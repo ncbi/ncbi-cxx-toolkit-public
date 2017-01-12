@@ -751,11 +751,11 @@ DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
 
 
 // FIND_BADLEN_TRNAS
-const string ktRNATooShort = "[n] tRNA[s] [is] too short";
-const string ktRNATooLong = "[n] tRNA[s] [is] too long";
-//  ----------------------------------------------------------------------------
+static const string ktRNATooShort = "[n] tRNA[s] [is] too short";
+static const string ktRNATooLong = "[n] tRNA[s] [is] too long";
+static const string ktRNATooLong150 = "[n] tRNA[s] [is] too long - over 150 nucleotides";
+
 DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Find short and long tRNAs")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
         return;
@@ -763,6 +763,9 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | 
     TSeqPos len = sequence::GetLength(obj.GetLocation(), &(context.GetScope()));
     if (!obj.IsSetPartial() && len < 50) {
         m_Objs[ktRNATooShort].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    }
+    else if (len >= 150) {
+        m_Objs[ktRNATooLong150].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     }
     else if (len > 100) {
         m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
@@ -776,9 +779,7 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | 
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
