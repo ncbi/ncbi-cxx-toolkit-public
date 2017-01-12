@@ -104,6 +104,8 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
 }
 
 
+static const string kCdsTrnaOverlapComment = "TAA stop codon is completed by the addition of 3' A residues to the mRNA";
+
 DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap - autofix")
 {}
 DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP)
@@ -165,10 +167,12 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         if (new_cds->CanGetComment()) {
             comment = new_cds->GetComment();
         }
-        if (comment.length()) {
-            comment += "; ";
+        if (comment.find(kCdsTrnaOverlapComment) == string::npos) {
+            if (comment.length()) {
+                comment += "; ";
+            }
+            comment += kCdsTrnaOverlapComment;
         }
-        comment += "TAA stop codon is completed by the addition of 3' A residues to the mRNA";
         new_cds->SetComment(comment);
         new_cds->SetData().SetCdregion().SetCode_break().push_back(code_break);
         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
