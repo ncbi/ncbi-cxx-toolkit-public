@@ -2093,8 +2093,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     }
 
     if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
-        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
-        && (! NStr::IsBlank (cguess)) && NStr::IsBlank (wguess)) {
+        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)) {
         /* do not flip from water */
         CLatLonCountryId *adjust_id = x_CalculateLatLonId(lon_value, lat_value, country, province);
         adjusted_flags = adjust_id == NULL ? 0 : adjust_id->Classify(country, province);
