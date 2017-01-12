@@ -59,7 +59,7 @@ const char* kTemplatesDir = "clog-test-templates";
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
-class CTestApplication : public CNcbiApplication
+class CTest : public CNcbiApplication
 {
 public:
     virtual void Init(void);
@@ -73,7 +73,7 @@ private:
 };
 
 
-void CTestApplication::Init(void)
+void CTest::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -231,7 +231,7 @@ void s_TestCase_PHID_Req_subhit_3(void)
 }
 
 
-int CTestApplication::Run(void)
+int CTest::Run(void)
 {
     m_Passed = 0;
     m_Failed = 0;
@@ -252,7 +252,7 @@ int CTestApplication::Run(void)
 }
 
 
-void CTestApplication::RunTest(CTempString name, FTestCase testcase)
+void CTest::RunTest(CTempString name, FTestCase testcase)
 {
     cout << name;
 
@@ -312,5 +312,5 @@ void CTestApplication::RunTest(CTempString name, FTestCase testcase)
 
 int main(int argc, const char* argv[]) 
 {
-    return CTestApplication().AppMain(argc, argv, 0, eDS_User /* do not redefine */);
+    return CTest().AppMain(argc, argv, 0, eDS_User /* do not redefine */);
 }

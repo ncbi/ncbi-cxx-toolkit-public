@@ -46,7 +46,7 @@ const int kRepeatCount = 10;
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
-class CTestRegApp : public CThreadedApp
+class CTest : public CThreadedApp
 {
 public:
     virtual bool TestApp_Init(void);
@@ -56,7 +56,7 @@ public:
 };
 
 
-bool CTestRegApp::TestApp_Init(void)
+bool CTest::TestApp_Init(void)
 {
     // Initialize the C logging API with default MT locking imlementation
     NcbiLog_InitMT(GetAppName().c_str());
@@ -69,7 +69,7 @@ bool CTestRegApp::TestApp_Init(void)
 }
 
 
-bool CTestRegApp::TestApp_Exit(void)
+bool CTest::TestApp_Exit(void)
 {
     // Stop application
     NcbiLog_AppStop(0);
@@ -79,7 +79,7 @@ bool CTestRegApp::TestApp_Exit(void)
 }
 
 
-bool CTestRegApp::Thread_Run(int /*idx*/)
+bool CTest::Thread_Run(int /*idx*/)
 {
     for (int i=0; i<kRepeatCount; i++) {
 
@@ -139,7 +139,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 }
 
 
-bool CTestRegApp::Thread_Exit(int /*idx*/)
+bool CTest::Thread_Exit(int /*idx*/)
 {
     /* Destroy thread-specific NcbiLog API information */
     NcbiLog_Destroy_Thread();
@@ -153,6 +153,5 @@ bool CTestRegApp::Thread_Exit(int /*idx*/)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestRegApp app;
-    return app.AppMain(argc, argv);
+    return CTest().AppMain(argc, argv);
 }

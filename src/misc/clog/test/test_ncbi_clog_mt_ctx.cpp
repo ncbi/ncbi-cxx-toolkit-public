@@ -46,7 +46,7 @@ const int kRepeatCount = 10;
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
-class CTestRegApp : public CThreadedApp
+class CTest : public CThreadedApp
 {
 public:
     virtual bool TestApp_Init(void);
@@ -55,7 +55,7 @@ public:
 };
 
 
-bool CTestRegApp::TestApp_Init(void)
+bool CTest::TestApp_Init(void)
 {
     // API initialization -- call it here if possible
     // NcbiLog_InitForAttachedContext("SomeAppName");
@@ -63,7 +63,7 @@ bool CTestRegApp::TestApp_Init(void)
 }
 
 
-bool CTestRegApp::TestApp_Exit(void)
+bool CTest::TestApp_Exit(void)
 {
     // Deinitialize logging API -- call it heer if possible
     // NcbiLog_Destroy();
@@ -71,7 +71,7 @@ bool CTestRegApp::TestApp_Exit(void)
 }
 
 
-bool CTestRegApp::Thread_Run(int /*idx*/)
+bool CTest::Thread_Run(int /*idx*/)
 {
     // This call can be skipped, if you don't need to set up an
     // application name. And it is better to make an initialization
@@ -163,6 +163,5 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestRegApp app;
-    return app.AppMain(argc, argv);
+    return CTest().AppMain(argc, argv);
 }
