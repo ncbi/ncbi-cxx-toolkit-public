@@ -4764,8 +4764,14 @@ void CFeatureItem::x_AddFTableQuals(
         x_AddFTableQual("pseudo");
     }
     const CGene_ref* grp = m_Feat.GetGeneXref();
-    if ( grp != 0  &&  grp->IsSuppressed() ) {
-        x_AddFTableQual("gene", "-");
+    if ( grp != 0 ) {
+        string gene_label; 
+        if (grp->IsSuppressed()) {
+            gene_label = "-";
+        } else {
+            grp->GetLabel(&gene_label);
+        }
+        x_AddFTableQual("gene", gene_label);
     }
     if ( m_Feat.IsSetComment()  &&  !m_Feat.GetComment().empty() ) {
         x_AddFTableQual("note", m_Feat.GetComment());
