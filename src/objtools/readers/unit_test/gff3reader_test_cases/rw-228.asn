@@ -993,8 +993,8 @@ Seq-annot ::= {
         code-break {
           {
             loc int {
-              from 76468,
-              to 76466,
+              from 76466,
+              to 76468,
               strand minus,
               id other {
                 accession "NW_006763130",
@@ -1117,8 +1117,8 @@ Seq-annot ::= {
         code-break {
           {
             loc int {
-              from 76468,
-              to 76466,
+              from 76466,
+              to 76468,
               strand minus,
               id other {
                 accession "NW_006763130",
