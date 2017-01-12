@@ -692,6 +692,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                                 ? fSOCK_Secure : 0);
             }
             /* Otherwise, it will be a pass-thru connection via dispatcher */
+            if (!net_info->scheme)
+                net_info->scheme = eURL_Https;
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(uuu->service, net_info,
                                             eReqMethod_Any, 0, 0,
@@ -736,9 +738,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         user_header = (net_info->stateless
                        ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
                        : "Client-Mode: STATEFUL_CAPABLE\r\n");
-        user_header = s_AdjustNetParams(uuu->service, net_info, req_method,
-                                        0, 0, 0, user_header,
-                                        mime_t, mime_s, mime_e, 0);
+        user_header = s_AdjustNetParams(uuu->service, net_info,
+                                        req_method, 0, 0,
+                                        0, user_header, mime_t,
+                                        mime_s, mime_e, 0);
         if (info)
             but_last = 1/*true*/;
     }
