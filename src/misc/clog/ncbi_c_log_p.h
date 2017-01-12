@@ -195,7 +195,7 @@ typedef struct SInfo_tag TNcbiLog_Info;
 
 /** Thread-specific context data.
  */
-struct SContext_tag {
+struct SNcbiLog_Context_tag {
     TNcbiLog_TID      tid;                      /**< Thread  ID                                          */
     TNcbiLog_Counter  tsn;                      /**< Serial number of the posting within the thread      */
     TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
@@ -211,7 +211,7 @@ struct SContext_tag {
 
     STime req_start_time;                       /**< Request start time                                  */
 };
-typedef struct SContext_tag TNcbiLog_Context_Data;
+typedef struct SNcbiLog_Context_tag TNcbiLog_Context_Data;
 
 
 

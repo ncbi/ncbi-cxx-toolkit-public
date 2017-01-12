@@ -303,8 +303,8 @@ typedef TNcbiLog_UInt8 TNcbiLog_Counter;
 
 /** Declaration for thread-specific context
  */
-struct SContext_tag;
-typedef struct SContext_tag* TNcbiLog_Context;
+struct SNcbiLog_Context_tag;
+typedef struct SNcbiLog_Context_tag* TNcbiLog_Context;
 
 
 
