@@ -1,5 +1,6 @@
 #define TAGS [perf]
 corelib$
+connect$
 serial$
 serial/datatool$
 util$
@@ -19,8 +20,9 @@ objects/seqfeat$
 objects/seqloc$
 objects/seqres$
 objects/seqset$
-objects/seqtable$
+objects/seqtable
 objects/misc$
+objtools/data_loaders/asn_cache
 db$
 db/bdb$
 internal$
