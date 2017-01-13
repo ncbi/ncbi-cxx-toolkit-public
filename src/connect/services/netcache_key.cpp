@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "util.hpp"
+#include <algorithm>
 
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
@@ -274,7 +274,8 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
 static void AppendServiceNameExtension(string& blob_id,
     const string& service_name)
 {
-    blob_id.append(g_NumberOfUnderscoresPlusOne(service_name), '_');
+    auto c = 1 + count(service_name.begin(), service_name.end(), '_');
+    blob_id.append(c, '_');
     blob_id.append("S_", 2);
     blob_id.append(service_name);
 }

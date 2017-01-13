@@ -32,7 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include "util.hpp"
+#include <algorithm>
+
 #include "netschedule_api_impl.hpp"
 
 #include <connect/services/netschedule_key.hpp>
@@ -179,7 +180,7 @@ CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
 
     string port_str(NStr::IntToString(port));
 
-    unsigned queue_prefix_len = g_NumberOfUnderscoresPlusOne(queue_name);
+    unsigned queue_prefix_len = 1 + count(queue_name.begin(), queue_name.end(), '_');
 
     m_V1HostPortQueue.reserve(1 + host.size() + 1 + port_str.size() +
             queue_prefix_len + queue_name.size());

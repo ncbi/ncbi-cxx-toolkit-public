@@ -33,8 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "util.hpp"
-
 #include <connect/services/util.hpp>
 #include <connect/services/netservice_api_expt.hpp>
 
@@ -267,17 +265,6 @@ void g_VerifyAlphabet(const string& str, const CTempString& param_name,
                 "' in the " << param_name << " \"" <<
                 NStr::PrintableString(str) << "\".");
     }
-}
-
-unsigned g_NumberOfUnderscoresPlusOne(const string& str)
-{
-    unsigned underscore_count = 1;
-    const char* underscore = strchr(str.c_str(), '_');
-    while (underscore != NULL) {
-        ++underscore_count;
-        underscore = strchr(underscore + 1, '_');
-    }
-    return underscore_count;
 }
 
 END_NCBI_SCOPE
