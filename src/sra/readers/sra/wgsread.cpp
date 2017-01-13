@@ -4402,7 +4402,22 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
     CVDBValueFor<NCBI_WGS_component_props> propss = m_Cur->COMPONENT_PROPS(m_CurrId);
     const NCBI_WGS_gap_linkage* linkages = 0;
     if ( m_Cur->m_COMPONENT_LINKAGE ) {
-        linkages = m_Cur->COMPONENT_LINKAGE(m_CurrId).data();
+        CVDBValueFor<NCBI_WGS_gap_linkage> linkages_val = m_Cur->COMPONENT_LINKAGE(m_CurrId);
+        if ( !linkages_val.empty() ) {
+            size_t gaps_count = 0;
+            for ( size_t i = 0; i < lens.size(); ++i ) {
+                NCBI_WGS_component_props props = propss[i];
+                if ( props < 0 ) {
+                    // gap
+                    ++gaps_count;
+                }
+            }
+            if ( linkages_val.size() != gaps_count ) {
+                NCBI_THROW(CSraException, eDataError,
+                           "CWGSScaffoldIterator: inconsistent gap info");
+            }
+            linkages = linkages_val.data();
+        }
     }
     CDelta_ext::Tdata& delta = inst->SetExt().SetDelta().Set();
     for ( size_t i = 0; i < lens.size(); ++i ) {
