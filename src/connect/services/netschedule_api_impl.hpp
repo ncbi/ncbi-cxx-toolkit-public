@@ -281,8 +281,9 @@ struct SNetScheduleNotificationThread : public CThread
 
 struct SNetScheduleAPIImpl : public CObject
 {
-    SNetScheduleAPIImpl(CConfig* config, const string& section,
-        const string& service_name, const string& client_name,
+    SNetScheduleAPIImpl(CConfig* config, const string& section);
+
+    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn = false, bool try_config = true);
 
     // Special constructor for CNetScheduleAPI::GetServer().
@@ -376,13 +377,13 @@ struct SNetScheduleAPIImpl : public CObject
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
 
-    CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
+    CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
     list<string> m_AffinityList;
 
     CNetScheduleGetJob::TAffinityLadder m_AffinityLadder;
 
     string m_JobGroup;
-    unsigned m_JobTtl;
+    unsigned m_JobTtl = 0;
 
     bool m_UseEmbeddedStorage;
 

@@ -855,18 +855,20 @@ static const char* const s_NetScheduleConfigSections[] = {
     NULL
 };
 
-SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-        CConfig* config, const string& section,
-        const string& service_name, const string& client_name,
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(CConfig* config, const string& section) :
+    m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr,
+                new CNetScheduleServerListener(false, true)))
+{
+    m_Service->Init(this, kEmptyStr, config, section, s_NetScheduleConfigSections);
+}
+
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn, bool try_config) :
     m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
                 new CNetScheduleServerListener(wn, try_config))),
-    m_Queue(queue_name),
-    m_AffinityPreference(CNetScheduleExecutor::eAnyJob),
-    m_JobTtl(0)
+    m_Queue(queue_name)
 {
-    m_Service->Init(this, service_name,
-        config, section, s_NetScheduleConfigSections);
+    m_Service->Init(this, service_name, nullptr, kEmptyStr, s_NetScheduleConfigSections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -877,15 +879,13 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_ClientNode(parent->m_ClientNode),
     m_ClientSession(parent->m_ClientSession),
     m_AffinityPreference(parent->m_AffinityPreference),
-    m_JobTtl(0),
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
 }
 
 CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
         const string& conf_section /* = kEmptyStr */) :
-    m_Impl(new SNetScheduleAPIImpl(NULL, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr))
+    m_Impl(new SNetScheduleAPIImpl(nullptr, conf_section))
 {
 }
 
@@ -893,20 +893,17 @@ CNetScheduleAPI::CNetScheduleAPI(const IRegistry& reg,
         const string& conf_section)
 {
     CConfig conf(reg);
-    m_Impl = new SNetScheduleAPIImpl(&conf, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr);
+    m_Impl = new SNetScheduleAPIImpl(&conf, conf_section);
 }
 
 CNetScheduleAPI::CNetScheduleAPI(CConfig* conf, const string& conf_section) :
-    m_Impl(new SNetScheduleAPIImpl(conf, conf_section,
-        kEmptyStr, kEmptyStr, kEmptyStr))
+    m_Impl(new SNetScheduleAPIImpl(conf, conf_section))
 {
 }
 
 CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
         const string& client_name, const string& queue_name) :
-    m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,
-        service_name, client_name, queue_name))
+    m_Impl(new SNetScheduleAPIImpl(service_name, client_name, queue_name))
 {
 }
 
@@ -1492,8 +1489,7 @@ public:
                 version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
-            return new SNetScheduleAPIImpl(&config, m_DriverName,
-                kEmptyStr, kEmptyStr, kEmptyStr);
+            return new SNetScheduleAPIImpl(&config, m_DriverName);
         }
         return NULL;
     }
@@ -1570,16 +1566,14 @@ CNetScheduleAPI::TInstance
 CNetScheduleAPIExt::CreateWnCompat(const string& service_name,
         const string& client_name)
 {
-    return new SNetScheduleAPIImpl(nullptr, kEmptyStr,
-            service_name, client_name, kEmptyStr, true, false);
+    return new SNetScheduleAPIImpl(service_name, client_name, kEmptyStr, true, false);
 }
 
 CNetScheduleAPI::TInstance
 CNetScheduleAPIExt::CreateNoCfgLoad(const string& service_name,
         const string& client_name, const string& queue_name)
 {
-    return new SNetScheduleAPIImpl(nullptr, kEmptyStr,
-            service_name, client_name, queue_name, false, false);
+    return new SNetScheduleAPIImpl(service_name, client_name, queue_name, false, false);
 }
 
 
