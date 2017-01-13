@@ -370,7 +370,8 @@ void CGenbankFormatter::FormatLocus
     int spaceForLength = min( 12, (int)(12 - (locus.GetName().length() - 16))  );
     locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
     locus_line
-        << setw(spaceForLength) << locus.GetLength()
+        << ' '
+        << setw(spaceForLength-1) << locus.GetLength()
         << ' '
         << units
         << ' '
