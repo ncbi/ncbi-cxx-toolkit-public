@@ -338,6 +338,7 @@ private:
     void x_RemoveOrphanedProteins(CBioseq_set& set);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
     void x_MergeDupBioSources(CSeq_descr & seq_descr);
+    void x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

@@ -5203,6 +5203,50 @@ void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
         x_CleanupOldName(biosrc.SetOrg());
         x_CleanupOrgModNoteEC(biosrc.SetOrg());
     }
+    if (biosrc.IsSetSubtype()) {
+        x_CleanupSubTypeEC(biosrc.SetSubtype());
+    }
+}
+
+
+void CNewCleanup_imp::x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes)
+{
+    NON_CONST_ITERATE(CBioSource::TSubtype, s, subtypes) {
+        if ((*s)->IsSetSubtype() &&
+            (*s)->GetSubtype() == CSubSource::eSubtype_lat_lon &&
+            (*s)->IsSetName()) {
+            bool format_correct = false;
+            bool precision_correct = false;
+            bool lat_in_range = false;
+            bool lon_in_range = false;
+            double lat_value = 0.0;
+            double lon_value = 0.0;
+            objects::CSubSource::IsCorrectLatLonFormat((*s)->GetName(), format_correct, precision_correct,
+                lat_in_range, lon_in_range,
+                lat_value, lon_value);
+            if (format_correct && lat_in_range && lon_in_range) {
+                string ns = "N";
+                string ew = "E";
+                if (lat_value < 0.0) {
+                    lat_value = 0.0 - lat_value;
+                    ns = "S";
+                }
+                string lat = NStr::NumericToString(lat_value);
+                if (lon_value < 0.0) {
+                    lon_value = 0.0 - lon_value;
+                    ew = "W";
+                }
+                string lon = NStr::NumericToString(lon_value);
+
+                string new_val = lat + " " + ns + " " + lon + " " + ew;
+
+                if (!NStr::Equal(new_val, (*s)->GetName())) {
+                    (*s)->SetName(new_val);
+                    ChangeMade(CCleanupChange::eChangeSubsource);
+                }
+            }
+        }
+    }
 }
 
 

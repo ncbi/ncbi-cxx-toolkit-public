@@ -1089,3 +1089,26 @@ BOOST_AUTO_TEST_CASE(Test_AddLowQualityException)
     CheckLowQualityResults(seh, CSeqFeatData::eSubtype_mRNA, false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_LatLonTrimming)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "3.12516554 N 2.5665974512 E");
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(*entry);
+    vector<string> changes_str = changes->GetAllDescriptions();
+    BOOST_CHECK_EQUAL(changes_str[1], "Change Subsource");
+    ITERATE(CBioseq::TDescr::Tdata, d, entry->GetDescr().Get()) {
+        if ((*d)->IsSource()) {
+            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12517 N 2.5666 E");
+        }
+    }
+
+}
