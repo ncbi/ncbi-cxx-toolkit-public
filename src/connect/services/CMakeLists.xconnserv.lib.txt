@@ -17,7 +17,7 @@ add_library(xconnserv
     netservice_protocol_parser util clparser
     json_over_uttp netstorage netstorage_rpc
     netstorageobjectloc netstorageobjectinfo netstorage_direct_nc
-    pack_int ns_output_parser
+    ns_output_parser
     ns_job_serializer compound_id compound_id_v0 tmp_wn_info
 )
 target_link_libraries(xconnserv
