@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -242,6 +243,19 @@ private:
     vector<string>            m_SeqVec; 
     vector<TSeqPos>           m_SeqLen; 
     TErrorList                m_Errors;
+
+    /// characters have different contexts, depending on 
+    /// whether they are before the first non-gap character,
+    /// after the last non-gap character, or between the
+    /// first and last non-gap character. This must be
+    /// precalculated before gap characters can be converted.
+    typedef pair<TSeqPos, TSeqPos> TAlignMiddleInterval;
+    typedef vector<TAlignMiddleInterval> TAlignMiddles;
+    TAlignMiddles m_MiddleSections;
+    void x_CalculateMiddleSections();
+    typedef objects::CDense_seg::TDim TNumrow;
+
+    bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
 };
 
 

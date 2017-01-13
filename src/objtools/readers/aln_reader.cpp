@@ -281,6 +281,60 @@ void CAlnReader::SetPhylip(EAlphabet alpha)
 }
 
 
+void CAlnReader::x_CalculateMiddleSections()
+{
+    m_MiddleSections.clear();
+
+
+    for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+        TSeqPos begin_len = strspn(m_Seqs[row_i].c_str(), m_BeginningGap.c_str());
+        TSeqPos end_len = 0;
+        if (begin_len < m_Seqs[row_i].length()) {
+            string::iterator s = m_Seqs[row_i].end();
+            while (s != m_Seqs[row_i].begin()) {
+                --s;
+                if (strchr(m_EndGap.c_str(), *s) != NULL) {
+                    end_len++;
+                } else {
+                    break;
+                }
+            }
+        }
+        m_MiddleSections.push_back(TAlignMiddleInterval(begin_len, m_Seqs[row_i].length() - end_len - 1));
+    }
+}
+
+
+bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
+{
+    if (m_MiddleSections.size() == 0) {
+        x_CalculateMiddleSections();
+    }
+    if (row > m_MiddleSections.size()) {
+        return false;
+    }
+    if (pos < m_MiddleSections[row].first) {
+        if (NStr::Find(m_BeginningGap, residue) == string::npos) {
+            return false;
+        } else {
+            return true;
+        }
+    } else if (pos > m_MiddleSections[row].second) {
+        if (NStr::Find(m_EndGap, residue) == string::npos) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        if (NStr::Find(m_MiddleGap, residue) == string::npos) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+
 CRef<CSeq_align> CAlnReader::GetSeqAlign()
 {
     if (m_Aln) {
@@ -292,7 +346,6 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     }
 
     typedef CDense_seg::TNumseg TNumseg;
-    typedef CDense_seg::TDim TNumrow;
 
     m_Aln = new CSeq_align();
     m_Aln->SetType(CSeq_align::eType_not_set);
@@ -348,9 +401,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
             } else {
                 string residue = m_Seqs[row_i].substr(aln_pos, 1);
                 NStr::ToUpper(residue);
-                if (NStr::Find(m_MiddleGap, residue) == string::npos  &&
-                    NStr::Find(m_EndGap, residue) == string::npos  &&
-                    NStr::Find(m_BeginningGap, residue) == string::npos) {
+                if (!x_IsGap(row_i, aln_pos, residue)) {
 
                     if (is_gap[row_i]) {
                         is_gap[row_i] = false;
