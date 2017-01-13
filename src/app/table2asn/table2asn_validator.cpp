@@ -252,7 +252,7 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
 
 void CTable2AsnValidator::FixProductNames(CTable2AsnContext& context, objects::CBioseq& bioseq)
 {
-    static const char hypotetic_protein_name[] = "hypotetic protein";
+    static const char hypotetic_protein_name[] = "hypothetical protein";
 
     if (bioseq.IsAa() && bioseq.IsSetAnnot() && !bioseq.GetAnnot().empty())
     {
