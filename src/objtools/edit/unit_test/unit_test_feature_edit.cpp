@@ -190,7 +190,8 @@ void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo, cons
     const bool success = trimmed_feat.Equals(*baseline);
     if (!success) {
         if (keep) {
-            CNcbiOfstream ostr(testInfo.m_BaselineFile.GetPath() + ".new");
+            string new_file = testInfo.m_BaselineFile.GetPath() + ".new";
+            CNcbiOfstream ostr(new_file.c_str());
             ostr << MSerial_AsnText << trimmed_feat;
             ostr.close();
         }
