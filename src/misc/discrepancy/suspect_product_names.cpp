@@ -5481,16 +5481,12 @@ static string ReplaceNoCase(const string& input, const string& search, const str
     if (!find.length()) {
         return input;
     }
-    string output = input;
     size_t p;
-    while ((p = NStr::FindNoCase(output, find)) != string::npos) {
-        string found = output.substr(p, find.length());
-        if (found == replace) {
-            break;  // avoid infinite cycles
-        }
-        output = NStr::Replace(output, found, replace);
+    if ((p = NStr::FindNoCase(input, find)) != string::npos) {
+        string tail = input.substr(p + find.length());
+        return input.substr(0, p) + replace + ReplaceNoCase(tail, find, replace);
     }
-    return output;
+    return input;
 }
 
 
