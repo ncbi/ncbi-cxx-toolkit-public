@@ -274,6 +274,26 @@ void CUrlArgs::SetValue(const string& name, const string& value)
 }
 
 
+void CUrlArgs::AddValue(const string& name, const string& value)
+{
+    m_IsIndex = false;
+    m_Args.push_back(TArg(name, value));
+}
+
+
+void CUrlArgs::SetUniqueValue(const string& name, const string& value)
+{
+    m_IsIndex = false;
+    iterator it = FindFirst(name);
+    while (it != m_Args.end()) {
+        iterator tmp = it;
+        it = FindNext(it);
+        m_Args.erase(tmp);
+    }
+    m_Args.push_back(TArg(name, value));
+}
+
+
 CUrlArgs::iterator CUrlArgs::x_Find(const string& name,
                                     const iterator& start)
 {
@@ -552,6 +572,71 @@ const CUrlArgs& CUrl::GetArgs(void) const
     return *m_ArgsList;
 }
 
+
+void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
+{
+    if ((flags & fUser_Replace)  &&  !other.m_User.empty()) {
+        m_User = other.m_User;
+    }
+    if ((flags & fPassword_Replace)  &&  !other.m_Password.empty()) {
+        m_Password = other.m_Password;
+    }
+    if (flags & fPath_Replace) {
+        m_Path = other.m_Path;
+    }
+    else if ((flags & fPath_Append)  &&  !other.m_Path.empty()) {
+        if ( m_Path.empty() ) {
+            m_Path = other.m_Path;
+        }
+        else {
+            size_t other_p = 0;
+            if (m_Path.back() == '/'  &&  other.m_Path.front() == '/') {
+                other_p = 1;
+            }
+            m_Path.append(other.m_Path.substr(other_p));
+        }
+    }
+    if ((flags & fFragment_Repace)  &&  !other.m_Fragment.empty()) {
+        m_Fragment = other.m_Fragment;
+    }
+    switch (flags & fArgs_Mask) {
+    case fArgs_Replace:
+        m_OrigArgs = other.m_OrigArgs;
+        if ( other.m_ArgsList.get() ) {
+            m_ArgsList.reset(new CUrlArgs(*other.m_ArgsList));
+        } else {
+            m_ArgsList.reset();
+        }
+        break;
+    case fArgs_Append:
+        if ( other.m_ArgsList.get() ) {
+            if ( m_ArgsList.get() ) {
+                ITERATE(CUrlArgs::TArgs, it, other.m_ArgsList->GetArgs()) {
+                    m_ArgsList->AddValue(it->name, it->value);
+                }
+            }
+            else {
+                m_ArgsList.reset(new CUrlArgs(*other.m_ArgsList));
+            }
+        }
+        break;
+    case fArgs_Merge:
+        auto_ptr<CUrlArgs> args(m_ArgsList.release());
+        m_ArgsList.reset(new CUrlArgs());
+        if ( args.get() ) {
+            // Copy existing arguments, if any, removing duplicate entries.
+            ITERATE(CUrlArgs::TArgs, it, args->GetArgs()) {
+                m_ArgsList->SetUniqueValue(it->name, it->value);
+            }
+        }
+        if ( other.m_ArgsList.get() ) {
+            ITERATE(CUrlArgs::TArgs, it, other.m_ArgsList->GetArgs()) {
+                m_ArgsList->SetUniqueValue(it->name, it->value);
+            }
+        }
+        break;
+    }
+}
 
 
 //////////////////////////////////////////////////////////////////////////////

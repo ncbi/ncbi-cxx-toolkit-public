@@ -803,7 +803,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
         m_Stream->SetConnStream(new CConn_ServiceStream(
-            m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
+            m_Url.GetHost(), // Service name is in host, ignore other fields now
             fSERV_Http,
             connnetinfo,
             &x_extra));
@@ -878,12 +878,20 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     char* loc = ConnNetInfo_URL(net_info);
     if (loc) {
         CUrl url(loc);
-        if (failure_count == (unsigned int)(-1)  &&  req->m_IsService  &&
-            req->m_AdjustUrl  &&  req->m_AdjustUrl->AdjustUrl(url)) {
-            ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
-            // Re-read the url and save it in the response.
-            free(loc);
-            loc = ConnNetInfo_URL(net_info);
+        if (failure_count == (unsigned int)(-1)  &&  req->m_IsService) {
+            bool adjust = true;
+            if (req->m_AdjustUrl) {
+                adjust = req->m_AdjustUrl->AdjustUrl(url);
+            }
+            else {
+                url.Adjust(req->m_Url);
+            }
+            if ( adjust ) {
+                ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
+                // Re-read the url and save it in the response.
+                free(loc);
+                loc = ConnNetInfo_URL(net_info);
+            }
         }
         resp->m_Location.SetUrl(loc);
         free(loc);

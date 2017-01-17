@@ -276,6 +276,12 @@ public:
     /// add a new argument.
     void SetValue(const string& name, const string& value);
 
+    /// Add new value even if an argument with the same name already exists.
+    void AddValue(const string& name, const string& value);
+
+    /// Set value, remove any other values for the name.
+    void SetUniqueValue(const string& name, const string& value);
+
     /// Get the const list of arguments.
     const TArgs& GetArgs(void) const 
         { return m_Args; }
@@ -415,6 +421,29 @@ public:
     static IUrlEncoder* GetDefaultEncoder(void);
 
     bool IsEmpty(void) const;
+
+    /// Flags controlling URL adjustment.
+    /// @sa CUrl::Adjust
+    enum EAdjustFlags {
+        fUser_Replace         = 0x0001, ///< Replace user if set in 'other'
+        fPassword_Replace     = 0x0002, ///< Replace password if set in 'other'
+        fPath_Replace         = 0x0004, ///< Replace path, overrides fPath_Append
+        fPath_Append          = 0x0008, ///< Append new path to the existing one
+        fFragment_Repace      = 0x0010, ///< Replace fragment if set in 'other'
+        fArgs_Replace         = 0x0020, ///< Discard all args, replace with args from 'other'
+        fArgs_Append          = 0x0040, ///< Append args, allow duplicate names and values
+        fArgs_Merge           = 0x0060, ///< Append new args; replace values of existing args,
+                                        ///< do not allow to set multiple values with the same name.
+        fArgs_Mask            = 0x0060,
+
+        fAdjust_Default = fPath_Append | fArgs_Merge
+    };
+    typedef int TAdjustFlags;
+
+    /// Adjust this URL using information from 'other' URL.
+    /// Scheme, host and port are never changed. Other parts can be replaced or merged
+    /// depending on the flags.
+    void Adjust(const CUrl& other, TAdjustFlags flags = fAdjust_Default);
 
 private:
     // Set values with verification
@@ -589,14 +618,18 @@ CUrlArgs::iterator CUrlArgs::FindFirst(const string& name)
 inline
 CUrlArgs::const_iterator CUrlArgs::FindNext(const const_iterator& iter) const
 {
-    return x_Find(iter->name, iter);
+    const_iterator next = iter;
+    ++next;
+    return x_Find(iter->name, next);
 }
 
 
 inline
 CUrlArgs::iterator CUrlArgs::FindNext(const iterator& iter)
 {
-    return x_Find(iter->name, iter);
+    iterator next = iter;
+    ++next;
+    return x_Find(iter->name, next);
 }
 
 /* @} */
