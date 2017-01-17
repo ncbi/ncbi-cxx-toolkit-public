@@ -2399,19 +2399,12 @@ static void s_AddLinkoutInfo(map<int, vector < CBioseq::TId > > &linkout_map,int
 }
 
 
-
-
 void 
-CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
+CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
                                     map<int, vector <CBioseq::TId > > &linkout_map,
                                     ILinkoutDB* linkoutdb, 
                                     const string& mv_build_name)
 {
-    
-    
-    for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){    
-        CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();        
         TGi gi = FindGi(cur_id);        
         CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
         
@@ -2442,9 +2435,28 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
         }        
         if(linkout & eReprMicrobialGenomes){        
             s_AddLinkoutInfo(linkout_map,eReprMicrobialGenomes,cur_id);            
-        }                
+        }                          
+}
+
+void 
+CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
+                                    map<int, vector <CBioseq::TId > > &linkout_map,
+                                    ILinkoutDB* linkoutdb, 
+                                    const string& mv_build_name)
+{
+    
+    
+    for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){    
+        CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();        
+
+        GetBdlLinkoutInfo(cur_id,
+                          linkout_map,
+                          linkoutdb, 
+                          mv_build_name);        
     }       
 }
+
 static string s_GetTaxName(int taxid)
 {
     string taxName;
@@ -2461,7 +2473,7 @@ static string s_GetTaxName(int taxid)
     return taxName;
 }
 
-void s_AddOtherRelatedInfoLinks(const list< CRef< CBlast_def_line > > &bdl, 
+void s_AddOtherRelatedInfoLinks(CBioseq::TId& cur_id, 
                                 const string& rid,    
                                 bool is_na,                                                                                                   
                                 bool for_alignment, 
@@ -2470,48 +2482,42 @@ void s_AddOtherRelatedInfoLinks(const list< CRef< CBlast_def_line > > &bdl,
                                 
 {   
     //Identical Proteins
-    if(!is_na && bdl.size() > 1) { 
-        list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
-        CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();
-        TGi gi = FindGi(cur_id);
-        if (gi > ZERO_GI) { 
-            CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-            string label;
-            wid->GetLabel(&label, CSeq_id::eContent);                
-            string url_link = kIdenticalProteinsUrl;
-            string lnk_displ = "Identical Proteins";
-            url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(gi),for_alignment, cur_align,label,lnk_displ);        
-            url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);
-            linkout_list.push_back(url_link);
-        }
+     TGi gi = FindGi(cur_id);
+     if (gi > ZERO_GI) { 
+        CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+        string label;
+        wid->GetLabel(&label, CSeq_id::eContent);                
+        string url_link = kIdenticalProteinsUrl;
+        string lnk_displ = "Identical Proteins";
+        url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(gi),for_alignment, cur_align,label,lnk_displ);        
+        url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);
+        linkout_list.push_back(url_link);
     }
 }
 
-list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_line > > &bdl,                                             
-                                                 const string& rid,
-                                                 const string& cdd_rid, 
-                                                 const string& entrez_term,
-                                                 bool is_na,                                                                                                   
-                                                 bool structure_linkout_as_group,
-                                                 bool for_alignment, 
-                                                 int cur_align,
-                                                 string& linkoutOrder,
-                                                 int taxid,
-                                                 string &database,
-                                                 int query_number,                                                 
-                                                 string &user_url,
-                                                 string &preComputedResID,
-                                                 ILinkoutDB* linkoutdb,
-                                                 const string& mv_build_name)
+static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,                                             
+                                        const string& rid,
+                                        const string& cdd_rid, 
+                                        const string& entrez_term,
+                                        bool is_na,                                                                                                   
+                                        bool structure_linkout_as_group,
+                                        bool for_alignment, 
+                                        int cur_align,
+                                        string& linkoutOrder,
+                                        int taxid,
+                                        string &database,
+                                        int query_number,                                                 
+                                        string &user_url,
+                                        string &preComputedResID,
+                                        //ILinkoutDB* linkoutdb,
+                                        //const string& mv_build_name,
+                                        map<int, vector < CBioseq::TId > >  &linkout_map,
+                                        bool getIdentProteins)
                                                  
 {
-    list<string> linkout_list;
-    map<int, vector < CBioseq::TId > >  linkout_map;
-    map<int, vector < CBioseq::TId > >::iterator  it;    
+    list<string> linkout_list;    
     
-    GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
-
     vector<string> linkLetters;
     NStr::Split(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
@@ -2549,9 +2555,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
         }
 
         string gnl;
-        if(!disableLink && linkout == eGenomicSeq) {
-            list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
-            CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();
+        if(!disableLink && linkout == eGenomicSeq) {            
             gnl = s_GetBestIDForURL(cur_id);
         }
 
@@ -2582,9 +2586,101 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             linkout_list.push_back(*iter);
         }
  }
- s_AddOtherRelatedInfoLinks(bdl,rid,is_na,for_alignment,cur_align,linkout_list); 
+ if(getIdentProteins) {
+    s_AddOtherRelatedInfoLinks(cur_id,rid,is_na,for_alignment,cur_align,linkout_list); 
+ }
  return linkout_list;
 }
+
+
+
+list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_line > > &bdl,                                             
+                                                 const string& rid,
+                                                 const string& cdd_rid, 
+                                                 const string& entrez_term,
+                                                 bool is_na,                                                                                                   
+                                                 bool structure_linkout_as_group,
+                                                 bool for_alignment, 
+                                                 int cur_align,
+                                                 string& linkoutOrder,
+                                                 int taxid,
+                                                 string &database,
+                                                 int query_number,                                                 
+                                                 string &user_url,
+                                                 string &preComputedResID,
+                                                 ILinkoutDB* linkoutdb,
+                                                 const string& mv_build_name)
+                                                 
+{
+    list<string> linkout_list;
+    map<int, vector < CBioseq::TId > >  linkout_map;
+        
+    GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
+    list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
+    CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();    
+    linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
+                                       rid,
+                                       cdd_rid, 
+                                       entrez_term,
+                                       is_na,                                                                                                   
+                                       structure_linkout_as_group,
+                                       for_alignment, 
+                                       cur_align,
+                                       linkoutOrder,
+                                       taxid,
+                                       database,
+                                       query_number,                                                 
+                                       user_url,
+                                       preComputedResID,                                      
+                                       linkout_map,
+                                       !is_na && bdl.size() > 1); 
+    return linkout_list;
+}
+
+list<string> CAlignFormatUtil::GetFullLinkoutUrl(CBioseq::TId& cur_id,                                             
+                                                 const string& rid,
+                                                 const string& cdd_rid, 
+                                                 const string& entrez_term,
+                                                 bool is_na,                                                                                                   
+                                                 bool structure_linkout_as_group,
+                                                 bool for_alignment, 
+                                                 int cur_align,
+                                                 string& linkoutOrder,
+                                                 int taxid,
+                                                 string &database,
+                                                 int query_number,                                                 
+                                                 string &user_url,
+                                                 string &preComputedResID,
+                                                 ILinkoutDB* linkoutdb,
+                                                 const string& mv_build_name,
+                                                 bool getIdentProteins)
+                                                 
+{
+    list<string> linkout_list;
+
+    map<int, vector < CBioseq::TId > >  linkout_map;        
+    GetBdlLinkoutInfo(cur_id,linkout_map, linkoutdb, mv_build_name);
+    
+    linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
+                                       rid,
+                                       cdd_rid, 
+                                       entrez_term,
+                                       is_na,                                                                                                   
+                                       structure_linkout_as_group,
+                                       for_alignment, 
+                                       cur_align,
+                                       linkoutOrder,
+                                       taxid,
+                                       database,
+                                       query_number,                                                 
+                                       user_url,
+                                       preComputedResID,                                      
+                                       linkout_map,
+                                       getIdentProteins);
+ 
+    return linkout_list;
+}
+
 
 static bool FromRangeAscendingSort(CRange<TSeqPos> const& info1,
                                    CRange<TSeqPos> const& info2)

@@ -280,6 +280,58 @@ static void s_LimitDescrLength(string &descr)
     
 }
 
+void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
+                                            CBioseq::TId& cur_id,                                 
+                                            int blast_rank,
+                                            bool getIdentProteins)
+{
+    string linkout_list;
+    TGi cur_gi =  FindGi(cur_id);
+    sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName) : 0;    
+    if(m_LinkoutOrder.empty()) {
+        m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
+        m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));        
+        if(!m_BlastType.empty()) m_LinkoutOrder = m_Reg->Get(m_BlastType,"LINKOUT_ORDER");
+        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : kLinkoutOrderStr;
+    }
+    if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView) {
+        if(m_Option & eRealtedInfoLinks){
+            string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
+            sdl->linkout_list =  CAlignFormatUtil::GetFullLinkoutUrl(cur_id,
+                                                            m_Rid, 
+                                                            m_CddRid, 
+                                                            m_EntrezTerm, 
+                                                            m_IsDbNa,
+                                                            false,
+                                                            true,                                           
+                                                            blast_rank,
+                                                            m_LinkoutOrder,
+                                                            sdl->taxid,
+                                                            m_Database,
+                                                            m_QueryNumber, 
+                                                            user_url,
+                                                            m_PreComputedResID,
+                                                            m_LinkoutDB, 
+                                                            m_MapViewerBuildName,
+                                                            getIdentProteins);
+        }
+        else {
+             sdl->linkout_list =  CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
+                                                         cur_id, 
+                                                         m_Rid, 
+                                                         m_CddRid, 
+                                                         m_EntrezTerm, 
+                                                         m_IsDbNa,
+                                                         ZERO_GI, 
+                                                         true, 
+                                                         false,
+                                                         blast_rank,
+                                                         m_PreComputedResID);
+        }
+    }
+}
+
+
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            const CSeq_id& aln_id,
                                            list<string> &use_this_seqid,
@@ -331,44 +383,21 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     //get linkout****
     if((m_Option & eLinkout)){
         bool linkout_not_found = true;
+        bool getIdentProteins = !m_IsDbNa && bdl.size() > 1;
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();
             TGi cur_gi =  FindGi(cur_id);            
             if(use_this_seqid.empty()){
-                if(sdl->gi == cur_gi){                 
-                    sdl->linkout = m_LinkoutDB
-                        ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
-                        : 0;                    
-                    if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)            
-                        sdl->linkout_list =
-                            CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
-                                           cur_id, m_Rid, 
-                                           m_CddRid, 
-                                           m_EntrezTerm, 
-                                           handle.GetBioseqCore()->IsNa(),
-                                           ZERO_GI, true, false,
-                                           blast_rank,m_PreComputedResID);                    
-                    
+                if(sdl->gi == cur_gi){                                     
+                    x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);                    
                     break;
                 }
             } else if (CAlignFormatUtil::IsGiList(use_this_seqid)) {
                 list<TGi> use_this_gi = CAlignFormatUtil::StringGiToNumGiList(use_this_seqid);
                 ITERATE(list<TGi>, iter_gi, use_this_gi){
-                    if(cur_gi == *iter_gi){                     
-                        sdl->linkout = m_LinkoutDB
-                            ?
-                            m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
-                            : 0;
-                        if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)
-                            sdl->linkout_list = 
-                                CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
-                                           cur_id, m_Rid, 
-                                           m_CddRid, 
-                                           m_EntrezTerm, 
-                                           handle.GetBioseqCore()->IsNa(),
-                                           ZERO_GI, true, false,
-                                           blast_rank,m_PreComputedResID);                        
+                    if(cur_gi == *iter_gi){                                             
+                        x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);                            
                         linkout_not_found = false;
                         break;
                     }
