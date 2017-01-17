@@ -98,11 +98,19 @@ void  CNetStorageGCDatabase::GetAppLock(void)
         query.SetParameter("@LockTimeout", 0);
 
         query.ExecuteSP("sp_getapplock");
-        if (query.GetStatus() != 0)
+        int     status = query.GetStatus();
+
+        // status >= 0 => success
+        if (status < 0)
             NCBI_THROW(CNetStorageGCException, eApplicationLockError,
-                       "Error getting the application lock");
+                       "sp_getapplock return code: " +
+                       NStr::NumericToString(status));
+    } catch (const exception &  exc) {
+        cerr << "Error getting the application lock: " << exc.what() << endl;
+        throw;
     } catch (...) {
-        cerr << "Error getting the application lock for the database" << endl;
+        cerr << "Unknown error getting the application lock "
+                "for the database" << endl;
         throw;
     }
 
