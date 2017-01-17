@@ -94,7 +94,8 @@ public:
         eNewTargetWindow = (1 << 7),    //open url link in a new window
         eShowNewSeqGif = (1 << 8),      //show new sequence gif image
         eShowPercentIdent = (1 << 9),   //show percent identity column
-        eLongSeqId = (1 << 10)          //print long sequences id (with bars)
+        eLongSeqId = (1 << 10),         //print long sequences id (with bars)
+        eRealtedInfoLinks = (1 << 11)           //Related information links - Linkout links with descriptions + others
     };
 
     ///Data Representing each defline
@@ -526,7 +527,11 @@ protected:
                             list<string> &use_this_seqid,
                             SDeflineInfo* sdl,
                             int blast_rank);
-    
+
+    void x_InitLinkOutInfo(SDeflineInfo* sdl,
+                           objects::CBioseq::TId& cur_id,                                 
+                           int blast_rank,
+                           bool getIdentProteins);
     ///Initialize defline params for regular output
     ///
     void x_InitDefline(void);

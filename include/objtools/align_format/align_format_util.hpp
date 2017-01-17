@@ -1103,6 +1103,16 @@ public:
                                   map<int, vector < objects::CBioseq::TId > > &linkout_map,
                                   ILinkoutDB* linkoutdb,
                                   const string& mv_build_name);
+
+    ///Create map that holds all linkouts for one seqID
+    ///@param cur_id: CBioseq::TId
+    ///@param linkout_map: map that holds linkouts and corresponding CBioseq::TId for the whole list  of blast deflines  
+    ///
+    static void GetBdlLinkoutInfo(objects::CBioseq::TId& cur_id,
+                                  map<int, vector <objects::CBioseq::TId > > &linkout_map,
+                                  ILinkoutDB* linkoutdb, 
+                                  const string& mv_build_name);
+
     ///Get linkout membership for for the list of blast deflines
     ///@param bdl: list of CRef<CBlast_def_line>    
     ///@param rid: blast rid
@@ -1136,7 +1146,41 @@ public:
                                                  string &preComputedResID,
                                                  ILinkoutDB* linkoutdb,
                                                  const string& mv_build_name);
-                                   
+
+    ///Get linkout membership for one seqID
+    ///@param cur_id: CBioseq::TId seqID
+    ///@param rid: blast rid
+    ///@param cdd_rid: blast cdd_rid
+    ///@param entrez_term: entrez_term for building url
+    ///@param is_na: bool indication if query is nucleotide
+    ///@param first_gi: first gi in the list (used to contsruct structure url)
+    ///@param structure_linkout_as_group: bool used to contsruct structure url
+    ///@param for_alignment: bool indicating tif link is locted in alignment section
+    ///@param int cur_align: int current alignment/description number
+    ///@param linkoutOrder: string of letters separated by comma specifing linkout order like "G,U,M,E,S,B"
+    ///@param taxid: int taxid
+    ///@param database: database name
+    ///@param query_number: query_number
+    ///@param user_url: url defined as TOOL_URL for blast_type in .ncbirc
+    ///@return list of string containing all linkout urls for all of the seqs in the list of blast deflines
+    ///
+    static list<string> GetFullLinkoutUrl(objects::CBioseq::TId& cur_id,                                             
+                                                 const string& rid,
+                                                 const string& cdd_rid, 
+                                                 const string& entrez_term,
+                                                 bool is_na,                                                                                                   
+                                                 bool structure_linkout_as_group,
+                                                 bool for_alignment, 
+                                                 int cur_align,
+                                                 string& linkoutOrder,
+                                                 int taxid,
+                                                 string &database,
+                                                 int query_number,                                                 
+                                                 string &user_url,
+                                                 string &preComputedResID,
+                                                 ILinkoutDB* linkoutdb,
+                                                 const string& mv_build_name,
+                                                 bool getIdentProteins);
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
 												
