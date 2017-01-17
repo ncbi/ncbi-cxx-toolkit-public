@@ -61,6 +61,12 @@ Section "DefaultSection" SecDflt
   SetOutPath "$INSTDIR\bin"
   
   File "cobalt.exe"
+  File "libgcc_s_seh-1.dll"
+  File "libgmp-10.dll"
+  File "libgnutls-30.dll"
+  File "libhogweed-4-2.dll"
+  File "libnettle-6-2.dll"
+  File "libp11-kit-0.dll"
   File "msvcp120.dll"
   File "msvcr120.dll"
   
