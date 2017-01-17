@@ -315,6 +315,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_AllNs,
     { "AllNs",
     "Sequence has only Ns." } },
+    { eErr_SEQ_INST_FarLocationExcludesFeatures,
+    { "FarLocationExcludesFeatures",
+      "Scaffold points to sequence that has features outside the location." } },
 
 
     /* SEQ_DESCR */

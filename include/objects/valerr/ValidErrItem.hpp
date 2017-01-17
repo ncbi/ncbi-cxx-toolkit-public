@@ -144,6 +144,7 @@ enum EErrType {
     eErr_SEQ_INST_WGSMasterLacksStrucComm,
     eErr_SEQ_INST_TSAMasterLacksStrucComm,
     eErr_SEQ_INST_AllNs,
+    eErr_SEQ_INST_FarLocationExcludesFeatures,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

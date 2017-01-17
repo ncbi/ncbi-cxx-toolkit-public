@@ -3582,6 +3582,39 @@ bool CValidError_bioseq::IsSelfReferential(const CBioseq& seq)
 }
 
 
+bool HasExcludedAnnotation(const CSeq_loc& loc, CBioseq_Handle far_bsh)
+{
+    if (!loc.IsInt()) {
+        return false;
+    }
+
+    TSeqPos stop = loc.GetStop(eExtreme_Positional);
+    TSeqPos start = loc.GetStart(eExtreme_Positional);
+
+    if (start > 0) {
+        CRef<CSeq_loc> far_loc(new CSeq_loc());
+        far_loc->SetInt().SetFrom(0);
+        far_loc->SetInt().SetTo(start - 1);
+        far_loc->SetInt().SetId().Assign(loc.GetInt().GetId());
+        CFeat_CI f(far_bsh.GetScope(), *far_loc);
+        if (f) {
+            return true;
+        }
+    }
+    if (stop < far_bsh.GetBioseqLength() - 1) {
+        CRef<CSeq_loc> far_loc(new CSeq_loc());
+        far_loc->SetInt().SetFrom(stop + 1);
+        far_loc->SetInt().SetTo(far_bsh.GetBioseqLength() - 1);
+        far_loc->SetInt().SetId().Assign(loc.GetInt().GetId());
+        CFeat_CI f(far_bsh.GetScope(), *far_loc);
+        if (f) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_bioseq::ValidateDeltaLoc
 (const CSeq_loc& loc,
  const CBioseq& seq, 
@@ -3618,6 +3651,12 @@ void CValidError_bioseq::ValidateDeltaLoc
                                  + ") greater than length of " + id_label
                                  + " (" + NStr::IntToString(seq_len) + ")",
                                 seq);
+                    }
+                    if (HasExcludedAnnotation(loc, bsh)) {
+                        string id_label = id->AsFastaString();
+                        PostErr(eDiag_Error, eErr_SEQ_INST_FarLocationExcludesFeatures,
+                                "Scaffold points to some but not all of " +
+                                id_label + ", excluded portion contains features", seq);
                     }
                 }
             } catch (CException ) {
