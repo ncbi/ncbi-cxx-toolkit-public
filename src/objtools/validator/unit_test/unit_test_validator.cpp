@@ -12314,7 +12314,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("CCDS");
     refseq_strings.push_back ("CGNC");
     refseq_strings.push_back ("CloneID");
-    refseq_strings.push_back ("ECOCYC");
     refseq_strings.push_back ("HPRD");
     refseq_strings.push_back ("LRG");
     refseq_strings.push_back ("PBR");
