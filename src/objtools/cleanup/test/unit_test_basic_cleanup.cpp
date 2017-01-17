@@ -592,6 +592,13 @@ BOOST_AUTO_TEST_CASE(Test_ParseCodeBreak)
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetCode_break().size(), 1);
     BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
 
+    cds->SetData().SetCdregion().ResetCode_break();
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("transl_except", "(pos:25, aa:TERM)")));
+    cds->SetLocation().SetInt().SetTo(24);
+    BOOST_CHECK_EQUAL(CCleanup::ParseCodeBreaks(*cds, *scope), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().IsSetCode_break(), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetCode_break().size(), 1);
+    BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
 }
 
 

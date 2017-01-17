@@ -4010,7 +4010,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const strin
     if (break_loc == NULL
         || (break_loc->IsInt()
         && sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained)
-        || (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) != 3)) {
+        || (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3)) {
         return false;
     }
 
