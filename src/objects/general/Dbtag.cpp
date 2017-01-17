@@ -660,7 +660,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
     { CDbtag::eDbtagType_WormBase, "https://www.wormbase.org/search/gene/" },
     { CDbtag::eDbtagType_Xenbase, "https://www.xenbase.org/gene/showgene.do?method=display&geneId=" },
-    { CDbtag::eDbtagType_ZFIN, "https://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID=" },
+    { CDbtag::eDbtagType_ZFIN, "https://zfin.org/" },
     { CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_dbClone, "https://www.ncbi.nlm.nih.gov/sites/entrez?db=clone&cmd=Retrieve&list_uids=" },
     { CDbtag::eDbtagType_dbCloneLib, "https://www.ncbi.nlm.nih.gov/sites/entrez?db=clonelib&cmd=Retrieve&list_uids=" },
