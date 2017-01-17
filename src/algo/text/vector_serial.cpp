@@ -47,9 +47,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// anonymous namespace to avoid names collision
-namespace {
-
 
 template<>
 void Serialize<Uint4, float>(CNcbiOstream& ostr,
@@ -84,6 +81,9 @@ void Deserialize<Uint4, float>(CNcbiIstream& istr,
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+// anonymous namespace to avoid names collision
+namespace {
 
 template <class Buffer>
 class CBufferWriter : public IWriter
@@ -141,6 +141,7 @@ private:
     CBufferWriterStream& operator=(const CBufferWriterStream&);
 };
 
+} // anonymous namespace
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -395,7 +396,5 @@ void Decode<string, float>(const CSimpleBuffer& data,
     Decode(&data[0], data.size(), vec);
 }
 
-
-} // anonymous namespace
 
 END_NCBI_SCOPE
