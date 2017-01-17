@@ -3034,8 +3034,10 @@ CQueryImpl::PurgeResults(void)
                 BeginNewRS();
             }
         } catch (CSDB_Exception& e) {
-            while (has_more) {
+            IResultSet* rs = NULL;
+            while (has_more  &&  rs != m_CurRS) {
                 try {
+                    rs = m_CurRS;
                     if ((has_more = HasMoreResultSets())) {
                         BeginNewRS();
                     }
