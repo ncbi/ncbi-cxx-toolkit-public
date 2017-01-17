@@ -402,7 +402,6 @@ private:
     EAction x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& product);
     EAction x_HandleStandardNameRnaGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& standard_name);
     EAction x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual);
-    EAction x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str);
     EAction x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt );
     void x_AddEnvSamplOrMetagenomic(CBioSource& biosrc);
     void x_CleanupOldName(COrg_ref& org);

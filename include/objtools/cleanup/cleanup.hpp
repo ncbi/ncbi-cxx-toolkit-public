@@ -481,6 +481,21 @@ public:
 
     static bool ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filter = CSeq_inst::eMol_not_set);
 
+/// Parse string into code break and add to coding region.
+/// @param feat feature that contains coding region - necessary to determine codon boundaries
+/// @param cds  coding region to which code breaks will be added
+/// @param str  string from which to parse code break
+/// @param scope scope in which to find sequences referenced (used for location comparisons)
+/// @return bool indicates string was successfully parsed and code break was added
+    static bool ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str, CScope& scope);
+
+/// Parses all valid transl_except Gb-quals into code-breaks for cdregion,
+/// then removes the transl_except Gb-quals that were successfully parsed
+/// @param feat feature that contains coding region
+/// @param scope scope in which to find sequences referenced (used for location comparisons)
+/// @return bool indicates changes were made
+    static bool ParseCodeBreaks(CSeq_feat& feat, CScope& scope);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

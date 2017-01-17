@@ -569,6 +569,32 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2212)
     BOOST_CHECK_EQUAL(false, feat->GetData().GetCdregion().IsSetCode_break());
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_ParseCodeBreak)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::ParseCodeBreak(*cds, cds->SetData().SetCdregion(), "(pos:3..5,aa:Met)", *scope), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().IsSetCode_break(), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetCode_break().size(), 1);
+
+    cds->SetData().SetCdregion().ResetCode_break();
+
+    CRef<CGb_qual> q(new CGb_qual("transl_except", "(pos:6..8,aa:Cys)"));
+    cds->SetQual().push_back(q);
+
+    BOOST_CHECK_EQUAL(CCleanup::ParseCodeBreaks(*cds, *scope), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().IsSetCode_break(), true);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetCode_break().size(), 1);
+    BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SQD_2221)
 {
     CRef<CBioSource> src(new CBioSource());

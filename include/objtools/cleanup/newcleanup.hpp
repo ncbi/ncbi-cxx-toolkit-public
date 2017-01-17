@@ -253,7 +253,6 @@ private:
     EAction x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual );
     EAction x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
     EAction x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual);
-    EAction x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str);
     EAction x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt );
 
     // publication-related cleanup

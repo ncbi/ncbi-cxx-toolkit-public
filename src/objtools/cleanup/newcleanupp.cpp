@@ -4294,7 +4294,8 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     
     // transl_except qual -> Cdregion.code_break
     if (NStr::EqualNocase(qual, "transl_except")) {
-        return x_ParseCodeBreak(feat, cds, val);
+        // could not be parsed earlier
+        return eAction_Nothing;
     }
 
     // codon_start qual -> Cdregion.frame
@@ -5054,99 +5055,6 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
     return eAction_Nothing;
 }
 
-
-CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str)
-{
-    if( str.empty() || ! feat.IsSetLocation() ) {
-        return eAction_Nothing;
-    }
-
-    const CSeq_id* feat_loc_seq_id = feat.GetLocation().GetId();
-    if( ! feat_loc_seq_id ) {
-        return eAction_Nothing;
-    }
-
-    string::size_type aa_pos = NStr::Find(str, "aa:");
-    string::size_type len = 0;
-    string::size_type loc_pos, end_pos;
-    char protein_letter = 'X';
-    CRef<CSeq_loc> break_loc;
-    
-    if (aa_pos == string::npos) {
-        aa_pos = NStr::Find (str, ",");
-        if (aa_pos != string::npos) {
-            aa_pos = NStr::Find (str, ":", aa_pos);
-        }
-        if (aa_pos != string::npos) {
-            aa_pos ++;
-        }
-    } else {
-        aa_pos += 3;
-    }
-
-    if (aa_pos != string::npos) {    
-        while (aa_pos < str.length() && isspace (str[aa_pos])) {
-            aa_pos++;
-        }
-        while (aa_pos + len < str.length() && isalpha (str[aa_pos + len])) {
-            len++;
-        }
-        if (len != 0) {    
-            protein_letter = ValidAminoAcid(str.substr(aa_pos, len));
-        }
-    }
-    
-    loc_pos = NStr::Find (str, "(pos:");
-    if (loc_pos == string::npos) {
-        return eAction_Nothing;
-    }
-    loc_pos += 5;
-    while (loc_pos < str.length() && isspace (str[loc_pos])) {
-        loc_pos++;
-    }
-
-    end_pos = NStr::Find (str, ",aa:", loc_pos);
-    if( end_pos == NPOS ) {
-        end_pos = NStr::Find (str, ",", loc_pos);
-        if (end_pos == NPOS) {
-            end_pos = str.length();
-        }
-    }
-
-    string pos = NStr::TruncateSpaces(str.substr(loc_pos, end_pos - loc_pos));
-
-    // handle multi-interval positions by adding a join() around them
-    if( pos.find_first_of(",") != string::npos ) {
-        pos = "join(" + pos + ")";
-    }
-
-    break_loc = ReadLocFromText (pos, feat_loc_seq_id, m_Scope);
-    if( FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus ) {
-        break_loc->SetStrand( GET_FIELD( feat.GetLocation(), Strand) );
-    } else {
-        RESET_FIELD( *break_loc, Strand );
-    }
-    
-    if (break_loc == NULL 
-        || (break_loc->IsInt()
-        && sequence::Compare (*break_loc, feat.GetLocation(), m_Scope, sequence::fCompareOverlapping) != sequence::eContained )
-        || (break_loc->IsInt() && sequence::GetLength(*break_loc, m_Scope) != 3)) {
-        return eAction_Nothing;
-    }
-    
-    // need to build code break object and add it to coding region
-    CRef<CCode_break> newCodeBreak(new CCode_break());
-    CCode_break::TAa& aa = newCodeBreak->SetAa();
-    aa.SetNcbieaa(protein_letter);
-    newCodeBreak->SetLoc (*break_loc);
-
-    CCdregion::TCode_break& orig_list = cds.SetCode_break();
-    orig_list.push_back(newCodeBreak);
-    
-    ChangeMade(CCleanupChange::eChangeCodeBreak);
-    
-    return eAction_Erase;
-}
 
 CNewCleanup_imp::EAction 
 CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt )
@@ -7284,6 +7192,9 @@ bool SortGBQuals(CSeq_feat& sf)
 
 void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
+    if (!sf.IsSetQual()) {
+        return;
+    }
     // clean before uniquing
     EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
@@ -7301,6 +7212,13 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     }
 
     // move quals to other parts of the feature as appropriate
+    if (CCleanup::ParseCodeBreaks(sf, *m_Scope)) {
+        ChangeMade(CCleanupChange::eChangeCodeBreak);
+        ChangeMade(CCleanupChange::eRemoveQualifier);
+    }
+    if (!sf.IsSetQual()) {
+        return;
+    }
     EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
         if (GBQualSeqFeatBC(gbq, sf) == eAction_Erase)

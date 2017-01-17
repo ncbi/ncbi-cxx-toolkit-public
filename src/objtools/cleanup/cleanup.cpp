@@ -3934,5 +3934,126 @@ bool CCleanup::ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filte
     return any_change;
 }
 
+
+bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str, CScope& scope)
+{
+    if (str.empty() || !feat.IsSetLocation()) {
+        return false;
+    }
+
+    const CSeq_id* feat_loc_seq_id = feat.GetLocation().GetId();
+    if (!feat_loc_seq_id) {
+        return false;
+    }
+
+    string::size_type aa_pos = NStr::Find(str, "aa:");
+    string::size_type len = 0;
+    string::size_type loc_pos, end_pos;
+    char protein_letter = 'X';
+    CRef<CSeq_loc> break_loc;
+
+    if (aa_pos == string::npos) {
+        aa_pos = NStr::Find(str, ",");
+        if (aa_pos != string::npos) {
+            aa_pos = NStr::Find(str, ":", aa_pos);
+        }
+        if (aa_pos != string::npos) {
+            aa_pos++;
+        }
+    } else {
+        aa_pos += 3;
+    }
+
+    if (aa_pos != string::npos) {
+        while (aa_pos < str.length() && isspace(str[aa_pos])) {
+            aa_pos++;
+        }
+        while (aa_pos + len < str.length() && isalpha(str[aa_pos + len])) {
+            len++;
+        }
+        if (len != 0) {
+            protein_letter = ValidAminoAcid(str.substr(aa_pos, len));
+        }
+    }
+
+    loc_pos = NStr::Find(str, "(pos:");
+    if (loc_pos == string::npos) {
+        return false;
+    }
+    loc_pos += 5;
+    while (loc_pos < str.length() && isspace(str[loc_pos])) {
+        loc_pos++;
+    }
+
+    end_pos = NStr::Find(str, ",aa:", loc_pos);
+    if (end_pos == NPOS) {
+        end_pos = NStr::Find(str, ",", loc_pos);
+        if (end_pos == NPOS) {
+            end_pos = str.length();
+        }
+    }
+
+    string pos = NStr::TruncateSpaces(str.substr(loc_pos, end_pos - loc_pos));
+
+    // handle multi-interval positions by adding a join() around them
+    if (pos.find_first_of(",") != string::npos) {
+        pos = "join(" + pos + ")";
+    }
+
+    break_loc = ReadLocFromText(pos, feat_loc_seq_id, &scope);
+    if (FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus) {
+        break_loc->SetStrand(GET_FIELD(feat.GetLocation(), Strand));
+    } else {
+        RESET_FIELD(*break_loc, Strand);
+    }
+
+    if (break_loc == NULL
+        || (break_loc->IsInt()
+        && sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained)
+        || (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) != 3)) {
+        return false;
+    }
+
+    // need to build code break object and add it to coding region
+    CRef<CCode_break> newCodeBreak(new CCode_break());
+    CCode_break::TAa& aa = newCodeBreak->SetAa();
+    aa.SetNcbieaa(protein_letter);
+    newCodeBreak->SetLoc(*break_loc);
+
+    CCdregion::TCode_break& orig_list = cds.SetCode_break();
+    orig_list.push_back(newCodeBreak);
+
+    return true;
+}
+
+
+bool CCleanup::ParseCodeBreaks(CSeq_feat& feat, CScope& scope)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || 
+        !feat.IsSetQual() || !feat.IsSetLocation()) {
+        return false;
+    }
+
+    bool any_removed = false;
+    CSeq_feat::TQual::iterator it = feat.SetQual().begin();
+    while (it != feat.SetQual().end()) {
+        if ((*it)->IsSetQual() &&
+            NStr::EqualNocase((*it)->GetQual(), "transl_except") &&
+            (*it)->IsSetVal() &&
+            ParseCodeBreak(feat, feat.SetData().SetCdregion(), (*it)->GetVal(), scope)) {
+            it = feat.SetQual().erase(it);
+            any_removed = true;
+        } else {
+            ++it;
+        }
+    }
+    if (feat.GetQual().size() == 0) {
+        feat.ResetQual();
+    }
+    return any_removed;
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
