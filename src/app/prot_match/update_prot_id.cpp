@@ -29,9 +29,64 @@
 #include <util/line_reader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 
+#include <serial/objcopy.hpp>
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
+class CCopySeqIdHook : public CCopyObjectHook
+{
+public:
+
+    typedef map<string, CRef<CSeq_id>> TIdMap;
+    CCopySeqIdHook(TIdMap& id_map) : m_IdMap(id_map) {}
+
+    virtual void CopyObject(CObjectStreamCopier& copier,
+        const CObjectTypeInfo& passed_info);
+
+    void x_UpdateSeqId(const TIdMap& id_map, 
+        CSeq_id& id) const;
+
+private:
+    TIdMap m_IdMap; 
+};
+
+
+void CCopySeqIdHook::CopyObject(CObjectStreamCopier& copier,
+    const CObjectTypeInfo& passed_info) 
+{
+    CSeq_id seq_id;
+    copier.In().ReadObject(&seq_id, CSeq_id::GetTypeInfo());
+
+    if (seq_id.IsLocal()) {
+        x_UpdateSeqId(m_IdMap, seq_id);
+    }
+
+    copier.Out().WriteObject(&seq_id, CSeq_id::GetTypeInfo());
+}
+
+
+void CCopySeqIdHook::x_UpdateSeqId(const TIdMap& id_map,
+    CSeq_id& id) const
+{
+    if (!id.IsLocal()) {
+        return;
+    }
+
+    const string id_string = id.GetLocal().IsStr() ?
+        id.GetLocal().GetStr() :
+        NStr::NumericToString(id.GetLocal().GetId());
+
+    const auto match = id_map.find(id_string);
+
+    if (match != id_map.end()) {
+        const CSeq_id& new_id = *(match->second);
+        id.Assign(new_id); // Reference - Sergiy G. 
+    }
+    return;
+}
 
 class CProtIdUpdateApp : public CNcbiApplication
 {
@@ -43,57 +98,14 @@ private:
 
     typedef map<string, CRef<CSeq_id>> TIdMap;
 
-    void x_UpdateSeqEntry(const TIdMap& id_map,
-        CSeq_entry& nuc_prot_set);
-
-    void x_UpdateBioseqSet(const TIdMap& id_map,
-        CBioseq_set& seqset);
-
-    void x_UpdateBioseq(const TIdMap& id_map,
-                        CBioseq& bioseq);
-
-    void x_UpdateSeqAnnot(const TIdMap& id_map,
-                          CSeq_annot& seq_annot);
-
-    void x_UpdateAnnotDesc(const TIdMap& id_map,
-                            CAnnotdesc& annot_desc);
- 
-    void x_UpdateSeqFeat(const TIdMap& id_map,
-                         CSeq_feat& seq_feat);
-
-    void x_UpdateSeqAlign(const TIdMap& id_map,
-                          CSeq_align& align);
-
-    void x_UpdateSeqGraph(const TIdMap& id_map,
-                          CSeq_graph& graph);
-
-    void x_UpdateSeqLoc(const TIdMap& id_map,
-                        CSeq_loc& seq_loc) const;
-
-    void x_UpdateSeqId(const TIdMap& id_map,
-                       CSeq_id& id) const;
-    
-    CObjectIStream* x_InitInputEntryStream(
-            const CArgs& args);
-
     bool x_ProcessInputTable(CNcbiIstream& istr, 
                              TIdMap& id_map);
-
-    void  x_ReadUpdateFile(CObjectIStream& istr,
-        bool& isSeqSet,
-        CSeq_entry& seq_entry) const;
-
-    bool x_TryReadBioseqSet(CObjectIStream& istr, 
-        CSeq_entry& seq_entry) const;
-
-    bool x_TryReadSeqEntry(CObjectIStream& istr,
-        CSeq_entry& seq_entry) const;
 };
 
 
 void CProtIdUpdateApp::Init(void) 
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     arg_desc->AddKey("i",
             "InputFile",
@@ -119,47 +131,21 @@ int CProtIdUpdateApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    // Set up object input stream
-    unique_ptr<CObjectIStream> istr(x_InitInputEntryStream(args));
-
-    // Attempt to read input file
-    bool isSeqSet = false;
-    CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
-    x_ReadUpdateFile(*istr, isSeqSet, *seq_entry);
-
     CNcbiIstream& table_str = args["t"].AsInputFile();
-    //map<CRef<CSeq_id>, CRef<CSeq_id>> id_map;
     map<string, CRef<CSeq_id>> id_map;
     x_ProcessInputTable(table_str, id_map);
 
-    CNcbiOstream& ostr = (args["o"]) ? 
-        args["o"].AsOutputFile() :
-        cout;
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, args["i"].AsString()));
+    unique_ptr<CObjectOStream> ostr(CObjectOStream::Open(eSerial_AsnText, args["o"].AsString()));
 
-    unique_ptr<MSerial_Format> pOutFormat(new MSerial_Format_AsnText());
-
-    x_UpdateSeqEntry(id_map, *seq_entry);
-
-    if (isSeqSet) {
-        ostr << MSerial_Format_AsnText() << seq_entry->GetSet();
-    } else {
-        ostr << MSerial_Format_AsnText() << *seq_entry;
-    }
-    return 0;
-}
-
-
-void CProtIdUpdateApp::x_ReadUpdateFile(CObjectIStream& istr,
-    bool& isSeqSet,
-    CSeq_entry& seq_entry) const
-{
-
-    isSeqSet = false;
+    CObjectStreamCopier copier(*istr, *ostr);
+    CObjectTypeInfo(CType<CSeq_id>()) 
+        .SetLocalCopyHook(copier, new CCopySeqIdHook(id_map));
 
     set<TTypeInfo> knownTypes, matchingTypes;
     knownTypes.insert(CSeq_entry::GetTypeInfo());
     knownTypes.insert(CBioseq_set::GetTypeInfo());
-    matchingTypes = istr.GuessDataType(knownTypes);
+    matchingTypes = istr->GuessDataType(knownTypes);
 
     if (matchingTypes.empty()) {
         NCBI_THROW(CProteinMatchException,
@@ -170,73 +156,12 @@ void CProtIdUpdateApp::x_ReadUpdateFile(CObjectIStream& istr,
     const TTypeInfo typeInfo = *matchingTypes.begin();
 
     if (typeInfo == CSeq_entry::GetTypeInfo()) {
-        if (!x_TryReadSeqEntry(istr, seq_entry)) {
-            NCBI_THROW(CProteinMatchException,
-                eInputError,
-                "Failed to read Seq-entry");
-        }
-        return;
-    }
-    // else
-    if (typeInfo == CBioseq_set::GetTypeInfo()) {
-        if (!x_TryReadBioseqSet(istr, seq_entry)) {
-            NCBI_THROW(CProteinMatchException,
-                eInputError,
-                "Failed to read Bioseq-set");
-        }
-        isSeqSet = true;
-    }
-}
-
-
-bool CProtIdUpdateApp::x_TryReadSeqEntry(CObjectIStream& istr,
-    CSeq_entry& seq_entry) const
-{
-    try {
-        istr.Read(ObjectInfo(seq_entry));
-    }
-    catch (CException&) {
-        return false;
+        copier.Copy(CType<CSeq_entry>());
+    } else {
+        copier.Copy(CType<CBioseq_set>());
     }
 
-    return true;
-}
-
-
-bool CProtIdUpdateApp::x_TryReadBioseqSet(CObjectIStream& istr,
-    CSeq_entry& seq_entry) const
-{
-    CRef<CBioseq_set> seq_set = Ref(new CBioseq_set());
-    try {
-        istr.Read(ObjectInfo(seq_set.GetNCObject()));
-    } 
-    catch (CException&) {
-        return false;
-    }
-
-    seq_entry.SetSet(seq_set.GetNCObject());
-    return true;
-}
-
-
-CObjectIStream* CProtIdUpdateApp::x_InitInputEntryStream(
-    const CArgs& args) 
-{
-    ESerialDataFormat serial = eSerial_AsnText;
-
-    const char* infile = args["i"].AsString().c_str();
-    CNcbiIstream* pInputStream = new CNcbiIfstream(infile, ios::binary); // What does this mean? 
-   
-
-    CObjectIStream* pI = CObjectIStream::Open(
-            serial, *pInputStream, eTakeOwnership);
-
-    if (!pI) {
-        NCBI_THROW(CProteinMatchException, 
-                   eInputError,
-                   "Failed to create input stream");
-    }
-    return pI;
+    return 0;
 }
 
 
@@ -286,247 +211,8 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
 }
 
 
-void CProtIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
-    CSeq_id& id) const
-{
-    if (!id.IsLocal()) {
-        return;
-    }
-
-    const string id_string = id.GetLocal().IsStr() ?
-        id.GetLocal().GetStr() :
-        NStr::NumericToString(id.GetLocal().GetId());
-
-    const auto match = id_map.find(id_string);
-
-    if (match != id_map.end()) {
-        const CSeq_id& new_id = *(match->second);
-        id.Assign(new_id); 
-    }
-    return;
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqLoc(const TIdMap& id_map,
-    CSeq_loc& seq_loc) const
-{
-    CRef<CSeq_id> seq_id = Ref(new CSeq_id());
-    seq_id->Assign(*(seq_loc.GetId()));
-    x_UpdateSeqId(id_map, *seq_id);
-    seq_loc.SetId(*seq_id);
-    return;
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqEntry(const TIdMap& id_map,
-    CSeq_entry& seq_entry) 
-{
-    if (seq_entry.IsSeq()) {
-        x_UpdateBioseq(id_map, seq_entry.SetSeq());
-        return;
-    }
-
-    // else is set
-    x_UpdateBioseqSet(id_map, seq_entry.SetSet());
-    return;
-}
-
-
-void CProtIdUpdateApp::x_UpdateBioseqSet(const TIdMap& id_map,
-    CBioseq_set& seqset) 
-{
-    EDIT_EACH_SEQENTRY_ON_SEQSET(it, seqset) {
-        x_UpdateSeqEntry(id_map, **it);
-    }
-
-
-    EDIT_EACH_SEQANNOT_ON_SEQSET(it, seqset) {
-        x_UpdateSeqAnnot(id_map, **it);
-    }
-    return;
-}
-
-
-// Update the ids and annotations on the bioseq
-void CProtIdUpdateApp::x_UpdateBioseq(const TIdMap& id_map,
-    CBioseq& bioseq)
-{
-
-    NON_CONST_ITERATE(CBioseq::TId, it, bioseq.SetId()) 
-    {
-        x_UpdateSeqId(id_map, **it); 
-    }
-
-    EDIT_EACH_SEQANNOT_ON_BIOSEQ(it, bioseq) 
-    {
-        x_UpdateSeqAnnot(id_map, **it);
-    }
-
-    return;
-}
-
-void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
-    CSeq_annot& annot) 
-{
-    // First update Annotdesc on the annotation
-    EDIT_EACH_ANNOTDESC_ON_SEQANNOT(it, annot) 
-    {
-        x_UpdateAnnotDesc(id_map, **it);
-    }
-
-    if (!annot.IsSetData()) {
-        return;
-    }
-
-    // Supported annotation types are 
-    // 1) Feature tables
-    // 2) Alignments
-    // 3) Graphs
-    // 4) Seq-id sets
-    // 5) Seq-loc sets
-    // Seq-table is not supported
-    switch (annot.GetData().Which()) {
-    default : 
-        break;
-
-    case CSeq_annot::TData::e_Ftable: 
-        EDIT_EACH_SEQFEAT_ON_SEQANNOT(it, annot)
-        {
-            x_UpdateSeqFeat(id_map, **it);
-        }
-        break;
-
-    case CSeq_annot::TData::e_Align: 
-        EDIT_EACH_SEQALIGN_ON_SEQANNOT(it, annot)
-        {
-            x_UpdateSeqAlign(id_map, **it);
-        }
-        break;
-
-    case CSeq_annot::TData::e_Graph: 
-        // EACH_SEQGRAPH_ON_SEQANNOT gives a compilation error
-        // Loop explicitly
-        for (CRef<CSeq_graph> seq_graph : annot.SetData().SetGraph()) {
-            x_UpdateSeqGraph(id_map, *seq_graph);
-        }
-        break;
-
-    case CSeq_annot::TData::e_Ids: 
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TIds, it, annot.SetData().SetIds()) 
-        {
-            x_UpdateSeqId(id_map, **it);
-        }
-        break;
-
-    case CSeq_annot::TData::e_Locs: 
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TLocs, it, annot.SetData().SetLocs()) {
-            x_UpdateSeqLoc(id_map, **it);
-        }
-        break;
-    }; // switch
-
-    // Doesn't cover Seq_table
-    return;
-}
-
-
-void CProtIdUpdateApp::x_UpdateAnnotDesc(const TIdMap& id_map,
-    CAnnotdesc& annot_desc)
-{
-   if (annot_desc.IsSrc()) {
-       x_UpdateSeqId(id_map, annot_desc.SetSrc());
-   }
-   else 
-   if (annot_desc.IsRegion()) {
-       x_UpdateSeqLoc(id_map, annot_desc.SetRegion());
-   }
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqAlign(const TIdMap& id_map,
-    CSeq_align& align)
-{
-    EDIT_EACH_RECURSIVE_SEQALIGN_ON_SEQALIGN(ait, align) 
-    {
-        x_UpdateSeqAlign(id_map, align);
-    }
-
-    if (!align.IsSetSegs()) {
-        return;
-    }
-
-    if (align.GetSegs().IsDendiag()) {
-        EDIT_EACH_DENDIAG_ON_SEQALIGN(dit, align) 
-        {
-            EDIT_EACH_SEQID_ON_DENDIAG(it, **dit) 
-            {
-                x_UpdateSeqId(id_map, **it);       
-            }
-        }
-        return;
-    }
-
-    if (align.GetSegs().IsDenseg()) {
-        EDIT_EACH_SEQID_ON_DENSEG(it, align.SetSegs().SetDenseg()) 
-        {
-            x_UpdateSeqId(id_map, **it);
-        }
-        return;
-    }
-
-
-    if (align.GetSegs().IsStd()) {
-        EDIT_EACH_STDSEG_ON_SEQALIGN(sit, align) {
-
-            if ((*sit)->IsSetIds()) {
-                NON_CONST_ITERATE(CStd_seg::TIds, it, (*sit)->SetIds()) {
-                    x_UpdateSeqId(id_map, **it);
-                }
-            }
-
-            if ((*sit)->IsSetLoc()) {
-                NON_CONST_ITERATE(CStd_seg::TLoc, it, (*sit)->SetLoc()) {
-                    x_UpdateSeqLoc(id_map, **it);
-                }
-            }
-        }
-    }
-
-    return;
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqGraph(const TIdMap& id_map, 
-    CSeq_graph& graph)
-{
-    if (!graph.IsSetLoc()) {
-        return;
-    }
-    x_UpdateSeqLoc(id_map, graph.SetLoc());
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
-    CSeq_feat& seq_feat) 
-{
-    // If protein feature, the location needs to be updated
-    if (seq_feat.IsSetLocation()) {
-        x_UpdateSeqLoc(id_map, seq_feat.SetLocation());
-    }
-
-    // If this is a CDS, the product needs to be updated
-    if (seq_feat.IsSetData() &&
-        seq_feat.GetData().IsCdregion() &&
-        seq_feat.IsSetProduct()) {
-        x_UpdateSeqLoc(id_map, seq_feat.SetProduct());
-    }
-
-    return;
-}
-
 END_NCBI_SCOPE
 USING_NCBI_SCOPE;
-
 
 int main(int argc, const char* argv[])
 {
