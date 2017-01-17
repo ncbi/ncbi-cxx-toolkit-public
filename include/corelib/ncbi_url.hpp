@@ -425,25 +425,25 @@ public:
     /// Flags controlling URL adjustment.
     /// @sa CUrl::Adjust
     enum EAdjustFlags {
-        fUser_Replace         = 0x0001, ///< Replace user if set in 'other'
-        fPassword_Replace     = 0x0002, ///< Replace password if set in 'other'
-        fPath_Replace         = 0x0004, ///< Replace path, overrides fPath_Append
-        fPath_Append          = 0x0008, ///< Append new path to the existing one
-        fFragment_Repace      = 0x0010, ///< Replace fragment if set in 'other'
-        fArgs_Replace         = 0x0020, ///< Discard all args, replace with args from 'other'
-        fArgs_Append          = 0x0040, ///< Append args, allow duplicate names and values
-        fArgs_Merge           = 0x0060, ///< Append new args; replace values of existing args,
-                                        ///< do not allow to set multiple values with the same name.
-        fArgs_Mask            = 0x0060,
-
-        fAdjust_Default = fPath_Append | fArgs_Merge
+        fUser_Replace            = 0x0001, ///< Replace user if set in 'other'
+        fUser_ReplaceIfEmpty     = 0x0002, ///< Replace user only if not yet set, overrides fUser_Replace.
+        fPassword_Replace        = 0x0004, ///< Replace password if set in 'other'
+        fPassword_ReplaceIfEmpty = 0x0008, ///< Replace password only if not yet set, overrides fPassword_Replace.
+        fPath_Replace            = 0x0010, ///< Replace path, overrides fPath_Append
+        fPath_Append             = 0x0020, ///< Append new path to the existing one
+        fFragment_Replace        = 0x0040, ///< Replace fragment if set in 'other'
+        fArgs_Replace            = 0x0100, ///< Discard all args, replace with args from 'other'
+        fArgs_Append             = 0x0200, ///< Append args, allow duplicate names and values
+        fArgs_Merge              = 0x0300, ///< Append new args; replace values of existing args,
+                                           ///< do not allow to set multiple values with the same name.
+        fArgs_Mask               = 0x0300
     };
     typedef int TAdjustFlags;
 
     /// Adjust this URL using information from 'other' URL.
     /// Scheme, host and port are never changed. Other parts can be replaced or merged
     /// depending on the flags.
-    void Adjust(const CUrl& other, TAdjustFlags flags = fAdjust_Default);
+    void Adjust(const CUrl& other, TAdjustFlags flags);
 
 private:
     // Set values with verification

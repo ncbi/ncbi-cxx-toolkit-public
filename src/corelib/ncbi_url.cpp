@@ -575,12 +575,24 @@ const CUrlArgs& CUrl::GetArgs(void) const
 
 void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
 {
-    if ((flags & fUser_Replace)  &&  !other.m_User.empty()) {
-        m_User = other.m_User;
+    if ( !other.m_User.empty() ) {
+        if ((flags & fUser_ReplaceIfEmpty)  &&  m_User.empty()) {
+            m_User = other.m_User;
+        }
+        else if (flags & fUser_Replace) {
+            m_User = other.m_User;
+        }
     }
-    if ((flags & fPassword_Replace)  &&  !other.m_Password.empty()) {
-        m_Password = other.m_Password;
+
+    if ( !other.m_Password.empty() ) {
+        if ((flags & fPassword_ReplaceIfEmpty)  &&  m_Password.empty()) {
+            m_Password = other.m_Password;
+        }
+        else if (flags & fPassword_Replace) {
+            m_Password = other.m_Password;
+        }
     }
+
     if (flags & fPath_Replace) {
         m_Path = other.m_Path;
     }
@@ -596,9 +608,11 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
             m_Path.append(other.m_Path.substr(other_p));
         }
     }
-    if ((flags & fFragment_Repace)  &&  !other.m_Fragment.empty()) {
+
+    if ((flags & fFragment_Replace)  &&  !other.m_Fragment.empty()) {
         m_Fragment = other.m_Fragment;
     }
+
     switch (flags & fArgs_Mask) {
     case fArgs_Replace:
         m_OrigArgs = other.m_OrigArgs;

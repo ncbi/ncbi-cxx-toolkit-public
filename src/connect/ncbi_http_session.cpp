@@ -884,7 +884,7 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                 adjust = req->m_AdjustUrl->AdjustUrl(url);
             }
             else {
-                url.Adjust(req->m_Url);
+                url.Adjust(req->m_Url, CUrl::fPath_Append | CUrl::fArgs_Merge);
             }
             if ( adjust ) {
                 ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
