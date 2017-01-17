@@ -47,6 +47,10 @@
 
 BEGIN_NCBI_SCOPE
 
+// anonymous namespace to avoid names collision
+namespace {
+
+
 template<>
 void Serialize<Uint4, float>(CNcbiOstream& ostr,
                              const CRawScoreVector<Uint4, float>& vec)
@@ -391,5 +395,7 @@ void Decode<string, float>(const CSimpleBuffer& data,
     Decode(&data[0], data.size(), vec);
 }
 
+
+} // anonymous namespace
 
 END_NCBI_SCOPE
