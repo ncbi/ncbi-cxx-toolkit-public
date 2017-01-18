@@ -951,7 +951,13 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
 
         os << "No backends can be used for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
 
-        if (flags) os << ", flags=" << flags;
+        if (secondary_ft && secondary_nc) {
+            os << ", requested FileTrack+NetCache backends";
+        } else if (secondary_ft) {
+            os << ", the only requested FileTrack backend";
+        } else if (secondary_nc) {
+            os << ", the only requested NetCache backend";
+        }
 
         os << " and ";
 
