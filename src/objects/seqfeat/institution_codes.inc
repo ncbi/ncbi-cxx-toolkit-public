@@ -6228,7 +6228,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "T\ts\tTavera, Department of Geology and Geophysics",
 "TA\ts\tTimescale Adventures Research and Interpretive Center",
 "TAA\ts\tEstonian Agricultural University, Institute of Agricultural and Environmental Sciences",
-"TAAM<EST>\ts\tInstitute of Agricultural and Environmental Sciences of the Estonian University of Life Sciences",
+"TAAM\ts\tInstitute of Agricultural and Environmental Sciences of the Estonian University of Life Sciences",
 "TAC\ts\tTarleton State University, Biological Sciences Department",
 "TAD\ts\tBotanical Institute of the Tajikistan Academy of Sciences, Department of Flora and Systematics of Higher Plants",
 "TAES\ts\tTexas A&M University, Department of Rangeland Ecology and Management",
