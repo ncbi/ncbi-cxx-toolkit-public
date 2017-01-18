@@ -3327,10 +3327,11 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
     STANDARD_SETUP
 
     // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SeqLocLength", "Short length (10) on seq-loc (gb|AY123456|:1-10) of delta seq_ext"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
+                   "FarLocationExcludesFeatures", 
+                   "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     // if length 11, should not be a problem
@@ -3342,6 +3343,8 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
@@ -3644,6 +3647,18 @@ BOOST_AUTO_TEST_CASE(Test_OverlappingDeltaRange)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 6-16 and 1-11 on a Bioseq gb|AY123456|"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 26-36 and 21-31 on a Bioseq gb|AY123456|"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14038,12 +14053,18 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 55);
     expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetInst().SetExt().Reset();
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 30);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 40, 72);
     expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14053,9 +14074,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
     expected_errors[0]->SetErrMsg("NULL pointer in delta seq_ext valnode (segment 2)");
     expected_errors[0]->SetSeverity(eDiag_Error);
+    free(expected_errors[2]);
+    expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    free(expected_errors[1]);
+    expected_errors.pop_back();
     entry->SetSeq().SetInst().SetExt().Reset();
     CRef<CDelta_seq> delta_seq2(new CDelta_seq());
     delta_seq2->SetLoc().SetInt().SetId(*id);
@@ -16321,6 +16346,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
 }
 
 
@@ -18131,6 +18157,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
                               "SeqGraph (25) and Bioseq (24) length mismatch"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "GraphSeqLocLen", 
                               "SeqGraph (13) and SeqLoc (12) length mismatch"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
