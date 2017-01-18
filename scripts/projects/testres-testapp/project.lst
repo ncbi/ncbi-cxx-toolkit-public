@@ -1,0 +1,16 @@
+cgi$
+corelib$
+util$
+connect$
+connect/ext$
+connect/impl$
+connect/services$
+connect/daemons$
+html$
+misc$
+misc/xmlwrapp$
+misc/xmlwrapp/impl$
+boost
+internal$
+internal/cppcore$
+internal/cppcore/testres/examples/exampleapp
