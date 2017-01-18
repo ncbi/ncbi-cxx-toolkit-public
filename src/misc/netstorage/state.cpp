@@ -892,20 +892,21 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     // After, all other locations that have not yet been used
     // And finally, the 'not found' location
 
-    bool primary_nc = location == eNFL_NetCache;
-    bool primary_ft = location == eNFL_FileTrack;
-    bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
-    bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
+    const bool primary_nc = location == eNFL_NetCache;
+    const bool primary_ft = location == eNFL_FileTrack;
+    const bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
+    const bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
+    const bool movable = flags & fNST_Movable;
 
     m_Locations.push_back(&m_NotFound);
 
-    if (!primary_nc && !secondary_nc && (flags & fNST_Movable)) {
+    if (!primary_nc && !secondary_nc && movable) {
         if (m_NetCache.Init()) {
             m_Locations.push_back(&m_NetCache);
         }
     }
 
-    if (!primary_ft && !secondary_ft && (flags & fNST_Movable)) {
+    if (!primary_ft && !secondary_ft && movable) {
         if (m_FileTrack.Init()) {
             m_Locations.push_back(&m_FileTrack);
         }
@@ -950,6 +951,8 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
             os << ", requested FileTrack";
         } else if (secondary_nc) {
             os << ", requested NetCache";
+        } else if (flags && !movable) {
+            os << ", zero requested backends";
         }
 
         os << " and ";
