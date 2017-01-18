@@ -172,22 +172,9 @@ void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo, cons
     CRef<CSeq_feat> infeat = s_ReadFeat(testInfo.m_InFile.GetPath());
     CRef<CSeq_feat> baseline = s_ReadFeat(testInfo.m_BaselineFile.GetPath());
 
-    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
-    temp_annot->SetData().SetFtable().push_back(infeat);
-    s_pScope->AddSeq_annot(*temp_annot);
+    CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(*infeat, testInfo.m_Range);
 
-    CSeq_feat_Handle sfh = s_pScope->GetSeq_featHandle(*infeat);
-
-    if (!sfh) {
-        cout << "Failed to get sfh" << endl;
-    }
-
-    CMappedFeat mapped_feat(sfh);
-    edit::CFeatTrim::Apply(testInfo.m_Range, mapped_feat);
-
-    const CSeq_feat& trimmed_feat = mapped_feat.GetMappedFeature();
-
-    const bool success = trimmed_feat.Equals(*baseline);
+    const bool success = trimmed_feat->Equals(*baseline);
     if (!success) {
         if (keep) {
             string new_file = testInfo.m_BaselineFile.GetPath() + ".new";

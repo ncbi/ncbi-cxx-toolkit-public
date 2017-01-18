@@ -65,29 +65,23 @@ struct SOutsideRange
 };
 
 
-void CFeatTrim::Apply(const CRange<TSeqPos>& range,
-        CMappedFeat& mapped_feat)
+CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
+    const CRange<TSeqPos>& range)
 {
-    auto from = range.GetFrom();
-    auto to = range.GetTo();
+    CRef<CSeq_loc> loc = Ref(new CSeq_loc());
+    loc->Assign(feat.GetLocation());
 
-    CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
+    const TSeqPos from = range.GetFrom();
+    const TSeqPos to = range.GetTo();
 
-/*
-    CRef<CSeq_loc> loc(new CSeq_loc());
-    loc->Assign(sfh.GetLocation());
     x_TrimLocation(from, to, loc);
     if (loc->IsNull()) {
-        CMappedFeat empty_feat;
-        mapped_feat = empty_feat;
-        return;
+        return Ref(new CSeq_feat());
     }
-*/
-    CSeq_feat_EditHandle sfeh(sfh);
+
     // Create a new seq-feat with the trimmed location
     CRef<CSeq_feat> new_sf(new CSeq_feat());
-    new_sf->Assign(*mapped_feat.GetOriginalSeq_feat());
-/*
+    new_sf->Assign(feat);
     new_sf->SetLocation(*loc);
     if (!loc->IsNull() &&
         (loc->IsPartialStart(eExtreme_Biological) || 
@@ -95,9 +89,10 @@ void CFeatTrim::Apply(const CRange<TSeqPos>& range,
         new_sf->SetPartial(true);
     }
 
+
     // If Cdregion need to consider changes in frameshift
     if (new_sf->GetData().IsCdregion()) {
-        const TSeqPos offset = x_GetStartOffset(mapped_feat, from, to);
+        const TSeqPos offset = x_GetStartOffset(feat, from, to);
         x_UpdateFrame(offset, new_sf->SetData().SetCdregion());
 
         if (new_sf->SetData().SetCdregion().IsSetCode_break()) {
@@ -136,8 +131,18 @@ void CFeatTrim::Apply(const CRange<TSeqPos>& range,
             x_TrimTrnaExt(from, to, rna.SetExt().SetTRNA());
         }
     }
-*/
-    //sfeh.Remove();
+    return new_sf;
+}
+
+
+void CFeatTrim::Apply(const CRange<TSeqPos>& range,
+        CMappedFeat& mapped_feat)
+{
+
+    CRef<CSeq_feat> new_sf = Apply(*mapped_feat.GetSeq_feat(), range);
+
+    CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
+    CSeq_feat_EditHandle sfeh(sfh);
     sfeh.Replace(*new_sf);
     return;
 }
@@ -233,12 +238,12 @@ void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
 }
 
 
-TSeqPos CFeatTrim::x_GetStartOffset(const CMappedFeat& mapped_feat,
+TSeqPos CFeatTrim::x_GetStartOffset(const CSeq_feat& feat,
     TSeqPos from, TSeqPos to) 
 {
     TSeqPos offset = 0;
-    const auto strand = mapped_feat.GetLocation().GetStrand();
-    CRange<TSeqPos> feat_range = mapped_feat.GetLocationTotalRange();
+    const auto strand = feat.GetLocation().GetStrand();
+    CRange<TSeqPos> feat_range = feat.GetLocation().GetTotalRange();
 
     if (strand != eNa_strand_minus) {
         TSeqPos feat_from = feat_range.GetFrom();
