@@ -34,6 +34,7 @@
 #include "state.hpp"
 
 #include <limits>
+#include <sstream>
 
 
 BEGIN_NCBI_SCOPE
@@ -943,9 +944,28 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
 
     // No real locations, only CNotFound
     if (m_Locations.size() == 1) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "No storages available for locator=\"" <<
-                m_ObjectLoc.GetLocator() << "\" and flags=" << flags);
+        const bool ft = m_Context->filetrack_api;
+        const bool nc = m_Context->icache_client;
+
+        ostringstream os;
+
+        os << "No backends can be used for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
+
+        if (flags) os << ", flags=" << flags;
+
+        os << " and ";
+
+        if (ft && nc) {
+            os << "configured FileTrack+NetCache backends";
+        } else if (ft) {
+            os << "the only configured FileTrack backend";
+        } else if (nc) {
+            os << "the only configured NetCache backend";
+        } else {
+            os << "no configured backends";
+        }
+
+        NCBI_THROW(CNetStorageException, eInvalidArg, os.str());
     }
 
     Restart();
