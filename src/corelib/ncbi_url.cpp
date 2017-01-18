@@ -578,6 +578,7 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
     static const int fUser_Mask = fUser_Replace | fUser_ReplaceIfEmpty;
     static const int fPassword_Mask = fPassword_Replace | fPassword_ReplaceIfEmpty;
     static const int fPath_Mask = fPath_Replace | fPath_Append;
+    static const int fFragment_Mask = fFragment_Replace | fFragment_ReplaceIfEmpty;
     static const int fArgs_Mask = fArgs_Replace | fArgs_Append | fArgs_Merge;
 
     if ((flags & fUser_Mask) == fUser_Mask) {
@@ -623,8 +624,16 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
         }
     }
 
-    if ((flags & fFragment_Replace)  &&  !other.m_Fragment.empty()) {
-        m_Fragment = other.m_Fragment;
+    if ((flags & fFragment_Mask) == fFragment_Mask) {
+        NCBI_THROW(CUrlException, eFlags, "Multiple fFragment_* flags are set.");
+    }
+    if ( !other.m_Fragment.empty() ) {
+        if ((flags & fFragment_ReplaceIfEmpty)  &&  m_Fragment.empty()) {
+            m_Fragment = other.m_Fragment;
+        }
+        else if (flags & fFragment_Replace) {
+            m_Fragment = other.m_Fragment;
+        }
     }
 
     switch (flags & fArgs_Mask) {

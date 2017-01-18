@@ -432,6 +432,7 @@ public:
         fPath_Replace            = 0x0010, ///< Replace path
         fPath_Append             = 0x0020, ///< Append new path to the existing one
         fFragment_Replace        = 0x0040, ///< Replace fragment if set in 'other'
+        fFragment_ReplaceIfEmpty = 0x0080, ///< Replace fragment only if not yet set
         fArgs_Replace            = 0x0100, ///< Discard all args, replace with args from 'other'
         fArgs_Append             = 0x0200, ///< Append args, allow duplicate names and values
         fArgs_Merge              = 0x0400  ///< Append new args; replace values of existing args,
