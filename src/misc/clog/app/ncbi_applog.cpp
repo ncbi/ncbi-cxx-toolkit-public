@@ -789,7 +789,11 @@ int CNcbiApplogApp::Redirect()
 
         // Send request to another machine via CGI
 
-        CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID);
+        // fHTTP_Flushable is necessary to correctly check status of the stream.
+        // 'endl' should cause flush() on the stream,  and flush() should
+        // cause connection before reading from the stream in ReadCgiResponse().
+
+        CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID | fHTTP_Flushable);
         // TODO: sanitize (replace all not printable symbols: '\n' and etc)
         cgi << s_args << endl;
         return ReadCgiResponse(cgi);
