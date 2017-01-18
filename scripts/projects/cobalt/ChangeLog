@@ -19,3 +19,11 @@ Bug fixes:
 * Nexus alignment format
 * Segmentation fault on out-of-memory
 * Alignment problems with clustering input sequences
+
+January 31, 2017
+2.1.0 release
+Improvements:
+* More memory efficient sequence clustering
+* No longer prints warning message about all sequences in one cluster
+Bug fixes:
+* Fixed clustering results for sequences with ambiguous amino acids
