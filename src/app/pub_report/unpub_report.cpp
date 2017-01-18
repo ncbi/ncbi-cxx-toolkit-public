@@ -613,9 +613,9 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
             query += '+';
         query += *word;
     }
-    
+
     vector<int> uids;
-    if (query.size() <= 1024) { // TODO: find out why exception is thrown if query.size() > some value (4096?)
+    if (query.size() <= 2048) { // TODO: find out why exception is thrown if query.size() > some value (4096?)
         hydra_search.DoHydraSearch(query, uids);
     }
 
@@ -630,12 +630,29 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
         if (pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit()) {
 
             const CCit_art& cit_art = pubmed_entry.GetMedent().GetCit();
-            if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal() && cit_art.IsSetAuthors()) {
 
-                const CAuth_list& authors = cit_art.GetAuthors();
-                if (authors.IsSetNames() && FirstOrLastAuthorMatches(data.GetAuthors(), authors.GetNames())) {
+            if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
 
-                    pmid = uids[0];
+                bool proceed = true;
+                
+                if (data.GetYear() && cit_art.GetFrom().GetJournal().IsSetImp() && cit_art.GetFrom().GetJournal().GetImp().IsSetDate()) {
+                    const CDate& pub_date = cit_art.GetFrom().GetJournal().GetImp().GetDate();
+                    if (pub_date.IsStd() && pub_date.GetStd().IsSetYear()) {
+
+                        int year = data.GetYear(),
+                            pub_year = pub_date.GetStd().GetYear();
+
+                        proceed = year - 1 <= pub_year && pub_year <= year + 1;
+                    }
+                }
+                
+                if (proceed && cit_art.IsSetAuthors()) {
+
+                    const CAuth_list& authors = cit_art.GetAuthors();
+                    if (authors.IsSetNames() && FirstOrLastAuthorMatches(data.GetAuthors(), authors.GetNames())) {
+
+                        pmid = uids[0];
+                    }
                 }
             }
         }
