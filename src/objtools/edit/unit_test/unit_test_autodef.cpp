@@ -2097,5 +2097,26 @@ BOOST_AUTO_TEST_CASE(Test_GB_6375)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_6557)
+{
+    // nuclear gene for X product (but not for macronuclear)
+    CRef<CSeq_entry> nps = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(nps);
+    CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(nps);
+    prot->SetData().SetProt().SetName().front() = "LIA2 macronuclear isoform";
+    
+    string defline = "Sebaea microphylla LIA2 macronuclear isoform gene, complete cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
+    // apicoplast
+    prot->SetData().SetProt().SetName().front() = "LIA2 apicoplast protein";
+    defline = "Sebaea microphylla LIA2 apicoplast protein gene, complete cds; nuclear gene for apicoplast product.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

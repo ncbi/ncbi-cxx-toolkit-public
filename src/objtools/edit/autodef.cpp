@@ -892,11 +892,7 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                 bh.GetScope());
             if (prot) {
                 feature::GetLabel(*prot, &label, feature::fFGL_Content);
-                if (NStr::Find(label, "macronuclear") != NCBI_NS_STD::string::npos) {
-                    product_flag = CBioSource::eGenome_macronuclear;
-                } else if (NStr::Find(label, "nucleomorph") != NCBI_NS_STD::string::npos) {
-                    product_flag = CBioSource::eGenome_nucleomorph;
-                } else if (NStr::Find(label, "mitochondrion") != NCBI_NS_STD::string::npos
+                if (NStr::Find(label, "mitochondrion") != NCBI_NS_STD::string::npos
                     || NStr::Find(label, "mitochondrial") != NCBI_NS_STD::string::npos) {
                     product_flag = CBioSource::eGenome_mitochondrion;
                 } else if (NStr::Find(label, "apicoplast") != NCBI_NS_STD::string::npos) {
@@ -916,8 +912,6 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                     product_flag = CBioSource::eGenome_cyanelle;
                 } else if (NStr::Find(label, "leucoplast") != NCBI_NS_STD::string::npos) {
                     product_flag = CBioSource::eGenome_leucoplast;
-                } else if (NStr::Find(label, "hydrogenosome") != NCBI_NS_STD::string::npos) {
-                    product_flag = CBioSource::eGenome_hydrogenosome;
                 }
             }
         }
