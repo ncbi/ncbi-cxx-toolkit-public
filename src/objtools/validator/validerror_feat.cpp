@@ -8463,12 +8463,12 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
                                  "Feature inside gap of Ns", feat);
+                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && startsOrEndsInGap) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
+                            "Internal interval begins or ends in gap", feat);
                     } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
                                  "Feature crosses gap of unknown length", feat);
-                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && startsOrEndsInGap) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap, 
-                                 "Internal interval begins or ends in gap", feat);
                     }            
                 } catch (CException &e) {
                     PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,

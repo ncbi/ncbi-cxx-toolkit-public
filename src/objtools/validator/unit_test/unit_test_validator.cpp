@@ -16347,6 +16347,28 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
 
     CLEAR_ERRORS
 
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_loc> int1(new CSeq_loc());
+    int1->SetInt().SetFrom(3);
+    int1->SetInt().SetTo(15);
+    int1->SetInt().SetId().SetLocal().SetStr("good");
+    CRef<CSeq_loc> int2(new CSeq_loc());
+    int2->SetInt().SetFrom(22);
+    int2->SetInt().SetTo(30);
+    int2->SetInt().SetId().SetLocal().SetStr("good");
+    misc->SetLocation().SetMix().Set().push_back(int1);
+    misc->SetLocation().SetMix().Set().push_back(int2);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
+        "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "IntervalBeginsOrEndsInGap",
+        "Internal interval begins or ends in gap"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
 }
 
 
