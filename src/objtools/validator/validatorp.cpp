@@ -1656,6 +1656,12 @@ void CValidError_imp::ValidateDbxref
                 "dbxref value " + xref.GetTag().GetStr() + " has SGML",
                 obj, ctx);
         }
+
+        if (xref.GetTag().GetStr().find(' ') != string::npos) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                       "dbxref value " + xref.GetTag().GetStr() + " contains space character",
+                       obj, ctx);
+        }
     }
 
     if ( !xref.CanGetDb() ) {
