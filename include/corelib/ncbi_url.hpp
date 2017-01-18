@@ -426,23 +426,23 @@ public:
     /// @sa CUrl::Adjust
     enum EAdjustFlags {
         fUser_Replace            = 0x0001, ///< Replace user if set in 'other'
-        fUser_ReplaceIfEmpty     = 0x0002, ///< Replace user only if not yet set, overrides fUser_Replace.
+        fUser_ReplaceIfEmpty     = 0x0002, ///< Replace user only if not yet set
         fPassword_Replace        = 0x0004, ///< Replace password if set in 'other'
-        fPassword_ReplaceIfEmpty = 0x0008, ///< Replace password only if not yet set, overrides fPassword_Replace.
-        fPath_Replace            = 0x0010, ///< Replace path, overrides fPath_Append
+        fPassword_ReplaceIfEmpty = 0x0008, ///< Replace password only if not yet set
+        fPath_Replace            = 0x0010, ///< Replace path
         fPath_Append             = 0x0020, ///< Append new path to the existing one
         fFragment_Replace        = 0x0040, ///< Replace fragment if set in 'other'
         fArgs_Replace            = 0x0100, ///< Discard all args, replace with args from 'other'
         fArgs_Append             = 0x0200, ///< Append args, allow duplicate names and values
-        fArgs_Merge              = 0x0300, ///< Append new args; replace values of existing args,
-                                           ///< do not allow to set multiple values with the same name.
-        fArgs_Mask               = 0x0300
+        fArgs_Merge              = 0x0400  ///< Append new args; replace values of existing args,
+                                           ///< do not allow to set multiple values with the same name
     };
     typedef int TAdjustFlags;
 
     /// Adjust this URL using information from 'other' URL.
     /// Scheme, host and port are never changed. Other parts can be replaced or merged
     /// depending on the flags.
+    /// Throw CUrlException if the flags are inconsistent (e.g. both fPath_Replace and fPath_Append are set).
     void Adjust(const CUrl& other, TAdjustFlags flags);
 
 private:
@@ -481,13 +481,15 @@ class CUrlException : public CException
 public:
     enum EErrCode {
         eName,       //< Argument does not exist
-        eNoArgs      //< CUrl contains no arguments
+        eNoArgs,     //< CUrl contains no arguments
+        eFlags       //< Inconsistent flags passed to Adjust()
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
         case eName:    return "Unknown argument name";
         case eNoArgs:  return "Arguments list is empty";
+        case eFlags:   return "Inconsistent flags set";
         default:       return CException::GetErrCodeString();
         }
     }

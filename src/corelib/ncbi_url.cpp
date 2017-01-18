@@ -575,6 +575,14 @@ const CUrlArgs& CUrl::GetArgs(void) const
 
 void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
 {
+    static const int fUser_Mask = fUser_Replace | fUser_ReplaceIfEmpty;
+    static const int fPassword_Mask = fPassword_Replace | fPassword_ReplaceIfEmpty;
+    static const int fPath_Mask = fPath_Replace | fPath_Append;
+    static const int fArgs_Mask = fArgs_Replace | fArgs_Append | fArgs_Merge;
+
+    if ((flags & fUser_Mask) == fUser_Mask) {
+        NCBI_THROW(CUrlException, eFlags, "Multiple fUser_* flags are set.");
+    }
     if ( !other.m_User.empty() ) {
         if ((flags & fUser_ReplaceIfEmpty)  &&  m_User.empty()) {
             m_User = other.m_User;
@@ -584,6 +592,9 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
         }
     }
 
+    if ((flags & fPassword_Mask) == fPassword_Mask) {
+        NCBI_THROW(CUrlException, eFlags, "Multiple fPassword_* flags are set.");
+    }
     if ( !other.m_Password.empty() ) {
         if ((flags & fPassword_ReplaceIfEmpty)  &&  m_Password.empty()) {
             m_Password = other.m_Password;
@@ -593,6 +604,9 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
         }
     }
 
+    if ((flags & fPath_Mask) == fPath_Mask) {
+        NCBI_THROW(CUrlException, eFlags, "Multiple fPath_* flags are set.");
+    }
     if (flags & fPath_Replace) {
         m_Path = other.m_Path;
     }
@@ -614,6 +628,8 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
     }
 
     switch (flags & fArgs_Mask) {
+    case 0:
+        break;
     case fArgs_Replace:
         m_OrigArgs = other.m_OrigArgs;
         if ( other.m_ArgsList.get() ) {
@@ -635,6 +651,7 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
         }
         break;
     case fArgs_Merge:
+    {
         auto_ptr<CUrlArgs> args(m_ArgsList.release());
         m_ArgsList.reset(new CUrlArgs());
         if ( args.get() ) {
@@ -649,6 +666,10 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
             }
         }
         break;
+    }
+    default:
+        // Several flags are set.
+        NCBI_THROW(CUrlException, eFlags, "Multiple fArgs_* flags are set.");
     }
 }
 
