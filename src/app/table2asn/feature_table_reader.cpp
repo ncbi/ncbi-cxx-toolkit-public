@@ -843,6 +843,7 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
             {
                 data.SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(*feature, scope));
             }
+            CCleanup::ParseCodeBreaks(*feature, scope);
             CRef<CSeq_entry> protein = _TranslateProtein(entry_h, bioseq, *feature);
             if (protein.NotEmpty())
             {
