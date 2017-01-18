@@ -896,48 +896,41 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     bool primary_ft = location == eNFL_FileTrack;
     bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
     bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
-    LOG_POST(Trace << "location: " << location << ", flags: " << flags);
 
     m_Locations.push_back(&m_NotFound);
 
     if (!primary_nc && !secondary_nc && (flags & fNST_Movable)) {
         if (m_NetCache.Init()) {
-            LOG_POST(Trace << "NetCache (movable)");
             m_Locations.push_back(&m_NetCache);
         }
     }
 
     if (!primary_ft && !secondary_ft && (flags & fNST_Movable)) {
         if (m_FileTrack.Init()) {
-            LOG_POST(Trace << "FileTrack (movable)");
             m_Locations.push_back(&m_FileTrack);
         }
     }
 
     if (!primary_nc && secondary_nc) {
         if (m_NetCache.Init()) {
-            LOG_POST(Trace << "NetCache (flag)");
             m_Locations.push_back(&m_NetCache);
         }
     }
 
     if (!primary_ft && secondary_ft) {
         if (m_FileTrack.Init()) {
-            LOG_POST(Trace << "FileTrack (flag)");
             m_Locations.push_back(&m_FileTrack);
         }
     }
 
     if (primary_nc) {
         if (m_NetCache.Init()) {
-            LOG_POST(Trace << "NetCache (location)");
             m_Locations.push_back(&m_NetCache);
         }
     }
     
     if (primary_ft) {
         if (m_FileTrack.Init()) {
-            LOG_POST(Trace << "FileTrack (location)");
             m_Locations.push_back(&m_FileTrack);
         }
     }
@@ -949,24 +942,24 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
 
         ostringstream os;
 
-        os << "No backends can be used for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
+        os << "No backends to use for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
 
         if (secondary_ft && secondary_nc) {
-            os << ", requested FileTrack+NetCache backends";
+            os << ", requested FileTrack+NetCache";
         } else if (secondary_ft) {
-            os << ", the only requested FileTrack backend";
+            os << ", requested FileTrack";
         } else if (secondary_nc) {
-            os << ", the only requested NetCache backend";
+            os << ", requested NetCache";
         }
 
         os << " and ";
 
         if (ft && nc) {
-            os << "configured FileTrack+NetCache backends";
+            os << "configured FileTrack+NetCache";
         } else if (ft) {
-            os << "the only configured FileTrack backend";
+            os << "configured FileTrack";
         } else if (nc) {
-            os << "the only configured NetCache backend";
+            os << "configured NetCache";
         } else {
             os << "no configured backends";
         }
