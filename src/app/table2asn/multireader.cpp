@@ -156,8 +156,7 @@ CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entr
         entry = xReadFasta(istr);
         break;
     default:
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "File format not recognized", 0);
+        entry.Reset();
     }
 
     if (entry.Empty())
@@ -1133,12 +1132,45 @@ private:
     ILineErrorListener* m_logger;
 };
 
-bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
+bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, const string& filename)
 {
     CFormatGuess::EFormat uFormat = xGetFormat(in);
 
-    if (uFormat != CFormatGuess::eUnknown)
-      cerr << "Recognized annotation format:" << CFormatGuess::GetFormatName(uFormat) << endl;
+    if (uFormat == CFormatGuess::eUnknown)
+    {        
+        string ext;
+        CDirEntry::SplitPath(filename, 0, 0, &ext);
+        NStr::ToLower(ext);
+        if (ext == ".gff" || ext == ".gff3")
+            uFormat = CFormatGuess::eGff3;
+        else
+        if (ext == ".gff2")
+            uFormat = CFormatGuess::eGff2;
+        else
+        if (ext == ".gtf")
+            uFormat = CFormatGuess::eGtf;
+        else
+        if (ext == ".tbl")
+            uFormat = CFormatGuess::eFiveColFeatureTable;
+        else
+        if (ext == ".asn" || ext == ".sqn" || ext == ".sap")
+            uFormat = CFormatGuess::eTextASN;
+
+        if (uFormat != CFormatGuess::eUnknown)
+        {
+            m_context.m_logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Info,
+                "", 0, "", "", "",
+                string("Presuming annotation format by filename suffix: ") + CFormatGuess::GetFormatName(uFormat))));
+        }
+    }
+    else
+    {
+        m_context.m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Info,
+            "", 0, "", "", "",
+            string("Recognized annotation format:") + CFormatGuess::GetFormatName(uFormat))));
+    }
 
     CRef<CSeq_entry> entry;
     switch (uFormat)
@@ -1167,7 +1199,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
         break;
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
-            "Annotation file format not recognized", 0);
+            "Annotation file format not recognized. Run format validator on your annotation file", 1);
     }
     if (entry)
     {
@@ -1179,10 +1211,11 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
 
 bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 {
-    CNcbiIfstream in(filename.c_str());
     CAnnotationLoader annot_loader;
 
-    if (xGetAnnotLoader(annot_loader, in))
+    CNcbiIfstream in(filename);
+
+    if (xGetAnnotLoader(annot_loader, in, filename))
     {
         CScope scope(*m_context.m_ObjMgr);
         scope.AddTopLevelSeqEntry(entry);
@@ -1277,6 +1310,13 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
             else
             {
                 cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
+            }
+            if (false)
+            {
+                CNcbiOfstream debug_annot("annot.sqn");
+                debug_annot << MSerial_AsnText
+                    << MSerial_VerifyNo
+                    << *annot_it;
             }
 #endif
         }

@@ -50,7 +50,7 @@ private:
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
     void x_PostProcessAnnot(objects::CSeq_entry& entry);
-    bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in);
+    bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, const string& filename);
 
     auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
