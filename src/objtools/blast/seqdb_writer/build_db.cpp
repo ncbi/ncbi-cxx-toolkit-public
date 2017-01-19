@@ -1121,6 +1121,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   title,
                                   ix,
                                   m_ParseIDs,
+                                  long_seqids,
                                   use_gi_mask));
 
     // Standard 1 GB limit
