@@ -55,7 +55,11 @@ TMgr-GenomeContext ::= CHOICE {
     assembly TMgr-AssemblySpec,
     sequence Seq-id,
     refseqgene NULL,
-    all NULL
+    all NULL,
+    assembly-and-sequence SEQUENCE {
+      assembly TMgr-AssemblySpec,
+      sequence Seq-id
+    }
 }
 
 TMgr-ClientInfo ::= SEQUENCE {
