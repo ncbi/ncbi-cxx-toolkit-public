@@ -34,7 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/mapped_feat.hpp>
-#include <objects/blastxml2/Range.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Code_break.hpp>
