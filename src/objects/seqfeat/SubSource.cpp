@@ -1017,7 +1017,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
         }
     }
         
-    if (year > 31 && year < 100 && num_original_tokens > 1) {
+    if (year > 0 && year < 100 && num_original_tokens > 1) {
         // try to guess year from two-digit year provided,
         // only if it could not possibly be a day of the month
         // and if there were at least two tokens provided
