@@ -980,6 +980,10 @@ string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
 
 void CTbl2AsnApp::ProcessOneFile()
 {
+    m_context.m_scope->ResetDataAndHistory();
+    if (m_context.m_split_log_files)
+        m_context.m_logger->ClearAll();
+
     CFile file(m_context.m_current_file);
     if (!file.Exists())
     {
