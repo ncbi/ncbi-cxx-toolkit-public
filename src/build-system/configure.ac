@@ -1509,6 +1509,9 @@ case "$host_os:$compiler" in
 
    OBJCXX_CXXFLAGS='-x objective-c++'
    OBJCXX_LIBS='-lobjc'
+
+   # New in macOS 10.12; don't attempt to use on older versions
+   ac_cv_search_clock_gettime=no
    ;;
 esac
 
