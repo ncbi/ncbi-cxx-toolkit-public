@@ -93,14 +93,14 @@ struct SQueueName
 struct SJobGroup
 {
     static string Name() { return "job group name"; }
-    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidValue(const string& s) { return s == "-"; }
     static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
 struct SAffinity
 {
     static string Name() { return "affinity token"; }
-    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidValue(const string& s) { return s == "-"; }
     static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
