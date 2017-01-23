@@ -578,7 +578,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 
     string cmd("PUT2 job_key=" + job.job_id);
 
-    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    limits::Check<limits::SAuthToken>(job.auth_token);
     cmd.append(" auth_token=");
     cmd.append(job.auth_token);
 
@@ -627,7 +627,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job,
 
     string cmd("FPUT2 job_key=" + job.job_id);
 
-    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    limits::Check<limits::SAuthToken>(job.auth_token);
     cmd.append(" auth_token=");
     cmd.append(job.auth_token);
 
@@ -652,7 +652,7 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
 {
     string cmd("RESCHEDULE job_key=" + job.job_id);
 
-    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    limits::Check<limits::SAuthToken>(job.auth_token);
     cmd += " auth_token=";
     cmd += job.auth_token;
 
@@ -687,7 +687,7 @@ void SNetScheduleExecutorImpl::ReturnJob(const CNetScheduleJob& job,
 {
     string cmd("RETURN2 job_key=" + job.job_id);
 
-    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    limits::Check<limits::SAuthToken>(job.auth_token);
     cmd.append(" auth_token=");
     cmd.append(job.auth_token);
 

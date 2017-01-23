@@ -108,6 +108,11 @@ struct SAffinity : SJobGroup
     static string Name() { return "affinity token"; }
 };
 
+struct SAuthToken : SJobGroup
+{
+    static string Name() { return "security token"; }
+};
+
 void ThrowIllegalChar(const string&, const string&, char);
 
 template <class TValue>
@@ -411,11 +416,6 @@ struct SNetScheduleAPIImpl : public CObject
     }
 
     bool GetServerByNode(const string& ns_node, CNetServer* server);
-
-    static void VerifyAuthTokenAlphabet(const string& auth_token)
-    {
-        g_VerifyAlphabet(auth_token, "security token", eCC_BASE64_PI);
-    }
 
     void AllocNotificationThread();
     void StartNotificationThread();
