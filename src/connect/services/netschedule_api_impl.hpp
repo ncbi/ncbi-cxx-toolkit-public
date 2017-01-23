@@ -56,7 +56,7 @@ namespace limits {
 struct SClientNode
 {
     static string Name() { return "client node ID"; }
-    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidValue(const string&) { return false; }
     static bool IsValidChar(char c)
     {
         return isalnum(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
@@ -66,7 +66,7 @@ struct SClientNode
 struct SClientSession
 {
     static string Name() { return "client session ID"; }
-    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidValue(const string&) { return false; }
     static bool IsValidChar(char c)
     {
         return isalnum(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
@@ -107,7 +107,7 @@ struct SAffinity
 struct SAuthToken 
 {
     static string Name() { return "security token"; }
-    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidValue(const string&) { return false; }
     static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
