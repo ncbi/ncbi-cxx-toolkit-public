@@ -316,5 +316,8 @@ version 4.2.0, CXX-8953
 Added random macro generation
 Removed CMake file generation
 
+January 23, 2017
+version 4.2.1, CXX-8983
+Bug fix.
 
 
