@@ -250,7 +250,7 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir,
     }
     string extra = site.GetConfigureEntry("ExtraDefines");
     string filename = CDirEntry::ConcatPath(cfg_root_inc, extra);
-    int random_count = NStr::StringToInt(site.GetConfigureEntry("RandomValueCount"));
+    int random_count = NStr::StringToInt(site.GetConfigureEntry("RandomValueCount"), NStr::fConvErr_NoThrow);
 
     if (extra.empty() || random_count <= 0 || CFile(filename).Exists()) {
         return;
