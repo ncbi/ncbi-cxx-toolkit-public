@@ -59,6 +59,8 @@
 
 #include <objmgr/util/create_defline.hpp>
 
+#include <objmgr/util/feature.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -261,6 +263,24 @@ private:
 };
 
 typedef CValidator::CCacheImpl CCacheImpl;
+
+class CGeneCache {
+public:
+    CGeneCache() {};
+    ~CGeneCache() {};
+
+    CConstRef<CSeq_feat> GetGeneFromCache(const CSeq_feat* feat, CScope& scope);
+    void Clear() { m_FeatGeneMap.clear(); m_SeqTreeMap.clear(); }
+
+private:
+    typedef map<const CSeq_feat*, CConstRef<CSeq_feat> > TFeatGeneMap;
+    TFeatGeneMap            m_FeatGeneMap;
+    
+    typedef map<CBioseq_Handle, CRef<feature::CFeatTree> > TSeqTreeMap;
+    TSeqTreeMap m_SeqTreeMap;
+
+};
+
 
 // =============================================================================
 //                            Validation classes                          
@@ -560,6 +580,8 @@ public:
     inline CScope* GetScope(void) { return m_Scope; }
     inline CCacheImpl & GetCache(void) { return m_cache; }
 
+    inline CConstRef<CSeq_feat> GetCachedGene(const CSeq_feat* f) { return m_GeneCache.GetGeneFromCache(f, *m_Scope); }
+
     // flags derived from options parameter
     bool IsNonASCII(void)             const { return m_NonASCII; }
     bool IsSuppressContext(void)      const { return m_SuppressContext; }
@@ -792,6 +814,7 @@ private:
     CSeq_entry_Handle       m_TSEH;
 
     CCacheImpl              m_cache;
+    CGeneCache              m_GeneCache;
 
     // error repoitory
     CValidError*       m_ErrRepository;
@@ -1234,7 +1257,7 @@ private:
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
 
     bool IsPlastid(int genome);
-    static bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
+    bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
     unsigned char Residue(unsigned char res);
 
     static int CheckForRaggedEnd(const CSeq_feat& feat, CScope* scope);

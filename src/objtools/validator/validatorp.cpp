@@ -3643,6 +3643,42 @@ CCacheImpl::GetBioseqHandleFromLocation(
 }
 
 
+CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope& scope)
+{
+    if (!feat) {
+        return CConstRef<CSeq_feat>(NULL);
+    }
+    CConstRef<CSeq_feat> gene;
+    TFeatGeneMap::iterator it = m_FeatGeneMap.find(feat);
+    if (it == m_FeatGeneMap.end()) {
+        try {
+            CSeq_feat_Handle fh = scope.GetSeq_featHandle(*feat);
+            CBioseq_Handle bsh = scope.GetBioseqHandle(feat->GetLocation());
+            TSeqTreeMap::iterator smit = m_SeqTreeMap.find(bsh);
+            if (smit == m_SeqTreeMap.end()) {
+                CFeat_CI f(bsh);
+                CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
+                m_SeqTreeMap[bsh] = tr;
+                CMappedFeat mf = tr->GetBestGene(fh);
+                if (mf) {
+                    gene = mf.GetSeq_feat();
+                }
+            } else {
+                CMappedFeat mf = smit->second->GetBestGene(fh);
+                if (mf) {
+                    gene = mf.GetSeq_feat();
+                }
+            }
+        } catch (CException& ex) {
+            gene = sequence::GetGeneForFeature(*feat, scope);
+        }
+        m_FeatGeneMap[feat] = gene;
+        return gene;
+    } else {
+        return it->second;
+    }
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

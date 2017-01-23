@@ -581,7 +581,7 @@ void CValidError_feat::ValidateSeqFeatData
             const CGene_ref* grp = feat.GetGeneXref();
             if ( !grp) {
                 // check overlapping gene
-                CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(feat, *m_Scope);
+                CConstRef<CSeq_feat> overlap = m_Imp.GetCachedGene(&feat);
                 if ( overlap ) {
                     if (overlap->IsSetPseudo() && overlap->GetPseudo()) {
                         pseudo = true;
@@ -606,7 +606,7 @@ void CValidError_feat::ValidateSeqFeatData
                 }
                 if (! NStr::IsBlank (feat_old_locus_tag)) {
                     if ( grp == 0 ) {
-                        const CSeq_feat* gene = sequence::GetGeneForFeature(feat, *m_Scope);
+                        const CSeq_feat* gene = m_Imp.GetCachedGene(&feat);
                         if ( gene != 0 ) {
                             grp = &gene->GetData().GetGene();
                         }
@@ -950,7 +950,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
     }
 
     // check overlapping gene
-    CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(feat, *scope);
+    CConstRef<CSeq_feat> overlap = m_Imp.GetCachedGene(&feat);
     if ( overlap ) {
         return sequence::IsPseudo(*overlap, *scope);
     }
@@ -5652,7 +5652,7 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
     if (feat.IsSetProduct()) {
         const CGene_ref* genomicgrp = NULL;
         // get gene ref for mRNA feature
-        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
+        CConstRef<CSeq_feat> gene = m_Imp.GetCachedGene(&feat);
         if (gene) {
             genomicgrp = &(gene->GetData().GetGene());
         } else {
@@ -6650,8 +6650,6 @@ void CValidError_feat::TranslateTripletIntrons (
 
     if (feat.IsSetExcept() || feat.IsSetExcept_text()) return;
     if (cdr.IsSetCode_break()) return;
-    if (feat.CanGetPseudo()  &&  feat.GetPseudo()) return;
-    if (IsOverlappingGenePseudo(feat, scope)) return;
 
     const CSeq_loc& loc = feat.GetLocation();
 
@@ -6673,6 +6671,7 @@ void CValidError_feat::TranslateTripletIntrons (
                 }
             }
             if (tmp_nonsense_intron) {
+                if (sequence::IsPseudo(feat, *scope)) return;
                 nonsense_intron = true;
                 if (nonsense_intron_loc.IsNull()) {
                     nonsense_intron_loc.Assign(intron);
