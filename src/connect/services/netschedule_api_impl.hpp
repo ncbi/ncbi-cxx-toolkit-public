@@ -92,6 +92,17 @@ struct SQueueName
     }
 };
 
+struct SJobGroup
+{
+    static string Name() { return "job group name"; }
+    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidChar(const char& c)
+    {
+        return isalpha(c) || isdigit(c) || c == '_' || c == '.';
+
+    }
+};
+
 void ThrowIllegalChar(const string&, const string&, char);
 
 template <class TValue>
@@ -109,6 +120,8 @@ void Check(const string& value)
 }
 }
 }
+
+using namespace grid::netschedule;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -394,11 +407,6 @@ struct SNetScheduleAPIImpl : public CObject
 
     bool GetServerByNode(const string& ns_node, CNetServer* server);
 
-    static void VerifyJobGroupAlphabet(const string& job_group)
-    {
-        g_VerifyAlphabet(job_group, "job group name", eCC_BASE64_PI);
-    }
-
     static void VerifyAuthTokenAlphabet(const string& auth_token)
     {
         g_VerifyAlphabet(auth_token, "security token", eCC_BASE64_PI);
@@ -582,7 +590,7 @@ private:
             m_Affinity(affinity),
             m_MoreJobs(false)
         {
-            SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
+            limits::Check<limits::SJobGroup>(group);
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         }
 

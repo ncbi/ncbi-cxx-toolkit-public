@@ -159,7 +159,7 @@ void CNetScheduleAdmin::DumpQueue(
         cmd.append(NStr::NumericToString(job_count));
     }
     if (!job_group.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+        limits::Check<limits::SJobGroup>(job_group);
         cmd.append(" group=");
         cmd.append(job_group);
     }
@@ -386,7 +386,7 @@ void CNetScheduleAdmin::StatusSnapshot(
     }
 
     if (!job_group.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+        limits::Check<limits::SJobGroup>(job_group);
         cmd.append(" group=");
         cmd.append(job_group);
     }

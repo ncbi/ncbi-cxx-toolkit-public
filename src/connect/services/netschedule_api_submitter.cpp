@@ -42,6 +42,8 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace grid::netschedule;
+
 #define FORCED_SST_INTERVAL_SEC 0
 #define MAX_FORCED_SST_INTERVAL_SEC 3
 #define FORCED_SST_INTERVAL_NANOSEC 500 * 1000 * 1000
@@ -101,7 +103,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,
     g_AppendClientIPAndSessionID(cmd, req);
 
     if (!job.group.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
+        limits::Check<limits::SJobGroup>(job.group);
         cmd.append(" group=");
         cmd.append(job.group);
     }
@@ -142,7 +144,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
     g_AppendClientIPAndSessionID(cmd, req);
 
     if (!job_group.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+        limits::Check<limits::SJobGroup>(job_group);
         cmd.append(" group=");
         cmd.append(job_group);
     }
@@ -313,7 +315,7 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
         cmd += NStr::UIntToString(timeout);
     }
     if (!job_group.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+        limits::Check<limits::SJobGroup>(job_group);
         cmd += " group=";
         cmd += job_group;
     }
@@ -597,7 +599,7 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
         const string& job_statuses)
 {
-    SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+    limits::Check<limits::SJobGroup>(job_group);
     string cmd("CANCEL group=" + job_group);
     if (!job_statuses.empty()) {
         cmd.append(" status=");

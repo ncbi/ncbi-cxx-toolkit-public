@@ -215,7 +215,7 @@ bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const SEntry& entry)
 void SNetScheduleJobReaderImpl::SetJobGroup(const string& group_name)
 {
     if (m_Impl.m_JobGroup.empty()) {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group_name);
+        limits::Check<limits::SJobGroup>(group_name);
         m_Impl.m_JobGroup = group_name;
     } else {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,

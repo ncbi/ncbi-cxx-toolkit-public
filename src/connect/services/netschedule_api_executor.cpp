@@ -40,6 +40,8 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace grid::netschedule;
+
 #define SKIP_SPACE(ptr) \
     while (isspace((unsigned char) *(ptr))) \
         ++ptr;
@@ -663,7 +665,7 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
 
     if (!job.group.empty()) {
         cmd += " group=\"";
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
+        limits::Check<limits::SJobGroup>(job.group);
         cmd += NStr::PrintableString(job.group);
         cmd += '"';
     }
