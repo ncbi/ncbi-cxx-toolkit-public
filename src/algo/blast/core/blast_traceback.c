@@ -662,6 +662,9 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
               hsp_array[index] = Blast_HSPFree(hsp);
        }
        Blast_HSPListPurgeNullHSPs(hsp_list);
+       if(program_number == eBlastTypeBlastn) {
+    	   Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, TRUE);
+       }
 
        /* Sort HSPs by score again, as the scores might have changed. */
        Blast_HSPListSortByScore(hsp_list);
