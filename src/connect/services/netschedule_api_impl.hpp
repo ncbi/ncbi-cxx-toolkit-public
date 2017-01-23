@@ -57,60 +57,58 @@ struct SClientNode
 {
     static string Name() { return "client node ID"; }
     static bool IsValidValue(const string& s) { return false; }
-    static bool IsValidChar(const char& c)
+    static bool IsValidChar(char c)
     {
-        return isalpha(c) || isdigit(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
-
+        return isalnum(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
     }
 };
 
-struct SClientSession : SClientNode
+struct SClientSession
 {
     static string Name() { return "client session ID"; }
+    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidChar(char c)
+    {
+        return isalnum(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
+    }
 };
 
 struct SQueueName
 {
-    static string Name() { return "Queue name"; }
+    static string Name() { return "queue name"; }
     static bool IsValidValue(const string& s)
     {
         if (s.empty()) {
-            NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                    Name() << " cannot be empty.");
+            NCBI_THROW(CConfigException, eParameterMissing, "Queue name cannot be empty.");
         }
         if (s.front() == '_') {
-            NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                    Name() << " cannot start with an underscore character.");
+            NCBI_THROW(CConfigException, eParameterMissing, "Queue name cannot start with underscore character.");
         }
 
         return false;
     }
-    static bool IsValidChar(const char& c)
-    {
-        return isalpha(c) || isdigit(c) || c == '_' || c == '-';
-
-    }
+    static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '-'; }
 };
 
 struct SJobGroup
 {
     static string Name() { return "job group name"; }
     static bool IsValidValue(const string& s) { return false; }
-    static bool IsValidChar(const char& c)
-    {
-        return isalpha(c) || isdigit(c) || c == '_' || c == '.';
-
-    }
+    static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
-struct SAffinity : SJobGroup
+struct SAffinity
 {
     static string Name() { return "affinity token"; }
+    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
-struct SAuthToken : SJobGroup
+struct SAuthToken 
 {
     static string Name() { return "security token"; }
+    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidChar(char c) { return isalnum(c) || c == '_' || c == '.'; }
 };
 
 void ThrowIllegalChar(const string&, const string&, char);
