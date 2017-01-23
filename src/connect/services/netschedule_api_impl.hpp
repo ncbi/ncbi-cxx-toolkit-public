@@ -44,9 +44,48 @@
 #include <list>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
+
+namespace grid {
+namespace netschedule {
+namespace limits {
+
+struct SClientNode
+{
+    static string Name() { return "client node ID"; }
+    static bool IsValidValue(const string& s) { return false; }
+    static bool IsValidChar(const char& c)
+    {
+        return isalpha(c) || isdigit(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '@' || c == '|';
+
+    }
+};
+
+struct SClientSession : SClientNode
+{
+    static string Name() { return "client session ID"; }
+};
+
+void ThrowIllegalChar(const string&, const string&, char);
+
+template <class TValue>
+void Check(const string& value)
+{
+    if (TValue::IsValidValue(value)) return;
+
+    auto it = find_if_not(value.begin(), value.end(), TValue::IsValidChar);
+
+    if (it != value.end()) {
+        ThrowIllegalChar(TValue::Name(), value, *it);
+    }
+}
+
+}
+}
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

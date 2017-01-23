@@ -52,6 +52,23 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace grid {
+namespace netschedule {
+namespace limits {
+
+void ThrowIllegalChar(const string& name, const string& value, char c)
+{
+    NCBI_THROW_FMT(CConfigException, eParameterMissing,
+            "Invalid character '" << NStr::PrintableString(CTempString(&c, 1)) <<
+            "' in the " << name << " \"" << NStr::PrintableString(value) << "\".");
+}
+
+}
+}
+}
+
+using namespace grid::netschedule;
+
 void g_AppendClientIPSessionIDHitID(string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
@@ -1312,20 +1329,15 @@ void SNetScheduleAPIImpl::VerifyQueueNameAlphabet(const string& queue_name)
     g_VerifyAlphabet(queue_name, "queue name", eCC_BASE64URL);
 }
 
-static void s_VerifyClientCredentialString(const string& str,
-    const CTempString& param_name)
-{
-    if (str.empty()) {
-        NCBI_THROW_FMT(CConfigException, eParameterMissing,
-            "'" << param_name << "' cannot be empty");
-    }
-
-    g_VerifyAlphabet(str, param_name, eCC_RelaxedId);
-}
-
 void CNetScheduleAPI::SetClientNode(const string& client_node)
 {
-    s_VerifyClientCredentialString(client_node, "client node ID");
+    // Cannot add this to limits::SClientNode due to CNetScheduleAPIExt allowing reset to empty values
+    if (client_node.empty()) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "'" << limits::SClientNode::Name() << "' cannot be empty");
+    }
+
+    limits::Check<limits::SClientNode>(client_node);
 
     m_Impl->m_ClientNode = client_node;
 
@@ -1334,7 +1346,13 @@ void CNetScheduleAPI::SetClientNode(const string& client_node)
 
 void CNetScheduleAPI::SetClientSession(const string& client_session)
 {
-    s_VerifyClientCredentialString(client_session, "client session ID");
+    // Cannot add this to limits::SClientSession due to CNetScheduleAPIExt allowing reset to empty values
+    if (client_session.empty()) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "'" << limits::SClientSession::Name() << "' cannot be empty");
+    }
+
+    limits::Check<limits::SClientSession>(client_session);
 
     m_Impl->m_ClientSession = client_session;
 
@@ -1550,14 +1568,14 @@ CNetScheduleAPI CNetScheduleAPIExt::GetServer(CNetServer::TInstance server)
 
 void CNetScheduleAPIExt::ReSetClientNode(const string& client_node)
 {
-    g_VerifyAlphabet(client_node, "client node ID", eCC_RelaxedId);
+    limits::Check<limits::SClientNode>(client_node);
     m_Impl->m_ClientNode = client_node;
     m_Impl->UpdateAuthString();
 }
 
 void CNetScheduleAPIExt::ReSetClientSession(const string& client_session)
 {
-    g_VerifyAlphabet(client_session, "client session ID", eCC_RelaxedId);
+    limits::Check<limits::SClientSession>(client_session);
     m_Impl->m_ClientSession = client_session;
     m_Impl->UpdateAuthString();
 }
