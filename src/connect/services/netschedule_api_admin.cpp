@@ -380,7 +380,7 @@ void CNetScheduleAdmin::StatusSnapshot(
     string cmd = "STAT JOBS";
 
     if (!affinity_token.empty()) {
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity_token);
+        limits::Check<limits::SAffinity>(affinity_token);
         cmd.append(" aff=");
         cmd.append(affinity_token);
     }

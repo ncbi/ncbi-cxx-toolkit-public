@@ -474,7 +474,7 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         ITERATE(list<CTempString>, token, affinity_tokens) {
-            SNetScheduleAPIImpl::VerifyAffinityAlphabet(*token);
+            limits::Check<limits::SAffinity>(*token);
         }
 
         cmd += " aff=";
@@ -658,7 +658,7 @@ void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
 
     if (!job.affinity.empty()) {
         cmd += " aff=\"";
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(job.affinity);
+        limits::Check<limits::SAffinity>(job.affinity);
         cmd += NStr::PrintableString(job.affinity);
         cmd += '"';
     }
@@ -716,7 +716,7 @@ int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,
 
     ITERATE(vector<string>, aff, *affs) {
         cmd.append(sep);
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*aff);
+        limits::Check<limits::SAffinity>(*aff);
         cmd.append(*aff);
         sep = ",";
     }

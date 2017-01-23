@@ -64,7 +64,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleNewJob& job,
     }
 
     if (!job.affinity.empty()) {
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(job.affinity);
+        limits::Check<limits::SAffinity>(job.affinity);
         cmd.append(" aff=");
         cmd.append(job.affinity);
     }

@@ -226,7 +226,7 @@ void SNetScheduleJobReaderImpl::SetJobGroup(const string& group_name)
 void SNetScheduleJobReaderImpl::SetAffinity(const string& affinity)
 {
     if (m_Impl.m_Affinity.empty()) {
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+        limits::Check<limits::SAffinity>(affinity);
         m_Impl.m_Affinity = affinity;
     } else {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,

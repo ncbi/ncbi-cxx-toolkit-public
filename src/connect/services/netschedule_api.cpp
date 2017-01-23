@@ -1414,7 +1414,7 @@ void SNetScheduleAPIImpl::InitAffinities(CConfig* config, const string& section)
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         for (auto& affinity : m_AffinityList) {
-            VerifyAffinityAlphabet(affinity);
+            limits::Check<limits::SAffinity>(affinity);
         }
 
         return;
@@ -1443,7 +1443,7 @@ void SNetScheduleAPIImpl::InitAffinities(CConfig* config, const string& section)
     string affinity_step;
 
     for (auto& affinity : affinities) {
-        VerifyAffinityAlphabet(affinity);
+        limits::Check<limits::SAffinity>(affinity);
 
         if (!affinity_step.empty()) affinity_step += ',';
         affinity_step += affinity;

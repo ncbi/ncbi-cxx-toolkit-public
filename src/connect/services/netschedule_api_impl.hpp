@@ -103,6 +103,11 @@ struct SJobGroup
     }
 };
 
+struct SAffinity : SJobGroup
+{
+    static string Name() { return "affinity token"; }
+};
+
 void ThrowIllegalChar(const string&, const string&, char);
 
 template <class TValue>
@@ -412,11 +417,6 @@ struct SNetScheduleAPIImpl : public CObject
         g_VerifyAlphabet(auth_token, "security token", eCC_BASE64_PI);
     }
 
-    static void VerifyAffinityAlphabet(const string& affinity)
-    {
-        g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
-    }
-
     void AllocNotificationThread();
     void StartNotificationThread();
 
@@ -591,7 +591,7 @@ private:
             m_MoreJobs(false)
         {
             limits::Check<limits::SJobGroup>(group);
-            SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+            limits::Check<limits::SAffinity>(affinity);
         }
 
         EState CheckState();
