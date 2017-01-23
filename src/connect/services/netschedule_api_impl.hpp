@@ -69,6 +69,29 @@ struct SClientSession : SClientNode
     static string Name() { return "client session ID"; }
 };
 
+struct SQueueName
+{
+    static string Name() { return "Queue name"; }
+    static bool IsValidValue(const string& s)
+    {
+        if (s.empty()) {
+            NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                    Name() << " cannot be empty.");
+        }
+        if (s.front() == '_') {
+            NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                    Name() << " cannot start with an underscore character.");
+        }
+
+        return false;
+    }
+    static bool IsValidChar(const char& c)
+    {
+        return isalpha(c) || isdigit(c) || c == '_' || c == '-';
+
+    }
+};
+
 void ThrowIllegalChar(const string&, const string&, char);
 
 template <class TValue>
@@ -385,8 +408,6 @@ struct SNetScheduleAPIImpl : public CObject
     {
         g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
     }
-
-    static void VerifyQueueNameAlphabet(const string& queue_name);
 
     void AllocNotificationThread();
     void StartNotificationThread();

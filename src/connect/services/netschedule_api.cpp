@@ -699,7 +699,7 @@ void CNetScheduleServerListener::OnInit(
     string& queue_ref = ns_impl->m_Queue;
 
     if (!queue_ref.empty()) {
-        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_ref);
+        limits::Check<limits::SQueueName>(queue_ref);
     }
 
     const list<string> embedded_synonyms{"use_embedded_input"};
@@ -731,7 +731,7 @@ void CNetScheduleServerListener::OnInit(
     for (int phase = 0; phase < 2; ++phase) {
         if (config) {
             if (queue.ReadOnce()) {
-                SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_ref);
+                limits::Check<limits::SQueueName>(queue_ref);
             }
 
             embedded.ReadOnce();
@@ -1269,7 +1269,7 @@ void SNetScheduleAPIImpl::GetQueueParams(
     string cmd("QINF2 ");
 
     if (!queue_name.empty()) {
-        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
+        limits::Check<limits::SQueueName>(queue_name);
 
         cmd += queue_name;
     } else if (!m_Queue.empty()) {
@@ -1314,19 +1314,6 @@ void CNetScheduleAPI::GetQueueParams(TQueueParams& queue_params)
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
     job.progress_msg = NStr::ParseEscapes(m_Impl->x_ExecOnce("MGET", job));
-}
-
-void SNetScheduleAPIImpl::VerifyQueueNameAlphabet(const string& queue_name)
-{
-    if (queue_name.empty()) {
-        NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                "Queue name cannot be empty.");
-    }
-    if (queue_name[0] == '_') {
-        NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                "Queue name cannot start with an underscore character.");
-    }
-    g_VerifyAlphabet(queue_name, "queue name", eCC_BASE64URL);
 }
 
 void CNetScheduleAPI::SetClientNode(const string& client_node)

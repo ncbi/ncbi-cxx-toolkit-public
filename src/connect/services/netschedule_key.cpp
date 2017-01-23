@@ -44,6 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace grid::netschedule;
+
 #define NS_KEY_V1_PREFIX "JSID_01_"
 #define NS_KEY_V1_PREFIX_LEN (sizeof(NS_KEY_V1_PREFIX) - 1)
 
@@ -168,7 +170,7 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str,
 CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
         const string& host, unsigned port, const string& queue_name)
 {
-    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
+    limits::Check<limits::SQueueName>(queue_name);
 
     m_UseIPv4Addr = CSocketAPI::isip(host, true);
     if (m_UseIPv4Addr)

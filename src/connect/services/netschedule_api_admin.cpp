@@ -39,6 +39,8 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace grid::netschedule;
+
 void CNetScheduleAdmin::SwitchToDrainMode(ESwitch on_off)
 {
     string cmd(on_off != eOff ?
@@ -68,7 +70,7 @@ void CNetScheduleAdmin::ReloadServerConfig()
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
                                     const string& description)
 {
-    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(qname);
+    limits::Check<limits::SQueueName>(qname);
 
     string cmd = "QCRE " + qname;
     cmd += ' ';
@@ -87,7 +89,7 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
 
 void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
-    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(qname);
+    limits::Check<limits::SQueueName>(qname);
 
     string cmd("QDEL " + qname);
     g_AppendClientIPSessionIDHitID(cmd);
