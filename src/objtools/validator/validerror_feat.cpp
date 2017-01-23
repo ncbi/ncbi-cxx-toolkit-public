@@ -8246,6 +8246,87 @@ static bool xf_IsDeltaLitOnly (CBioseq_Handle bsh)
 }
 
 
+class CGapCache {
+public:
+    CGapCache(const CSeq_loc& loc, CBioseq_Handle bsh);
+    ~CGapCache() {};
+    bool IsUnknownGap(size_t offset);
+    bool IsKnownGap(size_t offset);
+    bool IsGap(size_t offset);
+
+private:
+    typedef enum {
+        eGapType_unknown = 0,
+        eGapType_known
+    } EGapType;
+    typedef map <size_t, EGapType> TGapTypeMap;
+    TGapTypeMap m_Map;
+    size_t m_NumUnknown;
+    size_t m_NumKnown;
+};
+
+CGapCache::CGapCache(const CSeq_loc& loc, CBioseq_Handle bsh)
+{
+    TSeqPos start = loc.GetStart(eExtreme_Positional);
+    TSeqPos stop = loc.GetStop(eExtreme_Positional);
+    CRange<TSeqPos> range(start, stop);
+    CSeqMap_CI map_iter(bsh, SSeqMapSelector(CSeqMap::fDefaultFlags, 100), range);
+    TSeqPos pos = start;
+    while (map_iter && pos <= stop) {
+        TSeqPos map_end = map_iter.GetPosition() + map_iter.GetLength();
+        if (map_iter.GetType() == CSeqMap::eSeqGap) {
+            for (; pos < map_end && pos <= stop; pos++) {
+                if (map_iter.IsUnknownLength()) {
+                    m_Map[pos - start] = eGapType_unknown;
+                    m_NumUnknown++;
+                } else {
+                    m_Map[pos - start] = eGapType_known;
+                    m_NumKnown++;
+                }
+            }
+        } else {
+            pos = map_end;
+        }
+        ++map_iter;
+    }
+}
+
+bool CGapCache::IsGap(size_t pos)
+{
+    if (m_Map.find(pos) != m_Map.end()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CGapCache::IsKnownGap(size_t pos)
+{
+    TGapTypeMap::iterator it = m_Map.find(pos);
+    if (it == m_Map.end()) {
+        return false;
+    } else if (it->second == eGapType_known) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CGapCache::IsUnknownGap(size_t pos)
+{
+    TGapTypeMap::iterator it = m_Map.find(pos);
+    if (it == m_Map.end()) {
+        return false;
+    } else if (it->second == eGapType_unknown) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 
 void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 {
@@ -8363,61 +8444,70 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     int num_gap = 0;
                     int num_unknown_gap = 0;
                     bool first_in_gap = false, last_in_gap = false;
-                    bool local_first_gap, local_last_gap;
+                    bool local_first_gap = false, local_last_gap = false;
                     bool startsOrEndsInGap = false;
                     bool first = true;
 
                     for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
-                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
-                        if ( !vec.empty() ) {
+                        CSeqVector vec = GetSequenceFromLoc(*(loc_it.GetRangeAsSeq_loc()), *m_Scope);
+                        if (!vec.empty()) {
                             CBioseq_Handle ph = GetCache().GetBioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
-                            string vec_data;
-                            vec.GetSeqData(0, vec.size(), vec_data);
+                            try {
+                                CGapCache gap_cache(*(loc_it.GetRangeAsSeq_loc()), ph);
+                                string vec_data;
+                                vec.GetSeqData(0, vec.size(), vec_data);
 
-                            local_first_gap = false;
-                            local_last_gap = false;
-                            TSeqLength len = loc_it.GetRange().GetLength();
-                            TSeqPos start = loc_it.GetRange().GetFrom();
-                            TSeqPos stop = loc_it.GetRange().GetTo();
-                            ENa_strand strand = loc_it.GetStrand();
+                                local_first_gap = false;
+                                local_last_gap = false;
+                                TSeqLength len = loc_it.GetRange().GetLength();
+                                TSeqPos start = loc_it.GetRange().GetFrom();
+                                TSeqPos stop = loc_it.GetRange().GetTo();
+                                ENa_strand strand = loc_it.GetStrand();
 
-                            int pos = 0;
-                            string::iterator it = vec_data.begin();
-                            while (it != vec_data.end() && pos < len) {
-                                bool is_gap = false;
-                                bool unknown_length = false;
-                                try {
-                                    CSeqMap_CI map_iter(ph, SSeqMapSelector(),
-                                        strand == eNa_strand_minus ? stop - pos : start + pos);
-                                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
-                                        is_gap = true;
-                                        if (map_iter.IsUnknownLength()) {
+                                int pos = 0;
+                                string::iterator it = vec_data.begin();
+                                while (it != vec_data.end() && pos < len) {
+                                    bool is_gap = false;
+                                    bool unknown_length = false;
+                                    if (strand == eNa_strand_minus) {
+                                        if (gap_cache.IsKnownGap(len - pos - 1)) {
+                                            is_gap = true;
+                                        } else if (gap_cache.IsUnknownGap(len - pos - 1)) {
+                                            is_gap = true;
                                             unknown_length = true;
                                         }
-                                    }
-                                } catch (CException& ex) {
-                                    PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                                        string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
-                                        ex.what(), feat);
-                                }
-                                if (is_gap) {
-                                    if (pos == 0) {
-                                        local_first_gap = true;
-                                    } else if (pos == len - 1) {
-                                        local_last_gap = true;
-                                    }
-                                    if (unknown_length) {
-                                        num_unknown_gap++;
                                     } else {
-                                        num_gap++;
+                                        if (gap_cache.IsKnownGap(pos)) {
+                                            is_gap = true;
+                                        } else if (gap_cache.IsUnknownGap(pos)) {
+                                            is_gap = true;
+                                            unknown_length = true;
+                                        }
+
                                     }
-                                } else if (*it == 'N') {
-                                    num_n++;
-                                } else {
-                                    num_real++;
+                                    if (is_gap) {
+                                        if (pos == 0) {
+                                            local_first_gap = true;
+                                        } else if (pos == len - 1) {
+                                            local_last_gap = true;
+                                        }
+                                        if (unknown_length) {
+                                            num_unknown_gap++;
+                                        } else {
+                                            num_gap++;
+                                        }
+                                    } else if (*it == 'N') {
+                                        num_n++;
+                                    } else {
+                                        num_real++;
+                                    }
+                                    ++it;
+                                    ++pos;
                                 }
-                                ++it;
-                                ++pos;
+                            } catch (CException& ex) {
+                                PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                                    string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
+                                    ex.what(), feat);
                             }
                         }
                         if (first) {

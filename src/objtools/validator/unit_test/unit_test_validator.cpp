@@ -16612,12 +16612,24 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
+    misc->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
     misc->SetLocation().SetInt().SetFrom(14);
     misc->SetLocation().SetInt().SetTo(30);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    misc->SetLocation().SetInt().ResetStrand();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 }

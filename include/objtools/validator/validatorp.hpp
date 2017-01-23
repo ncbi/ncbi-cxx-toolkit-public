@@ -1127,6 +1127,7 @@ public:
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
+    void x_CheckLocForGaps(const CSeq_loc& loc);
     size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
