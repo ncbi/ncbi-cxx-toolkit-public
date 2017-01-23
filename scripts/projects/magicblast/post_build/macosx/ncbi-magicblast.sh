@@ -3,17 +3,17 @@
 INSTALLDIR=$1
 SCRIPTDIR=$2
 BLAST_VERSION=$3
-PRODUCT="ncbi-magicblast-$BLAST_VERSION+"
+PRODUCT="ncbi-magicblast-$BLAST_VERSION"
 
 INSTALL_LOCATION1=/usr/local/ncbi/magicblast
 INSTALL_LOCATION2=/etc/paths.d
 STAGE_DIR1=_stage1
 STAGE_DIR2=_stage2
 RESOURCES_DIR=Resources
-ID=gov.nlm.nih.ncbi.blast
+ID=gov.nlm.nih.ncbi.magicblast
 
 if [ $# -ne 3 ] ; then
-    echo "Usage: ncbi-magicblast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
+    echo "Usage: ncbi-magicblast.sh [installation directory] [MacOSX post-build script directory] [Magic-BLAST version]";
     exit 1;
 fi
 
