@@ -726,6 +726,11 @@ int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,
 
     if (action == eAddAffs)
         ITERATE(vector<string>, aff, *affs) {
+            if (*aff == "-") {
+                NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                        "Affinity '-' cannot be added as a preferred one.");
+            }
+
             m_PreferredAffinities.insert(*aff);
         }
     else
