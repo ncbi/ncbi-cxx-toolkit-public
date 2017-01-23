@@ -399,7 +399,13 @@ CFormatGuess::GuessFormat(
         return eUnknown;
     }
     if (!EnsureTestBuffer()) {
-        return eUnknown;
+        //one condition that won't allow us to get a good test buffer is an ascii
+        // file without any line breaks. so before giving up, let's specifically
+        // try any formats that would allow for that:
+        if(TestFormatNewick(eQuick)) {
+            return CFormatGuess::eNewick;
+        }
+        return CFormatGuess::eUnknown;
     }
 
     EMode mode = eQuick;
