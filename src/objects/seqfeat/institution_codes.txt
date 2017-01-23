@@ -673,7 +673,7 @@ BSMP	s	Department of Agriculture, Bureau of Science
 BSN	s	Boston University, Biology Department
 BSNH	s	Boston Society of Natural History
 BSNS	s	Buffalo Society of Natural Sciences
-BSPG	s	Bayerische Staatssammlung fuer Palaeontologie und Geologie
+BSPG	s	Bayerische Staatssammlung fur Palaontologie und  Geologie
 BSRA	s	University of Basrah, Biology Department
 BSRM	s	Biological Station Reference Museum at Porto Novo
 BST	s	Belfast Naturalists' Field Club
@@ -2167,7 +2167,7 @@ GPA	s	Grande Prairie Regional College, Science Department
 GPI	s	Geologisch-Palaeontologisches Institut
 GPIH	s	Geologisch-Palaeontologiches Institut der Universitt Haemburg
 GPIM	s	Lehreinheit Palaeontologisches, Institut fuer Geowissenschaften
-GPIT	s	Institut und Museum fur Geologie und Palaeontologie, Universitat Tuebingen
+GPIT	s	Institut und Museum fur Geologie und Palaontologie, Universitat Tubingen
 GPM	s	Gifu prefectural Museum
 GPM:B	s	Gifu prefectural Museum, Gifu prefectural Museum herbarium
 GPM:Z	s	Gifu prefectural Museum, Gifu prefectural Museum Zoological collection
@@ -7418,7 +7418,7 @@ ZA	s	University of Zagreb, Botany Department
 ZAD	s	Mount Makulu Research Station
 ZAGR	s	University of Zagreb
 ZAHO	s	University of Zagreb, Botany Department
-ZAR	s	Institut de Paleontologie du Museum National d'Historie Naturelle
+ZAR	s	Institut de Paleontologie du Museum National Historie Naturelle
 ZAU	s	Zhejiang Agricultural University
 ZAUC	s	Zhejian Agricultural University
 ZBMM	s	Maharaja's College, Zoology and Botany Museum
