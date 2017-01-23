@@ -399,6 +399,7 @@ bool CBedWriter::WriteAnnot(
     const string& )
 //  ----------------------------------------------------------------------------
 {
+    m_colCount = 6;
     if( annot.CanGetDesc() ) {
         ITERATE(CAnnot_descr::Tdata, DescIter, annot.GetDesc().Get()) {
             const CAnnotdesc& desc = **DescIter;

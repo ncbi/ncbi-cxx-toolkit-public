@@ -191,18 +191,12 @@ bool CBedFeatureRecord::AssignLocation(
         m_strChromEnd = NStr::UIntToString( interval.GetTo() + 1 );
     }
     BUMP( m_uColumnCount, 3 );
-    if ( interval.IsSetStrand() ) {
-        switch ( interval.GetStrand() ) {
-        default:
-            break;
-        case eNa_strand_plus:
-            m_strStrand = "+";
-            break;
-        case eNa_strand_minus:
+    m_strStrand = "+";
+    if (interval.IsSetStrand()) {
+        ENa_strand strand = interval.GetStrand();
+        if (strand == eNa_strand_minus) {
             m_strStrand = "-";
-            break;
         }
-        BUMP( m_uColumnCount, 6 );
     }
     return true;
 }
@@ -247,6 +241,7 @@ bool CBedFeatureRecord::Write(
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CBedFeatureRecord::SetLocation(
     const CSeq_loc& loc)
@@ -283,6 +278,7 @@ bool CBedFeatureRecord::SetLocation(
     }
     return false;
 }
+
 
 //  -----------------------------------------------------------------------------
 bool CBedFeatureRecord::SetName(
