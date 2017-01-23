@@ -82,7 +82,7 @@ struct SQueueName
             NCBI_THROW(CConfigException, eParameterMissing, "Queue name cannot be empty.");
         }
         if (s.front() == '_') {
-            NCBI_THROW(CConfigException, eParameterMissing, "Queue name cannot start with underscore character.");
+            NCBI_THROW(CConfigException, eInvalidParameter, "Queue name cannot start with underscore character.");
         }
 
         return false;

@@ -58,7 +58,7 @@ namespace limits {
 
 void ThrowIllegalChar(const string& name, const string& value, char c)
 {
-    NCBI_THROW_FMT(CConfigException, eParameterMissing,
+    NCBI_THROW_FMT(CConfigException, eInvalidParameter,
             "Invalid character '" << NStr::PrintableString(CTempString(&c, 1)) <<
             "' in the " << name << " \"" << NStr::PrintableString(value) << "\".");
 }
