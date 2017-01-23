@@ -58,8 +58,7 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 ///   CObjectIStreamAsyncIterator
 ///
-///  Asynchronously read multiple same-type data objects of the from an input
-///  stream.
+///  Asynchronously read multiple same-type data objects from an input stream.
 ///  @sa CObjectIStreamIterator
 ///
 ///  The algorithm assumes that the input stream on its top level consists
@@ -257,8 +256,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator
 ///
-///  Synchronously read multiple same-type data objects of the from an input
-///  stream.
+///  Synchronously read multiple same-type data objects from an input stream.
 ///  @sa CObjectIStreamAsyncIterator
 ///
 ///  The algorithm assumes that the input stream on its top level consists
