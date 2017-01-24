@@ -120,6 +120,7 @@ private:
 
     bool                      m_AllowGzip;
     bool                      m_ExclWGSMaster;
+    bool                      m_SetCubbyUser;
 };
 
 END_SCOPE(objects)

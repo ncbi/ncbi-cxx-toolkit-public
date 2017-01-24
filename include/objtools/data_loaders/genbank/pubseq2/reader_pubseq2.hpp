@@ -100,6 +100,7 @@ private:
     TConnections                    m_Connections;
 
     bool                      m_ExclWGSMaster;
+    bool                      m_SetCubbyUser;
 };
 
 END_SCOPE(objects)

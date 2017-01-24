@@ -154,7 +154,8 @@ CPubseqReader::CPubseqReader(int max_connections,
       m_DbapiDriver(dbapi_driver),
       m_Context(0),
       m_AllowGzip(DEFAULT_ALLOW_GZIP),
-      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
+      m_SetCubbyUser(false)
 {
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
@@ -185,7 +186,8 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
                              const string& driver_name)
     : m_Context(0),
       m_AllowGzip(DEFAULT_ALLOW_GZIP),
-      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER)
+      m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
+      m_SetCubbyUser(false)
 {
     CConfig conf(params);
     m_Server = conf.GetString(
@@ -218,6 +220,11 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER,
         CConfig::eErr_NoThrow,
         DEFAULT_EXCL_WGS_MASTER);
+    m_SetCubbyUser = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_SET_CUBBY_USER,
+        CConfig::eErr_NoThrow,
+        false);
 
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
@@ -435,6 +442,12 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
     }
     
+    if ( m_SetCubbyUser ) {
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(GetProcessUserName())));
+        cmd->Send();
+        cmd->DumpResults();
+    }
+
     if ( GetDebugLevel() >= 2 ) {
         CDebugPrinter s(conn_, "CPubseqReader");
         s << "Connected to " << conn->ServerName();

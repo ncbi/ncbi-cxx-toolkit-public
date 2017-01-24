@@ -51,5 +51,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_TIMEOUT  "timeout"
 /* timeout for initial request */
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_OPEN_TIMEOUT "open_timeout"
+/* set cubby user */
+#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_SET_CUBBY_USER "set_cubby_user"
 
 #endif

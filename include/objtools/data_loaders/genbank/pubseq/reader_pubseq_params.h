@@ -49,5 +49,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP     "gzip"
 /* exclude WGS master descriptors */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER "exclude_wgs_master"
+/* set cubby user */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_SET_CUBBY_USER "set_cubby_user"
 
 #endif
