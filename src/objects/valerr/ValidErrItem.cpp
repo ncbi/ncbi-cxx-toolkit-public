@@ -1678,6 +1678,9 @@ same id type" } },
    { eErr_SEQ_FEAT_BadLocation,
    { "BadLocation",
 "There is a problem with this feature location." } },
+   { eErr_SEQ_FEAT_GenCodeInvalid,
+   { "GenCodeInvalid",
+"A coding region contains invalid genetic code." } },
 
 /* SEQ_ALIGN */
 

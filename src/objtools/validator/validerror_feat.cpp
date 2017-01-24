@@ -1446,6 +1446,19 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 
 }
 
+static bool IsGeneticCodeValid(int gcode)
+{
+    if (gcode > 0) {
+        const CGenetic_code_table& tbl = CGen_code_table::GetCodeTable();
+        ITERATE(CGenetic_code_table::Tdata, it, tbl.Get()) {
+            if ((*it)->GetId() == gcode) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 void CValidError_feat::ValidateCdregion (
     const CCdregion& cdregion, 
@@ -1531,7 +1544,18 @@ void CValidError_feat::ValidateCdregion (
         }
     }
     
-    if ( bsh ) {
+    int cdsgencode = 0;
+
+    if (cdregion.CanGetCode()) {
+        cdsgencode = cdregion.GetCode().GetId();
+
+        if (!IsGeneticCodeValid(cdsgencode)) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_GenCodeInvalid,
+                    "A coding region contains invalid genetic code", feat);
+        }
+    }
+
+    if (bsh) {
         // debug
         string label;
         (*(bsh.GetCompleteBioseq())).GetLabel(&label, CBioseq::eBoth);
@@ -1541,11 +1565,6 @@ void CValidError_feat::ValidateCdregion (
             const CBioSource& src = diter->GetSource();
             int biopgencode = s_GetStrictGenCode(src);
             
-            int cdsgencode = 0;
-
-            if ( cdregion.CanGetCode() ) {
-                cdsgencode = cdregion.GetCode().GetId();
-            }
             if ( biopgencode != cdsgencode 
                  && (!feat.IsSetExcept()
                      || !feat.IsSetExcept_text() 
