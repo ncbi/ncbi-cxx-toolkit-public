@@ -38,7 +38,7 @@ NodeFeatureSet ::= SET OF NodeFeature
 
 NodeFeature ::= SEQUENCE {
    featureid   INTEGER,
-   value       VisibleString
+   value       UTF8String
 }
 
 
