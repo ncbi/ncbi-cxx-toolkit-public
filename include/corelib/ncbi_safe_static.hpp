@@ -108,9 +108,11 @@ public:
     ~CSafeStaticPtr_Base(void);
 
 protected:
+    typedef CGuard<CSafeStaticPtr_Base> TInstanceMutexGuard;
+
     /// Cleanup function type used by derived classes
     typedef void (*FSelfCleanup)(CSafeStaticPtr_Base* safe_static,
-                                 CMutexGuard& guard);
+                                 TInstanceMutexGuard& guard);
 
     /// Constructor.
     ///
@@ -130,13 +132,46 @@ protected:
         : m_SelfCleanup(self_cleanup),
           m_UserCleanup(user_cleanup),
           m_LifeSpan(life_span.GetLifeSpan()),
-          m_CreationOrder(x_GetCreationOrder())
+          m_CreationOrder(x_GetCreationOrder()),
+          m_MutexRefCount(0),
+          m_InstanceMutex(0)
     {}
 
     /// Pointer to the data
     const void* m_Ptr;
 
-    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
+    DECLARE_CLASS_STATIC_MUTEX(sm_ClassMutex);
+
+private:
+    friend struct SSimpleLock<CSafeStaticPtr_Base>;
+    friend struct SSimpleUnlock<CSafeStaticPtr_Base>;
+
+    void Lock(void)
+    {
+        CMutexGuard guard(sm_ClassMutex);
+        if (!m_InstanceMutex) {
+            m_InstanceMutex = new CMutex;
+            m_MutexRefCount = 1;
+        }
+        ++m_MutexRefCount;
+        guard.Release();
+        m_InstanceMutex->Lock();
+    }
+
+    void Unlock(void)
+    {
+        m_InstanceMutex->Unlock();
+        x_ReleaseInstanceMutex();
+    }
+
+    void x_ReleaseInstanceMutex(void)
+    {
+        CMutexGuard guard(sm_ClassMutex);
+        if (--m_MutexRefCount > 0) return;
+        delete m_InstanceMutex;
+        m_InstanceMutex = 0;
+        m_MutexRefCount = 0;
+    }
 
 protected:
     friend class CSafeStatic_Less;
@@ -145,6 +180,8 @@ protected:
     FUserCleanup m_UserCleanup;   // User-provided  cleanup function
     int          m_LifeSpan;      // Life span of the object
     int          m_CreationOrder; // Creation order of the object
+    int          m_MutexRefCount; // Mutex reference counter.
+    CMutex*      m_InstanceMutex; // Mutex used to create/destroy value.
 
     static int x_GetCreationOrder(void);
 
@@ -157,10 +194,15 @@ protected:
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
-    void x_Cleanup(CMutexGuard& guard)
+    void x_Cleanup(void)
     {
-        if ( m_SelfCleanup )
+        // Note: x_Cleanup should always be called with sm_ClassMutex locked.
+        if ( m_SelfCleanup ) {
+            TInstanceMutexGuard guard(*this);
             m_SelfCleanup(this, guard);
+        }
+        // Delete instance mutex if it's not used by other threads.
+        x_ReleaseInstanceMutex();
     }
 };
 
@@ -410,7 +452,7 @@ private:
     CSafeStatic& operator=(const CSafeStatic&);
 
     void x_Init(void) {
-        CMutexGuard guard(sm_Mutex);
+        TInstanceMutexGuard guard(*this);
         if ( m_Ptr == 0 ) {
             // Create the object and register for cleanup
             T* ptr = 0;
@@ -434,7 +476,7 @@ private:
 
     // "virtual" cleanup function
     static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
-                               CMutexGuard& guard)
+                               TInstanceMutexGuard& guard)
     {
         TThisType* this_ptr = static_cast<TThisType*>(safe_static);
         if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
@@ -548,7 +590,7 @@ private:
 
     // "virtual" cleanup function
     static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
-                               CMutexGuard& guard)
+                               TInstanceMutexGuard& guard)
     {
         CSafeStaticPtr<T>* this_ptr = static_cast<CSafeStaticPtr<T>*>(safe_static);
         if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
@@ -631,7 +673,7 @@ private:
 
     // "virtual" cleanup function
     static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
-                               CMutexGuard& guard)
+                               TInstanceMutexGuard& guard)
     {
         CSafeStaticRef<T>* this_ptr = static_cast<CSafeStaticRef<T>*>(safe_static);
         if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
@@ -664,7 +706,7 @@ template <class T>
 inline
 void CSafeStaticPtr<T>::Set(T* object)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Set the new object and register for cleanup
         if ( object ) {
@@ -679,7 +721,7 @@ template <class T>
 inline
 void CSafeStaticPtr<T>::x_Init(void)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
         m_Ptr = new T;
@@ -693,7 +735,7 @@ template <class FUserCreate>
 inline
 void CSafeStaticPtr<T>::x_Init(FUserCreate user_create)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
         m_Ptr = user_create();
@@ -708,7 +750,7 @@ template <class T>
 inline
 void CSafeStaticRef<T>::Set(T* object)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Set the new object and register for cleanup
         if ( object ) {
@@ -724,7 +766,7 @@ template <class T>
 inline
 void CSafeStaticRef<T>::x_Init(void)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
         T* ptr = new T;
@@ -740,7 +782,7 @@ template <class FUserCreate>
 inline
 void CSafeStaticRef<T>::x_Init(FUserCreate user_create)
 {
-    CMutexGuard guard(sm_Mutex);
+    TInstanceMutexGuard guard(*this);
     if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
         T* ptr = user_create();

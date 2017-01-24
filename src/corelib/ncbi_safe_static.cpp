@@ -80,7 +80,7 @@ CSafeStaticLifeSpan& CSafeStaticLifeSpan::GetDefault(void)
 
 // Protective mutex and the owner thread ID to avoid
 // multiple initializations and deadlocks
-DEFINE_CLASS_STATIC_MUTEX(CSafeStaticPtr_Base::sm_Mutex);
+DEFINE_CLASS_STATIC_MUTEX(CSafeStaticPtr_Base::sm_ClassMutex);
 
 
 int CSafeStaticPtr_Base::x_GetCreationOrder(void)
@@ -93,8 +93,7 @@ int CSafeStaticPtr_Base::x_GetCreationOrder(void)
 CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 {
     if ( x_IsStdStatic() ) {
-        CMutexGuard guard(sm_Mutex);
-        x_Cleanup(guard);
+        x_Cleanup();
     }
 }
 
@@ -128,7 +127,7 @@ static CSafeStaticGuard* sh_CleanupGuard;
 
 CSafeStaticGuard::~CSafeStaticGuard(void)
 {
-    CMutexGuard guard(CSafeStaticPtr_Base::sm_Mutex);
+    CMutexGuard guard(CSafeStaticPtr_Base::sm_ClassMutex);
 
     // Protect CSafeStaticGuard destruction
     if ( sh_CleanupGuard ) {
@@ -146,10 +145,11 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
         // Call Cleanup() for all variables registered
         TStack cur_Stack;
         swap(cur_Stack, *sm_Stack);
+        guard.Release();
         NON_CONST_ITERATE(TStack, it, cur_Stack) {
-            (*it)->x_Cleanup(guard);
-            guard.Guard(CSafeStaticPtr_Base::sm_Mutex);
+            (*it)->x_Cleanup();
         }
+        guard.Guard(CSafeStaticPtr_Base::sm_ClassMutex);
     }
 
     delete sm_Stack;
