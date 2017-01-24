@@ -253,15 +253,6 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
-    static void PostWarning(ILineErrorListener* pMessageListener, 
-                            const size_t lineNumber,
-                            const string& errMessage, 
-                            CObjReaderParseException::EErrCode errCode);
-
-    static void PostError(ILineErrorListener* pMessageListener, 
-                          const size_t lineNumber,
-                          const string& errMessage, 
-                          CObjReaderParseException::EErrCode errCode);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;

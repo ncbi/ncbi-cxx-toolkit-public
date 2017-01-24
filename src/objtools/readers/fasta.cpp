@@ -2122,54 +2122,6 @@ void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& 
 }
 
 
-void CFastaReader::PostWarning(ILineErrorListener* pMessageListener, 
-                               const size_t lineNumber,
-                               const string& errMessage, 
-                               const CObjReaderParseException::EErrCode errCode) 
-{
-    unique_ptr<CObjReaderLineException> pLineExpt(
-        CObjReaderLineException::Create(
-        eDiag_Warning,
-        lineNumber,
-        errMessage, 
-        ILineError::eProblem_GeneralParsingError,
-        "", "", "", "",
-        errCode));
-
-
-    if (!pMessageListener) {
-        LOG_POST_X(1, Warning << pLineExpt->Message());
-        return;
-    }
-
-    if (!pMessageListener->PutError(*pLineExpt)) {
-        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Warning);
-    }
-}
-
-
-void CFastaReader::PostError(ILineErrorListener* pMessageListener,
-                             const size_t lineNumber,
-                             const string& errMessage,
-                             const CObjReaderParseException::EErrCode errCode) 
-{
-
-    unique_ptr<CObjReaderLineException> pLineExpt(
-        CObjReaderLineException::Create(
-        eDiag_Error,
-        lineNumber,
-        errMessage, 
-        ILineError::eProblem_GeneralParsingError,
-        "", "", "", "",
-        errCode));
-
-    if (!pMessageListener || !pMessageListener->PutError(*pLineExpt)) {
-        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Error);
-    }
-}
-
-
-
 void CFastaReader::PostWarning(
             ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, CObjReaderParseException::EErrCode _eErrCode, ILineError::EProblem _eProblem, CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const
