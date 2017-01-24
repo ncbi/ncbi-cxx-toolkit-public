@@ -47,6 +47,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objtools/readers/fasta_defline_reader.hpp>
 
 #include <stack>
 #include <sstream>
@@ -190,27 +191,13 @@ public:
 
     void IgnoreProblem(ILineError::EProblem problem);
 
-    struct SLineTextAndLoc {
-        SLineTextAndLoc(
-            const string & sLineText,
-            TSeqPos iLineNum ) 
-            : m_sLineText(sLineText),
-              m_iLineNum(iLineNum) { }
-
-        string  m_sLineText;
-        TSeqPos m_iLineNum;
-    };
+    using SLineTextAndLoc = CFastaDeflineReader::SLineTextAndLoc;
 
     using TIgnoredProblems = vector<ILineError::EProblem>;
     using TSeqTitles = vector<SLineTextAndLoc>;
     typedef CTempString TStr;
 
-    struct SDefLineParseInfo {
-        TReaderFlags fBaseFlags;
-        TFlags fFastaFlags;
-        size_t maxIdLength;
-        size_t lineNumber;
-    };
+    using SDefLineParseInfo = CFastaDeflineReader::SDeflineParseInfo;
 
     static void ParseDefLine(const TStr& defLine, 
         const SDefLineParseInfo& info,

@@ -80,6 +80,7 @@
 
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/fasta_defline_reader.hpp>
 
 #include <ctype.h>
 
@@ -534,8 +535,8 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDGenerator.Reset(&gen);
 }
 
-// This method does not use CRef<CSeq_interval> to access range 
-// information for reasons of efficiency - RW-26
+// For reasons of efficiency, this method does not use 
+// CRef<CSeq_interval> to access range information - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
                                 const SDefLineParseInfo& info,
                                 const TIgnoredProblems& ignoredErrors,
@@ -544,130 +545,18 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
                                 TSeqPos& rangeStart,
                                 TSeqPos& rangeEnd,
                                 TSeqTitles& seqTitles, 
-                                ILineErrorListener * pMessageListener) 
+                                ILineErrorListener* pMessageListener) 
 {
-    size_t start = 1, pos, len = defLine.length(), title_start;
-    size_t range_len = 0;
-    const TFlags& fFastaFlags = info.fFastaFlags;
-    const size_t& lineNumber = info.lineNumber;
-
-    // ignore spaces between '>' and the sequence ID
-    for( ; start < len; ++start ) {
-        if( ! isspace(defLine[start]) ) {
-            break;
-        }
-    }
-
-    do {
-        bool has_id = true;
-        if ((fFastaFlags & fNoParseID)) {
-            title_start = start;
-        } else {
-            // This loop finds the end of the sequence ID
-            for ( pos = start;  pos < len;  ++pos) {
-                unsigned char c = defLine[pos];
-                
-                if (c <= ' ' ) { // assumes ASCII
-                    break;
-                } else if( c == '[' ) {
-
-                    // see if this is part of a FASTA mod, which
-                    // implies a pattern like "[key=value]".  We only check
-                    // that it looks *roughly* like a FASTA mod and only before the '='
-                    //
-                    // It might be worth it to put the body of this "if" into its own function,
-                    // for clarity if nothing else.
-
-                    const size_t left_bracket_pos = pos;
-                    ++pos;
-
-                    // arbitrary, but shouldn't be too much bigger than the largest possible mod key for efficiency
-                    const static size_t kMaxCharsToLookAt = 30; 
-                    // we give up much sooner than the length of the string, if the string is long.
-                    // also note that we give up *before* the end so even if pos
-                    // reaches bracket_give_up_pos, we can still say defLine[pos] without worrying
-                    // about array-out-of-bounds issues.
-                    const size_t bracket_give_up_pos = min(len - 1, kMaxCharsToLookAt);
-                    // keep track of the first space we find, because that becomes the end of the seqid
-                    // if this turns out not to be a FASTA mod.
-                    size_t first_space_pos = kMax_UI4;
-
-                    // find the end of the key
-                    for( ; pos < bracket_give_up_pos ; ++pos ) {
-                        const unsigned char c = defLine[pos];
-                        if( c == '=' ) {
-                            break;
-                        } else if( c <= ' ' ) {
-                            first_space_pos = min(first_space_pos, pos);
-                            // keep going
-                        } else if( isalnum(c) || c == '-' || c == '_' ) {
-                            // this is fine; keep going
-                        } else {
-                            // bad character, so this is NOT a FASTA mod
-                            break;
-                        }
-                    }
-
-                    if( defLine[pos] == '=' ) {
-                        // this seems to be a FASTA mod, so consider the left square bracket
-                        // to be the end of the seqid
-                        pos = left_bracket_pos;
-                        break;
-                    } else {
-                        // if we stopped on anything but an equal sign, this is NOT a 
-                        // FASTA mod.
-                        if( first_space_pos < len ) {
-                            // If we've found a space at any point, we consider that the end of the seq-id
-                            pos = first_space_pos;
-                            break;
-                        }
-
-                        // it's not a FASTA mod and we didn't find any spaces, so just
-                        // keep going as normal, continuing from where we let off at "pos"
-                    }
-                }
-            }
-
-            range_len = ParseRange(TStr(defLine.data() + start, pos - start),
-                                   rangeStart, rangeEnd, pMessageListener);
-            has_id = ParseIDs(TStr(defLine.data() + start, pos - start - range_len), 
-                              info,
-                              ignoredErrors,
-                              ids, 
-                              pMessageListener);
-            if (has_id  &&  (fFastaFlags & fAllSeqIds)  &&  defLine[pos] == '\1') {
-                start = pos + 1;
-                continue;
-            }
-            title_start = pos;
-            // trim leading whitespace from title (is this appropriate?)
-            while (title_start < len
-                   &&  isspace((unsigned char) defLine[title_start])) {
-                ++title_start;
-            }
-        }
-        for (pos = title_start + 1;  pos < len;  ++pos) {
-            if ((unsigned char) defLine[pos] < ' ') {
-                break;
-            }
-        }
-        if ( !has_id ) {
-            // no IDs after all, so take the whole line as a title
-            // (done now rather than earlier to avoid rescanning)
-            title_start = start;
-        }
-        if (title_start < min(pos, len)) {
-            // we parse the titles after we know what molecule this is
-            seqTitles.push_back(
-                SLineTextAndLoc(
-                defLine.substr(title_start, pos - title_start), lineNumber));
-        }
-        start = pos + 1;
-    } while ( (fFastaFlags & fAllSeqIds)  &&  start < len  &&  defLine[start - 1] == '\1'
-             &&  !range_len);
-
-
-    hasRange = (range_len>0);
+    CFastaDeflineReader::ParseDefline(
+        defLine, 
+        info,
+        ignoredErrors,
+        ids, 
+        hasRange,
+        rangeStart,
+        rangeEnd,
+        seqTitles,
+        pMessageListener);
 }
 
 
@@ -777,104 +666,7 @@ bool CFastaReader::ParseIDs(
     list<CRef<CSeq_id>>& ids, 
     ILineErrorListener * pMessageListener) 
 {
-    // if user wants all ids to be purely local, no problem
-    if( info.fBaseFlags & CReaderBase::fAllIdsAsLocal )
-    {
-        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, s)));
-        return true;
-    }
-
-    size_t count = 0;
-    // be generous overall, and give raw local IDs the benefit of the
-    // doubt for now
-    CSeq_id::TParseFlags flags
-        = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
-    if ( info.fFastaFlags & fParseRawID ) {
-        flags |= CSeq_id::fParse_RawText;
-    }
-
-    const bool ignoreError
-        = (find(ignoredErrors.cbegin(), ignoredErrors.cend(), ILineError::eProblem_GeneralParsingError) 
-           != ignoredErrors.cend()); 
-
-    try {
-        if (s.find(',') != TStr::npos && s.find('|') == TStr::npos)
-        {
-            string temp = NStr::Replace(s, ",", "_");
-            count = CSeq_id::ParseIDs(ids, temp, flags);
-
-            const string errMessage = 
-                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber) 
-                + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
-                + "symbol. Please find and correct the sequence id.";
-
-            if (!ignoreError) {
-                PostWarning(pMessageListener, 
-                            info.lineNumber,
-                            errMessage,
-                            CObjReaderParseException::eFormat);
-
-            }
-        }
-        else
-        {
-            count = CSeq_id::ParseIDs(ids, s, flags);
-        }
-    } catch (CSeqIdException&) {
-        // swap(ids, old_ids);
-    }
-
-    // numerics become local, if requested
-    if( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
-        NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {
-            CSeq_id & id = **id_it;
-            if( id.IsGi() ) {
-                const TGi gi = id.GetGi();
-                id.SetLocal().SetStr( NStr::NumericToString(gi) );
-            }
-        }
-    }
-    // recheck raw local IDs
-    if (count == 1  &&  ids.back()->IsLocal())
-    {
-        string temp;
-        ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!IsValidLocalID(temp, info.fFastaFlags))
-        {
-            ids.clear();
-            return false;
-        }
-    }
-    // check if ID was too long, use only 
-    if( count == 1)
-    {
-      CTempString check;
-      size_t last = s.rfind('|');
-      check = (last == CTempString::npos) ? s : s.substr(last + 1);
-      if (check.length() > info.maxIdLength) { 
-
-        // before throwing an ID-too-long error, check if what we
-        // think is a "sequence ID" is actually sequence data
-        if (ExcessiveSeqDataInTitle(s, info.fFastaFlags)) {
-            return false;
-        }
-
-        const string errMessage =
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
-            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
-            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
-            + ".  Please find and correct all sequence IDs that are too long.";
-
-
-        if (!ignoreError) {
-            PostError(pMessageListener, 
-                      info.lineNumber,
-                      errMessage,
-                      CObjReaderParseException::eIDTooLong);
-        }
-      }
-    }
-    return count > 0;
+    return CFastaDeflineReader::ParseIDs(s, info, ignoredErrors, ids, pMessageListener);
 }
 
 
@@ -965,44 +757,18 @@ bool CFastaReader::ParseIDs(
     return count > 0;
 }
 
+
 size_t CFastaReader::ParseRange(
     const TStr& s, TSeqPos& start, TSeqPos& end, 
-    ILineErrorListener * pMessageListener)
+    ILineErrorListener* pMessageListener)
 {
-    bool    on_start = false;
-    bool    negative = false;
-    TSeqPos mult = 1;
-    size_t  pos;
-    start = end = 0;
-    for (pos = s.length() - 1;  pos > 0;  --pos) {
-        unsigned char c = s[pos];
-        if (c >= '0'  &&  c <= '9') {
-            if (on_start) {
-                start += (c - '0') * mult;
-            } else {
-                end += (c - '0') * mult;
-            }
-            mult *= 10;
-        } else if (c == '-'  &&  !on_start  &&  mult > 1) {
-            on_start = true;
-            mult = 1;
-        } else if (c == ':'  &&  on_start  &&  mult > 1) {
-            break;
-        } else if (c == 'c'  &&  pos > 0  &&  s[--pos] == ':'
-                   &&  on_start  &&  mult > 1) {
-            negative = true;
-            break;
-        } else {
-            return 0; // syntax error
-        }
-    }
-    if ((negative ? (end > start) : (start > end))  ||  s[pos] != ':') {
-        return 0;
-    }
-    --start;
-    --end;
-    return s.length() - pos;
+    return CFastaDeflineReader::ParseRange(
+        s,
+        start, 
+        end,
+        pMessageListener);
 }
+
 
 void CFastaReader::ParseTitle(
     const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener)
