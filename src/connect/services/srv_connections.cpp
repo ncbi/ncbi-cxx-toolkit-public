@@ -225,36 +225,6 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
     }
 }
 
-namespace {
-    class CTimeoutKeeper
-    {
-    public:
-        CTimeoutKeeper(CSocket* sock, STimeout* timeout)
-        {
-            if (timeout == NULL)
-                m_Socket = NULL;
-            else {
-                m_Socket = sock;
-                m_ReadTimeout = *sock->GetTimeout(eIO_Read);
-                m_WriteTimeout = *sock->GetTimeout(eIO_Write);
-                sock->SetTimeout(eIO_ReadWrite, timeout);
-            }
-        }
-
-        ~CTimeoutKeeper()
-        {
-            if (m_Socket != NULL) {
-                m_Socket->SetTimeout(eIO_Read, &m_ReadTimeout);
-                m_Socket->SetTimeout(eIO_Write, &m_WriteTimeout);
-            }
-        }
-
-        CSocket* m_Socket;
-        STimeout m_ReadTimeout;
-        STimeout m_WriteTimeout;
-    };
-}
-
 string CNetServerConnection::Exec(const string& cmd,
         bool multiline_output,
         STimeout* timeout,

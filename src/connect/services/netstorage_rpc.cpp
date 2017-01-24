@@ -521,6 +521,7 @@ private:
 void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
         STimeout* timeout)
 {
+    CTimeoutKeeper timeout_keeper(&conn_impl->m_Socket, timeout);
     CSendJsonOverSocket sender(conn_impl->m_Socket);
 
     sender.SendMessage(m_Request);
