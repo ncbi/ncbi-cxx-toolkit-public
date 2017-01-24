@@ -611,8 +611,8 @@ void CNcbiApplogApp::Init(void)
         arg->SetDetailedDescription(
             "Check local and CGI logging capabilities, print short report to stdout "
             "in the NCBI registry format. Exit with status code 0 if logging is possible "
-            "(local or via CGI). If logging is possible via CGI only, also checks matching "
-            "versions  for local and CGI executables."
+            "(local or via CGI). If this is allowed via CGI only, check that versions "
+            "for local and CGI executables match."
         );
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
