@@ -105,6 +105,7 @@
 #include <objtools/format/feature_gather.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/error_codes.hpp>
+//#include <objtools/edit/feature_edit.hpp>
 #include <objmgr/util/objutil.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -2789,8 +2790,25 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 }
             }
 
-            // format feature
-            item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
+            if ( slice_mapper ) {
+            /*
+                CRange<TSeqPos> range = loc.GetTotalRange();
+                const CSeq_feat& feat = it->GetMappedFeature();
+                CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(feat, range);
+                CScope& scope = ctx.GetScope();
+                CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+                temp_annot->SetData().SetFtable().push_back(trimmed_feat);
+                scope.AddSeq_annot(*temp_annot);
+                CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
+                CMappedFeat mapped_feat(sfh);
+                item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
+                */
+                item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
+            } else {
+                // format feature
+                item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
+            }
+
             out << item;
 
             // Add more features depending on user preferences
@@ -3247,19 +3265,40 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
             continue;
         }
 
+        CConstRef<IFlatItem> item;
         // for command-line args "-from" and "-to"
         if( slice_mapper && loc ) {
             loc = slice_mapper->Map( *loc );
             if( loc->IsNull() ) {
                 continue;
             }
-        }
+            /*
+            CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
+            const CSeq_feat& feat = it->GetMappedFeature();
+            CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(feat, range);
+            CScope& scope = ctx.GetScope();
+            CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+            temp_annot->SetData().SetFtable().push_back(trimmed_feat);
+            scope.AddSeq_annot(*temp_annot);
+            CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
+            CMappedFeat mapped_feat(sfh);
 
-        CConstRef<IFlatItem> item
-            ( x_NewFeatureItem(*it, ctx, 
+            item = ConstRef( x_NewFeatureItem(mapped_feat, ctx, 
                                s_NormalizeNullsBetween(loc), m_Feat_Tree,
                                CFeatureItem::eMapped_from_prot,
                                cdsFeatureItem ) );
+                               */
+            item = ConstRef( x_NewFeatureItem(*it, ctx, 
+                               s_NormalizeNullsBetween(loc), m_Feat_Tree,
+                               CFeatureItem::eMapped_from_prot,
+                               cdsFeatureItem ) );
+        } else {
+            item = ConstRef( x_NewFeatureItem(*it, ctx, 
+                               s_NormalizeNullsBetween(loc), m_Feat_Tree,
+                               CFeatureItem::eMapped_from_prot,
+                               cdsFeatureItem ) );
+        }
+
         *m_ItemOS << item;
 
         prev = curr;
