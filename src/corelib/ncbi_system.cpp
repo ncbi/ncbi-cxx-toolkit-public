@@ -65,6 +65,7 @@ extern "C" {
 #  if defined(NCBI_OS_IRIX)
 #    include <sys/sysmp.h>
 #  endif //NCBI_OS_IRIX
+#  include "ncbi_os_unix_p.hpp"
 #  define USE_SETMEMLIMIT
 #  define USE_SETCPULIMIT
 #  define HAVE_MADVISE 1
@@ -87,6 +88,7 @@ extern "C" {
 #  include <crtdbg.h>
 #  include <stdlib.h>
 #  include <windows.h>
+#  include "ncbi_os_mswin_p.hpp"
 
 struct SProcessMemoryCounters
 {
@@ -1207,6 +1209,18 @@ extern int GetProcessThreadCount(void)
 #else
     return -1;
 #endif //NCBI_OS_LINUX
+}
+
+
+string GetProcessUserName(void)
+{
+#if defined(NCBI_OS_UNIX)
+    return CUnixFeature::GetUserNameByUID(geteuid());
+#elif defined(NCBI_OS_MSWIN)
+    return CWinSecurity::GetUserName();
+#else
+    return string();
+#endif
 }
 
 

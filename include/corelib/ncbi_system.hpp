@@ -441,6 +441,12 @@ extern int GetProcessFDCount(int* soft_limit = NULL, int* hard_limit = NULL);
 NCBI_XNCBI_EXPORT
 extern int GetProcessThreadCount(void);
 
+
+/// Get process owner actual user name, doesn't use environment as it can be changed.
+/// @return Actual process owner user name, or empty string if it cannot be determined.
+NCBI_XNCBI_EXPORT
+string GetProcessUserName(void);
+
 END_NCBI_SCOPE
 
 #endif  /* NCBI_SYSTEM__HPP */
