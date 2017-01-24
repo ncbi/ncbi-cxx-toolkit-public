@@ -53,6 +53,7 @@
 
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
+#include <objects/medline/Medline_si.hpp>
 
 #include "utils.hpp"
 #include "unpub_report.hpp"
@@ -603,15 +604,68 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
     return ret;
 }
 
+static bool CheckRefs(const CMedline_entry& medline_entry, const list<string>& seq_ids)
+{
+    if (medline_entry.IsSetXref()) {
+
+        ITERATE(CMedline_entry::TXref, xref, medline_entry.GetXref()) {
+
+            if ((*xref)->IsSetCit() && (*xref)->IsSetType() && (*xref)->GetType() == CMedline_si::eType_genbank) {
+
+                ITERATE(list<string>, id, seq_ids) {
+                    if (NStr::StartsWith(*id, "gb", NStr::eNocase) && NStr::EndsWith(*id, (*xref)->GetCit())) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool CheckDate(int year, const CCit_jour& juornal)
+{
+    bool ret = true;
+    if (year && juornal.IsSetImp() && juornal.GetImp().IsSetDate()) {
+        const CDate& pub_date = juornal.GetImp().GetDate();
+        if (pub_date.IsStd() && pub_date.GetStd().IsSetYear()) {
+
+            int pub_year = pub_date.GetStd().GetYear();
+            ret = year - 1 <= pub_year && pub_year <= year + 1;
+        }
+    }
+
+    return ret;
+}
+
 static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
 {
     string query;
 
+    // title
     ITERATE(list<string>, word, data.GetTitleWords()) {
 
         if (!query.empty())
             query += '+';
         query += *word;
+    }
+
+    // authors
+    ITERATE(list<string>, author, data.GetAuthors()) {
+
+        string cur_author;
+        size_t space = author->find(' ');
+        if (space == string::npos) {
+            cur_author = *author;
+        }
+        else {
+            cur_author = author->substr(0, space);
+        }
+
+        if (!query.empty())
+            query += '+';
+        query += cur_author;
     }
 
     vector<int> uids;
@@ -630,21 +684,9 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
         if (pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit()) {
 
             const CCit_art& cit_art = pubmed_entry.GetMedent().GetCit();
-
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
 
-                bool proceed = true;
-                
-                if (data.GetYear() && cit_art.GetFrom().GetJournal().IsSetImp() && cit_art.GetFrom().GetJournal().GetImp().IsSetDate()) {
-                    const CDate& pub_date = cit_art.GetFrom().GetJournal().GetImp().GetDate();
-                    if (pub_date.IsStd() && pub_date.GetStd().IsSetYear()) {
-
-                        int year = data.GetYear(),
-                            pub_year = pub_date.GetStd().GetYear();
-
-                        proceed = year - 1 <= pub_year && pub_year <= year + 1;
-                    }
-                }
+                bool proceed = CheckDate(data.GetYear(), cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry.GetMedent(), data.GetSeqIds());
                 
                 if (proceed && cit_art.IsSetAuthors()) {
 
