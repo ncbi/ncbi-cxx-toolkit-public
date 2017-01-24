@@ -242,6 +242,7 @@ ARB	s	Salahiddin University, Biology Department
 ARBH	s	Arbroath Scientific and Natural History Society
 ARC<ARG>	s	Universidad Nacional del Comahue, Facultad de Ciencias Agrarias
 ARC<CAN>	s	Atlantic Reference Centre
+ARC<USA-NC>	c	Algal Resources Collection
 ARCH	s	Archbold Biological Station
 ARCM	s	Atlantic Reference Centre
 ARER	s	Associazione Romana di Entomologia
@@ -438,7 +439,7 @@ BEDPL	s	Bedford Public Library
 BEG	c	International Bank for the Glomeromycota
 BEGO	s	Beth Gordon Institute
 BEI	s	American University of Beirut, Biology Department
-BEI<USA>	c	Microbiology and Infectious Diseases Resources (BEI Resources)
+BEI<USA>	c	Biodefense and Emerging Infections Research Resources
 BEL	s	Ulster Museum, Botany Department
 BELC	s	Beloit College, Biology Department
 BELUM	s	Ulster Museum, Belfast
@@ -1253,7 +1254,7 @@ CPMM	s	Dr. Alvaro de Castro Provincial Museum
 CPNP	s	Cuc Phuong National Park
 CPPIPP	c	Collection of Plant Pathogens
 CPPLIP	s	Centro de Pesquisas Paleontologias Llewellyn Ivor Price
-CPRC	s	University of Puerto Rico, Caribbean Primate Research Center Museum
+CPRC	s	Caribbean Primate Research Center Museum
 CPRR	c	Laboratorio de Doenca de Chagas
 CPS<USA-WA>	s	University of Puget Sound, Slater Museum of Natural History
 CPS<USA-WY/CO>	s	Wyoming-Colorado Paleontological Society
@@ -1275,6 +1276,7 @@ CRAI	s	University of Craiova
 CRBF	c	Collection de genomes d'organismes symbiotiques
 CRBK	s	Cranbrook School
 CRBY	s	Crosby Library
+CRC	c	Chlamydomonas Resource Center
 CRCA	s	Instituto dos Cereais
 CRCM	s	Washington State University, Charles R. Conner Museum
 CRCM:Bird	s	Washington State University, Charles R. Conner Museum, bird collection
@@ -2048,7 +2050,7 @@ GAW	s	Eastern Botanical Society of Glasgow
 GAZI	s	Gazi Ueniversitesi, Biyoloji Boeluemue
 GB	s	Goeteborg University, Department of Plant and Environmental Sciences
 GBFM	s	Universidad de Panama
-GBG<SWE>	b	Goteburg Botanical Garden
+GBG<SWE>	b	Gotheburg Botanical Garden
 GBH	h	Herbarium of Geo. B. Hinton
 GBNM	s	Glacier Bay National Park and Preserve Museum
 GBY	s	Grimsby Arts and Natural History
