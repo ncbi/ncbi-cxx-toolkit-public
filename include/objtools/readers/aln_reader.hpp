@@ -36,6 +36,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objtools/readers/fasta_defline_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -190,7 +191,20 @@ public:
     /// that would parse the alignment file and create the result data
     void Read(bool guess=false, bool generate_local_ids=false);
 
-
+    using SLineTextAndLoc   = objects::CFastaDeflineReader::SLineTextAndLoc;
+    using TSeqTitles        = objects::CFastaDeflineReader::TSeqTitles;
+    using SDeflineParseInfo = objects::CFastaDeflineReader::SDeflineParseInfo;
+    using TIgnoredProblems  = objects::CFastaDeflineReader::TIgnoredProblems;
+    void ParseDefline(const string& defline,
+            const SDeflineParseInfo& info,
+            const TIgnoredProblems& ignoredErrors,
+            list<CRef<objects::CSeq_id>>& ids,
+            bool& hasRange,
+            TSeqPos& rangeStart,
+            TSeqPos& rangeEnd,
+            TSeqTitles& seqTitles,
+            objects::ILineErrorListener* pMessageListener);
+    
 
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};

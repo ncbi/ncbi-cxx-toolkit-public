@@ -543,4 +543,27 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
     return m_Entry;
 }
 
+
+void CAlnReader::ParseDefline(const string& defline, 
+    const SDeflineParseInfo& info,
+    const TIgnoredProblems& ignoredErrors, 
+    list<CRef<CSeq_id>>& ids, 
+    bool& hasRange, 
+    TSeqPos& rangeStart,
+    TSeqPos& rangeEnd,
+    TSeqTitles& seqTitles,
+    ILineErrorListener* pMessageListener)
+{
+    CFastaDeflineReader::ParseDefline(
+        defline, 
+        info,
+        ignoredErrors, 
+        ids, 
+        hasRange, 
+        rangeStart, 
+        rangeEnd,
+        seqTitles, 
+        pMessageListener);
+}
+
 END_NCBI_SCOPE
