@@ -367,7 +367,7 @@ public:
 
 private:
     // This is not needed
-    ERW_Result PendingCount(size_t* count)
+    ERW_Result PendingCount(size_t*)
     {
         BOOST_ERROR("PendingCount() is not implemented");
         return eRW_NotImplemented;
@@ -759,7 +759,7 @@ struct SReadHelperBase
         BOOST_CHECK_NO_THROW_CTX(source.Close(), ctx);
     }
 
-    bool operator()(const SCtx& ctx)
+    bool operator()()
     {
         if (length) return true;
 
@@ -804,7 +804,7 @@ struct SReadHelper : SReadHelperBase
 private:
     bool Read(const SCtx& ctx)
     {
-        if (SReadHelperBase::operator()(ctx)) {
+        if (SReadHelperBase::operator()()) {
             return true;
         }
 
@@ -820,7 +820,7 @@ struct SReadHelper<TApi, TLocationNotFound> : SReadHelperBase
 
     bool operator()(const SCtx& ctx)
     {
-        BOOST_CHECK_THROW_CTX(SReadHelperBase::operator()(ctx),
+        BOOST_CHECK_THROW_CTX(SReadHelperBase::operator()(),
                 CNetStorageException, ctx);
         return false;
     }
@@ -841,7 +841,7 @@ struct SReadHelper<TIosApi, TLocationNotFound> : SReadHelperBase
 
     bool operator()(const SCtx& ctx)
     {
-        if (SReadHelperBase::operator()(ctx)) {
+        if (SReadHelperBase::operator()()) {
             BOOST_ERROR_CTX("iostream::read() was expected to fail", ctx);
         }
 
@@ -2133,7 +2133,7 @@ void Remove<NResult::TNotFound>(CDirectNetStorageObject& object, SCtx ctx)
 }
 
 template <class TResult, class TType, class TBackend>
-void ReadAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+void ReadAttributes(CNetStorageObject&, CAttributes&, SCtx)
 {
 }
 
@@ -2152,7 +2152,7 @@ void ReadAttributes<NResult::TFail, NType::TServer, NBackend::TNC>(CNetStorageOb
 }
 
 template <class TType, class TBackend>
-void WriteAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+void WriteAttributes(CNetStorageObject&, CAttributes&, SCtx)
 {
 }
 

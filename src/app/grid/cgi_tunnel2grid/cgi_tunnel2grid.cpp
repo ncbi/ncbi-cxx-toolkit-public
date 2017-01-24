@@ -78,7 +78,7 @@ public:
 protected:
 
     // Render the job input parameters HTML page
-    virtual void ShowParamsPage(CGridCgiContext& ctx) const {}
+    virtual void ShowParamsPage(CGridCgiContext&) const {}
 
     // Collect parameters from the HTML page.
     virtual bool CollectParams(CGridCgiContext&);

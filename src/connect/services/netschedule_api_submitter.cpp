@@ -329,7 +329,6 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
 }
 
 void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
-    const char* cmd_name,
     const string& job_id,
     const string& auth_token,
     const string& error_message)
@@ -353,21 +352,21 @@ void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
 void CNetScheduleSubmitter::ReadConfirm(const string& job_id,
         const string& auth_token)
 {
-    m_Impl->FinalizeRead("CFRM job_key=", "ReadConfirm",
+    m_Impl->FinalizeRead("CFRM job_key=",
             job_id, auth_token, kEmptyStr);
 }
 
 void CNetScheduleSubmitter::ReadRollback(const string& job_id,
         const string& auth_token)
 {
-    m_Impl->FinalizeRead("RDRB job_key=", "ReadRollback",
+    m_Impl->FinalizeRead("RDRB job_key=",
             job_id, auth_token, kEmptyStr);
 }
 
 void CNetScheduleSubmitter::ReadFail(const string& job_id,
         const string& auth_token, const string& error_message)
 {
-    m_Impl->FinalizeRead("FRED job_key=", "ReadFail",
+    m_Impl->FinalizeRead("FRED job_key=",
             job_id, auth_token, error_message);
 }
 

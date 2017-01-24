@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 void CTextTagWriter::x_WriteTag(const string& name, 
                                  const TAttributes* attr,
                                  const string& text,
-                                 bool close_tag)
+                                 bool)
 {
     m_Os << name;
     if (attr && !attr->empty() ) {
@@ -55,7 +55,7 @@ void CTextTagWriter::x_WriteTag(const string& name,
     m_Os << " : " << text << NcbiEndl;   
 }
 
-void CTextTagWriter::x_WriteCloseTag(const string& name)
+void CTextTagWriter::x_WriteCloseTag(const string&)
 {
 }
 void CTextTagWriter::x_WriteText(const string& text)

@@ -469,7 +469,6 @@ struct SNetScheduleSubmitterImpl : public CObject
             unsigned wait_time, CNetServer* server = NULL);
 
     void FinalizeRead(const char* cmd_start,
-        const char* cmd_name,
         const string& job_id,
         const string& auth_token,
         const string& error_message);

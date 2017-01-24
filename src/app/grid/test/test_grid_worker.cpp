@@ -59,7 +59,7 @@ NCBI_PARAM_DEF_EX(double, test, failure_rate, 0.0,
 class CGridWorkerTest : public IWorkerNodeJob
 {
 public:
-    CGridWorkerTest(const IWorkerNodeInitContext& context)
+    CGridWorkerTest(const IWorkerNodeInitContext&)
     {
         GetDiagContext().SetOldPostFormat(false);
 
@@ -114,7 +114,7 @@ private:
 class CGridWorkerIdleTask : public IWorkerNodeIdleTask
 {
 public:
-    CGridWorkerIdleTask(const IWorkerNodeInitContext& context) : m_Count(0)
+    CGridWorkerIdleTask(const IWorkerNodeInitContext&) : m_Count(0)
     {
     }
 

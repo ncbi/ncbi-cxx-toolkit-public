@@ -776,7 +776,7 @@ void CNetICacheClient::Purge(time_t access_timeout, EKeepVersions keep_last_vers
 void CNetICacheClient::Purge(const string&    key,
                              const string&    subkey,
                              time_t           access_timeout,
-                             EKeepVersions    keep_last_version)
+                             EKeepVersions)
 {
     if (access_timeout) {
         NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
