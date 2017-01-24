@@ -1,3 +1,37 @@
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Authors:  Justin Foley
+*
+* File Description:
+*   Reader for FASTA-format definition lines. Based on code 
+*   originally contained in CFastaReader.
+*
+* ===========================================================================
+*/
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <objtools/error_codes.hpp>
@@ -205,7 +239,7 @@ bool CFastaDeflineReader::ParseIDs(
         return true;
     }
 
-    size_t count = 0;
+    TSeqPos num_ids = 0;
     // be generous overall, and give raw local IDs the benefit of the
     // doubt for now
     CSeq_id::TParseFlags flags
@@ -222,7 +256,7 @@ bool CFastaDeflineReader::ParseIDs(
         if (s.find(',') != NPOS && s.find('|') == NPOS)
         {
             string temp = NStr::Replace(s, ",", "_");
-            count = CSeq_id::ParseIDs(ids, temp, flags);
+            num_ids = CSeq_id::ParseIDs(ids, temp, flags);
 
             const string errMessage = 
                 "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber) 
@@ -239,124 +273,12 @@ bool CFastaDeflineReader::ParseIDs(
         }
         else
         {
-            count = CSeq_id::ParseIDs(ids, s, flags);
+            num_ids = CSeq_id::ParseIDs(ids, s, flags);
         }
     } catch (CSeqIdException&) {
         // swap(ids, old_ids);
     }
-
-    // numerics become local, if requested
-    if( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
-        NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {
-            CSeq_id & id = **id_it;
-            if( id.IsGi() ) {
-                const TGi gi = id.GetGi();
-                id.SetLocal().SetStr( NStr::NumericToString(gi) );
-            }
-        }
-    }
-    // recheck raw local IDs
-    if (count == 1  &&  ids.back()->IsLocal())
-    {
-        string temp;
-        ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!x_IsValidLocalID(temp, info.fFastaFlags))
-        {
-            ids.clear();
-            return false;
-        }
-    }
-    // check if ID was too long, use only 
-    if( count == 1)
-    {
-      CTempString check;
-      size_t last = s.rfind('|');
-      check = (last == CTempString::npos) ? s : s.substr(last + 1);
-      if (check.length() > info.maxIdLength) { 
-
-        // before throwing an ID-too-long error, check if what we
-        // think is a "sequence ID" is actually sequence data
-        if (x_ExcessiveSeqDataInTitle(s, info.fFastaFlags)) {
-            return false;
-        }
-
-        const string errMessage =
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
-            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
-            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
-            + ".  Please find and correct all sequence IDs that are too long.";
-
-
-        if (!ignoreError) {
-            x_PostError(pMessageListener, 
-                      info.lineNumber,
-                      errMessage,
-                      CObjReaderParseException::eIDTooLong);
-        }
-      }
-    }
-    return count > 0;
-}
-
-
-
-
-/*
-bool CFastaDeflineReader::ParseIDs(
-    const string&  s, 
-    const SDeflineParseInfo& info,
-    const TIgnoredProblems& ignoredErrors,
-    list<CRef<CSeq_id>>& ids, 
-    ILineErrorListener* pMessageListener)
-{
-    // If user wants all ids to be purely local, no problem
-    if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
-    {
-        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, s)));
-        return true;
-    }
-
-    TSeqPos num_ids = 0;
-    // Give raw local IDs the benefit of the doubt for now
-    CSeq_id::TParseFlags flags
-        = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
-
-    if (info.fFastaFlags & CFastaReader::fParseRawID) {
-        flags |= CSeq_id::fParse_RawText;
-    }
-
-    const bool ignoreError = 
-        (find(ignoredErrors.cbegin(), 
-              ignoredErrors.cend(), 
-              ILineError::eProblem_GeneralParsingError) 
-         != ignoredErrors.cend());
-
-
-    if (s.find(',' != NPOS && s.find('|') == NPOS)) {
-        string temp = NStr::Replace(s, ",", "_"); // Replace commas with underscores
-        num_ids = CSeq_id::ParseIDs(ids, temp, flags);
-
-        const string errMessage = 
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber) 
-            + ", the sequence contains 'comma'symbol and replaced with 'underscore'"
-            + "symbol. Please find and correct the sequence id.";
-        if (!ignoreError) {
-            x_PostWarning(pMessageListener, 
-                info.lineNumber,
-                errMessage, 
-                CObjReaderParseException::eFormat);
-        }
-    }
-    else 
-    { 
-        num_ids = CSeq_id::ParseIDs(ids, s, flags);
-    }
-
-
-    if (!num_ids) {
-        return false;
-    }
-
+    
     if ( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
         x_ConvertNumericToLocal(ids);
     }
@@ -393,7 +315,7 @@ bool CFastaDeflineReader::ParseIDs(
 
     return true;
 }
-*/
+
 
 bool CFastaDeflineReader::x_IsValidLocalID(const CSeq_id& id, TFastaFlags fasta_flags) 
 {
