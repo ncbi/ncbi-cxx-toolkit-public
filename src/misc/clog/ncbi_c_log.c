@@ -1603,6 +1603,7 @@ static void s_InitDestination(const char* logfile_path)
                     cwd = _getcwd(NULL, 0);
                 #endif
                 if (cwd  &&  s_SetLogFilesDir(cwd, 0)) {
+                    sx_Info->destination = eNcbiLog_Cwd;
                     free(cwd);
                     return;
                 }
