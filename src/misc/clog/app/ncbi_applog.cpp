@@ -78,7 +78,8 @@
     ncbi_applog raw           -file - [-logsite SITE]
                                       [-nl NUM] [-nr NUM] [-timeout SEC]
     ncbi_applog generate      -phid -sid
-    
+    ncbi_applog health        [-logsite SITE]
+
 
   Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
 
@@ -205,8 +206,9 @@ typedef enum {
 class CNcbiApplogApp : public CNcbiApplication
 {
 public:
-    virtual void Init(void);
-    virtual int  Run(void);
+    CNcbiApplogApp();
+    virtual void Init();
+    virtual int  Run();
 
     /// Generate token on the base of current logging information.
     string GenerateToken(ETokenType type) const;
@@ -228,6 +230,10 @@ public:
     /// Read and check CGI response
     int ReadCgiResponse(CConn_HttpStream& cgi);
 
+    // Commands:
+    int Cmd_Generate();
+    int Cmd_Health();
+
 private:
     // Get location of 1st subpattern for kApplogRegexp
     // from the last match with additional checks.
@@ -244,6 +250,12 @@ private:
     CNcbiIfstream  m_Raw_ifs;
     string         m_Raw_line;
 };
+
+
+CNcbiApplogApp::CNcbiApplogApp(void)
+{
+    SetVersion(CVersionInfo(1, 3, 1));
+}
 
 
 void CNcbiApplogApp::Init(void)
@@ -590,6 +602,28 @@ void CNcbiApplogApp::Init(void)
             ("sid",
             "Generate and return Session ID (SID) to use in the user script.");
         cmd->AddCommand("generate", arg.release());
+    }}
+
+    // health
+    {{
+        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        arg->SetUsageContext(kEmptyStr, "Health checks.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Check local and CGI logging capabilities, print short report to stdout "
+            "in the NCBI registry format. Exit with status code 0 if logging is possible "
+            "(local or via CGI). If logging is possible via CGI only, also checks matching "
+            "versions  for local and CGI executables."
+        );
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
+            CArgDescriptions::eString, kEmptyStr);
+        // --- hidden arguments
+        arg->AddDefaultKey
+            ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
+            CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
+        arg->SetConstraint
+            ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
+        cmd->AddCommand("health", arg.release());
     }}
 
     SetupArgDescriptions(cmd.release());
@@ -1241,8 +1275,8 @@ void CNcbiApplogApp::UpdateInfo()
 
 void CNcbiApplogApp::Error(const string& msg)
 {
-    // For CGI redirect all errors to stdout, the calling ncbi_applog
-    // process reprint it to stderr on a local host.
+    // For CGI redirect all errors going to stdout, 
+    // the calling ncbi_applog process reprint it to stderr on a local host.
     if (m_IsRemoteLogging) {
         cout << kErrorMessagePrefix << msg << endl;
     } else {
@@ -1251,7 +1285,136 @@ void CNcbiApplogApp::Error(const string& msg)
 }
 
 
-int CNcbiApplogApp::Run(void)
+int CNcbiApplogApp::Cmd_Generate()
+{
+    TNcbiLog_UInt8 uid = NcbiLogP_GenerateUID();
+
+    // Generate in the order they passed in the command line
+    CNcbiArguments raw_args = GetArguments();
+    for (size_t i = 1; i < raw_args.Size(); ++i) {
+        string arg = raw_args[i];
+        bool newline = (i > 2);
+
+        if ( newline ) cout << endl;
+        // Generate PHID
+        if (arg == "-phid") {
+            char buf[NCBILOG_HITID_MAX + 1];
+            if (NcbiLogP_GenerateHitID(buf, NCBILOG_HITID_MAX + 1, uid)) {
+                cout << buf;
+            }
+        // Generate SID
+        } else if (arg == "-sid") {
+            char buf[NCBILOG_SESSION_MAX + 1];
+            if (NcbiLogP_GenerateSID(buf, NCBILOG_SESSION_MAX + 1, uid)) {
+                cout << buf;
+            }
+        }
+        if (newline) cout << endl;
+    }
+    return 0;
+}
+
+
+int CNcbiApplogApp::Cmd_Health()
+{
+    static const char* kCgi     = "CGI";
+    static const char* kLocal   = "LOCAL";
+    static const char* kVersion = "Version";
+    static const char* kLog     = "Log";
+    
+    const CArgs& args = GetArgs();
+    if (args["mode"].AsString() == "cgi") {
+        m_IsRemoteLogging = true;
+        // For CGI redirect all diagnostics going to stdout to allow the calling
+        // application see it. Diagnostics should be disabled by eDS_Disable,
+        // so this is just for safety.
+        SetDiagStream(&NcbiCout);
+    }
+
+    // All information will be printed in the NCBI registry format
+    CMemoryRegistry reg;
+
+    // Check local logging.
+    // Try to set 'stdlog' output destination (/log/...)
+    NcbiLog_InitST("ncbi_applog_healthcheck");
+    NcbiLog_SetSplitLogFile(0);
+    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Stdlog, 80, m_Info.logsite.c_str());
+    bool is_log_writable = (dst == eNcbiLog_Stdlog);
+    NcbiLog_Destroy();
+
+    // For CGI just print current info to parse by main process and return
+    if (m_IsRemoteLogging ) {
+        reg.Set(kCgi, kVersion, GetVersion().Print());
+        reg.Set(kCgi, kLog, NStr::BoolToString(is_log_writable));
+        reg.Write(cout);
+        return 0;
+    }
+
+    // Local:
+
+    // Get information from CGI
+
+    string s_url  = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
+    string s_args = "health ";
+    if ( m_Info.logsite.empty() ) {
+        m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
+    }
+    if (!m_Info.logsite.empty()) {
+        s_args += string(" \"-logsite=") + NStr::URLEncode(m_Info.logsite) + "\"";
+    }
+    CConn_HttpStream cgi(s_url, fHTTP_NoAutomagicSID | fHTTP_Flushable);
+    cgi << s_args << endl;
+    
+    // Read CGI response
+    
+    bool is_cgi_on  = false;
+    int http_status = -1;
+    string output;
+    
+    if (cgi.good()) {
+        getline(cgi, output, '\0');
+        http_status = cgi.GetStatusCode();
+        is_cgi_on = (http_status == 0 || http_status == 200)  &&
+                    !output.empty()  &&
+                    output.find("error:") == NPOS;
+    }
+    if (!is_cgi_on) {
+        _TRACE("CGI HTTP status code :" << NStr::IntToString(http_status));
+        _TRACE("CGI output :" << output);
+    }
+
+    // Set local information
+    reg.Set(kLocal, kVersion, GetVersion().Print());
+    reg.Set(kLocal, kLog, NStr::BoolToString(is_log_writable));
+    if ( !is_cgi_on ) {
+        reg.Write(cout);
+        return is_log_writable ? 0 : 1;
+    }
+
+    // Add received CGI info
+    CNcbiIstrstream is(output.c_str());
+    try {
+        reg.Read(is);
+    }
+    catch (exception&) {}
+
+    // Print combined results
+    reg.Write(cout);
+
+    // Check CGI and local versions if local logging is not available
+    if (!is_log_writable) {
+        string cgi_ver = reg.GetString(kCgi, kVersion, "0.0.0");
+        if (cgi_ver.empty()  ||  cgi_ver != GetVersion().Print()) {
+            return 1;
+        }
+    }
+
+    // Local or CGI logging is available 
+    return 0;
+}
+
+
+int CNcbiApplogApp::Run()
 {
     bool       is_api_init = false;                ///< C Logging API is initialized
     ETokenType token_gen_type = eToken_Undefined;  ///< Token type to generate (app, request)
@@ -1324,31 +1487,11 @@ int CNcbiApplogApp::Run(void)
     
     } else
     if (cmd == "generate") {
-        TNcbiLog_UInt8 uid = NcbiLogP_GenerateUID();
+        return Cmd_Generate();
 
-        // Generate in the order they passed in the command line
-        CNcbiArguments raw_args = GetArguments();
-        for (size_t i = 1; i < raw_args.Size(); ++i) {
-            string arg = raw_args[i];
-            bool newline = (i > 2);
-
-            if ( newline ) cout << endl;
-            // Generate PHID
-            if (arg == "-phid") {
-                char buf[NCBILOG_HITID_MAX + 1];
-                if (NcbiLogP_GenerateHitID(buf, NCBILOG_HITID_MAX + 1, uid)) {
-                    cout << buf;
-                }
-            // Generate SID
-            } else if (arg == "-sid") {
-                char buf[NCBILOG_SESSION_MAX + 1];
-                if (NcbiLogP_GenerateSID(buf, NCBILOG_SESSION_MAX + 1, uid)) {
-                    cout << buf;
-                }
-            }
-            if (newline) cout << endl;
-        }
-        return 0;
+    } else
+    if (cmd == "health") {
+        return Cmd_Health();
 
     } else {
         // Initialize session from existing token
@@ -1455,7 +1598,7 @@ int CNcbiApplogApp::Run(void)
     }
     if (mode == "cgi") {
         m_IsRemoteLogging = true;
-        // For CGI redirect all diagnostics to stdout to allow the calling
+        // For CGI redirect all diagnostics going to stdout to allow the calling
         // application see it. Diagnostics should be disabled by eDS_Disable,
         // so this is just for safety.
         SetDiagStream(&NcbiCout);
