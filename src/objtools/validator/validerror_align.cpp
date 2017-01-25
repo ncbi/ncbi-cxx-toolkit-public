@@ -302,6 +302,110 @@ bool CValidError_align::IsTpaAlignment(const CSparseAln& sparse_aln, CScope& sco
     return is_tpa;
 }
 
+
+void s_CalculateMatchingColumns(const CDense_seg& denseg, TSeqPos &col, size_t &num_match, bool& ids_missing, bool internal_gaps, CScope& scope)
+{
+    int dim = denseg.GetDim();
+    if (dim != s_GetNumIdsToUse(denseg)) {
+        return;
+    }
+
+    try {
+        CRef<CAlnVec> av(new CAlnVec(denseg, scope));
+        av->SetGapChar('-');
+        av->SetEndChar('.');
+
+        TSeqPos aln_len = av->GetAlnStop() + 1;
+
+        try {
+            while (col < aln_len && !ids_missing) {
+                string column;
+                av->GetColumnVector(column, col);
+                if (internal_gaps && NStr::Find(column, "-") != string::npos) {
+                    // do nothing
+                } else {
+                    bool match = true;
+                    // don't care about end gaps, ever
+                    NStr::ReplaceInPlace(column, ".", "");
+                    // if we cared about internal gaps, it would have been handled above
+                    NStr::ReplaceInPlace(column, "-", "");
+                    if (!NStr::IsBlank(column)) {
+                        string::iterator it1 = column.begin();
+                        string::iterator it2 = it1;
+                        ++it2;
+                        while (match && it2 != column.end()) {
+                            if (!s_AmbiguousMatch(*it1, *it2)) {
+                                match = false;
+                            }
+                            ++it2;
+                            if (it2 == column.end()) {
+                                ++it1;
+                                it2 = it1;
+                                ++it2;
+                            }
+                        }
+                    }
+                    if (match) {
+                        ++num_match;
+                    }
+                }
+                col++;
+            }
+        } catch (CException &x1) {
+            // if sequence is not in scope,
+            // the above is impossible
+            // report 0 %, same as C Toolkit
+            col = aln_len;
+            if (NStr::StartsWith(x1.GetMsg(), "iterator out of range")) {
+                // bad offsets
+            } else {
+                ids_missing = true;
+            }
+        } catch (std::exception &) {
+            // if sequence is not in scope,
+            // the above is impossible
+            // report 0 %, same as C Toolkit
+            col = aln_len;
+            ids_missing = true;
+        }
+    } catch (CException &) {
+        // if AlnVec can't resolve seq id, 
+        // the above is impossible
+        // report 0 %, same as C Toolkit
+        col = 1;
+        num_match = 0;
+        ids_missing = true;
+    }
+}
+
+
+bool s_DensegHasAccessionWithZeroVersion(const CDense_seg& denseg)
+{
+    if (!denseg.IsSetIds()) {
+        return false;
+    }
+    ITERATE(CDense_seg::TIds, id, denseg.GetIds()) {
+        if ((*id)->IsGenbank() && (*id)->GetGenbank().IsSetVersion() && (*id)->GetGenbank().GetVersion() == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void s_FixZeroVersions(CDense_seg& denseg)
+{
+    if (!denseg.IsSetIds()) {
+        return;
+    }
+    NON_CONST_ITERATE(CDense_seg::TIds, id, denseg.SetIds()) {
+        if ((*id)->IsGenbank() && (*id)->GetGenbank().IsSetVersion() && (*id)->GetGenbank().GetVersion() == 0) {
+            (*id)->SetGenbank().ResetVersion();
+        }
+    }
+}
+
+
 void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
 {
     TSeqPos col = 0;
@@ -316,85 +420,27 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         return;
     } else if (align.GetSegs().IsDenseg()) {
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
-        // first, make sure this isn't a TPA alignment
-        if (IsTpaAlignment(denseg, *m_Scope)) {
-            return;
-        }
-
         int dim = denseg.GetDim();
         if (dim != s_GetNumIdsToUse(denseg)) {
             return;
         }
-
-        try {
-            CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
-            av->SetGapChar('-');
-            av->SetEndChar('.');
-
-            TSeqPos aln_len = av->GetAlnStop() + 1;
-
-            try {
-                while (col < aln_len && !ids_missing) {
-                    string column;
-                    av->GetColumnVector(column, col);
-                    if (internal_gaps && NStr::Find(column, "-") != string::npos) {
-                        // do nothing
-                    } else {
-                        bool match = true;
-                        // don't care about end gaps, ever
-                        NStr::ReplaceInPlace(column, ".", "");
-                        // if we cared about internal gaps, it would have been handled above
-                        NStr::ReplaceInPlace(column, "-", "");
-                        if (!NStr::IsBlank(column)) {
-                            string::iterator it1 = column.begin();
-                            string::iterator it2 = it1;
-                            ++it2;
-                            while (match && it2 != column.end()) {
-                                if (!s_AmbiguousMatch(*it1, *it2)) {
-                                    match = false;
-                                }
-                                ++it2;
-                                if (it2 == column.end()) {
-                                    ++it1;
-                                    it2 = it1;
-                                    ++it2;
-                                }
-                            }
-                        }
-                        if (match) {
-                            ++num_match;
-                            ++match_25;
-                        }
-                    }
-                    col++;
-                    if (col % 25 == 0) {
-                        match_25 = 0;
-                    }
-                }
-            } catch (CException &x1) {
-                // if sequence is not in scope,
-                // the above is impossible
-                // report 0 %, same as C Toolkit
-                col = aln_len;
-                if (NStr::StartsWith(x1.GetMsg(), "iterator out of range")) {
-                    // bad offsets
-                } else {
-                    ids_missing = true;
-                }
-            } catch (std::exception &) {
-                // if sequence is not in scope,
-                // the above is impossible
-                // report 0 %, same as C Toolkit
-                col = aln_len;
-                ids_missing = true;
+        if (s_DensegHasAccessionWithZeroVersion(denseg)) {
+            // This is a dodge, to avoid the problem that Sequin is generating
+            // alignments with accessions with version 0
+            CRef<CDense_seg> tmp(new CDense_seg());
+            tmp->Assign(denseg);
+            s_FixZeroVersions(*tmp);
+            // make sure this isn't a TPA alignment
+            if (IsTpaAlignment(*tmp, *m_Scope)) {
+                return;
             }
-        } catch (CException &) {
-            // if AlnVec can't resolve seq id, 
-            // the above is impossible
-            // report 0 %, same as C Toolkit
-            col = 1;
-            num_match = 0;
-            ids_missing = true;
+            s_CalculateMatchingColumns(*tmp, col, num_match, ids_missing, internal_gaps, *m_Scope);
+        } else {
+            // make sure this isn't a TPA alignment
+            if (IsTpaAlignment(denseg, *m_Scope)) {
+                return;
+            }
+            s_CalculateMatchingColumns(denseg, col, num_match, ids_missing, internal_gaps, *m_Scope);
         }
     } else if (align.GetSegs().IsStd() && !(FindSegmentGaps(align.GetSegs().GetStd(), m_Scope)).empty()) {
         col = 1;
