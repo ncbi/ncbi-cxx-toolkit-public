@@ -75,7 +75,7 @@ inline CCompoundIDTestRequest::CCompoundIDTestRequest(
 {
 }
 
-#define RANDOM_ROOT (roots[m_Random.GetRandIndex(roots.size())])
+#define RANDOM_ROOT (roots[m_Random.GetRandIndex((CRandom::TValue)roots.size())])
 
 void CCompoundIDTestRequest::Process()
 {
@@ -155,10 +155,10 @@ void CCompoundIDTestRequest::Process()
         }
 
     while (roots.size() > 1) {
-        size_t container_idx = m_Random.GetRandIndex(roots.size());
+        size_t container_idx = m_Random.GetRandIndex((CRandom::TValue)roots.size());
 
         size_t nested_idx = (container_idx +
-                m_Random.GetRand(1, roots.size() - 1)) % roots.size();
+                m_Random.GetRand(1, (CRandom::TValue)roots.size() - 1)) % roots.size();
 
         roots[container_idx].AppendNestedCID(roots[nested_idx]);
 

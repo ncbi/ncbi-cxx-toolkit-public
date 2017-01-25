@@ -196,14 +196,14 @@ void CJsonOverUTTPTest::MakeRandomJsonTree()
     } while (!have_containter && tree_size > 1);
 
     while (tree_size > 1) {
-        size_t container_idx = m_Random.GetRandIndex(tree_size);
+        size_t container_idx = m_Random.GetRandIndex((CRandom::TValue)tree_size);
 
         while (!tree_elements[container_idx].IsObject() &&
                 !tree_elements[container_idx].IsArray())
             container_idx = (container_idx + 1) % tree_size;
 
         size_t element_idx = (container_idx +
-                m_Random.GetRand(1, tree_size - 1)) % tree_size;
+                m_Random.GetRand(1, (CRandom::TValue)tree_size - 1)) % tree_size;
 
         if (tree_elements[container_idx].IsObject()) {
             string key;

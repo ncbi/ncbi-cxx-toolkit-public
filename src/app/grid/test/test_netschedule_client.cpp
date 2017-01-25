@@ -84,7 +84,7 @@ static string s_GenInput(int input_length)
     input.reserve(input_length);
     s_Random.SetSeed(CRandom::TValue(time(0)));
     for (int n = 0; n < input_length; ++n) {
-        input.append(1, s_Random.GetRand(0, 255));
+        input.append(1, (char)s_Random.GetRand(0, 255));
     }
     return input;
 }

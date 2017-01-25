@@ -300,7 +300,7 @@ void CNetStorageObjectLoc::x_Pack() const
         // Save object creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
         // Save the random ID.
-        cid.AppendRandom(m_Random >> (sizeof(Uint4) * 8));
+        cid.AppendRandom((Uint4)(m_Random >> (sizeof(Uint4) * 8)));
         cid.AppendRandom((Uint4) m_Random);
     }
 

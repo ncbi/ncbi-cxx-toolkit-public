@@ -187,7 +187,7 @@ static void NormalizeStatKeyName(CTempString& key)
     key.assign(begin, end - begin);
 
     for (; begin < end; ++begin)
-        *begin = isalnum(*begin) ? tolower(*begin) : '_';
+        *begin = isalnum(*begin) ? (char)tolower(*begin) : '_';
 }
 
 bool s_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
@@ -309,7 +309,7 @@ static bool s_ExtractKey(const CTempString& line,
     {
         char c = line[i];
         if (isalnum(c))
-            key += tolower(c);
+            key += (char)tolower(c);
         else if (c == ' ' || c == '_' || c == '-')
             key += '_';
         else if (c != ':' || key.empty())

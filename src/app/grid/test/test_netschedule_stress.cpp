@@ -130,7 +130,7 @@ void TestBatchSubmit(const string& service,
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
-    double rate = jobs.size() / elapsed;
+    double rate = (double)jobs.size() / elapsed;
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
     NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
