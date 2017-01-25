@@ -1071,6 +1071,16 @@ BOOST_AUTO_TEST_CASE(Test_GB_3965)
     bool ambig = false;
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("06/11/11", true, ambig), "11-Jun-2011");
     BOOST_CHECK_EQUAL(ambig, true);
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("06/11/11"), "");
+    
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/8/12"), "");
+    ambig = false;
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/8/12", true, ambig), "08-Nov-2012");
+    ambig = false;
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/8/12", false, ambig), "11-Aug-2012");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Nov/8/12"), "08-Nov-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/Aug/12"), "11-Aug-2012");
 }
 
 
