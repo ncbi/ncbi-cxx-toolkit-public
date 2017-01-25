@@ -2357,7 +2357,7 @@ CNCMessageHandler::x_StartCommand(void)
     else if (!m_NCBlobKey.IsValid() && !x_IsFlagSet(fNeedsBlobList)) {
         diag_msg.Flush();
         x_ReportError(eStatus_NotFound);
-        SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
+        SRV_LOG(Warning, "Invalid blob key format: " << m_NCBlobKey.RawKey());
         return &CNCMessageHandler::x_FinishCommand;
     }
     else if (m_NCBlobKey.IsICacheKey()) {
