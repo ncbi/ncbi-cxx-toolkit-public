@@ -199,7 +199,7 @@ inline bool s_ASCII_IsAmbigNuc(unsigned char c)
     }
 }
 
-inline bool s_ASCII_IsUnAmbigNuc(unsigned char c)
+inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 {
     switch( c ) {
     case 'A':

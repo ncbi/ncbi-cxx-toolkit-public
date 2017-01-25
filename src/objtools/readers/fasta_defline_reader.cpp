@@ -404,7 +404,7 @@ CFastaDeflineReader::x_ExceedsMaxLength(const string& title,
 }
 
 
-bool s_ASCII_IsUnAmbigNuc(unsigned char c)
+static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 {
     switch( c ) {
     case 'A':
