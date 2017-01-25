@@ -132,9 +132,7 @@ protected:
         : m_SelfCleanup(self_cleanup),
           m_UserCleanup(user_cleanup),
           m_LifeSpan(life_span.GetLifeSpan()),
-          m_CreationOrder(x_GetCreationOrder()),
-          m_MutexRefCount(0),
-          m_InstanceMutex(0)
+          m_CreationOrder(x_GetCreationOrder())
     {}
 
     /// Pointer to the data
@@ -149,7 +147,7 @@ private:
     void Lock(void)
     {
         CMutexGuard guard(sm_ClassMutex);
-        if (!m_InstanceMutex) {
+        if (!m_InstanceMutex || !m_MutexRefCount) {
             m_InstanceMutex = new CMutex;
             m_MutexRefCount = 1;
         }
@@ -168,9 +166,13 @@ private:
     {
         CMutexGuard guard(sm_ClassMutex);
         if (--m_MutexRefCount > 0) return;
-        delete m_InstanceMutex;
+        // Workaround for over-optimization - member assignments done immediately
+        // before exiting destructor can be dropped, so mutex and counter should
+        // be set to 0 before deleting the mutex.
+        CMutex* tmp = m_InstanceMutex;
         m_InstanceMutex = 0;
         m_MutexRefCount = 0;
+        delete tmp;
     }
 
 protected:
