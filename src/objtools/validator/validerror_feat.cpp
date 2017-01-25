@@ -1551,7 +1551,7 @@ void CValidError_feat::ValidateCdregion (
 
         if (!IsGeneticCodeValid(cdsgencode)) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_GenCodeInvalid,
-                    "A coding region contains invalid genetic code", feat);
+                    "A coding region contains invalid genetic code [" + NStr::IntToString(cdsgencode) + "]", feat);
         }
     }
 
