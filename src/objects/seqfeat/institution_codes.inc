@@ -5696,6 +5696,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SAUF\ts\tSichuan Agricultural University, Forestry Department",
 "SAUT\ts\tSichuan Agricultural University",
 "SAV\ts\tInstitute of Botany, Slovak Academy of Sciences",
+"SAV:F\ts\tInstitute of Botany, Slovak Academy of Sciences, Fungal Collection",
 "SAWV\ts\tSalem International University, Department of Bioscience",
 "SB\ts\tSaint Bernard Abbey",
 "SBBG\ts\tSanta Barbara Botanic Garden",

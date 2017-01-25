@@ -5663,6 +5663,7 @@ SAU<USA-AR>	s	Southern Arkansas University
 SAUF	s	Sichuan Agricultural University, Forestry Department
 SAUT	s	Sichuan Agricultural University
 SAV	s	Institute of Botany, Slovak Academy of Sciences
+SAV:F	s	Institute of Botany, Slovak Academy of Sciences, Fungal Collection
 SAWV	s	Salem International University, Department of Bioscience
 SB	s	Saint Bernard Abbey
 SBBG	s	Santa Barbara Botanic Garden
