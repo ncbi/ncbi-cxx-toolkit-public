@@ -303,34 +303,25 @@ ostream& operator<< (ostream& os, const SIssue& issue)
 
 void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
 {
-    // Issues were reported by a NetStorage server v2.2.0 or later
-    if (sub_code != SIssue::kEmptySubCode) {
-        switch (code) {
-            case 3000:
-                code = sub_code; // CNetStorageServerError
-                break;
-            case 3010:
-                throw CNetServiceException(DIAG_COMPILE_INFO, 0,
-                        static_cast<CNetServiceException::EErrCode>(sub_code),
-                        err_msg);
-            case 3020:
-                throw CNetStorageException(DIAG_COMPILE_INFO, 0,
-                        static_cast<CNetStorageException::EErrCode>(sub_code),
-                        err_msg);
-        }
+    switch (code) {
+    case 3010:
+        throw CNetServiceException(DIAG_COMPILE_INFO, 0,
+                static_cast<CNetServiceException::EErrCode>(sub_code), err_msg);
+    case 3020:
+        throw CNetStorageException(DIAG_COMPILE_INFO, 0,
+                static_cast<CNetStorageException::EErrCode>(sub_code), err_msg);
     }
 
-    switch (code) {
-        case CNetStorageServerError::eNetStorageObjectNotFound:
-        case CNetStorageServerError::eRemoteObjectNotFound:
-            NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
-            break;
-        case CNetStorageServerError::eNetStorageObjectExpired:
-            NCBI_THROW_FMT(CNetStorageException, eExpired, err_msg);
-            break;
-        default:
-            NCBI_THROW_FMT(CNetStorageException, eServerError, err_msg);
+    switch (sub_code) {
+    case CNetStorageServerError::eNetStorageObjectNotFound:
+    case CNetStorageServerError::eRemoteObjectNotFound:
+        NCBI_THROW(CNetStorageException, eNotExists, err_msg);
+
+    case CNetStorageServerError::eNetStorageObjectExpired:
+        NCBI_THROW(CNetStorageException, eExpired, err_msg);
     }
+
+    NCBI_THROW(CNetStorageException, eServerError, err_msg);
 }
 
 static void s_TrapErrors(const CJsonNode& request,
