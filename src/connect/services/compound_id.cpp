@@ -922,20 +922,20 @@ CCompoundID CCompoundIDPool::FromDump(const string& cid_dump)
     pos = seq; \
     counter = seq_len - 1; \
     do { \
-        pos[1] ^= *pos ^ length_factor--; \
+        pos[1] = (unsigned char)(pos[1] ^ *pos ^ length_factor--); \
         ++pos; \
     } while (--counter > 0);
 
 static void s_Scramble(unsigned char* seq, size_t seq_len)
 {
     if (seq_len > 1) {
-        unsigned char length_factor = ((unsigned char) seq_len << 1) - 1;
+        unsigned char length_factor = (unsigned char)(((unsigned char) seq_len << 1) - 1);
         unsigned char* pos;
         size_t counter;
 
         SCRAMBLE_PASS();
 
-        *seq ^= *pos ^ length_factor--;
+        *seq = (unsigned char)(*seq ^ *pos ^ length_factor--);
 
         SCRAMBLE_PASS();
     }
@@ -960,7 +960,7 @@ void g_PackID(void* binary_id, size_t binary_id_len, string& packed_id)
 #define UNSCRAMBLE_PASS() \
     counter = seq_len - 1; \
     do { \
-        *pos ^= pos[-1] ^ ++length_factor; \
+        *pos = (unsigned char)(*pos ^ pos[-1] ^ ++length_factor); \
         --pos; \
     } while (--counter > 0);
 
@@ -975,7 +975,7 @@ static void s_Unscramble(unsigned char* seq, size_t seq_len)
 
         pos = seq + seq_len - 1;
 
-        *seq ^= *pos ^ ++length_factor;
+        *seq = (unsigned char)(*seq ^ *pos ^ ++length_factor);
 
         UNSCRAMBLE_PASS();
     }

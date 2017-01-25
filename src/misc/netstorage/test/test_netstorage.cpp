@@ -47,6 +47,7 @@
 #include <thread>
 #include <chrono>
 #include <type_traits>
+#include <locale>
 
 USING_NCBI_SCOPE;
 
@@ -1011,7 +1012,8 @@ struct CAttributes
         Shuffle();
 
         try {
-            auto uc = [](char& c) { c = ::toupper(c); };
+            locale loc;
+            auto uc = [&](char& c) { c = toupper(c, loc); };
 
             NON_CONST_ITERATE(TData, i, data) {
                 const string& name(*i->first);

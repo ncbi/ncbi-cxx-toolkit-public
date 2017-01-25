@@ -76,7 +76,7 @@ class CGridControlThread : public CThread
 {
 public:
     CGridControlThread(SGridWorkerNodeImpl* worker_node,
-        unsigned int start_port, unsigned int end_port) : m_Control(
+        unsigned short start_port, unsigned short end_port) : m_Control(
             new CWorkerNodeControlServer(worker_node, start_port, end_port)),
           m_ThreadName(worker_node->GetAppName() + "_ct")
     {
@@ -524,7 +524,7 @@ int SGridWorkerNodeImpl::Run(
 
     const CArgs& args = m_App.GetArgs();
 
-    unsigned int start_port, end_port;
+    unsigned short start_port, end_port;
 
     {{
         string control_port_arg(args["control_port"] ?
@@ -537,8 +537,8 @@ int SGridWorkerNodeImpl::Run(
                 from_port, to_port,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
-        start_port = NStr::StringToUInt(from_port);
-        end_port = to_port.empty() ? start_port : NStr::StringToUInt(to_port);
+        start_port = NStr::StringToNumeric<unsigned short>(from_port);
+        end_port = to_port.empty() ? start_port : NStr::StringToNumeric<unsigned short>(to_port);
     }}
 
 #ifdef NCBI_OS_UNIX
