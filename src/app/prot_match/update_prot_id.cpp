@@ -1,35 +1,56 @@
+
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Justin Foley
+*
+* File Description:
+*   Code to assign accessions to new protein sequences
+*
+* ===========================================================================
+*/
+
+
+
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seq/seq_macros.hpp>
-#include <objects/seqalign/seqalign_macros.hpp>
-#include <objects/seqtable/SeqTable_multi_data.hpp>
-#include <objects/seqtable/Seq_table.hpp>
-#include <objects/seqtable/SeqTable_column.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/seqfeat_macros.hpp>
-#include <objects/seqset/seqset_macros.hpp>
-#include <objects/seqfeat/Clone_seq_set.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-#include <objmgr/annot_ci.hpp>
+#include <serial/objcopy.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
 #include <util/line_reader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 
-#include <serial/objcopy.hpp>
 
 
 BEGIN_NCBI_SCOPE
