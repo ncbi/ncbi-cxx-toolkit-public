@@ -276,8 +276,8 @@ int CTestNetScheduleClient::Run(void)
 
         CNetScheduleJob job;
 
-        ITERATE(set<string>, job_id, submitted_job_ids) {
-            job.job_id = *job_id;
+        ITERATE(set<string>, it, submitted_job_ids) {
+            job.job_id = *it;
             if (cl.GetJobDetails(job) != CNetScheduleAPI::eFailed ||
                     job.error_msg != "DELIBERATE_FAILURE") {
                 all_deliberately_failed = false;

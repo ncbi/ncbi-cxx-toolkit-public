@@ -208,7 +208,6 @@ int CNSSubmitRemoteJobApp::Run(void)
 
     CRemoteAppRequest request(m_GridClient->GetNetCacheAPI());
     request.SetMaxInlineSize(input_size);
-    CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
 
     if (args["args"]) {
         string cmd = args["args"].AsString();
@@ -241,6 +240,8 @@ int CNSSubmitRemoteJobApp::Run(void)
             unsigned int rt = NStr::StringToUInt(args["runtime"].AsString());
             request.SetAppRunTimeout(rt);
         }
+
+        CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
         if (args["exclusive"]) {
             jmask |= CNetScheduleAPI::eExclusiveJob;
         }

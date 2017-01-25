@@ -259,9 +259,9 @@ int CTestNetScheduleStress::Run(void)
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        CNetScheduleJob job(input);
-        submitter.SubmitJob(job);
-        jobs.push_back( job.job_id );
+        CNetScheduleJob job2(input);
+        submitter.SubmitJob(job2);
+        jobs.push_back( job2.job_id );
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
         }
@@ -287,11 +287,11 @@ int CTestNetScheduleStress::Run(void)
 
     CStopWatch sw(CStopWatch::eStart);
 
-    CNetScheduleJob job;
+    CNetScheduleJob job3;
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
-        job.job_id = *it;
-        /*status =*/ executor.GetJobStatus(job);
+        job3.job_id = *it;
+        /*status =*/ executor.GetJobStatus(job3);
         //status = cl.GetStatus(jk, &ret_code, &output);
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
@@ -320,15 +320,14 @@ int CTestNetScheduleStress::Run(void)
     {{
     NcbiCout << NcbiEndl << "Take-Return jobs..." << NcbiEndl;
     CStopWatch sw(CStopWatch::eStart);
-    string input;
 
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
-        CNetScheduleJob job;
-        if (!executor.GetJob(job, 60))
+        CNetScheduleJob job4;
+        if (!executor.GetJob(job4, 60))
             break;
-        executor.ReturnJob(job);
-        jobs_returned.push_back(job.job_id);
+        executor.ReturnJob(job4);
+        jobs_returned.push_back(job4.job_id);
     }
     NcbiCout << "Returned " << cnt << " jobs." << NcbiEndl;
 
@@ -362,15 +361,15 @@ int CTestNetScheduleStress::Run(void)
     unsigned cnt = 0;
 
     for (; 1; ++cnt) {
-        CNetScheduleJob job;
+        CNetScheduleJob job5;
 
-        if (!executor.GetJob(job))
+        if (!executor.GetJob(job5))
             break;
 
-        jobs_processed.push_back(job.job_id);
+        jobs_processed.push_back(job5.job_id);
 
-        job.output = "DONE " + queue;
-        executor.PutResult(job);
+        job5.output = "DONE " + queue;
+        executor.PutResult(job5);
     }
     double elapsed = sw.Elapsed();
 

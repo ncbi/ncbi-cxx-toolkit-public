@@ -1337,9 +1337,9 @@ struct SFactory<NType::TServerless, CDirectNetStorageByKey, TBackend>
 template <class TType, class TClass, class TBackend>
 struct SStorage
 {
-    TClass netstorage;
+    TClass storage;
     SStorage()
-        : netstorage(SFactory<TType, TClass, TBackend>::Create())
+        : storage(SFactory<TType, TClass, TBackend>::Create())
     {
     }
 };
@@ -1525,7 +1525,7 @@ struct STestCase<TType, CCombinedNetStorage, TBackend> :
         auto flags = TBackend::flags;
         auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
 
-        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CCombinedNetStorage& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
         string locator(TType::GetNotFound());
 
@@ -1604,7 +1604,7 @@ struct STestCase<TType, CCombinedNetStorageByKey, TBackend> :
         auto flags = TBackend::flags;
         auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
 
-        CCombinedNetStorageByKey& netstorage(TStorage::netstorage);
+        CCombinedNetStorageByKey& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
 
         TKey key(GetRandom::GetUniqueKey(), flags);
@@ -1742,7 +1742,7 @@ struct STestCase<TType, CDirectNetStorage, TBackend> :
         SCtx ctx;
         auto flags = TBackend::flags;
 
-        CDirectNetStorage& netstorage(TStorage::netstorage);
+        CDirectNetStorage& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
         string locator(TType::GetNotFound());
 
@@ -1862,7 +1862,7 @@ struct STestCase<TType, CDirectNetStorageByKey, TBackend> :
         SCtx ctx;
         auto flags = TBackend::flags;
 
-        CDirectNetStorageByKey& netstorage(TStorage::netstorage);
+        CDirectNetStorageByKey& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
 
         TKey key(GetRandom::GetUniqueKey(), flags);
@@ -1905,7 +1905,7 @@ struct STestCase<NType::TNetCache, CCombinedNetStorage, TBackend> :
         SCtx ctx;
         auto flags = TBackend::flags;
 
-        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CCombinedNetStorage& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
         string locator(NType::TNetCache::GetNotFound());
 
@@ -2179,9 +2179,9 @@ struct STestCase<TType, CNetStorageObject, TBackend> :
     }
 
     template <class TResult, class TStorage, class TKey>
-    void Remove(TStorage& storage, const TKey& key, SCtx& ctx)
+    void Remove(TStorage& netstorage, const TKey& key, SCtx& ctx)
     {
-        NStorage::NTests::Remove<TResult, TStorage, TKey>(storage, key, ctx);
+        NStorage::NTests::Remove<TResult, TStorage, TKey>(netstorage, key, ctx);
     }
 
     template <class TResult>
@@ -2205,7 +2205,7 @@ struct STestCase<TType, CNetStorageObject, TBackend> :
         SCtx ctx;
         auto flags = TBackend::flags;
 
-        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CCombinedNetStorage& netstorage(TStorage::storage);
         string locator(TType::GetNotFound());
 
         ctx("Non-existing object");
@@ -2306,7 +2306,7 @@ struct STestCase<NType::TServerless, CDirectNetStorageObject, TBackend> :
         auto flags = TBackend::flags;
         auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
 
-        CDirectNetStorage& netstorage(TStorage::netstorage);
+        CDirectNetStorage& netstorage(TStorage::storage);
         CRndData source(netstorage, flags);
 
         ctx("Creating test object");
@@ -2371,7 +2371,7 @@ struct STestCase : NStorage::SStorage<TType, CCombinedNetStorage, TBackend>
         SCtx ctx;
         auto flags = TBackend::flags;
 
-        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CCombinedNetStorage& netstorage(TStorage::storage);
 
         ctx("IO test");
         CNetStorageObject object(netstorage.Create(flags));

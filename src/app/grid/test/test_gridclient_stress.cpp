@@ -109,7 +109,6 @@ int CGridClientTestApp::Run(void)
 
     CGridClient& grid_client = GetGridClient();
 
-    string job_key;
     string input1 = "Hello ";
     typedef map<string, vector<double>* > TJobs;
     TJobs jobs;
@@ -141,7 +140,6 @@ int CGridClientTestApp::Run(void)
     while (jobs.size()) {
         NON_CONST_ITERATE(TJobs, it, jobs) {
             const string& jk = it->first;
-            CGridClient& grid_client = GetGridClient();
             grid_client.SetJobKey(jk);
             vector<double>* dvec = it->second;
 

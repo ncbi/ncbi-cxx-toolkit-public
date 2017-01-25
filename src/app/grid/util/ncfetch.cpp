@@ -185,8 +185,8 @@ int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
             return -1;
         }
     }
-    catch (exception& e) {
-        NCBI_REPORT_EXCEPTION("(CGI) CNetCacheBlobFetchApp::OnException", e);
+    catch (exception& ex) {
+        NCBI_REPORT_EXCEPTION("(CGI) CNetCacheBlobFetchApp::OnException", ex);
     }
 
     return 0;

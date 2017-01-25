@@ -292,7 +292,7 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
 
                 CNetScheduleServerListener* listener = m_API->GetListener();
 
-                CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
+                CFastMutexGuard sync_guard(listener->m_AffinitySubmissionMutex);
 
                 listener->SetAffinitiesSynced(it.GetServer(), false);
             }

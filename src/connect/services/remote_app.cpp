@@ -280,9 +280,9 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
             if (of.good()) {
-                auto_ptr<CNcbiIstream> is(GetNetCacheAPI().GetIStream(blobid));
-                of << is->rdbuf();
-                is.reset();
+                auto_ptr<CNcbiIstream> blob_is(GetNetCacheAPI().GetIStream(blobid));
+                of << blob_is->rdbuf();
+                blob_is.reset();
                 s_ReplaceArg(args, fname, nfname);
             }
         }

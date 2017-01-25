@@ -576,12 +576,12 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
 
         const SCommandInfo* command_info = command->second;
 
-        ITERATE(TOptionValues, option_value, m_OptionValues)
+        ITERATE(TOptionValues, it, m_OptionValues)
             if (find(command_info->m_AcceptedOptions.begin(),
-                command_info->m_AcceptedOptions.end(), option_value->first) ==
+                command_info->m_AcceptedOptions.end(), it->first) ==
                     command_info->m_AcceptedOptions.end())
                 Throw("command '" + command_name + "' doesn't accept option '" +
-                        option_value->first->GetNameVariants() + "'",
+                        it->first->GetNameVariants() + "'",
                             command_name);
 
         expected_positional_arguments = &command_info->m_PositionalArguments;
