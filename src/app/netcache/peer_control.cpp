@@ -716,7 +716,7 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
 }
 
 void
-CNCPeerControl::MirrorUpdate(const CNCBlobKey& key,
+CNCPeerControl::MirrorUpdate(const CNCBlobKeyLight& key,
                               Uint2 slot,
                               Uint8 update_time)
 {
@@ -734,7 +734,7 @@ CNCPeerControl::MirrorUpdate(const CNCBlobKey& key,
 }
 
 void 
-CNCPeerControl::MirrorRemove(const CNCBlobKey& key,
+CNCPeerControl::MirrorRemove(const CNCBlobKeyLight& key,
                                   Uint2 slot,
                                   Uint8 update_time)
 {
@@ -752,7 +752,7 @@ CNCPeerControl::MirrorRemove(const CNCBlobKey& key,
 }
 
 void
-CNCPeerControl::MirrorWrite(const CNCBlobKey& key,
+CNCPeerControl::MirrorWrite(const CNCBlobKeyLight& key,
                           Uint2 slot,
                           Uint8 orig_rec_no,
                           Uint8 size, const TServersList& mirrors_done)
@@ -773,7 +773,7 @@ CNCPeerControl::MirrorWrite(const CNCBlobKey& key,
 }
 
 void
-CNCPeerControl::MirrorProlong(const CNCBlobKey& key,
+CNCPeerControl::MirrorProlong(const CNCBlobKeyLight& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
                             Uint8 orig_time,

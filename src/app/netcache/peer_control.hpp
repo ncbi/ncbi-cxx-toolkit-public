@@ -112,18 +112,18 @@ public:
     static CNCPeerControl* Peer(Uint8 srv_id);
     static string GetPeerNameOrEmpty(Uint8 srv_id);
 
-    static void MirrorUpdate(const CNCBlobKey& key,
+    static void MirrorUpdate(const CNCBlobKeyLight& key,
                               Uint2 slot,
                               Uint8 update_time);
-    static void MirrorRemove(const CNCBlobKey& key,
+    static void MirrorRemove(const CNCBlobKeyLight& key,
                               Uint2 slot,
                               Uint8 update_time);
-    static void MirrorWrite(const CNCBlobKey& key,
+    static void MirrorWrite(const CNCBlobKeyLight& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
                             Uint8 size,
                             const TServersList& mirrors_done);
-    static void MirrorProlong(const CNCBlobKey& key,
+    static void MirrorProlong(const CNCBlobKeyLight& key,
                               Uint2 slot,
                               Uint8 orig_rec_no,
                               Uint8 orig_time,
