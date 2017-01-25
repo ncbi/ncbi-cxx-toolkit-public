@@ -896,7 +896,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 {
     CAnnotationLoader annot_loader;
 
-    CNcbiIfstream in(filename);
+    CNcbiIfstream in(filename.c_str());
 
     if (xGetAnnotLoader(annot_loader, in, filename))
     {
