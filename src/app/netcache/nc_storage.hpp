@@ -98,6 +98,7 @@ class CNCBlobStorage
 public:
     static void GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer,
                          SNCBlobFilter* filters, const string& sep);
+    static string FindBlob(Uint2 bucket, const string& mask, Uint8 cr_time_hi);
 
     static bool Initialize(bool do_reinit);
     static void Finalize(void);

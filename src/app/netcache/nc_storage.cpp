@@ -295,6 +295,53 @@ static CExpiredCleaner* s_ExpiredCleaner = nullptr;
     } while (0)                                                             \
 /**/
 
+string CNCBlobStorage::FindBlob(Uint2 bucket, const string& mask, Uint8 cr_time_hi)
+{
+    string found;
+    Uint8 cur_time = CSrvTime::Current().Sec();
+    TBucketCacheMap::const_iterator bkt = s_BucketsCache.find(bucket);
+    if (bkt != s_BucketsCache.end()) {
+        SNCCacheData search_mask;
+        search_mask.key = mask;
+
+        SBucketCache* cache = bkt->second;
+        cache->lock.Lock();
+#if __NC_CACHEDATA_INTR_SET
+        TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
+        for ( ; lb != cache->key_map.end(); ++lb) {
+            if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
+                if (lb->expire <= cur_time) {
+                    continue;
+                }
+                if (lb->create_time <= cr_time_hi) {
+                    found = lb->key;
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+#else
+        TKeyMap::iterator lb = cache->key_map.lower_bound(&search_mask);
+        for ( ; lb != cache->key_map.end(); ++lb) {
+            if (strncmp(search_mask.key.data(), (*lb)->key.data(), search_mask.key.size())== 0) {
+                if ((*lb)->expire <= cur_time) {
+                    continue;
+                }
+                if ((*lb)->create_time <= cr_time_hi) {
+                    found = (*lb)->key;
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+#endif
+        cache->lock.Unlock();
+    }
+    return found;
+}
+
 void
 CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters, const string& sep)
 {

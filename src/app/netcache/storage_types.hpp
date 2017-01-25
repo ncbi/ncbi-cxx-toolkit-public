@@ -389,6 +389,50 @@ private:
     vector<SNCCacheData*> m_CacheDatas;
 };
 
+/*
+    delete multiple blobs created earlier than a certain time
+    by filter (usually  cache|key|* )
+
+    begin: x_StartSession
+    -> x_StartSession
+        get first filter
+        if found then goto x_FindNext
+    -> x_FindNext
+        for each bucket: get full blob key
+            if found then  goto x_RequestBlobAccess
+        if not found then goto x_FinishSession
+    -> x_RequestBlobAccess
+        create CNCBlobAccessor, request blob meta info
+        goto x_RemoveBlob
+    -> x_RemoveBlob
+        once the info is ready, check it once again and remove
+        goto  x_Finalize
+    -> x_Finalize
+        finalize accessor, goto x_FindNext
+    -> x_FinishSession
+        erase filter
+        goto x_StartSession
+*/
+class CBulkCleaner : public CSrvStatesTask<CBulkCleaner>
+{
+public:
+    CBulkCleaner(void);
+    virtual ~CBulkCleaner(void);
+
+private:
+    State x_StartSession(void);
+    State x_FindNext(void);
+    State x_RequestBlobAccess(void);
+    State x_RemoveBlob(void);
+    State x_Finalize(void);
+    State x_FinishSession(void);
+
+    Uint2 m_CurBucket;
+    Uint8  m_CrTime;
+    string m_Filter, m_Key;
+    CNCBlobAccessor* m_BlobAccess;
+};
+
 
 class CMovedRecDeleter : public CSrvRCUUser
 {

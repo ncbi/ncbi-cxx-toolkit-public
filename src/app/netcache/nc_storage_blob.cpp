@@ -27,8 +27,10 @@
  */
 
 #include "nc_pch.hpp"
+#include <corelib/request_ctx.hpp>
 
 #include "netcached.hpp"
+#include "distribution_conf.hpp"
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
 #include "storage_types.hpp"
@@ -75,6 +77,7 @@ typedef map<string, Uint8> TForgets;
 static TForgets s_Forgets;
 static TForgets s_ForgetKeys;
 static Uint8 s_LatestPurge = 0;
+static CBulkCleaner* s_BulkCleaner = NULL;
 
 // for PutFailed/PutSucceeded
 static bool s_FailMonitor = false;
@@ -474,6 +477,9 @@ CWriteBackControl::Initialize(void)
     s_WBData = new SWriteBackData[CTaskServer::GetMaxRunningThreads()];
     s_WBControl = new CWriteBackControl();
     s_WBControl->SetRunnable();
+
+    s_BulkCleaner = new CBulkCleaner;
+    s_BulkCleaner->SetRunnable();
 }
 
 void
@@ -1754,16 +1760,13 @@ CNCBlobAccessor::IsPurged(const CNCBlobKeyLight& nc_key) const
     string key(nc_key.Cache());
     bool res = false;
     s_ConsListLock.Lock();
-    TForgets::const_iterator i = s_Forgets.lower_bound(key);
-    if (i != s_Forgets.end() && i->first == key) {
-        res = cr_time <= i->second;
-    }
-    if (!res) {
-        key.append(1,'\1').append(nc_key.RawKey()).append(1,'\1');
-        i = s_ForgetKeys.find(key);
+    for (int t=0; !res && t<2; ++t) {
+        key.append(1,'\1');
+        TForgets::const_iterator i = s_ForgetKeys.find(key);
         if (i != s_ForgetKeys.end()) {
             res = cr_time <= i->second;
         }
+        key.append(nc_key.RawKey());
     }
     s_ConsListLock.Unlock();
     return res;
@@ -1802,16 +1805,17 @@ CNCBlobAccessor::Purge(const CNCBlobKeyLight& nc_key, Uint8 when)
                 i->second = when;
                 res=true;
             }
+            key.append(1,'\1');
         } else {
             key.append(1,'\1').append(nc_key.RawKey()).append(1,'\1');
-            TForgets::iterator i = s_ForgetKeys.find(key);
-            if (i == s_ForgetKeys.end()) {
-                s_ForgetKeys[key] = when;
-                res=true;
-            } else if (i->second < when) {
-                i->second = when;
-                res=true;
-            }
+        }
+        TForgets::iterator i = s_ForgetKeys.find(key);
+        if (i == s_ForgetKeys.end()) {
+            s_ForgetKeys[key] = when;
+            res=true;
+        } else if (i->second < when) {
+            i->second = when;
+            res=true;
         }
     }
     s_ConsListLock.Unlock();
@@ -1916,6 +1920,154 @@ bool CNCBlobAccessor::HasPutSucceeded(const string& blob_key)
         s_FailedListLock.Unlock();
     }
     return !b;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+CBulkCleaner::CBulkCleaner(void)
+{
+    SetState(&CBulkCleaner::x_StartSession);
+}
+
+CBulkCleaner::~CBulkCleaner(void)
+{
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_StartSession(void)
+{
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    m_CurBucket = 1;
+    m_CrTime = 0;
+    m_BlobAccess = NULL;
+    s_ConsListLock.Lock();
+    while (!s_ForgetKeys.empty()) {
+        TForgets::const_iterator i = s_ForgetKeys.begin();
+        m_Filter = i->first;
+        m_CrTime = i->second;
+        if (m_CrTime != 0) {
+            break;
+        }
+        s_ForgetKeys.erase(i);
+    }
+    s_ConsListLock.Unlock();
+    if (m_CrTime != 0) {
+        CreateNewDiagCtx();
+        return &CBulkCleaner::x_FindNext;
+    }
+    RunAfter(10);
+    return NULL;
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_FindNext(void)
+{
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    for (; m_CurBucket <= CNCDistributionConf::GetCntTimeBuckets(); ++m_CurBucket) {
+        m_Key = CNCBlobStorage::FindBlob(m_CurBucket, m_Filter, m_CrTime);
+        if (!m_Key.empty()) {
+            return &CBulkCleaner::x_RequestBlobAccess;
+        }
+    }
+    return &CBulkCleaner::x_FinishSession;
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_RequestBlobAccess(void)
+{
+    CNCBlobKeyLight nc_key(m_Key);
+    Uint2 slot, bkt;
+    if (nc_key.IsICacheKey()) {
+        CNCDistributionConf::GetSlotByICacheKey(nc_key, slot, bkt);
+    } else {
+        // we should never be here
+        ++m_CurBucket;
+        return &CBulkCleaner::x_FindNext;
+    }
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess( eNCCreate, nc_key.PackedKey(), "", bkt);
+    m_BlobAccess->RequestMetaInfo(this);
+    return &CBulkCleaner::x_RemoveBlob;
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_RemoveBlob(void)
+{
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    if (!m_BlobAccess->IsMetaInfoReady()) {
+        return NULL;
+    }
+
+// see
+// CNCMessageHandler::x_DoCmd_Remove
+    if ((!m_BlobAccess || !m_BlobAccess->IsBlobExists() || m_BlobAccess->IsCurBlobExpired()))
+    {
+        return &CBulkCleaner::x_Finalize;
+    }
+
+    m_BlobAccess->SetBlobTTL(m_BlobAccess->GetCurBlobTTL());
+    m_BlobAccess->SetBlobVersion(0);
+    int expire = CSrvTime::CurSecs() - 1;
+    unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
+    m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
+
+// see
+// CNCMessageHandler::x_FinishReadingBlob
+    CSrvTime cur_srv_time = CSrvTime::Current();
+    Uint8 cur_time = cur_srv_time.AsUSec();
+    int cur_secs = int(cur_srv_time.Sec());
+    m_BlobAccess->SetBlobCreateTime(cur_time);
+    if (m_BlobAccess->GetNewBlobExpire() == 0)
+        m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
+    m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
+    m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
+                                    CNCBlobStorage::GetNewBlobId());
+
+    return &CBulkCleaner::x_Finalize;
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_Finalize(void)
+{
+    if (m_BlobAccess) {
+        m_BlobAccess->Finalize();
+        m_BlobAccess->Release();
+        m_BlobAccess = NULL;
+
+        {
+            CSrvDiagMsg diag_msg;
+            GetDiagCtx()->SetRequestID();
+            diag_msg.StartRequest().PrintParam("_type", "bulkrmv");
+            CNCBlobKeyLight key(m_Key);
+            diag_msg.PrintParam("cache",key.Cache()).PrintParam("key",key.RawKey()).PrintParam("subkey",key.SubKey());
+            diag_msg.Flush();
+            diag_msg.StopRequest();
+        }
+    }
+    return &CBulkCleaner::x_FindNext;
+}
+
+CBulkCleaner::State
+CBulkCleaner::x_FinishSession(void)
+{
+    ReleaseDiagCtx();
+
+    s_ConsListLock.Lock();
+    if (!s_ForgetKeys.empty()) {
+        TForgets::const_iterator i = s_ForgetKeys.begin();
+        if (m_Filter == i->first && m_CrTime == i->second) {
+            s_ForgetKeys.erase(i);
+        }
+    }
+    s_ConsListLock.Unlock();
+
+    SetState(&CBulkCleaner::x_StartSession);
+    SetRunnable();
+    return NULL;
 }
 
 END_NCBI_SCOPE
