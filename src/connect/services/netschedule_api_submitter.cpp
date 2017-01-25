@@ -223,7 +223,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
                         "Invalid server response. Batch answer format.");
             }
 
-            port = atoi(s);
+            port = static_cast<short>(atoi(s));
             if (port == 0) {
                 NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Port=0.");

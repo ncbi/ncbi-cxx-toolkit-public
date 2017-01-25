@@ -142,7 +142,7 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
         CONNSERV_THROW_FMT(CNetSrvConnException, eReadTimeout, m_Server,
                 "Communication timeout while reading"
                 " (timeout=" << NcbiTimeoutToMs(
-                        m_Socket.GetTimeout(eIO_Read)) / 1000.0 << "s)");
+                        m_Socket.GetTimeout(eIO_Read)) / 1000.0l << "s)");
         break;
     case eIO_Closed:
         Abort();

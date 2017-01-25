@@ -695,10 +695,10 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                     THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
         }
 
-        m_MaxConnectionTime = s_SecondsToMilliseconds(config->GetString(section,
+        m_MaxConnectionTime = static_cast<int>(s_SecondsToMilliseconds(config->GetString(section,
             "max_connection_time", CConfig::eErr_NoThrow,
                 NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
-                SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
+                SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT)));
 
         max_requests = config->GetInt(section, "rebalance_requests",
                 CConfig::eErr_NoThrow, max_requests);
