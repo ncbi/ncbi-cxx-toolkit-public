@@ -139,6 +139,53 @@ BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
     BOOST_REQUIRE_EQUAL(2u, count);
 }
 
+// Test that all input SRA accessions are read
+BOOST_AUTO_TEST_CASE(MultipleAccessions)
+{
+    const int kBatchSize = 200000;
+    vector<string> accessions = {"SRR3720856", "SRR5196091"};
+
+    CSraInputSource input_source(accessions, kBatchSize);
+    CRef<CBioseq_set> queries;
+    while (!input_source.End()) {
+        queries.Reset(new CBioseq_set);
+        input_source.GetNextNumSequences(*queries, 0);
+
+        // all batches except the last one must have kBatchSize sequences
+        BOOST_REQUIRE(input_source.End() ||
+                      queries->GetSeq_set().size() >= (size_t)kBatchSize);
+
+    }
+
+    // the last query must be from the last SRA accession
+    const CSeq_id* id = queries->GetSeq_set().back()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(id->GetSeqIdString().find(accessions.back()) != string::npos);
+
+}
+
+BOOST_AUTO_TEST_CASE(MultipleAccessionsForceSingle)
+{
+    const int kBatchSize = 200000;
+    const bool kCheckForPairs = false;
+    vector<string> accessions = {"SRR3720856", "SRR5196091"};
+
+    CSraInputSource input_source(accessions, kBatchSize, kCheckForPairs);
+    CRef<CBioseq_set> queries;
+    while (!input_source.End()) {
+        queries.Reset(new CBioseq_set);
+        input_source.GetNextNumSequences(*queries, 0);
+
+        // all batches except the last one must have kBatchSize sequences
+        BOOST_REQUIRE(input_source.End() ||
+                      queries->GetSeq_set().size() >= (size_t)kBatchSize);
+
+    }
+
+    // the last query must be from the last SRA accession
+    const CSeq_id* id = queries->GetSeq_set().back()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(id->GetSeqIdString().find(accessions.back()) != string::npos);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

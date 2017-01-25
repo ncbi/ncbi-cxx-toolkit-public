@@ -52,13 +52,16 @@ CSraInputSource::CSraInputSource(const vector<string>& accessions,
                                  TSeqPos num_seqs,
                                  bool check_for_paires,
                                  bool validate)
-    : m_NumSeqsInBatch(num_seqs),
+    : m_Accessions(accessions),
+      m_NumSeqsInBatch(num_seqs),
       m_IsPaired(check_for_paires),
       m_Validate(validate)
 {
+    m_ItAcc = m_Accessions.begin();
+
     // initialize SRA access
     CVDBMgr mgr;
-    m_SraDb.reset(new CCSraDb(mgr, accessions[0]));
+    m_SraDb.reset(new CCSraDb(mgr, *m_ItAcc));
     m_It.reset(new CCSraShortReadIterator(*m_SraDb));
 }
 
@@ -90,8 +93,15 @@ CSraInputSource::GetNextNumSequences(CBioseq_set& bioseq_set,
         x_ReadPairs(bioseq_set);
     }
     else {
-        for (; *m_It && m_Index < (int)m_NumSeqsInBatch; ++(*m_It)) {
-            x_ReadOneSeq(bioseq_set);
+        while (m_Index < (int)m_NumSeqsInBatch && m_ItAcc != m_Accessions.end()) {
+
+            for (; *m_It && m_Index < (int)m_NumSeqsInBatch; ++(*m_It)) {
+                x_ReadOneSeq(bioseq_set);
+            }
+
+            if (m_Index < (int)m_NumSeqsInBatch) {
+                x_NextAccession();
+            }
         }
     }
 
@@ -147,46 +157,54 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
                                              fLastSegmentFlag | fPartialFlag);
 
 
-    TVDBRowId spot = -1;
-    while (*m_It && m_Index < (int)m_NumSeqsInBatch) {
-        // read one sequence and rember spot id
-        spot = m_It->GetSpotId();
-        int index1 = x_ReadOneSeq(bioseq_set);
- 
-        // move to the next sequence
-        ++(*m_It);
-        if (!(*m_It)) {
-            break;
-        }
-        
-        // if the current sequence has the same spot id, read current sequence
-        // as a mate, otherwise continue the loop
-        if (m_It->GetSpotId() == spot) {
-            int index2 = x_ReadOneSeq(bioseq_set);
-            // set pair information for sequences
-            if (index1 >= 0 && index2 >= 0) {
-                {
-                    CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                    bioseq.SetDescr().Set().push_back(seqdesc_first);
-                }
+    while (m_Index < (int)m_NumSeqsInBatch && m_ItAcc != m_Accessions.end()) {
 
-                {
-                    CBioseq& bioseq = m_Entries[index2]->SetSeq();
-                    bioseq.SetDescr().Set().push_back(seqdesc_last);
-                }
-            }
-            else {
-                if (index1 >= 0) {
-                    CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                    bioseq.SetDescr().Set().push_back(seqdesc_first_partial);
-                }
+        TVDBRowId spot = -1;
+        while (*m_It && m_Index < (int)m_NumSeqsInBatch) {
+            // read one sequence and rember spot id
+            spot = m_It->GetSpotId();
+            int index1 = x_ReadOneSeq(bioseq_set);
 
-                if (index2 >= 0) {
-                    CBioseq& bioseq = m_Entries[index2]->SetSeq();
-                    bioseq.SetDescr().Set().push_back(seqdesc_last_partial);
-                }
-            }
+            // move to the next sequence
             ++(*m_It);
+            if (!(*m_It)) {
+                break;
+            }
+        
+            // if the current sequence has the same spot id, read current
+            // sequence as a mate, otherwise continue the loop
+            if (m_It->GetSpotId() == spot) {
+                int index2 = x_ReadOneSeq(bioseq_set);
+                // set pair information for sequences
+                if (index1 >= 0 && index2 >= 0) {
+                    {
+                        CBioseq& bioseq = m_Entries[index1]->SetSeq();
+                        bioseq.SetDescr().Set().push_back(seqdesc_first);
+                    }
+
+                    {
+                        CBioseq& bioseq = m_Entries[index2]->SetSeq();
+                        bioseq.SetDescr().Set().push_back(seqdesc_last);
+                    }
+                }
+                else {
+                    if (index1 >= 0) {
+                        CBioseq& bioseq = m_Entries[index1]->SetSeq();
+                        bioseq.SetDescr().Set().push_back(seqdesc_first_partial);
+                    }
+
+                    if (index2 >= 0) {
+                        CBioseq& bioseq = m_Entries[index2]->SetSeq();
+                        bioseq.SetDescr().Set().push_back(seqdesc_last_partial);
+                    }
+                }
+                ++(*m_It);
+            }
+        }
+
+        // advance to the next accession
+        if (m_Index < (int)m_NumSeqsInBatch) {
+            x_NextAccession();
         }
     }
 }
@@ -209,6 +227,21 @@ bool CSraInputSource::x_ValidateSequence(const char* sequence, int length)
     int entropy = FindDimerEntropy(sequence, length);
     return entropy > 16;
 
+}
+
+void CSraInputSource::x_NextAccession(void)
+{
+    _ASSERT(m_ItAcc != m_Accessions.end());
+    if (m_ItAcc == m_Accessions.end()) {
+        return;
+    }
+
+    ++m_ItAcc;
+    if (m_ItAcc != m_Accessions.end()) {
+        CVDBMgr mgr;
+        m_SraDb.reset(new CCSraDb(mgr, *m_ItAcc));
+        m_It.reset(new CCSraShortReadIterator(*m_SraDb));
+    }
 }
 
 END_SCOPE(blast)

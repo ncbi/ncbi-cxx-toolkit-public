@@ -35,8 +35,6 @@
 #define ALGO_BLAST_BLASTINPUT___BLAST_SRA_INPUT__HPP
 
 #include <algo/blast/blastinput/blast_input.hpp>
-//#include <algo/blast/blastinput/blast_scope_src.hpp>
-
 #include <sra/readers/sra/csraread.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -63,7 +61,7 @@ public:
     virtual ~CSraInputSource() {}
 
     virtual void GetNextNumSequences(CBioseq_set& bioseq_set, TSeqPos num_seqs);
-    virtual bool End(void) {return !m_It.get() || !(*m_It);}
+    virtual bool End(void) {return m_ItAcc == m_Accessions.end();}
 
 
 private:
@@ -79,9 +77,14 @@ private:
     /// Validate sequence base distribution
     bool x_ValidateSequence(const char* sequence, int length);
 
+    /// Advance to the next SRA accession
+    void x_NextAccession(void);
 
     auto_ptr<CCSraDb> m_SraDb;
     auto_ptr<CCSraShortReadIterator> m_It;
+
+    vector<string> m_Accessions;
+    vector<string>::iterator m_ItAcc;
     
     TSeqPos m_NumSeqsInBatch;
 
