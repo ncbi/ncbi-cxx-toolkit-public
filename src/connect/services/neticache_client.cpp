@@ -811,18 +811,6 @@ IReader* CNetICacheClient::GetReadStream(
     int version,
     const string& subkey,
     size_t* blob_size_ptr,
-    CNetCacheAPI::ECachingMode caching_mode,
-        CNetServer::TInstance server_to_use)
-{
-    return GetReadStreamPart(key, version, subkey, 0, 0, blob_size_ptr,
-            (nc_caching_mode = caching_mode, nc_server_to_use = server_to_use));
-}
-
-IReader* CNetICacheClient::GetReadStream(
-    const string& key,
-    int version,
-    const string& subkey,
-    size_t* blob_size_ptr,
     const CNamedParameterList* optional)
 {
     return GetReadStreamPart(key, version, subkey,

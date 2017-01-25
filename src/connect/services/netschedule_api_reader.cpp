@@ -212,28 +212,6 @@ bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const SEntry& entry)
     return entry.more_jobs;
 }
 
-void SNetScheduleJobReaderImpl::SetJobGroup(const string& group_name)
-{
-    if (m_Impl.m_JobGroup.empty()) {
-        limits::Check<limits::SJobGroup>(group_name);
-        m_Impl.m_JobGroup = group_name;
-    } else {
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                "It's not allowed to change group");
-    }
-}
-
-void SNetScheduleJobReaderImpl::SetAffinity(const string& affinity)
-{
-    if (m_Impl.m_Affinity.empty()) {
-        limits::Check<limits::SAffinity>(affinity);
-        m_Impl.m_Affinity = affinity;
-    } else {
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                "It's not allowed to change affinity");
-    }
-}
-
 CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
@@ -263,18 +241,6 @@ void SNetScheduleJobReaderImpl::InterruptReading()
 {
     x_StartNotificationThread();
     m_Impl.m_API->m_NotificationThread->m_ReadNotifications.InterruptWait();
-}
-
-void CNetScheduleJobReader::SetJobGroup(const string& group_name)
-{
-    _ASSERT(m_Impl);
-    m_Impl->SetJobGroup(group_name);
-}
-
-void CNetScheduleJobReader::SetAffinity(const string& affinity)
-{
-    _ASSERT(m_Impl);
-    m_Impl->SetAffinity(affinity);
 }
 
 CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(

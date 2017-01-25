@@ -567,8 +567,6 @@ struct SNetScheduleJobReaderImpl : public CObject
         m_Impl.m_API->StartNotificationThread();
     }
 
-    void SetJobGroup(const string& group_name);
-    void SetAffinity(const string& affinity);
     CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,

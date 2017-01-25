@@ -641,32 +641,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
                 unsigned         wait_time,
                 const string&    affinity_list = kEmptyStr);
 
-    /// @deprecated
-    ///     Use GetJob() instead.
-    ///
-    /// Wait for a new job in the queue.
-    ///
-    /// @param job
-    ///    NetSchedule job description structure
-    ///
-    /// @param wait_time
-    ///    Time in seconds function waits for new jobs to arrive.
-    ///    If there are no jobs in the period of time,
-    ///    the function returns FALSE.
-    ///
-    /// @param affinity_list
-    ///    Comma-separated list of affinity tokens.
-    ///
-    /// @sa GetJob
-    ///
-    NCBI_DEPRECATED
-    bool WaitJob(CNetScheduleJob& job, unsigned wait_time,
-            const string& affinity_list = kEmptyStr)
-    {
-        return GetJob(job, wait_time, affinity_list);
-    }
-
-
     /// Put job result (job should be received by GetJob() or WaitJob())
     ///
     /// @param job
@@ -743,17 +717,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
             time_t* job_exptime = NULL,
             ENetScheduleQueuePauseMode* pause_mode = NULL);
 
-    NCBI_DEPRECATED
-    CNetScheduleAPI::EJobStatus GetJobStatus(
-            const string& job_key,
-            time_t* job_exptime = NULL,
-            ENetScheduleQueuePauseMode* pause_mode = NULL)
-    {
-        CNetScheduleJob job;
-        job.job_id = job_key;
-        return GetJobStatus(job, job_exptime, pause_mode);
-    }
-
     /// Switch the job back to the "Pending" status so that it can be
     /// run again on a different worker node.
     ///
@@ -813,18 +776,6 @@ struct SNetScheduleJobReaderImpl;
 class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
 {
     NCBI_NET_COMPONENT(NetScheduleJobReader);
-
-    /// @deprecated
-    ///     Use GetJobReader(group, ...) instead.
-    ///
-    NCBI_DEPRECATED
-    void SetJobGroup(const string& group_name);
-
-    /// @deprecated
-    ///     Use GetJobReader(..., affinity) instead.
-    ///
-    NCBI_DEPRECATED
-    void SetAffinity(const string& affinity);
 
     /// Possible outcomes of ReadNextJob() calls.
     enum EReadNextJobResult {

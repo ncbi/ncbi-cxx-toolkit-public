@@ -159,10 +159,6 @@ public:
                 ECleanUp cleanup,
                 EProgressMsg progress_msg);
 
-    /// Get a job submitter
-    /// @deprecated Use the CGridClient object itself instead.
-    NCBI_DEPRECATED CGridClient& GetJobSubmitter() {return *this;}
-
     /// Get a job's output string.
     ///
     /// This string can be used in two ways.
@@ -247,19 +243,6 @@ public:
     ///
     CGridJobBatchSubmitter& GetJobBatchSubmitter();
 
-    /// Get a job status checker
-    ///
-    /// @deprecated Use SetJobKey() and the CGridClient object itself instead.
-    ///
-    /// @param job_key
-    ///     Job key
-    ///
-    NCBI_DEPRECATED CGridClient& GetJobStatus(const string& job_key)
-    {
-        SetJobKey(job_key);
-        return *this;
-    }
-
     void SetJobKey(const string& job_key);
 
     /// Cancel Job
@@ -311,12 +294,6 @@ private:
     CGridClient(const CGridClient&);
     CGridClient& operator=(const CGridClient&);
 };
-
-/// @deprecated Use GetGridClient() instead.
-NCBI_DEPRECATED typedef CGridClient CGridJobSubmitter;
-
-/// @deprecated Use GetGridClient() instead.
-NCBI_DEPRECATED typedef CGridClient CGridJobStatus;
 
 /// Grid Client exception
 ///

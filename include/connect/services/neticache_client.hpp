@@ -193,21 +193,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         void* buf,
         size_t buf_size);
 
-    /// @deprecated Use GetReadStream() variant with optional argument list.
-    ///
-    /// Read a lengthy blob via the IReader interface. The Read() method
-    /// of the returned implementation is not blocking. The caller
-    /// must provide a reading completion loop for the Read() call.
-    /// @see CNetCacheAPI::GetReader() for an example.
-    NCBI_DEPRECATED
-    IReader* GetReadStream(
-        const string& key,
-        int version,
-        const string& subkey,
-        size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode,
-        CNetServer::TInstance server_to_use = NULL);
-
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller
     /// must provide a reading completion loop for the Read() call.

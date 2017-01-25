@@ -590,15 +590,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @see nc_cache_name
     typedef CNamedParameter<string, eNPT_CacheName> TCacheName;
 
-    /// @deprecated Please use PutData(key, buf, size, optional) instead.
-    NCBI_DEPRECATED string PutData(const string& key,
-                   const void*   buf,
-                   size_t        size,
-                   int           blob_ttl)
-    {
-        return PutData(key, buf, size, nc_blob_ttl = blob_ttl);
-    }
-
     /// Extract one of the servers comprising this service
     /// as a separate CNetCacheAPI object.
     /// This method is for use by the grid_cli utility only.
