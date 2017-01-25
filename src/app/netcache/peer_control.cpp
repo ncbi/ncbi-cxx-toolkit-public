@@ -349,7 +349,7 @@ CNCPeerControl::x_UpdateHasTasks(void)
         m_HasBGTasks = false;
     }
 
-#if 1
+#if 0
     size_t conn = m_BusyConns.size() + 1;
     if (conn < (size_t)m_ActiveConns) {
         m_ActiveConns = conn;
