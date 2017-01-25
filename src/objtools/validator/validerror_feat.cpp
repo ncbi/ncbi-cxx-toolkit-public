@@ -1448,16 +1448,18 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 
 static bool IsGeneticCodeValid(int gcode)
 {
+    bool ret = false;
     if (gcode > 0) {
-        const CGenetic_code_table& tbl = CGen_code_table::GetCodeTable();
-        ITERATE(CGenetic_code_table::Tdata, it, tbl.Get()) {
-            if ((*it)->GetId() == gcode) {
-                return true;
-            }
+
+        try {
+            const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
+            ret = true;
+        }
+        catch (CException&) {
         }
     }
 
-    return false;
+    return ret;
 }
 
 void CValidError_feat::ValidateCdregion (
