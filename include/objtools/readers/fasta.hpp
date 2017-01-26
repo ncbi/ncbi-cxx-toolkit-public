@@ -47,7 +47,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <objtools/readers/fasta_defline_reader.hpp>
+#include <objtools/readers/fasta_reader_utils.hpp>
 
 #include <stack>
 #include <sstream>
@@ -63,7 +63,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_loc;
 
-class CSeqIdGenerator;
+//class CSeqIdGenerator;
 
 class ILineErrorListener;
 
@@ -376,35 +376,6 @@ protected:
     TSeqTitles m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
     std::vector<ILineError::EProblem> m_ignorable;
-};
-
-
-class NCBI_XOBJREAD_EXPORT CSeqIdGenerator : public CObject
-{
-public:
-    typedef CAtomicCounter::TValue TInt;
-    CSeqIdGenerator(TInt counter = 1, const string& prefix = kEmptyStr,
-                    const string& suffix = kEmptyStr)
-        : m_Prefix(prefix),
-          m_Suffix(suffix),
-          m_Counter(counter)
-        { }
-
-    CRef<CSeq_id> GenerateID(bool advance);
-    /// Equivalent to GenerateID(false)
-    CRef<CSeq_id> GenerateID(void) const;
-    
-    const string& GetPrefix (void)  { return m_Prefix;        }
-    TInt          GetCounter(void)  { return m_Counter.Get(); }
-    const string& GetSuffix (void)  { return m_Suffix;        }
-
-    void SetPrefix (const string& s)  { m_Prefix  = s;    }
-    void SetCounter(TInt n)           { m_Counter.Set(n); }
-    void SetSuffix (const string& s)  { m_Suffix  = s;    }
-
-protected:
-    string         m_Prefix, m_Suffix;
-    CAtomicCounter_WithAutoInit m_Counter;
 };
 
 
