@@ -248,6 +248,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     /// NetStorage object as well as storing data into this object.
     /// The returned iostream object must be deleted by the caller.
     ///
+    /// @warning Empty writes are ignored by the returned iostream instance!
+    ///
     CNcbiIostream* GetRWStream();
 
     /// Write string to the object (starting at the current position)

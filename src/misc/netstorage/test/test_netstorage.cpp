@@ -2384,6 +2384,14 @@ struct STestCase : NStorage::SStorage<TType, CCombinedNetStorage, TBackend>
     }
 };
 
+// All *IoEmpIos* tests are no-op
+// (due to ignore of empty writes by instances created with GetRWStream()).
+template <class TType, class TBackend>
+struct STestCase<TType, NSource::TEmp, NIo::TIos, TBackend>
+{
+    void Test() {}
+};
+
 }
 
 

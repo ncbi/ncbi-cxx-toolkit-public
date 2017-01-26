@@ -38,18 +38,58 @@
 BEGIN_NCBI_SCOPE
 
 
+struct SEmptyWriteIgnore : IReaderWriter
+{
+    SEmptyWriteIgnore(SNetStorageObjectImpl* impl) :
+        m_Object(impl)
+    {
+        _ASSERT(impl);
+    }
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
+    {
+        return m_Object->Read(buf, count, bytes_read);
+    }
+
+    ERW_Result PendingCount(size_t* count) override
+    {
+        return m_Object->PendingCount(count);
+    }
+
+    ERW_Result Pushback(const void* buf, size_t count, void* del_ptr = 0) override
+    {
+        return m_Object->Pushback(buf, count, del_ptr);
+    }
+
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override
+    {
+        if (count) return m_Object->Write(buf, count, bytes_written);
+
+        if (bytes_written) *bytes_written = 0;
+        return eRW_Success;
+    }
+
+    ERW_Result Flush() override
+    {
+        return m_Object->Flush();
+    }
+
+private:
+    CNetStorageObject m_Object;
+};
+
 struct SNetStorageObjectRWStream : public CRWStream
 {
-    SNetStorageObjectRWStream(SNetStorageObjectImpl* nst_object) :
-        CRWStream(nst_object, nst_object, /*buf_size*/ 0, /*buf*/ NULL,
-                  CRWStreambuf::fLeakExceptions),
-        m_NetStorageObject(nst_object)
+    SNetStorageObjectRWStream(unique_ptr<SEmptyWriteIgnore> impl) :
+        CRWStream(impl.get(), 0, nullptr, CRWStreambuf::fLeakExceptions),
+        m_Impl(std::move(impl))
     {
     }
 
     virtual ~SNetStorageObjectRWStream() { flush(); }
 
-    CNetStorageObject m_NetStorageObject;
+private:
+    unique_ptr<SEmptyWriteIgnore> m_Impl;
 };
 
 string CNetStorageObject::GetLoc()
@@ -96,7 +136,8 @@ IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 
 CNcbiIostream* CNetStorageObject::GetRWStream()
 {
-    return new SNetStorageObjectRWStream(m_Impl);
+    unique_ptr<SEmptyWriteIgnore> impl(new SEmptyWriteIgnore(m_Impl));
+    return new SNetStorageObjectRWStream(std::move(impl));
 }
 
 Uint8 CNetStorageObject::GetSize()
