@@ -476,12 +476,10 @@ static bool s_IsSeqAlignAsGood(const CRef<CSeq_align> &x,
     x->GetNamedScore(CSeq_align::eScore_Score, ix);
     y->GetNamedScore(CSeq_align::eScore_Score, iy);
     if (ix > iy) return false;
-    x->GetNamedScore(CSeq_align::eScore_IdentityCount, ix);
-    y->GetNamedScore(CSeq_align::eScore_IdentityCount, iy);
     int dx, dy;
     dx = x->GetAlignLength();
     dy = y->GetAlignLength();
-    return (ix*dy <= iy*dx);
+    return (dx <= dy);
 }
 
 // Remove lcl| from seqid label
@@ -541,13 +539,12 @@ static bool s_CompareSeqAlignByEvalue(const CRef<CSeq_align> &x,
     x->GetNamedScore(CSeq_align::eScore_Score, ix);
     y->GetNamedScore(CSeq_align::eScore_Score, iy);
     if (ix != iy) return (ix > iy);
-    x->GetNamedScore(CSeq_align::eScore_IdentityCount, ix);
-    y->GetNamedScore(CSeq_align::eScore_IdentityCount, iy);
+
     int dx, dy;
     dx = x->GetAlignLength();
     dy = y->GetAlignLength();
-    if (ix*dy != iy*dx) {
-        return (ix*dy >= iy*dx);
+    if (dx != dy) {
+        return (dx >= dy);
     }
     string x_id = NcbiEmptyString;
     string y_id = NcbiEmptyString;
@@ -563,9 +560,10 @@ static bool s_CompareSeqAlignByScore(const CRef<CSeq_align> &x, const CRef<CSeq_
     x->GetNamedScore(CSeq_align::eScore_Score, sx);
     y->GetNamedScore(CSeq_align::eScore_Score, sy);
     if (sx != sy) return (sx > sy);
-    x->GetNamedScore(CSeq_align::eScore_IdentityCount, sx);
-    y->GetNamedScore(CSeq_align::eScore_IdentityCount, sy);
-    return (sx <= sy);
+    sx = x->GetAlignLength();
+    sy = y->GetAlignLength();
+    return (sx >= sy);
+    
 };
 
 // Compare two seqaligns according to their evalue and coverage and name 
@@ -576,10 +574,11 @@ static bool s_CompareSeqAlignByScoreAndName(const CRef<CSeq_align> &x, const CRe
     x->GetNamedScore(CSeq_align::eScore_Score, sx);
     y->GetNamedScore(CSeq_align::eScore_Score, sy);
     if (sx != sy) return (sx > sy);
-    x->GetNamedScore(CSeq_align::eScore_IdentityCount, sx);
-    y->GetNamedScore(CSeq_align::eScore_IdentityCount, sy);
+
+    sx = x->GetAlignLength();
+    sy = y->GetAlignLength();
     if (sx != sy) {
-        return (sx <= sy);
+        return (sx >= sy);
     }
     
     string x_id = NcbiEmptyString;
