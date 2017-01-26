@@ -36,7 +36,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objtools/readers/fasta_defline_reader.hpp>
+#include <objtools/readers/fasta_reader_utils.hpp>
 
 BEGIN_NCBI_SCOPE
 
