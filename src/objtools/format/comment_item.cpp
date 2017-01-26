@@ -2042,12 +2042,18 @@ string s_CreateHistCommentString
         if ( count != 0 ) {
             text << ",";
         }
+        string accn = GetAccessionForGi(gis[count], ctx.GetScope(), sequence::eWithAccessionVersion, sequence::eGetId_Best);
+        text << " ";
+        // text << accn;
+        NcbiId(text, accn, ctx.Config().DoHTML());
+        /* was
         text << " gi:";
 #ifdef NEW_HTML_FMT
         ctx.Config().GetHTMLFormatter().FormatGeneralId(text, NStr::NumericToString(gis[count]));
 #else
         NcbiId(text, gis[count], ctx.Config().DoHTML());
 #endif
+        */
     }
     text << '.' << '\n';
 
