@@ -165,18 +165,17 @@ public:
         return *mp_IdGenerator;
     }
 
-    virtual void GenerateID(bool unique_id) {
+    virtual CRef<CSeq_id> GenerateID(bool unique_id) {
         const bool advance = true;
         while (unique_id) {
             auto p_Id = mp_IdGenerator->GenerateID(advance);
             auto idh = CSeq_id_Handle::GetHandle(*p_Id);
             if (x_IsUniqueIdHandle(idh)) {
-                mp_CurrentId = p_Id;
-                return;
+                return p_Id;
             }
         }
         // !unique_id
-        mp_CurrentId = mp_IdGenerator->GenerateID(advance);
+        return mp_IdGenerator->GenerateID(advance);
     }
 
     void ClearIdCache(void) {
@@ -196,7 +195,6 @@ protected:
 
     using TIdHandleCache = set<CSeq_id_Handle>;
     CRef<CSeqIdGenerator> mp_IdGenerator;
-    CRef<CSeq_id> mp_CurrentId;
     TIdHandleCache m_PreviousIdHandles;
 };
 

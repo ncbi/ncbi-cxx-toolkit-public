@@ -269,6 +269,9 @@ private:
     void x_CalculateMiddleSections();
     typedef objects::CDense_seg::TDim TNumrow;
 
+    objects::CFastaIdHandler m_FastaIdHandler;
+
+
     bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
 };
 
