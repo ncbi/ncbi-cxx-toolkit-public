@@ -566,9 +566,25 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Int8 data)
         // three bytes
         length = 3;
     }
-    else if ( data >= Int8(-0x7fffffffL-1) && data <= Int8(0x7fffffffL) ) {
+    else if ( data >= NCBI_CONST_INT8(-0x80000000) &&
+              data <= NCBI_CONST_INT8( 0x7fffffff) ) {
         // four bytes
         length = 4;
+    }
+    else if ( data >= NCBI_CONST_INT8(-0x8000000000) &&
+              data <= NCBI_CONST_INT8( 0x7fffffffff) ) {
+        // four bytes
+        length = 5;
+    }
+    else if ( data >= NCBI_CONST_INT8(-0x800000000000) &&
+              data <= NCBI_CONST_INT8( 0x7fffffffffff) ) {
+        // four bytes
+        length = 6;
+    }
+    else if ( data >= NCBI_CONST_INT8(-0x80000000000000) &&
+              data <= NCBI_CONST_INT8( 0x7fffffffffffff) ) {
+        // four bytes
+        length = 7;
     }
     else {
         // full length signed
@@ -631,6 +647,18 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Uint8 data)
     else if ( data <= 0x7fffffffUL ) {
         // four bytes
         length = 4;
+    }
+    else if ( data <= NCBI_CONST_UINT8(0x7fffffffff) ) {
+        length = 5;
+    }
+    else if ( data <= NCBI_CONST_UINT8(0x7fffffffffff) ) {
+        length = 6;
+    }
+    else if ( data <= NCBI_CONST_UINT8(0x7fffffffffffff) ) {
+        length = 7;
+    }
+    else if ( data <= NCBI_CONST_UINT8(0x7fffffffffffffff) ) {
+        length = 8;
     }
     else {
         // check for high bit to avoid storing unsigned data as negative
