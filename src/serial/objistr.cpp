@@ -569,12 +569,7 @@ bool CObjectIStream::EndOfData(void)
     if (GetFailFlags() & failure || m_Input.EndOfData()) {
         return true;
     }
-    try {
-        m_Input.PeekChar();
-    } catch (...) {
-        return true;
-    }
-    return false;
+    return !m_Input.HasMore();
 }
 
 void CObjectIStream::HandleEOF(CEofException& expt)
