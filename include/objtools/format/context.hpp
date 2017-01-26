@@ -98,7 +98,7 @@ public:
     CBioseq_Handle& GetHandle(void) { return m_Handle; }
     const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
     CBioseq_Handle& GetNextHandle(void) { return m_NextHandle; }
-    CScope& GetScope(void) { return m_Handle.GetScope(); }
+    CScope& GetScope(void) const { return m_Handle.GetScope(); }
     feature::CFeatTree& GetFeatTree(void) { return m_FeatTree; }
 
     // -- id information
