@@ -27,7 +27,7 @@ Now you can use my_seq_file as blast database file for igblast.
 2).    Igblast internal data files (download from the release/ directory).  This directory contains data internal to 
 igblast program only and users should NEVER add, delete, move, copy or edit any files in this directory.  
 Igblastn program expects the internal_data directory under current directory (i.e., where the igblast 
-program is) or a path pointed to by IGDATA environmental variable.  Note that this directory does NOT contain
+program is) or a path pointed to by IGDATA environmental variable (avoid using space in your path for Windows system).  Note that this directory does NOT contain
  any germline gene databases you should search (see above for how you can obtain a germline gene database).
 
 2.  Optional files (download from the release/ directory):
