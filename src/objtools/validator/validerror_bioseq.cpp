@@ -3652,7 +3652,10 @@ void CValidError_bioseq::ValidateDeltaLoc
                                  + " (" + NStr::IntToString(seq_len) + ")",
                                 seq);
                     }
-                    if (HasExcludedAnnotation(loc, bsh)) {
+                    if (IsRefSeq(seq) && IsGenbank(*(bsh.GetCompleteBioseq())) ||
+                        m_Scope->GetBioseqHandle(seq).GetFeatureFetchPolicy() == CBioseq_Handle::eFeatureFetchPolicy_only_near) {
+                        // do not look for excluded annotation (VR-685)
+                    } else if(HasExcludedAnnotation(loc, bsh)) {
                         string id_label = id->AsFastaString();
                         PostErr(eDiag_Error, eErr_SEQ_INST_FarLocationExcludesFeatures,
                                 "Scaffold points to some but not all of " +
