@@ -416,6 +416,9 @@ string CGtfRecord::x_GeneToGeneId(
     if ( gene.IsSetLocus_tag() ) {
         geneId = gene.GetLocus_tag();
     }
+    if (geneId.empty()) {
+        geneId = mf.GetNamedQual("gene_id");
+    }
     if (geneId.empty() &&  gene.IsSetLocus()) {
         geneId = gene.GetLocus();
     }
@@ -508,6 +511,11 @@ string CGtfRecord::x_MrnaToTranscriptId(
         if (!CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), rnaId)) {
             rnaId.clear();
         }
+    }
+
+    //then transcript_id if available
+    if (rnaId.empty()  &&  !CWriteUtil::GetQualifier(mf, "transcript_id", rnaId)) {
+        rnaId.clear();
     }
 
     //then orig_transcript_id if available
