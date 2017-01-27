@@ -1855,6 +1855,10 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
     }
 
     CRef<CBioseq> new_product = CSeqTranslator::TranslateToProtein(cds, scope);
+    if (new_product.Empty()) {
+        return CRef<CSeq_entry>(NULL);
+    }
+
     CRef<CSeqdesc> molinfo(new CSeqdesc());
     molinfo->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
     molinfo->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
@@ -2364,7 +2368,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             //prefer ncbieaa
             if (new_cds->IsSetProduct()) {
                 CBioseq_Handle p = entry.GetScope().GetBioseqHandle(new_cds->GetProduct());
-                if (p.GetInst().IsSetSeq_data() && p.GetInst().GetSeq_data().IsIupacaa()) {
+                if (p && p.IsSetInst() && p.GetInst().IsSetSeq_data() && p.GetInst().GetSeq_data().IsIupacaa()) {
                     CBioseq_EditHandle peh(p);
                     string current = p.GetInst().GetSeq_data().GetIupacaa().Get();
                     CRef<CSeq_inst> new_inst(new CSeq_inst());
