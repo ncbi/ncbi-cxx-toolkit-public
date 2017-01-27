@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 static bool s_DiagUseRWLock = true;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
 DEFINE_STATIC_MUTEX(s_DiagPostMutex);
-static CSafeStatic<CRWLock> s_DiagRWLock;
+static CSafeStatic<CRWLock> s_DiagRWLock(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 static CSafeStatic<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
 DEFINE_STATIC_FAST_MUTEX(s_ApproveMutex);
