@@ -7378,7 +7378,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
             has_errors = true;
             other_than_mismatch = true;
             if (report_errors || unclassified_except) {
-                if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                if (unclassified_except && m_Imp.IsGpipe()) {
                     // suppress if gpipe genomic
                 } else {
                     PostErr(unclassified_except ? eDiag_Warning : eDiag_Error, 
