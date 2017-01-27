@@ -26,9 +26,10 @@ Now you can use my_seq_file as blast database file for igblast.
 
 2).    Igblast internal data files (download from the release/ directory).  This directory contains data internal to 
 igblast program only and users should NEVER add, delete, move, copy or edit any files in this directory.  
-Igblastn program expects the internal_data directory under current directory (i.e., where the igblast 
-program is) or a path pointed to by IGDATA environmental variable (avoid using space in your path for Windows system).  Note that this directory does NOT contain
- any germline gene databases you should search (see above for how you can obtain a germline gene database).
+Igblastn program expects the internal_data directory under current directory (i.e., where you run igblast 
+program) or a path pointed to by IGDATA environmental variable (avoid using space in your path name for 
+Windows system). Note that this directory does NOT contain any germline gene databases you should search (see above 
+for how you can obtain a germline gene database).
 
 2.  Optional files (download from the release/ directory):
 This is the file to indicate germline J gene coding frame start position (position is 0-based), the J gene type, 
@@ -43,13 +44,42 @@ You need to use -auxiliary_data option to specify your file. You can directly su
 put it under a path pointed to by IGDATA environmental variable.
  
 3.  Some examples.
-1).  Searching germline gene database
-a).  To query one or more mouse Ig sequences (contained in myseq) against NCBI mouse germline gene 
-database with standard text alignment result format (you can type "./igblastn -help" to see details on all 
-input parameters and the default setting, particularly those under IgBLAST options):
+1).  Searching germline gene database. 
+
+a).  This example assumes that your current working directory has the following file structure:
+
+igblastn
+mouse_gl_V.nhr
+mouse_gl_V.nin
+mouse_gl_V.nog
+mouse_gl_V.nsd
+mouse_gl_V.nsi
+mouse_gl_V.nsq
+mouse_gl_D.nhr
+mouse_gl_D.nin
+mouse_gl_D.nog
+mouse_gl_D.nsd
+mouse_gl_D.nsi
+mouse_gl_D.nsq
+mouse_gl_J.nhr
+mouse_gl_J.nin
+mouse_gl_J.nog
+mouse_gl_J.nsd
+mouse_gl_J.nsi
+mouse_gl_J.nsq
+myseq
+internal_data
+optional_file 
+
+To query one or more mouse Ig sequences (contained in myseq) against NCBI mouse germline gene 
+database with standard text alignment result format, you can issue the following command:
+
 ./igblastn -germline_db_V mouse_gl_V -germline_db_J mouse_gl_J -germline_db_D mouse_gl_D -
 organism mouse -domain_system kabat -query myseq -auxiliary_data optional_file/mouse_gl.aux -
 show_translation -outfmt 3
+
+you can type "./igblastn -help" to see details on all input parameters and the default setting, 
+particularly those under Ig-BLAST options.
 
 b).  To query one or more mouse T cell receptor sequences (contained in myseq) against imgt mouse 
 germline gene database:
