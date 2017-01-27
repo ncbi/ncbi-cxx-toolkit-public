@@ -1661,3 +1661,11 @@ BOOST_AUTO_TEST_CASE(Test_CleanupAndRepairInference)
     BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to AA: UniProtKB : P39748"), "similar to AA sequence:UniProtKB:P39748");
     BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to AA sequence: UniProtKB : P39748"), "similar to AA sequence:UniProtKB:P39748");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4173)
+{
+    BOOST_CHECK_EQUAL(CBioSource::ShouldIgnoreConflict("lat-lon", "12.12345 N 23.123456 W", "12.12 N 23.12 W"), false);
+}
+
+

@@ -1066,7 +1066,9 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
             break;
         }
     }
+#if 0
     // special handling for lat-lon
+    // commented out for SQD-4173
     if (!rval && NStr::EqualNocase(label, "lat-lon")) {
         bool src_format_correct, src_precision_correct,
              src_lat_in_range, src_lon_in_range;
@@ -1086,6 +1088,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
             rval = true;
         }
     }
+#endif
     // special handling for collection-date
     if (!rval && NStr::EqualNocase(label, "collection-date")) {
         try {
