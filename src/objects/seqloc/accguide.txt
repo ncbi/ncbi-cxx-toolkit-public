@@ -482,6 +482,16 @@ version  1 # of file format
 2+6  MC  ddbj_other_nuc
 2+6  MD  ddbj_other_nuc
 2+6  ME  ddbj_other_nuc
+2+6  MF  gb_other_nuc
+2+6  MG  gb_other_nuc
+2+6  MH  gb_other_nuc
+2+6  MI  gb_other_nuc
+2+6  MJ  gb_other_nuc
+2+6  MK  gb_other_nuc
+2+6  ML  gb_other_nuc
+2+6  MM  gb_other_nuc
+2+6  MN  gb_other_nuc
+2+6  MO  gb_other_nuc
 2+6  ??  unreserved_nuc
 
 # Specially handled type-general Dbtag names; commented out for now in
