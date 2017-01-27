@@ -14074,12 +14074,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
     expected_errors[0]->SetErrMsg("NULL pointer in delta seq_ext valnode (segment 2)");
     expected_errors[0]->SetSeverity(eDiag_Error);
-    free(expected_errors[2]);
+    delete (expected_errors[2]);
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    free(expected_errors[1]);
+    delete(expected_errors[1]);
     expected_errors.pop_back();
     entry->SetSeq().SetInst().SetExt().Reset();
     CRef<CDelta_seq> delta_seq2(new CDelta_seq());
@@ -14093,8 +14093,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
+    CLEAR_ERRORS
 }
 
 
