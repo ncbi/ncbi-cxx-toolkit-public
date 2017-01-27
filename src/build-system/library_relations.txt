@@ -1330,7 +1330,10 @@ xgencollstats needs gencoll_stats
 xgp_manifest needs xser
 xgpgcreport needs gc_asn_access
 xgpgcreport needs gencoll_release_report
+xgpp_console needs $(XCONNEXT)
 xgpp_console needs dbapi
+xgpp_console needs ncbi_xdbapi_ftds
+xgpp_console needs xconnect
 xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
 xgpp_console_commands needs xgpp_console
