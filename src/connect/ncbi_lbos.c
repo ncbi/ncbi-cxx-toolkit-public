@@ -47,7 +47,7 @@
 #define            kMaxLineSize              1024  /**< used to build strings*/
                                                          
 
-#define            NCBI_USE_ERRCODE_X        Connect_LBSM /**< Used in
+#define            NCBI_USE_ERRCODE_X        Connect_LBOS /**< Used in
                                                                CORE_LOG*_X  */
 
 #ifdef NCBI_COMPILER_MSVC
