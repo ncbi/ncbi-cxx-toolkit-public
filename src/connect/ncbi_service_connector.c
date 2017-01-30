@@ -973,7 +973,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                  ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
         }
-        if (!(info->type & uuu->types)) {
+        if (uuu->types  &&  !(info->type & uuu->types)) {
             const char* type = SERV_TypeStr(info->type);
             char buf[40];
             sprintf(buf,
