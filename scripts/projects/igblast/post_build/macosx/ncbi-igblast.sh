@@ -41,7 +41,7 @@ prep_binary_component_package()
 
 prep_paths_component_package()
 {
-    echo /usr/local/ncbi/igblast/bin > $STAGE_DIR2/ncbi_blast
+    echo /usr/local/ncbi/igblast/bin > $STAGE_DIR2/ncbi_igblast
     /usr/bin/pkgbuild --root $STAGE_DIR2 --identifier $ID.paths --version \
         $BLAST_VERSION --install-location $INSTALL_LOCATION2 paths.pkg
 }
