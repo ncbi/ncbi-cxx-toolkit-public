@@ -102,8 +102,59 @@ const string       CSourceItem::scm_Unclassified   = "Unclassified.";
 const list<string> CSourceItem::scm_EmptyList;
 
 
+static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
+    const CBioseq_Handle& bsh
+)
+
+{
+    CConstRef<CSeq_feat>   cds_feat;
+    CConstRef<CSeq_loc>    cds_loc;
+    CConstRef<CBioSource>  src_ref;
+
+    CScope& scope = bsh.GetScope();
+
+    cds_feat = sequence::GetCDSForProduct (bsh);
+
+    if (cds_feat) {
+        cds_loc = &cds_feat->GetLocation();
+        if (cds_loc) {
+            CRef<CSeq_loc> cleaned_location( new CSeq_loc );
+            cleaned_location->Assign( *cds_loc );
+            if (cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
+                CRef<CSeq_loc> rev_loc(sequence::SeqLocRevCmpl(*cleaned_location, &scope));
+                cleaned_location->Assign(*rev_loc);
+            }
+            CConstRef<CSeq_feat> src_feat
+                = sequence::GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, sequence::eOverlap_SubsetRev, scope);
+            if (src_feat) {
+                const CSeq_feat& feat = *src_feat;
+                if (feat.IsSetData()) {
+                    return src_feat;
+                }
+            }
+        }
+    }
+
+    return CConstRef<CSeq_feat> ();
+}
+
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
+    CConstRef<CSeq_feat>   cds_feat;
+    CConstRef<CSeq_loc>    cds_loc;
+    CConstRef<CBioSource>  src_ref;
+    CConstRef<CSeq_feat>   src_feat;
+
+    if (ctx.IsProt()) {
+        const CBioseq_Handle& bsh = ctx.GetHandle();
+        src_feat = x_GetSourceFeatFromCDS (bsh);
+        if (src_feat.NotEmpty()) {
+            const CSeq_feat& feat = *src_feat;
+            x_SetSource(feat.GetData().GetBiosrc(), feat);
+            return;
+        }
+    }
+
     // For DDBJ format first try a GB-Block descriptor (old style)
     if ( ctx.Config().IsFormatDDBJ() ) {
         CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);
@@ -133,6 +184,22 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj)
 {
+    CConstRef<CSeq_feat>   cds_feat;
+    CConstRef<CSeq_loc>    cds_loc;
+    CConstRef<CBioSource>  src_ref;
+
+    CConstRef<CSeq_feat>   src_feat;
+
+    if (ctx.IsProt()) {
+        const CBioseq_Handle& bsh = ctx.GetHandle();
+        src_feat = x_GetSourceFeatFromCDS (bsh);
+        if (src_feat.NotEmpty()) {
+            const CSeq_feat& feat = *src_feat;
+            x_SetSource(feat.GetData().GetBiosrc(), feat);
+            return;
+        }
+    }
+
     // For DDBJ format first try a GB-Block descriptor (old style)
     if ( ctx.Config().IsFormatDDBJ() ) {
         CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);

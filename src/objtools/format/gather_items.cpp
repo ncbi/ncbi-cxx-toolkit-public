@@ -1706,6 +1706,42 @@ void CFlatGatherer::x_CollectSourceFeatures
 }
 
 
+static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
+    const CBioseq_Handle& bsh
+)
+
+{
+    CConstRef<CSeq_feat>   cds_feat;
+    CConstRef<CSeq_loc>    cds_loc;
+    CConstRef<CBioSource>  src_ref;
+
+    CScope& scope = bsh.GetScope();
+
+    cds_feat = sequence::GetCDSForProduct (bsh);
+
+    if (cds_feat) {
+        cds_loc = &cds_feat->GetLocation();
+        if (cds_loc) {
+            CRef<CSeq_loc> cleaned_location( new CSeq_loc );
+            cleaned_location->Assign( *cds_loc );
+            if (cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
+                CRef<CSeq_loc> rev_loc(sequence::SeqLocRevCmpl(*cleaned_location, &scope));
+                cleaned_location->Assign(*rev_loc);
+            }
+            CConstRef<CSeq_feat> src_feat
+                = sequence::GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, sequence::eOverlap_SubsetRev, scope);
+            if (src_feat) {
+                const CSeq_feat& feat = *src_feat;
+                if (feat.IsSetData()) {
+                    return src_feat;
+                }
+            }
+        }
+    }
+
+    return CConstRef<CSeq_feat> ();
+}
+
 void CFlatGatherer::x_CollectBioSourcesOnBioseq
 (const CBioseq_Handle& bh,
  const TRange& range,
@@ -1714,11 +1750,17 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 {
     const CFlatFileConfig& cfg = ctx.Config();
 
+    // if protein, get sources applicable to DNA location of CDS
     if ( ctx.IsProt() ) {
         // collect biosources features on bioseq
         if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
-            x_CollectSourceFeatures(bh, range, ctx, srcs);
-            if (! srcs.empty()) return;
+            CConstRef<CSeq_feat> src_feat = x_GetSourceFeatFromCDS (bh);
+            if (src_feat.NotEmpty()) {
+                CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
+                CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(mapped_feat, ctx, m_Feat_Tree));
+                srcs.push_back(sf);
+                return;
+            }
         }
     }
 
@@ -1742,40 +1784,10 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     CScope* scope = &ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
 
-    // if protein, get sources applicable to DNA location of CDS
-    if ( ctx.IsProt() ) {
-        const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
-        if ( cds != 0 ) {
-            const CSeq_loc& cds_loc = cds->GetLocation();
-            CRef<CSeq_loc> cleaned_location( new CSeq_loc );
-            cleaned_location->Assign( cds_loc );
-            if (cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
-                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, scope));
-                cleaned_location->Assign(*rev_loc);
-            }
-            CBioseq_Handle bioseq_h;
-            ITERATE( CSeq_loc, cds_loc_ci, *cleaned_location ) {
-                bioseq_h = scope->GetBioseqHandle(cds_loc_ci.GetSeq_id());
-                if( bioseq_h ) {
-                    break;
-                }
-            }
-            if( bioseq_h ) {
-                x_CollectBioSourcesOnBioseq(
-                    bioseq_h,
-                    cleaned_location->GetTotalRange(),
-                    ctx,
-                    srcs);
-            }
-        }
-    }
-
-    if ( srcs.empty() ) {
-        x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
-                                    ctx.GetLocation().GetTotalRange(),
-                                    ctx,
-                                    srcs);
-    }
+    x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
+                                ctx.GetLocation().GetTotalRange(),
+                                ctx,
+                                srcs);
   
     // if no source found create one (only if not FTable format or Dump mode)
     if ( srcs.empty()  &&  /* ! cfg.IsFormatFTable()  && */  ! cfg.IsModeDump() ) {
