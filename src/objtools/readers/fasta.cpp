@@ -1845,6 +1845,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     if (counter) {
         *counter = reader.GetIDGenerator().GetCounter();
     }
+    return seq_entry;
 }
 
 
