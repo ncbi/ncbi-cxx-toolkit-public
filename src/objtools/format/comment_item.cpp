@@ -2010,7 +2010,7 @@ string s_CreateHistCommentString
 (const string& prefix,
  const string& suffix,
  const CSeq_hist_rec& hist,
- const CBioseqContext& ctx)
+ CBioseqContext& ctx)
 {
     //if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
     //    return "???";
