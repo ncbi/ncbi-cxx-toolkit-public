@@ -85,6 +85,7 @@ public:
     static bool HoldsInstitutionCode(const TSubtype stype);
 
     static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
+
     static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country);
     static string IsCultureCollectionValid(const string& culture_collection);
     static string IsSpecimenVoucherValid(const string& specimen_voucher);
@@ -121,11 +122,14 @@ public:
     static bool IsUnexpectedViralOrgModQualifier(TSubtype subtype);
     bool IsUnexpectedViralOrgModQualifier() const;
 
+    typedef map<string, string, PNocase> TInstitutionCodeMap;
     private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);
     COrgMod& operator=(const COrgMod& value);
 
+    static TInstitutionCodeMap::iterator FindInstitutionCode(const string& inst_coll, TInstitutionCodeMap& code_map,
+        bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country);
 };
 
 /////////////////// COrgMod inline methods

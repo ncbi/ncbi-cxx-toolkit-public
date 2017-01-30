@@ -184,16 +184,15 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 
 // ===== biomaterial, and culture-collection BioSource subsource modifiers     ================
 
-typedef map<string, string, PNocase> TInstitutionCodeMap;
-
-static TInstitutionCodeMap s_BiomaterialInstitutionCodeMap;
-static TInstitutionCodeMap s_SpecimenVoucherInstitutionCodeMap;
-static TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
+static COrgMod::TInstitutionCodeMap s_BiomaterialInstitutionCodeMap;
+static COrgMod::TInstitutionCodeMap s_SpecimenVoucherInstitutionCodeMap;
+static COrgMod::TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
 
 // holds all the data in the specific ones above
-static TInstitutionCodeMap s_CompleteInstitutionCodeMap;
-static TInstitutionCodeMap s_CompleteInstitutionFullNameMap;
-static TInstitutionCodeMap s_InstitutionCodeTypeMap;
+static COrgMod::TInstitutionCodeMap s_CompleteInstitutionCodeMap;
+static COrgMod::TInstitutionCodeMap s_CompleteInstitutionFullNameMap;
+static COrgMod::TInstitutionCodeMap s_InstitutionCodeTypeMap;
+static COrgMod::TInstitutionCodeMap s_InstitutionCodeSynonymsMap;
 static bool                s_InstitutionCollectionCodeMapInitialized = false;
 
 DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
@@ -204,7 +203,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
     vector<string> tokens;
     NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
-    if (tokens.size() != 3) {
+    if (tokens.size() != 3 && tokens.size() != 4) {
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
     } else {
@@ -232,6 +231,15 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         s_CompleteInstitutionCodeMap[tokens[0]] = tokens[2];
         s_CompleteInstitutionFullNameMap[tokens[2]] = tokens[0];
         s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
+        if (tokens.size() == 4 && !NStr::IsBlank(tokens[3])) {
+            NStr::TruncateSpacesInPlace(tokens[3]);
+            vector<string> synonyms;
+            NStr::Split(tokens[3], ";", synonyms, NStr::fSplit_NoMergeDelims);
+            NON_CONST_ITERATE(vector<string>, s, synonyms) {
+                NStr::TruncateSpacesInPlace(*s);
+                s_InstitutionCodeSynonymsMap[*s] = tokens[0];
+            }
+        }
     }
 }
 
@@ -268,6 +276,46 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
 }
 
 
+COrgMod::TInstitutionCodeMap::iterator COrgMod::FindInstitutionCode(const string& inst_coll, TInstitutionCodeMap& code_map,
+    bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country)
+{
+    TInstitutionCodeMap::iterator it = code_map.find(inst_coll);
+    if (it != code_map.end()) {
+        if (NStr::EqualCase(it->first, inst_coll)) {
+        } else if (NStr::EqualNocase(it->first, inst_coll)) {
+            is_miscapitalized = true;
+        }
+        correct_cap = it->first;
+        return it;
+    } else {
+        size_t pos = NStr::Find(inst_coll, "<");
+        if (pos == string::npos) {
+            string check = inst_coll + "<";
+            it = code_map.begin();
+            while (it != code_map.end()) {
+                if (NStr::StartsWith(it->first, check, NStr::eNocase)) {
+                    needs_country = true;
+                    if (!NStr::StartsWith(it->first, check, NStr::eCase)) {
+                        is_miscapitalized = true;
+                    }
+                    correct_cap = it->first.substr(0, inst_coll.length());
+                    return it;
+                }
+                ++it;
+            }
+        } else {
+            string inst_sub = inst_coll.substr(0, pos);
+            it = code_map.find(inst_sub);
+            if (it != code_map.end()) {
+                erroneous_country = true;
+                return it;
+            }
+        }
+    }
+    return code_map.end();
+}
+
+
 bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country)
 {
     bool rval = false;
@@ -278,42 +326,42 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
     correct_cap.clear();
 
     s_InitializeInstitutionCollectionCodeMaps();
-
-    TInstitutionCodeMap::iterator it = s_InstitutionCodeTypeMap.find(inst_coll);
-    if (it != s_InstitutionCodeTypeMap.end()) {
-        if (NStr::EqualCase (it->first, inst_coll)) {
-        } else if (NStr::EqualNocase (it->first, inst_coll)) {
-            is_miscapitalized = true;
-        }
-        voucher_type = it->second;
-        correct_cap = it->first;
-        rval = true;
-    } else {
-        size_t pos = NStr::Find(inst_coll, "<");
-        if (pos == string::npos) {
-            string check = inst_coll + "<";
-            it = s_InstitutionCodeTypeMap.begin();
-            while (!rval && it != s_InstitutionCodeTypeMap.end()) {
-                if (NStr::StartsWith(it->first, check, NStr::eNocase)) {
-                    needs_country = true;
-                    rval = true;
-                    if (!NStr::StartsWith(it->first, check, NStr::eCase)) {
-                        is_miscapitalized = true;
-                    }
-                    correct_cap = it->first.substr(0, inst_coll.length());
+    
+    TInstitutionCodeMap::iterator ic = FindInstitutionCode(inst_coll, s_InstitutionCodeTypeMap, is_miscapitalized, correct_cap, needs_country, erroneous_country);
+    if (ic != s_InstitutionCodeTypeMap.end()) {
+        if (needs_country) {
+            // check to see if non-country-requiring code is in synonyms
+            bool syn_is_miscapitalized = false;
+            string syn_correct_cap = "";
+            bool syn_needs_country = false;
+            bool syn_erroneous_country = false;
+            TInstitutionCodeMap::iterator it = FindInstitutionCode(inst_coll, 
+                s_InstitutionCodeSynonymsMap, syn_is_miscapitalized, syn_correct_cap, 
+                syn_needs_country, syn_erroneous_country);
+            if (it != s_InstitutionCodeSynonymsMap.end() && !syn_needs_country) {
+                TInstitutionCodeMap::iterator is = s_InstitutionCodeTypeMap.find(it->second);
+                if (is != s_InstitutionCodeTypeMap.end()) {
+                    is_miscapitalized = syn_is_miscapitalized;
+                    correct_cap = syn_correct_cap;
+                    needs_country = syn_needs_country;
+                    erroneous_country = syn_erroneous_country;
+                    voucher_type = is->second;
+                    return true;
                 }
-                ++it;
-            }
-        } else {
-            string inst_sub = inst_coll.substr(0, pos);
-            it = s_InstitutionCodeTypeMap.find(inst_sub);
-            if (it != s_InstitutionCodeTypeMap.end()) {
-                erroneous_country = true;
-                rval = true;
             }
         }
+        voucher_type = ic->second;
+        return true;
     }
-    return rval;
+    ic = FindInstitutionCode(inst_coll, s_InstitutionCodeSynonymsMap, is_miscapitalized, correct_cap, needs_country, erroneous_country);
+    if (ic != s_InstitutionCodeSynonymsMap.end()) {
+        TInstitutionCodeMap::iterator it = s_InstitutionCodeTypeMap.find(ic->second);
+        if (it != s_InstitutionCodeTypeMap.end()) {
+            voucher_type = it->second;
+        }
+        return true;
+    }
+    return false;
 }
 
 
@@ -454,7 +502,7 @@ string COrgMod::MakeStructuredVoucher(const string& inst, const string& coll, co
 // more letters followed by a series of digits, optionally separated
 // by space, and if the series of letters looks up as a valid
 // institution code.
-bool FindInstCodeAndSpecID(TInstitutionCodeMap& code_map, string& val)
+bool FindInstCodeAndSpecID(COrgMod::TInstitutionCodeMap& code_map, string& val)
 {
     // nothing to do if value is blank
     if (NStr::IsBlank(val)) {
@@ -489,7 +537,7 @@ bool FindInstCodeAndSpecID(TInstitutionCodeMap& code_map, string& val)
     }
 
     bool rval = false;
-    TInstitutionCodeMap::iterator it = code_map.find(inst_code);
+    COrgMod::TInstitutionCodeMap::iterator it = code_map.find(inst_code);
     if (it != code_map.end()) {
         val = inst_code + ":" + remainder;
         rval = true;
