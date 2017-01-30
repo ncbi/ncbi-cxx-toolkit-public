@@ -322,7 +322,7 @@ bool CNetService::IsUsingXSiteProxy()
     return SNetServiceXSiteAPI::IsUsingXSiteProxy();
 }
 
-const char kXSiteFwd[] = "XSITEFWD";
+static const char kXSiteFwd[] = "XSITEFWD";
 
 void SNetServiceXSiteAPI::AllowXSiteConnections()
 {
