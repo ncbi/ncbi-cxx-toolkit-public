@@ -5,7 +5,7 @@ SCRIPTDIR=$2
 BLAST_VERSION=$3
 PRODUCT="ncbi-igblast-$BLAST_VERSION+"
 
-INSTALL_LOCATION1=/usr/local/ncbi/blast
+INSTALL_LOCATION1=/usr/local/ncbi/igblast
 INSTALL_LOCATION2=/etc/paths.d
 STAGE_DIR1=_stage1
 STAGE_DIR2=_stage2
