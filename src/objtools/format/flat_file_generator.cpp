@@ -111,6 +111,72 @@ void CFlatFileGenerator::SetFeatTree(feature::CFeatTree* tree)
     m_Ctx->SetFeatTree(tree);
 }
 
+
+
+    /*
+    template<typename _Pred>
+    void VisitAllBioseqs(objects::CSeq_entry& entry, _Pred m)
+    {
+        if (entry.IsSeq())
+        {
+            m(entry.SetSeq());
+        }
+        else
+            if (entry.IsSet())
+            {
+                NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
+                {
+                    VisitAllBioseqs(**it_se, m);
+                }
+            }
+    }
+    // also const visitor
+    template<typename _Pred>
+    void VisitAllBioseqs(const objects::CSeq_entry& entry, _Pred m)
+    {
+        if (entry.IsSeq())
+        {
+            m(entry.GetSeq());
+        }
+        else
+            if (entry.IsSet())
+            {
+                ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.GetSet().GetSeq_set())
+                {
+                    VisitAllBioseqs(**it_se, m);
+                }
+            }
+    }
+
+    template<typename _Pred>
+    void VisitAllSeqSets(objects::CSeq_entry& entry, _Pred m)
+    {
+        if (entry.IsSet())
+        {
+            m(entry.SetSet());
+            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
+            {
+                VisitAllSeqSets(**it_se, m);
+            }
+        }
+    }
+    */
+    // also const visitor
+    template<typename _Pred>
+    void VisitAllSeqSets(const objects::CSeq_entry& entry, _Pred m)
+    {
+        if (entry.IsSet())
+        {
+            m(entry.GetSet());
+            ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.GetSet().GetSeq_set())
+            {
+                VisitAllSeqSets(**it_se, m);
+            }
+        }
+    }
+
+
+
 // Generate a flat-file report for a Seq-entry
 // (the other CFlatFileGenerator::Generate functions ultimately
 // call this)
@@ -160,6 +226,7 @@ void CFlatFileGenerator::Generate
     m_Ctx->SetSGS(false);
     CConstRef<CSeq_entry> topent = entry.GetTopLevelEntry().GetCompleteSeq_entry();
     if (topent && topent->IsSet()) {
+        /*
         const CBioseq_set& topset = topent->GetSet();
         VISIT_ALL_SEQSETS_WITHIN_SEQSET (itr, topset) {
             const CBioseq_set& bss = *itr;
@@ -167,6 +234,11 @@ void CFlatFileGenerator::Generate
                     m_Ctx->SetSGS(true);
             }
         }
+        */
+        VisitAllSeqSets(*topent, [this](const CBioseq_set& bss){
+            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
+                m_Ctx->SetSGS(true);
+            }});
     }
 
     CRef<CFlatItemOStream> pItemOS( & item_os );
