@@ -973,6 +973,17 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                  ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
         }
+        if (!(info->type & uuu->types)) {
+            char buf[20];
+            const char* type = SERV_TypeStr(info->type);
+            sprintf(buf, *type? " (#%hu)" : "#%hu",(unsigned short)info->type);
+            CORE_LOGF_X(10, eLOG_Critical,
+                        ("[%s]  Mismatched server type %s%s not within #%hu",
+                         type, buf, (unsigned short) uuu->types));
+            status = eIO_Unknown;
+            assert(0);
+            continue;
+        }
         if (uuu->type) {
             free((void*) uuu->type);
             uuu->type = 0;
