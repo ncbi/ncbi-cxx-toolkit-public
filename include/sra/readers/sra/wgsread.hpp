@@ -200,11 +200,19 @@ public:
 
     bool IsTSA(void) const;
 
+    enum EGnlIdFlags {
+        fGnlId_NoWGSVersion = 1<<0,
+        fGnlId_NoWGSId      = 1<<1,
+        fGnlId_Default      = 0
+    };
+    typedef int TGnlIdFlags;
+    
     CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
-                                   bool omit_wgs_version = false) const;
+                                   TGnlIdFlags gnl_id_flags = fGnlId_Default) const;
     CRef<CSeq_id> GetPatentSeq_id(int id) const;
+
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str, TVDBRowId row,
-                                           bool omit_wgs_version = false) const;
+                                           TGnlIdFlags gnl_id_flags = fGnlId_Default) const;
     CRef<CSeq_id> GetAccSeq_id(CTempString acc,
                                int version) const;
     CRef<CSeq_id> GetAccSeq_id(ERowType type,
