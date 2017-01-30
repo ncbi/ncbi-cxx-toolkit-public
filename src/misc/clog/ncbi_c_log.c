@@ -134,7 +134,7 @@
  *  Global constants
  */
 
-static const char* kBaseLogDir  = "/log/";
+static const char* kBaseLogDir  = "s:/log/";
 
 
 
@@ -626,9 +626,9 @@ static TNcbiLog_TID s_GetTID(void)
     tid = 0;
 #elif defined(NCBI_OS_UNIX)
 #  if defined(SYS_gettid)
-    tid = (TNcbiLog_TID)syscall(SYS_gettid);
+    tid = (TNcbiLog_TID)syscall(SYS_gettid); /* NCBI_FAKE_WARNING: Clang */
 #  else
-    tid = (TNcbiLog_TID)pthread_self(); /* NCBI_FAKE_WARNING */
+    tid = (TNcbiLog_TID)pthread_self();      /* NCBI_FAKE_WARNING */
 #  endif
 #elif defined(NCBI_OS_MSWIN)
     tid = GetCurrentThreadId();
