@@ -616,6 +616,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
 //  ----------------------------------------------------------------------------
 {
     unique_ptr<CGff2Record> pRecord(x_CreateRecord());
+
     if ( !pRecord->AssignFromGff(strLine) ) {
         return false;
     }
@@ -640,6 +641,12 @@ bool CGff2Reader::x_ParseAlignmentGff(
     mParsingAlignment = true;
     return true;
 }
+
+/*
+// ----------------------------------------------------------------------------
+bool s_CreateDiscAlignment(map<
+// ----------------------------------------------------------------------------
+*/
 
 
 //  ----------------------------------------------------------------------------
@@ -706,21 +713,25 @@ bool CGff2Reader::x_MergeAlignments(
     processed->SetType(CSeq_align::eType_disc);
 
     for (auto& kv : summed_scores) {
-        CRef<CScore> score = Ref(new CScore());
+        auto score = Ref(new CScore());
+  //      score_values[kv.first] = Ref(new CScore::TValue());
+ //       score_values[kv.first]->SetInt(kv.second);
+    //    score_values[name] = Ref(new CScore::TValue());
+    //    score_values[name]->Assign(value);
         score->SetId().SetStr(kv.first);
         score->SetValue().SetInt(kv.second);
         processed->SetScore().push_back(score);
     }
 
     for (auto& kv : score_values) {
-        CRef<CScore> score = Ref(new CScore());
+        auto score = Ref(new CScore());
         score->SetId().SetStr(kv.first);
         score->SetValue().Assign(*(kv.second));
         processed->SetScore().push_back(score);
     }
 
     for (auto current : alignment_list) {
-        CRef<CSeq_align> new_align = Ref(new CSeq_align());
+        auto new_align = Ref(new CSeq_align());
         new_align->Assign(*current);
         new_align->ResetScore();
 
@@ -1284,8 +1295,68 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetSegment(
+    const CGff2Record& gff,
+    CRef<CSeq_align> pAlign)
+//  ----------------------------------------------------------------------------
+{
+    const string& type = gff.Type();
+
+    if (type == "cDNA_match" || 
+        type == "EST_match"  || 
+        type == "translated_nucleotide_match") {
+        //return xAlignmentSetSpliced_seg(gff, pAlign);
+        return xAlignmentSetDenseg(gff, pAlign);
+    }
+
+    return xAlignmentSetDenseg(gff, pAlign);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xAlignmentSetSpliced_seg(
+    const CGff2Record& gff,
+    CRef<CSeq_align> pAlign)
+//  ----------------------------------------------------------------------------
+{
+    vector<string> targetParts;
+    if (!xGetTargetParts(gff, targetParts)) {
+        return false;
+    }
+
+    CSeq_align::TSegs& segs = pAlign->SetSegs();
+    
+    auto& spliced_seg = segs.SetSpliced();
+
+    const string& type = gff.Type();
+    CSpliced_seg::EProduct_type product_type;
+    if (type == "translated_nucleotide_match") {
+        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    } 
+    else {
+        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    }
+
+
+    CRef<CSpliced_exon> exon(new CSpliced_exon());
+    exon->SetProduct_start().SetNucpos(NStr::StringToInt(targetParts[1])-1);
+    exon->SetProduct_end().SetNucpos(NStr::StringToInt(targetParts[2])-1);
+
+    const auto genomic_start = gff.SeqStart();
+    const auto genomic_end = gff.SeqStop();
+    exon->SetGenomic_start(genomic_start);
+    exon->SetGenomic_end(genomic_end);
+
+    spliced_seg.SetExons().push_back(exon);
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xAlignmentSetDenseg(
     const CGff2Record& gff,
     CRef<CSeq_align> pAlign)
 //  ----------------------------------------------------------------------------
@@ -1353,6 +1424,9 @@ bool CGff2Reader::xAlignmentSetSegment(
     }
     return true;
 }
+
+
+
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetScore(

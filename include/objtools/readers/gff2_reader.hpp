@@ -334,8 +334,15 @@ public:
     bool xGetTargetParts(const CGff2Record& gff, 
                          vector<string>& targetParts) const;
 
-
     bool xAlignmentSetSegment(
+        const CGff2Record&,
+        CRef<CSeq_align> );
+
+    bool xAlignmentSetDenseg(
+        const CGff2Record&,
+        CRef<CSeq_align> );
+
+    bool xAlignmentSetSpliced_seg(
         const CGff2Record&,
         CRef<CSeq_align> );
 
