@@ -1463,6 +1463,7 @@ private:
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateTwintrons(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
+    void ValidateCompleteGenome(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);

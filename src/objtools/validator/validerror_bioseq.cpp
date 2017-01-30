@@ -1318,6 +1318,9 @@ void CValidError_bioseq::ValidateBioseqContext(
 
             // Check for colliding genes
             ValidateCollidingGenes(seq);
+
+            // Detect absence of BioProject DBLink for complete bacterial genomes
+            ValidateCompleteGenome(seq);
         }
 
         m_dblink_count = 0;
@@ -9660,6 +9663,105 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
     }
 }
 
+void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
+{
+    // EMBL or DDBJ check
+    bool embl_ddbj = false;
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if ((*id)->IsDdbj() || (*id)->IsEmbl()) {
+            embl_ddbj = true;
+            break;
+        }
+    }
+
+    if (!embl_ddbj) {
+        return;
+    }
+
+    // Completness check
+    bool complete_genome = false;
+    CSeqdesc_CI ti(m_CurrentHandle, CSeqdesc::e_Title);
+    complete_genome = (ti && NStr::Find(ti->GetTitle(), "complete genome") == string::npos);
+
+    if (!complete_genome) {
+
+        CSeqdesc_CI ei(m_CurrentHandle, CSeqdesc::e_Embl);
+        if (ei && ei->GetEmbl().IsSetKeywords()) {
+
+            ITERATE(CEMBL_block::TKeywords, keyword, ei->GetEmbl().GetKeywords()) {
+                if (NStr::EqualNocase(*keyword, "complete genome")) {
+                    complete_genome = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!complete_genome) {
+        return;
+    }
+
+    // Division check
+    CSeqdesc_CI si(m_CurrentHandle, CSeqdesc::e_Source);
+    if (!si || !si->GetSource().IsSetDivision() || si->GetSource().GetDivision() != "BCT") {
+        return;
+    }
+
+    // Check for BioProject accession
+    bool bioproject_accession_set = false;
+    for (CSeqdesc_CI ui(m_CurrentHandle, CSeqdesc::e_User); ui; ++ui) {
+
+        if (ui->GetUser().IsSetData() && ui->GetUser().IsSetType() && ui->GetUser().GetType().IsStr() && NStr::EqualCase(ui->GetUser().GetType().GetStr(), "DBLink")) {
+            
+            bioproject_accession_set = !ui->GetUser().GetData().empty();
+            break;
+        }
+    }
+
+    if (bioproject_accession_set)
+        return;
+
+    // Delta-seq check
+    bool no_gaps = true;
+    if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
+
+        const CDelta_ext& delta = seq.GetInst().GetExt().GetDelta();
+        if (delta.IsSet()) {
+
+            ITERATE(CDelta_ext::Tdata, part, delta.Get()) {
+
+                if ((*part)->IsLiteral()) {
+                    const CSeq_literal& literal = (*part)->GetLiteral();
+                    if (literal.IsSetLength() && !literal.IsSetSeq_data()) {
+                        no_gaps = false;
+                        break;
+                    }
+
+                    if (literal.IsSetSeq_data() && literal.GetSeq_data().IsGap()) {
+                        no_gaps = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check for instantiated gaps
+    if (no_gaps) {
+
+        CFeat_CI feat(m_CurrentHandle, CSeqFeatData::eSubtype_gap);
+        if (feat) {
+            no_gaps = false;
+        }
+   }
+
+
+    if (no_gaps) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_CompleteGenomeLacksBioProject,
+                "No BioProject Accession exists for what appears to be a complete genome",
+                seq);
+    }
+}
 
 void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 {
