@@ -161,29 +161,22 @@ public:
         mp_IdGenerator.Reset(&generator);
     }
 
+    CSeqIdGenerator& SetGenerator(void) {
+        return *mp_IdGenerator;
+    }
+
     const CSeqIdGenerator& GetGenerator(void) const {
         return *mp_IdGenerator;
     }
 
-    virtual CRef<CSeq_id> GenerateID(bool unique_id) {
-        const bool advance = true;
-        while (unique_id) {
-            auto p_Id = mp_IdGenerator->GenerateID(advance);
-            auto idh = CSeq_id_Handle::GetHandle(*p_Id);
-            if (x_IsUniqueIdHandle(idh)) {
-                return p_Id;
-            }
-        }
-        // !unique_id
-        return mp_IdGenerator->GenerateID(advance);
-    }
+    virtual CRef<CSeq_id> GenerateID(bool unique_id); 
 
     void ClearIdCache(void) {
         m_PreviousIdHandles.clear();
     }
 
-    void CacheIdHandle(CSeq_id_Handle idh) {
-        m_PreviousIdHandles.insert(idh);
+    bool CacheIdHandle(CSeq_id_Handle idh) {
+        return m_PreviousIdHandles.insert(idh).second;
     }
 
 protected:

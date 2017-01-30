@@ -468,7 +468,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(ILineErrorListener * pMessageListene
     CBioseq& master_seq = master->SetSeq();
     CSeq_inst& inst = master_seq.SetInst();
     // XXX - work out less generic ID?
-    CRef<CSeq_id> id(SetIDGenerator().GenerateID(true));
+    CRef<CSeq_id> id(m_IDGenerator->GenerateID(true));
     if (m_CurrentMask) {
         m_CurrentMask->SetId(*id);
     }
@@ -532,7 +532,8 @@ CRef<CSeq_loc> CFastaReader::SaveMask(void)
 
 void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
 {
-    m_IDGenerator.Reset(&gen);
+    m_IDHandler->SetGenerator(gen);
+ //   m_IDGenerator.Reset(&gen);
 }
 
 // For reasons of efficiency, this method does not use 
@@ -648,7 +649,8 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     if (TestFlag(fUniqueIDs)) {
         ITERATE (CBioseq::TId, it, GetIDs()) {
             CSeq_id_Handle h = CSeq_id_Handle::GetHandle(**it);
-            if ( !m_IDTracker.insert(h).second ) {
+            //if ( !m_IDTracker.insert(h).second ) {
+            if ( !m_IDHandler->CacheIdHandle(h) ) {
                 FASTA_ERROR(LineNumber(),
                     "CFastaReader: Seq-id " << h.AsString()
                     << " is a duplicate around line " << LineNumber(),
@@ -809,6 +811,9 @@ bool CFastaReader::IsValidLocalID(const TStr& idString,
 
 void CFastaReader::GenerateID(void)
 {
+    CRef<CSeq_id> id = m_IDHandler->GenerateID(TestFlag(fUniqueIDs));
+    SetIDs().push_back(id);
+/*
     if (TestFlag(fUniqueIDs)) { // be extra careful
         CRef<CSeq_id> id;
         TIDTracker::const_iterator idt_end = m_IDTracker.end();
@@ -819,6 +824,7 @@ void CFastaReader::GenerateID(void)
     } else {
         SetIDs().push_back(m_IDGenerator->GenerateID(true));
     }
+    */
 }
 
 void CFastaReader::CheckDataLine(
@@ -1804,7 +1810,7 @@ void CFastaReader::x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids)
     annot.SetData().SetAlign().push_back(sa);
 }
 
-
+/*
 class CCounterManager
 {
 public:
@@ -1818,6 +1824,7 @@ private:
     CSeqIdGenerator& m_Generator;
     int*             m_Counter;
 };
+*/
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv,
@@ -1825,11 +1832,19 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
 {
     CRef<ILineReader> lr(ILineReader::New(in));
     CFastaReader      reader(*lr, flags);
-    CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
+   // CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
+    if (counter) {
+        reader.SetIDGenerator().SetCounter(*counter);
+    }
+
     if (lcv) {
         reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
     }
-    return reader.ReadSet(kMax_Int, pMessageListener);
+    CRef<CSeq_entry> seq_entry = reader.ReadSet(kMax_Int, pMessageListener);
+
+    if (counter) {
+        *counter = reader.GetIDGenerator().GetCounter();
+    }
 }
 
 

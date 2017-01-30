@@ -466,6 +466,22 @@ CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title,
     return false;
 }
 
+
+CRef<CSeq_id> CFastaIdHandler::GenerateID(bool unique_id) 
+{
+    const bool advance = true;
+    while (unique_id) {
+        auto p_Id = mp_IdGenerator->GenerateID(advance);
+        auto idh = CSeq_id_Handle::GetHandle(*p_Id);
+        if (x_IsUniqueIdHandle(idh)) {
+            return p_Id;
+        }
+    }
+    // !unique_id
+    return mp_IdGenerator->GenerateID(advance);
+}
+
+
 CRef<CSeq_id> CSeqIdGenerator::GenerateID(bool advance)
 {
     CRef<CSeq_id> seq_id(new CSeq_id);

@@ -154,8 +154,8 @@ public:
     const CBioseq::TId& GetIDs(void) const    { return m_CurrentSeq->GetId(); }
     const CSeq_id&      GetBestID(void) const { return *m_BestID; }
 
-    const CSeqIdGenerator& GetIDGenerator(void) const { return *m_IDGenerator; }
-    CSeqIdGenerator&       SetIDGenerator(void)       { return *m_IDGenerator; }
+    const CSeqIdGenerator& GetIDGenerator(void) const { return  m_IDHandler->GetGenerator(); }
+    CSeqIdGenerator&       SetIDGenerator(void)       { return  m_IDHandler->SetGenerator(); }
     void                   SetIDGenerator(CSeqIdGenerator& gen);
 
     /// Re-allow previously seen IDs even if fUniqueIds is on.
@@ -350,6 +350,7 @@ protected:
     TMask                   m_NextMask;
     TMasks *                m_MaskVec;
     CRef<CSeqIdGenerator>   m_IDGenerator;
+    CRef<CFastaIdHandler>   m_IDHandler;
     string                  m_SeqData;
     TGaps                   m_Gaps;
     TSeqPos                 m_CurrentPos; // does not count gaps
