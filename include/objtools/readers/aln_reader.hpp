@@ -204,7 +204,10 @@ public:
             TSeqPos& rangeEnd,
             TSeqTitles& seqTitles,
             objects::ILineErrorListener* pMessageListener);
-    
+
+    objects::CSeqIdGenerator& SetIDGenerator(void) { return m_FastaIdHandler.SetGenerator(); }
+    const objects::CSeqIdGenerator& GetIDGenerator(void) const { return m_FastaIdHandler.GetGenerator(); }
+    virtual CRef<objects::CSeq_id> GenerateID(bool unique_id) { return m_FastaIdHandler.GenerateID(unique_id); } 
 
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
