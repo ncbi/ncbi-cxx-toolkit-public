@@ -234,7 +234,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         if (tokens.size() == 4 && !NStr::IsBlank(tokens[3])) {
             NStr::TruncateSpacesInPlace(tokens[3]);
             vector<string> synonyms;
-            NStr::Split(tokens[3], ";", synonyms, NStr::fSplit_NoMergeDelims);
+            NStr::Split(tokens[3], ",", synonyms, NStr::fSplit_NoMergeDelims);
             NON_CONST_ITERATE(vector<string>, s, synonyms) {
                 NStr::TruncateSpacesInPlace(*s);
                 s_InstitutionCodeSynonymsMap[*s] = tokens[0];
