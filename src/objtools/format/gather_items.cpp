@@ -2641,6 +2641,20 @@ bool s_CoincidingGapFeatures(
     return false;
 }
 
+/*
+CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat, 
+        const CRange<TSeqPos>& range, 
+        CScope& scope)
+{
+    CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(feat, range);
+    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+    temp_annot->SetData().SetFtable().push_back(trimmed_feat);
+    scope.AddSeq_annot(*temp_annot);
+    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
+    return CMappedFeat(sfh);
+}
+*/
+
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -2794,14 +2808,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             /*
                 CRange<TSeqPos> range = loc.GetTotalRange();
                 const CSeq_feat& feat = it->GetMappedFeature();
-                CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(feat, range);
                 CScope& scope = ctx.GetScope();
-                CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
-                temp_annot->SetData().SetFtable().push_back(trimmed_feat);
-                scope.AddSeq_annot(*temp_annot);
-                CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
-                CMappedFeat mapped_feat(sfh);
-                item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
+                CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
+                item.Reset( x_NewFeatureItem(trimmed_feat, ctx, feat_loc, m_Feat_Tree) );
                 */
                 item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
             } else {
@@ -3272,22 +3281,17 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
             if( loc->IsNull() ) {
                 continue;
             }
+
             /*
             CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
             const CSeq_feat& feat = it->GetMappedFeature();
-            CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(feat, range);
             CScope& scope = ctx.GetScope();
-            CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
-            temp_annot->SetData().SetFtable().push_back(trimmed_feat);
-            scope.AddSeq_annot(*temp_annot);
-            CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
-            CMappedFeat mapped_feat(sfh);
-
-            item = ConstRef( x_NewFeatureItem(mapped_feat, ctx, 
+            CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
+            item = ConstRef( x_NewFeatureItem(trimmed_feat, ctx, 
                                s_NormalizeNullsBetween(loc), m_Feat_Tree,
                                CFeatureItem::eMapped_from_prot,
                                cdsFeatureItem ) );
-                               */
+            */
             item = ConstRef( x_NewFeatureItem(*it, ctx, 
                                s_NormalizeNullsBetween(loc), m_Feat_Tree,
                                CFeatureItem::eMapped_from_prot,
