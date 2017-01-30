@@ -11,8 +11,8 @@ var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
 // valid:   "120", "120x64", "140", "140x64"
-var g_def_msvcver = "120";
-var g_msvcver     = "120";
+var g_def_msvcver = "120x64";
+var g_msvcver     = "120x64";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
