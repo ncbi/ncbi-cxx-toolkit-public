@@ -80,16 +80,12 @@ private:
 
 struct SNetStorageObjectRWStream : public CRWStream
 {
-    SNetStorageObjectRWStream(unique_ptr<SEmptyWriteIgnore> impl) :
-        CRWStream(impl.get(), 0, nullptr, CRWStreambuf::fLeakExceptions),
-        m_Impl(std::move(impl))
+    SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
+        CRWStream(new SEmptyWriteIgnore(impl), 0, nullptr, CRWStreambuf::fOwnAll | CRWStreambuf::fLeakExceptions)
     {
     }
 
     virtual ~SNetStorageObjectRWStream() { flush(); }
-
-private:
-    unique_ptr<SEmptyWriteIgnore> m_Impl;
 };
 
 string CNetStorageObject::GetLoc()
@@ -136,8 +132,7 @@ IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 
 CNcbiIostream* CNetStorageObject::GetRWStream()
 {
-    unique_ptr<SEmptyWriteIgnore> impl(new SEmptyWriteIgnore(m_Impl));
-    return new SNetStorageObjectRWStream(std::move(impl));
+    return new SNetStorageObjectRWStream(m_Impl);
 }
 
 Uint8 CNetStorageObject::GetSize()
