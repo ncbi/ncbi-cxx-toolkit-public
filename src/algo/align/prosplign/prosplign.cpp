@@ -298,11 +298,21 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
         ("cut_flanks_with_posit_window",
          "cut_flanks_with_posit_window",
          "window size for cut_flanks_with_posit_drop."
-         " positives will be counted for a flank and for a window next to the flank."
+         " Positives will be counted for a flank and for a window next to the flank."
          " If difference (in percentage) is more than cut_flanks_with_posit_dropoff, flank will be dropped",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_window));
     arg_desc->SetConstraint("cut_flanks_with_posit_window", new CArgAllow_Integers(0, 10000));
+
+    arg_desc->AddDefaultKey
+        ("cut_flanks_with_posit_gap_ratio",
+         "cut_flanks_with_posot_gap_ratio",
+         "gap ratio for cut_flanks_with_posit_drop."
+         " Gaps will be counted as 1 for opening and 1/gap_ratio for extention while trimming flanks."
+         " Setting gap_ratio to more than 1 will affect cut_flanks_with_posit_dropoff value",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_gap_ratio));
+    arg_desc->SetConstraint("cut_flanks_with_posit_gap_ratio", new CArgAllow_Integers(1, 1000));
 
     arg_desc->AddDefaultKey
         ("start_bonus",
@@ -314,7 +324,7 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey
         ("stop_bonus",
          "stop_bonus",
-         "postprocessing: reward for stop codon at the end",
+         "postprocessing: reward for stop codon at the end (not implemented)",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_stop_bonus));
     arg_desc->SetConstraint("stop_bonus", new CArgAllow_Integers(0, 1000));
@@ -326,9 +336,10 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
     switch (mode) {
     case eWithHoles:
     
-        SetCutFlanksWithPositDrop(false);
-        SetCutFlanksWithPositDropoff(0);
-        SetCutFlanksWithPositWindow(0);
+        SetCutFlanksWithPositDrop(default_cut_flanks_with_posit_drop);
+        SetCutFlanksWithPositDropoff(default_cut_flanks_with_posit_dropoff);
+        SetCutFlanksWithPositWindow(default_cut_flanks_with_posit_window);
+        SetCutFlanksWithPositGapRatio(default_cut_flanks_with_posit_gap_ratio);
        
         SetCutFlankPartialCodons(default_cut_flank_partial_codons);
         SetFillHoles(default_fill_holes);
@@ -356,6 +367,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
         SetCutFlanksWithPositDrop(false);
         SetCutFlanksWithPositDropoff(0);
         SetCutFlanksWithPositWindow(0);
+        SetCutFlanksWithPositGapRatio(0);
 
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
@@ -386,6 +398,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         SetCutFlanksWithPositDrop(false);
         SetCutFlanksWithPositDropoff(0);
         SetCutFlanksWithPositWindow(0);
+        SetCutFlanksWithPositGapRatio(0);
         
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
@@ -411,6 +424,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         SetCutFlanksWithPositDrop(args["cut_flanks_with_posit_drop"].AsBoolean());
         SetCutFlanksWithPositDropoff(args["cut_flanks_with_posit_dropoff"].AsInteger());
         SetCutFlanksWithPositWindow(args["cut_flanks_with_posit_window"].AsInteger());
+        SetCutFlanksWithPositGapRatio(args["cut_flanks_with_posit_gap_ratio"].AsInteger());
 
         SetCutFlankPartialCodons(args["cut_flank_partial_codons"].AsBoolean());
         SetFillHoles(args["fill_holes"].AsBoolean());
@@ -551,6 +565,16 @@ CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlanksWithPositWindow(in
 int CProSplignOutputOptions::GetCutFlanksWithPositWindow() const
 {
     return cut_flanks_with_posit_window;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlanksWithPositGapRatio(int val)
+{
+    cut_flanks_with_posit_gap_ratio = val;
+    return *this;
+}
+int CProSplignOutputOptions::GetCutFlanksWithPositGapRatio() const
+{
+    return cut_flanks_with_posit_gap_ratio;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlankPartialCodons(bool val)

@@ -73,9 +73,15 @@ public:
     CProSplignTrimmer(const CProteinAlignText& alignment_text); 
 
     /// checks if alignment ends should be restored beyond 'beg' or 'end'
-    ///returns new flanking coord or 'beg' if no restoring )
-    size_t RestoreFivePrime(size_t beg);
-    size_t RestoreThreePrime(size_t end);
+    ///returns new flanking coord or 'beg'/'end' if no restoring )
+    size_t RestoreFivePrime(size_t beg) const;
+    size_t RestoreThreePrime(size_t end) const;
+
+    ///trim flanks with positives dropoff over a cutoff, iterative
+    ///flank 'good pieces' should not be dropped completely
+    int CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt& options) const; //returns new pc.beg
+    int CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt& options) const; //returns new pc.end
+    
 
 private:
     const CProteinAlignText& m_alignment_text;
@@ -122,6 +128,8 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
         }
     }
 
+    CProSplignTrimmer trim(alignment_text); 
+
     m_AliPiece = FindGoodParts(CNPiece(0, match.size(), 0, 0), match, outp, m_options);
     for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
         list<CNPiece> tmp = ExcludeBadExons(*it, match, outp, m_options);
@@ -136,168 +144,10 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
 
     //trim flanks with positives dropoff over a cutoff, iterative
     //flank 'good pieces' should not be dropped completely
-    if( !m_AliPiece.empty() && m_options.GetCutFlanksWithPositDrop() ) {
-        const double dropoff = m_options.GetCutFlanksWithPositDropoff()/(double)100;
-        const int window_size = m_options.GetCutFlanksWithPositWindow();
-        bool keep_trimming = true;
-
-        //trim left flank
-
-        while ( keep_trimming ) {
-            _ASSERT( !m_AliPiece.empty() );
-            _ASSERT( m_AliPiece.begin()->beg + 1 < m_AliPiece.begin()->end );
-            int begpos = m_AliPiece.begin()->beg;
-            int endpos = m_AliPiece.begin()->end;
-            //cut point
-            double cur_max_drop = 0;
-            int cur_cut = begpos;
-            //current point
-            int cur_pos = begpos;
-            int cur_end = begpos + window_size;
-            int cur_len = 0;//flank length
-            int lposit = 0; // number of positives to the left of cur_pos;
-            int rposit = 0; // number of positives in the window [cur_pos, cur_end) 
-            //count posit in initial window 
-            if( cur_end >= endpos ) break; //nothing to trim if piece length is window size or less
-            //initial window
-            for( int pos = cur_pos; pos < cur_end; ++pos ) {
-                if(match[pos] == POSIT_CHAR || match[pos] == MATCH_CHAR) {
-                    ++rposit;
-                }
-            }
-            //find cutting point
-            do {
-                //step
-                if( match[cur_pos] == POSIT_CHAR || match[cur_pos] == MATCH_CHAR ) {
-                    ++lposit;
-                    _ASSERT( rposit > 0 );
-                    --rposit;
-                }
-                if(  match[cur_end] == POSIT_CHAR || match[cur_end] == MATCH_CHAR ) {
-                    ++rposit;
-                }
-                ++cur_pos;
-                ++cur_end;
-                ++cur_len;
-                //check
-                double posit_drop = rposit/(double)window_size - lposit/(double)cur_len;
-                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == begpos ) ) {
-                    cur_max_drop = posit_drop;
-                    cur_cut = cur_pos;
-                }
-            } while( cur_end < endpos );
-            // cut ?
-            if( cur_cut == begpos ) {
-                keep_trimming = false;
-            } else {//trim
-
-                //handle weird cases
-
-                //cut to positive
-                _ASSERT( cur_cut > begpos);
-                for( ; cur_cut < endpos; ++cur_cut ) {
-                    if(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR) {
-                        break;
-                    }
-                }
-                if( cur_cut >= endpos ) break; // we don't want to cut the whole piece
-
-                //add positives back 
-                // cur_cut is a positive after above and cur_cut < endpos
-                _ASSERT(cur_cut < endpos);
-                _ASSERT(cur_cut > begpos);
-                _ASSERT(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR);
-                for( ; cur_cut >= begpos; --cur_cut) {
-                    if(match[cur_cut] != POSIT_CHAR && match[cur_cut] != MATCH_CHAR) {
-                        ++cur_cut;
-                        break;
-                    }
-                }
-                if( cur_cut <= begpos ) break; // the whole piece is back, no cut
-
-                //trim
-                m_AliPiece.begin()->beg = cur_cut;
-            }
-        }
-
-        //trim right flank
-
-        keep_trimming = true;
-        while ( keep_trimming ) {
-            _ASSERT( !m_AliPiece.empty() );
-            _ASSERT( m_AliPiece.back().beg + 1 < m_AliPiece.back().end );
-            int begpos = m_AliPiece.back().beg;
-            int endpos = m_AliPiece.back().end;
-            //cut point
-            double cur_max_drop = 0;
-            int cur_cut = endpos;
-            //current numbers
-            int win_end = endpos;
-            if( begpos + window_size > win_end) break; //window goes out of the 'good piece'
-            int win_beg = win_end - window_size;
-            int cur_len = 0;//flank length
-            int fposit = 0; // flank number of positives (startins with win_end);
-            int wposit = 0; // number of positives in the window [win_beg, win_end) 
-            //count posit in initial window 
-            for( int pos = win_beg; pos < win_end; ++pos ) {
-                if(match[pos] == POSIT_CHAR || match[pos] == MATCH_CHAR) {
-                    ++wposit;
-                }
-            }
-            //find cutting point
-            while( win_beg > begpos ) {
-                //step
-                --win_end;
-                --win_beg;
-                if( match[win_end] == POSIT_CHAR || match[win_end] == MATCH_CHAR ) {
-                    _ASSERT(wposit > 0);
-                    ++fposit;
-                    --wposit;
-                }
-                if( match[win_beg] == POSIT_CHAR || match[win_beg] == MATCH_CHAR ) {
-                    ++wposit;
-                }
-                ++cur_len;
-                //check
-                double posit_drop = wposit/(double)window_size - fposit/(double)cur_len;
-                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == endpos ) ) {
-                    cur_max_drop = posit_drop;
-                    cur_cut = win_end;
-                }
-            }
-            // cut ?
-            if( cur_cut == endpos ) {
-                keep_trimming = false;
-            } else {//trim
-
-                //handle weird cases
-
-                //cut to positive
-                for( --cur_cut; cur_cut >= begpos; --cur_cut ) {
-                    if(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR) {
-                        ++cur_cut;
-                        break;
-                    }
-                }
-                if( cur_cut <= begpos ) break; // don't want to cut the whole piece
-
-                //add positives back
-                // we are on a positive here and cur_cut < endpos and cur_cut > begpos
-                _ASSERT(cur_cut > begpos);
-                _ASSERT(cur_cut < endpos);
-                _ASSERT(match[cur_cut-1] == POSIT_CHAR || match[cur_cut-1] == MATCH_CHAR);
-                for( ; cur_cut < endpos; ++cur_cut ) {
-                    if(match[cur_cut] != POSIT_CHAR && match[cur_cut] != MATCH_CHAR) {
-                        break;
-                    }
-                }
-                if(cur_cut >= endpos) break;//nothing to cut
-                    
-                //cut
-                m_AliPiece.back().end = cur_cut;
-            }
-        }
-    } //end of positive flank drop trimming
+    if( !m_AliPiece.empty() ) {
+        m_AliPiece.front().beg = trim.CutFromLeft(m_AliPiece.front(), m_options);
+        m_AliPiece.back().end = trim.CutFromRight(m_AliPiece.back(), m_options);
+    } 
 
     // 'fill holes' mode. keep everything between the first 'good piece' and the last one.
     if( !m_AliPiece.empty() && m_options.GetFillHoles() ) {
@@ -411,7 +261,6 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
 
     //restore short flanks if it makes the alignment complete
     if( !m_AliPiece.empty() ) {
-        CProSplignTrimmer trim(alignment_text); 
         m_AliPiece.front().beg = trim.RestoreFivePrime(m_AliPiece.front().beg); 
         m_AliPiece.back().end = trim.RestoreThreePrime(m_AliPiece.back().end); 
     }
@@ -1235,7 +1084,7 @@ CProSplignTrimmer::CProSplignTrimmer(const CProteinAlignText& alignment_text)
 
 
 // check if alignment beginning should be restored
-size_t CProSplignTrimmer::RestoreFivePrime(size_t beg) {
+size_t CProSplignTrimmer::RestoreFivePrime(size_t beg) const {
     const string& prot_row = m_alignment_text.GetProtein();
     const string& dna_row = m_alignment_text.GetDNA();
     size_t pbeg = prot_row.find_first_not_of(INTRON_OR_GAP);
@@ -1279,7 +1128,7 @@ size_t CProSplignTrimmer::RestoreFivePrime(size_t beg) {
 
 
 // check if alignment end should be restored
-size_t CProSplignTrimmer::RestoreThreePrime(size_t end) {
+size_t CProSplignTrimmer::RestoreThreePrime(size_t end) const {
     const string& prot_row = m_alignment_text.GetProtein();
     const string& dna_row = m_alignment_text.GetDNA();
     const string& tran_row = m_alignment_text.GetTranslation();
@@ -1324,6 +1173,285 @@ size_t CProSplignTrimmer::RestoreThreePrime(size_t end) {
     return end;
 }
 
+///trim left flank with positives dropoff over a cutoff, iterative
+///'pc' should not be dropped completely
+///returns new pc.beg
+int CProSplignTrimmer::CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt& options) const {
+    if( !options.GetCutFlanksWithPositDrop() ) { // do not trim
+        return pc.beg;
+    }
+
+    const string& dna = m_alignment_text.GetDNA();
+    const string& prot = m_alignment_text.GetProtein();
+
+        const double dropoff = options.GetCutFlanksWithPositDropoff()/(double)100;
+        const int window_size = options.GetCutFlanksWithPositWindow();
+        bool keep_trimming = true;
+
+        //trim left flank
+
+        while ( keep_trimming ) {
+            _ASSERT( pc.beg < pc.end );
+            int begpos = pc.beg;
+            int endpos = pc.end;
+            //cut point
+            double cur_max_drop = 0;
+            int cur_cut = begpos;
+            //current point
+            int cur_pos = begpos;
+            int cur_end = begpos + window_size;
+            int rposit = 0; // number of positives in the window [cur_pos, cur_end) 
+
+            /// initial style, real posit count
+            ///int cur_len = 0;//flank length
+            ///int lposit = 0; // number of positives to the left of cur_pos;
+
+            ///pseudo counts for the left flank
+            int ps_len = 0;
+            int ps_pos = 0;
+            int ps_dna_gap_len = 0; // length of current dna gap 
+            int ps_prot_gap_len = 0; // length of current prot gap 
+            // penalty for gap extention is 1
+            // penalty for gap opening = reward for match = penalty for mismath
+            int ps_len_increment = options.GetCutFlanksWithPositGapRatio();
+
+            //count posit in initial window 
+            if( cur_end >= endpos ) return pc.beg; //nothing to trim if piece length is window size or less
+            //initial window
+            for( int pos = cur_pos; pos < cur_end; ++pos ) {
+                if(m_posit[pos] == POSIT_CHAR) {
+                    ++rposit;
+                }
+            }
+
+            //find cutting point
+            do {
+                //step
+
+                //in window
+                if( m_posit[cur_pos] == POSIT_CHAR ) {
+                    _ASSERT( rposit > 0 );
+                    --rposit;
+                }
+                if(  m_posit[cur_end] == POSIT_CHAR ) {
+                    ++rposit;
+                }
+
+                //in flank
+                if( m_posit[cur_pos] == POSIT_CHAR ) { // match/positive
+                    _ASSERT( prot[cur_pos] != GAP_CHAR );
+                    _ASSERT( dna[cur_pos] != GAP_CHAR );
+                    ps_len += ps_len_increment;
+                    ps_pos += ps_len_increment;
+                    ps_prot_gap_len = 0;
+                    ps_dna_gap_len = 0;
+                } else if( dna[cur_pos] == GAP_CHAR ) { //gap in dna
+                    _ASSERT( prot[cur_pos] != GAP_CHAR );
+                    if( ps_dna_gap_len < 3 ) {
+                        ps_len += ps_len_increment;
+                    } else { //count as extention
+                        ++ps_len;
+                    }
+                    ++ps_dna_gap_len;
+                    ps_prot_gap_len = 0;
+                } else if( prot[cur_pos] == GAP_CHAR ) { // gap in protein
+                    if( ps_prot_gap_len < 3 ) {
+                        ps_len += ps_len_increment;
+                    } else { //count as extention
+                        ++ps_len;
+                    }
+                    ++ps_prot_gap_len;
+                    ps_dna_gap_len = 0;
+                } else { // mismatch, no gaps
+                    ps_len += ps_len_increment;
+                    ps_prot_gap_len = 0;
+                    ps_dna_gap_len = 0;
+                }
+                ++cur_pos;
+                ++cur_end;
+
+                //check
+                double posit_drop = rposit/(double)window_size - ps_pos/(double)ps_len;
+                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == begpos ) ) {
+                    cur_max_drop = posit_drop;
+                    cur_cut = cur_pos;
+                }
+            } while( cur_end < endpos );
+            // cut ?
+            if( cur_cut == begpos ) {
+                keep_trimming = false;
+            } else {//trim
+
+                //handle weird cases
+
+                //cut to positive
+                _ASSERT( cur_cut > begpos);
+                for( ; cur_cut < endpos; ++cur_cut ) {
+                    if(m_posit[cur_cut] == POSIT_CHAR) {
+                        break;
+                    }
+                }
+                if( cur_cut >= endpos ) return pc.beg; // we don't want to cut the whole piece
+
+                //add positives back 
+                // cur_cut is a positive after above and cur_cut < endpos
+                _ASSERT(cur_cut < endpos);
+                _ASSERT(cur_cut > begpos);
+                _ASSERT(m_posit[cur_cut] == POSIT_CHAR);
+                for( ; cur_cut >= begpos; --cur_cut) {
+                    if(m_posit[cur_cut] != POSIT_CHAR) {
+                        ++cur_cut;
+                        break;
+                    }
+                }
+                if( cur_cut <= begpos ) return pc.beg; // the whole piece is back, no cut
+
+                //trim
+                pc.beg = cur_cut;
+            }
+        }    
+        return pc.beg;
+}
+
+///trim right flank with positives dropoff over a cutoff, iterative
+///'pc' should not be dropped completely
+///returns new pc.end
+int CProSplignTrimmer::CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt& options) const {
+    if( !options.GetCutFlanksWithPositDrop() ) { // do not trim
+        return pc.end;
+    }
+
+    const string& dna = m_alignment_text.GetDNA();
+    const string& prot = m_alignment_text.GetProtein();
+
+        const double dropoff = options.GetCutFlanksWithPositDropoff()/(double)100;
+        const int window_size = options.GetCutFlanksWithPositWindow();
+        bool keep_trimming = true;
+
+        while ( keep_trimming ) {
+            _ASSERT( pc.beg < pc.end );
+            int begpos = pc.beg;
+            int endpos = pc.end;
+            //cut point
+            double cur_max_drop = 0;
+            int cur_cut = endpos;
+            //current numbers
+            int win_end = endpos;
+            if( begpos + window_size > win_end) return pc.end; //window goes out of the 'good piece'
+            int win_beg = win_end - window_size;
+            int wposit = 0; // number of positives in the window [win_beg, win_end) 
+
+            ///real counts
+            //int cur_len = 0;//flank length
+            //int fposit = 0; // flank number of positives (startins with win_end);
+
+            ///pseudo counts for the the flank
+            int ps_len = 0;
+            int ps_pos = 0;
+            int ps_dna_gap_len = 0; // length of current dna gap 
+            int ps_prot_gap_len = 0; // length of current prot gap 
+            // penalty for gap extention is 1
+            // penalty for gap opening = reward for match = penalty for mismath
+            int ps_len_increment = options.GetCutFlanksWithPositGapRatio();
+
+            //count posit in initial window 
+            for( int pos = win_beg; pos < win_end; ++pos ) {
+                if(m_posit[pos] == POSIT_CHAR) {
+                    ++wposit;
+                }
+            }
+
+            //find cutting point
+            while( win_beg > begpos ) {
+
+              //step
+
+                //in window
+                --win_end;
+                --win_beg;
+                if( m_posit[win_end] == POSIT_CHAR ) {
+                    _ASSERT(wposit > 0);
+                    --wposit;
+                }
+                if( m_posit[win_beg] == POSIT_CHAR ) {
+                    ++wposit;
+                }
+
+                //in flank
+                int cur_pos = win_end;
+                if( m_posit[cur_pos] == POSIT_CHAR ) { // match/positive
+                    _ASSERT( prot[cur_pos] != GAP_CHAR );
+                    _ASSERT( dna[cur_pos] != GAP_CHAR );
+                    ps_len += ps_len_increment;
+                    ps_pos += ps_len_increment;
+                    ps_prot_gap_len = 0;
+                    ps_dna_gap_len = 0;
+                } else if( dna[cur_pos] == GAP_CHAR ) { //gap in dna
+                    _ASSERT( prot[cur_pos] != GAP_CHAR );
+                    if( ps_dna_gap_len < 3 ) {
+                        ps_len += ps_len_increment;
+                    } else { //count as extention
+                        ++ps_len;
+                    }
+                    ++ps_dna_gap_len;
+                    ps_prot_gap_len = 0;
+                } else if( prot[cur_pos] == GAP_CHAR ) { // gap in protein
+                    if( ps_prot_gap_len < 3 ) {
+                        ps_len += ps_len_increment;
+                    } else { //count as extention
+                        ++ps_len;
+                    }
+                    ++ps_prot_gap_len;
+                    ps_dna_gap_len = 0;
+                } else { // mismatch, no gaps
+                    ps_len += ps_len_increment;
+                    ps_prot_gap_len = 0;
+                    ps_dna_gap_len = 0;
+                }
+
+              //check
+                double posit_drop = wposit/(double)window_size -  ps_pos/(double)ps_len;
+                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == endpos ) ) {
+                    cur_max_drop = posit_drop;
+                    cur_cut = win_end;
+                }
+            }
+            // cut ?
+            if( cur_cut == endpos ) {
+                keep_trimming = false;
+            } else {//trim
+
+                //handle weird cases
+
+                //cut to positive
+                for( --cur_cut; cur_cut >= begpos; --cur_cut ) {
+                    if(m_posit[cur_cut] == POSIT_CHAR) {
+                        ++cur_cut;
+                        break;
+                    }
+                }
+                if( cur_cut <= begpos ) return pc.end; // don't want to cut the whole piece
+
+                //add positives back
+                // we are on a positive here and cur_cut < endpos and cur_cut > begpos
+                _ASSERT(cur_cut > begpos);
+                _ASSERT(cur_cut < endpos);
+                _ASSERT(m_posit[cur_cut-1] == POSIT_CHAR);
+                for( ; cur_cut < endpos; ++cur_cut ) {
+                    if(m_posit[cur_cut] != POSIT_CHAR) {
+                        break;
+                    }
+                }
+                if(cur_cut >= endpos) return pc.end;//nothing to cut
+                    
+                //cut
+                pc.end = cur_cut;
+            }
+        }
+        return pc.end;
+}
+
+/// end of CProSplignTrimmer implementation
 
 END_NCBI_SCOPE
 

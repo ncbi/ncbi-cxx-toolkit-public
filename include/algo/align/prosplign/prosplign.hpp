@@ -175,9 +175,12 @@ public:
     bool GetCutFlanksWithPositDrop() const;
     CProSplignOutputOptions& SetCutFlanksWithPositDropoff(int);
     int GetCutFlanksWithPositDropoff() const;
-    //window size
+    ///window size
     CProSplignOutputOptions& SetCutFlanksWithPositWindow(int);
     int GetCutFlanksWithPositWindow() const;
+    ///count gaps as 1+1/gap_ratio, gap_ratio = 1 - standart behaviour.
+    CProSplignOutputOptions& SetCutFlanksWithPositGapRatio(int);
+    int GetCutFlanksWithPositGapRatio() const;
 
     /// cut partial codons and adjecent at the beginning and at the end good pieces
     /// called at the end of post processing
@@ -239,6 +242,7 @@ public:
     static const bool default_cut_flanks_with_posit_drop = true;
     static const int  default_cut_flanks_with_posit_dropoff = 35;
     static const int  default_cut_flanks_with_posit_window = 59;
+    static const int  default_cut_flanks_with_posit_gap_ratio = 1;
 
     static const bool default_cut_flank_partial_codons = true;
     static const bool default_fill_holes = false;
@@ -264,6 +268,7 @@ private:
     bool cut_flanks_with_posit_drop;
     int  cut_flanks_with_posit_dropoff;
     int  cut_flanks_with_posit_window;
+    int  cut_flanks_with_posit_gap_ratio;
 
     bool cut_flank_partial_codons;
     bool fill_holes;
