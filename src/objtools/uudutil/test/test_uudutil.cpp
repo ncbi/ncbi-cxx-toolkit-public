@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Liangshou Wu
+* Author:  Liangshou Wu, Andrei Shkeda
 *
 * File Description:
 *   Uunit tests file for CProjectStorage
@@ -44,7 +44,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
-// This header must be included before all Boost.Test headers if there are any
+// This header must be i,,ncluded before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
 
@@ -55,7 +55,6 @@ USING_SCOPE(objects);
 static const int  kTTL = 60; // seconds
 static const string kTestStr = "This is a very simple test string.";
 static const CProjectStorage::ENC_Compression kDefComp = CProjectStorage::eNC_ZlibCompressed;
-
 // global variables
 static bool verbose = false;
 
@@ -130,7 +129,7 @@ NCBITEST_INIT_TREE()
 }
 
 
-static CProjectStorage s_GetPrjStorage(const string& password = "")
+static CRef<CProjectStorage> s_GetPrjStorage(const string& password = "")
 {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
@@ -144,14 +143,15 @@ static CProjectStorage s_GetPrjStorage(const string& password = "")
     string nc_client = args["client"].HasValue() ?
         args["client"].AsString() : "NC_Test";
 
-    return CProjectStorage(nc_client, nc_service, password);
+    return Ref(new CProjectStorage(nc_client, nc_service, password));
 }
 
 
 /// Testing string blob
 BOOST_AUTO_TEST_CASE(StringTest)
 {
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
 
     if (verbose) {
         cout << "\n --- Testing string blob saving and retrieval --- " << endl;
@@ -200,7 +200,9 @@ BOOST_AUTO_TEST_CASE(CloneTest)
         cout << "\n --- Testing string blob cloning --- " << endl;
     }
 
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
+
     string nc_key =
         nc_tool.SaveString(kTestStr, "", kDefComp, kTTL);
     if (verbose) {
@@ -238,7 +240,8 @@ BOOST_AUTO_TEST_CASE(CloneTest)
 /// Testing password protection
 BOOST_AUTO_TEST_CASE(PasswordProtectionTest)
 {
-    CProjectStorage nc_tool = s_GetPrjStorage("my password");
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage("my password");
+    auto& nc_tool = *prj_storage;
 
     if (verbose) {
         cout << "\n --- Testing password-protected blob --- "
@@ -260,13 +263,17 @@ BOOST_AUTO_TEST_CASE(PasswordProtectionTest)
     string ret_str;
 
     // test failure on checking password-protected blob with no password.
-    CProjectStorage failed_nc_tool1 = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage1 = s_GetPrjStorage();
+    auto& failed_nc_tool1 = *prj_storage1;
+
     BOOST_CHECK( !failed_nc_tool1.Exists(nc_key) );
     BOOST_CHECK_THROW(
         failed_nc_tool1.GetString(nc_key, ret_str), CPrjStorageException);
 
     // test failure on checking password-protected blob with a wrong password.
-    CProjectStorage failed_nc_tool2 = s_GetPrjStorage("wrong password");
+    CRef<CProjectStorage> prj_storage2 = s_GetPrjStorage("wrong password");
+    auto& failed_nc_tool2 = *prj_storage2;
+
     BOOST_CHECK( !failed_nc_tool2.Exists(nc_key) );
     BOOST_CHECK_THROW(
         failed_nc_tool2.GetString(nc_key, ret_str), CPrjStorageException);
@@ -294,7 +301,9 @@ BOOST_AUTO_TEST_CASE(RawDataTest)
              << endl;
     }
 
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
+
     string nc_key =
         nc_tool.SaveRawData(kTestStr.data(), kTestStr.size(), "", kTTL);
     if (verbose) {
@@ -348,7 +357,8 @@ static CRef<CSeq_annot> s_ReadTestSeqAnnot()
 static void s_TestSeqAnnotAsn(ESerialDataFormat serial_fmt,
                               CProjectStorage::ENC_Compression compression_fmt)
 {
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
     CRef<CSeq_annot> annot;
     BOOST_CHECK_NO_THROW(annot = s_ReadTestSeqAnnot());
 
@@ -459,7 +469,8 @@ BOOST_AUTO_TEST_CASE(SeqAnnotRawDataTest)
              << endl;
     }
 
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
 
     // read seq-annot into memory
     CRef<CSeq_annot> annot;
@@ -539,7 +550,8 @@ BOOST_AUTO_TEST_CASE(GBProjectTest)
         cout << "\n --- Testing GB Project saving and retrieval --- " << endl;
     }
 
-    CProjectStorage nc_tool = s_GetPrjStorage();
+    CRef<CProjectStorage> prj_storage = s_GetPrjStorage();
+    auto& nc_tool = *prj_storage;
     CRef<CGBProject_ver2> gb_project = s_ReadGBProject();
 
     if (verbose) {

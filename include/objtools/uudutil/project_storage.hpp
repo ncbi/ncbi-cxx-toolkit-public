@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Liangshou Wu, Victor Joukov
+ * Author:  Liangshou Wu, Victor Joukov, Andrei Shkeda
  *
  * File Description:
  *   The helper classes for saving and retrieving data/GBProject to and from 
@@ -112,6 +112,9 @@ public:
                     const string& nc_service = "",
                     const string& password = "",
                     TNetStorageFlags default_flags = 0);
+
+    // prohibit copy constructor
+    CProjectStorage(const CProjectStorage&) = delete;
 
     const string& GetServiceName() const; 
 
