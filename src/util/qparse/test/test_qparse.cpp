@@ -258,6 +258,7 @@ void TestExpression(const char* q, bool cs = false,
     CQueryParseTree::TFunctionNames fnames;
     fnames.push_back("MAX");
     fnames.push_back("AVG");
+    fnames.push_back("ISPARTIAL");
     
     CQueryParseTree qtree;
     
@@ -406,7 +407,9 @@ int CTestQParse::Run(void)
          "SELECT MAX(a,b,c) FROM Y",
          "SELECT MAX(a || d,b,c) FROM Y",
          "SELECT MAX(aaa, bbb),f23, AVG(aaa) FROM Table WHERE AVG(1,2,3) == 2",
-         "MAX(aaa, bbb) = AVG(1,2,MAX(2,3))"
+         "MAX(aaa, bbb) = AVG(1,2,MAX(2,3))",
+         "SELECT aaa FROM X WHERE ISPARTIAL() AND AVG(1,2,3) == 2",
+         "SELECT bbb FROM Y WHERE ISPARTIAL()"
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {

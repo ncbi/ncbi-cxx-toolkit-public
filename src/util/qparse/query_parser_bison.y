@@ -195,6 +195,14 @@ functional:
         $$->InsertNode($$->SubNodeBegin(), $3);
         env->SetContext(0);
         env->ForgetPoolNodes($1, $3);    
+    }
+    | FUNCTION '(' ')'
+    {
+        $$ = $1;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);
+        env->SetContext(0);
+        env->ForgetPoolNode($1);
     }  
 ;
 

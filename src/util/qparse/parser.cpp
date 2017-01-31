@@ -345,6 +345,10 @@ private:
 
 END_NCBI_SCOPE
 
+#ifdef IN
+#undef IN
+#endif
+
 #include "query_parser_bison.tab.c"
 #include "lexer.inc"
 
