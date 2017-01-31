@@ -1681,6 +1681,9 @@ same id type" } },
    { eErr_SEQ_FEAT_GenCodeInvalid,
    { "GenCodeInvalid",
 "A coding region contains invalid genetic code." } },
+   { eErr_SEQ_FEAT_TranslExceptIsPartial,
+   { "TranslExceptIsPartial",
+"A translation exception location should not be partial." } },
 
 /* SEQ_ALIGN */
 

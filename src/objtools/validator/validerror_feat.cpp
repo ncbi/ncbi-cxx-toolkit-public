@@ -1654,6 +1654,12 @@ void CValidError_feat::x_ValidateCdregionCodebreak
                 }
             }
         }
+        if (cbr_loc.IsPartialStart(eExtreme_Biological) ||
+            cbr_loc.IsPartialStop(eExtreme_Biological)) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranslExceptIsPartial, 
+                   "Translation exception locations should not be partial",
+                   feat);
+        }
         if ( prev_cbr != 0 ) {
             if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope, fCompareOverlapping) == eSame ) {
                 string msg = "Multiple code-breaks at same location ";
