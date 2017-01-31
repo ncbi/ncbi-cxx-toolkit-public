@@ -182,13 +182,12 @@ public:
 
     void x_GetAlignmentScores(
         const CSeq_align& alignment,
-        TScoreValueMap& score_values);
-      //  map<string, CRef<CScore::TValue>>& score_values);
+        TScoreValueMap& score_values) const;
 
     void x_FindMatchingScores(
         const TScoreValueMap& scores_1,
         const TScoreValueMap& scores_2,
-        set<string>& matching_scores);
+        set<string>& matching_scores) const;
 
     virtual bool x_CreateAlignment(
         const CGff2Record& gff,
@@ -197,6 +196,13 @@ public:
     bool x_MergeAlignments(
         const list<CRef<CSeq_align>>& alignment_list,
         CRef<CSeq_align>& processed);
+
+    void x_InitializeScoreSums(const TScoreValueMap score_values,
+        map<string, TSeqPos>& summed_scores) const;
+
+    void x_ProcessAlignmentScores(const CSeq_align& alignment, 
+        map<string, TSeqPos>& summed_scores,
+        TScoreValueMap& common_scores) const;
      
     void x_ProcessAlignmentsGff(
         const list<string>& id_list,

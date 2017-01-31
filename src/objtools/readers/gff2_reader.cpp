@@ -510,7 +510,7 @@ CGff2Reader::xParseFeature(
 
 //  ----------------------------------------------------------------------------
 void CGff2Reader::x_GetAlignmentScores(const CSeq_align& alignment, 
-                                       TScoreValueMap& score_values)
+                                       TScoreValueMap& score_values) const
 //  ----------------------------------------------------------------------------
 {
     // Start with empty scores
@@ -560,7 +560,7 @@ bool s_CompareValues(const CScore::TValue& score_val1,
 //  ----------------------------------------------------------------------------
 void CGff2Reader::x_FindMatchingScores(const TScoreValueMap& scores_1,
                                        const TScoreValueMap& scores_2,
-                                       set<string>& matching_scores) 
+                                       set<string>& matching_scores) const
 //  ----------------------------------------------------------------------------
 {
     matching_scores.clear();
@@ -650,6 +650,55 @@ bool s_CreateDiscAlignment(map<
 
 
 //  ----------------------------------------------------------------------------
+void CGff2Reader::x_InitializeScoreSums(const TScoreValueMap score_values, 
+        map<string, TSeqPos>& summed_scores) const
+//  ----------------------------------------------------------------------------
+{
+    const list<string> score_names {"num_ident", "num_mismatch"};
+    
+    for (const string& score_name : score_names) {
+        if (score_values.find(score_name) != score_values.end()) {
+            summed_scores[score_name] = score_values.at(score_name)->GetInt();
+        }    
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGff2Reader::x_ProcessAlignmentScores(const CSeq_align& alignment, 
+    map<string, TSeqPos>& summed_scores, 
+    TScoreValueMap& common_scores) const
+//  ----------------------------------------------------------------------------
+{
+    const list<string> summed_score_names {"num_ident", "num_mismatch"};
+
+    TScoreValueMap new_scores;
+    x_GetAlignmentScores(alignment, new_scores);
+
+    for (const string& score_name : summed_score_names) {
+        if (new_scores.find(score_name) == new_scores.end()) {
+            summed_scores.erase(score_name);
+        } else if (summed_scores.find(score_name) != summed_scores.end()) {
+            summed_scores[score_name] += new_scores[score_name]->GetInt();
+            new_scores.erase(score_name);
+        }
+    }
+
+    set<string> matching_score_names;
+    x_FindMatchingScores(common_scores, 
+        new_scores, 
+        matching_score_names);
+
+    common_scores.clear(); 
+    for (string score_name : matching_score_names) {
+        common_scores[score_name] = Ref(new CScore::TValue());
+        common_scores[score_name]->Assign(*new_scores[score_name]);
+    }
+}
+
+
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_MergeAlignments(
         const list<CRef<CSeq_align>>& alignment_list,
         CRef<CSeq_align>& processed)
@@ -664,7 +713,7 @@ bool CGff2Reader::x_MergeAlignments(
         return true;
     }
 
-    map<string, size_t> summed_scores;
+    map<string, TSeqPos> summed_scores;
     const list<string> summed_score_names {"num_ident", "num_mismatch"};
 
     // Factor out identical scores
@@ -672,38 +721,14 @@ bool CGff2Reader::x_MergeAlignments(
     TScoreValueMap score_values;
     x_GetAlignmentScores(**align_it, score_values);
 
-
-    for (const string& score_name : summed_score_names) {
-        if (score_values.find(score_name) != score_values.end()) {
-            summed_scores[score_name] = score_values[score_name]->GetInt();
-        }
-    }
+    x_InitializeScoreSums(score_values, 
+        summed_scores);
     ++align_it;
 
     while (align_it != alignment_list.end() &&
            !score_values.empty()) {
-        TScoreValueMap new_score_values;
-        x_GetAlignmentScores(**align_it, new_score_values);
 
-        for (const string& score_name : summed_score_names) {
-            if (new_score_values.find(score_name) == new_score_values.end()) {
-                summed_scores.erase(score_name);
-            } else if (summed_scores.find(score_name) != summed_scores.end()) {
-                summed_scores[score_name] += new_score_values[score_name]->GetInt();
-                new_score_values.erase(score_name);
-            }
-        }
-
-        set<string> matching_scores;
-        x_FindMatchingScores(score_values, 
-                             new_score_values, 
-                             matching_scores);
-
-        score_values.clear(); 
-        for (string score_name : matching_scores) {
-            score_values[score_name] = Ref(new CScore::TValue());
-            score_values[score_name]->Assign(*new_score_values[score_name]);
-        }
+        x_ProcessAlignmentScores(**align_it, summed_scores, score_values);
         ++align_it;
     }
     // At this point, the score_values map should contain the scores that 
@@ -714,10 +739,6 @@ bool CGff2Reader::x_MergeAlignments(
 
     for (auto& kv : summed_scores) {
         auto score = Ref(new CScore());
-  //      score_values[kv.first] = Ref(new CScore::TValue());
- //       score_values[kv.first]->SetInt(kv.second);
-    //    score_values[name] = Ref(new CScore::TValue());
-    //    score_values[name]->Assign(value);
         score->SetId().SetStr(kv.first);
         score->SetValue().SetInt(kv.second);
         processed->SetScore().push_back(score);
