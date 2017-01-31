@@ -248,6 +248,7 @@ CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
       m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
+    m_IDHandler = Ref(new CFastaIdHandler());
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
@@ -257,6 +258,7 @@ CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
       m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
+    m_IDHandler = Ref(new CFastaIdHandler());
 }
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
@@ -266,6 +268,7 @@ CFastaReader::CFastaReader(const string& path, TFlags flags)
       m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
+    m_IDHandler = Ref(new CFastaIdHandler());
 }
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
@@ -275,6 +278,7 @@ CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
       m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
+    m_IDHandler = Ref(new CFastaIdHandler());
 }
 
 CFastaReader::~CFastaReader(void)
@@ -794,10 +798,12 @@ void CFastaReader::ParseTitle(
     x_ApplyAllMods(*m_CurrentSeq, lineInfo.m_iLineNum, pMessageListener);
 }
 
+
 bool CFastaReader::IsValidLocalID(const TStr& s) const
 {
     return IsValidLocalID(s, GetFlags());
 }
+
 
 bool CFastaReader::IsValidLocalID(const TStr& idString, 
     const TFlags fFastaFlags)
