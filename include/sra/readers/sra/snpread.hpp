@@ -466,14 +466,29 @@ typename SToSafeFlags<Enum>::type operator|(Enum a, Enum b)
     return CSafeFlags<Enum>(a)|b;
 }
 template<class Enum>
+CSafeFlags<Enum> operator|(Enum a, CSafeFlags<Enum> b)
+{
+    return b | a;
+}
+template<class Enum>
 typename SToSafeFlags<Enum>::type operator&(Enum a, Enum b)
 {
     return CSafeFlags<Enum>(a)&b;
 }
 template<class Enum>
+CSafeFlags<Enum> operator&(Enum a, CSafeFlags<Enum> b)
+{
+    return b & a;
+}
+template<class Enum>
 typename SToSafeFlags<Enum>::type operator^(Enum a, Enum b)
 {
     return CSafeFlags<Enum>(a)^b;
+}
+template<class Enum>
+CSafeFlags<Enum> operator^(Enum a, CSafeFlags<Enum> b)
+{
+    return b ^ a;
 }
 template<class Enum>
 typename SToSafeFlags<Enum>::type operator~(Enum a)
