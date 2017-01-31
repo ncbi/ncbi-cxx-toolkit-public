@@ -270,7 +270,7 @@ CGb_qual::GetSetOfLegalRecombinationClassValues(void)
         "chromosome_breakpoint",
         "meiotic_recombination",
         "mitotic_recombination",
-        "non_allelic_homologous_recombination"
+        "non_allelic_homologous"
     };
 
 
