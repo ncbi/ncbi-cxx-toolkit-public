@@ -157,12 +157,18 @@ const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 
 bool CMappedFeat::IsSetPartial(void) const
 {
+    if ( !m_MappingInfoPtr->IsMapped() ) {
+        return CSeq_feat_Handle::IsSetPartial();
+    }
     return m_MappingInfoPtr->IsPartial();
 }
 
 
 bool CMappedFeat::GetPartial(void) const
 {
+    if ( !m_MappingInfoPtr->IsMapped() ) {
+        return CSeq_feat_Handle::GetPartial();
+    }
     return m_MappingInfoPtr->IsPartial();
 }
 
