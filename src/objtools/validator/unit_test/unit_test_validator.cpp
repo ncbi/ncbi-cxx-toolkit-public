@@ -20370,3 +20370,39 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     BOOST_CHECK_EQUAL(num_updated_feats, 4);
 }
 
+
+BOOST_AUTO_TEST_CASE(TEST_VR_477)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+
+    CRef<CCode_break> codebreak(new CCode_break());
+    codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
+    codebreak->SetLoc().SetInt().SetFrom(24);
+    codebreak->SetLoc().SetInt().SetTo(26);
+    codebreak->SetLoc().SetPartialStop(true, eExtreme_Positional);
+    cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "TranslExceptIsPartial",
+        "Translation exception locations should not be partial"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_35)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> exon = unit_test_util::AddMiscFeature(entry);
+    exon->SetData().SetImp().SetKey("exon");
+    exon->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("number", "group I")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidQualifierValue",
+        "Number qualifiers should not contain spaces"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}

@@ -269,90 +269,7 @@ void CValidError_feat::ValidateSeqFeat(
         */
 
         FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-            if (!(*it)->IsSetQual()) {
-                continue;
-            }
-            /* first check for anything other than replace */
-            if (!(*it)->IsSetVal() || NStr::IsBlank ((*it)->GetVal())) {
-                if (NStr::EqualNocase ((*it)->GetQual(), "replace")) {
-                    /* ok for replace */
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
-                             "Qualifier other than replace has just quotation marks", feat);
-                    if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
-                    }
-                }
-                if (NStr::EqualNocase((*it)->GetQual(), "inference")) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string ()", feat);
-                } else if (NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty", feat);
-                }
-            } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-                if (!s_IsValidECNumberFormat((*it)->GetVal())) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
-                            (*it)->GetVal() + " is not in proper EC_number format", feat);
-                } else {
-                      string ec_number = (*it)->GetVal();
-                      CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
-                      x_ReportECNumFileStatus(feat);
-                      switch (status) {
-                          case CProt_ref::eEC_deleted:
-                              PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
-                                       "EC_number " + ec_number + " was deleted",
-                                       feat);
-                              break;
-                          case CProt_ref::eEC_replaced:
-                              PostErr (eDiag_Warning, 
-                                  CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
-                                       "EC_number " + ec_number + " was replaced",
-                                       feat);
-                              break;
-                          case CProt_ref::eEC_unknown:
-                        {
-                            size_t pos = NStr::Find (ec_number, "n");
-                            if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-                                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                                 ec_number + " is not a legal value for qualifier EC_number",
-                                                   feat);
-                            } else {
-                                      PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                                 ec_number + " is not a legal preliminary value for qualifier EC_number",
-                                                   feat);
-                            }
-                        }
-                              break;
-                          default:
-                              break;
-                      }
-                }
-            } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
-                /* TODO: Validate inference */
-                string val = "";
-                if ((*it)->IsSetVal()) {
-                    val = (*it)->GetVal();
-                }
-                EInferenceValidCode rsult = ValidateInference (val, m_Imp.ValidateInferenceAccessions());
-                if (rsult > eInferenceValidCode_valid) {
-                    if (NStr::IsBlank (val)) {
-                        val = "?";
-                    }
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
-                             "Inference qualifier problem - " + kInferenceMessage [(int) rsult] + " ("
-                             + val + ")", feat);
-                }
-            } else if (NStr::EqualNocase ((*it)->GetQual(), "pseudogene")) {
-                m_Imp.IncrementPseudogeneCount();
-                if (!CGb_qual::IsValidPseudogeneValue((*it)->GetVal())) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                        "/pseudogene value should be not '" + (*it)->GetVal() + "'", feat);
-                }
-            }
-            if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
-                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                         "feature qualifier " + (*it)->GetVal() + " has SGML",
-                         feat);
-            }
+            x_ValidateGbQual(**it, feat);
         }
 
         if (feat.IsSetExt()) {
@@ -372,6 +289,112 @@ void CValidError_feat::ValidateSeqFeat(
             string("Exception while validating feature. EXCEPTION: ") +
             e.what(), feat);
     }
+}
+
+
+void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& feat)
+{
+    if (!qual.IsSetQual()) {
+        return;
+    }
+    /* first check for anything other than replace */
+    if (!qual.IsSetVal() || NStr::IsBlank(qual.GetVal())) {
+        if (NStr::EqualNocase(qual.GetQual(), "replace")) {
+            /* ok for replace */
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "Qualifier other than replace has just quotation marks", feat);
+            if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+            }
+        }
+        if (NStr::EqualNocase(qual.GetQual(), "inference")) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string ()", feat);
+        } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty", feat);
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
+        if (!s_IsValidECNumberFormat(qual.GetVal())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
+                qual.GetVal() + " is not in proper EC_number format", feat);
+        } else {
+            string ec_number = qual.GetVal();
+            CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus(ec_number);
+            x_ReportECNumFileStatus(feat);
+            switch (status) {
+            case CProt_ref::eEC_deleted:
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
+                    "EC_number " + ec_number + " was deleted",
+                    feat);
+                break;
+            case CProt_ref::eEC_replaced:
+                PostErr(eDiag_Warning,
+                    CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
+                    "EC_number " + ec_number + " was replaced",
+                    feat);
+                break;
+            case CProt_ref::eEC_unknown:
+            {
+                size_t pos = NStr::Find(ec_number, "n");
+                if (pos == string::npos || !isdigit(ec_number.c_str()[pos + 1])) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
+                        ec_number + " is not a legal value for qualifier EC_number",
+                        feat);
+                } else {
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
+                        ec_number + " is not a legal preliminary value for qualifier EC_number",
+                        feat);
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "inference")) {
+        /* TODO: Validate inference */
+        string val = "";
+        if (qual.IsSetVal()) {
+            val = qual.GetVal();
+        }
+        EInferenceValidCode rsult = ValidateInference(val, m_Imp.ValidateInferenceAccessions());
+        if (rsult > eInferenceValidCode_valid) {
+            if (NStr::IsBlank(val)) {
+                val = "?";
+            }
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                "Inference qualifier problem - " + kInferenceMessage[(int)rsult] + " ("
+                + val + ")", feat);
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
+        m_Imp.IncrementPseudogeneCount();
+        if (!CGb_qual::IsValidPseudogeneValue(qual.GetVal())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "/pseudogene value should be not '" + qual.GetVal() + "'", feat);
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "number")) {
+        bool has_space = false;
+        bool has_char_after_space = false;
+        ITERATE(string, it, qual.GetVal()) {
+            if (isspace((unsigned char)(*it))) {
+                has_space = true;
+            } else if (has_space) {
+                // non-space after space
+                has_char_after_space = true;
+                break;
+            }
+        }
+        if (has_char_after_space) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "Number qualifiers should not contain spaces", feat);
+        }
+    }
+    if (qual.IsSetVal() && ContainsSgml(qual.GetVal())) {
+        PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "feature qualifier " + qual.GetVal() + " has SGML",
+            feat);
+    }
+
 }
 
 

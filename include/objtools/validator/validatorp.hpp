@@ -1257,6 +1257,8 @@ private:
     void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
 
+    void x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& feat);
+
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
     unsigned char Residue(unsigned char res);
