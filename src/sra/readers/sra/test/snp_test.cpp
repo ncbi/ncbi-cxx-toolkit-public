@@ -419,7 +419,7 @@ int CSNPTestApp::Run(void)
         size_t count = 0;
         CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
-            flags &= ~ToFlags(CSNPDbFeatIterator::fUseSharedObjects);
+            flags &= ~CSNPDbFeatIterator::fUseSharedObjects;
         }
         if ( args["make_overview_graph"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);

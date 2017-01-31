@@ -402,33 +402,41 @@ public:
             return get() != b.get();
         }
 
+    CSafeFlags operator~() const
+        {
+            return CSafeFlags(~get());
+        }
+    
     CSafeFlags operator&(const CSafeFlags& b) const
         {
-            return get() & b.get();
-        }
-    CSafeFlags operator|(const CSafeFlags& b) const
-        {
-            return get() | b.get();
-        }
-    CSafeFlags operator^(const CSafeFlags& b) const
-        {
-            return get() ^ b.get();
+            return CSafeFlags(get() & b.get());
         }
     CSafeFlags& operator&=(const CSafeFlags& b)
         {
             m_Flags &= b.get();
             return *this;
         }
-    CSafeFlags& operator|(const CSafeFlags& b)
+    
+    CSafeFlags operator|(const CSafeFlags& b) const
+        {
+            return CSafeFlags(get() | b.get());
+        }
+    CSafeFlags& operator|=(const CSafeFlags& b)
         {
             m_Flags |= b.get();
             return *this;
         }
-    CSafeFlags& operator^(const CSafeFlags& b)
+    
+    CSafeFlags operator^(const CSafeFlags& b) const
+        {
+            return CSafeFlags(get() ^ b.get());
+        }
+    CSafeFlags& operator^=(const CSafeFlags& b)
         {
             m_Flags ^= b.get();
             return *this;
         }
+    
     CSafeFlags without(const CSafeFlags& b) const
         {
             return CSafeFlags(get()&~b.get());
@@ -439,12 +447,8 @@ public:
             return *this;
         }
 
-    CSafeFlags operator~() const
-        {
-            return CSafeFlags(~get());
-        }
-
 private:
+    explicit
     CSafeFlags(storage_type flags)
         : m_Flags(flags)
         {
@@ -452,9 +456,29 @@ private:
 
     storage_type m_Flags;
 };
-template<class Enum> inline CSafeFlags<Enum> ToFlags(Enum v)
+template<class T> struct SToSafeFlags {};
+#define DECLARE_SAFE_FLAGS_TYPE(E, T) typedef CSafeFlags<E> T
+#define DECLARE_SAFE_FLAGS(E) template<> struct SToSafeFlags<E> { DECLARE_SAFE_FLAGS_TYPE(E, type); }
+
+template<class Enum>
+typename SToSafeFlags<Enum>::type operator|(Enum a, Enum b)
 {
-    return CSafeFlags<Enum>(v);
+    return CSafeFlags<Enum>(a)|b;
+}
+template<class Enum>
+typename SToSafeFlags<Enum>::type operator&(Enum a, Enum b)
+{
+    return CSafeFlags<Enum>(a)&b;
+}
+template<class Enum>
+typename SToSafeFlags<Enum>::type operator^(Enum a, Enum b)
+{
+    return CSafeFlags<Enum>(a)^b;
+}
+template<class Enum>
+typename SToSafeFlags<Enum>::type operator~(Enum a)
+{
+    return ~CSafeFlags<Enum>(a);
 }
 
 
@@ -606,7 +630,7 @@ public:
         fNoGaps         = 1<<1,
         fDefaultFlags   = 0
     };
-    typedef CSafeFlags<EFlags> TFlags;
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 
     CRef<CSeq_graph> GetOverviewGraph(CRange<TSeqPos> range,
                                       TFlags flags = fDefaultFlags) const;
@@ -681,6 +705,7 @@ private:
     TList::const_iterator m_Iter;
     CSNPDb_Impl::TTrackInfoList::const_iterator m_TrackIter;
 };
+DECLARE_SAFE_FLAGS(CSNPDbSeqIterator::EFlags);
 
 
 // iterate sequence pages of predefined fixed size
@@ -999,14 +1024,14 @@ public:
         fIncludeNeighbors    = 1<<3,
         fIncludeSubtype      = 1<<4,
         fUseSharedObjects    = 1<<8,
-        fDefaultFlags = ( fIncludeAlleles |
+        fDefaultFlags = ( fIncludeAlleles*1 |
                           fIncludeRsId |
                           fIncludeBitfield |
                           fIncludeNeighbors |
                           fIncludeSubtype |
                           fUseSharedObjects )
     };
-    typedef CSafeFlags<EFlags> TFlags;
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
     
     CRef<CSeq_feat> GetSeq_feat(TFlags flags = fDefaultFlags) const;
 
@@ -1072,6 +1097,7 @@ private:
     mutable AutoPtr<SCreateCache> m_CreateCache;
     SCreateCache& x_GetCreateCache(void) const;
 };
+DECLARE_SAFE_FLAGS(CSNPDbFeatIterator::EFlags);
 
 
 END_NAMESPACE(objects);

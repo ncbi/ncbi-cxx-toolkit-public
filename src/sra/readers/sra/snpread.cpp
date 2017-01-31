@@ -662,7 +662,7 @@ inline void x_SetOS8(vector<char>& os, Uint8 data)
     os.resize(8);
     char* dst = os.data();
     for ( int i = 0; i < 8; ++i ) {
-        dst[i] = data>>(8*i);
+        dst[i] = char(data>>(8*i));
     }
 }
 
@@ -2583,8 +2583,7 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         feat.ResetDbxref();
     }
     feat.ResetExt();
-    TFlags ext_flags =
-        ToFlags(fIncludeBitfield) | fIncludeNeighbors | fIncludeSubtype;
+    TFlags ext_flags = fIncludeBitfield | fIncludeNeighbors | fIncludeSubtype;
     if ( flags & ext_flags ) {
         CUser_object& ext = x_GetPrivate(cache.m_Ext);
         ext.SetType(x_GetObject_id(cache.m_ObjectIdQAdata,
