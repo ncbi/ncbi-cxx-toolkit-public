@@ -159,7 +159,8 @@ public:
     void                   SetIDGenerator(CSeqIdGenerator& gen);
 
     /// Re-allow previously seen IDs even if fUniqueIds is on.
-    void ResetIDTracker(void) { m_IDTracker.clear(); }
+    //void ResetIDTracker(void) { m_IDTracker.clear(); }
+    void ResetIDTracker(void) { m_IDHandler->ClearIdCache(); }
     
     const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
