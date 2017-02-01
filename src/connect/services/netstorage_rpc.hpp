@@ -63,7 +63,7 @@ struct SNetStorageRPC : public SNetStorageImpl
             const string& object_loc) const;
     CJsonNode MkObjectRequest(const string& request_type,
             const string& unique_key, TNetStorageFlags flags) const;
-    void x_InitNetCacheAPI();
+    EVoid x_InitNetCacheAPI();
 
     CNetService GetServiceIfLocator(const string& object_loc);
 

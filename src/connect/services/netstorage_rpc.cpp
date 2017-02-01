@@ -1024,12 +1024,35 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
 
 CNetService SNetStorageRPC::GetServiceIfLocator(const string& object_loc)
 {
-    if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(), NULL, m_CompoundIDPool)) {
-        x_InitNetCacheAPI();
-        return eVoid;
+    const bool direct_nc = m_Config.default_storage == TConfig::eNetCache;
+    auto IsBlobID = [&]() { return CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(), nullptr); };
+
+    if (direct_nc && IsBlobID()) return x_InitNetCacheAPI();
+
+    CCompoundID cid;
+
+    try {
+        cid = m_CompoundIDPool.FromString(object_loc);
+    }
+    catch (...) {
+        if (!direct_nc && IsBlobID()) return x_InitNetCacheAPI();
+
+        throw;
     }
 
-    CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc);
+    switch (cid.GetClass()) {
+    case eCIC_NetCacheBlobKey:
+        return x_InitNetCacheAPI();
+
+    case eCIC_NetStorageObjectLoc:
+        break;
+
+    default:
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Invalid NetStorage object locator '" << object_loc << '\'');
+    }
+
+    CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc, cid);
     string service_name = locator_struct.GetServiceName();
 
     if (service_name.empty())
@@ -1044,7 +1067,7 @@ CNetService SNetStorageRPC::GetServiceIfLocator(const string& object_loc)
     return service;
 }
 
-void SNetStorageRPC::x_InitNetCacheAPI()
+EVoid SNetStorageRPC::x_InitNetCacheAPI()
 {
     if (!m_NetCacheAPI) {
         CNetCacheAPI nc_api(m_Config.nc_service, m_Config.client_name);
@@ -1052,6 +1075,8 @@ void SNetStorageRPC::x_InitNetCacheAPI()
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
         m_NetCacheAPI = nc_api;
     }
+
+    return eVoid;
 }
 
 string SNetStorageObjectRPC::GetLoc()
