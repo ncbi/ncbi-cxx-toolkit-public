@@ -1040,20 +1040,9 @@ CNetService SNetStorageRPC::GetServiceIfLocator(const string& object_loc)
         throw;
     }
 
-    switch (cid.GetClass()) {
-    case eCIC_NetCacheBlobKey:
-        return x_InitNetCacheAPI();
+    if (cid.GetClass() == eCIC_NetCacheBlobKey) return x_InitNetCacheAPI();
 
-    case eCIC_NetStorageObjectLoc:
-        break;
-
-    default:
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Invalid NetStorage object locator '" << object_loc << '\'');
-    }
-
-    CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc, cid);
-    string service_name = locator_struct.GetServiceName();
+    string service_name = CNetStorageObjectLoc::GetServiceName(cid);
 
     if (service_name.empty())
         return m_Service;
