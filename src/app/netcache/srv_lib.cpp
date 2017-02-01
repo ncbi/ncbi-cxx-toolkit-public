@@ -97,7 +97,7 @@ public:
 
 #if 1
 
-#if NCBI_DEVELOPMENT_VER < 20160817
+#if NCBI_DEVELOPMENT_VER < 20160726
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const ncbi::CTempString& ) {}
 void  ncbi::CNcbiError::SetErrno( int, const ncbi::CTempString& )                {}
 void  ncbi::CNcbiError::SetFromErrno( const ncbi::CTempString& )                 {}
@@ -191,7 +191,7 @@ CNcbiApplication::GetInstanceMutex(void) {
 }
 #endif
 
-#if NCBI_DEVELOPMENT_VER > 20160817
+#if NCBI_DEVELOPMENT_VER > 20160725
 CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags)
 {
     return CSharedHitId(m_hid);
