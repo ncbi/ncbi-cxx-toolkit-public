@@ -534,7 +534,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     };
 
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetStorageFlags flags);
-    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc);
+    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc, CNetService service);
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_key, TNetStorageFlags flags);
 
     virtual ~SNetStorageObjectRPC();
@@ -600,9 +600,10 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetS
     m_OwnService = m_NetStorageRPC->GetServiceFromLocator(m_Locator);
 }
 
-SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc) :
+SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc,
+        CNetService service) :
     m_NetStorageRPC(netstorage_rpc),
-    m_OwnService(netstorage_rpc->GetServiceFromLocator(object_loc)),
+    m_OwnService(service),
     m_Locator(object_loc)
 {
 }
@@ -808,7 +809,8 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
     if (x_NetCacheMode(object_loc))
         return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
 
-    return new SNetStorageObjectRPC(this, object_loc);
+    auto service = GetServiceFromLocator(object_loc);
+    return new SNetStorageObjectRPC(this, object_loc, service);
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
