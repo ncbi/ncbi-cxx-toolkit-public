@@ -50,7 +50,7 @@ install-toolkit:
 	        $(LN_S) "$$x" "`$(BASENAME) \"$$x\" .a`-static.a"; \
 	    done
 	for d in $(includedir0) $(incdir); do \
-	    cd $$d && find * -name .svn prune -o -print | \
+	    cd $$d && find * -name .svn -prune -o -print | \
                 cpio -pd $(pincludedir) ; \
 	done
 ## set up appropriate build and status directories somewhere under $(libdir)?
