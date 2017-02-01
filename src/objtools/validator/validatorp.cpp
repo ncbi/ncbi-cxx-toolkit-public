@@ -1824,6 +1824,10 @@ void CValidError_imp::x_ReportInvalidFuzz(const CPacked_seqint& packed_int, cons
     }
 }
 
+
+static const string kSpaceLeftFirst = "Should not specify 'space to left' at first position of non-circular sequence";
+static const string kSpaceRightLast = "Should not specify 'space to right' at last position of non-circular sequence";
+
 void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj)
 {
     // check for invalid fuzz on both ends of Interval
@@ -1844,7 +1848,59 @@ void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const C
                 "Should not specify 'space to right' for both ends of interval", obj);
         }
     }
+
+    // VR-15
+    // look for space to left at beginning of sequence or space to right at end
+    bool check_from = false;
+    bool check_to = false;
+    if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() &&
+        interval.GetFuzz_from().GetLim() == CInt_fuzz::eLim_tl &&
+        interval.IsSetFrom() && interval.GetFrom() == 0) {
+        check_from = true;
+    }
+    TSeqPos len = 0;
+    if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() &&
+        interval.GetFuzz_to().GetLim() == CInt_fuzz::eLim_tr &&
+        interval.IsSetTo()) {
+        check_to = true;
+    }
+    if (check_from || check_to) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(interval.GetId());
+        if (bsh && (!bsh.IsSetInst_Topology() || bsh.GetInst_Topology() != CSeq_inst::eTopology_circular)) {
+            if (check_from) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceLeftFirst, obj);
+            }
+            if (check_to && interval.GetTo() == bsh.GetBioseqLength() - 1) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceRightLast, obj);
+            }
+        }
+    }
 }
+
+
+void CValidError_imp::x_ReportInvalidFuzz(const CSeq_point& point, const CSerialObject& obj)
+{
+    // VR-15
+    if (!point.IsSetFuzz() || !point.GetFuzz().IsLim() ||
+        (point.GetFuzz().GetLim() != CInt_fuzz::eLim_tl && point.GetFuzz().GetLim() != CInt_fuzz::eLim_tr) ||
+        !point.IsSetId() || !point.IsSetPoint()) {
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(point.GetId());
+    if (!bsh) {
+        return;
+    }
+    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+        return;
+    }
+    if (point.GetPoint() == 0 && point.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceLeftFirst, obj);
+    }
+    if (point.GetPoint() == bsh.GetBioseqLength() - 1) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceRightLast, obj);
+    }
+}
+
 
 void CValidError_imp::x_ReportInvalidFuzz(const CSeq_loc& loc, const CSerialObject& obj)
 {
@@ -1857,6 +1913,9 @@ void CValidError_imp::x_ReportInvalidFuzz(const CSeq_loc& loc, const CSerialObje
             break;
         case CSeq_loc::e_Packed_int:
             x_ReportInvalidFuzz(lit->GetPacked_int(), obj);
+            break;
+        case CSeq_loc::e_Pnt:
+            x_ReportInvalidFuzz(lit->GetPnt(), obj);
             break;
         default:
             break;

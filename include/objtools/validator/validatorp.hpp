@@ -796,6 +796,7 @@ private:
                        const CSerialObject& obj);
     void x_ReportInvalidFuzz(const CPacked_seqint& packed_int, const CSerialObject& obj);
     void x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj);
+    void x_ReportInvalidFuzz(const CSeq_point& point, const CSerialObject& obj);
     void x_ReportInvalidFuzz(const CSeq_loc& loc, const CSerialObject& obj);
     void x_ReportPCRSeqProblem(const string& primer_kind,
                                char badch,

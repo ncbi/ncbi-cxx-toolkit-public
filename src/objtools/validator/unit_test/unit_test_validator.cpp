@@ -19396,6 +19396,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidFuzz)
         "Should not specify 'space to left' for both ends of interval"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
         "Should not specify 'space to right' for both ends of interval"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to left' at first position of non-circular sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to left' at first position of non-circular sequence"));
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -20405,4 +20409,82 @@ BOOST_AUTO_TEST_CASE(Test_VR_35)
         "Number qualifiers should not contain spaces"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(TEST_VR_15)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
+    feat->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+    "Should not specify 'space to left' at first position of non-circular sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetLocation().SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tr);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // not an error
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetLocation().SetInt().ResetFuzz_from();
+    feat->SetLocation().SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to right' at last position of non-circular sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+    //suppress if circular
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CompleteCircleProblem", "Circular topology without complete flag set"));
+    CheckErrors(*eval, expected_errors);
+
+    // also suppress for point
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetLocation().SetPnt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    feat->SetLocation().SetPnt().SetPoint(0);
+    feat->SetLocation().SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_tl);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().ResetTopology();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to left' at first position of non-circular sequence"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    feat->SetLocation().SetPnt().SetPoint(entry->GetSeq().GetInst().GetLength() - 1);
+    feat->SetLocation().SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to right' at last position of non-circular sequence"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
 }
