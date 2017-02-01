@@ -863,6 +863,7 @@ protected:
     virtual void x_WriteSeqIds    ( const CBioseq& bioseq,
                                     const CSeq_loc* location);
     virtual void x_WriteAsFasta   ( const CBioseq& bioseq );
+    virtual void x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& best_id, bool& hide_prefix, const CBioseq& bioseq);
     virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
     virtual void x_WriteSeqTitle  ( const CBioseq& bioseq,
                                     CScope* scope,

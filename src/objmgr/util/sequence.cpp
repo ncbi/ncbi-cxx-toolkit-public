@@ -2702,49 +2702,64 @@ static bool s_ShouldUseOriginalID (const CBioseq& seq)
     return true;
 }
 
-void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
+void CFastaOstream::x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& best_id, bool& hide_prefix, const CBioseq& bioseq)
 {
     bool is_na = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
-    CConstRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
-        is_na ? CSeq_id::FastaNARank
-        : CSeq_id::FastaAARank);
+    best_id = FindBestChoice(bioseq.GetId(), is_na ? CSeq_id::FastaNARank : CSeq_id::FastaAARank);
 
-    // RW-139, no GI in FASTA output
+    ITERATE(CBioseq::TId, id, bioseq.GetId()) {
+        if ((*id)->IsGi()) {
+            gi_id = *id;
+            break;
+        }
+    }
+
+    // see SQD-4144, only Accession.Version should be shown, without prefixes and suffixes
+    if (best_id.NotEmpty() && 
+        (m_Flags & fEnableGI) == 0 &&
+        (m_Flags & fHideGenBankPrefix) != 0)
+    {
+        switch (best_id->Which())
+        {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            hide_prefix = true;
+            break;
+        }
+    }
+}
+
+void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
+{
+    CConstRef<CSeq_id> best_id;
+    CConstRef<CSeq_id> gi_id;
+    bool hide_prefix = false;
+
+    // override this method and provide application specific 'best id' policy
+    x_GetBestId(gi_id, best_id, hide_prefix, bioseq);
+
     if (best_id.NotEmpty())
     {
-        if ((m_Flags & fEnableGI) && !best_id->IsGi())
+        // RW-139, no GI in FASTA output
+        if (gi_id.NotEmpty() && (m_Flags & fEnableGI) && !best_id->IsGi())
         {
             // FastA format
             // Here we have something like:
             //      gi|###|SOME_ACCESSION|title
 
-            ITERATE(CBioseq::TId, id, bioseq.GetId()) {
-                if ((*id)->IsGi()) {
-                    (*id)->WriteAsFasta(m_Out);
-                    m_Out << '|';
-                    break;
-                }
-            }
+            gi_id->WriteAsFasta(m_Out);
+            m_Out << '|';
         }
 
-        // see SQD-4144, only Accession.Version should be shown, without prefixes and suffixes
         const CTextseq_id* text_id = 0;
-        if ((m_Flags & fEnableGI) == 0 &&
-            (m_Flags & fHideGenBankPrefix) != 0)
+        if (hide_prefix)
         {
-
-            switch (best_id->Which())
-            {
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Embl:
-            case CSeq_id::e_Other:
-            case CSeq_id::e_Ddbj:
-            case CSeq_id::e_Tpg:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpd:
-                text_id = best_id->GetTextseq_Id();
-                break;
-            }
+            text_id = best_id->GetTextseq_Id();
         }
 
         if (text_id != 0)
