@@ -47,10 +47,6 @@ class NCBI_XOBJEDIT_EXPORT CFeatTrim
 //  ----------------------------------------------------------------------------
 {
 public:
-    static void Apply(
-        const CRange<TSeqPos>& range,
-        CMappedFeat& mapped_feat);
-
     static CRef<CSeq_feat> Apply(
         const CSeq_feat& feat,
         const CRange<TSeqPos>& range);

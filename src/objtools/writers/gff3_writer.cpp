@@ -1321,7 +1321,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
             (s_RangeContains(mRoot.GetTotalRange(), from) ||
             s_RangeContains(mRoot.GetTotalRange(), to))) {
 
-            edit::CFeatTrim::Apply(range, mRoot);
+            //edit::CFeatTrim::Apply(range, mRoot);
 
             if (!xWriteFeature(fc, mRoot)) {
                 return false;
@@ -1381,7 +1381,7 @@ bool CGff3Writer::xWriteAllChildren(
             (s_RangeContains(mChild.GetTotalRange(), from) ||
             s_RangeContains(mChild.GetTotalRange(), to))) {
 
-            edit::CFeatTrim::Apply(range, mChild);
+            //edit::CFeatTrim::Apply(range, mChild);
 
             if (!xWriteFeature(fc, mChild)) {
                 return false;

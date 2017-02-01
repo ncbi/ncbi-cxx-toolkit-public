@@ -135,19 +135,6 @@ CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
 }
 
 
-void CFeatTrim::Apply(const CRange<TSeqPos>& range,
-        CMappedFeat& mapped_feat)
-{
-
-    CRef<CSeq_feat> new_sf = Apply(*mapped_feat.GetSeq_feat(), range);
-
-    CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
-    CSeq_feat_EditHandle sfeh(sfh);
-    sfeh.Replace(*new_sf);
-    return;
-}
-
-
 void CFeatTrim::x_TrimCodeBreak(const TSeqPos from, const TSeqPos to,
     CCode_break& code_break)
 {
