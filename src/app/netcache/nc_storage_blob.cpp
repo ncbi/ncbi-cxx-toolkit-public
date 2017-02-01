@@ -2006,7 +2006,9 @@ CBulkCleaner::x_RemoveBlob(void)
 // CNCMessageHandler::x_DoCmd_Remove
     if ((!m_BlobAccess || !m_BlobAccess->IsBlobExists() || m_BlobAccess->IsCurBlobExpired()))
     {
-        return &CBulkCleaner::x_Finalize;
+        m_BlobAccess->Release();
+        m_BlobAccess = NULL;
+        return &CBulkCleaner::x_FindNext;;
     }
 
     m_BlobAccess->SetBlobTTL(m_BlobAccess->GetCurBlobTTL());
