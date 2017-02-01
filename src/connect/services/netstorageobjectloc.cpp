@@ -114,7 +114,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_Locator(object_loc)
 {
     auto cid = m_CompoundIDPool.FromString(object_loc);
-    Parse(cid);
+    Parse(cid, false);
 }
 
 void CNetStorageObjectLoc::SetServiceName(const string& service_name)
@@ -132,11 +132,11 @@ void CNetStorageObjectLoc::SetServiceName(const string& service_name)
 string CNetStorageObjectLoc::GetServiceName(CCompoundID cid)
 {
     CNetStorageObjectLoc loc;
-    loc.ParseServiceName(cid);
+    loc.Parse(cid, true);
     return loc.m_ServiceName;
 }
 
-CCompoundIDField CNetStorageObjectLoc::ParseServiceName(CCompoundID cid)
+void CNetStorageObjectLoc::Parse(CCompoundID cid, bool service_name_only)
 {
     // Check the ID class.
     switch (cid.GetClass()) {
@@ -160,12 +160,7 @@ CCompoundIDField CNetStorageObjectLoc::ParseServiceName(CCompoundID cid)
         m_ServiceName = field.GetServiceName();
     }
 
-    return field;
-}
-
-void CNetStorageObjectLoc::Parse(CCompoundID cid)
-{
-    CCompoundIDField field = ParseServiceName(cid);
+    if (service_name_only) return;
 
     // Restore object ID.
     if (m_LocatorFlags & fLF_HasObjectID) {

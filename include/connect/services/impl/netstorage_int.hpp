@@ -151,8 +151,7 @@ private:
     typedef unsigned TLocatorFlags;
 
     CNetStorageObjectLoc() = default;
-    CCompoundIDField ParseServiceName(CCompoundID cid);
-    void Parse(CCompoundID cid);
+    void Parse(CCompoundID cid, bool service_name_only);
     string MakeShortUniqueKey() const;
     string MakeUniqueKey() const { return m_AppDomain + '-' + m_ShortUniqueKey; }
 
