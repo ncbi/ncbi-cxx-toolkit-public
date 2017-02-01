@@ -165,7 +165,7 @@ struct SWGSDb_Defs
         fSplitMask    = 0|fSplitQualityGraph | fSplitSeqData | fSplitProducts,
         fDefaultSplit = fSplitAll,
 
-        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
+        fDefaultFlags = 0|fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 };
