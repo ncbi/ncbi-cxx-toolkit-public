@@ -938,10 +938,11 @@ void CWGSDb_Impl::OpenProtAccIndex(void)
 }
 
 
-pair<TVDBRowId, char> CWGSDb_Impl::ParseRowType(CTempString acc,
-                                                TAllowRowType allow_type) const
+pair<TVDBRowId, CWGSDb_Impl::ERowType>
+CWGSDb_Impl::ParseRowType(CTempString acc,
+                          TAllowRowType allow_type) const
 {
-    pair<TVDBRowId, TAllowRowType> ret(0, eRowType_contig);
+    pair<TVDBRowId, ERowType> ret(0, eRowType_contig);
     const SIZE_TYPE start = 0;
     CTempString row = acc.substr(start+6);
     if ( row[0] == 'S' ) {
@@ -2016,10 +2017,8 @@ CWGSDb_Impl::SSeqTableCursor::GetGapInfo(TVDBRowId row) const
 }
 
 
-struct SWGSCreateInfo 
+struct SWGSCreateInfo : SWGSDb_Defs
 {
-    typedef int TFlags;
-
     SWGSCreateInfo(const CWGSDb& db, TFlags flags)
         : db(db),
           flags(flags),

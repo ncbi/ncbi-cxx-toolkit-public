@@ -44,6 +44,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <sra/readers/sra/snpread.hpp> // for CSafeFlags
 #include <map>
 #include <list>
 
@@ -132,6 +133,45 @@ private:
 };
 
 
+struct SWGSDb_Defs
+{
+    enum EFlags {
+        fIds_gi       = 1<<0,
+        fIds_acc      = 1<<1,
+        fIds_gnl      = 1<<2,
+        fMaskIds      = 0|fIds_gi|fIds_acc|fIds_gnl,
+        fDefaultIds   = 0|fIds_gi|fIds_acc|fIds_gnl,
+
+        fInst_ncbi4na = 0<<3,
+        fInst_delta   = 1<<3,
+        fMaskInst     = 0|fInst_ncbi4na|fInst_delta,
+        fDefaultInst  = fInst_delta,
+
+        fSeqDescr     = 1<<4,
+        fNucProtDescr = 1<<12,
+        fMasterDescr  = 1<<5,
+        fMaskDescr    = 0|fSeqDescr|fNucProtDescr|fMasterDescr,
+        fDefaultDescr = 0|fSeqDescr|fNucProtDescr|fMasterDescr,
+
+        fSeqAnnot     = 1<<6,
+        fQualityGraph = 1<<7,
+        fMaskAnnot    = 0|fSeqAnnot|fQualityGraph,
+        fDefaultAnnot = 0|fSeqAnnot|fQualityGraph,
+
+        fSplitQualityGraph  = 1<<8,
+        fSplitSeqData       = 1<<9,
+        fSplitProducts      = 1<<10,
+        fSplitAll     = 0|fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fSplitMask    = 0|fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fDefaultSplit = fSplitAll,
+
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+};
+DECLARE_SAFE_FLAGS(SWGSDb_Defs::EFlags);
+
+
 class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
 {
 public:
@@ -168,12 +208,12 @@ public:
         fAllowRowType_scaffold = 1<<1,
         fAllowRowType_protein  = 1<<2
     };
-    typedef int TAllowRowType;
+    DECLARE_SAFE_FLAGS_TYPE(EAllowRowType, TAllowRowType);
     // parse row id from accession
     // returns (row, accession_type) pair
     // row will be 0 if accession is in wrong format
-    pair<TVDBRowId, char> ParseRowType(CTempString acc,
-                                       TAllowRowType allow) const;
+    pair<TVDBRowId, ERowType> ParseRowType(CTempString acc,
+                                           TAllowRowType allow) const;
     // parse row id from accession
     // returns 0 if accession is in wrong format
     // if is_scaffold flag pointer is not null, then scaffold ids are also
@@ -205,7 +245,7 @@ public:
         fGnlId_NoWGSId      = 1<<1,
         fGnlId_Default      = 0
     };
-    typedef int TGnlIdFlags;
+    DECLARE_SAFE_FLAGS_TYPE(EGnlIdFlags, TGnlIdFlags);
     
     CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
                                    TGnlIdFlags gnl_id_flags = fGnlId_Default) const;
@@ -490,6 +530,8 @@ private:
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
 };
+DECLARE_SAFE_FLAGS(CWGSDb_Impl::EGnlIdFlags);
+DECLARE_SAFE_FLAGS(CWGSDb_Impl::EAllowRowType);
 
 
 class CWGSDb : public CRef<CWGSDb_Impl>
@@ -634,7 +676,7 @@ public:
 };
 
 
-class NCBI_SRAREAD_EXPORT CWGSSeqIterator
+class NCBI_SRAREAD_EXPORT CWGSSeqIterator : public SWGSDb_Defs
 {
 public:
     enum EWithdrawn {
@@ -833,40 +875,6 @@ public:
     bool HasGapInfo(void) const;
     void GetGapInfo(TWGSContigGapInfo& gap_info) const;
 
-    enum EFlags {
-        fIds_gi       = 1<<0,
-        fIds_acc      = 1<<1,
-        fIds_gnl      = 1<<2,
-        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
-        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
-
-        fInst_ncbi4na = 0<<3,
-        fInst_delta   = 1<<3,
-        fMaskInst     = fInst_ncbi4na|fInst_delta,
-        fDefaultInst  = fInst_delta,
-
-        fSeqDescr     = 1<<4,
-        fNucProtDescr = 1<<12,
-        fMasterDescr  = 1<<5,
-        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr,
-        fDefaultDescr = fSeqDescr|fNucProtDescr|fMasterDescr,
-
-        fSeqAnnot     = 1<<6,
-        fQualityGraph = 1<<7,
-        fMaskAnnot    = fSeqAnnot|fQualityGraph,
-        fDefaultAnnot = fSeqAnnot|fQualityGraph,
-
-        fSplitQualityGraph  = 1<<8,
-        fSplitSeqData       = 1<<9,
-        fSplitProducts      = 1<<10,
-        fSplitAll     = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
-        fSplitMask    = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
-        fDefaultSplit = fSplitAll,
-
-        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
-    };
-    typedef int TFlags;
-
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
@@ -922,6 +930,14 @@ public:
     CRef<CAsnBinData> GetChunkData(TChunkId chunk_id,
                                    TFlags flags = fDefaultFlags) const;
 
+    enum EInstSegmentFlags {
+        fInst_MakeData  = 1<<0, // generate Seq-data in data segments
+        fInst_MakeGaps  = 1<<1, // generate gap segments
+        fInst_Split     = 1<<2, // split data by chunk boundaries
+        fInst_Minimal   = 1<<3  // minimize number of data segments
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EInstSegmentFlags, TInstSegmentFlags);
+    
 protected:
     void x_Init(const CWGSDb& wgs_db,
                 EWithdrawn withdrawn,
@@ -978,13 +994,6 @@ protected:
         bool is_gap;
         CRef<CSeq_literal> literal;
     };
-    enum EInstSegmentFlags {
-        fInst_MakeData  = 1<<0, // generate Seq-data in data segments
-        fInst_MakeGaps  = 1<<1, // generate gap segments
-        fInst_Split     = 1<<2, // split data by chunk boundaries
-        fInst_Minimal   = 1<<3  // minimize number of data segments
-    };
-    typedef int TInstSegmentFlags;
     typedef vector<SSegment> TSegments;
 
     COpenRange<TSeqPos> x_NormalizeSeqRange(COpenRange<TSeqPos> range) const;
@@ -1011,9 +1020,10 @@ private:
     EWithdrawn m_Withdrawn;
     bool m_ClipByQuality;
 };
+DECLARE_SAFE_FLAGS(CWGSSeqIterator::EInstSegmentFlags);
 
 
-class NCBI_SRAREAD_EXPORT CWGSScaffoldIterator
+class NCBI_SRAREAD_EXPORT CWGSScaffoldIterator : public SWGSDb_Defs
 {
 public:
     CWGSScaffoldIterator(void);
@@ -1062,32 +1072,6 @@ public:
     CTempString GetScaffoldName(void) const;
 
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
-
-    enum EFlags {
-        fIds_gi       = 1<<0,
-        fIds_acc      = 1<<1,
-        fIds_gnl      = 1<<2,
-        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
-        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
-
-        fInst_ncbi4na = 0<<3,
-        fInst_delta   = 1<<3,
-        fMaskInst     = fInst_ncbi4na|fInst_delta,
-        fDefaultInst  = fInst_delta,
-
-        fSeqDescr     = 1<<4,
-        fMasterDescr  = 1<<5,
-        fMaskDescr    = fSeqDescr|fMasterDescr,
-        fDefaultDescr = fSeqDescr|fMasterDescr,
-
-        fSeqAnnot     = 1<<6,
-        fQualityGraph = 1<<7,
-        fMaskAnnot    = fSeqAnnot|fQualityGraph,
-        fDefaultAnnot = fSeqAnnot,
-
-        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
-    };
-    typedef int TFlags;
 
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
@@ -1189,7 +1173,7 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CWGSProteinIterator
+class NCBI_SRAREAD_EXPORT CWGSProteinIterator : public SWGSDb_Defs
 {
 public:
     CWGSProteinIterator(void);
@@ -1251,30 +1235,6 @@ public:
 
     TVDBRowId GetReplacedByRowId(void) const;
     TVDBRowId GetReplacesRowId(void) const;
-
-    enum EFlags {
-        fIds_gi       = 1<<0,
-        fIds_acc      = 1<<1,
-        fIds_gnl      = 1<<2,
-        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
-        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
-
-        fMaskInst     = 1<<3,
-        fDefaultInst  = 0,
-
-        fSeqDescr     = 1<<4,
-        fMasterDescr  = 1<<5,
-        fMaskDescr    = fSeqDescr|fMasterDescr,
-        fDefaultDescr = fSeqDescr|fMasterDescr,
-
-        fSeqAnnot     = 1<<6,
-        fQualityGraph = 1<<7,
-        fMaskAnnot    = fSeqAnnot|fQualityGraph,
-        fDefaultAnnot = fSeqAnnot|fQualityGraph,
-
-        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
-    };
-    typedef int TFlags;
 
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
