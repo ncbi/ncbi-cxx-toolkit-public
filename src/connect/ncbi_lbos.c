@@ -457,7 +457,6 @@ char*   g_LBOS_StringNConcat(char*       dest,
     if (buf == NULL) {
         CORE_LOG_X(eLBOS_MemAlloc, eLOG_Critical, 
                  "g_LBOS_StringConcat: No RAM. Returning NULL.");
-        free(buf);
         free(dest);
         return NULL;
     }
@@ -1081,7 +1080,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
         char* server_description;
-        const char* descr_format = "%s %s:%u %s Regular R=%s L=no T=25";
+        const char* descr_format = "%s %s:%u %s R=%s L=no T=25";
         int port;
         serviceEndpoint = x_json_array_get_object(serviceEndpoints, j);
         host = x_json_object_dotget_string(serviceEndpoint,
@@ -1608,6 +1607,8 @@ static void s_LBOS_Initialize(void)
         }
         if (s_EmptyNetInfo == NULL) {
             s_EmptyNetInfo = ConnNetInfo_Create(NULL);
+            if (s_EmptyNetInfo)
+                s_EmptyNetInfo->req_method = eReqMethod_Any;
         }
     CORE_UNLOCK;
     s_LBOS_TurnedOn = 1; /* To ensure that initialization does
@@ -1930,6 +1931,8 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
         data->net_info = ConnNetInfo_Clone(s_EmptyNetInfo);
     } else {
         data->net_info = ConnNetInfo_Clone(net_info);
+        if (data->net_info)
+            data->net_info->req_method = eReqMethod_Any;
     }
     // Check if CONNECT_Init() has been run before
     if (g_CORE_GetRequestDtab == NULL) {
