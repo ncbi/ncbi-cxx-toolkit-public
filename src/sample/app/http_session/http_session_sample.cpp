@@ -110,6 +110,7 @@ void CHttpSessionApp::Init()
     arg_desc->AddFlag("print-cookies", "Print HTTP cookies", true);
     arg_desc->AddFlag("print-body", "Print HTTP response body", true);
 
+    // Simple requests
     arg_desc->AddOptionalKey("head", "url", "URL to load using HEAD request",
         CArgDescriptions::eString,
         CArgDescriptions::fAllowMultiple);
@@ -119,6 +120,36 @@ void CHttpSessionApp::Init()
     arg_desc->AddOptionalKey("post", "url", "URL to POST data to (the data is read from STDIN)",
         CArgDescriptions::eString);
 
+    // Requests to specific url/service
+    arg_desc->AddOptionalKey("method", "method", "HTTP request method: HEAD/GET/POST",
+        CArgDescriptions::eString);
+    CArgAllow_Strings allow_methods;
+    allow_methods.Allow("HEAD");
+    allow_methods.Allow("GET");
+    allow_methods.Allow("POST");
+    arg_desc->SetConstraint("method", allow_methods);
+    arg_desc->SetDependency("method", CArgDescriptions::eExcludes, "head");
+    arg_desc->SetDependency("method", CArgDescriptions::eExcludes, "get");
+    arg_desc->SetDependency("method", CArgDescriptions::eExcludes, "post");
+
+    arg_desc->AddOptionalKey("url", "url", "URL to access using the specified method.",
+        CArgDescriptions::eString);
+    arg_desc->SetDependency("url", CArgDescriptions::eRequires, "method");
+
+    arg_desc->AddOptionalKey("service-name", "name", "Named service to access using the specified method.",
+        CArgDescriptions::eString);
+    arg_desc->SetDependency("service-name", CArgDescriptions::eRequires, "method");
+    arg_desc->SetDependency("service-name", CArgDescriptions::eExcludes, "url");
+
+    arg_desc->AddOptionalKey("service-path", "path", "Path to be appended to the service name.",
+        CArgDescriptions::eString);
+    arg_desc->SetDependency("service-path", CArgDescriptions::eRequires, "service-name");
+
+    arg_desc->AddOptionalKey("service-args", "name", "Named service arguments.",
+        CArgDescriptions::eString);
+    arg_desc->SetDependency("service-args", CArgDescriptions::eRequires, "service-name");
+
+    // Connection parameters
     arg_desc->AddOptionalKey("timeout", "double", "Timeout in seconds",
         CArgDescriptions::eDouble);
     arg_desc->AddOptionalKey("retries", "int", "Number of retries",
@@ -160,6 +191,36 @@ int CHttpSessionApp::Run(void)
     }
 
     bool skip_defaults = false;
+    if (args["method"]) {
+        CHttpSession::ERequestMethod method = CHttpSession::eHead;
+        if (args["method"].AsString() == "GET") method = CHttpSession::eGet;
+        else if (args["method"].AsString() == "POST") method = CHttpSession::ePost;
+        CUrl url;
+        if (args["url"]) {
+            url.SetUrl(args["url"].AsString());
+        }
+        else if (args["service-name"]) {
+            url.SetHost(args["service-name"].AsString());
+            if (args["service-path"]) {
+                url.SetPath(args["service-path"].AsString());
+            }
+            if (args["service-args"]) {
+                url.GetArgs().SetQueryString(args["service-args"].AsString());
+            }
+        }
+        else {
+            cout << "Missing 'url' or 'service-name' argument for " << args["method"] << " request." << endl;
+            return 0;
+        }
+        cout << args["method"].AsString() << " " << url.ComposeUrl(CUrlArgs::eAmp_Char) << endl;
+        CHttpRequest req = session.NewRequest(url, method);
+        SetupRequest(req);
+        if (method == CHttpSession::ePost) {
+            NcbiStreamCopy(req.ContentStream(), cin);
+        }
+        PrintResponse(&session, req.Execute());
+        return 0;
+    }
     if ( args["head"] ) {
         skip_defaults = true;
         const CArgValue::TStringArray& urls = args["head"].GetStringList();
