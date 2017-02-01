@@ -212,3 +212,12 @@ Added other memory managers
 January 11, 2017
 version 6.11.6 (CXX-8957)
 Bug fixes
+
+February 01, 2017
+version 6.12.0 (CXX-9005)
+Added option to purge all blobs with a given key in a cache.
+Implemented delayed removal of purged blobs.
+Switch to SC-18
+Switch to GCC 4.9.3
+
+
