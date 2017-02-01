@@ -597,7 +597,7 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetS
     m_NetStorageRPC->x_SetStorageFlags(m_OriginalRequest, m_NetStorageRPC->GetFlags(flags));
 
     m_Locator = ExchangeUsingOwnService(m_OriginalRequest, &m_Connection).GetString("ObjectLoc");
-    m_OwnService = m_NetStorageRPC->GetServiceFromLocator(m_Locator);
+    m_OwnService = m_NetStorageRPC->GetServiceIfLocator(m_Locator);
 }
 
 SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc,
@@ -806,21 +806,24 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 {
-    if (x_NetCacheMode(object_loc))
-        return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
+    auto service = GetServiceIfLocator(object_loc);
 
-    auto service = GetServiceFromLocator(object_loc);
+    if (!service) {
+        return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
+    }
+
     return new SNetStorageObjectRPC(this, object_loc, service);
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
         TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    if (x_NetCacheMode(object_loc))
+    auto service = GetServiceIfLocator(object_loc);
+
+    if (!service)
         NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
                 ": Relocate for NetCache blobs is not implemented");
 
-    auto service = GetServiceFromLocator(object_loc);
     auto request = MkObjectRequest("RELOCATE", object_loc);
     return RelocateImpl(service, request, flags, cb);
 }
@@ -865,7 +868,9 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
 
 bool SNetStorageRPC::Exists(const string& object_loc)
 {
-    if (x_NetCacheMode(object_loc))
+    auto service = GetServiceIfLocator(object_loc);
+
+    if (!service)
         try {
             return m_NetCacheAPI.HasBlob(object_loc);
         }
@@ -874,8 +879,8 @@ bool SNetStorageRPC::Exists(const string& object_loc)
     CJsonNode request(MkObjectRequest("EXISTS", object_loc));
 
     try {
-        return Exchange(GetServiceFromLocator(object_loc),
-                request).GetBoolean("Exists");
+        const auto reply = Exchange(service, request);
+        return reply.GetBoolean("Exists");
     }
     catch (CNetStorageException& e) {
         if (e.GetErrCode() != CNetStorageException::eExpired) throw;
@@ -886,7 +891,9 @@ bool SNetStorageRPC::Exists(const string& object_loc)
 
 ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 {
-    if (x_NetCacheMode(object_loc)) {
+    auto service = GetServiceIfLocator(object_loc);
+
+    if (!service) {
         try {
             if (m_NetCacheAPI.HasBlob(object_loc)) {
                 m_NetCacheAPI.Remove(object_loc);
@@ -902,8 +909,8 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
     CJsonNode request(MkObjectRequest("DELETE", object_loc));
 
     try {
-        CJsonNode response(Exchange(GetServiceFromLocator(object_loc), request));
-        CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
+        const auto reply = Exchange(service, request);
+        const auto not_found = reply.GetByKeyOrNull("NotFound");
 
         return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
     }
@@ -1015,6 +1022,28 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
     return new_request;
 }
 
+CNetService SNetStorageRPC::GetServiceIfLocator(const string& object_loc)
+{
+    if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(), NULL, m_CompoundIDPool)) {
+        x_InitNetCacheAPI();
+        return eVoid;
+    }
+
+    CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc);
+    string service_name = locator_struct.GetServiceName();
+
+    if (service_name.empty())
+        return m_Service;
+
+    auto i = m_ServiceMap.find(service_name);
+
+    if (i != m_ServiceMap.end()) return i->second;
+
+    CNetService service(m_Service.Clone(service_name));
+    m_ServiceMap.insert(make_pair(service_name, service));
+    return service;
+}
+
 void SNetStorageRPC::x_InitNetCacheAPI()
 {
     if (!m_NetCacheAPI) {
@@ -1023,16 +1052,6 @@ void SNetStorageRPC::x_InitNetCacheAPI()
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
         m_NetCacheAPI = nc_api;
     }
-}
-
-bool SNetStorageRPC::x_NetCacheMode(const string& object_loc)
-{
-    if (!CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
-            NULL, m_CompoundIDPool))
-        return false;
-
-    x_InitNetCacheAPI();
-    return true;
 }
 
 string SNetStorageObjectRPC::GetLoc()

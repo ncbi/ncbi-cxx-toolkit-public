@@ -64,24 +64,8 @@ struct SNetStorageRPC : public SNetStorageImpl
     CJsonNode MkObjectRequest(const string& request_type,
             const string& unique_key, TNetStorageFlags flags) const;
     void x_InitNetCacheAPI();
-    bool x_NetCacheMode(const string& object_loc);
 
-    CNetService GetServiceFromLocator(const string& object_loc)
-    {
-        CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc);
-        string service_name = locator_struct.GetServiceName();
-
-        if (service_name.empty())
-            return m_Service;
-
-        auto i = m_ServiceMap.find(service_name);
-
-        if (i != m_ServiceMap.end()) return i->second;
-
-        CNetService service(m_Service.Clone(service_name));
-        m_ServiceMap.insert(make_pair(service_name, service));
-        return service;
-    }
+    CNetService GetServiceIfLocator(const string& object_loc);
 
     TNetStorageFlags GetFlags(TNetStorageFlags flags) const
     {
