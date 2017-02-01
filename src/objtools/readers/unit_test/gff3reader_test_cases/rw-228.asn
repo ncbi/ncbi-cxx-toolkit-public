@@ -3792,7 +3792,8 @@ Seq-annot ::= {
   },
   data align {
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -3827,365 +3828,73 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 138
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              22758
-            },
-            lens {
-              138
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "NM_010651",
+          version 3
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 130
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              138,
-              20967
-            },
-            lens {
-              137
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 90
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 137,
+            genomic-start 22758,
+            genomic-end 22895
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              275,
-              19496
-            },
-            lens {
-              90
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 200
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+          {
+            product-start nucpos 138,
+            product-end nucpos 274,
+            genomic-start 20967,
+            genomic-end 21103
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              365,
-              18432
-            },
-            lens {
-              219
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 135
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+          {
+            product-start nucpos 275,
+            product-end nucpos 364,
+            genomic-start 19496,
+            genomic-end 19585
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              584,
-              15408
-            },
-            lens {
-              140
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 101
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+          {
+            product-start nucpos 365,
+            product-end nucpos 583,
+            genomic-start 18432,
+            genomic-end 18650
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              724,
-              12340
-            },
-            lens {
-              104
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 149
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+          {
+            product-start nucpos 584,
+            product-end nucpos 723,
+            genomic-start 15408,
+            genomic-end 15547
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              828,
-              8914
-            },
-            lens {
-              156
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 188
-            },
-            {
-              id str "num_ident",
-              value int 1167
-            },
-            {
-              id str "num_mismatch",
-              value int 27
-            }
+          {
+            product-start nucpos 724,
+            product-end nucpos 827,
+            genomic-start 12340,
+            genomic-end 12443
           },
-          segs denseg {
-            dim 2,
-            numseg 3,
-            ids {
-              other {
-                accession "NM_010651",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              984,
-              8752,
-              -1,
-              8751,
-              1068,
-              8625
-            },
-            lens {
-              84,
-              1,
-              126
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 828,
+            product-end nucpos 983,
+            genomic-start 8914,
+            genomic-end 9069
+          },
+          {
+            product-start nucpos 984,
+            product-end nucpos 1193,
+            genomic-start 8625,
+            genomic-end 8835
           }
         }
       }
     },
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -4220,322 +3929,67 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 177
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              79292
-            },
-            lens {
-              182
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "NM_014194",
+          version 5
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 87
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              182,
-              77723
-            },
-            lens {
-              90
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 208
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 181,
+            genomic-start 79292,
+            genomic-end 79473
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              272,
-              76297
-            },
-            lens {
-              219
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 138
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
+          {
+            product-start nucpos 182,
+            product-end nucpos 271,
+            genomic-start 77723,
+            genomic-end 77812
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              491,
-              74240
-            },
-            lens {
-              143
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 104
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
+          {
+            product-start nucpos 272,
+            product-end nucpos 490,
+            genomic-start 76297,
+            genomic-end 76515
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              634,
-              71833
-            },
-            lens {
-              104
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 149
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
+          {
+            product-start nucpos 491,
+            product-end nucpos 633,
+            genomic-start 74240,
+            genomic-end 74382
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              738,
-              64304
-            },
-            lens {
-              156
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 172
-            },
-            {
-              id str "num_ident",
-              value int 1060
-            },
-            {
-              id str "num_mismatch",
-              value int 15
-            }
+          {
+            product-start nucpos 634,
+            product-end nucpos 737,
+            genomic-start 71833,
+            genomic-end 71936
           },
-          segs denseg {
-            dim 2,
-            numseg 3,
-            ids {
-              other {
-                accession "NM_014194",
-                version 5
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              894,
-              64088,
-              -1,
-              64082,
-              1016,
-              64023
-            },
-            lens {
-              122,
-              6,
-              59
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 738,
+            product-end nucpos 893,
+            genomic-start 64304,
+            genomic-end 64459
+          },
+          {
+            product-start nucpos 894,
+            product-end nucpos 1074,
+            genomic-start 64023,
+            genomic-end 64209
           }
         }
       }
     },
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -4570,304 +4024,67 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              173084
-            },
-            lens {
-              80
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "NM_013794",
+          version 4
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              80,
-              171201
-            },
-            lens {
-              137
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 79,
+            genomic-start 173084,
+            genomic-end 173163
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              217,
-              169825
-            },
-            lens {
-              90
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
+          {
+            product-start nucpos 80,
+            product-end nucpos 216,
+            genomic-start 171201,
+            genomic-end 171337
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              307,
-              168723
-            },
-            lens {
-              207
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
+          {
+            product-start nucpos 217,
+            product-end nucpos 306,
+            genomic-start 169825,
+            genomic-end 169914
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              514,
-              166283
-            },
-            lens {
-              143
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
+          {
+            product-start nucpos 307,
+            product-end nucpos 513,
+            genomic-start 168723,
+            genomic-end 168929
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              657,
-              163852
-            },
-            lens {
-              104
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 1186
-            },
-            {
-              id str "num_mismatch",
-              value int 6
-            }
+          {
+            product-start nucpos 514,
+            product-end nucpos 656,
+            genomic-start 166283,
+            genomic-end 166425
           },
-          segs denseg {
-            dim 2,
-            numseg 5,
-            ids {
-              other {
-                accession "NM_013794",
-                version 4
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              761,
-              149655,
-              1048,
-              -1,
-              1088,
-              149563,
-              1180,
-              -1,
-              1182,
-              149511
-            },
-            lens {
-              287,
-              40,
-              92,
-              2,
-              52
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 657,
+            product-end nucpos 760,
+            genomic-start 163852,
+            genomic-end 163955
+          },
+          {
+            product-start nucpos 761,
+            product-end nucpos 1233,
+            genomic-start 149511,
+            genomic-end 149941
           }
         }
       }
     },
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -4902,322 +4119,67 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 149
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              292305
-            },
-            lens {
-              156
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "NM_010648",
+          version 3
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 121
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              156,
-              290526
-            },
-            lens {
-              130
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 83
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 155,
+            genomic-start 292305,
+            genomic-end 292460
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              286,
-              289047
-            },
-            lens {
-              90
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 198
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
+          {
+            product-start nucpos 156,
+            product-end nucpos 285,
+            genomic-start 290526,
+            genomic-end 290655
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              376,
-              288001
-            },
-            lens {
-              219
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 129
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
+          {
+            product-start nucpos 286,
+            product-end nucpos 375,
+            genomic-start 289047,
+            genomic-end 289136
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              595,
-              254930
-            },
-            lens {
-              140
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 99
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
+          {
+            product-start nucpos 376,
+            product-end nucpos 594,
+            genomic-start 288001,
+            genomic-end 288219
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              735,
-              251885
-            },
-            lens {
-              104
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 399
-            },
-            {
-              id str "num_ident",
-              value int 1238
-            },
-            {
-              id str "num_mismatch",
-              value int 49
-            }
+          {
+            product-start nucpos 595,
+            product-end nucpos 734,
+            genomic-start 254930,
+            genomic-end 255069
           },
-          segs denseg {
-            dim 2,
-            numseg 3,
-            ids {
-              other {
-                accession "NM_010648",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              839,
-              248670,
-              850,
-              -1,
-              853,
-              248233
-            },
-            lens {
-              11,
-              3,
-              437
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 735,
+            product-end nucpos 838,
+            genomic-start 251885,
+            genomic-end 251988
+          },
+          {
+            product-start nucpos 839,
+            product-end nucpos 1289,
+            genomic-start 248233,
+            genomic-end 248680
           }
         }
       }
     },
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -5252,412 +4214,72 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 48
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              338873
-            },
-            lens {
-              48
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "NM_016659",
+          version 3
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 190
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              48,
-              335546
-            },
-            lens {
-              195
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 273
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 47,
+            genomic-start 338873,
+            genomic-end 338920
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              243,
-              334439
-            },
-            lens {
-              278
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 164
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 48,
+            product-end nucpos 242,
+            genomic-start 335546,
+            genomic-end 335740
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              521,
-              332676
-            },
-            lens {
-              167
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 85
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 243,
+            product-end nucpos 520,
+            genomic-start 334439,
+            genomic-end 334716
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              688,
-              331124
-            },
-            lens {
-              90
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 201
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 521,
+            product-end nucpos 687,
+            genomic-start 332676,
+            genomic-end 332842
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              778,
-              329778
-            },
-            lens {
-              204
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 140
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 688,
+            product-end nucpos 777,
+            genomic-start 331124,
+            genomic-end 331213
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              982,
-              327323
-            },
-            lens {
-              143
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 101
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 778,
+            product-end nucpos 981,
+            genomic-start 329778,
+            genomic-end 329981
           },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              1125,
-              324929
-            },
-            lens {
-              104
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
-        },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "score",
-              value int 417
-            },
-            {
-              id str "num_ident",
-              value int 1649
-            },
-            {
-              id str "num_mismatch",
-              value int 16
-            }
+          {
+            product-start nucpos 982,
+            product-end nucpos 1124,
+            genomic-start 327323,
+            genomic-end 327465
           },
-          segs denseg {
-            dim 2,
-            numseg 5,
-            ids {
-              other {
-                accession "NM_016659",
-                version 3
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              1229,
-              316211,
-              -1,
-              316210,
-              1391,
-              316107,
-              1494,
-              -1,
-              1496,
-              315936
-            },
-            lens {
-              162,
-              1,
-              103,
-              2,
-              171
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 1125,
+            product-end nucpos 1228,
+            genomic-start 324929,
+            genomic-end 325032
+          },
+          {
+            product-start nucpos 1229,
+            product-end nucpos 1666,
+            genomic-start 315936,
+            genomic-end 316372
           }
         }
       }
@@ -5770,7 +4392,8 @@ Seq-annot ::= {
       }
     },
     {
-      type disc,
+      type global,
+      dim 2,
       score {
         {
           id str "num_ident",
@@ -5805,93 +4428,30 @@ Seq-annot ::= {
           value int 1
         }
       },
-      segs disc {
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 2423
-            },
-            {
-              id str "num_mismatch",
-              value int 0
-            }
-          },
-          segs denseg {
-            dim 2,
-            numseg 1,
-            ids {
-              other {
-                accession "XM_017319046",
-                version 1
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              0,
-              538387
-            },
-            lens {
-              235
-            },
-            strands {
-              plus,
-              minus
-            }
-          }
+      segs spliced {
+        product-id other {
+          accession "XM_017319046",
+          version 1
         },
-        {
-          type partial,
-          dim 2,
-          score {
-            {
-              id str "num_ident",
-              value int 2423
-            },
-            {
-              id str "num_mismatch",
-              value int 0
-            }
+        genomic-id other {
+          accession "NW_006763130",
+          version 1
+        },
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 234,
+            genomic-start 538387,
+            genomic-end 538621
           },
-          segs denseg {
-            dim 2,
-            numseg 3,
-            ids {
-              other {
-                accession "XM_017319046",
-                version 1
-              },
-              other {
-                accession "NW_006763130",
-                version 1
-              }
-            },
-            starts {
-              235,
-              536318,
-              2151,
-              -1,
-              2152,
-              536046
-            },
-            lens {
-              1916,
-              1,
-              272
-            },
-            strands {
-              plus,
-              minus,
-              plus,
-              minus,
-              plus,
-              minus
-            }
+          {
+            product-start nucpos 235,
+            product-end nucpos 2423,
+            genomic-start 536046,
+            genomic-end 538233
           }
         }
       }

@@ -734,6 +734,49 @@ bool CGff2Reader::x_MergeAlignments(
     // At this point, the score_values map should contain the scores that 
     // do not change over the rows
 
+    const auto first_alignment = alignment_list.front();
+    if (first_alignment->IsSetSegs() && 
+        first_alignment->GetSegs().IsSpliced()) {
+        
+        processed->SetType(CSeq_align::eType_global);
+
+        if (first_alignment->IsSetDim()) {
+            processed->SetDim(first_alignment->GetDim());
+        }
+
+        for (auto& kv : summed_scores) {
+            auto score = Ref(new CScore());
+            score->SetId().SetStr(kv.first);
+            score->SetValue().SetInt(kv.second);
+            processed->SetScore().push_back(score);
+        }
+
+        for (auto& kv : score_values) {
+            auto score = Ref(new CScore());
+            score->SetId().SetStr(kv.first);
+            score->SetValue().Assign(*(kv.second));
+            processed->SetScore().push_back(score);
+        }
+
+        CRef<CSpliced_seg> spliced = Ref(new CSpliced_seg());
+        spliced->Assign(first_alignment->GetSegs().GetSpliced());
+        processed->SetSegs().SetSpliced(*spliced);
+
+        auto align_it = alignment_list.cbegin();
+        ++align_it;
+
+        while(align_it != alignment_list.end()) {
+            const auto& spliced_seg = (*align_it)->GetSegs().GetSpliced();
+            if (spliced_seg.IsSetExons()) {
+                for (auto exon : spliced_seg.GetExons()) {
+                    processed->SetSegs().SetSpliced().SetExons().push_back(exon);
+                }
+            }
+            ++align_it;
+        }
+        return true;
+    }
+
 
     processed->SetType(CSeq_align::eType_disc);
 
@@ -1328,8 +1371,7 @@ bool CGff2Reader::xAlignmentSetSegment(
     if (type == "cDNA_match" || 
         type == "EST_match"  || 
         type == "translated_nucleotide_match") {
-        //return xAlignmentSetSpliced_seg(gff, pAlign);
-        return xAlignmentSetDenseg(gff, pAlign);
+        return xAlignmentSetSpliced_seg(gff, pAlign);
     }
 
     return xAlignmentSetDenseg(gff, pAlign);
@@ -1359,7 +1401,24 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     else {
         spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
     }
+    CRef<CSeq_id> product_id = CReadUtil::AsSeqId(targetParts[0]);
+    spliced_seg.SetProduct_id(*product_id);
 
+    CRef<CSeq_id> genomic_id = CReadUtil::AsSeqId(gff.Id());
+    spliced_seg.SetGenomic_id(*genomic_id);
+
+    if (targetParts[3] == "+") {
+        spliced_seg.SetProduct_strand(eNa_strand_plus);
+    }
+    else
+    if (targetParts[3] == "-") {
+        spliced_seg.SetProduct_strand(eNa_strand_minus);
+    }
+
+    if (gff.IsSetStrand()) {
+        ENa_strand ident_strand = gff.Strand();
+        spliced_seg.SetGenomic_strand(ident_strand);
+    }
 
     CRef<CSpliced_exon> exon(new CSpliced_exon());
     exon->SetProduct_start().SetNucpos(NStr::StringToInt(targetParts[1])-1);
