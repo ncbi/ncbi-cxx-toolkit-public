@@ -72,13 +72,13 @@ static void
     mapIdToPMIDs[7] = 0;
 
     TIntToStringMap mapIdToOrgname;
-    mapIdToOrgname[1] = "unknown";
+    mapIdToOrgname[1] = "root";
     mapIdToOrgname[2] = "Gallus gallus";
     mapIdToOrgname[3] = "Homo sapiens";
     mapIdToOrgname[4] = "Homo sapiens";
     mapIdToOrgname[5] = "Gallus gallus";
     mapIdToOrgname[6] = "Homo sapiens";
-    mapIdToOrgname[7] = "unknown";
+    mapIdToOrgname[7] = "root";
 
     for (geneId = 1; geneId <= 7; geneId++)
     {
