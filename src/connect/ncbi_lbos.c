@@ -1098,7 +1098,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         /* -------------type------------- */
         type = x_json_object_dotget_string(serviceEndpoint,
                                          "meta.type");
-        type = !g_LBOS_StringIsNullOrEmpty(type) ? type : "STANDALONE";
+        type = !g_LBOS_StringIsNullOrEmpty(type) ? type : "HTTP";
         /* -------------extra------------- */
         extra = x_json_object_dotget_string(serviceEndpoint,
                                          "meta.extra");
