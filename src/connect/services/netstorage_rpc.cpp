@@ -533,12 +533,8 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
         eWriting
     };
 
-    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
-            CJsonNode::TInstance original_request,
-            CNetServerConnection::TInstance conn,
-            const string& object_loc,
-            EState initial_state);
-
+    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetStorageFlags flags);
+    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc);
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_key, TNetStorageFlags flags);
 
     virtual ~SNetStorageObjectRPC();
@@ -583,27 +579,31 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     CUTTPReader m_UTTPReader;
     const char* m_CurrentChunk;
     size_t m_CurrentChunkSize;
-    EObjectIdentification m_ObjectIdentification;
+    EObjectIdentification m_ObjectIdentification = eByGeneratedID;
     string m_Locator;
     string m_UniqueKey;
-    TNetStorageFlags m_Flags;
-    EState m_State;
+    TNetStorageFlags m_Flags = 0;
+    EState m_State = eReady;
     bool m_EOF;
 };
 
-SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
-        CJsonNode::TInstance original_request,
-        CNetServerConnection::TInstance conn,
-        const string& object_loc,
-        EState initial_state) :
+SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetStorageFlags flags) :
+    m_NetStorageRPC(netstorage_rpc),
+    m_OwnService(netstorage_rpc->m_Service),
+    m_State(eWriting)
+{
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
+    m_OriginalRequest = m_NetStorageRPC->MkStdRequest("CREATE");
+    m_NetStorageRPC->x_SetStorageFlags(m_OriginalRequest, m_NetStorageRPC->GetFlags(flags));
+
+    m_Locator = ExchangeUsingOwnService(m_OriginalRequest, &m_Connection).GetString("ObjectLoc");
+    m_OwnService = m_NetStorageRPC->GetServiceFromLocator(m_Locator);
+}
+
+SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc) :
     m_NetStorageRPC(netstorage_rpc),
     m_OwnService(netstorage_rpc->GetServiceFromLocator(object_loc)),
-    m_OriginalRequest(original_request),
-    m_Connection(conn),
-    m_ObjectIdentification(eByGeneratedID),
-    m_Locator(object_loc),
-    m_Flags(0),
-    m_State(initial_state)
+    m_Locator(object_loc)
 {
 }
 
@@ -611,12 +611,9 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const
         TNetStorageFlags flags) :
     m_NetStorageRPC(netstorage_rpc),
     m_OwnService(netstorage_rpc->m_Service),
-    m_OriginalRequest(eVoid),
-    m_Connection(nullptr),
     m_ObjectIdentification(eByUniqueKey),
     m_UniqueKey(object_key),
-    m_Flags(flags),
-    m_State(eReady)
+    m_Flags(flags)
 {
 }
 
@@ -803,18 +800,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
                 "Object creation is disabled.");
     }
 
-    m_UseNextSubHitID.ProperCommand();
-    CJsonNode request(MkStdRequest("CREATE"));
-
-    x_SetStorageFlags(request, GetFlags(flags));
-
-    CNetServerConnection conn;
-
-    string object_loc = Exchange(m_Service,
-            request, &conn).GetString("ObjectLoc");
-
-    return new SNetStorageObjectRPC(this, request, conn,
-            object_loc, SNetStorageObjectRPC::eWriting);
+    return new SNetStorageObjectRPC(this, flags);
 }
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
@@ -822,8 +808,7 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
     if (x_NetCacheMode(object_loc))
         return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
 
-    return new SNetStorageObjectRPC(this, NULL, NULL,
-            object_loc, SNetStorageObjectRPC::eReady);
+    return new SNetStorageObjectRPC(this, object_loc);
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
