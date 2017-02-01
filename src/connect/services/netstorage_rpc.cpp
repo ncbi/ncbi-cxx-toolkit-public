@@ -536,10 +536,10 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
             CJsonNode::TInstance original_request,
             CNetServerConnection::TInstance conn,
-            EObjectIdentification object_identification,
-            const string& object_loc_or_key,
-            TNetStorageFlags flags,
+            const string& object_loc,
             EState initial_state);
+
+    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_key, TNetStorageFlags flags);
 
     virtual ~SNetStorageObjectRPC();
 
@@ -579,7 +579,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     CJsonNode m_OriginalRequest;
     CNetServerConnection m_Connection;
-    char* m_ReadBuffer;
+    char* m_ReadBuffer = nullptr;
     CUTTPReader m_UTTPReader;
     const char* m_CurrentChunk;
     size_t m_CurrentChunkSize;
@@ -594,25 +594,30 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
         CJsonNode::TInstance original_request,
         CNetServerConnection::TInstance conn,
-        EObjectIdentification object_identification,
-        const string& object_loc_or_key,
-        TNetStorageFlags flags,
+        const string& object_loc,
         EState initial_state) :
     m_NetStorageRPC(netstorage_rpc),
+    m_OwnService(netstorage_rpc->GetServiceFromLocator(object_loc)),
     m_OriginalRequest(original_request),
     m_Connection(conn),
-    m_ReadBuffer(NULL),
-    m_ObjectIdentification(object_identification),
-    m_Flags(flags),
+    m_ObjectIdentification(eByGeneratedID),
+    m_Locator(object_loc),
+    m_Flags(0),
     m_State(initial_state)
 {
-    if (object_identification == eByGeneratedID) {
-        m_OwnService = netstorage_rpc->GetServiceFromLocator(object_loc_or_key);
-        m_Locator = object_loc_or_key;
-    } else {
-        m_OwnService = netstorage_rpc->m_Service;
-        m_UniqueKey = object_loc_or_key;
-    }
+}
+
+SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_key,
+        TNetStorageFlags flags) :
+    m_NetStorageRPC(netstorage_rpc),
+    m_OwnService(netstorage_rpc->m_Service),
+    m_OriginalRequest(eVoid),
+    m_Connection(nullptr),
+    m_ObjectIdentification(eByUniqueKey),
+    m_UniqueKey(object_key),
+    m_Flags(flags),
+    m_State(eReady)
+{
 }
 
 SNetStorageObjectRPC::~SNetStorageObjectRPC()
@@ -809,8 +814,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
             request, &conn).GetString("ObjectLoc");
 
     return new SNetStorageObjectRPC(this, request, conn,
-            SNetStorageObjectRPC::eByGeneratedID,
-            object_loc, 0, SNetStorageObjectRPC::eWriting);
+            object_loc, SNetStorageObjectRPC::eWriting);
 }
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
@@ -819,8 +823,7 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
         return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
 
     return new SNetStorageObjectRPC(this, NULL, NULL,
-            SNetStorageObjectRPC::eByGeneratedID,
-            object_loc, 0, SNetStorageObjectRPC::eReady);
+            object_loc, SNetStorageObjectRPC::eReady);
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
@@ -1489,9 +1492,7 @@ SNetStorageByKeyRPC::SNetStorageByKeyRPC(const TConfig& config,
 CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
-    return new SNetStorageObjectRPC(m_NetStorageRPC, NULL, NULL,
-            SNetStorageObjectRPC::eByUniqueKey,
-            unique_key, flags, SNetStorageObjectRPC::eReady);
+    return new SNetStorageObjectRPC(m_NetStorageRPC, unique_key, flags);
 }
 
 string SNetStorageByKeyRPC::Relocate(const string& unique_key,
