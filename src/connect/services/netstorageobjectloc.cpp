@@ -60,7 +60,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
     m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site)),
-    m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
@@ -78,7 +77,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
     m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey),
-    m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_ShortUniqueKey(unique_key),
     m_UniqueKey(MakeUniqueKey()),
@@ -88,13 +86,13 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
 
 #define INVALID_LOC_ERROR_MSG "Invalid NetStorage object locator"
 
-#define THROW_INVALID_LOC_ERROR(object_loc, msg) \
+#define THROW_INVALID_LOC_ERROR(cid, msg) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                msg " '" << (object_loc) << '\'')
+                msg " '" << cid.ToString() << '\'')
 
 #define VERIFY_FIELD_EXISTS(field) \
         if (!(field)) { \
-            THROW_INVALID_LOC_ERROR(object_loc, INVALID_LOC_ERROR_MSG); \
+            THROW_INVALID_LOC_ERROR(cid, INVALID_LOC_ERROR_MSG); \
         }
 
 ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
@@ -113,11 +111,20 @@ ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc) :
     m_CompoundIDPool(cid_pool),
-    m_Location(eNFL_Unknown),
-    m_Dirty(false),
     m_Locator(object_loc)
 {
-    Parse(object_loc);
+    auto cid = m_CompoundIDPool.FromString(object_loc);
+    Parse(cid);
+}
+
+CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
+        const string& object_loc, CCompoundID cid) :
+    m_CompoundIDPool(cid_pool),
+    m_Locator(object_loc)
+{
+    // We have a locator that has been already parsed into compound ID
+    _ASSERT(object_loc == cid.ToString());
+    Parse(cid);
 }
 
 void CNetStorageObjectLoc::SetServiceName(const string& service_name)
@@ -132,19 +139,17 @@ void CNetStorageObjectLoc::SetServiceName(const string& service_name)
     m_Dirty = true;
 }
 
-void CNetStorageObjectLoc::Parse(const string& object_loc)
+void CNetStorageObjectLoc::Parse(CCompoundID cid)
 {
-    CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
-
     // Check the ID class.
     switch (cid.GetClass()) {
     case eCIC_NetStorageObjectLocV1:
-        THROW_INVALID_LOC_ERROR(object_loc,
+        THROW_INVALID_LOC_ERROR(cid,
                 "Unsupported NetStorage object locator version");
     case eCIC_NetStorageObjectLoc:
         break;
     default:
-        THROW_INVALID_LOC_ERROR(object_loc, INVALID_LOC_ERROR_MSG);
+        THROW_INVALID_LOC_ERROR(cid, INVALID_LOC_ERROR_MSG);
     }
 
     // Get locator flags.

@@ -80,6 +80,9 @@ public:
             EFileTrackSite ft_site);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
+    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
+            const string& object_loc,
+            CCompoundID cid);
 
     void SetServiceName(const string& service_name);
 
@@ -149,7 +152,7 @@ private:
     };
     typedef unsigned TLocatorFlags;
 
-    void Parse(const string& object_loc);
+    void Parse(CCompoundID cid);
     string MakeShortUniqueKey() const;
     string MakeUniqueKey() const { return m_AppDomain + '-' + m_ShortUniqueKey; }
 
@@ -170,7 +173,7 @@ private:
 
     string m_ServiceName;
     string m_LocationCode;
-    ENetStorageObjectLocation m_Location;
+    ENetStorageObjectLocation m_Location = eNFL_Unknown;
 
     string m_AppDomain;
 
