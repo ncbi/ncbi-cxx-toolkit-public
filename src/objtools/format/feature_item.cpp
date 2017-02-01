@@ -3204,11 +3204,9 @@ void CFeatureItem::x_AddQualsProt(
             }
         }
         if ( pref.IsSetActivity()  &&  !pref.GetActivity().empty() ) {
-            if ( ctx.IsNuc()  ||  processed != CProt_ref::eProcessed_mature ) {
-                ITERATE (CProt_ref::TActivity, it, pref.GetActivity()) {
-                    if (!NStr::IsBlank(*it)) {
-                        x_AddQual(eFQ_prot_activity, new CFlatStringQVal(*it));
-                    }
+            ITERATE (CProt_ref::TActivity, it, pref.GetActivity()) {
+                if (!NStr::IsBlank(*it)) {
+                    x_AddQual(eFQ_prot_activity, new CFlatStringQVal(*it));
                 }
             }
         }
