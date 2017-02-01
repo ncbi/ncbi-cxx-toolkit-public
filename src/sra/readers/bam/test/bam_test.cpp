@@ -906,11 +906,13 @@ int CBAMTestApp::Run(void)
                     }
                     out << flush;
                     if ( qual >= min_quality ) {
-                        conflict_objstr << *it.GetShortBioseq();
-                        conflict_objstr.FlushBuffer();
-                        conflict_memstr.ToString(&conflict_asnb);
-                        conflicts[it.GetShortSeq_id()->AsFastaString()]
-                            [conflict_asnb] += 1;
+                        if ( CRef<CBioseq> seq = it.GetShortBioseq() ) {
+                            conflict_objstr << *seq;
+                            conflict_objstr.FlushBuffer();
+                            conflict_memstr.ToString(&conflict_asnb);
+                            conflicts[it.GetShortSeq_id()->AsFastaString()]
+                                [conflict_asnb] += 1;
+                        }
                     }
                     p_ref_seq_id = ref_seq_id;
                     p_ref_pos = ref_pos;

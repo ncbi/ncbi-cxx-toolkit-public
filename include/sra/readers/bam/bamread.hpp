@@ -403,7 +403,7 @@ public:
         }
 
     CRef<CSeq_id> GetRefSeq_id(const string& str) const;
-    CRef<CSeq_id> GetShortSeq_id(const string& str) const;
+    CRef<CSeq_id> GetShortSeq_id(const string& str, bool external = false) const;
 
     TSeqPos GetRefSeqLength(const string& str) const;
 

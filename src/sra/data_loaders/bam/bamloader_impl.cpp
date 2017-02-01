@@ -1227,7 +1227,7 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
     _TRACE("Loading seqs "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
-    size_t count = 0, skipped = 0, dups = 0;
+    size_t count = 0, skipped = 0, dups = 0, far_refs = 0;
     set<CSeq_id_Handle> loaded;
     
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
@@ -1253,6 +1253,12 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
             continue;
         }
 
+        if ( ait.GetShortSequence().size() == 0 ) {
+            // far reference
+            ++far_refs;
+            continue;
+        }
+        
         CSeq_id_Handle seq_id =
             CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id());
         if ( m_Seq2Chunk[seq_id] != chunk_id ) {
@@ -1273,7 +1279,7 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
         LOG_POST_X(10, Info<<"CBAMDataLoader: "
                    "Loaded seqs "<<GetRefSeqId()<<" @ "<<
                    chunk.GetRefSeqRange()<<": "<<
-                   count<<" skipped: "<<skipped<<" dups: "<<dups);
+                   count<<" skipped: "<<skipped<<" dups: "<<dups<<" far: "<<far_refs);
     }
 
     chunk_info.SetLoaded();
@@ -1404,7 +1410,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             else if ( type == 'M' || type == 'X' ) {
                 // mismatch
                 for ( TSeqPos i = 0; i < seglen; ++i ) {
-                    if ( ss_pos < chunk_len ) {
+                    if ( ss_pos < chunk_len && read_pos < read.size() ) {
                         ss[ss_pos].add_base(read[read_pos]);
                     }
                     ++ss_pos;

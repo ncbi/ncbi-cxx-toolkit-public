@@ -371,8 +371,17 @@ CRef<CSeq_id> sx_GetRefSeq_id(const string& str, IIdMapper* idmapper)
 
 
 static
-CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* idmapper)
+CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* idmapper, bool external)
 {
+    if ( external ) {
+        try {
+            CRef<CSeq_id> id(new CSeq_id(str));
+            return id;
+        }
+        catch ( CException& /*ignored*/ ) {
+            // continue with local id
+        }
+    }
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local, str));
     //sx_MapId(*id, idmapper);
     return id;
@@ -522,9 +531,9 @@ CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& str) const
 }
 
 
-CRef<CSeq_id> CBamDb::GetShortSeq_id(const string& str) const
+CRef<CSeq_id> CBamDb::GetShortSeq_id(const string& str, bool external) const
 {
-    return sx_GetShortSeq_id(str, GetIdMapper());
+    return sx_GetShortSeq_id(str, GetIdMapper(), external);
 }
 
 
@@ -1079,7 +1088,7 @@ CRef<CSeq_id> CBamAlignIterator::GetRefSeq_id(void) const
 
 CRef<CSeq_id> CBamAlignIterator::GetShortSeq_id(const string& str) const
 {
-    return sx_GetShortSeq_id(str, GetIdMapper());
+    return sx_GetShortSeq_id(str, GetIdMapper(), GetShortSequence().size() == 0);
 }
 
 
@@ -1295,13 +1304,17 @@ bool CBamAlignIterator::TryGetFlags(Uint2& flags) const
 
 CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
 {
+    const CBamString& data = GetShortSequence();
+    TSeqPos length = TSeqPos(data.size());
+    if ( length == 0 ) {
+        // no actual sequence
+        return null;
+    }
     CRef<CBioseq> seq(new CBioseq);
     seq->SetId().push_back(GetShortSeq_id());
     CSeq_inst& inst = seq->SetInst();
     inst.SetRepr(inst.eRepr_raw);
     inst.SetMol(inst.eMol_na);
-    const CBamString& data = GetShortSequence();
-    TSeqPos length = TSeqPos(data.size());
     inst.SetLength(length);
     string& iupac = inst.SetSeq_data().SetIupacna().Set();
     iupac.assign(data.data(), length);
@@ -1411,11 +1424,18 @@ CRef<CSeq_entry>
 CBamAlignIterator::x_GetMatchEntry(const string* annot_name) const
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
-    CRef<CBioseq> seq = GetShortBioseq();
     CRef<CSeq_annot> annot = x_GetSeq_annot(annot_name);
     annot->SetData().SetAlign().push_back(GetMatchAlign());
-    seq->SetAnnot().push_back(annot);
-    entry->SetSeq(*seq);
+    CRef<CBioseq> seq = GetShortBioseq();
+    if ( seq ) {
+        seq->SetAnnot().push_back(annot);
+        entry->SetSeq(*seq);
+    }
+    else {
+        CBioseq_set& set = entry->SetSet();
+        set.SetSeq_set();
+        set.SetAnnot().push_back(annot);
+    }
     return entry;
 }
 
