@@ -333,10 +333,11 @@ TNetStorageAttrFlags CNetStorageObjectLoc::GetStorageAttrFlags() const
 
 void CNetStorageObjectLoc::SetStorageAttrFlags(TNetStorageAttrFlags flags)
 {
-    if (flags != GetStorageAttrFlags()) {
+    const auto new_locator_flags = (m_LocatorFlags & eLF_FieldFlags) | x_StorageFlagsToLocatorFlags(flags);
+
+    if (new_locator_flags != m_LocatorFlags) {
         m_Dirty = true;
-        m_LocatorFlags = (m_LocatorFlags & eLF_FieldFlags) |
-            x_StorageFlagsToLocatorFlags(flags);
+        m_LocatorFlags = new_locator_flags;
     }
 }
 
