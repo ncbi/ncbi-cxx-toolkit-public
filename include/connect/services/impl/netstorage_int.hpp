@@ -80,8 +80,6 @@ public:
             EFileTrackSite ft_site);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
-    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-            const string& object_loc, TNetStorageAttrFlags flags);
 
     void SetServiceName(const string& service_name);
 
@@ -121,6 +119,7 @@ public:
     }
 
     TNetStorageAttrFlags GetStorageAttrFlags() const;
+    void SetStorageAttrFlags(TNetStorageAttrFlags flags);
 
     // Serialize to a JSON object.
     void ToJSON(CJsonNode& root) const;

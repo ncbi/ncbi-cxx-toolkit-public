@@ -1032,8 +1032,9 @@ void CSelector::SetLocator()
 ISelector* CSelector::Clone(TNetStorageFlags flags)
 {
     flags = m_Context->DefaultFlags(flags);
-    return new CSelector(TObjLoc(m_Context->compound_id_pool,
-                    m_ObjectLoc.GetLocator(), flags), m_Context, flags);
+    TObjLoc loc(m_Context->compound_id_pool, m_ObjectLoc.GetLocator());
+    loc.SetStorageAttrFlags(flags);
+    return new CSelector(loc, m_Context, flags);
 }
 
 

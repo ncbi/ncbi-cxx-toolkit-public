@@ -120,22 +120,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     Parse(object_loc);
 }
 
-CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        const string& object_loc, TNetStorageAttrFlags flags) :
-    m_CompoundIDPool(cid_pool),
-    m_Location(eNFL_Unknown),
-    m_Dirty(false),
-    m_Locator(object_loc)
-{
-    Parse(object_loc);
-
-    if (flags != GetStorageAttrFlags()) {
-        m_Dirty = true;
-        m_LocatorFlags = (m_LocatorFlags & eLF_FieldFlags) |
-            x_StorageFlagsToLocatorFlags(flags);
-    }
-}
-
 void CNetStorageObjectLoc::SetServiceName(const string& service_name)
 {
     if (service_name.empty() ||
@@ -345,6 +329,15 @@ TNetStorageAttrFlags CNetStorageObjectLoc::GetStorageAttrFlags() const
         flags |= fNST_NoMetaData;
 
     return flags;
+}
+
+void CNetStorageObjectLoc::SetStorageAttrFlags(TNetStorageAttrFlags flags)
+{
+    if (flags != GetStorageAttrFlags()) {
+        m_Dirty = true;
+        m_LocatorFlags = (m_LocatorFlags & eLF_FieldFlags) |
+            x_StorageFlagsToLocatorFlags(flags);
+    }
 }
 
 CNetStorageObjectLoc::TLocatorFlags
