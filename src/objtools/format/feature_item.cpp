@@ -3781,6 +3781,10 @@ void CFeatureItem::x_ImportQuals(
             x_AddRegulatoryClassQual(val, check_qual_syntax);
             break;
 
+        case eFQ_recombination_class:
+            x_AddRecombinationClassQual(val, check_qual_syntax);
+            break;
+
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
@@ -3873,9 +3877,51 @@ static bool s_IsValidRegulatoryClass(const string& type)
     return false;
 }
 
+static bool s_IsValidRecombinationClass(const string& type)
+{
+    vector<string> valid_types = CSeqFeatData::GetRecombinationClassList();
+
+    FOR_EACH_STRING_IN_VECTOR (itr, valid_types) {
+        string str = *itr;
+        if (NStr::Equal (str, type)) return true;
+    }
+
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddRecombinationClassQual(
+    const string& recombination_class,
+    bool check_qual_syntax
+)
+//  ----------------------------------------------------------------------------
+{
+    if (recombination_class.empty()) {
+        return;
+    }
+    
+    if ( ! check_qual_syntax || s_IsValidRecombinationClass( recombination_class ) ) {
+        x_AddQual( eFQ_recombination_class, new CFlatStringQVal(recombination_class));
+    } else {
+        x_AddQual( eFQ_recombination_class, new CFlatStringQVal("other"));
+        string tmp = recombination_class;
+        /*
+        if (NStr::StartsWith(tmp, "other:")) {
+            NStr::TrimPrefixInPlace(tmp, "other:");
+            NStr::TruncateSpacesInPlace(tmp);
+        }
+        */
+        if (NStr::StartsWith(tmp, "other")) {
+          return;
+        }
+        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(tmp));
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddRegulatoryClassQual(
-    const string& regulatory_class, 
+    const string& regulatory_class,
     bool check_qual_syntax
 )
 //  ----------------------------------------------------------------------------
