@@ -1669,3 +1669,44 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4173)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_665)
+{
+    string voucher_type;
+    bool is_miscapitalized;
+    string correct_cap;
+    bool needs_country;
+    bool erroneous_country;
+    string inst_code = "ARBH";
+    BOOST_CHECK_EQUAL(COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country), true);
+    BOOST_CHECK_EQUAL(voucher_type, "s");
+    BOOST_CHECK_EQUAL(is_miscapitalized, false);
+    BOOST_CHECK_EQUAL(correct_cap, "ARBH");
+    BOOST_CHECK_EQUAL(needs_country, false);
+    BOOST_CHECK_EQUAL(erroneous_country, false);
+
+    inst_code = "NMNH";
+    BOOST_CHECK_EQUAL(COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country), true);
+    BOOST_CHECK_EQUAL(voucher_type, "sb");
+    BOOST_CHECK_EQUAL(is_miscapitalized, false);
+    BOOST_CHECK_EQUAL(correct_cap, "NMNH");
+    BOOST_CHECK_EQUAL(needs_country, false);
+    BOOST_CHECK_EQUAL(erroneous_country, false);
+
+    inst_code = "ZMM";
+    BOOST_CHECK_EQUAL(COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country), true);
+    BOOST_CHECK_EQUAL(voucher_type, "s");
+    BOOST_CHECK_EQUAL(is_miscapitalized, false);
+    BOOST_CHECK_EQUAL(correct_cap, "ZMM");
+    BOOST_CHECK_EQUAL(needs_country, false);
+    BOOST_CHECK_EQUAL(erroneous_country, false);
+
+    inst_code = "ZMUM";
+    BOOST_CHECK_EQUAL(COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country), true);
+    BOOST_CHECK_EQUAL(voucher_type, "s");
+    BOOST_CHECK_EQUAL(is_miscapitalized, false);
+    BOOST_CHECK_EQUAL(correct_cap, "ZMUM");
+    BOOST_CHECK_EQUAL(needs_country, false);
+    BOOST_CHECK_EQUAL(erroneous_country, false);
+}
+
+
