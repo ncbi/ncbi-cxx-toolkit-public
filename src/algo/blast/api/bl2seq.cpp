@@ -155,7 +155,6 @@ CBl2Seq::CSearchResultSet2TSeqAlignVector(CRef<CSearchResultSet> res)
     if (res.Empty()) {
         return TSeqAlignVector();
     }
-    _ASSERT(res->GetResultType() == eSequenceComparison);
     TSeqAlignVector retval;
     retval.reserve(res->GetNumResults());
     ITERATE(CSearchResultSet, r, *res) {
@@ -210,7 +209,6 @@ CBl2Seq::RunEx()
         mi_pDiagnostics =
             Blast_DiagnosticsCopy(m_Blast->m_InternalData->m_Diagnostics->GetPointer());
     }
-    _ASSERT(m_Results->GetResultType() == eSequenceComparison);
     return m_Results;
 }
 
