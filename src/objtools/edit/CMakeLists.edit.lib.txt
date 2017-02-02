@@ -9,7 +9,7 @@ add_library(xobjedit
     struc_comm_field text_desc_field gb_block_field
     link_cds_mrna cds_fix capitalization_string loc_edit mail_report
     feattable_edit gaps_edit source_edit rna_edit
-    remote_updater parse_text_options publication_edit feature_edit
+    remote_updater parse_text_options publication_edit
 )
 
 target_link_libraries(xobjedit
