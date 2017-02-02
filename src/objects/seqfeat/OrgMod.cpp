@@ -203,7 +203,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
     vector<string> tokens;
     NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
-    if (tokens.size() != 3 && tokens.size() != 4) {
+    if (tokens.size() < 2) {
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
     } else {
@@ -231,7 +231,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         s_CompleteInstitutionCodeMap[tokens[0]] = tokens[2];
         s_CompleteInstitutionFullNameMap[tokens[2]] = tokens[0];
         s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
-        if (tokens.size() == 4 && !NStr::IsBlank(tokens[3])) {
+        if (tokens.size() > 3 && !NStr::IsBlank(tokens[3])) {
             NStr::TruncateSpacesInPlace(tokens[3]);
             vector<string> synonyms;
             NStr::Split(tokens[3], ",", synonyms, NStr::fSplit_NoMergeDelims);

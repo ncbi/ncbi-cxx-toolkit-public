@@ -7312,14 +7312,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("MG");
     ambig.push_back("HNHM");
     ambig.push_back("PMS");
-    ambig.push_back("BMBN");
     ambig.push_back("LE");
     ambig.push_back("GCM");
     ambig.push_back("BNA");
     ambig.push_back("SU");
     ambig.push_back("TMP");
     ambig.push_back("DMNH");
-    ambig.push_back("SDNH");
     ambig.push_back("ZMUH");
     ambig.push_back("UMO");
     ambig.push_back("SMF");
@@ -7435,7 +7433,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("FNU");
     ambig.push_back("SHM");
     ambig.push_back("UM");
-    ambig.push_back("SMP");
     ambig.push_back("TNSC");
     ambig.push_back("LS");
     ambig.push_back("TMC");
@@ -7445,7 +7442,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("ITCC");
     ambig.push_back("TM");
     ambig.push_back("WB");
-    ambig.push_back("UK");
     ambig.push_back("ZMK");
     ambig.push_back("LBM");
     ambig.push_back("NI");
@@ -7487,7 +7483,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("SAU");
     ambig.push_back("UKMS");
     ambig.push_back("KM");
-    ambig.push_back("MCP");
     ambig.push_back("GMNH");
     ambig.push_back("SSM");
     ambig.push_back("MZ");
@@ -7507,8 +7502,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("JNU");
     ambig.push_back("IZ");
     ambig.push_back("UCM");
-    ambig.push_back("SM");
-    ambig.push_back("UCL");
     ambig.push_back("UAIC");
     ambig.push_back("LEB");
     ambig.push_back("MCSN");
@@ -7587,7 +7580,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("WB");
     ambig.push_back("LE");
     ambig.push_back("BNA");
-    ambig.push_back("UCL");
     ambig.push_back("LCC");
     ambig.push_back("LBM");
     ambig.push_back("NI");
@@ -7600,7 +7592,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CCDM");
     ambig.push_back("PCM");
     ambig.push_back("MU");
-    ambig.push_back("CISM");
     ambig.push_back("ISC");
     ambig.push_back("IMT");
     ambig.push_back("NU");
