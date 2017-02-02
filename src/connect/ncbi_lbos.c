@@ -1112,6 +1112,12 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         size_t length; /* used to count size to allocate for server_description,
                           and then for g_LBOS_StringConcat*/
         /* Occasionally, we are not able to allocate memory */
+        if (!*extra) {
+            if (strncasecmp(type, "HTTP", 4))
+                extra = "/";
+            else if (strcasecmp(type, "NCBID"))
+                extra = "''";
+        }
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
                  5 /*length of port*/ + strlen(extra) + strlen(rate);
         server_description = malloc(sizeof(char) * length);
