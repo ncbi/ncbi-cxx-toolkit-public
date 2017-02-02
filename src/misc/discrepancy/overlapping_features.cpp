@@ -346,9 +346,10 @@ DISCREPANCY_CASE(OVERLAPPING_GENES, COverlappingFeatures, eDisc, "Overlapping Ge
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
+        ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            if (loc_j.GetStrand() == loc_i.GetStrand() && context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
+            if (loc_j.GetStrand() == strand_i && context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
                 m_Objs["[n] gene[s] overlap[S] another gene on the same strand."].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
             }
         }
@@ -396,9 +397,10 @@ DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOnca
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
+        ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            if (loc_i.GetStrand() == loc_j.GetStrand()) {
+            if (loc_j.GetStrand() == strand_i) {
                 continue;
             }
             sequence::ECompare ovlp = context.Compare(loc_i, loc_j);

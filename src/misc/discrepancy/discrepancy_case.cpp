@@ -319,10 +319,8 @@ DISCREPANCY_SUMMARIZE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
 
 // OVERLAPPING_CDS
 
-static bool StrandsMatch(const CSeq_loc& loc1, const CSeq_loc& loc2)
+static bool StrandsMatch(ENa_strand strand1, ENa_strand strand2)
 {
-    ENa_strand strand1 = loc1.GetStrand();
-    ENa_strand strand2 = loc2.GetStrand();
     return (strand1 == eNa_strand_minus && strand2 == eNa_strand_minus) || (strand1 != eNa_strand_minus && strand2 != eNa_strand_minus);
 }
 
@@ -423,9 +421,10 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, COverlappingFeatures, eDisc, "Overlapping CDs"
     map<const CSeq_feat*, string> products;
     for (size_t i = 0; i < cds.size(); i++) {
         const CSeq_loc& loc_i = cds[i]->GetLocation();
+        ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i+1; j < cds.size(); j++) {
             const CSeq_loc& loc_j = cds[j]->GetLocation();
-            if (!StrandsMatch(loc_i, loc_j) || context.Compare(loc_i, loc_j) == sequence::eNoOverlap) {
+            if (!StrandsMatch(strand_i, loc_j.GetStrand()) || context.Compare(loc_i, loc_j) == sequence::eNoOverlap) {
                 continue;
             }
             string prod_i = GetProdName(cds[i], products, context);
@@ -671,11 +670,12 @@ DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmar
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
     for (size_t i = 0; i < cds.size(); i++) {
         const CSeq_loc& loc_i = cds[i]->GetLocation();
+        ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i+1; j < cds.size(); j++) {
             const CSeq_loc& loc_j = cds[j]->GetLocation();
             sequence::ECompare compare = context.Compare(loc_j, loc_i);
             if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
-                const char* strand = StrandsMatch(loc_j, loc_i) ? kContainedSame : kContainedOpps;
+                const char* strand = StrandsMatch(strand_i, loc_j.GetStrand()) ? kContainedSame : kContainedOpps;
                 bool has_note = HasContainedNote(*cds[i]);
                 m_Objs[kContained][has_note ? kContainedNote : strand].Add(*context.NewDiscObj(cds[i], eNoRef, compare == sequence::eContained && !has_note));
                 has_note = HasContainedNote(*cds[j]);
