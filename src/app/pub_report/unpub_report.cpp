@@ -55,6 +55,8 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/medline/Medline_si.hpp>
 
+#include <connect/ncbi_conn_stream.hpp>
+
 #include "utils.hpp"
 #include "unpub_report.hpp"
 
@@ -606,8 +608,10 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
 
 static bool CheckRefs(const CMedline_entry& medline_entry, const list<string>& seq_ids)
 {
+    bool ret = true;
     if (medline_entry.IsSetXref()) {
 
+        ret = false;
         ITERATE(CMedline_entry::TXref, xref, medline_entry.GetXref()) {
 
             if ((*xref)->IsSetCit() && (*xref)->IsSetType() && (*xref)->GetType() == CMedline_si::eType_genbank) {
@@ -621,7 +625,7 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const list<string>& s
         }
     }
 
-    return false;
+    return ret;
 }
 
 static bool CheckDate(int year, const CCit_jour& juornal)
@@ -639,7 +643,36 @@ static bool CheckDate(int year, const CCit_jour& juornal)
     return ret;
 }
 
-static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
+static int DoEUtilsSearch(CEutilsClient& eutils, const string& database, const string& term)
+{
+    vector<int> uids;
+    eutils.Search(database, term, uids);
+
+    int pmid = 0;
+    if (uids.size() == 1) {
+        pmid = uids[0];
+    }
+
+    return pmid;
+}
+
+static void BuildEUtilsTerm(const list<string>& ids, string& term)
+{
+    bool first = true;
+    ITERATE(list<string>, id, ids) {
+
+        size_t pos = id->find('|');
+        string acc = pos == string::npos ? *id : id->substr(pos + 1);
+
+        if (first)
+            first = false;
+        else
+            term += " AND ";
+        term += acc;
+    }
+}
+
+static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
 {
     string query;
 
@@ -675,8 +708,84 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
 
     int pmid = 0;
     if (uids.size() == 1) {
+        pmid = uids[0];
+    }
+
+    return pmid;
+}
+
+static int ConvertPMCtoPMID(int pmc)
+{
+    static const string BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=pub_report&versions=no&format=xml&ids=PMC";
+    static const size_t BUF_SIZE = 1024;
+
+    string url = BASE_URL + NStr::IntToString(pmc);
+
+    int pmid = 0;
+
+    for (int attempt = 1; attempt <= 5; attempt++) {
+        try {
+            CConn_HttpStream https(url);
+
+            string result;
+
+            vector<char> buf(BUF_SIZE);
+            while (!https.fail()) {
+                https.read(&buf[0], BUF_SIZE);
+                result.append(&buf[0], https.gcount());
+            }
+
+            if (NStr::StartsWith(result, "<pmcids status=\"ok\">")) {
+                if (result.find("status = \"error\"") == string::npos && result.find("<errmsg>") == string::npos) {
+
+                    static const char pmid_start[] = "pmid=\"";
+                    size_t pmid_pos = result.find(pmid_start);
+                    pmid = NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols);
+                }
+
+                break;
+            }
+
+        }
+        catch (CException& e) {
+            ERR_POST(Warning << "failed on attempt " << attempt
+                     << ": " << e);
+        }
+    }
+
+    return pmid;
+}
+
+static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
+{
+
+    string term;
+    BuildEUtilsTerm(data.GetSeqIds(), term);
+
+    int pmid = 0;
+
+    if (!term.empty()) {
+        pmid = DoEUtilsSearch(eutils, "pubmed", term);
+
+        if (pmid == 0) {
+            pmid = DoEUtilsSearch(eutils, "pmc", term);
+            if (pmid) {
+                pmid = ConvertPMCtoPMID(pmid);
+            }
+        }
+    }
+
+    if (pmid == 0) {
+        pmid = DoHydraSearch(hydra_search, data);
+    }
+
+    if (pmid) {
 
         CNcbiStrstream asnPubMedEntry;
+
+        vector<int> uids;
+        uids.push_back(pmid);
+        pmid = 0;
 
         eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
         asnPubMedEntry >> MSerial_AsnText >> pubmed_entry;
