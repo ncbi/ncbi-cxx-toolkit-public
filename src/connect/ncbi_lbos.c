@@ -1113,9 +1113,9 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                           and then for g_LBOS_StringConcat*/
         /* Occasionally, we are not able to allocate memory */
         if (!*extra) {
-            if (strncasecmp(type, "HTTP", 4))
+            if (strncasecmp(type, "HTTP", 4) == 0)
                 extra = "/";
-            else if (strcasecmp(type, "NCBID"))
+            else if (strcasecmp(type, "NCBID") == 0)
                 extra = "''";
         }
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
