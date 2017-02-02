@@ -1105,12 +1105,12 @@ void CFeatureItem::x_AddQualPartial(
 {
     if ( !ctx.Config().HideUnclassPartial() ) {
         if ( !IsMappedFromCDNA() || !ctx.IsProt() ) {
-    /*
             const CSeq_feat& feat = m_Feat.GetMappedFeature();
-            if ( feat.IsSetPartial() && feat.GetPartial() ) {
+            //if ( feat.IsSetPartial() && feat.GetPartial() ) {
+            if ( m_Feat.IsSetPartial()  &&  m_Feat.GetPartial() ) {
                 x_AddQual( eFQ_partial, new CFlatBoolQVal( true ) );
             }
-            */
+            /*
             if ( m_Feat.IsSetPartial()  &&  m_Feat.GetPartial() ) {
                 if ( eSeqlocPartial_Complete == sequence::SeqLocPartialCheck( GetLoc(), &ctx.GetScope() ) &&
                     !s_LocIsFuzz( m_Feat, GetLoc() ) ) 
@@ -1118,6 +1118,7 @@ void CFeatureItem::x_AddQualPartial(
                     x_AddQual( eFQ_partial, new CFlatBoolQVal( true ) );
                 }
             }
+            */
         }
     }
 }

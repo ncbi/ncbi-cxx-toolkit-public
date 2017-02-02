@@ -642,11 +642,6 @@ bool CGff2Reader::x_ParseAlignmentGff(
     return true;
 }
 
-/*
-// ----------------------------------------------------------------------------
-bool s_CreateDiscAlignment(map<
-// ----------------------------------------------------------------------------
-*/
 
 
 //  ----------------------------------------------------------------------------
@@ -695,7 +690,6 @@ void CGff2Reader::x_ProcessAlignmentScores(const CSeq_align& alignment,
         common_scores[score_name]->Assign(*new_scores[score_name]);
     }
 }
-
 
 
 //  ----------------------------------------------------------------------------

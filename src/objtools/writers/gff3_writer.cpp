@@ -77,7 +77,7 @@
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
-#include <objtools/edit/feature_edit.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -1321,7 +1321,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
             (s_RangeContains(mRoot.GetTotalRange(), from) ||
             s_RangeContains(mRoot.GetTotalRange(), to))) {
 
-            //edit::CFeatTrim::Apply(range, mRoot);
+            //sequence::CFeatTrim::Apply(range, mRoot);
 
             if (!xWriteFeature(fc, mRoot)) {
                 return false;
@@ -1381,7 +1381,7 @@ bool CGff3Writer::xWriteAllChildren(
             (s_RangeContains(mChild.GetTotalRange(), from) ||
             s_RangeContains(mChild.GetTotalRange(), to))) {
 
-            //edit::CFeatTrim::Apply(range, mChild);
+            //sequence::CFeatTrim::Apply(range, mChild);
 
             if (!xWriteFeature(fc, mChild)) {
                 return false;

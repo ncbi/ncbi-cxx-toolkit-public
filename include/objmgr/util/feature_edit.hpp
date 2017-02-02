@@ -40,7 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-BEGIN_SCOPE(edit)
+BEGIN_SCOPE(sequence)
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJEDIT_EXPORT CFeatTrim 
@@ -54,6 +54,7 @@ public:
 
 private:
     static void x_TrimLocation(TSeqPos from, TSeqPos to, 
+        bool set_partial,
         CRef<CSeq_loc>& loc);
     static TSeqPos x_GetStartOffset(const CSeq_feat& feat,
         TSeqPos from, TSeqPos to);
@@ -63,7 +64,7 @@ private:
     static void x_TrimCodeBreak(TSeqPos from, TSeqPos to, CCode_break& cod_break);
 };
 
-END_SCOPE(edit)
+END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

@@ -32,15 +32,16 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature_edit.hpp>
+
 #include <objects/seqfeat/Cdregion.hpp>
-#include <objtools/edit/feature_edit.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-BEGIN_SCOPE(edit)
+BEGIN_SCOPE(sequence)
 
 
 struct SOutsideRange
@@ -74,7 +75,9 @@ CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
     const TSeqPos from = range.GetFrom();
     const TSeqPos to = range.GetTo();
 
-    x_TrimLocation(from, to, loc);
+    const bool set_partial = true;
+
+    x_TrimLocation(from, to, set_partial, loc);
     if (loc->IsNull()) {
         return Ref(new CSeq_feat());
     }
@@ -138,15 +141,17 @@ CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
 void CFeatTrim::x_TrimCodeBreak(const TSeqPos from, const TSeqPos to,
     CCode_break& code_break)
 {
+    const bool not_partial = false;
     CRef<CSeq_loc> cb_loc(new CSeq_loc());
     cb_loc->Assign(code_break.GetLoc());
-    x_TrimLocation(from, to, cb_loc);
+    x_TrimLocation(from, to, not_partial, cb_loc);
     code_break.ResetLoc();
     code_break.SetLoc(*cb_loc);
 }
 
 
 void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
+    const bool set_partial,
     CRef<CSeq_loc>& loc) 
 {
     if (loc.IsNull()) {
@@ -206,9 +211,10 @@ void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
         }
     }
 
-    if (loc->IsNull()) {
+    if (loc->IsNull() || !set_partial) {
         return;
     }
+
 
     if (strand == eNa_strand_minus) {
         swap(partial_start, partial_stop);
@@ -312,10 +318,11 @@ void CFeatTrim::x_TrimTrnaExt(const TSeqPos from, const TSeqPos to, CTrna_ext& e
         return;
     } 
 
+    const bool set_partial=true;
     // else there is some overlap
     CRef<CSeq_loc> loc(new CSeq_loc());
     loc->Assign(ext.GetAnticodon());
-    x_TrimLocation(from, to, loc);
+    x_TrimLocation(from, to, set_partial, loc);
     ext.ResetAnticodon();
     ext.SetAnticodon(*loc);
 
@@ -323,6 +330,6 @@ void CFeatTrim::x_TrimTrnaExt(const TSeqPos from, const TSeqPos to, CTrna_ext& e
 }
 
 
-END_SCOPE(edit)
+END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE

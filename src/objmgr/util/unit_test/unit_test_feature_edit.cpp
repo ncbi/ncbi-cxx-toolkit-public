@@ -36,13 +36,13 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 //#include "unit_test_feature_edit.hpp"
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objtools/edit/feature_edit.hpp>
 #include <objects/blastxml2/Range.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
@@ -172,7 +172,7 @@ void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo, cons
     CRef<CSeq_feat> infeat = s_ReadFeat(testInfo.m_InFile.GetPath());
     CRef<CSeq_feat> baseline = s_ReadFeat(testInfo.m_BaselineFile.GetPath());
 
-    CRef<CSeq_feat> trimmed_feat = edit::CFeatTrim::Apply(*infeat, testInfo.m_Range);
+    CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*infeat, testInfo.m_Range);
 
     const bool success = trimmed_feat->Equals(*baseline);
     if (!success) {
