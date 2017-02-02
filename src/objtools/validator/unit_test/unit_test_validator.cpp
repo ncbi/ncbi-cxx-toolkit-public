@@ -3327,9 +3327,6 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
     STANDARD_SETUP
 
     // expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SeqLocLength", "Short length (10) on seq-loc (gb|AY123456|:1-10) of delta seq_ext"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
-                   "FarLocationExcludesFeatures", 
-                   "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3647,18 +3644,6 @@ BOOST_AUTO_TEST_CASE(Test_OverlappingDeltaRange)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 6-16 and 1-11 on a Bioseq gb|AY123456|"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 26-36 and 21-31 on a Bioseq gb|AY123456|"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3750,6 +3735,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ServiceError", "Unable to find far delta sequence component"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7472,7 +7458,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("DM");
     ambig.push_back("RIVE");
     ambig.push_back("TARI");
-    ambig.push_back("NMNH");
     ambig.push_back("CSCS");
     ambig.push_back("PSU");
     ambig.push_back("IMT");
@@ -14053,18 +14038,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 55);
     expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetInst().SetExt().Reset();
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 30);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 40, 72);
     expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14074,13 +14053,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
     expected_errors[0]->SetErrMsg("NULL pointer in delta seq_ext valnode (segment 2)");
     expected_errors[0]->SetSeverity(eDiag_Error);
-    delete (expected_errors[2]);
-    expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete(expected_errors[1]);
-    expected_errors.pop_back();
     entry->SetSeq().SetInst().SetExt().Reset();
     CRef<CDelta_seq> delta_seq2(new CDelta_seq());
     delta_seq2->SetLoc().SetInt().SetId(*id);
@@ -18190,9 +18165,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
                               "SeqGraph (25) and Bioseq (24) length mismatch"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "GraphSeqLocLen", 
                               "SeqGraph (13) and SeqLoc (12) length mismatch"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "FarLocationExcludesFeatures",
-        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -20488,3 +20460,23 @@ BOOST_AUTO_TEST_CASE(TEST_VR_15)
     CLEAR_ERRORS
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_433)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGenbank().SetAccession("AY123456");
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
+    unit_test_util::SetTech(entry, CMolInfo::eTech_wgs);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "FarLocationExcludesFeatures",
+        "Scaffold points to some but not all of gb|AY123456|, excluded portion contains features"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}
+

@@ -2329,6 +2329,20 @@ bool CValidError_bioseq::IsWGSMaster(const CBioseq& seq, CScope& scope)
 }
 
 
+bool CValidError_bioseq::IsWGS(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return false;
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetTech() && (*it)->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CValidError_bioseq::IsWGS(CBioseq_Handle bsh)
 {
     CSeqdesc_CI molinfo(bsh, CSeqdesc::e_Molinfo);
@@ -3664,15 +3678,15 @@ void CValidError_bioseq::ValidateDeltaLoc
                                  + " (" + NStr::IntToString(seq_len) + ")",
                                 seq);
                     }
-                    if (IsRefSeq(seq) && IsGenbank(*(bsh.GetCompleteBioseq())) ||
-                        m_Scope->GetBioseqHandle(seq).GetFeatureFetchPolicy() == CBioseq_Handle::eFeatureFetchPolicy_only_near) {
-                        // do not look for excluded annotation (VR-685)
-                    } else if(HasExcludedAnnotation(loc, bsh)) {
+                    if (IsWGS(seq) && HasExcludedAnnotation(loc, bsh)) {
                         string id_label = id->AsFastaString();
                         PostErr(eDiag_Error, eErr_SEQ_INST_FarLocationExcludesFeatures,
                                 "Scaffold points to some but not all of " +
                                 id_label + ", excluded portion contains features", seq);
                     }
+                } else {
+                    PostErr(eDiag_Error, eErr_GENERIC_ServiceError,
+                        "Unable to find far delta sequence component", seq);
                 }
             } catch (CException ) {
             } catch (std::exception ) {

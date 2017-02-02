@@ -1403,6 +1403,7 @@ public:
 
     static bool IsMaster(const CBioseq& seq);
     static bool IsWGSMaster(const CBioseq& seq, CScope& scope);
+    static bool IsWGS(const CBioseq& seq);
     static bool IsWGS(CBioseq_Handle bsh);
     static bool IsWp(CBioseq_Handle bsh);
     static bool IsEmblOrDdbj(const CBioseq& seq);
