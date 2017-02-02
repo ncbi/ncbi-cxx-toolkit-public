@@ -517,7 +517,8 @@ void sx_ProcessId(const TIdMap& id_map,
         return;
     }
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-    if ( !id_map.find(TIdKey(idh, null))->second ) {
+    auto id_it = id_map.find(TIdKey(idh, null));
+    if ( id_it == id_map.end() || !id_it->second ) {
         // no mapping is necessary
         return;
     }
