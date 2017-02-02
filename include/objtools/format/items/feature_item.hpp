@@ -188,6 +188,7 @@ protected:
     void x_AddQualGeneXref( const CGene_ref*, const CConstRef<CSeq_feat>& );
     void x_AddQualOperon( CBioseqContext&, CSeqFeatData::ESubtype );
     void x_AddQualsRegulatoryClass( CBioseqContext& ctx, CSeqFeatData::ESubtype subtype );
+    void x_AddQualsRecombinationClass( CBioseqContext& ctx, CSeqFeatData::ESubtype subtype );
 
     void x_AddQualPseudo( CBioseqContext&, CSeqFeatData::E_Choice, 
         CSeqFeatData::ESubtype, bool );
@@ -238,6 +239,7 @@ protected:
     void x_AddRptUnitQual(const string& rpt_unit);
     void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax);
     void x_AddRegulatoryClassQual(const string& regulatory_class, bool check_qual_syntax);
+    void x_AddRecombinationClassQual(const string& recombination_class, bool check_qual_syntax);
     void x_CleanQuals( const CGene_ref* );
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
