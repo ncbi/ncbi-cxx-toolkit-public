@@ -3958,6 +3958,18 @@ vector<string> CSeqFeatData::GetRegulatoryClassList()
     return choices;
 }
 
+vector<string> CSeqFeatData::GetRecombinationClassList()
+{
+    vector<string> choices;
+
+    choices.push_back("meiotic_recombination");
+    choices.push_back("mitotic_recombination");
+    choices.push_back("non_allelic_homologous");
+    choices.push_back("chromosome_breakpoint");
+
+    return choices;
+}
+
 bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
 {
     switch(subtype) {
