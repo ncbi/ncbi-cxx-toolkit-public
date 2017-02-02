@@ -147,10 +147,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                               const string&  subkey,
                               string*        owner);
 
-    /// Returns a list of subkeys for a given key
-    ///
-    list<string> GetSubkeyList(const string& key);
-
     typedef grid::netcache::search::CBlobInfo CBlobInfo;
     typedef grid::netcache::search::CExpression CExpression;
     typedef grid::netcache::search::CFields CFields;
@@ -346,6 +342,15 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void SetEventHandler(INetEventHandler* event_handler);
+
+    /// @deprecated Use Search() instead
+    NCBI_DEPRECATED list<string> GetSubkeyList(const string& key)
+    {
+        using namespace ncbi::grid::netcache::search;
+        list<string> r;
+        for (auto& i : Search(fields::key == key)) r.push_back(i[fields::subkey]);
+        return r;
+    }
 };
 
 extern NCBI_NET_CACHE_EXPORT const char* const kNetICacheDriverName;
