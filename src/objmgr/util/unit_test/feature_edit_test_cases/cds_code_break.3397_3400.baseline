@@ -11,8 +11,7 @@ Seq-feat ::= {
           from 3397,
           to 3398,
           strand minus,
-          id gi 749407087,
-          fuzz-from lim lt
+          id gi 749407087
         },
         aa ncbieaa 88
       }
