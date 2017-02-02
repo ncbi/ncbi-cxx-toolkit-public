@@ -488,6 +488,8 @@ public:
     static ESubtype GetRegulatoryClass(const string & class_name );
     static vector<string> GetRegulatoryClassList();
 
+    static vector<string> GetRecombinationClassList();
+
     static bool IsDiscouragedSubtype(ESubtype subtype);
     static bool IsDiscouragedQual(EQualifier qual);
 
