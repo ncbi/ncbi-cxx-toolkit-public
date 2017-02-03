@@ -87,7 +87,7 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
 
     if (flags.find('f') != string::npos)
     {        
-        VisitAllBioseqs(*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer(), [this](CBioseq&bioseq){ this->m_context->m_suspect_rules.FixProductNames(bioseq); });
+        m_context->m_suspect_rules.FixSuspectProductNames((*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer()));
     }
 
     if (flags.find('s') != string::npos)

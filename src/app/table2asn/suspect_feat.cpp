@@ -41,6 +41,7 @@
 #include <serial/objistr.hpp>
 
 #include "suspect_feat.hpp"
+#include "visitors.hpp"
 
 #include <objmgr/annot_ci.hpp>
 
@@ -109,7 +110,7 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
     *m_report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
-bool CFixSuspectProductName::FixProductNames(objects::CSeq_feat& feature)
+bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
 {
     static const char hypotetic_protein_name[] = "hypothetical protein";
 
@@ -132,21 +133,11 @@ bool CFixSuspectProductName::FixProductNames(objects::CSeq_feat& feature)
     return modified;
 }
 
-void CFixSuspectProductName::FixProductNames(objects::CBioseq& bioseq)
+void CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_entry& entry)
 {
-    if (bioseq.IsAa() && bioseq.IsSetAnnot() && !bioseq.GetAnnot().empty())
-    {
-        NON_CONST_ITERATE(CBioseq::TAnnot, annot_it, bioseq.SetAnnot())
-        {
-            if (!(**annot_it).IsFtable())
-                continue;
-
-            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, ft_it, (**annot_it).SetData().SetFtable())
-            {
-                FixProductNames(**ft_it);
-            }
-        }
-    }
+    VisitAllFeatures(entry,
+        [](const CBioseq& bioseq){return bioseq.IsAa(); },
+        [this](CBioseq&bioseq, CSeq_feat& feature) { this->FixSuspectProductNames(feature); });
 }
 
 

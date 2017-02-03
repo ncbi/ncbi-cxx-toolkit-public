@@ -18,11 +18,11 @@ namespace objects
         CFixSuspectProductName();
         ~CFixSuspectProductName();
 
-        void FixProductNames(objects::CBioseq& bioseq);
-        bool FixProductNames(objects::CSeq_feat& feature);
+        void FixSuspectProductNames(objects::CSeq_entry& entry);
+        bool FixSuspectProductNames(objects::CSeq_feat& feature);
+        bool FixSuspectProductName(string& product_name);
 
         void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag);
-        bool FixSuspectProductName(string& product_name);
 
         string m_fixed_product_report_filename;
         auto_ptr<CNcbiOfstream> m_report_ostream;
