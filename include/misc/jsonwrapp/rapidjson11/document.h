@@ -2228,7 +2228,8 @@ rhs.ValueType::SetValueAllocator(0);
     GenericDocument& Swap(GenericDocument& rhs) RAPIDJSON_NOEXCEPT {
         ValueType::Swap(rhs);
         stack_.Swap(rhs.stack_);
-        internal::Swap(allocator_, rhs.allocator_);
+// NCBI: moved allocator_into GenericValue
+        internal::Swap(ValueType::allocator_, rhs.ValueType::allocator_);
         internal::Swap(ownAllocator_, rhs.ownAllocator_);
         internal::Swap(parseResult_, rhs.parseResult_);
         return *this;
