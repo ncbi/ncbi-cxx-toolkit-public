@@ -600,10 +600,10 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
         case eLBOS_FindMethod_Registry:
             lbosaddress_temp = g_LBOS_RegGet("CONN", "lbos", NULL);
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress_temp)) {
-                CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS in "
-                                            "registry [CONN]lbos failed. "
-                                            "Using address in "
-                                            "/etc/ncbi/lbosresolver");
+                CORE_LOG_X(1, eLOG_Note, "Trying to find LBOS in "
+                                         "registry [CONN]lbos failed. "
+                                         "Using address in "
+                                         "/etc/ncbi/lbosresolver");
                 free(lbosaddress_temp); /* just in case */
                 lbosaddress_temp = NULL;
                 break;
