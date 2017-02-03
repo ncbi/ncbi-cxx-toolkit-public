@@ -2080,12 +2080,15 @@ SSeqMatch_Scope CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
         SSeqMatch_Scope new_ret = x_FindBioseqInfo(mit->second, idh, get_flag);
         if ( new_ret ) {
             _ASSERT(&new_ret.m_TSE_Lock->GetScopeImpl() == this);
-            if ( ret && ret.m_Bioseq != new_ret.m_Bioseq ) {
+            if ( ret && ret.m_Bioseq != new_ret.m_Bioseq &&
+                 ret.m_TSE_Lock->CanBeEdited() == new_ret.m_TSE_Lock->CanBeEdited() ) {
                 ret.m_BlobState = CBioseq_Handle::fState_conflict;
                 ret.m_Bioseq.Reset();
                 return ret;
             }
-            ret = new_ret;
+            if ( !ret || new_ret.m_TSE_Lock->CanBeEdited() ) {
+                ret = new_ret;
+            }
         }
         else if (new_ret.m_BlobState != 0) {
             // Remember first blob state
