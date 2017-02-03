@@ -1613,8 +1613,10 @@ static void s_LBOS_Initialize(void)
         }
         if (s_EmptyNetInfo == NULL) {
             s_EmptyNetInfo = ConnNetInfo_Create(NULL);
-            if (s_EmptyNetInfo)
+            if (s_EmptyNetInfo) {
+                s_EmptyNetInfo->scheme = eURL_Http;
                 s_EmptyNetInfo->req_method = eReqMethod_Any;
+            }
         }
     CORE_UNLOCK;
     s_LBOS_TurnedOn = 1; /* To ensure that initialization does
@@ -1937,8 +1939,10 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
         data->net_info = ConnNetInfo_Clone(s_EmptyNetInfo);
     } else {
         data->net_info = ConnNetInfo_Clone(net_info);
-        if (data->net_info)
+        if (data->net_info) {
+            data->net_info->scheme = eURL_Http;
             data->net_info->req_method = eReqMethod_Any;
+        }
     }
     // Check if CONNECT_Init() has been run before
     if (g_CORE_GetRequestDtab == NULL) {
