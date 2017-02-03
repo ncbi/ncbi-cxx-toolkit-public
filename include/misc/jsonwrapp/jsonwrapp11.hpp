@@ -65,12 +65,14 @@
 #include <iterator>
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
-#include "rapidjson/rapidjson.h"
-#include "rapidjson/document.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/error/en.h"
+#include "rapidjson11/rapidjson.h"
+#include "rapidjson11/document.h"
+#include "rapidjson11/prettywriter.h"
+#include "rapidjson11/filereadstream.h"
+#include "rapidjson11/istreamwrapper.h"
+#include "rapidjson11/filewritestream.h"
+#include "rapidjson11/ostreamwrapper.h"
+#include "rapidjson11/error/en.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -1186,8 +1188,8 @@ inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
 inline std::string
 CJson_ConstNode::ToString(TJson_Write_Flags flags, unsigned int indent_char_count) const {
     ncbi::CNcbiOstrstream os;
-    rapidjson::CppOStream ofs(os);
-    rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
+    rapidjson::OStreamWrapper ofs(os);
+    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
     } else {
@@ -2189,7 +2191,7 @@ inline bool CJson_Document::ParseString(const CJson_ConstNode::TStringType& v) {
 }
 
 inline bool CJson_Document::Read(std::istream& in) {
-    rapidjson::CppIStream ifs(in);
+    rapidjson::IStreamWrapper ifs(in);
     m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(ifs);
     return  !m_DocImpl.HasParseError();
 }
@@ -2203,8 +2205,8 @@ inline std::string CJson_Document::GetReadError() const {
 
 inline void CJson_Document::Write(std::ostream& out,
     TJson_Write_Flags flags, unsigned int indent_char_count) const {
-    rapidjson::CppOStream ofs(out);
-    rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
+    rapidjson::OStreamWrapper ofs(out);
+    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
     } else {
@@ -2224,7 +2226,7 @@ inline void CJson_Document::Walk(CJson_WalkHandler& walk) const {
 inline void CJson_Document::Walk(std::istream& in,
                                  CJson_WalkHandler& walk) {
     walk.x_SetSource(&in);
-    rapidjson::CppIStream ifs(in);
+    rapidjson::IStreamWrapper ifs(in);
     rapidjson::Reader rdr;
     rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
 }
