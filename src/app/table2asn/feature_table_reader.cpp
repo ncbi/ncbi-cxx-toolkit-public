@@ -76,8 +76,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 
 #include "table2asn_context.hpp"
-
-#include "suspect_feat.hpp"
+#include "visitors.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -450,6 +449,7 @@ namespace
         return bsrc.GetGenCode();
     }
 
+#if 0
     CConstRef<CSeq_feat> FindFeature(const CSeq_feat::TId& id, const CBioseq& bioseq)
     {
         CConstRef<CSeq_feat> feature;
@@ -475,9 +475,12 @@ namespace
         }
         return CConstRef<CSeq_feat>();
     }
+#endif
 
     CConstRef<CSeq_feat> GetLinkedmRNA(const CSeq_feat& cd_feature, const CBioseq& bioseq, CScope& scope)
     {
+        return sequence::GetmRNAforCDS(cd_feature, scope);
+#if 0
         ITERATE(CSeq_feat::TXref, it, cd_feature.GetXref())
         {
             if (!(**it).IsSetId()) continue;
@@ -491,10 +494,13 @@ namespace
             }
         }
         return sequence::GetBestMrnaForCds(cd_feature, scope);
+#endif
     }
 
     CConstRef<CSeq_feat> GetLinkedGene(const CSeq_feat& cd_feature, const CBioseq& bioseq, CScope& scope)
     {
+        return sequence::GetGeneForFeature(cd_feature, scope);
+#if 0
         ITERATE(CSeq_feat::TXref, it, cd_feature.GetXref())
         {
             if (!(**it).IsSetId()) continue;
@@ -507,6 +513,7 @@ namespace
             }
         }
         return sequence::GetBestGeneForCds(cd_feature, scope);
+#endif
     }
 
     void SetIdIfEmpty(CConstRef<CSeq_feat>& feat, int& counter)
@@ -516,14 +523,6 @@ namespace
             CSeq_feat& feature = (CSeq_feat&)*feat;
             AssignLocalIdIfEmpty(feature, counter);
         }
-    }
-
-    void ChangeDeltaProteinToRawProtein_Func(CTable2AsnContext& context, objects::CBioseq& bioseq)
-    {
-       if (bioseq.IsAa() && bioseq.IsSetInst() && bioseq.GetInst().IsSetRepr())
-       {
-          CSeqTranslator::ChangeDeltaProteinToRawProtein(Ref(&bioseq));
-       }
     }
 
 }
@@ -625,9 +624,9 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         if (NStr::CompareNocase(protein_name, "hypothetical protein") != 0)
         {
             string old = protein_name;
-            if (FixSuspectProductName(protein_name))
+            if (m_context.m_suspect_rules.FixSuspectProductName(protein_name))
             {
-                m_context.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
+                m_context.m_suspect_rules.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
             }
         }
     }
@@ -1575,7 +1574,15 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 
 void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry)
 {
-    m_context.VisitAllBioseqs(entry, ChangeDeltaProteinToRawProtein_Func);
+    VisitAllBioseqs(entry, [](CBioseq& bioseq)
+        {
+            if (bioseq.IsAa() && bioseq.IsSetInst() && bioseq.GetInst().IsSetRepr())
+            {
+                CSeqTranslator::ChangeDeltaProteinToRawProtein(Ref(&bioseq));
+            }
+        }
+    );
+
 }
 
 

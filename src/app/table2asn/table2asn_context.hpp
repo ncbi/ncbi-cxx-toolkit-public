@@ -3,6 +3,8 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include "suspect_feat.hpp"
+
 BEGIN_NCBI_SCOPE
 
 namespace objects
@@ -20,6 +22,7 @@ class CSeq_entry_EditHandle;
 class CSeq_feat;
 class CSourceModParser;
 class CSeq_id;
+class CFeat_CI;
 
 namespace edit
 {
@@ -100,12 +103,11 @@ public:
     bool   m_eukariote;
     bool   m_di_fasta;
 
-    string m_fixed_product_filename;
-
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
     auto_ptr<CNcbiOfstream> m_ecn_numbers_ostream;
-    auto_ptr<CNcbiOfstream> m_fixed_products;
+
+    objects::CFixSuspectProductName m_suspect_rules;
 
     //string conffile;
 
@@ -131,15 +133,6 @@ public:
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
     void UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const;
 
-    typedef void (*BioseqVisitorMethod)(CTable2AsnContext& context, objects::CBioseq& bioseq);
-    typedef void (*FeatureVisitorMethod)(CTable2AsnContext& context, objects::CSeq_feat& feature);
-    typedef void (*SeqdescVisitorMethod)(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
-
-    void VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m);
-    void VisitAllBioseqs(objects::CSeq_entry_EditHandle& entry_h, BioseqVisitorMethod m);
-    void VisitAllFeatures(objects::CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m);
-    void VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h, SeqdescVisitorMethod m);
-
     static void UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
@@ -148,11 +141,9 @@ public:
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
     void MakeGenomeCenterId(objects::CSeq_entry& entry);
-    static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
-    static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
-    static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
+    static void RenameProteinIdsQuals(objects::CSeq_feat& feature);
+    static void RemoveProteinIdsQuals(objects::CSeq_feat& feature);
     static bool IsDBLink(const objects::CSeqdesc& desc);
-    void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag);
 
 
     CRef<objects::CSeq_submit> m_submit_template;
@@ -165,7 +156,7 @@ public:
 
     static bool GetOrgName(string& name, const objects::CSeq_entry& entry);
     static CRef<objects::COrg_ref> GetOrgRef(objects::CSeq_descr& descr);
-    static void UpdateTaxonFromTable(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    static void UpdateTaxonFromTable(objects::CBioseq& bioseq);
 
 private:
     void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;

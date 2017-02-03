@@ -40,16 +40,21 @@
 #include <objects/macro/Suspect_rule.hpp>
 #include <serial/objistr.hpp>
 
+#include "suspect_feat.hpp"
+
+#include <objmgr/annot_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-namespace
+CFixSuspectProductName::CFixSuspectProductName()
 {
-    CRef<CSuspect_rule_set> g_rules;
-};
+}
+CFixSuspectProductName::~CFixSuspectProductName()
+{
+}
 
-bool FixSuspectProductName(string& name)
+bool CFixSuspectProductName::FixSuspectProductName(string& name)
 {
     static const char PRODUCT_RULES_LIST[] =
 #ifdef NCBI_OS_MSWIN
@@ -57,22 +62,29 @@ bool FixSuspectProductName(string& name)
 #else
         "/panfs/pan1.be-md.ncbi.nlm.nih.gov/wgs_gb_sub/processing/rules_usethis.txt";
 #endif
-    if (g_rules.Empty())
+    if (m_rules.Empty())
     {
-        g_rules.Reset(new CSuspect_rule_set);
-        if (CFile(PRODUCT_RULES_LIST).Exists())
+        bool found = false;
+        const string& rules_env = CNcbiApplication::Instance()->GetEnvironment().Get("PRODUCT_RULES_LIST", &found);
+        if (found)
+            m_rules_filename = rules_env.data();
+        else
+            m_rules_filename = PRODUCT_RULES_LIST;
+
+        m_rules.Reset(new CSuspect_rule_set);
+        if (CFile(m_rules_filename).Exists())
         {
-            CNcbiIfstream instream(PRODUCT_RULES_LIST);
+            CNcbiIfstream instream(m_rules_filename.c_str());
             auto_ptr<CObjectIStream> pObjIstrm(CObjectIStream::Open(eSerial_AsnText, instream, eNoOwnership));
-            pObjIstrm->Read(g_rules, g_rules->GetThisTypeInfo());
+            pObjIstrm->Read(m_rules, m_rules->GetThisTypeInfo());
         }
     }
 
 
-    if (g_rules.Empty() || g_rules->Get().empty())
+    if (m_rules.Empty() || m_rules->Get().empty())
         return false;
 
-    ITERATE(CSuspect_rule_set::Tdata, it, g_rules->Get())
+    ITERATE(CSuspect_rule_set::Tdata, it, m_rules->Get())
     {
         if ((**it).ApplyToString(name))
             return true;
@@ -80,6 +92,63 @@ bool FixSuspectProductName(string& name)
 
     return false;
 }
+
+void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const string& newproduct, const CSeq_loc& loc, const string& locustag)
+{
+    if (m_fixed_product_report_filename.empty())
+        return;
+
+    if (m_report_ostream.get() == 0)
+    {
+       m_report_ostream.reset(new CNcbiOfstream(m_fixed_product_report_filename.c_str()));
+       *m_report_ostream << "Using " << m_rules_filename.c_str() << " rules file" << endl << endl;
+    }
+
+    string label;
+    loc.GetLabel(&label);
+    *m_report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
+}
+
+bool CFixSuspectProductName::FixProductNames(objects::CSeq_feat& feature)
+{
+    static const char hypotetic_protein_name[] = "hypothetical protein";
+
+    bool modified = false;
+    if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
+    {
+        NON_CONST_ITERATE(CProt_ref::TName, name_it, feature.SetData().SetProt().SetName())
+        {
+            if (NStr::Compare(*name_it, hypotetic_protein_name))
+            {
+                string orig = *name_it;
+                if (FixSuspectProductName(*name_it))
+                {
+                    ReportFixedProduct(orig, *name_it, feature.GetLocation(), kEmptyStr);
+                    modified = true;
+                }
+            }
+        }
+    }
+    return modified;
+}
+
+void CFixSuspectProductName::FixProductNames(objects::CBioseq& bioseq)
+{
+    if (bioseq.IsAa() && bioseq.IsSetAnnot() && !bioseq.GetAnnot().empty())
+    {
+        NON_CONST_ITERATE(CBioseq::TAnnot, annot_it, bioseq.SetAnnot())
+        {
+            if (!(**annot_it).IsFtable())
+                continue;
+
+            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, ft_it, (**annot_it).SetData().SetFtable())
+            {
+                FixProductNames(**ft_it);
+            }
+        }
+    }
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

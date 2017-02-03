@@ -25,7 +25,6 @@ public:
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 
     void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope);
-    static void FixProductNames(CTable2AsnContext& context, objects::CBioseq& bioseq);
 
 protected:
     typedef map<int, size_t> TErrorStatMap;

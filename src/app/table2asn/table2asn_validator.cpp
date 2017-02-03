@@ -11,12 +11,12 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
-#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
-#include "suspect_feat.hpp"
+
+#include "visitors.hpp"
 
 
 #include <misc/discrepancy/discrepancy.hpp>
@@ -86,8 +86,8 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     }
 
     if (flags.find('f') != string::npos)
-    {
-        m_context->VisitAllBioseqs(*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer(), FixProductNames);
+    {        
+        VisitAllBioseqs(*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer(), [this](CBioseq&bioseq){ this->m_context->m_suspect_rules.FixProductNames(bioseq); });
     }
 
     if (flags.find('s') != string::npos)
@@ -245,38 +245,6 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
             if (EC.empty())
             {
                 feat.SetData().SetProt().ResetEc();
-            }
-        }
-    }
-}
-
-void CTable2AsnValidator::FixProductNames(CTable2AsnContext& context, objects::CBioseq& bioseq)
-{
-    static const char hypotetic_protein_name[] = "hypothetical protein";
-
-    if (bioseq.IsAa() && bioseq.IsSetAnnot() && !bioseq.GetAnnot().empty())
-    {
-        NON_CONST_ITERATE(CBioseq::TAnnot, annot_it, bioseq.SetAnnot())
-        {
-            if (!(**annot_it).IsFtable())
-                continue;
-
-            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, ft_it, (**annot_it).SetData().SetFtable())
-            {
-                if ((**ft_it).IsSetData() && (**ft_it).GetData().IsProt() && (**ft_it).GetData().GetProt().IsSetName())
-                {
-                    NON_CONST_ITERATE(CProt_ref::TName, name_it, (**ft_it).SetData().SetProt().SetName())
-                    {
-                        if (NStr::Compare(*name_it, hypotetic_protein_name))
-                        {
-                            string orig = *name_it;
-                            if (FixSuspectProductName(*name_it))
-                            {
-                                context.ReportFixedProduct(orig, *name_it, (**ft_it).GetLocation(), kEmptyStr);
-                            }
-                        }
-                    }
-                }
             }
         }
     }

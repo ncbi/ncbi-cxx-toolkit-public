@@ -38,7 +38,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
 
-#include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objects/general/Dbtag.hpp>
 
@@ -81,6 +80,8 @@
 #include <objmgr/scope.hpp>
 
 #include "table2asn_context.hpp"
+
+#include "visitors.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -221,19 +222,17 @@ void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
     date_desc.Set().SetUpdate_date(*date);
 }
 
-void CTable2AsnContext::x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq)
-{
-    CRef<CSeq_id> accession(new CSeq_id);
-    accession->Assign(*context.m_accession);
-    bioseq.SetId().push_back(accession);
-}
-
 void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry)
 {
     if (m_accession.Empty())
         return;
 
-    VisitAllBioseqs(entry, x_ApplyAccession);
+    VisitAllBioseqs(entry, [this](CBioseq& bioseq)
+    {
+        CRef<CSeq_id> accession(new CSeq_id);
+        accession->Assign(*this->m_accession);
+        bioseq.SetId().push_back(accession);
+    });
 }
 
 void CTable2AsnContext::UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const
@@ -468,62 +467,44 @@ void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
     if (m_genome_center_id.empty())
         return;
 
-    VisitAllBioseqs(entry, &CTable2AsnContext::MakeGenomeCenterId);
-}
-
-void CTable2AsnContext::VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m)
-{
-    if (entry.IsSeq())
+    VisitAllBioseqs(entry, [this](CBioseq& bioseq)
     {
-        m(*this, entry.SetSeq());
-    }
-    else
-    if (entry.IsSet()) 
-    {
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
+        if (m_genome_center_id.empty()) return;
+
+        CTempString db = m_genome_center_id;
+
+        NON_CONST_ITERATE(CBioseq::TId, id_it, bioseq.SetId())
         {
-            VisitAllBioseqs(**it_se, m);
+            CRef<CSeq_id> seq_id(*id_it);
+            if (seq_id.Empty()) continue;
+
+            const CObject_id* obj_id;
+            switch (seq_id->Which())
+            {
+            case CSeq_id::e_Local:
+                obj_id = &seq_id->GetLocal();
+                break;
+                //        case CSeq_id::e_General:
+                //            obj_id = &seq_id->GetGeneral().GetTag();
+                //            break;
+            default:
+                continue;
+            }
+            if (obj_id->IsId())
+                seq_id->SetGeneral().SetTag().SetId(obj_id->GetId());
+            else
+            {
+                string id = obj_id->GetStr();
+                seq_id->SetGeneral().SetTag().SetStr(id);
+            }
+
+            seq_id->SetGeneral().SetDb(db);
         }
-    }
-}
+    });
+};
 
 
-void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& bioseq)
-{    
-    if (context.m_genome_center_id.empty()) return;
-
-    CTempString db = context.m_genome_center_id;
-
-    NON_CONST_ITERATE(CBioseq::TId, id_it, bioseq.SetId())
-    {           
-        CRef<CSeq_id> seq_id(*id_it);
-        if (seq_id.Empty()) continue;
-
-        const CObject_id* obj_id;
-        switch (seq_id->Which())
-        {
-        case CSeq_id::e_Local:
-            obj_id = &seq_id->GetLocal();            
-            break;
-//        case CSeq_id::e_General:
-//            obj_id = &seq_id->GetGeneral().GetTag();
-//            break;
-        default:
-            continue;
-        }
-        if (obj_id->IsId())
-            seq_id->SetGeneral().SetTag().SetId(obj_id->GetId());
-        else
-        {
-            string id = obj_id->GetStr();
-            seq_id->SetGeneral().SetTag().SetStr(id);
-        }
-
-        seq_id->SetGeneral().SetDb(db);                      
-    }
-}
-
-void CTable2AsnContext::RenameProteinIdsQuals(CTable2AsnContext& context, CSeq_feat& feature)
+void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
 {
     if (!feature.IsSetQual())
         return;
@@ -556,7 +537,7 @@ void CTable2AsnContext::RenameProteinIdsQuals(CTable2AsnContext& context, CSeq_f
         feature.ResetQual();
 }
 
-void CTable2AsnContext::RemoveProteinIdsQuals(CTable2AsnContext& context, CSeq_feat& feature)
+void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
 {
     if (!feature.IsSetQual())
         return;
@@ -578,29 +559,9 @@ void CTable2AsnContext::RemoveProteinIdsQuals(CTable2AsnContext& context, CSeq_f
         feature.ResetQual();
 }
 
-void CTable2AsnContext::VisitAllFeatures(CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m)
-{
-    for (CFeat_CI feat_it(entry_h); feat_it; ++feat_it)
-    {
-        m(*this, *(CSeq_feat*)feat_it->GetOriginalSeq_feat().GetPointer());
-    }
-}
-
 void CTable2AsnContext::UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc)
 {
     context.m_remote_updater->UpdateOrgFromTaxon(context.m_logger, seqdesc);
-}
-
-void CTable2AsnContext::VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h, SeqdescVisitorMethod m)
-{
-    for (CBioseq_CI bioseq_it(entry_h); bioseq_it; ++bioseq_it)
-    {
-        CSeqdesc_CI it(bioseq_it->GetEditHandle(), CSeqdesc::e_not_set, 0);
-        for (; it; ++it)
-        {
-            m(*this, (CSeqdesc&)*it);
-        }
-    }
 }
 
 bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
@@ -649,21 +610,6 @@ void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
   if (!m_ft_url_mod.empty()) 
     AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
 
-}
-
-void CTable2AsnContext::ReportFixedProduct(const string& oldproduct, const string& newproduct, const CSeq_loc& loc, const string& locustag)
-{
-    if (m_fixed_product_filename.empty())
-        return;
-
-    if (m_fixed_products.get() == 0)
-    {
-        m_fixed_products.reset(new CNcbiOfstream(m_fixed_product_filename.c_str()));
-    }
-
-    string label;
-    loc.GetLabel(&label);
-    *m_fixed_products << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
 CRef<COrg_ref> CTable2AsnContext::GetOrgRef(CSeq_descr& descr)
@@ -729,7 +675,7 @@ bool CTable2AsnContext::GetOrgName(string& name, const CSeq_entry& entry)
 }
 
 
-void CTable2AsnContext::UpdateTaxonFromTable(CTable2AsnContext& context, objects::CBioseq& bioseq)
+void CTable2AsnContext::UpdateTaxonFromTable(objects::CBioseq& bioseq)
 {  
     if (bioseq.IsSetDescr() && bioseq.GetDescr().IsSet())
     {

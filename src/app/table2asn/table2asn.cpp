@@ -73,6 +73,9 @@
 
 #include "table2asn_validator.hpp"
 
+#include <objmgr/feat_ci.hpp>
+#include "visitors.hpp"
+
 #include <objtools/readers/fasta_exception.hpp>
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
@@ -106,7 +109,11 @@ public:
     CTbl2AsnApp(void);
 
     virtual void Init(void);
-    virtual int  Run (void);
+    virtual int Run (void);
+    virtual int DryRun(void)
+    {
+        return Run();
+    }
 
 private:
 
@@ -832,8 +839,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!IsDryRun())
     {
-        m_context.m_fixed_product_filename = GenerateOutputFilename(".fixedproducts");
-        CFile(m_context.m_fixed_product_filename).Remove();
+        m_context.m_suspect_rules.m_report_ostream.reset();
+        m_context.m_suspect_rules.m_fixed_product_report_filename = GenerateOutputFilename(".fixedproducts");
+        CFile(m_context.m_suspect_rules.m_fixed_product_report_filename).Remove();
     }
     m_context.ApplyFileTracks(*entry);
 
@@ -855,7 +863,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
-        m_context.VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
+        VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
     fr.m_replacement_protein = m_replacement_proteins;
@@ -900,11 +908,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_delay_genprodset)
     {
-        m_context.VisitAllFeatures(entry_edit_handle, m_context.RenameProteinIdsQuals);
+        VisitAllFeatures(entry_edit_handle, &m_context.RenameProteinIdsQuals);
     }
     else
     {
-        m_context.VisitAllFeatures(entry_edit_handle, m_context.RemoveProteinIdsQuals);
+        VisitAllFeatures(entry_edit_handle, &m_context.RemoveProteinIdsQuals);
     }
 
     if (m_context.m_RemotePubLookup)
@@ -955,6 +963,7 @@ string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
     string dir;
     string outputfile;
     string base;
+
     if (m_context.m_output_filename.empty())
     {
         CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
@@ -994,7 +1003,7 @@ void CTbl2AsnApp::ProcessOneFile()
         }
 
     CFile log_name;
-    if (!DryRun() && m_context.m_split_log_files)
+    if (!IsDryRun() && m_context.m_split_log_files)
     {
         log_name = GenerateOutputFilename(".log");
         m_logger->SetProgressOstream(new CNcbiOfstream(log_name.GetPath().c_str()), eTakeOwnership);
