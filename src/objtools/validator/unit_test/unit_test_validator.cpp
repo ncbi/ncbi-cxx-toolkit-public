@@ -20190,7 +20190,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
     CLEAR_ERRORS
 
     // no error because legal
-    qual->SetVal("mitotic_recombination");
+    qual->SetVal("mitotic");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
