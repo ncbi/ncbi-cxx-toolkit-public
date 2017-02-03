@@ -4020,7 +4020,7 @@ MJ	s	Muzeum Vysociny
 MJCM	s	Museo de Ciencias Naturales y Antropologicas "Prof. Juan C.Moyano" (Argentina)		
 MJG<ARG>	s	Museo Jorge Gerhold		
 MJG<AUT>	s	Landesmuseum Joanneum		
-MJG<DEU>	s	Johannes Gutenberg-Universitaet		
+MJG<DEU>	s	Johannes Gutenberg-Universitat		
 MJH	s	Muzeul Judetean Hunedoara		
 MJMO	s	Universidad Centro Occidental, Decanato de Agronomia		
 MJS	s	Xiaolongshan Forestry Experiment Bureau		
