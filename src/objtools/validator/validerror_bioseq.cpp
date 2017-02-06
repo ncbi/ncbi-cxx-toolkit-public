@@ -676,7 +676,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             if (id.IsPdb()) {
                 const CPDB_seq_id& pdb = id.GetPdb();
                 if (pdb.IsSetChain() && pdb.IsSetChain_id()) {
-                    PostErr(eDiag_Fatal, eErr_SEQ_INST_BadSeqIdFormat,
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "PDB Seq-id contains both \'chain\' and \'chain-id\' slots", ctx);
                 }
             }
