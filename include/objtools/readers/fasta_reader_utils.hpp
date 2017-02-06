@@ -67,8 +67,8 @@ public:
     struct SDeflineParseInfo {
         TBaseFlags fBaseFlags;
         TFastaFlags fFastaFlags;
-        size_t maxIdLength;
-        size_t lineNumber;
+        TSeqPos maxIdLength;
+        TSeqPos lineNumber;
     };
 
     static bool ParseIDs(
@@ -133,6 +133,8 @@ public:
         m_Counter(count)
         {}
 
+    
+    CRef<CSeq_id> GenerateID(const string& defline, bool advance);
     CRef<CSeq_id> GenerateID(bool advance);
     /// Equivalent to GenerateID(false)
     CRef<CSeq_id> GenerateID(void) const;
@@ -170,6 +172,9 @@ public:
     }
 
     virtual CRef<CSeq_id> GenerateID(bool unique_id); 
+
+    virtual CRef<CSeq_id> GenerateID(const string& defline, bool unique_id=true);
+
 
     void ClearIdCache(void) {
         m_PreviousIdHandles.clear();

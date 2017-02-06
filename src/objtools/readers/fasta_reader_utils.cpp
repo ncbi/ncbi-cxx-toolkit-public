@@ -469,20 +469,33 @@ CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title,
 
 CRef<CSeq_id> CFastaIdHandler::GenerateID(bool unique_id) 
 {
+    return GenerateID("", unique_id);
+}
+
+
+
+CRef<CSeq_id> CFastaIdHandler::GenerateID(const string& defline, const bool unique_id)
+{
     const bool advance = true;
     while (unique_id) {
-        auto p_Id = mp_IdGenerator->GenerateID(advance);
+        auto p_Id = mp_IdGenerator->GenerateID(defline, advance);
         auto idh = CSeq_id_Handle::GetHandle(*p_Id);
         if (x_IsUniqueIdHandle(idh)) {
             return p_Id;
         }
     }
     // !unique_id
-    return mp_IdGenerator->GenerateID(advance);
+    return mp_IdGenerator->GenerateID(defline, advance);
 }
 
 
-CRef<CSeq_id> CSeqIdGenerator::GenerateID(bool advance)
+CRef<CSeq_id> CSeqIdGenerator::GenerateID(const bool advance)
+{
+    return GenerateID("", advance);
+}
+
+
+CRef<CSeq_id> CSeqIdGenerator::GenerateID(const string& defline, const bool advance)
 {
     CRef<CSeq_id> seq_id(new CSeq_id);
     int n = advance ? m_Counter.Add(1) - 1 : m_Counter.Get();
@@ -498,10 +511,12 @@ CRef<CSeq_id> CSeqIdGenerator::GenerateID(bool advance)
     return seq_id;
 }
 
+
 CRef<CSeq_id> CSeqIdGenerator::GenerateID(void) const
 {
     return const_cast<CSeqIdGenerator*>(this)->GenerateID(false);
 }
+
 
 
 END_SCOPE(objects)
