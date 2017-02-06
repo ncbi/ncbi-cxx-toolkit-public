@@ -314,10 +314,22 @@ public:
 
     bool xSetDensegStarts(
         const vector<string>& gapParts, 
-        bool oppositeStrands,
-        size_t targetStart,
+        ENa_strand identStrand,
+        ENa_strand targetStrand,
+        const TSeqPos targetStart,
+        const TSeqPos targetEnd,
         const CGff2Record& gff,
         CSeq_align::C_Segs::TDenseg& denseg);
+
+    bool xGetStartsOnMinusStrand(TSeqPos offset,
+        const vector<string>& gapParts,
+        bool isTarget,
+        vector<int>& starts) const;
+
+    bool xGetStartsOnPlusStrand(TSeqPos offset,
+        const vector<string>& gapParts,
+        bool isTarget,
+        vector<int>& starts) const;
 
     virtual bool xReadInit();
 

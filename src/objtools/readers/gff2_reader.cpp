@@ -99,6 +99,8 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+
 
 #include <algorithm>
 
@@ -1277,79 +1279,155 @@ bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& target
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts, 
-                                   const bool oppositeStrands,
-                                   const size_t targetStart,
-                                   const CGff2Record& gff,
-                                   CSeq_align::C_Segs::TDenseg& denseg)
+bool CGff2Reader::xGetStartsOnMinusStrand(TSeqPos offset, 
+        const vector<string>& gapParts,
+        const bool isTarget,
+        vector<int>& starts) const
 //  ----------------------------------------------------------------------------
 {
+    starts.clear();
+    const auto gapCount = gapParts.size();
 
-    size_t targetOffset = targetStart;
-    const size_t gapCount = gapParts.size();
-    // Gap attribute is always given with respect to the target 
-    // strand. 
-    // The reference start values depend on the relative strandedness.
-    // The target start values do not.
-    if (oppositeStrands) {
-        size_t identOffset = gff.SeqStop();
-        for (size_t i=0; i<gapCount; ++i) {
-            char changeType = gapParts[i][0];
-            int changeSize = NStr::StringToInt(gapParts[i].substr(1));
-            switch (changeType) {
-            default:
-                return false;
-            case 'M': 
-                denseg.SetStarts().push_back(targetOffset);
-                denseg.SetStarts().push_back(identOffset+1-changeSize);
-                targetOffset += changeSize;
-                identOffset -= changeSize;
-                break;
-
-            case 'I':
-                denseg.SetStarts().push_back(targetOffset);
-                denseg.SetStarts().push_back(-1);
-                targetOffset += changeSize;
-                break;
-
-            case 'D':
-                denseg.SetStarts().push_back(-1);
-                denseg.SetStarts().push_back(identOffset+1-changeSize);
-                identOffset -= changeSize;
-                break;
-            }
-        }
-        return true;
-    }
-
-    // No difference in strandedness
-    size_t identOffset = gff.SeqStart();
-    for (size_t i=0; i < gapCount; ++i) {
+    for (auto i=0; i<gapCount; ++i) {
         char changeType = gapParts[i][0];
         int changeSize = NStr::StringToInt(gapParts[i].substr(1));
         switch (changeType) {
         default:
             return false;
-        case 'M':
-            denseg.SetStarts().push_back(targetOffset);
-            denseg.SetStarts().push_back(identOffset);
-            targetOffset += changeSize;
-            identOffset += changeSize;
+
+        case 'M': 
+            starts.push_back(offset+1-changeSize);
+            offset -= changeSize;
             break;
+
         case 'I':
-            denseg.SetStarts().push_back(targetOffset);
-            denseg.SetStarts().push_back(-1);
-            targetOffset += changeSize;
+            if (isTarget) {
+                starts.push_back(offset+1-changeSize);
+                offset -= changeSize;
+            } else {
+                starts.push_back(-1);
+            }
             break;
+
         case 'D':
-            denseg.SetStarts().push_back(-1);
-            denseg.SetStarts().push_back(identOffset);
-            identOffset += changeSize;
+            if (isTarget) {
+                starts.push_back(-1);
+            } else {
+                starts.push_back(offset+1-changeSize);
+                offset -= changeSize;
+            }
             break;
         }
     }
+    return true;
+}
 
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xGetStartsOnPlusStrand(TSeqPos offset, 
+        const vector<string>& gapParts,
+        const bool isTarget,
+        vector<int>& starts) const
+//  ----------------------------------------------------------------------------
+{
+    starts.clear();
+    const auto gapCount = gapParts.size();
+
+    for (auto i=0; i<gapCount; ++i) {
+        char changeType = gapParts[i][0];
+        int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+        switch (changeType) {
+        default:
+            return false;
+
+        case 'M': 
+            starts.push_back(offset);
+            offset += changeSize;
+            break;
+
+        case 'I':
+            if (isTarget) {
+                starts.push_back(offset);
+                offset += changeSize;
+            } else {
+                starts.push_back(-1);
+            }
+            break;
+
+        case 'D':
+            if (isTarget) {
+                starts.push_back(-1);
+            } else {
+                starts.push_back(offset);
+                offset += changeSize;
+            }
+            break;
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts, 
+                                   const ENa_strand identStrand,
+                                   const ENa_strand targetStrand,
+                                   const TSeqPos targetStart,
+                                   const TSeqPos targetEnd,
+                                   const CGff2Record& gff,
+                                   CSeq_align::C_Segs::TDenseg& denseg)
+//  ----------------------------------------------------------------------------
+{
+
+    TSeqPos targetOffset = targetStart;
+    const size_t gapCount = gapParts.size();
+
+    const bool isTarget = true;
+    vector<int> targetStarts;
+    if (targetStrand == eNa_strand_minus) {
+        if( !xGetStartsOnMinusStrand(targetEnd,
+            gapParts,
+            isTarget,
+            targetStarts)) {
+            return false;
+        }
+    }
+    else {
+        if (!xGetStartsOnPlusStrand(targetStart, 
+            gapParts,
+            isTarget,
+            targetStarts)) {
+            return false;
+        }
+    }
+
+    vector<int> identStarts;
+    const bool isIdent = !isTarget;
+
+    if (identStrand == eNa_strand_minus) {
+
+        if ( !xGetStartsOnMinusStrand(gff.SeqStop(),
+            gapParts,
+            isIdent,
+            identStarts)) {
+            return false;
+        }
+    }
+    else {
+        if ( !xGetStartsOnPlusStrand(gff.SeqStart(),
+            gapParts,
+            isIdent,
+            identStarts)) {
+            return false;
+        }
+    }
+
+    for (auto i=0; i<gapCount; ++i) {
+        denseg.SetStarts().push_back(targetStarts[i]);
+        denseg.SetStarts().push_back(identStarts[i]);
+    }
     return true;
 }
 
@@ -1422,6 +1500,42 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     const auto genomic_end = gff.SeqStop();
     exon->SetGenomic_start(genomic_start);
     exon->SetGenomic_end(genomic_end);
+/*
+    string gapInfo;
+    vector<string> gapParts;
+    if (gff.GetAttribute("Gap", gapInfo)) {
+        NStr::Split(gapInfo, " ", gapParts);
+    }
+    else {
+        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
+    }
+
+    const auto gapCount = gapParts.size();
+
+    for (auto i=0; i<gapCount; ++i) {
+        CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk());
+        char changeType = gapParts[i][0];
+        int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+        switch (changeType) {
+        default:
+            return false;
+
+        case 'M': 
+            chunk->SetMatch(changeSize);
+            break;
+
+        case 'I':
+            chunk->SetProduct_ins(changeSize);
+            break;
+
+        case 'D':
+            chunk->SetGenomic_ins(changeSize);
+            break;
+
+        }
+        exon->SetParts().push_back(chunk);
+    }
+*/
 
     spliced_seg.SetExons().push_back(exon);
 
@@ -1435,7 +1549,6 @@ bool CGff2Reader::xAlignmentSetDenseg(
     CRef<CSeq_align> pAlign)
 //  ----------------------------------------------------------------------------
 {
-
     vector<string> targetParts;
     if (!xGetTargetParts(gff, targetParts)) {
         return false;
@@ -1477,11 +1590,14 @@ bool CGff2Reader::xAlignmentSetDenseg(
     denseg.SetIds().push_back(
         CReadUtil::AsSeqId(gff.Id()));
 
-    size_t targetOffset = NStr::StringToInt(targetParts[1])-1;
+    const TSeqPos targetStart = NStr::StringToInt(targetParts[1])-1;
+    const TSeqPos targetEnd   = NStr::StringToInt(targetParts[2])-1;
 
     if (!xSetDensegStarts(gapParts, 
-                          oppositeStrands,
-                          targetOffset,
+                          identStrand,
+                          targetStrand,
+                          targetStart,
+                          targetEnd,
                           gff,
                           denseg)) {
         return false;
