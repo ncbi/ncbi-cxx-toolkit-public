@@ -641,7 +641,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     char*       iter_header;
     EReqMethod  req_method;
 
-    if (info  &&  info->type != fSERV_Firewall) {
+    if (!uuu->net_info->firewall  &&  info  &&  info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
         /* We know the connection point, let's try to use it! */
         if (info->type != fSERV_Standalone  ||  !net_info->stateless) {
@@ -707,24 +707,28 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         }
     } else {
+        /* Firewall connection via the dispatcher */
+        TSERV_Type     type;
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
+        if (info) {
+            type = info->type == fSERV_Firewall
+                ? info->u.firewall.type
+                : info->type;
+        } else
+            type = fSERV_Any/*0*/;
         if (!net_info->scheme)
             net_info->scheme = eURL_Https;
-        if (net_info->stateless
-            ||  (info  &&  (info->u.firewall.type & fSERV_Http))) {
-            if (info) {
-                req_method = (info->u.firewall.type == fSERV_HttpGet
-                              ? eReqMethod_Get
-                              : (info->u.firewall.type == fSERV_HttpPost
-                                 ? eReqMethod_Post
-                                 : eReqMethod_Any));
-                net_info->stateless = 1/*true*/;
-            } else
-                req_method = eReqMethod_Any;
+        if (type & fSERV_Http) {
+            req_method = (type == fSERV_HttpGet
+                          ? eReqMethod_Get
+                          : (type == fSERV_HttpPost
+                             ? eReqMethod_Post
+                             : eReqMethod_Any));
+            net_info->stateless = 1/*true*/;
         } else
-            req_method = eReqMethod_Get;
+            req_method = net_info->stateless ? eReqMethod_Any : eReqMethod_Get;
         if (info) {
             mime_t = info->mime_t;
             mime_s = info->mime_s;
@@ -973,8 +977,14 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                  ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
         }
-        if (uuu->types  &&  !(info->type & uuu->types)) {
-            const char* type = SERV_TypeStr(info->type);
+        if ((uuu->types & ~fSERV_Firewall)
+            &&  ((info->type != fSERV_Firewall
+                  &&  !(uuu->types & info->type))  ||
+                 (info->type == fSERV_Firewall
+                  &&  !(uuu->types & info->u.firewall.type)))) {
+            const char* type = SERV_TypeStr(info->type == fSERV_Firewall
+                                            ? info->u.firewall.type
+                                            : info->type);
             char buf[40];
             sprintf(buf,
                     *type ? " (0x%hX)" : "0x%hX", (unsigned short) info->type);
