@@ -46,6 +46,7 @@
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -1526,6 +1527,26 @@ bool CGff3Writer::xAssignFeatureType(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    //rw-341: if mf has "SO_type" qualifier, use that, unconditionally:
+    string so_type = mf.GetNamedQual("SO_type");
+    if (!so_type.empty()) {
+        record.SetType(so_type);
+        return true;
+    }
+    //rw-341: if mf is a misc_feature *and* it has a "feat_type qualifier,
+    // use that, unconditionally:
+    if (mf.GetData().IsImp()  &&  mf.GetData().GetImp().CanGetKey())
+    {
+        string key = mf.GetData().GetImp().GetKey();
+        if (key == "misc_feature") {
+            string feat_type = mf.GetNamedQual("feat_type");
+            if (!feat_type.empty()) {
+                record.SetType(feat_type);
+                return true;
+            }
+        }
+    }
+
     static const char* const ncrnaClasses_[] = {
         "antisense_RNA",
         "autocatalytically_spliced_intron",
