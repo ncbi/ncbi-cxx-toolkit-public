@@ -1500,7 +1500,7 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     const auto genomic_end = gff.SeqStop();
     exon->SetGenomic_start(genomic_start);
     exon->SetGenomic_end(genomic_end);
-/*
+
     string gapInfo;
     vector<string> gapParts;
     if (gff.GetAttribute("Gap", gapInfo)) {
@@ -1535,7 +1535,6 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
         }
         exon->SetParts().push_back(chunk);
     }
-*/
 
     spliced_seg.SetExons().push_back(exon);
 

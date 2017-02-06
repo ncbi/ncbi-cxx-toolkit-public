@@ -3845,49 +3845,75 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 137,
             genomic-start 22758,
-            genomic-end 22895
+            genomic-end 22895,
+            parts {
+              match 138
+            }
           },
           {
             product-start nucpos 138,
             product-end nucpos 274,
             genomic-start 20967,
-            genomic-end 21103
+            genomic-end 21103,
+            parts {
+              match 137
+            }
           },
           {
             product-start nucpos 275,
             product-end nucpos 364,
             genomic-start 19496,
-            genomic-end 19585
+            genomic-end 19585,
+            parts {
+              match 90
+            }
           },
           {
             product-start nucpos 365,
             product-end nucpos 583,
             genomic-start 18432,
-            genomic-end 18650
+            genomic-end 18650,
+            parts {
+              match 219
+            }
           },
           {
             product-start nucpos 584,
             product-end nucpos 723,
             genomic-start 15408,
-            genomic-end 15547
+            genomic-end 15547,
+            parts {
+              match 140
+            }
           },
           {
             product-start nucpos 724,
             product-end nucpos 827,
             genomic-start 12340,
-            genomic-end 12443
+            genomic-end 12443,
+            parts {
+              match 104
+            }
           },
           {
             product-start nucpos 828,
             product-end nucpos 983,
             genomic-start 8914,
-            genomic-end 9069
+            genomic-end 9069,
+            parts {
+              match 156
+            }
           },
           {
             product-start nucpos 984,
             product-end nucpos 1193,
             genomic-start 8625,
-            genomic-end 8835
+            genomic-end 8835,
+            parts {
+              match 84,
+              genomic-ins 1,
+              match 126
+            }
           }
         }
       }
@@ -3946,43 +3972,66 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 181,
             genomic-start 79292,
-            genomic-end 79473
+            genomic-end 79473,
+            parts {
+              match 182
+            }
           },
           {
             product-start nucpos 182,
             product-end nucpos 271,
             genomic-start 77723,
-            genomic-end 77812
+            genomic-end 77812,
+            parts {
+              match 90
+            }
           },
           {
             product-start nucpos 272,
             product-end nucpos 490,
             genomic-start 76297,
-            genomic-end 76515
+            genomic-end 76515,
+            parts {
+              match 219
+            }
           },
           {
             product-start nucpos 491,
             product-end nucpos 633,
             genomic-start 74240,
-            genomic-end 74382
+            genomic-end 74382,
+            parts {
+              match 143
+            }
           },
           {
             product-start nucpos 634,
             product-end nucpos 737,
             genomic-start 71833,
-            genomic-end 71936
+            genomic-end 71936,
+            parts {
+              match 104
+            }
           },
           {
             product-start nucpos 738,
             product-end nucpos 893,
             genomic-start 64304,
-            genomic-end 64459
+            genomic-end 64459,
+            parts {
+              match 156
+            }
           },
           {
             product-start nucpos 894,
             product-end nucpos 1074,
             genomic-start 64023,
-            genomic-end 64209
+            genomic-end 64209,
+            parts {
+              match 122,
+              genomic-ins 6,
+              match 59
+            }
           }
         }
       }
@@ -4041,43 +4090,68 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 79,
             genomic-start 173084,
-            genomic-end 173163
+            genomic-end 173163,
+            parts {
+              match 80
+            }
           },
           {
             product-start nucpos 80,
             product-end nucpos 216,
             genomic-start 171201,
-            genomic-end 171337
+            genomic-end 171337,
+            parts {
+              match 137
+            }
           },
           {
             product-start nucpos 217,
             product-end nucpos 306,
             genomic-start 169825,
-            genomic-end 169914
+            genomic-end 169914,
+            parts {
+              match 90
+            }
           },
           {
             product-start nucpos 307,
             product-end nucpos 513,
             genomic-start 168723,
-            genomic-end 168929
+            genomic-end 168929,
+            parts {
+              match 207
+            }
           },
           {
             product-start nucpos 514,
             product-end nucpos 656,
             genomic-start 166283,
-            genomic-end 166425
+            genomic-end 166425,
+            parts {
+              match 143
+            }
           },
           {
             product-start nucpos 657,
             product-end nucpos 760,
             genomic-start 163852,
-            genomic-end 163955
+            genomic-end 163955,
+            parts {
+              match 104
+            }
           },
           {
             product-start nucpos 761,
             product-end nucpos 1233,
             genomic-start 149511,
-            genomic-end 149941
+            genomic-end 149941,
+            parts {
+              match 287,
+              product-ins 40,
+              match 92,
+              product-ins 2,
+              match 52
+            }
           }
         }
       }
@@ -4136,43 +4210,66 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 155,
             genomic-start 292305,
-            genomic-end 292460
+            genomic-end 292460,
+            parts {
+              match 156
+            }
           },
           {
             product-start nucpos 156,
             product-end nucpos 285,
             genomic-start 290526,
-            genomic-end 290655
+            genomic-end 290655,
+            parts {
+              match 130
+            }
           },
           {
             product-start nucpos 286,
             product-end nucpos 375,
             genomic-start 289047,
-            genomic-end 289136
+            genomic-end 289136,
+            parts {
+              match 90
+            }
           },
           {
             product-start nucpos 376,
             product-end nucpos 594,
             genomic-start 288001,
-            genomic-end 288219
+            genomic-end 288219,
+            parts {
+              match 219
+            }
           },
           {
             product-start nucpos 595,
             product-end nucpos 734,
             genomic-start 254930,
-            genomic-end 255069
+            genomic-end 255069,
+            parts {
+              match 140
+            }
           },
           {
             product-start nucpos 735,
             product-end nucpos 838,
             genomic-start 251885,
-            genomic-end 251988
+            genomic-end 251988,
+            parts {
+              match 104
+            }
           },
           {
             product-start nucpos 839,
             product-end nucpos 1289,
             genomic-start 248233,
-            genomic-end 248680
+            genomic-end 248680,
+            parts {
+              match 11,
+              product-ins 3,
+              match 437
+            }
           }
         }
       }
@@ -4231,55 +4328,86 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 47,
             genomic-start 338873,
-            genomic-end 338920
+            genomic-end 338920,
+            parts {
+              match 48
+            }
           },
           {
             product-start nucpos 48,
             product-end nucpos 242,
             genomic-start 335546,
-            genomic-end 335740
+            genomic-end 335740,
+            parts {
+              match 195
+            }
           },
           {
             product-start nucpos 243,
             product-end nucpos 520,
             genomic-start 334439,
-            genomic-end 334716
+            genomic-end 334716,
+            parts {
+              match 278
+            }
           },
           {
             product-start nucpos 521,
             product-end nucpos 687,
             genomic-start 332676,
-            genomic-end 332842
+            genomic-end 332842,
+            parts {
+              match 167
+            }
           },
           {
             product-start nucpos 688,
             product-end nucpos 777,
             genomic-start 331124,
-            genomic-end 331213
+            genomic-end 331213,
+            parts {
+              match 90
+            }
           },
           {
             product-start nucpos 778,
             product-end nucpos 981,
             genomic-start 329778,
-            genomic-end 329981
+            genomic-end 329981,
+            parts {
+              match 204
+            }
           },
           {
             product-start nucpos 982,
             product-end nucpos 1124,
             genomic-start 327323,
-            genomic-end 327465
+            genomic-end 327465,
+            parts {
+              match 143
+            }
           },
           {
             product-start nucpos 1125,
             product-end nucpos 1228,
             genomic-start 324929,
-            genomic-end 325032
+            genomic-end 325032,
+            parts {
+              match 104
+            }
           },
           {
             product-start nucpos 1229,
             product-end nucpos 1666,
             genomic-start 315936,
-            genomic-end 316372
+            genomic-end 316372,
+            parts {
+              match 162,
+              genomic-ins 1,
+              match 103,
+              product-ins 2,
+              match 171
+            }
           }
         }
       }
@@ -4445,13 +4573,21 @@ Seq-annot ::= {
             product-start nucpos 0,
             product-end nucpos 234,
             genomic-start 538387,
-            genomic-end 538621
+            genomic-end 538621,
+            parts {
+              match 235
+            }
           },
           {
             product-start nucpos 235,
             product-end nucpos 2423,
             genomic-start 536046,
-            genomic-end 538233
+            genomic-end 538233,
+            parts {
+              match 1916,
+              product-ins 1,
+              match 272
+            }
           }
         }
       }
