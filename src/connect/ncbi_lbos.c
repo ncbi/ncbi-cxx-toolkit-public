@@ -1080,7 +1080,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
         char* server_description;
-        const char* descr_format = "%s %s:%u %s R=%s L=no T=25";
+        const char* descr_format = "%s %s:%u %s R=%s T=%lu";
         int port;
         serviceEndpoint = x_json_array_get_object(serviceEndpoints, j);
         host = x_json_object_dotget_string(serviceEndpoint,
@@ -1119,10 +1119,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                 extra = "''";
         }
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
-                 5 /*length of port*/ + strlen(extra) + strlen(rate);
+                 5 /*length of port*/ + strlen(extra) + strlen(rate) +
+                 20/*time*/;
         server_description = malloc(sizeof(char) * length);
         sprintf(server_description, descr_format, type, host, 
-                port, extra, rate);
+                port, extra, rate, iter->time + 25);
         SSERV_Info * info = SERV_ReadInfoEx(server_description,service_name, 0);
         free(server_description);
         if (info == NULL) {

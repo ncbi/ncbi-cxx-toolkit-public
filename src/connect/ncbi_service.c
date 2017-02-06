@@ -339,7 +339,7 @@ static void s_SkipSkip(SERV_ITER iter)
     n = 0;
     while (n < iter->n_skip) {
         SSERV_InfoCPtr temp = iter->skip[n];
-        if (temp->time != NCBI_TIME_INFINITE
+        if (temp != iter->last  &&  temp->time != NCBI_TIME_INFINITE
             &&  (!iter->time/*iterator reset*/
                  ||  ((temp->type != fSERV_Dns  ||  temp->host)
                       &&  temp->time < iter->time))) {
@@ -348,8 +348,6 @@ static void s_SkipSkip(SERV_ITER iter)
                 memmove((void*) ptr, (void*)(ptr + 1),
                         (iter->n_skip - n) * sizeof(*ptr));
             }
-            if (iter->last == temp)
-                iter->last  = 0;
             free((void*) temp);
         } else
             n++;
