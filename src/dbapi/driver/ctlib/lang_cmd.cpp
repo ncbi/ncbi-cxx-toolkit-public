@@ -738,8 +738,18 @@ CTL_LRCmd::Cancel(void)
             return true;
         }
 #endif
-
         DeleteResultInternal();
+        return x_Cancel();
+    } else {
+        return true;
+    }
+}
+
+bool
+CTL_LRCmd::x_Cancel(void)
+{
+    if (WasSent()) {
+        MarkEndOfReply();
 
         if (!IsDead()  &&  GetConnection().IsAlive()) {
             size_t was_timeout = GetConnection().PrepareToCancel();

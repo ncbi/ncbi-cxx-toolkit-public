@@ -1364,7 +1364,7 @@ int CTL_Connection::x_IntHandler(void* param)
             if (cmd != NULL) {
                 ctl_conn->m_AsyncCancelAllowed = false;
                 LOCK.Release();
-                cmd->Cancel();
+                cmd->x_Cancel();
             }
             LOCK.Guard(ctl_conn->m_AsyncCancelMutex);
             ctl_conn->m_BaseTimeout = ctl_conn->m_TotalTimeout;

@@ -597,6 +597,11 @@ protected:
         return GetConnection().GetClientEncoding();
     }
 
+    virtual bool x_Cancel(void)
+    {
+        return Cancel();
+    }
+    
 
 protected:
     // Result-related ...
@@ -674,6 +679,7 @@ protected:
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
+    inline void MarkEndOfReply(void);
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -719,12 +725,13 @@ public:
 public:
     CTL_RowResult* MakeResultInternal(void);
     CDB_Result* MakeResult(void);
-    virtual bool Cancel(void);
+    bool Cancel(void) override;
 
 protected:
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
     bool SendInternal(void);
+    bool x_Cancel(void) override;
 };
 
 
@@ -1480,14 +1487,20 @@ inline
 void
 CTL_Cmd::DeleteResultInternal(void)
 {
+    MarkEndOfReply();
     if ( HaveResult() ) {
-        // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-        m_Res->m_EOR = true;
-
         DeleteResult();
     }
 }
 
+inline
+void CTL_Cmd::MarkEndOfReply(void)
+{
+    // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
+    if (HaveResult()) {
+        m_Res->m_EOR = true;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 inline
