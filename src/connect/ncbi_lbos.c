@@ -34,12 +34,14 @@
 
 
 #include "ncbi_ansi_ext.h"
-#include <connect/ncbi_http_connector.h>
 #include "ncbi_lbosp.h"
 #include "ncbi_priv.h"
+#include "parson.h"
+#include <connect/ncbi_http_connector.h>
 #include <stdlib.h> /* free, realloc, calloc, malloc */
 #include <ctype.h> /* isdigit */
-#include "parson.h"
+#include <time.h>
+
 #define            kHostportStringLength     (16+1+5)/**<
                                                      strlen("255.255.255.255")+
                                                      strlen(":") +
@@ -1077,10 +1079,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     serviceEndpoints = 
         x_json_object_get_array(services, x_json_object_get_name(services, 0));
     /* Iterate through endpoints */
+    time_t now = 0;
     for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
         char* server_description;
-        const char* descr_format = "%s %s:%u %s R=%s T=25";
+        const char* descr_format = "%s %s:%u %s R=%s T=%lu";
         int port;
         serviceEndpoint = x_json_array_get_object(serviceEndpoints, j);
         host = x_json_object_dotget_string(serviceEndpoint,
@@ -1120,10 +1123,12 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         }
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
                  5 /*length of port*/ + strlen(extra) + strlen(rate) +
-                 20/*time*/;
+                 40/*time*/;
         server_description = malloc(sizeof(char) * length);
+        if (!now)
+            now = time(0);
         sprintf(server_description, descr_format, type, host, 
-                port, extra, rate);
+                port, extra, rate, (unsigned long) now + 25);
         SSERV_Info * info = SERV_ReadInfoEx(server_description,service_name, 0);
         free(server_description);
         if (info == NULL) {
@@ -1192,7 +1197,7 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(lbos_address, service,
                                                          data->net_info);
     if (hostports_array == NULL) {
-        CORE_LOGF_X(1, eLOG_Trace, ("Ho servers of \"%s\" found by LBOS",
+        CORE_LOGF_X(1, eLOG_Trace, ("No servers of \"%s\" found by LBOS",
                     service));
         return;
     }
@@ -1266,8 +1271,8 @@ static int s_LBOS_CheckAnnounceArgs(const char* service,
             }
         }
     }
-    if (port < 1 || port > 65535) {
-        CORE_LOG(eLOG_Critical, "Error with announcement, incorrect port.");
+    if (!port) {
+        CORE_LOG(eLOG_Critical, "Error with announcement, invalid port.");
         return 0;
     }
     if (g_LBOS_StringIsNullOrEmpty(version)) {
@@ -1300,9 +1305,9 @@ static int s_LBOS_CheckDeannounceArgs(const char*    service,
                                 "not contain protocol or port");
         return 0;
     }
-    if (port < 1 || port > 65535) {
+    if (!port) {
         CORE_LOG(eLOG_Critical, "Invalid argument passed for de-announcement, "
-                                "incorrect port.");
+                                "invalid port.");
         return 0;
     }
     if (g_LBOS_StringIsNullOrEmpty(version)) {
