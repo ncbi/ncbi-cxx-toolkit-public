@@ -315,7 +315,9 @@ static void s_SimpleTest()
     }
 
     try {
-        list<string> received(api.GetSubkeyList(ctx.key));
+        using namespace ncbi::grid::netcache::search;
+
+        auto received = api.Search(fields::key == ctx.key);
 
         if (received.size() != subkeys.size()) {
             BOOST_ERROR("Received unexpected number of subkeys: " <<
@@ -324,9 +326,8 @@ static void s_SimpleTest()
 
         set<string> expected(subkeys.begin(), subkeys.end());
 
-        for (list<string>::const_iterator i = received.begin();
-                i != received.end(); ++i) {
-            ctx.subkey = *i;
+        for (auto& i : received) {
+            ctx.subkey = i[fields::subkey];
 
             if (expected.find(ctx.subkey) == expected.end()) {
                 BOOST_ERROR("Received unexpected subkey " << ctx.subkey <<
