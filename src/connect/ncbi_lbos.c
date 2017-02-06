@@ -1123,7 +1123,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                  20/*time*/;
         server_description = malloc(sizeof(char) * length);
         sprintf(server_description, descr_format, type, host, 
-                port, extra, rate, iter->time + 25);
+                port, extra, rate, (unsigned long) iter->time + 25);
         SSERV_Info * info = SERV_ReadInfoEx(server_description,service_name, 0);
         free(server_description);
         if (info == NULL) {
