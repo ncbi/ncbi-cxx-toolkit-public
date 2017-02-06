@@ -126,56 +126,6 @@ void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream
                             .Print("blob-size", blob.size());
 }
 
-static
-const string& EnsureCompression(string& blob, CCompressStream::EMethod cur_method, CCompressStream::EMethod new_method)
-{
-    if(cur_method == new_method)
-        return blob;
-
-    CStopWatch sw(CStopWatch::eStart);
-
-    LOG_POST(Info << "Changing compression from " << cur_method << " to " << new_method);
-
-    CNcbiIstrstream in(blob.data(), blob.size());
-    CDecompressIStream from_stream(in, cur_method);
-    CNcbiOstrstream out;
-    CCompressOStream to_stream(out, new_method);
-
-    to_stream << from_stream.rdbuf();
-    to_stream.Finalize();
-
-    const string new_blob = CNcbiOstrstreamToString(out);
-
-    sw.Stop();
-    LOG_POST(Info << "Compression done - processed: " << to_stream.GetProcessedSize() << ", old size:" << blob.size() << ", new size: " << to_stream.GetOutputSize());
-
-    GetDiagContext().Extra().Print("Change-assembly-compression-time", sw.Elapsed() * 1000) // need millisecond
-                            .Print("compress-method-old", cur_method)
-                            .Print("compress-method-new", new_method)
-                            .Print("blob-size-old",       blob.size())
-                            .Print("blob-size-new",   new_blob.size());
-
-    blob = new_blob;
-
-    return blob;
-}
-
-const string& CCachedAssembly::Blob(CCompressStream::EMethod neededCompression)
-{
-    _ASSERT(neededCompression == CCompressStream::eBZip2 || neededCompression == CCompressStream::eZip);
-    LOG_POST(Info << "Requested blob with compression: " << neededCompression);
-
-    if (ValidBlob(m_blob.size()))
-        return EnsureCompression(m_blob, Compression(m_blob), neededCompression); //TODO: remove it once all be switched to new gc_access (conversion will be done inside CGencollCache)
-
-    if (m_assembly)
-        CompressAssembly(m_blob, m_assembly, neededCompression);
-    else
-        m_blob.clear();
-
-    return m_blob;
-}
-
 const string& CCachedAssembly::Blob()
 {
     if (ValidBlob(m_blob.size()))
