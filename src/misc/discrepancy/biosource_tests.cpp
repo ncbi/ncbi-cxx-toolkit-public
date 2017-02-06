@@ -1089,7 +1089,19 @@ const string kSuspectITS = "[n] Bioseq[s] [has] suspect rRNA / ITS on organelle"
 
 DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect rRNA / ITS on organelle")
 {
-    if (!obj.IsSetGenome() || !(obj.GetGenome() == CBioSource::eGenome_chloroplast || obj.GetGenome() == CBioSource::eGenome_mitochondrion || obj.GetGenome() == CBioSource::eGenome_plastid)) {
+    if (!obj.IsSetGenome() || !(
+            obj.GetGenome() == CBioSource::eGenome_apicoplast ||
+            obj.GetGenome() == CBioSource::eGenome_chloroplast ||
+            obj.GetGenome() == CBioSource::eGenome_chromatophore ||
+            obj.GetGenome() == CBioSource::eGenome_chromoplast ||
+            obj.GetGenome() == CBioSource::eGenome_cyanelle ||
+            obj.GetGenome() == CBioSource::eGenome_hydrogenosome ||
+            obj.GetGenome() == CBioSource::eGenome_kinetoplast ||
+            obj.GetGenome() == CBioSource::eGenome_leucoplast ||
+            obj.GetGenome() == CBioSource::eGenome_mitochondrion ||
+            obj.GetGenome() == CBioSource::eGenome_plastid ||
+            obj.GetGenome() == CBioSource::eGenome_proplastid
+        )) {
         return;
     }
 
