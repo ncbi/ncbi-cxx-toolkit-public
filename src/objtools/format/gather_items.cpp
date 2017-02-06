@@ -2820,7 +2820,16 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 const CSeq_feat& feat = it->GetMappedFeature();
                 CScope& scope = ctx.GetScope();
                 CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
-                item.Reset( x_NewFeatureItem(trimmed_feat, ctx, feat_loc, m_Feat_Tree) );
+
+                const bool partial_start = trimmed_feat.GetLocation().IsPartialStart(eExtreme_Biological);
+                const bool partial_stop = trimmed_feat.GetLocation().IsPartialStop(eExtreme_Biological);
+
+                CRef<CSeq_loc> new_loc(new CSeq_loc());
+                new_loc->Assign(*feat_loc);
+                new_loc->SetPartialStart(partial_start, eExtreme_Biological);
+                new_loc->SetPartialStop(partial_stop, eExtreme_Biological);
+                item.Reset( x_NewFeatureItem(trimmed_feat, ctx, new_loc, m_Feat_Tree) );
+
             } else {
                 // format feature
                 item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
@@ -3294,8 +3303,18 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
             const CSeq_feat& feat = it->GetMappedFeature();
             CScope& scope = ctx.GetScope();
             CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
+
+            const bool partial_start = trimmed_feat.GetLocation().IsPartialStart(eExtreme_Biological);
+            const bool partial_stop = trimmed_feat.GetLocation().IsPartialStop(eExtreme_Biological);
+
+            CRef<CSeq_loc> new_loc(new CSeq_loc());
+            new_loc->Assign(*loc);
+            new_loc->SetPartialStart(partial_start, eExtreme_Biological);
+            new_loc->SetPartialStop(partial_stop, eExtreme_Biological);
+
+
             item = ConstRef( x_NewFeatureItem(trimmed_feat, ctx, 
-                               s_NormalizeNullsBetween(loc), m_Feat_Tree,
+                               s_NormalizeNullsBetween(new_loc), m_Feat_Tree,
                                CFeatureItem::eMapped_from_prot,
                                cdsFeatureItem ) );
         } else {
