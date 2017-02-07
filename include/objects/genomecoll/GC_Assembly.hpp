@@ -98,7 +98,7 @@ public:
     bool IsGenBank() const;
 
     /// Generate the internal up-pointers
-    void CreateHierarchy();
+    void CreateHierarchy(CGC_Assembly *target_set = NULL);
 
     /// Generate the Seq-id index
     void CreateIndex();
@@ -141,6 +141,12 @@ public:
     void PreWrite() const;
     void PostRead();
 
+    /// Access the top-level target set that this assemhly belongs to
+    CConstRef<CGC_Assembly> GetTargetSet() const;
+
+    /// Is this assembly the reference assembly of the target set, or part of it?
+    bool IsTargetSetReference() const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CGC_Assembly(const CGC_Assembly& value);
@@ -149,6 +155,8 @@ private:
     CMutex m_Mutex;
     typedef map<CSeq_id_Handle, TSequenceList> TSequenceIndex;
     TSequenceIndex m_SequenceMap;
+
+    CGC_Assembly* m_TargetSet;
 
     /// indexing infrastructure
     void x_Index(CGC_Assembly&     assm,     CGC_Replicon& replicon);

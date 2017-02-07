@@ -104,6 +104,12 @@ CConstRef<CGC_Assembly> CGC_AssemblyUnit::GetFullAssembly() const
     return CConstRef<CGC_Assembly>(m_Assembly);
 }
 
+bool CGC_AssemblyUnit::IsPrimaryUnit() const
+{
+    return m_Assembly->IsUnit() ||
+           &m_Assembly->GetAssembly_set().GetPrimary_assembly().GetUnit()
+                     == this;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

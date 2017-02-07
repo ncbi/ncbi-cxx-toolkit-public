@@ -74,6 +74,9 @@ public:
     /// knowing the unit is not always enough
     CConstRef<CGC_Assembly> GetFullAssembly() const;
 
+    /// Is this the primary unit of its full assembly?
+    bool IsPrimaryUnit() const;
+
 protected:
     CGC_Assembly* m_Assembly;
 

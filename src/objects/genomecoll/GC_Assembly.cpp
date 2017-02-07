@@ -64,6 +64,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // constructor
 CGC_Assembly::CGC_Assembly(void)
+: m_TargetSet(NULL)
 {
 }
 
@@ -350,13 +351,17 @@ void CGC_Assembly::PostRead()
 }
 
 
-void CGC_Assembly::CreateHierarchy()
+void CGC_Assembly::CreateHierarchy(CGC_Assembly *target_set)
 {
     //LOG_POST(Error << "CGC_Assembly::CreateHierarchy()");
 
     ///
     /// generate the up-links as needed
     ///
+    if (target_set == NULL) {
+        target_set = this;
+    }
+    m_TargetSet = target_set;
     if (IsUnit()) {
         x_Index(*this);
     }
@@ -365,21 +370,23 @@ void CGC_Assembly::CreateHierarchy()
         switch (set.GetSet_type()) {
         case CGC_AssemblySet::eSet_type_assembly_set:
             /// each sub-assembly is its own entity and acts as its own root
-            set.SetPrimary_assembly().CreateHierarchy();
+            set.SetPrimary_assembly().CreateHierarchy(target_set);
             if (set.IsSetMore_assemblies()) {
                 NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
                                    set.SetMore_assemblies()) {
-                    (*it)->CreateHierarchy();
+                    (*it)->CreateHierarchy(target_set);
                 }
             }
             break;
 
         case CGC_AssemblySet::eSet_type_full_assembly:
             /// we are the root
+            set.SetPrimary_assembly().m_TargetSet = target_set;
             set.SetPrimary_assembly().x_Index(*this);
             if (set.IsSetMore_assemblies()) {
                 NON_CONST_ITERATE (CGC_AssemblySet::TMore_assemblies, it,
                                    set.SetMore_assemblies()) {
+                    (*it)->m_TargetSet = target_set;
                     (*it)->x_Index(*this);
                 }
             }
@@ -723,6 +730,28 @@ void CGC_Assembly::GetMolecules(list< CConstRef<CGC_Sequence> >& molecules,
     s_Extract(*this, molecules, subset);
 }
 
+CConstRef<CGC_Assembly> CGC_Assembly::GetTargetSet() const
+{
+    return CConstRef<CGC_Assembly>(m_TargetSet);
+}
+
+bool CGC_Assembly::IsTargetSetReference() const
+{
+    if (IsUnit() && GetUnit().GetFullAssembly().GetPointer() != this) {
+        /// Assembly unit which is part of a multi-unit assembly
+        return GetUnit().GetFullAssembly()->IsTargetSetReference();
+    } else if (IsAssembly_set() && GetAssembly_set().GetSet_type() == 
+                                   CGC_AssemblySet::eSet_type_assembly_set)
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "IsTargetSetReference() called on target set");
+    } else {
+        /// Full assembly
+        return m_TargetSet == this ||
+               &m_TargetSet->GetAssembly_set().GetPrimary_assembly()
+                     == this;
+    }
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
