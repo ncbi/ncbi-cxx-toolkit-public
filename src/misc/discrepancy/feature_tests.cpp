@@ -2358,7 +2358,7 @@ static bool IsStopCodon(const CCode_break::C_Aa& aa)
 DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, COverlappingFeatures, eDisc, "CDSs should have adjacent tRNA")
 {
     const CBioSource* biosrc = context.GetCurrentBiosource();
-    if (!biosrc && biosrc->GetGenome() != CBioSource::eGenome_mitochondrion) {
+    if (!biosrc || biosrc->GetGenome() != CBioSource::eGenome_mitochondrion) {
         return;
     }
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
