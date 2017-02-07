@@ -73,6 +73,7 @@
 #include "rapidjson11/filewritestream.h"
 #include "rapidjson11/ostreamwrapper.h"
 #include "rapidjson11/error/en.h"
+#include "rapidjson11/schema.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -1036,6 +1037,37 @@ public:
 
 private:
     _DocImpl m_DocImpl;
+    friend class CJson_Schema;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CJson_Schema
+///
+
+class CJson_Schema
+{
+public:
+    /// Construct JSON schema from JSON document
+    CJson_Schema(const CJson_Document& schema);
+
+    /// Validate JSON document against schema
+    bool Validate(const CJson_Document& v);
+    /// Return result of the most recent validation
+    bool IsValid(void) const;
+
+    /// Return property name which does not conform to schema
+    std::string GetInvalidValueProperty(void) const;
+    /// Return nonconforming value URI in the document
+    std::string GetInvalidValueDocumentUri(void) const;
+    /// Return nonconforming value URI in schema
+    std::string GetInvalidValueSchemaUri(void) const;
+    /// Return validation error
+    std::string GetValidationError() const;
+
+private:
+    rapidjson::SchemaDocument   m_SchemaDocument;
+    rapidjson::SchemaValidator  m_SchemaValidator;
 };
 
 
@@ -2229,6 +2261,48 @@ inline void CJson_Document::Walk(std::istream& in,
     rapidjson::IStreamWrapper ifs(in);
     rapidjson::Reader rdr;
     rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
+}
+
+// --------------------------------------------------------------------------
+// CJson_Schema methods
+
+
+inline CJson_Schema::CJson_Schema(const CJson_Document& schema)
+    : m_SchemaDocument(schema.m_DocImpl),
+      m_SchemaValidator( m_SchemaDocument)
+{
+}
+
+inline bool CJson_Schema::Validate(const CJson_Document& v) {
+    m_SchemaValidator.Reset();
+    return v.m_DocImpl.Accept(m_SchemaValidator);
+}
+inline bool CJson_Schema::IsValid(void) const {
+    return m_SchemaValidator.IsValid();
+}
+inline std::string CJson_Schema::GetInvalidValueProperty(void) const {
+    return m_SchemaValidator.GetInvalidSchemaKeyword();
+}
+inline std::string CJson_Schema::GetInvalidValueDocumentUri(void) const {
+    rapidjson::StringBuffer sb;
+    m_SchemaValidator.GetInvalidDocumentPointer().StringifyUriFragment(sb);
+    return sb.GetString();
+}
+inline std::string CJson_Schema::GetInvalidValueSchemaUri(void) const {
+    rapidjson::StringBuffer sb;
+    m_SchemaValidator.GetInvalidSchemaPointer().StringifyUriFragment(sb);
+    return sb.GetString();
+}
+inline std::string CJson_Schema::GetValidationError() const {
+    std::string res;
+    if (!IsValid()) {
+        res = "Invalid property \'"   + GetInvalidValueProperty()    +
+                "\' of value \'"        + GetInvalidValueDocumentUri() +
+                "\',  see schema at \'" + GetInvalidValueSchemaUri()   +
+                "\'";
+    }
+    return res;
+        
 }
 
 END_NCBI_SCOPE
