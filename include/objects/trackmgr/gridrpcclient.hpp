@@ -316,6 +316,7 @@ public:
 
     pair<CNetScheduleJob, bool> AskStream(CNcbiIstream& request, CNcbiOstream& reply) const
     {
+        CPerfLogGuard pl("CGridRPCBaseClient::AskStream");
         CGridClient grid_cli(m_NS_api.GetSubmitter(),
                              m_NC_api,
                              CGridClient::eManualCleanup,
@@ -370,12 +371,14 @@ public:
             }
             throw e;
         }
+        pl.Post(CRequestStatus::e200_Ok);
         return make_pair(job, timed_out);
     }
 
     template <class TRequest, class TReply>
     pair<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
     {
+        CPerfLogGuard pl("CGridRPCBaseClient::Ask");
         CGridClient grid_cli(m_NS_api.GetSubmitter(),
                              m_NC_api,
                              CGridClient::eManualCleanup,
@@ -432,6 +435,7 @@ public:
             }
             throw e;
         }
+        pl.Post(CRequestStatus::e200_Ok);
         return make_pair(job, timed_out);
     }
 
@@ -450,6 +454,7 @@ protected:
     template <class TReply>
     CNetScheduleJob x_GetJobById(const string job_id, TReply& reply) const
     {
+        CPerfLogGuard pl("CGridRPCBaseClient::x_GetJobById");
         CNetScheduleJob job;
         job.job_id = job_id;
 
@@ -478,6 +483,7 @@ protected:
                        "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
                       );
         }
+        pl.Post(CRequestStatus::e200_Ok);
         return job;
     }
 
