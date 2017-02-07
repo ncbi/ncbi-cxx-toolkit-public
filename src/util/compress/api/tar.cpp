@@ -2621,8 +2621,9 @@ bool CTar::x_PackCurrentName(STarHeader* h, bool link)
     }
 
     // Still, store the initial part in the original header
-    if (!packed)
+    if (!packed) {
         memcpy(dst, src, size);
+    }
 
     // Prepare extended block header with the long name info (old GNU style)
     _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
