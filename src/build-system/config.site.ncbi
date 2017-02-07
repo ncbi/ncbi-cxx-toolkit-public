@@ -280,6 +280,7 @@ case "$ncbi_platform" in
         else
             : ${VDB_PATH=$local_vdb_base/2.8.1}
         fi
+        : ${with_downloaded_vdb=no}
         ;;
     *MAC )
         if [ "x$with_vdb" = 'xrc' ]; then
@@ -287,6 +288,7 @@ case "$ncbi_platform" in
         else
             : ${VDB_PATH=$net_vdb_base/2.8.1}
         fi
+        : ${with_downloaded_vdb=no}
         ;;
 esac
 
