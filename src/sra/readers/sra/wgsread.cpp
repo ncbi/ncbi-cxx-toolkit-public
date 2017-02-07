@@ -468,6 +468,7 @@ struct CWGSDb_Impl::SScfTableCursor : public CObject {
 
     DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, COMPONENT_ID);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_one, COMPONENT_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, COMPONENT_LEN);
@@ -484,6 +485,7 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_VDB_COLUMN(SCAFFOLD_NAME),
       INIT_OPTIONAL_VDB_COLUMN(ACCESSION),
+      INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
       INIT_VDB_COLUMN(COMPONENT_ID),
       INIT_VDB_COLUMN(COMPONENT_START),
       INIT_VDB_COLUMN(COMPONENT_LEN),
@@ -507,6 +509,7 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
     DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
     DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
     DECLARE_VDB_COLUMN_AS_STRING(TITLE);
     DECLARE_VDB_COLUMN_AS_STRING(DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
@@ -530,6 +533,7 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(ACCESSION),
       INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
+      INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
       INIT_OPTIONAL_VDB_COLUMN(TITLE),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
@@ -1216,6 +1220,22 @@ bool CWGSDb_Impl::IsTSA(void) const
 }
 
 
+CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString prefix,
+                                            CTempString tag) const
+{
+    if ( prefix.empty() ) {
+        return null;
+    }
+    else {
+        CRef<CSeq_id> id(new CSeq_id);
+        CDbtag& dbtag = id->SetGeneral();
+        dbtag.SetDb(prefix);
+        sx_SetTag(dbtag, tag);
+        return id;
+    }
+}
+
+
 CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag,
                                             TGnlIdFlags gnl_id_flags) const
 {
@@ -1228,20 +1248,18 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag,
     SIZE_TYPE colon = tag.rfind(':');
     if ( colon != NPOS ) {
         dbtag.SetDb(tag.substr(0, colon));
-        sx_SetTag(dbtag, tag.substr(colon+1));
+        tag = tag.substr(colon+1);
     }
-    else if ( !m_IdPrefixWithVersion.empty() ) {
+    else {
         const string& db =
             gnl_id_flags & fGnlId_NoWGSVersion? m_IdPrefixDb: m_IdPrefixDbWithVersion;
         dbtag.SetDb(db);
         if ( NStr::StartsWith(tag, db) &&
              tag[db.size()] == ':' ) {
-            sx_SetTag(dbtag, tag.substr(db.size()+1));
-        }
-        else {
-            sx_SetTag(dbtag, tag);
+            tag = tag.substr(db.size()+1);
         }
     }
+    sx_SetTag(dbtag, tag);
     return id;
 }
 
@@ -1274,7 +1292,79 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
     if ( gnl_id_flags & fGnlId_NoWGSId ) {
         return null;
     }
-    return GetGeneralSeq_id(str, gnl_id_flags & fGnlId_NoWGSVersion);
+    return GetGeneralSeq_id(str, gnl_id_flags);
+}
+
+
+CRef<CSeq_id>
+CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
+                                      const SSeqTableCursor& cur,
+                                      TVDBRowId row) const
+{
+    if ( str.empty() ) {
+        return null;
+    }
+    int id = sx_GetStringId(str);
+    if ( id >= 0 && HasPatentId() ) {
+        return GetPatentSeq_id(id);
+    }
+    if ( id == row ) {
+        return null;
+    }
+    if ( cur.m_SEQID_GNL_PREFIX ) {
+        return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
+    }
+    else {
+        return GetGeneralSeq_id(str);
+    }
+}
+
+
+CRef<CSeq_id>
+CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
+                                      const SScfTableCursor& cur,
+                                      TVDBRowId row) const
+{
+    if ( str.empty() ) {
+        return null;
+    }
+    int id = sx_GetStringId(str);
+    if ( id >= 0 && HasPatentId() ) {
+        return GetPatentSeq_id(id);
+    }
+    if ( id == row ) {
+        return null;
+    }
+    if ( cur.m_SEQID_GNL_PREFIX ) {
+        return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
+    }
+    else {
+        return GetGeneralSeq_id(str);
+    }
+}
+
+
+CRef<CSeq_id>
+CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
+                                      const SProtTableCursor& cur,
+                                      TVDBRowId row) const
+{
+    if ( str.empty() ) {
+        return null;
+    }
+    int id = sx_GetStringId(str);
+    if ( id >= 0 && HasPatentId() ) {
+        return GetPatentSeq_id(id);
+    }
+    if ( id == row ) {
+        return null;
+    }
+    if ( cur.m_SEQID_GNL_PREFIX ) {
+        return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
+    }
+    else {
+        return GetGeneralSeq_id(str, fGnlId_NoWGSVersion);
+    }
 }
 
 
@@ -2355,23 +2445,15 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 }
 
 
+CRef<CSeq_id> CWGSSeqIterator::GetGeneralOrPatentSeq_id(void) const
+{
+    return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), *m_Cur, m_CurrId);
+}
+
+
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
 {
-    CWGSDb_Impl::TGnlIdFlags gnl_id_flags = CWGSDb_Impl::fGnlId_Default;
-    if ( m_Cur->m_SEQID_GNL_PREFIX ) {
-        CTempString prefix = m_Cur->SEQID_GNL_PREFIX(m_CurrId);
-        if ( prefix.empty() ) {
-            gnl_id_flags |= CWGSDb_Impl::fGnlId_NoWGSId;
-        }
-        else {
-            CRef<CSeq_id> id(new CSeq_id);
-            CDbtag& dbtag = id->SetGeneral();
-            dbtag.SetDb(prefix);
-            sx_SetTag(dbtag, GetContigName());
-            return id;
-        }
-    }
-    return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), m_CurrId, gnl_id_flags);
+    return GetGeneralOrPatentSeq_id();
 }
 
 
@@ -2494,7 +2576,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetId(TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             return id;
         }
     }
@@ -2518,7 +2600,7 @@ void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             ids.push_back(id);
         }
     }
@@ -4214,13 +4296,19 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 }
 
 
-CRef<CSeq_id> CWGSScaffoldIterator::GetGeneralSeq_id(void) const
+CRef<CSeq_id> CWGSScaffoldIterator::GetGeneralOrPatentSeq_id(void) const
 {
     CTempString name = GetScaffoldName();
     if ( name.empty() || sx_GetStringId(name) == m_CurrId ) {
         return null;
     }
     return GetDb().GetGeneralSeq_id(name);
+}
+
+
+CRef<CSeq_id> CWGSScaffoldIterator::GetGeneralSeq_id(void) const
+{
+    return GetGeneralOrPatentSeq_id();
 }
 
 
@@ -4248,7 +4336,7 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetId(TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             return id;
         }
     }
@@ -4272,7 +4360,7 @@ void CWGSScaffoldIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             ids.push_back(id);
         }
     }
@@ -4827,10 +4915,15 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 }
 
 
+CRef<CSeq_id> CWGSProteinIterator::GetGeneralOrPatentSeq_id(void) const
+{
+    return GetDb().GetGeneralOrPatentSeq_id(GetProteinName(), *m_Cur, m_CurrId);
+}
+
+
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
-    PROFILE(sw____GetProtGnlSeq_id);
-    return GetDb().GetGeneralOrPatentSeq_id(GetProteinName(), m_CurrId, CWGSDb_Impl::fGnlId_NoWGSVersion);
+    return GetGeneralOrPatentSeq_id();
 }
 
 
@@ -4867,7 +4960,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetId(TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             return id;
         }
     }
@@ -4891,7 +4984,7 @@ void CWGSProteinIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 
     if ( flags & fIds_gnl ) {
         // gnl
-        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+        if ( CRef<CSeq_id> id = GetGeneralOrPatentSeq_id() ) {
             ids.push_back(id);
         }
     }

@@ -247,6 +247,8 @@ public:
     };
     DECLARE_SAFE_FLAGS_TYPE(EGnlIdFlags, TGnlIdFlags);
     
+    CRef<CSeq_id> GetGeneralSeq_id(CTempString prefix,
+                                   CTempString tag) const;
     CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
                                    TGnlIdFlags gnl_id_flags = fGnlId_Default) const;
     CRef<CSeq_id> GetPatentSeq_id(int id) const;
@@ -457,6 +459,16 @@ protected:
     void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SIdxTableCursor>& curs, TVDBRowId row = 0);
 
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
+                                           const SSeqTableCursor& cur,
+                                           TVDBRowId row) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
+                                           const SScfTableCursor& cur,
+                                           TVDBRowId row) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
+                                           const SProtTableCursor& cur,
+                                           TVDBRowId row) const;
+    
 protected:
     // open tables
     void OpenTable(CVDBTable& table,
@@ -814,7 +826,9 @@ public:
     // return null if there is no such Seq-id
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGiSeq_id(void) const;
+    NCBI_DEPRECATED // use GetGeneralOrPatentSeq_id() instead
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(void) const;
 
     //CTempString GetGeneralId(void) const;
     CTempString GetContigName(void) const;
@@ -1067,7 +1081,9 @@ public:
 
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGiSeq_id(void) const;
+    NCBI_DEPRECATED // use GetGeneralOrPatentSeq_id() instead
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(void) const;
 
     CTempString GetScaffoldName(void) const;
 
@@ -1220,7 +1236,9 @@ public:
 
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGiSeq_id(void) const;
+    NCBI_DEPRECATED // use GetGeneralOrPatentSeq_id() instead
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(void) const;
 
     CTempString GetProteinName(void) const;
     CTempString GetProductName(void) const;
