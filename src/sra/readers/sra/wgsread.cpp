@@ -57,6 +57,7 @@
 #include <ncbi/ncbi.h>
 #include <insdc/insdc.h>
 #include <ncbi/wgs-contig.h>
+#include <vdb/vdb-priv.h>
 
 //#define COLLECT_PROFILE
 //#define TEST_ACC_VERSION
@@ -457,6 +458,9 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
     // uncomment lines to test algorithm on data without these columns
     //m_AMBIGUITY_MASK = CVDBColumnBits<8>();
     //m_GAP_START = CVDBColumnBits<32>();
+
+    // optimization - treat completely empty QUALITY column as inexistent - no quality graphs
+    m_QUALITY.ResetIfAlwaysEmpty(m_Cursor);
 }
 
 
