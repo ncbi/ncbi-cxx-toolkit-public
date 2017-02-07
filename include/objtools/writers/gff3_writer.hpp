@@ -423,10 +423,14 @@ protected:
     bool xAssignFeatureAttributeRptFamily(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    string xNextGenericId();
-    string xNextGeneId();
-    string xNextCdsId();
-    string xNextTrnaId();
+    string xNextGenericId(
+        const CMappedFeat& = CMappedFeat());
+    string xNextGeneId(
+        const CMappedFeat&);
+    string xNextCdsId(
+        const CMappedFeat&);
+    string xNextTrnaId(
+        const CMappedFeat&);
     string xNextAlignId();
 
 protected:
