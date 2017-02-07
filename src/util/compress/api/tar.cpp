@@ -2411,6 +2411,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 }
 
 
+static inline void sx_Signature(TBlock* block)
+{
+    _ASSERT(sizeof(block->header) + 4 < sizeof(block->buffer));
+    memcpy(block->buffer + sizeof(*block) - 4, "NCBI", 4);
+}
+
+
 void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
@@ -2419,15 +2426,16 @@ void CTar::x_WriteEntryInfo(const string& name)
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
-    CTarEntryInfo::EType type = m_Current.GetType();
-
     // Name(s) ('\0'-terminated if fit entirely, otherwise not)
-    if (!x_PackName(h, m_Current, false)) {
+    if (!x_PackCurrentName(h, false)) {
         TAR_THROW(this, eNameTooLong,
                   "Name '" + m_Current.GetName() + "' too long in"
                   " entry '" + name + '\'');
     }
-    if (type == CTarEntryInfo::eSymLink  &&  !x_PackName(h, m_Current, true)) {
+
+    CTarEntryInfo::EType type = m_Current.GetType();
+
+    if (type == CTarEntryInfo::eSymLink  &&  !x_PackCurrentName(h, true)) {
         TAR_THROW(this, eNameTooLong,
                   "Link '" + m_Current.GetLinkName() + "' too long in"
                   " entry '" + name + '\'');
@@ -2564,8 +2572,7 @@ void CTar::x_WriteEntryInfo(const string& name)
 
     // NCBI signature if allowed
     if (!(m_Flags & fStandardHeaderOnly)) {
-        _ASSERT(sizeof(block.header) + 4 < sizeof(block.buffer));
-        memcpy(block.buffer + sizeof(block) - 4, "NCBI", 4);
+        sx_Signature(&block);
     }
 
     // Final step: checksumming
@@ -2582,11 +2589,11 @@ void CTar::x_WriteEntryInfo(const string& name)
 }
 
 
-bool CTar::x_PackName(STarHeader* h, const CTarEntryInfo& info, bool link)
+bool CTar::x_PackCurrentName(STarHeader* h, bool link)
 {
-    size_t        size = link ? sizeof(h->linkname) : sizeof(h->name);
-    const string& name = link ? info.GetLinkName()  : info.GetName();
-    char*          dst = link ? h->linkname         : h->name;
+    const string& name = link ? m_Current.GetLinkName() : m_Current.GetName();
+    size_t        size = link ? sizeof(h->linkname)     : sizeof(h->name);
+    char*          dst = link ? h->linkname             : h->name;
     const char*    src = name.c_str();
     size_t         len = name.size();
 
@@ -2596,6 +2603,7 @@ bool CTar::x_PackName(STarHeader* h, const CTarEntryInfo& info, bool link)
         return true;
     }
 
+    bool packed = false;
     if (!link  &&  len <= sizeof(h->prefix) + 1 + sizeof(h->name)) {
         // Try to split the long name into a prefix and a short name (POSIX)
         size_t i = len;
@@ -2606,12 +2614,15 @@ bool CTar::x_PackName(STarHeader* h, const CTarEntryInfo& info, bool link)
         if (i  &&  len - i <= sizeof(h->name) + 1) {
             memcpy(h->prefix, src,         i);
             memcpy(h->name,   src + i + 1, len - i - 1);
-            return true;
+            if (!(m_Flags & fLongNameSupplement))
+                return true;
+            packed = true;
         }
     }
 
     // Still, store the initial part in the original header
-    memcpy(dst, src, size);
+    if (!packed)
+        memcpy(dst, src, size);
 
     // Prepare extended block header with the long name info (old GNU style)
     _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
@@ -2633,6 +2644,11 @@ bool CTar::x_PackName(STarHeader* h, const CTarEntryInfo& info, bool link)
 
     // Old GNU magic protrudes into adjacent version field
     memcpy(h->magic, "ustar  ", 8);  // 2 spaces and '\0'-terminated
+
+    // NCBI signature if allowed
+    if (!(m_Flags & fStandardHeaderOnly)) {
+        sx_Signature(block);
+    }
 
     s_TarChecksum(block, true);
 

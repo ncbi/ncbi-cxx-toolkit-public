@@ -301,6 +301,10 @@ public:
         /// when extracting (the latter is the default POSIX requirement).
         fSkipUnsupported    = (1<<15),
 
+        // --- Append ---
+        /// Always use OldGNU headers for long names (default:only when needed)
+        fLongNameSupplement = (1<<18),
+
         // --- Debugging ---
         fDumpEntryHeaders   = (1<<20),
         fSlowSkipWithRead   = (1<<21),
@@ -647,8 +651,8 @@ private:
     // Read information about current entry in the archive.
     EStatus x_ReadEntryInfo(bool dump, bool pax);
 
-    // Pack either name or linkname into archive entry header.
-    bool x_PackName(STarHeader* header, const CTarEntryInfo& info, bool link);
+    // Pack current name or linkname into archive entry header.
+    bool x_PackCurrentName(STarHeader* header, bool link);
 
     // Write information for current entry into the archive.
     void x_WriteEntryInfo(const string& name);

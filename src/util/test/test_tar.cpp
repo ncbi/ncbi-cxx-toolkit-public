@@ -213,6 +213,7 @@ void CTarTest::Init(void)
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("s", "Use stream operations with archive [non-standard]");
     args->AddFlag("S", "Stream archive through [non-standard]");
+    args->AddFlag("G", "Supplement long names with addtl header [non-std]");
     args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("v", "Turn on debugging information");
     args->AddFlag("lfs", "Large File Support check [non-standard]");
@@ -570,6 +571,9 @@ int CTarTest::Run(void)
     }
     if (args["I"].HasValue()) {
         m_Flags |=  CTar::fSkipUnsupported;
+    }
+    if (args["G"].HasValue()) {
+        m_Flags |=  CTar::fLongNameSupplement;
     }
     if (args["Z"].HasValue()) {
         m_Flags |=  CTar::fStandardHeaderOnly;
