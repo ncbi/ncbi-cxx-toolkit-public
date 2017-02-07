@@ -480,6 +480,12 @@ public:
             Init(cursor, element_bit_size, name, backup_name, missing);
         }
 
+    void Reset(void)
+        {
+            m_Index = kInvalidIndex;
+        }
+    void ResetIfAlwaysEmpty(const CVDBCursor& cursor);
+
     const char* GetName(void) const
         {
             return m_Name;

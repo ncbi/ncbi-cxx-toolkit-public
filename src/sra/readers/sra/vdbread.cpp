@@ -1009,6 +1009,27 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 }
 
 
+void CVDBColumn::ResetIfAlwaysEmpty(const CVDBCursor& cursor)
+{
+    if ( !*this ) {
+        return;
+    }
+    bool static_value;
+    if ( VCursorIsStaticColumn(cursor, GetIndex(), &static_value) ) {
+        // cannot get 'static' value -> do nothing
+        return;
+    }
+    try {
+        if ( static_value && CVDBValue(cursor, 1, *this).empty() ) {
+            // value is always empty
+            Reset();
+        }
+    }
+    catch ( CException& /*ignored*/ ) {
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVDBValue
 
