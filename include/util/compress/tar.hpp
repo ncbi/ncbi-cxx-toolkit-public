@@ -71,21 +71,21 @@ BEGIN_NCBI_SCOPE
 
 enum ETarModeBits {
     // Special mode bits
-    fTarSetUID   = 04000,       // set UID on execution
-    fTarSetGID   = 02000,       // set GID on execution
-    fTarSticky   = 01000,       // reserved (sticky bit)
+    fTarSetUID   = 04000,       ///< set UID on execution
+    fTarSetGID   = 02000,       ///< set GID on execution
+    fTarSticky   = 01000,       ///< reserved (sticky bit)
     // File permissions
-    fTarURead    = 00400,       // read by owner
-    fTarUWrite   = 00200,       // write by owner
-    fTarUExecute = 00100,       // execute/search by owner
-    fTarGRead    = 00040,       // read by group
-    fTarGWrite   = 00020,       // write by group
-    fTarGExecute = 00010,       // execute/search by group
-    fTarORead    = 00004,       // read by other
-    fTarOWrite   = 00002,       // write by other
-    fTarOExecute = 00001        // execute/search by other
+    fTarURead    = 00400,       ///< read by owner
+    fTarUWrite   = 00200,       ///< write by owner
+    fTarUExecute = 00100,       ///< execute/search by owner
+    fTarGRead    = 00040,       ///< read by group
+    fTarGWrite   = 00020,       ///< write by group
+    fTarGExecute = 00010,       ///< execute/search by group
+    fTarORead    = 00004,       ///< read by other
+    fTarOWrite   = 00002,       ///< write by other
+    fTarOExecute = 00001        ///< execute/search by other
 };
-typedef unsigned int TTarMode;  // Bitwise OR of ETarModeBits
+typedef unsigned int TTarMode;  ///< Bitwise OR of ETarModeBits
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -645,7 +645,7 @@ private:
     void x_Backspace(EAction action);  // NB: m_ZeroBlockCount blocks back
     void x_Skip(Uint8 blocks);         // NB: Can do by either skip or read
 
-    // Parse in extended entry information (POSIX) for the current entry.
+    // Parse in extended entry information (PAX) for the current entry.
     EStatus x_ParsePAXData(const string& buffer);
 
     // Read information about current entry in the archive.
