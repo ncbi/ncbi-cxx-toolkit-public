@@ -565,6 +565,51 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
 }
 
 
+CRef<CSeq_align> CFastaReader::xCreateAlignment(CRef<CSeq_id> old_id, 
+                CRef<CSeq_id> new_id, 
+                TSeqPos range_start,
+                TSeqPos range_end)
+{
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_partial); // ?
+    align->SetDim(2);
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
+    denseg.SetNumseg(1);
+    denseg.SetDim(2); // redundant, but required by validator
+    denseg.SetIds().push_back(new_id);
+    denseg.SetIds().push_back(old_id);
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(range_start);
+    if (range_start > range_end) { // negative strand
+        denseg.SetLens().push_back(range_start + 1 - range_end);
+        denseg.SetStrands().push_back(eNa_strand_plus);
+        denseg.SetStrands().push_back(eNa_strand_minus);
+    } else {
+        denseg.SetLens().push_back(range_end + 1 - range_start);
+    }
+
+    return align;
+}
+
+
+bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EMol& mol) {
+
+    for (auto pId : ids) {
+        const CSeq_id::EAccessionInfo acc_info = pId->IdentifyAccession();
+        if (acc_info & CSeq_id::fAcc_nuc) {
+            mol = CSeq_inst::eMol_na; 
+            return true;
+        }
+
+        if (acc_info & CSeq_id::fAcc_prot) {
+            mol = CSeq_inst::eMol_aa;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
     TSeqPos range_start, range_end;
@@ -575,7 +620,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     parseInfo.maxIdLength = m_MaxIDLength;
     parseInfo.lineNumber = LineNumber();
 
-    ParseDefLine(s,
+    CFastaDeflineReader::ParseDefline(s,
                  parseInfo,
                  m_ignorable,
                  SetIDs(), 
@@ -594,45 +639,24 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
         }
         GenerateID();
     } else if ( !TestFlag(fForceType) ) {
-        // Does any ID imply a specific type?
-        ITERATE (CBioseq::TId, it, GetIDs()) {
-            CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
-            if (acc_info & CSeq_id::fAcc_nuc) {
-                _ASSERT ( !(acc_info & CSeq_id::fAcc_prot) );
-                m_CurrentSeq->SetInst().SetMol(CSeq_inst::eMol_na);
-                break;
-            } else if (acc_info & CSeq_id::fAcc_prot) {
-                m_CurrentSeq->SetInst().SetMol(CSeq_inst::eMol_aa);
-                break;
-            }
-            // XXX - verify that other IDs aren't contradictory?
+        CSeq_inst::EMol mol;
+        if (xSetSeqMol(GetIDs(), mol)) {
+            m_CurrentSeq->SetInst().SetMol(mol);
         }
     }
 
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
 
+
     if (has_range) {
         // generate a new ID, and record its relation to the given one(s).
         SetIDs().clear();
         GenerateID();
-        CRef<CSeq_align> sa(new CSeq_align);
-        sa->SetType(CSeq_align::eType_partial); // ?
-        sa->SetDim(2);
-        CDense_seg& ds = sa->SetSegs().SetDenseg();
-        ds.SetNumseg(1);
-        ds.SetDim(2); // redundant, but required by validator
-        ds.SetIds().push_back(GetIDs().front());
-        ds.SetIds().push_back(m_BestID);
-        ds.SetStarts().push_back(0);
-        ds.SetStarts().push_back(range_start);
-        if (range_start > range_end) { // negative strand
-            ds.SetLens().push_back(range_start + 1 - range_end);
-            ds.SetStrands().push_back(eNa_strand_plus);
-            ds.SetStrands().push_back(eNa_strand_minus);
-        } else {
-            ds.SetLens().push_back(range_end + 1 - range_start);
-        }
-        m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(sa);
+
+        CRef<CSeq_align> align = xCreateAlignment(m_BestID, 
+            GetIDs().front(), range_start, range_end);
+
+        m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(align);
         _ASSERT(m_BestID->IsLocal()  ||  !GetIDs().front()->IsLocal()
                 ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
         m_BestID = GetIDs().front();
@@ -819,19 +843,8 @@ void CFastaReader::GenerateID(void)
 {
     CRef<CSeq_id> id = m_IDHandler->GenerateID(TestFlag(fUniqueIDs));
     SetIDs().push_back(id);
-/*
-    if (TestFlag(fUniqueIDs)) { // be extra careful
-        CRef<CSeq_id> id;
-        TIDTracker::const_iterator idt_end = m_IDTracker.end();
-        do {
-            id = m_IDGenerator->GenerateID(true);
-        } while (m_IDTracker.find(CSeq_id_Handle::GetHandle(*id)) != idt_end);
-        SetIDs().push_back(id);
-    } else {
-        SetIDs().push_back(m_IDGenerator->GenerateID(true));
-    }
-    */
 }
+
 
 void CFastaReader::CheckDataLine(
     const TStr& s, ILineErrorListener * pMessageListener)

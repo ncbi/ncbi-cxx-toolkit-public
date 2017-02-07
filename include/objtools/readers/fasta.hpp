@@ -339,6 +339,14 @@ protected:
         SGap & operator = (const SGap & );
         SGap(const SGap & rhs);
     };
+        
+    CRef<CSeq_align> xCreateAlignment(CRef<CSeq_id> old_id, 
+        CRef<CSeq_id> new_id, 
+        TSeqPos range_start,
+        TSeqPos range_end);
+
+    bool xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EMol& mol);
+
     typedef CRef<SGap> TGapRef;
     typedef vector<TGapRef>     TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;
