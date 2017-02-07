@@ -706,6 +706,9 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
         NCBI_THROW(CException, eUnknown, "Conflicts found");                      
     }
 
+    COrgName_Base::TMod mods;
+    CBioSource_Base::TSubtype subtypes;
+
     ITERATE(TFieldDiffList, it, diffs) {
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
             SetOrg().SetTaxname((*it)->GetSampleVal());
@@ -732,7 +735,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
                     CRef<COrgMod> mod(new COrgMod());
                     mod->SetSubtype(subtype);
                     mod->SetSubname(sample_val);
-                    SetOrg().SetOrgname().SetMod().push_back(mod);
+                    mods.push_back(mod);
                 }
             } catch (...) {
                 try {
@@ -742,13 +745,21 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
                         CRef<CSubSource> sub(new CSubSource());
                         sub->SetSubtype(subtype);
                         sub->SetName(sample_val);
-                        SetSubtype().push_back(sub);
+                        subtypes.push_back(sub);
                     }
                 } catch (...) {
                     NCBI_THROW(CException, eUnknown, "Unknown field name");
                 }
             }
         }
+    }
+
+    if (!mods.empty()) {
+        SetOrg().SetOrgname().SetMod().splice(SetOrg().SetOrgname().SetMod().end(), mods);
+    }
+
+    if (!subtypes.empty()) {
+        SetSubtype().splice(SetSubtype().end(), subtypes);
     }
 
     AutoFix();

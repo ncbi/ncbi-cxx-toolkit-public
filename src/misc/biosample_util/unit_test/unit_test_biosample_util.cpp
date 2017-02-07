@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     src->SetOrg().SetOrgname().SetLineage("Bacteria; Proteobacteria; Epsilonproteobacteria;  Campylobacterales; Campylobacteraceae; Campylobacter");
     src->SetOrg().SetOrgname().SetGcode(11);
     src->SetOrg().SetOrgname().SetDiv("BCT");
+    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_culture_collection, "TEST:TEST02");
 
     CRef<CBioSource> biosample(new CBioSource());
     biosample->SetOrg().SetTaxname("Campylobacter jejuni Cj3");
@@ -210,7 +211,9 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     biosample->SetOrg().SetOrgname().SetDiv("BCT");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_country, "Thailand");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_isolation_source, "stool");
- 
+    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_culture_collection, "TEST:TEST01");
+    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_culture_collection, "TEST:TEST02");
+
     src->UpdateWithBioSample(*biosample, true);
 
     TFieldDiffList diff_list = src->GetBiosampleDiffs(*biosample);
