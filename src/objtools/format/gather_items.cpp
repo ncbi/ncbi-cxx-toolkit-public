@@ -1756,8 +1756,11 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
         if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
             CConstRef<CSeq_feat> src_feat = x_GetSourceFeatFromCDS (bh);
             if (src_feat.NotEmpty()) {
-                CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
-                CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(mapped_feat, ctx, m_Feat_Tree));
+                // CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
+                const CSeq_feat& feat = *src_feat;
+                const CSeqFeatData& data = feat.GetData();
+                const CBioSource& src = data.GetBiosrc();
+                CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(src, range, ctx, m_Feat_Tree));
                 srcs.push_back(sf);
                 return;
             }
