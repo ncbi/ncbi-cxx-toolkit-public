@@ -6,8 +6,8 @@ SRC = journal_hook journal_report pub_report seq_entry_hook seqid_hook unpub_hoo
       unpub_report utils
 
 LIB = eutils_client hydra_client xmlwrapp xvalidate $(OBJEDIT_LIBS) xalnmgr \
-      xobjutil valerr submit pubmed xconnect $(SOBJMGR_LIBS)
+      xobjutil valerr submit pubmed xconnect xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
-LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 WATCHERS = dobronad
