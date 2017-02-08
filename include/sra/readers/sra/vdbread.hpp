@@ -148,7 +148,7 @@ public:
     CVPath(const CVFSManager& mgr, const string& path, EType type = eSys);
     NCBI_DEPRECATED_CTOR(explicit CVPath(const string& path, EType type = eSys));
 
-    CTempString ToString() const;
+    string ToString(EType type = eSys) const;
 
     // Check if argument string is plain VDB accession,
     // otherwise it's a system path.

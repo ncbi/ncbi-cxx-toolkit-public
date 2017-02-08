@@ -248,14 +248,24 @@ void CVPath::x_Init(const CVFSManager& mgr, const string& path, EType type)
 }
 
 
-CTempString CVPath::ToString() const
+string CVPath::ToString(EType type) const
 {
-    String str;
-    if ( rc_t rc = VPathGetPath(*this, &str) ) {
-        NCBI_THROW2(CSraException, eOtherError,
-                    "Cannot get path from VPath", rc);
+    const String* str = 0;
+    if (type == eSys) {
+        if (rc_t rc = VPathMakeSysPath(*this, &str)) {
+            NCBI_THROW2(CSraException, eOtherError,
+                "Cannot get path from VPath", rc);
+        }
     }
-    return CTempString(str.addr, str.size);
+    else {
+        if (rc_t rc = VPathMakeString(*this, &str)) {
+            NCBI_THROW2(CSraException, eOtherError,
+                "Cannot get path from VPath", rc);
+        }
+    }
+    string ret(str->addr, str->size);
+    StringWhack(str);
+    return ret;
 }
 
 
@@ -484,7 +494,7 @@ string CVDBMgr::GetCacheRoot() const
         NCBI_THROW2(CSraException, eOtherError,
                     "CVDBMgr: Cannot get cache root", rc);
     }
-    return CVPath(ret).ToString();
+    return CVPath(ret).ToString(CVPath::eSys);
 }
 
 
