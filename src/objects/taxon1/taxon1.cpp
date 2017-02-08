@@ -2222,5 +2222,32 @@ CTaxon1::GetDisplayCommonName( TTaxId tax_id, string& disp_name_out )
     return true;
 }
 
+//--------------------------------------------------
+// Get scientific name for taxonomy id
+// Returns: false if some error occurred (name_out not changed)
+//          true  if Ok
+//                name_out contains scientific name of this node
+///
+bool 
+CTaxon1::GetScientificName(TTaxId tax_id, string& name_out)
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode ) {
+	if( !pNode->GetName().empty() ) {
+	    name_out.assign( pNode->GetName() );
+	    return true;
+	} else {
+	    SetLastError( "ERROR: No scientific name at the node" );
+	}
+    }
+    return false;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -101,6 +101,14 @@ public:
     ///
     CRef< CTaxon2_data > GetById(TTaxId tax_id);
 
+    //--------------------------------------------------
+    // Get scientific name for taxonomy id
+    // Returns: false if some error occurred (name_out not changed)
+    //          true  if Ok
+    //                name_out contains scientific name of this node
+    ///
+    bool GetScientificName(TTaxId tax_id, string& name_out);
+
     //----------------------------------------------
     // Get organism data by OrgRef
     // Returns: pointer to Taxon2Data if organism exists
@@ -123,7 +131,7 @@ public:
     // Get tax_id by OrgRef
     // Returns: tax_id - if organism found
     //               0 - no organism found
-    //              -1 - error during processing occured
+    //              -1 - error occurred during processing
     //         -tax_id - if multiple nodes found
     //                   (where tax_id > 1 is id of one of the nodes)
     // NOTE:
@@ -163,7 +171,7 @@ public:
     // Get tax_id by organism name
     // Returns: tax_id - if organism found
     //               0 - no organism found
-    //              -1 - error during processing occured
+    //              -1 - error during processing occurred
     //         -tax_id - if multiple nodes found
     //                   (where tax_id > 1 is id of one of the nodes)
     ///
@@ -173,7 +181,7 @@ public:
     // Get tax_id by organism "unique" name
     // Returns: tax_id - if organism found
     //               0 - no organism found
-    //              -1 - error during processing occured
+    //              -1 - error during processing occurred
     //         -tax_id - if multiple nodes found
     //                   (where tax_id > 1 is id of one of the nodes)
     ///
@@ -186,7 +194,7 @@ public:
     // Returns: tax_id - if organism found
     //               0 - no organism found
     //              -1 - if multiple nodes found
-    //              -2 - error during processing occured
+    //              -2 - error during processing occurred
     ///
     TTaxId SearchTaxIdByName(const string& orgname,
 			     ESearch mode = eSearch_TokenSet,
@@ -202,7 +210,7 @@ public:
     //----------------------------------------------
     // Get organism by tax_id
     // Returns: pointer to OrgRef structure if organism found
-    //          NULL - if no such organism in taxonomy database or error occured 
+    //          NULL - if no such organism in taxonomy database or error occurred 
     //                 (check GetLastError() for the latter)
     // NOTE:
     // This function does not make a copy of OrgRef structure but returns
