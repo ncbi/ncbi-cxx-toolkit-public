@@ -641,7 +641,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     char*       iter_header;
     EReqMethod  req_method;
 
-    if (!uuu->net_info->firewall  &&  info  &&  info->type != fSERV_Firewall) {
+    assert(uuu->net_info->firewall  ||  info);
+    if (!uuu->net_info->firewall  &&  info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
         /* We know the connection point, let's try to use it! */
         if (info->type != fSERV_Standalone  ||  !net_info->stateless) {
@@ -712,15 +713,12 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
-        if (info) {
-            type = info->type == fSERV_Firewall
-                ? info->u.firewall.type
-                : info->type;
-        } else
-            type = fSERV_Any/*0*/;
+
         if (!net_info->scheme)
             net_info->scheme = eURL_Https;
-        if (type & fSERV_Http) {
+        if (info  &&  (fSERV_Http & (type = info->type == fSERV_Firewall
+                                     ? info->u.firewall.type
+                                     : info->type))) {
             req_method = (type == fSERV_HttpGet
                           ? eReqMethod_Get
                           : (type == fSERV_HttpPost
@@ -728,7 +726,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                              : eReqMethod_Any));
             net_info->stateless = 1/*true*/;
         } else
-            req_method = net_info->stateless ? eReqMethod_Any : eReqMethod_Get;
+            req_method = eReqMethod_Any;
         if (info) {
             mime_t = info->mime_t;
             mime_s = info->mime_s;
@@ -803,6 +801,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         net_info->max_try = 1;
+        net_info->req_method = eReqMethod_Get;
         c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);
