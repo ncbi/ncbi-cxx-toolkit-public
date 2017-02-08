@@ -3780,7 +3780,7 @@ bool sGetFeatureGeneBiotypeWrapper(
 
     //for debugging specific genes:
     // size_t start = mf.GetLocation().GetInt().GetStart(objects::eExtreme_Positional);
-    // if (XXXX == start) {
+    // if (start == 23365505-1) {
     //     cerr << "";
     // }
 
@@ -3840,9 +3840,10 @@ bool sGetFeatureGeneBiotypeWrapper(
     CSeqFeatData::ESubtype singleSubtype = SUBTYPE(bad);
     CMappedFeat nonPseudo;
 
+    bool geneIsPseudo = mf.IsSetPseudo() && mf.GetPseudo();
     for (MFSit it = vecOthers.begin(); it != vecOthers.end(); it++) {
         CSeqFeatData::ESubtype currentSubtype = it->GetFeatSubtype();
-        if (!it->IsSetPseudo() || !it->GetPseudo()) {
+        if (!geneIsPseudo  &&  (!it->IsSetPseudo() || !it->GetPseudo())) {
             nonPseudo = *it;
         }
         if (singleSubtype == SUBTYPE(bad)) {
