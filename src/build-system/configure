@@ -803,10 +803,10 @@ PNG_INCLUDE
 PNG_LIBS
 TIFF_INCLUDE
 TIFF_LIBS
-UNGIF_INCLUDE
-UNGIF_LIBS
 GIF_INCLUDE
 GIF_LIBS
+UNGIF_INCLUDE
+UNGIF_LIBS
 XPM_INCLUDE
 XPM_LIBS
 freetype_config
@@ -42801,184 +42801,7 @@ _ACEOF
 
 # Paths?
 with_ungif=$with_gif
-if test "$with_ungif" != "no"; then
-    case "$with_ungif" in
-       yes | "" ) ;;
-       *        ) UNGIF_PATH=$with_ungif ;;
-    esac
-    if test "$UNGIF_PATH" != /usr -a -d "$UNGIF_PATH"; then
-       in_path=" in $UNGIF_PATH"
-       if test -z "$UNGIF_INCLUDE" -a -d "$UNGIF_PATH/include"; then
-          UNGIF_INCLUDE="-I$UNGIF_PATH/include"
-       fi
-       if test -n "$UNGIF_LIBPATH"; then
-          :
-       elif test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
-          ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $UNGIF_PATH/lib${bit64_sfx}; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $UNGIF_PATH/lib${bit64_sfx}; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
- fi
-       elif test -d "$UNGIF_PATH/lib"; then
-          ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $UNGIF_PATH/lib; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $UNGIF_PATH/lib; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
- fi
-       fi
-       UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
-    else
-       UNGIF_INCLUDE=""
-       UNGIF_LIBS="-lungif $X_LIBS -lX11"
-       in_path=
-    fi
-    { echo "$as_me:$LINENO: checking for libungif$in_path" >&5
-echo $ECHO_N "checking for libungif$in_path... $ECHO_C" >&6; }
-if test "${ncbi_cv_lib_ungif+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  CPPFLAGS=" $UNGIF_INCLUDE $orig_CPPFLAGS"
-       LIBS="$UNGIF_LIBS  $orig_LIBS"
-       cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-extern "C" {
-                  #include <gif_lib.h>
-                  }
-int
-main ()
-{
-GifFileType* fp = DGifOpenFileName("foo");
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_lib_ungif=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ncbi_cv_lib_ungif=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_ungif" >&5
-echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6; }
-    if test "$ncbi_cv_lib_ungif" = "no"; then
-       if test "${with_ungif:=no}" != no; then
-       { { echo "$as_me:$LINENO: error: --with-ungif explicitly specified, but no usable version found." >&5
-echo "$as_me: error: --with-ungif explicitly specified, but no usable version found." >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-    fi
- fi
- if test "$with_ungif" = "no"; then
-    UNGIF_PATH="No_UNGIF"
-    UNGIF_INCLUDE=
-    UNGIF_LIBS=
- else
-              WithPackages="$WithPackages${WithPackagesSep}UNGIF"; WithPackagesSep=" "
-    UNGIF_INCLUDE=" $UNGIF_INCLUDE"
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBUNGIF 1
-_ACEOF
-
- fi
-
-
-
-if test "$with_ungif" = "no"; then
-   if test "$with_gif" != "no"; then
+if test "$with_gif" != "no"; then
     case "$with_gif" in
        yes | "" ) ;;
        *        ) GIF_PATH=$with_gif ;;
@@ -43073,8 +42896,8 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 extern "C" {
-                     #include <gif_lib.h>
-                     }
+                  #include <gif_lib.h>
+                  }
 int
 main ()
 {
@@ -43154,14 +42977,191 @@ _ACEOF
 
 
 
+if test "$with_gif" = "no"; then
+   if test "$with_ungif" != "no"; then
+    case "$with_ungif" in
+       yes | "" ) ;;
+       *        ) UNGIF_PATH=$with_ungif ;;
+    esac
+    if test "$UNGIF_PATH" != /usr -a -d "$UNGIF_PATH"; then
+       in_path=" in $UNGIF_PATH"
+       if test -z "$UNGIF_INCLUDE" -a -d "$UNGIF_PATH/include"; then
+          UNGIF_INCLUDE="-I$UNGIF_PATH/include"
+       fi
+       if test -n "$UNGIF_LIBPATH"; then
+          :
+       elif test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$UNGIF_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $UNGIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $UNGIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
+    else
+       UNGIF_INCLUDE=""
+       UNGIF_LIBS="-lungif $X_LIBS -lX11"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libungif$in_path" >&5
+echo $ECHO_N "checking for libungif$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_ungif+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $UNGIF_INCLUDE $orig_CPPFLAGS"
+       LIBS="$UNGIF_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern "C" {
+                     #include <gif_lib.h>
+                     }
+int
+main ()
+{
+GifFileType* fp = DGifOpenFileName("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_ungif=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_ungif=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_ungif" >&5
+echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6; }
+    if test "$ncbi_cv_lib_ungif" = "no"; then
+       if test "${with_ungif:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-ungif explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-ungif explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_ungif" = "no"; then
+    UNGIF_PATH="No_UNGIF"
+    UNGIF_INCLUDE=
+    UNGIF_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}UNGIF"; WithPackagesSep=" "
+    UNGIF_INCLUDE=" $UNGIF_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBUNGIF 1
+_ACEOF
+
+ fi
+
+
+
 else
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBGIF 1
+#define HAVE_LIBUNGIF 1
 _ACEOF
 
-   GIF_INCLUDE=$UNGIF_INCLUDE
-   GIF_LIBS=$UNGIF_LIBS
+   UNGIF_INCLUDE=$GIF_INCLUDE
+   UNGIF_LIBS=$GIF_LIBS
 fi
 
 case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
@@ -47478,7 +47478,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -48829,10 +48829,10 @@ ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 TIFF_LIBS!$TIFF_LIBS$ac_delim
-UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
-UNGIF_LIBS!$UNGIF_LIBS$ac_delim
 GIF_INCLUDE!$GIF_INCLUDE$ac_delim
 GIF_LIBS!$GIF_LIBS$ac_delim
+UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
+UNGIF_LIBS!$UNGIF_LIBS$ac_delim
 XPM_INCLUDE!$XPM_INCLUDE$ac_delim
 XPM_LIBS!$XPM_LIBS$ac_delim
 freetype_config!$freetype_config$ac_delim

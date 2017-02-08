@@ -7125,21 +7125,21 @@ NCBI_CHECK_THIRD_PARTY_LIB(tiff,
 
 # Paths?
 with_ungif=$with_gif
-NCBI_CHECK_THIRD_PARTY_LIB(ungif,
+NCBI_CHECK_THIRD_PARTY_LIB(gif,
  AC_LANG_PROGRAM([extern "C" {
                   #include <gif_lib.h>
                   }],
     [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
-if test "$with_ungif" = "no"; then
-   NCBI_CHECK_THIRD_PARTY_LIB(gif,
+if test "$with_gif" = "no"; then
+   NCBI_CHECK_THIRD_PARTY_LIB(ungif,
     AC_LANG_PROGRAM([extern "C" {
                      #include <gif_lib.h>
                      }],
        [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
 else
-   AC_DEFINE(HAVE_LIBGIF, 1, [Define to 1 if libgif is available.])
-   GIF_INCLUDE=$UNGIF_INCLUDE
-   GIF_LIBS=$UNGIF_LIBS
+   AC_DEFINE(HAVE_LIBUNGIF, 1, [Define to 1 if libungif is available.])
+   UNGIF_INCLUDE=$GIF_INCLUDE
+   UNGIF_LIBS=$GIF_LIBS
 fi
 
 case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
