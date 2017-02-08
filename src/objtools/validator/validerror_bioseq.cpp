@@ -9679,6 +9679,11 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
 {
+    // This check is applicable to nucleotide sequences only
+    if (!seq.IsNa()) {
+        return;
+    }
+
     // EMBL or DDBJ check
     bool embl_ddbj = false;
     ITERATE(CBioseq::TId, id, seq.GetId()) {
