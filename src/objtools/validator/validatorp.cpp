@@ -569,7 +569,7 @@ void CValidError_imp::PostErr
  TFeat          ft)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -634,7 +634,7 @@ void CValidError_imp::PostErr
  TSet          st)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -654,7 +654,7 @@ void CValidError_imp::PostErr
  TDesc          ds)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -706,7 +706,7 @@ void CValidError_imp::PostErr
  TAnnot         an)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -728,7 +728,7 @@ void CValidError_imp::PostErr
  TGraph         graph)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -756,7 +756,7 @@ void CValidError_imp::PostErr
  TGraph         graph)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -783,7 +783,7 @@ void CValidError_imp::PostErr
  TAlign        align)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -830,7 +830,7 @@ void CValidError_imp::PostErr
  TEntry        entry)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -856,7 +856,7 @@ void CValidError_imp::PostErr
  const CBioSource& src)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -873,7 +873,7 @@ void CValidError_imp::PostErr
  const COrg_ref& org)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -890,7 +890,7 @@ void CValidError_imp::PostErr
  const CPubdesc& pd)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
@@ -907,7 +907,7 @@ void CValidError_imp::PostErr
  const CSeq_submit& ss)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
