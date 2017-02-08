@@ -143,6 +143,7 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
 class CPubData
 {
 public:
+    typedef vector<string> TSeqIds;
 
     CPubData() :
         m_year(0),
@@ -153,7 +154,7 @@ public:
     const list<string>& GetAuthors() const
     { return m_authors; }
 
-    const list<string>& GetSeqIds() const
+    const TSeqIds& GetSeqIds() const
     { return m_seq_ids; }
 
     const list<string>& GetTitleWords() const
@@ -235,7 +236,7 @@ public:
 
     void SortSeqIds()
     {
-        m_seq_ids.sort();
+        sort(m_seq_ids.begin(), m_seq_ids.end());
     }
 
     void SetVolume(const string& volume)
@@ -246,7 +247,7 @@ public:
 
 private:
     list<string> m_authors;
-    list<string> m_seq_ids;
+    TSeqIds m_seq_ids;
 
     mutable list<string> m_titlewords;
 
@@ -265,22 +266,15 @@ private:
 
     void CreateTitleWords() const
     {
-        string word;
-        for (auto ch = m_title.begin(); ch != m_title.end(); ++ch) {
-            if (isalnum(*ch)) {
-                word += *ch;
-            }
-            else {
-                if (!word.empty()) {
-                    m_titlewords.push_back(word);
-                }
-                word.clear();
-            }
-        }
+        string title = NStr::Sanitize(m_title);
+        NStr::ReplaceInPlace(title, ",", " ");
+        NStr::ReplaceInPlace(title, ":", " ");
+        NStr::ReplaceInPlace(title, "(", " ");
+        NStr::ReplaceInPlace(title, ")", " ");
+        NStr::ReplaceInPlace(title, "-", " ");
+        NStr::ReplaceInPlace(title, ".", " ");
 
-        if (!word.empty()) {
-            m_titlewords.push_back(word);
-        }
+        NStr::Split(title, " ", m_titlewords, NStr::fSplit_Tokenize);
     }
 
     void CreateFullTitle() const
@@ -606,7 +600,7 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
     return ret;
 }
 
-static bool CheckRefs(const CMedline_entry& medline_entry, const list<string>& seq_ids)
+static bool CheckRefs(const CMedline_entry& medline_entry, const CPubData::TSeqIds& seq_ids)
 {
     bool ret = true;
     if (medline_entry.IsSetXref()) {
@@ -614,12 +608,11 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const list<string>& s
         ret = false;
         ITERATE(CMedline_entry::TXref, xref, medline_entry.GetXref()) {
 
-            if ((*xref)->IsSetCit() && (*xref)->IsSetType() && (*xref)->GetType() == CMedline_si::eType_genbank) {
+            if ((*xref)->IsSetCit()) {
 
-                ITERATE(list<string>, id, seq_ids) {
-                    if (NStr::StartsWith(*id, "gb", NStr::eNocase) && NStr::EndsWith(*id, (*xref)->GetCit())) {
-                        return true;
-                    }
+                // seq_ids should be sorted by this time
+                if (binary_search(seq_ids.begin(), seq_ids.end(), (*xref)->GetCit())) {
+                    return true;
                 }
             }
         }
@@ -656,33 +649,10 @@ static int DoEUtilsSearch(CEutilsClient& eutils, const string& database, const s
     return pmid;
 }
 
-static void BuildEUtilsTerm(const list<string>& ids, string& term)
-{
-    bool first = true;
-    ITERATE(list<string>, id, ids) {
-
-        size_t pos = id->find('|');
-        string acc = pos == string::npos ? *id : id->substr(pos + 1);
-
-        if (first)
-            first = false;
-        else
-            term += " AND ";
-        term += acc;
-    }
-}
-
 static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
 {
-    string query;
-
     // title
-    ITERATE(list<string>, word, data.GetTitleWords()) {
-
-        if (!query.empty())
-            query += '+';
-        query += *word;
-    }
+    string query = NStr::Join(data.GetTitleWords(), "+");
 
     // authors
     ITERATE(list<string>, author, data.GetAuthors()) {
@@ -759,8 +729,7 @@ static int ConvertPMCtoPMID(int pmc)
 static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
 {
 
-    string term;
-    BuildEUtilsTerm(data.GetSeqIds(), term);
+    string term = NStr::Join(data.GetSeqIds(), " AND ");
 
     int pmid = 0;
 
@@ -833,11 +802,10 @@ static AuthorNameMatch IsAuthorInList(const list<string>& auths, const string& a
     return found ? res : eNoMatch;
 }
 
-static void ReportSeqIds(CNcbiOstream& out, const list<string>& ids)
+static void ReportSeqIds(CNcbiOstream& out, const CPubData::TSeqIds& ids)
 {
-    ITERATE(list<string>, id, ids) {
-//        out << "SEQID " << *id << '\t';
-        out << "SEQID " << *id << "|\t";
+    ITERATE(CPubData::TSeqIds, id, ids) {
+        out << "SEQID |" << *id << "|\t";
     }
 }
 
@@ -1052,6 +1020,8 @@ void CUnpublishedReport::CompleteReport()
     m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
     NON_CONST_ITERATE(TPubs, pub, m_pubs) {
 
+        (*pub)->SortSeqIds();
+
         CPubmed_entry pubmed_entry;
         int pmid = RetrievePMid(GetEUtils(), GetHydraSearch(), **pub, pubmed_entry);
 
@@ -1059,7 +1029,6 @@ void CUnpublishedReport::CompleteReport()
 
             _ASSERT(pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
 
-            (*pub)->SortSeqIds();
             ReportOnePub(m_out, pubmed_entry.GetMedent().GetCit(), **pub, pmid);
         }
     }

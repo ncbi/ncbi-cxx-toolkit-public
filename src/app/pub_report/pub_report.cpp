@@ -67,7 +67,7 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
 
-    bool IsJuornalReport() const;
+    bool IsJournalReport() const;
     bool IsUnpublishedReport() const;
 
     ESerialDataFormat GetSerialDataFormat() const;
@@ -115,7 +115,7 @@ CNcbiOstream* CPubReportApp::GetOutputStream()
     return out;
 }
 
-bool CPubReportApp::IsJuornalReport() const
+bool CPubReportApp::IsJournalReport() const
 {
     return GetArgs()["Q"].AsString() == "j";
 }
@@ -136,20 +136,20 @@ int CPubReportApp::Run(void)
     CNcbiOstream* out = GetOutputStream();
 
     ESerialDataFormat format = GetSerialDataFormat();
-    auto_ptr<CObjectIStream> in_obj(CObjectIStream::Open(format, *in));
+    unique_ptr<CObjectIStream> in_obj(CObjectIStream::Open(format, *in));
 
-    auto_ptr<CBaseReport> report;
+    shared_ptr<CBaseReport> report;
     CRef<CSkipObjectHook> pub_hook;
 
-    if (IsJuornalReport()) {
+    if (IsJournalReport()) {
 
-        auto_ptr<CJournalReport> journal_report(new CJournalReport(*out));
+        shared_ptr<CJournalReport> journal_report(new CJournalReport(*out));
         pub_hook.Reset(new CSkipPubJournalHook(*journal_report));
         report = journal_report;
     }
     else if (IsUnpublishedReport()) {
 
-        auto_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out));
+        shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out));
         pub_hook.Reset(new CSkipPubUnpublishedHook(*unpub_report));
         report = unpub_report;
     }

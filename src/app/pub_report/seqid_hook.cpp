@@ -77,7 +77,7 @@ void CSkipSeqIdHook::SkipClassMember(CObjectIStream &in, const CObjectTypeInfoMI
 
     if (best_seq_id.NotEmpty()) {
         string label;
-        best_seq_id->GetLabel(&label);
+        best_seq_id->GetLabel(&label, CSeq_id::eContent);
         m_report.SetCurrentSeqId(label);
     }
 
