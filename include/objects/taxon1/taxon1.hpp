@@ -39,6 +39,7 @@
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <list>
 #include <vector>
@@ -52,6 +53,12 @@ class CConn_ServiceStream;
 
 
 BEGIN_objects_SCOPE
+
+/// Primitive types for some taxon1 object fields
+typedef short int TTaxRank;
+typedef short int TTaxDivision;
+typedef short int TTaxGeneticCode;
+typedef short int TTaxNameClass;
 
 class COrgRefCache;
 class ITaxon1Node;
@@ -69,12 +76,15 @@ public:
     // Taxon1 server init
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
+    // default parameters:  10 sec timeout, 5 reconnect attempts,
+    // cache for 1000 org-refs
     ///
-    bool Init(void);  // default:  120 sec timeout, 5 reconnect attempts,
-                      // cache for 10 org-refs
+    static const unsigned def_reconnect_attempts = 5;
+    static const unsigned def_cache_capacity = 1000;
+    bool Init(void);  
     bool Init(unsigned cache_capacity);
-    bool Init(const STimeout* timeout, unsigned reconnect_attempts=5,
-	      unsigned cache_capacity=10);
+    bool Init(const STimeout* timeout, unsigned reconnect_attempts=def_reconnect_attempts,
+	      unsigned cache_capacity=def_cache_capacity);
 
     //---------------------------------------------
     // Taxon1 server fini (closes connection, frees memory)
@@ -82,17 +92,17 @@ public:
     void Fini(void);
 
     //---------------------------------------------
-    // Get organism by tax_id
+    // Get organism data (including org-ref) by tax_id
     // Returns: pointer to Taxon2Data if organism exists
     //          NULL - if tax_id wrong
     //
     // NOTE:
-    // Caller gets his own copy of Taxon2Data structure.
+    // Caller gets own copy of Taxon2Data structure.
     ///
     CRef< CTaxon2_data > GetById(TTaxId tax_id);
 
     //----------------------------------------------
-    // Get organism by OrgRef
+    // Get organism data by OrgRef
     // Returns: pointer to Taxon2Data if organism exists
     //          NULL - if no such organism in taxonomy database
     //
@@ -137,7 +147,7 @@ public:
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
-    // Checks whether OrgRef is valid
+    // Checks whether OrgRef is current
     // Returns: false on any error, stat_out filled with status flags
     // (see above)
     ///
@@ -179,8 +189,8 @@ public:
     //              -2 - error during processing occured
     ///
     TTaxId SearchTaxIdByName(const string& orgname,
-			  ESearch mode = eSearch_TokenSet,
-			  list< CRef< CTaxon1_name > >* name_list_out = NULL);
+			     ESearch mode = eSearch_TokenSet,
+			     list< CRef< CTaxon1_name > >* name_list_out = NULL);
 
     //----------------------------------------------
     // Get ALL tax_id by organism name
@@ -290,11 +300,12 @@ public:
     // forma
     // Returns: tax_id of properly ranked accessor or
     //               0 - no such rank in the lineage
-    //              -1 - invalid rank name
-    //              -2 - any other error (use GetLastError for details)
+    //              -1 - tax id is not found
+    //              -2 - invalid rank name
+    //              -3 - any other error (use GetLastError for details)
     ///
     TTaxId GetAncestorByRank(TTaxId id_tax, const char* rank_name);
-    TTaxId GetAncestorByRank(TTaxId id_tax, short rank_id);
+    TTaxId GetAncestorByRank(TTaxId id_tax, TTaxRank rank_id);
 
     //---------------------------------------------
     // Get taxids for all children of specified node.
@@ -306,22 +317,22 @@ public:
     //---------------------------------------------
     // Get genetic code name by genetic code id
     ///
-    bool GetGCName(short gc_id, string& gc_name_out );
+    bool GetGCName(TTaxGeneticCode gc_id, string& gc_name_out );
 
     //---------------------------------------------
     // Get taxonomic rank name by rank id
     ///
-    bool GetRankName(short rank_id, string& rank_name_out );
+    bool GetRankName(TTaxRank rank_id, string& rank_name_out );
 
     //---------------------------------------------
     // Get taxonomic division name by division id
     ///
-    bool GetDivisionName(short div_id, string& div_name_out, string* div_code_out = NULL );
+    bool GetDivisionName(TTaxDivision div_id, string& div_name_out, string* div_code_out = NULL );
 
     //---------------------------------------------
     // Get taxonomic name class name by name class id
     ///
-    bool GetNameClass(short nameclass_id, string& class_name_out );
+    bool GetNameClass(TTaxNameClass nameclass_id, string& class_name_out );
 
     //---------------------------------------------
     // Get name class id by name class name
@@ -350,7 +361,7 @@ public:
     // is an union of names having both 'common name' and 'genbank common
     // name' classes).
     ///
-    short GetNameClassId( const string& class_name );
+    TTaxNameClass GetNameClassId( const string& class_name );
 
     //---------------------------------------------
     // Get the nearest common ancestor for two nodes
@@ -383,7 +394,7 @@ public:
     // Returns: TRUE - success
     //          FALSE - failure
     ///
-    bool DumpNames( short name_class, list< CRef< CTaxon1_name > >& out );
+    bool DumpNames( TTaxNameClass name_class, list< CRef< CTaxon1_name > >& out );
 
     //---------------------------------------------
     // Find out is taxonomy lookup system alive or not
@@ -545,20 +556,15 @@ private:
     bool                     m_bWithSynonyms;
     string                   m_sLastError;
 
-    typedef map<short, string> TGCMap;
+    typedef map<TTaxGeneticCode, string> TGCMap;
     TGCMap                   m_gcStorage;
 
     void             Reset(void);
     bool             SendRequest(CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnect = true);
     void             SetLastError(const char* err_msg);
-    void             PopulateReplaced(COrg_ref& org, COrgName::TMod& lMods);
-    bool             LookupByOrgRef(const COrg_ref& inp_orgRef, TTaxId* pTaxid,
-                                    COrgName::TMod& hitMods);
-    void             OrgRefAdjust( COrg_ref& inp_orgRef,
-                                   const COrg_ref& db_orgRef,
-                                   TTaxId tax_id );
     bool             LoadSubtreeEx( TTaxId tax_id, int type,
                                     const ITaxon1Node** ppNode );
+    TOrgRefStatus    x_ConvertOrgrefProps( CTaxon2_data& data );
 };
 
 //-------------------------------------------------
@@ -569,7 +575,7 @@ public:
 
     //-------------------------------------------------
     // Returns: taxonomy id of the node
-    virtual TTaxId              GetTaxId() const = 0;
+    virtual TTaxId           GetTaxId() const = 0;
 
     //-------------------------------------------------
     // Returns: scientific name of the node. This name is NOT unique
@@ -583,20 +589,20 @@ public:
 
     //-------------------------------------------------
     // Returns: taxonomic rank id of the node
-    virtual short            GetRank() const = 0;
+    virtual TTaxRank         GetRank() const = 0;
 
     //-------------------------------------------------
     // Returns: taxonomic division id of the node
-    virtual short            GetDivision() const = 0;
+    virtual TTaxDivision     GetDivision() const = 0;
 
     //-------------------------------------------------
-    // Returns: genetic code for the node
-    virtual short            GetGC() const = 0;
+    // Returns: genetic code id for the node
+    virtual TTaxGeneticCode  GetGC() const = 0;
 
     //-------------------------------------------------
-    // Returns: mitochondrial genetic code for the node
-    virtual short            GetMGC() const = 0;
-                       
+    // Returns: mitochondrial genetic code id for the node
+    virtual TTaxGeneticCode  GetMGC() const = 0;
+
     //-------------------------------------------------
     // Returns: true if node is uncultured,
     //          false otherwise

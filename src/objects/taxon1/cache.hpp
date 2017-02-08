@@ -57,60 +57,41 @@ public:
 
     bool Lookup( TTaxId tax_id, CTaxon1Node** ppNode );
     bool LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData );
-    bool LookupAndInsert( TTaxId tax_id, CTaxon1_data** ppData );
     bool LookupAndInsert( TTaxId tax_id, CTaxon2_data** ppData );
-    bool Lookup( TTaxId tax_id, CTaxon1_data** ppData );
     bool Lookup( TTaxId tax_id, CTaxon2_data** ppData );
 
-    bool Insert1( CTaxon1Node& node );
     bool Insert2( CTaxon1Node& node );
 
     // Rank stuff
     const char* GetRankName( int rank );
 
-    int GetSuperkingdomRank() const { return m_nSuperkingdomRank; }
-    int GetFamilyRank() const { return m_nFamilyRank; }
-    int GetOrderRank() const { return m_nOrderRank; }
-    int GetClassRank() const { return m_nClassRank; }
-    int GetGenusRank() const { return m_nGenusRank; }
-    int GetSubgenusRank() const { return m_nSubgenusRank; }
-    int GetSpeciesRank() const { return m_nSpeciesRank; }
-    int GetSubspeciesRank() const { return m_nSubspeciesRank; }
-    int GetFormaRank() const { return m_nFormaRank; }
-    int GetVarietyRank() const { return m_nVarietyRank; }
+    TTaxRank GetSuperkingdomRank() const { return m_nSuperkingdomRank; }
+    TTaxRank GetGenusRank() const { return m_nGenusRank; }
+    TTaxRank GetSpeciesRank() const { return m_nSpeciesRank; }
+    TTaxRank GetSubspeciesRank() const { return m_nSubspeciesRank; }
 
     const char* GetNameClassName( short nc );
-    short GetPreferredCommonNameClass() const { return m_ncPrefCommon; }
-    short GetCommonNameClass() const { return m_ncCommon; }
-    short GetSynonymNameClass() const { return m_ncSynonym; }
-    short GetGBAcronymNameClass() const { return m_ncGBAcronym; }
-    short GetGBSynonymNameClass() const { return m_ncGBSynonym; }
-    short GetGBAnamorphNameClass() const { return m_ncGBAnamorph; }
+    TTaxNameClass GetPreferredCommonNameClass() const { return m_ncPrefCommon; }
+    TTaxNameClass GetCommonNameClass() const { return m_ncCommon; }
 
-    const char* GetDivisionName( short div_id );
-    const char* GetDivisionCode( short div_id );
-    short GetVirusesDivision() const { return m_divViruses; }
-    short GetPhagesDivision() const { return m_divPhages; }
+    const char* GetDivisionName( TTaxDivision div_id );
+    const char* GetDivisionCode( TTaxDivision div_id );
 
     CTreeCont& GetTree() { return m_tPartTree; }
     const CTreeCont& GetTree() const { return m_tPartTree; }
 
     void  SetIndexEntry( TTaxId id, CTaxon1Node* pNode );
 
-    COrgMod::ESubtype GetSubtypeFromName( string& sName );
-
 private:
     friend class CTaxon1Node;
     friend class CTaxon1;
     struct SCacheEntry {
         friend class CTaxon1Node;
-        CRef< CTaxon1_data > m_pTax1;
         CRef< CTaxon2_data > m_pTax2;
 
         CTaxon1Node*  m_pTreeNode;
 
-        CTaxon1_data* GetData1();
-        CTaxon2_data* GetData2();
+        CTaxon2_data* GetData() { return m_pTax2.GetPointer(); }
     };
 
     CTaxon1&           m_host;
@@ -122,63 +103,44 @@ private:
     unsigned           m_nCacheCapacity; // Max number of elements in cache
     list<SCacheEntry*> m_lCache; // LRU list
 
-    bool             BuildOrgRef( CTaxon1Node& node, COrg_ref& org,
-                                  bool& is_species );
-    bool             BuildOrgModifier( CTaxon1Node* pNode,
-                                       COrgName& on,
-                                       CTaxon1Node* pParent = NULL );
-    bool             SetBinomialName( CTaxon1Node& node, COrgName& on );
-    bool             SetPartialName( CTaxon1Node& node, COrgName& on );
     // Rank stuff
-    int m_nSuperkingdomRank;
-    int m_nFamilyRank;
-    int m_nOrderRank;
-    int m_nClassRank;
-    int m_nGenusRank;
-    int m_nSubgenusRank;
-    int m_nSpeciesRank;
-    int m_nSubspeciesRank;
-    int m_nFormaRank;
-    int m_nVarietyRank;
+    TTaxRank m_nSuperkingdomRank;
+    TTaxRank m_nGenusRank;
+    TTaxRank m_nSpeciesRank;
+    TTaxRank m_nSubspeciesRank;
 
-    typedef map<int, string> TRankMap;
+    typedef map<TTaxRank, string> TRankMap;
     typedef TRankMap::const_iterator TRankMapCI;
     typedef TRankMap::iterator TRankMapI;
 
     TRankMap m_rankStorage;
 
-    bool     InitRanks();
-    int      FindRankByName( const char* pchName );
+    bool          InitRanks();
+    TTaxRank      FindRankByName( const char* pchName );
 
     // Name classes stuff
-    short m_ncPrefCommon; // now called "genbank common name"
-    short m_ncCommon;
-    short m_ncSynonym;
-    short m_ncGBAcronym;
-    short m_ncGBSynonym;
-    short m_ncGBAnamorph;
+    TTaxNameClass m_ncPrefCommon; // now called "genbank common name"
+    TTaxNameClass m_ncCommon;
 
-    typedef map<short, string> TNameClassMap;
+    typedef map<TTaxNameClass, string> TNameClassMap;
     typedef TNameClassMap::const_iterator TNameClassMapCI;
     typedef TNameClassMap::iterator TNameClassMapI;
     TNameClassMap m_ncStorage;
 
-    bool     InitNameClasses();
-    short    FindNameClassByName( const char* pchName );
+    bool          InitNameClasses();
+    TTaxNameClass FindNameClassByName( const char* pchName );
     // Division stuff
-    short m_divViruses;
-    short m_divPhages;
     struct SDivision {
         string m_sCode;
         string m_sName;
     };
-    typedef map<short, struct SDivision> TDivisionMap;
+    typedef map<TTaxDivision, struct SDivision> TDivisionMap;
     typedef TDivisionMap::const_iterator TDivisionMapCI;
     typedef TDivisionMap::iterator TDivisionMapI;
     TDivisionMap m_divStorage;
 
-    bool     InitDivisions();
-    short    FindDivisionByCode( const char* pchCode );
+    bool          InitDivisions();
+    TTaxDivision  FindDivisionByCode( const char* pchCode );
 
     // forbidden
     COrgRefCache(const COrgRefCache&);
@@ -196,31 +158,31 @@ public:
     virtual ~CTaxon1Node() {}
 
     virtual TTaxId           GetTaxId() const { return m_ref->GetTaxid(); }
-    virtual const string& GetName() const { return m_ref->GetOname(); }
-    virtual const string& GetBlastName() const
+    virtual const string&    GetName() const { return m_ref->GetOname(); }
+    virtual const string&    GetBlastName() const
     { return m_ref->CanGetUname() ? m_ref->GetUname() : kEmptyStr; }
-    virtual short         GetRank() const;
-    virtual short         GetDivision() const;
-    virtual short         GetGC() const;
-    virtual short         GetMGC() const;
+    virtual TTaxRank         GetRank() const;
+    virtual TTaxDivision     GetDivision() const;
+    virtual TTaxGeneticCode  GetGC() const;
+    virtual TTaxGeneticCode  GetMGC() const;
                        
-    virtual bool          IsUncultured() const;
-    virtual bool          IsGenBankHidden() const;
+    virtual bool             IsUncultured() const;
+    virtual bool             IsGenBankHidden() const;
 
-    virtual bool          IsRoot() const
+    virtual bool             IsRoot() const
     { return CTreeContNodeBase::IsRoot(); }
 
     COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
-    bool                  IsJoinTerminal() const
+    bool                     IsJoinTerminal() const
     { return m_flags&mJoinTerm ? true : false; }
-    void                  SetJoinTerminal() { m_flags |= mJoinTerm; }
-    bool                  IsSubtreeLoaded() const
+    void                     SetJoinTerminal() { m_flags |= mJoinTerm; }
+    bool                     IsSubtreeLoaded() const
     { return m_flags&mSubtreeLoaded ? true : false; }
-    void                  SetSubtreeLoaded( bool b )
+    void                     SetSubtreeLoaded( bool b )
     { if( b ) m_flags |= mSubtreeLoaded; else m_flags &= ~mSubtreeLoaded; }
 
-    CTaxon1Node*          GetParent()
+    CTaxon1Node*             GetParent()
     { return static_cast<CTaxon1Node*>(Parent()); }
 private:
     friend class COrgRefCache;
@@ -350,6 +312,26 @@ public:
 
 protected:
     virtual bool IsVisible( const CTreeContNodeBase* p ) const;
+};
+
+// Orgref "properties"
+class COrgrefProp {
+public:
+    static bool               HasOrgrefProp( const ncbi::objects::COrg_ref& org, const std::string& prop_name );
+    static const std::string& GetOrgrefProp( const ncbi::objects::COrg_ref& org, const std::string& prop_name );
+    // returns default value false if not found
+    static bool               GetOrgrefPropBool( const ncbi::objects::COrg_ref& org, const std::string& prop_name );
+    // returns default value 0 if not found
+    static int                GetOrgrefPropInt( const ncbi::objects::COrg_ref& org, const std::string& prop_name );
+
+    static void               SetOrgrefProp( ncbi::objects::COrg_ref& org, const std::string& prop_name,
+					     const std::string& prop_val );
+    static void               SetOrgrefProp( ncbi::objects::COrg_ref& org, const std::string& prop_name,
+					     int prop_val );
+    static void               SetOrgrefProp( ncbi::objects::COrg_ref& org, const std::string& prop_name,
+					     bool prop_val );
+
+    static void               RemoveOrgrefProp( ncbi::objects::COrg_ref& org, const std::string& prop_name );
 };
 
 END_objects_SCOPE

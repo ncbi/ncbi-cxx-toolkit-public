@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objects/taxon1/taxon1.hpp>
-#include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/misc/error_codes.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/serial.hpp>
@@ -89,24 +88,29 @@ CTaxon1::Reset()
     m_plCache = NULL;
 }
 
+//---------------------------------------------
+// Taxon1 server init
+// Returns: TRUE - OK
+//          FALSE - Can't open connection to taxonomy service
+///
+// default:  10 sec timeout, 5 reconnect attempts,
+// cache for 1000 org-refs
+static const STimeout def_timeout = { 10, 0 };
 
 bool
 CTaxon1::Init(void)
 {
-    static const STimeout def_timeout = { 120, 0 };
-    return CTaxon1::Init(&def_timeout);
+    return CTaxon1::Init(&def_timeout, def_reconnect_attempts, def_cache_capacity);
 }
 
 bool
 CTaxon1::Init(unsigned cache_capacity)
 {
-    static const STimeout def_timeout = { 120, 0 };
-    return CTaxon1::Init(&def_timeout, 5, cache_capacity);
+    return CTaxon1::Init(&def_timeout, def_reconnect_attempts, cache_capacity);
 }
 
 bool
-CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
-              unsigned cache_capacity)
+CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts, unsigned cache_capacity)
 {
     SetLastError(NULL);
     if( TAXON1_IS_INITED ) { // Already inited
@@ -128,7 +132,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
         }
 
         m_nReconnectAttempts = reconnect_attempts;
-        m_pchService = "TaxService";
+        m_pchService = "TaxService4";
         const char* tmp;
         if( ( (tmp=getenv("NI_TAXONOMY_SERVICE_NAME")) != NULL ) ||
             ( (tmp=getenv("NI_SERVICE_NAME_TAXONOMY")) != NULL ) ) {
@@ -157,8 +161,8 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
 #endif
         pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
         pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
-	pOut->FixNonPrint(eFNP_Allow);
-	pIn->FixNonPrint(eFNP_Allow);
+        pOut->FixNonPrint(eFNP_Allow);
+        pIn->FixNonPrint(eFNP_Allow);
 
         req.SetInit();
 
@@ -176,7 +180,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
                 delete m_plCache;
                 m_plCache = NULL;
             } else { // Set error
-                SetLastError( "ERROR: Response type is not Init" );
+                SetLastError( "INTERNAL: TaxService response type is not Init" );
             }
         }
     } catch( exception& e ) {
@@ -207,13 +211,21 @@ CTaxon1::Fini(void)
 
         if( SendRequest( req, resp, false ) ) {
             if( !resp.IsFini() ) {
-                SetLastError( "Response type is not Fini" );
+                SetLastError( "INTERNAL: TaxService response type is not Fini" );
             }
         }
     }
     Reset();
 }
 
+//---------------------------------------------
+// Get organism data (including org-ref) by tax_id
+// Returns: pointer to Taxon2Data if organism exists
+//          NULL - if tax_id wrong
+//
+// NOTE:
+// Caller gets own copy of Taxon2Data structure.
+///
 CRef< CTaxon2_data >
 CTaxon1::GetById(TTaxId tax_id)
 {
@@ -239,458 +251,117 @@ CTaxon1::GetById(TTaxId tax_id)
     return CRef<CTaxon2_data>(NULL);
 }
 
-class PFindMod {
-public:
-    void SetModToMatch( const CRef< COrgMod >& mod ) {
-        CanonizeName( mod->GetSubname(), m_sName );
-        m_nType = mod->GetSubtype();
-    }
-
-    bool operator()( const CRef< COrgMod >& mod ) const {
-        if( m_nType == mod->GetSubtype() ) {
-            string sCanoName;
-            CanonizeName( mod->GetSubname(), sCanoName );
-            return ( sCanoName == m_sName );
-        }
-        return false;
-    }
-
-    void CanonizeName( const string& in, string& out ) const {
-        bool bSpace = true;
-        char prevc = '\0';
-        for( size_t i = 0; i < in.size(); ++i ) {
-            if( bSpace ) {
-                if( !isspace((unsigned char) in[i]) ) {
-                    bSpace = false;
-                    if( prevc )
-                        out += tolower((unsigned char) prevc);
-                    prevc = in[i];
-                }
-            } else {
-                if( prevc )
-                    out += tolower((unsigned char) prevc);
-                if( isspace((unsigned char) in[i]) ) {
-                    prevc = ' ';
-                    bSpace = true;
-                } else {
-                    prevc = in[i];
-                }
-            }
-        }
-        if( prevc && prevc != ' ' )
-            out += tolower((unsigned char) prevc);
-    }
-
-private:
-    string  m_sName;
-    int     m_nType;
-};
-
-class PFindConflict {
-public:
-    void SetTypeToMatch( int type ) {
-        m_nType = type;
-        switch( type ) {
-        case COrgMod::eSubtype_strain:
-        case COrgMod::eSubtype_variety:
-            //case COrgMod::eSubtype_sub_species:
-            m_bSubSpecType = true;
-            break;
-        default:
-            m_bSubSpecType = false;
-            break;
-        }
-    }
-
-    bool operator()( const CRef< COrgMod >& mod ) const {
-        // mod is the destination modifier
-        if( m_nType == COrgMod::eSubtype_other ) {
-            return true;
-        }
-        if( m_nType == mod->GetSubtype() ) {
-            return true;
-        }
-#if 0
-        switch( mod->GetSubtype() ) {
-        case COrgMod::eSubtype_strain:
-        case COrgMod::eSubtype_substrain:
-        case COrgMod::eSubtype_type:
-        case COrgMod::eSubtype_subtype:
-        case COrgMod::eSubtype_variety:
-        case COrgMod::eSubtype_serotype:
-        case COrgMod::eSubtype_serogroup:
-        case COrgMod::eSubtype_serovar:
-        case COrgMod::eSubtype_cultivar:
-        case COrgMod::eSubtype_pathovar:
-        case COrgMod::eSubtype_chemovar:
-        case COrgMod::eSubtype_biovar:
-        case COrgMod::eSubtype_biotype:
-        case COrgMod::eSubtype_group:
-        case COrgMod::eSubtype_subgroup:
-        case COrgMod::eSubtype_isolate:
-            //  case COrgMod::eSubtype_sub_species:
-            return m_bSubSpecType;
-
-        default:
-            break;
-        }
-#endif
-        return false;
-    }
-
-private:
-    int     m_nType;
-    bool    m_bSubSpecType;
-};
-
-class PFindModByType {
-public:
-    PFindModByType( int type ) : m_nType( type ) {}
-
-    bool operator()( const CRef< COrgMod >& mod ) const {
-        return ( m_nType == mod->GetSubtype() );
-    }
-private:
-    int     m_nType;
-};
-
-class PRemoveSynAnamorph {
-public:
-    PRemoveSynAnamorph( const string& sTaxname ) : m_sName( sTaxname ) {}
-
-    bool operator()( const CRef< COrgMod >& mod ) const {
-        switch( mod->GetSubtype() ) {
-        case COrgMod::eSubtype_synonym:
-        case COrgMod::eSubtype_anamorph:
-            return (NStr::CompareNocase( m_sName, mod->GetSubname() ) == 0);
-        default:
-            break;
-        }
-        return false;
-    }
-
-private:
-    const string& m_sName;
-};
-
-void
-CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
-                       TTaxId tax_id )
+static bool
+s_GetBoolValue( const CObject_id& val )
 {
-    inp_orgRef.ResetCommon();
-    inp_orgRef.ResetSyn();
-
-    // fill-up inp_orgRef based on db_orgRef
-    inp_orgRef.SetTaxname( db_orgRef.GetTaxname() );
-    if( db_orgRef.IsSetCommon() ) {
-        inp_orgRef.SetCommon( db_orgRef.GetCommon() );
+    switch( val.Which() ) {
+    case CObject_id::e_Id:
+	return val.GetId() != 0;
+    case CObject_id::e_Str:
+	try {
+	    return NStr::StringToBool( val.GetStr().c_str() );
+	} catch(...) { return false; }
+    default:
+	return false;
     }
-    // Set tax id
-    inp_orgRef.SetTaxId( tax_id );
-    // copy the synonym list
-    if( m_bWithSynonyms && db_orgRef.IsSetSyn() ) {
-        inp_orgRef.SetSyn() = db_orgRef.GetSyn();
-    }
+}
 
-    // copy orgname
-    COrgName& on = inp_orgRef.SetOrgname();
 
-    // Copy the orgname
-    on.SetName().Assign( db_orgRef.GetOrgname().GetName() );
-
-    bool bHasMod = on.IsSetMod();
-    const COrgName::TMod& lSrcMod = db_orgRef.GetOrgname().GetMod();
-    COrgName::TMod& lDstMod = on.SetMod();
-
-    if( bHasMod ) { // Merge modifiers
-        // Find and remove gb_xxx modifiers
-        // tc2proc.c: CleanOrgName
-        // Service stuff
-        CTaxon1_req req;
-        CTaxon1_resp resp;
-        CRef<CTaxon1_info> pModInfo( new CTaxon1_info() );
-
-        PushDiagPostPrefix( "Taxon1::OrgRefAdjust" );
-
-        for( COrgName::TMod::iterator i = lDstMod.begin();
-             i != lDstMod.end(); ) {
-            switch( (*i)->GetSubtype() ) {
-            case COrgMod::eSubtype_gb_acronym:
-            case COrgMod::eSubtype_gb_anamorph:
-            case COrgMod::eSubtype_gb_synonym:
-                i = lDstMod.erase( i );
-                break;
-            default: // Check the modifier validity
-                if( (*i)->CanGetSubname() && (*i)->CanGetSubtype() &&
-                    !(*i)->GetSubname().empty() && (*i)->GetSubtype() != 0 ) {
-                    pModInfo->SetIval1( tax_id );
-                    pModInfo->SetIval2( (*i)->GetSubtype() );
-                    pModInfo->SetSval( (*i)->GetSubname() );
-
-                    req.SetGetorgmod( *pModInfo );
-                    try {
-                        if( SendRequest( req, resp ) ) {
-                            if( !resp.IsGetorgmod() ) { // error
-                                ERR_POST_X( 1, "Response type is not Getorgmod" );
-                            } else {
-                                if( resp.GetGetorgmod().size() > 0 ) {
-                                    CRef<CTaxon1_info> pInfo
-                                        = resp.GetGetorgmod().front();
-                                    if( pInfo->GetIval1() == tax_id ) {
-                                        if( pInfo->GetIval2() == 0 ) {
-                                            // Modifier is wrong (probably, hidden)
-                                            i = lDstMod.erase( i );
-                                            continue;
-                                        } else {
-                                            (*i)->SetSubname( pInfo->GetSval() );
-                                            (*i)->SetSubtype( COrgMod::TSubtype( pInfo->GetIval2() ) );
-                                        }
-                                    } else if( pInfo->GetIval1() != 0 ) {
-                                        // Another redirection occurred
-                                        // leave modifier but issue warning
-                                        NCBI_NS_NCBI::CNcbiDiag(eDiag_Warning)
-                                            << NCBI_NS_NCBI::ErrCode(NCBI_ERRCODE_X, 19)
-                                            << "OrgMod type="
-                                            << COrgMod::GetTypeInfo_enum_ESubtype()
-                                            ->FindName( (*i)->GetSubtype(), true )
-                                            << " name='" << (*i)->GetSubname()
-                                            << "' causing illegal redirection"
-                                            << NCBI_NS_NCBI::Endm;
-                                    }
-                                }
-                            }
-                        } else if( resp.IsError()
-                                   && resp.GetError().GetLevel()
-                                   != CTaxon1_error::eLevel_none ) {
-                            string sErr;
-                            resp.GetError().GetErrorText( sErr );
-                            ERR_POST_X( 2, sErr );
+CTaxon1::TOrgRefStatus
+CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
+{
+    TOrgRefStatus result = 0;
+    COrg_ref& org = data.SetOrg();
+    // Copy dbtags from org to inp_orgRef
+    for( COrg_ref::TDb::iterator i = org.SetDb().begin(); i != org.SetDb().end(); ) {
+	if( (*i)->GetDb() != "taxon" ) {
+	    if( NStr::StartsWith( (*i)->GetDb(), "taxlookup" ) ) {
+		// convert taxlookup to status or refresh flags
+		if( NStr::EndsWith( (*i)->GetDb(), "-changed" ) ) { // refresh flag
+		    if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxid-changed" ) &&
+			(*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongTaxId;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxname-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongTaxname;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?division-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongDivision;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?lineage-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongLineage;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?gc-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongGC;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?mgc-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongMGC;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgmod-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongOrgmod;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?pgc-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongPGC;
+		    }
+		} else { // status flag
+		    if( NStr::Equal( (*i)->GetDb(), "taxlookup?is_species_level" ) &&
+			(*i)->IsSetTag() ) {
+			data.SetIs_species_level( s_GetBoolValue((*i)->GetTag()) );
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?is_uncultured" ) &&
+			(*i)->IsSetTag() ) {
+			data.SetIs_uncultured( s_GetBoolValue((*i)->GetTag()) );
+		    } else if( NStr::EqualNocase( (*i)->GetDb(), "taxlookup$blast_lineage" ) &&
+			       (*i)->IsSetTag() && (*i)->GetTag().IsStr() ) {
+			list< string > lBlastNames;
+			NStr::Split( (*i)->GetTag().GetStr(), ";", lBlastNames, NStr::fSplit_Tokenize );
+                        NON_CONST_ITERATE( list< string >, i, lBlastNames ) {
+                            NStr::TruncateSpacesInPlace( *i );
                         }
-                    } catch( exception& e ) {
-                        ERR_POST_X( 3, e.what() );
-                    }
-
-                }
-
-                ++i;
-                break;
-            }
-        }
-
-        PopDiagPostPrefix();
-
-        PFindConflict predConflict;
-
-        for( COrgName::TMod::const_iterator i = lSrcMod.begin();
-             i != lSrcMod.end();
-             ++i ) {
-            predConflict.SetTypeToMatch( (*i)->GetSubtype() );
-            if( (*i)->GetSubtype() != COrgMod::eSubtype_other ) {
-                if( find_if( lDstMod.begin(), lDstMod.end(), predConflict )
-                    == lDstMod.end() ) {
-                    CRef<COrgMod> pMod( new COrgMod() );
-                    pMod->Assign( *(*i) );
-                    lDstMod.push_back( pMod );
-                }
-            }
-        }
-    } else { // Copy modifiers
-
-        CRef<COrgMod> pMod;
-        for( COrgName::TMod::const_iterator i = lSrcMod.begin();
-             i != lSrcMod.end();
-             ++i ) {
-            switch( (*i)->GetSubtype() ) {
-            //case COrgMod::eSubtype_gb_acronym:
-            //case COrgMod::eSubtype_gb_anamorph:
-            //case COrgMod::eSubtype_gb_synonym:
-            default:
-                pMod.Reset( new COrgMod() );
-                pMod->Assign( *(*i) );
-                lDstMod.push_back( pMod );
-            case COrgMod::eSubtype_other:
-                break;
-            }
-        }
-        // Remove 'other' modifiers
-    }
-    // Remove 'synonym' or 'anamorph' it if coincides with taxname
-    PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
-    // Remove duplicated modifiers
-    for( COrgName::TMod::iterator i = lDstMod.begin();
-	 i != lDstMod.end(); ) {
-	if( rsa(*i) ) {
-            i = lDstMod.erase( i );
-            continue;
-        } else {
-	    COrgName::TMod::iterator ii = i;
-	    for( COrgName::TMod::iterator j = ++ii;
-	         j != lDstMod.end(); ) {
-	        if( (*i)->GetSubtype() == (*j)->GetSubtype() &&
-		    NStr::EqualNocase( (*i)->GetSubname(), (*j)->GetSubname() ) ) {
-		    j = lDstMod.erase( j );
-	        } else {
-		    ++j;
-	        }
+			data.SetBlast_name().insert( data.SetBlast_name().end(),
+						     lBlastNames.begin(), lBlastNames.end() );
+		    } else {
+			string sPropName = (*i)->GetDb().substr( strlen( "taxlookup?" ) );
+			switch( (*i)->GetTag().Which() ) {
+			case CObject_id::e_Str: data.SetProperty( sPropName, (*i)->GetTag().GetStr() ); break;
+			case CObject_id::e_Id: data.SetProperty( sPropName, (*i)->GetTag().GetId() ); break;
+			default: break; // unknown type
+			}
+		    }
+		}
+		i = org.SetDb().erase(i);
+	    } else {
+		++i;
 	    }
-            ++i;
-        }
+	} else {
+	    ++i;
+	}
     }
-
-    // Reset destination modifiers if empty
-    if( lDstMod.size() == 0 ) {
-        on.ResetMod();
+		    
+    // Set flags to default values if corresponding property is not found
+    if( !data.IsSetIs_uncultured() ) {
+	data.SetIs_uncultured( false );
     }
-    // Copy lineage
-    if( db_orgRef.GetOrgname().IsSetLineage() ) {
-        on.SetLineage() = db_orgRef.GetOrgname().GetLineage();
-    } else {
-        on.ResetLineage();
+    if( !data.IsSetIs_species_level() ) {
+	data.SetIs_species_level( false );
     }
-    if( db_orgRef.GetOrgname().IsSetGcode() ) {
-        on.SetGcode( db_orgRef.GetOrgname().GetGcode() );
-    } else {
-        on.ResetGcode();
-    }
-    if( db_orgRef.GetOrgname().IsSetMgcode() ) {
-        on.SetMgcode( db_orgRef.GetOrgname().GetMgcode() );
-    } else {
-        on.ResetMgcode();
-    }
-    if( db_orgRef.GetOrgname().IsSetDiv() ) {
-        on.SetDiv( db_orgRef.GetOrgname().GetDiv() );
-    } else {
-        on.ResetDiv();
-    }
-    if( db_orgRef.GetOrgname().IsSetPgcode() ) {
-        on.SetPgcode( db_orgRef.GetOrgname().GetPgcode() );
-    } else {
-        on.ResetPgcode();
-    }
+    return result;
 }
 
-bool
-CTaxon1::LookupByOrgRef(const COrg_ref& inp_orgRef, TTaxId* pTaxid,
-                        COrgName::TMod& hitMods )
-{
-    SetLastError(NULL);
-
-    CTaxon1_req  req;
-    CTaxon1_resp resp;
-
-    SerialAssign< COrg_ref >( req.SetLookup(), inp_orgRef );
-
-    if( SendRequest( req, resp ) ) {
-        if( resp.IsLookup() ) {
-            // Correct response, return object
-            COrg_ref& result = resp.SetLookup().SetOrg();
-            *pTaxid = result.GetTaxId();
-            if( result.IsSetOrgname() &&
-                result.GetOrgname().IsSetMod() ) {
-                hitMods.swap( result.SetOrgname().SetMod() );
-            }
-            //      for( COrgName::TMod::const_iterator ci =
-            //           result.GetOrgname().GetMod().begin();
-            //           ci != result.GetOrgname().GetMod().end();
-            //           ++ci ) {
-            //          if( (*ci)->GetSubtype() == COrgMod::eSubtype_old_name ) {
-            //          hitMod->Assign( *ci );
-            //          bHitFound = true;
-            //          break;
-            //          }
-            //      }
-            //      }
-            //      if( bHitFound ) {
-            //      hitMod.Reset( NULL );
-            //      }
-            return true;
-        } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Lookup" );
-        }
-    }
-    return false;
-}
-
-void
-CTaxon1::PopulateReplaced( COrg_ref& org, COrgName::TMod& lMods  )
-{
-    if( org.IsSetOrgname() ) {
-        CRef< COrgMod > pOldNameMod;
-        COrgName& on = org.SetOrgname();
-        for( COrgName::TMod::iterator i = lMods.begin();
-             i != lMods.end();
-             ++i ) {
-            if( (*i)->GetSubtype() == COrgMod::eSubtype_old_name ) {
-                pOldNameMod = *i;
-                continue;
-            }
-            if( on.IsSetMod() ) {
-                PFindModByType fmbt( (*i)->GetSubtype() );
-                if( find_if( on.GetMod().begin(), on.GetMod().end(), fmbt )
-                    != on.GetMod().end() ) {
-                    /* modifier already present in target orgref */
-                    continue;
-                }
-            }
-            /* adding this modifier */
-            on.SetMod().push_back( *i );
-        }
-        if( pOldNameMod ) {
-            if( on.IsSetMod() ) {
-                PFindModByType fmbt( COrgMod::eSubtype_old_name );
-                COrgName::TMod::iterator i =
-                    find_if( on.SetMod().begin(), on.SetMod().end(), fmbt );
-                if( i != on.SetMod().end() ) {
-                    // There is old-name in the target already
-                    if( !(*i)->IsSetAttrib() && pOldNameMod->IsSetAttrib() &&
-                        NStr::CompareNocase(pOldNameMod->GetSubname(),
-                                            (*i)->GetSubname() ) == 0 ) {
-                        (*i)->SetAttrib( pOldNameMod->GetAttrib() );
-                    }
-                    return;
-                }
-            }
-            /* we probably don't need to populate search name */
-            if( org.IsSetTaxname() &&
-                NStr::CompareNocase( org.GetTaxname(),
-                                     pOldNameMod->GetSubname() ) == 0 ) {
-                if( pOldNameMod->IsSetAttrib() ) {
-                    const string& sAttrib = pOldNameMod->GetAttrib();
-                    if( !sAttrib.empty() && sAttrib[0] == '(' ) {
-                        try {
-                            CRef< COrgMod > srchMod( new COrgMod );
-                            string::size_type pos = sAttrib.find("=");
-                            if( pos == string::npos ) {
-                                return;
-                            }
-                            if( on.IsSetMod() ) {
-                                const COrgName::TMod& mods = on.GetMod();
-                                srchMod->SetSubname()
-                                    .assign( sAttrib.c_str()+pos+1 );
-                                srchMod->SetSubtype
-                                    ( COrgMod::TSubtype
-                                      (NStr::StringToInt
-                                       (sAttrib.substr(1, pos-1),
-                                        NStr::fAllowTrailingSymbols) ) );
-                                PFindMod mf;
-                                mf.SetModToMatch( srchMod );
-                                if( find_if( mods.begin(), mods.end(),
-                                             mf ) != mods.end() ) {
-                                    return;
-                                }
-                            }
-                        } catch(...) { return; }
-                    } else
-                        return;
-                } else
-                    return;
-            }
-            // Add old-name to modifiers
-            on.SetMod().push_back( pOldNameMod );
-        }
-    }
-}
-
+//----------------------------------------------
+// Get organism data by OrgRef
+// Returns: pointer to Taxon2Data if organism exists
+//          NULL - if no such organism in taxonomy database
+//
+// NOTE:
+// 1. These functions uses the following data from inp_orgRef to find
+//    organism in taxonomy database. It uses taxname first. If no organism
+//    was found (or multiple nodes found) then it tries to find organism
+//    using common name. If nothing found, then it tries to find organism
+//    using synonyms. Lookup never uses tax_id to find organism.
+// 2. LookupMerge function modifies given OrgRef to correspond to the
+//    found one and returns constant pointer to the Taxon2Data structure
+//    stored internally.
+///
 CRef< CTaxon2_data >
 CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 {
@@ -701,51 +372,38 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 	}
     }
     // Check if this taxon is in cache
-    CTaxon2_data* pData = 0;
-    COrgName::TMod hitMod;
-    TTaxId tax_id = 0;
+    CRef<CTaxon2_data> pData( 0 );
 
-    if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
-        && tax_id > 0
-        && m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
+    SetLastError(NULL);
 
-        CTaxon2_data* pNewData = new CTaxon2_data();
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
 
-        COrg_ref* pOrf = new COrg_ref;
-        pOrf->Assign( inp_orgRef );
-        if( pOrf->IsSetOrgname() && pOrf->GetOrgname().IsSetMod() ) {
-            // Clean up modifiers
-            pOrf->SetOrgname().ResetMod();
+    SerialAssign< COrg_ref >( req.SetLookup(), inp_orgRef );
+    // Set version db tag
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
+
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsLookup() ) {
+            // Correct response, return object
+	    pData.Reset( new CTaxon2_data() );
+	    
+            SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
+	    x_ConvertOrgrefProps( *pData );
+	    
+        } else { // Internal: wrong respond type
+            SetLastError( "INTERNAL: TaxService response type is not Lookup" );
         }
-        pNewData->SetOrg( *pOrf );
-
-        const COrg_ref& db_orgRef = pData->GetOrg();
-
-        OrgRefAdjust( pNewData->SetOrg(), db_orgRef, tax_id );
-        // Copy all other fields
-        if( pData->IsSetBlast_name() ) {
-            pNewData->SetBlast_name() = pData->GetBlast_name();
-        }
-        if( pData->IsSetIs_uncultured() ) {
-            pNewData->SetIs_uncultured( pData->GetIs_uncultured() );
-        }
-        if( pData->IsSetIs_species_level() ) {
-            pNewData->SetIs_species_level( pData->GetIs_species_level() );
-        }
-        // Insert the hitMod if necessary
-        if( hitMod.size() > 0 ) {
-            PopulateReplaced( pNewData->SetOrg(), hitMod );
-        }
-
-        return CRef<CTaxon2_data>(pNewData);
     }
-    return CRef<CTaxon2_data>(NULL);
+
+    return pData;
 }
 
 CConstRef< CTaxon2_data >
 CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 {
-    CTaxon2_data* pData = 0;
+    //CTaxon2_data* pData = 0;
 
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -753,24 +411,47 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 	    return CConstRef<CTaxon2_data>(NULL);
 	}
     }
-    COrgName::TMod hitMod;
-    TTaxId tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
+    // Check if this taxon is in cache
+    CRef<CTaxon2_data> pData( 0 );
 
-    if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
-        && tax_id > 0
-        && m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
+    SetLastError(NULL);
 
-        const COrg_ref& db_orgRef = pData->GetOrg();
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
 
-        OrgRefAdjust( inp_orgRef, db_orgRef, tax_id );
+    SerialAssign< COrg_ref >( req.SetLookup(), inp_orgRef );
+    // Set version db tag
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "merge", true );
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
 
-        if( hitMod.size() > 0 ) {
-            PopulateReplaced( inp_orgRef, hitMod );
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsLookup() ) {
+            // Correct response, return object
+	    pData.Reset( new CTaxon2_data() );
+	    
+            SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
+	    x_ConvertOrgrefProps( *pData );
+	    SerialAssign< COrg_ref >( inp_orgRef, pData->GetOrg() );
+	    
+        } else { // Internal: wrong respond type
+            SetLastError( "INTERNAL: TaxService response type is not Lookup" );
         }
     }
+
     return CConstRef<CTaxon2_data>(pData);
 }
 
+//-----------------------------------------------
+// Get tax_id by OrgRef
+// Returns: tax_id - if organism found
+//               0 - no organism found
+//              -1 - error during processing occured
+//         -tax_id - if multiple nodes found
+//                   (where tax_id > 1 is id of one of the nodes)
+// NOTE:
+// This function uses the same information from inp_orgRef as Lookup
+///
 TTaxId
 CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
 {
@@ -791,12 +472,20 @@ CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
             // Correct response, return object
             return resp.GetGetidbyorg();
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Getidbyorg" );
+            SetLastError( "INTERNAL: TaxService response type is not Getidbyorg" );
         }
     }
     return 0;
 }
 
+//----------------------------------------------
+// Get tax_id by organism name
+// Returns: tax_id - if organism found
+//               0 - no organism found
+//              -1 - error during processing occured
+//         -tax_id - if multiple nodes found
+//                   (where tax_id > 1 is id of one of the nodes)
+///
 TTaxId
 CTaxon1::GetTaxIdByName(const string& orgname)
 {
@@ -810,6 +499,14 @@ CTaxon1::GetTaxIdByName(const string& orgname)
     return GetTaxIdByOrgRef(orgRef);
 }
 
+//----------------------------------------------
+// Get tax_id by organism "unique" name
+// Returns: tax_id - if organism found
+//               0 - no organism found
+//              -1 - error during processing occured
+//         -tax_id - if multiple nodes found
+//                   (where tax_id > 1 is id of one of the nodes)
+///
 TTaxId
 CTaxon1::FindTaxIdByName(const string& orgname)
 {
@@ -826,7 +523,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
 
     if(id < 1) {
 
-        int idu = 0;
+        TTaxId idu = 0;
 
         CTaxon1_req  req;
         CTaxon1_resp resp;
@@ -838,7 +535,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
                 // Correct response, return object
                 idu = resp.GetGetunique();
             } else { // Internal: wrong respond type
-                SetLastError( "Response type is not Getunique" );
+                SetLastError( "INTERNAL: TaxService response type is not Getunique" );
             }
         }
 
@@ -892,7 +589,7 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
     if( SendRequest( req, resp ) ) {
         if( resp.IsSearchname() ) {
             // Correct response, return object
-            int retc = 0;
+            TTaxId retc = 0;
             const CTaxon1_resp::TSearchname& lNm = resp.GetSearchname();
             if( lNm.size() == 0 ) {
                 retc = 0;
@@ -907,13 +604,18 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
             }
             return retc;
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Searchname" );
+            SetLastError( "INTERNAL: TaxService response type is not Searchname" );
             return 0;
         }
     }
     return 0;
 }
 
+//----------------------------------------------
+// Get ALL tax_id by organism name
+// Returns: number of organisms found (negative value on error), 
+// id list appended with found tax ids
+///
 int
 CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
 {
@@ -943,7 +645,7 @@ CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
                  i != lNm.end(); ++i, ++count )
                 lIds.push_back( (*i)->GetTaxid() );
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Findname" );
+            SetLastError( "INTERNAL: TaxService response type is not Findname" );
             return 0;
         }
     }
@@ -977,16 +679,17 @@ CTaxon1::GetOrgRef(TTaxId tax_id,
         if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
             is_species = pData->GetIs_species_level();
             is_uncultured = pData->GetIs_uncultured();
-            if( pData->GetBlast_name().size() > 0 ) {
+            if( pData->IsSetBlast_name() && pData->GetBlast_name().size() > 0 ) {
                 blast_name.assign( pData->GetBlast_name().front() );
             }
 	    if( is_specified ) {
-		bool specified = false;
-		if( GetNodeProperty( tax_id, "specified_inh", specified ) ) {
-		    *is_specified = specified;
-		} else {
-		    return null;
-		}		
+		*is_specified = pData->GetOrg().GetOrgname().IsFormalName();
+// 		bool specified = false;
+// 		if( GetNodeProperty( tax_id, "specified_inh", specified ) ) {
+// 		    *is_specified = specified;
+// 		} else {
+// 		    return null;
+// 		}		
 	    }
             return CConstRef<COrg_ref>(&pData->GetOrg());
         }
@@ -1055,39 +758,39 @@ CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && m_plCache->InitRanks() ) {
-    if( mode == eSpeciesMode_RankOnly ) {
-        int species_rank(m_plCache->GetSpeciesRank());
-        while( !pNode->IsRoot() ) {
-	    int rank( pNode->GetRank() );
-	    if( rank == species_rank )
-		return pNode->GetTaxId();
-	    if( (rank >= 0) && (rank < species_rank))
-		return 0;
-	    pNode = pNode->GetParent();
-        }
-        return 0;
-    } else { // Based on flag
-        CTaxon1Node* pResult = NULL;
-        CTaxon2_data* pData = NULL;
-        while( !pNode->IsRoot() ) {
-        if( m_plCache->LookupAndInsert( pNode->GetTaxId(), &pData ) ) {
-            if( !pData )
-            return -1;
-            if( !(pData->IsSetIs_species_level() &&
-              pData->GetIs_species_level()) ) {
-            if( pResult ) {
-                return pResult->GetTaxId();
-            } else {
-                return 0;
-            }
-            }
-            pResult = pNode;
-            pNode = pNode->GetParent();
-        } else { // Node in the lineage not found
-            return -1;
-        }
-        }
-    }
+	if( mode == eSpeciesMode_RankOnly ) {
+	    TTaxRank species_rank(m_plCache->GetSpeciesRank());
+	    while( !pNode->IsRoot() ) {
+		TTaxRank rank( pNode->GetRank() );
+		if( rank == species_rank )
+		    return pNode->GetTaxId();
+		if( (rank > 0) && (rank < species_rank))
+		    return 0;
+		pNode = pNode->GetParent();
+	    }
+	    return 0;
+	} else { // Based on flag
+	    CTaxon1Node* pResult = NULL;
+	    CTaxon2_data* pData = NULL;
+	    while( !pNode->IsRoot() ) {
+		if( m_plCache->LookupAndInsert( pNode->GetTaxId(), &pData ) ) {
+		    if( !pData )
+			return -1;
+		    if( !(pData->IsSetIs_species_level() &&
+			  pData->GetIs_species_level()) ) {
+			if( pResult ) {
+			    return pResult->GetTaxId();
+			} else {
+			    return 0;
+			}
+		    }
+		    pResult = pNode;
+		    pNode = pNode->GetParent();
+		} else { // Node in the lineage not found
+		    return -1;
+		}
+	    }
+	}
     }
     return -1;
 }
@@ -1110,16 +813,15 @@ CTaxon1::GetGenus(TTaxId id_tax)
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && m_plCache->InitRanks() ) {
-        int genus_rank(m_plCache->GetGenusRank());
+        TTaxId genus_rank(m_plCache->GetGenusRank());
         while( !pNode->IsRoot() ) {
-            int rank( pNode->GetRank() );
+            TTaxId rank( pNode->GetRank() );
             if( rank == genus_rank )
                 return pNode->GetTaxId();
-            if( (rank >= 0) && (rank < genus_rank))
-                break;
+            if( (rank > 0) && (rank < genus_rank))
+                return 0;
             pNode = pNode->GetParent();
         }
-	return 0;
     }
     return -1;
 }
@@ -1142,14 +844,15 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && m_plCache->InitRanks() ) {
-        int sk_rank(m_plCache->GetSuperkingdomRank());
+        TTaxRank sk_rank(m_plCache->GetSuperkingdomRank());
         while( !pNode->IsRoot() ) {
-            int rank( pNode->GetRank() );
+            TTaxRank rank( pNode->GetRank() );
             if( rank == sk_rank )
                 return pNode->GetTaxId();
+            if( (rank > 0) && (rank < sk_rank))
+                return 0;
             pNode = pNode->GetParent();
         }
-	return 0;
     }
     return -1;
 }
@@ -1191,50 +894,51 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
 //
 // Returns: tax_id of properly ranked accessor or
 //               0 - no such rank in the lineage
-//              -1 - invalid rank name
-//              -2 - any other error (use GetLastError for details)
+//              -1 - tax id is not found
+//              -2 - invalid rank name
+//              -3 - any other error (use GetLastError for details)
 ///
 TTaxId
 CTaxon1::GetAncestorByRank(TTaxId id_tax, const char* rank_name)
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
-	if( !Init() ) { 
-	    return -2;
-	}
+        if( !Init() ) { 
+            return -3;
+        }
     }
     if( rank_name ) {
-	short rank( m_plCache->FindRankByName( rank_name ) );
-	if( rank != -1000 ) {
-	    return GetAncestorByRank(id_tax, rank);
-	}
+        TTaxRank rank( m_plCache->FindRankByName( rank_name ) );
+        if( rank != -1000 ) {
+            return GetAncestorByRank(id_tax, rank);
+        }
     }
     SetLastError( "rank not found" );
     ERR_POST_X( 2, GetLastError() );
-    return -1;
+    return -2;
 }
 
 TTaxId
-CTaxon1::GetAncestorByRank(TTaxId id_tax, short rank_id)
+CTaxon1::GetAncestorByRank(TTaxId id_tax, TTaxRank rank_id)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
-	if( !Init() ) { 
-	    return -1;
-	}
+        if( !Init() ) { 
+            return -3;
+        }
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode ) {
         while( !pNode->IsRoot() ) {
-            int rank( pNode->GetRank() );
+            TTaxRank rank( pNode->GetRank() );
             if( rank == rank_id )
                 return pNode->GetTaxId();
             if( (rank >= 0) && (rank < rank_id))
                 return 0;
             pNode = pNode->GetParent();
         }
-	return 0;
+        return 0;
     }
     return -1;
 }
@@ -1244,7 +948,7 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, short rank_id)
 // Returns: number of children, id list appended with found tax ids
 //          -1 - in case of error
 ///
-int
+TTaxId
 CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
 {
     int count(0);
@@ -1280,7 +984,7 @@ CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
                     pIt->AddChild( pNewNode );
                 }
             } else { // Internal: wrong respond type
-                SetLastError( "Response type is not Taxachildren" );
+                SetLastError( "INTERNAL: TaxService response type is not Taxachildren" );
                 return 0;
             }
         }
@@ -1289,7 +993,7 @@ CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
 }
 
 bool
-CTaxon1::GetGCName(short gc_id, string& gc_name_out )
+CTaxon1::GetGCName(TTaxGeneticCode gc_id, string& gc_name_out )
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -1315,7 +1019,7 @@ CTaxon1::GetGCName(short gc_id, string& gc_name_out )
                                                            (*i)->GetSval()) );
                 }
             } else { // Internal: wrong respond type
-                SetLastError( "Response type is not Getgcs" );
+                SetLastError( "INTERNAL: TaxService response type is not Getgcs" );
                 return false;
             }
         }
@@ -1334,7 +1038,7 @@ CTaxon1::GetGCName(short gc_id, string& gc_name_out )
 // Get taxonomic rank name by rank id
 ///
 bool
-CTaxon1::GetRankName(short rank_id, string& rank_name_out )
+CTaxon1::GetRankName(TTaxRank rank_id, string& rank_name_out )
 {
     SetLastError( NULL );
     if( !TAXON1_IS_INITED ) {
@@ -1356,7 +1060,7 @@ CTaxon1::GetRankName(short rank_id, string& rank_name_out )
 // Get taxonomic division name by division id
 ///
 bool
-CTaxon1::GetDivisionName(short div_id, string& div_name_out, string* div_code_out )
+CTaxon1::GetDivisionName(TTaxDivision div_id, string& div_name_out, string* div_code_out )
 {
     SetLastError( NULL );
     if( !TAXON1_IS_INITED ) {
@@ -1382,7 +1086,7 @@ CTaxon1::GetDivisionName(short div_id, string& div_name_out, string* div_code_ou
 // Get taxonomic name class (scientific name, common name, etc.) by id
 ///
 bool
-CTaxon1::GetNameClass(short nameclass_id, string& name_class_out )
+CTaxon1::GetNameClass(TTaxNameClass nameclass_id, string& name_class_out )
 {
     SetLastError( NULL );
     if( !TAXON1_IS_INITED ) {
@@ -1404,7 +1108,7 @@ CTaxon1::GetNameClass(short nameclass_id, string& name_class_out )
 // Get name class id by name class name
 // Returns: value < 0 - Incorrect class name
 ///
-short
+TTaxNameClass
 CTaxon1::GetNameClassId( const string& class_name )
 {
     SetLastError( NULL );
@@ -1484,7 +1188,7 @@ CTaxon1::GetAllNames(TTaxId tax_id, TNameList& lNames, bool unique)
                                       (*i)->GetOname() );
                 }
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Getorgnames" );
+            SetLastError( "INTERNAL: TaxService response type is not Getorgnames" );
             return 0;
         }
     }
@@ -1524,7 +1228,7 @@ CTaxon1::GetAllNamesEx(TTaxId tax_id, list< CRef< CTaxon1_name > >& lNames)
 		lNames.push_back( *i );
 	    }
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Getorgnames" );
+            SetLastError( "INTERNAL: TaxService response type is not Getorgnames" );
             return false;
         }
     }
@@ -1533,7 +1237,7 @@ CTaxon1::GetAllNamesEx(TTaxId tax_id, list< CRef< CTaxon1_name > >& lNames)
 }
 
 bool
-CTaxon1::DumpNames( short name_class, list< CRef< CTaxon1_name > >& lOut )
+CTaxon1::DumpNames( TTaxNameClass name_class, list< CRef< CTaxon1_name > >& lOut )
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -1551,23 +1255,13 @@ CTaxon1::DumpNames( short name_class, list< CRef< CTaxon1_name > >& lOut )
             // Correct response, return object
             lOut.swap( resp.SetDumpnames4class() );
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Dumpnames4class" );
+            SetLastError( "INTERNAL: TaxService response type is not Dumpnames4class" );
             return false;
         }
     }
 
     return true;
 }
-
-/*---------------------------------------------
- * Find organism name in the string (for PDB mostly)
- * Returns: nimber of tax_ids found
- * NOTE:
- * 1. orgname is substring of search_str which matches organism name
- *    (return parameter).
- * 2. Ids consists of tax_ids. Caller is responsible to free this memory
- */
- // int getTaxId4Str(const char* search_str, char** orgname, intPtr *Ids_out);
 
 bool
 CTaxon1::IsAlive(void)
@@ -1607,7 +1301,7 @@ CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
             tax_id_out = resp.GetId4gi();
             return true;
         } else { // Internal: wrong respond type
-            SetLastError( "Response type is not Id4gi" );
+            SetLastError( "INTERNAL: TaxService response type is not Id4gi" );
         }
     }
     return false;
@@ -1710,6 +1404,7 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnec
                 pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
                 pOut->FixNonPrint(eFNP_Allow);
                 pIn->FixNonPrint(eFNP_Allow);
+
                 m_pServer = pServer.release();
                 m_pIn = pIn.release();
                 m_pOut = pOut.release();
@@ -1774,7 +1469,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
         for( TTaxIdList::const_iterator ci = ids_in.begin();
              ci != ids_in.end();
              ++ci ) {
-            map< TTaxId, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
+            map< int, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
             if( nmi == nodeMap.end() ) {
                 if( m_plCache->LookupAndAdd( *ci, &pNode ) ) {
                     if( !tPartTree.GetRoot() ) {
@@ -1782,7 +1477,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                             ( *static_cast<const CTaxon1Node*>
                               (m_plCache->GetTree().GetRoot()) );
                         tPartTree.SetRoot( pNewParent );
-                        nodeMap.insert( map< TTaxId,CTaxon1Node* >::value_type
+                        nodeMap.insert( map< int,CTaxon1Node* >::value_type
                                         (pNewParent->GetTaxId(), pNewParent) );
                     }
                     if( pNode ) {
@@ -1808,7 +1503,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                              i != vLin.rend();
                              ++i ) {
                             pNode = *i;
-                            nodeMap.insert( map< TTaxId,CTaxon1Node* >::value_type
+                            nodeMap.insert( map< int,CTaxon1Node* >::value_type
                                             ( pNode->GetTaxId(), pNode ) );
                             pIt->AddChild( pNode );
                             pIt->GoNode( pNode );
@@ -1898,7 +1593,7 @@ CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
                             pIt->GoNode( pNode );
                         } else { // Invalid parent specified
                             SetLastError( ("Invalid parent taxid "
-                                           + NStr::NumericToString((*i)->GetTaxid())
+                                           + NStr::IntToString((*i)->GetTaxid())
                                            ).c_str() );
                             return false;
                         }
@@ -1914,7 +1609,7 @@ CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
                 }
                 return true;
             } else { // Internal: wrong respond type
-                SetLastError( "Response type is not Taxachildren" );
+                SetLastError( "INTERNAL: TaxService response type is not Taxachildren" );
                 return false;
             }
         }
@@ -2001,6 +1696,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
                     ERR_POST_X( 4, "Response type is not Getorgprop" );
+		    SetLastError( "INTERNAL: TaxService response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -2053,6 +1749,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
                     ERR_POST_X( 8, "Response type is not Getorgprop" );
+		    SetLastError( "INTERNAL: TaxService response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -2105,6 +1802,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
                     ERR_POST_X( 12, "Response type is not Getorgprop" );
+		    SetLastError( "INTERNAL: TaxService response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -2292,146 +1990,41 @@ ITreeIterator::TraverseAncestors(I4Each& cb)
     return stat;
 }
 
+//-----------------------------------------------
+// Checks whether OrgRef is current
+// Returns: false on any error, stat_out filled with status flags
+// (see above)
+///
 bool
 CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 {
     CDiagAutoPrefix( "Taxon1::CheckOrgRef" );
     SetLastError(NULL);
-    TTaxId tax_id;
-
-    tax_id = GetTaxIdByOrgRef( orgRef );
     stat_out = eStatus_Ok;
 
-    if( tax_id == 0 ) {
-        SetLastError( "No organism found for specified org_ref" );
-        ERR_POST_X( 16, GetLastError() );
-        return false;
-    } else if( tax_id < 0 ) {
-        SetLastError( "Multiple organisms found for specified org_ref" );
-        ERR_POST_X( 17, GetLastError() );
-        return false;
-    } else {
-        CRef< CTaxon2_data > pData( GetById( tax_id ) );
-        if( pData ) {
-            // Compare orgrefs
-            const COrg_ref& goodOr = pData->GetOrg();
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
 
-            if( !orgRef.IsSetOrgname() ) {
-                stat_out |= eStatus_NoOrgname;
-            } else {
-                const COrgName& goodOn = goodOr.GetOrgname();
-                const COrgName& inpOn = orgRef.GetOrgname();
+    SerialAssign< COrg_ref >( req.SetLookup(), orgRef );
+    // Set version db tag
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "merge", true );
 
-                if( !inpOn.IsSetGcode() || !goodOn.IsSetGcode() ||
-                    inpOn.GetGcode() != goodOn.GetGcode() ) {
-                    stat_out |= eStatus_WrongGC;
-                }
-                if( !inpOn.IsSetMgcode() ) { // mgc not set in input
-                    if( goodOn.IsSetMgcode() &&
-                        goodOn.GetMgcode() != 0 ) {
-                        stat_out |= eStatus_WrongMGC;
-                    }
-                } else { // mgc set
-                    if( !goodOn.IsSetMgcode() ) {
-                        if( inpOn.GetMgcode() != 0 ) { // not unassigned
-                            stat_out |= eStatus_WrongMGC;
-                        }
-                    } else if( inpOn.GetMgcode() != goodOn.GetMgcode() ) {
-                        stat_out |= eStatus_WrongMGC;
-                    }
-                }
-                if( !inpOn.IsSetPgcode() ) { // pgc not set in input
-                    if( goodOn.IsSetPgcode() &&
-                        goodOn.GetPgcode() != 0 ) {
-                        stat_out |= eStatus_WrongPGC;
-                    }
-                } else { // pgc set
-                    if( !goodOn.IsSetPgcode() ) {
-                        if( inpOn.GetPgcode() != 0 ) { // not unassigned
-                            stat_out |= eStatus_WrongPGC;
-                        }
-                    } else if( inpOn.GetPgcode() != goodOn.GetPgcode() ) {
-                        stat_out |= eStatus_WrongPGC;
-                    }
-                }
-                if( !inpOn.IsSetLineage() || !goodOn.IsSetLineage() ||
-                    inpOn.GetLineage().compare( goodOn.GetLineage() ) != 0 ) {
-                    stat_out |= eStatus_WrongLineage;
-                }
-                if( !inpOn.IsSetName() || !goodOn.IsSetName() ||
-                    inpOn.GetName().Which() != goodOn.GetName().Which() ) {
-                    stat_out |= eStatus_WrongOrgname;
-                }
-                if( !inpOn.IsSetDiv() ) {
-                    if( goodOn.IsSetDiv() &&
-                        goodOn.GetDiv().compare( "UNA" ) != 0 ) {
-                        stat_out |= eStatus_WrongDivision;
-                    }
-                } else {
-                    if( !goodOn.IsSetDiv() ) {
-                        if( inpOn.GetDiv().compare( "UNA" ) != 0 ) {
-                            stat_out |= eStatus_WrongDivision;
-                        }
-                    } else if( inpOn.GetDiv().compare( goodOn.GetDiv() )
-                               != 0 ) {
-                        stat_out |= eStatus_WrongDivision;
-                    }
-                }
-                if( goodOn.IsSetMod() ) {
-                    if( inpOn.IsSetMod() ) {
-                        const COrgName::TMod& inpMods = inpOn.GetMod();
-                        const COrgName::TMod& goodMods = goodOn.GetMod();
-                        for( COrgName::TMod::const_iterator gi =
-                                 goodMods.begin();
-                             gi != goodMods.end();
-                             ++gi ) {
-                            bool bFound = false;
-                            for( COrgName::TMod::const_iterator ii =
-                                     inpMods.begin();
-                                 ii != inpMods.end();
-                                 ++ii ) {
-                                if( (*gi)->GetSubtype() == (*ii)->GetSubtype()
-                                    && ((*gi)->GetSubname() ==
-                                        (*ii)->GetSubname()) ) {
-                                    bFound = true;
-                                    break;
-                                }
-                            }
-                            if( !bFound ) {
-                                stat_out |= eStatus_WrongOrgmod;
-                                break;
-                            }
-                        }
-                    } else {
-                        stat_out |= eStatus_WrongOrgmod;
-                    }
-                }
-            }
-            // Check taxname
-            if( orgRef.IsSetTaxname() ) {
-                if( !goodOr.IsSetTaxname() ||
-                    orgRef.GetTaxname().compare( goodOr.GetTaxname() ) != 0 ) {
-                    stat_out |= eStatus_WrongTaxname;
-                }
-            } else if( goodOr.IsSetTaxname() ) {
-                stat_out |= eStatus_WrongTaxname;
-            }
-            // Check common name
-            if( orgRef.IsSetCommon() ) {
-                if( !goodOr.IsSetCommon() ||
-                    orgRef.GetCommon().compare( goodOr.GetCommon() ) != 0 ) {
-                    stat_out |= eStatus_WrongCommonName;
-                }
-            } else if( goodOr.IsSetCommon() ) {
-                stat_out |= eStatus_WrongCommonName;
-            }
-        } else { // Internal error: Cannot find orgref by tax_id
-            SetLastError( "No organisms found for tax id" );
-            ERR_POST_X( 18, GetLastError() );
-            return false;
+    if( SendRequest( req, resp ) ) {
+        if( resp.IsLookup() ) {
+            // Correct response, return object
+	    CRef<CTaxon2_data> pData( new CTaxon2_data() );
+	    
+            SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
+	    stat_out = x_ConvertOrgrefProps( *pData );
+
+	    return true;
+        } else { // Internal: wrong respond type
+            SetLastError( "INTERNAL: TaxService response type is not Lookup" );
         }
     }
-    return true;
+
+    return false;
 }
 
 //---------------------------------------------------
@@ -2494,7 +2087,7 @@ CTaxon1::GetTypeMaterial( TTaxId tax_id, TNameList& type_material_list_out )
 	    pNode = pNode->GetParent();
         }
 	// Filter out excessive name classes, leave type material only
-	short tm_cde = GetNameClassId( "type material" );
+	TTaxNameClass tm_cde = GetNameClassId( "type material" );
 	if ( tm_cde < 0 ) {
 	    SetLastError( "Name class for type material not found" );
 	    ERR_POST_X( 19, GetLastError() );
@@ -2554,7 +2147,7 @@ CTaxon1::GetDisplayCommonName( TTaxId tax_id, string& disp_name_out )
     if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode &&
         m_plCache->InitNameClasses() ) {
 	tax_id = pNode->GetTaxId(); // get rid of secondary taxid
-	short cn = m_plCache->GetPreferredCommonNameClass();
+	TTaxNameClass cn = m_plCache->GetPreferredCommonNameClass();
 	list< CRef< CTaxon1_name > > lNames;
 	if( GetAllNamesEx(tax_id, lNames) ) {
 	    // 1)

@@ -37,6 +37,8 @@
 #include "ctreecont.hpp"
 #include "cache.hpp"
 
+using namespace std;
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
@@ -55,25 +57,25 @@ BEGIN_objects_SCOPE
 #define TXC_GBHIDE  0x40000000
 #define TXC_STHIDE  0x80000000
 
-short
+TTaxRank
 CTaxon1Node::GetRank() const
 {
     return ((m_ref->GetCde())&0xff)-1;
 }
 
-short
+TTaxDivision
 CTaxon1Node::GetDivision() const
 {
     return (m_ref->GetCde()>>8)&0x3f;
 }
 
-short
+TTaxGeneticCode
 CTaxon1Node::GetGC() const
 {
     return (m_ref->GetCde()>>(8+6))&0x3f;
 }
 
-short
+TTaxGeneticCode
 CTaxon1Node::GetMGC() const
 {
     return (m_ref->GetCde()>>(8+6+6))&0x3f;
@@ -91,6 +93,143 @@ CTaxon1Node::IsGenBankHidden() const
     return m_ref->GetCde() & TXC_GBHIDE ? true : false;
 }
 
+class PPredDbTagByName {
+    const string& m_name;
+public:
+    PPredDbTagByName(const string& sName) : m_name(sName) {}
+    bool operator()( const COrg_ref::TDb::value_type& vt ) const {
+	return m_name.size()+10 == vt->GetDb().size() &&
+	    NStr::StartsWith( vt->GetDb(), "taxlookup" ) &&
+	    NStr::EndsWith( vt->GetDb(), m_name );
+    }
+};
+
+
+void
+COrgrefProp::SetOrgrefProp( COrg_ref& org, const string& prop_name, const string& prop_val )
+{
+    string sProp = "taxlookup$"+prop_name;
+    CRef< CDbtag > pDb( new CDbtag );
+    pDb->SetDb( sProp );
+    pDb->SetTag().SetStr( prop_val );
+    // Find the prop_name first
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::iterator i = find_if( org.SetDb().begin(), org.SetDb().end(), ppdb );
+	if( i != org.SetDb().end() ) {
+	    *i = pDb;
+	    return;
+	}
+    }
+    org.SetDb().push_back( pDb );
+}
+
+void
+COrgrefProp::SetOrgrefProp( COrg_ref& org, const string& prop_name, int prop_val )
+{
+    string sProp = "taxlookup%"+prop_name;
+    CRef< CDbtag > pDb( new CDbtag );
+    pDb->SetDb( sProp );
+    pDb->SetTag().SetId( prop_val );
+    // Find the prop_name first
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::iterator i = find_if( org.SetDb().begin(), org.SetDb().end(), ppdb );
+	if( i != org.SetDb().end() ) {
+	    *i = pDb;
+	    return;
+	}
+    }
+    org.SetDb().push_back( pDb );
+}
+
+void
+COrgrefProp::SetOrgrefProp( COrg_ref& org, const string& prop_name, bool prop_val )
+{
+    string sProp = "taxlookup?"+prop_name;
+    CRef< CDbtag > pDb( new CDbtag );
+    pDb->SetDb( sProp );
+    pDb->SetTag().SetId( prop_val ? 1 : 0 );
+    // Find the prop_name first
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::iterator i = find_if( org.SetDb().begin(), org.SetDb().end(), ppdb );
+	if( i != org.SetDb().end() ) {
+	    *i = pDb;
+	    return;
+	}
+    }
+    org.SetDb().push_back( pDb );
+}
+
+bool 
+COrgrefProp::HasOrgrefProp( const COrg_ref& org, const string& prop_name )
+{
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::const_iterator i = find_if( org.GetDb().begin(), org.GetDb().end(), ppdb );
+	return i != org.GetDb().end();
+    }
+    return false;
+}
+
+const string& 
+COrgrefProp::GetOrgrefProp( const COrg_ref& org, const string& prop_name )
+{
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::const_iterator i = find_if( org.GetDb().begin(), org.GetDb().end(), ppdb );
+	if( i != org.GetDb().end() && (*i)->IsSetTag() && (*i)->GetTag().IsStr() ) {
+	    return (*i)->GetTag().GetStr();
+	}
+    }
+    return CNcbiEmptyString::Get();
+}
+
+// returns default value false if not found
+bool 
+COrgrefProp::GetOrgrefPropBool( const COrg_ref& org, const string& prop_name )
+{
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::const_iterator i = find_if( org.GetDb().begin(), org.GetDb().end(), ppdb );
+	if( i != org.GetDb().end() && (*i)->IsSetTag() && (*i)->GetTag().IsId() ) {
+	    return (*i)->GetTag().GetId() != 0;
+	}
+    }
+    return false;
+}
+
+// returns default value 0 if not found
+int 
+COrgrefProp::GetOrgrefPropInt( const COrg_ref& org, const string& prop_name )
+{
+    if( org.IsSetDb() ) {
+	PPredDbTagByName ppdb( prop_name );
+	COrg_ref::TDb::const_iterator i = find_if( org.GetDb().begin(), org.GetDb().end(), ppdb );
+	if( i != org.GetDb().end() && (*i)->IsSetTag() && (*i)->GetTag().IsId() ) {
+	    return (*i)->GetTag().GetId();
+	}
+    }
+    return 0;
+}
+
+void
+COrgrefProp::RemoveOrgrefProp( COrg_ref& org, const string& prop_name )
+{
+    // Find the prop_name first
+    if( org.IsSetDb() ) {
+	for( COrg_ref::TDb::iterator i = org.SetDb().begin(); i != org.SetDb().end(); ) {
+	    if( prop_name.size()+10 == (*i)->GetDb().size() &&
+		NStr::StartsWith( (*i)->GetDb(), "taxlookup" ) &&
+		NStr::EndsWith( (*i)->GetDb(), prop_name ) ) {
+		i = org.SetDb().erase(i);
+	    } else {
+		++i;
+	    }
+	}
+    }
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
