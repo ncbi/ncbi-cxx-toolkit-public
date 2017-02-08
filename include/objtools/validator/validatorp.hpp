@@ -53,8 +53,9 @@
 #include <objects/valid/Comment_rule.hpp>
 
 #include <objtools/validator/validator.hpp>
-
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/feature_match.hpp>
+
 #include <objtools/alnmgr/sparse_aln.hpp>
 
 #include <objmgr/util/create_defline.hpp>
@@ -1362,27 +1363,6 @@ private:
 // internal structures
 class CCdsMatchInfo;
 class CMrnaMatchInfo;
-class CMatchmRNA;
-class CMatchCDS;
-class CMatchmRNA;
-
-class CmRNAAndCDSIndex
-{
-public:
-    CmRNAAndCDSIndex();
-    ~CmRNAAndCDSIndex();
-    void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq, CCacheImpl & cache);
-    CRef<CMatchmRNA> FindMatchmRNA(const CMappedFeat& mrna);
-    bool MatchmRNAToCDSEnd(const CMappedFeat& mrna, unsigned int partial_type);
-
-private:
-    vector < CRef<CMatchCDS> > m_CdsList;
-    vector < CRef<CMatchmRNA> > m_mRNAList;
-
-};
-
-
-
 class CValidError_bioseq : private CValidError_base
 {
 public:
