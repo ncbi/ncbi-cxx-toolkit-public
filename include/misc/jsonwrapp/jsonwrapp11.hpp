@@ -1017,7 +1017,8 @@ public:
 
     /// Read JSON data from a file, validating against schema
     bool Read(const std::string& filename, CJson_Schema& schema) {
-        return Read(std::ifstream(filename.c_str()), schema);
+        std::ifstream in(filename.c_str());
+	return Read(in, schema);
     }
 
     /// Test if the most recent read was successful
@@ -1046,7 +1047,8 @@ public:
     bool Write(const std::string& filename, CJson_Schema& schema,
                TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                unsigned int indent_char_count = 4) const {
-        return Write(std::ofstream(filename.c_str()), flags, indent_char_count);
+        std::ofstream out(filename.c_str());
+	return Write(out, flags, indent_char_count);
     }
 
     /// Traverse the document contents
@@ -1078,7 +1080,8 @@ public:
     bool Validate(std::istream& in);
     /// Validate JSON data from a file
     bool Validate(const std::string& filename) {
-        return Validate(std::ifstream(filename.c_str()));
+        std::ifstream in(filename.c_str());
+	return Validate(in);
     }
 
     /// Return result of the most recent validation
