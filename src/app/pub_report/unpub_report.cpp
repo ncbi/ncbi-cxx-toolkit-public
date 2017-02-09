@@ -673,7 +673,7 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
 
     vector<int> uids;
     if (query.size() <= 2048) { // TODO: find out why exception is thrown if query.size() > some value (4096?)
-        hydra_search.DoHydraSearch(query, uids);
+        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePMC_TOP_6);
     }
 
     int pmid = 0;
