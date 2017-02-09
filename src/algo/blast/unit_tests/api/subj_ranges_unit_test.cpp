@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     CSubjectRangesSet srs;
     const int kQueryId(0);
     const int kSubjectId(1);
-    const TSeqPos kSeqLength(129189614);
+    const TSeqPos kSeqLength(db.GetSeqLength(1));
     const int kPadSize = CSubjectRangesSet::kHspExpandSize;
     TSeqRange range1(500, 2000), range2(10000, 12000), range3(130000, 400000);
     TSeqRange range4(kSeqLength - kPadSize - 10, kSeqLength - kPadSize - 1);
