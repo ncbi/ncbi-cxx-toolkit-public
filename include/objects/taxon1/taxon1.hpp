@@ -141,17 +141,19 @@ public:
 
     enum EOrgRefStatus {
         eStatus_Ok = 0,
-        eStatus_WrongTaxId      = 0x001,
-        eStatus_WrongGC         = 0x002,
-        eStatus_WrongMGC        = 0x004,
-        eStatus_NoOrgname       = 0x008,
-        eStatus_WrongTaxname    = 0x010,
-        eStatus_WrongLineage    = 0x020,
-        eStatus_WrongCommonName = 0x040,
-        eStatus_WrongOrgname    = 0x080,
-        eStatus_WrongDivision   = 0x100,
-        eStatus_WrongOrgmod     = 0x200,
-	eStatus_WrongPGC        = 0x400
+        eStatus_WrongTaxId      = 0x0001,
+        eStatus_WrongGC         = 0x0002,
+        eStatus_WrongMGC        = 0x0004,
+        eStatus_NoOrgname       = 0x0008,
+        eStatus_WrongTaxname    = 0x0010,
+        eStatus_WrongLineage    = 0x0020,
+        eStatus_WrongCommonName = 0x0040,
+        eStatus_WrongOrgname    = 0x0080,
+        eStatus_WrongDivision   = 0x0100,
+        eStatus_WrongOrgmod     = 0x0200,
+        eStatus_WrongPGC        = 0x0400,
+        eStatus_WrongOrgrefMod  = 0x0800,
+        eStatus_WrongOrgnameAttr= 0x1000
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------

@@ -302,6 +302,12 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
 		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?pgc-changed" ) &&
 			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
 			result |= eStatus_WrongPGC;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgrefmod-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongOrgrefMod;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgnameattr-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongOrgnameAttr;
 		    }
 		} else { // status flag
 		    if( NStr::Equal( (*i)->GetDb(), "taxlookup?is_species_level" ) &&
@@ -2000,6 +2006,11 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 {
     CDiagAutoPrefix( "Taxon1::CheckOrgRef" );
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     stat_out = eStatus_Ok;
 
     CTaxon1_req  req;
