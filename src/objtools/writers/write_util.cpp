@@ -798,7 +798,8 @@ CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
 
     CSeqFeatData::ESubtype subType = mf.GetFeatSubtype();
     if (subType == CSeqFeatData::eSubtype_mobile_element) {
-        cerr << "";
+        m_mfLastOut = CMappedFeat();
+        return m_mfLastOut;
     }
 
     if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {

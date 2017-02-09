@@ -2025,14 +2025,8 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
         }
     }
 
-    const CSeqFeatData& data = mf.GetData();
-    if (data.IsImp()  &&  data.GetImp().IsSetKey()  
-            &&  data.GetImp().GetKey() == "mobile_element") {
-        return true;
-    }
-
     CMappedFeat gene = fc.FindBestGeneParent(mf);
-    if (gene.IsSetData()  &&  gene.GetData().IsGene()) {
+    if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
         CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
         record.SetAttribute("gene", strGene);
         return true; 
