@@ -1998,6 +1998,11 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    //const CSeq_loc& loc = mf.GetLocation();
+    //if (loc.GetStart(ESeqLocExtremes::eExtreme_Positional) == 52731-1) {
+    //    cout << "";
+    //} 
+
     string strGene;
     if (mf.GetData().Which() == CSeq_feat::TData::e_Gene) {
         const CGene_ref& gene_ref = mf.GetData().GetGene();
@@ -2018,6 +2023,12 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
                 return true;
             }
         }
+    }
+
+    const CSeqFeatData& data = mf.GetData();
+    if (data.IsImp()  &&  data.GetImp().IsSetKey()  
+            &&  data.GetImp().GetKey() == "mobile_element") {
+        return true;
     }
 
     CMappedFeat gene = fc.FindBestGeneParent(mf);
