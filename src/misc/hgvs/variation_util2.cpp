@@ -2353,7 +2353,8 @@ static bool HasProblematicExceptions(const CSeq_feat& cds_feat)
          : !cds_feat.GetExcept()        ? false
          : !cds_feat.IsSetExcept_text() ? true
          : (int)cds_feat.GetExcept_text().size() > ( //not all of except-text is explained by benign exceptions
-             27 * (NStr::Find(cds_feat.GetExcept_text(), "mismatches in translation") != NPOS)
+             49 * (NStr::Find(cds_feat.GetExcept_text(), "translation initiation by" /* tRNA-Leu at CUG codon"*/) != NPOS)
+          +  27 * (NStr::Find(cds_feat.GetExcept_text(), "mismatches in translation") != NPOS)
           +  20 * (NStr::Find(cds_feat.GetExcept_text(), "ribosomal slippage")        != NPOS));
 }
 
