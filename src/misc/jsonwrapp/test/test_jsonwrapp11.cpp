@@ -904,5 +904,57 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         }
     }
     CFile(filename).Remove();
+
+// --------------------------------------------------------------------------
+// schema
+    {
+        string str_schema(
+            "{\"$schema\": \"http://json-schema.org/draft-04/schema#\",\"title\": \"Product\",\"type\": \"object\",\"properties\": {"
+            "\"id\":   {\"type\": \"integer\"},"
+            "\"name\": {\"type\": \"string\"},"
+            "\"price\":{\"type\": \"number\", \"minimum\": 0, \"exclusiveMinimum\": true},"
+            "\"tags\": {\"type\": \"array\",\"items\": {\"type\": \"string\"},\"minItems\": 1,\"uniqueItems\": true }"
+            "},\"required\": [\"id\", \"name\", \"price\"]}"
+            );
+        CJson_Document sd(str_schema);
+        CJson_Schema sc(sd);
+        CJson_Document testdoc;
+        testdoc.SetObject().insert("id", 1);
+        testdoc.SetObject().insert("name", "objname");
+        testdoc.SetObject().insert("price", 1.23);
+        CJson_Array ar = testdoc.SetObject().insert_array("tags");
+        ar.push_back("one");
+        ar.push_back("two");
+        cout << testdoc << endl;
+
+        BOOST_CHECK(sc.Validate(testdoc));
+        if (!sc.IsValid()) {
+            cout << sc.GetValidationError() << endl;
+        }
+        BOOST_CHECK(testdoc.Write(filename, sc));
+        BOOST_CHECK(testdoc.Read(filename, sc));
+        cout << testdoc << endl;
+
+        testdoc.SetObject().at("id").SetValue().SetBool(true);
+        BOOST_CHECK(!sc.Validate(testdoc));
+        cout << sc.GetValidationError() << endl;
+        BOOST_CHECK(!testdoc.Write(filename, sc));
+        cout << sc.GetValidationError() << endl;
+
+        testdoc.SetObject().at("id").SetValue().SetInt4(1);
+        testdoc.SetObject().at("tags").SetArray().push_back(true);
+        BOOST_CHECK(!sc.Validate(testdoc));
+        cout << sc.GetValidationError() << endl;
+        BOOST_CHECK(!testdoc.Write(filename, sc));
+        cout << sc.GetValidationError() << endl;
+
+        testdoc.SetObject().at("tags").SetArray().pop_back();
+        testdoc.SetObject().at("tags").SetArray().push_back("one");
+        BOOST_CHECK(!sc.Validate(testdoc));
+        cout << sc.GetValidationError() << endl;
+        BOOST_CHECK(!testdoc.Write(filename, sc));
+        cout << sc.GetValidationError() << endl;
+    }
+    CFile(filename).Remove();
 }
 
