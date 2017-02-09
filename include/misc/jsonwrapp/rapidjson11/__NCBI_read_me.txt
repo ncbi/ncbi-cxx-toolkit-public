@@ -15,4 +15,4 @@ Search for 'NCBI' in the following files:
 rapidjson.h
 document.h
 prettywriter.h
-
+schema.h

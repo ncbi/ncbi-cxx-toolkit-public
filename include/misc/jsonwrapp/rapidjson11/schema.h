@@ -1597,6 +1597,10 @@ public:
 #if RAPIDJSON_SCHEMA_VERBOSE
         , depth_(0)
 #endif
+// NCBI: added
+        , invalidSchemaPointer_(PointerType())
+        , invalidSchemaKeyword_(0)
+        , invalidDocumentPointer_(PointerType())
     {
     }
 
@@ -1626,6 +1630,10 @@ public:
 #if RAPIDJSON_SCHEMA_VERBOSE
         , depth_(0)
 #endif
+// NCBI: added
+        , invalidSchemaPointer_(PointerType())
+        , invalidSchemaKeyword_(0)
+        , invalidDocumentPointer_(PointerType())
     {
     }
 
@@ -1645,6 +1653,10 @@ public:
             PopSchema();
         documentStack_.Clear();
         valid_ = true;
+// NCBI: added
+        invalidSchemaPointer_ = PointerType();
+        invalidSchemaKeyword_ = 0;
+        invalidDocumentPointer_ = PointerType();
     }
 
     //! Checks whether the current state is valid.
@@ -1652,18 +1664,19 @@ public:
     virtual bool IsValid() const { return valid_; }
 
     //! Gets the JSON pointer pointed to the invalid schema.
+// NCBI: changed
     PointerType GetInvalidSchemaPointer() const {
-        return schemaStack_.Empty() ? PointerType() : schemaDocument_->GetPointer(&CurrentSchema());
+        return invalidSchemaKeyword_ ? invalidSchemaPointer_ : (schemaStack_.Empty() ? PointerType() : schemaDocument_->GetPointer(&CurrentSchema()));
     }
 
     //! Gets the keyword of invalid schema.
     const Ch* GetInvalidSchemaKeyword() const {
-        return schemaStack_.Empty() ? 0 : CurrentContext().invalidKeyword;
+        return invalidSchemaKeyword_ ? invalidSchemaKeyword_ : (schemaStack_.Empty() ? 0 : CurrentContext().invalidKeyword);
     }
 
     //! Gets the JSON pointer pointed to the invalid value.
     PointerType GetInvalidDocumentPointer() const {
-        return documentStack_.Empty() ? PointerType() : PointerType(documentStack_.template Bottom<Ch>(), documentStack_.GetSize() / sizeof(Ch));
+        return invalidSchemaKeyword_ ? invalidDocumentPointer_ : (documentStack_.Empty() ? PointerType() : PointerType(documentStack_.template Bottom<Ch>(), documentStack_.GetSize() / sizeof(Ch)));
     }
 
 #if RAPIDJSON_SCHEMA_VERBOSE
@@ -1818,6 +1831,10 @@ private:
 #if RAPIDJSON_SCHEMA_VERBOSE
         , depth_(depth)
 #endif
+// NCBI: added
+        , invalidSchemaPointer_(PointerType())
+        , invalidSchemaKeyword_(0)
+        , invalidDocumentPointer_(PointerType())
     {
     }
 
@@ -1945,6 +1962,18 @@ private:
 #if RAPIDJSON_SCHEMA_VERBOSE
     unsigned depth_;
 #endif
+//NCBI: added
+    PointerType invalidSchemaPointer_;
+    const Ch* invalidSchemaKeyword_;
+    PointerType invalidDocumentPointer_;
+public:
+    template <typename ExtHandler>
+    void SetValidationError(const ExtHandler& validator) {
+        invalidSchemaPointer_ = validator.GetInvalidSchemaPointer();
+        invalidSchemaKeyword_ = validator.GetInvalidSchemaKeyword();
+        invalidDocumentPointer_ = validator.GetInvalidDocumentPointer();
+        valid_ = invalidSchemaKeyword_ == nullptr;
+    }
 };
 
 typedef GenericSchemaValidator<SchemaDocument> SchemaValidator;

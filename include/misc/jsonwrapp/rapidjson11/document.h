@@ -2414,6 +2414,11 @@ rhs.ValueType::SetValueAllocator(0);
     //! Get the position of last parsing error in input, 0 otherwise.
     size_t GetErrorOffset() const { return parseResult_.Offset(); }
 
+//NCBI: added
+    void SetParseResult(const ParseResult& result) {
+        parseResult_.Set(result.Code(), result.Offset());
+    }
+
     //! Implicit conversion to get the last parse result
 #ifndef __clang // -Wdocumentation
     /*! \return \ref ParseResult of the last parse operation

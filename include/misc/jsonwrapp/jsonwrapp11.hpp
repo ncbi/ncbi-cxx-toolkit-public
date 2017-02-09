@@ -978,6 +978,7 @@ private:
 /// CJson_Document
 ///
 /// Serializable, copyable container for JSON data.
+class CJson_Schema;
 
 class CJson_Document : public CJson_Node
 {
@@ -1011,6 +1012,14 @@ public:
         return Read(in);
     }
 
+    /// Read JSON data from a stream, validating against schema
+    bool Read(std::istream& in, CJson_Schema& schema);
+
+    /// Read JSON data from a file, validating against schema
+    bool Read(const std::string& filename, CJson_Schema& schema) {
+        return Read(std::ifstream(filename.c_str()), schema);
+    }
+
     /// Test if the most recent read was successful
     bool ReadSucceeded(void);
 
@@ -1018,14 +1027,26 @@ public:
     std::string GetReadError(void) const;
 
     /// Write JSON data into a stream
-    void Write(std::ostream& out, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+    bool Write(std::ostream& out, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                                   unsigned int indent_char_count = 4) const;
 
     /// Write JSON data into a file
-    void Write(const std::string& filename, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+    bool Write(const std::string& filename, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                                             unsigned int indent_char_count = 4) const {
         std::ofstream out(filename.c_str());
-        Write(out, flags, indent_char_count);
+        return Write(out, flags, indent_char_count);
+    }
+
+    /// Write JSON data into a stream, validating against schema
+    bool Write(std::ostream& out, CJson_Schema& schema,
+               TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+               unsigned int indent_char_count = 4) const;
+
+    /// Write JSON data into a file, validating against schema
+    bool Write(const std::string& filename, CJson_Schema& schema,
+               TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+               unsigned int indent_char_count = 4) const {
+        return Write(std::ofstream(filename.c_str()), flags, indent_char_count);
     }
 
     /// Traverse the document contents
@@ -1053,10 +1074,17 @@ public:
 
     /// Validate JSON document against schema
     bool Validate(const CJson_Document& v);
+    /// Validate JSON data from a stream
+    bool Validate(std::istream& in);
+    /// Validate JSON data from a file
+    bool Validate(const std::string& filename) {
+        return Validate(std::ifstream(filename.c_str()));
+    }
+
     /// Return result of the most recent validation
     bool IsValid(void) const;
 
-    /// Return property name which does not conform to schema
+    /// Return name of the property which does not conform to schema
     std::string GetInvalidValueProperty(void) const;
     /// Return nonconforming value URI in the document
     std::string GetInvalidValueDocumentUri(void) const;
@@ -1068,6 +1096,7 @@ public:
 private:
     rapidjson::SchemaDocument   m_SchemaDocument;
     rapidjson::SchemaValidator  m_SchemaValidator;
+    friend class CJson_Document;
 };
 
 
@@ -2228,6 +2257,21 @@ inline bool CJson_Document::Read(std::istream& in) {
     return  !m_DocImpl.HasParseError();
 }
 
+inline bool CJson_Document::Read(std::istream& in, CJson_Schema& schema) {
+    rapidjson::IStreamWrapper ifs(in);
+    rapidjson::SchemaValidatingReader<
+        rapidjson::kParseStopWhenDoneFlag,
+        rapidjson::IStreamWrapper,
+        rapidjson::UTF8<> > rdr(ifs, schema.m_SchemaDocument);
+    m_DocImpl.Populate(rdr);
+    m_DocImpl.SetParseResult(rdr.GetParseResult());
+    schema.m_SchemaValidator.SetValidationError(rdr);
+    if (m_DocImpl.HasParseError()) {
+        m_DocImpl.SetNull();
+    }
+    return !m_DocImpl.HasParseError();
+}
+
 inline bool CJson_Document::ReadSucceeded(void) {
     return !m_DocImpl.HasParseError();
 }
@@ -2235,7 +2279,7 @@ inline std::string CJson_Document::GetReadError() const {
     return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
 }
 
-inline void CJson_Document::Write(std::ostream& out,
+inline bool CJson_Document::Write(std::ostream& out,
     TJson_Write_Flags flags, unsigned int indent_char_count) const {
     rapidjson::OStreamWrapper ofs(out);
     rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
@@ -2247,7 +2291,27 @@ inline void CJson_Document::Write(std::ostream& out,
     if (flags & fJson_Write_NoEol) {
         writer.SetWriteEol(false);
     }
-    m_DocImpl.Accept(writer);
+    return m_DocImpl.Accept(writer);
+}
+
+inline bool CJson_Document::Write(std::ostream& out, CJson_Schema& schema,
+            TJson_Write_Flags flags, unsigned int indent_char_count) const
+{
+    rapidjson::OStreamWrapper ofs(out);
+    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
+    if (flags & fJson_Write_NoIndentation) {
+        writer.SetIndent(' ', 0);
+    } else {
+        writer.SetIndent( (flags & fJson_Write_IndentWithTab) ? '\t' : ' ', indent_char_count);
+    }
+    if (flags & fJson_Write_NoEol) {
+        writer.SetWriteEol(false);
+    }
+    rapidjson::GenericSchemaValidator< rapidjson::SchemaDocument,
+        rapidjson::PrettyWriter<rapidjson::OStreamWrapper> > validator(schema.m_SchemaDocument, writer);
+    bool res = m_DocImpl.Accept(validator);
+    schema.m_SchemaValidator.SetValidationError(validator);
+    return res;
 }
 
 inline void CJson_Document::Walk(CJson_WalkHandler& walk) const {
@@ -2277,6 +2341,13 @@ inline bool CJson_Schema::Validate(const CJson_Document& v) {
     m_SchemaValidator.Reset();
     return v.m_DocImpl.Accept(m_SchemaValidator);
 }
+inline bool CJson_Schema::Validate(std::istream& in) {
+    m_SchemaValidator.Reset();
+    rapidjson::IStreamWrapper ifs(in);
+    rapidjson::Reader rdr;
+    return rdr.Parse(ifs, m_SchemaValidator);
+}
+
 inline bool CJson_Schema::IsValid(void) const {
     return m_SchemaValidator.IsValid();
 }
@@ -2296,13 +2367,12 @@ inline std::string CJson_Schema::GetInvalidValueSchemaUri(void) const {
 inline std::string CJson_Schema::GetValidationError() const {
     std::string res;
     if (!IsValid()) {
-        res = "Invalid property \'"   + GetInvalidValueProperty()    +
+        res = "Invalid property \'"     + GetInvalidValueProperty()    +
                 "\' of value \'"        + GetInvalidValueDocumentUri() +
                 "\',  see schema at \'" + GetInvalidValueSchemaUri()   +
                 "\'";
     }
     return res;
-        
 }
 
 END_NCBI_SCOPE
