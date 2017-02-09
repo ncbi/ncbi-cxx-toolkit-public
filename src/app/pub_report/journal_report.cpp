@@ -69,7 +69,7 @@ void CJournalReport::ReportJournal(const string& name)
         m_set_level_journals.push_back(name);
     }
     else {
-        m_out << GetCurrentSeqId() << '\t' << name << '\n';
+        m_out << '|' << GetCurrentSeqId() << "|\t" << name << '\n';
     }
 }
 
