@@ -1048,7 +1048,7 @@ public:
                TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                unsigned int indent_char_count = 4) const {
         std::ofstream out(filename.c_str());
-	return Write(out, flags, indent_char_count);
+        return Write(out, schema, flags, indent_char_count);
     }
 
     /// Traverse the document contents
