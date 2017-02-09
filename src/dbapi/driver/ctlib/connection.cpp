@@ -415,9 +415,10 @@ CS_INT
 CTL_Connection::GetBLKVersion(void) const
 {
     CS_INT blk_version = BLK_VERSION_100;
+    CS_INT tds_version = m_Cntx->GetTDSVersion();
 
     _ASSERT(m_Cntx);
-    switch (m_Cntx->GetTDSVersion()) {
+    switch (tds_version) {
     case CS_VERSION_100:
         blk_version = BLK_VERSION_100;
         break;
@@ -428,6 +429,28 @@ CTL_Connection::GetBLKVersion(void) const
     case CS_VERSION_125:
         blk_version = BLK_VERSION_125;
         break;
+#endif
+#ifdef CS_VERSION_150
+    case CS_VERSION_150:
+        blk_version = BLK_VERSION_150;
+        break;
+#endif
+#ifdef CS_VERSION_155
+    case CS_VERSION_155:
+        blk_version = BLK_VERSION_155;
+        break;
+#endif
+#ifdef CS_VERSION_157
+    case CS_VERSION_157:
+        blk_version = BLK_VERSION_157;
+        break;
+#endif
+#ifdef CS_CURRENT_VERSION
+    default:
+        if (tds_version == CS_CURRENT_VERSION) {
+            // values have historically matched up in practice
+            blk_version = tds_version;
+        }
 #endif
     }
 

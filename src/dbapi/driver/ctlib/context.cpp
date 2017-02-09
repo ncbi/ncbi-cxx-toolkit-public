@@ -1543,6 +1543,7 @@ void CTLibContext::SetClientCharset(const string& charset)
 
 // Tunable version of TDS protocol to use
 
+// NB: normally used only in the absence of CS_CURRENT_VERSION
 #if !defined(NCBI_CTLIB_TDS_VERSION)
 #    define NCBI_CTLIB_TDS_VERSION 125
 #endif
@@ -1582,6 +1583,8 @@ CS_INT GetCtlibTdsVersion(int version)
     if (version == 0) {
 #ifdef FTDS_IN_USE
         return TFtdsTdsVersion::GetDefault();
+#elif defined(CS_CURRENT_VERSION)
+        return CS_CURRENT_VERSION;
 #else
         version = TCtlibTdsVersion::GetDefault();
 #endif
@@ -1611,6 +1614,18 @@ CS_INT GetCtlibTdsVersion(int version)
 #ifdef CS_VERSION_125
     case 125:
         return CS_VERSION_125;
+#endif
+#ifdef CS_VERSION_150
+    case 150:
+        return CS_VERSION_150;
+#endif
+#ifdef CS_VERSION_155
+    case 155:
+        return CS_VERSION_155;
+#endif
+#ifdef CS_VERSION_157
+    case 157:
+        return CS_VERSION_157;
 #endif
     }
 
@@ -1665,7 +1680,7 @@ CDbapiCtlibCFBase::CreateInstance(
 #else
         // Previous behahviour was: reuse_context = true
         bool reuse_context = false;
-        int  tds_version   = NCBI_CTLIB_TDS_VERSION;
+        int  tds_version   = 0 /* NCBI_CTLIB_TDS_VERSION */;
 #endif
 
         // Optional parameters ...
