@@ -1110,13 +1110,13 @@ CRef<CSeq_id> CID2WGSProcessor_Impl::GetAccVer(SWGSSeqInfo& seq)
 CRef<CSeq_id> CID2WGSProcessor_Impl::GetGeneral(SWGSSeqInfo& seq)
 {
     if ( seq.IsContig() ) {
-        return GetContigIterator(seq).GetGeneralSeq_id();
+        return GetContigIterator(seq).GetGeneralOrPatentSeq_id();
     }
     if ( seq.IsScaffold() ) {
-        return GetScaffoldIterator(seq).GetGeneralSeq_id();
+        return GetScaffoldIterator(seq).GetGeneralOrPatentSeq_id();
     }
     if ( seq.IsProtein() ) {
-        return GetProteinIterator(seq).GetGeneralSeq_id();
+        return GetProteinIterator(seq).GetGeneralOrPatentSeq_id();
     }
     // master
     return null;
