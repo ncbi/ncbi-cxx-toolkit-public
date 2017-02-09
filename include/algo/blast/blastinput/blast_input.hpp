@@ -93,6 +93,8 @@ public:
     ///                 type guessing (see @ref kSeqLenThreshold2Guess) [in]
     /// @param local_id_counter counter used to create the CSeqidGenerator to
     ///                 create local identifiers for sequences read [in]
+    /// @param skip_seq_check When set this will avoid the sequence 
+    ///                       validation step when using the CFastaReader. -RMH-
     CBlastInputSourceConfig(const SDataLoaderConfig& dlconfig,
                   objects::ENa_strand strand = objects::eNa_strand_other,
                   bool lowercase = false,
@@ -101,7 +103,8 @@ public:
                   bool retrieve_seq_data = true,
                   int local_id_counter = 1,
                   unsigned int seqlen_thresh2guess = 
-                    numeric_limits<unsigned int>::max());
+                    numeric_limits<unsigned int>::max(),
+                  bool skip_seq_check = false /* -RMH- */ );
 
     /// Destructor
     ///
@@ -135,6 +138,18 @@ public:
     /// @return boolean to toggle parsing of seq IDs
     ///
     bool GetBelieveDeflines() const { return m_BelieveDeflines; }
+
+    /// Retrieve status of sequence alphabet validation
+    /// @return boolean to toggle validation of seq data 
+    /// -RMH-
+    ///
+    bool GetSkipSeqCheck() const { return m_SkipSeqCheck; }
+    
+    /// Turn validation of sequence on/off
+    /// @param skip boolean to toggle validation of sequence
+    /// -RMH-
+    ///
+    void SetSkipSeqCheck(bool skip) { m_SkipSeqCheck = skip; }
 
     /// Set range for all sequences
     /// @param r range to use [in]
@@ -201,6 +216,8 @@ private:
     bool m_LowerCaseMask;          
     /// Whether to parse sequence IDs
     bool m_BelieveDeflines;        
+    /// Whether to validate sequence data -RMH-
+    bool m_SkipSeqCheck;
     /// Sequence range
     TSeqRange m_Range;             
     /// Configuration object for data loaders, used by CBlastInputReader

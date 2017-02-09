@@ -292,6 +292,11 @@ CBlastFastaInputSource::x_InitInputReader()
                                     CFastaReader::fAllSeqIds :
                                     (CFastaReader::fNoParseID |
                                      CFastaReader::fDLOptional);
+
+    // Allow CFastaReader fSkipCheck flag to be set based
+    // on new CBlastInputSourceConfig property - GetSkipSeqCheck() -RMH-
+    flags += ( m_Config.GetSkipSeqCheck() ? CFastaReader::fSkipCheck : 0 );
+
     flags += (m_ReadProteins
               ? CFastaReader::fAssumeProt 
               : CFastaReader::fAssumeNuc);
