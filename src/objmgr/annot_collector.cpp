@@ -3090,6 +3090,10 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                 }
                             }
                         }
+                        if ( enough ) {
+                            _ASSERT(!restart);
+                            break;
+                        }
                         continue;
                     }
 
