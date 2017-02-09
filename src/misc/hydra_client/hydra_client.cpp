@@ -46,7 +46,8 @@ class CHydraServer : public xml::event_parser
 {
 public:
     CHydraServer(vector<int>& uids);
-    bool RunHydraSearch (const string& query);
+    bool RunHydraSearch(const string& query,
+                        CHydraSearch::ESearch search);
 
 protected:
     bool error(const string& message);
@@ -65,11 +66,38 @@ CHydraServer::CHydraServer(vector<int>& uids)
 {
 }
 
-bool CHydraServer::RunHydraSearch (const string& query)
+static string GetSearchType(CHydraSearch::ESearch search) 
+{
+    switch(search) {
+        case CHydraSearch::ESearch::ePUBMED_TOP_20:  
+            return "pubmed_search_citation_top_20.1";
+
+        case CHydraSearch::ESearch::ePUBMED:         
+            return "pubmed_search_citation.1";
+
+        case CHydraSearch::ESearch::eCITATION:       
+            return "citation";
+
+        case CHydraSearch::ESearch::ePMC:            
+            return "pmc_citation.1";
+
+        case CHydraSearch::ESearch::ePMC_TOP_6:
+            return "pmc_citation_top_6.1";
+
+        default:
+            return "pubmed_search_citation_top_20.1";
+    }
+}
+
+bool CHydraServer::RunHydraSearch(const string& query,
+                                  CHydraSearch::ESearch search)
 {
     string hostname = "www.ncbi.nlm.nih.gov";
     string path = "/projects/hydra/hydra_search.cgi";
-    string args = "search=pubmed_search_citation_top_20.1&query=";
+    string args = "search=@SEARCHTYPE@&query=";
+
+    string searchtype = GetSearchType(search);
+    NStr::ReplaceInPlace(args, "@SEARCHTYPE@", searchtype);
 
     string params = args + NStr::URLEncode(query);
 
@@ -144,10 +172,11 @@ bool CHydraServer::text(const string& contents)
     return true;
 }
 
-bool CHydraSearch::DoHydraSearch (const string& query, vector<int>& uids)
+bool CHydraSearch::DoHydraSearch(const string& query, vector<int>& uids,
+                                 CHydraSearch::ESearch search)
 {
     uids.clear();
     CHydraServer hydra(uids);
-    return hydra.RunHydraSearch (query);
+    return hydra.RunHydraSearch(query, search);
 }
 

@@ -45,7 +45,21 @@ BEGIN_NCBI_SCOPE
 class CHydraSearch
 {
 public:
-    bool DoHydraSearch (const string& query, vector<int>& uids);
+    // Group 1 PUBMED and Group 2 PMC have different training sets.
+    // In Group 2 PMC, matches in the abstract text are ignored.
+    enum class ESearch {
+        // Group 1 PUBMED 
+        ePUBMED_TOP_20,  // up to 20 results with any score
+        ePUBMED,         // up to 15 results with score above 0.5
+
+        // Group 2 PMC 
+        eCITATION,       // only the top result in case its score is > 0.5, otherwise no results
+        ePMC,            // up to 6 results with score above 0.5
+        ePMC_TOP_6       // maximum of 6 results, any positive score
+    };
+
+    bool DoHydraSearch(const string& query, vector<int>& uids,
+                       ESearch search = ESearch::ePUBMED_TOP_20);
 };
 
 
