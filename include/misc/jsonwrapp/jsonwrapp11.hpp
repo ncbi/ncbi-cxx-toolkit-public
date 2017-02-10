@@ -30,7 +30,9 @@
 *
 *   File Description:
 *       Wrapper API to work with JSON data
-*       http://www.ietf.org/rfc/rfc4627.txt
+*       JSON format:   http://www.ietf.org/rfc/rfc7159.txt
+*       JSON pointer:  https://tools.ietf.org/html/rfc6901
+*       JSON schema:   http://json-schema.org/documentation.html
 *
 *   Internally, data of any type is stored in a universal container.
 *   We define different API classes here for the sake of semantics only.
@@ -58,6 +60,10 @@
 *
 *   Sequential access parsing event listener:
 *       CJson_WalkHandler -- define your own class derived from this one.
+* 
+*   Internally, the wrapper uses RapidJSON library, v1.1.0
+*       https://github.com/miloyip/rapidjson
+*   Please, DO NOT USE RapidJSON directly, as this may change.
 */
 
 #include <corelib/ncbistr.hpp>
@@ -142,6 +148,10 @@ public:
     /// Get JSON object contents of the node
     CJson_ConstObject GetObject(void) const;
 
+    /// Get node by JSON pointer
+    /// If node not found, method throws std::out_of_range exception
+    CJson_ConstNode  GetNode(const TKeyType& value);
+
     /// Convert the contents of the node into string
     std::string ToString(TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                          unsigned int indent_char_count = 4) const;
@@ -203,6 +213,10 @@ public:
 
     /// Get JSON object contents of the node
     CJson_Object SetObject(void);
+
+    /// Get node by JSON pointer
+    /// If node not found, it will be created
+    CJson_Node  SetNode(const TKeyType& value);
 
     ~CJson_Node(void) {}
     /// Note: this does not copy Node data
@@ -936,6 +950,10 @@ public:
     /// Return current stack path as string
     /// For example:  "/root/obj2/arr[3]"
     CJson_Node::TKeyType GetCurrentJPath(void) const;
+
+    /// Return current stack path as JSON pointer
+    /// For example:  "/root/obj2/arr/3"
+    CJson_Node::TKeyType GetCurrentJPointer(void) const;
     
     /// Convert data, starting at the current parsing position, into
     /// a document object.
@@ -1209,6 +1227,19 @@ inline bool CJson_ConstNode::IsArray(void) const {
 inline bool CJson_ConstNode::IsObject(void) const {
     return m_Impl->IsObject();
 }
+inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) {
+    _Impl *v = rapidjson::Pointer(value.c_str()).Get(*m_Impl);
+    if (!v) {
+        throw std::out_of_range("node not found");
+    }
+    return CJson_ConstNode(v);
+}
+
+inline CJson_Node CJson_Node::SetNode(const TKeyType& value) {
+    rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
+    return CJson_Node(&rapidjson::Pointer(value.c_str()).Create(*m_Impl, *a).SetValueAllocator(a));
+}
+
 inline CJson_Node& CJson_Node::SetNull(void) {
     m_Impl->SetNull( ); return *this;
 }
@@ -2198,6 +2229,23 @@ CJson_WalkHandler::GetCurrentJPath(void) const {
             path += JSONWRAPP_TO_NCBIUTF8("[");
             path += JSONWRAPP_TO_NCBIUTF8(ncbi::NStr::NumericToString(*i));
             path += JSONWRAPP_TO_NCBIUTF8("]");
+        }
+    }
+    return path;
+}
+
+inline CJson_Node::TKeyType CJson_WalkHandler::GetCurrentJPointer(void) const {
+    std::vector<bool>::const_iterator t = m_object_type.begin();
+    std::vector<bool>::const_iterator te = m_object_type.end();
+    std::vector<size_t>::const_iterator i = m_index.begin();
+    std::vector<CJson_Node::TKeyType>::const_iterator n = m_name.begin();
+    CJson_Node::TKeyType path;
+    for ( ++t, ++i, ++n; t != te; ++t, ++i, ++n) {
+        path += JSONWRAPP_TO_NCBIUTF8("/");
+        if (*t) {
+            path += JSONWRAPP_TO_NCBIUTF8(*n);
+        } else  if (*i != size_t(-1)) {
+            path += JSONWRAPP_TO_NCBIUTF8(ncbi::NStr::NumericToString(*i));
         }
     }
     return path;
