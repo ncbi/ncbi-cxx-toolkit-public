@@ -130,8 +130,11 @@ public:
     ~CCrawler() {}
 
     virtual bool BeginObject(const std::string& name) {
-        std::cout << "begin_object " << name << ", JPath = "
-                  << GetCurrentJPath() << std::endl;
+        std::cout << "begin_object " << name
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         if (m_TestNo == 1)
         {
             if (name == "obj3") {
@@ -144,29 +147,40 @@ public:
     }
     virtual bool BeginObjectMember(const std::string& name,
                                    const std::string& member) {
-        std::cout << "begin_object_member " << name << "."
-                  << member << ", JPath = "
-                  << GetCurrentJPath() << std::endl;
+        std::cout << "begin_object_member " << name << "." << member
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
 
         return true;
     }
     virtual bool PlainMemberValue(const std::string& name,
                                   const std::string& member,
-                                  const CJson_ConstValue& /*value*/) {
-        std::cout << "plain_member_value " << name
-                  << "." << member << ", JPath = "
-                  << GetCurrentJPath() << std::endl;
+                                  const CJson_ConstValue& value) {
+        std::cout << "plain_member_value " << name << "." << member
+                  << " = " << value.ToString()
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         return true;
     }
     virtual bool EndObject(const std::string& name) {
-        std::cout << "end_object " << name << ",  JPath = "
-                  << GetCurrentJPath() << std::endl;
+        std::cout << "end_object " << name 
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         return true;
     }
 
     virtual bool BeginArray(const std::string& name) {
-        std::cout << "begin_array " << name << ", JPath = "
-                  << GetCurrentJPath() << std::endl;
+        std::cout << "begin_array " << name
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         if (m_TestNo == 2)
         {
             if (name == "array") {
@@ -185,21 +199,30 @@ public:
     virtual bool BeginArrayElement(const std::string& name,
                                    size_t index) {
         std::cout << "begin_array_element " << name << "["
-                  << index << "], JPath = "
-                  << GetCurrentJPath() << std::endl;
+                  << index << "]"
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         return true;
     }
     virtual bool PlainElementValue(const std::string& name,
                                    size_t index,
-                                   const CJson_ConstValue& /*value*/) {
+                                   const CJson_ConstValue& value) {
         std::cout << "plain_element_value " << name << "["
-                  << index << "], JPath = "
-                  << GetCurrentJPath() << std::endl;
+                  << index << "] = " << value.ToString()
+                  << std::endl
+                  << ", JPath = "    << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         return true;
     }
     virtual bool EndArray(const std::string& name) {
-        std::cout << "end_array " << name << ", JPath = "
-                  << GetCurrentJPath() << std::endl;
+        std::cout << "end_array " << name 
+                  << std::endl
+                  << ", JPath = " << GetCurrentJPath()
+                  << ", JPointer = " << GetCurrentJPointer()
+                  << std::endl;
         return true;
     }
 private:
@@ -906,7 +929,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     CFile(filename).Remove();
 
 // --------------------------------------------------------------------------
-// schema
+// JSON schema
     {
         string str_schema(
             "{\"$schema\": \"http://json-schema.org/draft-04/schema#\",\"title\": \"Product\",\"type\": \"object\",\"properties\": {"
@@ -956,5 +979,62 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         cout << sc.GetValidationError() << endl;
     }
     CFile(filename).Remove();
-}
 
+// --------------------------------------------------------------------------
+// JSON pointer
+    CJson_ConstNode node = doc.GetNode("/obj2/one");
+    BOOST_CHECK(node.IsValue());
+    BOOST_CHECK(node.GetValue().IsInt4());
+    BOOST_CHECK(node.GetValue().GetInt4() == 1);
+
+    node = doc.GetNode("/obj2/obj3/array/4/1");
+    BOOST_CHECK(node.IsValue());
+    BOOST_CHECK(node.GetValue().IsString());
+    BOOST_CHECK(node.GetValue().GetString() == "three");
+
+    node = doc.GetNode("/obj2/obj3/array/5/one");
+    BOOST_CHECK(node.IsValue());
+    BOOST_CHECK(node.GetValue().IsInt4());
+    BOOST_CHECK(node.GetValue().GetInt4() == 1);
+
+    node = doc.GetNode("/string");
+    BOOST_CHECK(node.IsValue());
+    BOOST_CHECK(node.GetValue().IsString());
+    BOOST_CHECK(node.GetValue().GetString() == "stringvalue");
+
+    {
+        CJson_Document testdoc(CJson_Node::eObject);
+        testdoc.SetNode("/id").SetValue().SetInt4(1);
+        testdoc.SetNode("/name").SetValue().SetString("objname");
+#if 0
+        testdoc.SetNode("/tags/0").SetValue().SetString("one");
+        testdoc.SetNode("/tags/1").SetValue().SetString("two");
+#else
+        CJson_Array ar = testdoc.SetNode("/tags").ResetArray();
+        ar.SetNode("/0").SetValue().SetString("one");
+        ar.SetNode("/1").SetValue().SetString("two");
+        testdoc.SetNode("/tags/2").SetValue().SetInt4(3);
+        testdoc.SetNode("/tags/3").SetValue().SetInt4(4);
+#endif
+        cout << testdoc << endl;
+    }
+    {
+        CJson_Document testdoc(CJson_Node::eObject);
+        testdoc.SetNode("/id/one/int").SetValue().SetInt4(1);
+        testdoc.SetNode("/id/one/name").SetValue().SetString("one");
+        testdoc.SetNode("/id/two/int").SetValue().SetInt4(2);
+        testdoc.SetNode("/id/two/name").SetValue().SetString("two");
+        testdoc.SetNode("/id/three/0").SetValue().SetInt4(3);
+        testdoc.SetNode("/id/three/1").SetValue().SetString("three");
+        cout << testdoc << endl;
+        cout << testdoc.GetNode("/id/one/name").ToString() << endl;
+        cout << testdoc.GetNode("/id/two").ToString() << endl;
+        try {
+            cout << testdoc.GetNode("/id/two/num").ToString() << endl;
+            BOOST_CHECK(false);
+        }
+        catch (std::exception& e) {
+            cout << e.what() << endl;;
+        }
+    }
+}
