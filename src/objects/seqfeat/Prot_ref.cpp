@@ -126,17 +126,20 @@ static CProt_ref::EECNumberFileStatus s_LoadECNumberTable(const string& dir, con
 {
     CRef<ILineReader> lr;
     CProt_ref::EECNumberFileStatus rval = CProt_ref::eECFile_not_attempted;
-
+    string file = kEmptyStr;
     if ( !dir.empty() ) {
+        file = CDirEntry::MakePath(dir, "ecnum_" + name, "txt");
         lr.Reset(ILineReader::New
                  (CDirEntry::MakePath(dir, "ecnum_" + name, "txt")));
         rval = CProt_ref::eECFile_not_found;
     }
     if (lr.Empty()) {
+        LOG_POST("Reading " + name + " EC number data from built-in table");
         while (fallback_count--) {
             s_ProcessECNumberLine(*fallback++, status);
         }
     } else {
+        LOG_POST("Reading " + name + " EC number data from " + file);
         rval = CProt_ref::eECFile_not_read;
         do {
             s_ProcessECNumberLine(*++*lr, status);
@@ -163,8 +166,9 @@ static void s_InitializeECNumberMaps(void)
             dir = CDirEntry::AddTrailingPathSeparator(CDirEntry(file).GetDir());
         }
         if (dir.empty()) {
-            ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
-                       "falling back on built-in data.");
+            LOG_POST("s_InitializeECNumberMaps: reading specific EC Numbers from built-in data.");
+        } else {
+            LOG_POST("s_InitializeECNumberMaps: reading specific EC Numbers from " + file);
         }
     }
 #define LOAD_EC(x) s_LoadECNumberTable \

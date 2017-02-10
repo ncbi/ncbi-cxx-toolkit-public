@@ -108,8 +108,10 @@ static void s_InitializeStructuredCommentRules(void)
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_CommentRules), CObjectIStream::eNoFileHeader);    
+        LOG_POST("Reading from " + file + " for structured comment rules.");
     }
     if (!s_CommentRules->IsSet()) {
+        LOG_POST("Falling back on built-in data for structured comment rules");
         size_t num_lines = sizeof (s_Defaultvalidrules) / sizeof (char *);     
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {

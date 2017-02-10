@@ -4651,6 +4651,7 @@ static const size_t k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
 
 void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 {
+    LOG_POST("Falling back on built-in data for latlon / water data.");
       // initialize list of country lines
     m_CountryLineList.clear();
     m_Scale = 20.0;
@@ -4686,7 +4687,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
     if (NStr::IsBlank (fname)) {
         return false;
     }
-
+    LOG_POST("Reading from " + filename + " for latlon/water data.");
     CRef<ILineReader> lr = ILineReader::New (fname);
     if (lr.Empty()) {
         return false;

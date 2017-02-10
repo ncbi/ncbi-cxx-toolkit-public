@@ -420,9 +420,12 @@ static void s_InitializeOrgRefMap(void)
     string file = g_FindDataFile("common_tax.txt");
     CRef<ILineReader> lr;
     if (!file.empty()) {
+        LOG_POST("Reading from " + file + " for popular organisms.");
         try {
             lr = ILineReader::New(file);
         } NCBI_CATCH("s_InitializeOrgRefMap")
+    } else {
+        LOG_POST("Falling back on built-in data for popular organisms.");
     }
 
     if (lr.Empty()) {

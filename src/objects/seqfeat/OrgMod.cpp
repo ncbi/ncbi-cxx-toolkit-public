@@ -259,14 +259,14 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
     }
 
     if (lr.Empty()) {
-//        ERR_POST_X(2, Info << "s_InitializeInstitutionCollectionCodeMaps: "
-//                   "falling back on built-in data.");
+        LOG_POST("Falling back on built-in data for institution code list.");
         size_t num_codes = sizeof (kInstitutionCollectionCodeList) / sizeof (char *);
         for (size_t i = 0; i < num_codes; i++) {
             const char *p = kInstitutionCollectionCodeList[i];
             s_ProcessInstitutionCollectionCodeLine(p);
         }
     } else {
+        LOG_POST("Reading from " + file + " for instition code list.");
         do {
             s_ProcessInstitutionCollectionCodeLine(*++*lr);
         } while ( !lr->AtEOF() );

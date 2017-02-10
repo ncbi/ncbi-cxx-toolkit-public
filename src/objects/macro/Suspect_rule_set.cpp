@@ -79,12 +79,14 @@ static void s_InitializeOrganelleProductRules(const string& name)
     string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
 
     if ( !file.empty() ) {
+        LOG_POST("Reading from " + file + " for organelle products");
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_OrganelleProductRules), CObjectIStream::eNoFileHeader);    
     }
     if (!s_OrganelleProductRules->IsSet()) {
+        LOG_POST("Falling back on built-in data for organelle products");
         size_t num_lines = sizeof (s_Defaultorganelleproducts) / sizeof (char *);     
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {
@@ -108,12 +110,14 @@ static void s_InitializeProductRules(const string& name)
     string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
 
     if ( !file.empty() ) {
+        LOG_POST("Reading from " + file + " for suspect product rules");
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_ProductRules), CObjectIStream::eNoFileHeader);    
     }
     if (!s_ProductRules->IsSet()) {
+        LOG_POST("Falling back on built-in data for suspect product rules");
         size_t num_lines = sizeof (s_Defaultproductrules) / sizeof (char *);     
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {
