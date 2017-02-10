@@ -267,6 +267,8 @@ string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
         label = "plasmid";
     } else if (st == CSubSource::eSubtype_country) {
         label = "from";
+    } else if (st == CSubSource::eSubtype_segment) {
+        label = "segment";
     } else if (m_UseModifierLabels) {
         label = CAutoDefAvailableModifier::GetSubSourceLabel (st);
     }
@@ -556,6 +558,11 @@ void CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers(TExtraOrgMods& extra
 
     if (extra_subsrcs.find(CSubSource::eSubtype_endogenous_virus_name) == extra_subsrcs.end()) {
         extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_endogenous_virus_name, true));
+    }
+
+    if (extra_subsrcs.find(CSubSource::eSubtype_segment) == extra_subsrcs.end() &&
+        bsrc.IsSetOrg() && bsrc.GetOrg().IsSetTaxname() && NStr::StartsWith(bsrc.GetOrg().GetTaxname(), "Influenza ")) {
+        extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_segment, true));
     }
 }
 

@@ -2114,8 +2114,25 @@ BOOST_AUTO_TEST_CASE(Test_GB_6557)
     defline = "Sebaea microphylla LIA2 apicoplast protein gene, complete cds; nuclear gene for apicoplast product.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4185)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetTaxname(seq, "Influenza A virus (A/USA/RVD1_H1/2011(H1N1))");
+    unit_test_util::SetSubSource(seq, CSubSource::eSubtype_segment, "4");
+    string defline = "Influenza A virus (A/USA/RVD1_H1/2011(H1N1)) segment 4 hemagglutinin (HA) gene, complete cds.";
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq);
+    AddTitle(nuc, defline);
+    unit_test_util::SetNucProtSetProductName(seq, "hemagglutinin");
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("HA");
+    AddFeat(gene, nuc);
+
+    CheckDeflineMatches(seq, true);
+}
 
 
 END_SCOPE(objects)
