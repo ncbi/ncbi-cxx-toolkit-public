@@ -1128,26 +1128,59 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
 
 }
 
+static bool s_IsEmptyBioSource(const CSeqdesc& src)
+{
+    return !src.GetSource().IsSetSubtype() && !src.GetSource().IsSetGenome() && !src.GetSource().IsSetOrigin() &&
+        (!src.GetSource().IsSetOrg() || !src.GetSource().IsSetOrgname() && !src.GetSource().IsSetTaxname() && !src.GetSource().IsSetDivision());
+}
 
 void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src)
 {
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
 
+    CBioseq_EditHandle beh = bh.GetEditHandle();
+    // Removes empty BioSources
+    for (; src_desc_ci;) {
+
+        if (s_IsEmptyBioSource(*src_desc_ci)) {
+            const CSeqdesc& cur_descr = *src_desc_ci;
+            ++src_desc_ci;
+            beh.RemoveSeqdesc(cur_descr);
+        }
+        else {
+            break;
+        }
+    }
+
     if (!src_desc_ci) {
         CRef<CSeqdesc> new_desc(new CSeqdesc());
         new_desc->SetSource().Assign(src);
         CBioseq_set_Handle parent = bh.GetParentBioseq_set();
+
         if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
-            CBioseq_set_EditHandle beh = parent.GetEditHandle();
-            beh.AddSeqdesc(*new_desc);
+            CBioseq_set_EditHandle bseh = parent.GetEditHandle();
+            bseh.AddSeqdesc(*new_desc);
         } else {
-            CBioseq_EditHandle beh = bh.GetEditHandle();
             beh.AddSeqdesc(*new_desc);
         }
     } else {
+
         const CBioSource& bs = src_desc_ci->GetSource();
         CBioSource* old_src = const_cast<CBioSource *> (&bs);
         old_src->UpdateWithBioSample(src, true, true);
+
+        // Removes the rest of empty BioSources
+        for (++src_desc_ci; src_desc_ci;) {
+
+            if (s_IsEmptyBioSource(*src_desc_ci)) {
+                const CSeqdesc& cur_descr = *src_desc_ci;
+                ++src_desc_ci;
+                beh.RemoveSeqdesc(cur_descr);
+            }
+            else {
+                ++src_desc_ci;
+            }
+        }
     }
 }
 
