@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(Test_DropConnection)
 {
     string sql;
     enum {
-        num_of_tests = 31
+        num_of_tests = 3
     };
 
     try {
