@@ -602,7 +602,7 @@ static const char* kAC_MaxAge = "Access-Control-Max-Age";
 static const char* kSimpleHeaders =
     " Accept Accept-Language Content-Language Content-Type";
 static const char* kDefaultHeaders =
-    " Cache-Control Expires Last-Modified Pragma X-Accept-Charset X-Accept"
+    " Origin Cache-Control Expires Last-Modified Pragma X-Accept-Charset X-Accept"
     " X-Requested-With NCBI-SID NCBI-PHID";
 
 
