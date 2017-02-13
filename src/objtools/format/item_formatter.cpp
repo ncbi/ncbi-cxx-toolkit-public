@@ -1412,6 +1412,9 @@ static void s_FormatJournal
             s_FixPages(pages);
         }
     }
+    if (NStr::IsBlank(pages)) {
+        pages = ref.GetPII();
+    }
 
     if (!NStr::IsBlank(volume)  ||  !NStr::IsBlank(pages)) {
         jour << s_DoSup(issue, part_sup, part_supi);

@@ -41,6 +41,8 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/mla/mla_client.hpp>
 #include <objects/pub/Pub.hpp>
@@ -742,6 +744,7 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         m_JustUids = false;
         break;
 
+    /*
     case CPub::e_Journal:
         x_Init(pub.GetJournal(), ctx);
         m_JustUids = false;
@@ -758,6 +761,7 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         x_InitProc(pub.GetProc().GetBook(), ctx);
         m_JustUids = false;
         break;
+    */
 
     case CPub::e_Patent:
         x_Init(pub.GetPatent(), ctx);
@@ -952,6 +956,17 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
             case CArticleId::e_Medline:
                 if (m_MUID == 0) {
                     m_MUID = (*it)->GetMedline();
+                }
+                break;
+            case CArticleId_Base::e_Other:
+                {
+                    const CDbtag& dbt = (*it)->GetOther();
+                    if (dbt.IsSetTag ()) {
+                        const CObject_id& oid = dbt.GetTag();
+                        if (oid.IsStr()) {
+                            m_ELocationPII = oid.GetStr();
+                        }
+                    }
                 }
                 break;
             default:
