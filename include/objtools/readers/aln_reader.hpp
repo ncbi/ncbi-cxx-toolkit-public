@@ -194,6 +194,8 @@ public:
     using TSeqTitles        = objects::CFastaDeflineReader::TSeqTitles;
     using SDeflineParseInfo = objects::CFastaDeflineReader::SDeflineParseInfo;
     using TIgnoredProblems  = objects::CFastaDeflineReader::TIgnoredProblems;
+    using TFastaFlags       = objects::CFastaDeflineReader::TFastaFlags;
+
     void ParseDefline(const string& defline,
             const SDeflineParseInfo& info,
             const TIgnoredProblems& ignoredErrors,
@@ -207,6 +209,7 @@ public:
     objects::CSeqIdGenerator& SetIDGenerator(void) { return m_FastaIdHandler.SetGenerator(); }
     const objects::CSeqIdGenerator& GetIDGenerator(void) const { return m_FastaIdHandler.GetGenerator(); }
     virtual CRef<objects::CSeq_id> GenerateID(bool unique_id) { return m_FastaIdHandler.GenerateID(unique_id); } 
+    virtual CRef<objects::CSeq_id> GenerateID(const string defline, bool unique_id) { return m_FastaIdHandler.GenerateID(defline, unique_id); } 
 
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
@@ -218,8 +221,8 @@ public:
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
     
     /// Create ASN.1 classes from the parsed alignment
-    CRef<objects::CSeq_align> GetSeqAlign(bool use_defline_parser=false);
-    CRef<objects::CSeq_entry> GetSeqEntry(bool use_defline_parser=false);
+    CRef<objects::CSeq_align> GetSeqAlign(bool use_defline_parser=false, TFastaFlags fasta_flags=0);
+    CRef<objects::CSeq_entry> GetSeqEntry(bool use_defline_parser=false, TFastaFlags fasta_flags=0);
 
 
 private:
@@ -273,9 +276,12 @@ private:
     bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
 
 protected:
-    virtual void x_AssignDensegIds(bool use_defline_parser, objects::CDense_seg& denseg);
+    virtual void x_AssignDensegIds(bool use_defline_parser, 
+            TFastaFlags fasta_flags,
+            objects::CDense_seg& denseg);
     virtual CRef<objects::CSeq_id> x_GetFastaId(const string& fasta_defline, 
-        const TSeqPos& line_number);
+        const TSeqPos& line_number,
+        TFastaFlags fasta_flags);
 
 
 protected:

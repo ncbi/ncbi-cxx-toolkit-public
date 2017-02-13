@@ -335,12 +335,14 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
 }
 
 
-CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline, const TSeqPos& defline_number) 
+CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline, 
+        const TSeqPos& defline_number, 
+        TFastaFlags fasta_flags) 
 {
     TSeqPos range_start = 0, range_end = 0;
     bool has_range = false;
     SDeflineParseInfo parse_info;
-    parse_info.fFastaFlags = objects::CFastaReader::fAllSeqIds;
+    parse_info.fFastaFlags = fasta_flags;
     parse_info.lineNumber = defline_number; 
 
     TIgnoredProblems ignored_errors;
@@ -359,9 +361,9 @@ CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline, const TSeqPo
     }
     catch (const exception&) {}
 
-    const bool unique_id = false;
+    const bool unique_id = true;
     if (ids.empty()) {
-        return GenerateID(unique_id);
+        return GenerateID(fasta_defline, unique_id);
     }  
 
     if (has_range) {
@@ -371,7 +373,9 @@ CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline, const TSeqPo
 }
 
 
-void CAlnReader::x_AssignDensegIds(const bool use_defline_parser, CDense_seg& denseg) {
+void CAlnReader::x_AssignDensegIds(const bool use_defline_parser, 
+        TFastaFlags fasta_flags, 
+        CDense_seg& denseg) {
 
     CDense_seg::TIds& ids = denseg.SetIds();
     ids.resize(m_Dim);
@@ -385,7 +389,7 @@ void CAlnReader::x_AssignDensegIds(const bool use_defline_parser, CDense_seg& de
                 fasta_defline += " " + m_Deflines[i];
                 fasta_defline = ">" + fasta_defline;
             }
-            ids[i] = x_GetFastaId(fasta_defline, i);
+            ids[i] = x_GetFastaId(fasta_defline, i, fasta_flags);
         }
         return;
     }
@@ -402,7 +406,7 @@ void CAlnReader::x_AssignDensegIds(const bool use_defline_parser, CDense_seg& de
 }
 
 
-CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser)
+CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser, const TFastaFlags fasta_flags)
 {
     if (m_Aln) {
         return m_Aln;
@@ -425,7 +429,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser)
     //CDense_seg::TStrands& strands = ds.SetStrands();
     CDense_seg::TLens&    lens    = ds.SetLens();
 
-    x_AssignDensegIds(use_defline_parser, ds);
+    x_AssignDensegIds(use_defline_parser, fasta_flags, ds);
 
     // get the length of the alignment
     TSeqPos aln_stop = m_Seqs[0].size();
@@ -523,7 +527,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser)
 }
 
 
-CRef<CSeq_entry> CAlnReader::GetSeqEntry(const bool use_defline_parser)
+CRef<CSeq_entry> CAlnReader::GetSeqEntry(const bool use_defline_parser, const TFastaFlags fasta_flags)
 {
     if (m_Entry) {
         return m_Entry;
@@ -534,7 +538,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const bool use_defline_parser)
     }
     m_Entry = new CSeq_entry();
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
-    seq_annot->SetData().SetAlign().push_back(GetSeqAlign(use_defline_parser));
+    seq_annot->SetData().SetAlign().push_back(GetSeqAlign(use_defline_parser, fasta_flags));
 
     m_Entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     m_Entry->SetSet().SetAnnot().push_back(seq_annot);
