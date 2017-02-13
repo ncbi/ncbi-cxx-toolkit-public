@@ -283,7 +283,7 @@ protected:
     virtual CRef<objects::CSeq_id> x_GetFastaId(const string& fasta_defline, 
         const TSeqPos& line_number,
         TFastaFlags fasta_flags);
-    bool x_CacheIdHandle(objects::CSeq_id_Handle idh) { m_FastaIdHandler.CacheIdHandle(idh); }
+    bool x_CacheIdHandle(objects::CSeq_id_Handle idh) { return m_FastaIdHandler.CacheIdHandle(idh); }
     void x_ClearIdHandleCache(void) { m_FastaIdHandler.ClearIdCache(); }
 
 
