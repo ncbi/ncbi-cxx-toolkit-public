@@ -2220,8 +2220,17 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     lookup->word_length = opt->word_size;
     lookup->lut_word_length = 16;
     lookup->overflow = NULL;
-    lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
     lookup->hash_callback = FNV_hash;
+
+    if (opt->db_filter) {
+        /* with database filtering some query words are not put in the lookup
+           table and neighboring query words would be missed with larger scan
+           step */
+        lookup->scan_step = 1;
+    }
+    else {
+        lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
+    }
 
     /* PV array does not use hashing */
     lookup->pv_array_bts = PV_ARRAY_BTS;
