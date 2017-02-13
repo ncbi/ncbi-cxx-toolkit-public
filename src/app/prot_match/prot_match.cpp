@@ -130,7 +130,7 @@ void CProteinMatchApp::Init(void)
 
     arg_desc->AddKey("o",
         "OutputFile",
-        "Output stub",
+        "Match-table file",
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("bindir", 
@@ -170,7 +170,7 @@ int CProteinMatchApp::Run(void)
         if (!outputdir.Exists()) {
             outputdir.Create();
         }
-        out_dir = outputdir.GetDir();
+        out_dir = args["outdir"].AsString();
     }
 
     CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn");
@@ -198,7 +198,7 @@ int CProteinMatchApp::Run(void)
         return 0;
     }
 
-    const string out_stub = CDirEntry::MakePath(
+    const string table_file = CDirEntry::MakePath(
         out_dir,
         args["o"].AsString());
 
@@ -207,7 +207,7 @@ int CProteinMatchApp::Run(void)
     for (CRef<CSeq_entry> nuc_prot_set : nuc_prot_sets) {
 
         x_ProcessSeqEntry(nuc_prot_set,
-            out_stub,
+            table_file,
             count, 
             keep_temps,
             assm_assm_blastn,
@@ -217,7 +217,7 @@ int CProteinMatchApp::Run(void)
         ++count;
     } // Return table if exception
 
-    const string table_file = out_stub + ".tab";
+//    const string table_file = out_stub + ".tab";
     try {
         CNcbiOfstream ostr(table_file);
         match_tab.WriteTable(ostr);
