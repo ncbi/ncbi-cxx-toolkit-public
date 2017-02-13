@@ -37,6 +37,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -282,6 +283,8 @@ protected:
     virtual CRef<objects::CSeq_id> x_GetFastaId(const string& fasta_defline, 
         const TSeqPos& line_number,
         TFastaFlags fasta_flags);
+    bool x_CacheIdHandle(objects::CSeq_id_Handle idh) { m_FastaIdHandler.CacheIdHandle(idh); }
+    void x_ClearIdHandleCache(void) { m_FastaIdHandler.ClearIdCache(); }
 
 
 protected:

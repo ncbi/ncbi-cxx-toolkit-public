@@ -342,7 +342,8 @@ CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline,
     TSeqPos range_start = 0, range_end = 0;
     bool has_range = false;
     SDeflineParseInfo parse_info;
-    parse_info.fFastaFlags = fasta_flags;
+    //parse_info.fFastaFlags = fasta_flags;
+    parse_info.fFastaFlags = objects::CFastaReader::fAllSeqIds;
     parse_info.lineNumber = defline_number; 
 
     TIgnoredProblems ignored_errors;
@@ -361,15 +362,28 @@ CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline,
     }
     catch (const exception&) {}
 
-    const bool unique_id = true;
+    CRef<CSeq_id> result;
+    const bool unique_id = (fasta_flags & objects::CFastaReader::fUniqueIDs); 
+
+
     if (ids.empty()) {
-        return GenerateID(fasta_defline, unique_id);
-    }  
+        result = GenerateID(fasta_defline, unique_id);
+    } 
+    else {
+        result = FindBestChoice(ids, CSeq_id::BestRank);
+    } 
 
     if (has_range) {
-        // What to do now?
+        string seq_id_text = "lcl|" + result->GetSeqIdString(true);
+        seq_id_text += ":" + NStr::NumericToString(range_start+1) + "_" + NStr::NumericToString(range_end+1);
+        result = Ref(new CSeq_id(seq_id_text)); 
     }
-    return FindBestChoice(ids, CSeq_id::BestRank);
+
+ //   if (unique_id) {
+ //       x_CacheIdHandle(CSeq_id_Handle::GetHandle(*result));
+ //   }
+
+    return result;
 }
 
 
@@ -523,6 +537,11 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser, const TF
 #if _DEBUG
     m_Aln->Validate(true);
 #endif    
+
+    if (use_defline_parser) {
+        x_ClearIdHandleCache();
+    }
+
     return m_Aln;
 }
 
