@@ -982,12 +982,12 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
 // --------------------------------------------------------------------------
 // JSON pointer
-    CJson_ConstNode node = doc.GetNode("/obj2/one");
+    CJson_ConstNode node = doc.GetNode("#/obj2/one");
     BOOST_CHECK(node.IsValue());
     BOOST_CHECK(node.GetValue().IsInt4());
     BOOST_CHECK(node.GetValue().GetInt4() == 1);
 
-    node = doc.GetNode("/obj2/obj3/array/4/1");
+    node = doc.GetNode("#/obj2/obj3/array/4/1");
     BOOST_CHECK(node.IsValue());
     BOOST_CHECK(node.GetValue().IsString());
     BOOST_CHECK(node.GetValue().GetString() == "three");
@@ -1022,10 +1022,16 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         CJson_Document testdoc(CJson_Node::eObject);
         testdoc.SetNode("/id/one/int").SetValue().SetInt4(1);
         testdoc.SetNode("/id/one/name").SetValue().SetString("one");
+        BOOST_CHECK(testdoc.GetNode("/id/one").IsObject());
+        testdoc.SetNode("/id/one").SetObject().insert("extra", true);
+        BOOST_CHECK(testdoc.SetNode("/id").IsObject());
+        testdoc.SetNode("/id").SetObject().insert("extra", false);
         testdoc.SetNode("/id/two/int").SetValue().SetInt4(2);
         testdoc.SetNode("/id/two/name").SetValue().SetString("two");
         testdoc.SetNode("/id/three/0").SetValue().SetInt4(3);
         testdoc.SetNode("/id/three/1").SetValue().SetString("three");
+        BOOST_CHECK(testdoc.SetNode("/id/three").IsArray());
+        testdoc.SetNode("/id/three").SetArray().push_back("tres");
         cout << testdoc << endl;
         cout << testdoc.GetNode("/id/one/name").ToString() << endl;
         cout << testdoc.GetNode("/id/two").ToString() << endl;

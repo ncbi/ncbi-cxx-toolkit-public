@@ -1237,7 +1237,7 @@ inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) {
 
 inline CJson_Node CJson_Node::SetNode(const TKeyType& value) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
-    return CJson_Node(&rapidjson::Pointer(value.c_str()).Create(*m_Impl, *a).SetValueAllocator(a));
+    return CJson_Node(&rapidjson::Pointer(value.c_str()).Create(*m_Impl, *a));
 }
 
 inline CJson_Node& CJson_Node::SetNull(void) {

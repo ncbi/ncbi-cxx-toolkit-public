@@ -404,7 +404,8 @@ public:
         bool exist = true;
         for (const Token *t = tokens_; t != tokens_ + tokenCount_; ++t) {
             if (v->IsArray() && t->name[0] == '-' && t->length == 1) {
-                v->PushBack(ValueType().Move(), allocator);
+//NCBI: added SetValueAllocator
+                v->PushBack(ValueType().SetValueAllocator(&allocator).Move(), allocator);
                 v = &((*v)[v->Size() - 1]);
                 exist = false;
             }
@@ -421,8 +422,9 @@ public:
                 if (v->IsArray()) {
                     if (t->index >= v->Size()) {
                         v->Reserve(t->index + 1, allocator);
+//NCBI: added SetValueAllocator
                         while (t->index >= v->Size())
-                            v->PushBack(ValueType().Move(), allocator);
+                            v->PushBack(ValueType().SetValueAllocator(&allocator).Move(), allocator);
                         exist = false;
                     }
                     v = &((*v)[t->index]);
@@ -430,7 +432,8 @@ public:
                 else {
                     typename ValueType::MemberIterator m = v->FindMember(GenericStringRef<Ch>(t->name, t->length));
                     if (m == v->MemberEnd()) {
-                        v->AddMember(ValueType(t->name, t->length, allocator).Move(), ValueType().Move(), allocator);
+//NCBI: added SetValueAllocator
+                        v->AddMember(ValueType(t->name, t->length, allocator).SetValueAllocator(&allocator).Move(), ValueType().SetValueAllocator(&allocator).Move(), allocator);
                         m = v->MemberEnd();
                         v = &(--m)->value; // Assumes AddMember() appends at the end
 //                        v = &(--v->MemberEnd())->value; // Assumes AddMember() appends at the end

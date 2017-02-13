@@ -16,3 +16,5 @@ rapidjson.h
 document.h
 prettywriter.h
 schema.h
+pointer.h
+
