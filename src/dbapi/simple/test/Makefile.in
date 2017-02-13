@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = sdbapi_unit_test mirror_test
+APP_PROJ = sdbapi_unit_test mirror_test sdbapi_test_mt_pooling
 PROJ_TAG = test
 
 srcdir = @srcdir@
