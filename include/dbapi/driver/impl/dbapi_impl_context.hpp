@@ -78,6 +78,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fPoolWaitTimeSet = 0x10000,
         fPoolAllowTempSet= 0x20000,
         fContRaiserrorSet= 0x40000
+        // , fPoolNameSet     = 0x40000
     };
     typedef unsigned int  TFlags;
 
@@ -118,6 +119,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsCancelTimeoutSet(void){ return IsFlagSet(fCancelTimeoutSet); }
     bool IsSingleServerSet(void) { return IsFlagSet(fSingleServerSet);  }
     bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
+    // bool IsPoolNameSet(void)     { return IsFlagSet(fPoolNameSet);      }
     bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
     bool IsPoolMaxSizeSet(void)  { return IsFlagSet(fPoolMaxSizeSet);   }
     bool IsPoolIdleTimeSet(void) { return IsFlagSet(fPoolIdleTimeSet);  }

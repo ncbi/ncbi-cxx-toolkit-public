@@ -850,6 +850,10 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->pool_name.append(1, '.');
         params->pool_name.append("pool");
     }
+    if (reg.HasEntry(section_name, "conn_pool_name", IRegistry::fCountCleared)) {
+        // params->flags += SDBConfParams::fPoolNameSet;
+        params->pool_name = reg.Get(section_name, "conn_pool_name");
+    }
     if (reg.HasEntry(section_name, "conn_pool_minsize", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fPoolMinSizeSet;
         params->pool_minsize = reg.Get(section_name, "conn_pool_minsize");

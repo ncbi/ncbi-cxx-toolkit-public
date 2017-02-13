@@ -903,6 +903,7 @@ public:
     ///   - io_timeout
     ///   - exclusive_server
     ///   - use_conn_pool
+    ///   - conn_pool_name
     ///   - conn_pool_minsize
     ///   - conn_pool_maxsize
     ///   - conn_pool_idle_time
@@ -955,6 +956,7 @@ public:
         eIOTimeout,
         eExclusiveServer,
         eUseConnPool,
+        eConnPoolName,
         eConnPoolMinSize,
         eConnPoolMaxSize,
         eConnPoolIdleTime,
@@ -1375,6 +1377,7 @@ CSDB_ConnectionParam::x_GetName(EParam param)
     case eIOTimeout:        return "io_timeout";
     case eExclusiveServer:  return "exclusive_server";
     case eUseConnPool:      return "use_conn_pool";
+    case eConnPoolName:     return "conn_pool_name";
     case eConnPoolMinSize:  return "conn_pool_minsize"; 
     case eConnPoolMaxSize:  return "conn_pool_maxsize";
     case eConnPoolIdleTime: return "conn_pool_idle_time";
@@ -1438,6 +1441,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     case eIOTimeout:
     case eExclusiveServer:
     case eUseConnPool:
+    case eConnPoolName:
     case eConnPoolMinSize:
     case eConnPoolMaxSize:
     case eConnPoolIdleTime:
@@ -1506,6 +1510,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
     case eIOTimeout:
     case eExclusiveServer:
     case eUseConnPool:
+    case eConnPoolName:
     case eConnPoolMinSize:
     case eConnPoolMaxSize:
     case eConnPoolIdleTime:

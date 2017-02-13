@@ -1136,6 +1136,13 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     params->SetParam("io_timeout",    Get(eIOTimeout,       eWithOverrides));
     x_FillBoolParam(params, "single_server", eExclusiveServer);
     x_FillBoolParam(params, "is_pooled",     eUseConnPool);
+    if (params->GetParam("is_pooled") == "true") { // canonicalized above
+        params->SetParam("pool_name", params->GetServerName() + ".pool");
+    }
+    string explicit_pool_name = Get(eConnPoolName, eWithOverrides);
+    if ( !explicit_pool_name.empty() ) {
+        params->SetParam("pool_name", explicit_pool_name);
+    }
     params->SetParam("pool_minsize",  Get(eConnPoolMinSize, eWithOverrides));
     params->SetParam("pool_maxsize",  Get(eConnPoolMaxSize, eWithOverrides));
     params->SetParam("pool_idle_time", Get(eConnPoolIdleTime, eWithOverrides));
