@@ -88,7 +88,6 @@ private:
 class NCBI_XOBJREAD_EXPORT CAlnReader
 {
 public:
-
     // alphabets to try
     enum EAlphabet {
         eAlpha_Nucleotide,
@@ -219,8 +218,8 @@ public:
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
     
     /// Create ASN.1 classes from the parsed alignment
-    CRef<objects::CSeq_align> GetSeqAlign(void);
-    CRef<objects::CSeq_entry> GetSeqEntry(void);
+    CRef<objects::CSeq_align> GetSeqAlign(bool use_defline_parser=false);
+    CRef<objects::CSeq_entry> GetSeqEntry(bool use_defline_parser=false);
 
 
 private:
@@ -272,6 +271,12 @@ private:
     void x_CalculateMiddleSections();
     typedef objects::CDense_seg::TDim TNumrow;
     bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
+
+protected:
+    virtual void x_AssignDensegIds(bool use_defline_parser, objects::CDense_seg& denseg);
+    virtual CRef<objects::CSeq_id> x_GetFastaId(const string& fasta_defline, 
+        const TSeqPos& line_number);
+
 
 protected:
     objects::CFastaIdHandler m_FastaIdHandler;

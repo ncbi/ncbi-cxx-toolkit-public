@@ -47,7 +47,7 @@
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
-
+#include <objtools/readers/fasta.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Align
 
@@ -335,7 +335,74 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
 }
 
 
-CRef<CSeq_align> CAlnReader::GetSeqAlign()
+CRef<CSeq_id> CAlnReader::x_GetFastaId(const string& fasta_defline, const TSeqPos& defline_number) 
+{
+    TSeqPos range_start = 0, range_end = 0;
+    bool has_range = false;
+    SDeflineParseInfo parse_info;
+    parse_info.fFastaFlags = objects::CFastaReader::fAllSeqIds;
+    parse_info.lineNumber = defline_number; 
+
+    TIgnoredProblems ignored_errors;
+    TSeqTitles seq_titles;
+    list<CRef<CSeq_id>> ids;
+    try {
+        ParseDefline(fasta_defline,
+            parse_info,
+            ignored_errors,
+            ids,
+            has_range,
+            range_start,
+            range_end,
+            seq_titles,
+            0);
+    }
+    catch (const exception&) {}
+
+    const bool unique_id = false;
+    if (ids.empty()) {
+        return GenerateID(unique_id);
+    }  
+
+    if (has_range) {
+        // What to do now?
+    }
+    return FindBestChoice(ids, CSeq_id::BestRank);
+}
+
+
+void CAlnReader::x_AssignDensegIds(const bool use_defline_parser, CDense_seg& denseg) {
+
+    CDense_seg::TIds& ids = denseg.SetIds();
+    ids.resize(m_Dim);
+
+    if (use_defline_parser) {
+        for (auto i=0; i<m_Dim; ++i) {
+            // Reconstruct original defline string from results 
+            // returned by C code.
+            string fasta_defline = m_Ids[i];
+            if (!m_Deflines[i].empty()) {
+                fasta_defline += " " + m_Deflines[i];
+                fasta_defline = ">" + fasta_defline;
+            }
+            ids[i] = x_GetFastaId(fasta_defline, i);
+        }
+        return;
+    }
+    
+    
+    for (auto i=0; i<m_Dim; ++i) {
+        CBioseq::TId xid;
+        if (CSeq_id::ParseFastaIds(xid, m_Ids[i], true) > 0) {
+            ids[i] = xid.front();   
+        } else {
+            ids[i] = new CSeq_id(CSeq_id::e_Local, m_Ids[i]);
+        }
+    }
+}
+
+
+CRef<CSeq_align> CAlnReader::GetSeqAlign(const bool use_defline_parser)
 {
     if (m_Aln) {
         return m_Aln;
@@ -354,12 +421,11 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     CDense_seg& ds = m_Aln->SetSegs().SetDenseg();
     ds.SetDim(m_Dim);
     
-    CDense_seg::TIds&     ids     = ds.SetIds();
     CDense_seg::TStarts&  starts  = ds.SetStarts();
     //CDense_seg::TStrands& strands = ds.SetStrands();
     CDense_seg::TLens&    lens    = ds.SetLens();
 
-    ids.resize(m_Dim);
+    x_AssignDensegIds(use_defline_parser, ds);
 
     // get the length of the alignment
     TSeqPos aln_stop = m_Seqs[0].size();
@@ -369,14 +435,6 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
         }
     }
 
-    for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        CBioseq::TId xid;
-        if (CSeq_id::ParseFastaIds(xid, m_Ids[row_i], true) > 0) {
-            ids[row_i] = xid.front();
-        } else {
-            ids[row_i] = new CSeq_id(CSeq_id::e_Local, m_Ids[row_i]);
-        }
-    }
 
     m_SeqVec.resize(m_Dim);
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
@@ -465,7 +523,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 }
 
 
-CRef<CSeq_entry> CAlnReader::GetSeqEntry()
+CRef<CSeq_entry> CAlnReader::GetSeqEntry(const bool use_defline_parser)
 {
     if (m_Entry) {
         return m_Entry;
@@ -476,7 +534,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
     }
     m_Entry = new CSeq_entry();
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
-    seq_annot->SetData().SetAlign().push_back(GetSeqAlign());
+    seq_annot->SetData().SetAlign().push_back(GetSeqAlign(use_defline_parser));
 
     m_Entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     m_Entry->SetSet().SetAnnot().push_back(seq_annot);
