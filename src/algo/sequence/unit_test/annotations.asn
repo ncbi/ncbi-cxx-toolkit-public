@@ -10230,7 +10230,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "OR4C45",
-        desc "olfactory receptor family 4 subfamily C member 45"
+        desc "olfactory receptor family 4 subfamily C member 45 (gene/pseudogene)"
       },
       location int {
         from 49972873,
