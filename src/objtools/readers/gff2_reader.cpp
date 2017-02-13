@@ -487,15 +487,6 @@ CGff2Reader::xParseFeature(
     //make sure we are interested:
     string ftype = pRecord->Type();
     if (xIsIgnoredFeatureType(ftype)) {
-        string message = string("GFF3 feature type \"") + ftype + 
-            string("\" not supported- ignored.");
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Warning,
-            0,
-            message,
-            ILineError::eProblem_FeatureNameNotAllowed));
-        ProcessError(*pErr, pEC);
         return true;
     }
 
@@ -876,15 +867,6 @@ bool CGff2Reader::x_ParseFeatureGff(
     }
     string ftype = pRecord->Type();
     if (xIsIgnoredFeatureType(ftype)) {
-        string message = string("GFF3 feature type \"") + ftype + 
-            string("\" not supported- ignored.");
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Warning,
-            0,
-            message,
-            ILineError::eProblem_FeatureNameNotAllowed));
-        ProcessError(*pErr, pEC);
         return true;
     }
 
