@@ -467,7 +467,11 @@ bool x_GetNextAttribute(CTempString& input, CTempString& key, CTempString& value
 
     bool inQuotes = false;
     size_t i = 0;
-    for (; i < input.length(); i++)
+    while (input[i] == ';') {
+        ++i;
+    }
+    input = input.substr(i);
+    for (i=0; i < input.length(); i++)
     {
         if (inQuotes) {
             if (input[i] == '\"') {
