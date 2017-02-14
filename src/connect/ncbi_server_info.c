@@ -43,7 +43,7 @@
 #endif /*fabs*/
 #define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
-#define MAX_IP_ADDR_LEN  16  /*sizeof("255.255.255.255")*/
+#define MAX_IP_ADDR_LEN  80  /*IPv6 compatible*/
 
 #define SERV_VHOSTABLE   (/*fSERV_Ncbid |*/ fSERV_Http | fSERV_Standalone)
 
@@ -53,7 +53,7 @@
  *   SSERV_Info's basic fields are stored per the structure;
  *   SSERV_Info::u is the last "fixed" field;
  *   SSERV_Info::u's string parameters are stored contiguously following the
- *                 "fixed" area (VTable::SizeOf() returns the size of the
+ *                 "fixed" area (SSERV_Ops::SizeOf() returns the size of the
  *                 type-dependent "u" plus all the string parameters);
  *   SSERV_Info::vhost (if non-zero) is stored past the parameters;
  *   SSERV_Info::extra defines the "extra" opaque bytes (which may be used to
@@ -68,23 +68,23 @@
  *  Attributes for the different server types::  Interface
  */
 
-/* Table of virtual functions
+/* Table of operations: req = required; opt = optional
  */
 typedef struct {
-    SSERV_Info* (*Read  )(const char** str, size_t add);
-    char*       (*Write )(size_t reserve, const USERV_Info* u);
-    int/*bool*/ (*Equal )(const USERV_Info *u1, const USERV_Info *u2);
-    size_t      (*SizeOf)(const USERV_Info *u);
-} SSERV_Info_VTable;
+    SSERV_Info* (*Read  )(const char** str, size_t add);               /*req*/
+    char*       (*Write )(size_t reserve, const USERV_Info* u);        /*req*/
+    int/*bool*/ (*Equal )(const USERV_Info *u1, const USERV_Info *u2); /*opt*/
+    size_t      (*SizeOf)(const USERV_Info *u);                        /*req*/
+} SSERV_Ops;
 
 
 /* Attributes
  */
 typedef struct {
-    ESERV_Type        type;
-    const char*       tag;
-    size_t            taglen;
-    SSERV_Info_VTable vtable;
+    ESERV_Type  type;
+    const char* tag;
+    size_t      len;
+    SSERV_Ops   ops;
 } SSERV_Attr;
 
 
@@ -131,7 +131,7 @@ extern const char* SERV_ReadType(const char* str,
     if (!attr)
         return 0;
     *type = attr->type;
-    return str + attr->taglen; 
+    return str + attr->len; 
 }
 
 
@@ -162,18 +162,18 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         memmove(c_t, p, strlen(p) + 1);
     } else
         *c_t = '\0';
-    reserve = attr->taglen+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+12/*algo*/
+    reserve = attr->len+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+12/*algo*/
         + 1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 3*(1+5)/*site*/
         + 1+14/*rate*/ + 2*(1+5)/*mode*/ + 1+12/*time*/ + 2*(1+5)/*$,X*/
         + 3+info->vhost
         + 1/*EOL*/;
     /* write server-specific info */
-    if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
+    if ((str = attr->ops.Write(reserve, &info->u)) != 0) {
         char* s = str;
         size_t n;
 
-        memcpy(s, attr->tag, attr->taglen);
-        s += attr->taglen;
+        memcpy(s, attr->tag, attr->len);
+        s += attr->len;
         *s++ = ' ';
         if (info->host == SOCK_HostToNetLong(-1L)) {
             int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
@@ -201,7 +201,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
         if (info->vhost) {
-            size_t size = s_GetAttrByType(info->type)->vtable.SizeOf(&info->u);
+            size_t size = attr->ops.SizeOf(&info->u);
             const char* vhost = (const char*) &info->u + size;
             s += sprintf(s, " H=%.*s", (int) info->vhost, vhost);
         }
@@ -249,7 +249,6 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     if (*str  &&
         (*str == ':'  ||  *str == '['  ||  !ispunct((unsigned char)(*str)))) {
         const char* end = str;
-        size_t      len;
         while (*end  &&  !isspace((unsigned char)(*end)))
             ++end;
         verify((len = (size_t)(end - str)) > 0);
@@ -308,7 +307,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     assert(!tmp  ||  !SOCK_isipEx(tmp, 1/*fullquad*/));
                     if (!tmp)
                         vhost = 0;
-                    else if (!SOCK_isip(tmp)/*NB: very unlikely*/)
+                    else if (SOCK_isip(tmp)/*NB: very unlikely*/)
                         vhost = 0;
                     else
                         free((void*) tmp);
@@ -333,9 +332,9 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         return 0;
 
     /* read server-specific info according to the detected type... */
-    info = attr->vtable.Read(&str,
-                             (name ? strlen(name) + 1 : 0) +
-                             (attr->type & SERV_VHOSTABLE ? 256 : 0));
+    info = attr->ops.Read(&str,
+                          (name ? strlen(name) + 1 : 0) +
+                          (attr->type & SERV_VHOSTABLE ? 256 : 0));
     if (!info)
         return 0;
     assert(info->type == attr->type);
@@ -542,7 +541,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         if (vhost) {
             if (len > 255)
                 len = 255;
-            strncpy0((char*) &info->u + attr->vtable.SizeOf(&info->u),
+            strncpy0((char*) &info->u + attr->ops.SizeOf(&info->u),
                      vhost, len);
             info->vhost = len;
         }
@@ -610,7 +609,7 @@ extern size_t SERV_SizeOfInfo(const SSERV_Info *info)
     const SSERV_Attr* attr = info ? s_GetAttrByType(info->type) : 0;
     return attr
         ? (sizeof(*info) - sizeof(info->u)
-           + attr->vtable.SizeOf(&info->u)
+           + attr->ops.SizeOf(&info->u)
            + info->vhost
            + info->extra)
         : 0;
@@ -621,6 +620,7 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
                                   const SSERV_Info *i2)
 {
     const SSERV_Attr* attr;
+    assert(i1  &&  i2);
     if (i1->type != i2->type  ||
         i1->host != i2->host  ||
         i1->port != i2->port) {
@@ -628,10 +628,19 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
     }
     if (memcmp(&i1->addr, &i2->addr, sizeof(i1->addr)) != 0)
         return 0/*false*/;
-    attr = s_GetAttrByType(i1->type/*==i2->type*/);
-    return attr->vtable.Equal ? attr->vtable.Equal(&i1->u, &i2->u) : 1;
+    if (!(attr = s_GetAttrByType(i1->type/*==i2->type*/)))
+        return 0/*false*/;
+    return attr->ops.Equal ? attr->ops.Equal(&i1->u, &i2->u) : 1;
 }
 
+
+extern const char* SERV_HostOfInfo(const SSERV_Info* info)
+{
+    const SSERV_Attr* attr;
+    if (!info->vhost  ||  !(attr = s_GetAttrByType(info->type)))
+        return 0;
+    return (const char*) &info->u + attr->ops.SizeOf(&info->u);
+}
 
 
 /*****************************************************************************
@@ -1121,7 +1130,7 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
     if (tag) {
         size_t i;
         for (i = 0;  i < sizeof(kSERV_Attr)/sizeof(kSERV_Attr[0]);  ++i) {
-            size_t len = kSERV_Attr[i].taglen;
+            size_t len = kSERV_Attr[i].len;
             if (strncasecmp(tag, kSERV_Attr[i].tag, len) == 0
                 &&  (!tag[len]  ||  isspace((unsigned char) tag[len])))
                 return &kSERV_Attr[i];

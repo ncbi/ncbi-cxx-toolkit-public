@@ -99,6 +99,12 @@ const char* SERV_NameOfInfo
  );
 
 
+NCBI_XCONNECT_EXPORT
+const char* SERV_HostOfInfo
+(const SSERV_Info* info
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
