@@ -72,7 +72,7 @@ case "$with_3psw" in
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack,
-                     libuv, libssh2, cassandra],
+                     libuv, libssh2, cassandra, libxlsxwriter],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -506,6 +506,10 @@ AC_ARG_WITH(cassandra,
    [ --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR])
 AC_ARG_WITH(cassandra,
    [ --without-cassandra     do not use Datastax Cassandra driver])
+AC_ARG_WITH(libxlsxwriter,
+   [ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR])
+AC_ARG_WITH(libxlsxwriter,
+   [ --without-libxlsxwriter do not use libxlsxwriter])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -568,7 +572,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
-libuv libssh2 cassandra 3psw \
+libuv libssh2 cassandra libxlsxwriter 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -638,7 +642,7 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7550,6 +7554,17 @@ if test "$with_cassandra" != no -a \
     CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
+   [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
+      [[lxw_workbook* wb = workbook_new("conftest.xlsx");]])],
+   [], [$Z_LIBS])
+if test "$with_libxlsxwriter" != no -a \
+     -f "$LIBXLSXWRITER_PATH/lib/libxlsxwriter-static.a"; then
+    LIBXLSWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
+else
+    LIBXLSWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
 ### Restore original compiler/linker flags

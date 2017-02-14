@@ -58,6 +58,7 @@ try_local() {
         test -d "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
         test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
+        test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
         test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
@@ -186,6 +187,8 @@ esac
 : ${LIBUV_PATH=$NCBI/libuv-1.9.1}
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
+
+: ${LIBXLSXWRITER_PATH=$NCBI/libxlsxwriter-0.6.9}
 
 : ${LMDB_PATH=$NCBI/lmdb-0.9.18}
 

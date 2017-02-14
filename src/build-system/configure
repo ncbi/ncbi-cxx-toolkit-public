@@ -839,6 +839,8 @@ LIBSSH2_INCLUDE
 LIBSSH2_LIBS
 CASSANDRA_INCLUDE
 CASSANDRA_LIBS
+LIBXLSXWRITER_INCLUDE
+LIBXLSXWRITER_LIBS
 signature
 build_root
 top_srcdir
@@ -1632,7 +1634,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
-libuv libssh2 cassandra 3psw \
+libuv libssh2 cassandra libxlsxwriter 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1703,7 +1705,7 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2024,6 +2026,8 @@ Optional Packages:
  --without-libssh2       do not use libssh2
  --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR
  --without-cassandra     do not use Datastax Cassandra driver
+ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR
+ --without-libxlsxwriter do not use libxlsxwriter
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2588,6 +2592,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_cassandra=no
+         fi
+        if test "${with_libxlsxwriter-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-libxlsxwriter but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_libxlsxwriter=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -4125,6 +4135,18 @@ fi
 # Check whether --with-cassandra was given.
 if test "${with_cassandra+set}" = set; then
   withval=$with_cassandra;
+fi
+
+
+# Check whether --with-libxlsxwriter was given.
+if test "${with_libxlsxwriter+set}" = set; then
+  withval=$with_libxlsxwriter;
+fi
+
+
+# Check whether --with-libxlsxwriter was given.
+if test "${with_libxlsxwriter+set}" = set; then
+  withval=$with_libxlsxwriter;
 fi
 
 
@@ -47026,6 +47048,187 @@ else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
 
+if test "$with_libxlsxwriter" != "no"; then
+    case "$with_libxlsxwriter" in
+       yes | "" ) ;;
+       *        ) LIBXLSXWRITER_PATH=$with_libxlsxwriter ;;
+    esac
+    if test "$LIBXLSXWRITER_PATH" != /usr -a -d "$LIBXLSXWRITER_PATH"; then
+       in_path=" in $LIBXLSXWRITER_PATH"
+       if test -z "$LIBXLSXWRITER_INCLUDE" -a -d "$LIBXLSXWRITER_PATH/include"; then
+          LIBXLSXWRITER_INCLUDE="-I$LIBXLSXWRITER_PATH/include"
+       fi
+       if test -n "$LIBXLSXWRITER_LIBPATH"; then
+          :
+       elif test -d "$LIBXLSXWRITER_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBXLSXWRITER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBXLSXWRITER_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBXLSXWRITER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBXLSXWRITER_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LIBXLSXWRITER_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBXLSXWRITER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBXLSXWRITER_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBXLSXWRITER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBXLSXWRITER_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LIBXLSXWRITER_LIBS="$LIBXLSXWRITER_LIBPATH -lxlsxwriter "
+    else
+       LIBXLSXWRITER_INCLUDE=""
+       LIBXLSXWRITER_LIBS="-lxlsxwriter "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libxlsxwriter$in_path" >&5
+echo $ECHO_N "checking for libxlsxwriter$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_libxlsxwriter+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $LIBXLSXWRITER_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LIBXLSXWRITER_LIBS $Z_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <xlsxwriter.h>
+int
+main ()
+{
+lxw_workbook* wb = workbook_new("conftest.xlsx");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_libxlsxwriter=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_libxlsxwriter=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_libxlsxwriter" >&5
+echo "${ECHO_T}$ncbi_cv_lib_libxlsxwriter" >&6; }
+    if test "$ncbi_cv_lib_libxlsxwriter" = "no"; then
+       if test "${with_libxlsxwriter:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-libxlsxwriter explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-libxlsxwriter explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_libxlsxwriter" = "no"; then
+    LIBXLSXWRITER_PATH="No_LIBXLSXWRITER"
+    LIBXLSXWRITER_INCLUDE=
+    LIBXLSXWRITER_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LIBXLSXWRITER"; WithPackagesSep=" "
+    LIBXLSXWRITER_INCLUDE=" $LIBXLSXWRITER_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBXLSXWRITER 1
+_ACEOF
+
+ fi
+
+
+
+if test "$with_libxlsxwriter" != no -a \
+     -f "$LIBXLSXWRITER_PATH/lib/libxlsxwriter-static.a"; then
+    LIBXLSWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
+else
+    LIBXLSWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -47478,7 +47681,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -48865,6 +49068,8 @@ LIBSSH2_INCLUDE!$LIBSSH2_INCLUDE$ac_delim
 LIBSSH2_LIBS!$LIBSSH2_LIBS$ac_delim
 CASSANDRA_INCLUDE!$CASSANDRA_INCLUDE$ac_delim
 CASSANDRA_LIBS!$CASSANDRA_LIBS$ac_delim
+LIBXLSXWRITER_INCLUDE!$LIBXLSXWRITER_INCLUDE$ac_delim
+LIBXLSXWRITER_LIBS!$LIBXLSXWRITER_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
@@ -48923,8 +49128,6 @@ CHECK_ARG!$CHECK_ARG$ac_delim
 CHECK_TOOLS!$CHECK_TOOLS$ac_delim
 CHECK_TIMEOUT_MULT!$CHECK_TIMEOUT_MULT$ac_delim
 CHECK_OS_NAME!$CHECK_OS_NAME$ac_delim
-FEATURES!$FEATURES$ac_delim
-script_shell!$script_shell$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -48966,6 +49169,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FEATURES!$FEATURES$ac_delim
+script_shell!$script_shell$ac_delim
 make_shell!$make_shell$ac_delim
 obj_ext!$obj_ext$ac_delim
 lib_pre!$lib_pre$ac_delim
@@ -49061,8 +49266,6 @@ OPENGL_LIBS!$OPENGL_LIBS$ac_delim
 OPENGL_STATIC_LIBS!$OPENGL_STATIC_LIBS$ac_delim
 OSMESA_INCLUDE!$OSMESA_INCLUDE$ac_delim
 OSMESA_LIBS!$OSMESA_LIBS$ac_delim
-OSMESA_STATIC_LIBS!$OSMESA_STATIC_LIBS$ac_delim
-GLUT_INCLUDE!$GLUT_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49104,6 +49307,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+OSMESA_STATIC_LIBS!$OSMESA_STATIC_LIBS$ac_delim
+GLUT_INCLUDE!$GLUT_INCLUDE$ac_delim
 GLUT_LIBS!$GLUT_LIBS$ac_delim
 GLEW_INCLUDE!$GLEW_INCLUDE$ac_delim
 GLEW_LIBS!$GLEW_LIBS$ac_delim
@@ -49199,8 +49404,6 @@ KeepStateTarget!$KeepStateTarget$ac_delim
 Rules!$Rules$ac_delim
 serial_ws50_rtti_kludge!$serial_ws50_rtti_kludge$ac_delim
 ncbicntr!$ncbicntr$ac_delim
-UNIX_SRC!$UNIX_SRC$ac_delim
-UNIX_USR_PROJ!$UNIX_USR_PROJ$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49242,6 +49445,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+UNIX_SRC!$UNIX_SRC$ac_delim
+UNIX_USR_PROJ!$UNIX_USR_PROJ$ac_delim
 compiler!$compiler$ac_delim
 compiler_root!$compiler_root$ac_delim
 compiler_version!$compiler_version$ac_delim
@@ -49255,7 +49460,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

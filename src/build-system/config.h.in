@@ -394,6 +394,9 @@
 /* Define to 1 if libuv is available. */
 #undef HAVE_LIBUV
 
+/* Define to 1 if libxlsxwriter is available. */
+#undef HAVE_LIBXLSXWRITER
+
 /* Define to 1 if libxml2 is available. */
 #undef HAVE_LIBXML
 
