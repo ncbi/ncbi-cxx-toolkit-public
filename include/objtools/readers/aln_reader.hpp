@@ -191,27 +191,6 @@ public:
     /// that would parse the alignment file and create the result data
     void Read(bool guess=false, bool generate_local_ids=false);
 
-    using SLineTextAndLoc   = objects::CFastaDeflineReader::SLineTextAndLoc;
-    using TSeqTitles        = objects::CFastaDeflineReader::TSeqTitles;
-    using SDeflineParseInfo = objects::CFastaDeflineReader::SDeflineParseInfo;
-    using TIgnoredProblems  = objects::CFastaDeflineReader::TIgnoredProblems;
-    using TFastaFlags       = objects::CFastaDeflineReader::TFastaFlags;
-
-    void ParseDefline(const string& defline,
-            const SDeflineParseInfo& info,
-            const TIgnoredProblems& ignoredErrors,
-            list<CRef<objects::CSeq_id>>& ids,
-            bool& hasRange,
-            TSeqPos& rangeStart,
-            TSeqPos& rangeEnd,
-            TSeqTitles& seqTitles,
-            objects::ILineErrorListener* pMessageListener);
-
-    objects::CSeqIdGenerator& SetIDGenerator(void) { return m_FastaIdHandler.SetGenerator(); }
-    const objects::CSeqIdGenerator& GetIDGenerator(void) const { return m_FastaIdHandler.GetGenerator(); }
-    virtual CRef<objects::CSeq_id> GenerateID(bool unique_id) { return m_FastaIdHandler.GenerateID(unique_id); } 
-    virtual CRef<objects::CSeq_id> GenerateID(const string defline, bool unique_id) { return m_FastaIdHandler.GenerateID(defline, unique_id); } 
-
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
@@ -221,9 +200,10 @@ public:
 
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
     
+    using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
-    CRef<objects::CSeq_align> GetSeqAlign(bool use_defline_parser=false, TFastaFlags fasta_flags=0);
-    CRef<objects::CSeq_entry> GetSeqEntry(bool use_defline_parser=false, TFastaFlags fasta_flags=0);
+    CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0);
+    CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=0);
 
 
 private:
@@ -275,17 +255,28 @@ private:
     void x_CalculateMiddleSections();
     typedef objects::CDense_seg::TDim TNumrow;
     bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
-
+    void x_AssignDensegIds(
+        TFastaFlags fasta_flags,
+        objects::CDense_seg& denseg);
 protected:
-    virtual void x_AssignDensegIds(bool use_defline_parser, 
-            TFastaFlags fasta_flags,
-            objects::CDense_seg& denseg);
-    virtual CRef<objects::CSeq_id> x_GetFastaId(const string& fasta_defline, 
+    virtual CRef<objects::CSeq_id> GenerateID(const string& fasta_defline, 
         const TSeqPos& line_number,
         TFastaFlags fasta_flags);
-    bool x_CacheIdHandle(objects::CSeq_id_Handle idh) { return m_FastaIdHandler.CacheIdHandle(idh); }
-    void x_ClearIdHandleCache(void) { m_FastaIdHandler.ClearIdCache(); }
 
+    using SLineTextAndLoc   = objects::CFastaDeflineReader::SLineTextAndLoc;
+    using TSeqTitles        = objects::CFastaDeflineReader::TSeqTitles;
+    using SDeflineParseInfo = objects::CFastaDeflineReader::SDeflineParseInfo;
+    using TIgnoredProblems  = objects::CFastaDeflineReader::TIgnoredProblems;
+
+    void ParseDefline(const string& defline,
+            const SDeflineParseInfo& info,
+            const TIgnoredProblems& ignoredErrors,
+            list<CRef<objects::CSeq_id>>& ids,
+            bool& hasRange,
+            TSeqPos& rangeStart,
+            TSeqPos& rangeEnd,
+            TSeqTitles& seqTitles,
+            objects::ILineErrorListener* pMessageListener);
 
 protected:
     objects::CFastaIdHandler m_FastaIdHandler;
