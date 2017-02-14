@@ -1599,7 +1599,7 @@ CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
                             pIt->GoNode( pNode );
                         } else { // Invalid parent specified
                             SetLastError( ("Invalid parent taxid "
-                                           + NStr::IntToString((*i)->GetTaxid())
+                                           + NStr::NumericToString((*i)->GetTaxid())
                                            ).c_str() );
                             return false;
                         }
