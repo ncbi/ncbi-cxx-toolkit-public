@@ -48,12 +48,19 @@ extern "C" {
 /*ARGSUSED*/
 static void* s_Expand(void* base, TNCBI_Size size, void* arg)
 {
-    if (base  &&  size)
+    if (base  &&  size) {
+        CORE_LOGF(eLOG_Note, ("Resizing heap, size %u", size));
         return realloc(base, size);
-    if (size)
+    }
+    if (size) {
+        CORE_LOGF(eLOG_Note, ("Allocating heap, size %u", size));
         return malloc(size);
-    if (base)
+    }
+    if (base) {
+        CORE_LOG(eLOG_Note, "Freeing heap");
         free(base);
+    } else
+        CORE_LOG(eLOG_Note, "NULL heap op");
     return 0;
 }
 
