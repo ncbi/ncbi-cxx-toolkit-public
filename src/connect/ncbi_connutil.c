@@ -85,7 +85,8 @@ static char* x_StrcatCRLF(char* dst, const char* src)
 }
 
 
-static const char* x_GetValue(const char* service, const char* param,
+static const char* x_GetValue(const char* svc, size_t svclen,
+                              const char* param,
                               char* value, size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
@@ -93,21 +94,19 @@ static const char* x_GetValue(const char* service, const char* param,
     const char* val;
     char*       s;
 
-    if (!value  ||  value_size <= 0)
-        return 0;
+    assert(!svc  ||  (*svc  &&  svclen == strlen(svc)));
+    assert(param  &&  *param);
+    assert(value  &&  value_size > 0);
+
     *value = '\0';
 
-    if (!param  ||  !*param)
-        return 0;
-
     *generic = 0/*false*/;
-    if (service  &&  *service) {
+    if (svc) {
         /* Service-specific inquiry */
         int/*bool*/ end;
         char        temp[sizeof(buf)];
-        size_t      slen = strlen(service);
         size_t      plen = strlen(param) + 1;
-        size_t       len = slen + 1 + plen;
+        size_t       len = svclen + 1 + plen;
 
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
                         sizeof(DEF_CONN_REG_SECTION)) != 0) {
@@ -119,7 +118,7 @@ static const char* x_GetValue(const char* service, const char* param,
             return 0;
 
         /* First, environment search for 'service_CONN_param' */
-        s = (char*) memcpy(buf, service, slen) + slen;
+        s = (char*) memcpy(buf, svc, svclen) + svclen;
         *s++ = '_';
         if (!end) {
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
@@ -137,8 +136,8 @@ static const char* x_GetValue(const char* service, const char* param,
         CORE_UNLOCK;
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
-        buf[slen++] = '\0';
-        s = buf + slen;
+        buf[svclen++] = '\0';
+        s = buf + svclen;
         CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
         if (*value  ||  end)
             return value;
@@ -179,16 +178,22 @@ static const char* x_GetValue(const char* service, const char* param,
 }
 
 
-static const char* s_GetValue(const char* service, const char* param,
+static const char* s_GetValue(const char* svc, size_t len, const char* param,
                               char* value, size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
-    const char* retval = x_GetValue(service, param,
-                                    value, value_size, def_value, generic);
+    const char* retval;
+
+    assert(!svc  ||  (*svc  &&  len == strlen(svc)));
+    assert(param  &&  *param);
+    assert(value  &&  value_size > 0);
+
+    retval = x_GetValue(svc, len, param,
+                        value, value_size, def_value, generic);
     if (retval) {
         /*strip enveloping quotes*/
-        size_t len = strlen(value);
-        if (len > 1  &&  (value[0] == '"'  ||  value[0] == '\'')
+        if ((len = strlen(value)) > 1
+            &&  (value[0] == '"'  ||  value[0] == '\'')
             &&  strchr(value + 1, value[0]) == value + len - 1) {
             if (len -= 2)
                 memcpy(value, value + 1, len);
@@ -196,6 +201,7 @@ static const char* s_GetValue(const char* service, const char* param,
         }
         assert(retval == value);
     }
+
     return retval;
 }
 
@@ -204,8 +210,30 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
 {
+    const char* retval;
     int/*bool*/ dummy;
-    return s_GetValue(service, param, value, value_size, def_value, &dummy);
+    size_t len = 0;
+
+    if (!value  ||  value_size < 1)
+        return 0;
+    if (!param  ||  !*param)
+        return 0;
+
+    if (service) {
+        if (!*service)
+            service = 0;
+        else if (!(service = SERV_ServiceName(service)))
+            return 0;
+        else
+            verify(len = strlen(service));
+    }
+
+    retval =  s_GetValue(service, len, param,
+                         value, value_size, def_value, &dummy);
+    if (len)
+        free((void*) service);
+
+    return retval;
 }
 
 
@@ -300,7 +328,7 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
-    s_GetValue(service, name, value, sizeof(value), def_value, &generic)
+    s_GetValue(service, len, name, value, sizeof(value), def_value, &generic)
 
     int/*bool*/ generic;
     SConnNetInfo* info;
@@ -311,7 +339,15 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     double dbl;
     char*  e;
 
-    len = service ? strlen(service) : 0;
+    if (service  &&  *service) {
+        if (!(service = SERV_ServiceName(service)))
+            return 0;
+        assert(*service);
+        len = strlen(service);
+    } else {
+        len = 0;
+        service = 0;
+    }
 
     /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
@@ -319,7 +355,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->reserved = 0/*MBZ*/;
 
     /* store the service name, which this structure has been created for */
-    memcpy((char*) info->svc, service ? service : "", ++len);
+    memcpy((char*) info->svc, service ? service : "", len + 1);
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -429,8 +465,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    len = strlen(str);
-    if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
+    val = (long) strlen(str);
+    if (val < 3  ||  8 < val  ||  strncasecmp(str, "infinite", val) != 0) {
         if (!*str || (dbl = NCBI_simple_atof(str, &e)) < 0.0 || errno || *e)
             dbl = DEF_CONN_TIMEOUT;
         info->tmo.sec      = (unsigned int)  dbl;
@@ -455,6 +491,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* magic */
     info->magic = CONN_NET_INFO_MAGIC;
+
+    if (len)
+        free((void*) service);
 
     /* done */
     return info;
@@ -520,7 +559,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
         /* username:password */
         if (!hostlen) {
-            user    = pass    = host = scheme == eURL_File ? "" : 0;
+            user    = pass    = host = (scheme == eURL_File ? "" : 0);
             userlen = passlen = 0;
         } else {
             if (!(s = (const char*) memrchr(host, '@', hostlen))) {
@@ -1479,10 +1518,8 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     req_method = info->req_method & ~eReqMethod_v1;
     scheme = x_Scheme((EURLScheme) info->scheme, buf);
     assert(!scheme  ||  *scheme);
-    if ((!scheme  &&  req_method != eReqMethod_Connect)  ||
-        ( scheme  &&  !isalpha((unsigned char)(*scheme)))) {
+    if (scheme  &&  !isalpha((unsigned char)(*scheme)))
         return 0/*failure*/;
-    }
 
     if (req_method == eReqMethod_Connect) {
         scheme = "";
@@ -1491,7 +1528,8 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         args = "";
         len = 0;
     } else {
-        assert(scheme);
+        if (!scheme)
+            scheme = "";
         schlen = strlen(scheme);
         path = info->path;
         args = info->args;
@@ -1504,7 +1542,11 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         assert(scheme  &&  args);
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len  = schlen;
-        len += sprintf(url + len, &"://%s"[schlen ? 0 : 3], info->host);
+        len += sprintf(url + len, &"://%s"[schlen
+                                           ? 0
+                                           : req_method == eReqMethod_Connect
+                                           ? 3
+                                           : 1], info->host);
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",

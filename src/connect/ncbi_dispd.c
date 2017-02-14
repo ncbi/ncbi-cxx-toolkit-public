@@ -267,7 +267,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
             CORE_LOGF_X(6, failure ? eLOG_Warning : eLOG_Note,
-                        ("[%s]  %s", data->net_info->svc, text));
+                        ("[%s]  %s", data->net_info->svc/*not exact*/, text));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (failure) {

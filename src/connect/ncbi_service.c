@@ -71,8 +71,8 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-static char* x_ServiceName(const char* service,
-                           int/*bool*/ ismask, unsigned int depth)
+static char* x_ServiceName(const char* service, unsigned int depth,
+                           int/*bool*/ ismask, int/*bool*/ isfast)
 {
     char   buf[128];
     char   srv[128];
@@ -100,7 +100,7 @@ static char* x_ServiceName(const char* service,
                      "Too long"));
         return 0/*failure*/;
     }
-    if (!s_Fast  &&  !ismask) {
+    if (!ismask  &&  !isfast) {
         s = (char*) memcpy(buf, service, len) + len;
         *s++ = '_';
         memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
@@ -112,17 +112,18 @@ static char* x_ServiceName(const char* service,
             s = srv;
         }
         if (*s  &&  strcasecmp(s, service) != 0)
-            return x_ServiceName(s, ismask, depth + 1);
+            return x_ServiceName(s, depth + 1, ismask, isfast);
     }
     return strdup(service);
 }
 
 
-static char* s_ServiceName(const char* service, int/*bool*/ ismask)
+static char* s_ServiceName(const char* service,
+                           int/*bool*/ ismask, int/*bool*/ isfast)
 {
     char* retval;
     CORE_LOCK_READ;
-    retval = x_ServiceName(service, ismask, 0);
+    retval = x_ServiceName(service, 0/*depth*/, ismask, isfast);
     CORE_UNLOCK;
     return retval;
 }
@@ -130,7 +131,7 @@ static char* s_ServiceName(const char* service, int/*bool*/ ismask)
 
 char* SERV_ServiceName(const char* service)
 {
-    return s_ServiceName(service, 0);
+    return s_ServiceName(service, 0/*ismask*/, 0/*isfast*/);
 }
 
 
@@ -208,7 +209,7 @@ static SERV_ITER x_Open(const char*         service,
     SERV_ITER iter;
     const char* s;
 
-    if (!(s = s_ServiceName(service, ismask)))
+    if (!(s = s_ServiceName(service, ismask, s_Fast)))
         return 0;
     if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         free((void*) s);
