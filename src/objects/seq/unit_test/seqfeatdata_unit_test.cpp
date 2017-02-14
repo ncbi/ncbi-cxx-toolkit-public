@@ -172,10 +172,74 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("30.1.49N31.11.44E", false), "30.0303 N 31.1956 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("27 degrees 22'50'' N 88 degrees 13'16'' E", false), "27.3806 N 88.2211 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("27 degrees 22 50  N 88 degrees 13 16 E", false), "27.3806 N 88.2211 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("27 degrees 22'50 N 88 degrees 13'16 E", false), "27.3806 N 88.2211 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("34 deg 00.465 N 77 deg 41.514 E", false), "34.00775 N 77.69190 E");
 
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-50.4498 N - 59 74.8912 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("50.4498 N 59 74.8912 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("9.93N\xC2\xB0 and 78.12\xC2\xB0\x45", true), "9.93 N 78.12 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("N03'00'12.1 E101'39'33'1", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("43.098333, -89.405278", true), "43.098333 N 89.405278 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("43.098333, -91.00231", true), "43.098333 N 91.00231 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("14.60085 and 144.77629", true), "14.60085 N 144.77629 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("53.43.20 N 7.43.20 E", true), "53.7222 N 7.7222 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("53.43.20.30 N 7.43.20.6 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("91.00 N 5.00 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("83.00 N 181.00 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("91.00 S 5.00 E", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("83.00 S 181.00 W", true), "");
+
+    string degree = "\xB0";
+    string to_fix = "9.93" + degree + "N and 78.12" + degree + "E";
+    string fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
+
+    to_fix = "Lattitude: 25.790544; longitude: -80.214930";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "25.790544 N 80.214930 W");
+
+    to_fix = "34.1030555556 , -118.357777778  34 degrees 6' 11'' North , 118 degrees 21' 28'' West";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "0031.02 N 00.01E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "31.02 N 0.01 E");
+
+    to_fix = "000.00 N 0.12 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.00 N 0.12 E");
+
+    to_fix = "0.0023 N 0 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.0023 N 0 E");
+
+    to_fix = "78.32 -0092.25";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "78.32 N 92.25 W");
+
+    to_fix = "-0008.34 0.85";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "8.34 S 0.85 E");
+
+    to_fix = "0.067682S_76.39885W";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.067682 S 76.39885 W");
+
+    to_fix = "34degrees 20' 13'' N,47degrees 03' 24''E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "34.3369 N 47.0567 E");
+
+    to_fix = "34degrees 20' 13' N,47deg 03' 24' E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "34.3369 N 47.0567 E");
+
+    to_fix = "8 degrees 28 'N & 77 degrees 41 'E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "8.47 N 77.68 E");
 
 }
 

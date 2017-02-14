@@ -1224,6 +1224,68 @@ static void s_RemoveLeadingZeros(string& token)
 }
 
 
+bool s_AddTokenToVal(double& val, const string& num_str, size_t num_sep, size_t& prec)
+{
+    double this_val = NStr::StringToDouble(num_str);
+    if (num_sep == 0) {
+        val += this_val;
+    } else if (num_sep == 1) {
+        if (this_val >= 60.0) {
+            // too big to be minutes
+            return false;
+        }
+        val += (this_val) / (60.0);
+        prec += 2;
+    } else if (num_sep == 2) {
+        if (this_val >= 60.0) {
+            // too big to be seconds
+            return false;
+        }
+        val += (this_val) / (3600.0);
+        prec += 2;
+    } else {
+        // too many separators
+        return false;
+    }
+    size_t p_pos = NStr::Find(num_str, ".");
+    if (p_pos != NPOS) {
+        prec += num_str.substr(p_pos + 1).length();
+    }
+
+    return true;
+}
+
+
+string s_StringFromValAndPrec(double val, size_t prec)
+{
+    if (prec > 0) {
+        double mult = pow((double)10.0, int(prec));
+        bool round_down = true;
+        double remainder = (val * mult) - floor(val * mult);
+        if (remainder > 0.5) {
+            round_down = false;
+        }
+        double tmp;
+        if (round_down) {
+            tmp = floor(val * mult);
+        } else {
+            tmp = ceil(val * mult);
+        }
+        val = tmp / mult;
+    }
+    string val_str = NStr::NumericToString(val, NStr::fDoubleFixed);
+    size_t pos = NStr::Find(val_str, ".");
+    if (pos != NPOS  &&  prec > 0) {
+        while (val_str.substr(pos + 1).length() < prec) {
+            val_str += "0";
+        }
+        if (val_str.substr(pos + 1).length() > prec) {
+            val_str = val_str.substr(0, pos + prec + 1);
+        }
+    }
+    return val_str;
+}
+
 static string s_GetNumFromLatLonToken (string token, const string& default_dir)
 {
     NStr::TruncateSpacesInPlace(token);
@@ -1261,7 +1323,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     double val = 0;
     size_t num_sep = 0, prev_start = 0;
     size_t prec = 0;
-    bool seen_period = false;
+    size_t num_period = 0;
     bool last_is_sep = false;
 
     while (pos < token.length()) {
@@ -1272,22 +1334,9 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
                 return kEmptyStr;
             }
             string num_str = token.substr(prev_start, pos - prev_start);
-            double this_val = NStr::StringToDouble (num_str);
-            if (num_sep == 0) {
-                val += this_val;
-            } else if (num_sep == 1) {
-                val += (this_val) / (60.0);
-                prec += 2;
-            } else if (num_sep == 2) {
-                val += (this_val) / (3600.0);
-                prec += 2;
-            } else {
+            if (!s_AddTokenToVal(val, num_str, num_sep, prec)) {
                 // too many separators
                 return kEmptyStr;
-            }
-            size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != NPOS) {
-                prec += num_str.substr(p_pos + 1).length();
             }
             num_sep++;
             pos++;
@@ -1339,20 +1388,42 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
             pos++;
             last_is_sep = false;
         } else if (ch == '.') {
-            if (seen_period) {
+            if (num_period > 0 && num_sep > 0) {
                 return kEmptyStr;
             }
-            seen_period = true;
+            num_period++;
             pos++;
             last_is_sep = false;
         } else {
             return kEmptyStr;
         }
     }
+    if (num_sep == 0 && num_period > 1) {
+        list<CTempString> pieces;
+        NStr::Split(token, ".", pieces);
+        num_sep = 0;
+        ITERATE(list<CTempString>, it, pieces) {
+            if (!s_AddTokenToVal(val, *it, num_sep, prec)) {
+                // too many separators
+                return kEmptyStr;
+            }
+            num_sep++;
+        }
+        string val_str = s_StringFromValAndPrec(val, prec);
+
+        if (!NStr::IsBlank(dir)) {
+            val_str = val_str + " " + dir;
+        }
+        return val_str;
+    } else if (num_period > 1) {
+        return kEmptyStr;
+    }
     if (num_sep > 0 && !last_is_sep) {
         // if there have been separators, but the last value is not a separator,
-        if (num_sep == 2 && !seen_period) {
+        if (num_sep == 2 && num_period == 0) {
             // if we have seen minutes but not seconds we'll treat this last value as seconds
+        } else if (num_sep == 1) {
+            // we'll treat this last value as minutes
         } else {
             // otherwise this is a bad format
             return kEmptyStr;
@@ -1369,51 +1440,12 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     } else {
         if (prev_start < pos) {
             string num_str = token.substr(prev_start, pos - prev_start);
-
-            double this_val = NStr::StringToDouble (num_str);
-            if (num_sep == 0) {
-                val += this_val;
-            } else if (num_sep == 1) {
-                val += (this_val) / (60.0);
-                prec += 2;
-            } else if (num_sep == 2) {
-                val += (this_val) / (3600.0);
-                prec += 2;
-            } else {
+            if (!s_AddTokenToVal(val, num_str, num_sep, prec)) {
                 // too many separators
                 return kEmptyStr;
             }
-            size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != NPOS) {
-                prec += num_str.substr(p_pos + 1).length();
-            }
         }
-        if (prec > 0) {
-            double mult = pow ((double)10.0, int(prec));
-            bool round_down = true;
-            double remainder = (val * mult) - floor (val * mult);
-            if (remainder > 0.5) {
-                round_down = false;
-            }
-            double tmp;
-            if (round_down) {
-                tmp = floor(val * mult);
-            } else {
-                tmp = ceil(val * mult);
-            }
-            val = tmp / mult;
-        }
-        string val_str = NStr::NumericToString (val, NStr::fDoubleFixed);
-        pos = NStr::Find (val_str, ".");
-        if (pos != NPOS  &&  prec > 0) {
-            while (val_str.substr(pos + 1).length() < prec) {
-                val_str += "0";
-            }
-            if (val_str.substr(pos + 1).length() > prec) {
-                val_str = val_str.substr (0, pos + prec + 1);
-            }
-        }
-
+        string val_str = s_StringFromValAndPrec(val, prec);
 
         if (!NStr::IsBlank(dir)) {
             val_str = val_str + " " + dir;
