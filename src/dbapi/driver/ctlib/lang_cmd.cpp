@@ -156,7 +156,11 @@ CTL_Cmd::CheckSFB_Internal(CS_RETCODE rc, const char* msg, unsigned int msg_num)
     case CS_SUCCEED:
         break;
     case CS_FAIL:
-        DATABASE_DRIVER_ERROR( msg, msg_num );
+        if (GetConnection().IsAlive()) {
+            DATABASE_DRIVER_ERROR(msg, msg_num);
+        } else {
+            DATABASE_DRIVER_ERROR("Connection has died.", 122010);
+        }
 #ifdef CS_BUSY
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
@@ -765,7 +769,15 @@ CTL_LRCmd::x_Cancel(void)
                     SetWasSent(false);
                     return true;
                 case CS_FAIL:
-                    DATABASE_DRIVER_ERROR( "ct_cancel failed." + GetDbgInfo(), 120008 );
+                    if (GetConnection().IsAlive()) {
+                        DATABASE_DRIVER_ERROR("ct_cancel failed."
+                                              + GetDbgInfo(),
+                                              120008);
+                    } else {
+                        DATABASE_DRIVER_ERROR("Connection has died."
+                                              + GetDbgInfo(),
+                                              122010);
+                    }
 #ifdef CS_BUSY
                 case CS_BUSY:
                     DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 120009 );
@@ -810,7 +822,15 @@ CTL_LRCmd::SendInternal(void)
     case CS_FAIL:
         SetHasFailed();
         Cancel();
-        DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 121005 );
+        // IsAlive digs deeper than IsDead, and sockets whose peers have
+        // disconnected remain nominally open until their owners try to
+        // use them, so checking after trying to send is most effective.
+        if (GetConnection().IsAlive()) {
+            DATABASE_DRIVER_ERROR("ct_send failed." + GetDbgInfo(), 121005);
+        } else {
+            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(),
+                                  121008);
+        }
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "Command was canceled." + GetDbgInfo(), 121006 );
 #ifdef CS_BUSY

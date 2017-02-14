@@ -630,6 +630,15 @@ protected:
                                           GetConnection(), GetLastParams());
         }
     }
+    virtual void SetHasFailed(bool flag = true)
+    {
+        CBaseCmd::SetHasFailed(flag);
+        if (flag  &&  !GetConnection().IsAlive()) {
+            NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
+                                          122010, eDiag_Error, GetDbgInfo(),
+                                          GetConnection(), GetLastParams());
+        }
+    }
 
     typedef CTL_Connection::TDbgInfo TDbgInfo;
     const TDbgInfo& GetDbgInfo(void) const

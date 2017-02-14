@@ -400,7 +400,11 @@ CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,
     case CS_SUCCEED:
         break;
     case CS_FAIL:
-        DATABASE_DRIVER_ERROR(msg, msg_num);
+        if (IsAlive()) {
+            DATABASE_DRIVER_ERROR(msg, msg_num);
+        } else {
+            DATABASE_DRIVER_ERROR("Connection has died.", 122010);
+        }
 #ifdef CS_BUSY
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );

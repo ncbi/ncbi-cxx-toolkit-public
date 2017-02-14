@@ -213,7 +213,7 @@ protected:
         return m_Recompile;
     }
 
-    void SetHasFailed(bool flag = true)
+    virtual void SetHasFailed(bool flag = true)
     {
         m_HasFailed = flag;
     }

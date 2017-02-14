@@ -252,10 +252,15 @@ bool CTL_RowResult::Fetch()
     case CS_ROW_FAIL:
         DATABASE_DRIVER_ERROR( "Error while fetching the row." + GetDbgInfo(), 130003 );
     case CS_FAIL:
-        DATABASE_DRIVER_ERROR("ct_fetch has failed. "
-                              "You need to cancel the command." +
-                              GetDbgInfo(),
-                              130006 );
+        if (GetConnection().IsAlive()) {
+            DATABASE_DRIVER_ERROR("ct_fetch has failed. "
+                                  "You need to cancel the command." +
+                                  GetDbgInfo(),
+                                  130006 );
+        } else {
+            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(),
+                                  122010);
+        }
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
