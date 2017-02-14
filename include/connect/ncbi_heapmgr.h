@@ -56,8 +56,9 @@ typedef struct SHEAP_tag* HEAP;
 /* Header of a heap block
  */
 typedef struct {
-    unsigned int flag;  /* (flag & 1) == 0 if the block is vacant         */
-    TNCBI_Size   size;  /* size of the block (including the block header) */
+    unsigned int flag;  /* (flag & 1) == 0 if the block is vacant;
+                         * other bits reserved, do not assume their values! */
+    TNCBI_Size   size;  /* size of the block (including this header), bytes */
 } SHEAP_Block;
 
 
@@ -192,7 +193,7 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
 
 
 /* Add reference counter to the given copy heap (no effect on
- * a heap, which have been HEAP_Create()'d or HEAP_Attach[Fast]()'d).
+ * a heap, which has been HEAP_Create()'d or HEAP_Attach[Fast]()'d).
  * The heap handle then will be destroyed only when the internal
  * reference counter reaches 0.  No internal locking is provided.
  * Return the resultant value of the reference counter.
