@@ -1065,6 +1065,7 @@ MONGODB_STATIC_LIBS
 LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
+LIBXLSXWRITER_STATIC_LIBS
 ncbi_xreader_pubseqos
 ncbi_xreader_pubseqos2
 UNLESS_PUBSEQOS
@@ -47224,9 +47225,9 @@ _ACEOF
 
 if test "$with_libxlsxwriter" != no -a \
      -f "$LIBXLSXWRITER_PATH/lib/libxlsxwriter-static.a"; then
-    LIBXLSWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
+    LIBXLSXWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
 else
-    LIBXLSWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
+    LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
 ### Restore original compiler/linker flags
@@ -47789,6 +47790,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -49376,6 +49378,7 @@ MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
+LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
@@ -49403,7 +49406,6 @@ LINK_WRAPPER!$LINK_WRAPPER$ac_delim
 KeepStateTarget!$KeepStateTarget$ac_delim
 Rules!$Rules$ac_delim
 serial_ws50_rtti_kludge!$serial_ws50_rtti_kludge$ac_delim
-ncbicntr!$ncbicntr$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49445,6 +49447,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ncbicntr!$ncbicntr$ac_delim
 UNIX_SRC!$UNIX_SRC$ac_delim
 UNIX_USR_PROJ!$UNIX_USR_PROJ$ac_delim
 compiler!$compiler$ac_delim
@@ -49460,7 +49463,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 13; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

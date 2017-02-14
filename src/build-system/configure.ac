@@ -7562,9 +7562,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
    [], [$Z_LIBS])
 if test "$with_libxlsxwriter" != no -a \
      -f "$LIBXLSXWRITER_PATH/lib/libxlsxwriter-static.a"; then
-    LIBXLSWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
+    LIBXLSXWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
 else
-    LIBXLSWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
+    LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
 ### Restore original compiler/linker flags
@@ -8312,6 +8312,7 @@ AC_SUBST(MONGODB_STATIC_LIBS)
 AC_SUBST(LIBUV_STATIC_LIBS)
 AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)
+AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
