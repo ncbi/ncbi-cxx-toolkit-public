@@ -7,6 +7,6 @@ LIB  = $(SDBAPI_LIB) xconnect xutil test_mt xncbi
 LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD =
-CHECK_REQUIRES = MT
+CHECK_REQUIRES = MT in-house-resources
 
 WATCHERS = ucko
