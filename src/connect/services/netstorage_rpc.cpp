@@ -1142,8 +1142,7 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
                 m_CurrentChunk += buf_size;
                 m_CurrentChunkSize -= buf_size;
             }
-            if (bytes_read != NULL)
-                *bytes_read = bytes_copied + buf_size;
+            if (bytes_read) *bytes_read = bytes_copied + buf_size;
             return true;
         }
 
@@ -1161,8 +1160,7 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
     if (buffer_copy()) return eRW_Success;
 
     if (m_EOF) {
-        if (bytes_read != NULL)
-            *bytes_read = bytes_copied;
+        if (bytes_read) *bytes_read = bytes_copied;
         return bytes_copied ? eRW_Success : eRW_Eof;
     }
 
@@ -1187,8 +1185,7 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
                 }
                 m_EOF = true;
                 ReadConfirmation();
-                if (bytes_read != NULL)
-                    *bytes_read = bytes_copied;
+                if (bytes_read) *bytes_read = bytes_copied;
                 return bytes_copied ? eRW_Success : eRW_Eof;
 
             case CUTTPReader::eEndOfBuffer:
@@ -1201,10 +1198,6 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
                         "while reading " << m_Locator);
             }
         }
-
-        if (bytes_read != NULL)
-            *bytes_read = bytes_copied;
-        return eRW_Success;
     }
     catch (...) {
         ExitState();
@@ -1213,6 +1206,9 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
         m_Connection = NULL;
         throw;
     }
+
+    if (bytes_read) *bytes_read = bytes_copied;
+    return eRW_Success;
 }
 
 bool SNetStorageObjectRPC::Eof()
