@@ -119,11 +119,29 @@ protected:
 // TODO:
 // Remove IReader and IEmbeddedStreamWriter bases,
 // Make all methods non virtual
+// XXX:
+// IReader and IEmbeddedStreamWriter bases are required for GetReader()/GetWriter()/GetRWStream(),
+// Investigate
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
 {
+    enum EIoModeApi { eAnyApi, eBuffer, eIoStream, eIReaderIWriter, eString };
+    enum EIoModeMth { eAnyMth, eRead, eWrite, eEof };
+
     ~SNetStorageObjectImpl();
 
     void SetStartState(INetStorageObjectState* state);
+
+    void SetIoMode(EIoModeApi api, EIoModeMth mth)
+    {
+        if (m_IoModeApi == eAnyApi || m_IoModeApi == api) {
+            m_IoModeApi = api;
+            m_IoModeMth = mth;
+        } else {
+            ThrowIoMode(api, mth);
+        }
+    }
+
+    void ResetIoMode() { m_IoModeApi = eAnyApi; }
 
     IReader& GetReader();
     IEmbeddedStreamWriter& GetWriter();
@@ -152,10 +170,13 @@ private:
     void A() const { _ASSERT(m_Current); }
     void EnterState(INetStorageObjectState* state);
     void ExitState();
+    void ThrowIoMode(EIoModeApi api, EIoModeMth mth);
 
     unique_ptr<INetStorageObjectState> m_Start;
     stack<INetStorageObjectState*> m_Previous;
     INetStorageObjectState* m_Current = nullptr;
+    EIoModeApi m_IoModeApi = eAnyApi;
+    EIoModeMth m_IoModeMth = eAnyMth;
 
     friend class INetStorageObjectState;
 };

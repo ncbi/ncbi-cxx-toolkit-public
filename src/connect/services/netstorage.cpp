@@ -38,54 +38,19 @@
 BEGIN_NCBI_SCOPE
 
 
-struct SEmptyWriteIgnore : IReaderWriter
+struct SNetStorageObjectRWStream : public CRWStream
 {
-    SEmptyWriteIgnore(SNetStorageObjectImpl* impl) :
-        m_Object(impl)
+    SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
+        CRWStream(impl, impl, 0, nullptr, CRWStreambuf::fLeakExceptions),
+        m_Impl(impl)
     {
         _ASSERT(impl);
     }
 
-    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
-    {
-        return m_Object->Read(buf, count, bytes_read);
-    }
-
-    ERW_Result PendingCount(size_t* count) override
-    {
-        return m_Object->PendingCount(count);
-    }
-
-    ERW_Result Pushback(const void* buf, size_t count, void* del_ptr = 0) override
-    {
-        return m_Object->Pushback(buf, count, del_ptr);
-    }
-
-    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override
-    {
-        if (count) return m_Object->Write(buf, count, bytes_written);
-
-        if (bytes_written) *bytes_written = 0;
-        return eRW_Success;
-    }
-
-    ERW_Result Flush() override
-    {
-        return m_Object->Flush();
-    }
+    virtual ~SNetStorageObjectRWStream() { flush(); m_Impl->ResetIoMode(); }
 
 private:
-    CNetStorageObject m_Object;
-};
-
-struct SNetStorageObjectRWStream : public CRWStream
-{
-    SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
-        CRWStream(new SEmptyWriteIgnore(impl), 0, nullptr, CRWStreambuf::fOwnAll | CRWStreambuf::fLeakExceptions)
-    {
-    }
-
-    virtual ~SNetStorageObjectRWStream() { flush(); }
+    SNetStorageObjectImpl* m_Impl;
 };
 
 ERW_Result SNetStorageObjectOState::Read(void*, size_t, size_t*)
@@ -148,6 +113,39 @@ string SNetStorageObjectIoState::FileTrack_Path()
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling FileTrack_Path() while reading/writing " << GetLoc());
 }
 
+string s_IoModeToString(SNetStorageObjectImpl::EIoModeApi api, SNetStorageObjectImpl::EIoModeMth mth)
+{
+    if (api == SNetStorageObjectImpl::eBuffer) {
+        if (mth == SNetStorageObjectImpl::eRead)  return "Read(buffer)";
+        if (mth == SNetStorageObjectImpl::eWrite) return "Write(buffer)";
+        if (mth == SNetStorageObjectImpl::eEof)   return "Eof()";
+    }
+    
+    if (api == SNetStorageObjectImpl::eIoStream) {
+        return "GetRWStream()";
+    }
+    
+    if (api == SNetStorageObjectImpl::eIReaderIWriter) {
+        if (mth == SNetStorageObjectImpl::eRead)  return "GetReader()";
+        if (mth == SNetStorageObjectImpl::eWrite) return "GetWriter()";
+    }
+    
+    if (api == SNetStorageObjectImpl::eString) {
+        if (mth == SNetStorageObjectImpl::eRead)  return "Read(string)";
+        if (mth == SNetStorageObjectImpl::eWrite) return "Write(string)";
+    }
+    
+    _ASSERT(false);
+    return ""; // Not reached
+}
+
+void SNetStorageObjectImpl::ThrowIoMode(EIoModeApi api, EIoModeMth mth)
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported,
+            "Calling " << s_IoModeToString(api, mth) << " after " <<
+            s_IoModeToString(m_IoModeApi, m_IoModeMth) << " for " << GetLoc());
+}
+
 IReader& SNetStorageObjectImpl::GetReader()
 {
     return *this;
@@ -187,7 +185,12 @@ ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
 ERW_Result SNetStorageObjectImpl::Write(const void* buf, size_t count, size_t* written)
 {
     _ASSERT(m_Current);
-    return m_Current->Write(buf, count, written);
+
+    if ((m_IoModeApi != eIoStream) || count) return m_Current->Write(buf, count, written);
+
+    // Ignore empty writes to iostream (CXX-8936)
+    if (written) *written = 0;
+    return eRW_Success;
 }
 
 ERW_Result SNetStorageObjectImpl::Flush()
@@ -199,6 +202,7 @@ ERW_Result SNetStorageObjectImpl::Flush()
 void SNetStorageObjectImpl::Close()
 {
     _ASSERT(m_Current);
+    ResetIoMode();
     return m_Current->Close();
 }
 
@@ -216,6 +220,7 @@ string CNetStorageObject::GetLoc() const
 size_t CNetStorageObject::Read(void* buffer, size_t buf_size)
 {
     size_t bytes_read;
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eBuffer, SNetStorageObjectImpl::eRead);
     m_Impl->Read(buffer, buf_size, &bytes_read);
     return bytes_read;
 }
@@ -227,41 +232,49 @@ void CNetStorageObject::Read(string* data)
     data->resize(0);
     size_t bytes_read;
 
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eString, SNetStorageObjectImpl::eRead);
+
     do {
         m_Impl->Read(buffer, sizeof(buffer), &bytes_read);
         data->append(buffer, bytes_read);
-    } while (!Eof());
+    } while (!m_Impl->Eof());
 
     Close();
 }
 
 IReader& CNetStorageObject::GetReader()
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eIReaderIWriter, SNetStorageObjectImpl::eRead);
     return m_Impl->GetReader();
 }
 
 bool CNetStorageObject::Eof()
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eBuffer, SNetStorageObjectImpl::eEof);
     return m_Impl->Eof();
 }
 
 void CNetStorageObject::Write(const void* buffer, size_t buf_size)
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eBuffer, SNetStorageObjectImpl::eWrite);
     m_Impl->Write(buffer, buf_size, NULL);
 }
 
 void CNetStorageObject::Write(const string& data)
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eString, SNetStorageObjectImpl::eWrite);
     m_Impl->Write(data.data(), data.length(), NULL);
 }
 
 IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eIReaderIWriter, SNetStorageObjectImpl::eWrite);
     return m_Impl->GetWriter();
 }
 
 CNcbiIostream* CNetStorageObject::GetRWStream()
 {
+    m_Impl->SetIoMode(SNetStorageObjectImpl::eIoStream, SNetStorageObjectImpl::eAnyMth);
     return m_Impl->GetRWStream();
 }
 
