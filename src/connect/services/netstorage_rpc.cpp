@@ -551,6 +551,8 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     CNetService m_OwnService;
 
+    const SNetStorage::SConfig::EErrMode m_ErrMode;
+    CRef<INetServerConnectionListener> m_Listener;
     CJsonNode m_OriginalRequest;
     CNetServerConnection m_Connection;
     vector<char> m_ReadBuffer;
@@ -575,6 +577,8 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, CNetS
         TBuilder builder, const string& object_loc) :
     m_NetStorageRPC(netstorage_rpc),
     m_OwnService(service),
+    m_ErrMode(m_NetStorageRPC->m_Config.err_mode),
+    m_Listener(m_NetStorageRPC->m_Service->m_Listener),
     m_Builder(builder),
     m_Locator(object_loc)
 {
@@ -1071,9 +1075,7 @@ void SNetStorageObjectRPC::ReadConfirmation()
         throw;
     }
 
-    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
-            m_NetStorageRPC->m_Config.err_mode,
-            *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
+    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock, m_ErrMode, *m_Listener, m_Connection->m_Server);
 }
 
 ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
@@ -1121,9 +1123,7 @@ void SNetStorageObjectRPC::StartReading(CJsonNode::TInstance request, CNetServer
         throw;
     }
 
-    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
-        m_NetStorageRPC->m_Config.err_mode,
-        *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
+    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock, m_ErrMode, *m_Listener, m_Connection->m_Server);
 
     m_CurrentChunkSize = 0;
 
@@ -1386,10 +1386,7 @@ void SNetStorageObjectRPC::Close()
         auto f = [](CUTTPWriter& w) { w.SendControlSymbol(END_OF_DATA_MARKER); };
         s_SendUTTP(sock, f);
 
-        s_ReadMessage(
-                m_OriginalRequest, sock,
-                m_NetStorageRPC->m_Config.err_mode,
-                *m_NetStorageRPC->m_Service->m_Listener, conn_copy->m_Server);
+        s_ReadMessage(m_OriginalRequest, sock, m_ErrMode, *m_Listener, conn_copy->m_Server);
     }
 }
 
