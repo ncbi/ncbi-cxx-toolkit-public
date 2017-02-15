@@ -97,8 +97,7 @@ const char* CJsonException::GetErrCodeString() const
     }
 }
 
-typedef CRef<SJsonNodeImpl,
-    CNetComponentCounterLocker<SJsonNodeImpl> > TJsonNodeRef;
+typedef CNetRef<SJsonNodeImpl> TJsonNodeRef;
 
 struct SJsonObjectElement {
     SJsonObjectElement(const string& key, SJsonNodeImpl* node_impl) :
@@ -439,8 +438,7 @@ struct SJsonObjectKeyIterator : public SJsonIteratorImpl
     virtual bool Next();
     virtual bool IsValid() const;
 
-    CRef<SJsonObjectNodeImpl,
-            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Container;
+    CNetRef<SJsonObjectNodeImpl> m_Container;
     TJsonObjectElements::iterator m_Iterator;
 };
 
@@ -480,8 +478,7 @@ struct SJsonObjectElementOrderIterator : public SJsonIteratorImpl
     virtual bool Next();
     virtual bool IsValid() const;
 
-    CRef<SJsonObjectNodeImpl,
-            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Container;
+    CNetRef<SJsonObjectNodeImpl> m_Container;
     TJsonObjectElementOrder::iterator m_Iterator;
 };
 
@@ -521,8 +518,7 @@ struct SJsonArrayIterator : public SJsonIteratorImpl
     virtual bool Next();
     virtual bool IsValid() const;
 
-    CRef<SJsonArrayNodeImpl,
-            CNetComponentCounterLocker<SJsonArrayNodeImpl> > m_Container;
+    CNetRef<SJsonArrayNodeImpl> m_Container;
     TJsonNodeVector::iterator m_Iterator;
 };
 

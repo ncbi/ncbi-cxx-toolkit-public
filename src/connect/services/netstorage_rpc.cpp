@@ -568,8 +568,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     CJsonNode x_MkRequest(const string& request_type) const;
 
-    CRef<SNetStorageRPC,
-            CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
+    CNetRef<SNetStorageRPC> m_NetStorageRPC;
 
     CNetService m_OwnService;
 
@@ -1495,8 +1494,7 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     virtual ENetStorageRemoveResult Remove(const string& key,
             TNetStorageFlags flags);
 
-    CRef<SNetStorageRPC,
-            CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
+    CNetRef<SNetStorageRPC> m_NetStorageRPC;
 };
 
 SNetStorageByKeyRPC::SNetStorageByKeyRPC(const TConfig& config,
@@ -1567,8 +1565,7 @@ struct SNetStorageAdminImpl : public CObject
     {
     }
 
-    CRef<SNetStorageRPC,
-            CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
+    CNetRef<SNetStorageRPC> m_NetStorageRPC;
 };
 
 CNetStorageAdmin::CNetStorageAdmin(CNetStorage::TInstance netstorage_impl) :

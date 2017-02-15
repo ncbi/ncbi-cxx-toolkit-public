@@ -80,9 +80,12 @@ public:
     }
 };
 
+template <class S>
+using CNetRef = CRef<S, CNetComponentCounterLocker<S>>;
+
 #define NCBI_NET_COMPONENT_DEF(Class, Impl)                                 \
     protected:                                                              \
-    CRef<Impl, CNetComponentCounterLocker<Impl> > m_Impl;                   \
+    CNetRef<Impl> m_Impl;                                                   \
     public:                                                                 \
     typedef Impl* TInstance;                                                \
     Class(EVoid)                        {}                                  \
