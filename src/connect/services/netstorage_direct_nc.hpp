@@ -40,11 +40,6 @@ BEGIN_NCBI_SCOPE
 
 struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 {
-    enum EObjectIdentification {
-        eByGeneratedID,
-        eByUniqueKey
-    };
-
     enum EState {
         eReady,
         eReading,
@@ -59,27 +54,25 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     {
     }
 
-    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
-    virtual ERW_Result PendingCount(size_t* count);
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read) override;
+    ERW_Result PendingCount(size_t* count) override;
 
-    virtual ERW_Result Write(const void* buf, size_t count,
-            size_t* bytes_written);
-    virtual ERW_Result Flush();
-    virtual void Close();
-    virtual void Abort();
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written) override;
+    ERW_Result Flush() override;
+    void Close() override;
+    void Abort() override;
 
-    virtual string GetLoc() const;
-    virtual void Read(string* data);
-    virtual bool Eof();
-    virtual Uint8 GetSize();
-    virtual list<string> GetAttributeList() const;
-    virtual string GetAttribute(const string& attr_name) const;
-    virtual void SetAttribute(const string& attr_name,
-            const string& attr_value);
-    virtual CNetStorageObjectInfo GetInfo();
-    virtual void SetExpiration(const CTimeout&);
+    string GetLoc() const override;
+    void Read(string* data) override;
+    bool Eof() override;
+    Uint8 GetSize() override;
+    list<string> GetAttributeList() const override;
+    string GetAttribute(const string& attr_name) const override;
+    void SetAttribute(const string& attr_name, const string& attr_value) override;
+    CNetStorageObjectInfo GetInfo() override;
+    void SetExpiration(const CTimeout&) override;
 
-    string FileTrack_Path();
+    string FileTrack_Path() override;
 
     void x_InitReader();
     void x_InitWriter();
@@ -91,7 +84,6 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
     auto_ptr<CNetCacheReader> m_NetCacheReader;
-    size_t m_BlobSize;
 };
 
 class CDNCNetStorage

@@ -58,8 +58,7 @@ void SNetStorage_NetCacheBlob::x_InitReader()
     }
 
     try {
-        m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(
-                m_BlobKey, 0, 0, &m_BlobSize, NULL));
+        m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(m_BlobKey, 0, 0, nullptr, nullptr));
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 
