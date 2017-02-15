@@ -549,12 +549,16 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     void ReadConfirmation();
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    virtual ERW_Result PendingCount(size_t* count);
 
     virtual ERW_Result Write(const void* buf, size_t count,
             size_t* bytes_written);
+    virtual ERW_Result Flush();
     virtual void Close();
+    virtual void Abort();
 
     virtual string GetLoc();
+    virtual void Read(string* data);
     virtual bool Eof();
     virtual Uint8 GetSize();
     virtual list<string> GetAttributeList() const;
@@ -1439,33 +1443,23 @@ CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type) const
                 m_UniqueKey, m_Flags);
 }
 
-ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
+ERW_Result SNetStorageObjectRPC::PendingCount(size_t* count)
 {
     *count = 0;
     return eRW_Success;
 }
 
-ERW_Result SNetStorageObjectImpl::Flush()
+ERW_Result SNetStorageObjectRPC::Flush()
 {
     return eRW_Success;
 }
 
-void SNetStorageObjectImpl::Abort()
+void SNetStorageObjectRPC::Abort()
 {
     Close();
 }
 
-IReader& SNetStorageObjectImpl::GetReader()
-{
-    return *this;
-}
-
-IEmbeddedStreamWriter& SNetStorageObjectImpl::GetWriter()
-{
-    return *this;
-}
-
-void SNetStorageObjectImpl::Read(string* data)
+void SNetStorageObjectRPC::Read(string* data)
 {
     char buffer[READ_CHUNK_SIZE];
 

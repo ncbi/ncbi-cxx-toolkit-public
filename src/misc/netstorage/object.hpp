@@ -55,11 +55,16 @@ public:
     virtual ~CObj();
 
     ERW_Result Read(void*, size_t, size_t*);
+    ERW_Result PendingCount(size_t* count) { *count = 0; return eRW_Success; }
+
     ERW_Result Write(const void*, size_t, size_t*);
+    ERW_Result Flush() { return eRW_Success; }
+
     void Close();
     void Abort();
 
     string GetLoc();
+    void Read(string* data);
     bool Eof();
     Uint8 GetSize();
     list<string> GetAttributeList() const;

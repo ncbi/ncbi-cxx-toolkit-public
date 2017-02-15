@@ -88,6 +88,56 @@ struct SNetStorageObjectRWStream : public CRWStream
     virtual ~SNetStorageObjectRWStream() { flush(); }
 };
 
+IReader& SNetStorageObjectImpl::GetReader()
+{
+    return *this;
+}
+
+IEmbeddedStreamWriter& SNetStorageObjectImpl::GetWriter()
+{
+    return *this;
+}
+
+CNcbiIostream* SNetStorageObjectImpl::GetRWStream()
+{
+    return new SNetStorageObjectRWStream(this);
+}
+
+ERW_Result SNetStorageObjectImpl::Read(void* buf, size_t count, size_t* read)
+{
+    return current->Read(buf, count, read);
+}
+
+void SNetStorageObjectImpl::Read(string* data)
+{
+    return current->Read(data);
+}
+
+ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
+{
+    return current->PendingCount(count);
+}
+
+ERW_Result SNetStorageObjectImpl::Write(const void* buf, size_t count, size_t* written)
+{
+    return current->Write(buf, count, written);
+}
+
+ERW_Result SNetStorageObjectImpl::Flush()
+{
+    return current->Flush();
+}
+
+void SNetStorageObjectImpl::Close()
+{
+    return current->Close();
+}
+
+void SNetStorageObjectImpl::Abort()
+{
+    return current->Abort();
+}
+
 string CNetStorageObject::GetLoc()
 {
     return m_Impl->GetLoc();
@@ -132,7 +182,7 @@ IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 
 CNcbiIostream* CNetStorageObject::GetRWStream()
 {
-    return new SNetStorageObjectRWStream(m_Impl);
+    return m_Impl->GetRWStream();
 }
 
 Uint8 CNetStorageObject::GetSize()

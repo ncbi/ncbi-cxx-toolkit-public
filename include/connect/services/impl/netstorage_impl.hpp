@@ -42,38 +42,54 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
-    public CObject,
-    public IReader,
-    public IEmbeddedStreamWriter
+struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmbeddedStreamWriter
 {
-    /* IReader methods */
-    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read) = 0;
-    virtual ERW_Result PendingCount(size_t* count);
-
-    /* IEmbeddedStreamWriter methods */
-    virtual ERW_Result Write(const void* buf, size_t count,
-            size_t* bytes_written) = 0;
-    virtual ERW_Result Flush();
-    virtual void Close() = 0;
-    virtual void Abort();
-
-    /* More overridable methods */
-    virtual IReader& GetReader();
-    virtual IEmbeddedStreamWriter& GetWriter();
+    using IReader::Read;
+    virtual void Read(string* data) = 0;
 
     virtual string GetLoc() = 0;
-    virtual void Read(string* data);
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
     virtual list<string> GetAttributeList() const = 0;
-    virtual string GetAttribute(const string& attr_name) const = 0;
-    virtual void SetAttribute(const string& attr_name,
-            const string& attr_value) = 0;
+    virtual string GetAttribute(const string& name) const = 0;
+    virtual void SetAttribute(const string& name, const string& value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
-    virtual void SetExpiration(const CTimeout&) = 0;
+    virtual void SetExpiration(const CTimeout& ttl) = 0;
 
     virtual string FileTrack_Path() = 0;
+};
+
+/// @internal
+// TODO:
+// Remove IReader and IEmbeddedStreamWriter bases,
+// Make all methods non virtual
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
+{
+    INetStorageObjectState* current;
+
+    IReader& GetReader();
+    IEmbeddedStreamWriter& GetWriter();
+    CNcbiIostream* GetRWStream();
+
+    virtual ERW_Result Read(void* buf, size_t count, size_t* read);
+    virtual void Read(string* data);
+    virtual ERW_Result PendingCount(size_t* count);
+
+    virtual ERW_Result Write(const void* buf, size_t count, size_t* written);
+    virtual ERW_Result Flush();
+
+    virtual void Close();
+    virtual void Abort();
+
+    virtual string GetLoc()                                            { return current->GetLoc(); }
+    virtual bool Eof()                                                 { return current->Eof(); }
+    virtual Uint8 GetSize()                                            { return current->GetSize(); }
+    virtual list<string> GetAttributeList() const                      { return current->GetAttributeList(); }
+    virtual string GetAttribute(const string& name) const              { return current->GetAttribute(name); }
+    virtual void SetAttribute(const string& name, const string& value) { return current->SetAttribute(name, value); }
+    virtual CNetStorageObjectInfo GetInfo()                            { return current->GetInfo(); }
+    virtual void SetExpiration(const CTimeout& ttl)                    { return current->SetExpiration(ttl); }
+    virtual string FileTrack_Path()                                    { return current->FileTrack_Path(); }
 };
 
 /// @internal
