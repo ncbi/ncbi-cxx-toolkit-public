@@ -105,32 +105,38 @@ CNcbiIostream* SNetStorageObjectImpl::GetRWStream()
 
 ERW_Result SNetStorageObjectImpl::Read(void* buf, size_t count, size_t* read)
 {
-    return current->Read(buf, count, read);
+    _ASSERT(m_Current);
+    return m_Current->Read(buf, count, read);
 }
 
 ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
 {
-    return current->PendingCount(count);
+    _ASSERT(m_Current);
+    return m_Current->PendingCount(count);
 }
 
 ERW_Result SNetStorageObjectImpl::Write(const void* buf, size_t count, size_t* written)
 {
-    return current->Write(buf, count, written);
+    _ASSERT(m_Current);
+    return m_Current->Write(buf, count, written);
 }
 
 ERW_Result SNetStorageObjectImpl::Flush()
 {
-    return current->Flush();
+    _ASSERT(m_Current);
+    return m_Current->Flush();
 }
 
 void SNetStorageObjectImpl::Close()
 {
-    return current->Close();
+    _ASSERT(m_Current);
+    return m_Current->Close();
 }
 
 void SNetStorageObjectImpl::Abort()
 {
-    return current->Abort();
+    _ASSERT(m_Current);
+    return m_Current->Abort();
 }
 
 string CNetStorageObject::GetLoc() const

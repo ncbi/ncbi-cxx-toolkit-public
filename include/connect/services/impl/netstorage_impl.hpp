@@ -58,20 +58,20 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmb
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectState
 {
-    SNetStorageObjectIoState(INetStorageObjectState& p) : base(p) {}
+    SNetStorageObjectIoState(INetStorageObjectState& parent) : m_Parent(parent) {}
 
-    string GetLoc() const override                                      { return base.GetLoc(); }
-    bool Eof() override                                                 { return base.Eof(); }
-    Uint8 GetSize() override                                            { return base.GetSize(); }
-    list<string> GetAttributeList() const override                      { return base.GetAttributeList(); }
-    string GetAttribute(const string& name) const override              { return base.GetAttribute(name); }
-    void SetAttribute(const string& name, const string& value) override { return base.SetAttribute(name, value); }
-    CNetStorageObjectInfo GetInfo() override                            { return base.GetInfo(); }
-    void SetExpiration(const CTimeout& ttl) override                    { return base.SetExpiration(ttl); }
-    string FileTrack_Path() override                                    { return base.FileTrack_Path(); }
+    string GetLoc() const override                                      { return m_Parent.GetLoc(); }
+    bool Eof() override                                                 { return m_Parent.Eof(); }
+    Uint8 GetSize() override                                            { return m_Parent.GetSize(); }
+    list<string> GetAttributeList() const override                      { return m_Parent.GetAttributeList(); }
+    string GetAttribute(const string& name) const override              { return m_Parent.GetAttribute(name); }
+    void SetAttribute(const string& name, const string& value) override { return m_Parent.SetAttribute(name, value); }
+    CNetStorageObjectInfo GetInfo() override                            { return m_Parent.GetInfo(); }
+    void SetExpiration(const CTimeout& ttl) override                    { return m_Parent.SetExpiration(ttl); }
+    string FileTrack_Path() override                                    { return m_Parent.FileTrack_Path(); }
 
 private:
-    INetStorageObjectState& base;
+    INetStorageObjectState& m_Parent;
 };
 
 /// @internal
@@ -80,8 +80,6 @@ private:
 // Make all methods non virtual
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
 {
-    INetStorageObjectState* current;
-
     IReader& GetReader();
     IEmbeddedStreamWriter& GetWriter();
     CNcbiIostream* GetRWStream();
@@ -95,15 +93,20 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IRead
     virtual void Close();
     virtual void Abort();
 
-    virtual string GetLoc() const                                      { return current->GetLoc(); }
-    virtual bool Eof()                                                 { return current->Eof(); }
-    virtual Uint8 GetSize()                                            { return current->GetSize(); }
-    virtual list<string> GetAttributeList() const                      { return current->GetAttributeList(); }
-    virtual string GetAttribute(const string& name) const              { return current->GetAttribute(name); }
-    virtual void SetAttribute(const string& name, const string& value) { return current->SetAttribute(name, value); }
-    virtual CNetStorageObjectInfo GetInfo()                            { return current->GetInfo(); }
-    virtual void SetExpiration(const CTimeout& ttl)                    { return current->SetExpiration(ttl); }
-    virtual string FileTrack_Path()                                    { return current->FileTrack_Path(); }
+    virtual string GetLoc() const                                      { A(); return m_Current->GetLoc(); }
+    virtual bool Eof()                                                 { A(); return m_Current->Eof(); }
+    virtual Uint8 GetSize()                                            { A(); return m_Current->GetSize(); }
+    virtual list<string> GetAttributeList() const                      { A(); return m_Current->GetAttributeList(); }
+    virtual string GetAttribute(const string& name) const              { A(); return m_Current->GetAttribute(name); }
+    virtual void SetAttribute(const string& name, const string& value) { A(); return m_Current->SetAttribute(name, value); }
+    virtual CNetStorageObjectInfo GetInfo()                            { A(); return m_Current->GetInfo(); }
+    virtual void SetExpiration(const CTimeout& ttl)                    { A(); return m_Current->SetExpiration(ttl); }
+    virtual string FileTrack_Path()                                    { A(); return m_Current->FileTrack_Path(); }
+
+private:
+    void A() const { _ASSERT(m_Current); }
+
+    INetStorageObjectState* m_Current = nullptr;
 };
 
 /// @internal
