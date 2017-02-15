@@ -1061,6 +1061,13 @@ string SNetStorageObjectRPC::GetLoc() const
 
 void SNetStorageObjectRPC::ReadConfirmation()
 {
+    if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+                "NetStorage API: invalid end-of-data-stream terminator: " << (int) m_UTTPReader.GetControlSymbol());
+    }
+
+    m_EOF = true;
+
     CJsonOverUTTPReader json_reader;
     try {
         while (!json_reader.ReadMessage(m_UTTPReader)) {
@@ -1180,13 +1187,6 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
                 break;
 
             case CUTTPReader::eControlSymbol:
-                if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
-                    NCBI_THROW_FMT(CNetStorageException, eIOError,
-                            "NetStorage API: invalid end-of-data-stream "
-                            "terminator: " <<
-                                    (int) m_UTTPReader.GetControlSymbol());
-                }
-                m_EOF = true;
                 ReadConfirmation();
                 if (bytes_read) *bytes_read = bytes_copied;
                 return bytes_copied ? eRW_Success : eRW_Eof;
