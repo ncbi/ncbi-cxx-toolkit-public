@@ -38,23 +38,50 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
+struct SNetStorage_NetCacheBlob : public INetStorageObjectState
 {
-    enum EState {
-        eReady,
-        eReading,
-        eWriting
+private:
+    struct SIState : public SNetStorageObjectIoState
+    {
+        unique_ptr<CNetCacheReader> reader;
+
+        SIState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
+            SNetStorageObjectIoState(fsm, parent)
+        {}
+
+        ERW_Result Read(void* buf, size_t count, size_t* read) override;
+        ERW_Result PendingCount(size_t* count) override;
+        bool Eof() override;
+
+        void Close() override;
+        void Abort() override;
     };
 
-    SNetStorage_NetCacheBlob(CNetCacheAPI::TInstance netcache_api,
+    struct SOState : public SNetStorageObjectIoState
+    {
+        unique_ptr<IEmbeddedStreamWriter> writer;
+
+        SOState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
+            SNetStorageObjectIoState(fsm, parent)
+        {}
+
+        ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+        ERW_Result Flush() override;
+
+        void Close() override;
+        void Abort() override;
+    };
+
+public:
+    SNetStorage_NetCacheBlob(SNetStorageObjectImpl& fsm, CNetCacheAPI::TInstance netcache_api,
             const string& blob_key) :
+        INetStorageObjectState(fsm),
         m_NetCacheAPI(netcache_api),
         m_BlobKey(blob_key),
-        m_State(SNetStorage_NetCacheBlob::eReady)
+        m_IState(fsm, *this),
+        m_OState(fsm, *this)
     {
     }
-
-    void ExitState() { m_State = eReady; }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read) override;
     ERW_Result PendingCount(size_t* count) override;
@@ -75,16 +102,13 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
 
     string FileTrack_Path() override;
 
-    void x_InitReader();
     void StartWriting();
 
+private:
     CNetCacheAPI m_NetCacheAPI;
-
     string m_BlobKey;
-    EState m_State;
-
-    auto_ptr<IEmbeddedStreamWriter> writer;
-    auto_ptr<CNetCacheReader> reader;
+    SIState m_IState;
+    SOState m_OState;
 };
 
 class CDNCNetStorage
