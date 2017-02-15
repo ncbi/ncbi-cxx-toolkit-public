@@ -113,11 +113,6 @@ bool SNetStorage_NetCacheBlob::Eof()
 
 void SNetStorage_NetCacheBlob::x_InitWriter()
 {
-    if (m_State == eReading) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot write a NetCache blob while reading");
-    }
-
     try {
         m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
@@ -129,6 +124,11 @@ void SNetStorage_NetCacheBlob::x_InitWriter()
 ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
         size_t* bytes_written)
 {
+    if (m_State == eReading) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot write a NetCache blob while reading");
+    }
+
     if (m_State != eWriting)
         x_InitWriter();
 
@@ -235,12 +235,12 @@ void SNetStorage_NetCacheBlob::Close()
 {
     switch (m_State) {
     case eReading:
-        m_State = eReady;
+        ExitState();
         m_NetCacheReader.reset();
         break;
 
     case eWriting:
-        m_State = eReady;
+        ExitState();
         m_NetCacheWriter->Close();
         m_NetCacheWriter.reset();
         break;
@@ -254,12 +254,12 @@ void SNetStorage_NetCacheBlob::Abort()
 {
     switch (m_State) {
     case eReading:
-        m_State = eReady;
+        ExitState();
         m_NetCacheReader.reset();
         break;
 
     case eWriting:
-        m_State = eReady;
+        ExitState();
         m_NetCacheWriter->Abort();
         m_NetCacheWriter.reset();
         break;

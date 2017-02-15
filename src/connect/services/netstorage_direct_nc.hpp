@@ -54,6 +54,8 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     {
     }
 
+    void ExitState() { m_State = eReady; }
+
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read) override;
     ERW_Result PendingCount(size_t* count) override;
 
