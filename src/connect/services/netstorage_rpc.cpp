@@ -542,6 +542,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     string FileTrack_Path();
 
     void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
+    ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
 
     CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Locator); }
 
@@ -1120,8 +1121,11 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         m_EOF = false;
     }
 
-    char* buf_pos = reinterpret_cast<char*>(buffer);
+    return ReadImpl(buffer, buf_size, bytes_read);
+}
 
+ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t* bytes_read)
+{
     size_t bytes_copied = 0;
 
     auto buffer_copy = [&]() {
@@ -1138,7 +1142,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
         if (m_CurrentChunkSize > 0) {
             memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
-            buf_pos += m_CurrentChunkSize;
+            buf_pos = static_cast<char*>(buf_pos) + m_CurrentChunkSize;
             buf_size -= m_CurrentChunkSize;
         }
 
