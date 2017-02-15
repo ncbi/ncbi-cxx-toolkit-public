@@ -494,22 +494,81 @@ void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
     m_Connection = conn_impl;
 }
 
-struct SNetStorageObjectRPC : public SNetStorageObjectImpl
+struct SNetStorageObjectRPC : public INetStorageObjectState
 {
-    typedef function<CJsonNode(const string&, const string&)> TBuilder;
+private:
+    struct SContext
+    {
+        const SNetStorage::SConfig::EErrMode m_ErrMode;
+        CRef<INetServerConnectionListener> m_Listener;
+        CJsonNode m_OriginalRequest;
+        CNetServerConnection m_Connection;
+        string m_Locator;
 
-    enum EState {
-        eReady,
-        eReading,
-        eWriting
+        SContext(SNetStorageRPC* netstorage_rpc, const string& object_loc) :
+            m_ErrMode(netstorage_rpc->m_Config.err_mode),
+            m_Listener(netstorage_rpc->m_Service->m_Listener),
+            m_Locator(object_loc)
+        {
+        }
+
+        operator string() const { return m_Locator; }
+
+        void TrapErrors(const CJsonNode& reply)
+        {
+            s_TrapErrors(m_OriginalRequest, reply, m_Connection->m_Socket, m_ErrMode, *m_Listener, m_Connection->m_Server);
+        }
+
+        CJsonNode ReadMessage(CNetServerConnection::TInstance conn)
+        {
+            return s_ReadMessage(m_OriginalRequest, conn->m_Socket, m_ErrMode, *m_Listener, conn->m_Server);
+        }
     };
 
-    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, CNetService service, TBuilder builder,
+    struct SIState : public SNetStorageObjectChildState<SNetStorageObjectIState, SContext>
+    {
+        typedef SNetStorageObjectChildState<SNetStorageObjectIState, SContext> TBase;
+
+        using TBase::TBase;
+
+        ERW_Result Read(void* buf, size_t count, size_t* read) override;
+        ERW_Result PendingCount(size_t* count) override;
+        bool Eof() override;
+
+        void Close() override;
+        void Abort() override;
+
+        void StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
+
+    private:
+        void ReadConfirmation();
+        void ReadSocket() { s_ReadSocket(m_Context.m_Connection->m_Socket, m_ReadBuffer, m_UTTPReader); }
+
+        vector<char> m_ReadBuffer;
+        CUTTPReader m_UTTPReader;
+        const char* m_CurrentChunk;
+        size_t m_CurrentChunkSize;
+        bool m_EOF;
+    };
+
+    struct SOState : public SNetStorageObjectChildState<SNetStorageObjectOState, SContext>
+    {
+        typedef SNetStorageObjectChildState<SNetStorageObjectOState, SContext> TBase;
+
+        using TBase::TBase;
+
+        ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+        ERW_Result Flush() override;
+
+        void Close() override;
+        void Abort() override;
+    };
+
+public:
+    typedef function<CJsonNode(const string&, const string&)> TBuilder;
+
+    SNetStorageObjectRPC(SNetStorageObjectImpl& fsm, SNetStorageRPC* netstorage_rpc, CNetService service, TBuilder builder,
             const string& object_loc);
-
-    void ExitState() { m_State = eReady; }
-
-    virtual ~SNetStorageObjectRPC();
 
     CJsonNode ExchangeUsingOwnService(const CJsonNode& request,
             CNetServerConnection* conn = NULL,
@@ -519,84 +578,57 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
                 request, conn, server_to_use);
     }
 
-    void ReadConfirmation();
-    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
-    virtual ERW_Result PendingCount(size_t* count);
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read) override;
+    ERW_Result PendingCount(size_t* count) override;
 
-    virtual ERW_Result Write(const void* buf, size_t count,
-            size_t* bytes_written);
-    virtual ERW_Result Flush();
-    virtual void Close();
-    virtual void Abort();
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written) override;
+    ERW_Result Flush() override;
+    void Close() override;
+    void Abort() override;
 
-    virtual string GetLoc() const;
-    virtual bool Eof();
-    virtual Uint8 GetSize();
-    virtual list<string> GetAttributeList() const;
-    virtual string GetAttribute(const string& attr_name) const;
-    virtual void SetAttribute(const string& attr_name,
-            const string& attr_value);
-    virtual CNetStorageObjectInfo GetInfo();
-    virtual void SetExpiration(const CTimeout&);
+    string GetLoc() const override { return m_Context.m_Locator; }
+    bool Eof() override;
+    Uint8 GetSize() override;
+    list<string> GetAttributeList() const override;
+    string GetAttribute(const string& attr_name) const override;
+    void SetAttribute(const string& attr_name, const string& attr_value) override;
+    CNetStorageObjectInfo GetInfo() override;
+    void SetExpiration(const CTimeout&) override;
 
-    string FileTrack_Path();
+    string FileTrack_Path() override;
 
     void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
-    void StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
     ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
 
-    CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Locator); }
-
-    void ReadSocket() { s_ReadSocket(m_Connection->m_Socket, m_ReadBuffer, m_UTTPReader); }
-
-    void TrapErrors(const CJsonNode& reply)
-    {
-        s_TrapErrors(m_OriginalRequest, reply, m_Connection->m_Socket, m_ErrMode, *m_Listener, m_Connection->m_Server);
-    }
+private:
+    CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Context.m_Locator); }
 
     CNetRef<SNetStorageRPC> m_NetStorageRPC;
-
     CNetService m_OwnService;
-
-    const SNetStorage::SConfig::EErrMode m_ErrMode;
-    CRef<INetServerConnectionListener> m_Listener;
-    CJsonNode m_OriginalRequest;
-    CNetServerConnection m_Connection;
-    vector<char> m_ReadBuffer;
-    CUTTPReader m_UTTPReader;
-    const char* m_CurrentChunk;
-    size_t m_CurrentChunkSize;
     TBuilder m_Builder;
-    string m_Locator;
-    EState m_State = eReady;
-    bool m_EOF;
+    SContext m_Context;
+    SIState m_IState;
+    SOState m_OState;
 };
 
 void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
 {
-    m_OriginalRequest = request;
-    m_Connection = conn;
-    m_State = eWriting;
+    m_Context.m_OriginalRequest = request;
+    m_Context.m_Connection = conn;
+    EnterState(&m_OState);
 }
 
 
-SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, CNetService service,
+SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageObjectImpl& fsm, SNetStorageRPC* netstorage_rpc, CNetService service,
         TBuilder builder, const string& object_loc) :
+    INetStorageObjectState(fsm),
     m_NetStorageRPC(netstorage_rpc),
     m_OwnService(service),
-    m_ErrMode(m_NetStorageRPC->m_Config.err_mode),
-    m_Listener(m_NetStorageRPC->m_Service->m_Listener),
     m_Builder(builder),
-    m_Locator(object_loc)
+    m_Context(netstorage_rpc, object_loc),
+    m_IState(fsm, m_Context),
+    m_OState(fsm, m_Context)
 {
-}
-
-SNetStorageObjectRPC::~SNetStorageObjectRPC()
-{
-    try {
-        Close();
-    }
-    NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
 }
 
 static const char* const s_NetStorageConfigSections[] = {
@@ -783,9 +815,11 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
     auto service = GetServiceIfLocator(object_loc);
     auto builder = [this](const string& r, const string& l) { return MkObjectRequest(r, l); };
 
-    auto state = new SNetStorageObjectRPC(this, service, builder, object_loc);
+    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
+    auto* state = new SNetStorageObjectRPC(*fsm, this, service, builder, object_loc);
+    fsm->SetStartState(state);
     state->StartWriting(request, conn);
-    return state;
+    return fsm.release();
 }
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
@@ -798,7 +832,10 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 
     auto builder = [this](const string& r, const string& l) { return MkObjectRequest(r, l); };
 
-    return new SNetStorageObjectRPC(this, service, builder, object_loc);
+    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
+    auto state = new SNetStorageObjectRPC(*fsm, this, service, builder, object_loc);
+    fsm->SetStartState(state);
+    return fsm.release();
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
@@ -1054,12 +1091,7 @@ EVoid SNetStorageRPC::x_InitNetCacheAPI()
     return eVoid;
 }
 
-string SNetStorageObjectRPC::GetLoc() const
-{
-    return m_Locator;
-}
-
-void SNetStorageObjectRPC::ReadConfirmation()
+void SNetStorageObjectRPC::SIState::ReadConfirmation()
 {
     if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
         NCBI_THROW_FMT(CNetStorageException, eIOError,
@@ -1077,48 +1109,46 @@ void SNetStorageObjectRPC::ReadConfirmation()
         if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Extra bytes past confirmation message "
-                    "while reading " << m_Locator << " from " <<
-                    m_Connection->m_Socket.GetPeerAddress() << '.');
+                    "while reading " << m_Context.m_Locator << " from " <<
+                    m_Context.m_Connection->m_Socket.GetPeerAddress() << '.');
         }
     }
     catch (...) {
         m_UTTPReader.Reset();
-        m_Connection->Close();
+        m_Context.m_Connection->Close();
         throw;
     }
 
-    TrapErrors(json_reader.GetMessage());
+    m_Context.TrapErrors(json_reader.GetMessage());
 }
 
 ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         size_t* bytes_read)
 {
-    if (m_State == eWriting) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot read a NetStorage file while writing to it");
-    }
+    auto request = x_MkRequest("READ");
 
-    if (m_State == eReady) {
-        auto request = x_MkRequest("READ");
+    CNetServer server(*m_OwnService.Iterate(CNetService::eRandomize));
 
-        CNetServer server(*m_OwnService.Iterate(CNetService::eRandomize));
+    CJsonOverUTTPExecHandler json_over_uttp_sender(request);
 
-        CJsonOverUTTPExecHandler json_over_uttp_sender(request);
+    server->TryExec(json_over_uttp_sender);
 
-        server->TryExec(json_over_uttp_sender);
+    m_IState.StartReading(request, json_over_uttp_sender.GetConnection());
+    EnterState(&m_IState);
 
-        StartReading(request, json_over_uttp_sender.GetConnection());
-    }
-
-    return ReadImpl(buffer, buf_size, bytes_read);
+    return m_IState.Read(buffer, buf_size, bytes_read);
 }
 
-void SNetStorageObjectRPC::StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
+void SNetStorageObjectRPC::SIState::StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
 {
-    m_OriginalRequest = request;
-    m_Connection = conn;
+    m_Context.m_OriginalRequest = request;
+    m_Context.m_Connection = conn;
 
     m_ReadBuffer = vector<char>(READ_BUFFER_SIZE);
+    m_UTTPReader.Reset();
+    m_CurrentChunk = nullptr;
+    m_CurrentChunkSize = 0;
+    m_EOF = false;
 
     CJsonOverUTTPReader json_reader;
 
@@ -1129,19 +1159,14 @@ void SNetStorageObjectRPC::StartReading(CJsonNode::TInstance request, CNetServer
     }
     catch (...) {
         m_UTTPReader.Reset();
-        m_Connection->m_Socket.Close();
+        m_Context.m_Connection->Close();
         throw;
     }
 
-    TrapErrors(json_reader.GetMessage());
-
-    m_CurrentChunkSize = 0;
-
-    m_State = eReading;
-    m_EOF = false;
+    m_Context.TrapErrors(json_reader.GetMessage());
 }
 
-ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t* bytes_read)
+ERW_Result SNetStorageObjectRPC::SIState::Read(void* buf_pos, size_t buf_size, size_t* bytes_read)
 {
     if (bytes_read) *bytes_read = 0;
 
@@ -1169,15 +1194,15 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
             default:
                 NCBI_THROW_FMT(CNetStorageException, eIOError,
                         "NetStorage API: invalid UTTP status "
-                        "while reading " << m_Locator);
+                        "while reading " << m_Context.m_Locator);
             }
         }
     }
     catch (...) {
         ExitState();
         m_UTTPReader.Reset();
-        m_Connection->Close();
-        m_Connection = NULL;
+        m_Context.m_Connection->Close();
+        m_Context.m_Connection = NULL;
         throw;
     }
 
@@ -1194,41 +1219,33 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
 
 bool SNetStorageObjectRPC::Eof()
 {
-    switch (m_State) {
-    case eReady:
         return false;
+}
 
-    case eReading:
-        return m_CurrentChunkSize == 0 && m_EOF;
-
-    default: /* case eWriting: */
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot read a NetStorage file while writing");
-    }
+bool SNetStorageObjectRPC::SIState::Eof()
+{
+    return m_CurrentChunkSize == 0 && m_EOF;
 }
 
 ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
         size_t* bytes_written)
 {
-    if (m_State == eReading) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot write a NetStorage file while reading");
-    }
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
+    m_Context.m_OriginalRequest = x_MkRequest("WRITE");
 
-    if (m_State == eReady) {
-        m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
-        m_OriginalRequest = x_MkRequest("WRITE");
+    m_Context.m_Locator = ExchangeUsingOwnService(m_Context.m_OriginalRequest,
+            &m_Context.m_Connection).GetString("ObjectLoc");
 
-        m_Locator = ExchangeUsingOwnService(m_OriginalRequest,
-                &m_Connection).GetString("ObjectLoc");
+    EnterState(&m_OState);
+    return m_OState.Write(buf_pos, buf_size, bytes_written);
+}
 
-        m_State = eWriting;
-    }
-
+ERW_Result SNetStorageObjectRPC::SOState::Write(const void* buf_pos, size_t buf_size, size_t* bytes_written)
+{
     try {
         const char* chunk = reinterpret_cast<const char*>(buf_pos);
         auto f = [&](CUTTPWriter& w) { w.SendChunk(chunk, buf_size, false); };
-        s_SendUTTP(m_Connection->m_Socket, f);
+        s_SendUTTP(m_Context.m_Connection->m_Socket, f);
 
         if (bytes_written != NULL)
             *bytes_written = buf_size;
@@ -1236,19 +1253,14 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
     }
     catch (exception&) {
         ExitState();
-        m_Connection->Close();
-        m_Connection = NULL;
+        m_Context.m_Connection->Close();
+        m_Context.m_Connection = NULL;
         throw;
     }
 }
 
 Uint8 SNetStorageObjectRPC::GetSize()
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot get object size while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("GETSIZE"));
 
     return (Uint8) ExchangeUsingOwnService(request).GetInteger("Size");
@@ -1256,11 +1268,6 @@ Uint8 SNetStorageObjectRPC::GetSize()
 
 list<string> SNetStorageObjectRPC::GetAttributeList() const
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot get object attribute while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("GETATTRLIST"));
 
     CJsonNode reply(ExchangeUsingOwnService(request));
@@ -1278,11 +1285,6 @@ list<string> SNetStorageObjectRPC::GetAttributeList() const
 
 string SNetStorageObjectRPC::GetAttribute(const string& attr_name) const
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot get object attribute while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("GETATTR"));
 
     request.SetString("AttrName", attr_name);
@@ -1293,11 +1295,6 @@ string SNetStorageObjectRPC::GetAttribute(const string& attr_name) const
 void SNetStorageObjectRPC::SetAttribute(const string& attr_name,
         const string& attr_value)
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot set object attribute while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("SETATTR"));
 
     request.SetString("AttrName", attr_name);
@@ -1308,11 +1305,6 @@ void SNetStorageObjectRPC::SetAttribute(const string& attr_name,
 
 CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot get object info while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
     return g_CreateNetStorageObjectInfo(
@@ -1321,11 +1313,6 @@ CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 
 void SNetStorageObjectRPC::SetExpiration(const CTimeout& ttl)
 {
-    if (m_State != eReady) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot set expiration while reading or writing");
-    }
-
     CJsonNode request(x_MkRequest("SETEXPTIME"));
 
     if (ttl.IsFinite()) {
@@ -1344,31 +1331,38 @@ string SNetStorageObjectRPC::FileTrack_Path()
     return ExchangeUsingOwnService(request).GetString("Path");
 }
 
+void SNetStorageObjectRPC::SIState::Close()
+{
+    CNetServerConnection conn_copy(m_Context.m_Connection);
+    m_Context.m_Connection = NULL;
+
+    ExitState();
+
+    if (!m_EOF) {
+        m_UTTPReader.Reset();
+        conn_copy->Close();
+    }
+}
+void SNetStorageObjectRPC::SOState::Close()
+{
+    CNetServerConnection conn_copy(m_Context.m_Connection);
+    m_Context.m_Connection = NULL;
+
+    ExitState();
+
+    auto f = [](CUTTPWriter& w) { w.SendControlSymbol(END_OF_DATA_MARKER); };
+    s_SendUTTP(conn_copy->m_Socket, f);
+    m_Context.ReadMessage(conn_copy);
+}
+
 void SNetStorageObjectRPC::Close()
 {
-    if (m_State == eReady)
-        return;
+}
 
-    CNetServerConnection conn_copy(m_Connection);
-    m_Connection = NULL;
-
-    if (m_State == eReading) {
-        ExitState();
-
-        if (!m_EOF) {
-            m_UTTPReader.Reset();
-            conn_copy->Close();
-        }
-    } else { /* m_State == eWriting */
-        ExitState();
-
-        CSocket& sock = conn_copy->m_Socket;
-
-        auto f = [](CUTTPWriter& w) { w.SendControlSymbol(END_OF_DATA_MARKER); };
-        s_SendUTTP(sock, f);
-
-        s_ReadMessage(m_OriginalRequest, sock, m_ErrMode, *m_Listener, conn_copy->m_Server);
-    }
+ERW_Result SNetStorageObjectRPC::SIState::PendingCount(size_t* count)
+{
+    *count = 0;
+    return eRW_Success;
 }
 
 ERW_Result SNetStorageObjectRPC::PendingCount(size_t* count)
@@ -1377,9 +1371,24 @@ ERW_Result SNetStorageObjectRPC::PendingCount(size_t* count)
     return eRW_Success;
 }
 
+ERW_Result SNetStorageObjectRPC::SOState::Flush()
+{
+    return eRW_Success;
+}
+
 ERW_Result SNetStorageObjectRPC::Flush()
 {
     return eRW_Success;
+}
+
+void SNetStorageObjectRPC::SIState::Abort()
+{
+    Close();
+}
+
+void SNetStorageObjectRPC::SOState::Abort()
+{
+    Close();
 }
 
 void SNetStorageObjectRPC::Abort()
@@ -1421,7 +1430,10 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
         return m_NetStorageRPC->MkObjectRequest(r, unique_key, flags);
     };
 
-    return new SNetStorageObjectRPC(m_NetStorageRPC, m_NetStorageRPC->m_Service, builder, kEmptyStr);
+    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
+    auto state = new SNetStorageObjectRPC(*fsm, m_NetStorageRPC, m_NetStorageRPC->m_Service, builder, kEmptyStr);
+    fsm->SetStartState(state);
+    return fsm.release();
 }
 
 string SNetStorageByKeyRPC::Relocate(const string& unique_key,
