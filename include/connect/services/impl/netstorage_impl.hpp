@@ -75,15 +75,22 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
     {
     }
 
+    ERW_Result Read(void* buf, size_t count, size_t* read) override;
+    ERW_Result PendingCount(size_t* count) override;
+    bool Eof() override;
+
+    ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+    ERW_Result Flush() override;
+
     string GetLoc() const override                                      { return m_Parent.GetLoc(); }
-    bool Eof() override                                                 { return m_Parent.Eof(); }
-    Uint8 GetSize() override                                            { return m_Parent.GetSize(); }
-    list<string> GetAttributeList() const override                      { return m_Parent.GetAttributeList(); }
-    string GetAttribute(const string& name) const override              { return m_Parent.GetAttribute(name); }
-    void SetAttribute(const string& name, const string& value) override { return m_Parent.SetAttribute(name, value); }
-    CNetStorageObjectInfo GetInfo() override                            { return m_Parent.GetInfo(); }
-    void SetExpiration(const CTimeout& ttl) override                    { return m_Parent.SetExpiration(ttl); }
-    string FileTrack_Path() override                                    { return m_Parent.FileTrack_Path(); }
+
+    Uint8 GetSize() final;
+    list<string> GetAttributeList() const final;
+    string GetAttribute(const string& name) const final;
+    void SetAttribute(const string& name, const string& value) final;
+    CNetStorageObjectInfo GetInfo() final;
+    void SetExpiration(const CTimeout& ttl) final;
+    string FileTrack_Path() final;
 
 private:
     INetStorageObjectState& m_Parent;

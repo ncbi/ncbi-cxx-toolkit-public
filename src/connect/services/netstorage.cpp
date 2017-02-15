@@ -88,6 +88,66 @@ struct SNetStorageObjectRWStream : public CRWStream
     virtual ~SNetStorageObjectRWStream() { flush(); }
 };
 
+ERW_Result SNetStorageObjectIoState::Read(void*, size_t, size_t*)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Read() while writing " << GetLoc());
+}
+
+ERW_Result SNetStorageObjectIoState::PendingCount(size_t*)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling PendingCount() while writing " << GetLoc());
+}
+
+bool SNetStorageObjectIoState::Eof()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Eof() while writing " << GetLoc());
+}
+
+ERW_Result SNetStorageObjectIoState::Write(const void*, size_t, size_t*)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Write() while reading " << GetLoc());
+}
+
+ERW_Result SNetStorageObjectIoState::Flush()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Flush() while reading " << GetLoc());
+}
+
+Uint8 SNetStorageObjectIoState::GetSize()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling GetSize() while reading/writing " << GetLoc());
+}
+
+list<string> SNetStorageObjectIoState::GetAttributeList() const
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling GetAttributeList() while reading/writing " << GetLoc());
+}
+
+string SNetStorageObjectIoState::GetAttribute(const string&) const
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling GetAttribute() while reading/writing " << GetLoc());
+}
+
+void SNetStorageObjectIoState::SetAttribute(const string&, const string& )
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling SetAttribute() while reading/writing " << GetLoc());
+}
+
+CNetStorageObjectInfo SNetStorageObjectIoState::GetInfo()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling GetInfo() while reading/writing " << GetLoc());
+}
+
+void SNetStorageObjectIoState::SetExpiration(const CTimeout&)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling SetExpiration() while reading/writing " << GetLoc());
+}
+
+string SNetStorageObjectIoState::FileTrack_Path()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling FileTrack_Path() while reading/writing " << GetLoc());
+}
+
 IReader& SNetStorageObjectImpl::GetReader()
 {
     return *this;
