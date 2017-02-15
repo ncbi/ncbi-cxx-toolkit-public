@@ -1143,57 +1143,28 @@ void SNetStorageObjectRPC::StartReading(CJsonNode::TInstance request, CNetServer
 
 ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t* bytes_read)
 {
-    size_t bytes_copied = 0;
+    if (bytes_read) *bytes_read = 0;
 
-    auto buffer_copy = [&]() {
-        if (m_CurrentChunkSize >= buf_size) {
-            if (buf_size > 0) {
-                memcpy(buf_pos, m_CurrentChunk, buf_size);
-                m_CurrentChunk += buf_size;
-                m_CurrentChunkSize -= buf_size;
-            }
-            if (bytes_read) *bytes_read = bytes_copied + buf_size;
-            return true;
-        }
+    if (!m_CurrentChunkSize && m_EOF) return eRW_Eof;
 
-        if (m_CurrentChunkSize > 0) {
-            memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
-            buf_pos = static_cast<char*>(buf_pos) + m_CurrentChunkSize;
-            buf_size -= m_CurrentChunkSize;
-        }
-
-        bytes_copied += m_CurrentChunkSize;
-        m_CurrentChunkSize = 0;
-        return false;
-    };
-
-    if (buffer_copy()) return eRW_Success;
-
-    if (m_EOF) {
-        if (bytes_read) *bytes_read = bytes_copied;
-        return bytes_copied ? eRW_Success : eRW_Eof;
-    }
+    if (!buf_size) return eRW_Success;
 
     try {
-        while (buf_size > 0) {
+        while (!m_CurrentChunkSize) {
             switch (m_UTTPReader.GetNextEvent()) {
             case CUTTPReader::eChunkPart:
             case CUTTPReader::eChunk:
                 m_CurrentChunk = m_UTTPReader.GetChunkPart();
                 m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
-
-                if (buffer_copy()) return eRW_Success;
-
-                break;
+                continue;
 
             case CUTTPReader::eControlSymbol:
                 ReadConfirmation();
-                if (bytes_read) *bytes_read = bytes_copied;
-                return bytes_copied ? eRW_Success : eRW_Eof;
+                return eRW_Eof;
 
             case CUTTPReader::eEndOfBuffer:
                 ReadSocket();
-                break;
+                continue;
 
             default:
                 NCBI_THROW_FMT(CNetStorageException, eIOError,
@@ -1210,7 +1181,14 @@ ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t
         throw;
     }
 
-    if (bytes_read) *bytes_read = bytes_copied;
+    if (auto bytes_copied = min(m_CurrentChunkSize, buf_size)) {
+        memcpy(buf_pos, m_CurrentChunk, bytes_copied);
+        m_CurrentChunk += bytes_copied;
+        m_CurrentChunkSize -= bytes_copied;
+
+        if (bytes_read) *bytes_read = bytes_copied;
+    }
+
     return eRW_Success;
 }
 
