@@ -65,41 +65,26 @@ void SNetStorage_NetCacheBlob::x_InitReader()
     m_State = eReading;
 }
 
-ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
-        size_t* bytes_read)
+ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size, size_t* bytes_read)
 {
     if (m_State != eReading)
         x_InitReader();
 
+    ERW_Result rw_res = eRW_Success;
+
     try {
-        size_t iter_bytes_read;
-        size_t total_bytes_read = 0;
-        ERW_Result rw_res = eRW_Success;
-        char* buf = reinterpret_cast<char*>(buffer);
-
-        while (buf_size > 0) {
-            rw_res = m_NetCacheReader->Read(buf, buf_size, &iter_bytes_read);
-            if (rw_res == eRW_Success) {
-                total_bytes_read += iter_bytes_read;
-                buf += iter_bytes_read;
-                buf_size -= iter_bytes_read;
-            } else if (rw_res == eRW_Eof)
-                break;
-            else {
-                NCBI_THROW_FMT(CNetStorageException, eIOError,
-                        "I/O error while reading NetCache BLOB " <<
-                        m_NetCacheReader->GetBlobID() << ": " <<
-                        g_RW_ResultToString(rw_res));
-            }
-        }
-
-        if (bytes_read != NULL)
-            *bytes_read = total_bytes_read;
-
-        return rw_res;
+        rw_res = m_NetCacheReader->Read(buffer, buf_size, bytes_read);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
-    return eRW_Error; // Not reached
+
+    if ((rw_res != eRW_Success) && (rw_res != eRW_Eof)) {
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+                "I/O error while reading NetCache BLOB " <<
+                m_NetCacheReader->GetBlobID() << ": " <<
+                g_RW_ResultToString(rw_res));
+    }
+
+    return rw_res;
 }
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
