@@ -75,7 +75,12 @@ CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq)
             }
         }
     }
-    return ConstRef(new CBioseq_set());
+
+    NCBI_THROW(CProteinMatchException,
+               eInputError,
+               "Failed to find a valid database id");
+
+    return CConstRef<CBioseq_set>();
 }
 
 
