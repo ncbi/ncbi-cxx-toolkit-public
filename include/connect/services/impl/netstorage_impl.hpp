@@ -41,9 +41,13 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SNetStorageObjectImpl;
+
 /// @internal
 struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmbeddedStreamWriter
 {
+    INetStorageObjectState(SNetStorageObjectImpl& fsm) : m_Fsm(fsm) {}
+
     virtual string GetLoc() const = 0;
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
@@ -53,12 +57,23 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmb
     virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void SetExpiration(const CTimeout& ttl) = 0;
     virtual string FileTrack_Path() = 0;
+
+protected:
+    void EnterState(INetStorageObjectState* state);
+    void ExitState();
+
+private:
+    SNetStorageObjectImpl& m_Fsm;
 };
 
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectState
 {
-    SNetStorageObjectIoState(INetStorageObjectState& parent) : m_Parent(parent) {}
+    SNetStorageObjectIoState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
+        INetStorageObjectState(fsm),
+        m_Parent(parent)
+    {
+    }
 
     string GetLoc() const override                                      { return m_Parent.GetLoc(); }
     bool Eof() override                                                 { return m_Parent.Eof(); }
@@ -80,6 +95,8 @@ private:
 // Make all methods non virtual
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
 {
+    void SetStartState(INetStorageObjectState* state);
+
     IReader& GetReader();
     IEmbeddedStreamWriter& GetWriter();
     CNcbiIostream* GetRWStream();
@@ -105,9 +122,47 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IRead
 
 private:
     void A() const { _ASSERT(m_Current); }
+    void EnterState(INetStorageObjectState* state);
+    void ExitState();
 
+    unique_ptr<INetStorageObjectState> m_Start;
+    stack<INetStorageObjectState*> m_Previous;
     INetStorageObjectState* m_Current = nullptr;
+
+    friend class INetStorageObjectState;
 };
+
+inline void SNetStorageObjectImpl::SetStartState(INetStorageObjectState* state)
+{
+    _ASSERT(state);
+    _ASSERT(!m_Start);
+    m_Start.reset(state);
+    m_Current = state;
+}
+
+inline void SNetStorageObjectImpl::EnterState(INetStorageObjectState* state)
+{
+    _ASSERT(state);
+    m_Previous.push(m_Current);
+    m_Current = state;
+}
+
+inline void SNetStorageObjectImpl::ExitState()
+{
+    _ASSERT(!m_Previous.empty());
+    m_Current = m_Previous.top();
+    m_Previous.pop();
+}
+
+inline void INetStorageObjectState::EnterState(INetStorageObjectState* state)
+{
+    m_Fsm.EnterState(state);
+}
+
+inline void INetStorageObjectState::ExitState()
+{
+    m_Fsm.ExitState();
+}
 
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorage
