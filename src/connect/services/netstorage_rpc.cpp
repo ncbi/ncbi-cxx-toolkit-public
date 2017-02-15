@@ -303,12 +303,11 @@ void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
     NCBI_THROW(CNetStorageException, eServerError, err_msg);
 }
 
-static void s_TrapErrors(const CJsonNode& request,
-        const CJsonNode& reply, CSocket& sock,
-        SNetStorage::SConfig::EErrMode err_mode,
-        INetServerConnectionListener& listener,
-        CNetServer& server)
+void s_TrapErrors(const CJsonNode& request, const CJsonNode& reply, CNetServerConnection& conn,
+        SNetStorage::SConfig::EErrMode err_mode, INetServerConnectionListener& listener)
 {
+    CSocket& sock(conn->m_Socket);
+    CNetServer& server(conn->m_Server);
     const string server_address(sock.GetPeerAddress());
     CJsonNode issues(reply.GetByKeyOrNull("Warnings"));
 
@@ -370,9 +369,10 @@ static void s_TrapErrors(const CJsonNode& request,
     }
 }
 
-CJsonNode s_ReadMessage(const CJsonNode& request, CSocket& sock, SNetStorage::SConfig::EErrMode err_mode,
-        INetServerConnectionListener& listener, CNetServer& server)
+CJsonNode s_ReadMessage(const CJsonNode& request, CNetServerConnection& conn, SNetStorage::SConfig::EErrMode err_mode,
+        INetServerConnectionListener& listener)
 {
+    CSocket& sock(conn->m_Socket);
     CUTTPReader uttp_reader;
     CJsonOverUTTPReader json_reader;
 
@@ -398,7 +398,7 @@ CJsonNode s_ReadMessage(const CJsonNode& request, CSocket& sock, SNetStorage::SC
     }
 
     CJsonNode reply(json_reader.GetMessage());
-    s_TrapErrors(request, reply, sock, err_mode, listener, server);
+    s_TrapErrors(request, reply, conn, err_mode, listener);
     return reply;
 }
 
@@ -438,13 +438,11 @@ void CNetStorageServerListener::OnInit(CObject* /*api_impl*/,
 void CNetStorageServerListener::OnConnected(
         CNetServerConnection& connection)
 {
-    CSocket& sock(connection->m_Socket);
-
-    CSendJsonOverSocket message_sender(sock);
+    CSendJsonOverSocket message_sender(connection->m_Socket);
 
     message_sender.SendMessage(m_Hello);
 
-    s_ReadMessage(m_Hello, sock, m_ErrMode, *this, connection->m_Server);
+    s_ReadMessage(m_Hello, connection, m_ErrMode, *this);
 }
 
 void CNetStorageServerListener::OnError(const string& err_msg,
@@ -516,12 +514,12 @@ private:
 
         void TrapErrors(const CJsonNode& reply)
         {
-            s_TrapErrors(m_OriginalRequest, reply, m_Connection->m_Socket, m_ErrMode, *m_Listener, m_Connection->m_Server);
+            s_TrapErrors(m_OriginalRequest, reply, m_Connection, m_ErrMode, *m_Listener);
         }
 
-        CJsonNode ReadMessage(CNetServerConnection::TInstance conn)
+        CJsonNode ReadMessage(CNetServerConnection& conn)
         {
-            return s_ReadMessage(m_OriginalRequest, conn->m_Socket, m_ErrMode, *m_Listener, conn->m_Server);
+            return s_ReadMessage(m_OriginalRequest, conn, m_ErrMode, *m_Listener);
         }
     };
 
@@ -871,10 +869,10 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
 
     server->TryExec(json_over_uttp_sender);
 
-    CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
+    CNetServerConnection conn(json_over_uttp_sender.GetConnection());
 
     for (;;) {
-        CJsonNode reply(s_ReadMessage(request, sock, m_Config.err_mode, *service->m_Listener, server));
+        CJsonNode reply(s_ReadMessage(request, conn, m_Config.err_mode, *service->m_Listener));
         CJsonNode object_loc(reply.GetByKeyOrNull("ObjectLoc"));
 
         if (object_loc) return object_loc.AsString();
@@ -946,7 +944,7 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 
 CJsonNode SNetStorageRPC::Exchange(CNetService service,
         const CJsonNode& request,
-        CNetServerConnection* conn,
+        CNetServerConnection* pconn,
         CNetServer::TInstance server_to_use) const
 {
     CNetServer server(server_to_use != NULL ? server_to_use :
@@ -957,12 +955,11 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
 
     server->TryExec(json_over_uttp_sender);
 
-    if (conn != NULL)
-        *conn = json_over_uttp_sender.GetConnection();
+    CNetServerConnection conn(json_over_uttp_sender.GetConnection());
 
-    CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
+    if (pconn) *pconn = conn;
 
-    return s_ReadMessage(request, sock, m_Config.err_mode, *service->m_Listener, server);
+    return s_ReadMessage(request, conn, m_Config.err_mode, *service->m_Listener);
 }
 
 void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
