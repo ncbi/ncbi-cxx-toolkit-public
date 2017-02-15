@@ -52,8 +52,26 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmb
     virtual void SetAttribute(const string& name, const string& value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void SetExpiration(const CTimeout& ttl) = 0;
-
     virtual string FileTrack_Path() = 0;
+};
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectState
+{
+    SNetStorageObjectIoState(INetStorageObjectState& p) : base(p) {}
+
+    string GetLoc() const override                                      { return base.GetLoc(); }
+    bool Eof() override                                                 { return base.Eof(); }
+    Uint8 GetSize() override                                            { return base.GetSize(); }
+    list<string> GetAttributeList() const override                      { return base.GetAttributeList(); }
+    string GetAttribute(const string& name) const override              { return base.GetAttribute(name); }
+    void SetAttribute(const string& name, const string& value) override { return base.SetAttribute(name, value); }
+    CNetStorageObjectInfo GetInfo() override                            { return base.GetInfo(); }
+    void SetExpiration(const CTimeout& ttl) override                    { return base.SetExpiration(ttl); }
+    string FileTrack_Path() override                                    { return base.FileTrack_Path(); }
+
+private:
+    INetStorageObjectState& base;
 };
 
 /// @internal
