@@ -63,7 +63,6 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     void Abort() override;
 
     string GetLoc() const override;
-    void Read(string* data) override;
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;

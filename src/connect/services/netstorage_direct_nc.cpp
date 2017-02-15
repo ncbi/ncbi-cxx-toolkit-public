@@ -111,14 +111,6 @@ ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
     return m_NetCacheReader->PendingCount(count);
 }
 
-void SNetStorage_NetCacheBlob::Read(string* data)
-{
-    try {
-        m_NetCacheAPI.ReadData(m_BlobKey, *data);
-    }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
-}
-
 bool SNetStorage_NetCacheBlob::Eof()
 {
     switch (m_State) {

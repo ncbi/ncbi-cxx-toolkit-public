@@ -108,11 +108,6 @@ ERW_Result SNetStorageObjectImpl::Read(void* buf, size_t count, size_t* read)
     return current->Read(buf, count, read);
 }
 
-void SNetStorageObjectImpl::Read(string* data)
-{
-    return current->Read(data);
-}
-
 ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
 {
     return current->PendingCount(count);
@@ -152,7 +147,17 @@ size_t CNetStorageObject::Read(void* buffer, size_t buf_size)
 
 void CNetStorageObject::Read(string* data)
 {
-    m_Impl->Read(data);
+    char buffer[64 * 1024];
+
+    data->resize(0);
+    size_t bytes_read;
+
+    do {
+        m_Impl->Read(buffer, sizeof(buffer), &bytes_read);
+        data->append(buffer, bytes_read);
+    } while (!Eof());
+
+    Close();
 }
 
 IReader& CNetStorageObject::GetReader()

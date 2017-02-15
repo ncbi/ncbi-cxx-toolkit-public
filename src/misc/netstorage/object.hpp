@@ -64,7 +64,6 @@ public:
     void Abort();
 
     string GetLoc() const;
-    void Read(string* data);
     bool Eof();
     Uint8 GetSize();
     list<string> GetAttributeList() const;

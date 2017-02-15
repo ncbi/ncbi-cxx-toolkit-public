@@ -47,8 +47,6 @@
 
 #define NST_PROTOCOL_VERSION "1.0.0"
 
-#define READ_CHUNK_SIZE (64 * 1024)
-
 #define WRITE_BUFFER_SIZE (64 * 1024)
 #define READ_BUFFER_SIZE (64 * 1024)
 
@@ -558,7 +556,6 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     virtual void Abort();
 
     virtual string GetLoc() const;
-    virtual void Read(string* data);
     virtual bool Eof();
     virtual Uint8 GetSize();
     virtual list<string> GetAttributeList() const;
@@ -1456,21 +1453,6 @@ ERW_Result SNetStorageObjectRPC::Flush()
 
 void SNetStorageObjectRPC::Abort()
 {
-    Close();
-}
-
-void SNetStorageObjectRPC::Read(string* data)
-{
-    char buffer[READ_CHUNK_SIZE];
-
-    data->resize(0);
-    size_t bytes_read;
-
-    do {
-        Read(buffer, sizeof(buffer), &bytes_read);
-        data->append(buffer, bytes_read);
-    } while (!Eof());
-
     Close();
 }
 

@@ -290,22 +290,6 @@ string CObj::GetLoc() const
 }
 
 
-void CObj::Read(string* data)
-{
-    char buffer[64 * 1024];
-
-    data->resize(0);
-    size_t bytes_read;
-
-    do {
-        Read(buffer, sizeof(buffer), &bytes_read);
-        data->append(buffer, bytes_read);
-    } while (!Eof());
-
-    Close();
-}
-
-
 ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
     const bool restartable = m_Selector->InProgress();

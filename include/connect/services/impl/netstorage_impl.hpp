@@ -44,9 +44,6 @@ BEGIN_NCBI_SCOPE
 /// @internal
 struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmbeddedStreamWriter
 {
-    using IReader::Read;
-    virtual void Read(string* data) = 0;
-
     virtual string GetLoc() const = 0;
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
@@ -72,7 +69,6 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IRead
     CNcbiIostream* GetRWStream();
 
     virtual ERW_Result Read(void* buf, size_t count, size_t* read);
-    virtual void Read(string* data);
     virtual ERW_Result PendingCount(size_t* count);
 
     virtual ERW_Result Write(const void* buf, size_t count, size_t* written);
