@@ -13,6 +13,7 @@ public:
     enum EErrCode {
         eInputError,
         eOutputError, 
+        eInternalError,
         eExecutionError,
         eBadInput,
         eNoGenomeSeq
@@ -25,6 +26,8 @@ public:
                 return "eInputError";
             case eOutputError:
                 return "eOutputError";
+            case eInternalError:
+                return "eInternalError";
             case eExecutionError:
                  return "eExecutionError";
             case eBadInput:
