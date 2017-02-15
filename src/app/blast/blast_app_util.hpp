@@ -132,11 +132,6 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
 blast::SDataLoaderConfig 
 InitializeQueryDataLoaderConfiguration(bool query_is_protein, 
                                        CRef<blast::CLocalDbAdapter> db_adapter);
-/// Create a CSeqDB object from the command line arguments provided
-/// @param db_args BLAST database arguments [in]
-/// @throw CSeqDBException in case of not being able to properly build a CSeqDB
-/// object
-CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args);
 
 /// Register the BLAST database data loader using the already initialized
 /// CSeqDB object
