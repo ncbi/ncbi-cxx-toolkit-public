@@ -554,8 +554,13 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
                    "Seq_entry is not available until after Read()", 0);
     }
     m_Entry = new CSeq_entry();
+
+    CRef<CSeq_align> seq_align = GetSeqAlign(fasta_flags);
+    const CDense_seg& denseg = seq_align->GetSegs().GetDenseg();
+    _ASSERT(denseg.GetIds().size() == m_Dim);
+
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
-    seq_annot->SetData().SetAlign().push_back(GetSeqAlign(fasta_flags));
+    seq_annot->SetData().SetAlign().push_back(seq_align);
 
     m_Entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     m_Entry->SetSet().SetAnnot().push_back(seq_annot);
@@ -571,12 +576,14 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
 
         // seq-id(s)
         CBioseq::TId& ids = seq_entry->SetSeq().SetId();
+        ids.push_back(denseg.GetIds()[row_i]);
+/*
         CSeq_id::ParseFastaIds(ids, m_Ids[row_i], true);
         if (ids.empty()) {
             ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local,
                                                     m_Ids[row_i])));
         }
-
+*/
         // mol
         CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
         CSeq_id::EAccessionInfo ai = ids.front()->IdentifyAccession();
