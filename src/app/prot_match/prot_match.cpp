@@ -401,6 +401,13 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
 
     CConstRef<CBioseq_set> db_nuc_prot_set = m_pMatchSetup->GetDBNucProtSet(nuc_prot_set->GetSet().GetNucFromNucProtSet());
 
+    if (db_nuc_prot_set.IsNull()) {
+        NCBI_THROW(CProteinMatchException, 
+                   eInternalError,
+                   "Failed to fetch database entry");
+    }
+
+
     // Write the genbank nuc-prot-set to a file
     string db_nuc_prot_file = out_stub
         + ".genbank"
