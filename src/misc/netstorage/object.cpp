@@ -284,7 +284,7 @@ void CObj::Abort()
 }
 
 
-string CObj::GetLoc()
+string CObj::GetLoc() const
 {
     return m_Selector->Locator().GetLocator();
 }

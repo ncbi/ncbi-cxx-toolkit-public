@@ -138,7 +138,7 @@ void SNetStorageObjectImpl::Abort()
     return current->Abort();
 }
 
-string CNetStorageObject::GetLoc()
+string CNetStorageObject::GetLoc() const
 {
     return m_Impl->GetLoc();
 }

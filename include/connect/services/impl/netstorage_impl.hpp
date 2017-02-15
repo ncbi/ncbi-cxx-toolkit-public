@@ -47,7 +47,7 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmb
     using IReader::Read;
     virtual void Read(string* data) = 0;
 
-    virtual string GetLoc() = 0;
+    virtual string GetLoc() const = 0;
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
     virtual list<string> GetAttributeList() const = 0;
@@ -81,7 +81,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IRead
     virtual void Close();
     virtual void Abort();
 
-    virtual string GetLoc()                                            { return current->GetLoc(); }
+    virtual string GetLoc() const                                      { return current->GetLoc(); }
     virtual bool Eof()                                                 { return current->Eof(); }
     virtual Uint8 GetSize()                                            { return current->GetSize(); }
     virtual list<string> GetAttributeList() const                      { return current->GetAttributeList(); }

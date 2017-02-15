@@ -161,7 +161,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     NCBI_NET_COMPONENT(NetStorageObject);
 
     /// Return object locator
-    string GetLoc(void);
+    string GetLoc(void) const;
 
     /// Read no more than 'buf_size' bytes of the object contents
     /// (starting at the current position)

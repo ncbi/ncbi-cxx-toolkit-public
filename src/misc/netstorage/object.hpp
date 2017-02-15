@@ -63,7 +63,7 @@ public:
     void Close();
     void Abort();
 
-    string GetLoc();
+    string GetLoc() const;
     void Read(string* data);
     bool Eof();
     Uint8 GetSize();

@@ -68,7 +68,7 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     virtual void Close();
     virtual void Abort();
 
-    virtual string GetLoc();
+    virtual string GetLoc() const;
     virtual void Read(string* data);
     virtual bool Eof();
     virtual Uint8 GetSize();

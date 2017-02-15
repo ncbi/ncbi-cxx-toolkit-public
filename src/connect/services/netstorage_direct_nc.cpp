@@ -45,7 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
-string SNetStorage_NetCacheBlob::GetLoc()
+string SNetStorage_NetCacheBlob::GetLoc() const
 {
     return m_BlobKey;
 }

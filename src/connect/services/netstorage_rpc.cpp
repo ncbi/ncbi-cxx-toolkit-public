@@ -557,7 +557,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     virtual void Close();
     virtual void Abort();
 
-    virtual string GetLoc();
+    virtual string GetLoc() const;
     virtual void Read(string* data);
     virtual bool Eof();
     virtual Uint8 GetSize();
@@ -1071,7 +1071,7 @@ EVoid SNetStorageRPC::x_InitNetCacheAPI()
     return eVoid;
 }
 
-string SNetStorageObjectRPC::GetLoc()
+string SNetStorageObjectRPC::GetLoc() const
 {
     return m_Locator;
 }
