@@ -1122,26 +1122,32 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
     char* buf_pos = reinterpret_cast<char*>(buffer);
 
-    if (m_CurrentChunkSize >= buf_size) {
-        if (buf_size > 0) {
-            memcpy(buf_pos, m_CurrentChunk, buf_size);
-            m_CurrentChunk += buf_size;
-            m_CurrentChunkSize -= buf_size;
+    size_t bytes_copied = 0;
+
+    auto buffer_copy = [&]() {
+        if (m_CurrentChunkSize >= buf_size) {
+            if (buf_size > 0) {
+                memcpy(buf_pos, m_CurrentChunk, buf_size);
+                m_CurrentChunk += buf_size;
+                m_CurrentChunkSize -= buf_size;
+            }
+            if (bytes_read != NULL)
+                *bytes_read = bytes_copied + buf_size;
+            return true;
         }
-        if (bytes_read != NULL)
-            *bytes_read = buf_size;
-        return eRW_Success;
-    }
 
-    if (m_CurrentChunkSize > 0) {
-        memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
-        buf_pos += m_CurrentChunkSize;
-        buf_size -= m_CurrentChunkSize;
-    }
+        if (m_CurrentChunkSize > 0) {
+            memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
+            buf_pos += m_CurrentChunkSize;
+            buf_size -= m_CurrentChunkSize;
+        }
 
-    size_t bytes_copied = m_CurrentChunkSize;
+        bytes_copied += m_CurrentChunkSize;
+        m_CurrentChunkSize = 0;
+        return false;
+    };
 
-    m_CurrentChunkSize = 0;
+    if (buffer_copy()) return eRW_Success;
 
     if (m_EOF) {
         if (bytes_read != NULL)
@@ -1157,20 +1163,8 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                 m_CurrentChunk = m_UTTPReader.GetChunkPart();
                 m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
 
-                if (m_CurrentChunkSize >= buf_size) {
-                    memcpy(buf_pos, m_CurrentChunk, buf_size);
-                    m_CurrentChunk += buf_size;
-                    m_CurrentChunkSize -= buf_size;
-                    if (bytes_read != NULL)
-                        *bytes_read = bytes_copied + buf_size;
-                    return eRW_Success;
-                }
+                if (buffer_copy()) return eRW_Success;
 
-                memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
-                buf_pos += m_CurrentChunkSize;
-                buf_size -= m_CurrentChunkSize;
-                bytes_copied += m_CurrentChunkSize;
-                m_CurrentChunkSize = 0;
                 break;
 
             case CUTTPReader::eControlSymbol:
