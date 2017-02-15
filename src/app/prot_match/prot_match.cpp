@@ -193,6 +193,7 @@ int CProteinMatchApp::Run(void)
     list<CRef<CSeq_entry>> nuc_prot_sets;
     CMatchSetup::GatherNucProtSets(input_entry, nuc_prot_sets);
 
+
     if (nuc_prot_sets.empty()) { 
         ERR_POST(Warning << "No nuc-prot sets in input");
         return 0;
@@ -217,7 +218,6 @@ int CProteinMatchApp::Run(void)
         ++count;
     } // Return table if exception
 
-//    const string table_file = out_stub + ".tab";
     try {
         CNcbiOfstream ostr(table_file);
         match_tab.WriteTable(ostr);
@@ -420,8 +420,16 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
 
     CRef<CSeq_id> local_id;
 
-    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
-        m_pMatchSetup->UpdateNucSeqIds(local_id, nuc_prot_set.GetNCObject());
+    if (!m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
+        NCBI_THROW(CProteinMatchException, 
+                    eInputError, 
+                    "Could not determine a unique nucleotide id");
+    }
+
+    if (!m_pMatchSetup->UpdateNucSeqIds(local_id, nuc_prot_set.GetNCObject())) {
+        NCBI_THROW(CProteinMatchException, 
+                    eExecutionError, 
+                    "Unable to assign local nucleotide id");
     }
 
     // Write processed update

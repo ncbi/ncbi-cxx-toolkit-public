@@ -135,7 +135,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
 bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
     CSeq_entry& nuc_prot_set) const
 {
-    if (nuc_prot_set.IsSet()) {
+    if (!nuc_prot_set.IsSet()) {
         return false;
     }
 
