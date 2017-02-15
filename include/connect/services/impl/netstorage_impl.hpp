@@ -80,8 +80,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
 private:
     SNetStorageObjectIoState(SNetStorageObjectImpl& fsm) : INetStorageObjectState(fsm) {}
 
-    friend class SNetStorageObjectIState;
-    friend class SNetStorageObjectOState;
+    friend struct SNetStorageObjectIState;
+    friend struct SNetStorageObjectOState;
 };
 
 /// @internal
@@ -178,7 +178,7 @@ private:
     EIoModeApi m_IoModeApi = eAnyApi;
     EIoModeMth m_IoModeMth = eAnyMth;
 
-    friend class INetStorageObjectState;
+    friend struct INetStorageObjectState;
 };
 
 inline void SNetStorageObjectImpl::SetStartState(INetStorageObjectState* state)

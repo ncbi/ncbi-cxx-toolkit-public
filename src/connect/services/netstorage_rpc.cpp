@@ -42,6 +42,7 @@
 #include <corelib/request_ctx.hpp>
 
 #include <sstream>
+#include <array>
 
 #define NCBI_USE_ERRCODE_X  NetStorage_RPC
 
@@ -527,7 +528,7 @@ private:
     {
         typedef SNetStorageObjectChildState<SNetStorageObjectIState, SContext> TBase;
 
-        using TBase::TBase;
+        SIState(SNetStorageObjectImpl& fsm, SContext& context) : TBase(fsm, context) {}
 
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
@@ -553,7 +554,7 @@ private:
     {
         typedef SNetStorageObjectChildState<SNetStorageObjectOState, SContext> TBase;
 
-        using TBase::TBase;
+        SOState(SNetStorageObjectImpl& fsm, SContext& context) : TBase(fsm, context) {}
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;

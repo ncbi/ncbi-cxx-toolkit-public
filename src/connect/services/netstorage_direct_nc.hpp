@@ -47,7 +47,7 @@ private:
 
         unique_ptr<CNetCacheReader> reader;
 
-        using TBase::TBase;
+        SIState(SNetStorageObjectImpl& fsm, string& context) : TBase(fsm, context) {}
 
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
@@ -63,7 +63,7 @@ private:
 
         unique_ptr<IEmbeddedStreamWriter> writer;
 
-        using TBase::TBase;
+        SOState(SNetStorageObjectImpl& fsm, string& context) : TBase(fsm, context) {}
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
