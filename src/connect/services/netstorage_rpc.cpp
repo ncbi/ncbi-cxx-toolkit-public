@@ -531,9 +531,10 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
         eWriting
     };
 
-    SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetStorageFlags flags);
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc, CNetService service);
     SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_key, TNetStorageFlags flags);
+
+    void ExitState() { m_State = eReady; }
 
     virtual ~SNetStorageObjectRPC();
 
@@ -567,6 +568,8 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     string FileTrack_Path();
 
+    void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
+
     CJsonNode x_MkRequest(const string& request_type) const;
 
     CNetRef<SNetStorageRPC> m_NetStorageRPC;
@@ -587,18 +590,13 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     bool m_EOF;
 };
 
-SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, TNetStorageFlags flags) :
-    m_NetStorageRPC(netstorage_rpc),
-    m_OwnService(netstorage_rpc->m_Service),
-    m_State(eWriting)
+void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
-    m_OriginalRequest = m_NetStorageRPC->MkStdRequest("CREATE");
-    m_NetStorageRPC->x_SetStorageFlags(m_OriginalRequest, m_NetStorageRPC->GetFlags(flags));
-
-    m_Locator = ExchangeUsingOwnService(m_OriginalRequest, &m_Connection).GetString("ObjectLoc");
-    m_OwnService = m_NetStorageRPC->GetServiceIfLocator(m_Locator);
+    m_OriginalRequest = request;
+    m_Connection = conn;
+    m_State = eWriting;
 }
+
 
 SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc, const string& object_loc,
         CNetService service) :
@@ -801,7 +799,19 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
                 "Object creation is disabled.");
     }
 
-    return new SNetStorageObjectRPC(this, flags);
+    m_UseNextSubHitID.ProperCommand();
+
+    auto request = MkStdRequest("CREATE");
+    x_SetStorageFlags(request, GetFlags(flags));
+
+    CNetServerConnection conn;
+    const auto reply = Exchange(m_Service, request, &conn);
+    const auto object_loc = reply.GetString("ObjectLoc");
+    auto service = GetServiceIfLocator(object_loc);
+
+    auto state = new SNetStorageObjectRPC(this, object_loc, service);
+    state->StartWriting(request, conn);
+    return state;
 }
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
@@ -1244,7 +1254,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         return eRW_Success;
     }
     catch (...) {
-        m_State = eReady;
+        ExitState();
         m_UTTPReader.Reset();
         m_Connection->Close();
         m_Connection = NULL;
@@ -1293,7 +1303,7 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
         return eRW_Success;
     }
     catch (exception&) {
-        m_State = eReady;
+        ExitState();
         m_Connection->Close();
         m_Connection = NULL;
         throw;
@@ -1411,14 +1421,14 @@ void SNetStorageObjectRPC::Close()
     m_Connection = NULL;
 
     if (m_State == eReading) {
-        m_State = eReady;
+        ExitState();
 
         if (!m_EOF) {
             m_UTTPReader.Reset();
             conn_copy->Close();
         }
     } else { /* m_State == eWriting */
-        m_State = eReady;
+        ExitState();
 
         CSocket& sock = conn_copy->m_Socket;
 
