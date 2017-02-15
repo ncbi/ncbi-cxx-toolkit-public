@@ -102,6 +102,8 @@ private:
 // Make all methods non virtual
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
 {
+    ~SNetStorageObjectImpl();
+
     void SetStartState(INetStorageObjectState* state);
 
     IReader& GetReader();

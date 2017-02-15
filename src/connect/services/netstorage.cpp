@@ -153,6 +153,15 @@ IReader& SNetStorageObjectImpl::GetReader()
     return *this;
 }
 
+SNetStorageObjectImpl::~SNetStorageObjectImpl()
+{
+    try {
+        if (m_Current) // TODO: Remove check after this gets bases and virualness removed (in netstorage_impl.hpp)
+        Close();
+    }
+    NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
+}
+
 IEmbeddedStreamWriter& SNetStorageObjectImpl::GetWriter()
 {
     return *this;
