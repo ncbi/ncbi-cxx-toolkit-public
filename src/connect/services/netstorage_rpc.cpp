@@ -1242,9 +1242,7 @@ ERW_Result SNetStorageObjectRPC::SOState::Write(const void* buf_pos, size_t buf_
         return eRW_Success;
     }
     catch (exception&) {
-        ExitState();
-        m_Context.m_Connection->Close();
-        m_Context.m_Connection = NULL;
+        Abort();
         throw;
     }
 }
@@ -1380,7 +1378,11 @@ void SNetStorageObjectRPC::SIState::Abort()
 
 void SNetStorageObjectRPC::SOState::Abort()
 {
-    Close();
+    CNetServerConnection conn_copy(m_Context.m_Connection);
+    m_Context.m_Connection = NULL;
+
+    ExitState();
+    conn_copy->Close();
 }
 
 void SNetStorageObjectRPC::Abort()
