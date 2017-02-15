@@ -542,6 +542,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     string FileTrack_Path();
 
     void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
+    void StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
     ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
 
     CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Locator); }
@@ -1084,44 +1085,50 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
     }
 
     if (m_State == eReady) {
-        m_OriginalRequest = x_MkRequest("READ");
-
-        m_ReadBuffer = vector<char>(READ_BUFFER_SIZE);
+        auto request = x_MkRequest("READ");
 
         CNetServer server(*m_OwnService.Iterate(CNetService::eRandomize));
 
-        CJsonOverUTTPExecHandler json_over_uttp_sender(m_OriginalRequest);
+        CJsonOverUTTPExecHandler json_over_uttp_sender(request);
 
         server->TryExec(json_over_uttp_sender);
 
-        m_Connection = json_over_uttp_sender.GetConnection();
-
-        CSocket& sock = m_Connection->m_Socket;
-
-        CJsonOverUTTPReader json_reader;
-
-        try {
-            do {
-                s_ReadSocket(sock, m_ReadBuffer, m_UTTPReader);
-            } while (!json_reader.ReadMessage(m_UTTPReader));
-        }
-        catch (...) {
-            m_UTTPReader.Reset();
-            sock.Close();
-            throw;
-        }
-
-        s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
-            m_NetStorageRPC->m_Config.err_mode,
-            *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
-
-        m_CurrentChunkSize = 0;
-
-        m_State = eReading;
-        m_EOF = false;
+        StartReading(request, json_over_uttp_sender.GetConnection());
     }
 
     return ReadImpl(buffer, buf_size, bytes_read);
+}
+
+void SNetStorageObjectRPC::StartReading(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
+{
+    m_OriginalRequest = request;
+    m_Connection = conn;
+
+    m_ReadBuffer = vector<char>(READ_BUFFER_SIZE);
+
+    CSocket& sock = m_Connection->m_Socket;
+
+    CJsonOverUTTPReader json_reader;
+
+    try {
+        do {
+            s_ReadSocket(sock, m_ReadBuffer, m_UTTPReader);
+        } while (!json_reader.ReadMessage(m_UTTPReader));
+    }
+    catch (...) {
+        m_UTTPReader.Reset();
+        sock.Close();
+        throw;
+    }
+
+    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
+        m_NetStorageRPC->m_Config.err_mode,
+        *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
+
+    m_CurrentChunkSize = 0;
+
+    m_State = eReading;
+    m_EOF = false;
 }
 
 ERW_Result SNetStorageObjectRPC::ReadImpl(void* buf_pos, size_t buf_size, size_t* bytes_read)
