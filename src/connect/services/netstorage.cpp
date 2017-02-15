@@ -88,27 +88,27 @@ struct SNetStorageObjectRWStream : public CRWStream
     virtual ~SNetStorageObjectRWStream() { flush(); }
 };
 
-ERW_Result SNetStorageObjectIoState::Read(void*, size_t, size_t*)
+ERW_Result SNetStorageObjectOState::Read(void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Read() while writing " << GetLoc());
 }
 
-ERW_Result SNetStorageObjectIoState::PendingCount(size_t*)
+ERW_Result SNetStorageObjectOState::PendingCount(size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling PendingCount() while writing " << GetLoc());
 }
 
-bool SNetStorageObjectIoState::Eof()
+bool SNetStorageObjectOState::Eof()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Eof() while writing " << GetLoc());
 }
 
-ERW_Result SNetStorageObjectIoState::Write(const void*, size_t, size_t*)
+ERW_Result SNetStorageObjectIState::Write(const void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Write() while reading " << GetLoc());
 }
 
-ERW_Result SNetStorageObjectIoState::Flush()
+ERW_Result SNetStorageObjectIState::Flush()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Flush() while reading " << GetLoc());
 }

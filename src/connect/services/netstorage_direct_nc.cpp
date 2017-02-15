@@ -45,11 +45,6 @@
 
 BEGIN_NCBI_SCOPE
 
-string SNetStorage_NetCacheBlob::GetLoc() const
-{
-    return m_BlobKey;
-}
-
 ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size, size_t* bytes_read)
 {
     try {
@@ -124,7 +119,7 @@ ERW_Result SNetStorage_NetCacheBlob::SOState::Write(const void* buf_pos, size_t 
     try {
         return writer->Write(buf_pos, buf_size, bytes_written);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + GetLoc())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_Context)
     return eRW_Error; // Not reached
 }
 

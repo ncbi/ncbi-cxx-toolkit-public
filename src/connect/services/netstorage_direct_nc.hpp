@@ -41,13 +41,13 @@ BEGIN_NCBI_SCOPE
 struct SNetStorage_NetCacheBlob : public INetStorageObjectState
 {
 private:
-    struct SIState : public SNetStorageObjectIoState
+    struct SIState : public SNetStorageObjectChildState<SNetStorageObjectIState, string>
     {
+        typedef SNetStorageObjectChildState<SNetStorageObjectIState, string> TBase;
+
         unique_ptr<CNetCacheReader> reader;
 
-        SIState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
-            SNetStorageObjectIoState(fsm, parent)
-        {}
+        using TBase::TBase;
 
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
@@ -57,13 +57,13 @@ private:
         void Abort() override;
     };
 
-    struct SOState : public SNetStorageObjectIoState
+    struct SOState : public SNetStorageObjectChildState<SNetStorageObjectOState, string>
     {
+        typedef SNetStorageObjectChildState<SNetStorageObjectOState, string> TBase;
+
         unique_ptr<IEmbeddedStreamWriter> writer;
 
-        SOState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
-            SNetStorageObjectIoState(fsm, parent)
-        {}
+        using TBase::TBase;
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
@@ -78,8 +78,8 @@ public:
         INetStorageObjectState(fsm),
         m_NetCacheAPI(netcache_api),
         m_BlobKey(blob_key),
-        m_IState(fsm, *this),
-        m_OState(fsm, *this)
+        m_IState(fsm, m_BlobKey),
+        m_OState(fsm, m_BlobKey)
     {
     }
 
@@ -91,7 +91,7 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override;
+    string GetLoc() const override { return m_BlobKey; }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;

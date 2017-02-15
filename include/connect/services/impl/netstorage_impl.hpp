@@ -69,21 +69,6 @@ private:
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectState
 {
-    SNetStorageObjectIoState(SNetStorageObjectImpl& fsm, INetStorageObjectState& parent) :
-        INetStorageObjectState(fsm),
-        m_Parent(parent)
-    {
-    }
-
-    ERW_Result Read(void* buf, size_t count, size_t* read) override;
-    ERW_Result PendingCount(size_t* count) override;
-    bool Eof() override;
-
-    ERW_Result Write(const void* buf, size_t count, size_t* written) override;
-    ERW_Result Flush() override;
-
-    string GetLoc() const override                                      { return m_Parent.GetLoc(); }
-
     Uint8 GetSize() final;
     list<string> GetAttributeList() const final;
     string GetAttribute(const string& name) const final;
@@ -93,7 +78,41 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
     string FileTrack_Path() final;
 
 private:
-    INetStorageObjectState& m_Parent;
+    SNetStorageObjectIoState(SNetStorageObjectImpl& fsm) : INetStorageObjectState(fsm) {}
+
+    friend class SNetStorageObjectIState;
+    friend class SNetStorageObjectOState;
+};
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectIState : public SNetStorageObjectIoState
+{
+    SNetStorageObjectIState(SNetStorageObjectImpl& fsm) : SNetStorageObjectIoState(fsm) {}
+
+    ERW_Result Write(const void* buf, size_t count, size_t* written) final;
+    ERW_Result Flush() final;
+};
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectOState : public SNetStorageObjectIoState
+{
+    SNetStorageObjectOState(SNetStorageObjectImpl& fsm) : SNetStorageObjectIoState(fsm) {}
+
+    ERW_Result Read(void* buf, size_t count, size_t* read) final;
+    ERW_Result PendingCount(size_t* count) final;
+    bool Eof() final;
+};
+
+/// @internal
+template <class TBase, class TContext>
+struct SNetStorageObjectChildState : TBase
+{
+    SNetStorageObjectChildState(SNetStorageObjectImpl& fsm, TContext& context) : TBase(fsm), m_Context(context) {}
+
+    string GetLoc() const final { return m_Context; }
+
+protected:
+    TContext& m_Context;
 };
 
 /// @internal
