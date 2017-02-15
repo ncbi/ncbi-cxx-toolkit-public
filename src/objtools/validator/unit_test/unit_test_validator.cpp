@@ -19708,7 +19708,6 @@ CRef<CTaxon3_reply> s_CreateReplyWithMessage(const string& message)
 }
 
 
-#if 0
 //removed until issues with caching and mocking service can be resolved
 BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
 {
@@ -19724,7 +19723,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
 
     expected_errors.push_back(new CExpectedError("lcl|good",
         eDiag_Error,
-        "TaxonomyLookupProblem",
+        "ServiceError",
         "Taxonomy service connection failure"));
 
 
@@ -19732,7 +19731,6 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
 
     CLEAR_ERRORS
 }
-#endif
 
 
 BOOST_AUTO_TEST_CASE(Test_VR_601)

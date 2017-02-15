@@ -2652,7 +2652,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     vector< CRef<COrg_ref> > org_rq_list = tval.GetTaxonomyLookupRequest();
 
     if (org_rq_list.size() > 0) {
-#if 1
+#if 0
         CTaxon3 taxon3;
         taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
