@@ -1101,22 +1101,16 @@ void SNetStorageObjectRPC::SIState::ReadConfirmation()
     m_EOF = true;
 
     CJsonOverUTTPReader json_reader;
-    try {
-        while (!json_reader.ReadMessage(m_UTTPReader)) {
-            ReadSocket();
-        }
 
-        if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
-            NCBI_THROW_FMT(CNetStorageException, eIOError,
-                    "Extra bytes past confirmation message "
-                    "while reading " << m_Context.m_Locator << " from " <<
-                    m_Context.m_Connection->m_Socket.GetPeerAddress() << '.');
-        }
+    while (!json_reader.ReadMessage(m_UTTPReader)) {
+        ReadSocket();
     }
-    catch (...) {
-        m_UTTPReader.Reset();
-        m_Context.m_Connection->Close();
-        throw;
+
+    if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+                "Extra bytes past confirmation message "
+                "while reading " << m_Context.m_Locator << " from " <<
+                m_Context.m_Connection->m_Socket.GetPeerAddress() << '.');
     }
 
     m_Context.TrapErrors(json_reader.GetMessage());
@@ -1133,8 +1127,8 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
     server->TryExec(json_over_uttp_sender);
 
-    m_IState.StartReading(request, json_over_uttp_sender.GetConnection());
     EnterState(&m_IState);
+    m_IState.StartReading(request, json_over_uttp_sender.GetConnection());
 
     return m_IState.Read(buffer, buf_size, bytes_read);
 }
@@ -1156,14 +1150,13 @@ void SNetStorageObjectRPC::SIState::StartReading(CJsonNode::TInstance request, C
         do {
             ReadSocket();
         } while (!json_reader.ReadMessage(m_UTTPReader));
+
+        m_Context.TrapErrors(json_reader.GetMessage());
     }
     catch (...) {
-        m_UTTPReader.Reset();
-        m_Context.m_Connection->Close();
+        Abort();
         throw;
     }
-
-    m_Context.TrapErrors(json_reader.GetMessage());
 }
 
 ERW_Result SNetStorageObjectRPC::SIState::Read(void* buf_pos, size_t buf_size, size_t* bytes_read)
@@ -1199,10 +1192,7 @@ ERW_Result SNetStorageObjectRPC::SIState::Read(void* buf_pos, size_t buf_size, s
         }
     }
     catch (...) {
-        ExitState();
-        m_UTTPReader.Reset();
-        m_Context.m_Connection->Close();
-        m_Context.m_Connection = NULL;
+        Abort();
         throw;
     }
 
@@ -1333,16 +1323,12 @@ string SNetStorageObjectRPC::FileTrack_Path()
 
 void SNetStorageObjectRPC::SIState::Close()
 {
-    CNetServerConnection conn_copy(m_Context.m_Connection);
     m_Context.m_Connection = NULL;
 
     ExitState();
-
-    if (!m_EOF) {
-        m_UTTPReader.Reset();
-        conn_copy->Close();
-    }
+    m_UTTPReader.Reset();
 }
+
 void SNetStorageObjectRPC::SOState::Close()
 {
     CNetServerConnection conn_copy(m_Context.m_Connection);
@@ -1383,7 +1369,13 @@ ERW_Result SNetStorageObjectRPC::Flush()
 
 void SNetStorageObjectRPC::SIState::Abort()
 {
-    Close();
+    CNetServerConnection conn_copy(m_Context.m_Connection);
+    m_Context.m_Connection = NULL;
+    _ASSERT(conn_copy);
+
+    ExitState();
+    m_UTTPReader.Reset();
+    conn_copy->Close();
 }
 
 void SNetStorageObjectRPC::SOState::Abort()
