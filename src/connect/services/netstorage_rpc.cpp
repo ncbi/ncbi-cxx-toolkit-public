@@ -1094,7 +1094,9 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
         server->TryExec(json_over_uttp_sender);
 
-        CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
+        m_Connection = json_over_uttp_sender.GetConnection();
+
+        CSocket& sock = m_Connection->m_Socket;
 
         CJsonOverUTTPReader json_reader;
 
@@ -1112,8 +1114,6 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
             m_NetStorageRPC->m_Config.err_mode,
             *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
-
-        m_Connection = json_over_uttp_sender.GetConnection();
 
         m_CurrentChunkSize = 0;
 
@@ -1386,7 +1386,7 @@ void SNetStorageObjectRPC::Close()
         s_ReadMessage(
                 m_OriginalRequest, sock,
                 m_NetStorageRPC->m_Config.err_mode,
-                *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
+                *m_NetStorageRPC->m_Service->m_Listener, conn_copy->m_Server);
     }
 }
 
