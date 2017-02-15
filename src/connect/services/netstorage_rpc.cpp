@@ -193,14 +193,15 @@ static void s_SendEndOfData(CSocket& sock)
     s_WriteToSocket(sock, output_buffer, output_buffer_size);
 }
 
-static void s_ReadSocket(CSocket& sock, void* buffer,
-        size_t buffer_size, size_t* bytes_read)
+template <class TContiguousContainer>
+void s_ReadSocket(CSocket& sock, TContiguousContainer& buffer, CUTTPReader& uttp_reader)
 {
     EIO_Status status;
+    size_t bytes_read;
 
-    while ((status = sock.Read(buffer,
-            buffer_size, bytes_read)) == eIO_Interrupt)
-        /* no-op */;
+    do {
+        status = sock.Read(buffer.data(), buffer.size(), &bytes_read);
+    } while (status == eIO_Interrupt);
 
     if (status != eIO_Success) {
         // eIO_Timeout, eIO_Closed, eIO_InvalidArg,
@@ -210,6 +211,8 @@ static void s_ReadSocket(CSocket& sock, void* buffer,
                         sock.GetPeerAddress() << ". "
                 "Socket status: " << IO_StatusStr(status) << '.');
     }
+
+    uttp_reader.SetNewBuffer(buffer.data(), bytes_read);
 }
 
 struct SIssue
@@ -396,15 +399,10 @@ CJsonNode s_ReadMessage(const CJsonNode& request, CSocket& sock, SNetStorage::SC
     CJsonOverUTTPReader json_reader;
 
     try {
-        char read_buffer[READ_BUFFER_SIZE];
-
-        size_t bytes_read;
+        array<char, READ_BUFFER_SIZE> read_buffer;
 
         do {
-            s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
-
-            uttp_reader.SetNewBuffer(read_buffer, bytes_read);
-
+            s_ReadSocket(sock, read_buffer, uttp_reader);
         } while (!json_reader.ReadMessage(uttp_reader));
     }
     catch (...) {
@@ -578,7 +576,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     CJsonNode m_OriginalRequest;
     CNetServerConnection m_Connection;
-    char* m_ReadBuffer = nullptr;
+    vector<char> m_ReadBuffer;
     CUTTPReader m_UTTPReader;
     const char* m_CurrentChunk;
     size_t m_CurrentChunkSize;
@@ -622,8 +620,6 @@ SNetStorageObjectRPC::~SNetStorageObjectRPC()
         Close();
     }
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
-
-    delete[] m_ReadBuffer;
 }
 
 static const char* const s_NetStorageConfigSections[] = {
@@ -1089,13 +1085,8 @@ void SNetStorageObjectRPC::ReadConfirmation()
 
     CJsonOverUTTPReader json_reader;
     try {
-        size_t bytes_read;
-
         while (!json_reader.ReadMessage(m_UTTPReader)) {
-            s_ReadSocket(sock, m_ReadBuffer,
-                    READ_BUFFER_SIZE, &bytes_read);
-
-            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+            s_ReadSocket(sock, m_ReadBuffer, m_UTTPReader);
         }
 
         if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
@@ -1124,13 +1115,10 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                 "Cannot read a NetStorage file while writing to it");
     }
 
-    size_t bytes_read_local;
-
     if (m_State == eReady) {
         m_OriginalRequest = x_MkRequest("READ");
 
-        if (m_ReadBuffer == NULL)
-            m_ReadBuffer = new char[READ_BUFFER_SIZE];
+        m_ReadBuffer = vector<char>(READ_BUFFER_SIZE);
 
         CNetServer server(*m_OwnService.Iterate(CNetService::eRandomize));
 
@@ -1144,11 +1132,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
         try {
             do {
-                s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE,
-                        &bytes_read_local);
-
-                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
-
+                s_ReadSocket(sock, m_ReadBuffer, m_UTTPReader);
             } while (!json_reader.ReadMessage(m_UTTPReader));
         }
         catch (...) {
@@ -1236,10 +1220,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                 return bytes_copied ? eRW_Success : eRW_Eof;
 
             case CUTTPReader::eEndOfBuffer:
-                s_ReadSocket(m_Connection->m_Socket, m_ReadBuffer,
-                        READ_BUFFER_SIZE, &bytes_read_local);
-
-                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
+                s_ReadSocket(m_Connection->m_Socket, m_ReadBuffer, m_UTTPReader);
                 break;
 
             default:
