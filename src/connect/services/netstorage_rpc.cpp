@@ -149,7 +149,7 @@ void CSendJsonOverSocket::x_SendOutputBuffer()
     } while (m_JSONWriter.NextOutputBuffer());
 }
 
-static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket& sock)
+void s_SendUTTP(CSocket& sock, function<void(CUTTPWriter&)> f)
 {
     CUTTPWriter uttp_writer;
 
@@ -157,29 +157,7 @@ static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket& sock)
 
     uttp_writer.Reset(write_buffer, WRITE_BUFFER_SIZE);
 
-    uttp_writer.SendChunk(chunk, chunk_size, false);
-
-    const char* output_buffer;
-    size_t output_buffer_size;
-
-    do {
-        uttp_writer.GetOutputBuffer(&output_buffer, &output_buffer_size);
-        s_WriteToSocket(sock, output_buffer, output_buffer_size);
-    } while (uttp_writer.NextOutputBuffer());
-
-    uttp_writer.GetOutputBuffer(&output_buffer, &output_buffer_size);
-    s_WriteToSocket(sock, output_buffer, output_buffer_size);
-}
-
-static void s_SendEndOfData(CSocket& sock)
-{
-    CUTTPWriter uttp_writer;
-
-    char write_buffer[WRITE_BUFFER_SIZE];
-
-    uttp_writer.Reset(write_buffer, WRITE_BUFFER_SIZE);
-
-    uttp_writer.SendControlSymbol(END_OF_DATA_MARKER);
+    f(uttp_writer);
 
     const char* output_buffer;
     size_t output_buffer_size;
@@ -1266,8 +1244,10 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
     }
 
     try {
-        s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
-                buf_size, m_Connection->m_Socket);
+        const char* chunk = reinterpret_cast<const char*>(buf_pos);
+        auto f = [&](CUTTPWriter& w) { w.SendChunk(chunk, buf_size, false); };
+        s_SendUTTP(m_Connection->m_Socket, f);
+
         if (bytes_written != NULL)
             *bytes_written = buf_size;
         return eRW_Success;
@@ -1402,7 +1382,8 @@ void SNetStorageObjectRPC::Close()
 
         CSocket& sock = conn_copy->m_Socket;
 
-        s_SendEndOfData(sock);
+        auto f = [](CUTTPWriter& w) { w.SendControlSymbol(END_OF_DATA_MARKER); };
+        s_SendUTTP(sock, f);
 
         s_ReadMessage(
                 m_OriginalRequest, sock,
