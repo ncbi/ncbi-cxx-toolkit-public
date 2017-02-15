@@ -58,7 +58,7 @@ void SNetStorage_NetCacheBlob::x_InitReader()
     }
 
     try {
-        m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(m_BlobKey, 0, 0, nullptr, nullptr));
+        reader.reset(m_NetCacheAPI->GetPartReader(m_BlobKey, 0, 0, nullptr, nullptr));
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 
@@ -73,14 +73,14 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size, size_t*
     ERW_Result rw_res = eRW_Success;
 
     try {
-        rw_res = m_NetCacheReader->Read(buffer, buf_size, bytes_read);
+        rw_res = reader->Read(buffer, buf_size, bytes_read);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 
     if ((rw_res != eRW_Success) && (rw_res != eRW_Eof)) {
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "I/O error while reading NetCache BLOB " <<
-                m_NetCacheReader->GetBlobID() << ": " <<
+                reader->GetBlobID() << ": " <<
                 g_RW_ResultToString(rw_res));
     }
 
@@ -93,7 +93,7 @@ ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
         *count = 0;
         return eRW_Success;
     }
-    return m_NetCacheReader->PendingCount(count);
+    return reader->PendingCount(count);
 }
 
 bool SNetStorage_NetCacheBlob::Eof()
@@ -103,7 +103,7 @@ bool SNetStorage_NetCacheBlob::Eof()
         return false;
 
     case eReading:
-        return m_NetCacheReader->Eof();
+        return reader->Eof();
 
     default: /* case eWriting: */
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -111,10 +111,10 @@ bool SNetStorage_NetCacheBlob::Eof()
     }
 }
 
-void SNetStorage_NetCacheBlob::x_InitWriter()
+void SNetStorage_NetCacheBlob::StartWriting()
 {
     try {
-        m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
+        writer.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
 
@@ -130,10 +130,10 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
     }
 
     if (m_State != eWriting)
-        x_InitWriter();
+        StartWriting();
 
     try {
-        return m_NetCacheWriter->Write(buf_pos, buf_size, bytes_written);
+        return writer->Write(buf_pos, buf_size, bytes_written);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
     return eRW_Error; // Not reached
@@ -141,7 +141,7 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
 
 ERW_Result SNetStorage_NetCacheBlob::Flush()
 {
-    return m_State != eWriting ? eRW_Success : m_NetCacheWriter->Flush();
+    return m_State != eWriting ? eRW_Success : writer->Flush();
 }
 
 Uint8 SNetStorage_NetCacheBlob::GetSize()
@@ -150,7 +150,7 @@ Uint8 SNetStorage_NetCacheBlob::GetSize()
         if (m_State != eReading)
             return m_NetCacheAPI.GetBlobSize(m_BlobKey);
         else
-            return m_NetCacheReader->GetBlobSize();
+            return reader->GetBlobSize();
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
     return 0; // Not reached
@@ -236,13 +236,13 @@ void SNetStorage_NetCacheBlob::Close()
     switch (m_State) {
     case eReading:
         ExitState();
-        m_NetCacheReader.reset();
+        reader.reset();
         break;
 
     case eWriting:
         ExitState();
-        m_NetCacheWriter->Close();
-        m_NetCacheWriter.reset();
+        writer->Close();
+        writer.reset();
         break;
 
     default:
@@ -255,13 +255,13 @@ void SNetStorage_NetCacheBlob::Abort()
     switch (m_State) {
     case eReading:
         ExitState();
-        m_NetCacheReader.reset();
+        reader.reset();
         break;
 
     case eWriting:
         ExitState();
-        m_NetCacheWriter->Abort();
-        m_NetCacheWriter.reset();
+        writer->Abort();
+        writer.reset();
         break;
 
     default:
@@ -273,7 +273,7 @@ CNetStorageObject CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
 {
     auto_ptr<SNetStorage_NetCacheBlob> result(
             new SNetStorage_NetCacheBlob(nc_api, kEmptyStr));
-    result->x_InitWriter();
+    result->StartWriting();
     return result.release();
 }
 

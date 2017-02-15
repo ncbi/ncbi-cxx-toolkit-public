@@ -76,15 +76,15 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     string FileTrack_Path() override;
 
     void x_InitReader();
-    void x_InitWriter();
+    void StartWriting();
 
     CNetCacheAPI m_NetCacheAPI;
 
     string m_BlobKey;
     EState m_State;
 
-    auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
-    auto_ptr<CNetCacheReader> m_NetCacheReader;
+    auto_ptr<IEmbeddedStreamWriter> writer;
+    auto_ptr<CNetCacheReader> reader;
 };
 
 class CDNCNetStorage
