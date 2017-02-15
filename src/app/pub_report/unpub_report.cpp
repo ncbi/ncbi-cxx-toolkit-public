@@ -673,7 +673,9 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
 
     vector<int> uids;
     if (query.size() <= 2048) { // TODO: find out why exception is thrown if query.size() > some value (4096?)
-        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePMC);
+        hydra_search.DoHydraSearch(query, uids, 
+                                   CHydraSearch::ESearch::ePMC, 
+                                   CHydraSearch::EScoreCutoff::eCutoff_High);
     }
 
     int pmid = 0;
@@ -734,13 +736,18 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
     int pmid = 0;
 
     if (!term.empty()) {
-        pmid = DoEUtilsSearch(eutils, "pubmed", term);
+        try {
+            pmid = DoEUtilsSearch(eutils, "pubmed", term);
 
-        if (pmid == 0) {
-            pmid = DoEUtilsSearch(eutils, "pmc", term);
-            if (pmid) {
-                pmid = ConvertPMCtoPMID(pmid);
+            if (pmid == 0) {
+                pmid = DoEUtilsSearch(eutils, "pmc", term);
+                if (pmid) {
+                    pmid = ConvertPMCtoPMID(pmid);
+                }
             }
+        }
+        catch(...) {
+            pmid = 0;
         }
     }
 

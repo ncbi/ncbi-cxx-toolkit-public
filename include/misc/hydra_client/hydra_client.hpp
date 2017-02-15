@@ -49,7 +49,7 @@ public:
     // In Group 2 PMC, matches in the abstract text are ignored.
     enum class ESearch {
         // Group 1 PUBMED 
-        ePUBMED_TOP_20,  // up to 20 results with any score
+        ePUBMED_TOP_20,  // up to 20 results with any score (original default)
         ePUBMED,         // up to 15 results with score above 0.5
 
         // Group 2 PMC 
@@ -58,8 +58,17 @@ public:
         ePMC_TOP_6       // maximum of 6 results, any positive score
     };
 
+    // Do not report matches with a score below specified threshold
+    enum class EScoreCutoff {
+        eCutoff_Low,      // 0.80 or higher (original default)
+        eCutoff_Medium,   // 0.90 or higher
+        eCutoff_High,     // 0.95 or higher
+        eCutoff_VeryHigh  // 0.99 or higher
+    };
+
     bool DoHydraSearch(const string& query, vector<int>& uids,
-                       ESearch search = ESearch::ePUBMED_TOP_20);
+                       ESearch search = ESearch::ePUBMED_TOP_20,
+                       EScoreCutoff cutoff = EScoreCutoff::eCutoff_Low);
 };
 
 

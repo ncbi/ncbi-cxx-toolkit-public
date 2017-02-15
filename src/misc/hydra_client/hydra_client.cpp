@@ -47,7 +47,8 @@ class CHydraServer : public xml::event_parser
 public:
     CHydraServer(vector<int>& uids);
     bool RunHydraSearch(const string& query,
-                        CHydraSearch::ESearch search);
+                        CHydraSearch::ESearch search,
+                        CHydraSearch::EScoreCutoff cutoff);
 
 protected:
     bool error(const string& message);
@@ -59,6 +60,7 @@ protected:
 protected:
     string m_Score;
     vector<int>& m_Uids;
+    CHydraSearch::EScoreCutoff m_Cutoff;
 };
 
 CHydraServer::CHydraServer(vector<int>& uids)
@@ -90,11 +92,14 @@ static string GetSearchType(CHydraSearch::ESearch search)
 }
 
 bool CHydraServer::RunHydraSearch(const string& query,
-                                  CHydraSearch::ESearch search)
+                                  CHydraSearch::ESearch search,
+                                  CHydraSearch::EScoreCutoff cutoff)
 {
     string hostname = "www.ncbi.nlm.nih.gov";
     string path = "/projects/hydra/hydra_search.cgi";
     string args = "search=@SEARCHTYPE@&query=";
+
+    m_Cutoff = cutoff;
 
     string searchtype = GetSearchType(search);
     NStr::ReplaceInPlace(args, "@SEARCHTYPE@", searchtype);
@@ -164,8 +169,32 @@ bool CHydraServer::text(const string& contents)
     if ( m_Score.empty() ) return true;
     if ( contents.find_first_not_of(" \n\r\t") == NPOS ) return true;
 
-    if (m_Score == "1" || (m_Score.size() >= 3  &&
-        m_Score[0] == '0'  &&  m_Score[1] == '.'  &&  m_Score[2] >= '8')) {
+    if (m_Score == "1") {
+        // score 100 always gets reported
+        m_Uids.push_back(NStr::StringToInt(contents));
+    }
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_VeryHigh) && 
+             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '9'))
+    {
+        // score 0.99 or higher
+        m_Uids.push_back(NStr::StringToInt(contents));
+    }
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_High) && 
+             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '5'))
+    {
+        // score 0.95 or higher
+        m_Uids.push_back(NStr::StringToInt(contents));
+    }
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Medium) && 
+             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '0'))
+    {
+        // score 0.90 or higher
+        m_Uids.push_back(NStr::StringToInt(contents));
+    }
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Low) && 
+             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '8' && m_Score[3] >= '0'))
+    {
+        // score 0.80 or higher
         m_Uids.push_back(NStr::StringToInt(contents));
     }
 
@@ -173,10 +202,11 @@ bool CHydraServer::text(const string& contents)
 }
 
 bool CHydraSearch::DoHydraSearch(const string& query, vector<int>& uids,
-                                 CHydraSearch::ESearch search)
+                                 ESearch search,
+                                 EScoreCutoff cutoff)
 {
     uids.clear();
     CHydraServer hydra(uids);
-    return hydra.RunHydraSearch(query, search);
+    return hydra.RunHydraSearch(query, search, cutoff);
 }
 
