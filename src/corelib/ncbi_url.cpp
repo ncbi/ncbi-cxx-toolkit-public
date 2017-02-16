@@ -529,9 +529,6 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
     if (m_IsGeneric) {
         url += "//";
     }
-    if ( !m_Service.empty() ) {
-        url += NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
-    }
     bool have_user_info = false;
     if ( !m_User.empty() ) {
         url += encoder->EncodeUser(m_User);
@@ -544,7 +541,10 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
     if ( have_user_info ) {
         url += "@";
     }
-    if ( !m_Host.empty() ) {
+    if ( !m_Service.empty() ) {
+        url += NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
+    }
+    else if ( !m_Host.empty() ) {
         url += m_Host;
     }
     if ( !m_Port.empty() ) {
