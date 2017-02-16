@@ -11,7 +11,7 @@ endif()
 set(Boost_USE_MULTITHREADED     ON)
 
 #Hinst for FindBoost
-set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1)
+set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
 
 include(FindBoost)
 #set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
