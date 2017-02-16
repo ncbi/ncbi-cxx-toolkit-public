@@ -42,15 +42,15 @@ struct SNetStorageObjectRWStream : public CRWStream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
         CRWStream(impl, impl, 0, nullptr, CRWStreambuf::fLeakExceptions),
-        m_Impl(impl)
+        m_Object(impl)
     {
         _ASSERT(impl);
     }
 
-    virtual ~SNetStorageObjectRWStream() { flush(); m_Impl->ResetIoMode(); }
+    virtual ~SNetStorageObjectRWStream() { flush(); m_Object->ResetIoMode(); }
 
 private:
-    SNetStorageObjectImpl* m_Impl;
+    CNetStorageObject m_Object;
 };
 
 ERW_Result SNetStorageObjectOState::Read(void*, size_t, size_t*)
