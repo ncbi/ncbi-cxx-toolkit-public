@@ -116,6 +116,32 @@ protected:
 };
 
 /// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoMode
+{
+    enum EApi { eAnyApi, eBuffer, eIoStream, eIReaderIWriter, eString };
+    enum EMth { eAnyMth, eRead, eWrite, eEof };
+
+    bool Set(EApi api, EMth mth)
+    {
+        if (m_Api != eAnyApi && m_Api != api) return false;
+
+        m_Api = api;
+        m_Mth = mth;
+        return true;
+    }
+
+    void Reset() { m_Api = eAnyApi; }
+    bool IoStream() const { return m_Api == eIoStream; }
+    void Throw(EApi api, EMth mth, string object_loc);
+
+private:
+    static string ToString(EApi api, EMth mth);
+
+    EApi m_Api = eAnyApi;
+    EMth m_Mth = eAnyMth;
+};
+
+/// @internal
 // TODO:
 // Remove IReader and IEmbeddedStreamWriter bases,
 // Make all methods non virtual
@@ -124,24 +150,14 @@ protected:
 // Investigate
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
 {
-    enum EIoModeApi { eAnyApi, eBuffer, eIoStream, eIReaderIWriter, eString };
-    enum EIoModeMth { eAnyMth, eRead, eWrite, eEof };
-
     ~SNetStorageObjectImpl();
 
     void SetStartState(INetStorageObjectState* state);
 
-    void SetIoMode(EIoModeApi api, EIoModeMth mth)
+    void SetIoMode(SNetStorageObjectIoMode::EApi api, SNetStorageObjectIoMode::EMth mth)
     {
-        if (m_IoModeApi == eAnyApi || m_IoModeApi == api) {
-            m_IoModeApi = api;
-            m_IoModeMth = mth;
-        } else {
-            ThrowIoMode(api, mth);
-        }
+        if (!m_IoMode.Set(api, mth)) m_IoMode.Throw(api, mth, GetLoc());
     }
-
-    void ResetIoMode() { m_IoModeApi = eAnyApi; }
 
     IReader& GetReader();
     IEmbeddedStreamWriter& GetWriter();
@@ -170,13 +186,11 @@ private:
     void A() const { _ASSERT(m_Current); }
     void EnterState(INetStorageObjectState* state);
     void ExitState();
-    void ThrowIoMode(EIoModeApi api, EIoModeMth mth);
 
     unique_ptr<INetStorageObjectState> m_Start;
     stack<INetStorageObjectState*> m_Previous;
     INetStorageObjectState* m_Current = nullptr;
-    EIoModeApi m_IoModeApi = eAnyApi;
-    EIoModeMth m_IoModeMth = eAnyMth;
+    SNetStorageObjectIoMode m_IoMode;
 
     friend struct INetStorageObjectState;
 };
