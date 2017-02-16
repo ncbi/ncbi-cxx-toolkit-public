@@ -9,3 +9,14 @@ Improvements:
 * Tabular output includes a header with column titles
 Bug fixes:
 * Fixed SAM flag values
+
+February 17, 2017
+* 1.2.0 release
+Improvements:
+* Improved multi-threading for larger genomes
+* Improved splice site detection
+Bug fixes:
+* Magic-BLAST now works with multiple SRA accessions
+* Fixed the macOS dmg installer that used to remove BLAST+ binaries
+* The -seqidlist option is no longer ignored
+
