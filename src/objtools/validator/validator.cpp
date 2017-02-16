@@ -63,9 +63,9 @@ CValidator::CValidator(CObjectManager& objmgr,
     m_UserData(0)
 {
     if (taxon.get() == NULL) {
-        AutoPtr<ITaxon3> taxon(new CTaxon3);
-        taxon->Init();
-        m_Taxon.reset(CCachedTaxon3::CreateUnSafe(taxon));
+        AutoPtr<ITaxon3> taxon3(new CTaxon3);
+        taxon3->Init();
+        m_Taxon = taxon3;
     } else {
         m_Taxon = taxon;
     }
