@@ -499,6 +499,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                                 t_con = m_PoolSemConn;
                                 m_PoolSemConn = NULL;
                                 m_NotInUse.erase((++it).base());
+                                break;
                             }
                         }
                         if (t_con != NULL) {
