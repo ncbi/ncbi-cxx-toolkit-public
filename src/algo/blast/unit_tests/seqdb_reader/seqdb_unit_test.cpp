@@ -4390,6 +4390,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
     }
 }
 
+#if 0
 typedef CSeqDBSqlite::TOid TOid;
 
 BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Singles)
@@ -4864,6 +4865,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Steps)
     // Finalize SQLite library.
     CSQLITE_Global::Finalize();
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
