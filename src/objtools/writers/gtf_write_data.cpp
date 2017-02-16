@@ -413,11 +413,9 @@ string CGtfRecord::x_GeneToGeneId(
     GENE_ID geneId;
     const CGene_ref& gene = mf.GetData().GetGene();
 
-    if ( gene.IsSetLocus_tag() ) {
+    geneId = mf.GetNamedQual("gene_id");
+    if (geneId.empty()  &&  gene.IsSetLocus_tag()) {
         geneId = gene.GetLocus_tag();
-    }
-    if (geneId.empty()) {
-        geneId = mf.GetNamedQual("gene_id");
     }
     if (geneId.empty() &&  gene.IsSetLocus()) {
         geneId = gene.GetLocus();
@@ -506,21 +504,19 @@ string CGtfRecord::x_MrnaToTranscriptId(
     static RNA_IDS usedRnaIds;
     RNA_ID rnaId;
 
-    //far accession first
-    if (mf.IsSetProduct()) {
+    // qualifier on feature first
+    rnaId = mf.GetNamedQual("transcript_id");
+
+    //then product if available
+    if (rnaId.empty()  &&  mf.IsSetProduct()) {
         if (!CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), rnaId)) {
             rnaId.clear();
         }
     }
 
-    //then transcript_id if available
-    if (rnaId.empty()  &&  !CWriteUtil::GetQualifier(mf, "transcript_id", rnaId)) {
-        rnaId.clear();
-    }
-
     //then orig_transcript_id if available
-    if (rnaId.empty()  &&  !CWriteUtil::GetQualifier(mf, "orig_transcript_id", rnaId)) {
-        rnaId.clear();
+    if (rnaId.empty()) {
+        rnaId = mf.GetNamedQual("orig_transcript_id");
     }
 
     //then gene/locus-tag
@@ -602,6 +598,10 @@ string CGtfRecord::x_CdsToProteinId(
     const CMappedFeat& mf )
 //  ============================================================================
 {
+    string protein_id = mf.GetNamedQual("protein_id");
+    if (!protein_id.empty()) {
+        return protein_id;
+    }
     if ( mf.IsSetProduct() ) {
         string product;
         if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
@@ -648,10 +648,10 @@ string CGtfRecord::x_CdsToProduct(
     
 //  ============================================================================
 string CGtfRecord::x_CdsToCode(
-    const CMappedFeat& mapped_feature )
+    const CMappedFeat& mf)
 //  ============================================================================
 {
-    const CCdregion& cdr = mapped_feature.GetData().GetCdregion();
+    const CCdregion& cdr = mf.GetData().GetCdregion();
     if ( cdr.IsSetCode() ) {
         return NStr::IntToString( cdr.GetCode().GetId() );
     }
@@ -660,10 +660,14 @@ string CGtfRecord::x_CdsToCode(
 
 //  ============================================================================
 string CGtfRecord::x_MrnaToProduct(
-    const CMappedFeat& mapped_feature )
+    const CMappedFeat& mf)
 //  ============================================================================
 {
-    const CRNA_ref& rna = mapped_feature.GetData().GetRna();
+    string product = mf.GetNamedQual("product");
+    if (!product.empty()) {
+        return product;
+    }
+    const CRNA_ref& rna = mf.GetData().GetRna();
     if ( rna.IsSetExt() && rna.GetExt().IsName() ) {
         return rna.GetExt().GetName();
     }
