@@ -333,6 +333,8 @@ private:
 /// URL parser. Uses CUrlArgs to parse arguments.
 ///
 
+#define NCBI_SCHEME_SERVICE "ncbilb"
+
 class NCBI_XNCBI_EXPORT CUrl
 {
 public:

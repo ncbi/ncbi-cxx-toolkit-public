@@ -366,8 +366,6 @@ CUrl& CUrl::operator=(const CUrl& url)
 }
 
 
-const char* kNcbiScheme_Service = "ncbilb";
-
 void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
 {
     m_Scheme.clear();
@@ -465,7 +463,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             }
             host.resize(pos);
         }
-        if (NStr::EqualNocase(m_Scheme, kNcbiScheme_Service)) {
+        if (NStr::EqualNocase(m_Scheme, NCBI_SCHEME_SERVICE)) {
             x_SetService(host);
         }
         else {
@@ -498,7 +496,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
     if (unparsed[0] == '?') {
         // Arguments
         pos = unparsed.find('#');
-        x_SetArgs(unparsed.substr(1, pos), *encoder);
+        x_SetArgs(unparsed.substr(1, pos - 1), *encoder);
         if (pos == NPOS) return;
         unparsed = unparsed.substr(pos);
     }
