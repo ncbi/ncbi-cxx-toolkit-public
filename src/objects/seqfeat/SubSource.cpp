@@ -1611,6 +1611,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace (cpy, "_", " ");
     NStr::ReplaceInPlace (cpy, "&", " ");
     NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
+    NStr::ReplaceInPlace (cpy, " . ", "."); // space before and after period is eliminated
 
     size_t lat_pos = NStr::Find (cpy, "LAT");
     size_t lon_pos = NStr::Find (cpy, "LO");
