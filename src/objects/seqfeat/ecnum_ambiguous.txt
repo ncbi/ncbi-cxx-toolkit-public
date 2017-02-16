@@ -272,6 +272,8 @@
 1.17.5.n	With a quinone or similar compound as acceptor
 1.17.7.-	With an iron-sulfur protein as acceptor
 1.17.7.n	With an iron-sulfur protein as acceptor
+1.17.8.-	With a flavin as acceptor
+1.17.8.n	With a flavin as acceptor
 1.17.98.-	With other, known, acceptors
 1.17.98.n	With other, known, acceptors
 1.17.99.-	With other acceptors
@@ -292,6 +294,8 @@
 1.18.99.n	With H(+) as acceptor
 1.19.-.-	Acting on reduced flavodoxin as donor
 1.19.n.n	Acting on reduced flavodoxin as donor
+1.19.1.-	With NAD(+) or NADP(+) as acceptor
+1.19.1.n	With NAD(+) or NADP(+) as acceptor
 1.19.6.-	With dinitrogen as acceptor
 1.19.6.n	With dinitrogen as acceptor
 1.20.-.-	Acting on phosphorus or arsenic in donors
