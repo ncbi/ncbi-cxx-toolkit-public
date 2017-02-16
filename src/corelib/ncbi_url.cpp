@@ -351,6 +351,7 @@ CUrl& CUrl::operator=(const CUrl& url)
         m_User = url.m_User;
         m_Password = url.m_Password;
         m_Host = url.m_Host;
+        m_Service = url.m_Service;
         m_Port = url.m_Port;
         m_Path = url.m_Path;
         m_Fragment = url.m_Fragment;
@@ -365,160 +366,151 @@ CUrl& CUrl::operator=(const CUrl& url)
 }
 
 
+const char* kNcbiScheme_Service = "ncbilb";
+
 void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
 {
-    m_Scheme = kEmptyStr;
+    m_Scheme.clear();
     m_IsGeneric = false;
-    m_User = kEmptyStr;
-    m_Password = kEmptyStr;
-    m_Host = kEmptyStr;
-    m_Port = kEmptyStr;
-    m_Path = kEmptyStr;
-    m_Fragment = kEmptyStr;
-    m_OrigArgs = kEmptyStr;
+    m_User.clear();
+    m_Password.clear();
+    m_Host.clear();
+    m_Service.clear();
+    m_Port.clear();
+    m_Path.clear();
+    m_Fragment.clear();
+    m_OrigArgs.clear();
     m_ArgsList.reset();
 
-    string url;
+    string unparsed;
 
     if ( !encoder ) {
         encoder = GetDefaultEncoder();
     }
 
-    SIZE_TYPE frag_pos = orig_url.find_last_of("#");
-    if (frag_pos != NPOS) {
-        x_SetFragment(orig_url.substr(frag_pos + 1, orig_url.size()), *encoder);
-        url = orig_url.substr(0, frag_pos);
-    }
-    else {
-        url = orig_url;
+    // Special case - service name does not contain any URL reserved symbols
+    // (they must be URL-encoded).
+    if (orig_url.find_first_of(":/.?#") == NPOS) {
+        x_SetService(orig_url);
+        return;
     }
 
-    bool skip_host = false;
-    bool skip_path = false;
-    SIZE_TYPE beg = 0;
-    SIZE_TYPE pos = url.find_first_of(":@/?[");
-
-    while ( beg < url.size() ) {
-        if (pos == NPOS) {
-            if ( !skip_host ) {
-                x_SetHost(url.substr(beg, url.size()), *encoder);
-            }
-            else if ( !skip_path ) {
-                x_SetPath(url.substr(beg, url.size()), *encoder);
+    // Parse scheme and authority (user info, host, port).
+    SIZE_TYPE pos = orig_url.find("//");
+    SIZE_TYPE offset = 0;
+    string authority;
+    if (pos != NPOS) {
+        m_IsGeneric = true;
+        // Host is present, split into scheme/host/path.
+        if (pos > 0 && orig_url[pos - 1] == ':') {
+            // Scheme is present
+            x_SetScheme(orig_url.substr(0, pos - 1), *encoder);
+        }
+        pos += 2;
+        offset += pos;
+        unparsed = orig_url.substr(pos);
+        pos = unparsed.find_first_of("/?#");
+        authority = unparsed.substr(0, pos);
+        if (pos != NPOS) {
+            unparsed = unparsed.substr(pos);
+        }
+        else {
+            unparsed.clear();
+        }
+        string host;
+        pos = authority.find('@');
+        if (pos != NPOS) {
+            offset += pos;
+            string user_info = authority.substr(0, pos);
+            host = authority.substr(pos + 1);
+            pos = user_info.find(':');
+            if (pos != NPOS) {
+                x_SetUser(user_info.substr(0, pos), *encoder);
+                x_SetPassword(user_info.substr(pos + 1), *encoder);
             }
             else {
-                x_SetArgs(url.substr(beg, url.size()), *encoder);
+                x_SetUser(user_info, *encoder);
             }
-            break;
         }
-        switch ( url[pos] ) {
-        case '[': // IPv6 address
-            {
-                SIZE_TYPE closing = url.find(']', pos);
-                if (closing == NPOS) {
-                    NCBI_THROW2(CUrlParserException, eFormat,
-                        "Unmatched '[' in the URL: \"" + url + "\"", pos);
-                }
-                beg = pos;
-                pos = url.find_first_of(":/?", closing);
-                break;
+        else {
+            host = authority;
+        }
+        string port;
+        // Find port position, if any. Take IPv6 into account.
+        if (!host.empty() && host[0] == '[') {
+            // IPv6 address - skip to the closing ]
+            pos = host.find(']');
+            if (pos == NPOS) {
+                NCBI_THROW2(CUrlParserException, eFormat,
+                    "Unmatched '[' in the URL: \"" + orig_url + "\"", pos + offset);
             }
-        case ':': // scheme: || user:password || host:port
-            {
-                if (url.substr(pos, 3) == "://") {
-                    // scheme://
-                    x_SetScheme(url.substr(beg, pos - beg), *encoder);
-                    beg = pos + 3;
-                    m_IsGeneric = true;
-                    if (m_Scheme == "file") {
-                        // Special case - no further parsing, use the whole
-                        // string as path.
-                        x_SetPath(url.substr(beg), *encoder);
-                        return;
-                    }
-                    pos = url.find_first_of(":@/?[", beg);
-                    break;
-                }
-                // user:password@ || host:port...
-                SIZE_TYPE next = url.find_first_of("@/?[", pos + 1);
-                if (m_IsGeneric  &&  next != NPOS  &&  url[next] == '@') {
-                    // user:password@
-                    x_SetUser(url.substr(beg, pos - beg), *encoder);
-                    beg = pos + 1;
-                    x_SetPassword(url.substr(beg, next - beg), *encoder);
-                    beg = next + 1;
-                    pos = url.find_first_of(":/?[", beg);
-                    break;
-                }
-                // host:port || host:port/path || host:port?args
-                string host = url.substr(beg, pos - beg);
-                beg = pos + 1;
-                if (next == NPOS) {
-                    next = url.size();
-                }
-                try {
-                    x_SetPort(url.substr(beg, next - beg), *encoder);
-                    if ( !skip_host ) {
-                        x_SetHost(host, *encoder);
-                    }
-                }
-                catch (CStringException) {
-                    if ( !m_IsGeneric ) {
-                        x_SetScheme(host, *encoder);
-                        x_SetPath(url.substr(beg, url.size()), *encoder);
-                        beg = url.size();
-                        continue;
-                    }
-                    else {
-                        NCBI_THROW2(CUrlParserException, eFormat,
-                            "Invalid port value: \"" + url + "\"", beg+1);
-                    }
-                }
-                skip_host = true;
-                beg = next;
-                if (next < url.size()  &&  url[next] == '/') {
-                    pos = url.find_first_of("?", beg);
-                }
-                else {
-                    skip_path = true;
-                    pos = next;
-                }
-                break;
+            if (pos + 1 < host.size()  &&  host[pos + 1] == ':') {
+                pos++;
             }
-        case '@': // username@host
-            {
-                x_SetUser(url.substr(beg, pos - beg), *encoder);
-                beg = pos + 1;
-                pos = url.find_first_of(":/?[", beg);
-                break;
-            }
-        case '/': // host/path
-            {
-                if ( !skip_host ) {
-                    x_SetHost(url.substr(beg, pos - beg), *encoder);
-                    skip_host = true;
-                }
-                beg = pos;
-                pos = url.find_first_of("?", beg);
-                break;
-            }
-        case '?':
-            {
-                if ( !skip_host ) {
-                    x_SetHost(url.substr(beg, pos - beg), *encoder);
-                    skip_host = true;
-                }
-                else {
-                    x_SetPath(url.substr(beg, pos - beg), *encoder);
-                    skip_path = true;
-                }
-                beg = pos + 1;
-                x_SetArgs(url.substr(beg, url.size()), *encoder);
-                beg = url.size();
+            else {
                 pos = NPOS;
-                break;
             }
         }
+        else {
+            pos = host.find(':');
+        }
+        if (pos != NPOS) {
+            // Found port - make sure it's numeric.
+            try {
+                x_SetPort(host.substr(pos + 1), *encoder);
+            }
+            catch (CStringException) {
+                NCBI_THROW2(CUrlParserException, eFormat,
+                    "Invalid port value: \"" + orig_url + "\"", pos + 1);
+            }
+            host.resize(pos);
+        }
+        if (NStr::EqualNocase(m_Scheme, kNcbiScheme_Service)) {
+            x_SetService(host);
+        }
+        else {
+            x_SetHost(host, *encoder);
+        }
+    }
+    else {
+        // No authority, check scheme.
+        SIZE_TYPE scheme_end = orig_url.find(':');
+        if (scheme_end != NPOS) {
+            x_SetScheme(orig_url.substr(0, scheme_end), *encoder);
+            unparsed = orig_url.substr(scheme_end + 1);
+        }
+        else {
+            unparsed = orig_url;
+        }
+    }
+
+    if ( unparsed.empty() ) return;
+    if (unparsed[0] == '/') {
+        // Path present
+        pos = unparsed.find_first_of("?#");
+        x_SetPath(unparsed.substr(0, pos), *encoder);
+        // No args/fragment
+        if (pos == NPOS) return;
+        unparsed = unparsed.substr(pos);
+    }
+
+    _ASSERT(!unparsed.empty());
+    if (unparsed[0] == '?') {
+        // Arguments
+        pos = unparsed.find('#');
+        x_SetArgs(unparsed.substr(1, pos), *encoder);
+        if (pos == NPOS) return;
+        unparsed = unparsed.substr(pos);
+    }
+    // Fragment
+    _ASSERT(!unparsed.empty());
+    if (unparsed[0] == '#') {
+        x_SetFragment(unparsed.substr(1), *encoder);
+    }
+    else {
+        // Non-generic URL - path does not contain /, no args or fragment.
+        // E.g. scheme:foo:bar
+        x_SetPath(unparsed, *encoder);
     }
 }
 
@@ -532,25 +524,31 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
     string url;
     if ( !m_Scheme.empty() ) {
         url += m_Scheme;
-        url += m_IsGeneric ? "://" : ":";
+        url += ":";
+    }
+    if (m_IsGeneric) {
+        url += "//";
+    }
+    if ( !m_Service.empty() ) {
+        url += NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
+    }
+    bool have_user_info = false;
+    if ( !m_User.empty() ) {
+        url += encoder->EncodeUser(m_User);
+        have_user_info = true;
+    }
+    if ( !m_Password.empty() ) {
+        url += ":" + encoder->EncodePassword(m_Password);
+        have_user_info = true;
+    }
+    if ( have_user_info ) {
+        url += "@";
     }
     if ( !m_Host.empty() ) {
-        bool use_auth = false;
-        if ( !m_User.empty() ) {
-            url += encoder->EncodeUser(m_User);
-            use_auth = true;
-        }
-        if ( !m_Password.empty() ) {
-            url += ":" + encoder->EncodePassword(m_Password);
-            use_auth = true;
-        }
-        if ( use_auth ) {
-            url += "@";
-        }
         url += m_Host;
-        if ( !m_Port.empty() ) {
-            url += ":" + m_Port;
-        }
+    }
+    if ( !m_Port.empty() ) {
+        url += ":" + m_Port;
     }
     url += encoder->EncodePath(m_Path);
     if ( HaveArgs() ) {
@@ -697,8 +695,8 @@ IUrlEncoder* CUrl::GetDefaultEncoder(void)
 
 bool CUrl::IsEmpty(void) const
 {
-    // At least one of host or path must be present.
-    return m_Host.empty()  &&  m_Path.empty();
+    // At least one of host, service or path must be present.
+    return m_Host.empty()  &&  m_Service.empty()  &&  m_Path.empty();
 }
 
 

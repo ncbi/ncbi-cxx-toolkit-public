@@ -376,7 +376,7 @@ public:
     string GetScheme(void) const            { return m_Scheme; }
     void   SetScheme(const string& value)   { m_Scheme = value; }
 
-    /// Generic schemes use '//' after scheme name and colon.
+    /// Generic schemes use '//' prefix (after optional scheme).
     bool GetIsGeneric(void) const           { return m_IsGeneric; }
     void SetIsGeneric(bool value)           { m_IsGeneric = value; }
 
@@ -385,9 +385,13 @@ public:
 
     string GetPassword(void) const          { return m_Password; }
     void   SetPassword(const string& value) { m_Password = value; }
-    
+
     string GetHost(void) const              { return m_Host; }
-    void   SetHost(const string& value)     { m_Host = value; }
+    void   SetHost(const string& value);
+
+    bool IsService(void) const              { return !m_Service.empty(); }
+    string GetService(void) const           { return m_Service; }
+    void SetService(const string& value);
     
     string GetPort(void) const              { return m_Port; }
     void   SetPort(const string& value)     { m_Port = value; }
@@ -452,6 +456,7 @@ private:
     void x_SetUser(const string& user, const IUrlEncoder& encoder);
     void x_SetPassword(const string& password, const IUrlEncoder& encoder);
     void x_SetHost(const string& host, const IUrlEncoder& encoder);
+    void x_SetService(const string& service);
     void x_SetPort(const string& port, const IUrlEncoder& encoder);
     void x_SetPath(const string& path, const IUrlEncoder& encoder);
     void x_SetArgs(const string& args, const IUrlEncoder& encoder);
@@ -462,6 +467,7 @@ private:
     string  m_User;
     string  m_Password;
     string  m_Host;
+    string  m_Service;
     string  m_Port;
     string  m_Path;
     string  m_Fragment;
@@ -536,6 +542,20 @@ public:
 // CUrl
 
 inline
+void CUrl::SetHost(const string& host)
+{
+    m_Service.clear();
+    m_Host = host;
+}
+
+inline
+void CUrl::SetService(const string& service)
+{
+    m_Host.clear();
+    m_Service = service;
+}
+
+inline
 void CUrl::x_SetScheme(const string& scheme,
                        const IUrlEncoder& /*encoder*/)
 {
@@ -561,6 +581,13 @@ void CUrl::x_SetHost(const string& host,
                      const IUrlEncoder& /*encoder*/)
 {
     m_Host = host;
+    m_Service.clear();
+}
+
+inline
+void CUrl::x_SetService(const string& service)
+{
+    m_Service = NStr::URLDecode(service);
 }
 
 inline

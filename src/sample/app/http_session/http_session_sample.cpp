@@ -200,7 +200,7 @@ int CHttpSessionApp::Run(void)
             url.SetUrl(args["url"].AsString());
         }
         else if (args["service-name"]) {
-            url.SetHost(args["service-name"].AsString());
+            url.SetService(args["service-name"].AsString());
             if (args["service-path"]) {
                 url.SetPath(args["service-path"].AsString());
             }

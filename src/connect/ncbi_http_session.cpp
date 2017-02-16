@@ -778,7 +778,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
     m_Stream.Reset(new TStreamRef);
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
-    if ( m_Url.GetIsGeneric() ) {
+    if ( !m_Url.IsService() ) {
         // Connect using HTTP.
         m_IsService = false;
         m_Stream->SetConnStream(new CConn_HttpStream(
@@ -803,7 +803,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
         m_Stream->SetConnStream(new CConn_ServiceStream(
-            m_Url.GetHost(), // Service name is in host, ignore other fields now
+            m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
             connnetinfo,
             &x_extra));
