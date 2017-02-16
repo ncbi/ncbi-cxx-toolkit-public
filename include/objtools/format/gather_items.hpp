@@ -110,7 +110,7 @@ protected:
 
     // features
     void x_GatherFeatures  (void) const;
-    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx,
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx,
         CRef<CSeq_loc_Mapper> slice_mapper,
         CConstRef<CFeatureItem> cdsFeatureItem = CConstRef<CFeatureItem>() ) const;
     static void x_GiveOneResidueIntervalsBogusFuzz(CSeq_loc & loc);

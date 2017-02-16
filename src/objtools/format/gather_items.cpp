@@ -2787,7 +2787,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx, slice_mapper);
+                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
                     }
                 }
                 continue;
@@ -2855,7 +2855,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     {{  
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, *feat_loc, ctx, 
+                            x_GetFeatsOnCdsProduct(original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
                         }
@@ -3202,7 +3202,6 @@ void s_FixIntervalProtToCds(
 //  ============================================================================
 void CFlatGatherer::x_GetFeatsOnCdsProduct(
     const CSeq_feat& feat,
-    const CSeq_loc& mapped_loc,
     CBioseqContext& ctx,
     CRef<CSeq_loc_Mapper> slice_mapper,
     CConstRef<CFeatureItem> cdsFeatureItem ) const
