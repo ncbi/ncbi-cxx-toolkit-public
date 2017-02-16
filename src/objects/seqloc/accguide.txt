@@ -506,55 +506,89 @@ version  1 # of file format
 # SPECIAL CASES
 
 # Early N accessions were assigned haphazardly, and sometimes ambiguously.
-# (These are all secondary accessions nowadays, though.)
-special  N00001-N00002  gb_embl
-special  N00003-N00004  gb_ddbj
-special  N00005         gb_embl_ddbj
-special  N00006-N00007  gb_ddbj
-special  N00008         gb_other_nuc
-special  N00009         gb_embl_ddbj
-special  N00010         gb_ddbj
-special  N00011         gb_embl
-special  N00012         gb_embl_ddbj
-special  N00013         gb_other_nuc
-special  N00014-N00017  gb_ddbj
-special  N00018-N00019  gb_other_nuc
-special  N00020         gb_embl_ddbj
-special  N00021         gb_ddbj
-special  N00022         gb_embl_ddbj
-special  N00023-N00024  gb_ddbj
-special  N00025         gb_embl_ddbj
-special  N00026         gb_ddbj
-special  N00027         gb_other_nuc
-special  N00028         ddbj_other_nuc
-special  N00029-N00034  gb_ddbj
-special  N00035         ddbj_other_nuc
-special  N00036         gb_ddbj
-special  N00037         ddbj_other_nuc
-special  N00038-N00040  gb_ddbj
-special  N00041         gb_other_nuc
-special  N00042-N00045  gb_ddbj
-special  N00046         gb_other_nuc
-special  N00047         gb_ddbj
-special  N00048         gb_other_nuc
-special  N00049-N00051  gb_ddbj
-special  N00052         gb_other_nuc
-special  N00053         ddbj_other_nuc
-special  N00054         gb_other_nuc
-special  N00055-N00056  gb_ddbj
-special  N00057         gb_embl
-special  N00058         gb_embl_ddbj
-special  N00059         gb_ddbj
-special  N00060         embl_other_nuc
-special  N00061-N00063  ddbj_other_nuc
-special  N00064         embl_other_nuc
-special  N00065-N00069  ddbj_other_nuc
-special  N00070         embl_ddbj
-special  N00078-N00079  ddbj_other_nuc
-special  N00083         ddbj_other_nuc
-special  N00088         ddbj_other_nuc
-special  N00090-N00094  ddbj_other_nuc
-special  N18624         gb_other_nuc
+# (These are all secondary accessions nowadays, though.)  "*" denotes what,
+# if anything, N????? (and usually also N?????.1) immediately resolves to.
+# Some unambiguous accessions don't resolve, and some ambiguous ones do.
+special  N00001  gb_embl        # (L29187+L00109+L00110 / AH005313.2) / X04516.1
+special  N00002  gb_embl_ddbj   # M31027.1 / X04469.1 = D00002
+special  N00003  gb_ddbj        # L29169.1 / D00003.1
+special  N00004  gb_ddbj        # *L29170.1 / D00004.1
+special  N00005  gb_embl_ddbj   # L29171.1 / V01385.1 / D00005.1
+special  N00006  gb_ddbj        # (M31028.1 / AH002572.2) / D00006.1
+special  N00007  gb_ddbj        # (M31029.1 / AH002572.2) / D00007.1
+special  N00008  gb_other_nuc   # *L29172.1
+special  N00009  gb_embl_ddbj   # M13655.1 / *X00532.1 / D00009.1 (= M13655.1)
+special  N00010  gb_embl_ddbj   # *L29174.1 / X04067.1 = D00010.1
+special  N00011  gb_embl        # *L29175.1 = V00749.1
+special  N00012  gb_embl_ddbj   # L29176.1 = V00751.1 / D00012.1
+special  N00013  gb_other_nuc   # L29177.1 / AH002712.2
+special  N00014  gb_ddbj        # (L29178.1 / AH005322.2) / D00014.1
+special  N00015  gb_ddbj        # (L29187.1 / AH005313.2) / D00015.1
+special  N00016  gb_ddbj        # (L29188.1 / AH005313.2) / D00016.1
+special  N00017  gb_ddbj        # *L29190.1 / (M14043 =) D00017.1
+special  N00018  gb_other_nuc   # *L29191.1 / AH002172.2; only unversioned
+special  N00019  gb_other_nuc   # *L29197.1
+special  N00020  gb_embl_ddbj   # (L29198.1 / AH002320.2) / X03632.1 = D00020.1
+special  N00021  gb_ddbj        # (L29199.1 / AH002320.2) / D00021.1
+special  N00022  gb_embl_ddbj   # L29390.1 / V01168.1 / D00022.1
+special  N00023  gb_ddbj        # (L29391.1 / AH000963.2) / D00023.1
+special  N00024  gb_ddbj        # *L29392.1 / (M13071.1 =) D00024.1
+special  N00025  gb_embl_ddbj   # L29393.1 / X00626.1 / D00025.1
+special  N00026  gb_ddbj        # L29394.1 (= *X00442.1) / D00026.1
+special  N00027  gb_other_nuc   # *L29395.1
+special  N00028  ddbj_other_nuc # D00028.1
+special  N00029  gb_ddbj        # *L29397.1 / D00029.1
+special  N00030  gb_ddbj        # M10126.1 / D00030.1
+special  N00031  gb_ddbj        # (*L29400.1 / AH002739.2) / D00031.1; unvers.
+special  N00032  gb_ddbj        # (L?????.1 / AH??????.2) / D00032.1
+special  N00033  gb_ddbj        # (L29401.1 / AH002776.2) / D00033.1
+special  N00034  gb_ddbj        # (L29424.1 / AH001823.2) / D00034.1
+special  N00035  ddbj_other_nuc # D00035.1
+special  N00036  gb_ddbj        # M31030.1 / D00036.1
+special  N00037  ddbj_other_nuc # D00037.1
+special  N00038  gb_ddbj        # M31031.1 / D00038.1
+special  N00039  gb_ddbj        # *L29427.1 / D00039.1
+special  N00040  gb_ddbj        # L29428.1 / D00040.1
+special  N00041  gb_other_nuc   # L29429.1 / *M13756.1 (= D00041)
+special  N00042  gb_ddbj        # (L29430.1 / AH002209.2) / (M13752 =) D00042.1
+special  N00043  gb_ddbj        # (L29431.1 / AH005585.2) / (M13753 =) D00043.1
+special  N00044  gb_ddbj        # L29432.1 / D00044.1
+special  N00045  gb_other_nuc   # (*L29433.1/AH002727.2); once also DDBJ?
+special  N00046  gb_other_nuc   # *L29434.1
+special  N00047  gb_ddbj        # (*L29435.1 / AH002481.2) / D00047.1
+special  N00048  gb_other_nuc   # *L29436.1
+special  N00049  gb_ddbj        # M31032.1 / D00049.1
+special  N00050  gb_ddbj        # (L29399.1 / AH002739.2) / D00050.1
+special  N00051  gb_ddbj        # (L?????.1 / AH??????.2) / D00051.1
+special  N00052  gb_other_nuc   # L29472.1 / *M14909.1 (= D00052.1)
+special  N00053  ddbj_other_nuc # D00053.1
+special  N00054  gb_other_nuc   # M31033.1
+special  N00055  gb_ddbj        # (L?????.1 / AH??????.2) / D00055.1
+special  N00056  gb_ddbj        # L39908.1 / D00056.1
+special  N00057  gb_embl        # M31034.1 / X05532.1
+special  N00058  gb_embl_ddbj   # M31035.1 (= X05163.1) / (X05537.1 =) D00058.1
+special  N00059  gb_ddbj        # M22232.1 / (X05538.1 =) D00059.1
+special  N00060  embl_other_nuc # X05541.1 (= D00060.1)
+special  N00061  ddbj_other_nuc # (X05531.1 =) D00061.1
+special  N00062  ddbj_other_nuc # (X05530.1 =) D00062.1
+special  N00063  ddbj_other_nuc # (X05529.1 =) D00063.1
+special  N00064  embl_other_nuc # X05528.1 (= D00064.1 = D10030.1)
+special  N00065  ddbj_other_nuc # (X05527.1 =) D00065.1 = D10031.1
+special  N00066  ddbj_other_nuc # D00066.1
+special  N00067  ddbj_other_nuc # (M20207.1 =) D00067.1
+special  N00068  ddbj_other_nuc # D00068.1
+special  N00069  ddbj_other_nuc # D00069.1
+special  N00070  embl_ddbj      # X04036.1 = D00070.1
+special  N00078  ddbj_other_nuc # D00078.1
+special  N00079  ddbj_other_nuc # D00079.1
+special  N00083  ddbj_other_nuc # D00083.1
+special  N00088  ddbj_other_nuc # (M16550.1 =) D00088.1 = D10032.1
+special  N00090  ddbj_other_nuc # (X05597.1 =) D00090.1
+special  N00091  ddbj_other_nuc # (M15807.1 =) D00091.1
+special  N00092  ddbj_other_nuc # D00092.1
+special  N00093  ddbj_other_nuc # (M34437.1 = X04797.1 =) D00093.1
+special  N00094  ddbj_other_nuc # (X05040.1 =) D00094.1
+special  N18624  gb_other_nuc   # *L29496.1 / M23263.1
 special  N20000-N99999  gb_est
 
 # Some GenBank "TPA" 8-character protein accessions are really native.
