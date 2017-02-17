@@ -139,8 +139,6 @@ static void Test_PIDGuard(int ppid, string lockfile)
         Test_PIDGuardChild(-1, lockfile);
         assert(lf.Exists());
 
-#if 0
-// possible not needed now, commented out for test purposes
 #if defined(NCBI_OS_MSWIN)
         // Additional check on stuck child process.
         // On some Windows machines OS report that child process is still
@@ -155,7 +153,6 @@ static void Test_PIDGuard(int ppid, string lockfile)
             }
         }
         in.close();
-#endif
 #endif
         // And other reuse existent lockfile
         Test_PIDGuardChild(-2, lockfile);
