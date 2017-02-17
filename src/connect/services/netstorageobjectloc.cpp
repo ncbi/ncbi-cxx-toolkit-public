@@ -111,6 +111,7 @@ ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc) :
     m_CompoundIDPool(cid_pool),
+    m_Dirty(false),
     m_Locator(object_loc)
 {
     auto cid = m_CompoundIDPool.FromString(object_loc);
