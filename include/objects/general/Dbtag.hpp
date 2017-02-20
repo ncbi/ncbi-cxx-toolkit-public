@@ -214,7 +214,8 @@ public:
         eDbtagType_VISTA,
         eDbtagType_BEI,
         eDbtagType_Araport,
-        eDbtagType_VGNC
+        eDbtagType_VGNC,
+        eDbtagType_RNAcentral
     };
 
     enum EDbtagGroup {

@@ -145,6 +145,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "RATMAP", CDbtag::eDbtagType_RATMAP },
     { "RFAM", CDbtag::eDbtagType_RFAM },
     { "RGD", CDbtag::eDbtagType_RGD },
+    { "RNAcentral", CDbtag::eDbtagType_RNAcentral },
     { "RZPD", CDbtag::eDbtagType_RZPD },
     { "RiceGenes", CDbtag::eDbtagType_RiceGenes },
     { "SEED", CDbtag::eDbtagType_SEED },
@@ -694,6 +695,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_BEI, "https://www.beiresources.org/Catalog/animalViruses/" },
     { CDbtag::eDbtagType_Araport, "https://www.araport.org/locus/" },
     { CDbtag::eDbtagType_VGNC, "http://vertebrate.genenames.org/data/gene-symbol-report/#!/vgnc_id/VGNC:" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
