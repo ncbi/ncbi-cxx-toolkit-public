@@ -3961,8 +3961,8 @@ vector<string> CSeqFeatData::GetRecombinationClassList()
 {
     vector<string> choices;
 
-    choices.push_back("meiotic_recombination");
-    choices.push_back("mitotic_recombination");
+    choices.push_back("meiotic");
+    choices.push_back("mitotic");
     choices.push_back("non_allelic_homologous");
     choices.push_back("chromosome_breakpoint");
 
