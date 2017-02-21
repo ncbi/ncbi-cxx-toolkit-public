@@ -3899,22 +3899,18 @@ void CFeatureItem::x_AddRecombinationClassQual(
     if (recombination_class.empty()) {
         return;
     }
-    
-    if ( ! check_qual_syntax || s_IsValidRecombinationClass( recombination_class ) ) {
-        x_AddQual( eFQ_recombination_class, new CFlatStringQVal(recombination_class));
+ 
+     string recomb_class = recombination_class;
+ 
+    if (NStr::StartsWith(recomb_class, "other:")) {
+        NStr::TrimPrefixInPlace(recomb_class, "other:");
+        NStr::TruncateSpacesInPlace(recomb_class);
+    }
+    if ( s_IsValidRecombinationClass( recomb_class ) ) {
+        x_AddQual( eFQ_recombination_class, new CFlatStringQVal(recomb_class));
     } else {
         x_AddQual( eFQ_recombination_class, new CFlatStringQVal("other"));
-        string tmp = recombination_class;
-        /*
-        if (NStr::StartsWith(tmp, "other:")) {
-            NStr::TrimPrefixInPlace(tmp, "other:");
-            NStr::TruncateSpacesInPlace(tmp);
-        }
-        */
-        if (NStr::StartsWith(tmp, "other")) {
-          return;
-        }
-        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(tmp));
+        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(recomb_class));
     }
 }
 
@@ -3929,22 +3925,18 @@ void CFeatureItem::x_AddRegulatoryClassQual(
     if (regulatory_class.empty()) {
         return;
     }
-    
-    if ( ! check_qual_syntax || s_IsValidRegulatoryClass( regulatory_class ) ) {
-        x_AddQual( eFQ_regulatory_class, new CFlatStringQVal(regulatory_class));
+
+     string reg_class = regulatory_class;
+ 
+    if (NStr::StartsWith(reg_class, "other:")) {
+        NStr::TrimPrefixInPlace(reg_class, "other:");
+        NStr::TruncateSpacesInPlace(reg_class);
+    }
+    if ( s_IsValidRegulatoryClass( reg_class ) ) {
+        x_AddQual( eFQ_regulatory_class, new CFlatStringQVal(reg_class));
     } else {
         x_AddQual( eFQ_regulatory_class, new CFlatStringQVal("other"));
-        string tmp = regulatory_class;
-        /*
-        if (NStr::StartsWith(tmp, "other:")) {
-            NStr::TrimPrefixInPlace(tmp, "other:");
-            NStr::TruncateSpacesInPlace(tmp);
-        }
-        */
-        if (NStr::StartsWith(tmp, "other")) {
-          return;
-        }
-        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(tmp));
+        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(reg_class));
     }
 }
 
