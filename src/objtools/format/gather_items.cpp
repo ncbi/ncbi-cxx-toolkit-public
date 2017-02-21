@@ -2656,17 +2656,25 @@ bool s_CoincidingGapFeatures(
     return false;
 }
 
-CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat, 
+
+static CMappedFeat s_GetMappedFeat(CRef<CSeq_feat>& feat, CScope& scope) 
+{
+    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+    temp_annot->SetData().SetFtable().push_back(feat);
+    scope.AddSeq_annot(*temp_annot);
+    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*feat);
+    return CMappedFeat(sfh);
+}
+
+
+static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat, 
         const CRange<TSeqPos>& range, 
         CScope& scope)
 {
     CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(feat, range);
-    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
-    temp_annot->SetData().SetFtable().push_back(trimmed_feat);
-    scope.AddSeq_annot(*temp_annot);
-    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*trimmed_feat);
-    return CMappedFeat(sfh);
+    return s_GetMappedFeat(trimmed_feat, scope);
 }
+
 
 
 void CFlatGatherer::x_GatherFeaturesOnLocation
@@ -2684,7 +2692,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CRef<CSeq_loc_Mapper> slice_mapper; // NULL (unset) if no slicing
     if( ! ctx.GetLocation().IsWhole() ) {
         // build slice_mapper for mapping locations
-
         CSeq_id seq_id;
         seq_id.Assign( *ctx.GetHandle().GetSeqId() );
 
@@ -2774,10 +2781,17 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
             CConstRef<CSeq_loc> feat_loc(&it->GetLocation()); 
 
+
+
             // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+            CMappedFeat mapped_feat;
             if( slice_mapper )
             {
-                feat_loc.Reset( slice_mapper->Map( *feat_loc ) );
+                CRange<TSeqPos> range = loc.GetTotalRange();
+                const CSeq_feat& feat = it->GetMappedFeature();
+                CScope& scope = ctx.GetScope();
+                mapped_feat = s_GetTrimmedMappedFeat(feat, range, scope);
+                feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
             }
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
@@ -2818,26 +2832,10 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 }
             }
 
-            if ( slice_mapper ) {
-                CRange<TSeqPos> range = loc.GetTotalRange();
-                const CSeq_feat& feat = it->GetMappedFeature();
-                CScope& scope = ctx.GetScope();
-                CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
-
-                const bool partial_start = trimmed_feat.GetLocation().IsPartialStart(eExtreme_Biological);
-                const bool partial_stop = trimmed_feat.GetLocation().IsPartialStop(eExtreme_Biological);
-
-                CRef<CSeq_loc> new_loc(new CSeq_loc());
-                new_loc->Assign(*feat_loc);
-                new_loc->SetPartialStart(partial_start, eExtreme_Biological);
-                new_loc->SetPartialStop(partial_stop, eExtreme_Biological);
-                item.Reset( x_NewFeatureItem(trimmed_feat, ctx, new_loc, m_Feat_Tree) );
-
-            } else {
-                // format feature
-                item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
+            if (!slice_mapper) {
+                mapped_feat = *it;
             }
-
+            item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
             // Add more features depending on user preferences
@@ -3272,9 +3270,6 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
         if ( curr.IsSetData() ) {
             const CSeqFeatData& currData = curr.GetData();
-            if ( currData.Which() == CSeqFeatData::e_Prot ) {
-                // s_FixIntervalProtToCds( feat, curr_loc, loc ); // This line appears to be unnecessary, but I'm leaving it in in case further testing reveals I'm wrong.
-            }
         }
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
@@ -3295,36 +3290,24 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
         CConstRef<IFlatItem> item;
         // for command-line args "-from" and "-to"
+        CMappedFeat mapped_feat;
         if( slice_mapper && loc ) {
-            loc = slice_mapper->Map( *loc );
+            CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
+            loc = slice_mapper->Map( *CFeatTrim::Apply(*loc, range) );
             if( loc->IsNull() ) {
                 continue;
             }
-
-            CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
             const CSeq_feat& feat = it->GetMappedFeature();
             CScope& scope = ctx.GetScope();
-            CMappedFeat trimmed_feat = s_GetTrimmedMappedFeat(feat, range, scope);
-
-            const bool partial_start = trimmed_feat.GetLocation().IsPartialStart(eExtreme_Biological);
-            const bool partial_stop = trimmed_feat.GetLocation().IsPartialStop(eExtreme_Biological);
-
-            CRef<CSeq_loc> new_loc(new CSeq_loc());
-            new_loc->Assign(*loc);
-            new_loc->SetPartialStart(partial_start, eExtreme_Biological);
-            new_loc->SetPartialStop(partial_stop, eExtreme_Biological);
-
-
-            item = ConstRef( x_NewFeatureItem(trimmed_feat, ctx, 
-                               s_NormalizeNullsBetween(new_loc), m_Feat_Tree,
-                               CFeatureItem::eMapped_from_prot,
-                               cdsFeatureItem ) );
+            mapped_feat = s_GetTrimmedMappedFeat(feat, range, scope);
         } else {
-            item = ConstRef( x_NewFeatureItem(*it, ctx, 
-                               s_NormalizeNullsBetween(loc), m_Feat_Tree,
-                               CFeatureItem::eMapped_from_prot,
-                               cdsFeatureItem ) );
+            mapped_feat = *it; 
         }
+
+        item = ConstRef( x_NewFeatureItem(*it, ctx, 
+            s_NormalizeNullsBetween(loc), m_Feat_Tree,
+            CFeatureItem::eMapped_from_prot,
+            cdsFeatureItem ) );
 
         *m_ItemOS << item;
 
