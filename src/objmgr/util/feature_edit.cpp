@@ -66,6 +66,22 @@ struct SOutsideRange
 };
 
 
+CRef<CSeq_loc> CFeatTrim::Apply(const CSeq_loc& loc, 
+    const CRange<TSeqPos>& range)
+{
+    const bool set_partial = true;
+    const TSeqPos from = range.GetFrom();
+    const TSeqPos to = range.GetTo();
+
+    CRef<CSeq_loc> trimmed_loc;
+    trimmed_loc->Assign(loc);
+
+    x_TrimLocation(from, to, set_partial, trimmed_loc);
+
+    return trimmed_loc;
+}
+
+
 CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
     const CRange<TSeqPos>& range)
 {

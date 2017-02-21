@@ -51,6 +51,9 @@ public:
         const CSeq_feat& feat,
         const CRange<TSeqPos>& range);
 
+    static CRef<CSeq_loc> Apply(
+        const CSeq_loc& loc,
+        const CRange<TSeqPos>& range);
 
 private:
     static void x_TrimLocation(TSeqPos from, TSeqPos to, 
