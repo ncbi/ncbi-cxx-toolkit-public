@@ -1173,6 +1173,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                         case CSeq_id_Base::e_Tpg:
                             // Genbank allows merging only if it's the old-style 1 + 5 accessions
                             if( NULL != seqId->GetTextseq_Id() &&
+                                seqId->GetTextseq_Id()->IsSetAccession() &&
                                 seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
                                     m_CanSourcePubsBeFused = true;
                             }
