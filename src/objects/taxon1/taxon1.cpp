@@ -611,10 +611,10 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
             return retc;
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Searchname" );
-            return 0;
+            return -2;
         }
     }
-    return 0;
+    return -2;
 }
 
 //----------------------------------------------
@@ -782,8 +782,7 @@ CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
 		if( m_plCache->LookupAndInsert( pNode->GetTaxId(), &pData ) ) {
 		    if( !pData )
 			return -1;
-		    if( !(pData->IsSetIs_species_level() &&
-			  pData->GetIs_species_level()) ) {
+		    if( !(pData->IsSetIs_species_level() && pData->GetIs_species_level()) ) {
 			if( pResult ) {
 			    return pResult->GetTaxId();
 			} else {
@@ -819,15 +818,16 @@ CTaxon1::GetGenus(TTaxId id_tax)
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && m_plCache->InitRanks() ) {
-        TTaxId genus_rank(m_plCache->GetGenusRank());
+        TTaxRank genus_rank(m_plCache->GetGenusRank());
         while( !pNode->IsRoot() ) {
-            TTaxId rank( pNode->GetRank() );
+            TTaxRank rank( pNode->GetRank() );
             if( rank == genus_rank )
                 return pNode->GetTaxId();
             if( (rank > 0) && (rank < genus_rank))
                 return 0;
             pNode = pNode->GetParent();
         }
+        return 0;
     }
     return -1;
 }
@@ -859,7 +859,8 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
                 return 0;
             pNode = pNode->GetParent();
         }
-    }
+        return 0; 
+   }
     return -1;
 }
 
