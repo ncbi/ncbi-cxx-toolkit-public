@@ -1377,14 +1377,23 @@ int CTL_Connection::x_IntHandler(void* param)
         CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
         CTL_CmdBase* cmd = ctl_conn->m_ActiveCmd;
         ++ctl_conn->m_TotalTimeout;
+        unsigned int max_timeout = 0;
+        if (ctl_conn->IsOpen()) {
+            max_timeout = ctl_conn->m_OrigTimeout;
+            if (max_timeout == 0) {
+                max_timeout = ctl_conn->GetTimeout();
+            }
+        } else {
+            max_timeout = ctl_conn->GetCTLibContext().GetLoginTimeout();
+        }
         if (ctl_conn->m_AsyncCancelRequested) {
             result = TDS_INT_CANCEL;
         } else if (ctl_conn->m_OrigIntHandler != NULL) {
             LOCK.Release();
             result = (*ctl_conn->m_OrigIntHandler)(param);
-        } else if (ctl_conn->m_OrigTimeout > 0
+        } else if (max_timeout > 0
                    &&  ctl_conn->m_TotalTimeout - ctl_conn->m_BaseTimeout
-                       >= ctl_conn->m_OrigTimeout) {
+                       >= max_timeout) {
             result = TDS_INT_CANCEL;
         }
         if (result == TDS_INT_CANCEL) {

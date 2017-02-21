@@ -1285,7 +1285,11 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 msg->msgnumber);
 
             PassException(ex, server_name, user_name, msg->severity, params);
-            return CS_SUCCEED;
+            if (ctl_conn != NULL && ctl_conn->IsOpen()) {
+                return CS_SUCCEED;
+            } else {
+                return CS_FAIL;
+            }
         } else if ((msg->msgnumber & 0xFF) == 25) {
             CDB_TruncateEx ex(
                 DIAG_COMPILE_INFO,
