@@ -611,7 +611,7 @@ BPPT-ESC	c	BPPT Ethanol-Single Cell Protein-Fructose Syrup Technical Unit
 BPS	s	California Department of Food and Agriculture		
 BPU	s	Eoetvoes Lorand University, Department of Plant Taxonomy and Ecology		
 BR<BEL>	s	Botanic Garden Meise		
-BR<BRA>	c	Embrapa Agrobiology Diazothrophic Microbial Culture Collection		
+BR<BRA>	c	Johanna Dobereiner Biological Resouce Center (CRB-JD)		
 BRA	s	Slovak National Museum, Botany Department		
 BRAD	s	University of Bradford, Biology Department		
 BRC	s	Botanical Record Club		

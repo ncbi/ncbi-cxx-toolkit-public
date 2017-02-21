@@ -644,7 +644,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BPS\ts\tCalifornia Department of Food and Agriculture\t\t",
 "BPU\ts\tEoetvoes Lorand University, Department of Plant Taxonomy and Ecology\t\t",
 "BR<BEL>\ts\tBotanic Garden Meise\t\t",
-"BR<BRA>\tc\tEmbrapa Agrobiology Diazothrophic Microbial Culture Collection\t\t",
+"BR<BRA>\tc\tJohanna Dobereiner Biological Resouce Center (CRB-JD)\t\t",
 "BRA\ts\tSlovak National Museum, Botany Department\t\t",
 "BRAD\ts\tUniversity of Bradford, Biology Department\t\t",
 "BRC\ts\tBotanical Record Club\t\t",
