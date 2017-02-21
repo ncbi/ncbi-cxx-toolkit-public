@@ -188,6 +188,11 @@ TSeqPos CFastaDeflineReader::ParseRange(
     TSeqPos& end, 
     ILineErrorListener * pMessageListener)
 {
+
+    if (s.empty()) {
+        return 0;
+    }
+
     bool    on_start = false;
     bool    negative = false;
     TSeqPos mult = 1;
@@ -232,6 +237,10 @@ bool CFastaDeflineReader::ParseIDs(
     list<CRef<CSeq_id>>& ids, 
     ILineErrorListener* pMessageListener) 
 {
+    if (s.empty()) {
+        return false;
+    }
+
     // if user wants all ids to be purely local, no problem
     if( info.fBaseFlags & CReaderBase::fAllIdsAsLocal )
     {
