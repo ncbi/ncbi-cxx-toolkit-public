@@ -646,7 +646,15 @@ void CTaxFormat::x_InitBlastNameTaxInfo(STaxInfo &taxInfo)
     
     if(m_TaxClient && m_TaxClient->IsAlive()) {
         m_TaxClient->GetBlastName(taxInfo.taxid,taxInfo.blastName);
-        taxInfo.blNameTaxid = m_TaxClient->SearchTaxIdByName(taxInfo.blastName,CTaxon1::eSearch_Exact);        
+        list< CRef< CTaxon1_name > > nameList;
+        taxInfo.blNameTaxid = m_TaxClient->SearchTaxIdByName(taxInfo.blastName,CTaxon1::eSearch_Exact,&nameList);        
+        if(taxInfo.blNameTaxid == -1) //more than one name in the list
+        ITERATE(list < CRef< CTaxon1_name > >, iter, nameList) {                           
+            ncbi::TIntId blastNameCde = m_TaxClient->GetNameClassId("blast name");
+            if((*iter)->CanGetTaxid() && (*iter)->IsSetCde() && (*iter)->GetCde() == blastNameCde) {
+                taxInfo.blNameTaxid = (*iter)->GetTaxid();
+            }
+        }
     }
 }
 
