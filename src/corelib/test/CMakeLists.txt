@@ -53,4 +53,4 @@ include(CMakeLists.test_message_mt.app.txt)
 include(CMakeLists.test_ncbicntr.app.txt)
 include(CMakeLists.test_trial.app.txt)
 include(CMakeLists.test_strdbl.app.txt)
-
+include(CMakeLists.test_ncbi_url.app.txt)
