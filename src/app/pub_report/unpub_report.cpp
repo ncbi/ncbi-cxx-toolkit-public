@@ -143,7 +143,7 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
 class CPubData
 {
 public:
-    typedef vector<string> TSeqIds;
+    typedef set<string> TSeqIds;
 
     CPubData() :
         m_year(0),
@@ -228,15 +228,7 @@ public:
 
     void AddSeqId(const string& seq_id)
     {
-        auto it = find(m_seq_ids.begin(), m_seq_ids.end(), seq_id);
-        if (it == m_seq_ids.end()) {
-            m_seq_ids.push_back(seq_id);
-        }
-    }
-
-    void SortSeqIds()
-    {
-        sort(m_seq_ids.begin(), m_seq_ids.end());
+        m_seq_ids.insert(seq_id);
     }
 
     void SetVolume(const string& volume)
@@ -610,8 +602,7 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const CPubData::TSeqI
 
             if ((*xref)->IsSetCit()) {
 
-                // seq_ids should be sorted by this time
-                if (binary_search(seq_ids.begin(), seq_ids.end(), (*xref)->GetCit())) {
+                if (seq_ids.find((*xref)->GetCit()) != seq_ids.end()) {
                     return true;
                 }
             }
@@ -657,26 +648,34 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     // authors
     ITERATE(list<string>, author, data.GetAuthors()) {
 
-        string cur_author;
-        size_t space = author->find(' ');
-        if (space == string::npos) {
-            cur_author = *author;
-        }
-        else {
-            cur_author = author->substr(0, space);
-        }
+        list<CTempString> names;
+        NStr::Split(*author, " ", names, NStr::fSplit_MergeDelims);
+        if (!names.empty()) {
 
-        if (!query.empty())
-            query += '+';
-        query += cur_author;
+            if (!query.empty())
+                query += '+';
+            query += names.front();
+        }
     }
 
     vector<int> uids;
-    if (query.size() <= 2048) { // TODO: find out why exception is thrown if query.size() > some value (4096?)
+
+    try {
+       
         hydra_search.DoHydraSearch(query, uids, 
                                    CHydraSearch::ESearch::ePMC, 
-                                   CHydraSearch::EScoreCutoff::eCutoff_High);
+                                   CHydraSearch::EScoreCutoff::eCutoff_Medium);
+
+        if (uids.empty()) {
+            hydra_search.DoHydraSearch(query, uids,
+                                       CHydraSearch::ESearch::ePUBMED,
+                                       CHydraSearch::EScoreCutoff::eCutoff_Medium);
+        }
     }
+    catch (CException& e) {
+        ERR_POST(Warning << "failed while Hydra search: " << e);
+    }
+
 
     int pmid = 0;
     if (uids.size() == 1) {
@@ -730,7 +729,7 @@ static int ConvertPMCtoPMID(int pmc)
 
 static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
 {
-
+    // TODO: look at MLA search
     string term = NStr::Join(data.GetSeqIds(), " AND ");
 
     int pmid = 0;
@@ -763,8 +762,17 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
         uids.push_back(pmid);
         pmid = 0;
 
-        eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
-        asnPubMedEntry >> MSerial_AsnText >> pubmed_entry;
+        try {
+            eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
+
+            if (asnPubMedEntry) {
+                asnPubMedEntry >> MSerial_AsnText >> pubmed_entry;
+            }
+        }
+        catch (CException& e) {
+            // skips exceptions those may occur during Fetch(...) and '>>'
+            ERR_POST(Warning << "failed while fetching data from PubMed: " << e);
+        }
 
         if (pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit()) {
 
@@ -1026,8 +1034,6 @@ void CUnpublishedReport::CompleteReport()
 {
     m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
     NON_CONST_ITERATE(TPubs, pub, m_pubs) {
-
-        (*pub)->SortSeqIds();
 
         CPubmed_entry pubmed_entry;
         int pmid = RetrievePMid(GetEUtils(), GetHydraSearch(), **pub, pubmed_entry);
