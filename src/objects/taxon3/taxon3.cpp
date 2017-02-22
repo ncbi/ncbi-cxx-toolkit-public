@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbienv.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/misc/error_codes.hpp>
@@ -83,14 +84,23 @@ CTaxon3::Init(const STimeout* timeout, unsigned reconnect_attempts)
     }
 
     m_nReconnectAttempts = reconnect_attempts;
-    m_pchService = "TaxService3";
+    
+    CNcbiEnvironment env;
+    bool bFound = false;
+    
+    m_pchService = env.Get("NI_SERVICE_NAME_TAXON3", &bFound).c_str();
+    if( !bFound ) {
+	m_pchService = env.Get("NI_TAXON3_SERVICE_NAME", &bFound).c_str();
+	if( !bFound ) {
+	    m_pchService = "TaxService3";
+	}
+    }
 
 #ifdef USE_TEXT_ASN
-			m_eDataFormat = eSerial_AsnText;
+    m_eDataFormat = eSerial_AsnText;
 #else
-			m_eDataFormat = eSerial_AsnBinary;
+    m_eDataFormat = eSerial_AsnBinary;
 #endif
-
 }
 
 
@@ -106,9 +116,8 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
 			auto_ptr<CObjectOStream> pOut;
 			auto_ptr<CObjectIStream> pIn;
 			auto_ptr<CConn_ServiceStream>
-				pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
-												 0, 0, m_timeout) );
-
+			    pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
+							     0, 0, m_timeout) );
 
 			pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
 			pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
