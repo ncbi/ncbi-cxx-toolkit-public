@@ -970,7 +970,7 @@ void CBedReader::xSetFeatureLocationRna(
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
         pInterval->SetFrom(blockStarts[i]);
-        pInterval->SetTo(blockStarts[i] + blockSizes[i]);
+        pInterval->SetTo(blockStarts[i] + blockSizes[i] -1);
         pInterval->SetStrand(strand);
         if (negative)
             blocks.insert(blocks.begin(), pInterval);
