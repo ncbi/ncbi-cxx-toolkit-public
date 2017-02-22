@@ -617,7 +617,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 #    elif defined(NCBI_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
         goto out;
-#    elif defined(_MT)
+#    elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
 #    endif /*NCBI_POSIX_THREADS*/
 #  endif /*HAVE_LIBGCRYPT*/
