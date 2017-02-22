@@ -1074,8 +1074,7 @@ void CObjectIStream::ReadClassMember(const CObjectInfo::CMemberIterator& member)
 {
     const CMemberInfo* memberInfo = member.GetMemberInfo();
     TObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
-    ReadObject(memberInfo->GetMemberPtr(classPtr),
-               memberInfo->GetTypeInfo());
+    memberInfo->DefaultReadMember(*this, classPtr);
 }
 
 void CObjectIStream::ReadChoiceVariant(const CObjectInfoCV& object)

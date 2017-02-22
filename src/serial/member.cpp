@@ -1196,9 +1196,6 @@ void CMemberInfoFunctions::ReadHookedMember(CObjectIStream& stream,
         TMemberIndex index = memberInfo->GetIndex();
         CObjectInfo::CMemberIterator member(object, index);
         _ASSERT(member.Valid());
-        if (memberInfo->HaveSetFlag()) {
-            memberInfo->UpdateSetFlagYes(classPtr);
-        }
         hook->ReadClassMember(stream, member);
     }
     else
