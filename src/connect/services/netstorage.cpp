@@ -56,7 +56,7 @@ private:
 // Ignore empty writes to iostream (CXX-8936)
 struct SIoStreamEmbeddedStreamReaderWriter : SEmbeddedStreamReaderWriter
 {
-    using SEmbeddedStreamReaderWriter::SEmbeddedStreamReaderWriter;
+    SIoStreamEmbeddedStreamReaderWriter(SNetStorageObjectImpl* impl) : SEmbeddedStreamReaderWriter(impl) {}
 
     ERW_Result Write(const void* buf, size_t count, size_t* written) override
     {
