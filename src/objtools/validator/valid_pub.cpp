@@ -372,20 +372,6 @@ void CValidError_imp::ValidatePubArticle
                 "Journal title missing", obj, ctx);
         }
 
-        bool in_press = false;
-        if (jour.CanGetImp()) {
-            const CImprint& imp = jour.GetImp();
-
-            if (imp.CanGetPrepub()) {
-                in_press = imp.GetPrepub() == CImprint::ePrepub_in_press;
-            }
-        }
-
-        if (uid == 0) {
-            ValidatePubArticleNoPMID(art, obj, ctx);
-        }
-
-
         if ( !has_iso_jta && !is_electronic_journal ) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
