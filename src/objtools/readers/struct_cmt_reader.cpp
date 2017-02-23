@@ -35,9 +35,11 @@
 
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <util/line_reader.hpp>
 #include <objtools/readers/struct_cmt_reader.hpp>
@@ -56,17 +58,23 @@ CStructuredCommentsReader::~CStructuredCommentsReader()
 {
 }
 
-CUser_object* CStructuredCommentsReader::FindStructuredComment(CSeq_descr& descr)
+const string& CStructuredCommentsReader::TStructComment::GetPrefix(const objects::CSeqdesc& desc)
 {
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, descr.Set())
+    if (!desc.IsUser())
+        return kEmptyStr;
+
+    auto& user = desc.GetUser();
+    if (user.IsSetType() && user.GetType().IsStr() && NStr::Equal(user.GetType().GetStr(), "StructuredComment"))
     {
-        if ((**it).IsUser())
+        if (user.IsSetData() && user.GetData().size() > 0)
         {
-            if ((**it).GetUser().GetType().GetStr().compare("StructuredComment") == 0)
-                return &((**it).SetUser());
+            const auto& fdata = *user.GetData().front();
+            if (fdata.IsSetLabel() && fdata.GetLabel().IsStr() && NStr::Equal(fdata.GetLabel().GetStr(), "StructuredCommentPrefix"))
+                return fdata.GetData().GetStr();
         }
     }
-    return 0;
+
+    return kEmptyStr;
 }
 
 objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects::CUser_object* user_obj, TStructComment& cmt, const CTempString& name, const CTempString& value)

@@ -46,6 +46,7 @@ public:
    typedef struct {
        CRef<objects::CSeq_id> m_id;
        vector<CRef<objects::CSeqdesc> > m_descs;
+       static const string& GetPrefix(const objects::CSeqdesc&);
    } TStructComment;
 
    template<typename _container>
@@ -78,15 +79,29 @@ public:
                _BuildStructuredComment(cmt, cols, values);
            }
        }
+       return cont.size();
    }
 
-   objects::CUser_object* FindStructuredComment(objects::CSeq_descr& descr);
-#if 0
-   size_t LoadCommentsVector(ILineReader& reader, vector<TStructComment>& cont)
+   size_t LoadCommentsByRow(ILineReader& reader, TStructComment& cmt)
    {
-       LoadComments(reader, cont);
+       objects::CUser_object* user = 0;
+
+       while (!reader.AtEOF())
+       {
+           reader.ReadLine();
+           // First line is a collumn definitions
+           CTempString current = reader.GetCurrentLine();
+           if (current.empty())
+               continue;
+
+           CTempString commentname, comment;
+           NStr::SplitInTwo(current, "\t", commentname, comment);
+
+           // create new user object
+           user = _AddStructuredComment(user, cmt, commentname, comment);
+       }
+       return cmt.m_descs.size();
    }
-#endif
 
 
 protected:

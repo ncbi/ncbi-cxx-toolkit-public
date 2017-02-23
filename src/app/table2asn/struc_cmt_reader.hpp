@@ -57,12 +57,7 @@ public:
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
 
 private:
-   void AddStructuredCommentToAllObjects(objects::CSeq_entry& container,
-       const string& name, const string& value);
-
-   objects::CUser_object* AddStructuredComment(objects::CUser_object* obj,
-       objects::CSeq_descr& container,
-       const CTempString& name, const CTempString& value);
+    void _AddStructuredComments(objects::CSeq_entry& entry, const TStructComment& comments);
 
    objects::ILineErrorListener* m_logger;
 };

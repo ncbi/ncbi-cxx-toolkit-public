@@ -48,42 +48,12 @@
 
 #include "struc_cmt_reader.hpp"
 #include "table2asn_context.hpp"
+#include "visitors.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-namespace
-{
-
-    CBioseq* FindObjectById(CSeq_entry& entry, const CSeq_id& id)
-    {
-        switch (entry.Which())
-        {
-        case CSeq_entry::e_Seq:
-            ITERATE(CBioseq::TId, it, entry.GetSeq().GetId())
-            {
-                if ((**it).Compare(id) == CSeq_id::e_YES)
-                   return &entry.SetSeq();
-            }
-            break;
-        case CSeq_entry::e_Set:
-            NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
-            {
-                CBioseq* obj = FindObjectById(**it, id);
-                if (obj)
-                    return obj;
-            }
-            break;
-        default:
-            break;
-        }
-        return 0;
-    }
-
-
-}
 
 CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(ILineErrorListener* logger) : CStructuredCommentsReader(logger)
 {
@@ -93,102 +63,76 @@ CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 {
 }
 
-CUser_object* CTable2AsnStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const CTempString& name, const CTempString& value)
+void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& entry)
 {
-    if (name.compare("StructuredCommentPrefix") == 0)
-        user_obj = 0; // reset user obj so to create a new one
-    else
-        if (user_obj == 0)
-            user_obj = FindStructuredComment(descr);
-
-    if (user_obj == 0)
-    {
-        // create new user object
-        CRef<CSeqdesc> user_desc(new CSeqdesc);
-        user_obj = &(user_desc->SetUser());
-        user_obj->SetType().SetStr("StructuredComment");
-        descr.Set().push_back(user_desc);
-    }
-    user_obj->AddField(name, value);
-    // create next user object
-    if (name.compare("StructuredCommentSuffix") == 0)
-        return 0;
-    else
-        return user_obj;
+    list<TStructComment> comments;
+    LoadComments(reader, comments);
+    for (const TStructComment& comment: comments)
+       _AddStructuredComments(entry, comment);
 }
 
-
-void CTable2AsnStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& entry, const string& name, const string& value)
+void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_entry& entry, const TStructComment& comments)
 {
-    if (entry.IsSet())
+    VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
     {
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        if (comments.m_id.NotEmpty())
         {
-            AddStructuredComment(0, (**it).SetDescr(), name, value);
-        }
-    }
-    else
-        AddStructuredComment(0, entry.SetSeq().SetDescr(), name, value);
-
-}
-
-void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& container)
-{
-    vector<string> cols;
-
-    _LoadHeaderLine(reader, cols);
-
-    while (!reader.AtEOF())
-    {
-        reader.ReadLine();
-        // First line is a collumn definitions
-        CTempString current = reader.GetCurrentLine();
-
-        if (!current.empty())
-        {
-            // Each line except first is a set of values, first collumn is a sequence id
-            vector<CTempString> values;
-            NStr::Split(current, "\t", values);
-            if (!values[0].empty())
+            bool matched = false;
+            for (const auto& id : bioseq.GetId())
             {
-                // try to find destination sequence
-                CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
-                CBioseq* dest = FindObjectById(container, id);
-                if (dest)
+                if (id->Compare(*comments.m_id) == CSeq_id::e_YES) 
                 {
-                    CUser_object* obj = FindStructuredComment(dest->SetDescr());
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched)
+                return;
+        }
 
-                    for (size_t i=1; i<values.size(); i++)
+        for (const auto& new_desc : comments.m_descs)
+        {
+           bool append_desc = true;
+
+            const string& index = TStructComment::GetPrefix(*new_desc);
+            if (index.empty())
+                continue;
+
+            for (auto& desc : bioseq.SetDescr().Set()) // push to create setdescr
+            {
+                if (!desc->IsUser()) continue;
+
+                auto& user = desc->SetUser();
+
+                const string& other = TStructComment::GetPrefix(*desc);
+                if (other.empty())
+                    continue;
+
+                if (NStr::Equal(other, index))
+                {
+                    append_desc = false;
+                    // Merge
+                    for (const auto& field : new_desc->GetUser().GetData())
                     {
-                        if (!values[i].empty())
-                        {
-                            // apply structure comment
-                            obj = AddStructuredComment(obj, dest->SetDescr(), cols[i], values[i]);
-                        }
+                        user.SetFieldRef(field->GetLabel().GetStr())->SetValue(field->GetData().GetStr());
                     }
                 }
             }
-        }
-    }
-}
-
-void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& container)
-{
-    while (!reader.AtEOF())
-    {
-        reader.ReadLine();
-        string current = reader.GetCurrentLine();
-        if (!current.empty())
-        {
-            size_t index = current.find('\t');
-            if (index != string::npos )
+            if (append_desc)
             {
-                string commentname = current.substr(0, index);
-                current.erase(current.begin(), current.begin()+index+1);
-                AddStructuredCommentToAllObjects(container, commentname, current);
+                CRef<CSeqdesc> add_desc(new CSeqdesc);
+                add_desc->Assign(*new_desc);
+                bioseq.SetDescr().Set().push_back(add_desc);
             }
         }
-    }
+    });
+}
+
+void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& entry)
+{
+    TStructComment comments;
+    LoadCommentsByRow(reader, comments);
+    _AddStructuredComments(entry, comments);
 }
 
 END_NCBI_SCOPE
