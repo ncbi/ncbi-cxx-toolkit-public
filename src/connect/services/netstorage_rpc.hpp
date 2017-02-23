@@ -77,8 +77,6 @@ struct SNetStorageRPC : public SNetStorageImpl
         return flags ? flags : m_DefaultFlags;
     }
 
-    void StartWriting();
-
 private:
     TNetStorageFlags m_DefaultFlags;
 

@@ -196,6 +196,22 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
     virtual bool Exists()                                              { A(); return m_Current->Exists(); }
     virtual ENetStorageRemoveResult Remove()                           { A(); return m_Current->Remove(); }
 
+    template <class TState, class... TArgs>
+    static SNetStorageObjectImpl* Create(TArgs&&... args)
+    {
+        return CreateAndStart<TState>([](TState&){}, std::forward<TArgs>(args)...);
+    }
+
+    template <class TState, class TStarter, class... TArgs>
+    static SNetStorageObjectImpl* CreateAndStart(TStarter starter, TArgs&&... args)
+    {
+        unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
+        auto state = new TState(*fsm, std::forward<TArgs>(args)...);
+        fsm->SetStartState(state);
+        starter(*state);
+        return fsm.release();
+    }
+
 private:
     void A() const { _ASSERT(m_Current); }
     void EnterState(INetStorageObjectState* state);

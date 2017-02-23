@@ -279,21 +279,4 @@ void SNetStorage_NetCacheBlob::Abort()
 {
 }
 
-SNetStorageObjectImpl* CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
-{
-    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-    auto* state = new SNetStorage_NetCacheBlob(*fsm, nc_api, kEmptyStr);
-    fsm->SetStartState(state);
-    state->StartWriting();
-    return fsm.release();
-}
-
-SNetStorageObjectImpl* CDNCNetStorage::Open(CNetCacheAPI::TInstance nc_api, const string& blob_key)
-{
-    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-    auto state = new SNetStorage_NetCacheBlob(*fsm, nc_api, blob_key);
-    fsm->SetStartState(state);
-    return fsm.release();
-}
-
 END_NCBI_SCOPE

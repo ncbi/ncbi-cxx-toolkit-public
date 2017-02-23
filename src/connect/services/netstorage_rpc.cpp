@@ -835,7 +835,8 @@ SNetStorageObjectImpl* SNetStorageRPC::Create(TNetStorageFlags flags)
 
     case TConfig::eNetCache:
         x_InitNetCacheAPI();
-        return CDNCNetStorage::Create(m_NetCacheAPI);
+        return SNetStorageObjectImpl::CreateAndStart<SNetStorage_NetCacheBlob>(
+                [&](SNetStorage_NetCacheBlob& s) { s.StartWriting(); }, m_NetCacheAPI, kEmptyStr);
 
     default: /* TConfig::eNoCreate */
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
@@ -852,12 +853,9 @@ SNetStorageObjectImpl* SNetStorageRPC::Create(TNetStorageFlags flags)
     const auto object_loc = reply.GetString("ObjectLoc");
     auto service = GetServiceIfLocator(object_loc);
     auto builder = [this](const string& r, const string& l) { return MkObjectRequest(r, l); };
+    auto starter = [&](SNetStorageObjectRPC& s) { s.StartWriting(request, conn); };
 
-    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-    auto* state = new SNetStorageObjectRPC(*fsm, this, service, builder, object_loc);
-    fsm->SetStartState(state);
-    state->StartWriting(request, conn);
-    return fsm.release();
+    return SNetStorageObjectImpl::CreateAndStart<SNetStorageObjectRPC>(starter, this, service, builder, object_loc);
 }
 
 SNetStorageObjectImpl* SNetStorageRPC::Open(const string& object_loc)
@@ -865,15 +863,12 @@ SNetStorageObjectImpl* SNetStorageRPC::Open(const string& object_loc)
     auto service = GetServiceIfLocator(object_loc);
 
     if (!service) {
-        return CDNCNetStorage::Open(m_NetCacheAPI, object_loc);
+        return SNetStorageObjectImpl::Create<SNetStorage_NetCacheBlob>(m_NetCacheAPI, object_loc);
     }
 
     auto builder = [this](const string& r, const string& l) { return MkObjectRequest(r, l); };
 
-    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-    auto state = new SNetStorageObjectRPC(*fsm, this, service, builder, object_loc);
-    fsm->SetStartState(state);
-    return fsm.release();
+    return SNetStorageObjectImpl::Create<SNetStorageObjectRPC>(this, service, builder, object_loc);
 }
 
 string SNetStorageObjectRPC::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
@@ -1389,14 +1384,12 @@ SNetStorageByKeyRPC::SNetStorageByKeyRPC(const TConfig& config,
 SNetStorageObjectImpl* SNetStorageByKeyRPC::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
+    auto& rpc = m_NetStorageRPC;
     auto builder = [=](const string& r, const string&) {
-        return m_NetStorageRPC->MkObjectRequest(r, unique_key, flags);
+        return rpc->MkObjectRequest(r, unique_key, flags);
     };
 
-    unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-    auto state = new SNetStorageObjectRPC(*fsm, m_NetStorageRPC, m_NetStorageRPC->m_Service, builder, kEmptyStr);
-    fsm->SetStartState(state);
-    return fsm.release();
+    return SNetStorageObjectImpl::Create<SNetStorageObjectRPC>(rpc, rpc->m_Service, builder, kEmptyStr);
 }
 
 struct SNetStorageAdminImpl : public CObject
