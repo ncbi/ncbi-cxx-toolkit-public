@@ -59,6 +59,24 @@ public:
 };
 
 
+// CID2ProcessorContext is used to hold connection specific state
+class NCBI_ID2_EXPORT CID2ProcessorContext : public CObject
+{
+public:
+    CID2ProcessorContext(void);
+    virtual ~CID2ProcessorContext(void);
+};
+
+
+// CID2ProcessorPacketContext is used to hold request packet specific state
+class NCBI_ID2_EXPORT CID2ProcessorPacketContext : public CObject
+{
+public:
+    CID2ProcessorPacketContext(void);
+    virtual ~CID2ProcessorPacketContext(void);
+};
+
+
 class NCBI_ID2_EXPORT CID2Processor : public CObject
 {
 public:
@@ -67,11 +85,40 @@ public:
     
     typedef vector<CRef<CID2_Reply> > TReplies;
 
+    // old interface, optional
+
     virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet,
-                                         CID2ProcessorResolver* resolver = 0) = 0;
+                                         CID2ProcessorResolver* resolver = 0);
     virtual bool ProcessRequest(TReplies& replies,
                                 CID2_Request& request,
-                                CID2ProcessorResolver *resolver = 0) = 0;
+                                CID2ProcessorResolver* resolver = 0);
+
+    // new interface, optional
+    
+    // return true if the processer need to process replies from server via ProcessReply()
+    virtual bool NeedToProcessReplies(void) const;
+
+    // CID2ProcessorParameters holds parameters that control behavior of the processor.
+    // The same CID2Processor object can be used for all connections, but each connection should
+    // have its own CID2ProcessorContext object.
+    // It's allowed to return null if there's no connection specific data
+    virtual CRef<CID2ProcessorContext> CreateContext(void);
+
+    // If CID2Processor needs to process replies too, it should create
+    // CID2ProcessorPacketContext object for later use in ProcessReply().
+    // Otherwise it's allowed to return null.
+    // The context pointer should be the same returned from CreateContext() call.
+    virtual CRef<CID2ProcessorPacketContext> ProcessPacket(CID2ProcessorContext* context,
+                                                           CID2_Request_Packet& packet,
+                                                           TReplies& replies);
+    
+    // Process reply from server
+    // The context pointer should be the same returned from CreateContext() call.
+    // The packet_context pointer should be the same returned from ProcessPacket() call.
+    virtual void ProcessReply(CID2ProcessorContext* context,
+                              CID2ProcessorPacketContext* packet_context,
+                              CID2_Reply& reply,
+                              TReplies& replies);
 };
 
 

@@ -65,6 +65,26 @@ CID2ProcessorResolver::~CID2ProcessorResolver(void)
 }
 
 
+CID2ProcessorContext::CID2ProcessorContext(void)
+{
+}
+
+
+CID2ProcessorContext::~CID2ProcessorContext(void)
+{
+}
+
+
+CID2ProcessorPacketContext::CID2ProcessorPacketContext(void)
+{
+}
+
+
+CID2ProcessorPacketContext::~CID2ProcessorPacketContext(void)
+{
+}
+
+
 CID2Processor::CID2Processor(void)
 {
 }
@@ -72,6 +92,55 @@ CID2Processor::CID2Processor(void)
 
 CID2Processor::~CID2Processor(void)
 {
+}
+
+
+CID2Processor::TReplies
+CID2Processor::ProcessSomeRequests(CID2_Request_Packet& /*packet*/,
+                                   CID2ProcessorResolver* /*resolver*/)
+{
+    return TReplies();
+}
+
+
+bool CID2Processor::ProcessRequest(TReplies& /*replies*/,
+                                   CID2_Request& /*request*/,
+                                   CID2ProcessorResolver* /*resolver*/)
+{
+    return false;
+}
+
+
+bool CID2Processor::NeedToProcessReplies(void) const
+{
+    return false;
+}
+
+
+CRef<CID2ProcessorContext> CID2Processor::CreateContext(void)
+{
+    return null;
+}
+
+
+CRef<CID2ProcessorPacketContext>
+CID2Processor::ProcessPacket(CID2ProcessorContext* /*context*/,
+                             CID2_Request_Packet& packet,
+                             TReplies& replies)
+{
+    // redirect to old interface by default
+    replies = move(ProcessSomeRequests(packet));
+    return null;
+}
+
+
+void CID2Processor::ProcessReply(CID2ProcessorContext* /*context*/,
+                                 CID2ProcessorPacketContext* /*packet_context*/,
+                                 CID2_Reply& reply,
+                                 TReplies& replies)
+{
+    // copy the original reply by default
+    replies.push_back(Ref(&reply));
 }
 
 
