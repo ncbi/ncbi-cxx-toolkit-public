@@ -990,7 +990,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                     TIds::const_iterator it1 = lower_bound(seq_ids.begin(),
                                                            seq_ids.end(),
                                                            it2->first);
-                    if ( it1 != seq_ids.end() ) {
+                    if ( it1 != seq_ids.end() && *it1 == it2->first ) {
                         CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
                         if ( !binfo.HasBioseq() ) {
                             // try to resolve again
