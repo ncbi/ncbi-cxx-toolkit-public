@@ -80,7 +80,7 @@ const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
 
 string CDirectNetStorageObject::FileTrack_Path()
 {
-    return Impl<CObj>(m_Impl)->FileTrack_Path();
+    return m_Impl->FileTrack_Path();
 }
 
 
