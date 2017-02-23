@@ -40,7 +40,7 @@ class CID2Processor;
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CID2Processor,  "id2proc", 1, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CID2Processor,  "id2proc", 2, 0, 0);
 
 template<>
 class NCBI_ID2_EXPORT CDllResolver_Getter<objects::CID2Processor>
