@@ -1,5 +1,5 @@
-APP = test_jsonwrapp11
-SRC = test_jsonwrapp11
+APP = test_jsonwrapp10
+SRC = test_jsonwrapp10
 
 CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = test_boost xncbi

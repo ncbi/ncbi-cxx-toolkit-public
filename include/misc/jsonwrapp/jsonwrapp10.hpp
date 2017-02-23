@@ -1,5 +1,5 @@
-#ifndef MISC_JSONWRAPP___JSONWRAPP11__HPP
-#define MISC_JSONWRAPP___JSONWRAPP11__HPP
+#ifndef MISC_JSONWRAPP___JSONWRAPP10__HPP
+#define MISC_JSONWRAPP___JSONWRAPP10__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -30,9 +30,7 @@
 *
 *   File Description:
 *       Wrapper API to work with JSON data
-*       JSON format:   http://www.ietf.org/rfc/rfc7159.txt
-*       JSON pointer:  https://tools.ietf.org/html/rfc6901
-*       JSON schema:   http://json-schema.org/documentation.html
+*       http://www.ietf.org/rfc/rfc4627.txt
 *
 *   Internally, data of any type is stored in a universal container.
 *   We define different API classes here for the sake of semantics only.
@@ -60,10 +58,6 @@
 *
 *   Sequential access parsing event listener:
 *       CJson_WalkHandler -- define your own class derived from this one.
-* 
-*   Internally, the wrapper uses RapidJSON library, v1.1.0
-*       https://github.com/miloyip/rapidjson
-*   Please, DO NOT USE RapidJSON directly, as this may change.
 */
 
 #include <corelib/ncbistr.hpp>
@@ -71,15 +65,12 @@
 #include <iterator>
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
-#include "rapidjson11/rapidjson.h"
-#include "rapidjson11/document.h"
-#include "rapidjson11/prettywriter.h"
-#include "rapidjson11/filereadstream.h"
-#include "rapidjson11/istreamwrapper.h"
-#include "rapidjson11/filewritestream.h"
-#include "rapidjson11/ostreamwrapper.h"
-#include "rapidjson11/error/en.h"
-#include "rapidjson11/schema.h"
+#include "rapidjson10/rapidjson.h"
+#include "rapidjson10/document.h"
+#include "rapidjson10/prettywriter.h"
+#include "rapidjson10/filereadstream.h"
+#include "rapidjson10/filewritestream.h"
+#include "rapidjson10/error/en.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -148,10 +139,6 @@ public:
     /// Get JSON object contents of the node
     CJson_ConstObject GetObject(void) const;
 
-    /// Get node by JSON pointer
-    /// If node not found, method throws std::out_of_range exception
-    CJson_ConstNode  GetNode(const TKeyType& value);
-
     /// Convert the contents of the node into string
     std::string ToString(TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                          unsigned int indent_char_count = 4) const;
@@ -213,10 +200,6 @@ public:
 
     /// Get JSON object contents of the node
     CJson_Object SetObject(void);
-
-    /// Get node by JSON pointer
-    /// If node not found, it will be created
-    CJson_Node  SetNode(const TKeyType& value);
 
     ~CJson_Node(void) {}
     /// Note: this does not copy Node data
@@ -950,10 +933,6 @@ public:
     /// Return current stack path as string
     /// For example:  "/root/obj2/arr[3]"
     CJson_Node::TKeyType GetCurrentJPath(void) const;
-
-    /// Return current stack path as JSON pointer
-    /// For example:  "/root/obj2/arr/3"
-    CJson_Node::TKeyType GetCurrentJPointer(void) const;
     
     /// Convert data, starting at the current parsing position, into
     /// a document object.
@@ -996,7 +975,6 @@ private:
 /// CJson_Document
 ///
 /// Serializable, copyable container for JSON data.
-class CJson_Schema;
 
 class CJson_Document : public CJson_Node
 {
@@ -1030,15 +1008,6 @@ public:
         return Read(in);
     }
 
-    /// Read JSON data from a stream, validating against schema
-    bool Read(std::istream& in, CJson_Schema& schema);
-
-    /// Read JSON data from a file, validating against schema
-    bool Read(const std::string& filename, CJson_Schema& schema) {
-        std::ifstream in(filename.c_str());
-	return Read(in, schema);
-    }
-
     /// Test if the most recent read was successful
     bool ReadSucceeded(void);
 
@@ -1046,27 +1015,14 @@ public:
     std::string GetReadError(void) const;
 
     /// Write JSON data into a stream
-    bool Write(std::ostream& out, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+    void Write(std::ostream& out, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                                   unsigned int indent_char_count = 4) const;
 
     /// Write JSON data into a file
-    bool Write(const std::string& filename, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+    void Write(const std::string& filename, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                                             unsigned int indent_char_count = 4) const {
         std::ofstream out(filename.c_str());
-        return Write(out, flags, indent_char_count);
-    }
-
-    /// Write JSON data into a stream, validating against schema
-    bool Write(std::ostream& out, CJson_Schema& schema,
-               TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
-               unsigned int indent_char_count = 4) const;
-
-    /// Write JSON data into a file, validating against schema
-    bool Write(const std::string& filename, CJson_Schema& schema,
-               TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
-               unsigned int indent_char_count = 4) const {
-        std::ofstream out(filename.c_str());
-        return Write(out, schema, flags, indent_char_count);
+        Write(out, flags, indent_char_count);
     }
 
     /// Traverse the document contents
@@ -1078,46 +1034,6 @@ public:
 
 private:
     _DocImpl m_DocImpl;
-    friend class CJson_Schema;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CJson_Schema
-///
-
-class CJson_Schema
-{
-public:
-    /// Construct JSON schema from JSON document
-    CJson_Schema(const CJson_Document& schema);
-
-    /// Validate JSON document against schema
-    bool Validate(const CJson_Document& v);
-    /// Validate JSON data from a stream
-    bool Validate(std::istream& in);
-    /// Validate JSON data from a file
-    bool Validate(const std::string& filename) {
-        std::ifstream in(filename.c_str());
-	return Validate(in);
-    }
-
-    /// Return result of the most recent validation
-    bool IsValid(void) const;
-
-    /// Return name of the property which does not conform to schema
-    std::string GetInvalidValueProperty(void) const;
-    /// Return nonconforming value URI in the document
-    std::string GetInvalidValueDocumentUri(void) const;
-    /// Return nonconforming value URI in schema
-    std::string GetInvalidValueSchemaUri(void) const;
-    /// Return validation error
-    std::string GetValidationError() const;
-
-private:
-    rapidjson::SchemaDocument   m_SchemaDocument;
-    rapidjson::SchemaValidator  m_SchemaValidator;
-    friend class CJson_Document;
 };
 
 
@@ -1227,19 +1143,6 @@ inline bool CJson_ConstNode::IsArray(void) const {
 inline bool CJson_ConstNode::IsObject(void) const {
     return m_Impl->IsObject();
 }
-inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) {
-    _Impl *v = rapidjson::Pointer(value.c_str()).Get(*m_Impl);
-    if (!v) {
-        throw std::out_of_range("node not found");
-    }
-    return CJson_ConstNode(v);
-}
-
-inline CJson_Node CJson_Node::SetNode(const TKeyType& value) {
-    rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
-    return CJson_Node(&rapidjson::Pointer(value.c_str()).Create(*m_Impl, *a));
-}
-
 inline CJson_Node& CJson_Node::SetNull(void) {
     m_Impl->SetNull( ); return *this;
 }
@@ -1283,8 +1186,8 @@ inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
 inline std::string
 CJson_ConstNode::ToString(TJson_Write_Flags flags, unsigned int indent_char_count) const {
     ncbi::CNcbiOstrstream os;
-    rapidjson::OStreamWrapper ofs(os);
-    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
+    rapidjson::CppOStream ofs(os);
+    rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
     } else {
@@ -2234,23 +2137,6 @@ CJson_WalkHandler::GetCurrentJPath(void) const {
     return path;
 }
 
-inline CJson_Node::TKeyType CJson_WalkHandler::GetCurrentJPointer(void) const {
-    std::vector<bool>::const_iterator t = m_object_type.begin();
-    std::vector<bool>::const_iterator te = m_object_type.end();
-    std::vector<size_t>::const_iterator i = m_index.begin();
-    std::vector<CJson_Node::TKeyType>::const_iterator n = m_name.begin();
-    CJson_Node::TKeyType path;
-    for ( ++t, ++i, ++n; t != te; ++t, ++i, ++n) {
-        path += JSONWRAPP_TO_NCBIUTF8("/");
-        if (*t) {
-            path += JSONWRAPP_TO_NCBIUTF8(*n);
-        } else  if (*i != size_t(-1)) {
-            path += JSONWRAPP_TO_NCBIUTF8(ncbi::NStr::NumericToString(*i));
-        }
-    }
-    return path;
-}
-
 inline bool CJson_WalkHandler::Read(CJson_Document& doc) {
     bool b = false;
     if (m_in) {
@@ -2303,24 +2189,9 @@ inline bool CJson_Document::ParseString(const CJson_ConstNode::TStringType& v) {
 }
 
 inline bool CJson_Document::Read(std::istream& in) {
-    rapidjson::IStreamWrapper ifs(in);
+    rapidjson::CppIStream ifs(in);
     m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(ifs);
     return  !m_DocImpl.HasParseError();
-}
-
-inline bool CJson_Document::Read(std::istream& in, CJson_Schema& schema) {
-    rapidjson::IStreamWrapper ifs(in);
-    rapidjson::SchemaValidatingReader<
-        rapidjson::kParseStopWhenDoneFlag,
-        rapidjson::IStreamWrapper,
-        rapidjson::UTF8<> > rdr(ifs, schema.m_SchemaDocument);
-    m_DocImpl.Populate(rdr);
-    m_DocImpl.SetParseResult(rdr.GetParseResult());
-    schema.m_SchemaValidator.SetValidationError(rdr);
-    if (m_DocImpl.HasParseError()) {
-        m_DocImpl.SetNull();
-    }
-    return !m_DocImpl.HasParseError();
 }
 
 inline bool CJson_Document::ReadSucceeded(void) {
@@ -2330,10 +2201,10 @@ inline std::string CJson_Document::GetReadError() const {
     return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
 }
 
-inline bool CJson_Document::Write(std::ostream& out,
+inline void CJson_Document::Write(std::ostream& out,
     TJson_Write_Flags flags, unsigned int indent_char_count) const {
-    rapidjson::OStreamWrapper ofs(out);
-    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
+    rapidjson::CppOStream ofs(out);
+    rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
     } else {
@@ -2342,27 +2213,7 @@ inline bool CJson_Document::Write(std::ostream& out,
     if (flags & fJson_Write_NoEol) {
         writer.SetWriteEol(false);
     }
-    return m_DocImpl.Accept(writer);
-}
-
-inline bool CJson_Document::Write(std::ostream& out, CJson_Schema& schema,
-            TJson_Write_Flags flags, unsigned int indent_char_count) const
-{
-    rapidjson::OStreamWrapper ofs(out);
-    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(ofs);
-    if (flags & fJson_Write_NoIndentation) {
-        writer.SetIndent(' ', 0);
-    } else {
-        writer.SetIndent( (flags & fJson_Write_IndentWithTab) ? '\t' : ' ', indent_char_count);
-    }
-    if (flags & fJson_Write_NoEol) {
-        writer.SetWriteEol(false);
-    }
-    rapidjson::GenericSchemaValidator< rapidjson::SchemaDocument,
-        rapidjson::PrettyWriter<rapidjson::OStreamWrapper> > validator(schema.m_SchemaDocument, writer);
-    bool res = m_DocImpl.Accept(validator);
-    schema.m_SchemaValidator.SetValidationError(validator);
-    return res;
+    m_DocImpl.Accept(writer);
 }
 
 inline void CJson_Document::Walk(CJson_WalkHandler& walk) const {
@@ -2373,61 +2224,13 @@ inline void CJson_Document::Walk(CJson_WalkHandler& walk) const {
 inline void CJson_Document::Walk(std::istream& in,
                                  CJson_WalkHandler& walk) {
     walk.x_SetSource(&in);
-    rapidjson::IStreamWrapper ifs(in);
+    rapidjson::CppIStream ifs(in);
     rapidjson::Reader rdr;
     rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
 }
 
-// --------------------------------------------------------------------------
-// CJson_Schema methods
-
-
-inline CJson_Schema::CJson_Schema(const CJson_Document& schema)
-    : m_SchemaDocument(schema.m_DocImpl),
-      m_SchemaValidator( m_SchemaDocument)
-{
-}
-
-inline bool CJson_Schema::Validate(const CJson_Document& v) {
-    m_SchemaValidator.Reset();
-    return v.m_DocImpl.Accept(m_SchemaValidator);
-}
-inline bool CJson_Schema::Validate(std::istream& in) {
-    m_SchemaValidator.Reset();
-    rapidjson::IStreamWrapper ifs(in);
-    rapidjson::Reader rdr;
-    return rdr.Parse(ifs, m_SchemaValidator);
-}
-
-inline bool CJson_Schema::IsValid(void) const {
-    return m_SchemaValidator.IsValid();
-}
-inline std::string CJson_Schema::GetInvalidValueProperty(void) const {
-    return m_SchemaValidator.GetInvalidSchemaKeyword();
-}
-inline std::string CJson_Schema::GetInvalidValueDocumentUri(void) const {
-    rapidjson::StringBuffer sb;
-    m_SchemaValidator.GetInvalidDocumentPointer().StringifyUriFragment(sb);
-    return sb.GetString();
-}
-inline std::string CJson_Schema::GetInvalidValueSchemaUri(void) const {
-    rapidjson::StringBuffer sb;
-    m_SchemaValidator.GetInvalidSchemaPointer().StringifyUriFragment(sb);
-    return sb.GetString();
-}
-inline std::string CJson_Schema::GetValidationError() const {
-    std::string res;
-    if (!IsValid()) {
-        res = "Invalid property \'"     + GetInvalidValueProperty()    +
-                "\' of value \'"        + GetInvalidValueDocumentUri() +
-                "\',  see schema at \'" + GetInvalidValueSchemaUri()   +
-                "\'";
-    }
-    return res;
-}
-
 END_NCBI_SCOPE
 
-#endif  /* MISC_JSONWRAPP___JSONWRAPP11__HPP */
+#endif  /* MISC_JSONWRAPP___JSONWRAPP10__HPP */
 
 
