@@ -844,7 +844,7 @@ public:
     ILocation* Next();
     bool InProgress() const;
     void Restart();
-    const TObjLoc& Locator();
+    TObjLoc& Locator();
     void SetLocator();
     ISelector* Clone(TNetStorageFlags);
     const SContext& GetContext() const;
@@ -1012,7 +1012,7 @@ void CSelector::Restart()
 }
 
 
-const TObjLoc& CSelector::Locator()
+TObjLoc& CSelector::Locator()
 {
     return m_ObjectLoc;
 }

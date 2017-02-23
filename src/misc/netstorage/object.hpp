@@ -75,7 +75,7 @@ public:
     string FileTrack_Path();
     TUserInfo GetUserInfo();
 
-    const TObjLoc& Locator() const;
+    CNetStorageObjectLoc& Locator();
     string Relocate(TNetStorageFlags, TNetStorageProgressCb cb);
     void CancelRelocate();
     bool Exists();

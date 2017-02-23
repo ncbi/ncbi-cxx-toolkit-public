@@ -582,7 +582,10 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override { return m_Context.locator; }
+    string GetLoc() const override                                       { return m_Context.locator; }
+    pair<string, string> GetUserInfo()                                   { return m_Context.GetUserInfo(); }
+    CNetStorageObjectLoc& Locator() override                             { return m_Context.Locator(); }
+    void CancelRelocate() override                                       { return m_Context.CancelRelocate(); }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;
@@ -606,6 +609,21 @@ private:
     SIState m_IState;
     SOState m_OState;
 };
+
+pair<string, string> SNetStorageObjectContext::GetUserInfo()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::GetUserInfo()");
+}
+
+CNetStorageObjectLoc& SNetStorageObjectContext::Locator()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::Locator()");
+}
+
+void SNetStorageObjectContext::CancelRelocate()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::CancelRelocate()");
+}
 
 void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
 {

@@ -91,7 +91,10 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override { return m_Context.locator; }
+    string GetLoc() const override                                       { return m_Context.locator; }
+    pair<string, string> GetUserInfo()                                   { return m_Context.GetUserInfo(); }
+    CNetStorageObjectLoc& Locator() override                             { return m_Context.Locator(); }
+    void CancelRelocate() override                                       { return m_Context.CancelRelocate(); }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;

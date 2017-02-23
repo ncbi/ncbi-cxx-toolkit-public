@@ -45,6 +45,9 @@ struct SNetStorageObjectContext
     string locator;
 
     SNetStorageObjectContext(const string& l) : locator(l) {}
+    pair<string, string> GetUserInfo();
+    CNetStorageObjectLoc& Locator();
+    void CancelRelocate();
 };
 
 struct SNetStorageRPC : public SNetStorageImpl

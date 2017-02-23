@@ -57,6 +57,9 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReade
     virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void SetExpiration(const CTimeout& ttl) = 0;
     virtual string FileTrack_Path() = 0;
+    virtual pair<string, string> GetUserInfo() = 0;
+    virtual CNetStorageObjectLoc& Locator() = 0;
+    virtual void CancelRelocate() = 0;
 
 protected:
     void EnterState(INetStorageObjectState* state);
@@ -109,7 +112,10 @@ struct SNetStorageObjectChildState : TBase
 {
     SNetStorageObjectChildState(SNetStorageObjectImpl& fsm, TContext& context) : TBase(fsm), m_Context(context) {}
 
-    string GetLoc() const final { return m_Context.locator; }
+    string GetLoc() const final                                       { return m_Context.locator; }
+    pair<string, string> GetUserInfo() final                          { return m_Context.GetUserInfo(); }
+    CNetStorageObjectLoc& Locator() final                             { return m_Context.Locator(); }
+    void CancelRelocate() final                                       { return m_Context.CancelRelocate(); }
 
 protected:
     TContext& m_Context;
@@ -177,6 +183,9 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
     virtual CNetStorageObjectInfo GetInfo()                            { A(); return m_Current->GetInfo(); }
     virtual void SetExpiration(const CTimeout& ttl)                    { A(); return m_Current->SetExpiration(ttl); }
     virtual string FileTrack_Path()                                    { A(); return m_Current->FileTrack_Path(); }
+    virtual pair<string, string> GetUserInfo()                         { A(); return m_Current->GetUserInfo(); }
+    virtual CNetStorageObjectLoc& Locator()                            { A(); return m_Current->Locator(); }
+    virtual void CancelRelocate()                                      { A(); return m_Current->CancelRelocate(); }
 
 private:
     void A() const { _ASSERT(m_Current); }

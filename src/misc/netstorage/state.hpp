@@ -120,7 +120,7 @@ public:
     virtual ILocation* Next() = 0;
     virtual bool InProgress() const = 0;
     virtual void Restart() = 0;
-    virtual const TObjLoc& Locator() = 0;
+    virtual TObjLoc& Locator() = 0;
     virtual void SetLocator() = 0;
 
     virtual ISelector* Clone(TNetStorageFlags) = 0;

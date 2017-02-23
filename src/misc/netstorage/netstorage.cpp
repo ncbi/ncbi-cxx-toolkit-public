@@ -62,7 +62,7 @@ string CDirectNetStorageObject::Relocate(TNetStorageFlags flags,
 
 void CDirectNetStorageObject::CancelRelocate()
 {
-    return Impl<CObj>(m_Impl)->CancelRelocate();
+    return m_Impl->CancelRelocate();
 }
 
 
@@ -74,7 +74,7 @@ ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 
 const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
 {
-    return Impl<CObj>(m_Impl)->Locator();
+    return m_Impl->Locator();
 }
 
 
@@ -86,7 +86,7 @@ string CDirectNetStorageObject::FileTrack_Path()
 
 pair<string, string> CDirectNetStorageObject::GetUserInfo()
 {
-    return Impl<CObj>(m_Impl)->GetUserInfo();
+    return m_Impl->GetUserInfo();
 }
 
 

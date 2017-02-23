@@ -155,7 +155,7 @@ ILocation::TUserInfo CObj::GetUserInfo()
 }
 
 
-const TObjLoc& CObj::Locator() const
+CNetStorageObjectLoc& CObj::Locator()
 {
     return m_Selector->Locator();
 }
