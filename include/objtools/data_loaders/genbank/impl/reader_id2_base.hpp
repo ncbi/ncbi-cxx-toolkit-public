@@ -65,11 +65,13 @@ class CID2S_Reply_Get_Chunk;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
 class CID2Processor;
+class CID2ProcessorContext;
 class CId2ReaderProcessorResolver;
 class CReaderRequestResult;
 struct SId2LoadedSet;
 struct SId2PacketInfo;
 struct SId2PacketReplies;
+struct SId2ProcessingState;
 
 class NCBI_XREADER_EXPORT CId2ReaderBase : public CReader
 {
@@ -257,7 +259,11 @@ protected:
     void x_DumpReply(TConn conn, const char* source, CID2_Reply& reply);
     void x_SetContextData(CID2_Request& request);
     void x_SendToConnection(TConn conn, CID2_Request_Packet& packet);
+    void x_SendToConnection(CReaderRequestResult& result,
+                            SId2ProcessingState& state,
+                            CID2_Request_Packet& packet);
     CRef<CID2_Reply> x_ReceiveFromConnection(TConn conn);
+    CRef<CID2_Reply> x_ReceiveFromConnection(SId2ProcessingState& state, size_t pos = 0);
     void x_AssignSerialNumbers(SId2PacketInfo& info,
                                CID2_Request_Packet& packet);
     int x_GetReplyIndex(CReaderRequestResult& result,
@@ -286,7 +292,11 @@ private:
     typedef int TAvoidRequests;
     TAvoidRequests m_AvoidRequest;
 
-    typedef vector< CRef<CID2Processor> > TProcessors;
+    struct SProcessorInfo {
+        CRef<CID2Processor> processor;
+        CRef<CID2ProcessorContext> context;
+    };
+    typedef vector<SProcessorInfo> TProcessors;
     TProcessors m_Processors;
 };
 

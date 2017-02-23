@@ -182,24 +182,26 @@ CId2ReaderBase::CId2ReaderBase(void)
     NStr::Split(proc_param, ";", proc_list);
     ITERATE ( vector<string>, it, proc_list ) {
         const string& proc_name = *it;
-        CRef<CID2Processor> proc;
+        SProcessorInfo info;
         try {
-            proc = CPluginManagerGetter<CID2Processor>::Get()->
+            info.processor = CPluginManagerGetter<CID2Processor>::Get()->
                 CreateInstance(proc_name);
         }
         catch ( CException& exc ) {
             ERR_POST_X(15, "CId2ReaderBase: "
                        "cannot load ID2 processor "<<proc_name<<": "<<exc);
         }
-        if ( proc ) {
+        if ( info.processor ) {
+            info.context = info.processor->CreateContext();
             // send init request
             CID2_Request req;
             req.SetRequest().SetInit();
             x_SetContextData(req);
             CID2_Request_Packet packet;
             packet.Set().push_back(Ref(&req));
-            proc->ProcessSomeRequests(packet);
-            m_Processors.push_back(proc);
+            CID2Processor::TReplies replies;
+            info.processor->ProcessPacket(info.context, packet, replies);
+            m_Processors.push_back(info);
         }
     }
 }
@@ -1583,8 +1585,26 @@ struct SId2PacketInfo
 
 struct SId2PacketReplies
 {
-    typedef vector< CRef<CID2_Reply> > TRequestReplies;
+    typedef CID2Processor::TReplies TRequestReplies;
     vector<TRequestReplies> replies;
+};
+
+
+struct SId2ProcessorStage
+{
+    CRef<CID2ProcessorPacketContext> packet_context;
+    CID2Processor::TReplies replies; // in backward order to use pop_back()
+};
+
+
+struct SId2ProcessingState
+{
+    vector<SId2ProcessorStage> stages;
+    unique_ptr<CReaderAllocatedConnection> conn;
+
+    CReader::TConn GetConn() const {
+        return conn? *conn: 0;
+    }
 };
 
 
@@ -1827,6 +1847,57 @@ CRef<CID2_Reply> CId2ReaderBase::x_ReceiveFromConnection(TConn conn)
 }
 
 
+void CId2ReaderBase::x_SendToConnection(CReaderRequestResult& result,
+                                        SId2ProcessingState& state,
+                                        CID2_Request_Packet& packet)
+{
+    size_t proc_count = m_Processors.size();
+    state.stages.reserve(proc_count);
+    for ( size_t i = 0; i < proc_count; ++i ) {
+        if ( packet.Get().empty() ) {
+            return;
+        }
+        state.stages.resize(i+1);
+        SProcessorInfo& info = m_Processors[i];
+        SId2ProcessorStage& stage = state.stages[i];
+        stage.packet_context = info.processor->ProcessPacket(info.context, packet, stage.replies);
+        reverse(stage.replies.begin(), stage.replies.end());
+    }
+    if ( packet.Get().empty() ) {
+        return;
+    }
+    state.conn.reset(new CConn(result, this));
+    x_SendToConnection(state.GetConn(), packet);
+}
+
+
+CRef<CID2_Reply> CId2ReaderBase::x_ReceiveFromConnection(SId2ProcessingState& state, size_t pos)
+{
+    if ( pos < state.stages.size() ) {
+        SId2ProcessorStage& stage = state.stages[pos];
+        SProcessorInfo& info = m_Processors[pos];
+        while ( stage.replies.empty() ) {
+            CRef<CID2_Reply> reply = x_ReceiveFromConnection(state, pos+1);
+            info.processor->ProcessReply(info.context, stage.packet_context, *reply, stage.replies);
+            reverse(stage.replies.begin(), stage.replies.end());
+        }
+        CRef<CID2_Reply> reply = stage.replies.back();
+        stage.replies.pop_back();
+        return move(reply);
+    }
+    else {
+        _ASSERT(state.conn);
+        for (;;) {
+            CRef<CID2_Reply> reply = x_ReceiveFromConnection(state.GetConn());
+            if ( reply->IsSetDiscard() ) {
+                continue;
+            }
+            return move(reply);
+        }
+    }
+}
+
+
 void CId2ReaderBase::x_AssignSerialNumbers(SId2PacketInfo& info,
                                            CID2_Request_Packet& packet)
 {
@@ -1981,50 +2052,17 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     x_AssignSerialNumbers(packet_info, packet);
 
     vector<SId2LoadedSet> loaded_sets(packet_info.request_count);
-    
-    NON_CONST_ITERATE ( TProcessors, it, m_Processors ) {
-        if ( result.IsInProcessor() ) {
-            break;
-        }
-        CId2ReaderProcessorResolver resolver(*this, result);
-        CID2Processor::TReplies replies =
-            (*it)->ProcessSomeRequests(packet, &resolver);
-        ITERATE ( CID2Processor::TReplies, it, replies ) {
-            CRef<CID2_Reply> reply = *it;
-            x_DumpReply(0, " from processor", *reply);
-            int num = x_GetReplyIndex(result, 0, packet_info, *reply);
-            if ( num >= 0 ) {
-                try {
-                    x_ProcessReply(result, loaded_sets[num], *reply);
-                }
-                catch ( CException& exc ) {
-                    NCBI_RETHROW(exc, CLoaderException, eOtherError,
-                                 "CId2ReaderBase: failed to process reply");
-                }
-                if ( x_DoneReply(packet_info, num, *reply) ) {
-                    x_UpdateLoadedSet(result, loaded_sets[num], sel);
-                }
-            }
-        }
-        if ( size_t(packet_info.remaining_count) != packet.Get().size() ) {
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "CId2ReaderBase: processor discrepancy");
-        }
-        if ( packet_info.remaining_count == 0 ) {
-            return;
-        }
-    }
 
-    CConn conn(result, this);
+    SId2ProcessingState state;
     CRef<CID2_Reply> reply;
     try {
         // send request
-        x_SendToConnection(conn, packet);
+        x_SendToConnection(result, state, packet);
 
         // process replies
         while ( packet_info.remaining_count > 0 ) {
-            reply = x_ReceiveFromConnection(conn);
-            int num = x_GetReplyIndex(result, &conn, packet_info, *reply);
+            reply = x_ReceiveFromConnection(state);
+            int num = x_GetReplyIndex(result, state.conn.get(), packet_info, *reply);
             if ( num >= 0 ) {
                 try {
                     x_ProcessReply(result, loaded_sets[num], *reply);
@@ -2032,7 +2070,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                 catch ( CException& exc ) {
                     NCBI_RETHROW(exc, CLoaderException, eOtherError,
                                  "CId2ReaderBase: failed to process reply: "+
-                                 x_ConnDescription(conn));
+                                 x_ConnDescription(state.GetConn()));
                 }
                 if ( x_DoneReply(packet_info, num, *reply) ) {
                     x_UpdateLoadedSet(result, loaded_sets[num], sel);
@@ -2040,13 +2078,13 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             }
             reply.Reset();
         }
-        if ( conn.IsAllocated() ) {
-            x_EndOfPacket(conn);
+        if ( state.conn ) {
+            x_EndOfPacket(*state.conn);
         }
     }
     catch ( exception& /*rethrown*/ ) {
         if ( GetDebugLevel() >= eTraceError ) {
-            CDebugPrinter s(conn, "CId2Reader");
+            CDebugPrinter s(state.GetConn(), "CId2Reader");
             s << "Error processing request: " << MSerial_AsnText << packet;
             if ( reply &&
                  (reply->IsSetSerial_number() ||
@@ -2063,7 +2101,9 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
         }
         throw;
     }
-    conn.Release();
+    if ( state.conn ) {
+        state.conn->Release();
+    }
 }
 
 
@@ -2118,6 +2158,11 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
                          annot_info.IsSetGraph() && ainfos.size() == 1 &&
                          !ExtractZoomLevel(annot_info.GetName(), 0, 0) ) {
                         // graphs are suppozed to be zoom tracks
+                        if ( GetDebugLevel() >= eTraceASN ) {
+                            CDebugPrinter s(0, "CId2Reader");
+                            s << "Adding zoom tracks for "
+                              << MSerial_AsnText << annot_info;
+                        }
                         for ( int zoom = 10; zoom < 1000000; zoom *= 10 ) {
                             CRef<CID2S_Seq_annot_Info> zoom_info;
                             zoom_info = SerialClone(annot_info);
@@ -2207,7 +2252,7 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        error_flags |= fError_no_data;
+        error_flags |= fError_restricted;
         break;
     case CID2_Error::eSeverity_unsupported_command:
         m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
@@ -2257,7 +2302,7 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        error_flags |= fError_no_data;
+        error_flags |= fError_restricted;
         if ( error.IsSetMessage() ) {
             sx_CheckErrorFlag(error, error_flags,
                               fError_withdrawn, "withdrawn");
