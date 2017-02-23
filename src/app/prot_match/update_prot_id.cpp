@@ -138,7 +138,7 @@ void CProtIdUpdateApp::Init(void)
             "Path to file containing protein match table",
             CArgDescriptions::eInputFile);
 
-    arg_desc->AddOptionalKey("o", "OutputFile",
+    arg_desc->AddKey("o", "OutputFile",
             "Path to Seq-entry output file. Defaults to stdout",
             CArgDescriptions::eOutputFile);
 
