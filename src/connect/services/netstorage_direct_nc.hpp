@@ -105,6 +105,7 @@ public:
 
     string FileTrack_Path() override;
     bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
 
     void StartWriting();
 

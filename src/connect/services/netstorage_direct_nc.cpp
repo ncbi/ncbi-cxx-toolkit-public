@@ -226,6 +226,19 @@ bool SNetStorage_NetCacheBlob::Exists()
     return false; // Not reached
 }
 
+ENetStorageRemoveResult SNetStorage_NetCacheBlob::Remove()
+{
+    try {
+        if (m_NetCacheAPI.HasBlob(m_Context.locator)) {
+            m_NetCacheAPI.Remove(m_Context.locator);
+            return eNSTRR_Removed;
+        }
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + m_Context.locator)
+
+    return eNSTRR_NotFound;
+}
+
 void SNetStorage_NetCacheBlob::SIState::Close()
 {
     ExitState();

@@ -68,7 +68,7 @@ void CDirectNetStorageObject::CancelRelocate()
 
 ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 {
-    return Impl<CObj>(m_Impl)->Remove();
+    return m_Impl->Remove();
 }
 
 

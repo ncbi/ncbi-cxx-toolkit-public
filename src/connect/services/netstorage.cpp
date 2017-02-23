@@ -147,6 +147,11 @@ bool SNetStorageObjectIoState::Exists()
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Exists() while reading/writing " << GetLoc());
 }
 
+ENetStorageRemoveResult SNetStorageObjectIoState::Remove()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Remove() while reading/writing " << GetLoc());
+}
+
 string SNetStorageObjectIoMode::ToString(EApi api, EMth mth)
 {
     if (api == eBuffer) {

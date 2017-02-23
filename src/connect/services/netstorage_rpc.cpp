@@ -596,6 +596,7 @@ public:
 
     string FileTrack_Path() override;
     bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
 
     void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
     ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
@@ -927,25 +928,17 @@ bool SNetStorageObjectRPC::Exists()
 
 ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 {
-    auto service = GetServiceIfLocator(object_loc);
+    auto object = Open(object_loc);
+    return object->Remove();
+}
 
-    if (!service) {
-        try {
-            if (m_NetCacheAPI.HasBlob(object_loc)) {
-                m_NetCacheAPI.Remove(object_loc);
-                return eNSTRR_Removed;
-            }
-        }
-        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + object_loc)
-
-        return eNSTRR_NotFound;
-    }
-
-    m_UseNextSubHitID.ProperCommand();
-    CJsonNode request(MkObjectRequest("DELETE", object_loc));
+ENetStorageRemoveResult SNetStorageObjectRPC::Remove()
+{
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
+    auto request = x_MkRequest("DELETE");
 
     try {
-        const auto reply = Exchange(service, request);
+        const auto reply = ExchangeUsingOwnService(request);
         const auto not_found = reply.GetByKeyOrNull("NotFound");
 
         return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
@@ -1460,22 +1453,8 @@ bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
 ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
         TNetStorageFlags flags)
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
-    CJsonNode request(m_NetStorageRPC->MkObjectRequest("DELETE", key, flags));
-
-    try {
-        CJsonNode response(
-                m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request));
-
-        CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
-
-        return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
-    }
-    catch (CNetStorageException& e) {
-        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
-    }
-
-    return eNSTRR_NotFound;
+    auto object = Open(key, flags);
+    return object->Remove();
 }
 
 struct SNetStorageAdminImpl : public CObject
