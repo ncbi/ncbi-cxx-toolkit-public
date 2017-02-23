@@ -375,7 +375,8 @@ string CNetStorage::Relocate(const string& object_loc, TNetStorageFlags flags, T
 
 bool CNetStorage::Exists(const string& object_loc)
 {
-    return m_Impl->Exists(object_loc);
+    auto object = m_Impl->Open(object_loc);
+    return object->Exists();
 }
 
 ENetStorageRemoveResult CNetStorage::Remove(const string& object_loc)
@@ -409,7 +410,8 @@ string CNetStorageByKey::Relocate(const string& unique_key,
 bool CNetStorageByKey::Exists(const string& key, TNetStorageFlags flags)
 {
     SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
-    return m_Impl->Exists(key, flags);
+    auto object = m_Impl->Open(key, flags);
+    return object->Exists();
 }
 
 ENetStorageRemoveResult CNetStorageByKey::Remove(const string& key,
