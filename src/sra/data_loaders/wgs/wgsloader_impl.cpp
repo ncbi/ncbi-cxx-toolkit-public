@@ -454,6 +454,12 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
         break;
+    case CSeq_id::eAcc_other:
+        if ( type == CSeq_id::eAcc_embl_prot ) {
+            // Some EMBL WGS accession aren't identified as WGS, so we'll try lookup anyway
+            break;
+        }
+        return ret;
     default:
         return ret;
     }

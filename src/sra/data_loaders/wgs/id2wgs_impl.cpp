@@ -985,6 +985,14 @@ CID2WGSProcessor_Impl::ResolveAcc(const CTextseq_id& id,
         else {
             return ResolveWGSAcc(acc, id, fAllow_master|fAllow_na);
         }
+    case CSeq_id::eAcc_other:
+        // Some EMBL WGS accession aren't identified as WGS, so we'll try lookup anyway
+        if ( type == CSeq_id::eAcc_embl_prot ) {
+            if ( acc.size() <= 8 ) { // 3+5
+                return ResolveProtAcc(id, resolver);
+            }
+        }
+        return SWGSSeqInfo();
     default:
         // non-WGS accessions
         return SWGSSeqInfo();
