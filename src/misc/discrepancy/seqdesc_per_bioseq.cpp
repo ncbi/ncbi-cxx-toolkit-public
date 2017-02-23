@@ -177,6 +177,7 @@ enum EPrefixOrSuffixType
     eType_suffix
 };
 
+
 static EPrefixOrSuffixType GetPrefixOrSuffixType(const CUser_field& field)
 {
     EPrefixOrSuffixType type = eType_none;
@@ -192,6 +193,7 @@ static EPrefixOrSuffixType GetPrefixOrSuffixType(const CUser_field& field)
 
     return type;
 }
+
 
 static bool IsAppropriateRule(const CComment_rule& rule, const CUser_object& user)
 {
@@ -211,6 +213,7 @@ static bool IsAppropriateRule(const CComment_rule& rule, const CUser_object& use
 
     return ret;
 }
+
 
 const CComment_rule* FindAppropriateRule(const CComment_set& rules, const CUser_object& user)
 {
@@ -232,6 +235,7 @@ const CComment_rule* FindAppropriateRule(const CComment_set& rules, const CUser_
 
     return ret;
 }
+
 
 DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspicious structured comment prefix")
 {
@@ -348,6 +352,7 @@ DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
 {
     TReportObjectList list = item->GetDetails();
@@ -372,6 +377,22 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
     }
 
     return CRef<CAutofixReport>(n ? new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] coment[s] with " + comment, n) : 0);
+}
+
+
+// GENOMIC_MRNA
+
+DISCREPANCY_CASE(GENOMIC_MRNA, CSeqdesc, eOncaller, "Genomic mRNA is legal, but not expected")
+{
+    if (obj.IsMolinfo() && obj.GetMolinfo().IsSetBiomol() && obj.GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic_mRNA) {
+        m_Objs["[n] biololecule[s] [is] genomic mRNA"].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(GENOMIC_MRNA)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
