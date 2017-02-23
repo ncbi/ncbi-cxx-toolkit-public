@@ -876,13 +876,6 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
     return fsm.release();
 }
 
-string SNetStorageRPC::Relocate(const string& object_loc,
-        TNetStorageFlags flags, TNetStorageProgressCb cb)
-{
-    auto object = Open(object_loc);
-    return object->Relocate(flags, cb);
-}
-
 string SNetStorageObjectRPC::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
@@ -1392,9 +1385,6 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 
     virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags);
-    virtual string Relocate(const string& unique_key,
-            TNetStorageFlags flags, TNetStorageFlags old_flags,
-            TNetStorageProgressCb cb);
     virtual bool Exists(const string& key, TNetStorageFlags flags);
     virtual ENetStorageRemoveResult Remove(const string& key,
             TNetStorageFlags flags);
@@ -1423,14 +1413,6 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
     auto state = new SNetStorageObjectRPC(*fsm, m_NetStorageRPC, m_NetStorageRPC->m_Service, builder, kEmptyStr);
     fsm->SetStartState(state);
     return fsm.release();
-}
-
-string SNetStorageByKeyRPC::Relocate(const string& unique_key,
-        TNetStorageFlags flags, TNetStorageFlags old_flags,
-        TNetStorageProgressCb cb)
-{
-    auto object = Open(unique_key, old_flags);
-    return object->Relocate(flags, cb);
 }
 
 bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
