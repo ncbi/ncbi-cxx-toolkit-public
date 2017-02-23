@@ -40,6 +40,14 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SNetStorageObjectContext
+{
+    string locator;
+
+    SNetStorageObjectContext(const string& l) : locator(l) {}
+    string GetLoc() const { return locator; }
+};
+
 struct SNetStorageRPC : public SNetStorageImpl
 {
     SNetStorageRPC(const TConfig& config, TNetStorageFlags default_flags);

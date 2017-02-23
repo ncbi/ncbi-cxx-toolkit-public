@@ -109,7 +109,7 @@ struct SNetStorageObjectChildState : TBase
 {
     SNetStorageObjectChildState(SNetStorageObjectImpl& fsm, TContext& context) : TBase(fsm), m_Context(context) {}
 
-    string GetLoc() const final { return m_Context; }
+    string GetLoc() const final { return m_Context.GetLoc(); }
 
 protected:
     TContext& m_Context;

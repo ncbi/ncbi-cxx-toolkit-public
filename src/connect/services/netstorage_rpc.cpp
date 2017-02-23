@@ -511,7 +511,7 @@ private:
         {
         }
 
-        operator string() const { return m_Locator; }
+        string GetLoc() const { return m_Locator; }
 
         void TrapErrors(const CJsonNode& reply)
         {
