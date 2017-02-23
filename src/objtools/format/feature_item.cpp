@@ -1769,13 +1769,14 @@ void CFeatureItem::x_AddQuals(
     x_AddQualsGene( gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
 
     x_AddQualPseudo( ctx, type, subtype, pseudo );
-    x_AddQualSeqfeatNote(ctx);
     x_AddQualsGb( ctx );
 
     // dynamic mapping of old features to regulatory with regulatory_class qualifier
     if ( type == CSeqFeatData::e_Imp ) {
        x_AddQualsRegulatoryClass ( ctx, subtype );
     }
+
+    x_AddQualSeqfeatNote(ctx);
 
     // cleanup (drop illegal quals, duplicate information etc.)
     x_CleanQuals( gene_ref );
