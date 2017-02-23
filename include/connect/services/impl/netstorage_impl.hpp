@@ -154,10 +154,7 @@ private:
 };
 
 /// @internal
-// TODO:
-// Remove IReader and IEmbeddedStreamWriter bases,
-// Make all methods non virtual
-struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbeddedStreamReaderWriter
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
 {
     ~SNetStorageObjectImpl();
 
@@ -165,36 +162,16 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
 
     void SetIoMode(SNetStorageObjectIoMode::EApi api, SNetStorageObjectIoMode::EMth mth)
     {
-        if (!m_IoMode.Set(api, mth)) m_IoMode.Throw(api, mth, GetLoc());
+        if (!m_IoMode.Set(api, mth)) m_IoMode.Throw(api, mth, m_Current->GetLoc());
     }
 
     IEmbeddedStreamReaderWriter& GetReaderWriter();
     CNcbiIostream* GetRWStream();
 
-    virtual ERW_Result Read(void* buf, size_t count, size_t* read);
-    virtual ERW_Result PendingCount(size_t* count);
+          INetStorageObjectState* operator->()       { _ASSERT(m_Current); return m_Current; }
+    const INetStorageObjectState* operator->() const { _ASSERT(m_Current); return m_Current; }
 
-    virtual ERW_Result Write(const void* buf, size_t count, size_t* written);
-    virtual ERW_Result Flush();
-
-    virtual void Close();
-    virtual void Abort();
-
-    virtual string GetLoc() const                                      { A(); return m_Current->GetLoc(); }
-    virtual bool Eof()                                                 { A(); return m_Current->Eof(); }
-    virtual Uint8 GetSize()                                            { A(); return m_Current->GetSize(); }
-    virtual list<string> GetAttributeList() const                      { A(); return m_Current->GetAttributeList(); }
-    virtual string GetAttribute(const string& name) const              { A(); return m_Current->GetAttribute(name); }
-    virtual void SetAttribute(const string& name, const string& value) { A(); return m_Current->SetAttribute(name, value); }
-    virtual CNetStorageObjectInfo GetInfo()                            { A(); return m_Current->GetInfo(); }
-    virtual void SetExpiration(const CTimeout& ttl)                    { A(); return m_Current->SetExpiration(ttl); }
-    virtual string FileTrack_Path()                                    { A(); return m_Current->FileTrack_Path(); }
-    virtual pair<string, string> GetUserInfo()                         { A(); return m_Current->GetUserInfo(); }
-    virtual CNetStorageObjectLoc& Locator()                            { A(); return m_Current->Locator(); }
-    virtual string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) { A(); return m_Current->Relocate(flags, cb); }
-    virtual void CancelRelocate()                                      { A(); return m_Current->CancelRelocate(); }
-    virtual bool Exists()                                              { A(); return m_Current->Exists(); }
-    virtual ENetStorageRemoveResult Remove()                           { A(); return m_Current->Remove(); }
+    void Close();
 
     template <class TState, class... TArgs>
     static SNetStorageObjectImpl* Create(TArgs&&... args)
@@ -213,7 +190,6 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
     }
 
 private:
-    void A() const { _ASSERT(m_Current); }
     void EnterState(INetStorageObjectState* state);
     void ExitState();
 

@@ -56,37 +56,37 @@ CDirectNetStorageObject::CDirectNetStorageObject(EVoid)
 string CDirectNetStorageObject::Relocate(TNetStorageFlags flags,
         TNetStorageProgressCb cb)
 {
-    return m_Impl->Relocate(flags, cb);
+    return m_Impl--->Relocate(flags, cb);
 }
 
 
 void CDirectNetStorageObject::CancelRelocate()
 {
-    return m_Impl->CancelRelocate();
+    return m_Impl--->CancelRelocate();
 }
 
 
 ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 {
-    return m_Impl->Remove();
+    return m_Impl--->Remove();
 }
 
 
 const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
 {
-    return m_Impl->Locator();
+    return m_Impl--->Locator();
 }
 
 
 string CDirectNetStorageObject::FileTrack_Path()
 {
-    return m_Impl->FileTrack_Path();
+    return m_Impl--->FileTrack_Path();
 }
 
 
 pair<string, string> CDirectNetStorageObject::GetUserInfo()
 {
-    return m_Impl->GetUserInfo();
+    return m_Impl--->GetUserInfo();
 }
 
 
@@ -133,14 +133,14 @@ private:
 SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(flags));
-    return new CObj(selector);
+    return SNetStorageObjectImpl::Create<CObj>(selector);
 }
 
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Open(const string& object_loc)
 {
     ISelector::Ptr selector(m_Context->Create(object_loc));
-    return new CObj(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(selector, true);
 }
 
 
@@ -152,7 +152,7 @@ SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags, con
     // So, object must choose location for writing here to make locator valid
     selector->SetLocator();
 
-    return new CObj(selector);
+    return SNetStorageObjectImpl::Create<CObj>(selector);
 }
 
 
@@ -213,8 +213,8 @@ bool SDirectNetStorageImpl::Exists(const string& db_loc, const string& client_lo
         return true;
     }
 
-    auto object = Open(client_loc);
-    return object->Exists();
+    CNetStorageObject object = Open(client_loc);
+    return object--->Exists();
 }
 
 
@@ -256,7 +256,7 @@ SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(key, flags));
-    return new CObj(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(selector, true);
 }
 
 
@@ -279,7 +279,7 @@ SDirectNetStorageByKeyImpl::SDirectNetStorageByKeyImpl(
 SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags, const string& key)
 {
     ISelector::Ptr selector(m_Context->Create(key, flags, m_ServiceName));
-    return new CObj(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(selector, true);
 }
 
 
@@ -290,8 +290,8 @@ bool SDirectNetStorageByKeyImpl::Exists(const string& db_loc,
         return true;
     }
 
-    auto object = Open(key, flags);
-    return object->Exists();
+    CNetStorageObject object = Open(key, flags);
+    return object--->Exists();
 }
 
 

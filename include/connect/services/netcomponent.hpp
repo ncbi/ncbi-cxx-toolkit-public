@@ -83,6 +83,9 @@ public:
 template <class S>
 using CNetRef = CRef<S, CNetComponentCounterLocker<S>>;
 
+template <class S> inline       S& operator--(      CNetRef<S>& r, int) { return r.GetObject(); }
+template <class S> inline const S& operator--(const CNetRef<S>& r, int) { return r.GetObject(); }
+
 #define NCBI_NET_COMPONENT_DEF(Class, Impl)                                 \
     protected:                                                              \
     CNetRef<Impl> m_Impl;                                                   \
@@ -93,6 +96,8 @@ using CNetRef = CRef<S, CNetComponentCounterLocker<S>>;
     Class& operator =(Impl* impl)       { m_Impl = impl; return *this; }    \
     operator Impl*()                    { return m_Impl.GetPointer(); }     \
     operator const Impl*() const        { return m_Impl.GetPointer(); }     \
+    Impl& operator --(int)              { return m_Impl.GetObject(); }      \
+    const Impl& operator --(int) const  { return m_Impl.GetObject(); }      \
     Impl* operator ->()                 { return m_Impl.GetPointer(); }     \
     const Impl* operator ->() const     { return m_Impl.GetPointer(); }
 

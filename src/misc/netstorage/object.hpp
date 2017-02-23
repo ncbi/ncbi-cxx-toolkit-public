@@ -40,19 +40,18 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-class CObj : public SNetStorageObjectImpl, private IState, private ILocation
+class CObj : public INetStorageObjectState, private IState, private ILocation
 {
 public:
-    CObj(ISelector::Ptr selector, bool is_opened = false)
-        : m_Selector(selector),
+    CObj(SNetStorageObjectImpl& fsm, ISelector::Ptr selector, bool is_opened = false)
+        : INetStorageObjectState(fsm),
+          m_Selector(selector),
           m_State(this),
           m_Location(this),
           m_IsOpened(is_opened)
     {
         _ASSERT(m_Selector.get());
     }
-
-    virtual ~CObj();
 
     ERW_Result Read(void*, size_t, size_t*);
     ERW_Result PendingCount(size_t* count) { *count = 0; return eRW_Success; }

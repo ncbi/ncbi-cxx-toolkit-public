@@ -39,15 +39,6 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-CObj::~CObj()
-{
-    try {
-        m_State->CloseImpl();
-    }
-    NCBI_CATCH_ALL("Error while implicitly closing a NetStorage file.");
-}
-
-
 ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
 {
     return m_State->ReadImpl(buf, count, bytes_read);
@@ -203,7 +194,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     }
 
     LOG_POST(Trace << "locations are different");
-    CRef<CObj> new_file(new CObj(selector));
+    CNetStorageObject new_file = SNetStorageObjectImpl::Create<CObj>(selector);
 
     for (;;) {
         current += bytes_read;
@@ -212,7 +203,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
         size_t bytes_written;
 
         do {
-            s_Check(new_file->Write(data, bytes_read, &bytes_written), "writing");
+            s_Check(new_file--->Write(data, bytes_read, &bytes_written), "writing");
             data += bytes_written;
             bytes_read -= bytes_written;
         }
@@ -232,7 +223,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
                 // m_CancelRelocate may only be set to true inside the callback
                 if (cb(progress), m_CancelRelocate) {
                     m_CancelRelocate = false;
-                    new_file->Abort();
+                    new_file--->Abort();
                     Close();
                     NCBI_THROW(CNetStorageException, eInterrupted,
                         "Request to interrupt Relocate has been received.");
@@ -243,10 +234,10 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
         s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
     }
 
-    new_file->Close();
+    new_file--->Close();
     Close();
     Remove();
-    return new_file->GetLoc();
+    return new_file--->GetLoc();
 }
 
 
