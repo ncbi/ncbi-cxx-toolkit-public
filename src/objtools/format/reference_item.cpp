@@ -916,6 +916,47 @@ void CReferenceItem::x_Init(const CMedline_entry& mle, CBioseqContext& ctx)
 }
 
 
+static bool PiiOk(const string& str)
+{
+    if (NStr::IsBlank(str)) return false;
+
+    int max = str.length();
+    int i = 0;
+
+    char ch = str[i];
+
+    if (ch != 'e') return false;
+    if (ch == 'e') {
+        i++;
+        ch = str[i];
+    }
+    if (i >= max || ch < '0' || ch > '9') return false;
+    while (i < max && ch >= '0' && ch <= '9') {
+        i++;
+        ch = str[i];
+    }
+    if (i >= max) return true;
+
+    if (ch == 'e') return false;
+    if (ch == '-') {
+        i++;
+        ch = str[i];
+    }
+    if (ch == 'e') {
+        i++;
+        ch = str[i];
+    }
+    if (i >= max || ch < '0' || ch > '9') return false;
+    while (i < max && ch >= '0' && ch <= '9') {
+        i++;
+        ch = str[i];
+    }
+
+    if (i >= max) return true;
+
+    return false;
+}
+
 void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
 {
     // Title
@@ -928,10 +969,33 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
         x_AddAuthors(art.GetAuthors());
     }
 
+    bool not_in_press = false;
+    bool is_epublish = false;
+
     switch (art.GetFrom().Which()) {
     case CCit_art::C_From::e_Journal:
-        m_PubType = ePub_jour;
-        x_Init(art.GetFrom().GetJournal(), ctx);
+        {
+            m_PubType = ePub_jour;
+            const CCit_jour& jour = art.GetFrom().GetJournal();
+            x_Init(jour, ctx);
+            if (jour.IsSetImp()) {
+                const CImprint& imp = jour.GetImp();
+                if (imp.IsSetPrepub()) {
+                    CImprint::TPrepub prepub = imp.GetPrepub();
+                    if (prepub != CImprint::ePrepub_in_press) {
+                        not_in_press = true;
+                    }
+                } else {
+                    not_in_press = true;
+                }
+                if (imp.IsSetPubstatus()) {
+                    CImprint::TPubstatus pubstatus = imp.GetPubstatus();
+                    if (pubstatus == 3) {
+                        is_epublish = true;
+                    }
+                }
+            }
+        }
         break;
     case CCit_art::C_From::e_Proc:
         m_PubType = ePub_book_art;
@@ -961,10 +1025,18 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
             case CArticleId_Base::e_Other:
                 {
                     const CDbtag& dbt = (*it)->GetOther();
-                    if (dbt.IsSetTag ()) {
-                        const CObject_id& oid = dbt.GetTag();
-                        if (oid.IsStr()) {
-                            m_ELocationPII = oid.GetStr();
+                    if (dbt.CanGetDb()) {
+                        const string& db = dbt.GetDb();
+                        if (NStr::EqualNocase(db, "ELocationID pii")) {
+                            if (dbt.IsSetTag ()) {
+                                const CObject_id& oid = dbt.GetTag();
+                                if (oid.IsStr() && not_in_press && is_epublish) {
+                                    const string& pii = oid.GetStr();
+                                    if (PiiOk (pii)) {
+                                        m_ELocationPII = pii;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
