@@ -102,6 +102,14 @@ Location: src/connect/parson.{c,h}
 Author:   Krzysztof Gabis
 License:  MIT [https://opensource.org/licenses/MIT]
 
+Location: include/misc/jsonwrapp/rapidjson
+Author:   Milo Yip
+License:  MIT [include/misc/jsonwrapp/rapidjson/license.txt]
+
+Location: include/misc/jsonwrapp/rapidjson/msinttypes
+Author:   Alexander Chemeris
+License:  BSD [include/misc/jsonwrapp/rapidjson/msinttypes/inttypes.h]
+
 
 ==============================================================
 Copyright F.A.Q.
