@@ -617,6 +617,7 @@ public:
     void SetExpiration(const CTimeout&) override;
 
     string FileTrack_Path() override;
+    string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) override;
     bool Exists() override;
     ENetStorageRemoveResult Remove() override;
 
@@ -879,20 +880,14 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 string SNetStorageRPC::Relocate(const string& object_loc,
         TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    auto service = GetServiceIfLocator(object_loc);
-
-    if (!service)
-        NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
-                ": Relocate for NetCache blobs is not implemented");
-
-    auto request = MkObjectRequest("RELOCATE", object_loc);
-    return RelocateImpl(service, request, flags, cb);
+    auto object = Open(object_loc);
+    return object->Relocate(flags, cb);
 }
 
-string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
-        TNetStorageFlags flags, TNetStorageProgressCb cb)
+string SNetStorageObjectRPC::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    m_UseNextSubHitID.ProperCommand();
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
+    auto request = m_Context.m_OriginalRequest = x_MkRequest("RELOCATE");
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
 
@@ -903,7 +898,7 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
     // Always request progress report to avoid timing out on large objects
     request.SetBoolean("NeedProgressReport", true);
 
-    CNetServer server(*service.Iterate(CNetService::eRandomize));
+    CNetServer server(*m_OwnService.Iterate(CNetService::eRandomize));
 
     CJsonOverUTTPExecHandler json_over_uttp_sender(request);
 
@@ -912,7 +907,7 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
     CNetServerConnection conn(json_over_uttp_sender.GetConnection());
 
     for (;;) {
-        CJsonNode reply(s_ReadMessage(request, conn, m_Config.err_mode, *service->m_Listener));
+        CJsonNode reply(m_Context.ReadMessage(conn));
         CJsonNode object_loc(reply.GetByKeyOrNull("ObjectLoc"));
 
         if (object_loc) return object_loc.AsString();
@@ -1439,9 +1434,8 @@ string SNetStorageByKeyRPC::Relocate(const string& unique_key,
         TNetStorageFlags flags, TNetStorageFlags old_flags,
         TNetStorageProgressCb cb)
 {
-    auto service = m_NetStorageRPC->m_Service;
-    auto request = m_NetStorageRPC->MkObjectRequest("RELOCATE", unique_key, old_flags);
-    return m_NetStorageRPC->RelocateImpl(service, request, flags, cb);
+    auto object = Open(unique_key, old_flags);
+    return object->Relocate(flags, cb);
 }
 
 bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)

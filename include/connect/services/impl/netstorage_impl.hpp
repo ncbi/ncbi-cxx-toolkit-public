@@ -59,6 +59,7 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReade
     virtual string FileTrack_Path() = 0;
     virtual pair<string, string> GetUserInfo() = 0;
     virtual CNetStorageObjectLoc& Locator() = 0;
+    virtual string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) = 0;
     virtual void CancelRelocate() = 0;
     virtual bool Exists() = 0;
     virtual ENetStorageRemoveResult Remove() = 0;
@@ -81,6 +82,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
     CNetStorageObjectInfo GetInfo() final;
     void SetExpiration(const CTimeout& ttl) final;
     string FileTrack_Path() final;
+    string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) final;
     bool Exists() final;
     ENetStorageRemoveResult Remove() final;
 
@@ -189,6 +191,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
     virtual string FileTrack_Path()                                    { A(); return m_Current->FileTrack_Path(); }
     virtual pair<string, string> GetUserInfo()                         { A(); return m_Current->GetUserInfo(); }
     virtual CNetStorageObjectLoc& Locator()                            { A(); return m_Current->Locator(); }
+    virtual string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) { A(); return m_Current->Relocate(flags, cb); }
     virtual void CancelRelocate()                                      { A(); return m_Current->CancelRelocate(); }
     virtual bool Exists()                                              { A(); return m_Current->Exists(); }
     virtual ENetStorageRemoveResult Remove()                           { A(); return m_Current->Remove(); }

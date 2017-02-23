@@ -142,6 +142,11 @@ string SNetStorageObjectIoState::FileTrack_Path()
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling FileTrack_Path() while reading/writing " << GetLoc());
 }
 
+string SNetStorageObjectIoState::Relocate(TNetStorageFlags, TNetStorageProgressCb)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Relocate() while reading/writing " << GetLoc());
+}
+
 bool SNetStorageObjectIoState::Exists()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Exists() while reading/writing " << GetLoc());

@@ -56,7 +56,7 @@ CDirectNetStorageObject::CDirectNetStorageObject(EVoid)
 string CDirectNetStorageObject::Relocate(TNetStorageFlags flags,
         TNetStorageProgressCb cb)
 {
-    return Impl<CObj>(m_Impl)->Relocate(flags, cb);
+    return m_Impl->Relocate(flags, cb);
 }
 
 

@@ -217,6 +217,12 @@ string SNetStorage_NetCacheBlob::FileTrack_Path()
             ": not a FileTrack object");
 }
 
+string SNetStorage_NetCacheBlob::Relocate(TNetStorageFlags, TNetStorageProgressCb)
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+            ": Relocate for NetCache blobs is not implemented");
+}
+
 bool SNetStorage_NetCacheBlob::Exists()
 {
     try {
