@@ -958,6 +958,23 @@ static void s_TestFormats(void)
             assert(t.AsString("s.S") == "03.123456789");
         }}
     }}
+
+    // AM/PM time parsing
+    {{
+        CTime t;
+        t.SetFormat("Y-M-D H:m P");
+        string fmtout = "Y-M-D h:m";
+        t = "2001-01-01 12:00 AM";  assert(t.AsString(fmtout) == "2001-01-01 00:00");
+        t = "2001-01-01 12:01 AM";  assert(t.AsString(fmtout) == "2001-01-01 00:01");
+        t = "2001-01-01 01:00 AM";  assert(t.AsString(fmtout) == "2001-01-01 01:00");
+        t = "2001-01-01 11:00 AM";  assert(t.AsString(fmtout) == "2001-01-01 11:00");
+        t = "2001-01-01 11:59 AM";  assert(t.AsString(fmtout) == "2001-01-01 11:59");
+        t = "2001-01-01 12:00 PM";  assert(t.AsString(fmtout) == "2001-01-01 12:00");
+        t = "2001-01-01 12:01 PM";  assert(t.AsString(fmtout) == "2001-01-01 12:01");
+        t = "2001-01-01 01:00 PM";  assert(t.AsString(fmtout) == "2001-01-01 13:00");
+        t = "2001-01-01 11:00 PM";  assert(t.AsString(fmtout) == "2001-01-01 23:00");
+        t = "2001-01-01 11:59 PM";  assert(t.AsString(fmtout) == "2001-01-01 23:59");
+    }}
 }
 
 

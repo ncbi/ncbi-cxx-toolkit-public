@@ -158,21 +158,22 @@ const char kFormatEscapeSymbol = '$';
         } else { return false; } \
     }
 
-#define CHECK_RANGE_YEAR(value)        CHECK_RANGE_EXCEPTION(value, "Year", 1583, kMax_Int)
-#define CHECK_RANGE_MONTH(value)       CHECK_RANGE_EXCEPTION(value, "Month", 1, 12)
-#define CHECK_RANGE_DAY(value)         CHECK_RANGE_EXCEPTION(value, "Day", 1, 31)
-#define CHECK_RANGE_HOUR(value)        CHECK_RANGE_EXCEPTION(value, "Hour", 0, 23)
-#define CHECK_RANGE_MIN(value)         CHECK_RANGE_EXCEPTION(value, "Minute", 0, 59)
-#define CHECK_RANGE_SEC(value)         CHECK_RANGE_EXCEPTION(value, "Second", 0, 61)
-#define CHECK_RANGE_NSEC(value)        CHECK_RANGE_EXCEPTION(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1)
+#define CHECK_RANGE_YEAR(value)         CHECK_RANGE_EXCEPTION(value, "Year", 1583, kMax_Int)
+#define CHECK_RANGE_MONTH(value)        CHECK_RANGE_EXCEPTION(value, "Month", 1, 12)
+#define CHECK_RANGE_DAY(value)          CHECK_RANGE_EXCEPTION(value, "Day", 1, 31)
+#define CHECK_RANGE_HOUR(value)         CHECK_RANGE_EXCEPTION(value, "Hour", 0, 23)
+#define CHECK_RANGE_MIN(value)          CHECK_RANGE_EXCEPTION(value, "Minute", 0, 59)
+#define CHECK_RANGE_SEC(value)          CHECK_RANGE_EXCEPTION(value, "Second", 0, 61)
+#define CHECK_RANGE_NSEC(value)         CHECK_RANGE_EXCEPTION(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1)
 
-#define CHECK_RANGE2_YEAR(value, err)  CHECK_RANGE2(value, "Year", 1583, kMax_Int, err)
-#define CHECK_RANGE2_MONTH(value, err) CHECK_RANGE2(value, "Month", 1, 12, err)
-#define CHECK_RANGE2_DAY(value, err)   CHECK_RANGE2(value, "Day", 1, 31, err)
-#define CHECK_RANGE2_HOUR(value, err)  CHECK_RANGE2(value, "Hour", 0, 23, err)
-#define CHECK_RANGE2_MIN(value, err)   CHECK_RANGE2(value, "Minute", 0, 59, err)
-#define CHECK_RANGE2_SEC(value, err)   CHECK_RANGE2(value, "Second", 0, 61, err)
-#define CHECK_RANGE2_NSEC(value, err)  CHECK_RANGE2(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1, err)
+#define CHECK_RANGE2_YEAR(value, err)   CHECK_RANGE2(value, "Year", 1583, kMax_Int, err)
+#define CHECK_RANGE2_MONTH(value, err)  CHECK_RANGE2(value, "Month", 1, 12, err)
+#define CHECK_RANGE2_DAY(value, err)    CHECK_RANGE2(value, "Day", 1, 31, err)
+#define CHECK_RANGE2_HOUR24(value, err) CHECK_RANGE2(value, "Hour", 0, 23, err)
+#define CHECK_RANGE2_HOUR12(value, err) CHECK_RANGE2(value, "Hour", 0, 12, err)
+#define CHECK_RANGE2_MIN(value, err)    CHECK_RANGE2(value, "Minute", 0, 59, err)
+#define CHECK_RANGE2_SEC(value, err)    CHECK_RANGE2(value, "Second", 0, 61, err)
+#define CHECK_RANGE2_NSEC(value, err)   CHECK_RANGE2(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1, err)
 
 // Bitfilds setters (to avoid warnings)
 
@@ -776,12 +777,12 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             is_day_present = true;
             break;
         case 'h':
-            CHECK_RANGE2_HOUR(value, err_action);
+            CHECK_RANGE2_HOUR24(value, err_action);
             SET_HOUR(value);
             is_time_present = true;
             break;
         case 'H':
-            CHECK_RANGE2_HOUR(value, err_action);
+            CHECK_RANGE2_HOUR12(value, err_action);
             SET_HOUR(value % 12);
             is_12hour = true;
             is_time_present = true;
