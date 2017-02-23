@@ -496,22 +496,19 @@ void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 struct SNetStorageObjectRPC : public INetStorageObjectState
 {
 private:
-    struct SContext
+    struct SContext : SNetStorageObjectContext
     {
         const SNetStorage::SConfig::EErrMode m_ErrMode;
         CRef<INetServerConnectionListener> m_Listener;
         CJsonNode m_OriginalRequest;
         CNetServerConnection m_Connection;
-        string m_Locator;
 
         SContext(SNetStorageRPC* netstorage_rpc, const string& object_loc) :
+            SNetStorageObjectContext(object_loc),
             m_ErrMode(netstorage_rpc->m_Config.err_mode),
-            m_Listener(netstorage_rpc->m_Service->m_Listener),
-            m_Locator(object_loc)
+            m_Listener(netstorage_rpc->m_Service->m_Listener)
         {
         }
-
-        string GetLoc() const { return m_Locator; }
 
         void TrapErrors(const CJsonNode& reply)
         {
@@ -585,7 +582,7 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override { return m_Context.m_Locator; }
+    string GetLoc() const override { return m_Context.locator; }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;
@@ -600,7 +597,7 @@ public:
     ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
 
 private:
-    CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Context.m_Locator); }
+    CJsonNode x_MkRequest(const string& request_type) const { return m_Builder(request_type, m_Context.locator); }
 
     CNetRef<SNetStorageRPC> m_NetStorageRPC;
     CNetService m_OwnService;
@@ -1107,7 +1104,7 @@ void SNetStorageObjectRPC::SIState::ReadConfirmation()
     if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Extra bytes past confirmation message "
-                "while reading " << m_Context.m_Locator << " from " <<
+                "while reading " << m_Context.locator << " from " <<
                 m_Context.m_Connection->m_Socket.GetPeerAddress() << '.');
     }
 
@@ -1185,7 +1182,7 @@ ERW_Result SNetStorageObjectRPC::SIState::Read(void* buf_pos, size_t buf_size, s
             default:
                 NCBI_THROW_FMT(CNetStorageException, eIOError,
                         "NetStorage API: invalid UTTP status "
-                        "while reading " << m_Context.m_Locator);
+                        "while reading " << m_Context.locator);
             }
         }
     }
@@ -1221,7 +1218,7 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     m_Context.m_OriginalRequest = x_MkRequest("WRITE");
 
-    m_Context.m_Locator = ExchangeUsingOwnService(m_Context.m_OriginalRequest,
+    m_Context.locator = ExchangeUsingOwnService(m_Context.m_OriginalRequest,
             &m_Context.m_Connection).GetString("ObjectLoc");
 
     EnterState(&m_OState);

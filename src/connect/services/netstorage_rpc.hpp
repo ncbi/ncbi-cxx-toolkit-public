@@ -45,7 +45,6 @@ struct SNetStorageObjectContext
     string locator;
 
     SNetStorageObjectContext(const string& l) : locator(l) {}
-    string GetLoc() const { return locator; }
 };
 
 struct SNetStorageRPC : public SNetStorageImpl
