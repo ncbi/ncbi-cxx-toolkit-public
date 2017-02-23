@@ -658,7 +658,8 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ScaffoldNameIndexIsOpened(0),
       m_ProteinNameIndexIsOpened(0),
       m_ProductNameIndexIsOpened(0),
-      m_IsSetMasterDescr(false)
+      m_IsSetMasterDescr(false),
+      m_HasNoDefaultGnlId(false)
 {
     PROFILE(sw_WGSOpen);
     m_Db = CVDB(mgr, m_WGSPath);
@@ -792,6 +793,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdVersion = NStr::StringToNumeric<int>(acc.substr(prefix_len, 2));
     m_IdPrefixDbWithVersion = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
     m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefix;
+    m_HasNoDefaultGnlId = seq->m_SEQID_GNL_PREFIX && seq->SEQID_GNL_PREFIX(1).empty();
     Put(seq);
 }
 
@@ -1244,7 +1246,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag,
                                             TGnlIdFlags gnl_id_flags) const
 {
     CRef<CSeq_id> id;
-    if ( m_IdPrefixWithVersion.empty() ) {
+    if ( m_HasNoDefaultGnlId ) {
         return id;
     }
     id = new CSeq_id;

@@ -538,6 +538,7 @@ private:
     CVDBTableIndex m_ProductNameIndex;
 
     bool m_IsSetMasterDescr;
+    bool m_HasNoDefaultGnlId;
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
