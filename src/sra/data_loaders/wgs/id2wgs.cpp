@@ -117,6 +117,37 @@ CID2WGSProcessor::ProcessSomeRequests(CID2_Request_Packet& packet,
 }
 
 
+CRef<CID2ProcessorContext>
+CID2WGSProcessor::CreateContext(void)
+{
+    return CRef<CID2ProcessorContext>(m_Impl->CreateContext());
+}
+
+
+CRef<CID2ProcessorPacketContext>
+CID2WGSProcessor::ProcessPacket(CID2ProcessorContext* context,
+                                CID2_Request_Packet& packet,
+                                TReplies& replies)
+{
+    return CRef<CID2ProcessorPacketContext>(
+        m_Impl->ProcessPacket(dynamic_cast<CID2WGSProcessorContext*>(context),
+                              packet,
+                              replies));
+}
+
+
+void CID2WGSProcessor::ProcessReply(CID2ProcessorContext* context,
+                                    CID2ProcessorPacketContext* packet_context,
+                                    CID2_Reply& reply,
+                                    TReplies& replies)
+{
+    m_Impl->ProcessReply(dynamic_cast<CID2WGSProcessorContext*>(context),
+                         dynamic_cast<CID2WGSProcessorPacketContext*>(packet_context),
+                         reply,
+                         replies);
+}
+
+
 END_NAMESPACE(objects);
 
 void ID2Processors_Register_WGS(void)

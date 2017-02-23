@@ -44,6 +44,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <objects/id2/id2__.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <objects/general/general__.hpp>
@@ -262,6 +263,40 @@ size_t sx_GetSize(const CID2_Reply_Data& data)
         size += (*it)->size();
     }
     return size;
+}
+
+
+bool sx_RequestedNA(const CID2_Request_Get_Blob_Id& request)
+{
+    if ( request.IsSetSources() ) {
+        for ( auto& s : request.GetSources() ) {
+            if ( NStr::StartsWith(s, "NA") ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool sx_IsNABlobId(const CID2_Reply& main_reply)
+{
+    if ( !main_reply.GetReply().IsGet_blob_id() ) {
+        return false;
+    }
+    const CID2_Reply_Get_Blob_Id& reply = main_reply.GetReply().GetGet_blob_id();
+    if ( !reply.IsSetAnnot_info() ) {
+        return false;
+    }
+    bool has_na_accession = false;
+    ITERATE ( CID2_Reply_Get_Blob_Id::TAnnot_info, it, reply.GetAnnot_info() ) {
+        const CID2S_Seq_annot_Info& annot_info = **it;
+        if ( annot_info.IsSetName() && NStr::StartsWith(annot_info.GetName(), "NA") ) {
+            has_na_accession = true;
+            break;
+        }
+    }
+    return has_na_accession;
 }
 
 
@@ -1398,13 +1433,29 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobId(CID2WGSContext& context,
                                              TReplies& replies,
                                              CID2_Request& main_request,
                                              CID2ProcessorResolver* resolver,
-                                             CID2_Request_Get_Blob_Id& request)
+                                             CID2_Request_Get_Blob_Id& request,
+                                             CID2WGSProcessorPacketContext* packet_context)
 {
+    size_t old_size = replies.size();
     START_TRACE();
     TRACE_X(7, eDebug_request, "GetBlobId: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq = Resolve(context, replies, main_request, resolver, request);
     TRACE_X(8, eDebug_resolve, "GetBlobId: done");
-    return seq || seq.m_IsWGS;
+    if ( seq || seq.m_IsWGS ) {
+        // wgs sequence
+        if ( seq && packet_context && sx_RequestedNA(request) ) {
+            // there is sequence and it might have NA annotations in ID
+            // delay replies until reply from ID
+            packet_context->m_NARequests[main_request.GetSerial_number()].assign(replies.begin()+old_size, replies.end());
+            replies.resize(old_size);
+            return true;
+        }
+        return true;
+    }
+    else {
+        // non-wgs sequence
+        return false;
+    }
 }
 
 
@@ -1852,7 +1903,8 @@ bool CID2WGSProcessor_Impl::ProcessGetChunks(CID2WGSContext& context,
 bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
                                            TReplies& replies,
                                            CID2_Request& request,
-                                           CID2ProcessorResolver* resolver)
+                                           CID2ProcessorResolver* resolver,
+                                           CID2WGSProcessorPacketContext* packet_context)
 {
     if ( !s_Enabled() ) {
         return false;
@@ -1874,7 +1926,7 @@ bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
             break;
         case CID2_Request::TRequest::e_Get_blob_id:
             done = ProcessGetBlobId(context, replies, request, resolver,
-                                    request.SetRequest().SetGet_blob_id());
+                                    request.SetRequest().SetGet_blob_id(), packet_context);
             break;
         case CID2_Request::TRequest::e_Get_blob_info:
             done = ProcessGetBlobInfo(context, replies, request, resolver,
@@ -1913,7 +1965,8 @@ bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
         return false;
     }
     if ( replies.size() == old_size ) {
-        if ( s_DebugEnabled(eDebug_error) ) {
+        if ( s_DebugEnabled(eDebug_error) &&
+             !(packet_context && packet_context->m_NARequests.count(request.GetSerial_number())) ) {
             ERR_POST_X(17, "ID2WGS: no replies for request "<<
                        MSerial_AsnText<<request);
         }
@@ -1924,14 +1977,14 @@ bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
 }
 
 
-CID2WGSProcessor_Impl::TReplies
-CID2WGSProcessor_Impl::DoProcessSomeRequests(CID2WGSContext& context,
-                                             CID2_Request_Packet& packet,
-                                             CID2ProcessorResolver* resolver)
+void CID2WGSProcessor_Impl::ProcessPacket(CID2WGSContext& context,
+                                          CID2_Request_Packet& packet,
+                                          TReplies& replies,
+                                          CID2ProcessorResolver* resolver,
+                                          CID2WGSProcessorPacketContext* packet_context)
 {
-    TReplies replies;
     ERASE_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
-        if ( ProcessRequest(context, replies, **it, resolver) ) {
+        if ( ProcessRequest(context, replies, **it, resolver, packet_context) ) {
             packet.Set().erase(it);
         }
     }
@@ -1939,7 +1992,6 @@ CID2WGSProcessor_Impl::DoProcessSomeRequests(CID2WGSContext& context,
         START_TRACE();
         TRACE_X(15, eDebug_request, "Unprocessed: "<<MSerial_AsnText<<packet);
     }
-    return replies;
 }
 
 
@@ -1987,18 +2039,78 @@ CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
                                            CID2_Request_Packet& packet,
                                            CID2ProcessorResolver* resolver)
 {
+    TReplies replies;
     if ( resolver && packet.Set().size() > 1 ) {
         // try to resolve all ids in one request
         CID2ProcessorResolverCollect collect;
-        TReplies replies = DoProcessSomeRequests(context, packet, &collect);
+        ProcessPacket(context, packet, replies, &collect);
         if ( collect.ResolveRequests(resolver) ) {
-            TReplies more = DoProcessSomeRequests(context, packet, &collect);
-            replies.insert(replies.end(), more.begin(), more.end());
+            TReplies more_replies;
+            ProcessPacket(context, packet, more_replies, &collect);
+            replies.insert(replies.end(), more_replies.begin(), more_replies.end());
         }
-        return replies;
     }
     else {
-        return DoProcessSomeRequests(context, packet, resolver);
+        ProcessPacket(context, packet, replies, resolver);
+    }
+    return move(replies);
+}
+
+
+CRef<CID2WGSProcessorContext>
+CID2WGSProcessor_Impl::CreateContext(void)
+{
+    CRef<CID2WGSProcessorContext> context(new CID2WGSProcessorContext);
+    context->m_Context = m_InitialContext;
+    return move(context);
+}
+
+
+CRef<CID2WGSProcessorPacketContext>
+CID2WGSProcessor_Impl::ProcessPacket(CID2WGSProcessorContext* context,
+                                     CID2_Request_Packet& packet,
+                                     TReplies& replies)
+{
+    CRef<CID2WGSProcessorPacketContext> packet_context(new CID2WGSProcessorPacketContext);
+    ProcessPacket(context? context->m_Context: m_InitialContext, packet, replies, 0, packet_context);
+    if ( packet_context->m_NARequests.empty() ) {
+        return null;
+    }
+    return move(packet_context);
+}
+
+
+void CID2WGSProcessor_Impl::ProcessReply(CID2WGSProcessorContext* context,
+                                         CID2WGSProcessorPacketContext* packet_context,
+                                         CID2_Reply& reply,
+                                         TReplies& replies)
+{
+    if ( reply.IsSetDiscard() ) {
+        // ignore discarded replies
+        return;
+    }
+    if ( !packet_context ) {
+        // no post-processing
+        replies.push_back(Ref(&reply));
+        return;
+    }
+    auto it = packet_context->m_NARequests.find(reply.GetSerial_number());
+    if ( it == packet_context->m_NARequests.end() ) {
+        // non-related requests are passed through
+        replies.push_back(Ref(&reply));
+        return;
+    }
+    // filter all replies except blob-id with NA
+    if ( sx_IsNABlobId(reply) ) {
+        // keep reply about NA blob
+        it->second.push_back(Ref(&reply));
+    }
+    if ( reply.IsSetEnd_of_reply() ) {
+        // end of request processing
+        replies = move(it->second);
+        packet_context->m_NARequests.erase(it);
+        replies.back()->SetEnd_of_reply();
+        replies.back()->SetReply().SetGet_blob_id().SetEnd_of_reply();
     }
 }
 

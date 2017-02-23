@@ -62,6 +62,20 @@ class CID2WGSContext;
 class CDataLoader;
 class CWGSResolver;
 
+class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessorContext : public CID2ProcessorContext
+{
+public:
+    CID2WGSContext m_Context;
+};
+
+
+class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessorPacketContext : public CID2ProcessorPacketContext
+{
+public:
+    map<int, vector< CRef<CID2_Reply> > > m_NARequests;
+};
+
+
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
 public:
@@ -137,7 +151,22 @@ public:
     bool ProcessRequest(CID2WGSContext& context,
                         TReplies& replies,
                         CID2_Request& request,
-                        CID2ProcessorResolver* resolver);
+                        CID2ProcessorResolver* resolver,
+                        CID2WGSProcessorPacketContext* packet_context = 0);
+    void ProcessPacket(CID2WGSContext& context,
+                       CID2_Request_Packet& packet,
+                       TReplies& replies,
+                       CID2ProcessorResolver* resolver = 0,
+                       CID2WGSProcessorPacketContext* packet_context = 0);
+
+    CRef<CID2WGSProcessorContext> CreateContext(void);
+    CRef<CID2WGSProcessorPacketContext> ProcessPacket(CID2WGSProcessorContext* context,
+                                                      CID2_Request_Packet& packet,
+                                                      TReplies& replies);
+    void ProcessReply(CID2WGSProcessorContext* context,
+                      CID2WGSProcessorPacketContext* packet_context,
+                      CID2_Reply& reply,
+                      TReplies& replies);
 
     const CID2WGSContext& GetInitialContext(void) const {
         return m_InitialContext;
@@ -154,7 +183,8 @@ public:
                           TReplies& replies,
                           CID2_Request& main_request,
                           CID2ProcessorResolver* resolver,
-                          CID2_Request_Get_Blob_Id& request);
+                          CID2_Request_Get_Blob_Id& request,
+                          CID2WGSProcessorPacketContext* packet_context);
     bool ProcessGetBlobInfo(CID2WGSContext& context,
                             TReplies& replies,
                             CID2_Request& main_request,
@@ -228,7 +258,6 @@ protected:
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
     CID2_Blob_Id& GetBlobId(SWGSSeqInfo& id);
-
     // opening WGS files (with caching)
     CWGSDb GetWGSDb(const string& prefix);
     CWGSDb& GetWGSDb(SWGSSeqInfo& seq);
@@ -288,9 +317,6 @@ protected:
 
     CRef<CWGSResolver> GetWGSResolver(CID2ProcessorResolver* resolver);
 
-    TReplies DoProcessSomeRequests(CID2WGSContext& context,
-                                   CID2_Request_Packet& packet,
-                                   CID2ProcessorResolver* resolver);
 private:
     CMutex m_Mutex;
     CVDBMgr m_Mgr;

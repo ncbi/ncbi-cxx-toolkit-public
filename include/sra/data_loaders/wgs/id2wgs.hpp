@@ -43,6 +43,7 @@ class CID2WGSProcessor_Impl;
 
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSContext
 {
+public:
     CID2WGSContext(void);
     
     bool operator<(const CID2WGSContext& b) const;
@@ -51,7 +52,6 @@ class NCBI_ID2PROC_WGS_EXPORT CID2WGSContext
         return !(*this == b);
     }
 
-public:
     friend class CID2WGSProcessor_Impl;
 
     enum ECompressData {
@@ -74,6 +74,7 @@ public:
                      const string& driver_name);
     virtual ~CID2WGSProcessor(void);
 
+    // old interface
     CID2WGSContext GetInitialContext(void) const;
     void InitContext(CID2WGSContext& context,
                      const CID2_Request& request);
@@ -87,12 +88,25 @@ public:
                         CID2ProcessorResolver* resolver = 0);
 
     virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet,
-                                         CID2ProcessorResolver* resolver = 0);
+                                         CID2ProcessorResolver* resolver = 0) override;
 
     virtual bool ProcessRequest(TReplies& replies,
                                 CID2_Request& request,
-                                CID2ProcessorResolver* resolver = 0);
+                                CID2ProcessorResolver* resolver = 0) override;
 
+    // new  interface
+    virtual
+    CRef<CID2ProcessorContext> CreateContext(void) override;
+    virtual
+    CRef<CID2ProcessorPacketContext> ProcessPacket(CID2ProcessorContext* context,
+                                                   CID2_Request_Packet& packet,
+                                                   TReplies& replies) override;
+    virtual
+    void ProcessReply(CID2ProcessorContext* context,
+                      CID2ProcessorPacketContext* packet_context,
+                      CID2_Reply& reply,
+                      TReplies& replies) override;
+    
 private:
     CRef<CID2WGSProcessor_Impl> m_Impl;
     CID2WGSContext m_CommonContext;
