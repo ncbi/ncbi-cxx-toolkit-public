@@ -929,12 +929,6 @@ bool SNetStorageObjectRPC::Exists()
     return false;
 }
 
-ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
-{
-    auto object = Open(object_loc);
-    return object->Remove();
-}
-
 ENetStorageRemoveResult SNetStorageObjectRPC::Remove()
 {
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
@@ -1379,8 +1373,6 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 
     virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags);
-    virtual ENetStorageRemoveResult Remove(const string& key,
-            TNetStorageFlags flags);
 
     CNetRef<SNetStorageRPC> m_NetStorageRPC;
 };
@@ -1406,13 +1398,6 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
     auto state = new SNetStorageObjectRPC(*fsm, m_NetStorageRPC, m_NetStorageRPC->m_Service, builder, kEmptyStr);
     fsm->SetStartState(state);
     return fsm.release();
-}
-
-ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
-        TNetStorageFlags flags)
-{
-    auto object = Open(key, flags);
-    return object->Remove();
 }
 
 struct SNetStorageAdminImpl : public CObject

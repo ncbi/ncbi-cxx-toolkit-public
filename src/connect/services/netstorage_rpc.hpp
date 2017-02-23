@@ -57,7 +57,6 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     virtual CNetStorageObject Create(TNetStorageFlags flags);
     virtual CNetStorageObject Open(const string& object_loc);
-    virtual ENetStorageRemoveResult Remove(const string& object_loc);
 
     CJsonNode Exchange(CNetService service,
             const CJsonNode& request,

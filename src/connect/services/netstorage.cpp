@@ -381,7 +381,8 @@ bool CNetStorage::Exists(const string& object_loc)
 
 ENetStorageRemoveResult CNetStorage::Remove(const string& object_loc)
 {
-    return m_Impl->Remove(object_loc);
+    auto object = m_Impl->Open(object_loc);
+    return object->Remove();
 }
 
 CNetStorageByKey::CNetStorageByKey(const string& init_string,
@@ -418,7 +419,8 @@ ENetStorageRemoveResult CNetStorageByKey::Remove(const string& key,
         TNetStorageFlags flags)
 {
     SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
-    return m_Impl->Remove(key, flags);
+    auto object = m_Impl->Open(key, flags);
+    return object->Remove();
 }
 
 inline 

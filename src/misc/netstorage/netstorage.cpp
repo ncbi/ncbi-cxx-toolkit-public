@@ -119,7 +119,6 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
 
     CNetStorageObject Create(TNetStorageFlags);
     CNetStorageObject Open(const string&);
-    ENetStorageRemoveResult Remove(const string&);
 
     // For direct NetStorage API only
     SDirectNetStorageImpl(const string&, CCompoundIDPool::TInstance,
@@ -150,14 +149,6 @@ CNetStorageObject SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 CNetStorageObject SDirectNetStorageImpl::Open(const string& object_loc)
 {
     return OpenImpl(object_loc);
-}
-
-
-ENetStorageRemoveResult SDirectNetStorageImpl::Remove(const string& object_loc)
-{
-    ISelector::Ptr selector(m_Context->Create(object_loc));
-    CRef<CObj> net_file(new CObj(selector));
-    return net_file->Remove();
 }
 
 
@@ -259,7 +250,6 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     CObj* OpenImpl(const string&, TNetStorageFlags);
 
     CNetStorageObject Open(const string&, TNetStorageFlags);
-    ENetStorageRemoveResult Remove(const string&, TNetStorageFlags);
 
     // For direct NetStorage API only
     SDirectNetStorageByKeyImpl(const string&, const string&,
@@ -285,15 +275,6 @@ CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
 {
     ISelector::Ptr selector(m_Context->Create(key, flags));
     return new CObj(selector, true);
-}
-
-
-ENetStorageRemoveResult SDirectNetStorageByKeyImpl::Remove(const string& key,
-        TNetStorageFlags flags)
-{
-    ISelector::Ptr selector(m_Context->Create(key, flags));
-    CRef<CObj> net_file(new CObj(selector));
-    return net_file->Remove();
 }
 
 
