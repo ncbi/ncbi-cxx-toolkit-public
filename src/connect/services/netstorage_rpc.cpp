@@ -825,7 +825,7 @@ SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,
 {
 }
 
-CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
+SNetStorageObjectImpl* SNetStorageRPC::Create(TNetStorageFlags flags)
 {
     switch (m_Config.default_storage) {
     /* TConfig::eUndefined is overridden in the constructor */
@@ -860,7 +860,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
     return fsm.release();
 }
 
-CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
+SNetStorageObjectImpl* SNetStorageRPC::Open(const string& object_loc)
 {
     auto service = GetServiceIfLocator(object_loc);
 
@@ -1371,8 +1371,7 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     SNetStorageByKeyRPC(const TConfig& config,
             TNetStorageFlags default_flags);
 
-    virtual CNetStorageObject Open(const string& unique_key,
-            TNetStorageFlags flags);
+    SNetStorageObjectImpl* Open(const string& unique_key, TNetStorageFlags flags) override;
 
     CNetRef<SNetStorageRPC> m_NetStorageRPC;
 };
@@ -1387,7 +1386,7 @@ SNetStorageByKeyRPC::SNetStorageByKeyRPC(const TConfig& config,
     }
 }
 
-CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
+SNetStorageObjectImpl* SNetStorageByKeyRPC::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
     auto builder = [=](const string& r, const string&) {

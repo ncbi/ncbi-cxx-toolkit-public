@@ -115,15 +115,13 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     {
     }
 
-    CObj* OpenImpl(const string&);
-
-    CNetStorageObject Create(TNetStorageFlags);
-    CNetStorageObject Open(const string&);
+    SNetStorageObjectImpl* Create(TNetStorageFlags);
+    SNetStorageObjectImpl* Open(const string&);
 
     // For direct NetStorage API only
     SDirectNetStorageImpl(const string&, CCompoundIDPool::TInstance,
             const IRegistry&);
-    CObj* Create(TNetStorageFlags, const string&);
+    SNetStorageObjectImpl* Create(TNetStorageFlags, const string&);
     bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
 
@@ -132,28 +130,21 @@ private:
 };
 
 
-CObj* SDirectNetStorageImpl::OpenImpl(const string& object_loc)
-{
-    ISelector::Ptr selector(m_Context->Create(object_loc));
-    return new CObj(selector, true);
-}
-
-
-CNetStorageObject SDirectNetStorageImpl::Create(TNetStorageFlags flags)
+SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(flags));
     return new CObj(selector);
 }
 
 
-CNetStorageObject SDirectNetStorageImpl::Open(const string& object_loc)
+SNetStorageObjectImpl* SDirectNetStorageImpl::Open(const string& object_loc)
 {
-    return OpenImpl(object_loc);
+    ISelector::Ptr selector(m_Context->Create(object_loc));
+    return new CObj(selector, true);
 }
 
 
-CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
-        const string& service)
+SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags, const string& service)
 {
     ISelector::Ptr selector(m_Context->Create(flags, service));
 
@@ -247,14 +238,12 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     {
     }
 
-    CObj* OpenImpl(const string&, TNetStorageFlags);
-
-    CNetStorageObject Open(const string&, TNetStorageFlags);
+    SNetStorageObjectImpl* Open(const string&, TNetStorageFlags);
 
     // For direct NetStorage API only
     SDirectNetStorageByKeyImpl(const string&, const string&,
             CCompoundIDPool::TInstance, const IRegistry&);
-    CObj* Open(TNetStorageFlags, const string&);
+    SNetStorageObjectImpl* Open(TNetStorageFlags, const string&);
     bool Exists(const string& db_loc, const string& key, TNetStorageFlags flags);
 
 private:
@@ -263,14 +252,7 @@ private:
 };
 
 
-CNetStorageObject SDirectNetStorageByKeyImpl::Open(const string& key,
-        TNetStorageFlags flags)
-{
-    return OpenImpl(key, flags);
-}
-
-
-CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
+SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(key, flags));
@@ -294,8 +276,7 @@ SDirectNetStorageByKeyImpl::SDirectNetStorageByKeyImpl(
 }
 
 
-CObj* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags,
-        const string& key)
+SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags, const string& key)
 {
     ISelector::Ptr selector(m_Context->Create(key, flags, m_ServiceName));
     return new CObj(selector, true);
@@ -333,7 +314,7 @@ CDirectNetStorageObject CDirectNetStorage::Create(const string& service_name,
 
 CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 {
-    return Impl<SDirectNetStorageImpl>(m_Impl)->OpenImpl(object_loc);
+    return m_Impl->Open(object_loc);
 }
 
 

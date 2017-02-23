@@ -279,7 +279,7 @@ void SNetStorage_NetCacheBlob::Abort()
 {
 }
 
-CNetStorageObject CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
+SNetStorageObjectImpl* CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
 {
     unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
     auto* state = new SNetStorage_NetCacheBlob(*fsm, nc_api, kEmptyStr);
@@ -288,8 +288,7 @@ CNetStorageObject CDNCNetStorage::Create(CNetCacheAPI::TInstance nc_api)
     return fsm.release();
 }
 
-CNetStorageObject CDNCNetStorage::Open(CNetCacheAPI::TInstance nc_api,
-        const string& blob_key)
+SNetStorageObjectImpl* CDNCNetStorage::Open(CNetCacheAPI::TInstance nc_api, const string& blob_key)
 {
     unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
     auto state = new SNetStorage_NetCacheBlob(*fsm, nc_api, blob_key);

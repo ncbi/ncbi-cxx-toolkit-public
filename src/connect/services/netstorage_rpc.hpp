@@ -55,8 +55,8 @@ struct SNetStorageRPC : public SNetStorageImpl
     SNetStorageRPC(const TConfig& config, TNetStorageFlags default_flags);
     SNetStorageRPC(SNetServerInPool* server, SNetStorageRPC* parent);
 
-    virtual CNetStorageObject Create(TNetStorageFlags flags);
-    virtual CNetStorageObject Open(const string& object_loc);
+    SNetStorageObjectImpl* Create(TNetStorageFlags flags) override;
+    SNetStorageObjectImpl* Open(const string& object_loc) override;
 
     CJsonNode Exchange(CNetService service,
             const CJsonNode& request,

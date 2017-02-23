@@ -120,9 +120,8 @@ private:
 class CDNCNetStorage
 {
 public:
-    static CNetStorageObject Create(CNetCacheAPI::TInstance nc_api);
-    static CNetStorageObject Open(CNetCacheAPI::TInstance nc_api,
-        const string& blob_key);
+    static SNetStorageObjectImpl* Create(CNetCacheAPI::TInstance nc_api);
+    static SNetStorageObjectImpl* Open(CNetCacheAPI::TInstance nc_api, const string& blob_key);
 };
 
 END_NCBI_SCOPE
