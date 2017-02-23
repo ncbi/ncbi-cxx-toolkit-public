@@ -145,9 +145,6 @@ private:
 // TODO:
 // Remove IReader and IEmbeddedStreamWriter bases,
 // Make all methods non virtual
-// XXX:
-// IReader and IEmbeddedStreamWriter bases are required for GetReader()/GetWriter()/GetRWStream(),
-// Investigate
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbeddedStreamReaderWriter
 {
     ~SNetStorageObjectImpl();
@@ -186,6 +183,7 @@ private:
     void EnterState(INetStorageObjectState* state);
     void ExitState();
 
+    unique_ptr<IEmbeddedStreamReaderWriter> m_ReaderWriter;
     unique_ptr<INetStorageObjectState> m_Start;
     stack<INetStorageObjectState*> m_Previous;
     INetStorageObjectState* m_Current = nullptr;

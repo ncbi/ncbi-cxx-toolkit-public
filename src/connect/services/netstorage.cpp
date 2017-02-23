@@ -38,10 +38,25 @@
 BEGIN_NCBI_SCOPE
 
 
+struct SEmbeddedStreamReaderWriter : IEmbeddedStreamReaderWriter
+{
+    SEmbeddedStreamReaderWriter(SNetStorageObjectImpl* impl) : m_Impl(impl) { _ASSERT(impl); }
+
+    ERW_Result Read(void* b, size_t c, size_t* r)        override { return m_Impl->Read(b, c, r);   }
+    ERW_Result PendingCount(size_t* c)                   override { return m_Impl->PendingCount(c); }
+    ERW_Result Write(const void* b, size_t c, size_t* w) override { return m_Impl->Write(b, c, w);  }
+    ERW_Result Flush()                                   override { return m_Impl->Flush();         }
+    void       Close()                                   override {        m_Impl->Close();         }
+    void       Abort()                                   override {        m_Impl->Abort();         }
+
+private:
+    SNetStorageObjectImpl* m_Impl;
+};
+
 struct SNetStorageObjectRWStream : public CRWStream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
-        CRWStream(impl, impl, 0, nullptr, CRWStreambuf::fLeakExceptions),
+        CRWStream(&impl->GetReaderWriter(), &impl->GetReaderWriter(), 0, nullptr, CRWStreambuf::fLeakExceptions),
         m_Object(impl)
     {
         _ASSERT(impl);
@@ -148,7 +163,8 @@ void SNetStorageObjectIoMode::Throw(EApi api, EMth mth, string object_loc)
 
 IEmbeddedStreamReaderWriter& SNetStorageObjectImpl::GetReaderWriter()
 {
-    return *this;
+    if (!m_ReaderWriter) m_ReaderWriter.reset(new SEmbeddedStreamReaderWriter(this));
+    return *m_ReaderWriter;
 }
 
 SNetStorageObjectImpl::~SNetStorageObjectImpl()
