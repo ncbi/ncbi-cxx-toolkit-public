@@ -146,7 +146,7 @@ void SNetStorageObjectIoMode::Throw(EApi api, EMth mth, string object_loc)
             ToString(m_Api, m_Mth) << " for " << object_loc);
 }
 
-IReader& SNetStorageObjectImpl::GetReader()
+IEmbeddedStreamReaderWriter& SNetStorageObjectImpl::GetReaderWriter()
 {
     return *this;
 }
@@ -158,11 +158,6 @@ SNetStorageObjectImpl::~SNetStorageObjectImpl()
         Close();
     }
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
-}
-
-IEmbeddedStreamWriter& SNetStorageObjectImpl::GetWriter()
-{
-    return *this;
 }
 
 CNcbiIostream* SNetStorageObjectImpl::GetRWStream()
@@ -245,7 +240,7 @@ void CNetStorageObject::Read(string* data)
 IReader& CNetStorageObject::GetReader()
 {
     m_Impl->SetIoMode(SNetStorageObjectIoMode::eIReaderIWriter, SNetStorageObjectIoMode::eRead);
-    return m_Impl->GetReader();
+    return m_Impl->GetReaderWriter();
 }
 
 bool CNetStorageObject::Eof()
@@ -269,7 +264,7 @@ void CNetStorageObject::Write(const string& data)
 IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
 {
     m_Impl->SetIoMode(SNetStorageObjectIoMode::eIReaderIWriter, SNetStorageObjectIoMode::eWrite);
-    return m_Impl->GetWriter();
+    return m_Impl->GetReaderWriter();
 }
 
 CNcbiIostream* CNetStorageObject::GetRWStream()

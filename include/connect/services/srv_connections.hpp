@@ -75,6 +75,12 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////
 //
+class NCBI_XCONNECT_EXPORT IEmbeddedStreamReaderWriter : public IReader, public IEmbeddedStreamWriter
+{
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
 class NCBI_XCONNECT_EXPORT CNetServerInfo
 {
     NCBI_NET_COMPONENT(NetServerInfo);

@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 struct SNetStorageObjectImpl;
 
 /// @internal
-struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IReader, public IEmbeddedStreamWriter
+struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReaderWriter
 {
     INetStorageObjectState(SNetStorageObjectImpl& fsm) : m_Fsm(fsm) {}
 
@@ -148,7 +148,7 @@ private:
 // XXX:
 // IReader and IEmbeddedStreamWriter bases are required for GetReader()/GetWriter()/GetRWStream(),
 // Investigate
-struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IReader, public IEmbeddedStreamWriter
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbeddedStreamReaderWriter
 {
     ~SNetStorageObjectImpl();
 
@@ -159,8 +159,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IRead
         if (!m_IoMode.Set(api, mth)) m_IoMode.Throw(api, mth, GetLoc());
     }
 
-    IReader& GetReader();
-    IEmbeddedStreamWriter& GetWriter();
+    IEmbeddedStreamReaderWriter& GetReaderWriter();
     CNcbiIostream* GetRWStream();
 
     virtual ERW_Result Read(void* buf, size_t count, size_t* read);
