@@ -217,6 +217,15 @@ string SNetStorage_NetCacheBlob::FileTrack_Path()
             ": not a FileTrack object");
 }
 
+bool SNetStorage_NetCacheBlob::Exists()
+{
+    try {
+        return m_NetCacheAPI.HasBlob(m_Context.locator);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_Context.locator)
+    return false; // Not reached
+}
+
 void SNetStorage_NetCacheBlob::SIState::Close()
 {
     ExitState();

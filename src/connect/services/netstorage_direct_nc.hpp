@@ -104,6 +104,7 @@ public:
     void SetExpiration(const CTimeout&) override;
 
     string FileTrack_Path() override;
+    bool Exists() override;
 
     void StartWriting();
 

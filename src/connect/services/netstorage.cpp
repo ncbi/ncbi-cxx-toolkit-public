@@ -142,6 +142,11 @@ string SNetStorageObjectIoState::FileTrack_Path()
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling FileTrack_Path() while reading/writing " << GetLoc());
 }
 
+bool SNetStorageObjectIoState::Exists()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Calling Exists() while reading/writing " << GetLoc());
+}
+
 string SNetStorageObjectIoMode::ToString(EApi api, EMth mth)
 {
     if (api == eBuffer) {

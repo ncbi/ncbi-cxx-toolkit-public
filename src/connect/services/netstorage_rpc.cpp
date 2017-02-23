@@ -595,6 +595,7 @@ public:
     void SetExpiration(const CTimeout&) override;
 
     string FileTrack_Path() override;
+    bool Exists() override;
 
     void StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn);
     ERW_Result ReadImpl(void* buffer, size_t buf_size, size_t* bytes_read);
@@ -905,18 +906,16 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
 
 bool SNetStorageRPC::Exists(const string& object_loc)
 {
-    auto service = GetServiceIfLocator(object_loc);
+    auto object = Open(object_loc);
+    return object->Exists();
+}
 
-    if (!service)
-        try {
-            return m_NetCacheAPI.HasBlob(object_loc);
-        }
-        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + object_loc)
-
-    CJsonNode request(MkObjectRequest("EXISTS", object_loc));
+bool SNetStorageObjectRPC::Exists()
+{
+    auto request = x_MkRequest("EXISTS");
 
     try {
-        const auto reply = Exchange(service, request);
+        const auto reply = ExchangeUsingOwnService(request);
         return reply.GetBoolean("Exists");
     }
     catch (CNetStorageException& e) {
@@ -1454,17 +1453,8 @@ string SNetStorageByKeyRPC::Relocate(const string& unique_key,
 
 bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
 {
-    CJsonNode request(m_NetStorageRPC->MkObjectRequest("EXISTS", key, flags));
-
-    try {
-        return m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service,
-                request).GetBoolean("Exists");
-    }
-    catch (CNetStorageException& e) {
-        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
-    }
-
-    return false;
+    auto object = Open(key, flags);
+    return object->Exists();
 }
 
 ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,

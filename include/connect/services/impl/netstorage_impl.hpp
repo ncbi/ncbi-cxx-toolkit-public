@@ -60,6 +60,7 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReade
     virtual pair<string, string> GetUserInfo() = 0;
     virtual CNetStorageObjectLoc& Locator() = 0;
     virtual void CancelRelocate() = 0;
+    virtual bool Exists() = 0;
 
 protected:
     void EnterState(INetStorageObjectState* state);
@@ -79,6 +80,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
     CNetStorageObjectInfo GetInfo() final;
     void SetExpiration(const CTimeout& ttl) final;
     string FileTrack_Path() final;
+    bool Exists() final;
 
 private:
     SNetStorageObjectIoState(SNetStorageObjectImpl& fsm) : INetStorageObjectState(fsm) {}
@@ -186,6 +188,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject, public IEmbe
     virtual pair<string, string> GetUserInfo()                         { A(); return m_Current->GetUserInfo(); }
     virtual CNetStorageObjectLoc& Locator()                            { A(); return m_Current->Locator(); }
     virtual void CancelRelocate()                                      { A(); return m_Current->CancelRelocate(); }
+    virtual bool Exists()                                              { A(); return m_Current->Exists(); }
 
 private:
     void A() const { _ASSERT(m_Current); }
