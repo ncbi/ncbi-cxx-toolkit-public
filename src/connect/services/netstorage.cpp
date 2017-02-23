@@ -53,10 +53,24 @@ private:
     SNetStorageObjectImpl* m_Impl;
 };
 
+// Ignore empty writes to iostream (CXX-8936)
+struct SIoStreamEmbeddedStreamReaderWriter : SEmbeddedStreamReaderWriter
+{
+    using SEmbeddedStreamReaderWriter::SEmbeddedStreamReaderWriter;
+
+    ERW_Result Write(const void* buf, size_t count, size_t* written) override
+    {
+        if (count) return SEmbeddedStreamReaderWriter::Write(buf, count, written);
+
+        if (written) *written = 0;
+        return eRW_Success;
+    }
+};
+
 struct SNetStorageObjectRWStream : public CRWStream
 {
-    SNetStorageObjectRWStream(SNetStorageObjectImpl* impl) :
-        CRWStream(&impl->GetReaderWriter(), &impl->GetReaderWriter(), 0, nullptr, CRWStreambuf::fLeakExceptions),
+    SNetStorageObjectRWStream(SNetStorageObjectImpl* impl, IEmbeddedStreamReaderWriter *rw) :
+        CRWStream(rw, rw, 0, nullptr, CRWStreambuf::fLeakExceptions),
         m_Object(impl)
     {
         _ASSERT(impl);
@@ -178,7 +192,8 @@ SNetStorageObjectImpl::~SNetStorageObjectImpl()
 
 CNcbiIostream* SNetStorageObjectImpl::GetRWStream()
 {
-    return new SNetStorageObjectRWStream(this);
+    if (!m_IoStreamReaderWriter) m_IoStreamReaderWriter.reset(new SIoStreamEmbeddedStreamReaderWriter(this));
+    return new SNetStorageObjectRWStream(this, m_IoStreamReaderWriter.get());
 }
 
 ERW_Result SNetStorageObjectImpl::Read(void* buf, size_t count, size_t* read)
@@ -196,12 +211,7 @@ ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
 ERW_Result SNetStorageObjectImpl::Write(const void* buf, size_t count, size_t* written)
 {
     _ASSERT(m_Current);
-
-    if (!m_IoMode.IoStream() || count) return m_Current->Write(buf, count, written);
-
-    // Ignore empty writes to iostream (CXX-8936)
-    if (written) *written = 0;
-    return eRW_Success;
+    return m_Current->Write(buf, count, written);
 }
 
 ERW_Result SNetStorageObjectImpl::Flush()

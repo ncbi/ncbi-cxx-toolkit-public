@@ -184,6 +184,7 @@ private:
     void ExitState();
 
     unique_ptr<IEmbeddedStreamReaderWriter> m_ReaderWriter;
+    unique_ptr<IEmbeddedStreamReaderWriter> m_IoStreamReaderWriter;
     unique_ptr<INetStorageObjectState> m_Start;
     stack<INetStorageObjectState*> m_Previous;
     INetStorageObjectState* m_Current = nullptr;
