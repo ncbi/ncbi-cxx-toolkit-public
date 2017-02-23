@@ -403,6 +403,28 @@ CJsonNode s_ReadMessage(const CJsonNode& request, CNetServerConnection& conn, SN
     return reply;
 }
 
+void s_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
+{
+    CJsonNode storage_flags(CJsonNode::NewObjectNode());
+
+    if (flags & fNST_Fast)
+        storage_flags.SetBoolean("Fast", true);
+    if (flags & fNST_Persistent)
+        storage_flags.SetBoolean("Persistent", true);
+    if (flags & fNST_NetCache)
+        storage_flags.SetBoolean("NetCache", true);
+    if (flags & fNST_FileTrack)
+        storage_flags.SetBoolean("FileTrack", true);
+    if (flags & fNST_Movable)
+        storage_flags.SetBoolean("Movable", true);
+    if (flags & fNST_Cacheable)
+        storage_flags.SetBoolean("Cacheable", true);
+    if (flags & fNST_NoMetaData)
+        storage_flags.SetBoolean("NoMetaData", true);
+
+    node.SetByKey("StorageFlags", storage_flags);
+}
+
 class CNetStorageServerListener : public INetServerConnectionListener
 {
 public:
@@ -823,7 +845,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
     m_UseNextSubHitID.ProperCommand();
 
     auto request = MkStdRequest("CREATE");
-    x_SetStorageFlags(request, GetFlags(flags));
+    s_SetStorageFlags(request, GetFlags(flags));
 
     CNetServerConnection conn;
     const auto reply = Exchange(m_Service, request, &conn);
@@ -874,7 +896,7 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
 
-    x_SetStorageFlags(new_location, flags);
+    s_SetStorageFlags(new_location, flags);
 
     request.SetByKey("NewLocation", new_location);
 
@@ -970,28 +992,6 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
     return s_ReadMessage(request, conn, m_Config.err_mode, *service->m_Listener);
 }
 
-void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
-{
-    CJsonNode storage_flags(CJsonNode::NewObjectNode());
-
-    if (flags & fNST_Fast)
-        storage_flags.SetBoolean("Fast", true);
-    if (flags & fNST_Persistent)
-        storage_flags.SetBoolean("Persistent", true);
-    if (flags & fNST_NetCache)
-        storage_flags.SetBoolean("NetCache", true);
-    if (flags & fNST_FileTrack)
-        storage_flags.SetBoolean("FileTrack", true);
-    if (flags & fNST_Movable)
-        storage_flags.SetBoolean("Movable", true);
-    if (flags & fNST_Cacheable)
-        storage_flags.SetBoolean("Cacheable", true);
-    if (flags & fNST_NoMetaData)
-        storage_flags.SetBoolean("NoMetaData", true);
-
-    node.SetByKey("StorageFlags", storage_flags);
-}
-
 CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
 {
     CJsonNode new_request(CJsonNode::NewObjectNode());
@@ -1046,7 +1046,7 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
     user_key.SetString("UniqueID", unique_key);
     new_request.SetByKey("UserKey", user_key);
 
-    x_SetStorageFlags(new_request, GetFlags(flags));
+    s_SetStorageFlags(new_request, GetFlags(flags));
     return new_request;
 }
 

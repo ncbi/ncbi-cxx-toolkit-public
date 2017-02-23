@@ -67,7 +67,6 @@ struct SNetStorageRPC : public SNetStorageImpl
             CNetServerConnection* conn = NULL,
             CNetServer::TInstance server_to_use = NULL) const;
 
-    static void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
     CJsonNode MkStdRequest(const string& request_type) const;
     CJsonNode MkObjectRequest(const string& request_type,
             const string& object_loc) const;
