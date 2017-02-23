@@ -1319,9 +1319,16 @@ string SNetStorageObjectRPC::FileTrack_Path()
     return ExchangeUsingOwnService(request).GetString("Path");
 }
 
+struct SConnReset
+{
+    CNetServerConnection& conn;
+    SConnReset(CNetServerConnection& c) : conn(c) {}
+    ~SConnReset() { conn = nullptr; }
+};
+
 void SNetStorageObjectRPC::SIState::Close()
 {
-    m_Context.m_Connection = NULL;
+    SConnReset conn_reset(m_Context.m_Connection);
 
     ExitState();
     m_UTTPReader.Reset();
@@ -1329,14 +1336,13 @@ void SNetStorageObjectRPC::SIState::Close()
 
 void SNetStorageObjectRPC::SOState::Close()
 {
-    CNetServerConnection conn_copy(m_Context.m_Connection);
-    m_Context.m_Connection = NULL;
+    SConnReset conn_reset(m_Context.m_Connection);
 
     ExitState();
 
     auto f = [](CUTTPWriter& w) { w.SendControlSymbol(END_OF_DATA_MARKER); };
-    s_SendUTTP(conn_copy->m_Socket, f);
-    m_Context.ReadMessage(conn_copy);
+    s_SendUTTP(m_Context.m_Connection->m_Socket, f);
+    m_Context.ReadMessage(m_Context.m_Connection);
 }
 
 void SNetStorageObjectRPC::Close()
@@ -1367,22 +1373,19 @@ ERW_Result SNetStorageObjectRPC::Flush()
 
 void SNetStorageObjectRPC::SIState::Abort()
 {
-    CNetServerConnection conn_copy(m_Context.m_Connection);
-    m_Context.m_Connection = NULL;
-    _ASSERT(conn_copy);
+    SConnReset conn_reset(m_Context.m_Connection);
 
     ExitState();
     m_UTTPReader.Reset();
-    conn_copy->Close();
+    m_Context.m_Connection->Close();
 }
 
 void SNetStorageObjectRPC::SOState::Abort()
 {
-    CNetServerConnection conn_copy(m_Context.m_Connection);
-    m_Context.m_Connection = NULL;
+    SConnReset conn_reset(m_Context.m_Connection);
 
     ExitState();
-    conn_copy->Close();
+    m_Context.m_Connection->Close();
 }
 
 void SNetStorageObjectRPC::Abort()
