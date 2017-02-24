@@ -53,7 +53,7 @@
 #elif defined(NCBI_OS_LINUX)
    /* Larger sizes do not seem to work everywhere */
 #  define MAX_DGRAM_SIZE  59550
-#elif defined(NCBI_OS_SOLARIS)
+#elif defined(NCBI_OS_SOLARIS)  ||  defined(NCBI_OS_MSWIN)
    /* 65508 was reported too large */
 #  define MAX_DGRAM_SIZE  65507
 #else
