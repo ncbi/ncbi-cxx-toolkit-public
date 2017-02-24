@@ -382,7 +382,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
 
 // GENOMIC_MRNA
 
-DISCREPANCY_CASE(GENOMIC_MRNA, CSeqdesc, eOncaller, "Genomic mRNA is legal, but not expected")
+DISCREPANCY_CASE(GENOMIC_MRNA, CSeqdesc, eOncaller | eSmart, "Genomic mRNA is legal, but not expected")
 {
     if (obj.IsMolinfo() && obj.GetMolinfo().IsSetBiomol() && obj.GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic_mRNA) {
         m_Objs["[n] biololecule[s] [is] genomic mRNA"].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
