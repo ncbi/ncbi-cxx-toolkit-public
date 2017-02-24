@@ -48,9 +48,9 @@ BEGIN_NCBI_SCOPE
 ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size, size_t* bytes_read)
 {
     try {
-        m_IState.reader.reset(m_NetCacheAPI->GetPartReader(m_Context.locator, 0, 0, nullptr, nullptr));
+        m_IState.reader.reset(m_NetCacheAPI->GetPartReader(m_BlobKey, 0, 0, nullptr, nullptr));
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 
     EnterState(&m_IState);
     return m_IState.Read(buffer, buf_size, bytes_read);
@@ -99,9 +99,9 @@ bool SNetStorage_NetCacheBlob::SIState::Eof()
 void SNetStorage_NetCacheBlob::StartWriting()
 {
     try {
-        m_OState.writer.reset(m_NetCacheAPI.PutData(&m_Context.locator));
+        m_OState.writer.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
 
     EnterState(&m_OState);
 }
@@ -119,7 +119,7 @@ ERW_Result SNetStorage_NetCacheBlob::SOState::Write(const void* buf_pos, size_t 
     try {
         return writer->Write(buf_pos, buf_size, bytes_written);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
     return eRW_Error; // Not reached
 }
 
@@ -136,28 +136,28 @@ ERW_Result SNetStorage_NetCacheBlob::SOState::Flush()
 Uint8 SNetStorage_NetCacheBlob::GetSize()
 {
     try {
-        return m_NetCacheAPI.GetBlobSize(m_Context.locator);
+        return m_NetCacheAPI.GetBlobSize(m_BlobKey);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
     return 0; // Not reached
 }
 
 list<string> SNetStorage_NetCacheBlob::GetAttributeList() const
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
 }
 
 string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/) const
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
 }
 
 void SNetStorage_NetCacheBlob::SetAttribute(const string& /*attr_name*/,
         const string& /*attr_value*/)
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute setting for NetCache blobs is not implemented");
 }
 
@@ -166,7 +166,7 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
     try {
         try {
             CNetServerMultilineCmdOutput output(
-                    m_NetCacheAPI.GetBlobInfo(m_Context.locator));
+                    m_NetCacheAPI.GetBlobInfo(m_BlobKey));
 
             CJsonNode blob_info = CJsonNode::NewObjectNode();
             string line, key, val;
@@ -180,67 +180,67 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
 
             Uint8 blob_size = size_node && size_node.IsInteger() ?
                     (Uint8) size_node.AsInteger() :
-                    m_NetCacheAPI.GetBlobSize(m_Context.locator);
+                    m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-            if (m_NetCacheAPI.HasBlob(m_Context.locator)) {
-                return g_CreateNetStorageObjectInfo(m_Context.locator,
+            if (m_NetCacheAPI.HasBlob(m_BlobKey)) {
+                return g_CreateNetStorageObjectInfo(m_BlobKey,
                         eNFL_NetCache, NULL, blob_size, blob_info);
             }
         }
-        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_Context.locator)
+        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
     }
     catch (CNetStorageException& e) {
         if (e.GetErrCode() != CNetStorageException::eNotExists)
             throw;
     }
 
-    return g_CreateNetStorageObjectInfo(m_Context.locator,
+    return g_CreateNetStorageObjectInfo(m_BlobKey,
             eNFL_NotFound, NULL, 0, NULL);
 }
 
 void SNetStorage_NetCacheBlob::SetExpiration(const CTimeout& ttl)
 {
     if (!ttl.IsFinite()) {
-        NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": infinite ttl for NetCache blobs is not implemented");
     }
 
     try {
-        m_NetCacheAPI.ProlongBlobLifetime(m_Context.locator, (unsigned)ttl.GetAsDouble());
+        m_NetCacheAPI.ProlongBlobLifetime(m_BlobKey, (unsigned)ttl.GetAsDouble());
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on setting ttl " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on setting ttl " + m_BlobKey)
 }
 
 string SNetStorage_NetCacheBlob::FileTrack_Path()
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_Context.locator <<
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
             ": not a FileTrack object");
 }
 
 string SNetStorage_NetCacheBlob::Relocate(TNetStorageFlags, TNetStorageProgressCb)
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_Context.locator <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": Relocate for NetCache blobs is not implemented");
 }
 
 bool SNetStorage_NetCacheBlob::Exists()
 {
     try {
-        return m_NetCacheAPI.HasBlob(m_Context.locator);
+        return m_NetCacheAPI.HasBlob(m_BlobKey);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
     return false; // Not reached
 }
 
 ENetStorageRemoveResult SNetStorage_NetCacheBlob::Remove()
 {
     try {
-        if (m_NetCacheAPI.HasBlob(m_Context.locator)) {
-            m_NetCacheAPI.Remove(m_Context.locator);
+        if (m_NetCacheAPI.HasBlob(m_BlobKey)) {
+            m_NetCacheAPI.Remove(m_BlobKey);
             return eNSTRR_Removed;
         }
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + m_Context.locator)
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + m_BlobKey)
 
     return eNSTRR_NotFound;
 }

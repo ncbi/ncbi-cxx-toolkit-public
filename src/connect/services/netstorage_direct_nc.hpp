@@ -41,13 +41,11 @@ BEGIN_NCBI_SCOPE
 struct SNetStorage_NetCacheBlob : public INetStorageObjectState
 {
 private:
-    struct SIState : public SNetStorageObjectChildState<SNetStorageObjectIState, SNetStorageObjectContext>
+    struct SIState : public SNetStorageObjectIState
     {
-        typedef SNetStorageObjectChildState<SNetStorageObjectIState, SNetStorageObjectContext> TBase;
-
         unique_ptr<CNetCacheReader> reader;
 
-        SIState(SNetStorageObjectImpl& fsm, SNetStorageObjectContext& context) : TBase(fsm, context) {}
+        SIState(SNetStorageObjectImpl& fsm, string& blob_key) : SNetStorageObjectIState(fsm), m_BlobKey(blob_key) {}
 
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
@@ -55,21 +53,29 @@ private:
 
         void Close() override;
         void Abort() override;
+
+        string GetLoc() const override { return m_BlobKey; }
+
+    private:
+        string& m_BlobKey;
     };
 
-    struct SOState : public SNetStorageObjectChildState<SNetStorageObjectOState, SNetStorageObjectContext>
+    struct SOState : public SNetStorageObjectOState
     {
-        typedef SNetStorageObjectChildState<SNetStorageObjectOState, SNetStorageObjectContext> TBase;
-
         unique_ptr<IEmbeddedStreamWriter> writer;
 
-        SOState(SNetStorageObjectImpl& fsm, SNetStorageObjectContext& context) : TBase(fsm, context) {}
+        SOState(SNetStorageObjectImpl& fsm, string& blob_key) : SNetStorageObjectOState(fsm), m_BlobKey(blob_key) {}
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
 
         void Close() override;
         void Abort() override;
+
+        string GetLoc() const override { return m_BlobKey; }
+
+    private:
+        string& m_BlobKey;
     };
 
 public:
@@ -77,9 +83,9 @@ public:
             const string& blob_key) :
         INetStorageObjectState(fsm),
         m_NetCacheAPI(netcache_api),
-        m_Context(blob_key),
-        m_IState(fsm, m_Context),
-        m_OState(fsm, m_Context)
+        m_BlobKey(blob_key),
+        m_IState(fsm, m_BlobKey),
+        m_OState(fsm, m_BlobKey)
     {
     }
 
@@ -91,10 +97,7 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override                                       { return m_Context.locator; }
-    pair<string, string> GetUserInfo()                                   { return m_Context.GetUserInfo(); }
-    CNetStorageObjectLoc& Locator() override                             { return m_Context.Locator(); }
-    void CancelRelocate() override                                       { return m_Context.CancelRelocate(); }
+    string GetLoc() const override { return m_BlobKey; }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;
@@ -112,7 +115,7 @@ public:
 
 private:
     CNetCacheAPI m_NetCacheAPI;
-    SNetStorageObjectContext m_Context;
+    string m_BlobKey;
     SIState m_IState;
     SOState m_OState;
 };

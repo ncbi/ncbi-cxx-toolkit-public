@@ -518,15 +518,16 @@ void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 struct SNetStorageObjectRPC : public INetStorageObjectState
 {
 private:
-    struct SContext : SNetStorageObjectContext
+    struct SContext
     {
+        string locator;
         const SNetStorage::SConfig::EErrMode m_ErrMode;
         CRef<INetServerConnectionListener> m_Listener;
         mutable CJsonNode m_OriginalRequest;
         mutable CNetServerConnection m_Connection;
 
         SContext(SNetStorageRPC* netstorage_rpc, const string& object_loc) :
-            SNetStorageObjectContext(object_loc),
+            locator(object_loc),
             m_ErrMode(netstorage_rpc->m_Config.err_mode),
             m_Listener(netstorage_rpc->m_Service->m_Listener)
         {
@@ -543,11 +544,9 @@ private:
         }
     };
 
-    struct SIState : public SNetStorageObjectChildState<SNetStorageObjectIState, SContext>
+    struct SIState : public SNetStorageObjectIState
     {
-        typedef SNetStorageObjectChildState<SNetStorageObjectIState, SContext> TBase;
-
-        SIState(SNetStorageObjectImpl& fsm, SContext& context) : TBase(fsm, context) {}
+        SIState(SNetStorageObjectImpl& fsm, SContext& context) : SNetStorageObjectIState(fsm), m_Context(context) {}
 
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
@@ -556,12 +555,15 @@ private:
         void Close() override;
         void Abort() override;
 
+        string GetLoc() const override { return m_Context.locator; }
+
         void StartReading();
 
     private:
         void ReadConfirmation();
         void ReadSocket() { s_ReadSocket(m_Context.m_Connection->m_Socket, m_ReadBuffer, m_UTTPReader); }
 
+        SContext& m_Context;
         vector<char> m_ReadBuffer;
         CUTTPReader m_UTTPReader;
         const char* m_CurrentChunk;
@@ -569,17 +571,20 @@ private:
         bool m_EOF;
     };
 
-    struct SOState : public SNetStorageObjectChildState<SNetStorageObjectOState, SContext>
+    struct SOState : public SNetStorageObjectOState
     {
-        typedef SNetStorageObjectChildState<SNetStorageObjectOState, SContext> TBase;
-
-        SOState(SNetStorageObjectImpl& fsm, SContext& context) : TBase(fsm, context) {}
+        SOState(SNetStorageObjectImpl& fsm, SContext& context) : SNetStorageObjectOState(fsm), m_Context(context) {}
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
 
         void Close() override;
         void Abort() override;
+
+        string GetLoc() const override { return m_Context.locator; }
+
+    private:
+        SContext& m_Context;
     };
 
 public:
@@ -596,10 +601,7 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const override                                       { return m_Context.locator; }
-    pair<string, string> GetUserInfo()                                   { return m_Context.GetUserInfo(); }
-    CNetStorageObjectLoc& Locator() override                             { return m_Context.Locator(); }
-    void CancelRelocate() override                                       { return m_Context.CancelRelocate(); }
+    string GetLoc() const override { return m_Context.locator; }
     bool Eof() override;
     Uint8 GetSize() override;
     list<string> GetAttributeList() const override;
@@ -633,21 +635,6 @@ private:
     SIState m_IState;
     SOState m_OState;
 };
-
-pair<string, string> SNetStorageObjectContext::GetUserInfo()
-{
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::GetUserInfo()");
-}
-
-CNetStorageObjectLoc& SNetStorageObjectContext::Locator()
-{
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::Locator()");
-}
-
-void SNetStorageObjectContext::CancelRelocate()
-{
-    NCBI_THROW_FMT(CNetStorageException, eNotSupported, "SNetStorageObjectContext::CancelRelocate()");
-}
 
 void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
 {

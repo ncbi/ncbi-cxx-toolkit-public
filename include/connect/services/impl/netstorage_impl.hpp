@@ -57,12 +57,24 @@ struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReade
     virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void SetExpiration(const CTimeout& ttl) = 0;
     virtual string FileTrack_Path() = 0;
-    virtual pair<string, string> GetUserInfo() = 0;
-    virtual CNetStorageObjectLoc& Locator() = 0;
     virtual string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) = 0;
-    virtual void CancelRelocate() = 0;
     virtual bool Exists() = 0;
     virtual ENetStorageRemoveResult Remove() = 0;
+
+    virtual pair<string, string> GetUserInfo()
+    {
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, "INetStorageObjectState::GetUserInfo()");
+    }
+
+    virtual CNetStorageObjectLoc& Locator()
+    {
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, "INetStorageObjectState::Locator()");
+    }
+
+    virtual void CancelRelocate()
+    {
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, "INetStorageObjectState::CancelRelocate()");
+    }
 
 protected:
     void EnterState(INetStorageObjectState* state);
@@ -110,21 +122,6 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectOState : public SNetStorageObjectIo
     ERW_Result Read(void* buf, size_t count, size_t* read) final;
     ERW_Result PendingCount(size_t* count) final;
     bool Eof() final;
-};
-
-/// @internal
-template <class TBase, class TContext>
-struct SNetStorageObjectChildState : TBase
-{
-    SNetStorageObjectChildState(SNetStorageObjectImpl& fsm, TContext& context) : TBase(fsm), m_Context(context) {}
-
-    string GetLoc() const final                                       { return m_Context.locator; }
-    pair<string, string> GetUserInfo() final                          { return m_Context.GetUserInfo(); }
-    CNetStorageObjectLoc& Locator() final                             { return m_Context.Locator(); }
-    void CancelRelocate() final                                       { return m_Context.CancelRelocate(); }
-
-protected:
-    TContext& m_Context;
 };
 
 /// @internal
