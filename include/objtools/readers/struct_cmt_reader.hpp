@@ -43,7 +43,7 @@ public:
    CStructuredCommentsReader(objects::ILineErrorListener* logger);
    ~CStructuredCommentsReader();
 
-   typedef struct {
+   typedef struct SStructComment {
        CRef<objects::CSeq_id> m_id;
        vector<CRef<objects::CSeqdesc> > m_descs;
        static const string& GetPrefix(const objects::CSeqdesc&);
