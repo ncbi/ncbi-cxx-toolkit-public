@@ -86,7 +86,7 @@ public:
 private:
 
     ESerialDataFormat        m_eDataFormat;
-    const char*              m_pchService;
+    string                   m_sService;
     STimeout*                m_timeout;  // NULL, or points to "m_timeout_value"
     STimeout                 m_timeout_value;
 

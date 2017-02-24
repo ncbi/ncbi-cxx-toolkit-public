@@ -88,11 +88,11 @@ CTaxon3::Init(const STimeout* timeout, unsigned reconnect_attempts)
     CNcbiEnvironment env;
     bool bFound = false;
     
-    m_pchService = env.Get("NI_SERVICE_NAME_TAXON3", &bFound).c_str();
+    m_sService = env.Get("NI_SERVICE_NAME_TAXON3", &bFound);
     if( !bFound ) {
-	m_pchService = env.Get("NI_TAXON3_SERVICE_NAME", &bFound).c_str();
+	m_sService = env.Get("NI_TAXON3_SERVICE_NAME", &bFound);
 	if( !bFound ) {
-	    m_pchService = "TaxService3";
+	    m_sService = "TaxService3";
 	}
     }
 
@@ -116,7 +116,7 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
 			auto_ptr<CObjectOStream> pOut;
 			auto_ptr<CObjectIStream> pIn;
 			auto_ptr<CConn_ServiceStream>
-			    pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
+			    pServer( new CConn_ServiceStream(m_sService, fSERV_Any,
 							     0, 0, m_timeout) );
 
 			pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
