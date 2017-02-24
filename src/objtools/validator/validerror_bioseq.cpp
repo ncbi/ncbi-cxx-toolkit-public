@@ -2228,6 +2228,64 @@ bool CValidError_bioseq::IsWGS(CBioseq_Handle bsh)
 }
 
 
+bool CValidError_bioseq::IsWGSAccession(const CSeq_id& id)
+{
+    const CTextseq_id* txt = id.GetTextseq_Id();
+    if (txt == NULL || !txt->IsSetAccession()) {
+        return false;
+    }
+    CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(txt->GetAccession());
+    if ((info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CValidError_bioseq::IsWGSAccession(const CBioseq& seq)
+{
+    if (!seq.IsSetId()) {
+        return false;
+    }
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if (IsWGSAccession(**id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::IsTSAAccession(const CSeq_id& id)
+{
+    const CTextseq_id* txt = id.GetTextseq_Id();
+    if (txt == NULL || !txt->IsSetAccession()) {
+        return false;
+    }
+    CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(txt->GetAccession());
+    if ((info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CValidError_bioseq::IsTSAAccession(const CBioseq& seq)
+{
+    if (!seq.IsSetId()) {
+        return false;
+    }
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if (IsWGSAccession(**id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CValidError_bioseq::IsPartial(const CBioseq& seq, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(seq);

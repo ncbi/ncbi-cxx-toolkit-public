@@ -372,6 +372,10 @@ void CValidError_imp::ValidatePubArticle
                 "Journal title missing", obj, ctx);
         }
 
+        if (uid == 0) {
+            ValidatePubArticleNoPMID(art, obj, ctx);
+        }
+
         if ( !has_iso_jta && !is_electronic_journal ) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
@@ -1255,9 +1259,10 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
         CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
         if (b_it) {
             CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
-	          if (   !s_IsNoncuratedRefSeq(*bioseq)
-		         && !s_IsWgs_Contig(*bioseq)
-		         && !s_IsTSA_Contig(*bioseq) ) {
+            if (CValidError_bioseq::IsWGSMaster(*bioseq, *m_Scope) || 
+                (!s_IsNoncuratedRefSeq(*bioseq) &&
+                 !CValidError_bioseq::IsWGSAccession(*bioseq) &&
+                 !CValidError_bioseq::IsTSAAccession(*bioseq))) {
                   EDiagSev sev = eDiag_Info;
                   if (m_genomeSubmission) {
                       sev = eDiag_Error;
