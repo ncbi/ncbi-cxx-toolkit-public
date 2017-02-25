@@ -4786,10 +4786,14 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             if (aa == 'M') {
                 if (NStr::Find(product, "fMet") != NPOS &&
                     (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "fMet") == NPOS)) {
-                    x_AddToComment(feat, "fMet");
+                    // x_AddToComment(feat, "fMet");
+                    ChangeMade(CCleanupChange::eChangeRNAref);
+                    return eAction_Nothing;
                 } else if (NStr::Find(product, "iMet") != NPOS &&
                     (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "iMet") == NPOS)) {
-                    x_AddToComment(feat, "iMet");
+                    // x_AddToComment(feat, "iMet");
+                    ChangeMade(CCleanupChange::eChangeRNAref);
+                    return eAction_Nothing;
                 }
             }
 
