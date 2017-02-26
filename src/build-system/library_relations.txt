@@ -125,6 +125,7 @@ bdb2ez needs xser
 bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
+biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
 biosample needs xmlwrapp
 biosample needs xregexp
@@ -323,7 +324,7 @@ gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
-gc_schedule needs gc_asn_access
+gc_schedule needs ncbi_xcache_netcache
 gc_utils needs gpipe_objutil
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
@@ -887,6 +888,7 @@ refseq_ctl needs process_annotation_stats
 refseq_ctl needs validation_results
 reftrack_access needs xncbi
 reftrack_admin needs xncbi
+regexp needs3party $(ORIG_LIBS)
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
@@ -961,9 +963,8 @@ ssl needs3party $(Z_LIBS)
 ssparse needs3party ncbiid1
 ssparse needs3party ncbimla
 ssparse needs3party ncbitxc2
-ssrvcmn needs $(LIBSSSUTILS)
+ssrvcmn needs ssssys
 ssscli needs ssrvcmn
-ssscli needs ssssys
 sssdb needs ssssys
 sssdb needs3party $(SYBASE_DLLS)
 sssdb needs3party $(SYBASE_LIBS)
@@ -1057,6 +1058,8 @@ tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
 txclient needs xconnect
+txcscu needs txclient
+txcscu needs xregexp
 txserv needs xmlwrapp
 txserv14 needs txxmldoc
 txserv14 needs xconnect
