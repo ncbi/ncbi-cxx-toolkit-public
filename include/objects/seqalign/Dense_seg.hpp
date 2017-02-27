@@ -179,7 +179,7 @@ private:
 
 
 NCBISER_HAVE_GLOBAL_READ_MEMBER_HOOK(CDense_seg, "starts,lens,strands",
-                                     new CDense_seg::CReserveHook);
+                                     new CDense_seg::CReserveHook)
 
 
 /////////////////// CDense_seg inline methods
