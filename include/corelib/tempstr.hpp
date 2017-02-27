@@ -352,7 +352,6 @@ CTempString::const_iterator CTempString::end() const
 inline
 const char* CTempString::data(void) const
 {
-    _ASSERT(m_String);
     return m_String;
 }
 
