@@ -99,6 +99,44 @@ public:
 };
 
 
+namespace foo {
+class CClassWithFlags
+{
+public:
+    enum EFlags {
+        fDefault = 0,
+        fFlag1 = 1<<0,
+        fFlag2 = 1<<1,
+        fFlag3 = 1<<2,
+        fMask12 = 0|fFlag1|fFlag2
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+    enum EOtherFlags {
+        fOtherDefault = 0,
+        fOtherFlag1 = 1<<0,
+        fOtherFlag2 = 1<<1,
+        fOtherFlag3 = 1<<2,
+        fOtherMask12 = 0|fOtherFlag1|fOtherFlag2
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EOtherFlags, TOtherFlags);
+    enum EOtherEnum {
+        eValue1,
+        eValue2
+    };
+
+    static void Foo(TFlags flags = fDefault)
+        {
+            if ( flags == fDefault ) {
+                cout << "Foo()" << endl;
+            }
+            else {
+                cout << "Foo("<<flags<<")" << endl;
+            }
+        }
+};
+DECLARE_SAFE_FLAGS(CClassWithFlags::EFlags);
+}
+
 int CTestApplication::Run(void)
 {
     NcbiCout << "isupper(int('A')) = " << isupper(int('A')) << NcbiEndl;
@@ -127,6 +165,16 @@ int CTestApplication::Run(void)
     gi = GI_CONST(192377853343);
 #endif
     NcbiCout << "GI = " << gi << NcbiEndl;
+    {{
+        // safe-flags test
+        foo::CClassWithFlags::Foo();
+        foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
+        using namespace foo;
+        CClassWithFlags::Foo(CClassWithFlags::fFlag1|CClassWithFlags::fFlag3);
+        CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2);
+        CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2);
+        //CClassWithFlags::Foo(CClassWithFlags::eValue1);
+    }}
     NcbiCout << "Passed" << NcbiEndl;
     return 0;
 }
