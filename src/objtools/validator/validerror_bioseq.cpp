@@ -5462,11 +5462,44 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 
 void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds, const CSeq_loc& parent_loc, const string& parent_name)
 {
+    bool check_gaps = false;
+    CBioseq_Handle bh = m_Scope->GetBioseqHandle(cds.GetLocation());
+    if (bh && bh.IsSetInst() && bh.GetInst().IsSetRepr() && bh.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+        check_gaps = true;
+    }
+
+    bool has_abutting_gap = false;
+    bool is_minus_strand = cds.GetLocation().IsSetStrand() && cds.GetLocation().GetStrand() == eNa_strand_minus;
+
     if (cds.GetLocation().IsPartialStart(eExtreme_Biological) && !parent_loc.IsPartialStart(eExtreme_Biological)) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
+
+        if (check_gaps) {
+
+            CSeqVector seq_vec(bh);
+            TSeqPos start = cds.GetLocation().GetStart(eExtreme_Biological),
+                    pos = is_minus_strand ? start + 1 : start - 1;
+
+            has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+        }
+
+        if (!has_abutting_gap) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
+        }
     }
     if (cds.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
+
+        if (check_gaps) {
+
+            CSeqVector seq_vec(bh);
+            TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Biological),
+                    pos = is_minus_strand ? stop - 1 : stop + 1;
+
+            has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+        }
+
+        if (!has_abutting_gap) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
+        }
     }
 }
 
