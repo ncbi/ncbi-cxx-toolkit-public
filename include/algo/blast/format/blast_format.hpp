@@ -62,7 +62,7 @@ USING_SCOPE(align_format);
 class CCmdLineBlastXML2ReportData;
 
 /// This class formats the BLAST results for command line applications
-class NCBI_XBLASTFORMAT_EXPORT CBlastFormat
+class NCBI_XBLASTFORMAT_EXPORT CBlastFormat : public CObject
 {
 public:
 
