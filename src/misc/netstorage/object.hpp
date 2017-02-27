@@ -43,12 +43,11 @@ namespace NDirectNetStorageImpl
 class CObj : public INetStorageObjectState, private IState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, ISelector::Ptr selector, bool is_opened = false)
-        : INetStorageObjectState(fsm),
-          m_Selector(selector),
-          m_State(this),
-          m_Location(this),
-          m_IsOpened(is_opened)
+    CObj(SNetStorageObjectImpl&, ISelector::Ptr selector, bool is_opened = false) :
+        m_Selector(selector),
+        m_State(this),
+        m_Location(this),
+        m_IsOpened(is_opened)
     {
         _ASSERT(m_Selector.get());
     }

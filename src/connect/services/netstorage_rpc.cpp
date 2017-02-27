@@ -546,8 +546,6 @@ private:
 
     struct SIState : public SNetStorageObjectIState
     {
-        SIState(SNetStorageObjectImpl& fsm, SContext& context) : SNetStorageObjectIState(fsm), m_Context(context) {}
-
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
         bool Eof() override;
@@ -558,6 +556,9 @@ private:
         string GetLoc() const override { return m_Context.locator; }
 
         void StartReading();
+
+    protected:
+        SIState(SContext& context) : m_Context(context) {}
 
     private:
         void ReadConfirmation();
@@ -573,8 +574,6 @@ private:
 
     struct SOState : public SNetStorageObjectOState
     {
-        SOState(SNetStorageObjectImpl& fsm, SContext& context) : SNetStorageObjectOState(fsm), m_Context(context) {}
-
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
 
@@ -582,6 +581,9 @@ private:
         void Abort() override;
 
         string GetLoc() const override { return m_Context.locator; }
+
+    protected:
+        SOState(SContext& context) : m_Context(context) {}
 
     private:
         SContext& m_Context;
@@ -632,8 +634,8 @@ private:
     CNetService m_OwnService;
     TBuilder m_Builder;
     SContext m_Context;
-    SIState m_IState;
-    SOState m_OState;
+    SNetStorageObjectState<SIState> m_IState;
+    SNetStorageObjectState<SOState> m_OState;
 };
 
 void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServerConnection::TInstance conn)
@@ -646,7 +648,6 @@ void SNetStorageObjectRPC::StartWriting(CJsonNode::TInstance request, CNetServer
 
 SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageObjectImpl& fsm, SNetStorageRPC* netstorage_rpc, CNetService service,
         TBuilder builder, const string& object_loc) :
-    INetStorageObjectState(fsm),
     m_NetStorageRPC(netstorage_rpc),
     m_OwnService(service),
     m_Builder(builder),

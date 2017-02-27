@@ -45,8 +45,6 @@ private:
     {
         unique_ptr<CNetCacheReader> reader;
 
-        SIState(SNetStorageObjectImpl& fsm, string& blob_key) : SNetStorageObjectIState(fsm), m_BlobKey(blob_key) {}
-
         ERW_Result Read(void* buf, size_t count, size_t* read) override;
         ERW_Result PendingCount(size_t* count) override;
         bool Eof() override;
@@ -56,6 +54,9 @@ private:
 
         string GetLoc() const override { return m_BlobKey; }
 
+    protected:
+        SIState(string& blob_key) : m_BlobKey(blob_key) {}
+
     private:
         string& m_BlobKey;
     };
@@ -63,8 +64,6 @@ private:
     struct SOState : public SNetStorageObjectOState
     {
         unique_ptr<IEmbeddedStreamWriter> writer;
-
-        SOState(SNetStorageObjectImpl& fsm, string& blob_key) : SNetStorageObjectOState(fsm), m_BlobKey(blob_key) {}
 
         ERW_Result Write(const void* buf, size_t count, size_t* written) override;
         ERW_Result Flush() override;
@@ -74,6 +73,9 @@ private:
 
         string GetLoc() const override { return m_BlobKey; }
 
+    protected:
+        SOState(string& blob_key) : m_BlobKey(blob_key) {}
+
     private:
         string& m_BlobKey;
     };
@@ -81,7 +83,6 @@ private:
 public:
     SNetStorage_NetCacheBlob(SNetStorageObjectImpl& fsm, CNetCacheAPI::TInstance netcache_api,
             const string& blob_key) :
-        INetStorageObjectState(fsm),
         m_NetCacheAPI(netcache_api),
         m_BlobKey(blob_key),
         m_IState(fsm, m_BlobKey),
@@ -116,8 +117,8 @@ public:
 private:
     CNetCacheAPI m_NetCacheAPI;
     string m_BlobKey;
-    SIState m_IState;
-    SOState m_OState;
+    SNetStorageObjectState<SIState> m_IState;
+    SNetStorageObjectState<SOState> m_OState;
 };
 
 END_NCBI_SCOPE

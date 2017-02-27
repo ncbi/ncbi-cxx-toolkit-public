@@ -46,8 +46,6 @@ struct SNetStorageObjectImpl;
 /// @internal
 struct NCBI_XCONNECT_EXPORT INetStorageObjectState : public IEmbeddedStreamReaderWriter
 {
-    INetStorageObjectState(SNetStorageObjectImpl& fsm) : m_Fsm(fsm) {}
-
     virtual string GetLoc() const = 0;
     virtual bool Eof() = 0;
     virtual Uint8 GetSize() = 0;
@@ -81,6 +79,23 @@ protected:
     void ExitState();
 
 private:
+    virtual SNetStorageObjectImpl& Fsm() = 0;
+};
+
+/// @internal
+template <class TBase>
+struct SNetStorageObjectState : TBase
+{
+    template <class... TArgs>
+    SNetStorageObjectState(SNetStorageObjectImpl& fsm, TArgs&&... args) :
+        TBase(std::forward<TArgs>(args)...),
+        m_Fsm(fsm)
+    {
+    }
+
+private:
+    SNetStorageObjectImpl& Fsm() final { return m_Fsm; }
+
     SNetStorageObjectImpl& m_Fsm;
 };
 
@@ -97,19 +112,11 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIoState : public INetStorageObjectS
     string Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb) final;
     bool Exists() final;
     ENetStorageRemoveResult Remove() final;
-
-private:
-    SNetStorageObjectIoState(SNetStorageObjectImpl& fsm) : INetStorageObjectState(fsm) {}
-
-    friend struct SNetStorageObjectIState;
-    friend struct SNetStorageObjectOState;
 };
 
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectIState : public SNetStorageObjectIoState
 {
-    SNetStorageObjectIState(SNetStorageObjectImpl& fsm) : SNetStorageObjectIoState(fsm) {}
-
     ERW_Result Write(const void* buf, size_t count, size_t* written) final;
     ERW_Result Flush() final;
 };
@@ -117,8 +124,6 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectIState : public SNetStorageObjectIo
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectOState : public SNetStorageObjectIoState
 {
-    SNetStorageObjectOState(SNetStorageObjectImpl& fsm) : SNetStorageObjectIoState(fsm) {}
-
     ERW_Result Read(void* buf, size_t count, size_t* read) final;
     ERW_Result PendingCount(size_t* count) final;
     bool Eof() final;
@@ -180,7 +185,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
     static SNetStorageObjectImpl* CreateAndStart(TStarter starter, TArgs&&... args)
     {
         unique_ptr<SNetStorageObjectImpl> fsm(new SNetStorageObjectImpl());
-        auto state = new TState(*fsm, std::forward<TArgs>(args)...);
+        auto state = new SNetStorageObjectState<TState>(*fsm, *fsm, std::forward<TArgs>(args)...);
         fsm->SetStartState(state);
         starter(*state);
         return fsm.release();
@@ -224,12 +229,12 @@ inline void SNetStorageObjectImpl::ExitState()
 
 inline void INetStorageObjectState::EnterState(INetStorageObjectState* state)
 {
-    m_Fsm.EnterState(state);
+    Fsm().EnterState(state);
 }
 
 inline void INetStorageObjectState::ExitState()
 {
-    m_Fsm.ExitState();
+    Fsm().ExitState();
 }
 
 /// @internal
