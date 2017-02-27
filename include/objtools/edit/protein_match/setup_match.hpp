@@ -46,7 +46,7 @@ public:
     virtual ~CMatchSetup(void) = default;
 
     static void GatherNucProtSets(
-        CRef<CSeq_entry> input_entry,
+        CSeq_entry& input_entry,
         list<CRef<CSeq_entry>>& nuc_prot_sets);
 
     CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);

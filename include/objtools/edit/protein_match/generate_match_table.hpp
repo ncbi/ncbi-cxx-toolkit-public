@@ -54,6 +54,8 @@ public:
     static void WriteTable(const CSeq_table& table,
         CNcbiOstream& out);
 
+    TSeqPos GetNum_rows(void) const;
+
     typedef list<CRef<CSeq_annot>> TMatches;
 
     struct SNucMatchInfo {

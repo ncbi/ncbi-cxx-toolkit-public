@@ -590,9 +590,9 @@ void CMatchTabulate::WriteTable(const CSeq_table& table,
 
     out << '\n';
 
-    const unsigned int numRows = table.GetNum_rows();
+    const auto numRows = table.GetNum_rows();
 
-    for (int row_index=0; row_index<numRows; ++row_index) { 
+    for (auto row_index=0; row_index<numRows; ++row_index) { 
         for (auto pColumn : table.GetColumns()) {
             const string* pValue = pColumn->GetStringPtr(row_index);
             out << *pValue << "\t";
@@ -607,6 +607,15 @@ void CMatchTabulate::WriteTable(
         CNcbiOstream& out) const
 {
     WriteTable(*mMatchTable, out);
+}
+
+
+TSeqPos CMatchTabulate::GetNum_rows(void) const 
+{
+    if (!mMatchTable || mMatchTable.IsNull()) {
+        return 0;
+    }
+    return mMatchTable->GetNum_rows();
 }
 
 
@@ -635,7 +644,7 @@ void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table)
     }
 
 
-    int num_rows = 0;
+    TSeqPos num_rows = 0;
     while (!pLineReader->AtEOF()) {
         pLineReader->ReadLine();
         line = pLineReader->GetCurrentLine();

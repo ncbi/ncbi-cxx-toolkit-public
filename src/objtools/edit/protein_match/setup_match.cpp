@@ -24,14 +24,14 @@ CMatchSetup::CMatchSetup(CRef<CScope> db_scope) : m_DBScope(db_scope)
 
 
 void CMatchSetup::GatherNucProtSets(
-    CRef<CSeq_entry> input_entry,
+    CSeq_entry& input_entry,
     list<CRef<CSeq_entry>>& nuc_prot_sets) 
 {
-    if (!input_entry->IsSet()) {
+    if (!input_entry.IsSet()) {
         return;
     }
 
-    for (CTypeIterator<CSeq_entry> it(*input_entry); it; ++it) {
+    for (CTypeIterator<CSeq_entry> it(input_entry); it; ++it) {
         if (it->IsSet() &&
             it->GetSet().IsSetClass() &&
             it->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
