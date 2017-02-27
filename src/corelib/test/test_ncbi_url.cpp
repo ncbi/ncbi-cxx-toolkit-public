@@ -93,7 +93,6 @@ enum EUrlParts {
 void s_TestUrl(string url_str, int flags)
 {
     CUrl url(url_str);
-    bool custom_scheme = false;
     if (flags & fScheme) {
         if (url.GetScheme() == kNonGenericScheme) {
             BOOST_CHECK_EQUAL(url.GetPath(), kNonGenericPath);
