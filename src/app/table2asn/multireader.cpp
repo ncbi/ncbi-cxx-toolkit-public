@@ -655,6 +655,28 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
+namespace
+{
+    void CopyDescr(CSeq_entry& dest, const CSeq_entry& src)
+    {
+        if (src.IsSetDescr() && !src.GetDescr().Get().empty())
+        {
+            dest.SetDescr().Set().insert(dest.SetDescr().Set().end(),
+                src.GetDescr().Get().begin(),
+                src.GetDescr().Get().end());
+        }
+    }
+    void CopyAnnot(CSeq_entry& dest, const CSeq_entry& src)
+    {
+        if (src.IsSetAnnot() && !src.GetAnnot().empty())
+        {
+            dest.SetAnnot().insert(dest.SetAnnot().end(),
+                src.GetAnnot().begin(),
+                src.GetAnnot().end());
+        }
+    }
+};
+
 CFormatGuess::EFormat CMultiReader::LoadFile(const string& filename, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
     CNcbiIfstream istream(filename.c_str());
@@ -665,12 +687,8 @@ CFormatGuess::EFormat CMultiReader::LoadFile(const string& filename, CRef<CSeq_e
             entry->GetSet().GetSeq_set().front()->IsSeq())
         {           
             CRef<CSeq_entry> seq = entry->SetSet().SetSeq_set().front();
-            seq->SetDescr().Set().insert(seq->SetDescr().Set().end(),
-                entry->SetDescr().Set().begin(),
-                entry->SetDescr().Set().end());
-            seq->SetAnnot().insert(seq->SetAnnot().end(),
-                entry->SetAnnot().begin(),
-                entry->SetAnnot().end());
+            CopyDescr(*seq, *entry);
+            CopyAnnot(*seq, *entry);
             entry = seq;
         }
         entry->ResetParentEntry();
