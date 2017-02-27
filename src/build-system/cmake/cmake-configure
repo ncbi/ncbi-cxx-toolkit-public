@@ -16,7 +16,7 @@ export BOOST_ROOT=$NCBI/boost-1.53.0-ncbi1/
 while [ ! -z "$1" ]
 do
     case "$1" in
-        --with-static)
+        --with-static|--without-dll)
             BUILD_SHARED_LIBS=OFF
             ;;
 
