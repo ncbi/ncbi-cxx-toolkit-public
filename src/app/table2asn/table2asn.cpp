@@ -345,6 +345,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
     arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
     arg_desc->AddFlag("euk", "Assume eukariote");
+    arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
@@ -375,7 +376,9 @@ int CTbl2AsnApp::Run(void)
     }
 
     m_logger.Reset(new CTable2AsnLogger);
-    m_logger->SetProgressOstream(args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout);
+    CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;
+    m_logger->SetProgressOstream(error_log);
+    SetDiagStream(error_log);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_validator.Reset(new CTable2AsnValidator(m_context));
@@ -675,6 +678,9 @@ int CTbl2AsnApp::Run(void)
 
     if (m_context.m_cleanup.find('f') != string::npos)
         m_context.m_use_hypothetic_protein = true;
+
+    if (args["suspect-rules"])
+        m_context.m_suspect_rules.SetFilename(args["suspect-rules"].AsString());
 
     try
     {
@@ -1006,7 +1012,9 @@ void CTbl2AsnApp::ProcessOneFile()
     if (!IsDryRun() && m_context.m_split_log_files)
     {
         log_name = GenerateOutputFilename(".log");
-        m_logger->SetProgressOstream(new CNcbiOfstream(log_name.GetPath().c_str()), eTakeOwnership);
+        CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath().c_str());
+        m_logger->SetProgressOstream(error_log, eTakeOwnership);
+        SetDiagStream(error_log);
     }
 
     try

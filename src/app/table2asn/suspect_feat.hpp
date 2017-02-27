@@ -15,9 +15,10 @@ namespace objects
     class CFixSuspectProductName
     {
     public:
-        CFixSuspectProductName();
+        CFixSuspectProductName();        
         ~CFixSuspectProductName();
 
+        void SetFilename(const string& filename);
         void FixSuspectProductNames(objects::CSeq_entry& entry);
         bool FixSuspectProductNames(objects::CSeq_feat& feature);
         bool FixSuspectProductName(string& product_name);
@@ -28,7 +29,7 @@ namespace objects
         auto_ptr<CNcbiOfstream> m_report_ostream;
     protected:
         string m_rules_filename;
-        CRef<CSuspect_rule_set> m_rules;
+        CConstRef<CSuspect_rule_set> m_rules;
     };
 };
 

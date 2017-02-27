@@ -55,39 +55,30 @@ CFixSuspectProductName::~CFixSuspectProductName()
 {
 }
 
+void CFixSuspectProductName::SetFilename(const string& filename)
+{
+    m_rules_filename = filename;
+    m_rules.Reset();
+}
+
 bool CFixSuspectProductName::FixSuspectProductName(string& name)
 {
-    static const char PRODUCT_RULES_LIST[] =
-#ifdef NCBI_OS_MSWIN
-        "\\\\panfs\\pan1\\wgs_gb_sub\\processing\\rules_usethis.txt";
-#else
-        "/panfs/pan1.be-md.ncbi.nlm.nih.gov/wgs_gb_sub/processing/rules_usethis.txt";
-#endif
     if (m_rules.Empty())
     {
         bool found = false;
         const string& rules_env = CNcbiApplication::Instance()->GetEnvironment().Get("PRODUCT_RULES_LIST", &found);
         if (found)
             m_rules_filename = rules_env.data();
-        else
-            m_rules_filename = PRODUCT_RULES_LIST;
 
-        m_rules.Reset(new CSuspect_rule_set);
-        if (CFile(m_rules_filename).Exists())
-        {
-            CNcbiIfstream instream(m_rules_filename.c_str());
-            auto_ptr<CObjectIStream> pObjIstrm(CObjectIStream::Open(eSerial_AsnText, instream, eNoOwnership));
-            pObjIstrm->Read(m_rules, m_rules->GetThisTypeInfo());
-        }
+        m_rules = CSuspect_rule_set::GetProductRules(m_rules_filename);
     }
-
 
     if (m_rules.Empty() || m_rules->Get().empty())
         return false;
 
-    ITERATE(CSuspect_rule_set::Tdata, it, m_rules->Get())
+    for (const auto& rule : m_rules->Get())
     {
-        if ((**it).ApplyToString(name))
+        if (rule->ApplyToString(name))
             return true;
     }
 
@@ -117,14 +108,14 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
     bool modified = false;
     if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
     {
-        NON_CONST_ITERATE(CProt_ref::TName, name_it, feature.SetData().SetProt().SetName())
+        for (auto& name : feature.SetData().SetProt().SetName())
         {
-            if (NStr::Compare(*name_it, hypotetic_protein_name))
+            if (NStr::Compare(name, hypotetic_protein_name))
             {
-                string orig = *name_it;
-                if (FixSuspectProductName(*name_it))
+                string orig = name;
+                if (FixSuspectProductName(name))
                 {
-                    ReportFixedProduct(orig, *name_it, feature.GetLocation(), kEmptyStr);
+                    ReportFixedProduct(orig, name, feature.GetLocation(), kEmptyStr);
                     modified = true;
                 }
             }
