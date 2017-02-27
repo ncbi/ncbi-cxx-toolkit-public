@@ -1362,8 +1362,6 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
                                    CSeq_align::C_Segs::TDenseg& denseg)
 //  ----------------------------------------------------------------------------
 {
-
-    TSeqPos targetOffset = targetStart;
     const size_t gapCount = gapParts.size();
 
     const bool isTarget = true;
@@ -1448,7 +1446,6 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     auto& spliced_seg = segs.SetSpliced();
 
     const string& type = gff.Type();
-    CSpliced_seg::EProduct_type product_type;
     if (type == "translated_nucleotide_match") {
         spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
     } 
@@ -1554,8 +1551,6 @@ bool CGff2Reader::xAlignmentSetDenseg(
     else {
         gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
     }
-
-    bool oppositeStrands = (targetStrand != identStrand);
 
     int gapCount = gapParts.size();
 
