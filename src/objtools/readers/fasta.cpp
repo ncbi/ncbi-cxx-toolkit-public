@@ -1196,6 +1196,20 @@ bool CFastaReader::ParseGapLine(
     SGap::TNullableGapType pGapType;
     CSeq_gap::ELinkEvid eLinkEvid = CSeq_gap::eLinkEvid_UnspecifiedOnly;
     set<CLinkage_evidence::EType> setOfLinkageEvidence;
+
+    if (modKeyValueMultiMap.empty()) // fall back to default values coming from caller
+    {
+        pGapType = m_gap_type;
+        setOfLinkageEvidence = m_gap_linkage_evidence;
+        for (const auto& rec : CSeq_gap::GetNameToGapTypeInfoMap())
+        {
+            if (rec.second.m_eType == *pGapType)
+            {
+                eLinkEvid = rec.second.m_eLinkEvid;
+            }
+        }
+    }
+
     ITERATE(TModKeyValueMultiMap, modKeyValue_it, modKeyValueMultiMap) {
         const TStr & sKey   = modKeyValue_it->first;
         const TStr & sValue = modKeyValue_it->second;
