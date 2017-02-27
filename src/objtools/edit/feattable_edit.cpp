@@ -326,7 +326,8 @@ void CFeatTableEdit::EliminateBadQualifiers()
                 continue;
             }
             if (qualKey == "protein_id") {
-                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")) {
+                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")  &&
+                        !NStr::StartsWith((*qual)->GetVal(), "gb|")) {
                     badQuals.push_back(qualKey);
                 }
                 continue;
