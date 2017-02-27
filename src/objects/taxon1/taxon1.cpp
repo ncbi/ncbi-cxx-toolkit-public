@@ -436,6 +436,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
     // Set version db tag
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "merge", true );
+    COrgrefProp::SetOrgrefProp( req.SetLookup(), "syn", m_bWithSynonyms );
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
 
     if( SendRequest( req, resp ) ) {
