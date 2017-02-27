@@ -93,7 +93,6 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
     if (m_report_ostream.get() == 0)
     {
        m_report_ostream.reset(new CNcbiOfstream(m_fixed_product_report_filename.c_str()));
-       *m_report_ostream << "Using " << m_rules_filename.c_str() << " rules file" << endl << endl;
     }
 
     string label;
