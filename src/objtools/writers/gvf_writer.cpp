@@ -191,7 +191,7 @@ bool CGvfWriter::xWriteFeature(
     }
 
     CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it.GetAnnot());
-    return (fc, *feat_it);
+    return xWriteFeature(fc, *feat_it);
 }
 
 //  ----------------------------------------------------------------------------
