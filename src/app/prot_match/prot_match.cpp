@@ -44,6 +44,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/streamiter.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
 #include <objtools/edit/protein_match/generate_match_table.hpp>
@@ -63,6 +64,19 @@ public:
     int Run(void);
 
 private:
+    template<typename TRoot>
+    void x_GenerateMatchTable(CObjectIStream& istr, 
+        const string& out_stub, 
+        bool keep_temps, 
+        CBinRunner& assm_assm_blastn,
+        CBinRunner& compare_annots, 
+        CMatchTabulate& match_tab);
+
+    void x_WriteMatchTable(
+        const string& table_file,
+        const CMatchTabulate& match_tab,
+        bool suppress_exception=false) const;
+
     void x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
     const string& out_stub,
     int count, 
@@ -77,7 +91,7 @@ private:
     CObjectIStream* x_InitObjectIStream(const string& filename,
         const bool binary) const;
 
-    void x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_entry) const;
+    TTypeInfo x_GetRootTypeInfo(CObjectIStream& istr) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     void x_WriteEntry(const CSeq_entry& entry,
@@ -186,29 +200,94 @@ int CProteinMatchApp::Run(void)
     
     unique_ptr<CObjectIStream> pInStream(x_InitObjectIStream(args));
 
-    CRef<CSeq_entry> input_entry = Ref(new CSeq_entry());
-    x_ReadUpdateFile(*pInStream, *input_entry); 
-
-
-    list<CRef<CSeq_entry>> nuc_prot_sets;
-    CMatchSetup::GatherNucProtSets(input_entry, nuc_prot_sets);
-
-
-    if (nuc_prot_sets.empty()) { 
-        ERR_POST(Warning << "No nuc-prot sets in input");
-        return 0;
-    }
-
     const string table_file = CDirEntry::MakePath(
         out_dir,
         args["o"].AsString());
 
     CMatchTabulate match_tab;
-    int count=0;
-    for (CRef<CSeq_entry> nuc_prot_set : nuc_prot_sets) {
 
-        x_ProcessSeqEntry(nuc_prot_set,
-            table_file,
+    const TTypeInfo root_info =  x_GetRootTypeInfo(*pInStream);
+
+    try {
+        if (root_info == CSeq_entry::GetTypeInfo()) {
+            x_GenerateMatchTable<CSeq_entry>(*pInStream,
+                table_file,
+                keep_temps,
+                assm_assm_blastn,
+                compare_annots,
+                match_tab);
+        } else { // Must be CBioseq_set
+            x_GenerateMatchTable<CBioseq_set>(*pInStream,
+                table_file,
+                keep_temps,
+                assm_assm_blastn,
+                compare_annots,
+                match_tab);
+        }
+    } 
+    catch (...) 
+    {
+        const bool suppress_write_exceptions = true;
+        x_WriteMatchTable(table_file, match_tab, suppress_write_exceptions);
+        throw;
+    }
+
+    x_WriteMatchTable(table_file, match_tab);
+    return 0;
+}
+
+
+void CProteinMatchApp::x_WriteMatchTable(
+        const string& table_file,
+        const CMatchTabulate& match_tab,
+        const bool suppress_exception) const
+{
+    if (match_tab.GetNum_rows() == 0) {
+        ERR_POST(Warning << "Match table is empty");
+        return;
+    }
+
+    try {
+        CNcbiOfstream ostr(table_file);
+        match_tab.WriteTable(ostr);
+    }
+    catch (...) {
+        if (suppress_exception) {
+            return;
+        }
+        NCBI_THROW(CProteinMatchException,
+            eOutputError,
+            "Could not write match table");
+    }
+}
+
+
+template<typename TRoot>
+void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr, 
+        const string& out_stub,
+        bool keep_temps, 
+        CBinRunner& assm_assm_blastn,
+        CBinRunner& compare_annots, 
+        CMatchTabulate& match_tab)
+
+{
+    int count=0;
+    for (const CBioseq_set& obj : 
+        CObjectIStreamIterator<TRoot, CBioseq_set>(istr))
+    {
+
+        if (!obj.IsSetClass() ||
+            obj.GetClass() != CBioseq_set::eClass_nuc_prot) {
+            continue;
+        }
+
+        CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
+        CRef<CBioseq_set> bio_set = Ref(new CBioseq_set());
+        bio_set->Assign(obj);
+        seq_entry->SetSet(*bio_set);
+
+        x_ProcessSeqEntry(seq_entry,
+            out_stub,
             count, 
             keep_temps,
             assm_assm_blastn,
@@ -217,18 +296,6 @@ int CProteinMatchApp::Run(void)
 
         ++count;
     } // Return table if exception
-
-    try {
-        CNcbiOfstream ostr(table_file);
-        match_tab.WriteTable(ostr);
-    }
-    catch (...) {
-        NCBI_THROW(CProteinMatchException,
-            eOutputError,
-            "Could not write match table");
-    }
-
-    return 0;
 }
 
 
@@ -298,7 +365,7 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
 }
 
 
-void CProteinMatchApp::x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_entry) const
+TTypeInfo CProteinMatchApp::x_GetRootTypeInfo(CObjectIStream& istr) const
 {
     set<TTypeInfo> knownTypes, matchingTypes;
     knownTypes.insert(CSeq_entry::GetTypeInfo());
@@ -317,26 +384,7 @@ void CProteinMatchApp::x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_en
             "Ambiguous input");
     }
 
-    const TTypeInfo typeInfo = *matchingTypes.begin();
-
-    if (typeInfo == CSeq_entry::GetTypeInfo()) {
-        if (!x_TryReadSeqEntry(istr, seq_entry)) {
-            NCBI_THROW(CProteinMatchException, 
-                       eInputError, 
-                       "Failed to read Seq-entry");
-
-        }
-    }
-    else 
-    if (typeInfo == CBioseq_set::GetTypeInfo()) {
-        if (!x_TryReadBioseqSet(istr, seq_entry)) {
-            NCBI_THROW(CProteinMatchException, 
-                       eInputError, 
-                       "Failed to read Bioseq-set");
-        }
-    }
-
-    return;
+    return *matchingTypes.begin();
 }
 
 
