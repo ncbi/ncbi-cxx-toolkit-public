@@ -284,6 +284,12 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
 		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxname-changed" ) &&
 			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
 			result |= eStatus_WrongTaxname;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?common-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongCommonName;
+		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgname-changed" ) &&
+			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			result |= eStatus_WrongOrgname;
 		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?division-changed" ) &&
 			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
 			result |= eStatus_WrongDivision;
@@ -323,6 +329,7 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
                         NON_CONST_ITERATE( list< string >, i, lBlastNames ) {
                             NStr::TruncateSpacesInPlace( *i );
                         }
+			lBlastNames.reverse();
 			data.SetBlast_name().insert( data.SetBlast_name().end(),
 						     lBlastNames.begin(), lBlastNames.end() );
 		    } else {
