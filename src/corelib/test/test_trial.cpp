@@ -98,7 +98,7 @@ public:
     virtual int Run(void);
 };
 
-
+#if 0
 namespace foo {
 class CClassWithFlags
 {
@@ -121,7 +121,8 @@ public:
     DECLARE_SAFE_FLAGS_TYPE(EOtherFlags, TOtherFlags);
     enum EOtherEnum {
         eValue1,
-        eValue2
+        eValue2,
+        eValue3 = eValue1 + eValue2
     };
 
     static void Foo(TFlags flags = fDefault)
@@ -135,7 +136,29 @@ public:
         }
 };
 DECLARE_SAFE_FLAGS(CClassWithFlags::EFlags);
+template<int>
+class COtherClass
+{
+public:
+    enum EOtherEnum {
+        eValue1,
+        eValue2,
+        eValue3 = eValue1 + eValue2
+    };
+};
 }
+void TestSafeFlags()
+{
+    // safe-flags test
+    foo::CClassWithFlags::Foo();
+    foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
+    using namespace foo;
+    CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3);
+    CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2);
+    CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2);
+    CClassWithFlags::Foo(CClassWithFlags::EFlags(COtherClass<1>::eValue3));
+}
+#endif
 
 int CTestApplication::Run(void)
 {
@@ -165,16 +188,6 @@ int CTestApplication::Run(void)
     gi = GI_CONST(192377853343);
 #endif
     NcbiCout << "GI = " << gi << NcbiEndl;
-    {{
-        // safe-flags test
-        foo::CClassWithFlags::Foo();
-        foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
-        using namespace foo;
-        CClassWithFlags::Foo(CClassWithFlags::fFlag1|CClassWithFlags::fFlag3);
-        CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2);
-        CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2);
-        //CClassWithFlags::Foo(CClassWithFlags::eValue1);
-    }}
     NcbiCout << "Passed" << NcbiEndl;
     return 0;
 }

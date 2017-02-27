@@ -1221,7 +1221,7 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
-
+#if 0
 /////////////////////////////////////////////////////////////////////////////
 /// Support for safe enum flags
 /////////////////////////////////////////////////////////////////////////////
@@ -1399,6 +1399,7 @@ ostream& operator<<(ostream& out, CSafeFlags<E> v)
 {
     return out << v.get();
 }
+#endif
 
 
 END_NCBI_NAMESPACE;
