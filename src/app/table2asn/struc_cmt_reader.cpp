@@ -65,13 +65,13 @@ CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 
 void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& entry)
 {
-    list<TStructComment> comments;
+    list<CStructComment> comments;
     LoadComments(reader, comments);
-    for (const TStructComment& comment: comments)
+    for (const CStructComment& comment: comments)
        _AddStructuredComments(entry, comment);
 }
 
-void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_entry& entry, const TStructComment& comments)
+void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments)
 {
     VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
     {
@@ -94,7 +94,7 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
         {
            bool append_desc = true;
 
-            const string& index = TStructComment::GetPrefix(*new_desc);
+            const string& index = CStructComment::GetPrefix(*new_desc);
             if (index.empty())
                 continue;
 
@@ -104,7 +104,7 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
 
                 auto& user = desc->SetUser();
 
-                const string& other = TStructComment::GetPrefix(*desc);
+                const string& other = CStructComment::GetPrefix(*desc);
                 if (other.empty())
                     continue;
 
@@ -130,7 +130,7 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
 
 void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& entry)
 {
-    TStructComment comments;
+    CStructComment comments;
     LoadCommentsByRow(reader, comments);
     _AddStructuredComments(entry, comments);
 }

@@ -57,7 +57,7 @@ public:
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
 
 private:
-    void _AddStructuredComments(objects::CSeq_entry& entry, const TStructComment& comments);
+    void _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
 
    objects::ILineErrorListener* m_logger;
 };

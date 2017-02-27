@@ -24,12 +24,12 @@ class ILineReader;
 
   CStructuredCommentsReader reader(error_logger);
 
-  std::list<CStructuredCommentsReader::TStructComment> comments;
+  std::list<CStructuredCommentsReader::CStructComment> comments;
 
   ILineReader reader1(ILineReader::New(filename);
   reader.LoadComments(reader1, comments);
 
-  for (const CStructuredCommentsReader::TStructComment& cmt: comments)
+  for (const CStructuredCommentsReader::CStructComment& cmt: comments)
   {
      // do something
   }
@@ -43,11 +43,13 @@ public:
    CStructuredCommentsReader(objects::ILineErrorListener* logger);
    ~CStructuredCommentsReader();
 
-   typedef struct SStructComment {
+   class NCBI_XOBJREAD_EXPORT CStructComment
+   {
+   public:
        CRef<objects::CSeq_id> m_id;
        vector<CRef<objects::CSeqdesc> > m_descs;
        static const string& GetPrefix(const objects::CSeqdesc&);
-   } TStructComment;
+   };
 
    template<typename _container>
    size_t LoadComments(ILineReader& reader, _container& cont)
@@ -56,8 +58,6 @@ public:
        _LoadHeaderLine(reader, cols);
        if (cols.empty())
            return 0;
-
-       size_t loader = 0;
 
        while (!reader.AtEOF())
        {
@@ -73,8 +73,8 @@ public:
            if (!values[0].empty())
            {
                // try to find destination sequence
-               cont.push_back(TStructComment());
-               TStructComment& cmt = cont.back();
+               cont.push_back(CStructComment());
+               CStructComment& cmt = cont.back();
                cmt.m_id.Reset(new objects::CSeq_id(values[0], objects::CSeq_id::fParse_AnyLocal));
                _BuildStructuredComment(cmt, cols, values);
            }
@@ -82,7 +82,7 @@ public:
        return cont.size();
    }
 
-   size_t LoadCommentsByRow(ILineReader& reader, TStructComment& cmt)
+   size_t LoadCommentsByRow(ILineReader& reader, CStructComment& cmt)
    {
        objects::CUser_object* user = 0;
 
@@ -106,8 +106,8 @@ public:
 
 protected:
    void _LoadHeaderLine(ILineReader& reader, vector<string>& cols);
-   void _BuildStructuredComment(TStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values);
-   objects::CUser_object* _AddStructuredComment(objects::CUser_object* user_obj, TStructComment& cmt, const CTempString& name, const CTempString& value);
+   void _BuildStructuredComment(CStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values);
+   objects::CUser_object* _AddStructuredComment(objects::CUser_object* user_obj, CStructComment& cmt, const CTempString& name, const CTempString& value);
    objects::ILineErrorListener* m_logger;
 };
 

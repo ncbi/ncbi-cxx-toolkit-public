@@ -58,7 +58,7 @@ CStructuredCommentsReader::~CStructuredCommentsReader()
 {
 }
 
-const string& CStructuredCommentsReader::TStructComment::GetPrefix(const objects::CSeqdesc& desc)
+const string& CStructuredCommentsReader::CStructComment::GetPrefix(const objects::CSeqdesc& desc)
 {
     if (!desc.IsUser())
         return kEmptyStr;
@@ -77,7 +77,7 @@ const string& CStructuredCommentsReader::TStructComment::GetPrefix(const objects
     return kEmptyStr;
 }
 
-objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects::CUser_object* user_obj, TStructComment& cmt, const CTempString& name, const CTempString& value)
+objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects::CUser_object* user_obj, CStructComment& cmt, const CTempString& name, const CTempString& value)
 {
     if (name.compare("StructuredCommentPrefix") == 0)
         user_obj = 0; // reset user obj so to create a new one
@@ -103,7 +103,7 @@ objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects:
         return user_obj;
 }
 
-void CStructuredCommentsReader::_BuildStructuredComment(TStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values)
+void CStructuredCommentsReader::_BuildStructuredComment(CStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values)
 {
     cmt.m_descs.reserve(values.size() - 1);
     objects::CUser_object* user = 0;
