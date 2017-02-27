@@ -5463,7 +5463,17 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds, const CSeq_loc& parent_loc, const string& parent_name)
 {
     bool check_gaps = false;
-    CBioseq_Handle bh = m_Scope->GetBioseqHandle(cds.GetLocation());
+    CBioseq_Handle bh;
+    
+    try {
+        bh = m_Scope->GetBioseqHandle(cds.GetLocation());
+    }
+    catch (CObjMgrException& e) {
+        if (e.GetErrCode() != CObjMgrException::eFindFailed) {
+            throw;
+        }
+    }
+
     if (bh && bh.IsSetInst() && bh.GetInst().IsSetRepr() && bh.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
         check_gaps = true;
     }
