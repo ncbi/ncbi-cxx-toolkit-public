@@ -477,8 +477,7 @@ bool CFlatSeqLoc::x_Add
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     if ( (type == eType_assembly) || 
-         ( to > 0  &&
-            (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to()) ) ) 
+        (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to()) ) 
     {
         oss << "..";
 
