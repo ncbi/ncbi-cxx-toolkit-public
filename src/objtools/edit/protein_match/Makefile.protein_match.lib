@@ -1,4 +1,9 @@
 LIB = protein_match
 SRC = setup_match generate_match_table
 
+ASN_DEP = genome_collection seqset
 CPPFLAGS = $(ORIG_CPPFLAGS)
+
+WATHCERS = foleyjp
+
+
