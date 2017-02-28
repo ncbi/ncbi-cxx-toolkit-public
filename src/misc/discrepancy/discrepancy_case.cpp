@@ -45,6 +45,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <sstream>
 
@@ -823,6 +824,15 @@ DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
 }
 
 
+// POSSIBLE_LINKER
+
+struct CTmpDiscrepancyNum : public CObject  // used to pass the numeric parameter to autofix
+{
+    CTmpDiscrepancyNum(size_t n) : N(n) {}
+    size_t N;
+};
+
+
 DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence after poly-A tail")
 {
     if (obj.IsAa() ) {
@@ -850,32 +860,30 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence 
         return;
     }
         
-    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(),
-                       CBioseq_Handle::eCoding_Iupac,
-                       eNa_strand_plus
-                       );
+    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(), CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
 
+    static const size_t TAIL = 30;
     string seq_data(kEmptyStr);
-    seq_vec.GetSeqData(bsh.GetInst_Length()-30, bsh.GetInst_Length(), seq_data);
+    seq_vec.GetSeqData(bsh.GetInst_Length() - TAIL, bsh.GetInst_Length(), seq_data);
 
     size_t tail_len = 0;
-    bool found_linker = false;
+    size_t cut = 0;
 
-    ITERATE (string, base_it , seq_data) {
-        char base = toupper(*base_it);
-
-        if (base == 'A') {
+    for (size_t i = 0; i < seq_data.length(); i++) {
+        if (seq_data[i] == 'A' || seq_data[i] == 'a') {
             tail_len++;
-        } else if (tail_len > 20) {
-            found_linker = true;
-            break;
-        } else {
+        }
+        else {
+            if (tail_len > 20) {
+                cut = i;
+            }
             tail_len = 0;
         }
     }
 
-    if (found_linker) {
-        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    if (cut) {
+        cut = TAIL - cut;
+        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eNoRef, cut > 0, cut ? new CTmpDiscrepancyNum(cut) : 0));
     }
 }
 
@@ -883,6 +891,58 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence 
 DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
+{
+    TReportObjectList list = item->GetDetails();
+    size_t num_fixed = 0;
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
+        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        if (!obj.CanAutofix()) {
+            continue;
+        }
+        size_t cut_from_end = dynamic_cast<const CTmpDiscrepancyNum*>(obj.GetMoreInfo().GetPointer())->N;
+        const CBioseq* orig_seq = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
+        _ASSERT(orig_seq);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope_copy(new CScope(*object_manager));
+        CRef<CBioseq> seq_copy(new CBioseq);
+        seq_copy->Assign(*orig_seq);
+        scope_copy->AddBioseq(*seq_copy);
+        CBioseq_EditHandle besh(scope_copy->GetBioseqEditHandle(*seq_copy));
+
+        SSeqMapSelector selector;
+        selector.SetFlags(CSeqMap::fFindData); 
+        CSeqMap_I seqmap_i(besh, selector);
+        size_t start = 0;
+        size_t stop = besh.GetInst_Length() - cut_from_end;
+        while (seqmap_i) {
+            TSeqPos len = seqmap_i.GetLength();
+            if (start < stop && start + len > stop) {
+                string seq_in;
+                seqmap_i.GetSequence(seq_in, CSeqUtil::e_Iupacna);
+                string seq_out = seq_in.substr(0, stop - start);
+                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, CSeq_data::e_Iupacna);            
+                ++seqmap_i;
+            }
+            else if (start >= stop) {
+                seqmap_i = seqmap_i.Remove(); 
+            }
+            else {
+                ++seqmap_i;
+            }
+            start += len;
+        }
+        seq_copy->SetInst().SetLength(seq_copy->GetInst().GetLength() - cut_from_end);
+        CRef<CSeq_inst> new_inst(new CSeq_inst);
+        new_inst->Assign(seq_copy->GetInst());
+        scope.GetEditHandle(scope.GetBioseqHandle(*orig_seq)).SetInst(*new_inst);
+        num_fixed++;
+    }
+    return CRef<CAutofixReport>(num_fixed ? new CAutofixReport("POSSIBLE_LINKER: [n] sequence[s] trimmed", num_fixed) : 0);
 }
 
 
@@ -897,7 +957,7 @@ DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eDisc | eOncaller | eSmart, "Locat
     for( ; loc_ci; ++loc_ci) {
         if( loc_ci.GetEmbeddingSeq_loc().IsNull() ) {
             CReportNode & message_report_node = m_Objs["[n] feature[s] [has] ordered location[s]"];
-            message_report_node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef, true), false);
+            message_report_node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true), false);
             return;
         }
     }
@@ -1294,16 +1354,9 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
                 }
             }
             if (diff) {
-                if (context.IsGui()) {
-                    string sub = "[n] coding regions have the same gene name (" + gene->first + ") as another coding region but a different product";
-                    ITERATE (TGenesList, cur_gene, gene->second) {
-                        report[kGeneProductConflict][sub].Add(*context.NewDiscObj(cur_gene->first), false);
-                    }
-                }
-                else {
-                    ITERATE (TGenesList, cur_gene, gene->second) {
-                        report[kGeneProductConflict].Add(*context.NewDiscObj(cur_gene->first), false);
-                    }
+                string sub = "[n] coding regions have the same gene name (" + gene->first + ") as another coding region but a different product";
+                ITERATE (TGenesList, cur_gene, gene->second) {
+                    report[kGeneProductConflict][sub].Ext().Add(*context.NewDiscObj(cur_gene->first), false);
                 }
             }
         }
