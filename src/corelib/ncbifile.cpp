@@ -186,7 +186,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
-                } \
+        } \
         errno = saved_error; \
     }
 
@@ -194,7 +194,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-                } \
+        } \
         return false; \
     }
 
@@ -202,7 +202,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-                } \
+        } \
         CNcbiError::Set(ncbierr, log_message); \
         return false; \
     }
@@ -211,7 +211,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-                } \
+        } \
         CNcbiError::SetFromWindowsError(log_message); \
         return false; \
     }
@@ -325,6 +325,10 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][4] =
 
 // Default backup suffix
 const char* CDirEntry::m_BackupSuffix = ".bak";
+
+// Part of the temporary name used for "safe copy"
+static const char* kTmpSafeSuffix = ".tmp.";
+
 
 
 CDirEntry& CDirEntry::operator= (const CDirEntry& other)
@@ -531,6 +535,24 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
 }
 
 
+string CDirEntry::GetNearestExistingParentDir(const string& path)
+{
+    CDirEntry entry(NormalizePath(path));
+
+    // Find closest existing directory
+    while (!entry.Exists()) {
+        string dir = entry.GetDir();
+        if (dir.empty()) {
+            NCBI_THROW(CFileException, eNotExists,
+                       "Failed to find existing containing directory for: " +
+                       entry.GetPath());
+        }
+        entry.Reset(dir);
+    }
+    return entry.GetPath();
+}
+
+
 /// Helper -- strips dir to parts:
 ///     c:\a\b\     will be <c:><a><b>
 ///     /usr/bin/   will be </><usr><bin>
@@ -548,25 +570,21 @@ static void s_StripDir(const string& dir, vector<string> * dir_parts)
     for (;;) {
         sep_pos = dir.find(sep, sep_pos);
         if (sep_pos == NPOS) {
-            dir_parts->push_back(string(dir, part_start,
-                                        dir.length() - part_start));
+            dir_parts->push_back(string(dir, part_start, dir.length() - part_start));
             break;
         }
-
         // If path starts from '/' - it's a root directory
         if (sep_pos == 0) {
             dir_parts->push_back(string(1, sep));
         } else {
-            dir_parts->push_back(string(dir, part_start, sep_pos -part_start));
+            dir_parts->push_back(string(dir, part_start, sep_pos - part_start));
         }
-
         sep_pos++;
         part_start = sep_pos;
         if (sep_pos >= last_ind) {
             break;
         }
     }
-
 }
 
 
@@ -576,13 +594,11 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     string path; // the result    
     
     if ( !IsAbsolutePath(path_from) ) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "path_from is not absolute path");
+        NCBI_THROW(CFileException, eRelativePath, "path_from is not absolute path");
     }
 
     if ( !IsAbsolutePath(path_to) ) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "path_to is not absolute path");
+        NCBI_THROW(CFileException, eRelativePath, "path_to is not absolute path");
     }
 
     // Split and strip FROM
@@ -591,8 +607,7 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     vector<string> dir_from_parts;
     s_StripDir(dir_from, &dir_from_parts);
     if ( dir_from_parts.empty() ) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "path_from is empty path");
+        NCBI_THROW(CFileException, eRelativePath, "path_from is empty path");
     }
 
     // Split and strip TO
@@ -603,8 +618,7 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     vector<string> dir_to_parts;
     s_StripDir(dir_to, &dir_to_parts);
     if ( dir_to_parts.empty() ) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "path_to is empty path");
+        NCBI_THROW(CFileException, eRelativePath, "path_to is empty path");
     }
 
     // Platform-dependent compare mode
@@ -618,16 +632,13 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     if (NStr::Compare(dir_from_parts.front(), 
                       dir_to_parts.front(), 
                       DIR_PARTS_CMP_MODE) != 0) {
-        NCBI_THROW(CFileException, eRelativePath, 
-                   "roots of input paths are different");
+        NCBI_THROW(CFileException, eRelativePath, "roots of input paths are different");
     }
 
     size_t min_parts = min(dir_from_parts.size(), dir_to_parts.size());
     size_t common_length = min_parts;
     for (size_t i = 0; i < min_parts; i++) {
-        if (NStr::Compare(dir_from_parts[i], 
-                          dir_to_parts[i],
-                          DIR_PARTS_CMP_MODE) != 0) {
+        if (NStr::Compare(dir_from_parts[i], dir_to_parts[i], DIR_PARTS_CMP_MODE) != 0) {
             common_length = i;
             break;
         }
@@ -649,9 +660,8 @@ string CDirEntry::CreateRelativePath( const string& path_from,
 string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
 {
     if ( IsAbsolutePath(path) ) {
-        return path;
+        return NormalizePath(path);
     }
-
     string result;
 
 #if defined(NCBI_OS_MSWIN)
@@ -676,32 +686,29 @@ string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
 #endif
 
     switch (rtw) {
-    case eRelativeToCwd:
-        result = ConcatPath(CDir::GetCwd(), path);
-        break;
-    case eRelativeToExe:
-      {
-        string dir;
-        SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eFullName),
-                  &dir);
-        result = ConcatPath(dir, path);
-        if ( !CDirEntry(result).Exists() ) {
-            SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eRealName),
-                      &dir);
+        case eRelativeToCwd:
+            result = ConcatPath(CDir::GetCwd(), path);
+            break;
+        case eRelativeToExe:
+          {
+            string dir;
+            SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eFullName), &dir);
             result = ConcatPath(dir, path);
-        }
-        break;
-      }
+            if ( !CDirEntry(result).Exists() ) {
+                SplitPath(CNcbiApplication::GetAppName(CNcbiApplication::eRealName), &dir);
+                result = ConcatPath(dir, path);
+            }
+            break;
+          }
     }
-    result = NormalizePath(result);
-    return result;
+    return NormalizePath(result);
 }
 
 
 string CDirEntry::CreateAbsolutePath(const string& path, const string& rtw)
 {
-    if (IsAbsolutePath(path)) {
-        return path;
+    if ( IsAbsolutePath(path) ) {
+        return NormalizePath(path);
     }
 
 #if defined(NCBI_OS_MSWIN)
@@ -727,8 +734,6 @@ string CDirEntry::CreateAbsolutePath(const string& path, const string& rtw)
                    "2nd parameter must represent absolute path: " + rtw);
     }
     return NormalizePath(ConcatPath(rtw, path));
-
-
 }
 
 
@@ -943,8 +948,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 
     // Special cases
     if ( (head.size() == 0)  ||
-         (head.size() == 2  &&  head.front() == DIR_CURRENT  &&
-         head.back().empty()) ) {
+         (head.size() == 2  &&  head.front() == DIR_CURRENT  &&  head.back().empty()) ) {
         // current dir
         return DIR_CURRENT;
     }
@@ -2116,8 +2120,7 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
     if ( !buffer ) {
         errno = EFAULT;
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Stat():"
-                                   " NULL stat buffer passed for "
-                                   + GetPath());
+                                   " NULL stat buffer passed for " + GetPath());
     }
 
     int errcode;
@@ -2350,7 +2353,7 @@ string CDirEntry::LookupLink(void) const
 #else  // NCBI_OS_UNIX
     char buf[PATH_MAX];
     string name;
-    int length = (int)readlink(GetPath().c_str(), buf, sizeof(buf));
+    int length = (int)readlink(_T_XCSTRING(GetPath()), buf, sizeof(buf));
     if (length > 0) {
         name.assign(buf, length);
     }
@@ -2543,7 +2546,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         }
         // Backup destination entry first
         if ( F_ISSET(flags, fRF_Backup) ) {
-            // Use new CDirEntry object for 'dst', because its path
+            // Use new CDirEntry object instead of 'dst', because its path
             // will be changed after backup
             CDirEntry dst_tmp(dst);
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
@@ -2621,12 +2624,10 @@ bool CDirEntry::Remove(TRemoveFlags flags) const
 #if defined(NCBI_OS_MSWIN)
         case EACCES:
             if ( NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault() ) {
-                if ( !SetMode(eDefault) ) {
-                    CNcbiError::SetErrno(EACCES);
-                    return false;
-                }
-                if ( NcbiSys_remove(_T_XCSTRING(GetPath())) == 0 )
+                SetMode(eDefault);
+                if ( NcbiSys_remove(_T_XCSTRING(GetPath())) == 0 ) {
                     return true;
+                }
             }
 #endif
         }
@@ -3349,9 +3350,10 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                              CNcbiError::eNoSuchFileOrDirectory);
     }
 
-    EType dst_type   = dst.GetType();
-    bool  dst_exists = (dst_type != eUnknown);
-    
+    EType  dst_type   = dst.GetType();
+    bool   dst_exists = (dst_type != eUnknown);
+    string dst_safe_path;  // saved path for fCF_Safe
+
     // If destination exists...
     if ( dst_exists ) {
         // UNIX: check on copying file into yourself.
@@ -3365,16 +3367,13 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
         // Can copy entries with different types?
         // Destination must be a file too.
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
-            LOG_ERROR_AND_RETURN_NCBI("CFile::Copy():"
-                                 " Destination is not a file: "
-                                 + dst.GetPath(),
-                                 CNcbiError::eOperationNotPermitted);
+            LOG_ERROR_AND_RETURN_NCBI("CFile::Copy(): Destination is not a file: " + dst.GetPath(),
+                                      CNcbiError::eOperationNotPermitted);
         }
         // Can overwrite entry?
         if ( !F_ISSET(flags, fCF_Overwrite) ) {
-            LOG_ERROR_AND_RETURN_NCBI("CFile::Copy():"
-                                 " Destination file exists: "
-                                 + dst.GetPath(), CNcbiError::eOperationNotPermitted);
+            LOG_ERROR_AND_RETURN_NCBI("CFile::Copy(): Destination file exists: " + dst.GetPath(), 
+                                      CNcbiError::eOperationNotPermitted);
         }
         // Copy only if destination is older
         if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath(),0) ) {
@@ -3386,28 +3385,44 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             // will be changed after backup
             CDirEntry dst_tmp(dst);
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
-                LOG_ERROR_AND_RETURN("CFile::Copy():"
-                                     " Cannot backup " << dst.GetPath());
+                LOG_ERROR_AND_RETURN("CFile::Copy(): Cannot backup " + dst.GetPath());
             }
         }
+    }
+    // Safe copy -- copy to temporary file and rename later
+    if (F_ISSET(flags, fCF_Safe)) {
+        // Get new temporary name in the same directory
+        string path, name, ext;
+        SplitPath(dst.GetPath(), &path, &name, &ext);
+        string tmp = GetTmpNameEx(path.empty() ? CDir::GetCwd() : path, name + ext + kTmpSafeSuffix);
+        // Set new destination
+        dst_safe_path = dst.GetPath();
+        dst.Reset(tmp);
     }
 
     // Copy
 #if defined(NCBI_OS_MSWIN)
     if ( !::CopyFile(_T_XCSTRING(src.GetPath()),
                      _T_XCSTRING(dst.GetPath()), FALSE) ) {
-        LOG_ERROR_AND_RETURN_WIN("CFile::Copy():"
-                             " Cannot copy "
-                             + src.GetPath() + " to " + dst.GetPath());
+        dst.Remove();
+        LOG_ERROR_AND_RETURN_WIN("CFile::Copy(): Cannot copy " + src.GetPath() + " to " + dst.GetPath());
     }
 #else
     if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size) ){
-        LOG_ERROR_AND_RETURN("CFile::Copy():"
-                             " Cannot copy "
-                             << src.GetPath() << " to " << dst.GetPath());
+        dst.Remove();
+        LOG_ERROR_AND_RETURN("CFile::Copy(): Cannot copy " << src.GetPath() << " to " + dst.GetPath());
     }
 #endif
 
+    // Safe copy -- renaming
+    if (F_ISSET(flags, fCF_Safe)) {
+        if (!dst.Rename(dst_safe_path, fRF_Overwrite)) {
+            dst.Remove();
+            LOG_ERROR_AND_RETURN_NCBI("CFile:Copy():"
+                                      " Cannot rename temporary file " + dst.GetPath() +
+                                      " to " + dst_safe_path, CNcbiError::eIoError);
+        }
+    }
     // Verify copied data
     if ( F_ISSET(flags, fCF_Verify)  &&  !src.Compare(dst.GetPath()) ) {
         LOG_ERROR_AND_RETURN_NCBI("CFile::Copy():"
@@ -3615,7 +3630,7 @@ string CDir::GetHome(void)
     }
 #elif defined(NCBI_OS_UNIX)
     // Try get home dir from environment variable
-    char*  str = NcbiSys_getenv("HOME");
+    char* str = NcbiSys_getenv(_TX("HOME"));
     if ( str ) {
         home = str;
     } else {
@@ -3672,7 +3687,7 @@ string CDir::GetAppTmpDir(void)
 {
     // Get application specific temporary directory name
     string tmp = NCBI_PARAM_TYPE(NCBI, TmpDir)::GetThreadDefault();
-    if (!tmp.empty()) {
+    if ( !tmp.empty() ) {
         return tmp;
     }
     // Use default TMP directory specified by OS
@@ -3892,8 +3907,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
         s_SetFindFileError();
         delete contents;
         if ( F_ISSET(flags, fThrowOnError) ) {
-            NCBI_THROW(CFileErrnoException, eFile,
-                       string("Cannot read directory ") + base_path);
+            NCBI_THROW(CFileErrnoException, eFile, string("Cannot read directory ") + base_path);
         }
         return NULL;
     }
@@ -3904,8 +3918,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     if ( !dir ) {
         delete contents;
         if ( F_ISSET(flags, fThrowOnError) ) {
-            NCBI_THROW(CFileErrnoException, eFile,
-                       string("Cannot read directory ") + base_path);
+            NCBI_THROW(CFileErrnoException, eFile, string("Cannot read directory ") + base_path);
         }
         return NULL;
     }
@@ -3967,9 +3980,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
         s_SetFindFileError();
         delete contents;
         if ( F_ISSET(flags, fThrowOnError) ) {
-            cout << "--> " << errno << endl;
-            NCBI_THROW(CFileErrnoException, eFile,
-                       string("Cannot read directory ") + base_path);
+            NCBI_THROW(CFileErrnoException, eFile, string("Cannot read directory ") + base_path);
         }
         return NULL;
     }
@@ -3980,8 +3991,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     if ( !dir ) {
         delete contents;
         if ( F_ISSET(flags, fThrowOnError) ) {
-            NCBI_THROW(CFileErrnoException, eFile,
-                       string("Cannot read directory ") + base_path);
+            NCBI_THROW(CFileErrnoException, eFile, string("Cannot read directory ") + base_path);
         }
         return NULL;
     }
@@ -3999,69 +4009,163 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
 }
 
 
-bool CDir::Create(void) const
+// Helper function for CDir::Create[Path]()
+inline bool s_DirCreate(const string&path, CDir::TCreateFlags flags, mode_t mode)
 {
-    TMode user_mode, group_mode, other_mode;
-    TSpecialModeBits special;
-    GetDefaultMode(&user_mode, &group_mode, &other_mode, &special);
-    mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
-
+    errno = 0;
 #if defined(NCBI_OS_MSWIN)
-    errno = 0;
-    if ( NcbiSys_mkdir(_T_XCSTRING(GetPath())) != 0  &&
-         errno != EEXIST ) {
-        LOG_ERROR_AND_RETURN_ERRNO(string("CDir::Create():")
-                                   + " Cannot create directory " + GetPath());
-    }
-
+    int res = NcbiSys_mkdir(_T_XCSTRING(path));
 #elif defined(NCBI_OS_UNIX)
-    errno = 0;
-    // The permissions for the created directory are (mode & ~umask & 0777).
-    if ( NcbiSys_mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
-        LOG_ERROR_AND_RETURN_ERRNO(string("CDir::Create():")
-                                   + " Cannot create directory " + GetPath());
-    }
-    // so we need to call chmod() directly
+    int res = NcbiSys_mkdir(_T_XCSTRING(path), mode);
 #endif
-    if (! NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) {
-        if ( NcbiSys_chmod(_T_XCSTRING(GetPath()), mode) != 0 ) {
-            LOG_ERROR_AND_RETURN_ERRNO(string("CDir::Create():")
-                                       + " Cannot set mode for directory "
-                                       + GetPath());
+    if (res != 0) {
+        if (errno != EEXIST) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
+                                       " Cannot create directory " + path);
         }
+        // Entry with such name already exists, check its type
+        CDirEntry::EType type = CDirEntry(path).GetType();
+        if (type == CDirEntry::eUnknown) {
+            LOG_ERROR_AND_RETURN("CDir::Create():"
+                                 " Cannot create directory " + path);
+        }
+        if (type != CDirEntry::eDir) {
+            LOG_ERROR_AND_RETURN("CDir::Create():"
+                                 " Path already exist and is not a directory " + path);
+        }
+        if (F_ISSET(flags, CDir::fCreate_ErrorIfExists)) {
+            LOG_ERROR_AND_RETURN("CDir::Create():"
+                                 " Directory already exist " + path);
+        }
+        if (!F_ISSET(flags, CDir::fCreate_UpdateIfExists)) {
+            return true;
+        }
+    }
+    // The permissions for the created directory is controlled by umask and is (mode & ~umask & 0777).
+    // We need to call chmod() directly if we need other behavior.
+
+    _ASSERT(CDir::fCreate_Default      == 0  &&
+            CDir::fCreate_PermByUmask  != 0  &&
+            CDir::fCreate_PermAsParent != 0);
+    _ASSERT(!F_ISSET(flags, CDir::fCreate_PermByUmask | CDir::fCreate_PermAsParent));
+
+    if ( F_ISSET(flags, CDir::fCreate_PermByUmask)  ||  
+          (!F_ISSET(flags, CDir::fCreate_PermByUmask)  &&  !F_ISSET(flags, CDir::fCreate_PermAsParent)  &&
+           NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) ) {
+        // nothing to do if (umask) or (default mode with "honor umask" global flag)
+        return true;
+    }
+    // Change directory permissions
+    if (NcbiSys_chmod(_T_XCSTRING(path), mode) != 0) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
+                                   " Cannot set mode for directory " + path);
     }
     return true;
 }
 
 
-bool CDir::CreatePath(void) const
+bool CDir::Create(TCreateFlags flags) const
 {
-    if ( Exists() ) {
-        return true;
+    if (GetPath().empty()) {
+        LOG_ERROR_AND_RETURN("CDir::Create(): Path is empty");
     }
-    string path(GetPath());
-    if ( path.empty() ) {
-        return true;
+    mode_t mode = GetDefaultModeT();
+
+    // Get parent permissions
+    if (F_ISSET(flags, fCreate_PermAsParent)) {
+        CDir d(CreateAbsolutePath(GetPath()));
+        string path_up(d.GetDir());
+        if ( path_up.empty()  ||  path_up == d.GetPath() ) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
+                                        " Cannot get parent directory for " + GetPath());
+        }
+#if defined(NCBI_OS_MSWIN)
+        // Special case -- stat() dont works if directory have trailing path
+        // separator, except it is a root directory with a disk name, like "C:\".
+        if (path_up.length() > 3) {
+            path_up = DeleteTrailingPathSeparator(path_up);
+        }
+#endif
+        TNcbiSys_stat st;
+        if (NcbiSys_stat(_T_XCSTRING(path_up), &st) != 0) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
+                                        " Cannot get permissions for parent directory of " + GetPath());
+        }
+        mode = st.st_mode;
     }
-    if ( path[path.length()-1] == GetPathSeparator() ) {
+    return s_DirCreate(GetPath(), flags, mode);
+}
+
+
+bool CDir::CreatePath(TCreateFlags flags) const
+{
+    if (GetPath().empty()) {
+        LOG_ERROR_AND_RETURN("CDir::CreatePath(): Path is empty");
+    }
+    string path(CreateAbsolutePath(GetPath()));
+    if (path.empty()) {
+        LOG_ERROR_AND_RETURN("CDir::CreatePath():"
+                             " Cannot create absolute path from " + path);
+    }
+    if (path[path.length()-1] == GetPathSeparator()) {
         path.erase(path.length() - 1);
     }
-    string path_up = GetDir();
-    if ( path_up == path ) {
-        // special case: unknown disk name
-        LOG_ERROR_AND_RETURN_NCBI(string("CDir::CreatePath():")
-                             + " Disk name not specified: " + path,
-                             CNcbiError::eInvalidArgument);
-    } 
-    // Create a copy for this object to derive creation mode
-    CDir dir_up(*this);
-    dir_up.Reset(path_up);
-    // Create upper level path
-    if ( dir_up.CreatePath() ) {
-        // Create current subdirectory
-        return Create();
+
+    // Find all missed parts of the path
+
+    CTempString tmp(path); // existent part of a path
+    std::list<CTempString> missed_parts;
+
+    while (!tmp.empty()  &&  !CDirEntry(tmp).Exists()) {
+        size_t pos = tmp.find_last_of(DIR_SEPARATORS);
+        if (pos == NPOS) {
+            break;
+        }
+        CTempString part(tmp.substr(pos+1));
+        missed_parts.push_front(part);
+        tmp.erase(pos);
     }
-    return false;
+
+    mode_t mode = GetDefaultModeT();
+
+    // Get parent permissions
+    if (F_ISSET(flags, fCreate_PermAsParent)) {
+        string parent;
+        if (missed_parts.empty()) {
+            parent.assign(CDir(tmp).GetDir());
+        } else {
+            parent.assign(tmp);
+        }
+#if defined(NCBI_OS_MSWIN)
+        // Special case -- for paths like "C:" add slash to represent a root directory
+        if (parent.length() == 2) {
+            parent += GetPathSeparator();
+        }
+#endif
+        TNcbiSys_stat st;
+        if (NcbiSys_stat(_T_XCSTRING(parent), &st) != 0) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::CreatePath():"
+                                       " Cannot get permissions for " + parent);
+        }
+        mode = st.st_mode;
+    }
+
+    // Path exists?
+    if (missed_parts.empty()) {
+        // check existence and behave depends on flags
+        return s_DirCreate(path, flags, mode);
+    }
+
+    // Create missed subdirectories
+    string p = tmp;
+    for (auto i : missed_parts) {
+        p += GetPathSeparator();
+        p += i;
+        if (!s_DirCreate(p, flags, mode)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -4083,9 +4187,17 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                              " Source is not a directory: " + src.GetPath(),
                              CNcbiError::eNoSuchFileOrDirectory);
     }
-    EType dst_type   = dst.GetType();
-    bool  dst_exists = (dst_type != eUnknown);
-    
+    EType  dst_type        = dst.GetType();
+    bool   dst_exists      = (dst_type != eUnknown);
+    bool   need_create_dst = !dst_exists;
+    string dst_safe_path;  // saved path for fCF_Safe
+
+    // Safe copy? 
+    // Don't use it if fCF_TopDirOnly is not specified. If target directory
+    // exists it will be just "updated" and safe copying will be applied
+    // on a file level for every copied entry.
+    bool need_safe_copy = F_ISSET(flags, fCF_Safe | fCF_TopDirOnly);
+
     // If destination exists...
     if ( dst_exists ) {
         // Check on copying dir into yourself
@@ -4111,63 +4223,84 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                                      + dst.GetPath(), CNcbiError::eOperationNotPermitted);
             }
             // Copy only if destination is older
-            if ( F_ISSET(flags, fCF_Update)  &&
-                 !src.IsNewer(dst.GetPath(), 0) ) {
+            if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath(), 0) ) {
                 return true;
             }
-            // Backup destination entry first
-            if ( F_ISSET(flags, fCF_Backup) ) {
-                // Use new CDirEntry object for 'dst', because its path
+            // Backup destination directory
+            if (F_ISSET(flags, fCF_Backup)) {
+                // Use new CDirEntry object instead of 'dst', because its path
                 // will be changed after backup
                 CDirEntry dst_tmp(dst);
                 if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                     LOG_ERROR_AND_RETURN("CDir::Copy():"
                                          " Cannot backup destination"
-                                         " directory: " << dst.GetPath());
+                                         " directory: " + dst.GetPath());
                 }
-                // Create target directory
-                if ( !dst.CreatePath() ) {
-                    LOG_ERROR_AND_RETURN("CDir::Copy():"
-                                         " Cannot create target directory: " <<
-                                         dst.GetPath());
-                }
+                need_create_dst = true;
             }
-            // Remove unneeded flags.
-            // All dir entries can now be overwritten.
-            flags &= ~(fCF_TopDirOnly | fCF_Update | fCF_Backup);
+            // Clear flags not needed anymore.
+            // Keep fCF_Overwrite if it is set (fCF_Backup is a compound flag).
+            flags &= ~(fCF_TopDirOnly | (fCF_Backup - fCF_Overwrite));
         }
-    } else {
-        // Create target directory
+    }
+
+    // Safe copy for top directory -- copy to temporary directory in the same
+    // parent directory and rename later.
+
+    if ( need_safe_copy ) {
+        // Get new temporary name in the same directory
+        string path, name, ext;
+        SplitPath(dst.GetPath(), &path, &name, &ext);
+        string tmp = GetTmpNameEx(path.empty() ? CDir::GetCwd() : path, name + ext + kTmpSafeSuffix);
+        // Set new destination
+        dst_safe_path = dst.GetPath();
+        dst.Reset(tmp);
+        need_create_dst = true;
+        // Clear safe flag, we already have a temporary top directory
+        flags &= ~fCF_Safe;
+    }
+
+    // Create target directory if needed
+    if ( need_create_dst ) {
         if ( !dst.CreatePath() ) {
             LOG_ERROR_AND_RETURN("CDir::Copy():"
-                                 " Cannot create target directory: "
-                                 << dst.GetPath());
+                                 " Cannot create " << 
+                                 (dst_safe_path.empty() ? "target" : "temporary") <<
+                                 " directory: " << dst.GetPath());
         }
     }
 
     // Read all entries in source directory
-    auto_ptr<TEntries>
-        contents(src.GetEntriesPtr(kEmptyStr, fIgnoreRecursive));
-    if (!contents.get()) {
+    auto_ptr<TEntries> contents(src.GetEntriesPtr(kEmptyStr, fIgnoreRecursive));
+    if ( !contents.get() ) {
         LOG_ERROR_AND_RETURN("CDir::Copy():"
-                             " Cannot get content of " << src.GetPath());
+                             " Cannot get content of " + src.GetPath());
     }
 
     // And copy each of them to target directory
     ITERATE(TEntries, e, *contents.get()) {
         CDirEntry& entry = **e;
-        if ( !F_ISSET(flags, fCF_Recursive)  &&
-             entry.IsDir(follow ? eFollowLinks : eIgnoreLinks)) {
+        if (!F_ISSET(flags, fCF_Recursive) &&
+            entry.IsDir(follow ? eFollowLinks : eIgnoreLinks)) {
             continue;
         }
         // Copy entry
-        if ( !entry.CopyToDir(dst.GetPath(), flags, buf_size) ) {
+        if (!entry.CopyToDir(dst.GetPath(), flags, buf_size)) {
             LOG_ERROR_AND_RETURN("CDir::Copy():"
-                                 " Cannot copy " << entry.GetPath() <<
-                                 " to directory " << dst.GetPath());
+                                 " Cannot copy "  + entry.GetPath() +
+                                 " to directory " + dst.GetPath());
         }
     }
 
+    // Safe copy for top directory -- renaming temporary to target
+    if (!dst_safe_path.empty()) {
+        if (!dst.Rename(dst_safe_path, fRF_Overwrite)) {
+            dst.Remove();
+            LOG_ERROR_AND_RETURN("CDir:Copy():"
+                                 " Cannot rename temporary directory " + dst.GetPath() +
+                                 " to " + dst_safe_path);
+        }
+    }
     // Preserve attributes
     if ( flags & fCF_PreserveAll ) {
         if ( !s_CopyAttrs(src.GetPath().c_str(),
@@ -4177,7 +4310,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     } else {
         // Set default permissions for directory, if we should not
         // honor umask settings.
-        if (! NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) {
+        if ( !NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) {
             if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
                 return false;
             }
@@ -4192,10 +4325,13 @@ bool CDir::Remove(TRemoveFlags flags) const
     // Assumption
     _ASSERT(fDir_Self  == fEntry);
     _ASSERT(eOnlyEmpty == fEntry);
-
+    
     // Remove directory as empty
     if ( (flags & (fDir_All | fDir_Recursive)) == eOnlyEmpty ) {
         if ( NcbiSys_rmdir(_T_XCSTRING(GetPath())) != 0 ) {
+            if ( (flags & fIgnoreMissing)  &&  (errno == ENOENT) ) {
+                return true;
+            }
             LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
                                        " Cannot remove (by implication empty)"
                                        " directory " + GetPath());
@@ -4203,12 +4339,20 @@ bool CDir::Remove(TRemoveFlags flags) const
         return true;
     }
 
+#if !defined(NCBI_OS_MSWIN)
+    // Make directory writable for user to remove any entry inside
+    SetMode(CDirEntry::fWrite | CDirEntry::fModeAdd, 
+            CDirEntry::fModeNoChange,
+            CDirEntry::fModeNoChange);
+#endif
+
     // Read all entries in directory
     auto_ptr<TEntries> contents(GetEntriesPtr());
     if (!contents.get()) {
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
                                    " Cannot get content of " + GetPath());
     }
+    
     // Remove each entry
     ITERATE(TEntries, entry, *contents.get()) {
         string name = (*entry)->GetName();
@@ -4246,9 +4390,12 @@ bool CDir::Remove(TRemoveFlags flags) const
             return false;
         }
     }
+    
     // Remove top directory
-    if ( (flags & fDir_Self)  &&
-         NcbiSys_rmdir(_T_XCSTRING(GetPath())) != 0 ) {
+    if ( (flags & fDir_Self)  &&  NcbiSys_rmdir(_T_XCSTRING(GetPath())) != 0 ) {
+        if ( (flags & fIgnoreMissing)  &&  (errno == ENOENT) ) {
+            return true;
+        }
         LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
                                    " Cannot remove directory " + GetPath());
     }
@@ -4342,7 +4489,7 @@ bool CSymLink::Create(const string& path) const
 {
 #if defined(NCBI_OS_UNIX)
     char buf[PATH_MAX + 1];
-    int len = (int) readlink(GetPath().c_str(), buf, sizeof(buf) - 1);
+    int len = (int)readlink(_T_XCSTRING(GetPath()), buf, sizeof(buf) - 1);
     if (len >= 0) {
         buf[len] = '\0';
         if (strcmp(buf, path.c_str()) == 0) {
@@ -4350,7 +4497,7 @@ bool CSymLink::Create(const string& path) const
         }
     }
     // Leave it to the kernel to decide whether the symlink can be recreated
-    if ( symlink(path.c_str(), GetPath().c_str()) == 0) {
+    if ( symlink(_T_XCSTRING(path), _T_XCSTRING(GetPath())) == 0 ) {
         return true;
     }
     LOG_ERROR_AND_RETURN_ERRNO("CSymLink::Create(): failed: " + path);
@@ -4389,8 +4536,9 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
                              CNcbiError::eNoSuchFileOrDirectory);
     }
     CSymLink dst(new_path);
-    EType dst_type   = dst.GetType(eIgnoreLinks);
-    bool  dst_exists = (dst_type != eUnknown);
+    EType    dst_type = dst.GetType(eIgnoreLinks);
+    bool     dst_exists = (dst_type != eUnknown);
+    string   dst_safe_path;  // saved path for fCF_Safe
 
     // If destination exists...
     if ( dst_exists ) {
@@ -4424,7 +4572,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
                 LOG_ERROR_AND_RETURN("CSymLink::Copy():"
                                      " Cannot backup destination: "
-                                     << dst.GetPath());
+                                     + dst.GetPath());
             }
         }
         // Overwrite destination entry
@@ -4432,24 +4580,47 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
             dst.Remove();
         } 
     }
-
+    // Safe copy -- create temporary symlink and rename later
+    if (F_ISSET(flags, fCF_Safe)) {
+        // Get new temporary name in the same directory
+        string path, name, ext;
+        SplitPath(dst.GetPath(), &path, &name, &ext);
+        string tmp = GetTmpNameEx(path.empty() ? CDir::GetCwd() : path, name + ext + kTmpSafeSuffix);
+        // Set new destination
+        dst_safe_path = dst.GetPath();
+        dst.Reset(tmp);
+    }
+    else {
+        // Overwrite destination entry
+        if (dst_exists  &&  F_ISSET(flags, fCF_Overwrite)) {
+            dst.Remove();
+        }
+    }
     // Copy symbolic link (create new one)
-    char buf[PATH_MAX+1];
-    int  len = (int)readlink(GetPath().c_str(), buf, sizeof(buf)-1);
-    if ( len < 1 ) {
+    char buf[PATH_MAX + 1];
+    int  len = (int)readlink(_T_XCSTRING(GetPath()), buf, sizeof(buf)-1);
+    if (len < 1) {
         LOG_ERROR_AND_RETURN_ERRNO("CSymLink::Copy():"
-                             " Cannot create new symbolic link to "
-                             + GetPath());
+                                   " Cannot read symbolic link " + GetPath());
     }
     buf[len] = '\0';
-    if ( symlink(buf, new_path.c_str()) ) {
+    if (symlink(buf, _T_XCSTRING(dst.GetPath()))) {
         LOG_ERROR_AND_RETURN_ERRNO("CSymLink::Copy():"
-                                   " Cannot create new symbolic link to "
-                                   + GetPath());
+                                   " Cannot create symbolic link to " +
+                                   dst.GetPath() + " to " + string(buf));
     }
 
+    // Safe copy -- renaming
+    if (F_ISSET(flags, fCF_Safe)) {
+        if (!dst.Rename(dst_safe_path, fRF_Overwrite)) {
+            dst.Remove();
+            LOG_ERROR_AND_RETURN_NCBI("CSymLink:Copy():"
+                                      " Cannot rename temporary symlink " + dst.GetPath() +
+                                      " to " + dst_safe_path, CNcbiError::eIoError);
+        }
+    }
     // Preserve attributes
-    if ( flags & fCF_PreserveAll ) {
+    if (flags & fCF_PreserveAll) {
         if (!s_CopyAttrs(GetPath().c_str(), new_path.c_str(), eLink, flags)) {
             return false;
         }
@@ -6018,13 +6189,11 @@ void x_Glob(const string& path,
     else {
         if ( !found.empty() ) {
             ITERATE(std::list<string>, it, found) {
-                x_Glob(CDirEntry::AddTrailingPathSeparator(*it),
-                    parts, next, result, flags);
+                x_Glob(CDirEntry::AddTrailingPathSeparator(*it), parts, next, result, flags);
             }
         }
         else {
-            x_Glob(CDirEntry::AddTrailingPathSeparator(path + masks.front()),
-                parts, next, result, flags);
+            x_Glob(CDirEntry::AddTrailingPathSeparator(path + masks.front()), parts, next, result, flags);
         }
     }
 }
@@ -6084,6 +6253,61 @@ void FindFiles(const string& pattern,
 #endif
 
     x_Glob(search_path, parts, parts.begin(), result, flags);
+}
+
+
+
+bool SCompareDirEntries::operator ()(const string& p1, const string& p2)
+{
+    if (m_Mode == ePath) {
+        return (p1 < p2);
+    }
+
+    string d1, n1, e1;
+    string d2, n2, e2;
+
+    CDirEntry::SplitPath(p1, &d1, &n1, &e1);
+    CDirEntry::SplitPath(p2, &d2, &n2, &e2);
+
+    int dc = NStr::CompareCase(d1, d2);
+
+    if (m_Mode == eName) {
+        // dir -> name-> ext
+        if (dc == 0) {
+            int nc = NStr::CompareCase(n1, n2);
+            if (nc == 0) {
+                return e1 < e2;
+            }
+            else {
+                return nc < 0;
+            }
+        }
+        else {
+            return dc < 0;
+        }
+
+    }
+    else {
+        if (m_Mode == eExtension) {
+            // dir -> ext -> name
+            if (dc == 0) {
+                int ec = NStr::CompareCase(e1, e2);
+                if (ec == 0) {
+                    return n1 < n2;
+                }
+                else {
+                    return ec < 0;
+                }
+            }
+            else {
+                return dc < 0;
+            }
+        }
+    }
+
+    NCBI_THROW(CCoreException, eInvalidArg, "Unknown sorting mode");
+    // Unreachable
+    return false;
 }
 
 
@@ -7050,7 +7274,7 @@ void CFileAPI::SetLogging(ESwitch on_off_default)
 {
     NCBI_PARAM_TYPE(NCBI, FileAPILogging)::SetDefault(
         on_off_default != eDefault ?
-            on_off_default != eOff : DEFAULT_LOGGING_VALUE);
+        on_off_default != eOff : DEFAULT_LOGGING_VALUE);
 }
 
 void CFileAPI::SetHonorUmask(ESwitch on_off_default)
@@ -7066,4 +7290,6 @@ void CFileAPI::SetDeleteReadOnlyFiles(ESwitch on_off_default)
         on_off_default == eOn);
 }
 
+
 END_NCBI_SCOPE
+

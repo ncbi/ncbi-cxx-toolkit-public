@@ -189,7 +189,14 @@ public:
 class NCBI_XNCBI_EXPORT CFileAPI
 {
 public:
-    /// Enable or disable logging of errors.
+    /// Enable or disable logging of errors from the File API classes.
+    ///
+    /// Have the same effect as FileAPILogging global parameter:
+    /// Registry file:
+    ///     [NCBI]
+    ///     FileAPILogging = true/false
+    /// Environment variable:
+    ///     NCBI_CONFIG__FILEAPILOGGING
     ///
     /// @param on_off_default
     ///   Switch between logging enabled (eOn), disabled (eOff),
@@ -199,16 +206,31 @@ public:
     /// Enable or disable honoring umask settings on Unix for
     /// newly created files/directories in the File API.
     ///
+    /// Have the same effect as FileAPIHonorUmask global parameter:
+    /// Registry file:
+    ///     [NCBI]
+    ///     FileAPIHonorUmask = true/false
+    /// Environment variable:
+    ///     NCBI_CONFIG__FILEAPIHONORUMASK
+    ///
     /// @param on_off_default
     ///   When set to eOn, allows read-only files to be deleted.
     ///   Otherwise, an attempt to delete a read-only files will
     ///   return an error (EACCES).
     /// @note
-    ///   Unix only.
+    ///   Unix only. On Windows umask affect only CRT function,
+    ///   the part of API that use Windows API directly just ignore umask setting.
     static void SetHonorUmask(ESwitch on_off_default);
 
     /// Specify whether read-only files can be deleted via
     /// CDirEntry::Remove() on Windows.
+    ///
+    /// Have the same effect as DeleteReadOnlyFiles global parameter:
+    /// Registry file:
+    ///     [NCBI]
+    ///     DeleteReadOnlyFiles = true/false
+    /// Environment variable:
+    ///     NCBI_CONFIG__DELETEREADONLYFILES
     ///
     /// @param on_off_default
     ///   When set to eOn, allows read-only files to be deleted.
@@ -373,6 +395,25 @@ public:
     /// Note that the "path" can be for any OS (MSWIN, UNIX).
     static bool IsAbsolutePathEx(const string& path);
 
+    /// Given a path, gets the closest parent directory which actually exists.
+    ///
+    /// @param path
+    ///   Some path to a directory entry.
+    /// @return
+    ///   The closest parent directory which actually exists.
+    /// @throws
+    ///   CFileException if no existing nearest parent directory was found.
+    /// @note
+    ///   For relative not-existent path it always return ".".
+    ///   To avoid this, you can always use absolute path for "path":
+    ///      CDirEntry::GetNearestExistingParentDir(CDirEntry::CreateAbsolutePath(path))
+    /// @note
+    ///   On Unix, a non-empty path should always have some existing parent,
+    ///   because '/' is a common path that should always exist.
+    /// @sa
+    ///   GetDir, CreateAbsolutePath
+    static string GetNearestExistingParentDir(const string& path);
+
     /// Create a relative path between two points in the file
     /// system specified by their absolute paths.
     ///
@@ -483,36 +524,46 @@ public:
     virtual bool Exists(void) const;
 
     /// Copy flags.
-    /// Note that update modification time for directory depends on the OS.
+    /// Note that updating modification time for directory depends on the OS.
     /// Normally it gets updated when a new directory entry is added/removed.
     /// On the other hand, changing contents of files of that directory
     /// doesn't usually affect the directory modification time.
     enum ECopyFlags {
-        /// The following three flags define what to do when the
+        /// The following flags define what to do when the
         /// destination entry already exists:
         /// - Overwrite the destination
-        fCF_Overwrite       = (1<< 1), 
-        /// - Update older entries only (compare modification times).
-        fCF_Update          = (1<< 2) | fCF_Overwrite,
-        /// - Backup destination if it exists.
-        fCF_Backup          = (1<< 3) | fCF_Overwrite,
+        fCF_Overwrite       = (1 << 1), 
+        /// - Update older entries only (compare modification times)
+        fCF_Update          = (1 << 2) | fCF_Overwrite,
+        /// - Backup destination (renames to ".bak" by default)
+        fCF_Backup          = (1 << 3) | fCF_Overwrite,
+
+        /// Safe copy (copy to temporary object and rename).
+        /// Be aware if used together with fCF_TopDirOnly for copying directories: 
+        ///    if specified -- full copy of the source directory will be created,
+        ///        after successful copying it replaces the destination.
+        ///    if not specified -- existing destination directory will be "upgraded"
+        ///        with files from source directory, safe copying will be applied
+        ///        for every copied entry inside.
+        fCF_Safe            = (1 << 4) | fCF_Overwrite,
+
         /// All above flags can be applied to the top directory only
         /// (not for every file therein), to process the directory
         /// as a single entity for overwriting, updating or backing up.
-        fCF_TopDirOnly      = (1<< 6),
+        fCF_TopDirOnly      = (1 << 6),
+
         /// If destination entry exists, it must have the same type as source.
-        fCF_EqualTypes      = (1<< 7),
+        fCF_EqualTypes      = (1 << 7),
         /// Copy entries following their sym.links, not the links themselves.
-        fCF_FollowLinks     = (1<< 8),
-        fCF_Verify          = (1<< 9),  ///< Verify data after copying
-        fCF_PreserveOwner   = (1<<10),  ///< Preserve owner/group
-        fCF_PreservePerm    = (1<<11),  ///< Preserve permissions/attributes
-        fCF_PreserveTime    = (1<<12),  ///< Preserve date/times
-        fCF_PreserveAll     = fCF_PreserveOwner | fCF_PreservePerm |
-                              fCF_PreserveTime,
-        fCF_Recursive       = (1<<14),  ///< Copy recursively (for dir only)
+        fCF_FollowLinks     = (1 << 8),
+        fCF_Verify          = (1 << 9),   ///< Verify data after copying
+        fCF_PreserveOwner   = (1 << 10),  ///< Preserve owner/group
+        fCF_PreservePerm    = (1 << 11),  ///< Preserve permissions/attributes
+        fCF_PreserveTime    = (1 << 12),  ///< Preserve date/times
+        fCF_PreserveAll     = fCF_PreserveOwner | fCF_PreservePerm | fCF_PreserveTime,
+        fCF_Recursive       = (1 << 14),  ///< Copy recursively (for dir only)
         /// Skip all entries for which we don't have Copy() method.
-        fCF_SkipUnsupported = (1<<15),
+        fCF_SkipUnsupported = (1 << 15),
         /// Default flags.
         fCF_Default         = fCF_Recursive | fCF_FollowLinks
     };
@@ -529,7 +580,7 @@ public:
     /// @param buf_size
     ///   Buffer size to use while copying the file contents.
     ///   Zero value means using default buffer size. This parameter
-    ///   have advisory status and can be overrided, depends from OS
+    ///   have advisory status and can be override, depends from OS
     ///   and size of copied file.
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
@@ -558,15 +609,15 @@ public:
     /// Rename flags
     enum ERenameFlags {
         /// Remove destination if it exists.
-        fRF_Overwrite   = (1<<1),
+        fRF_Overwrite   = (1 << 1),
         /// Update older entries only (compare modification times).
-        fRF_Update      = (1<<2) | fCF_Overwrite,
+        fRF_Update      = (1 << 2) | fCF_Overwrite,
         /// Backup destination if it exists before renaming.
-        fRF_Backup      = (1<<3) | fCF_Overwrite,
+        fRF_Backup      = (1 << 3) | fCF_Overwrite,
         /// If destination entry exists, it must have the same type as source.
-        fRF_EqualTypes  = (1<<4),
+        fRF_EqualTypes  = (1 << 4),
         /// Rename entries following sym.links, not the links themselves.
-        fRF_FollowLinks = (1<<5),
+        fRF_FollowLinks = (1 << 5),
         /// Default flags
         fRF_Default     = 0
     };
@@ -614,8 +665,8 @@ public:
 
     /// Backup modes
     enum EBackupMode {
-        eBackup_Copy    = (1<<1),       ///< Copy entry
-        eBackup_Rename  = (1<<2),       ///< Rename entry
+        eBackup_Copy    = (1 << 1),     ///< Copy entry
+        eBackup_Rename  = (1 << 2),     ///< Rename entry
         eBackup_Default = eBackup_Copy  ///< Default mode
     };
 
@@ -628,8 +679,7 @@ public:
     /// be deleted (if possible). The current entry name components are
     /// changed to reflect the backed up copy.
     /// @param suffix
-    ///   Extension to add to backup entry. If empty, GetBackupSuffix()
-    ///   is be used.
+    ///   Extension to add to backup entry. If empty, GetBackupSuffix() is be used.
     /// @param mode
     ///   Backup mode. Specifies what to do, copy the entry or just rename it.
     /// @param copyflags
@@ -673,7 +723,7 @@ public:
         // --- directory processing modes ---------------------------
         // "Enums", retained for backward compatibility.
 
-        /// Directory entry only, no any files or subdirestories
+        /// Directory entry only, no any files or subdirectories
         eOnlyEmpty    = fDir_Self,
         eEntryOnly    = fDir_Self,
         
@@ -1120,7 +1170,7 @@ public:
         fModeAdd      = 16,  ///< Adds the argument permission mode to
                              ///< the entry's current mode.
         fModeRemove   = 32,  ///< Removes the argument permission mode
-                             ///< from the entriy's current mode.
+                             ///< from the entry's current mode.
         fModeNoChange = 64   ///< Do not change permission mode.
     };
 
@@ -1149,7 +1199,7 @@ public:
     ///   Adding one of the EModeRelative flags to mode change default
     ///   behavior that replace modes with passed values and allow
     ///   for relative mode change for any of user/group/other/special.
-    ///   It is possble to keep it as is, or add/remove some permission
+    ///   It is possible to keep it as is, or add/remove some permission
     ///   modes specified in parameters.
     /// @note
     ///   Passing fDefault will cause the corresponding mode
@@ -1157,7 +1207,7 @@ public:
     /// @flags
     ///   Entry processing flags. Affect directories only,
     ///   see CDir::SetMode() for details. For other type entris
-    ///   dont have any effect.
+    ///   donut have any effect.
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
@@ -1479,6 +1529,7 @@ protected:
                         TMode*            group_mode,
                         TMode*            other_mode,
                         TSpecialModeBits* special) const;
+    mode_t GetDefaultModeT(void) const;
 
 private:
     string m_Path;    ///< Full path of this directory entry
@@ -1666,7 +1717,8 @@ public:
     static bool SetCwd(const string& dir);
 
     /// Define a list of pointers to directory entries.
-    typedef list< AutoPtr<CDirEntry> > TEntries;
+    typedef AutoPtr<CDirEntry> TEntry;
+    typedef list< TEntry > TEntries;
 
     /// Flags for GetEntries()
     /// @sa GetEntries, GetEntriesPtr
@@ -1696,6 +1748,7 @@ public:
                                    ///<   removed in the future. Do not use.
     };
     typedef int TGetEntriesFlags; ///< Binary OR of "EGetEntriesFlags"
+
 
     /// Get directory entries based on the specified "mask".
     ///
@@ -1824,17 +1877,48 @@ public:
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
 
+    /// Flags for Create()/CreatePath()
+    /// @sa Create, CreatePath
+    enum ECreateFlags {
+        /// Default directory creation mode 
+        ///   - no error if directory already exists;
+        ///   - don't change permissions if already exists;
+        ///   - use default mode for created directory
+        ///     see: SetDefaultMode(), SetDefaultModeGlobal(), CFileAPI::SetHonorUmask().
+        fCreate_Default         = 0,
+        /// Don't change permissions after creation, leave it for OS and umask control.
+        /// This flag have a priority over CFileAPI::SetHonorUmask(), that works with fCD_Default only.
+        fCreate_PermByUmask     = (1 << 1),
+        /// Use same permissions as parent directory (umask ignored)
+        fCreate_PermAsParent    = (1 << 2),
+        /// Error, if directory already exists. All other existent entry with
+        /// the same name (including symbolic links to directory) lead to an error by default.
+        fCreate_ErrorIfExists   = (1 << 3),
+        /// Allow to "update" permissions for already existent directory
+        /// using default, umask or parent permissions as specified by previous flags.
+        /// Note: Create() only, ignored by CreatePath().
+        fCreate_UpdateIfExists  = (1 << 4)
+    };
+    typedef unsigned int TCreateFlags;    ///< Binary OR of "ECreateFlags"
+
     /// Create the directory using "dirname" passed in the constructor.
-    /// 
+    ///
+    /// Default directory creation mode:
+    ///   - TRUE if directory already exists;
+    ///   - don't change permissions if already exists;
+    ///   - use default mode for created directory
     /// @return
     ///   TRUE if operation successful; FALSE, otherwise.
-    bool Create(void) const;
+    /// @sa 
+    ///   SetDefaultMode, SetDefaultModeGlobal, CFileAPI::SetHonorUmask, CreatePath
+    bool Create(TCreateFlags flags = fCreate_Default) const;
 
     /// Create the directory path recursively possibly more than one at a time.
     ///
     /// @return
     ///   TRUE if operation successful; FALSE otherwise.
-    bool CreatePath(void) const;
+    /// @sa Create
+    bool CreatePath(TCreateFlags flags = fCreate_Default) const;
 
     /// Copy directory.
     ///
@@ -1886,7 +1970,7 @@ public:
     ///   Adding one of the EModeRelative flags to mode change default
     ///   behavior that replace modes with passed values and allow
     ///   for relative mode change for any of user/group/other/special.
-    ///   It is possble to keep it as is, or add/remove some permission
+    ///   It is possible to keep it as is, or add/remove some permission
     ///   modes specified in parameters.
     /// @note
     ///   Passing "fDefault" will cause the corresponding mode
@@ -2873,10 +2957,10 @@ private:
 
 /// File finding flags
 enum EFindFiles {
-    fFF_File       = (1<<0),             ///< find files
-    fFF_Dir        = (1<<1),             ///< find directories
-    fFF_Recursive  = (1<<2),             ///< descend into sub-dirs
-    fFF_Nocase     = (1<<3),             ///< case-insensitive name search
+    fFF_File       = (1 << 0),           ///< find files
+    fFF_Dir        = (1 << 1),           ///< find directories
+    fFF_Recursive  = (1 << 2),           ///< descend into sub-dirs
+    fFF_Nocase     = (1 << 3),           ///< case-insensitive name search
     fFF_Default    = fFF_File | fFF_Dir  ///< default behavior
 };
 /// Bitwise OR of "EFindFiles"
@@ -3226,6 +3310,41 @@ void FindFiles(TContainer&    out,
 void NCBI_XNCBI_EXPORT FindFiles(const string& pattern,
                                  list<string>& result,
                                  TFindFiles flags);
+
+
+/// Comparator for directory entries names.
+///
+/// Compares two directory entries lexicographically, allow to sort
+/// elements in ascending order. Could be used with a list of entries
+/// obtained via CDir::GetEntries() or FindFiles().
+/// @param mode
+///   Entries sorting mode. 
+/// @sa 
+///   CDir::GetEntries, FindFiles
+/// @code
+///     CDir::TEntries entries = CDir(dir).GetEntries("*.*");
+///     entries.sort(SCompareDirEntries());
+/// @endcode
+/// @code
+///     vector<string> entries;
+///     FindFiles(entries, ...);
+///     std::sort(entries.begin(), entries.end(), SCompareDirEntries());
+/// @endcode
+
+struct SCompareDirEntries
+{
+    /// Sorting mode
+    enum EMode {
+        ePath = 0,   ///< Sort by full path (default)
+        eName,       ///< Sort by name (dir->name->ext)
+        eExtension,  ///< Sort by extension (dir->ext->name)
+    };
+    SCompareDirEntries(EMode mode = ePath) : m_Mode(mode) {};
+    bool operator()(const CDir::TEntry& e1, const CDir::TEntry& e2);
+    bool operator()(const string& e1, const string& e2);
+private:
+    EMode m_Mode;
+};
 
 
 
@@ -3814,6 +3933,14 @@ void CDirEntry::SetBackupSuffix(const char* suffix)
     m_BackupSuffix = const_cast<char*>(suffix);
 }
 
+inline
+mode_t CDirEntry::GetDefaultModeT() const
+{
+    return MakeModeT(m_DefaultMode[eUser],  m_DefaultMode[eGroup],
+                     m_DefaultMode[eOther], m_DefaultMode[eSpecial]);
+}
+
+
 
 // CFile
 
@@ -3922,6 +4049,15 @@ CDir::GetEntriesPtr(const CMask&     masks,
     if (use_case == NStr::eNocase) mode |= fNoCase;
     return GetEntriesPtr(masks, mode);
 }
+
+
+// SCompareDirEntries
+
+inline
+bool SCompareDirEntries::operator()(const CDir::TEntry& e1, const CDir::TEntry& e2)
+{
+    return operator()(e1->GetPath(), e2->GetPath());
+};
 
 
 // CSymLink
