@@ -139,33 +139,33 @@ struct SWGSDb_Defs
         fIds_gi       = 1<<0,
         fIds_acc      = 1<<1,
         fIds_gnl      = 1<<2,
-        fMaskIds      = 0|fIds_gi|fIds_acc|fIds_gnl,
-        fDefaultIds   = 0|fIds_gi|fIds_acc|fIds_gnl,
+        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
+        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
 
         fInst_ncbi4na = 0<<3,
         fInst_delta   = 1<<3,
-        fMaskInst     = 0|fInst_ncbi4na|fInst_delta,
+        fMaskInst     = fInst_ncbi4na|fInst_delta,
         fDefaultInst  = fInst_delta,
 
         fSeqDescr     = 1<<4,
         fNucProtDescr = 1<<12,
         fMasterDescr  = 1<<5,
-        fMaskDescr    = 0|fSeqDescr|fNucProtDescr|fMasterDescr,
-        fDefaultDescr = 0|fSeqDescr|fNucProtDescr|fMasterDescr,
+        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr,
+        fDefaultDescr = fSeqDescr|fNucProtDescr|fMasterDescr,
 
         fSeqAnnot     = 1<<6,
         fQualityGraph = 1<<7,
-        fMaskAnnot    = 0|fSeqAnnot|fQualityGraph,
-        fDefaultAnnot = 0|fSeqAnnot|fQualityGraph,
+        fMaskAnnot    = fSeqAnnot|fQualityGraph,
+        fDefaultAnnot = fSeqAnnot|fQualityGraph,
 
         fSplitQualityGraph  = 1<<8,
         fSplitSeqData       = 1<<9,
         fSplitProducts      = 1<<10,
-        fSplitAll     = 0|fSplitQualityGraph | fSplitSeqData | fSplitProducts,
-        fSplitMask    = 0|fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fSplitAll     = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fSplitMask    = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
         fDefaultSplit = fSplitAll,
 
-        fDefaultFlags = 0|fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 };

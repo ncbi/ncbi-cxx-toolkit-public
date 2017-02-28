@@ -1221,7 +1221,6 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
-#if 0
 /////////////////////////////////////////////////////////////////////////////
 /// Support for safe enum flags
 /////////////////////////////////////////////////////////////////////////////
@@ -1356,51 +1355,37 @@ private:
 /// If the enum is defined inside a class then DECLARE_SAFE_FLAGS()
 /// must be placed outside the class definition:
 ///   DECLARE_SAFE_FLAGS(CMyClass::EFlags);
-#define DECLARE_SAFE_FLAGS(E)                                           \
-    inline NCBI_NS_NCBI::CSafeFlags<E> AsSafeFlags(const E* ptr) { return *ptr; }
+#define DECLARE_SAFE_FLAGS(E)                          \
+inline NCBI_NS_NCBI::CSafeFlags<E> operator|(E a, E b) \
+{ return NCBI_NS_NCBI::CSafeFlags<E>(a) | b; }         \
+inline NCBI_NS_NCBI::CSafeFlags<E> operator&(E a, E b) \
+{ return NCBI_NS_NCBI::CSafeFlags<E>(a) & b; }         \
+inline NCBI_NS_NCBI::CSafeFlags<E> operator^(E a, E b) \
+{ return NCBI_NS_NCBI::CSafeFlags<E>(a) ^ b; }         \
+inline NCBI_NS_NCBI::CSafeFlags<E> operator~(E a)      \
+{ return ~NCBI_NS_NCBI::CSafeFlags<E>(a); }
+
 
 /// Helper operators for safe-flags enums.
 /// These operators will be used only for enums marked
 /// as safe-flag enums by macro DECLARE_SAFE_FLAGS()
-template<class E> inline
-decltype(AsSafeFlags(static_cast<const E*>(0))) operator|(E a, E b)
-{
-    return CSafeFlags<E>(a)|b;
-}
 template<class E> inline CSafeFlags<E> operator|(E a, CSafeFlags<E> b)
 {
     return b | a;
 }
-template<class E> inline
-decltype(AsSafeFlags(static_cast<const E*>(0))) operator&(E a, E b)
-{
-    return CSafeFlags<E>(a)&b;
-}
 template<class E> inline CSafeFlags<E> operator&(E a, CSafeFlags<E> b)
 {
     return b & a;
-}
-template<class E> inline
-decltype(AsSafeFlags(static_cast<const E*>(0))) operator^(E a, E b)
-{
-    return CSafeFlags<E>(a)^b;
 }
 template<class E> inline CSafeFlags<E> operator^(E a, CSafeFlags<E> b)
 {
     return b ^ a;
 }
 template<class E> inline
-decltype(AsSafeFlags(static_cast<const E*>(0))) operator~(E a)
-{
-    return ~CSafeFlags<E>(a);
-}
-template<class E> inline
-ostream& operator<<(ostream& out, CSafeFlags<E> v)
+ostream& operator<<(ostream& out, const CSafeFlags<E>& v)
 {
     return out << v.get();
 }
-#endif
-
 
 END_NCBI_NAMESPACE;
 

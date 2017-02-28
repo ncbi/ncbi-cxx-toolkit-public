@@ -98,7 +98,6 @@ public:
     virtual int Run(void);
 };
 
-#if 0
 namespace foo {
 class CClassWithFlags
 {
@@ -116,7 +115,7 @@ public:
         fOtherFlag1 = 1<<0,
         fOtherFlag2 = 1<<1,
         fOtherFlag3 = 1<<2,
-        fOtherMask12 = 0|fOtherFlag1|fOtherFlag2
+        fOtherMask12 = fOtherFlag1|fOtherFlag2
     };
     DECLARE_SAFE_FLAGS_TYPE(EOtherFlags, TOtherFlags);
     enum EOtherEnum {
@@ -125,7 +124,7 @@ public:
         eValue3 = eValue1 + eValue2
     };
 
-    static void Foo(TFlags flags = fDefault)
+    static int Foo(TFlags flags = fDefault)
         {
             if ( flags == fDefault ) {
                 cout << "Foo()" << endl;
@@ -133,6 +132,20 @@ public:
             else {
                 cout << "Foo("<<flags<<")" << endl;
             }
+            return flags.get() | 1;
+        }
+    static int Foo(EFlags flags)
+        {
+            return Foo(TFlags(flags));
+        }
+    static int Foo2(TFlags flags)
+        {
+            return Foo(flags);
+        }
+    static int Foo(int flags)
+        {
+            cout << "Foo(int = "<<flags<<")" << endl;
+            return 0;
         }
 };
 DECLARE_SAFE_FLAGS(CClassWithFlags::EFlags);
@@ -153,12 +166,22 @@ void TestSafeFlags()
     foo::CClassWithFlags::Foo();
     foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
     using namespace foo;
-    CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3);
-    CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2);
-    CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2);
-    CClassWithFlags::Foo(CClassWithFlags::EFlags(COtherClass<1>::eValue3));
+    CClassWithFlags::TFlags ff = CClassWithFlags::fFlag1;
+    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3));
+    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2));
+    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2));
+    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::EFlags(COtherClass<1>::eValue3)));
+    _ASSERT(CClassWithFlags::Foo(ff | CClassWithFlags::fFlag3));
+    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12 & ff));
+    _ASSERT(CClassWithFlags::Foo(ff ^ ff));
+    _ASSERT(CClassWithFlags::Foo(~ff));
+    _ASSERT(CClassWithFlags::Foo2(~ff|CClassWithFlags::fFlag2));
+    _ASSERT(CClassWithFlags::Foo2(CClassWithFlags::fFlag2));
+    _ASSERT(!CClassWithFlags::Foo(CClassWithFlags::eValue1));
+    // all below operations should cause compilation error
+    //CClassWithFlags::Foo(CClassWithFlags::fOtherFlag1 | CClassWithFlags::fOtherFlag3);
+    //CClassWithFlags::Foo(COtherClass<1>::eValue3);
 }
-#endif
 
 int CTestApplication::Run(void)
 {
@@ -188,6 +211,7 @@ int CTestApplication::Run(void)
     gi = GI_CONST(192377853343);
 #endif
     NcbiCout << "GI = " << gi << NcbiEndl;
+    TestSafeFlags();
     NcbiCout << "Passed" << NcbiEndl;
     return 0;
 }
