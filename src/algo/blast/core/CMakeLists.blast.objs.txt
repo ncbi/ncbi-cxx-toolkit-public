@@ -60,5 +60,6 @@ set(SRC_C
     ../core/phi_gapalign
     ../core/phi_lookup
     ../core/split_query
+    ../core/spliced_hits
 )
 
