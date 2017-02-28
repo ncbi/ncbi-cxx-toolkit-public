@@ -190,6 +190,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 
     if (m_Location->IsSame(selector->First())) {
         LOG_POST(Trace << "locations are the same");
+        Close();
         return selector->Locator().GetLocator();
     }
 
