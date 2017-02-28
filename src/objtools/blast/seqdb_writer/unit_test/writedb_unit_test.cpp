@@ -223,6 +223,9 @@ s_DupIdsBioseq(CWriteDB      & w,
 
         int oid = -1;
         bool found = s.SeqidToOid(*seqid, oid);
+if(!found) {
+	 cerr << seqid->GetSeqIdString() << endl;
+}
 
         BOOST_REQUIRE(found);
 
@@ -636,7 +639,7 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
 
     BOOST_REQUIRE_CUTPOINT(0);
 
-    const string srcname("nt");
+    const string srcname("data/writedb_nucl");
     const string dstname("w-nucl-bs");
     const string title("bioseq nucleotide dup");
 
@@ -1087,14 +1090,14 @@ BOOST_AUTO_TEST_CASE(ProtBioseqDup)
     s_DupSequencesTest(ids,
                        true,
                        false,
-                       "nr",
+                       "data/writedb_prot",
                        "w-prot-bs",
                        "bioseq protein dup");
 
     s_DupSequencesTest(ids,
                        true,
                        true,
-                       "nr",
+                       "data/writedb_prot",
                        "w-prot-raw",
                        "raw protein dup");
 }
@@ -1213,20 +1216,20 @@ BOOST_AUTO_TEST_CASE(SetPig)
     vector<string> files;
 
     {
-        CSeqDB nr("nr", CSeqDB::eProtein);
+        CSeqDB wdb("data/writedb_prot", CSeqDB::eProtein);
 
         CWriteDB db(nm,
                     CWriteDB::eProtein,
                     "title",
                     CWriteDB::eFullIndex);
 
-        db.AddSequence(*nr.GiToBioseq(129295));
+        db.AddSequence(*wdb.GiToBioseq(129295));
         db.SetPig(101);
 
-        db.AddSequence(*nr.GiToBioseq(129296));
+        db.AddSequence(*wdb.GiToBioseq(129296));
         db.SetPig(102);
 
-        db.AddSequence(*nr.GiToBioseq(129297));
+        db.AddSequence(*wdb.GiToBioseq(129297));
         db.SetPig(103);
 
         db.Close();
@@ -1266,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(SetPig)
 BOOST_AUTO_TEST_CASE(MultiVolume)
 {
 
-    CSeqDB nr("nr", CSeqDB::eProtein);
+    CSeqDB wdb("data/writedb_prot", CSeqDB::eProtein);
 
     CWriteDB db("multivol",
                 CWriteDB::eProtein,
@@ -1281,10 +1284,10 @@ BOOST_AUTO_TEST_CASE(MultiVolume)
 
     for(int i = 0; gis[i]; i++) {
         int oid(0);
-        nr.GiToOid(gis[i], oid);
+        wdb.GiToOid(gis[i], oid);
 
-        db.AddSequence(*nr.GetBioseq(oid));
-        letter_count += nr.GetSeqLength(oid);
+        db.AddSequence(*wdb.GetBioseq(oid));
+        letter_count += wdb.GetSeqLength(oid);
     }
 
     db.Close();
@@ -1331,7 +1334,7 @@ BOOST_AUTO_TEST_CASE(UsPatId)
                           "patent id test",
                           CWriteDB::eFullIndex));
 
-        CSeqDB seqdb("nr", CSeqDB::eProtein);
+        CSeqDB seqdb("data/writedb_prot", CSeqDB::eProtein);
 
         CRef<CBioseq> bs = seqdb.GiToBioseq(129297);
 
@@ -1398,7 +1401,7 @@ BOOST_AUTO_TEST_CASE(IsamSorting)
     s_DupSequencesTest(ids,
                        true,
                        false,
-                       "nr",
+                       "data/writedb_prot",
                        "w-isam-sort-bs",
                        "test of string ISAM sortedness");
 }
@@ -1427,7 +1430,7 @@ BOOST_AUTO_TEST_CASE(DuplicateId)
     BOOST_REQUIRE_THROW(s_DupSequencesTest(ids,
                        true,
                        false,
-                       "nr",
+                       "data/writedb_prot",
                        "w-isam-sort-bs",
                        "test of string ISAM sortedness"),
                         CWriteDBException);
@@ -1436,8 +1439,8 @@ BOOST_AUTO_TEST_CASE(DuplicateId)
 BOOST_AUTO_TEST_CASE(HashToOid)
 {
 
-    CSeqDBExpert nr("nr", CSeqDB::eProtein);
-    CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
+    CSeqDBExpert wdb_p("data/writedb_prot", CSeqDB::eProtein);
+    CSeqDBExpert wdb_n("data/writedb_nucl", CSeqDB::eNucleotide);
 
     TGi prot_gis[] = { 129295, 129296, 129297, 0 };
     TGi nucl_gis[] = { 555, 556, 405832, 0 };
@@ -1461,8 +1464,8 @@ BOOST_AUTO_TEST_CASE(HashToOid)
                                      "test of hash ISAMs (N)",
                                      itype));
 
-    s_DupIdsBioseq(*prot, nr, prot_ids, 99);
-    s_DupIdsBioseq(*nucl, nt, nucl_ids, 99);
+    s_DupIdsBioseq(*prot, wdb_p, prot_ids, 99);
+    s_DupIdsBioseq(*nucl, wdb_n, nucl_ids, 99);
 
     prot->Close();
     nucl->Close();
@@ -1768,7 +1771,7 @@ BOOST_AUTO_TEST_CASE(UserDefinedColumns)
     string vname("user-column-db");
     string title("comedy");
 
-    CSeqDB R("nr", CSeqDB::eProtein);
+    CSeqDB R("data/writedb_prot", CSeqDB::eProtein);
     CWriteDB W(vname,
                CWriteDB::eProtein,
                "User defined column");
@@ -1926,9 +1929,9 @@ BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfOther)
 BOOST_AUTO_TEST_CASE(MaskDataColumn)
 {
 
-    CSeqDB R("nr", CSeqDB::eProtein);
+    CSeqDB R("data/writedb_prot", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
-    const int kNumSeqs = 10;
+    const int kNumSeqs = 3;
 
     vector<int> oids;
     int next_oid = 0;
@@ -2059,7 +2062,7 @@ BOOST_AUTO_TEST_CASE(TooManyAlgoId)
 BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
 {
 
-    CSeqDB R("nr", CSeqDB::eProtein);
+    CSeqDB R("data/writedb_prot", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
 
     W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
@@ -2097,7 +2100,7 @@ BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
 
 BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
 {
-    CSeqDB R("nr", CSeqDB::eProtein);
+    CSeqDB R("data/writedb_prot", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
 
     W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
@@ -2221,7 +2224,7 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     CDiagRestorer diag_restorer;
     SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmp_aliasfile, tmp_gifile;
-    const string kDbName("nr");
+    const string kDbName("data/writedb_prot");
     const string kTitle("My alias file");
     string kAliasFileName(tmp_aliasfile.GetFileName());
     string kGiFileName(tmp_gifile.GetFileName());
@@ -2261,7 +2264,7 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_SeqIdList)
     CDiagRestorer diag_restorer;
     SetDiagPostLevel(eDiag_Fatal);
     CTmpFile tmp_aliasfile, tmp_gifile;
-    const string kDbName("nr");
+    const string kDbName("data/writedb_prot");
     const string kTitle("My alias file");
     string kAliasFileName(tmp_aliasfile.GetFileName());
     string kGiFileName(tmp_gifile.GetFileName());
@@ -2620,15 +2623,13 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
     bd.Reset(new CBuildDatabase(kOutput, "foo", true,
                                 CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
-    //CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
-    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
     bd->SetTaxids(*tid);
     bd->StartBuild();
-    bd->SetSourceDb("swissprot");
+    bd->SetSourceDb("data/writedb_prot");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    //vector<string> ids(1, "129295");
-    vector<string> ids(1, "30172867");
+    vector<string> ids(1, "129295");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
@@ -2651,14 +2652,14 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
     bd.Reset(new CBuildDatabase(kOutput, "foo", true,
                                 CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
-    //CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
-    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
+    //CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
     bd->SetTaxids(*tid);
     bd->StartBuild();
-    bd->SetSourceDb("swissprot");
+    bd->SetSourceDb("data/writedb_prot");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    vector<string> ids(1, "30172867");
+    vector<string> ids(1, "129295");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
@@ -2689,7 +2690,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation)
             false,              // use_gi_mask
             &log
     ));
-    bd->SetSourceDb("swissprot");
+    bd->SetSourceDb("data/writedb_prot");
 
     // These two IDs are NOT in the FASTA file.
     vector<string> ids;
@@ -2728,7 +2729,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation_NoIds)
             false,              // use_gi_mask
             &log
     ));
-    bd->SetSourceDb("swissprot");
+    bd->SetSourceDb("data/writedb_prot");
 
     // Not adding any IDs.
     vector<string> ids;     // empty
