@@ -273,6 +273,46 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CScore_Polya : public CScoreLookup::IScore
+{
+public:
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Length of polya tail";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        if (!align.GetSegs().IsSpliced() || 
+            !align.GetSegs().GetSpliced().IsSetPoly_a())
+        {
+            NCBI_THROW(CSeqalignException, eNotImplemented,
+                       "Poly-a value not available");
+        }
+        double product_length = 0;
+        if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
+            product_length = align.GetSegs().GetSpliced().GetProduct_length();
+        } else if (scope) {
+            CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+            if (bsh) {
+                product_length = bsh.GetBioseqLength();
+            }
+        }
+        if (product_length == 0) {
+            NCBI_THROW(CSeqalignException, eNotImplemented,
+                       "Product length not available");
+        }
+        return product_length - align.GetSegs().GetSpliced().GetPoly_a();
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 class CScore_InternalUnaligned : public CScoreLookup::IScore
 {
 public:
@@ -1659,6 +1699,10 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("3prime_unaligned",
           CIRef<IScore>(new CScore_3PrimeUnaligned)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("polya", CIRef<IScore>(new CScore_Polya)));
 
     m_Scores.insert
         (TScoreDictionary::value_type
