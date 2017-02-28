@@ -69,7 +69,7 @@ USING_SCOPE(objects);
 #endif
 
 static const int   kMajorVersion = 1;
-static const int   kMinorVersion = 2;
+static const int   kMinorVersion = 3;
 static const int   kPatchVersion = 0;
 
 class CMagicBlastVersion : public CVersionInfo
