@@ -2044,8 +2044,12 @@ string s_CreateHistCommentString
         }
         string accn = GetAccessionForGi(gis[count], ctx.GetScope(), sequence::eWithAccessionVersion, sequence::eGetId_Best);
         text << " ";
-        // text << accn;
-        NcbiId(text, accn, ctx.Config().DoHTML());
+        if (NStr::Find(accn, ".") != NPOS) {
+             NcbiId(text, accn, ctx.Config().DoHTML());
+        } else {
+            text << "gi:";
+            NcbiId(text, gis[count], ctx.Config().DoHTML());
+        }
         /* was
         text << " gi:";
 #ifdef NEW_HTML_FMT
