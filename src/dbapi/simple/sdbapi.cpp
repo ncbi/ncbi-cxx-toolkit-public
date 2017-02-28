@@ -1864,7 +1864,7 @@ void
 CDatabase::Connect(void)
 {
     try {
-        if (m_Impl->IsOpen()) {
+        if (m_Impl->EverConnected()) {
             m_Impl.Reset(new CDatabaseImpl);
         }
         m_Impl->Connect(m_Params);
