@@ -73,6 +73,7 @@
 #include <algo/blast/core/mb_indexed_lookup.h>
 #include <algo/blast/core/gencode_singleton.h>
 #include "blast_gapalign_priv.h"
+#include "jumper.h"
 
 /** Converts nucleotide coordinates to protein */
 #define CONV_NUCL2PROT_COORDINATES(length) (length) / CODON_LENGTH
@@ -1678,6 +1679,15 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
          if (status != 0)
             break;
+
+         /* Do anchored search for mapping */
+         if (Blast_ProgramIsMapping(program_number) && getenv("MAPPER_ANCHOR")) {
+             Int4 word_size = 12;
+
+             DoAnchoredSearch(query, seq_arg.seq, word_size,
+                              query_info, gap_align, score_params,
+                              hit_params, hsp_stream);
+         }
 
          if (hit_params->low_score)
          {

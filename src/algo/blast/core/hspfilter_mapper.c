@@ -35,144 +35,13 @@
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_hits.h>
 #include "jumper.h"
+#include "spliced_hits.h"
 
 /* Pair configurations, in the order of prefernece */
 #define PAIR_CONVERGENT 0
 #define PAIR_DIVERGENT 1
 #define PAIR_PARALLEL 2
 #define PAIR_NONE 3
-
-/* A container to create a list of HSPs */
-typedef struct HSPContainer
-{
-    BlastHSP* hsp;
-    struct HSPContainer* next;    
-} HSPContainer;
-
-
-/* Create HSPContainer and take ownership of the HSP */
-static HSPContainer* HSPContainerNew(BlastHSP** hsp)
-{
-    HSPContainer* retval = calloc(1, sizeof(HSPContainer));
-    if (!retval) {
-        return NULL;
-    }
-    retval->hsp = *hsp;
-    /* take ownership of this HSP */
-    *hsp = NULL;
-
-    return retval;
-}
-
-/* Free the list of HSPs, along with the stored HSPs */
-static HSPContainer* HSPContainerFree(HSPContainer* hc)
-{
-    HSPContainer* h = hc;
-    while (h) {
-        HSPContainer* next = h->next;
-        if (h->hsp) {
-            Blast_HSPFree(h->hsp);
-        }
-
-        sfree(h);
-        h = next;
-    }
-
-    return NULL;
-}
-
-/* Clone a list of HSP containers */
-static HSPContainer* HSPContainerDup(HSPContainer* inh)
-{
-    HSPContainer* retval = NULL;
-    HSPContainer* hi = NULL, *ho = NULL;
-    BlastHSP* new_hsp = NULL;
-
-    if (!inh || !inh->hsp) {
-        return NULL;
-    }
-
-    new_hsp = Blast_HSPClone(inh->hsp);
-    if (!new_hsp) {
-        return NULL;
-    }
-    retval = HSPContainerNew(&new_hsp);
-    if (!retval) {
-        Blast_HSPFree(new_hsp);
-        return NULL;
-    }
-
-    hi = inh->next;
-    ho = retval;
-    for (; hi; hi = hi->next, ho = ho->next) {
-        new_hsp = Blast_HSPClone(hi->hsp);
-        if (!new_hsp) {
-            Blast_HSPFree(new_hsp);
-            HSPContainerFree(retval);
-            return NULL;
-        }
-        ho->next = HSPContainerNew(&new_hsp);
-        if (!ho->next) {
-            Blast_HSPFree(new_hsp);
-            HSPContainerFree(retval);
-            return NULL;
-        }
-    }
-
-    return retval;
-}
-
-/* A chain of HSPs: gene transcript sequence aligned to exons */
-typedef struct HSPChain
-{
-    Int4 context;  /* query context */
-    Int4 oid;      /* subject oid */
-    Int4 score;    /* score for the whole chain */
-    HSPContainer* hsps;  /* list of HSPs that belong to this chain */
-    Int4 compartment;    /* compartment number for the chain (needed
-                            for reporting results) */
-    
-    Int4 count;    /* number of chains with the same or larger score found
-                      for the same query */
-    struct HSPChain* pair;  /* pointer to the pair (for paired reads) */
-    Uint1 pair_conf;        /* pair configuration */
-
-    Int4 adapter;  /* adapter start position */
-    Int4 polyA;    /* start of polyA tail */
-    struct HSPChain* next;
-} HSPChain;
-
-
-static HSPChain* HSPChainFree(HSPChain* chain_list)
-{
-    HSPChain* chain = chain_list;
-    while (chain) {
-        HSPChain* next = chain->next;
-        if (chain->pair) {
-            chain->pair->pair = NULL;
-        }
-        ASSERT(chain->hsps);
-        chain->hsps = HSPContainerFree(chain->hsps);
-        sfree(chain);
-        chain = next;
-    }
-
-    return NULL;
-}
-
-static HSPChain* HSPChainNew(Int4 context)
-{
-    HSPChain* retval = calloc(1, sizeof(HSPChain));
-    if (!retval) {
-        return NULL;
-    }
-    retval->context = context;
-    retval->compartment = -1;
-    retval->adapter = -1;
-
-    return retval;
-}
-
 
 /* Insert a single chain into the list so that the list is sorted in decending
    order of chain scores. */
@@ -287,32 +156,6 @@ static Int4 HSPChainListTrim(HSPChain* list, Int4 margin)
     return 0;
 }
 
-
-/* Clone a single HSP chain */
-static HSPChain* s_CloneChain(const HSPChain* chain)
-{
-    HSPChain* retval = NULL;
-
-    if (!chain) {
-        return NULL;
-    }
-    
-    retval = HSPChainNew(chain->context);
-    if (!retval) {
-        return NULL;
-    }
-    retval->hsps = HSPContainerDup(chain->hsps);
-    if (!retval->hsps) {
-        HSPChainFree(retval);
-        return NULL;
-    }
-    retval->oid = chain->oid;
-    retval->score = chain->score;
-    retval->adapter = chain->adapter;
-    retval->polyA = chain->polyA;
-
-    return retval;
-}
 
 /* Test that all pointers in the chain are set */
 static Boolean s_TestChains(HSPChain* chain)
@@ -4046,7 +3889,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             }
             ASSERT(pair_info[i].second->pair);
 
-            pair = s_CloneChain(pair_info[i].second);
+            pair = CloneChain(pair_info[i].second);
             ASSERT(pair);
             ASSERT(s_TestChains(pair));
             pair_info[i].second = pair;
@@ -4076,7 +3919,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             }
             ASSERT(pair_info[i].first->pair);
 
-            pair = s_CloneChain(pair_info[i].first);
+            pair = CloneChain(pair_info[i].first);
             ASSERT(pair);
             ASSERT(s_TestChains(pair));
             pair_info[i].first = pair;
@@ -4140,6 +3983,67 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
     }
 
     return found;
+}
+
+
+HSPChain* FindPartialyCoveredQueries(void* data, Int4 oid, Int4 word_size)
+{
+    BlastHSPMapperData* spl_data = data;
+    BlastQueryInfo* query_info = spl_data->query_info;
+    HSPChain** saved = spl_data->saved_chains;
+    HSPChain* retval = NULL;
+    HSPChain* last;
+    Int4 i;
+
+    for (i = 0;i < query_info->num_queries;i++) {
+        HSPChain* chain = saved[i];
+
+        for (chain = saved[i]; chain; chain = chain->next) {
+            HSPContainer* h;
+
+            if (chain->oid != oid) {
+                continue;
+            }
+
+            if (chain->score < 30) {
+                continue;
+            }
+
+            h = chain->hsps;
+
+            if (h->hsp->query.offset > word_size) {
+
+                if (!retval) {
+                    retval = CloneChain(chain);
+                    last = retval;
+                }
+                else {
+                    last->next = CloneChain(chain);
+                    last = last->next;
+                }
+
+                continue;
+            }
+
+            while (h->next) {
+                h = h->next;
+            }
+            if (query_info->contexts[h->hsp->context].query_length -
+                h->hsp->query.end > word_size) {
+
+                if (!retval) {
+                    retval = CloneChain(chain);
+                    last = retval;
+                }
+                else {
+                    last->next = CloneChain(chain);
+                    last = last->next;
+                }
+            }
+        }
+    }
+
+    return retval;
 }
 
 

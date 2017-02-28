@@ -37,6 +37,8 @@
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_nalookup.h>
+#include <algo/blast/core/blast_hspstream.h>
+#include "spliced_hits.h"
 
 
 #ifdef __cplusplus
@@ -271,6 +273,31 @@ typedef struct SequenceOverhangs
 } SequenceOverhangs;
 
 SequenceOverhangs* SequenceOverhangsFree(SequenceOverhangs* overhangs);
+
+
+/** Do a search against a single subject with smaller word size and with no
+ *  database word frequency filtering, for queries that have partial hits.
+ *  The subject is scanned only where one expects to find an exon. This is to
+ *  find smaller and low complexity exons.
+ *  @param query Concatenated query [in]
+ *  @param subject Subject sequence [in]
+ *  @param word_size Minimum word size to use in scanning [in]
+ *  @param query_info Query information structure [in]
+ *  @param gap_align Data for gapped alignment [in|out]
+ *  @param score_params Alignment scoring parameters [in]
+ *  @param hit_params Hit saving parameters [in]
+ *  @param hsp_stream Queries will be selected based on hits in hsp_stream and
+ *  new hits will be written to it [in|out]
+ *  @return Status
+ */
+Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
+                      BLAST_SequenceBlk* subject,
+                      Int4 word_size,
+                      BlastQueryInfo* query_info,
+                      BlastGapAlignStruct* gap_align,
+                      const BlastScoringParameters* score_params,
+                      const BlastHitSavingParameters* hit_params, 
+                      BlastHSPStream* hsp_stream);
 
 
 #ifdef __cplusplus

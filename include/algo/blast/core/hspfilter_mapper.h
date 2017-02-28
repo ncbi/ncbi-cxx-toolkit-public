@@ -94,6 +94,16 @@ NCBI_XBLAST_EXPORT
 BlastHSPWriterInfo* 
 BlastHSPMapperInfoNew(BlastHSPMapperParams* params);
 
+typedef struct HSPChain HSPChain;
+
+/** Find HSP chains that do not cover full extend of queries for a given
+    subject */
+NCBI_XBLAST_EXPORT
+HSPChain*
+FindPartialyCoveredQueries(void* data, Int4 oid, Int4 word_size);
+
+
+
 #ifdef __cplusplus
 }
 #endif

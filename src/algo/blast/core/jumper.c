@@ -1,4 +1,4 @@
-/* $Id $
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,7 @@
 
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/hspfilter_mapper.h>
 
 #include "jumper.h"
 
@@ -3140,6 +3141,70 @@ static BlastHSP* s_CreateHSPForWordHit(Int4 q_offset, Int4 s_offset,
     return retval;
 }
 
+
+static BlastHSP* s_CreateHSP(Uint1* query_seq,
+                             Int4 query_len,
+                             Int4 context,
+                             BlastQueryInfo* query_info,
+                             BlastGapAlignStruct* gap_align,
+                             BLAST_SequenceBlk* subject,
+                             const BlastScoringParameters* score_params,
+                             const BlastHitSavingParameters* hit_params)
+{
+    Int4 num_identical = 0;
+    Int4 status;
+    BlastHSP* new_hsp = NULL;
+
+    if (!getenv("MAPPER_NO_GAP_SHIFT")) {
+        s_ShiftGaps(gap_align, query_seq, subject->sequence,
+                    query_len, subject->length,
+                    score_params->penalty, &num_identical);
+    }
+
+    gap_align->edit_script = JumperPrelimEditBlockToGapEditScript(
+                                      gap_align->jumper->left_prelim_block,
+                                      gap_align->jumper->right_prelim_block);
+
+
+    status = Blast_HSPInit(gap_align->query_start,
+                           gap_align->query_stop,
+                           gap_align->subject_start,
+                           gap_align->subject_stop,
+                           gap_align->query_start,
+                           gap_align->subject_start,
+                           context,
+                           query_info->contexts[context].frame,
+                           subject->frame,
+                           gap_align->score,
+                           &(gap_align->edit_script),
+                           &new_hsp);
+
+    if (!new_hsp || status) {
+        return NULL;
+    }
+    new_hsp->map_info = BlastHSPMappingInfoNew();
+    if (!new_hsp->map_info) {
+        return NULL;
+    }
+
+    new_hsp->num_ident = num_identical;
+    new_hsp->evalue = 0.0;
+    new_hsp->map_info->edits =
+        JumperFindEdits(query_seq, subject->sequence, gap_align);
+
+    if (hit_params->options->splice) {
+        /* FIXME: This is currently needed because these splice 
+           sites are used in finding splice signals for overlapping
+           HSPs */
+        JumperFindSpliceSignals(new_hsp, query_len, subject->sequence,
+                                subject->length);
+
+        s_SaveSubjectOverhangs(new_hsp, subject->sequence, query_len);
+    }
+                
+    return new_hsp;
+}
+
 /* for mapping this may only work if we hash genome and scan reads */
 Int4
 BlastNaExtendJumper(BlastOffsetPair* offset_pairs, Int4 num_hits,
@@ -4020,6 +4085,349 @@ Int4 SubjectIndexIteratorPrev(SubjectIndexIterator* it)
     it->word_index--;
 
     return pos;
+}
+
+
+#define MAX_NUM_MATCHES 10
+
+static Int4 DoAnchoredScan(Uint1* query_seq, Int4 query_len,
+                           Int4 query_from, Int4 context,
+                           BLAST_SequenceBlk* subject,
+                           Int4 subject_from, Int4 subject_to,
+                           BlastQueryInfo* query_info,
+                           BlastGapAlignStruct* gap_align,
+                           const BlastScoringParameters* score_params,
+                           const BlastHitSavingParameters* hit_params,
+                           BlastHSPList* hsp_list)
+                     
+{
+    Int4 q = query_from;
+    BlastHSP* hsp = NULL;
+    Int4 num = 0;
+    const int kMaxNumMatches = MAX_NUM_MATCHES;
+    Int4 num_extensions = 0;
+    Int4 word_size = 12;
+    Int4 big_word_size = 0;
+    Int4 scan_step;
+
+    Uint4 word[MAX_NUM_MATCHES];
+    Int4 query_pos[MAX_NUM_MATCHES];
+    Uint4 w;
+    Int4 i;
+
+    Int4 scan_from = subject_from;
+    Int4 scan_to = MIN(subject_to, subject->length - 1);
+    
+    Uint4 mask = (1U << (2 * word_size)) - 1;
+
+    Int4 best_score = 0;
+    Int4 num_matches = 0;
+    Uint1* s = NULL;
+    Int4 last_idx = 0;
+    Int4 num_bytes = 0;
+    Int4 num_words = 0;
+
+    Boolean is_right = subject_from < subject_to;
+    if (is_right) {
+        big_word_size = MIN(MAX(query_len - query_from - 5, word_size), 24);
+        scan_step = big_word_size - word_size + 1;
+
+    }
+    else {
+        big_word_size = MIN(MAX(query_from - 5, word_size), 24);
+        scan_step = -(big_word_size - word_size + 1);
+    }
+    
+    if ((is_right && (query_len - query_from + 1 < big_word_size ||
+                      scan_to - subject_from < big_word_size)) ||
+        (!is_right && (query_from < big_word_size ||
+                       subject_from - scan_to < big_word_size))) {
+
+        return 0;
+    }
+
+    
+
+    if (is_right) {
+        for (; q + big_word_size < query_len && num_words < MAX_NUM_MATCHES; q++) {
+
+            /* skip over ambiguous bases */
+            while (q + big_word_size <= query_len) {
+                for (i = 0;i < big_word_size;i++) {
+                    if ((query_seq[q + i] & 0xfc) != 0) {
+                        q = q + i + 1;
+                        break;
+                    }
+                }
+
+                /* success */
+                if (i == big_word_size) {
+                    break;
+                }
+
+                q++;
+            }
+
+            /* not enough query left */
+            if (q + big_word_size - 1 >= query_len) {
+                break;
+            }
+
+            /* this is query word */
+            word[num_words] = (query_seq[q] << 6) | (query_seq[q + 1] << 4) |
+                (query_seq[q + 2] << 2) | query_seq[q + 3];
+            for (i = 4; i < word_size; i++) {
+                word[num_words] = (word[num_words] << 2) | query_seq[q + i];
+            }
+
+            /* do not search for PolyA words */
+            if (word[num_words] == 0 || word[num_words] == 0xffffff) {
+                continue;
+            }
+
+            query_pos[num_words] = q;
+            num_words++;
+        }
+    }
+    else {
+        q -= big_word_size;
+        for (; q >= 0 && num_words < MAX_NUM_MATCHES; q--) {
+
+            /* skip over ambiguous bases */
+            while (q >= 0) {
+                for (i = 0;i < big_word_size;i++) {
+                    if ((query_seq[q + i] & 0xfc) != 0) {
+                        q = q - big_word_size + i;
+                        break;
+                    }
+                }
+
+                /* success */
+                if (i == big_word_size) {
+                    break;
+                }
+
+                q--;
+            }
+
+            /* not enough query left */
+            if (q < 0) {
+                break;
+            }
+
+            /* this is query word */
+            word[num_words] = (query_seq[q] << 6) | (query_seq[q + 1] << 4) |
+                (query_seq[q + 2] << 2) | query_seq[q + 3];
+            for (i = 4; i < word_size; i++) {
+                word[num_words] = (word[num_words] << 2) | query_seq[q + i];
+            }
+
+            /* do not search for PolyA words */
+            if (word[num_words] == 0 || word[num_words] == 0xffffff) {
+                continue;
+            }
+
+            query_pos[num_words] = q;
+            num_words++;
+        }
+
+    }
+
+    if (num_words == 0) {
+        return 0;
+    }
+
+    for (i = scan_from; (scan_from < scan_to && i < scan_to) ||
+             (scan_from > scan_to && i > scan_to); i += scan_step) {
+
+        Int4 local_ungapped_ext;
+        Int4 shift;
+        /* subject word */
+        Uint4 index;
+
+        Int4 q_offset;
+        Int4 s_offset;
+        Int4 num_identical;
+        Int4 k;
+
+        if (num_matches > kMaxNumMatches) {
+            break;
+        }
+
+        s = subject->sequence + i / COMPRESSION_RATIO;
+
+        w = (Int4)s[0] << 16 | s[1] << 8 | s[2];
+        last_idx = 3;
+        num_bytes = word_size / COMPRESSION_RATIO;
+        ASSERT(num_bytes < 9);
+        for (; last_idx < num_bytes; last_idx++) {
+            w = w << 8 | s[last_idx];
+        }
+
+        if (i % COMPRESSION_RATIO != 0) {
+            w = (w << 8) | s[last_idx];
+            shift = 2 * (COMPRESSION_RATIO - (i % COMPRESSION_RATIO));
+            index = (w >> shift) & mask;
+        }
+        else {
+            index = w & mask;
+        }
+
+
+        for (k = 0;k < num_words; k++) {
+            if (index == word[k]) {
+                break;
+            }
+        }
+
+        if (k >= num_words) {
+            continue;
+        }
+
+        q_offset = query_pos[k];
+        s_offset = i;
+
+        for (k = word_size;k < big_word_size;k++) {
+            if (query_seq[q_offset + k] != UNPACK_BASE(subject->sequence, s_offset + k)) {
+                break;
+            }
+        }
+        if (k < big_word_size) {
+            continue;
+        }
+
+
+        num_matches++;
+
+        num_extensions++;
+
+        num_identical = 0;
+        JumperGappedAlignmentCompressedWithTraceback(query_seq,
+                                                     subject->sequence,
+                                                     query_len,
+                                                     subject->length,
+                                                     q_offset,
+                                                     s_offset,
+                                                     gap_align,
+                                                     score_params, 
+                                                     &num_identical,
+                                                     &local_ungapped_ext);
+
+
+        if (gap_align->score <= best_score) {
+            continue;
+        }
+
+        best_score = gap_align->score;
+
+        if (hsp) {
+            hsp = Blast_HSPFree(hsp);
+        }
+
+        hsp = s_CreateHSP(query_seq, query_len, context,
+                          query_info, gap_align, subject,
+                          score_params, hit_params);
+
+
+        if (hsp->score >= query_len - query_from) {
+            break;
+        }
+
+
+    }
+
+    if (hsp) {
+        Blast_HSPListSaveHSP(hsp_list, hsp);
+        num++;
+    }
+
+    return num;
+}
+
+
+Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
+                      BLAST_SequenceBlk* subject,
+                      Int4 word_size,
+                      BlastQueryInfo* query_info,
+                      BlastGapAlignStruct* gap_align,
+                      const BlastScoringParameters* score_params,
+                      const BlastHitSavingParameters* hit_params, 
+                      BlastHSPStream* hsp_stream)
+{
+    HSPChain* chains = NULL;
+    HSPChain* ch = NULL;
+    BlastHSPList* hsp_list = NULL;
+
+    if (!query || !subject || !query_info || !gap_align || !score_params ||
+        !hit_params || !hsp_stream) {
+
+        return -1;
+    }
+
+    hsp_list = Blast_HSPListNew(MAX(query_info->num_queries, 100));
+    if (!hsp_list) {
+        return BLASTERR_MEMORY;
+    }
+    hsp_list->oid = subject->oid;
+
+    /* Collect HSPs for HSP chains with that cover queries partially */
+    MT_LOCK_Do(hsp_stream->x_lock, eMT_Lock);
+    chains = FindPartialyCoveredQueries(hsp_stream->writer->data,
+                                        hsp_list->oid, word_size);
+    MT_LOCK_Do(hsp_stream->x_lock, eMT_Unlock);
+
+
+    /* Search uncovered parts of the queries */ 
+    for (ch = chains; ch; ch = ch->next) {
+        HSPContainer* h = ch->hsps;
+        Int4 context = h->hsp->context;
+        Uint1* query_seq =
+            query->sequence + query_info->contexts[context].query_offset;
+        Int4 query_len = query_info->contexts[context].query_length;
+        Int4 num = 0;
+
+
+        if (h->hsp->query.offset >= 12) {
+
+            num = DoAnchoredScan(query_seq, query_len,
+                                 h->hsp->query.offset - 1,
+                                 context, subject,
+                                 h->hsp->subject.offset - 1,
+                                 h->hsp->subject.offset - 1 - 
+                                     hit_params->options->longest_intron,
+                                 query_info, gap_align, score_params,
+                                 hit_params, hsp_list);
+        }
+
+        while (h->next) {
+            h = h->next;
+        }
+
+
+        if (query_len - h->hsp->query.end > 12) {
+
+            num += DoAnchoredScan(query_seq, query_len, h->hsp->query.end,
+                                  context, subject,
+                                  h->hsp->subject.end,
+                                  h->hsp->subject.end + 
+                                      hit_params->options->longest_intron,
+                                  query_info, gap_align, score_params,
+                                  hit_params, hsp_list);
+        }
+
+        if (num) {
+            for (h = ch->hsps; h; h = h->next) {
+                Blast_HSPListSaveHSP(hsp_list, h->hsp);
+                h->hsp = NULL;
+            }
+        }
+    }
+
+    BlastHSPStreamWrite(hsp_stream, &hsp_list);
+    HSPChainFree(chains);
+    Blast_HSPListFree(hsp_list);
+
+    return 0;
 }
 
 
