@@ -1235,7 +1235,7 @@ private:
 ///           fFlag1 = 1<<0,
 ///           fFlag2 = 1<<1,
 ///           fFlag3 = 1<<1,
-///           fMask  = 0|fFlag1|fFlag2
+///           fMask  = fFlag1|fFlag2
 ///       };
 /// you can add at the same level a macro declaration:
 ///       DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
@@ -1245,14 +1245,9 @@ private:
 /// The first macro DECLARE_SAFE_FLAGS_TYPE() declares a typedef for safe-flags.
 /// The second macro DECLARE_SAFE_FLAGS() marks the enum as a safe-flags enum, so that
 /// bit-wise operations on its values will preserve the safe-flags type.
-/// The zero or in fMask definition is necessary to prefent incorrect early instantiation
-/// of safe-flags definition on MSVC, so that combined flag value could be assigned.
-/// No other modification of sources is necessary for correctly used enum.
-/// In case the enum values are used in a wrong context, like as a different enum,
+/// No other modification is necessary in code that uses enum flags correctly.
+/// In case the enum values are used in a wrong context, like with a different enum type,
 /// compilation error will occur.
-/// If the use in a different context is actually necessary you can enforce it by casting
-/// enum values to int either explicitly, or implicitly by or-ing with zero like in
-/// the example code above.
 
 /// Safe enum flags template, not to be used explicitly.
 /// Use macros DECLARE_SAFE_FLAGS_TYPE and DECLARE_SAFE_FLAGS instead.
@@ -1343,8 +1338,8 @@ private:
 };
 /// Macro DECLARE_SAFE_FLAGS_TYPE defines a typedef for safe-flags.
 /// First argument is enum name, second argument is the new typedef name.
-/// In place of old code:
-///   typedef EFlags TFlags;
+/// In place of old typedef:
+///   typedef int TFlags;
 /// put new macro:
 ///   DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 #define DECLARE_SAFE_FLAGS_TYPE(E, T)           \
