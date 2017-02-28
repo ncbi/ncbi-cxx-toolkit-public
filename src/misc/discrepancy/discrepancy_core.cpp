@@ -377,7 +377,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             if (m_Current_Bioseq->GetInst().IsNa()) {
                 m_NaSeqs.push_back(CRef<CReportObj>(NewBioseqObj(m_Current_Bioseq, &GetSeqSummary())));
             }
-            if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->S.empty()) {
+            if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->Value.empty()) {
                 string label;
                 string citsub;
                 m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
@@ -387,8 +387,8 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
                     label = m_File + ":" + label;
                     citsub = m_File + ":" + citsub;
                 }
-                m_Current_Submit_block_StringObj->S = label;
-                m_Current_Cit_sub_StringObj->S = citsub;
+                m_Current_Submit_block_StringObj->Value = label;
+                m_Current_Cit_sub_StringObj->Value = citsub;
                 m_Current_Submit_block_StringObj.Reset();
                 m_Current_Cit_sub_StringObj.Reset();
             }
@@ -458,8 +458,8 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         }
         else if (CType<CSubmit_block>::Match(i)) {
             m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
-            m_Current_Submit_block_StringObj.Reset(new CStringObj);
-            m_Current_Cit_sub_StringObj.Reset(new CStringObj);
+            m_Current_Submit_block_StringObj.Reset(new CSimpleTypeObject<string>);
+            m_Current_Cit_sub_StringObj.Reset(new CSimpleTypeObject<string>);
             m_Current_Pub.Reset();
             m_Current_Pub_equiv.Reset();
             const CSubmit_block & obj = *CType<CSubmit_block>::Get(i);

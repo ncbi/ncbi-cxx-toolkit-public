@@ -826,12 +826,6 @@ DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
 
 // POSSIBLE_LINKER
 
-struct CTmpDiscrepancyNum : public CObject  // used to pass the numeric parameter to autofix
-{
-    CTmpDiscrepancyNum(size_t n) : N(n) {}
-    size_t N;
-};
-
 
 DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence after poly-A tail")
 {
@@ -883,7 +877,7 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence 
 
     if (cut) {
         cut = TAIL - cut;
-        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eNoRef, cut > 0, cut ? new CTmpDiscrepancyNum(cut) : 0));
+        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eNoRef, cut > 0, cut ? new CSimpleTypeObject<size_t>(cut) : 0));
     }
 }
 
@@ -903,17 +897,10 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
         if (!obj.CanAutofix()) {
             continue;
         }
-        size_t cut_from_end = dynamic_cast<const CTmpDiscrepancyNum*>(obj.GetMoreInfo().GetPointer())->N;
-        const CBioseq* orig_seq = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
-        _ASSERT(orig_seq);
-
-        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-        CRef<CScope> scope_copy(new CScope(*object_manager));
-        CRef<CBioseq> seq_copy(new CBioseq);
-        seq_copy->Assign(*orig_seq);
-        scope_copy->AddBioseq(*seq_copy);
-        CBioseq_EditHandle besh(scope_copy->GetBioseqEditHandle(*seq_copy));
-
+        size_t cut_from_end = dynamic_cast<const CSimpleTypeObject<size_t>*>(obj.GetMoreInfo().GetPointer())->Value;
+        const CBioseq* seq = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
+        _ASSERT(seq);
+        CBioseq_EditHandle besh(scope.GetBioseqEditHandle(*seq));
         SSeqMapSelector selector;
         selector.SetFlags(CSeqMap::fFindData); 
         CSeqMap_I seqmap_i(besh, selector);
@@ -925,7 +912,7 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
                 string seq_in;
                 seqmap_i.GetSequence(seq_in, CSeqUtil::e_Iupacna);
                 string seq_out = seq_in.substr(0, stop - start);
-                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, CSeq_data::e_Iupacna);            
+                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, seqmap_i.GetData().Which());            
                 ++seqmap_i;
             }
             else if (start >= stop) {
@@ -936,10 +923,6 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
             }
             start += len;
         }
-        seq_copy->SetInst().SetLength(seq_copy->GetInst().GetLength() - cut_from_end);
-        CRef<CSeq_inst> new_inst(new CSeq_inst);
-        new_inst->Assign(seq_copy->GetInst());
-        scope.GetEditHandle(scope.GetBioseqHandle(*orig_seq)).SetInst(*new_inst);
         num_fixed++;
     }
     return CRef<CAutofixReport>(num_fixed ? new CAutofixReport("POSSIBLE_LINKER: [n] sequence[s] trimmed", num_fixed) : 0);
