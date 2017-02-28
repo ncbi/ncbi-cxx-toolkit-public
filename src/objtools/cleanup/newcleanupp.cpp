@@ -3937,6 +3937,12 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
             ChangeMade(CCleanupChange::eCleanQualifiers);
         }
     }
+    else if (NStr::EqualNocase(qual, "recombination_class")) {
+        if (CGb_qual::FixRecombinationClassValue(val)) {
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
+    }
+
 
     if( NStr::EqualNocase( qual, "mobile_element_type" ) ) {
         // trim spaces around first colon but only if there are no colons

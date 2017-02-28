@@ -1622,6 +1622,19 @@ BOOST_AUTO_TEST_CASE(Test_recombination_class)
     BOOST_CHECK_EQUAL(CSeqFeatData::IsLegalQualifier(CSeqFeatData::eSubtype_misc_recomb, CSeqFeatData::eQual_recombination_class), true);
     const CGb_qual::TLegalRecombinationClassSet recomb_values = CGb_qual::GetSetOfLegalRecombinationClassValues();
     BOOST_ASSERT(recomb_values.find("chromosome_breakpoint") != recomb_values.end());
+
+
+    string old_recomb_value("meiotic_recombination");
+    BOOST_CHECK_EQUAL(CGb_qual::FixRecombinationClassValue(old_recomb_value), true);
+    BOOST_CHECK_EQUAL(old_recomb_value, "meiotic");
+
+    old_recomb_value = ("other:non_allelic_homologous_recombination");
+    BOOST_CHECK_EQUAL(CGb_qual::FixRecombinationClassValue(old_recomb_value), true);
+    BOOST_CHECK_EQUAL(old_recomb_value, "non_allelic_homologous");
+
+    string valid_recomb_value("mitotic");
+    BOOST_CHECK_EQUAL(CGb_qual::FixRecombinationClassValue(valid_recomb_value), false);
+    BOOST_CHECK_EQUAL(valid_recomb_value, "mitotic");
 }
 
 

@@ -90,6 +90,7 @@ public:
     // for misc_recomb qualifiers
     typedef CStaticArraySet<const char *, PNocase_CStr> TLegalRecombinationClassSet;
     static const TLegalRecombinationClassSet &GetSetOfLegalRecombinationClassValues(void);
+    static bool FixRecombinationClassValue(string& val);
 
     static bool IsLegalMobileElementValue(const string& val);
     static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);

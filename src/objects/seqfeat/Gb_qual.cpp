@@ -280,6 +280,30 @@ CGb_qual::GetSetOfLegalRecombinationClassValues(void)
     return sc_LegalRecombinationClass;
 }
 
+bool CGb_qual::FixRecombinationClassValue(string& val)
+{
+    static const CTempString PREFIX_OTHER("other:");
+    static const map<string, string> SUBSTITUTION_MAP = {
+        { "meiotic_recombination", "meiotic" },
+        { "mitotic_recombination", "mitotic" },
+        { "non_allelic_homologous_recombination", "non_allelic_homologous" }
+    };
+
+    string original = val;
+
+    NStr::ToLower(val);
+    if (NStr::StartsWith(val, PREFIX_OTHER)) {
+        val = val.substr(PREFIX_OTHER.size());
+    }
+
+    auto substitute = SUBSTITUTION_MAP.find(val);
+    if (substitute != SUBSTITUTION_MAP.end()) {
+        val = substitute->second;
+    }
+
+    return original != val;
+}
+
 
 // constructor
 CInferencePrefixList::CInferencePrefixList(void)
