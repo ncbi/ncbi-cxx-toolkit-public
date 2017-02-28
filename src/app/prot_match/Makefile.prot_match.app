@@ -1,3 +1,11 @@
+#################################
+# $Id$
+# Author:  Justin Foley
+#################################
+
+# Build application "prot_match"
+#################################
+
 APP = prot_match
 SRC = prot_match run_binary
 
