@@ -119,6 +119,10 @@ Gene-commentary ::= SEQUENCE {
         gene-group (23), -- for relationship sets (such as pseudogene / parent gene)
         assembly (24),  -- for full assembly accession
         assembly-unit (25), -- for the assembly unit corresponding to the refseq
+        c-region (26),
+        d-segment (27),
+        j-segment (28),
+        v-segment (29),
 
         comment (254) ,
         other (255) } ,
