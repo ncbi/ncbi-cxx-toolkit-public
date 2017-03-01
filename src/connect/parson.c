@@ -994,21 +994,21 @@ x_JSON_Value * x_json_object_get_value_at(const x_JSON_Object *object, size_t in
 }
 
 int x_json_object_has_value (const x_JSON_Object *object, const char *name) {
-    return json_object_get_value(object, name) != NULL;
+    return x_json_object_get_value(object, name) != NULL;
 }
 
 int x_json_object_has_value_of_type(const x_JSON_Object *object, const char *name, x_JSON_Value_Type type) {
-    x_JSON_Value *val = json_object_get_value(object, name);
-    return val != NULL && json_value_get_type(val) == type;
+    x_JSON_Value *val = x_json_object_get_value(object, name);
+    return val != NULL && x_json_value_get_type(val) == type;
 }
 
 int x_json_object_dothas_value (const x_JSON_Object *object, const char *name) {
-    return json_object_dotget_value(object, name) != NULL;
+    return x_json_object_dotget_value(object, name) != NULL;
 }
 
 int x_json_object_dothas_value_of_type(const x_JSON_Object *object, const char *name, x_JSON_Value_Type type) {
-    x_JSON_Value *val = json_object_dotget_value(object, name);
-    return val != NULL && json_value_get_type(val) == type;
+    x_JSON_Value *val = x_json_object_dotget_value(object, name);
+    return val != NULL && x_json_value_get_type(val) == type;
 }
 
 /* JSON Array API */
