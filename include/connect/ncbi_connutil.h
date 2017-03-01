@@ -157,8 +157,8 @@ typedef unsigned EBDebugPrintout;
 
 /* Network connection-related configurable informational structure.
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
- *             Instead, use ConnNetInfo_Create() described below to create
- *             it, and then fix (hard-code) some fields, if really necessary.
+ *             Instead, use ConnNetInfo_Create() described below to create it,
+ *             and then fix (hard-code) some fields, if really necessary.
  * NOTE1:      Not every field may be fully utilized throughout the library.
  * NOTE2:      HTTP passwords can be either clear text or Base64 encoded values
  *             enclosed in square brackets [] (which are not Base-64 charset).
