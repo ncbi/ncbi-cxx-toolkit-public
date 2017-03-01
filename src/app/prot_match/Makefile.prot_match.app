@@ -16,6 +16,6 @@ LIB = protein_match xobjwrite $(OBJREAD_LIBS) xalnmgr xobjutil \
 
 LIBS = $(DATA_LOADERS_UTIL_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects BerkeleyDB SQLITE3 -Cygwin
+REQUIRES = objects BerkeleyDB SQLITE3 -Cygwin MT
 
 WATCHERS = foleyjp
