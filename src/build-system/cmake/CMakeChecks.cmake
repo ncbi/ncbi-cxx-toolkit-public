@@ -14,6 +14,10 @@ set(incinternal     ${includedir0}/internal)
 
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
 
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
+
 if (NOT buildconf)
   set(buildconf "${CMAKE_BUILD_TYPE}MT64")
   set(buildconf0 ${CMAKE_BUILD_TYPE})
