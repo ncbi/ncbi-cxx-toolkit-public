@@ -993,6 +993,24 @@ x_JSON_Value * x_json_object_get_value_at(const x_JSON_Object *object, size_t in
     return object->values[index];
 }
 
+int json_object_has_value (const JSON_Object *object, const char *name) {
+    return json_object_get_value(object, name) != NULL;
+}
+
+int json_object_has_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
+    JSON_Value *val = json_object_get_value(object, name);
+    return val != NULL && json_value_get_type(val) == type;
+}
+
+int json_object_dothas_value (const JSON_Object *object, const char *name) {
+    return json_object_dotget_value(object, name) != NULL;
+}
+
+int json_object_dothas_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
+    JSON_Value *val = json_object_dotget_value(object, name);
+    return val != NULL && json_value_get_type(val) == type;
+}
+
 /* JSON Array API */
 x_JSON_Value * x_json_array_get_value(const x_JSON_Array *array, size_t index) {
     if (array == NULL || index >= x_json_array_get_count(array))
