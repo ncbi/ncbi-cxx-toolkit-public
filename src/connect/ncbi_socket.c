@@ -286,8 +286,10 @@ static const char* s_StrError(SOCK sock, int error)
     if (sock) {
         FSSLError sslerror = sock->session  &&  s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
+            char errbuf[128];
             const char* strerr = sslerror(sock->session == SESSION_INVALID
-                                          ? 0 : sock->session, error);
+                                          ? 0 : sock->session, error,
+                                          errbuf, sizeof(errbuf));
             if (strerr  &&  *strerr)
                 return MSWIN_STRDUP(strerr);
         }
@@ -4018,21 +4020,29 @@ static EIO_Status s_Connect_(SOCK            sock,
 
     if (sock->session) {
         FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+        const char* hostname = 0;
         void* session;
         assert(sock->sock == SOCK_INVALID);
         assert(sock->session == SESSION_INVALID);
+#ifdef NCBI_OS_UNIX
+        if (!sock->path[0])
+#endif /*NCBI_OS_UNIX*/
+            hostname = host;
+        if (!hostname  ||  SOCK_isip(hostname))
+            hostname = "";
         if (!sslcreate) {
             session = 0;
             error = 0;
         } else
-            session = sslcreate(eSOCK_Client, sock, sock->cred, &error);
+            session = sslcreate(eSOCK_Client,sock,hostname,sock->cred,&error);
         if (!session) {
             const char* strerr = s_StrError(sock, error);
             CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("%s[SOCK::Connect] "
-                                 " Failed to initialize secure session",
-                                 s_ID(sock, _id)));
+                                 " Failed to initialize secure session%s%s",
+                                 s_ID(sock, _id), *hostname ? " with " : "",
+                                 hostname));
             UTIL_ReleaseBuffer(strerr);
             return eIO_NotSupported;
         }
@@ -4587,7 +4597,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
             session = 0;
             error = 0;
         } else
-            session = sslcreate(eSOCK_Client, x_sock, cred, &error);
+            session = sslcreate(eSOCK_Client, x_sock, 0, cred, &error);
         if (!session) {
             const char* strerr = s_StrError(x_sock, error);
             CORE_LOGF_ERRNO_EXX(132, eLOG_Error,

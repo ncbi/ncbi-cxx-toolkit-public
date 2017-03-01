@@ -43,7 +43,8 @@ extern "C" {
 
 
 typedef enum {
-    eNcbiCred_GnuTls = 0x484FFB94
+    eNcbiCred_GnuTls  = 0x484FFB94,
+    eNcbiCred_MbedTls = 0x765CE813
 } ENcbiCred;
 
 
@@ -67,8 +68,8 @@ struct SNcbiCred {
 typedef EIO_Status  (*FSSLPull)  (SOCK sock,       void* buf,  size_t size,
                                   size_t* done, int/*bool*/ logdata);
 
-/* Write up to "size" bytes of "data", and return the number of bytes
- * actually written via the "done" pointer (m.b. non-null, on call "*done"==0).
+/* Write up to "size" bytes of "data", and return the number of bytes actually
+ * written via the "done" pointer (must be non-null, on call "*done"==0).
  * The call is allowed to log the transaction data if "logdata" is non-zero.
  * The call is always allowed to log errors (regardless of the last parameter).
  * Return:
@@ -81,7 +82,7 @@ typedef EIO_Status  (*FSSLPush)  (SOCK sock, const void* data, size_t size,
 
 
 typedef EIO_Status  (*FSSLInit)  (FSSLPull pull, FSSLPush push);
-typedef void*       (*FSSLCreate)(ESOCK_Side side, SOCK sock,
+typedef void*       (*FSSLCreate)(ESOCK_Side side, SOCK sock, const char* host,
                                   NCBI_CRED cred, int* error);
 typedef EIO_Status  (*FSSLOpen)  (void* session, int* error, char** desc);
 
@@ -100,7 +101,8 @@ typedef EIO_Status  (*FSSLWrite) (void* session, const void* data, size_t size,
 typedef EIO_Status  (*FSSLClose) (void* session, int how, int* error);
 typedef void        (*FSSLDelete)(void* session);
 typedef void        (*FSSLExit)  (void);
-typedef const char* (*FSSLError) (void* session, int  error);
+typedef const char* (*FSSLError) (void* session, int  error,
+                                  char* buf, size_t size);
 
 
 /* Table of "virtual functions"
