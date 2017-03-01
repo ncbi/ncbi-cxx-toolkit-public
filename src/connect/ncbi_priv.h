@@ -99,8 +99,8 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   9);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     304,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,     306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  23);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  308,  10);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  24);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  308,  11);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  309,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,     310, 600); /*safe upper bound*/
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    311,  16);
@@ -390,21 +390,21 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
  * some types have to be pre-selected based on current OS
  */
 #   ifdef NCBI_OS_MSWIN
-#       define MONKEY_RETTYPE  int
-#       define MONKEY_SOCKTYPE SOCKET
-#       define MONKEY_DATATYPE char*
-#       define MONKEY_LENTYPE  int
+#       define MONKEY_RETTYPE      int
+#       define MONKEY_SOCKTYPE     SOCKET
+#       define MONKEY_DATATYPE     char*
+#       define MONKEY_LENTYPE      int
 #       define MONKEY_SOCKLENTYPE  int
-#       define MONKEY_STDCALL __stdcall /* in Windows, socket functions have 
-                                           prototypes with __stdcall */
+#       define MONKEY_STDCALL      __stdcall /*in Windows, socket functions
+                                               have prototypes with __stdcall*/
 #   else
-#       define MONKEY_RETTYPE  ssize_t
-#       define MONKEY_SOCKTYPE int
-#       define MONKEY_DATATYPE void*
-#       define MONKEY_LENTYPE  size_t
+#       define MONKEY_RETTYPE      ssize_t
+#       define MONKEY_SOCKTYPE     int
+#       define MONKEY_DATATYPE     void*
+#       define MONKEY_LENTYPE      size_t
 #       define MONKEY_SOCKLENTYPE  socklen_t
-#       define MONKEY_STDCALL /* empty*/ 
-#   endif /* NCBI_OS_MSWIN */
+#       define MONKEY_STDCALL      /*empty*/ 
+#   endif /*NCBI_OS_MSWIN*/
 
 /******************************************************************************
  *  Socket functions via Crazy Monkey
@@ -425,8 +425,8 @@ typedef int(MONKEY_STDCALL *FMonkeyConnect)(MONKEY_SOCKTYPE        sock,
                                             const struct sockaddr* name,
                                             MONKEY_SOCKLENTYPE     namelen);
 
-typedef int /* bool */    (*FMonkeyPoll)   (size_t*                n,
-                                            void* /*SSOCK_Poll[]* */polls,
+typedef int /*bool*/      (*FMonkeyPoll)   (size_t*                n,
+                                            void* /*SSOCK_Poll[]**/polls,
                                             EIO_Status*            ret_status);
 typedef void              (*FMonkeyClose)  (SOCKET sock); 
 typedef void              (*FSockHasSocket)(void* /* SOCK* */      sock, 
