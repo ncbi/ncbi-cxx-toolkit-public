@@ -63,7 +63,8 @@ static void s_REG_Get(void* user_data,
                       char* value, size_t value_size) THROWS_NONE
 {
     try {
-        string result(static_cast<IRegistry*> (user_data)->Get(section, name));
+        string result
+            = static_cast<const IRegistry*> (user_data)->Get(section, name);
 
         if (!result.empty()) {
             /*FIXME:  This is *bad* because of possible truncation*/
@@ -104,7 +105,7 @@ extern "C" {
 static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
     try {
-        static_cast<IRegistry*> (user_data)->RemoveReference();
+        static_cast<const IRegistry*> (user_data)->RemoveReference();
     }
     NCBI_CATCH_ALL_X(3, "s_REG_Cleanup() failed");
 }
@@ -113,13 +114,27 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
 
 extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 {
-    if (pass_ownership  &&  reg) {
+    if (!reg)
+        return 0;
+    if (pass_ownership) {
         reg->AddReference();
     }
-    return reg
-        ? REG_Create(static_cast<void*> (reg), s_REG_Get, s_REG_Set,
-                     pass_ownership ? s_REG_Cleanup : 0, 0)
-        : 0;
+    return REG_Create(reg,
+                      s_REG_Get, s_REG_Set,
+                      pass_ownership ? s_REG_Cleanup : 0, 0);
+}
+
+
+extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
+{
+    if (!reg)
+        return 0;
+    if (pass_ownership) {
+        reg->AddReference();
+    }
+    return REG_Create(const_cast<IRWRegistry*> (reg),
+                      s_REG_Get, 0/*no setter*/,
+                      pass_ownership ? s_REG_Cleanup : 0, 0);
 }
 
 
@@ -442,11 +457,11 @@ static void s_Fini(void) THROWS_NONE
 DEFINE_STATIC_FAST_MUTEX(s_ConnectInitMutex);
 
 /* NB: gets called under a lock */
-static void s_Init(IRWRegistry*      reg  = 0,
-                   FSSLSetup         ssl  = 0,
-                   CRWLock*          lock = 0,
-                   TConnectInitFlags flag = 0,
-                   EConnectInit      how  = eConnectInit_Weak)
+static void s_Init(const IRWRegistry* reg  = 0,
+                   FSSLSetup          ssl  = 0,
+                   CRWLock*           lock = 0,
+                   TConnectInitFlags  flag = 0,
+                   EConnectInit       how  = eConnectInit_Weak)
 {
     _ASSERT(how != eConnectInit_Intact);
 
@@ -492,9 +507,9 @@ static void s_Init(IRWRegistry*      reg  = 0,
 
 
 /* PUBLIC */
-extern void CONNECT_Init(IRWRegistry*      reg,
-                         CRWLock*          lock,
-                         TConnectInitFlags flag)
+extern void CONNECT_Init(const IRWRegistry* reg,
+                         CRWLock*           lock,
+                         TConnectInitFlags  flag)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
