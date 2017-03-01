@@ -744,7 +744,6 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         m_JustUids = false;
         break;
 
-    /*
     case CPub::e_Journal:
         x_Init(pub.GetJournal(), ctx);
         m_JustUids = false;
@@ -761,7 +760,6 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         x_InitProc(pub.GetProc().GetBook(), ctx);
         m_JustUids = false;
         break;
-    */
 
     case CPub::e_Patent:
         x_Init(pub.GetPatent(), ctx);
