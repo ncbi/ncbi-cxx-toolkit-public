@@ -40,8 +40,8 @@
 
 #include "test_assert.h"  /* This header must go last */
 
-/* maximal UDP packet size as allowed by the standard */
-#define MAX_UDP_DGRAM_SIZE  65535
+/* maximal UDP packet size as allowed by the standard (minus UDP header size)*/
+#define MAX_UDP_DGRAM_SIZE  (65535 - 8)
 
 #if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1) || defined(NCBI_OS_DARWIN)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
@@ -392,8 +392,8 @@ int main(int argc, const char* argv[])
 
     if (argc > 3) {
         int mtu = atoi(argv[3]);
-        if (mtu > 32  &&  mtu < (int) s_MTU)
-            s_MTU = mtu - 32/*small protocol (IP/UDP) overhead*/;
+        if (mtu > 28  &&  mtu < (int) s_MTU)
+            s_MTU = mtu - 28/*small protocol -IP(20)/UDP(8)- overhead*/;
     }
 
     if (strcasecmp(argv[1], "client") == 0) {
