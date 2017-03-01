@@ -101,7 +101,7 @@ static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
 }
 
 
-#if LIBGNUTLS_VERSION_NUMBER >= 0x021000
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 static int x_CertVfyCB(gnutls_session_t session)
 {
 	unsigned int n, cert_list_size = 0;
@@ -142,10 +142,10 @@ static int x_CertVfyCB(gnutls_session_t session)
 	}
     return 0;
 }
-#endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 
 
-#if 0
+#  if 0
 static int x_CertRtrCB(gnutls_session_t session,
                        const gnutls_datum_t* req_ca_dn,    int n_req_ca_dn,
                        const gnutls_pk_algorithm_t* algos, int n_algos,
@@ -226,7 +226,7 @@ static int x_CertRtrCB(gnutls_session_t session,
     }
     return 0;
 }
-#endif/*0*/
+#  endif/*0*/
 
 #endif /*HAVE_LIBGNUTLS*/
 
@@ -331,21 +331,20 @@ int main(int argc, char* argv[])
             if (!(cred = NcbiCredGnuTls(xcred)))
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
             net_info->credentials = cred;
-            if (!file)
-                CORE_LOG(eLOG_Note, "Debug certificate credentials set");
-            else {
+            if (file) {
                 CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
                                       " \"%s\"", type, file));
-            }
+            } else
+                CORE_LOG(eLOG_Note, "Debug certificate credentials set");
             if (net_info->debug_printout == eDebugPrintout_Data) {
-#if LIBGNUTLS_VERSION_NUMBER >= 0x021000
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
                 gnutls_certificate_set_verify_function(xcred,
                                                        x_CertVfyCB);
-#endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#if 0
+  #endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
+# if 0
                 gnutls_certificate_set_retrieve_function2(xcred,
                                                           x_CertRtrCB);
-#endif
+#  endif
             }
         }
 #else
