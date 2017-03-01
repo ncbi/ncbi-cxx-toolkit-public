@@ -7,17 +7,30 @@
 # http://stackoverflow.com/questions/32752446/using-compiler-prefix-commands-with-cmake-distcc-ccache
 #
 # There are better ways to do this
-find_program(CCACHE_EXECUTABLE ccache)
+option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
+option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
+
+find_program(CCACHE_EXECUTABLE ccache
+             PATHS /usr/local/ccache/3.2.5/bin/)
 find_program(DISTCC_EXECUTABLE distcc)
 
-if (DISTCC_EXECUTABLE)
-  set(CMAKE_C_COMPILER_ARG1 ${CMAKE_C_COMPILER})
-  set(CMAKE_CXX_COMPILER_ARG1 ${CMAKE_CXX_COMPILER})
-  
-  set(CMAKE_C_COMPILER ${DISTCC_EXECUTABLE})
-  set(CMAKE_CXX_COMPILER ${DISTCC_EXECUTABLE})
-#else (DISTCC_EXECUTABLE)
-endif(DISTCC_EXECUTABLE)
+if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
+    message(STATUS "Enabling distcc: ${DISTCC_EXECUTABLE}")
+    set(CMAKE_C_COMPILER_ARG1 ${CMAKE_C_COMPILER})
+    set(CMAKE_CXX_COMPILER_ARG1 ${CMAKE_CXX_COMPILER})
+
+    set(CMAKE_C_COMPILER ${DISTCC_EXECUTABLE})
+    set(CMAKE_CXX_COMPILER ${DISTCC_EXECUTABLE})
+
+elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
+    message(STATUS "Enabling ccache: ${CCACHE_EXECUTABLE}")
+    set(CMAKE_C_COMPILER_ARG1 ${CMAKE_C_COMPILER})
+    set(CMAKE_CXX_COMPILER_ARG1 ${CMAKE_CXX_COMPILER})
+
+    set(CMAKE_C_COMPILER ${CCACHE_EXECUTABLE})
+    set(CMAKE_CXX_COMPILER ${CCACHE_EXECUTABLE})
+endif()
+
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_DEBUG -gdwarf-3)

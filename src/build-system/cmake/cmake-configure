@@ -32,6 +32,14 @@ do
             CMAKE_BUILD_TYPE=Release
             ;;
 
+        --with-ccache)
+            CMAKE_USE_CCACHE=ON
+            ;;
+
+        --with-distcc)
+            CMAKE_USE_DISTCC=ON
+            ;;
+
         --with-xcode)
             XCODE="-G Xcode"
             ;;
@@ -69,6 +77,8 @@ cd $root/build
 cmake ../../src $XCODE \
     -DCMAKE_C_COMPILER=$CC \
     -DCMAKE_CXX_COMPILER=$CXX \
+    -DCMAKE_USE_CCACHE=$CMAKE_USE_CCACHE \
+    -DCMAKE_USE_DISTCC=$CMAKE_USE_DISTCC \
     -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
     -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS
 
