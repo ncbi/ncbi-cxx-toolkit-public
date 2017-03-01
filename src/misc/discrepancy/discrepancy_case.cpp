@@ -912,7 +912,7 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
                 string seq_in;
                 seqmap_i.GetSequence(seq_in, CSeqUtil::e_Iupacna);
                 string seq_out = seq_in.substr(0, stop - start);
-                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, seqmap_i.GetData().Which());            
+                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, seqmap_i.GetData().Which());
                 ++seqmap_i;
             }
             else if (start >= stop) {
