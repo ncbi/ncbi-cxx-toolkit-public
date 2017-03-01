@@ -1316,7 +1316,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     if (NStr::IsBlank(dir)) {
         dir = s_GetDefaultDir(is_negative, default_dir);
     } else if (is_negative) {
-        return kEmptyStr;
+        is_negative = false;
     }
 
     size_t pos = 0;
