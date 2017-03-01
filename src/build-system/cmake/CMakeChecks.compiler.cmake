@@ -15,6 +15,7 @@ find_program(CCACHE_EXECUTABLE ccache
 find_program(DISTCC_EXECUTABLE distcc)
 
 if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
+
     message(STATUS "Enabling distcc: ${DISTCC_EXECUTABLE}")
     set(CMAKE_C_COMPILER_ARG1 ${CMAKE_C_COMPILER})
     set(CMAKE_CXX_COMPILER_ARG1 ${CMAKE_CXX_COMPILER})
@@ -23,12 +24,19 @@ if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
     set(CMAKE_CXX_COMPILER ${DISTCC_EXECUTABLE})
 
 elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
-    message(STATUS "Enabling ccache: ${CCACHE_EXECUTABLE}")
+
     set(CMAKE_C_COMPILER_ARG1 ${CMAKE_C_COMPILER})
     set(CMAKE_CXX_COMPILER_ARG1 ${CMAKE_CXX_COMPILER})
 
     set(CMAKE_C_COMPILER ${CCACHE_EXECUTABLE})
     set(CMAKE_CXX_COMPILER ${CCACHE_EXECUTABLE})
+
+    # pass these back for ccache to pick up
+    set(ENV{CCACHE_UMASK} 002)
+    set(ENV{CCACHE_BASEDIR} ${top_src_dir})
+    message(STATUS "Enabling ccache: ${CCACHE_EXECUTABLE}")
+    message(STATUS "ccache basedir: $ENV{CCACHE_BASEDIR}")
+
 endif()
 
 
