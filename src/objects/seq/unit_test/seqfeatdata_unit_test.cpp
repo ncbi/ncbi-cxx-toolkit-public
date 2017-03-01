@@ -1789,3 +1789,17 @@ BOOST_AUTO_TEST_CASE(Test_VR_665)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_693)
+{
+    BOOST_CHECK_EQUAL(CSubSource::FixDevStageCapitalization("FOO"), "FOO");
+    BOOST_CHECK_EQUAL(CSubSource::FixDevStageCapitalization("LARVA"), "larva");
+ 
+    BOOST_CHECK_EQUAL(CSubSource::FixCellTypeCapitalization("FOO"), "FOO");
+    BOOST_CHECK_EQUAL(CSubSource::FixCellTypeCapitalization("Lymphocyte"), "lymphocyte");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixTissueTypeCapitalization("CLINICAL"), "clinical");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixIsolationSourceCapitalization("Bovine (feces)"), "bovine feces");
+}
+
+

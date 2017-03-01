@@ -1316,6 +1316,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     if (NStr::IsBlank(dir)) {
         dir = s_GetDefaultDir(is_negative, default_dir);
     } else if (is_negative) {
+        // ignore the dash
         is_negative = false;
     }
 
@@ -3755,369 +3756,129 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
     }
     return new_country;
 }
-      
 
-const char * sm_KnownDevStageWords[] = {
-  "adult",
-  "egg",
-  "juvenile",
-  "larva",
+
+// SubSource Qual Fixups
+typedef SStaticPair<const char*, const char*> TStaticQualFixPair;
+typedef CStaticPairArrayMap<const char*, const char*, PNocase_CStr> TStaticQualFixMap;
+
+static const TStaticQualFixPair kDevStagePairs[] = {
+    { "adult", "adult" },
+    { "egg", "egg" },
+    { "juvenile", "juvenile" },
+    { "larva", "larva" }
 };
+
+DEFINE_STATIC_ARRAY_MAP(TStaticQualFixMap, sc_DevStagePairs, kDevStagePairs);
 
 
 string CSubSource::FixDevStageCapitalization(const string& value)
 {
     string fix = value;
 
-    size_t max = sizeof(sm_KnownDevStageWords) / sizeof(const char*);
-    for (size_t i = 0; i < max; i++) {
-        if (NStr::EqualNocase(fix, sm_KnownDevStageWords[i])) {
-            fix = sm_KnownDevStageWords[i];
-            break;
-        }
+    TStaticQualFixMap::const_iterator it = sc_DevStagePairs.find(value.c_str());
+    if (it != sc_DevStagePairs.end()) {
+        fix = it->second;
     }
     return fix;
 }
 
 
-const char * sm_CellTypeWords[] = {
-  "hemocyte",
-  "hepatocyte",
-  "lymphocyte",
-  "neuroblast",
+static const TStaticQualFixPair kCellTypePairs[] = {
+    { "hemocyte", "hemocyte" },
+    { "hepatocyte", "hepatocyte" },
+    { "lymphocyte", "lymphocyte" },
+    { "neuroblast", "neuroblast" }
 };
 
+DEFINE_STATIC_ARRAY_MAP(TStaticQualFixMap, sc_CellTypePairs, kCellTypePairs);
 
 string CSubSource::FixCellTypeCapitalization(const string& value)
 {
     string fix = value;
 
-    size_t max = sizeof(sm_CellTypeWords) / sizeof(const char*);
-    for (size_t i = 0; i < max; i++) {
-        if (NStr::EqualNocase(fix, sm_CellTypeWords[i])) {
-            fix = sm_CellTypeWords[i];
-            break;
-        }
+    TStaticQualFixMap::const_iterator it = sc_CellTypePairs.find(value.c_str());
+    if (it != sc_CellTypePairs.end()) {
+        fix = it->second;
     }
     return fix;
+
+}
+
+DEFINE_STATIC_FAST_MUTEX(s_QualFixMutex);
+typedef map<string, string, PNocase> TQualFixMap;
+
+static TQualFixMap s_IsolationSourceMap;
+static bool s_QualFixupMapsInitialized = false;
+
+static void s_ProcessQualMapLine(const CTempString& line, TQualFixMap& qual_map)
+{
+    vector<CTempString> tokens;
+    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
+    if (tokens.size() > 1) {
+        qual_map[tokens[0]] = tokens[1];
+    }
 }
 
 
-const char * sm_KnownIsolationAndTissueTypeWords[] = {
-  "abdomen",
-  "abdominal fluid",
-  "acne",
-  "activated sludge",
-  "adductor muscle",
-  "agricultural soil",
-  "air",
-  "amniotic fluid",
-  "antenna",
-  "aspirate",
-  "bile",
-  "biofilm",
-  "blood",
-  "blood cells",
-  "blood sample",
-  "body fluid",
-  "bone",
-  "bovine feces",
-  "bovine milk",
-  "brain",
-  "brain abscess",
-  "brain tissue",
-  "branch",
-  "bronchial mucosa",
-  "bronchoalveolar lavage",
-  "buccal epithelial cells",
-  "buccal mucosa",
-  "buccal swab",
-  "bursa",
-  "callus",
-  "cave sediment",
-  "cave sediments",
-  "cerebellum",
-  "cerebrospinal fluid",
-  "cervix",
-  "cheese",
-  "clinical",
-  "clinical isolate",
-  "clinical isolates",
-  "clinical sample",
-  "clinical samples",
-  "cloaca",
-  "cloacal swab",
-  "compost",
-  "coral reef",
-  "corn rhizosphere",
-  "cornea",
-  "cotton rhizosphere",
-  "dairy cow rumen",
-  "distillery",
-  "drinking water",
-  "ear",
-  "egg",
-  "embryogenic callus",
-  "epithelium",
-  "esophageal mucosa",
-  "estuarine water",
-  "estuarine waters",
-  "eye",
-  "fecal",
-  "fecal sample",
-  "fecal samples",
-  "feces",
-  "fermented food",
-  "fermented soybeans",
-  "fetal brain",
-  "fin",
-  "fin wound",
-  "fish eggs",
-  "flooded rice soil",
-  "flower",
-  "food",
-  "food product",
-  "food sample",
-  "food samples",
-  "forest",
-  "forest soil",
-  "freshwater stream",
-  "fruit",
-  "fruitbody",
-  "fruiting body",
-  "gastric mucosa",
-  "gastrointestinal tract",
-  "genital cells",
-  "genitals",
-  "gill",
-  "gills",
-  "goat milk",
-  "head",
-  "head kidney",
-  "heart",
-  "heart blood",
-  "hemocyte",
-  "hepatocyte",
-  "hepatopancreas",
-  "horse",
-  "horse",
-  "hot spring",
-  "hot springs",
-  "human plasma",
-  "human skin",
-  "infected leaf",
-  "inflorescence",
-  "intestinal mucosa",
-  "intestine",
-  "intestines",
-  "kidney",
-  "kimchi",
-  "lake",
-  "lake sediment",
-  "lake soil",
-  "lake water",
-  "leaf",
-  "leaves",
-  "lentil",
-  "liver",
-  "liver abscess",
-  "lung",
-  "lymph node",
-  "lymphocyte",
-  "maize",
-  "mammary gland",
-  "mangrove sediment",
-  "mangrove sediments",
-  "manure",
-  "marine environment",
-  "marine sediment",
-  "marine sediments",
-  "marine water",
-  "mature leaf",
-  "meat",
-  "midgut",
-  "milk",
-  "mitral valve",
-  "mouth wound",
-  "mucosa",
-  "mucus",
-  "muscle",
-  "muscle tissue",
-  "mycelium",
-  "nasal mucosa",
-  "nasal sample",
-  "nasal samples",
-  "nasal swab",
-  "nasopharyngeal aspirate",
-  "nasopharyngeal swab",
-  "nasopharynx",
-  "nest",
-  "neuroblast",
-  "nodule",
-  "nodules",
-  "nose swab",
-  "olfactory mucosa",
-  "oral fluid",
-  "oral lexion",
-  "oral mucosa",
-  "ovary",
-  "oviduct",
-  "paddy soil",
-  "parietal cortex",
-  "patient",
-  "pericardial",
-  "pharnyx",
-  "placenta",
-  "plasma",
-  "pleopod",
-  "pleopods",
-  "pleura",
-  "pod",
-  "purulent fluid",
-  "respiratory tract",
-  "rhizosphere",
-  "rhizosphere soil",
-  "rice rhizosphere",
-  "rice soil",
-  "river sediment",
-  "river sediments",
-  "river water",
-  "root",
-  "root nodule",
-  "root nodules",
-  "root tip",
-  "root tips",
-  "roots",
-  "rumen",
-  "saliva",
-  "salivary gland",
-  "saltern soil",
-  "seafood",
-  "seawater",
-  "sediment",
-  "sediments",
-  "seedling",
-  "seedling roots",
-  "sera",
-  "serum",
-  "sesame seeds",
-  "shrimp pond",
-  "skeletal muscle",
-  "skin",
-  "skin lesion",
-  "sludge",
-  "soil",
-  "spindle leaf",
-  "spleen",
-  "sputum",
-  "stem",
-  "stem base",
-  "stems",
-  "stomach",
-  "stool",
-  "stool sample",
-  "stool samples",
-  "strawberry",
-  "swab",
-  "swamp soil",
-  "tail",
-  "tentacle",
-  "testes",
-  "testis",
-  "textile wastewater",
-  "throat",
-  "throat swab",
-  "throat wash",
-  "thymus",
-  "trachea",
-  "tracheal aspirate",
-  "tracheal swab",
-  "turfgrass",
-  "urine",
-  "uterine mucosa",
-  "wastewater",
-  "water",
-  "white clover",
-  "whole blood",
-  "whole cell/tissue lysate",
-  "wound",
-  "yogurt",
-};
+void s_AddOneDataFile(const string& file_name, const string& data_name, 
+                      const char **built_in, size_t num_built_in, 
+                      TQualFixMap& qual_map)
+{
+    string file = g_FindDataFile(file_name);
+    CRef<ILineReader> lr;
+    if (!file.empty()) {
+        try {
+            lr = ILineReader::New(file);
+        } NCBI_CATCH("s_InitializeQualMaps")
+    }
 
-     
-const char * sm_KnownIsolationSourceWords[] = {
-  "adductor muscle",
-  "aquaculture water",
-  "bile",
-  "bitumen",
-  "bone marrow",
-  "brain biopsy",
-  "buffy coat",
-  "cabbage leaves",
-  "catfish",
-  "Channel catfish",
-  "compost soil",
-  "crown",
-  "curd sample",
-  "dairy farm soil",
-  "farm soil",
-  "field soil",
-  "fish intestine",
-  "freshwater",
-  "fruit body",
-  "groundwater",
-  "hepatic bile duct",
-  "hepatic biliary duct",
-  "hot marine salterns",
-  "human skin",
-  "lake isolate",
-  "lake mud",
-  "mangrove soil",
-  "midgut",
-  "pond sediment",
-  "pond water",
-  "poultry farm soil",
-  "river sand",
-  "saline lake",
-  "sewage sludge",
-  "soda lake",
-  "soil rhizosphere",
-  "soil sample",
-  "solar saltern",
-  "solar salterns",
-  "sulphur spring",
-  "surface water",
-  "tannery waste",
-  "tannery waste effluent",
-  "tissue biopsy",
-  "twig",
-  "underground water",
-  "vegetable",
-  "vegetables",
-};
+    if (lr.Empty()) {
+        if (built_in == NULL) {
+            LOG_POST("No data for " + data_name);
+        } else {
+            LOG_POST("Falling back on built-in data for " + data_name);
+            for (size_t i = 0; i < num_built_in; i++) {
+                const char *p = built_in[i];
+                s_ProcessQualMapLine(p, qual_map);
+            }
+        }
+    } else {
+        LOG_POST("Reading from " + file + " for " + data_name);
+        do {
+            s_ProcessQualMapLine(*++*lr, qual_map);
+        } while (!lr->AtEOF());
+    }
+}
+
+#include "isolation_sources.inc"
+
+static void s_InitializeQualMaps(void)
+{
+    CFastMutexGuard GUARD(s_QualFixMutex);
+    if (s_QualFixupMapsInitialized) {
+        return;
+    }
+
+    // tissue types
+    s_AddOneDataFile("isolation_sources.txt", "isolation sources", (const char **)k_isolation_sources, sizeof(k_isolation_sources) / sizeof(char *), s_IsolationSourceMap);
+    s_QualFixupMapsInitialized = true;
+}
+
+
+
 
 
 string CSubSource::FixIsolationSourceCapitalization(const string& value)
 {
     string fix = value;
 
-    size_t max = sizeof(sm_KnownIsolationSourceWords) / sizeof(const char*);
-    for (size_t i = 0; i < max; i++) {
-        if (NStr::EqualNocase(fix, sm_KnownIsolationSourceWords[i])) {
-            fix = sm_KnownIsolationSourceWords[i];
-            break;
-        }
+    TQualFixMap::iterator it = s_IsolationSourceMap.find(value);
+    if (it != s_IsolationSourceMap.end()) {
+        return it->second;
     }
 
-    max = sizeof(sm_KnownIsolationAndTissueTypeWords) / sizeof(const char*);
-    for (size_t i = 0; i < max; i++) {
-        if (NStr::EqualNocase(fix, sm_KnownIsolationAndTissueTypeWords[i])) {
-            fix = sm_KnownIsolationAndTissueTypeWords[i];
-            break;
-        }
-    }
-
-    max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
+    size_t max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
     for (size_t i = 0; i < max; i++) {
         if (NStr::EqualNocase(fix, sm_ValidSexQualifierTokens[i])) {
             fix = sm_ValidSexQualifierTokens[i];
@@ -4137,15 +3898,14 @@ string CSubSource::FixTissueTypeCapitalization(const string& value)
 {
     string fix = value;
 
-    size_t max = sizeof(sm_KnownIsolationAndTissueTypeWords) / sizeof(const char*);
-    for (size_t i = 0; i < max; i++) {
-        if (NStr::EqualNocase(fix, sm_KnownIsolationAndTissueTypeWords[i])) {
-            fix = sm_KnownIsolationAndTissueTypeWords[i];
-            break;
-        }
+    s_InitializeQualMaps();
+    TQualFixMap::iterator it = s_IsolationSourceMap.find(value);
+    if (it != s_IsolationSourceMap.end()) {
+        return it->second;
     }
 
-    max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
+
+    size_t max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
     for (size_t i = 0; i < max; i++) {
         if (NStr::EqualNocase(fix, sm_ValidSexQualifierTokens[i])) {
             fix = sm_ValidSexQualifierTokens[i];
