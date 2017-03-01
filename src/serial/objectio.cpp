@@ -218,7 +218,7 @@ void CIStreamClassMemberIterator::NextClassMember(void)
 void CIStreamClassMemberIterator::ReadClassMember(const CObjectInfo& member)
 {
     CheckState();
-    GetStream().ReadSeparateObject(member);
+    GetMemberInfo()->ReadMember(GetStream(), member.GetObjectPtr());
 }
 
 void CIStreamClassMemberIterator::SkipClassMember(const CObjectTypeInfo& member)
@@ -295,13 +295,16 @@ CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
         const CItemInfo* itemInfo =
             classType->GetItems().GetItemInfo(classType->GetItems().FirstIndex());
         _ASSERT(itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer);
+        m_Container = itemInfo;
         containerTypeInfo =
             CTypeConverter<CContainerTypeInfo>::SafeCast(itemInfo->GetTypeInfo());
         in.PushFrame(CObjectStackFrame::eFrameNamed, m_ContainerType.GetTypeInfo());
         in.BeginNamedType(m_ContainerType.GetTypeInfo());
     } else {
+        m_Container = nullptr;
         containerTypeInfo = GetContainerType().GetContainerTypeInfo();
     }
+    m_ContainerTypeInfo = containerTypeInfo;
 
     in.PushFrame(CObjectStackFrame::eFrameArray, containerTypeInfo);
     in.BeginContainer(containerTypeInfo);
@@ -385,6 +388,15 @@ void CIStreamContainerIterator::BeginElementData(const CObjectTypeInfo& )
     //if ( elementType.GetTypeInfo() != GetElementTypeInfo() )
     //    IllegalCall("wrong element type");
     BeginElementData();
+}
+
+CObjectInfo CIStreamContainerIterator::ReadElement(TObjectPtr container)
+{
+    BeginElementData(GetElementType());
+    TObjectPtr cont = m_Container ? m_Container->GetItemPtr(container) : container;
+    TObjectPtr elem = m_ContainerTypeInfo->AddElement(cont, GetStream());
+    NextElement();
+    return CObjectInfo(elem, m_ElementTypeInfo);
 }
 
 void CIStreamContainerIterator::ReadElement(const CObjectInfo& element)

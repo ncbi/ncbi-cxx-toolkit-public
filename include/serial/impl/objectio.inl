@@ -52,6 +52,11 @@ const CObjectTypeInfo& CIStreamContainerIterator::GetContainerType(void) const
 {
     return m_ContainerType;
 }
+inline
+const CObjectTypeInfo CIStreamContainerIterator::GetElementType(void) const
+{
+    return m_ElementTypeInfo;
+}
 
 inline
 const CObjectTypeInfo& COStreamContainer::GetContainerType(void) const

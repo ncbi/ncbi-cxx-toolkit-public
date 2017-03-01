@@ -169,6 +169,7 @@ public:
     ~CIStreamContainerIterator(void);
 
     const CObjectTypeInfo& GetContainerType(void) const;
+    const CObjectTypeInfo  GetElementType(void) const;
 
     bool HaveMore(void) const;
     DECLARE_OPERATOR_BOOL(HaveMore());
@@ -176,6 +177,7 @@ public:
     void NextElement(void);
     CIStreamContainerIterator& operator++(void);
 
+    CObjectInfo ReadElement(TObjectPtr container);
     void ReadElement(const CObjectInfo& element);
     void SkipElement(const CObjectTypeInfo& elementType);
     void SkipElement(void);
@@ -206,6 +208,8 @@ private:
     CObjectTypeInfo m_ContainerType;
     TTypeInfo m_ElementTypeInfo;
     EState m_State;
+    const CContainerTypeInfo* m_ContainerTypeInfo;
+    const CItemInfo* m_Container;
 };
 
 template<typename T>

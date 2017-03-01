@@ -252,6 +252,7 @@ public:
             container.allocation_size(container.size());
 #endif
             container.push_back(TElementType());
+            in.SetDiscardCurrObject(false);
             containerType->GetElementType()->ReadData(in, &container.back());
             if (in.GetDiscardCurrObject()) {
                 container.pop_back();
