@@ -38,38 +38,41 @@
 #include "ncbi_priv.h"
 #include "parson.h"
 #include <connect/ncbi_http_connector.h>
-#include <stdlib.h> /* free, realloc, calloc, malloc */
-#include <ctype.h> /* isdigit */
+#include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <time.h>
 
-#define            kHostportStringLength     (16+1+5)/**<
-                                                     strlen("255.255.255.255")+
-                                                     strlen(":") +
-                                                     strlen("65535")         */
-#define            kMaxLineSize              1024  /**< used to build strings*/
+#define NCBI_USE_ERRCODE_X     Connect_LBOS
+
+#define kHostportStringLength  (16+1+5) /* strlen("255.255.255.255") +
+                                           strlen(":") +
+                                           strlen("65535")           */
+#define kMaxLineSize           1024     /* used to build strings     */
                                                          
-
-#define            NCBI_USE_ERRCODE_X        Connect_LBOS /**< Used in
-                                                               CORE_LOG*_X  */
-
 #ifdef NCBI_COMPILER_MSVC
-#   define LBOS_STRTOK strtok_s
+#   define LBOS_STRTOK         strtok_s
 #else
-#   define LBOS_STRTOK strtok_r
-#endif 
+#   define LBOS_STRTOK         strtok_r
+#endif /*NCBI_COMPILER_MSVC*/
+
+#ifdef NCBI_OS_MSWIN
+#  define LBOS_RESOLVER_FILE                            \
+    "C:\\Apps\\Admin_Installs\\etc\\ncbi\\lbosresolver"
+#else
+#  define LBOS_RESOLVER_FILE   "/etc/ncbi/lbosresolver"
+#endif /*NCBI_OS_MSWIN*/
+
+
 /*/////////////////////////////////////////////////////////////////////////////
 //                         STATIC VARIABLES                                  //
 /////////////////////////////////////////////////////////////////////////////*/
 
-#ifdef NCBI_OS_MSWIN
-    static const char* kLbosresolverFile      = "C:\\Apps\\Admin_Installs\\etc"
-                                                "\\ncbi\\lbosresolver";
-#else 
-    static const char* kLbosresolverFile      = "/etc/ncbi/lbosresolver";
-#endif
 
-static const char* kLBOSQuery                 = "/lbos/v3/services/"
-                                                "?format=json&show=all&q=";
+static const char* kLbosresolverFile           = LBOS_RESOLVER_FILE;
+
+static const char* kLBOSQuery                  = "/lbos/v3/services/"
+                                                 "?format=json&show=all&q=";
 
 /*
  * LBOS registry section for announcement
@@ -291,8 +294,7 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     return_code = 1;
     /* extract host from healthcheck url */
     healthcheck_info = ConnNetInfo_Clone(s_EmptyNetInfo);
-    healthcheck_info->host[0] = '\0'; /* to be sure that it will be
-                                           * overridden                      */
+    healthcheck_info->host[0] = '\0'; /* to make sure it will be overridden */
     ConnNetInfo_ParseURL(healthcheck_info, healthcheck_url);
 
     /* Create new element of list*/
@@ -301,7 +303,7 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     handle.version = strdup(version);
     handle.service = strdup(service);
 
-    /* We search for the same server being already announced                 */  
+    /* We search for the same server being already announced */  
     s_LBOS_RemoveAnnouncedServer(service, version, port,
                                  healthcheck_info->host);
     ConnNetInfo_Destroy(healthcheck_info);
@@ -577,23 +579,24 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
             break;
         case eLBOS_FindMethod_CustomHost :
             if (g_LBOS_StringIsNullOrEmpty(lbos_addr)) {
-                CORE_LOG_X(1, eLOG_Warning, "Use of custom LBOS address was "
-                           "asked for, but no custom address was supplied. "
-                           "Using default LBOS.");
+                CORE_LOG_X(1, eLOG_Error, "Use of custom LBOS address "
+                           "requested, but no custom address supplied. "
+                           "Using default LBOS");
                 break;
             }
             address = strdup(lbos_addr);
             if (address == NULL) {
-                CORE_LOG_X(1, eLOG_Warning, "Did not manage to copy custom "
-                           "LBOS address. Probably insufficient RAM.");
+                CORE_LOG_ERRNO_X(1, eLOG_Warning, errno,
+                                 "Cannot copy custom LBOS address");
             }
             break;
         case eLBOS_FindMethod_Lbosresolve :
 #if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
             lbosaddress = s_LBOS_ReadLbosresolver();
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress)) {
-                CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS using "
-                           "/etc/ncbi/lbosresolve failed");
+                CORE_LOGF_X(1, eLOG_Warning,
+                            ("Attempt to locate LBOS using %s has failed",
+                             kLbosresolverFile));
             } else {
                 address = strdup(lbosaddress);
             }
@@ -602,10 +605,10 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
         case eLBOS_FindMethod_Registry:
             lbosaddress_temp = g_LBOS_RegGet("CONN", "lbos", NULL);
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress_temp)) {
-                CORE_LOG_X(1, eLOG_Note, "Trying to find LBOS in "
-                                         "registry [CONN]lbos failed. "
-                                         "Using address in "
-                                         "/etc/ncbi/lbosresolver");
+                CORE_LOGF_X(1, eLOG_Note,
+                            ("Attempt to locate LBOS in registry"
+                             " [CONN]LBOS has failed. Using address from %s",
+                             kLbosresolverFile));
                 free(lbosaddress_temp); /* just in case */
                 lbosaddress_temp = NULL;
                 break;
@@ -711,55 +714,58 @@ static const char* s_LBOS_ReadRole()
  */
 static const char* s_LBOS_ReadLbosresolver(void)
 {
-    if (s_LBOS_Lbosresolver != NULL) {
+    if (s_LBOS_Lbosresolver) {
         return s_LBOS_Lbosresolver;
     }
 
-    FILE* lbosresolver_file;
+    FILE*  fp;
+    char   str[kMaxLineSize];
     size_t len;
-    char str[kMaxLineSize];
-    char* read_result; /* during function will become equal either NULL
-                        or str, do not free() */
-    if ((lbosresolver_file = fopen(kLbosresolverFile, "r")) == NULL) {
-        CORE_LOGF(eLOG_Warning, ("LBOS mapper: "
-                                 "could not open file %s",
-                                 kLbosresolverFile));
-        return NULL;
+    char*  rv;
+
+    if (!(fp = fopen(kLbosresolverFile, "r"))) {
+        CORE_LOGF_ERRNO(eLOG_Warning, errno,
+                        ("[LBOS]  Cannot open %s",
+                         kLbosresolverFile));
+        return 0;
     }
-    read_result = fgets(str, sizeof(str), lbosresolver_file);
-    fclose(lbosresolver_file);
-    if (read_result == NULL) {
-        CORE_LOG(eLOG_Warning, "s_LBOS_ReadLBOSResolve: "
-                               "memory allocation failed");
-        return NULL;
+    rv = fgets(str, sizeof(str), fp);
+    fclose(fp);
+
+    if (!rv) {
+        CORE_LOGF_ERRNO(eLOG_Warning, errno,
+                        ("[LBOS]  Cannot read %s",
+                         kLbosresolverFile));
+        return 0;
     }
-    len = strlen(str);
-    assert(len);
+
+    verify(len = strlen(str));
     if (g_LBOS_StringIsNullOrEmpty(str)) {
         /* No domain recognized */
         CORE_LOGF(eLOG_Warning,
-                  ("LBOS mapper: file %s is empty, no LBOS address available",
+                  ("[LBOS]  No LBOS address found in %s",
                    kLbosresolverFile));
-        free(read_result);
-        return NULL;
+        return 0;
     }
-    /*We remove unnecessary '/n' and probably '/r'   */
+
+    /* Remove unnecessary '/n' and probably '/r' */
     if (str[len - 1] == '\n') {
-        if (--len && str[len - 1] == '\r') {
+        if (--len  &&  str[len - 1] == '\r') {
             --len;
         }
         str[len] = '\0';
     }
+
     CORE_LOCK_WRITE;
-    /* Check one more time that no other thread managed to fill
-        * static variable ahead of this thread. If this happened,
-        * release memory */
-    if (s_LBOS_Lbosresolver == NULL)
-        /* We skip "http://" and "/lbos" */
-        str[strlen(str) - strlen("/lbos")] = '\0';
-        s_LBOS_Lbosresolver = strdup(str + 7);
+    /* Check one more time that no other thread managed to fill static
+     * variable ahead of this thread.  If that happened, do nothing */
+    if (s_LBOS_Lbosresolver == 0) {
+        /* Strip both trailing "/lbos" and leading "http://" */
+        str[len - 5] = '\0';
+        s_LBOS_Lbosresolver  = strdup(str + 7);
+    }
     CORE_UNLOCK;
-    
+
     return s_LBOS_Lbosresolver;
 }
 #endif  /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
@@ -820,12 +826,12 @@ static CONN s_LBOS_ConnectURL(SConnNetInfo* net_info, const char* url,
     CONN                conn;
     CONNECTOR           connector;
 
-    CORE_LOGF(eLOG_Note, ("Parsing URL \"%s\"", url));
+    CORE_LOGF(eLOG_Trace, ("Parsing URL \"%s\"", url));
     if (!ConnNetInfo_ParseURL(net_info, url)) {
         CORE_LOG(eLOG_Warning, "Cannot parse URL");
         return NULL;
     }
-    CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",
+    CORE_LOGF(eLOG_Trace, ("Creating HTTP%s connector",
             &"S"[net_info->scheme != eURL_Https]));
     if (!(connector = HTTP_CreateConnectorEx(net_info, flags,
                       g_LBOS_UnitTesting_GetLBOSFuncs()->ParseHeader,
@@ -835,7 +841,7 @@ static CONN s_LBOS_ConnectURL(SConnNetInfo* net_info, const char* url,
         CORE_LOG(eLOG_Warning, "Cannot create HTTP connector");
         return NULL;
     }
-    CORE_LOG(eLOG_Note, "Creating connection");
+    CORE_LOG(eLOG_Trace, "Creating connection");
     if (CONN_Create(connector, &conn) != eIO_Success) {
         CORE_LOG(eLOG_Warning, "Cannot create connection");
         return NULL;
@@ -1641,19 +1647,6 @@ static void s_LBOS_Initialize(void)
                    ("DTAB from registry: %s ", s_LBOS_DTABLocal));
     }
 
-    /* Check On/Off status */
-    char* lbos_toggle = g_LBOS_RegGet("CONN", "LBOS_ENABLE", NULL);
-    int lbos_toggled = ConnNetInfo_Boolean(lbos_toggle);
-    free(lbos_toggle);
-    if (lbos_toggled) {
-        CORE_LOG_X(1, eLOG_Note, "LBOS is turned ON in config.");
-    } else {
-        CORE_LOG_X(1, eLOG_Warning, 
-                   "LBOS is NOT turned ON in config! Please provide "
-                   "[CONN]LBOS_ENABLE=1");
-        s_LBOS_TurnedOn = 0;
-        return;
-    }
     /*
      * Try to find LBOS
      */
@@ -1950,23 +1943,14 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
             data->net_info->req_method = eReqMethod_Any;
         }
     }
-    // Check if CONNECT_Init() has been run before
-    if (g_CORE_GetRequestDtab == NULL) {
+    // Check if CONNECT_Init() has been called before
+    const char* request_dtab = 0;
+    if (!g_CORE_GetRequestDtab) {
         CORE_LOG(eLOG_Critical, 
-                 "LBOS FAIL! Please run CONNECT_Init() prior to using LBOS!\n"
-                 "Example:\n"
-                 "CNcbiRegistry& config = CNcbiApplication::Instance()"
-                 "->GetConfig();\n"
-                 "CONNECT_Init(&config);\n"
-                 "LBOS::Announce(...);");
-        s_LBOS_DestroyData(data);
-        if (iter->name != orig_serv_name) {
-            free(new_name);
-            iter->name = orig_serv_name;
-        }
-        return NULL;
-    }
-    const char* request_dtab = g_CORE_GetRequestDtab();
+                 "LBOS MAY FAIL! "
+                 " Make sure to call CONNECT_Init() prior to using LBOS!");
+    } else
+        request_dtab = g_CORE_GetRequestDtab();
     if (!g_LBOS_StringIsNullOrEmpty(request_dtab)) {
         /* Add a semicolon to separate DTabs */
         ConnNetInfo_ExtendUserHeader(data->net_info, "DTab-Local: ;");
