@@ -248,7 +248,7 @@ void CProteinMatchApp::x_WriteMatchTable(
     }
 
     try {
-        CNcbiOfstream ostr(table_file);
+        CNcbiOfstream ostr(table_file.c_str());
         match_tab.WriteTable(ostr);
     }
     catch (...) {
@@ -328,7 +328,7 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
     // Create alignment manifest tempfile 
     const string manifest_file = out_stub + ".aln" + count_string + ".mft";
     try {
-        CNcbiOfstream ostr(manifest_file);
+        CNcbiOfstream ostr(manifest_file.c_str());
         ostr << alignment_file << endl;
     }
     catch(...) {
