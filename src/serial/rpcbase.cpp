@@ -220,8 +220,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
         if ((!limit_by_time  &&  ++m_RetryCount >= m_RetryLimit)  ||
             !x_ShouldRetry(m_RetryCount)) {
             NCBI_THROW(CRPCClientException, eFailed,
-                "Failed to receive reply after " +
-                NStr::NumericToString(m_RetryCount) + " tries");
+                       "Failed to receive reply after " +
+                       NStr::NumericToString(m_RetryCount) +
+                       (m_RetryCount == 1 ? "try" : " tries"));
         }
         if ( m_RetryCtx.IsSetStop() ) {
             NCBI_THROW(CRPCClientException, eFailed,
