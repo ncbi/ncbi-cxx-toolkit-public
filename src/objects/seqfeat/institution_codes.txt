@@ -2476,6 +2476,7 @@ HNWP	s	Northwest Plateau Institute of Biology, Chinese Academy of Sciences
 HNWU	s	Nebraska Wesleyan University, Biology Department		
 HO	s	Tasmanian Museum & Art Gallery		
 HOH	s	Universitaet Hohenheim (210)		
+HOL	s	Holden Arboretum		
 HOLZ	s	Paleontological Collection		
 HOMP	s	Okresni muzeum Pribram Brezove Hory		
 HON	s	Sichuan Grassland Research Institute		

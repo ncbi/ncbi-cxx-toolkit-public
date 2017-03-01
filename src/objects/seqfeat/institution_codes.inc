@@ -2509,6 +2509,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HNWU\ts\tNebraska Wesleyan University, Biology Department\t\t",
 "HO\ts\tTasmanian Museum & Art Gallery\t\t",
 "HOH\ts\tUniversitaet Hohenheim (210)\t\t",
+"HOL\ts\tHolden Arboretum\t\t",
 "HOLZ\ts\tPaleontological Collection\t\t",
 "HOMP\ts\tOkresni muzeum Pribram Brezove Hory\t\t",
 "HON\ts\tSichuan Grassland Research Institute\t\t",
