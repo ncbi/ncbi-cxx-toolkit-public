@@ -39,6 +39,7 @@
 #include <algo/blast/blastinput/blastn_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <db/sqlite/sqlitewrapp.hpp>
 #include "blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -71,9 +72,8 @@ void CBlastnApp::Init()
     // formulate command line arguments
 
     m_CmdLineArgs.Reset(new CBlastnAppArgs());
-
+    CSQLITE_Global::Initialize();
     // read the command line
-
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
@@ -228,6 +228,7 @@ int CBlastnApp::Run(void)
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+    CSQLITE_Global::Finalize();
     return status;
 }
 
