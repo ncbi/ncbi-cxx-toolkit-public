@@ -58,7 +58,8 @@ typedef struct SServiceConnectorTag {
     unsigned short      retry;          /* Open retry count since last okay  */
     TSERV_TypeOnly      types;          /* Server types w/o any specials     */
     unsigned            reset:1;        /* Non-zero if iter was just reset   */
-    unsigned            unused:6;
+    unsigned            warned:1;       /* Non-zero when needed adj via HTTP */
+    unsigned            unused:5;
     unsigned            secure:1;       /* Set when must start ssl on SOCK   */
 
     ticket_t            ticket;         /* Network byte order (none if zero) */
@@ -575,9 +576,10 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     assert(n  ||  uuu->extra.adjust);
     assert(!net_info->firewall  ||  net_info->stateless);
 
-    if (!n)
+    if (!n  ||  n == (unsigned int)(-1))
         return uuu->extra.adjust(net_info, uuu->extra.data, 0);
 
+    uuu->warned = 1;
     if (uuu->retry >= uuu->net_info->max_try)
         return 0/*failure - too many errors*/;
     uuu->retry++;
@@ -684,7 +686,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     EReqMethod  req_method;
 
     assert(net_info->firewall  ||  info);
-    if (!net_info->firewall  &&  info->type != fSERV_Firewall) {
+    if ((!net_info->firewall  &&  info->type != fSERV_Firewall)
+        || (info  &&  ((info->type  & fSERV_Http)  ||
+                       (info->type == fSERV_Ncbid  &&  net_info->stateless)))){
         /* Not a firewall/relay connection here:
            We know the connection point, so let's try to use it! */
         if ((info->type != fSERV_Standalone  ||  !net_info->stateless)
@@ -698,15 +702,12 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             /* Connection directly to NCBID, add NCBID-specific tags */
             if (info->mode & fSERV_Secure)
                 net_info->scheme = eURL_Https;
-            if (net_info->stateless) {
+            req_method  = eReqMethod_Any; /* replaced with GET if aux HTTP */
+            user_header = net_info->stateless
                 /* Connection request with data */
-                user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
-                req_method  = eReqMethod_Post;
-            } else {
+                ? "Connection-Mode: STATELESS\r\n" /*default*/
                 /* We will be waiting for conn-info back */
-                user_header = "Connection-Mode: STATEFUL\r\n";
-                req_method  = eReqMethod_Any; /*set GET in aux HTTP */
-            }
+                : "Connection-Mode: STATEFUL\r\n";
             user_header = s_AdjustNetParams(uuu->service, net_info, req_method,
                                             NCBID_WEBPATH,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
@@ -717,6 +718,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         case fSERV_HttpGet:
         case fSERV_HttpPost:
             /* Connection directly to CGI */
+            net_info->stateless = 1/*true*/;
             req_method  = info->type == fSERV_HttpGet
                 ? eReqMethod_Get : (info->type == fSERV_HttpPost
                                     ? eReqMethod_Post : eReqMethod_Any);
@@ -751,7 +753,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         }
     } else {
-        /* Firewall/relay connection via the dispatcher */
+        /* Firewall/relay connection via dispatcher */
         TSERV_Type     type;
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
@@ -769,16 +771,19 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                              : eReqMethod_Any));
             net_info->stateless = 1/*true*/;
         } else
-            req_method = eReqMethod_Any; /*may downgrade to GET w/aux HTTP*/
+            req_method = eReqMethod_Any; /* may downgrade to GET w/aux HTTP */
+
         if (info) {
             mime_t = info->mime_t;
             mime_s = info->mime_s;
             mime_e = info->mime_e;
+            but_last = 1/*true*/;
         } else {
             mime_t = eMIME_T_Undefined;
             mime_s = eMIME_Undefined;
             mime_e = eENCOD_None;
         }
+
         /* Firewall/relay connection thru dispatcher, special tags */
         user_header = (net_info->stateless
                        ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
@@ -787,8 +792,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                         req_method, 0, 0,
                                         0, user_header, mime_t,
                                         mime_s, mime_e, 0);
-        if (info)
-            but_last = 1/*true*/;
     }
     if (!user_header) {
         *status = eIO_Unknown;
@@ -844,10 +847,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         uuu->secure = 0;
-        net_info->max_try = 1;
         assert(!net_info->req_method);
         net_info->req_method = eReqMethod_Get;
-        c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable,
+        c = HTTP_CreateConnectorEx(net_info,
+                                   fHTTP_Flushable | fHTTP_NoAutoRetry,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);
         /* Wait for connection info back from dispatcher */
@@ -926,8 +929,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         ||  uuu->extra.adjust(net_info, uuu->extra.data, (unsigned int)(-1))
         ? HTTP_CreateConnectorEx(net_info,
                                  (uuu->extra.flags
-                                  & (fHTTP_Flushable       |
-                                     fHTTP_NoAutoRetry     |
+                                  & (fHTTP_Flushable   |
+                                     fHTTP_NoAutoRetry |
                                      (uuu->extra.adjust
                                       ? fHTTP_AdjustOnRedirect
                                       : 0)))
@@ -1004,6 +1007,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     SMetaConnector* meta = connector->meta;
     EIO_Status status = eIO_Closed;
 
+    uuu->warned = 0;
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
         SSERV_InfoCPtr info;
@@ -1119,7 +1123,12 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 
         s_Close(connector, timeout, 0/*retain*/);
     }
-
+    if (status != eIO_Success  &&  !uuu->warned
+        &&  uuu->retry > 1  &&  uuu->retry >= uuu->net_info->max_try) {
+        CORE_LOGF_X(11, eLOG_Error,
+                    ("[%s]  Too many failed attempts (%hu), giving up",
+                     uuu->service, uuu->retry));
+    }
     uuu->status = status;
     return status;
 }
