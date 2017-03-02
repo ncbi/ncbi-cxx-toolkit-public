@@ -170,8 +170,6 @@ void CProteinMatchApp::Init(void)
 
 int CProteinMatchApp::Run(void)
 {
-    const bool as_binary = true;
-    const bool as_text = false;
     const CArgs& args = GetArgs();
 
     const string bin_dir = args["bindir"] ? 
@@ -617,7 +615,7 @@ void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
     try { 
         unique_ptr<CObjectOStream> pOstr(x_InitObjectOStream(filename, as_binary));
         *pOstr << seq_entry;
-    } catch (CException& e) {
+    } catch (...) {
         NCBI_THROW(CProteinMatchException,
             eOutputError,
             "Failed to write " + filename);
