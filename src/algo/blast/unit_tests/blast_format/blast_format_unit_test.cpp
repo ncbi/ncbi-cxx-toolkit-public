@@ -52,6 +52,7 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <algo/blast/format/blast_async_format.hpp>
 
 
 #include <algo/blast/format/build_archive.hpp>
@@ -87,7 +88,7 @@ BOOST_AUTO_TEST_CASE(BlastFormatTest)
     CBlastNucleotideOptionsHandle nucl_opts(CBlastOptions::eBoth);
 
     const bool kIsProtein = false;
-    SDataLoaderConfig dlconfig(kIsProtein, SDataLoaderConfig::eUseNoDataLoaders);
+    SDataLoaderConfig dlconfig("refseq_rna", kIsProtein);
     CRef<CScope> scope(CBlastScopeSource(dlconfig).NewScope());
     scope->AddBioseq(bs);
     CRef<CSearchDatabase> target_db( new CSearchDatabase("refseq_rna", CSearchDatabase::eBlastDbIsNucleotide));
@@ -116,4 +117,77 @@ BOOST_AUTO_TEST_CASE(BlastFormatTest)
     BOOST_REQUIRE(myReport.find("Query=") != std::string::npos);
 }
 
+BOOST_AUTO_TEST_CASE(BlastAsyncFormatTest)
+{
+    // First read in the data to use.
+    const char* fname = "data/archive.asn";
+    ifstream in(fname);
+    CRemoteBlast rb(in);
+
+    rb.LoadFromArchive();
+
+    CRef<objects::CBlast4_queries> queries = rb.GetQueries();
+ 
+    CConstRef<objects::CBioseq_set> bss_ref(&(queries->SetBioseq_set()));
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(bss_ref));
+    const CBioseq& bs = bss_ref->GetSeq_set().front()->GetSeq();
+
+    CBlastNucleotideOptionsHandle nucl_opts(CBlastOptions::eBoth);
+
+    const bool kIsProtein = false;
+    SDataLoaderConfig dlconfig("refseq_rna", kIsProtein);
+    CRef<CScope> scope(CBlastScopeSource(dlconfig).NewScope());
+    scope->AddBioseq(bs);
+    CRef<CSearchDatabase> target_db( new CSearchDatabase("refseq_rna", CSearchDatabase::eBlastDbIsNucleotide));
+    CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*target_db));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*(bs.GetFirstId()));
+    loc->SetWhole(*id);
+    CRef<CBlastSearchQuery> query(new CBlastSearchQuery(*loc, *scope));
+    CRef<CBlastQueryVector> q_vec(new CBlastQueryVector);
+    q_vec->push_back(query);
+    CRef<CSearchResultSet> blast_results = rb.GetResultSet();
+
+    CBlastAsyncFormatThread* formatThr = new CBlastAsyncFormatThread();
+    formatThr->Run();
+    
+    CNcbiOstrstream streamBuffer;
+    CRef<CBlastFormat> formatter(new CBlastFormat(nucl_opts.GetOptions(), *db_adapter,
+                          ncbi::blast::CFormattingArgs::EOutputFormat::ePairwise, 
+			  false, streamBuffer, 10, 10, *scope));
+
+    vector<SFormatResultValues> results_v;
+    results_v.push_back(SFormatResultValues(q_vec, blast_results, formatter));
+    formatThr->QueueResults(0, results_v);
+    formatThr->Finalize();
+    formatThr->Join();
+    
+    string myReport = CNcbiOstrstreamToString(streamBuffer);
+
+    BOOST_REQUIRE(myReport.length() > 0);
+    BOOST_REQUIRE(myReport.find("Query=") != std::string::npos);
+}
+
+// Insert results after call to Finalize.
+BOOST_AUTO_TEST_CASE(BlastAsyncFormatFinalizeThrow)
+{
+    CBlastAsyncFormatThread* formatThr = new CBlastAsyncFormatThread();
+    formatThr->Run();
+    
+    formatThr->Finalize();
+    vector<SFormatResultValues> results_v;
+    BOOST_REQUIRE_THROW(formatThr->QueueResults(0, results_v), CException);
+}
+
+// Attempt to insert the same batch number twice.
+BOOST_AUTO_TEST_CASE(BlastAsyncFormatDuplicateThrow)
+{
+    CBlastAsyncFormatThread* formatThr = new CBlastAsyncFormatThread();
+    formatThr->Run();
+    
+    vector<SFormatResultValues> results_v;
+    formatThr->QueueResults(0, results_v);
+    BOOST_REQUIRE_THROW(formatThr->QueueResults(0, results_v), CException);
+}
 BOOST_AUTO_TEST_SUITE_END()
