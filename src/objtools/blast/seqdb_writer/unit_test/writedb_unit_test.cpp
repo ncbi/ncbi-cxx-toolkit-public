@@ -2511,7 +2511,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathWindows)
     BOOST_REQUIRE_THROW(
         bd.Reset(new CBuildDatabase(kOutput, "foo", true,
                                     CWriteDB::eDefault, false, &log)),
-        CMultisourceException);
+        CFileException);
     BOOST_REQUIRE(bd.Empty());
 /* temporarily disabled.
     CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
