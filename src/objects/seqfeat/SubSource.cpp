@@ -1344,6 +1344,9 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
             prev_start = pos;
             last_is_sep = true;
         } else if (ch == '\'') {
+            if (num_period > 1) {
+                return kEmptyStr;
+            }
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
             if (token[pos + 1] == '\'') {
@@ -3835,16 +3838,16 @@ void s_AddOneDataFile(const string& file_name, const string& data_name,
 
     if (lr.Empty()) {
         if (built_in == NULL) {
-            LOG_POST("No data for " + data_name);
+            ERR_POST(Note << "No data for " + data_name);
         } else {
-            LOG_POST("Falling back on built-in data for " + data_name);
+            ERR_POST(Note << "Falling back on built-in data for " + data_name);
             for (size_t i = 0; i < num_built_in; i++) {
                 const char *p = built_in[i];
                 s_ProcessQualMapLine(p, qual_map);
             }
         }
     } else {
-        LOG_POST("Reading from " + file + " for " + data_name);
+        ERR_POST(Note << "Reading from " + file + " for " + data_name);
         do {
             s_ProcessQualMapLine(*++*lr, qual_map);
         } while (!lr->AtEOF());
@@ -4444,7 +4447,7 @@ static const size_t k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
 
 void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 {
-    LOG_POST("Falling back on built-in data for latlon / water data.");
+    ERR_POST(Note << "Falling back on built-in data for latlon / water data.");
       // initialize list of country lines
     m_CountryLineList.clear();
     m_Scale = 20.0;
@@ -4480,7 +4483,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
     if (NStr::IsBlank (fname)) {
         return false;
     }
-    LOG_POST("Reading from " + filename + " for latlon/water data.");
+    ERR_POST(Note << "Reading from " + filename + " for latlon/water data.");
     CRef<ILineReader> lr = ILineReader::New (fname);
     if (lr.Empty()) {
         return false;
