@@ -73,7 +73,7 @@ void Read(CObjectIStream& in, TObjectPtr object, TTypeInfo type)
     in.Read(object, type);
 }
 
-bool Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype)
+bool Serial_FilterSkip(CObjectIStream& in, const CObjectTypeInfo& ctype)
 {
     if (!in.EndOfData()) {
         in.Skip(ctype);

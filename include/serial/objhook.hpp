@@ -626,7 +626,7 @@ private:
 };
 
 NCBI_XSERIAL_EXPORT
-bool Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype);
+bool Serial_FilterSkip(CObjectIStream& in, const CObjectTypeInfo& ctype);
 
 /// Scan input stream, finding objects of requested type (TObject) only
 template<typename TRoot, typename TObject>
