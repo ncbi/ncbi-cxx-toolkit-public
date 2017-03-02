@@ -75,10 +75,6 @@ public:
     string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
     string GetOneDefLine(CBioseq_Handle bh);
-    static string GetDocsumOrgDescription(CSeq_entry_Handle se);
-    string GetDocsumDefLine(CSeq_entry_Handle se);
-
-    static bool RegenerateDefLines(CSeq_entry_Handle se);
     
     void SetOptionsObject(const CUser_object& user);
     CRef<CUser_object> GetOptionsObject() const { return m_Options.MakeUserObject(); }
@@ -121,6 +117,19 @@ public:
     bool Cancelled() { return m_Cancelled; }
 
     static string GetKeywordPrefix(CBioseq_Handle bh);
+
+    static bool RegenerateSequenceDefLines(CSeq_entry_Handle se);
+
+    NCBI_DEPRECATED
+    static bool RegeneratePopsetTitles(CSeq_entry_Handle se);
+
+    NCBI_DEPRECATED
+    static string GetDocsumOrgDescription(CSeq_entry_Handle se);
+    NCBI_DEPRECATED
+    string GetDocsumDefLine(CSeq_entry_Handle se);
+    NCBI_DEPRECATED
+    static bool RegenerateDefLines(CSeq_entry_Handle se);
+
     
 private:
     typedef vector<unsigned int> TModifierIndexVector;

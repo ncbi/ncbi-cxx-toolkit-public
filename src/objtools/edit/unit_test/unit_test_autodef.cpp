@@ -107,7 +107,7 @@
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/edit/autodef.hpp>
+#include <objtools/edit/autodef_with_tax.hpp>
 
 
 // for writing out tmp files
@@ -374,7 +374,7 @@ void CheckAutoDefOptions
 
 
 static void CheckDeflineMatches(CSeq_entry_Handle seh,
-                                objects::CAutoDef& autodef, 
+                                objects::CAutoDefWithTaxonomy& autodef, 
                                 CRef<CAutoDefModifierCombo> mod_combo)
 {
     // check defline for each nucleotide sequence
@@ -430,7 +430,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry,
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources (seh);
@@ -461,7 +461,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources (seh);
@@ -1209,7 +1209,7 @@ void s_SetProteinName(CRef<CSeq_entry> prot, const string& name)
 }
 
 
-CRef<CSeq_feat> s_AddCDS(CRef<CSeq_entry> np, const string& name, size_t from, size_t to)
+CRef<CSeq_feat> s_AddCDS(CRef<CSeq_entry> np, const string& name, TSeqPos from, TSeqPos to)
 {
     CRef<CSeq_entry> prev_prot = np->SetSet().SetSeq_set().back();
     CRef<CSeq_entry> new_prot (new CSeq_entry());
@@ -1261,7 +1261,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3942)
     // actual splicing
     cds2->SetLocation().Assign(*(unit_test_util::MakeMixLoc(nuc->GetSeq().GetId().front())));
     cds3->SetLocation().Assign(cds2->GetLocation());
-    size_t old_end = cds3->GetLocation().GetMix().Get().back()->GetInt().GetTo();
+    TSeqPos old_end = cds3->GetLocation().GetMix().Get().back()->GetInt().GetTo();
     cds3->SetLocation().SetMix().Set().back()->SetInt().SetTo(old_end + 2);
 
     AddTitle(nuc, "Sebaea microphylla protein gene, complete cds, alternatively spliced; and RNA-dependent RNA polymerase gene, partial cds.");
@@ -1314,7 +1314,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2181)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources (seh);
@@ -1372,7 +1372,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4043)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources (seh);
@@ -1445,7 +1445,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*seq);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources(seh);
@@ -1505,7 +1505,7 @@ BOOST_AUTO_TEST_CASE(Test_RemovableuORF)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources(seh);
@@ -1552,7 +1552,7 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources(seh);
@@ -1621,7 +1621,7 @@ BOOST_AUTO_TEST_CASE(GB_5272a)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     // add to autodef 
     autodef.AddSources(seh);
@@ -1696,7 +1696,7 @@ BOOST_AUTO_TEST_CASE(SQD_3462)
     gene->SetData().SetGene().SetLocus("BRM");
     gene->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -1837,7 +1837,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5447)
 
 void MakeRegulatoryFeatureTest(const string& regulatory_class, const string& defline_interval, bool use_fake_promoters, bool keep_regulatory)
 {
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
     CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
@@ -1940,7 +1940,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5758)
 void TestForRecomb(CRef<CSeq_entry> entry, const string& expected)
 {
     AddTitle(entry, expected);
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
@@ -1977,7 +1977,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5765)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
     AddTitle(entry, "Sebaea microphylla special flower.");
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
@@ -2047,7 +2047,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5618)
     string defline = "Sebaea microphylla gene locus gene, complete sequence.";
     AddTitle(entry, defline);
 
-    objects::CAutoDef autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
