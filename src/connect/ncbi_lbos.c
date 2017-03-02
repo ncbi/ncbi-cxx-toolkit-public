@@ -739,7 +739,7 @@ static const char* s_LBOS_ReadLbosresolver(void)
         return 0;
     }
 
-    verify(len = strlen(str));
+    verify((len = strlen(str)));
     if (g_LBOS_StringIsNullOrEmpty(str)) {
         /* No domain recognized */
         CORE_LOGF(eLOG_Warning,

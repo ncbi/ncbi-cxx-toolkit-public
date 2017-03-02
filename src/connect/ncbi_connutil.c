@@ -225,7 +225,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         else if (!(service = SERV_ServiceName(service)))
             return 0;
         else
-            verify(len = strlen(service));
+            verify((len = strlen(service)));
     }
 
     retval =  s_GetValue(service, len, param,
