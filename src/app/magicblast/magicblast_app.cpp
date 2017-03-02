@@ -649,6 +649,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const BLAST_SequenceBlk* queries,
                        const BlastQueryInfo* query_info,
                        int batch_number, int compartment,
+                       bool trim_read_ids,
                        const CSeq_align* mate = NULL)
 {
     string sep = "\t";
@@ -672,11 +673,11 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         _ASSERT(second != disc.Get().end());
 
         PrintSAM(ostr, **first, queries, query_info, batch_number,
-                 compartment, second->GetNonNullPointer());
+                 compartment, trim_read_ids, second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, batch_number,
-                 compartment, first->GetNonNullPointer());
+                 compartment, trim_read_ids, first->GetNonNullPointer());
 
         return ostr;
     }
@@ -766,7 +767,14 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     // read id
-    ostr << s_GetBareId(align.GetSeq_id(0)) << sep;
+    string read_id = s_GetBareId(align.GetSeq_id(0));
+    if (trim_read_ids &&
+        (NStr::EndsWith(read_id, ".1") || NStr::EndsWith(read_id, ".2") ||
+         NStr::EndsWith(read_id, "/1") || NStr::EndsWith(read_id, "/2"))) {
+
+        read_id.resize(read_id.length() - 2);
+    }
+    ostr << read_id << sep;
 
     // flag
     ostr << sam_flags << sep;
@@ -1039,13 +1047,15 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align_set& aligns,
                        const BLAST_SequenceBlk* queries,
                        const BlastQueryInfo* query_info,
-                       int batch_number)
+                       int batch_number,
+                       bool trim_read_id)
 {
     int compartment = 0;
 
     ITERATE (list< CRef<CSeq_align> >, it, aligns.Get()) {
 
-        PrintSAM(ostr, **it, queries, query_info, batch_number, compartment++);
+        PrintSAM(ostr, **it, queries, query_info, batch_number, compartment++,
+                 trim_read_id);
         ostr << endl;
     }
 
@@ -1258,7 +1268,9 @@ int CMagicBlastApp::Run(void)
            	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
 
         /*** Get the formatting options ***/
-        CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        CRef<CMapperFormattingArgs> fmt_args(
+             dynamic_cast<CMapperFormattingArgs*>(
+                   m_CmdLineArgs->GetFormattingArgs().GetNonNullPointer()));
 
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eSAM) {
             if (num_db_sequences < kSamLargeNumSubjects) {
@@ -1307,6 +1319,8 @@ int CMagicBlastApp::Run(void)
         vector<ostringstream> os_vector(num_query_threads);
         int batch_number = 0;
         bool print_warning = false;
+        const bool kTrimReadIdForSAM =
+            query_opts->IsPaired() && fmt_args->TrimReadIds();
 
         while (!input.End()) {
 
@@ -1416,7 +1430,8 @@ int CMagicBlastApp::Run(void)
                                  *results,
                                  query_data->GetSequenceBlk(),
                                  query_data->GetQueryInfo(),
-                                 batch_number);
+                                 batch_number,
+                                 kTrimReadIdForSAM);
                     }
 
 

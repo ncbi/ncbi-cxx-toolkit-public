@@ -241,6 +241,7 @@ const string kArgQueryMate("query_mate");
 const string kArgRefType("reftype");
 const string kArgOutputGzip("gzo");
 const string kArgSraAccession("sra");
+const string kArgNoReadIdTrim("no_query_id_trim");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

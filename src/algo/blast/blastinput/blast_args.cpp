@@ -2492,6 +2492,72 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     return;
 }
 
+
+void
+CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Formatting options");
+    string kOutputFormatDescription = string(
+                                             "alignment view options:\n"
+                                             "sam = SAM format,\n"
+                                             "tabular = Tabular format,\n"
+                                             "asn = text ASN.1\n");
+
+    arg_desc.AddDefaultKey(align_format::kArgOutputFormat, "format", 
+                           kOutputFormatDescription,
+                           CArgDescriptions::eString, 
+                           "sam");
+
+    set<string> allowed_formats = {"sam", "tabular", "asn"};
+    arg_desc.SetConstraint(align_format::kArgOutputFormat,
+                           new CArgAllowStringSet(allowed_formats));
+
+    arg_desc.AddFlag(kArgNoReadIdTrim, "Do not trim '.1', '/1', '.2', " \
+                     "or '/2' at the end of read ids for SAM format and" \
+                     "paired runs");
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                                    CBlastOptions& opt)
+{
+    if (args.Exist(align_format::kArgOutputFormat)) {
+        string fmt_choice = args[align_format::kArgOutputFormat].AsString();
+        if (fmt_choice == "sam") {
+            m_OutputFormat = eSAM;
+        }
+        else if (fmt_choice == "tabular") {
+            m_OutputFormat = eTabular;
+        }
+        else if (fmt_choice == "asn") {
+            m_OutputFormat = eAsnText;
+        }
+        else {
+            CNcbiOstrstream os;
+            os << "'" << fmt_choice << "' is not a valid output format";
+            string msg = CNcbiOstrstreamToString(os);
+            NCBI_THROW(CInputException, eInvalidInput, msg);
+        }
+    }
+
+    m_ShowGis = true;
+    m_Html = false;
+
+    if (args.Exist(kArgNoReadIdTrim) && args[kArgNoReadIdTrim]) {
+        m_TrimReadIds = false;
+    }
+
+    // only the fast tabular format is able to show merged HSPs with
+    // common query bases
+    if (m_OutputFormat != eTabular) {
+        // FIXME: This is a hack. Merging should be done by the formatter,
+        // but is currently done by HSP stream writer. This is an easy
+        // switch until merging is implemented properly.
+        CNcbiEnvironment().Set("MAPPER_NO_OVERLAPPED_HSP_MERGE", "1");
+    }
+}
+
 void
 CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 

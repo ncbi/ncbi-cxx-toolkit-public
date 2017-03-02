@@ -1137,6 +1137,30 @@ protected:
     EFormatFlags m_FormatFlags;
 };
 
+/// Formatting args for magicblast advertising only SAM and fast tabular
+/// formats
+class NCBI_BLASTINPUT_EXPORT CMapperFormattingArgs : public CFormattingArgs
+{
+public:
+
+    CMapperFormattingArgs(void) : CFormattingArgs(), m_TrimReadIds(true) {}
+
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+
+    virtual void ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt);
+
+    virtual bool ArchiveFormatRequested(const CArgs& args) const {
+        return false;
+    }
+
+    /// Should read ids be in SAM format be trimmed of .1 and .2 endings
+    /// for paired mapping
+    bool TrimReadIds(void) const {return m_TrimReadIds;}
+
+private:
+    bool m_TrimReadIds;
+};
+
 /// Argument class to collect multi-threaded arguments
 class NCBI_BLASTINPUT_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
