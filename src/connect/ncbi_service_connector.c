@@ -521,9 +521,7 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
     const char* vhost = SERV_HostOfInfo(info);
 
     if (vhost) {
-        assert(info->vhost);
-        if (info->vhost >= sizeof(net_info->host))
-            return 0/*failure*/;
+        assert(info->vhost  &&  info->vhost < sizeof(net_info->host));
         strncpy0(net_info->host, vhost, info->vhost);
     } else if (info->host == SOCK_HostToNetLong(-1L)) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
@@ -577,7 +575,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     assert(!net_info->firewall  ||  net_info->stateless);
 
     if (!n  ||  n == (unsigned int)(-1))
-        return uuu->extra.adjust(net_info, uuu->extra.data, 0);
+        return uuu->extra.adjust(net_info, uuu->extra.data, n);
 
     uuu->warned = 1;
     if (uuu->retry >= uuu->net_info->max_try)
