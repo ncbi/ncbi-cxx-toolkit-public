@@ -4128,6 +4128,7 @@ MNMS	s	Museo Nacional de Ciencias Naturales
 MNN	s	Musee National du Niger		
 MNNC	s	Museo Nacional de Historia Natural, Santiago		
 MNNHN	s	Museum National d'Historie Naturelle		
+MNNIT	c	Motilal Nehru National Institute of Technology		
 MNNW	s	Museum fuer Naturkunde		
 MNRJ	s	Museu Nacional/Universidade Federal de Rio de Janeiro		
 MNSB	s	Museum of Natural Sciences		

@@ -4161,6 +4161,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNN\ts\tMusee National du Niger\t\t",
 "MNNC\ts\tMuseo Nacional de Historia Natural, Santiago\t\t",
 "MNNHN\ts\tMuseum National d'Historie Naturelle\t\t",
+"MNNIT\tc\tMotilal Nehru National Institute of Technology\t\t",
 "MNNW\ts\tMuseum fuer Naturkunde\t\t",
 "MNRJ\ts\tMuseu Nacional/Universidade Federal de Rio de Janeiro\t\t",
 "MNSB\ts\tMuseum of Natural Sciences\t\t",
