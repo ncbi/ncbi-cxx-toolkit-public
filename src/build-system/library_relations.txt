@@ -864,6 +864,8 @@ process_annotation_stats needs xser
 proj needs pubmed
 proj needs seqset
 prosplign needs xalgoalignutil
+protein_match needs $(OBJMGR_LIBS)
+protein_match needs xobjutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
