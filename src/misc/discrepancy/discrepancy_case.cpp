@@ -1230,42 +1230,42 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
 }
 
 
+// BAD_BGPIPE_QUALS
+
+static const string kDiscMessage = "[n] feature[s] contain[S] invalid BGPIPE qualifiers";
+
 DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc | eSmart, "Bad BGPIPE qualifiers")
 {
     if (context.IsRefseq() || !context.IsBGPipe()) {
         return;
     }
-
-    static const string kDiscMessage(
-        // Note the "(s)" instead of "[s]" at the end so the submitter
-        // will see that part as-is.
-        "[n] feature[s] contain[S] invalid BGPIPE qualifiers");
-    if( STRING_FIELD_NOT_EMPTY(obj, Except_text) ) {
+    if(STRING_FIELD_NOT_EMPTY(obj, Except_text)) {
         m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         return;
-    } else if ( FIELD_IS_SET_AND_IS(obj, Data, Cdregion) ) {
+    }
+    if (FIELD_IS_SET_AND_IS(obj, Data, Cdregion)) {
         const CCdregion & cdregion = obj.GetData().GetCdregion();
-        if( RAW_FIELD_IS_EMPTY_OR_UNSET(cdregion, Code_break) ) {
+        if(RAW_FIELD_IS_EMPTY_OR_UNSET(cdregion, Code_break)) {
             return;
         }
-        if(GET_STRING_FLD_OR_BLANK(obj, Comment) != "ambiguity in stop codon")
-        {
+        if(GET_STRING_FLD_OR_BLANK(obj, Comment) == "ambiguity in stop codon") {
+            // check if any code break is a stop codon
+            FOR_EACH_CODEBREAK_ON_CDREGION(code_break_it, cdregion) {
+                const CCode_break & code_break = **code_break_it;
+                if(FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) && code_break.GetAa().GetNcbieaa() == 42 /* *:Stop codon */) {
+                    return;
+                }
+            }
             m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
             return;
         }
-
-        // check if any code break is a stop codon
         FOR_EACH_CODEBREAK_ON_CDREGION(code_break_it, cdregion) {
             const CCode_break & code_break = **code_break_it;
-            if( FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) &&
-                // '*' means "stop codon"
-                code_break.GetAa().GetNcbieaa() == static_cast<int>('*'))
-            {
+            if( FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) && code_break.GetAa().GetNcbieaa() == 85 /* U:Sec */) {
                 return;
             }
         }
         m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-        return;
     }
 }
 
