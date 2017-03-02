@@ -456,28 +456,28 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
 
 BOOST_AUTO_TEST_CASE(s_IncorrectPathTest)
 {
-    CGeneInfoFileReader *pReader1 = 0, *pReader2 = 0;
+    unique_ptr<CGeneInfoFileReader> pReader1, pReader2;
 
     CNcbiEnvironment env;
     string strDirPath = env.Get(GENE_INFO_PATH_ENV_VARIABLE);
 
     env.Set(GENE_INFO_PATH_ENV_VARIABLE, "./");
-    BOOST_REQUIRE_THROW(pReader1 = new CGeneInfoFileReader(true),
+    BOOST_REQUIRE_THROW(pReader1.reset(new CGeneInfoFileReader(true)),
                         CGeneInfoException);
-    BOOST_REQUIRE_THROW(pReader1 = new CGeneInfoFileReader(false),
+    BOOST_REQUIRE_THROW(pReader1.reset(new CGeneInfoFileReader(false)),
                         CGeneInfoException);
 
     env.Set(GENE_INFO_PATH_ENV_VARIABLE, "invalid_path");
-    BOOST_REQUIRE_THROW(pReader1 = new CGeneInfoFileReader(true),
+    BOOST_REQUIRE_THROW(pReader1.reset(new CGeneInfoFileReader(true)),
                         CGeneInfoException);
-    BOOST_REQUIRE_THROW(pReader1 = new CGeneInfoFileReader(false),
+    BOOST_REQUIRE_THROW(pReader1.reset(new CGeneInfoFileReader(false)),
                         CGeneInfoException);
 
-    env.Set(GENE_INFO_PATH_ENV_VARIABLE, strDirPath);
-    BOOST_REQUIRE_NO_THROW(pReader1 = new CGeneInfoFileReader(true));
-    BOOST_REQUIRE_NO_THROW(pReader2 = new CGeneInfoFileReader(false));
-    delete pReader1;
-    delete pReader2;
+    if (strDirPath != kEmptyStr) {
+        env.Set(GENE_INFO_PATH_ENV_VARIABLE, strDirPath);
+        BOOST_REQUIRE_NO_THROW(pReader1.reset(new CGeneInfoFileReader(true)));
+        BOOST_REQUIRE_NO_THROW(pReader2.reset(new CGeneInfoFileReader(false)));
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
