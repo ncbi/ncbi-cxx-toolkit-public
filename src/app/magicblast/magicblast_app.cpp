@@ -52,6 +52,7 @@
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Splice_site.hpp>
 
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
@@ -59,6 +60,8 @@
 
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
+#include <algo/sequence/consensus_splice.hpp>
+#include <util/sequtil/sequtil_manip.hpp>
 
 #include <unordered_set>
 
@@ -558,6 +561,82 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     return ostr;
 }
 
+static ENa_strand
+s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
+                           const CSpliced_seg::TExons::const_iterator& next_exon)
+{
+    ENa_strand result = eNa_strand_unknown;
+
+    // orientation is unknown if exons align on different strands or a exon's
+    // genomic strand is unknown
+    if ((*exon)->GetGenomic_strand() != 
+        (*next_exon)->GetGenomic_strand() ||
+        (*exon)->GetGenomic_strand() == eNa_strand_unknown) {
+        
+        return eNa_strand_unknown;
+    }
+
+    // orientation is unknown if splice signal is not set
+    if (!(*exon)->IsSetDonor_after_exon() ||
+        !(*next_exon)->IsSetAcceptor_before_exon()) {
+
+        return eNa_strand_unknown;
+    }
+
+    // get splice signal
+    string donor = (*exon)->GetDonor_after_exon().GetBases();
+    string acceptor = (*next_exon)->GetAcceptor_before_exon().GetBases();
+
+    // if the signal is recognised then the splice orientation is the same as
+    // genomic strand
+    if (IsConsensusSplice(donor, acceptor) ||
+        IsKnownNonConsensusSplice(donor, acceptor)) {
+
+        result = (*exon)->GetGenomic_strand();
+    }
+    else {
+        // otherwise try to recognise reverse complemented splice signals
+
+        string rc_donor;
+        string rc_acceptor;
+
+        CSeqManip::ReverseComplement(donor,
+                                     CSeqUtil::e_Iupacna,
+                                     0, donor.length(),
+                                     rc_donor);
+
+        CSeqManip::ReverseComplement(acceptor,
+                                     CSeqUtil::e_Iupacna,
+                                     0, acceptor.length(),
+                                     rc_acceptor);
+                        
+        // if reverse complemented signals are recognised then splice
+        // orientation is opposite to genomic strand
+        if (IsConsensusSplice(rc_acceptor, rc_donor) ||
+            IsKnownNonConsensusSplice(rc_acceptor, rc_donor)) {
+
+            if ((*exon)->GetGenomic_strand() == eNa_strand_plus) {
+                result = eNa_strand_minus;
+            }
+            else if ((*exon)->GetGenomic_strand() == eNa_strand_minus) {
+                result = eNa_strand_plus;
+            }
+            else {
+                result = eNa_strand_unknown;
+            }
+        }
+        else {
+            // if neither signals are recognised then splice orientation is
+            // unknown
+            result = eNa_strand_unknown;
+        }
+                            
+    }
+
+    return result;
+}
+
+
 #define SAM_FLAG_MULTI_SEGMENTS  0x1
 #define SAM_FLAG_SEGS_ALIGNED    0x2
 #define SAM_FLAG_NEXT_SEG_UNMAPPED 0x8
@@ -630,6 +709,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
             
     }
 
+    vector<ENa_strand> orientation;
     if (align.GetSegs().Which() == CSeq_align::TSegs::e_Spliced) {
         const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
 
@@ -835,6 +915,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                     (*exon)->GetGenomic_end() - 1;
                 cigar += NStr::IntToString(intron);
                 cigar += "N";
+
+                // get intron orientation
+                orientation.push_back(
+                               s_GetSpliceSiteOrientation(exon, next_exon));
             }
         }
 
@@ -918,6 +1002,35 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
     // edit distance
     ostr << sep << "NM:i:" << edit_distance;
+
+    // splice site orientation
+    // The final splice orientation is positive or negative, if all introns in
+    // the alignment have the same orientation, or unknown if orientation
+    // changes.
+    if (!orientation.empty()) {
+        char ori;
+
+        switch (orientation[0]) {
+        case eNa_strand_plus:
+            ori = '+';
+            break;
+
+        case eNa_strand_minus:
+            ori = '-';
+            break;
+
+        default:
+            ori = '?';
+        }
+
+        for (size_t i=1;i < orientation.size();i++) {
+            if (orientation[i] != orientation[0]) {
+                ori = '?';
+            }
+        }
+
+        ostr << sep << "XS:A:" << ori;
+    }
 
     return ostr;
 }
