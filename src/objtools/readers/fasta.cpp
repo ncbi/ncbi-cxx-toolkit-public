@@ -1197,7 +1197,7 @@ bool CFastaReader::ParseGapLine(
     CSeq_gap::ELinkEvid eLinkEvid = CSeq_gap::eLinkEvid_UnspecifiedOnly;
     set<CLinkage_evidence::EType> setOfLinkageEvidence;
 
-    if (modKeyValueMultiMap.empty()) // fall back to default values coming from caller
+    if (m_gap_type && modKeyValueMultiMap.empty()) // fall back to default values coming from caller
     {
         pGapType = m_gap_type;
         setOfLinkageEvidence = m_gap_linkage_evidence;
