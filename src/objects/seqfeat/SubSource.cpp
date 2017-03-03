@@ -1470,12 +1470,11 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
         }
     }
 
-    s_RemoveLeadingZeros(token);
-
     if (prev_start == 0) {
         if (!NStr::IsBlank(dir)) {
             token = token + " " + dir;
         }
+        s_RemoveLeadingZeros(token);
         return token;
     } else {
         if (prev_start < pos) {
