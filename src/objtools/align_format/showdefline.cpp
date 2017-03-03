@@ -767,7 +767,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string idStr;
-                if (use_long_seqids) {
+                if (use_long_seqids || ((m_Option & eShowGi) && !sdl->id->IsGi())) {
                     idStr = sdl->id->AsFastaString();
                 }
                 else {
