@@ -41,7 +41,6 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
-#include <math.h>
 
 
 USING_NCBI_SCOPE;
@@ -61,7 +60,7 @@ struct SFormatResultValues {
 
 /////////////////////////////////////////////////////////////////////////////
 /// Run as separate thread and format results.
-class CBlastAsyncFormatThread : public CThread
+class NCBI_XBLASTFORMAT_EXPORT CBlastAsyncFormatThread : public CThread
 {
 public:
     CBlastAsyncFormatThread() 
