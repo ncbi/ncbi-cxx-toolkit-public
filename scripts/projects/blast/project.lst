@@ -51,6 +51,7 @@ objtools/blast/gene_info_reader
 objtools/blast/services
 objtools/blast/blastdb_format
 objtools/blast/seqdb_writer
+-objtools/blast/seqdb_writer/demo
 objtools/cleanup$
 objtools/edit$
 objtools/format$
