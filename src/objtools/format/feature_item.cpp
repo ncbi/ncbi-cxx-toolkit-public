@@ -3928,6 +3928,9 @@ void CFeatureItem::x_AddRegulatoryClassQual(
     }
     if ( s_IsValidRegulatoryClass( reg_class ) ) {
         x_AddQual( eFQ_regulatory_class, new CFlatStringQVal(reg_class));
+    } else if (NStr::CompareNocase(reg_class, "other") == 0  && 
+        m_Feat.IsSetComment()  &&  !m_Feat.GetComment().empty()) {
+        x_AddQual( eFQ_regulatory_class, new CFlatStringQVal("other"));
     } else {
         x_AddQual( eFQ_regulatory_class, new CFlatStringQVal("other"));
         x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(reg_class));
