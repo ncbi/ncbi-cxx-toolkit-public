@@ -1879,6 +1879,57 @@ CRef<CID2_Reply> CId2ReaderBase::x_ReceiveFromConnection(SId2ProcessingState& st
         while ( stage.replies.empty() ) {
             CRef<CID2_Reply> reply = x_ReceiveFromConnection(state, pos+1);
             info.processor->ProcessReply(info.context, stage.packet_context, *reply, stage.replies);
+            if ( GetDebugLevel() >= eTraceConn &&
+                 (stage.replies.size() != 1 || stage.replies[0] != reply) ) {
+                CDebugPrinter s(0, "CId2Reader");
+                s << "ID2Processor replaced reply with "<<stage.replies.size()<<" replies";
+                if ( GetDebugLevel() >= eTraceASN ) {
+                    s << " original: " << MSerial_AsnText << *reply;
+                    for ( auto& it : stage.replies ) {
+                        CID2_Reply& reply = *it;
+                        s << "New reply: " << MSerial_AsnText;
+                        if ( GetDebugLevel() >= eTraceBlobData ) {
+                            s << reply;
+                        }
+                        else {
+                            CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
+                            if ( iter && iter->IsSetData() ) {
+                                CID2_Reply_Data::TData save;
+                                save.swap(iter->SetData());
+                                size_t size = 0, count = 0, max_chunk = 0;
+                                ITERATE ( CID2_Reply_Data::TData, i, save ) {
+                                    ++count;
+                                    size_t chunk = (*i)->size();
+                                    size += chunk;
+                                    max_chunk = max(max_chunk, chunk);
+                                }
+                                s << reply <<
+                                    "Data: " << size << " bytes in " <<
+                                    count << " chunks with " <<
+                                    max_chunk << " bytes in chunk max";
+                                save.swap(iter->SetData());
+                            }
+                            else {
+                                s << reply;
+                            }
+                        }
+                        if ( GetDebugLevel() >= eTraceBlob ) {
+                            for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(reply));
+                                  it; ++it ) {
+                                if ( it->IsSetData() ) {
+                                    try {
+                                        CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                                    }
+                                    catch ( CException& exc ) {
+                                        ERR_POST_X(1, "Exception while dumping data: "
+                                                   <<exc);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             reverse(stage.replies.begin(), stage.replies.end());
         }
         CRef<CID2_Reply> reply = stage.replies.back();
@@ -2252,7 +2303,7 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        error_flags |= fError_restricted;
+        error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_unsupported_command:
         m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
@@ -2302,7 +2353,7 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        error_flags |= fError_restricted;
+        error_flags |= fError_no_data;
         if ( error.IsSetMessage() ) {
             sx_CheckErrorFlag(error, error_flags,
                               fError_withdrawn, "withdrawn");
