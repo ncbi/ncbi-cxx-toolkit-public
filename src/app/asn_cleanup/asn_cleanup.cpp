@@ -69,7 +69,7 @@
 #include <objects/entrez2/entrez2_client.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
-#include <objtools/edit/autodef.hpp>
+#include <objtools/edit/autodef_with_tax.hpp>
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
@@ -800,7 +800,7 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
         any_changes = CCleanup::WGSCleanup(seh);
     }
     if (NStr::Find(opt, "r") != string::npos) {
-        bool change_defline = CAutoDef::RegenerateDefLines(seh);
+        bool change_defline = CAutoDefWithTaxonomy::RegenerateDefLines(seh);
         if (change_defline) {
             any_changes = true;
             CCleanup::NormalizeDescriptorOrder(seh);
