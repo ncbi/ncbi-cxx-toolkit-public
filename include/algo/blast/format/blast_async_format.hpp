@@ -42,7 +42,6 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include <math.h>
-#include <sys/time.h>
 
 
 USING_NCBI_SCOPE;
