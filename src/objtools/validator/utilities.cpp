@@ -875,21 +875,32 @@ bool IsRefGeneTrackingObject (const CUser_object& user)
     return rval;
 }
 
-static void UpdateGItoAccn (CSeq_loc& loc, CScope& scope)
-
+static void UpdateToBestId(CSeq_loc& loc, CScope& scope)
 {
+    bool any_change = false;
     CSeq_loc_I it(loc);
     for (; it; ++it) {
         const CSeq_id& id = it.GetSeq_id();
-        if (id.IsGi()) {
-            CSeq_id_Handle acc_handle
-                = sequence::GetId(id, scope, sequence::eGetId_ForceAcc);
-            if (acc_handle) {
-                it.SetSeq_id_Handle(acc_handle);
+        if (!id.IsGenbank() && !id.IsDdbj() && !id.IsEmbl()) {
+            CConstRef<CSeq_id> best_id(NULL);
+            CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+            if (bsh) {
+                ITERATE(CBioseq::TId, id_it, bsh.GetCompleteBioseq()->GetId()) {
+                    if ((*id_it)->IsGenbank() || (*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
+                        best_id = *id_it;
+                        break;
+                    }
+                }
+            }
+            if (best_id) {
+                it.SetSeq_id(*best_id);
+                any_change = true;
             }
         }
     }
-    loc.Assign(*it.MakeSeq_loc());
+    if (any_change) {
+        loc.Assign(*it.MakeSeq_loc());
+    }
 }
 
 
@@ -907,7 +918,7 @@ string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
     if (NStr::IsBlank(loc_label)) {
         CSeq_loc tweaked_loc;
         tweaked_loc.Assign(loc);
-        UpdateGItoAccn(tweaked_loc, scope);
+        UpdateToBestId(tweaked_loc, scope);
         tweaked_loc.GetLabel(&loc_label);
         NStr::ReplaceInPlace(loc_label, "[", "(");
         NStr::ReplaceInPlace(loc_label, "]", ")");
