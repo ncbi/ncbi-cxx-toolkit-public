@@ -5041,22 +5041,21 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                             trna->GetAnticodon(), m_Scope, sequence::fCompareOverlapping) != sequence::eSame) {
                             ok_to_apply = false;
                         }
-                    }
-                    else {
+                    } else {
                         apply_anticodon = true;
                     }
                 }
             }
             if (ok_to_apply) {
-                if (apply_aa ) {
+                if (apply_aa) {
                     rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetNcbieaa());
-                    ChangeMade (CCleanupChange::eChange_tRna);
+                    ChangeMade(CCleanupChange::eChange_tRna);
                 }
                 if (apply_anticodon) {
                     CRef<CSeq_loc> anticodon(new CSeq_loc());
-                    anticodon->Add (trna->GetAnticodon());
+                    anticodon->Add(trna->GetAnticodon());
                     rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
-                    ChangeMade (CCleanupChange::eChangeAnticodon);
+                    ChangeMade(CCleanupChange::eChangeAnticodon);
                 }
                 return eAction_Erase;
             }
@@ -5066,32 +5065,32 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
 }
 
 
-CNewCleanup_imp::EAction 
-CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt )
+CNewCleanup_imp::EAction
+CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt)
 {
     const string& qual = gb_qual.GetQual();
-    const string& val  = gb_qual.GetVal();
+    const string& val = gb_qual.GetVal();
 
-    if (NStr::EqualNocase(qual, "product")  ||  NStr::EqualNocase(qual, "standard_name")) {
-        if ( opt == eGBQualOpt_CDSMode || !prot.IsSetName()  ||  NStr::IsBlank(prot.GetName().front())) {
+    if (NStr::EqualNocase(qual, "product") || NStr::EqualNocase(qual, "standard_name")) {
+        if (opt == eGBQualOpt_CDSMode || !prot.IsSetName() || NStr::IsBlank(prot.GetName().front())) {
             CCleanup::SetProteinName(prot, val, false);
             ChangeMade(CCleanupChange::eChangeQualifiers);
         } else {
             return eAction_Nothing;
         }
     } else if (NStr::EqualNocase(qual, "function")) {
-        ADD_STRING_TO_LIST( prot.SetActivity(), val );
+        ADD_STRING_TO_LIST(prot.SetActivity(), val);
         ChangeMade(CCleanupChange::eChangeQualifiers);
     } else if (NStr::EqualNocase(qual, "EC_number")) {
-        ADD_STRING_TO_LIST( prot.SetEc(), val );
+        ADD_STRING_TO_LIST(prot.SetEc(), val);
         ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 
     // labels to leave alone
-    static const char * const ignored_quals[] = 
-        { "label", "allele", "experiment", "inference", "UniProtKB_evidence",
-          "dbxref", "replace", "rpt_unit_seq", "rpt_unit_range"};
-    static set<string, PNocase> ignored_quals_raw; 
+    static const char * const ignored_quals[] =
+    { "label", "allele", "experiment", "inference", "UniProtKB_evidence",
+    "dbxref", "replace", "rpt_unit_seq", "rpt_unit_range" };
+    static set<string, PNocase> ignored_quals_raw;
 
     // the mutex is just there in the unlikely event that two separate
     // threads both try to initialized ignored_quals_raw.  It's NOT
@@ -5099,13 +5098,13 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
     static CMutex ignored_quals_raw_initialization_mutex;
     {
         CMutexGuard guard(ignored_quals_raw_initialization_mutex);
-        if( ignored_quals_raw.empty() ) {
-            copy( ignored_quals, ignored_quals + sizeof(ignored_quals)/sizeof(ignored_quals[0]),
-                  inserter(ignored_quals_raw, ignored_quals_raw.begin()) );
+        if (ignored_quals_raw.empty()) {
+            copy(ignored_quals, ignored_quals + sizeof(ignored_quals) / sizeof(ignored_quals[0]),
+                inserter(ignored_quals_raw, ignored_quals_raw.begin()));
         }
     }
 
-    if( ignored_quals_raw.find(qual) != ignored_quals_raw.end() ) {
+    if (ignored_quals_raw.find(qual) != ignored_quals_raw.end()) {
         return eAction_Nothing;
     }
 
@@ -5133,35 +5132,10 @@ void CNewCleanup_imp::x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes)
         if ((*s)->IsSetSubtype() &&
             (*s)->GetSubtype() == CSubSource::eSubtype_lat_lon &&
             (*s)->IsSetName()) {
-            bool format_correct = false;
-            bool precision_correct = false;
-            bool lat_in_range = false;
-            bool lon_in_range = false;
-            double lat_value = 0.0;
-            double lon_value = 0.0;
-            objects::CSubSource::IsCorrectLatLonFormat((*s)->GetName(), format_correct, precision_correct,
-                lat_in_range, lon_in_range,
-                lat_value, lon_value);
-            if (format_correct && lat_in_range && lon_in_range) {
-                string ns = "N";
-                string ew = "E";
-                if (lat_value < 0.0) {
-                    lat_value = 0.0 - lat_value;
-                    ns = "S";
-                }
-                string lat = NStr::NumericToString(lat_value);
-                if (lon_value < 0.0) {
-                    lon_value = 0.0 - lon_value;
-                    ew = "W";
-                }
-                string lon = NStr::NumericToString(lon_value);
-
-                string new_val = lat + " " + ns + " " + lon + " " + ew;
-
-                if (!NStr::Equal(new_val, (*s)->GetName())) {
-                    (*s)->SetName(new_val);
-                    ChangeMade(CCleanupChange::eChangeSubsource);
-                }
+            string new_val = CSubSource::FixLatLonPrecision((*s)->GetName());
+            if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*s)->GetName())) {
+                (*s)->SetName(new_val);
+                ChangeMade(CCleanupChange::eChangeSubsource);
             }
         }
     }

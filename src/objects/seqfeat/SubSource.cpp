@@ -1177,6 +1177,42 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
 }
 
 
+string CSubSource::FixLatLonPrecision(const string& orig)
+{
+    bool format_correct = false;
+    bool precision_correct = false;
+    bool lat_in_range = false;
+    bool lon_in_range = false;
+    double lat_value = 0.0;
+    double lon_value = 0.0;
+    IsCorrectLatLonFormat(orig, format_correct, precision_correct,
+                          lat_in_range, lon_in_range,
+                          lat_value, lon_value);
+    if (!format_correct || !lat_in_range || !lon_in_range || precision_correct) {
+        return orig;
+    }
+    vector<string> pieces;
+    NStr::Split(orig, " ", pieces, NStr::fSplit_NoMergeDelims);
+    if (pieces.size() > 3) {
+        int precision_lat = x_GetPrecision(pieces[0]);
+        int precision_lon = x_GetPrecision(pieces[2]);
+        if (precision_lat > 4) {
+            precision_lat = 4;
+        }
+        if (precision_lon > 4) {
+            precision_lon = 4;
+        }
+
+        char reformatted[1000];
+        sprintf(reformatted, "%.*lf %c %.*lf %c", precision_lat, abs(lat_value), pieces[1].c_str()[0],
+            precision_lon, abs(lon_value), pieces[3].c_str()[0]);
+        string new_val = reformatted;
+        return reformatted;
+    }
+    return kEmptyStr;
+}
+
+
 static void s_TrimInternalSpaces (string& token)
 {
     size_t pos;

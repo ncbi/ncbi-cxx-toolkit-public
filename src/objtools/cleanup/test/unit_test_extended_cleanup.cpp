@@ -1107,8 +1107,35 @@ BOOST_AUTO_TEST_CASE(Test_LatLonTrimming)
     BOOST_CHECK_EQUAL(changes_str[1], "Change Subsource");
     ITERATE(CBioseq::TDescr::Tdata, d, entry->GetDescr().Get()) {
         if ((*d)->IsSource()) {
-            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12517 N 2.5666 E");
+            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.1252 N 2.5666 E");
         }
     }
 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ConvertMiscSignalToRegulatory)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = BuildGoodFeat();
+    misc->SetData().SetImp().SetKey("misc_signal");
+    misc->SetComment("boxB antiterminator");
+    AddFeat(misc, entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+
+    cleanup.SetScope(scope);
+    cleanup.ExtendedCleanup(*entry);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    // make sure change was actually made
+    CFeat_CI feat(seh);
+    BOOST_CHECK_EQUAL(feat->GetData().GetImp().GetKey(), "regulatory");
+    BOOST_CHECK_EQUAL(feat->GetQual().front()->GetQual(), "regulatory_class");
+    BOOST_CHECK_EQUAL(feat->GetQual().front()->GetVal(), "other");
 }

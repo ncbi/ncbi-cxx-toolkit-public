@@ -180,6 +180,7 @@ public:
                                      double& lat_value, double& lon_value);
     static string FixLatLonFormat (string orig_lat_lon, bool guess = false);
     static string MakeLatLon(double lat_value, double lon_value);
+    static string FixLatLonPrecision(const string& orig);
 
     enum ELatLonCountryErr {
         eLatLonCountryErr_None = 0,
