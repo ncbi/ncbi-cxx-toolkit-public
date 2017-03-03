@@ -52,39 +52,59 @@ CRNA_gen::~CRNA_gen(void)
 {
 }
 
+
+static const char* const kAcceptedClasses[] = {
+    "antisense_RNA",
+    "autocatalytically_spliced_intron",
+    "guide_RNA",
+    "hammerhead_ribozyme",
+    "lncRNA",
+    "miRNA",
+    "other",
+    "piRNA",
+    "rasiRNA",
+    "ribozyme",
+    "RNase_MRP_RNA",
+    "RNase_P_RNA",
+    "scRNA",
+    "siRNA",
+    "snoRNA",
+    "snRNA",
+    "SRP_RNA",
+    "stRNA",
+    "telomerase_RNA",
+    "vault_RNA",
+    "Y_RNA",
+};
+typedef CStaticArraySet<const char*, PNocase_CStr> TAcceptedClasses;
+DEFINE_STATIC_ARRAY_MAP(TAcceptedClasses,
+    sc_AcceptedClasses, kAcceptedClasses);
+
+vector<string> CRNA_gen::GetncRNAClassList()
+{
+    vector<string> choices;
+
+    TAcceptedClasses::const_iterator it = sc_AcceptedClasses.begin();
+    while (it != sc_AcceptedClasses.end()) {
+        choices.push_back(*it);
+        ++it;
+    }
+    return choices;
+}
+
+
+bool CRNA_gen::IsLegalClass(const string& val)
+{
+    TAcceptedClasses::const_iterator it =
+        sc_AcceptedClasses.find(val.c_str());
+    return (it != sc_AcceptedClasses.end());
+}
+
+
 bool CRNA_gen::IsLegalClass() const
 {
     if (IsSetClass()) {
-        static const char* const kAcceptedClasses[] = {
-            "antisense_RNA",
-            "autocatalytically_spliced_intron",
-            "guide_RNA",
-            "hammerhead_ribozyme",
-            "lncRNA",
-            "miRNA",
-            "other",
-            "piRNA",
-            "rasiRNA",
-            "ribozyme",
-            "RNase_MRP_RNA",
-            "RNase_P_RNA",
-            "scRNA",
-            "siRNA",
-            "snoRNA",
-            "snRNA",
-            "SRP_RNA",
-            "stRNA",
-            "telomerase_RNA",
-            "vault_RNA",
-            "Y_RNA",
-        };
-        typedef CStaticArraySet<const char*, PNocase_CStr> TAcceptedClasses;
-        DEFINE_STATIC_ARRAY_MAP(TAcceptedClasses,
-                                sc_AcceptedClasses, kAcceptedClasses);
-
-        TAcceptedClasses::const_iterator it =
-            sc_AcceptedClasses.find(GetClass().c_str());
-        return (it != sc_AcceptedClasses.end());
+        return IsLegalClass(GetClass());
     }
     return false;
 }

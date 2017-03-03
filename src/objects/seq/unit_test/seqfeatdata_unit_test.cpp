@@ -1804,3 +1804,10 @@ BOOST_AUTO_TEST_CASE(Test_VR_693)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_IsLegalClass)
+{
+    BOOST_CHECK_EQUAL(CRNA_gen::IsLegalClass("lncRNA"), true);
+    BOOST_CHECK_EQUAL(CRNA_gen::IsLegalClass("babble"), false);
+    BOOST_CHECK_EQUAL(CRNA_gen::GetncRNAClassList().size(), 21);
+}
+

@@ -60,6 +60,8 @@ public:
     ~CRNA_gen(void);
 
     bool IsLegalClass() const;
+    static bool IsLegalClass(const string& val);
+    static vector<string> GetncRNAClassList();
 
 private:
     // Prohibit copy constructor and assignment operator
