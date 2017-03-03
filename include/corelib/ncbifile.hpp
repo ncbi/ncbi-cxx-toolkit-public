@@ -4057,7 +4057,7 @@ inline
 bool SCompareDirEntries::operator()(const CDir::TEntry& e1, const CDir::TEntry& e2)
 {
     return operator()(e1->GetPath(), e2->GetPath());
-};
+}
 
 
 // CSymLink
