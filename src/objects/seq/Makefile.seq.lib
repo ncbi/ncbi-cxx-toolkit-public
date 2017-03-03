@@ -14,7 +14,7 @@ SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
 
 DLL_LIB = seqcode pub general xser sequtil
 
-WATCHERS = vasilche grichenk
+WATCHERS = vasilche grichenk bollin
 
 
 USES_LIBRARIES =  \
