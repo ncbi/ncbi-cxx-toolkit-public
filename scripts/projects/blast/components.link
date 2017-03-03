@@ -1,9 +1,9 @@
 [components]
-infrastructure  19.0
-core            19.0
-dbase           19.0
-web             19.0
-objects         19.0
-objtools        19.0
-algo            19.0
-app             19.0
+infrastructure  18.0
+core            18.0
+dbase           18.0
+web             18.0
+objects         18.0
+objtools        18.0
+algo            18.0
+app             18.0
