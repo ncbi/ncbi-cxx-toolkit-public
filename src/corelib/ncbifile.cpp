@@ -2488,7 +2488,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     // a symlink. So just dont use link() in this case and,
     // fall back to regular rename() instead.
     
-    if ( src_type != eLink  && 
+    if ( src_type == eFile  && 
          link(_T_XCSTRING(src.GetPath()),
               _T_XCSTRING(dst.GetPath())) == 0 ) {
         // Hard link successfully created, so we can just remove source file
