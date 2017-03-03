@@ -1204,8 +1204,8 @@ string CSubSource::FixLatLonPrecision(const string& orig)
         }
 
         char reformatted[1000];
-        sprintf(reformatted, "%.*lf %c %.*lf %c", precision_lat, abs(lat_value), pieces[1].c_str()[0],
-            precision_lon, abs(lon_value), pieces[3].c_str()[0]);
+        sprintf(reformatted, "%.*lf %c %.*lf %c", precision_lat, fabs(lat_value), pieces[1].c_str()[0],
+            precision_lon, fabs(lon_value), pieces[3].c_str()[0]);
         string new_val = reformatted;
         return reformatted;
     }
