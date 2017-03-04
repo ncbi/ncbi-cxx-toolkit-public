@@ -486,6 +486,7 @@ gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_val needs xmlwrapp
+gpipe_xlsx needs3party $(ORIG_LIBS)
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
