@@ -1367,9 +1367,9 @@ CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBio
     const CBioseq& b = *(bsh.GetCompleteBioseq());
 
     CTSE_Handle::TSeq_feat_Handles potentials = tse.GetGenesWithLocus(locus, use_tag);
-    if (potentials.size() == 1) {
-        return potentials.front().GetSeq_feat();
-    }
+    //if (potentials.size() == 1) { // it may return wrong gene!
+    //    return potentials.front().GetSeq_feat();
+    //}
     ITERATE(CTSE_Handle::TSeq_feat_Handles, p, potentials) {
         try {
             CConstRef<CSeq_id> p_id = p->GetLocationId().GetSeqId();
