@@ -875,18 +875,29 @@ bool IsRefGeneTrackingObject (const CUser_object& user)
     return rval;
 }
 
+
+bool IsAccession(const CSeq_id& id)
+{
+    if (id.GetTextseq_Id() != NULL) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 static void UpdateToBestId(CSeq_loc& loc, CScope& scope)
 {
     bool any_change = false;
     CSeq_loc_I it(loc);
     for (; it; ++it) {
         const CSeq_id& id = it.GetSeq_id();
-        if (!id.IsGenbank() && !id.IsDdbj() && !id.IsEmbl()) {
+        if (!IsAccession(id)) {
             CConstRef<CSeq_id> best_id(NULL);
             CBioseq_Handle bsh = scope.GetBioseqHandle(id);
             if (bsh) {
                 ITERATE(CBioseq::TId, id_it, bsh.GetCompleteBioseq()->GetId()) {
-                    if ((*id_it)->IsGenbank() || (*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
+                    if (IsAccession(**id_it)) {
                         best_id = *id_it;
                         break;
                     }
