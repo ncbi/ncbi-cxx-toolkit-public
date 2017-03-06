@@ -349,36 +349,42 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
 
 
 static const char* s_LegalMobileElementStrings[] = {
-    "transposon",
-    "retrotransposon",
-    "integron",
-    "superintegron",
     "insertion sequence",
-    "non-LTR retrotransposon",
-    "P-element",
-    "transposable element",
-    "SINE",
-    "MITE",
+    "integron",
     "LINE",
-    "other"
+    "MITE",
+    "non-LTR retrotransposon",
+    "other",
+    "P-element",
+    "retrotransposon",
+    "SINE",
+    "superintegron",
+    "transposable element",
+    "transposon"
 };
+
+typedef CStaticArraySet<const char*, PNocase_CStr> TLegalMobileElementStrings;
+DEFINE_STATIC_ARRAY_MAP(TLegalMobileElementStrings,
+    sc_LegalMobileElementStrings, s_LegalMobileElementStrings);
 
 
 void CGb_qual::GetMobileElementValueElements(const string& val, string& element_type, string& element_name)
 {
     element_type.clear();
     element_name.clear();
-    for (size_t i = 0; i < ArraySize(s_LegalMobileElementStrings); ++i) {
-        if (NStr::StartsWith(val, s_LegalMobileElementStrings[i], NStr::eNocase)) {
-            element_name = val.substr(strlen(s_LegalMobileElementStrings[i]));
-            if (!NStr::IsBlank(element_name) &&
-                (!NStr::StartsWith(element_name, ":") || NStr::Equal(element_name, ":"))) {
-                element_name.clear();
-            } else {
-                element_type = s_LegalMobileElementStrings[i];
-            }
-            break;
+
+    size_t pos = NStr::Find(val, ":");
+    if (pos == string::npos) {
+        TLegalMobileElementStrings::const_iterator it = sc_LegalMobileElementStrings.find(val.c_str());
+        if (it != sc_LegalMobileElementStrings.end()) {
+            element_type = *it;
         }
+    } else {
+        TLegalMobileElementStrings::const_iterator it = sc_LegalMobileElementStrings.find(val.substr(0, pos).c_str());
+        if (it != sc_LegalMobileElementStrings.end()) {
+            element_type = *it;
+            element_name = val.substr(pos + 1);
+        }        
     }
 }
 
@@ -395,6 +401,28 @@ bool CGb_qual::IsLegalMobileElementValue(const string& val)
     } else {
         return true;
     }
+}
+
+
+bool CGb_qual::FixMobileElementValue(string& val)
+{
+    bool rval = false;
+    string element_type;
+    string element_name;
+    GetMobileElementValueElements(val, element_type, element_name);
+    if (!NStr::IsBlank(element_type)) {
+        string new_val;
+        if (NStr::IsBlank(element_name)) {
+            new_val = element_type;
+        } else {
+            new_val = element_type + ":" + element_name;
+        }
+        if (!NStr::Equal(val, new_val)) {
+            val = new_val;
+            rval = true;
+        }
+    }
+    return rval;
 }
 
 

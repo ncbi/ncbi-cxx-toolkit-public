@@ -1812,3 +1812,14 @@ BOOST_AUTO_TEST_CASE(Test_IsLegalClass)
     BOOST_CHECK_EQUAL(CRNA_gen::GetncRNAClassList().size(), 21);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_LegalMobileElement)
+{
+    BOOST_CHECK_EQUAL(CGb_qual::IsLegalMobileElementValue("foo"), false);
+    BOOST_CHECK_EQUAL(CGb_qual::IsLegalMobileElementValue("integron"), true);
+
+    string val = "p-element";
+    BOOST_CHECK_EQUAL(CGb_qual::FixMobileElementValue(val), true);
+    BOOST_CHECK_EQUAL(val, "P-element");
+}
+

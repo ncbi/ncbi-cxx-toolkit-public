@@ -94,6 +94,7 @@ public:
 
     static bool IsLegalMobileElementValue(const string& val);
     static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);
+    static bool FixMobileElementValue(string& val);
 
     static bool IsIllegalQualName(const string& val);
 

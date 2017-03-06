@@ -3587,6 +3587,11 @@ void CNewCleanup_imp::GBQualBC (
         SET_FIELD( gbq, Qual, "mobile_element_type" );
         ChangeMade(CCleanupChange::eChangeQualifiers);
     }
+    if (NStr::EqualNocase(gbq.GetQual(), "mobile_element_type") &&
+        gbq.IsSetVal() &&
+        CGb_qual::FixMobileElementValue(gbq.SetVal())) {
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
 }
 
 static 
