@@ -1806,6 +1806,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributeExperiment(record, mf) ||
             !xAssignFeatureAttributeFunction(record, mf) ||
             !xAssignFeatureAttributeExonNumber(record, mf)  ||
+            !xAssignFeatureAttributeEcNumbers(record, mf)  ||
             !xAssignFeatureAttributePseudo(record, mf)  ||
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
             !xAssignFeatureAttributeGene(record, fc, mf)  ||
@@ -2095,6 +2096,26 @@ bool CGff3Writer::xAssignFeatureAttributeFunction(
         const CProt_ref& prot = mf.GetData().GetProt();
         if (prot.CanGetActivity()) {
             record.SetAttribute("function", prot.GetActivity().front());
+        }
+        return true;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeEcNumbers(
+    CGffFeatureRecord& record,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (CSeqFeatData::e_Prot != mf.GetFeatType()) {
+        return true;
+    }
+    const CProt_ref& prot = mf.GetData().GetProt();
+    if (prot.CanGetEc()) {
+        const list<string> ec = prot.GetEc();
+        if (!ec.empty()) {
+            record.SetAttribute("ec_number", NStr::Join(ec, ","));
         }
         return true;
     }

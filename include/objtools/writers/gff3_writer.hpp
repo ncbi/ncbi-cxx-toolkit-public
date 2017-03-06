@@ -342,6 +342,9 @@ protected:
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeEcNumbers(
+        CGffFeatureRecord&,
+        const CMappedFeat&);
     bool xAssignFeatureAttributeException(
         CGffFeatureRecord&,
         const CMappedFeat&);
