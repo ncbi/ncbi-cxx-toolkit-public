@@ -3061,22 +3061,14 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
     CLEAN_STRING_MEMBER_JUNK(imf, Key);
     CLEAN_STRING_MEMBER(imf, Loc);
     CLEAN_STRING_MEMBER(imf, Descr);
+
+    if (imf.IsSetKey() && CSeqFeatData::FixImportKey(imf.SetKey())) {
+        ChangeMade(CCleanupChange::eChangeKeywords);
+    }
     
     if ( FIELD_IS_SET(imf, Key) ) {
         const CImp_feat::TKey& key = GET_FIELD(imf, Key);
-        if (key == "allele"  ||  key == "mutation") {
-            SET_FIELD(imf, Key, "variation");
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if ( key == "Import" || key == "virion" ) {
-            SET_FIELD(imf, Key, "misc_feature");
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if ( key == "repeat_unit" ) {
-            SET_FIELD(imf, Key, "repeat_region");
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if ( key == "misc_bind" ) {
-            SET_FIELD(imf, Key, "misc_binding");
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if ( key == "satellite" && ! m_IsEmblOrDdbj ) {
+        if ( key == "satellite" && ! m_IsEmblOrDdbj ) {
             SET_FIELD(imf, Key, "repeat_region");
             ChangeMade(CCleanupChange::eChangeKeywords);
 

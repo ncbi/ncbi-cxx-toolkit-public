@@ -1823,3 +1823,11 @@ BOOST_AUTO_TEST_CASE(Test_LegalMobileElement)
     BOOST_CHECK_EQUAL(val, "P-element");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_FixImportKey)
+{
+    string val = "Exon";
+    BOOST_CHECK_EQUAL(CSeqFeatData::FixImportKey(val), true);
+    BOOST_CHECK_EQUAL(val, "exon");
+    BOOST_CHECK_EQUAL(CSeqFeatData::FixImportKey(val), false);
+}

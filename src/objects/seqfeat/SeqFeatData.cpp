@@ -4656,6 +4656,40 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
     return ShouldRepresentAsGbqual(feat_subtype, CSeqFeatData::GetQualifierType(qual.GetQual()));
 }
 
+
+bool CSeqFeatData::FixImportKey(string& key)
+{
+    if (NStr::EqualNocase(key, "allele") ||
+        NStr::EqualNocase(key, "mutation")) {
+        key = "variation";
+        return true;
+    } else if (NStr::EqualNocase(key, "Import") ||
+        NStr::EqualNocase(key, "virion")) {
+        key = "misc_feature";
+        return true;
+    } else if (NStr::EqualNocase(key, "repeat_unit")) {
+        key = "repeat_region";
+        return true;
+    } else if (NStr::EqualNocase(key, "misc_bind")) {
+        key = "misc_binding";
+        return true;
+    }
+    const SImportEntry* start = kImportTable;
+    while (start < kImportTableEnd) {
+        if (NStr::EqualNocase(key, start->m_Name)) {
+            if (!NStr::Equal(key, start->m_Name)) {
+                key = start->m_Name;
+                return true;
+            } else {
+                return false;
+            }
+        }
+        ++start;
+    }
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

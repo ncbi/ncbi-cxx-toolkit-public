@@ -514,6 +514,8 @@ public:
     static bool AllowXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
     static bool ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
 
+    static bool FixImportKey(string& key);
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
