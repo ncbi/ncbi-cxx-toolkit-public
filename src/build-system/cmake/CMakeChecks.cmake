@@ -14,6 +14,10 @@ set(incinternal     ${includedir0}/internal)
 
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
 
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
+
 if (NOT buildconf)
   set(buildconf "${CMAKE_BUILD_TYPE}MT64")
   set(buildconf0 ${CMAKE_BUILD_TYPE})
@@ -521,6 +525,11 @@ set(LAPACK_LIBS "-llapack -lblas")
 #LMBD
 set(LMDB_INCLUDE "/netopt/ncbi_tools64/lmdb-0.9.18/include")
 set(LMDB_LIBS -L/netopt/ncbi_tools64/lmdb-0.9.18/lib64 -llmdb)
+
+#libxlsxwriter
+set(LIBXLSXWRITER_INCLUDE "/netopt/ncbi_tools64/libxlsxwriter-0.6.9/include")
+set(LIBXLSXWRITER_LIBS "-L/netopt/ncbi_tools64/libxlsxwriter-0.6.9/lib -lxlsxwriter -lz")
+
 
 ##############################################################################
 #

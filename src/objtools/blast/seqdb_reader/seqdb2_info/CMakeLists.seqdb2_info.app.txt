@@ -1,0 +1,9 @@
+add_executable(seqdb2_info-app
+    seqdb2_info
+)
+
+set_target_properties(seqdb2_info-app PROPERTIES OUTPUT_NAME seqdb2_info)
+
+target_link_libraries(seqdb2_info-app 
+    seqdb
+)
