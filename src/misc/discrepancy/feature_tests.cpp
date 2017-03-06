@@ -969,12 +969,11 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, COverlappingFeatures, eOncaller | eSubmitter |
                 if (HasMixedStrands(loc_i)) {
                     // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
                     CSeq_loc_CI f_loc(loc_j);
-                    ENa_strand strand_f = f_loc.GetStrand();
                     while (f_loc && all_ok) {
                         CSeq_loc_CI g_loc(loc_i);
                         bool found = false;
                         while (g_loc && !found) {
-                            if (StrandsMatch(strand_f, g_loc.GetStrand())) {
+                            if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
                                 sequence::ECompare cmp = context.Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()));
                                 if (cmp == sequence::eContained || cmp == sequence::eSame) {
                                     found = true;
