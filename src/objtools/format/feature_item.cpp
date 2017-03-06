@@ -1667,12 +1667,14 @@ void CFeatureItem::x_AddQuals(
             CConstRef<CSeq_feat> overlap;
             CScope& scope = ctx.GetScope();
             const CSeq_feat& orig = m_Feat.GetOriginalFeature();
+            /*
             if (subtype == CSeqFeatData::eSubtype_cdregion) {
                 CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(orig, scope);
                 if (mrna) {
                     overlap = sequence::GetGeneForFeature(*mrna, scope);
                 }
             }
+            */
             if (! overlap) {
                 overlap = sequence::GetGeneForFeature(orig, scope);
             }
