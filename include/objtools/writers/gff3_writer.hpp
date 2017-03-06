@@ -351,6 +351,9 @@ protected:
     bool xAssignFeatureAttributeExonNumber(
         CGffFeatureRecord&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeFunction(
+        CGffFeatureRecord&,
+        const CMappedFeat&);
     bool xAssignFeatureAttributeDbXref(
         CGffFeatureRecord&,
         CGffFeatureContext&,

@@ -1804,6 +1804,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributePartial(record, mf) ||
             !xAssignFeatureAttributeException(record, mf) ||
             !xAssignFeatureAttributeExperiment(record, mf) ||
+            !xAssignFeatureAttributeFunction(record, mf) ||
             !xAssignFeatureAttributeExonNumber(record, mf)  ||
             !xAssignFeatureAttributePseudo(record, mf)  ||
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
@@ -2077,6 +2078,27 @@ bool CGff3Writer::xAssignFeatureAttributeExperiment(
     }
     record.SetAttribute("experiment", experiment);
     return true; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeFunction(
+    CGffFeatureRecord& record,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    const string& function = mf.GetNamedQual("function");
+    if (!function.empty()) {
+        record.SetAttribute("function", function);
+        return true;
+    }
+    if (CSeqFeatData::e_Prot == mf.GetFeatType()) {
+        const CProt_ref& prot = mf.GetData().GetProt();
+        if (prot.CanGetActivity()) {
+            record.SetAttribute("function", prot.GetActivity().front());
+        }
+        return true;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
