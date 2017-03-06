@@ -172,28 +172,25 @@ bool CHydraServer::text(const string& contents)
     if (m_Score == "1") {
         // score 100 always gets reported
         m_Uids.push_back(NStr::StringToInt(contents));
+        return true;
     }
-    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_VeryHigh) && 
-             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '9'))
-    {
+
+    // convert m_Score string to double and then make comparisons to cutoff
+    double score = NStr::StringToDouble(m_Score);
+
+    if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_VeryHigh) && score >= 0.99) {
         // score 0.99 or higher
         m_Uids.push_back(NStr::StringToInt(contents));
     }
-    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_High) && 
-             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '5'))
-    {
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_High) && score >= 0.95) {
         // score 0.95 or higher
         m_Uids.push_back(NStr::StringToInt(contents));
     }
-    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Medium) && 
-             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '9' && m_Score[3] >= '0'))
-    {
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Medium) && score >= 0.90) {
         // score 0.90 or higher
         m_Uids.push_back(NStr::StringToInt(contents));
     }
-    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Low) && 
-             (m_Score.size() >= 4 && m_Score[0] == '0' && m_Score[1] == '.' && m_Score[2] == '8' && m_Score[3] >= '0'))
-    {
+    else if ((m_Cutoff == CHydraSearch::EScoreCutoff::eCutoff_Low) && score >= 0.80) {
         // score 0.80 or higher
         m_Uids.push_back(NStr::StringToInt(contents));
     }
