@@ -61,6 +61,7 @@ try_local() {
         test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
         test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
+        test -d "$d/include/mbedtls"       &&  : ${MBEDTLS_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
@@ -196,6 +197,8 @@ case "$ncbi_platform" in
     FreeBSD64* ) : ${LZO_PATH=$NCBI/lzo-2.09} ;;
     *          ) : ${LZO_PATH=$NCBI/lzo-2.05} ;;
 esac
+
+: ${MBEDTLS_PATH=$NCBI/mbedtls-2.4.0-apache}
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 

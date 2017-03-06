@@ -719,6 +719,8 @@ LZO_INCLUDE
 LZO_LIBS
 PCRE_INCLUDE
 PCRE_LIBS
+MBEDTLS_INCLUDE
+MBEDTLS_LIBS
 GMP_INCLUDE
 GMP_LIBS
 LIBGCRYPT_CONFIG
@@ -951,8 +953,6 @@ BZ2_LIB
 PCREPOSIX_LIBS
 PCRE_LIB
 OPENSSL_STATIC_LIBS
-TLS_INCLUDE
-TLS_LIBS
 SYBASE_PATH
 SYBASE_LCL_PATH
 SYBASE_INCLUDE
@@ -1627,7 +1627,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb \
-z bz2 lzo pcre gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
+z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -1690,7 +1690,7 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
-      | --with-bz2=* | --with-lzo=* | --with-pcre=* \
+      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
@@ -1904,6 +1904,7 @@ Optional Packages:
  --without-lzo           do not use LZO
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
+ --with-mbedtls(=DIR)    use external mbedTLS installation (in DIR)
  --with-gmp=DIR          use GMP installation in DIR
  --without-gmp           do not use GMP
  --with-gcrypt=DIR       use gcrypt installation in DIR
@@ -2245,6 +2246,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_pcre=no
+         fi
+        if test "${with_mbedtls-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-mbedtls but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_mbedtls=no
          fi
         if test "${with_gmp-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gmp but --without-3psw" >&2
@@ -3398,6 +3405,12 @@ fi
 # Check whether --with-pcre was given.
 if test "${with_pcre+set}" = set; then
   withval=$with_pcre;
+fi
+
+
+# Check whether --with-mbedtls was given.
+if test "${with_mbedtls+set}" = set; then
+  withval=$with_mbedtls;
 fi
 
 
@@ -28759,6 +28772,221 @@ else
 fi
 
 ## SSL/TLS libraries (and supporting libraries)
+if test "x${with_mbedtls-no}" != xno; then
+   case "$with_mbedtls" in
+      yes ) ;;
+      *   ) MBEDTLS_PATH=$with_mbedtls ;;
+   esac
+   d="$MBEDTLS_PATH/${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   if test -d "$d"; then
+      MBEDTLS_PATH=$d
+   fi
+   if test -d "$MBEDTLS_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $MBEDTLS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $MBEDTLS_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            MBEDTLS_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$MBEDTLS_PATH" in
+               /*) ;;
+               * ) MBEDTLS_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) MBEDTLS_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   if test "$with_mbedtls" != "no"; then
+    case "$with_mbedtls" in
+       yes | "" ) ;;
+       *        ) MBEDTLS_PATH=$with_mbedtls ;;
+    esac
+    if test "$MBEDTLS_PATH" != /usr -a -d "$MBEDTLS_PATH"; then
+       in_path=" in $MBEDTLS_PATH"
+       if test -z "$MBEDTLS_INCLUDE" -a -d "$MBEDTLS_PATH/include"; then
+          MBEDTLS_INCLUDE="-I$MBEDTLS_PATH/include"
+       fi
+       if test -n "$MBEDTLS_LIBPATH"; then
+          :
+       elif test -d "$MBEDTLS_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MBEDTLS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MBEDTLS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MBEDTLS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MBEDTLS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$MBEDTLS_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MBEDTLS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MBEDTLS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MBEDTLS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MBEDTLS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       MBEDTLS_LIBS="$MBEDTLS_LIBPATH -lmbedtls -lmbedx509 -lmbedcrypto $Z_LIBS"
+    else
+       MBEDTLS_INCLUDE=""
+       MBEDTLS_LIBS="-lmbedtls -lmbedx509 -lmbedcrypto $Z_LIBS"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libmbedtls$in_path" >&5
+echo $ECHO_N "checking for libmbedtls$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_mbedtls+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $MBEDTLS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$MBEDTLS_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <mbedtls/ssl.h>
+int
+main ()
+{
+mbedtls_ssl_context ssl; mbedtls_ssl_init(&ssl);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_mbedtls=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_mbedtls=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_mbedtls" >&5
+echo "${ECHO_T}$ncbi_cv_lib_mbedtls" >&6; }
+    if test "$ncbi_cv_lib_mbedtls" = "no"; then
+       if test "${with_mbedtls:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mbedtls explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mbedtls explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_mbedtls" = "no"; then
+    MBEDTLS_PATH="No_MBEDTLS"
+    MBEDTLS_INCLUDE=
+    MBEDTLS_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}MBEDTLS"; WithPackagesSep=" "
+    MBEDTLS_INCLUDE=" $MBEDTLS_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBMBEDTLS 1
+_ACEOF
+
+ fi
+
+
+
+   if test -n "$MBEDTLS_LIBS" -a -f "$MBEDTLS_PATH/lib/libmbedtls-static.a" \
+      -a "x$with_static_mbedtls" = xyes; then
+      MBEDTLS_LIBS="-L$MBEDTLS_PATH/lib -lmbedtls-static -lmbedx509-static -lmbedcrypto-static $Z_LIBS"
+   fi
+fi
+if test -z "$MBEDTLS_LIBS"; then
+   mbedtls_local=connect/mbedtls
+   { echo "$as_me:$LINENO: using local mbedTLS copy in $mbedtls_local" >&5
+echo "$as_me: using local mbedTLS copy in $mbedtls_local" >&6;}
+   # This requires headers to wind up under .../mbedtls/mbedtls/...,
+   # but avoiding that would pollute the header namespace.
+   MBEDTLS_INCLUDE="-I\$(includedir)/$mbedtls_local -I\$(includedir0)/$mbedtls_local"
+   MBEDTLS_LIBS="$Z_LIBS"
+             WithPackages="$WithPackages${WithPackagesSep}MBEDTLS"; WithPackagesSep=" "
+fi
+
 if test "x$with_gmp" != xno; then
    case "$with_gmp" in
       yes | '' ) ;;
@@ -30121,15 +30349,7 @@ for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
    fi
 done
 
-if test -n "$GNUTLS_LIBS"; then
-   TLS_INCLUDE=$GNUTLS_INCLUDE
-   TLS_LIBS=$GNUTLS_LIBS
-else
-   TLS_INCLUDE=$OPENSSL_INCLUDE
-   TLS_LIBS=$OPENSSL_LIBS
-fi
-
-NETWORK_LIBS="$TLS_LIBS $NETWORK_LIBS"
+NETWORK_LIBS="$GNUTLS_LIBS $MBEDTLS_LIBS $NETWORK_LIBS"
 
 case "$with_krb5" in
    no )       ac_cv_path_KRB5_CONFIG=no    ;;
@@ -47682,7 +47902,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -47790,8 +48010,6 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
-
-
 
 
 
@@ -48909,6 +49127,8 @@ LZO_INCLUDE!$LZO_INCLUDE$ac_delim
 LZO_LIBS!$LZO_LIBS$ac_delim
 PCRE_INCLUDE!$PCRE_INCLUDE$ac_delim
 PCRE_LIBS!$PCRE_LIBS$ac_delim
+MBEDTLS_INCLUDE!$MBEDTLS_INCLUDE$ac_delim
+MBEDTLS_LIBS!$MBEDTLS_LIBS$ac_delim
 GMP_INCLUDE!$GMP_INCLUDE$ac_delim
 GMP_LIBS!$GMP_LIBS$ac_delim
 LIBGCRYPT_CONFIG!$LIBGCRYPT_CONFIG$ac_delim
@@ -48990,8 +49210,6 @@ HDF5_LIBS!$HDF5_LIBS$ac_delim
 JPEG_INCLUDE!$JPEG_INCLUDE$ac_delim
 JPEG_LIBS!$JPEG_LIBS$ac_delim
 PNG_INCLUDE!$PNG_INCLUDE$ac_delim
-PNG_LIBS!$PNG_LIBS$ac_delim
-TIFF_INCLUDE!$TIFF_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49033,6 +49251,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+PNG_LIBS!$PNG_LIBS$ac_delim
+TIFF_INCLUDE!$TIFF_INCLUDE$ac_delim
 TIFF_LIBS!$TIFF_LIBS$ac_delim
 GIF_INCLUDE!$GIF_INCLUDE$ac_delim
 GIF_LIBS!$GIF_LIBS$ac_delim
@@ -49128,8 +49348,6 @@ internal!$internal$ac_delim
 check!$check$ac_delim
 CHECK_ARG!$CHECK_ARG$ac_delim
 CHECK_TOOLS!$CHECK_TOOLS$ac_delim
-CHECK_TIMEOUT_MULT!$CHECK_TIMEOUT_MULT$ac_delim
-CHECK_OS_NAME!$CHECK_OS_NAME$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49171,6 +49389,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CHECK_TIMEOUT_MULT!$CHECK_TIMEOUT_MULT$ac_delim
+CHECK_OS_NAME!$CHECK_OS_NAME$ac_delim
 FEATURES!$FEATURES$ac_delim
 script_shell!$script_shell$ac_delim
 make_shell!$make_shell$ac_delim
@@ -49223,8 +49443,6 @@ BZ2_LIB!$BZ2_LIB$ac_delim
 PCREPOSIX_LIBS!$PCREPOSIX_LIBS$ac_delim
 PCRE_LIB!$PCRE_LIB$ac_delim
 OPENSSL_STATIC_LIBS!$OPENSSL_STATIC_LIBS$ac_delim
-TLS_INCLUDE!$TLS_INCLUDE$ac_delim
-TLS_LIBS!$TLS_LIBS$ac_delim
 SYBASE_PATH!$SYBASE_PATH$ac_delim
 SYBASE_LCL_PATH!$SYBASE_LCL_PATH$ac_delim
 SYBASE_INCLUDE!$SYBASE_INCLUDE$ac_delim

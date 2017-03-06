@@ -366,8 +366,10 @@ PCRE_LIBS      = @PCRE_LIBS@
 PCREPOSIX_LIBS = @PCREPOSIX_LIBS@
 PCRE_LIB       = @PCRE_LIB@
 
-# OpenSSL, GnuTLS, and potential supporting packages: headers and libs.
-# TLS_* points to GNUTLS_* by preference.
+# mbedTLS, OpenSSL, GNUTLS, and potential supporting packages: headers and libs.
+# TLS_* covers *both* GNUTLS and mbedTLS.
+MBEDTLS_INCLUDE = @MBEDTLS_INCLUDE@
+MBEDTLS_LIBS    = @MBEDTLS_LIBS@
 GMP_INCLUDE     = @GMP_INCLUDE@
 GMP_LIBS        = @GMP_LIBS@
 GCRYPT_INCLUDE  = @GCRYPT_INCLUDE@
@@ -379,8 +381,8 @@ GNUTLS_LIBS     = @GNUTLS_LIBS@
 OPENSSL_INCLUDE = @OPENSSL_INCLUDE@
 OPENSSL_LIBS    = @OPENSSL_LIBS@
 OPENSSL_STATIC_LIBS = @OPENSSL_STATIC_LIBS@
-TLS_INCLUDE     = @TLS_INCLUDE@
-TLS_LIBS        = @TLS_LIBS@
+TLS_INCLUDE     = $(GNUTLS_INCLUDE) $(MBEDTLS_INCLUDE)
+TLS_LIBS        = $(GNUTLS_LIBS) $(MBEDTLS_LIBS)
 
 # Kerberos 5 (via GSSAPI)
 KRB5_INCLUDE = @KRB5_INCLUDE@

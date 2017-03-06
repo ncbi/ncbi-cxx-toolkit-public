@@ -64,7 +64,7 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre,
+      m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
@@ -260,6 +260,8 @@ AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre,
    [ --without-pcre          use internal copy of PCRE])
+AC_ARG_WITH(mbedtls,
+   [ --with-mbedtls(=DIR)    use external mbedTLS installation (in DIR)])
 AC_ARG_WITH(gmp,
    [ --with-gmp=DIR          use GMP installation in DIR])
 AC_ARG_WITH(gmp,
@@ -564,7 +566,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb \
-z bz2 lzo pcre gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
+z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -626,7 +628,7 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
-      | --with-bz2=* | --with-lzo=* | --with-pcre=* \
+      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
@@ -4279,6 +4281,37 @@ else
 fi
 
 ## SSL/TLS libraries (and supporting libraries)
+if test "x${with_mbedtls-no}" != xno; then
+   case "$with_mbedtls" in
+      yes ) ;;
+      *   ) MBEDTLS_PATH=$with_mbedtls ;;
+   esac
+   d="$MBEDTLS_PATH/${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   if test -d "$d"; then
+      MBEDTLS_PATH=$d
+   fi
+   if test -d "$MBEDTLS_PATH"; then
+      NCBI_FIX_DIR(MBEDTLS_PATH)
+   fi
+   NCBI_CHECK_THIRD_PARTY_LIB(mbedtls,
+      [[AC_LANG_PROGRAM([#include <mbedtls/ssl.h>],
+           [[mbedtls_ssl_context ssl; mbedtls_ssl_init(&ssl);]])]],
+      [[-lmbedx509 -lmbedcrypto $Z_LIBS]])
+   if test -n "$MBEDTLS_LIBS" -a -f "$MBEDTLS_PATH/lib/libmbedtls-static.a" \
+      -a "x$with_static_mbedtls" = xyes; then
+      MBEDTLS_LIBS="-L$MBEDTLS_PATH/lib -lmbedtls-static -lmbedx509-static -lmbedcrypto-static $Z_LIBS"
+   fi
+fi
+if test -z "$MBEDTLS_LIBS"; then
+   mbedtls_local=connect/mbedtls
+   AC_MSG_NOTICE([using local mbedTLS copy in $mbedtls_local])
+   # This requires headers to wind up under .../mbedtls/mbedtls/...,
+   # but avoiding that would pollute the header namespace.
+   MBEDTLS_INCLUDE="-I\$(includedir)/$mbedtls_local -I\$(includedir0)/$mbedtls_local"
+   MBEDTLS_LIBS="$Z_LIBS"
+   NCBI_PACKAGE(MBEDTLS)
+fi
+
 if test "x$with_gmp" != xno; then
    case "$with_gmp" in
       yes | '' ) ;;
@@ -4480,15 +4513,7 @@ for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
    fi
 done
 
-if test -n "$GNUTLS_LIBS"; then
-   TLS_INCLUDE=$GNUTLS_INCLUDE
-   TLS_LIBS=$GNUTLS_LIBS
-else
-   TLS_INCLUDE=$OPENSSL_INCLUDE
-   TLS_LIBS=$OPENSSL_LIBS
-fi
-
-NETWORK_LIBS="$TLS_LIBS $NETWORK_LIBS"
+NETWORK_LIBS="$GNUTLS_LIBS $MBEDTLS_LIBS $NETWORK_LIBS"
 
 case "$with_krb5" in
    no )       ac_cv_path_KRB5_CONFIG=no    ;;
@@ -8198,8 +8223,6 @@ AC_SUBST(BZ2_LIB)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
 AC_SUBST(OPENSSL_STATIC_LIBS)
-AC_SUBST(TLS_INCLUDE)
-AC_SUBST(TLS_LIBS)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_LCL_PATH)
 AC_SUBST(SYBASE_INCLUDE)
