@@ -345,6 +345,9 @@ protected:
     bool xAssignFeatureAttributeException(
         CGffFeatureRecord&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeExperiment(
+        CGffFeatureRecord&,
+        const CMappedFeat&);
     bool xAssignFeatureAttributeExonNumber(
         CGffFeatureRecord&,
         const CMappedFeat&);

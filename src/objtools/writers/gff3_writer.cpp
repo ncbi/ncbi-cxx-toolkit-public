@@ -1803,6 +1803,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
             !xAssignFeatureAttributePartial(record, mf) ||
             !xAssignFeatureAttributeException(record, mf) ||
+            !xAssignFeatureAttributeExperiment(record, mf) ||
             !xAssignFeatureAttributeExonNumber(record, mf)  ||
             !xAssignFeatureAttributePseudo(record, mf)  ||
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
@@ -2061,6 +2062,20 @@ bool CGff3Writer::xAssignFeatureAttributeException(
         // what should I do?
         return true;
     }
+    return true; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeExperiment(
+    CGffFeatureRecord& record,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    const string& experiment = mf.GetNamedQual("experiment");
+    if (experiment.empty()) {
+        return true;
+    }
+    record.SetAttribute("experiment", experiment);
     return true; 
 }
 
