@@ -711,7 +711,9 @@ static int ConvertPMCtoPMID(int pmc)
 
                     static const char pmid_start[] = "pmid=\"";
                     size_t pmid_pos = result.find(pmid_start);
-                    pmid = NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols);
+                    if (pmid_pos != string::npos) {
+                        pmid = NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols);
+                    }
                 }
 
                 break;
