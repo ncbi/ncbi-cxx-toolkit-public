@@ -45,6 +45,7 @@
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/writer_exception.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
@@ -100,13 +101,9 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
 
     const bool IsCdregion = feat.GetData().IsCdregion();
 
-    // So far, only Gene, CDS, RNA features are handled
-    if (!IsCdregion &&
-        !feat.GetData().IsGene() &&
-        !feat.GetData().IsRna()) {
-        return;
+    if (!xWriteFeatureTitle(feat, scope, translate_cds)) {
+        return; // Title not written
     }
-    WriteFeatureTitle(feat, scope, translate_cds);
 
     if (translate_cds &&
         IsCdregion) {
@@ -139,25 +136,42 @@ void CFastaOstreamEx::WriteFeatureTitle(const CSeq_feat& feat,
                                         CScope& scope,
                                         const bool translate_cds)
 {
+    xWriteFeatureTitle(feat, scope, translate_cds);
+}
+
+
+
+bool CFastaOstreamEx::xWriteFeatureTitle(const CSeq_feat& feat,
+                                        CScope& scope,
+                                        const bool translate_cds)
+{
     if (!feat.IsSetData()) {
-        return;
+        return false;
     }
 
     string id_string;
-    if (feat.GetData().IsCdregion()) {
+    if (feat.GetData().IsCdregion()) 
+    {
         id_string = x_GetCDSIdString(feat, scope, translate_cds);
-    } else if (feat.GetData().IsGene()) {
+    } else 
+    if (feat.GetData().IsGene()) {
         id_string = x_GetGeneIdString(feat, scope);
-    } else if (feat.GetData().IsRna()) {
+    } 
+    else 
+    if (feat.GetData().IsRna()) {
         id_string = x_GetRNAIdString(feat, scope);
     }
-
-    if (id_string.empty()) { // skip 
-        return;
+    else {
+        id_string = x_GetOtherIdString(feat, scope);
+    }
+    if (id_string.empty()) { 
+        return false;
     }
    
     m_Out << ">lcl|" << id_string;
     x_WriteFeatureAttributes(feat, scope);
+
+    return true;
 }
 
 
@@ -254,7 +268,11 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
     x_AddLocationAttribute(feat, scope, defline);
 
-    m_Out << defline << "\n"; // endl flushes output? 
+    x_AddMiscQualifierAttributes(feat, defline);
+
+    x_AddGBkeyAttribute(feat, defline);
+
+    m_Out << defline << "\n"; 
 }
 
 
@@ -285,6 +303,40 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
 
     id_string += to_string(++m_FeatCount);
     return id_string;
+}
+
+string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
+        CScope& scope)
+{  
+    const auto& loc = feat.GetLocation();
+    auto id_string = sequence::GetAccessionForId(*(loc.GetId()), scope);
+
+    const auto& feat_data = feat.GetData();
+
+    CSeqFeatData::E_Choice feat_type = feat_data.Which();
+    string feat_tag;
+
+    switch(feat_type) {
+    case CSeqFeatData::e_Region:
+    {
+        feat_tag = "_region_";
+        break;
+    }
+
+    case CSeqFeatData::e_Imp:
+    {
+        const string underscore = "_";
+        string key = feat_data.GetImp().GetKey();
+        NStr::ReplaceInPlace(key, "_", "");
+        feat_tag = "_" + key + "_";
+        break;
+    }
+    default:
+        return "";
+    }
+
+    id_string += feat_tag;
+    return id_string + to_string(++m_FeatCount);
 }
 
 
@@ -434,7 +486,7 @@ void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
                                             const string& value,
                                             string& defline) const
 {
-    if (label.empty() || value.empty()) {
+    if (NStr::IsBlank(label) || NStr::IsBlank(value)) {
         return;
     }
     defline += " [" + label + "=" + value + "]";
@@ -445,7 +497,7 @@ void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
                                             const bool value,
                                             string& defline) const
 {
-    if (label.empty() || !value) {
+    if (NStr::IsBlank(label) || !value) {
         return;
     }
     defline += " [" + label + "=true]";
@@ -516,6 +568,45 @@ void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
     } 
 
     x_AddDeflineAttribute("pseudo", is_pseudo, defline);
+}
+
+
+void CFastaOstreamEx::x_AddMiscQualifierAttributes(const CSeq_feat& feat,
+    string& defline) const
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    list<string> qualifiers;
+    qualifiers.push_back("regulatory_class");
+    qualifiers.push_back("recombination_class");
+    qualifiers.push_back("feat_class");
+    qualifiers.push_back("bound_moiety");
+    qualifiers.push_back("mobile_element_type");
+    qualifiers.push_back("operon");
+    qualifiers.push_back("site_type");
+
+
+    for (const string& qual_name : qualifiers) {
+        const string value = feat.GetNamedQual(qual_name);
+        if (!value.empty()) {
+            x_AddDeflineAttribute(qual_name, value, defline);
+        }
+    }
+}
+
+
+void CFastaOstreamEx::x_AddGBkeyAttribute(const CSeq_feat&  feat,
+    string& defline) const 
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+    const string gbkey = feat.GetData().GetKey();
+    if (!NStr::IsBlank(gbkey)) {
+        x_AddDeflineAttribute("gbkey", gbkey, defline);
+    }
 }
 
 

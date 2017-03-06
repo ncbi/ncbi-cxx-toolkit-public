@@ -77,6 +77,9 @@ protected:
 
     virtual bool xWriteFeature(CFeat_CI feat_it) override;
 
+    bool xWriteFeatureTitle(const CSeq_feat& feat,
+        CScope& scope,
+        bool translate_cds=false);
 
     void x_WriteTranslatedCds(const CSeq_feat& cds,
         CScope& scope);
@@ -145,6 +148,12 @@ protected:
         const string& value,
         string& defline) const;
 
+    void x_AddMiscQualifierAttributes(const CSeq_feat& feat,
+        string& defline) const;
+
+    void x_AddGBkeyAttribute(const CSeq_feat& feat, 
+        string& defline) const;
+
     void x_AddDeflineAttribute(const string& label,
         bool value,
         string& defline) const;
@@ -160,6 +169,9 @@ protected:
         CScope& scope);
 
     string x_GetGeneIdString(const CSeq_feat& gene,
+        CScope& scope);
+
+    string x_GetOtherIdString(const CSeq_feat& feat,
         CScope& scope);
 
     bool m_TranslateCds;
