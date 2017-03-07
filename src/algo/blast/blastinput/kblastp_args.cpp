@@ -47,7 +47,6 @@ CKBlastpAppArgs::CKBlastpAppArgs()
     static const string kProgram("kblastp");
     arg.Reset(new CProgramDescriptionArgs(kProgram, "Protein-Protein BLAST"));
     const bool kQueryIsProtein = true;
-    bool const kFilterByDefault = false;
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
@@ -62,9 +61,6 @@ CKBlastpAppArgs::CKBlastpAppArgs()
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
-
-    // arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
-    // m_Args.push_back(arg);
 
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);

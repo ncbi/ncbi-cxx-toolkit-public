@@ -443,64 +443,6 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
     return frame;
 }
 
-///return the get sequence table for html display
-///@param form_name: form name
-///@parm db_is_na: is the db of nucleotide type?
-///@query_number: the query number
-///@return: the from string
-///
-static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
-                           int db_type, const string& dbName,const char *rid, const char *queryID,bool showTreeButtons)
-{
-    string temp_buf = NcbiEmptyString;
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[dbName.size() + 4096]);
-    if(form_name){             
-        string localClientButtons = "";
-        if(showTreeButtons) {
-            string l_GetTreeViewForm  = CAlignFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
-            localClientButtons = "<td>" + l_GetTreeViewForm + "</td>";
-        }
-        string l_GetSeqSubmitForm  = CAlignFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
-        string l_GetSeqSelectForm = CAlignFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
-        
-        string template_str = "<table border=\"0\"><tr><td>" +
-                            l_GetSeqSubmitForm + //k_GetSeqSubmitForm[db_type] +
-                            "</td><td>" +
-                             l_GetSeqSelectForm + //k_GetSeqSelectForm +
-                            "</td>" +
-                            localClientButtons +
-                            "</tr></table>";
-
-        if(showTreeButtons) {
-            sprintf(buf.get(), template_str.c_str(), form_name, query_number,
-                db_is_na?1:0, query_number, form_name, query_number, db_type, 
-                query_number,query_number,             
-                    rid,queryID,form_name,query_number,rid,query_number,form_name,query_number);                  
-        
-        }
-        else {
-             sprintf(buf.get(), template_str.c_str(), form_name, query_number,
-                db_is_na?1:0, query_number, form_name, query_number, db_type, 
-                query_number,query_number);              
-        }
-
-    }
-    temp_buf = buf.get();
-    return temp_buf;
-}
-
-///Gets Query Seq ID from Seq Align
-///@param actual_aln_list: align set for one query
-///@return: string query ID
-static string s_GetQueryIDFromSeqAlign(const CSeq_align_set& actual_aln_list) 
-{
-    CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
-    const CSeq_id& query_SeqID = first_aln->GetSeq_id(0);
-    string queryID;
-    query_SeqID.GetLabel(&queryID);    
-    return queryID;
-}
-
 
 ///return concatenated exon sequence
 ///@param feat: the feature containing this cds

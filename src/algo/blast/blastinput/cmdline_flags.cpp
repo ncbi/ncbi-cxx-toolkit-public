@@ -192,7 +192,6 @@ const string kArgDPenalty("D_penalty");
 const string kArgJPenalty("J_penalty");
 const string kArgIgSeqType("ig_seqtype");
 const string kArgMaxHSPsPerSubject("max_hsps");
-const int    kDfltArgMaxHSPsPerSubject = 0;
 const string kArgSumStats("sum_stats");
 const string kArgPercentIdentity("perc_identity");
 const string kArgNoGreedyExtension("no_greedy");
