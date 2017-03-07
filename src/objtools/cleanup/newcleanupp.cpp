@@ -2224,11 +2224,13 @@ void CNewCleanup_imp::DbtagBC (
     }
 
     if (NStr::EqualNocase(db, "Swiss-Prot")
-        || NStr::EqualNocase (db, "SWISSPROT")) {
+        || NStr::EqualNocase (db, "SWISSPROT")
+        || NStr::EqualNocase (db, "UniProt/Swiss-Prot")) {
         db = "UniProtKB/Swiss-Prot";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SPTREMBL")  ||
-               NStr::EqualNocase(db, "TrEMBL") ) {
+               NStr::EqualNocase(db, "TrEMBL")  ||
+               NStr::EqualNocase(db, "UniProt/TrEMBL") ) {
         db = "UniProtKB/TrEMBL";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SUBTILIS")) {
