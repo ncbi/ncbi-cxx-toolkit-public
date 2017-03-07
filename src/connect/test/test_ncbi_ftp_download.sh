@@ -39,7 +39,8 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     file='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
   2)
-    file='ftp://ftp.kernel.org/pub/'
+    # https://kernel.org/shutting-down-ftp-services.html
+    file='ftp://mirrors.kernel.org/'
     ;;
 esac
 
