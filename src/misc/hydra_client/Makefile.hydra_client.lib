@@ -5,6 +5,6 @@ SRC = hydra_client
 
 DLL_LIB = xmlwrapp
 
-WATCHERS = grichenk
+WATCHERS = grichenk choi
 
 USES_LIBRARIES = xconnect xmlwrapp

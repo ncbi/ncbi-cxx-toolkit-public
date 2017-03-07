@@ -10,4 +10,4 @@ LIB = eutils_client hydra_client xmlwrapp xvalidate $(OBJEDIT_LIBS) xalnmgr \
 
 LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
-WATCHERS = dobronad
+WATCHERS = dobronad choi
