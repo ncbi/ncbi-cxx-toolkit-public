@@ -361,9 +361,10 @@ gif needs3party $(ORIG_LIBS)
 gif needs3party X11
 gmap needs xmlwrapp
 gmp needs3party $(ORIG_LIBS)
-gnomon_access needs sqlitewrapp
+gnomon_access needs $(SQLITE3_WRAPPER)
 gnomon_access needs xalgognomon
 gnomon_access needs xqueryparse
+gnomon_access needs3party $(SQLITE3_LIBS)
 gnomon_asn_proc needs xobjutil
 gnutls needs3party $(GMP_LIBS)
 gnutls needs3party $(NETTLE_LIBS)
@@ -470,10 +471,11 @@ gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
+gpipe_sqlite needs $(SQLITE3_WRAPPER)
 gpipe_sqlite needs pub
-gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
+gpipe_sqlite needs3party $(SQLITE3_LIBS)
 gpipe_standalone needs gpipe_an_base
 gpipe_teamcity needs gpipe_common
 gpipe_teamcity needs gpipe_curl
@@ -486,7 +488,10 @@ gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_val needs xmlwrapp
+gpipe_xlsx needs $(Z_LIB)
+gpipe_xlsx needs3party $(LIBXLSXWRITER_LIBS)
 gpipe_xlsx needs3party $(ORIG_LIBS)
+gpipe_xlsx needs3party $(Z_LIBS)
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
@@ -607,7 +612,8 @@ lapackwrapp needs3party $(ORIG_LIBS)
 lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
-lds2 needs sqlitewrapp
+lds2 needs $(SQLITE3_WRAPPER)
+lds2 needs3party $(SQLITE3_LIBS)
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs seqdb
@@ -916,8 +922,9 @@ seqalign_util needs $(SEQ_LIBS)
 seqalign_util needs pub
 seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
+seqdb needs $(SQLITE3_WRAPPER)
 seqdb needs blastdb
-seqdb needs sqlitewrapp
+seqdb needs3party $(SQLITE3_LIBS)
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
@@ -1373,6 +1380,9 @@ xid_wgs needs3party $(VDB_LIBS)
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
+xlsxwriter needs $(Z_LIB)
+xlsxwriter needs3party $(ORIG_LIBS)
+xlsxwriter needs3party $(Z_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
