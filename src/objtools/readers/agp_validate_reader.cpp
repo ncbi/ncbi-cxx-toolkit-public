@@ -464,6 +464,7 @@ void CAgpValidateReader::OnGapOrComponent()
   // m_this_row = current gap or component (check with m_this_row->IsGap())
 }
 
+// this function can use m_prev_row - but not m_this_row
 void CAgpValidateReader::OnScaffoldEnd()
 {
   NCBI_ASSERT(m_componentsInLastScaffold>0 || m_gapsInLastScaffold>0,
@@ -477,7 +478,7 @@ void CAgpValidateReader::OnScaffoldEnd()
     if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
       if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
 
-      TMapStrInt::iterator it = m_comp2len->find( m_this_row->GetComponentId() );
+      TMapStrInt::iterator it = m_comp2len->find( m_prev_row->GetComponentId() );
       if( it!=m_comp2len->end() ) {
         int len = it->second;
         if(m_prev_component_beg!=1 || m_prev_component_end<len ) {
