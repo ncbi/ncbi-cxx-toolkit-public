@@ -71,22 +71,6 @@ void
 CSraInputSource::GetNextNumSequences(CBioseq_set& bioseq_set,
                                      TSeqPos /* num_seqs */)
 {
-    //Pre-allocate and initialize Seq_entry objects for the batch of queries
-    // to be read.
-    m_Entries.clear();
-
-    // +1 in case we need to read one more sequence so that a pair is not
-    // broken
-    m_Entries.resize(m_NumSeqsInBatch + 1);
-
-    // allocate seq_entry objects, they will be reused to minimize
-    // time spent on memory management
-    for (TSeqPos i=0;i < m_NumSeqsInBatch + 1;i++) {
-        m_Entries[i].Reset(new CSeq_entry);
-        m_Entries[i]->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
-        m_Entries[i]->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    }
-
     // read sequences
     m_Index = 0;
     if (m_IsPaired) {
@@ -104,34 +88,33 @@ CSraInputSource::GetNextNumSequences(CBioseq_set& bioseq_set,
             }
         }
     }
-
-    // detach CRefs in m_Entries from objects in bioseq_set for thread safety
-    m_Entries.clear();
 }
 
 
-int
+CSeq_entry*
 CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
 {
     _ASSERT(m_It.get() && *m_It);
     if (m_It->IsTechnicalRead()) {
-        return -1;
+        return NULL;
     }
     CTempString sequence = m_It->GetReadData();
     if (!m_Validate || x_ValidateSequence(sequence.data(), sequence.length())) {
-        CBioseq& bioseq = m_Entries[m_Index]->SetSeq();
-        bioseq.SetId().clear();
+        CRef<CSeq_entry> seq_entry(new CSeq_entry);
+        seq_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+        seq_entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+
+        CBioseq& bioseq = seq_entry->SetSeq();
         bioseq.SetId().push_back(m_It->GetShortSeq_id());
-        bioseq.SetDescr().Reset();
         bioseq.SetInst().SetLength(sequence.length());
         bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna((string)sequence));
-        bioseq_set.SetSeq_set().push_back(m_Entries[m_Index]);
+        bioseq_set.SetSeq_set().push_back(seq_entry);
 
         m_Index++;
-        return m_Index - 1;
+        return bioseq_set.SetSeq_set().back().GetNonNullPointer();
     }
 
-    return -1;
+    return NULL;
 }
 
 
@@ -163,7 +146,7 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
         while (*m_It && m_Index < (int)m_NumSeqsInBatch) {
             // read one sequence and rember spot id
             spot = m_It->GetSpotId();
-            int index1 = x_ReadOneSeq(bioseq_set);
+            CSeq_entry* first = x_ReadOneSeq(bioseq_set);
 
             // move to the next sequence
             ++(*m_It);
@@ -174,28 +157,22 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
             // if the current sequence has the same spot id, read current
             // sequence as a mate, otherwise continue the loop
             if (m_It->GetSpotId() == spot) {
-                int index2 = x_ReadOneSeq(bioseq_set);
+                CSeq_entry* second = x_ReadOneSeq(bioseq_set);
                 // set pair information for sequences
-                if (index1 >= 0 && index2 >= 0) {
-                    {
-                        CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                        bioseq.SetDescr().Set().push_back(seqdesc_first);
-                    }
+                if (first && second) {
 
-                    {
-                        CBioseq& bioseq = m_Entries[index2]->SetSeq();
-                        bioseq.SetDescr().Set().push_back(seqdesc_last);
-                    }
+                    first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+                    second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
                 }
                 else {
-                    if (index1 >= 0) {
-                        CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                        bioseq.SetDescr().Set().push_back(seqdesc_first_partial);
+                    if (first) {
+                        first->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_first_partial);
                     }
 
-                    if (index2 >= 0) {
-                        CBioseq& bioseq = m_Entries[index2]->SetSeq();
-                        bioseq.SetDescr().Set().push_back(seqdesc_last_partial);
+                    if (second) {
+                        second->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_last_partial);
                     }
                 }
                 ++(*m_It);

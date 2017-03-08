@@ -54,7 +54,10 @@ static int s_GetSegmentFlags(const CBioseq& bioseq)
 {
     int retval = 0;
 
-    BOOST_REQUIRE(bioseq.IsSetDescr());
+    if (!bioseq.IsSetDescr()) {
+        return 0;
+    }
+
     for (auto desc : bioseq.GetDescr().Get()) {
         if (desc->Which() == CSeqdesc::e_User) {
 

@@ -88,7 +88,7 @@ private:
     int x_FindDimerEntropy2NA(const vector<char>& sequence, int length);
 
     /// Read one sequence from
-    int x_ReadOneSeq(CNcbiIstream& instream);
+    CRef<CSeq_entry> x_ReadOneSeq(CNcbiIstream& instream);
 
     /// Read sequences from one stream
     bool x_ReadFromSingleFile(CBioseq_set& bioseq_set);
@@ -108,8 +108,6 @@ private:
     bool m_IsBinary;
     /// Used for indexing Seq-entries when reading from two files
     int m_Index;
-
-    vector< CRef<CSeq_entry> > m_Entries;
 };
 
 

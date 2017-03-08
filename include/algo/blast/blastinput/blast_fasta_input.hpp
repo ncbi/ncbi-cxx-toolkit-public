@@ -154,10 +154,10 @@ private:
     void x_ReadFastq(CBioseq_set& bioseq_set);
 
     /// Read one sequence from a FASTA file
-    int x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
+    CRef<CSeq_entry> x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
 
     /// Read one sequence from a FASTQ file
-    int x_ReadFastqOneSeq(CRef<ILineReader> line_reader);
+    CRef<CSeq_entry> x_ReadFastqOneSeq(CRef<ILineReader> line_reader);
 
     /// Read sequences from two FASTA or FASTQ files (for paired reads)
     bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, EInputFormat format);
@@ -184,9 +184,6 @@ private:
     EInputFormat m_Format;
     /// Used for indexing Seq-entries when reading from two files
     int m_Index;
-
-    vector< CRef<CSeq_id> > m_SeqIds;
-    vector< CRef<CSeq_entry> > m_Entries;
 };
 
 

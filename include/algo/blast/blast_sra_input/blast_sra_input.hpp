@@ -69,7 +69,7 @@ private:
     CSraInputSource& operator=(const CSraInputSource&);
 
     /// Read one sequence pointed by the iterator
-    int x_ReadOneSeq(CBioseq_set& bioseq_set);
+    CSeq_entry* x_ReadOneSeq(CBioseq_set& bioseq_set);
 
     /// Read one batch of sequences and mark pairs
     void x_ReadPairs(CBioseq_set& bioseq_set);
@@ -95,8 +95,6 @@ private:
 
     /// Used for indexing Seq-entries when reading from two files
     int m_Index;
-
-    vector< CRef<CSeq_entry> > m_Entries;
 };
 
 

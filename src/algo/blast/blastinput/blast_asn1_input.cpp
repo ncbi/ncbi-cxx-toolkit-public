@@ -78,31 +78,21 @@ void
 CASN1InputSourceOMF::GetNextNumSequences(CBioseq_set& bioseq_set,
                                          TSeqPos /* num_seqs */)
 {
-    // preallocate memory for sequences to be read
-    m_Entries.clear();
-
-    // +1 in case we need to read one more sequence so that a pair is not
-    // broken
-    m_Entries.resize(m_NumSeqsInBatch + 1);
-
     if (m_SecondInputStream) {
         x_ReadFromTwoFiles(bioseq_set);
     }
     else {
         x_ReadFromSingleFile(bioseq_set);
     }
-
-    // detach CRefs in m_Entries from objects in bioseq_set for thread safety
-    m_Entries.clear();
 }
 
 
-int
+CRef<CSeq_entry>
 CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
 {
     CTempString line;
     CTempString id;
-    int retval = -1;
+    CRef<CSeq_entry> retval;
 
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     try {
@@ -115,7 +105,7 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
     }
     catch (...) {
         if (instream.eof()) {
-            return -1;
+            return retval;
         }
 
         NCBI_THROW(CInputException, eInvalidInput, "Problem reading ASN1 entry");
@@ -125,8 +115,7 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
         x_ValidateSequence(seq_entry->GetSeq().GetInst().GetSeq_data(),
                            seq_entry->GetSeq().GetInst().GetLength())) {
 
-        m_Entries[m_Index] = seq_entry;
-        retval = m_Index;
+        retval = seq_entry;
         m_Index++;
     }
 
@@ -161,9 +150,9 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 
     m_Index = 0;
     while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof()) {
-        int index = x_ReadOneSeq(*m_InputStream);
+        CRef<CSeq_entry> entry = x_ReadOneSeq(*m_InputStream);
 
-        if (index >= 0) {
+        if (entry.NotEmpty()) {
 
             if (m_IsPaired && (current_read & 1) == 0) {
                 first_added = true;
@@ -173,16 +162,16 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
                 if (first_added) {
                     bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
                         push_back(seqdesc_first);
-                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+                    entry->SetSeq().SetDescr().Set().push_back(seqdesc_last);
                 }
                 else {
-                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                    entry->SetSeq().SetDescr().Set().push_back(
                                                         seqdesc_last_partial);
                 }
                 first_added = false;
             }
 
-            bioseq_set.SetSeq_set().push_back(m_Entries[index]);
+            bioseq_set.SetSeq_set().push_back(entry);
         }
         else {
             if (first_added) {
@@ -220,38 +209,33 @@ CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
     seqdesc_last_partial->SetUser().AddField("has_pair",
                                              fLastSegmentFlag | fPartialFlag);
 
-    int index1;
-    int index2;
     m_Index = 0;
     while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof() &&
            !m_SecondInputStream->eof()) {
 
-        index1 = x_ReadOneSeq(*m_InputStream); 
-        index2 = x_ReadOneSeq(*m_SecondInputStream);
+        CRef<CSeq_entry> first = x_ReadOneSeq(*m_InputStream); 
+        CRef<CSeq_entry> second = x_ReadOneSeq(*m_SecondInputStream);
 
         // if both sequences were read, the pair in the first one
-        if (index1 >= 0 && index2 >= 0) {
-            m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
-                                                             seqdesc_first);
+        if (first.NotEmpty() && second.NotEmpty()) {
+            first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+            second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
 
-            m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
-                                                              seqdesc_last);
-
-            bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
-            bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
+            bioseq_set.SetSeq_set().push_back(first);
+            bioseq_set.SetSeq_set().push_back(second);
         }
         else {
             // otherwise mark incomplete pair for the sequence that was read
-            if (index1 >= 0) {
-                m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
+            if (first.NotEmpty()) {
+                first->SetSeq().SetDescr().Set().push_back(
                                                        seqdesc_first_partial);
-                bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
+                bioseq_set.SetSeq_set().push_back(first);
             }
 
-            if (index2 >= 0) {
-                m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
+            if (second.NotEmpty()) {
+                second->SetSeq().SetDescr().Set().push_back(
                                                         seqdesc_last_partial);
-                bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
+                bioseq_set.SetSeq_set().push_back(second);
             }
         }
     }
