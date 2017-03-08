@@ -57,8 +57,12 @@ public:
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         CRef<CSeq_id>& id) const;
 
+    bool GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const;
+
 private:
     CBioseq& x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const;
+    bool x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq,
+        CRef<CSeq_id>& id) const;
 
     CRef<CScope> m_DBScope;
 };

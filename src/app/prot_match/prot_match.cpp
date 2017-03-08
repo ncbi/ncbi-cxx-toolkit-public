@@ -306,58 +306,74 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
     CMatchTabulate& match_tab) 
 {
 
-    SSeqEntryFilenames seq_entry_files = 
-        x_GenerateSeqEntryTempFiles(nuc_prot_set,
-        out_stub, 
-        count);
-    const string count_string = NStr::NumericToString(count);
-        
-    const string alignment_file = out_stub + ".merged" + count_string + ".asn";
-    string blast_args;
-    x_GetBlastArgs(
-        seq_entry_files.local_nuc_seq, 
-        seq_entry_files.db_nuc_seq, 
-        alignment_file,
-        blast_args);
 
-    assm_assm_blastn.Exec(blast_args);
-    x_LogTempFile(alignment_file);
-       
-    // Create alignment manifest tempfile 
-    const string manifest_file = out_stub + ".aln" + count_string + ".mft";
+    CRef<CSeq_id> local_nuc_acc;
+    bool success = m_pMatchSetup->GetNucSeqId(
+        nuc_prot_set->GetSet().GetNucFromNucProtSet(),
+        local_nuc_acc);
+    const string local_nuc_acc_string = local_nuc_acc->GetSeqIdString();
+
     try {
-        CNcbiOfstream ostr(manifest_file.c_str());
-        ostr << alignment_file << endl;
-    }
-    catch(...) {
-        NCBI_THROW(CProteinMatchException,
-            eOutputError,
-            "Could not write alignment manifest");
-    }
-    x_LogTempFile(manifest_file);
+        SSeqEntryFilenames seq_entry_files = 
+            x_GenerateSeqEntryTempFiles(nuc_prot_set,
+            out_stub, 
+            count);
+        const string count_string = NStr::NumericToString(count);
+        
+        const string alignment_file = out_stub + ".merged" + count_string + ".asn";
+        string blast_args;
+        x_GetBlastArgs(
+            seq_entry_files.local_nuc_seq, 
+            seq_entry_files.db_nuc_seq, 
+            alignment_file,
+            blast_args);
 
-    const string annot_file = out_stub + ".compare" + count_string + ".asn";
-
-    string compare_annots_args;
-    x_GetCompareAnnotsArgs(
-        seq_entry_files.local_nuc_prot_set,
-        seq_entry_files.db_nuc_prot_set,
-        manifest_file, 
-        annot_file,
-        compare_annots_args);
-
-    compare_annots.Exec(compare_annots_args);
-    x_LogTempFile(annot_file);
-
-    list<CRef<CSeq_annot>> seq_annots;
-    x_ReadAnnotFile(annot_file, seq_annots);
-
-    CRef<CSeq_align> alignment = Ref(new CSeq_align());
-    x_ReadAlignmentFile(alignment_file, alignment);
+        x_LogTempFile(alignment_file);
+        assm_assm_blastn.Exec(blast_args);
        
-    match_tab.AppendToMatchTable(*alignment, seq_annots); 
-    if (!keep_temps) {
-        x_DeleteTempFiles();
+        // Create alignment manifest tempfile 
+        const string manifest_file = out_stub + ".aln" + count_string + ".mft";
+        try {
+            CNcbiOfstream ostr(manifest_file.c_str());
+            x_LogTempFile(manifest_file);
+            ostr << alignment_file << endl;
+        }
+        catch(...) {
+            NCBI_THROW(CProteinMatchException,
+                eOutputError,
+                "Could not write alignment manifest");
+        }
+
+        const string annot_file = out_stub + ".compare" + count_string + ".asn";
+
+        string compare_annots_args;
+        x_GetCompareAnnotsArgs(
+            seq_entry_files.local_nuc_prot_set,
+            seq_entry_files.db_nuc_prot_set,
+            manifest_file, 
+            annot_file,
+            compare_annots_args);
+
+        x_LogTempFile(annot_file);
+        compare_annots.Exec(compare_annots_args);
+
+        list<CRef<CSeq_annot>> seq_annots;
+        x_ReadAnnotFile(annot_file, seq_annots);
+
+        CRef<CSeq_align> alignment = Ref(new CSeq_align());
+        x_ReadAlignmentFile(alignment_file, alignment);
+      
+
+        match_tab.AppendToMatchTable(*alignment, seq_annots, local_nuc_acc_string); 
+        if (!keep_temps) {
+            x_DeleteTempFiles();
+        }
+    } 
+    catch (...) {
+        if (!keep_temps) {
+            x_DeleteTempFiles();
+        }
+        throw;
     }
     return;
 }
@@ -459,8 +475,9 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
         + ".genbank"
         + count_string
         + ".asn";
-    x_WriteEntry(*(db_nuc_prot_set->GetParentEntry()), db_nuc_prot_file, as_binary);
+
     x_LogTempFile(db_nuc_prot_file);
+    x_WriteEntry(*(db_nuc_prot_set->GetParentEntry()), db_nuc_prot_file, as_binary);
 
     // Write the genbank nucleotide sequence to a file
     const CBioseq& db_nuc_seq = db_nuc_prot_set->GetNucFromNucProtSet();
@@ -468,8 +485,9 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
         + ".genbank_nuc"
         + count_string
         + ".asn";
-    x_WriteEntry(*(db_nuc_seq.GetParentEntry()), db_nuc_file, as_text);
+
     x_LogTempFile(db_nuc_file);
+    x_WriteEntry(*(db_nuc_seq.GetParentEntry()), db_nuc_file, as_text);
 
     CRef<CSeq_id> local_id;
 
@@ -490,8 +508,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
         + ".local"
         + count_string
         + ".asn";
-    x_WriteEntry(*nuc_prot_set, local_nuc_prot_file, as_binary);
     x_LogTempFile(local_nuc_prot_file);
+    x_WriteEntry(*nuc_prot_set, local_nuc_prot_file, as_binary);
 
 
     // Write update nucleotide sequence
@@ -504,8 +522,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CRef<CSeq_entry> nuc_prot_set,
     CRef<CSeq_entry> nuc_se = Ref(new CSeq_entry());
     nuc_se->SetSeq().Assign(nuc_seq);
 
-    x_WriteEntry(*nuc_se, local_nuc_file, as_text);
     x_LogTempFile(local_nuc_file);
+    x_WriteEntry(*nuc_se, local_nuc_file, as_text);
 
     SSeqEntryFilenames filenames;
     filenames.db_nuc_prot_set = db_nuc_prot_file;

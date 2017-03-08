@@ -47,7 +47,8 @@ public:
     CMatchTabulate(void);
     virtual ~CMatchTabulate(void);
     void AppendToMatchTable(const CSeq_align& alignment,
-        const list<CRef<CSeq_annot>>& annots);
+        const list<CRef<CSeq_annot>>& annots,
+        const string& nuc_id="");
 
     void WriteTable(CNcbiOstream& out) const;
 
@@ -90,6 +91,7 @@ private:
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
     bool x_HasNovelSubject(const CSeq_annot& annot) const;
     bool x_HasNovelQuery(const CSeq_annot& annot) const;
+    bool x_HasUnmappedQuery(const CSeq_annot& annot) const;
     CAnnotdesc::TName x_GetComparisonClass(const CSeq_annot& annot) const;
     const CSeq_feat& x_GetQuery(const CSeq_annot& compare_annot) const;
     const CSeq_feat& x_GetSubject(const CSeq_annot& compare_annot) const;

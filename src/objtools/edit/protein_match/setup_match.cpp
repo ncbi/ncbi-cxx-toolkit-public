@@ -9,10 +9,13 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
 
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
 #include <serial/iterator.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -58,23 +61,67 @@ CBioseq& CMatchSetup::x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const
 }
 
 
-CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq) 
+bool CMatchSetup::x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& acc) const
+{
+    if (!nuc_seq.IsSetInst()) {
+        return false;
+    }
+
+    const auto& seq_inst = nuc_seq.GetInst();
+    if (!seq_inst.IsSetHist() ||
+        !seq_inst.GetHist().IsSetReplaces() ||
+        !seq_inst.GetHist().GetReplaces().IsSetIds()) {
+        return false;
+    }
+
+    for (auto pReplacesId : seq_inst.GetHist().GetReplaces().GetIds()) {
+        if (pReplacesId->IsGenbank() || pReplacesId->IsOther()) {
+            acc = pReplacesId;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+
+bool CMatchSetup::GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
 {
     for (auto pNucId : nuc_seq.GetId()) {
+        if (pNucId->IsGenbank() || pNucId->IsOther()) {
+            id = pNucId;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq) 
+{
+    CBioseq_Handle db_bsh;
+    for (auto pNucId : nuc_seq.GetId()) {
         if (pNucId->IsGenbank() || pNucId->IsOther()) {  // Look at GetBioseqHandle
-            CBioseq_Handle db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
-            if (!db_bsh) {
-                NCBI_THROW(CProteinMatchException, 
-                    eInputError,
-                    "Failed to fetch DB entry");
-            }
-            // HasParentSet
-            //return db_bsh.GetCompleteBioseq()->GetParentSet(); 
-            if (db_bsh.GetParentBioseq_set()) {
+            db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
+            if (db_bsh && 
+                db_bsh.GetParentBioseq_set()) {
                 return db_bsh.GetParentBioseq_set().GetCompleteBioseq_set();
             }
         }
     }
+
+    CRef<CSeq_id> pReplacedId;
+    const bool use_replaced_id = x_TryFetchReplacedAccessionFromHist(nuc_seq, pReplacedId);
+
+    if (use_replaced_id) {
+        db_bsh = m_DBScope->GetBioseqHandle(*pReplacedId);
+        if (db_bsh && 
+            db_bsh.GetParentBioseq_set()) {
+            return db_bsh.GetParentBioseq_set().GetCompleteBioseq_set();
+        }
+    }
+
 
     NCBI_THROW(CProteinMatchException,
                eInputError,
@@ -108,6 +155,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
 
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         nucseq_id->Assign(*(feat->GetLocation().GetId()));
+
         // Throw an exception if null pointer
         ids.insert(nucseq_id);
     }

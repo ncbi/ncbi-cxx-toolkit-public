@@ -95,6 +95,7 @@ bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list
     set<string> dead_protein_skip;
 
     for (CRef<CSeq_annot> pSeqAnnot : annot_list) {
+
         // Match by algorithm
         if (x_IsProteinMatch(*pSeqAnnot)) {
             matches.push_back(pSeqAnnot);
@@ -136,6 +137,7 @@ bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list
         }
     }
 
+
     for (CRef<CSeq_annot> pSeqAnnot : annot_list) {
         if (x_HasCdsSubject(*pSeqAnnot) && 
             x_HasNovelSubject(*pSeqAnnot)) {
@@ -149,7 +151,8 @@ bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list
         }
 
         if (x_HasCdsQuery(*pSeqAnnot) && 
-            x_HasNovelQuery(*pSeqAnnot)) {
+            (x_HasNovelQuery(*pSeqAnnot) ||
+             x_HasUnmappedQuery(*pSeqAnnot))) {
             const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
             const string localid = x_GetLocalID(query);
             if (new_protein_skip.find(localid) == new_protein_skip.end()) {
@@ -247,7 +250,12 @@ bool CMatchTabulate::x_HasNovelQuery(const CSeq_annot& seq_annot) const
 {
     const string comparison_class = x_GetComparisonClass(seq_annot);
     return (comparison_class == "q-novel");
+}
 
+
+bool CMatchTabulate::x_HasUnmappedQuery(const CSeq_annot& seq_annot) const
+{
+    return(x_GetComparisonClass(seq_annot) == "q-unmapped");
 }
 
 
@@ -446,7 +454,8 @@ bool CMatchTabulate::x_IsComparison(const CSeq_annot& seq_annot) const
 
 void CMatchTabulate::AppendToMatchTable(
         const CSeq_align& alignment,
-        const list<CRef<CSeq_annot>>& annots)
+        const list<CRef<CSeq_annot>>& annots,
+        const string& nuc_id)
 {
     if (!mMatchTableInitialized) {
         x_InitMatchTable();
@@ -455,6 +464,9 @@ void CMatchTabulate::AppendToMatchTable(
 
     SNucMatchInfo nuc_match_info;
     x_TryProcessAlignment(alignment, nuc_match_info);
+    if (!NStr::IsBlank(nuc_id)) {
+        nuc_match_info.accession = nuc_id;
+    }
 
     list<string> new_protein_ids;
     list<string> dead_protein_accessions;
