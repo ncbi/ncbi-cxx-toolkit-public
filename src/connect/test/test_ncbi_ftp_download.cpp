@@ -556,8 +556,7 @@ static void s_TryAskFtpFilesize(CNcbiIostream& ios, const char* filename)
 }
 
 
-static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
-                                   const char*     name)
+static void s_InitiateFtpRetrieval(CConn_IOStream& ftp, const char* name)
 {
     // RETR must be understood by all FTP implementations
     // LIST command obtains non-machine readable output
