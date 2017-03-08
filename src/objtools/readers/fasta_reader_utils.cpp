@@ -406,7 +406,7 @@ bool
 CFastaDeflineReader::x_ExceedsMaxLength(const string& title,
     const TSeqPos max_length)
 {
-    TSeqPos last = title.rfind('|');
+    auto last = title.rfind('|');
     string substring = (last == NPOS) ? title : title.substr(last+1);
 
     return (substring.length() > max_length);
