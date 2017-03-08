@@ -527,8 +527,9 @@ set(LMDB_INCLUDE "/netopt/ncbi_tools64/lmdb-0.9.18/include")
 set(LMDB_LIBS -L/netopt/ncbi_tools64/lmdb-0.9.18/lib64 -llmdb)
 
 #libxlsxwriter
-set(LIBXLSXWRITER_INCLUDE "/netopt/ncbi_tools64/libxlsxwriter-0.6.9/include")
-set(LIBXLSXWRITER_LIBS "-L/netopt/ncbi_tools64/libxlsxwriter-0.6.9/lib -lxlsxwriter -lz")
+set(LIBXLSXWRITER /netopt/ncbi_tools64/libxlsxwriter-0.6.9)
+set(LIBXLSXWRITER_INCLUDE "${LIBXLSXWRITER}/include")
+set(LIBXLSXWRITER_LIBS "-L${LIBXLSXWRITER}/lib -Wl,-rpath,${LIBXLSXWRITER}/lib -lxlsxwriter -lz")
 
 
 ##############################################################################
