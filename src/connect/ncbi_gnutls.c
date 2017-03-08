@@ -49,26 +49,27 @@
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif /*not implemented*/
 
-#  ifdef HAVE_LIBGCRYPT
+#  if GNUTLS_VERSION_NUMBER <= 0x020B00
+#    ifdef HAVE_LIBGCRYPT
 
-#    include <gcrypt.h>
+#      include <gcrypt.h>
 
-#    if   defined(NCBI_POSIX_THREADS)
+#      if   defined(NCBI_POSIX_THREADS)
 
-#      include <pthread.h>
-#      ifdef __cplusplus
+#        include <pthread.h>
+#        ifdef __cplusplus
 extern "C" {
-#      endif /*__cplusplus*/
+#        endif /*__cplusplus*/
     GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#      ifdef __cplusplus
+#        ifdef __cplusplus
 } /* extern "C" */
-#      endif /*__cplusplus*/
+#        endif /*__cplusplus*/
 
-#    elif defined(NCBI_THREADS)
+#      elif defined(NCBI_THREADS)
 
-#      ifdef __cplusplus
+#        ifdef __cplusplus
 extern "C" {
-#      endif /*__cplusplus*/
+#        endif /*__cplusplus*/
 static int gcry_user_mutex_init(void** lock)
 {
     return !(*lock = CORE_GetLOCK()) ? NCBI_NOTSUPPORTED : 0;
@@ -92,13 +93,39 @@ static struct gcry_thread_cbs gcry_threads_user = {
     gcry_user_mutex_lock, gcry_user_mutex_unlock,
     NULL/*all other fields NULL-inited*/
 };
-#      ifdef __cplusplus
+#        ifdef __cplusplus
 } /* extern "C" */
-#      endif /*__cplusplus*/
+#        endif /*__cplusplus*/
 
-#    endif /*NCBI_POSIX_THREADS*/
+#      endif /*NCBI_POSIX_THREADS*/
 
-#  endif /*HAVE_LIBGCRYPT*/
+#    endif /*HAVE_LIBGCRYPT*/
+#  elif defined(NCBI_THREADS)
+#    ifdef __cplusplus
+extern "C" {
+#    endif /*__cplusplus*/
+static int gtls_user_mutex_init(void** lock)
+{
+    return !(*lock = CORE_GetLOCK()) ? NCBI_NOTSUPPORTED : 0;
+}
+static int gtls_user_mutex_deinit(void** lock)
+{
+    *lock = 0;
+    return 0;
+}
+static int gtls_user_mutex_lock(void** lock)
+{
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) > 0 ? 0 : NCBI_NOTSUPPORTED;
+}
+static int gtls_user_mutex_unlock(void** lock)
+{
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock) ? 0 : NCBI_NOTSUPPORTED;
+}
+#    ifdef __cplusplus
+}
+#    endif /*__cplusplus*/
+#  endif
+
 
 #  ifdef __cplusplus
 extern "C" {
@@ -618,17 +645,24 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
-#  ifdef HAVE_LIBGCRYPT
-#    if   defined(NCBI_POSIX_THREADS)
+#  if GNUTLS_VERSION_NUMBER <= 0x020B00
+#    ifdef HAVE_LIBGCRYPT
+#      if   defined(NCBI_POSIX_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
         goto out;
-#    elif defined(NCBI_THREADS)
+#      elif defined(NCBI_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
         goto out;
-#    elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+#      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
-#    endif /*NCBI_POSIX_THREADS*/
-#  endif /*HAVE_LIBGCRYPT*/
+#      endif /*NCBI_POSIX_THREADS*/
+#    endif /*HAVE_LIBGCRYPT*/
+#  elif defined(NCBI_THREADS)
+    gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
+                            gtls_user_mutex_lock, gtls_user_mutex_unlock);
+#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
+#  endif
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
