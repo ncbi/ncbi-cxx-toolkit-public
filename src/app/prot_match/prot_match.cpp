@@ -306,12 +306,14 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
     CMatchTabulate& match_tab) 
 {
 
-
     CRef<CSeq_id> local_nuc_acc;
-    bool success = m_pMatchSetup->GetNucSeqId(
+    const bool success = m_pMatchSetup->GetNucSeqId(
         nuc_prot_set->GetSet().GetNucFromNucProtSet(),
         local_nuc_acc);
-    const string local_nuc_acc_string = local_nuc_acc->GetSeqIdString();
+    string local_nuc_acc_string = ""; 
+    if (success) {
+        local_nuc_acc_string = local_nuc_acc->GetSeqIdString();
+    }
 
     try {
         SSeqEntryFilenames seq_entry_files = 
