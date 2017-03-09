@@ -199,7 +199,7 @@ IEmbeddedStreamReaderWriter& SNetStorageObjectImpl::GetReaderWriter()
 SNetStorageObjectImpl::~SNetStorageObjectImpl()
 {
     try {
-        Close();
+        if (m_Current) m_Current->Close();
     }
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
 }
