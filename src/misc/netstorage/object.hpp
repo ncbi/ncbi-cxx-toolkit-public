@@ -71,7 +71,7 @@ private:
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags);
+    CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc);
@@ -126,8 +126,8 @@ private:
 
     bool IsSame(const ILocation* other) const { return To<CObj>(other); }
 
-    void RemoveOldCopyIfExists() const;
-    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CSelector** selector) const;
+    void RemoveOldCopyIfExists();
+    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
 
     static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
     static CSelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);

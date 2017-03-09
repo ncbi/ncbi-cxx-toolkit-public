@@ -40,8 +40,8 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-CObj::CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags) :
-    m_Selector(selector->Clone(fsm, flags)),
+CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
+    m_Selector(source->m_Selector->Clone(fsm, flags)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -207,12 +207,12 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     _ASSERT(rw_state); // Cannot be a nullptr if result check passed
 
     // Selector can only be cloned after location is detected
-    CSelector* selector;
-    CNetStorageObject new_file(Clone(flags, &selector));
+    CObj* new_obj;
+    CNetStorageObject new_file(Clone(flags, &new_obj));
 
-    if (m_Location->IsSame(selector->First())) {
+    if (m_Location->IsSame(new_obj->m_Selector->First())) {
         rw_state->Close();
-        return selector->Locator().GetLocator();
+        return new_obj->m_Selector->Locator().GetLocator();
     }
 
     for (;;) {
@@ -419,12 +419,12 @@ ILocation::TUserInfo CObj::GetUserInfoImpl()
 }
 
 
-void CObj::RemoveOldCopyIfExists() const
+void CObj::RemoveOldCopyIfExists()
 {
-    CSelector* selector;
-    CNetStorageObject guard(Clone(fNST_Movable, &selector));
+    CObj* old_obj;
+    CNetStorageObject guard(Clone(fNST_Movable, &old_obj));
 
-    for (ILocation* l = selector->First(); l; l = selector->Next()) {
+    for (ILocation* l = old_obj->m_Selector->First(); l; l = old_obj->m_Selector->Next()) {
         if (l->IsSame(m_Location)) continue;
 
         try {
@@ -610,11 +610,11 @@ TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
 }
 
 
-SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CSelector** selector) const
+SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 {
-    _ASSERT(selector);
-    auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
-    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
+    _ASSERT(copy);
+    auto l = [&](CObj& state) { *copy = &state; };
+    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, this, flags);
 }
 
 
