@@ -43,13 +43,48 @@ namespace NDirectNetStorageImpl
 class CObj : public INetStorageObjectState, private IState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl&, ISelector::Ptr selector, bool is_opened = false) :
-        m_Selector(selector),
+    CObj(SNetStorageObjectImpl&, ISelector* selector, TNetStorageFlags flags) :
+        m_Selector(selector->Clone(flags)),
         m_State(this),
         m_Location(this),
-        m_IsOpened(is_opened)
+        m_IsOpened(false)
     {
         _ASSERT(m_Selector.get());
+    }
+
+    CObj(SNetStorageObjectImpl&, SContext* context, TNetStorageFlags flags) :
+        m_Selector(context->Create(flags)),
+        m_State(this),
+        m_Location(this),
+        m_IsOpened(false)
+    {
+    }
+
+    CObj(SNetStorageObjectImpl&, SContext* context, TNetStorageFlags flags, const string& service) :
+        m_Selector(context->Create(flags, service)),
+        m_State(this),
+        m_Location(this),
+        m_IsOpened(false)
+    {
+        // Server reports locator to the client before writing anything
+        // So, object must choose location for writing here to make locator valid
+        m_Selector->SetLocator();
+    }
+
+    CObj(SNetStorageObjectImpl&, SContext* context, const string& object_loc) :
+        m_Selector(context->Create(object_loc)),
+        m_State(this),
+        m_Location(this),
+        m_IsOpened(true)
+    {
+    }
+
+    CObj(SNetStorageObjectImpl&, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr) :
+        m_Selector(context->Create(key, flags, service)),
+        m_State(this),
+        m_Location(this),
+        m_IsOpened(true)
+    {
     }
 
     ERW_Result Read(void*, size_t, size_t*);
@@ -105,6 +140,13 @@ private:
     bool IsSame(const ILocation* other) const { return To<CObj>(other); }
 
     void RemoveOldCopyIfExists() const;
+
+    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, ISelector** selector) const
+    {
+        _ASSERT(selector);
+        auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
+        return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
+    }
 
     ISelector::Ptr m_Selector;
     IState* m_State;

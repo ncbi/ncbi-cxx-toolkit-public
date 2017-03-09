@@ -186,7 +186,8 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
 
     // Selector can only be cloned after location is detected
-    ISelector::Ptr selector(m_Selector->Clone(flags));
+    ISelector* selector;
+    CNetStorageObject new_file(Clone(flags, &selector));
 
     if (m_Location->IsSame(selector->First())) {
         LOG_POST(Trace << "locations are the same");
@@ -195,7 +196,6 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     }
 
     LOG_POST(Trace << "locations are different");
-    CNetStorageObject new_file = SNetStorageObjectImpl::Create<CObj>(selector);
 
     for (;;) {
         current += bytes_read;
@@ -428,7 +428,8 @@ ILocation::TUserInfo CObj::GetUserInfoImpl()
 
 void CObj::RemoveOldCopyIfExists() const
 {
-    ISelector::Ptr selector(m_Selector->Clone(fNST_Movable));
+    ISelector* selector;
+    CNetStorageObject guard(Clone(fNST_Movable, &selector));
 
     for (ILocation* l = selector->First(); l; l = selector->Next()) {
         if (l->IsSame(m_Location)) continue;

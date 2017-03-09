@@ -132,27 +132,20 @@ private:
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(m_Context->Create(flags));
-    return SNetStorageObjectImpl::Create<CObj>(selector);
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, flags);
 }
 
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Open(const string& object_loc)
 {
-    ISelector::Ptr selector(m_Context->Create(object_loc));
-    return SNetStorageObjectImpl::Create<CObj>(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, object_loc);
 }
 
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags, const string& service)
 {
-    ISelector::Ptr selector(m_Context->Create(flags, service));
 
-    // Server reports locator to the client before writing anything
-    // So, object must choose location for writing here to make locator valid
-    selector->SetLocator();
-
-    return SNetStorageObjectImpl::Create<CObj>(selector);
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, flags, service);
 }
 
 
@@ -255,8 +248,7 @@ private:
 SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(m_Context->Create(key, flags));
-    return SNetStorageObjectImpl::Create<CObj>(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, key, flags);
 }
 
 
@@ -278,8 +270,7 @@ SDirectNetStorageByKeyImpl::SDirectNetStorageByKeyImpl(
 
 SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags, const string& key)
 {
-    ISelector::Ptr selector(m_Context->Create(key, flags, m_ServiceName));
-    return SNetStorageObjectImpl::Create<CObj>(selector, true);
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, key, flags, m_ServiceName);
 }
 
 
