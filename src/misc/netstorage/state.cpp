@@ -60,27 +60,14 @@ public:
 };
 
 
-// This is used for CLocatorHolding constructor overloading
-enum EBaseCtorExpectsLocator { eBaseCtorExpectsLocator };
-
-
 template <class TBase>
 class CLocatorHolding : public TBase
 {
 public:
-    CLocatorHolding(TObjLoc& object_loc)
-        : m_ObjectLoc(object_loc)
-    {}
-
-    CLocatorHolding(TObjLoc& object_loc, EBaseCtorExpectsLocator)
-        : TBase(object_loc),
-          m_ObjectLoc(object_loc)
-    {}
-
-    template <class TParam>
-    CLocatorHolding(TObjLoc& object_loc, TParam param)
-        : TBase(object_loc, param),
-          m_ObjectLoc(object_loc)
+    template <class... TArgs>
+    CLocatorHolding(TObjLoc& object_loc, TArgs&&... args) :
+        TBase(std::forward<TArgs>(args)...),
+        m_ObjectLoc(object_loc)
     {}
 
 private:
@@ -866,9 +853,9 @@ private:
 CSelector::CSelector(const TObjLoc& loc, SContext* context)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc, eBaseCtorExpectsLocator),
-        m_NetCache(m_ObjectLoc, m_Context),
-        m_FileTrack(m_ObjectLoc, m_Context)
+        m_NotFound(m_ObjectLoc, m_ObjectLoc),
+        m_NetCache(m_ObjectLoc, m_ObjectLoc, m_Context),
+        m_FileTrack(m_ObjectLoc, m_ObjectLoc, m_Context)
 {
     InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
 }
@@ -876,9 +863,9 @@ CSelector::CSelector(const TObjLoc& loc, SContext* context)
 CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc, eBaseCtorExpectsLocator),
-        m_NetCache(m_ObjectLoc, m_Context),
-        m_FileTrack(m_ObjectLoc, m_Context)
+        m_NotFound(m_ObjectLoc, m_ObjectLoc),
+        m_NetCache(m_ObjectLoc, m_ObjectLoc, m_Context),
+        m_FileTrack(m_ObjectLoc, m_ObjectLoc, m_Context)
 {
     InitLocations(eNFL_Unknown, flags);
 }
