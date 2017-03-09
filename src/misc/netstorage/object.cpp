@@ -32,6 +32,7 @@
 
 #include <array>
 #include <sstream>
+#include <typeinfo>
 
 
 BEGIN_NCBI_SCOPE
@@ -173,7 +174,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CObj* new_obj;
     CNetStorageObject new_file(Clone(flags, &new_obj));
 
-    if (m_Location->IsSame(new_obj->First())) {
+    if (typeid(*m_Location) == typeid(*new_obj->First())) {
         rw_state->Close();
         return new_obj->m_ObjectLoc.GetLocator();
     }
@@ -388,7 +389,7 @@ void CObj::RemoveOldCopyIfExists()
     CNetStorageObject guard(Clone(fNST_Movable, &old_obj));
 
     for (ILocation* l = old_obj->First(); l; l = old_obj->Next()) {
-        if (l->IsSame(m_Location)) continue;
+        if (typeid(*l) == typeid(*m_Location)) continue;
 
         try {
             if (l->RemoveImpl() == eNSTRR_Removed) return;

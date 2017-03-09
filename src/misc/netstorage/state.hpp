@@ -104,15 +104,6 @@ public:
 
     typedef pair<string, string> TUserInfo;
     virtual TUserInfo GetUserInfoImpl() = 0;
-
-    virtual bool IsSame(const ILocation* other) const = 0;
-
-protected:
-    template <class TLocation>
-    static const TLocation* To(const ILocation* location)
-    {
-        return dynamic_cast<const TLocation*>(location);
-    }
 };
 
 struct SContext : CObject
@@ -311,8 +302,6 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
-    bool IsSame(const ILocation* other) const { return To<CNotFound>(other); }
-
     TState<CRWNotFound> m_RW;
 };
 
@@ -339,8 +328,6 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
-    bool IsSame(const ILocation* other) const { return To<CNetCache>(other); }
-
     CRef<SContext> m_Context;
     CNetICacheClientExt m_Client;
     TState<CRONetCache> m_Read;
@@ -370,8 +357,6 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
-    bool IsSame(const ILocation* other) const { return To<CFileTrack>(other); }
-
     CRef<SContext> m_Context;
     TState<CROFileTrack> m_Read;
     TState<CWOFileTrack> m_Write;

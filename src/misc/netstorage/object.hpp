@@ -94,8 +94,6 @@ private:
     string FileTrack_PathImpl();
     TUserInfo GetUserInfoImpl();
 
-    bool IsSame(const ILocation* other) const { return To<CObj>(other); }
-
     void RemoveOldCopyIfExists();
     SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
 
