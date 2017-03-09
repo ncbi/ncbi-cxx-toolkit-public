@@ -244,7 +244,7 @@ INetStorageObjectState* CNotFound::StartWrite(const void*, size_t, size_t*, ERW_
 }
 
 
-Uint8 CNotFound::GetSizeImpl()
+Uint8 CNotFound::GetSize()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "NetStorageObject \"" << LocatorToStr() <<
@@ -253,27 +253,27 @@ Uint8 CNotFound::GetSizeImpl()
 }
 
 
-CNetStorageObjectInfo CNotFound::GetInfoImpl()
+CNetStorageObjectInfo CNotFound::GetInfo()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
     return g_CreateNetStorageObjectInfo(object_loc.GetLocator(),
             eNFL_NotFound, &object_loc, 0, NULL);
 }
 
 
-bool CNotFound::ExistsImpl()
+bool CNotFound::Exists()
 {
     return false;
 }
 
 
-ENetStorageRemoveResult CNotFound::RemoveImpl()
+ENetStorageRemoveResult CNotFound::Remove()
 {
     return eNSTRR_NotFound;
 }
 
 
-void CNotFound::SetExpirationImpl(const CTimeout&)
+void CNotFound::SetExpiration(const CTimeout&)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "NetStorageObject \"" << LocatorToStr() <<
@@ -281,7 +281,7 @@ void CNotFound::SetExpirationImpl(const CTimeout&)
 }
 
 
-string CNotFound::FileTrack_PathImpl()
+string CNotFound::FileTrack_Path()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "NetStorageObject \"" << LocatorToStr() <<
@@ -290,19 +290,19 @@ string CNotFound::FileTrack_PathImpl()
 }
 
 
-ILocation::TUserInfo CNotFound::GetUserInfoImpl()
+pair<string, string> CNotFound::GetUserInfo()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "NetStorageObject \"" << LocatorToStr() <<
             "\" could not be found in any of the designated locations.");
-    return TUserInfo(kEmptyStr, kEmptyStr); // Not reached
+    return make_pair(kEmptyStr, kEmptyStr); // Not reached
 }
 
 
 bool CNetCache::Init()
 {
     if (!m_Client) {
-        TObjLoc& object_loc(Locator());
+        CNetStorageObjectLoc& object_loc(Locator());
         if (object_loc.GetLocation() == eNFL_NetCache) {
             m_Client = CNetICacheClient(object_loc.GetNCServiceName(),
                     object_loc.GetAppDomain(), kEmptyStr);
@@ -329,7 +329,7 @@ INetStorageObjectState* CNetCache::StartRead(void* buf, size_t count,
 {
     _ASSERT(result);
 
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         size_t blob_size;
@@ -356,7 +356,7 @@ INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
 {
     _ASSERT(result);
 
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
@@ -375,9 +375,9 @@ INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
 }
 
 
-Uint8 CNetCache::GetSizeImpl()
+Uint8 CNetCache::GetSize()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         return m_Client.GetBlobSize(
@@ -389,10 +389,10 @@ Uint8 CNetCache::GetSizeImpl()
 }
 
 
-CNetStorageObjectInfo CNetCache::GetInfoImpl()
+CNetStorageObjectInfo CNetCache::GetInfo()
 {
     CJsonNode blob_info = CJsonNode::NewObjectNode();
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
@@ -410,14 +410,14 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
     CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
     Uint8 blob_size = size_node && size_node.IsInteger() ?
-            (Uint8) size_node.AsInteger() : GetSizeImpl();
+            (Uint8) size_node.AsInteger() : GetSize();
 
     return g_CreateNetStorageObjectInfo(object_loc.GetLocator(), eNFL_NetCache,
             &object_loc, blob_size, blob_info);
 }
 
 
-// Cannot use ExistsImpl() directly from other methods,
+// Cannot use Exists() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
 #define NC_EXISTS_IMPL(object_loc)                                          \
     if (!m_Client.HasBlob(object_loc.GetShortUniqueKey(),                   \
@@ -429,9 +429,9 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
     }
 
 
-bool CNetCache::ExistsImpl()
+bool CNetCache::Exists()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         NC_EXISTS_IMPL(object_loc);
@@ -442,9 +442,9 @@ bool CNetCache::ExistsImpl()
 }
 
 
-ENetStorageRemoveResult CNetCache::RemoveImpl()
+ENetStorageRemoveResult CNetCache::Remove()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         // NetCache returns OK on removing already-removed/non-existent blobs,
@@ -459,9 +459,9 @@ ENetStorageRemoveResult CNetCache::RemoveImpl()
 }
 
 
-void CNetCache::SetExpirationImpl(const CTimeout& requested_ttl)
+void CNetCache::SetExpiration(const CTimeout& requested_ttl)
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         NC_EXISTS_IMPL(object_loc);
@@ -480,7 +480,7 @@ void CNetCache::SetExpirationImpl(const CTimeout& requested_ttl)
 }
 
 
-string CNetCache::FileTrack_PathImpl()
+string CNetCache::FileTrack_Path()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "NetStorageObject \"" << LocatorToStr() <<
@@ -489,9 +489,9 @@ string CNetCache::FileTrack_PathImpl()
 }
 
 
-ILocation::TUserInfo CNetCache::GetUserInfoImpl()
+pair<string, string> CNetCache::GetUserInfo()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
 
     try {
         NC_EXISTS_IMPL(object_loc);
@@ -499,7 +499,7 @@ ILocation::TUserInfo CNetCache::GetUserInfoImpl()
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
 
     // Not supported
-    return TUserInfo(kEmptyStr, kEmptyStr);
+    return make_pair(kEmptyStr, kEmptyStr);
 }
 
 
@@ -546,16 +546,16 @@ INetStorageObjectState* CFileTrack::StartWrite(const void* buf, size_t count,
 }
 
 
-Uint8 CFileTrack::GetSizeImpl()
+Uint8 CFileTrack::GetSize()
 {
     return (Uint8) m_Context->filetrack_api.GetFileInfo(
             Locator()).GetInteger("size");
 }
 
 
-CNetStorageObjectInfo CFileTrack::GetInfoImpl()
+CNetStorageObjectInfo CFileTrack::GetInfo()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
     CJsonNode file_info_node =
             m_Context->filetrack_api.GetFileInfo(object_loc);
 
@@ -571,7 +571,7 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 }
 
 
-// Cannot use ExistsImpl() directly from other methods,
+// Cannot use Exists() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
 #define FT_EXISTS_IMPL(object_loc)                                  \
     if (!m_Context->filetrack_api.GetFileInfo(object_loc)) {        \
@@ -582,25 +582,25 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
     }
 
 
-bool CFileTrack::ExistsImpl()
+bool CFileTrack::Exists()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
     FT_EXISTS_IMPL(object_loc);
     return true;
 }
 
 
-ENetStorageRemoveResult CFileTrack::RemoveImpl()
+ENetStorageRemoveResult CFileTrack::Remove()
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
     m_Context->filetrack_api.Remove(object_loc);
     return eNSTRR_Removed;
 }
 
 
-void CFileTrack::SetExpirationImpl(const CTimeout&)
+void CFileTrack::SetExpiration(const CTimeout&)
 {
-    TObjLoc& object_loc(Locator());
+    CNetStorageObjectLoc& object_loc(Locator());
     // By default objects in FileTrack do not have expiration,
     // so checking only object existence
     FT_EXISTS_IMPL(object_loc);
@@ -609,20 +609,20 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
 }
 
 
-string CFileTrack::FileTrack_PathImpl()
+string CFileTrack::FileTrack_Path()
 {
     return m_Context->filetrack_api.GetPath(Locator());
 }
 
 
-ILocation::TUserInfo CFileTrack::GetUserInfoImpl()
+pair<string, string> CFileTrack::GetUserInfo()
 {
     CJsonNode file_info = m_Context->filetrack_api.GetFileInfo(Locator());
     CJsonNode my_ncbi_id = file_info.GetByKeyOrNull("myncbi_id");
 
-    if (my_ncbi_id) return TUserInfo("my_ncbi_id", my_ncbi_id.Repr());
+    if (my_ncbi_id) return make_pair(string("my_ncbi_id"), my_ncbi_id.Repr());
 
-    return TUserInfo(kEmptyStr, kEmptyStr);
+    return make_pair(kEmptyStr, kEmptyStr);
 }
 
 

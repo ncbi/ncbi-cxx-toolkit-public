@@ -85,8 +85,6 @@ using TState = SNetStorageObjectState<SNetStorageObjectDirectState<TBase>>;
 namespace NDirectNetStorageImpl
 {
 
-typedef CNetStorageObjectLoc TObjLoc;
-
 class ILocation
 {
 public:
@@ -94,17 +92,13 @@ public:
 
     virtual INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) = 0;
     virtual INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) = 0;
-    virtual Uint8 GetSizeImpl() = 0;
-    virtual CNetStorageObjectInfo GetInfoImpl() = 0;
-    virtual bool ExistsImpl() = 0;
-    virtual ENetStorageRemoveResult RemoveImpl() = 0;
-    virtual void SetExpirationImpl(const CTimeout&) = 0;
-
-    virtual string FileTrack_PathImpl() = 0;
-
-    typedef pair<string, string> TUserInfo;
-    virtual TUserInfo GetUserInfoImpl() = 0;
-
+    virtual Uint8 GetSize() = 0;
+    virtual CNetStorageObjectInfo GetInfo() = 0;
+    virtual bool Exists() = 0;
+    virtual ENetStorageRemoveResult Remove() = 0;
+    virtual void SetExpiration(const CTimeout&) = 0;
+    virtual string FileTrack_Path() = 0;
+    virtual pair<string, string> GetUserInfo() = 0;
     virtual void SetLocator() = 0;
 };
 
@@ -122,14 +116,14 @@ struct SContext : CObject
     SContext(const string&, const string&,
             CCompoundIDPool::TInstance, const IRegistry&);
 
-    TObjLoc Create(TNetStorageFlags flags)
+    CNetStorageObjectLoc Create(TNetStorageFlags flags)
     {
-        return TObjLoc(compound_id_pool, flags, app_domain, random.GetRandUint8(), filetrack_api.config.site);
+        return CNetStorageObjectLoc(compound_id_pool, flags, app_domain, random.GetRandUint8(), filetrack_api.config.site);
     }
 
-    TObjLoc Create(const string& key, TNetStorageFlags flags)
+    CNetStorageObjectLoc Create(const string& key, TNetStorageFlags flags)
     {
-        return TObjLoc(compound_id_pool, flags, app_domain, key, filetrack_api.config.site);
+        return CNetStorageObjectLoc(compound_id_pool, flags, app_domain, key, filetrack_api.config.site);
     }
 
 private:
@@ -143,7 +137,7 @@ template <class TBase>
 class ILocatorHolding : public TBase
 {
 public:
-    virtual TObjLoc& Locator() = 0;
+    virtual CNetStorageObjectLoc& Locator() = 0;
 
     // Convenience method
     string LocatorToStr() { return Locator().GetLocator(); }
@@ -154,15 +148,15 @@ class CLocatorHolding : public TBase
 {
 public:
     template <class... TArgs>
-    CLocatorHolding(TObjLoc& object_loc, TArgs&&... args) :
+    CLocatorHolding(CNetStorageObjectLoc& object_loc, TArgs&&... args) :
         TBase(object_loc, std::forward<TArgs>(args)...),
         m_ObjectLoc(object_loc)
     {}
 
 private:
-    virtual TObjLoc& Locator() { return m_ObjectLoc; }
+    virtual CNetStorageObjectLoc& Locator() { return m_ObjectLoc; }
 
-    TObjLoc& m_ObjectLoc;
+    CNetStorageObjectLoc& m_ObjectLoc;
 };
 
 class CROState : public SNetStorageObjectIState
@@ -281,21 +275,21 @@ private:
 class CNotFound : public ILocatorHolding<ILocation>
 {
 public:
-    CNotFound(TObjLoc& object_loc, SNetStorageObjectImpl& fsm)
+    CNotFound(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm)
         : m_RW(fsm, object_loc)
     {}
 
-    void SetLocator();
+    void SetLocator() override;
 
     INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
     INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
-    Uint8 GetSizeImpl();
-    CNetStorageObjectInfo GetInfoImpl();
-    bool ExistsImpl();
-    ENetStorageRemoveResult RemoveImpl();
-    void SetExpirationImpl(const CTimeout&);
-    string FileTrack_PathImpl();
-    TUserInfo GetUserInfoImpl();
+    Uint8 GetSize() override;
+    CNetStorageObjectInfo GetInfo() override;
+    bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
+    void SetExpiration(const CTimeout&) override;
+    string FileTrack_Path() override;
+    pair<string, string> GetUserInfo() override;
 
 private:
     TState<CRWNotFound> m_RW;
@@ -304,24 +298,24 @@ private:
 class CNetCache : public ILocatorHolding<ILocation>
 {
 public:
-    CNetCache(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
+    CNetCache(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
         : m_Context(context),
           m_Read(fsm, object_loc, cancel_relocate),
           m_Write(fsm, object_loc)
     {}
 
     bool Init();
-    void SetLocator();
+    void SetLocator() override;
 
     INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
     INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
-    Uint8 GetSizeImpl();
-    CNetStorageObjectInfo GetInfoImpl();
-    bool ExistsImpl();
-    ENetStorageRemoveResult RemoveImpl();
-    void SetExpirationImpl(const CTimeout&);
-    string FileTrack_PathImpl();
-    TUserInfo GetUserInfoImpl();
+    Uint8 GetSize() override;
+    CNetStorageObjectInfo GetInfo() override;
+    bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
+    void SetExpiration(const CTimeout&) override;
+    string FileTrack_Path() override;
+    pair<string, string> GetUserInfo() override;
 
 private:
     CRef<SContext> m_Context;
@@ -333,24 +327,24 @@ private:
 class CFileTrack : public ILocatorHolding<ILocation>
 {
 public:
-    CFileTrack(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
+    CFileTrack(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
         : m_Context(context),
           m_Read(fsm, object_loc, cancel_relocate),
           m_Write(fsm, object_loc)
     {}
 
     bool Init() { return m_Context->filetrack_api; }
-    void SetLocator();
+    void SetLocator() override;
 
     INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
     INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
-    Uint8 GetSizeImpl();
-    CNetStorageObjectInfo GetInfoImpl();
-    bool ExistsImpl();
-    ENetStorageRemoveResult RemoveImpl();
-    void SetExpirationImpl(const CTimeout&);
-    string FileTrack_PathImpl();
-    TUserInfo GetUserInfoImpl();
+    Uint8 GetSize() override;
+    CNetStorageObjectInfo GetInfo() override;
+    bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
+    void SetExpiration(const CTimeout&) override;
+    string FileTrack_Path() override;
+    pair<string, string> GetUserInfo() override;
 
 private:
     CRef<SContext> m_Context;

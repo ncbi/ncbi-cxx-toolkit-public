@@ -43,7 +43,7 @@ namespace NDirectNetStorageImpl
 class CObj : public INetStorageObjectState
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened = false, ENetStorageObjectLocation location = eNFL_Unknown);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const CNetStorageObjectLoc& loc, TNetStorageFlags flags, bool is_opened = false, ENetStorageObjectLocation location = eNFL_Unknown);
 
     ERW_Result Read(void*, size_t, size_t*) override;
     ERW_Result PendingCount(size_t* count) override { *count = 0; return eRW_Success; }
@@ -84,7 +84,7 @@ private:
     SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
 
     bool m_CancelRelocate = false;
-    TObjLoc m_ObjectLoc;
+    CNetStorageObjectLoc m_ObjectLoc;
     CRef<SContext> m_Context;
     list<unique_ptr<ILocation>> m_Locations;
     CLocatorHolding<CNotFound> m_NotFound;

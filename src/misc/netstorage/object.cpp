@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened, ENetStorageObjectLocation location) :
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const CNetStorageObjectLoc& loc, TNetStorageFlags flags, bool is_opened, ENetStorageObjectLocation location) :
     m_ObjectLoc(loc),
     m_Context(context),
     m_NotFound(m_ObjectLoc, fsm),
@@ -132,7 +132,7 @@ auto CObj::Meta(TCaller caller) -> decltype(caller(nullptr))
 
 Uint8 CObj::GetSize()
 {
-    return Meta([](ILocation* l) { return l->GetSizeImpl(); });
+    return Meta([](ILocation* l) { return l->GetSize(); });
 }
 
 
@@ -159,25 +159,25 @@ void CObj::SetAttribute(const string&, const string&)
 
 CNetStorageObjectInfo CObj::GetInfo()
 {
-    return Meta([](ILocation* l) { return l->GetInfoImpl(); });
+    return Meta([](ILocation* l) { return l->GetInfo(); });
 }
 
 
 void CObj::SetExpiration(const CTimeout& ttl)
 {
-    return Meta([&](ILocation* l) { return l->SetExpirationImpl(ttl); });
+    return Meta([&](ILocation* l) { return l->SetExpiration(ttl); });
 }
 
 
 string CObj::FileTrack_Path()
 {
-    return Meta([&](ILocation* l) { return l->FileTrack_PathImpl(); });
+    return Meta([&](ILocation* l) { return l->FileTrack_Path(); });
 }
 
 
 pair<string, string> CObj::GetUserInfo()
 {
-    return Meta([&](ILocation* l) { return l->GetUserInfoImpl(); });
+    return Meta([&](ILocation* l) { return l->GetUserInfo(); });
 }
 
 
@@ -279,13 +279,13 @@ void CObj::CancelRelocate()
 
 bool CObj::Exists()
 {
-    return Meta([&](ILocation* l) { return l->ExistsImpl(); });
+    return Meta([&](ILocation* l) { return l->Exists(); });
 }
 
 
 ENetStorageRemoveResult CObj::Remove()
 {
-    return Meta([&](ILocation* l) { return l->RemoveImpl(); });
+    return Meta([&](ILocation* l) { return l->Remove(); });
 }
 
 
@@ -363,14 +363,14 @@ void CObj::RemoveOldCopyIfExists(ILocation* current)
         // Do not remove object from current location
         if (typeid(*l) == typeid(*current)) throw 0;
 
-        return l->RemoveImpl();
+        return l->Remove();
     };
 
     Meta(f);
 }
 
 
-TObjLoc& CObj::Locator()
+CNetStorageObjectLoc& CObj::Locator()
 {
     return m_ObjectLoc;
 }
@@ -388,7 +388,7 @@ SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 
     if (!flags) flags = m_Context->default_flags;
 
-    TObjLoc loc = Locator();
+    CNetStorageObjectLoc loc = Locator();
     loc.SetStorageAttrFlags(flags);
 
     auto l = [&](CObj& state) { *copy = &state; };
