@@ -686,16 +686,25 @@ void CAsnCacheApplication::Init(void)
                              "items in delta sequences",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddFlag("skip-retrieval-failures",
+                      "Skip failed retrieval of sequences, "
+                      "up to any limit imposed by -max-retrieval-failures");
     arg_desc->AddOptionalKey("max-retrieval-failures", "MaximumAllowedFailures",
+                             "Configures the option of -skip-failures: "
                              "Maximum number of sequences we're allowed to "
                              "fail to retrieve from ID and still consider "
                              "execution a success; does not include withdrawn "
-                             "sequences, which are counted separately",
+                             "sequences, which are counted separately. The "
+                             "default is unlimited.",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddFlag("skip-withdrawn",
+                      "Skip retrieval of withdrawn sequences, "
+                      "up to any limit imposed by -max-withdrawn");
     arg_desc->AddOptionalKey("max-withdrawn", "MaximumWithdrawnSequences",
+                             "Configures the option of -skip-withdrawn: "
                              "Maximum number of withdrawn sequences allowed in "
-                             "the input Seq-ids",
+                             "the input Seq-ids. The default is unlimited.",
                              CArgDescriptions::eInteger);
 
     arg_desc->AddFlag("extract-product",
@@ -716,11 +725,16 @@ void CAsnCacheApplication::Init(void)
     arg_desc->AddFlag("remove-annotation",
                       "Remove all annotation from caches entries");
 
+    arg_desc->SetDependency("skip-retrieval-failures",
+                            CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-retrieval-failures",
+                            CArgDescriptions::eRequires, "skip-retrieval-failures");
+
+    arg_desc->SetDependency("skip-withdrawn",
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-withdrawn",
-                            CArgDescriptions::eRequires, "fetch-missing");
-                            
+                            CArgDescriptions::eRequires, "skip-withdrawn");
+
     arg_desc->AddOptionalKey("oseqids","oseqids","Seqids that actually made it to the cache", 
         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
@@ -813,10 +827,12 @@ int CAsnCacheApplication::Run(void)
     LOG_POST(Error << "update existing = "
              << (update_existing ? "true" : "false"));
 
+    bool skip_retrieval_failures = args["skip-retrieval-failures"];
     unsigned max_retrieval_failures =
          args["max-retrieval-failures"]
              ? args["max-retrieval-failures"].AsInteger() : UINT_MAX;
 
+    bool skip_withdrawn = args["skip-withdrawn"];
     unsigned max_withdrawn =
          args["max-withdrawn"]
              ? args["max-withdrawn"].AsInteger() : UINT_MAX;
@@ -884,9 +900,11 @@ int CAsnCacheApplication::Run(void)
     if (fetch_missing) {
         LOG_POST(Error << "total record retrieval failures: " << m_RecordsNotFound);
         LOG_POST(Error << "total records withdrawn:         " << m_RecordsWithdrawn);
-        if (m_RecordsNotFound > max_retrieval_failures) {
+        if (skip_retrieval_failures  &&
+            m_RecordsNotFound > max_retrieval_failures) {
             return 3;
-        } else if (m_RecordsWithdrawn > max_withdrawn) {
+        } else if (skip_withdrawn  &&
+                   m_RecordsWithdrawn > max_withdrawn) {
             return 4;
         }
     }
