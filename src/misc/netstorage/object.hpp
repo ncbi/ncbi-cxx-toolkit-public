@@ -87,7 +87,7 @@ private:
     CNetStorageObjectLoc m_ObjectLoc;
     CRef<SContext> m_Context;
     list<unique_ptr<ILocation>> m_Locations;
-    CLocatorHolding<CNotFound> m_NotFound;
+    CNotFound m_NotFound;
     bool m_IsOpened;
 };
 

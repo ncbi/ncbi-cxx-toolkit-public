@@ -99,8 +99,12 @@ public:
     virtual void SetExpiration(const CTimeout&) = 0;
     virtual string FileTrack_Path() = 0;
     virtual pair<string, string> GetUserInfo() = 0;
+    virtual string GetLoc() const = 0;
+    virtual CNetStorageObjectLoc& Locator() = 0;
     virtual void SetLocator() = 0;
 };
+
+using CLocation = SNetStorageObjectDirectState<ILocation>;
 
 struct SContext : CObject
 {
@@ -128,35 +132,6 @@ struct SContext : CObject
 
 private:
     void Init();
-};
-
-// The purpose of LocatorHolding templates is to provide object locator
-// for any interface/class that needs it (e.g. for exception/log purposes).
-
-template <class TBase>
-class ILocatorHolding : public TBase
-{
-public:
-    virtual CNetStorageObjectLoc& Locator() = 0;
-
-    // Convenience method
-    string LocatorToStr() { return Locator().GetLocator(); }
-};
-
-template <class TBase>
-class CLocatorHolding : public TBase
-{
-public:
-    template <class... TArgs>
-    CLocatorHolding(CNetStorageObjectLoc& object_loc, TArgs&&... args) :
-        TBase(object_loc, std::forward<TArgs>(args)...),
-        m_ObjectLoc(object_loc)
-    {}
-
-private:
-    virtual CNetStorageObjectLoc& Locator() { return m_ObjectLoc; }
-
-    CNetStorageObjectLoc& m_ObjectLoc;
 };
 
 class CROState : public SNetStorageObjectIState
@@ -272,11 +247,12 @@ private:
     TRequest m_Request;
 };
 
-class CNotFound : public ILocatorHolding<ILocation>
+class CNotFound : public CLocation
 {
 public:
     CNotFound(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm)
-        : m_RW(fsm, object_loc)
+        : CLocation(object_loc),
+          m_RW(fsm, object_loc)
     {}
 
     void SetLocator() override;
@@ -295,11 +271,12 @@ private:
     TState<CRWNotFound> m_RW;
 };
 
-class CNetCache : public ILocatorHolding<ILocation>
+class CNetCache : public CLocation
 {
 public:
     CNetCache(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
-        : m_Context(context),
+        : CLocation(object_loc),
+          m_Context(context),
           m_Read(fsm, object_loc, cancel_relocate),
           m_Write(fsm, object_loc)
     {}
@@ -324,11 +301,12 @@ private:
     TState<CWONetCache> m_Write;
 };
 
-class CFileTrack : public ILocatorHolding<ILocation>
+class CFileTrack : public CLocation
 {
 public:
     CFileTrack(CNetStorageObjectLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
-        : m_Context(context),
+        : CLocation(object_loc),
+          m_Context(context),
           m_Read(fsm, object_loc, cancel_relocate),
           m_Write(fsm, object_loc)
     {}

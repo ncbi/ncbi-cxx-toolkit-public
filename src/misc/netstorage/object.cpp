@@ -54,12 +54,12 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const CNetStorageObjec
     const bool movable = flags & fNST_Movable;
 
     if (primary_ft || secondary_ft || movable) {
-        unique_ptr<CFileTrack> ft(new CLocatorHolding<CFileTrack>(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
+        unique_ptr<CFileTrack> ft(new CFileTrack(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
         if (ft->Init()) m_Locations.emplace_back(ft.release());
     }
 
     if (primary_nc || secondary_nc || movable) {
-        unique_ptr<CNetCache> nc(new CLocatorHolding<CNetCache>(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
+        unique_ptr<CNetCache> nc(new CNetCache(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
         if (nc->Init()) m_Locations.emplace_back(nc.release());
     }
 

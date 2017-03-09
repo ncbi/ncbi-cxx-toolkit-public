@@ -223,7 +223,7 @@ void CWOFileTrack::Abort()
 void CNotFound::SetLocator()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << LocatorToStr() << "\" for writing.");
+            "Cannot open \"" << GetLoc() << "\" for writing.");
 }
 
 
@@ -247,7 +247,7 @@ INetStorageObjectState* CNotFound::StartWrite(const void*, size_t, size_t*, ERW_
 Uint8 CNotFound::GetSize()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << LocatorToStr() <<
+            "NetStorageObject \"" << GetLoc() <<
             "\" could not be found in any of the designated locations.");
     return 0; // Not reached
 }
@@ -276,7 +276,7 @@ ENetStorageRemoveResult CNotFound::Remove()
 void CNotFound::SetExpiration(const CTimeout&)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << LocatorToStr() <<
+            "NetStorageObject \"" << GetLoc() <<
             "\" could not be found in any of the designated locations.");
 }
 
@@ -284,7 +284,7 @@ void CNotFound::SetExpiration(const CTimeout&)
 string CNotFound::FileTrack_Path()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << LocatorToStr() <<
+            "NetStorageObject \"" << GetLoc() <<
             "\" could not be found in any of the designated locations.");
     return kEmptyStr; // Not reached
 }
@@ -293,7 +293,7 @@ string CNotFound::FileTrack_Path()
 pair<string, string> CNotFound::GetUserInfo()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << LocatorToStr() <<
+            "NetStorageObject \"" << GetLoc() <<
             "\" could not be found in any of the designated locations.");
     return make_pair(kEmptyStr, kEmptyStr); // Not reached
 }
@@ -405,7 +405,7 @@ CNetStorageObjectInfo CNetCache::GetInfo()
             if (NStr::SplitInTwo(line, ": ", key, val, NStr::fSplit_ByPattern))
                 blob_info.SetByKey(key, CJsonNode::GuessType(val));
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + GetLoc())
 
     CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
@@ -436,7 +436,7 @@ bool CNetCache::Exists()
     try {
         NC_EXISTS_IMPL(object_loc);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + GetLoc())
 
     return true;
 }
@@ -453,7 +453,7 @@ ENetStorageRemoveResult CNetCache::Remove()
         m_Client.RemoveBlob(object_loc.GetShortUniqueKey(), 0, kEmptyStr,
                 nc_cache_name = object_loc.GetAppDomain());
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + GetLoc())
 
     return eNSTRR_Removed;
 }
@@ -476,14 +476,14 @@ void CNetCache::SetExpiration(const CTimeout& requested_ttl)
         m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl,
                 nc_cache_name = object_loc.GetAppDomain());
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + GetLoc())
 }
 
 
 string CNetCache::FileTrack_Path()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "NetStorageObject \"" << LocatorToStr() <<
+            "NetStorageObject \"" << GetLoc() <<
             "\" is not a FileTrack object");
     return kEmptyStr; // Not reached
 }
@@ -496,7 +496,7 @@ pair<string, string> CNetCache::GetUserInfo()
     try {
         NC_EXISTS_IMPL(object_loc);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + GetLoc())
 
     // Not supported
     return make_pair(kEmptyStr, kEmptyStr);
