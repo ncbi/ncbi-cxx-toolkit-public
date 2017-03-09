@@ -41,10 +41,15 @@ namespace NDirectNetStorageImpl
 {
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened, ENetStorageObjectLocation location) :
-    m_Selector(new CSelector(fsm, loc, context, &m_CancelRelocate, flags, location)),
+    m_ObjectLoc(loc),
+    m_Context(context),
+    m_NotFound(m_ObjectLoc, fsm),
+    m_NetCache(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate),
+    m_FileTrack(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate),
     m_Location(this),
     m_IsOpened(is_opened)
 {
+    InitLocations(location, flags);
 }
 
 
@@ -69,7 +74,7 @@ auto CObj::Meta(TCaller caller, bool restartable) -> decltype(caller(nullptr))
     // Restarting location search,
     // as object location might be changed while we were using it.
     m_Location = this;
-    m_Selector->Restart();
+    Restart();
     return caller(m_Location);
 }
 
@@ -125,12 +130,6 @@ ILocation::TUserInfo CObj::GetUserInfo()
 }
 
 
-CNetStorageObjectLoc& CObj::Locator()
-{
-    return m_Selector->Locator();
-}
-
-
 void s_Check(ERW_Result result, const char* what)
 {
     switch (result) {
@@ -155,7 +154,7 @@ void s_Check(ERW_Result result, const char* what)
 
 string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    const size_t max = m_Selector->GetContext().relocate_chunk;
+    const size_t max = m_Context->relocate_chunk;
     size_t current = 0;
     size_t total = 0;
     size_t bytes_read;
@@ -163,7 +162,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 
     // Use Read() to detect the current location
     m_Location = this;
-    m_Selector->Restart();
+    Restart();
     ERW_Result result = eRW_Error;
     auto rw_state = StartRead(buffer.data(), buffer.size(), &bytes_read, &result);
     s_Check(result, "reading");
@@ -174,9 +173,9 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CObj* new_obj;
     CNetStorageObject new_file(Clone(flags, &new_obj));
 
-    if (m_Location->IsSame(new_obj->m_Selector->First())) {
+    if (m_Location->IsSame(new_obj->First())) {
         rw_state->Close();
-        return new_obj->m_Selector->Locator().GetLocator();
+        return new_obj->m_ObjectLoc.GetLocator();
     }
 
     for (;;) {
@@ -254,7 +253,7 @@ void CObj::Abort()
 
 string CObj::GetLoc() const
 {
-    return m_Selector->Locator().GetLocator();
+    return m_ObjectLoc.GetLocator();
 }
 
 
@@ -267,7 +266,7 @@ ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
         return result;
     };
 
-    return Meta(f, m_Selector->InProgress());
+    return Meta(f, InProgress());
 }
 
 
@@ -281,11 +280,11 @@ ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     // If object already exists, it will be overwritten in the same backend
     if (m_IsOpened && !Exists()) {
-        m_Selector->Restart();
+        Restart();
     }
 
     ERW_Result result = eRW_Error;
-    ILocation* l = m_Selector->First();
+    ILocation* l = First();
     EnterState(l->StartWrite(buf, count, bytes_written, &result));
     m_Location = l;
     if (m_IsOpened) RemoveOldCopyIfExists();
@@ -297,7 +296,7 @@ ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 INetStorageObjectState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read,
         ERW_Result* result)
 {
-    for (ILocation* l = m_Selector->First(); l; l = m_Selector->Next()) {
+    for (ILocation* l = First(); l; l = Next()) {
         auto rw_state = l->StartRead(buf, count, bytes_read, result);
         if (rw_state) {
             m_Location = l;
@@ -322,7 +321,7 @@ INetStorageObjectState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Resul
 template <class TCaller>
 auto CObj::MetaImpl(TCaller caller) -> decltype(caller(nullptr))
 {
-    ILocation* l = m_Selector->First();
+    ILocation* l = First();
 
     for (;;) {
         m_Location = l;
@@ -333,7 +332,7 @@ auto CObj::MetaImpl(TCaller caller) -> decltype(caller(nullptr))
         catch (CNetStorageException& e) {
             if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
 
-            l = m_Selector->Next();
+            l = Next();
 
             if (!l) throw;
         }
@@ -388,7 +387,7 @@ void CObj::RemoveOldCopyIfExists()
     CObj* old_obj;
     CNetStorageObject guard(Clone(fNST_Movable, &old_obj));
 
-    for (ILocation* l = old_obj->m_Selector->First(); l; l = old_obj->m_Selector->Next()) {
+    for (ILocation* l = old_obj->First(); l; l = old_obj->Next()) {
         if (l->IsSame(m_Location)) continue;
 
         try {
@@ -401,18 +400,7 @@ void CObj::RemoveOldCopyIfExists()
 }
 
 
-CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate,
-        TNetStorageFlags flags, ENetStorageObjectLocation location)
-    : m_ObjectLoc(loc),
-        m_Context(context),
-        m_NotFound(m_ObjectLoc, fsm),
-        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
-        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
-{
-    InitLocations(location, flags);
-}
-
-void CSelector::InitLocations(ENetStorageObjectLocation location,
+void CObj::InitLocations(ENetStorageObjectLocation location,
         TNetStorageFlags flags)
 {
     // The order does matter:
@@ -503,13 +491,13 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
 }
 
 
-ILocation* CSelector::First()
+ILocation* CObj::First()
 {
     return Top();
 }
 
 
-ILocation* CSelector::Next()
+ILocation* CObj::Next()
 {
     if (m_CurrentLocation) {
         --m_CurrentLocation;
@@ -520,7 +508,7 @@ ILocation* CSelector::Next()
 }
 
 
-CLocation* CSelector::Top()
+CLocation* CObj::Top()
 {
     _ASSERT(m_Locations.size() > m_CurrentLocation);
     CLocation* location = m_Locations[m_CurrentLocation];
@@ -529,25 +517,25 @@ CLocation* CSelector::Top()
 }
 
 
-bool CSelector::InProgress() const
+bool CObj::InProgress() const
 {
     return m_CurrentLocation != m_Locations.size() - 1;
 }
 
 
-void CSelector::Restart()
+void CObj::Restart()
 {
     m_CurrentLocation = m_Locations.size() - 1;
 }
 
 
-TObjLoc& CSelector::Locator()
+TObjLoc& CObj::Locator()
 {
     return m_ObjectLoc;
 }
 
 
-void CSelector::SetLocator()
+void CObj::SetLocator()
 {
     if (CLocation* l = Top()) {
         l->SetLocator();
@@ -562,21 +550,13 @@ SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 {
     _ASSERT(copy);
 
-    auto context = &m_Selector->GetContext();
-
-    if (!flags) flags = context->default_flags;
+    if (!flags) flags = m_Context->default_flags;
 
     TObjLoc loc = Locator();
     loc.SetStorageAttrFlags(flags);
 
     auto l = [&](CObj& state) { *copy = &state; };
-    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, context, loc, flags);
-}
-
-
-SContext& CSelector::GetContext()
-{
-    return *m_Context;
+    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Context, loc, flags);
 }
 
 

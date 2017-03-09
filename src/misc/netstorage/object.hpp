@@ -40,32 +40,6 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-class CSelector
-{
-public:
-    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags, ENetStorageObjectLocation = eNFL_Unknown);
-
-    ILocation* First();
-    ILocation* Next();
-    bool InProgress() const;
-    void Restart();
-    TObjLoc& Locator();
-    void SetLocator();
-    SContext& GetContext();
-
-private:
-    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
-    CLocation* Top();
-
-    TObjLoc m_ObjectLoc;
-    CRef<SContext> m_Context;
-    CLocatorHolding<CNotFound> m_NotFound;
-    CLocatorHolding<CNetCache> m_NetCache;
-    CLocatorHolding<CFileTrack> m_FileTrack;
-    vector<CLocation*> m_Locations;
-    size_t m_CurrentLocation;
-};
-
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
@@ -98,7 +72,7 @@ public:
     bool Exists();
     ENetStorageRemoveResult Remove();
 
-    void SetLocator() { m_Selector->SetLocator(); }
+    void SetLocator();
 
 private:
     template <class TCaller>
@@ -125,8 +99,22 @@ private:
     void RemoveOldCopyIfExists();
     SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
 
+    ILocation* First();
+    ILocation* Next();
+    bool InProgress() const;
+    void Restart();
+
+    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
+    CLocation* Top();
+
     bool m_CancelRelocate = false;
-    unique_ptr<CSelector> m_Selector;
+    TObjLoc m_ObjectLoc;
+    CRef<SContext> m_Context;
+    CLocatorHolding<CNotFound> m_NotFound;
+    CLocatorHolding<CNetCache> m_NetCache;
+    CLocatorHolding<CFileTrack> m_FileTrack;
+    vector<CLocation*> m_Locations;
+    size_t m_CurrentLocation;
     ILocation* m_Location;
     bool m_IsOpened;
 };
