@@ -155,6 +155,13 @@ typedef unsigned TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 /// Sequential I/O only
 /// Can switch between reading and writing but only explicitly, using Close()
 ///
+/// @warning Different I/O intefaces cannot be used at the same time.
+/// E.g. calls to Write(buf) and Write(string) cannot be mixed.
+/// Different IO can be used after calling Close().
+///
+/// @warning Once I/O started non-I/O methods cannot be called until Close() is called.
+/// E.g. calls to Write() and GetSize() cannot be mixed.
+///
 
 class NCBI_XCONNECT_EXPORT CNetStorageObject
 {
