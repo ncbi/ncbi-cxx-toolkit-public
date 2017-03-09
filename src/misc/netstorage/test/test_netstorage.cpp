@@ -298,7 +298,8 @@ void CGetSize::Check<TLocationRelocated>()
 
 struct GetRandom
 {
-    static const size_t DataSize = 20 * 1024 * 1024;
+    // 777 for making data only partially fill internal buffers
+    static const size_t DataSize = 20 * 1024 * 1024 + 777;
 
 private:
     // Convenience class for random generator
@@ -2335,7 +2336,7 @@ struct STestCase<NType::TServerless, CDirectNetStorageObject, TBackend> :
         ctx("Relocating with cancel");
         Relocate<TCancel>(object, flags, ctx);
 
-        ctx("Relocated object");
+        ctx("Relocated object after cancel");
         Read<TSuccess>(object, source, ctx);
         Locator<TSuccess>(object, new_locator, ctx);
         Remove<TSuccess>(object, ctx);
