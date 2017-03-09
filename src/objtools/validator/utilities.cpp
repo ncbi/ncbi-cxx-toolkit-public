@@ -1655,7 +1655,8 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
                                        fh1.GetScope()) 
                       && (sequence::Compare(fh1.GetLocation(), 
                                            fh2.GetLocation(),
-                                           &(fh1.GetScope())) == sequence::eSame)) {
+                                           &(fh1.GetScope()),
+                                           sequence::fCompareOverlapping) == sequence::eSame)) {
                         rval = false;
                     }
                 }
