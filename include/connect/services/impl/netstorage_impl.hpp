@@ -198,7 +198,7 @@ private:
     unique_ptr<IEmbeddedStreamReaderWriter> m_ReaderWriter;
     unique_ptr<IEmbeddedStreamReaderWriter> m_IoStreamReaderWriter;
     unique_ptr<INetStorageObjectState> m_Start;
-    stack<INetStorageObjectState*> m_Previous;
+    INetStorageObjectState* m_Previous = nullptr;
     INetStorageObjectState* m_Current = nullptr;
     SNetStorageObjectIoMode m_IoMode;
 
@@ -216,15 +216,15 @@ inline void SNetStorageObjectImpl::SetStartState(INetStorageObjectState* state)
 inline void SNetStorageObjectImpl::EnterState(INetStorageObjectState* state)
 {
     _ASSERT(state);
-    m_Previous.push(m_Current);
+    m_Previous = m_Current;
     m_Current = state;
 }
 
 inline void SNetStorageObjectImpl::ExitState()
 {
-    _ASSERT(!m_Previous.empty());
-    m_Current = m_Previous.top();
-    m_Previous.pop();
+    _ASSERT(m_Previous);
+    m_Current = m_Previous;
+    m_Previous = nullptr;
 }
 
 inline void INetStorageObjectState::EnterState(INetStorageObjectState* state)
