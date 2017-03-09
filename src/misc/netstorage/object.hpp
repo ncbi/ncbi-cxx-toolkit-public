@@ -103,7 +103,7 @@ private:
     void Restart();
 
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
-    CLocation* Top();
+    ILocation* Top();
 
     bool m_CancelRelocate = false;
     TObjLoc m_ObjectLoc;
@@ -111,7 +111,7 @@ private:
     CLocatorHolding<CNotFound> m_NotFound;
     CLocatorHolding<CNetCache> m_NetCache;
     CLocatorHolding<CFileTrack> m_FileTrack;
-    vector<CLocation*> m_Locations;
+    vector<ILocation*> m_Locations;
     size_t m_CurrentLocation;
     ILocation* m_Location;
     bool m_IsOpened;

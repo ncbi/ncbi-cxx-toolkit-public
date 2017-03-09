@@ -104,6 +104,8 @@ public:
 
     typedef pair<string, string> TUserInfo;
     virtual TUserInfo GetUserInfoImpl() = 0;
+
+    virtual void SetLocator() = 0;
 };
 
 struct SContext : CObject
@@ -276,13 +278,7 @@ private:
     TRequest m_Request;
 };
 
-class CLocation : public ILocatorHolding<ILocation>
-{
-public:
-    virtual void SetLocator() = 0;
-};
-
-class CNotFound : public CLocation
+class CNotFound : public ILocatorHolding<ILocation>
 {
 public:
     CNotFound(TObjLoc& object_loc, SNetStorageObjectImpl& fsm)
@@ -305,7 +301,7 @@ private:
     TState<CRWNotFound> m_RW;
 };
 
-class CNetCache : public CLocation
+class CNetCache : public ILocatorHolding<ILocation>
 {
 public:
     CNetCache(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
@@ -334,7 +330,7 @@ private:
     TState<CWONetCache> m_Write;
 };
 
-class CFileTrack : public CLocation
+class CFileTrack : public ILocatorHolding<ILocation>
 {
 public:
     CFileTrack(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)

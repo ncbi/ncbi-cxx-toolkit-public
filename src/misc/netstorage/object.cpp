@@ -509,10 +509,10 @@ ILocation* CObj::Next()
 }
 
 
-CLocation* CObj::Top()
+ILocation* CObj::Top()
 {
     _ASSERT(m_Locations.size() > m_CurrentLocation);
-    CLocation* location = m_Locations[m_CurrentLocation];
+    ILocation* location = m_Locations[m_CurrentLocation];
     _ASSERT(location);
     return location;
 }
@@ -538,7 +538,7 @@ TObjLoc& CObj::Locator()
 
 void CObj::SetLocator()
 {
-    if (CLocation* l = Top()) {
+    if (ILocation* l = Top()) {
         l->SetLocator();
     } else {
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
