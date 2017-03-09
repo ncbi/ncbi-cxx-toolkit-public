@@ -43,8 +43,7 @@ namespace NDirectNetStorageImpl
 class CSelector
 {
 public:
-    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate);
-    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags);
+    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags, ENetStorageObjectLocation = eNFL_Unknown);
 
     ILocation* First();
     ILocation* Next();

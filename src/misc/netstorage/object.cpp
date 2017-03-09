@@ -58,7 +58,7 @@ CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, const TObjLoc
 CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
 {
     TObjLoc loc(context->compound_id_pool, object_loc);
-    return new CSelector(fsm, loc, context, cancel_relocate);
+    return new CSelector(fsm, loc, context, cancel_relocate, loc.GetStorageAttrFlags(), loc.GetLocation());
 }
 
 
@@ -98,7 +98,6 @@ CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
     m_Location(this),
     m_IsOpened(false)
 {
-    _ASSERT(m_Selector.get());
 }
 
 
@@ -490,25 +489,15 @@ void CObj::RemoveOldCopyIfExists()
 }
 
 
-CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate)
-    : m_ObjectLoc(loc),
-        m_Context(context),
-        m_NotFound(m_ObjectLoc, fsm),
-        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
-        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
-{
-    InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
-}
-
 CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate,
-        TNetStorageFlags flags)
+        TNetStorageFlags flags, ENetStorageObjectLocation location)
     : m_ObjectLoc(loc),
         m_Context(context),
         m_NotFound(m_ObjectLoc, fsm),
         m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
         m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
 {
-    InitLocations(eNFL_Unknown, flags);
+    InitLocations(location, flags);
 }
 
 void CSelector::InitLocations(ENetStorageObjectLocation location,
