@@ -6,7 +6,7 @@ srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
 TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
-  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test sub_test
+  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test sub_test unplaced_singleton
 
 .PHONY : noalt test $(TESTS) alt_test
 
@@ -89,6 +89,11 @@ chr_scaf_test_bad: agp_validate
 	-sh -c "./agp_validate -scaf $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test_bad.out 2>&1"
 	-sh -c "./agp_validate -chr $(srcdir)/test/scaffold_from_contig_WGS.agp>>chr_scaf_test_bad.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/chr_scaf_test_bad.out chr_scaf_test_bad.out
+
+unplaced_singleton: agp_validate
+	sh -c "./agp_validate $(srcdir)/test/unplaced_singleton.fa $(srcdir)/test/unplaced_singleton.agp>unplaced_singleton.out 2>&1"
+	sh -c "./agp_validate $(srcdir)/test/unplaced_singleton.fa $(srcdir)/test/unplaced_singleton_bad.agp>>unplaced_singleton.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/unplaced_singleton.out unplaced_singleton.out
 
 ver2.0: agp_validate
 	-sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0.out 2>&1"

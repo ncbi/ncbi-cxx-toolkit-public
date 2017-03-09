@@ -1,0 +1,62 @@
+1 component_id and length loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
+	WARNING: all objects are singletons with component_beg=1 and component_end = length of sequence
+
+No errors, 2 warnings.
+  Count Code  Description
+      1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
+
+
+Objects                : 1
+- with single component: 1
+
+Scaffolds              : 1
+- with single component: 1
+
+Components                   : 1 (W)
+  orientation +              : 1
+  orientation -              : 0
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
+
+Gaps                   : 0
+
+Object names   :  1
+  unlocalized01:  1
+
+Component names:  1
+  chr_contig02 :  1
+1 component_id and length loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
+
+1:unlocalized01	1	850	1	W	chr_contig02	1	850	+
+	WARNING: in unplaced singleton scaffold, component is not used in full (850 out of 859 bp)
+	WARNING: all objects are singletons with component_beg=1 (not all component_end = length of sequence)
+
+No errors, 3 warnings.
+  Count Code  Description
+      1  w50  in unplaced singleton scaffold, component is not used in full
+      1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
+
+
+Objects                : 1
+- with single component: 1
+
+Scaffolds              : 1
+- with single component: 1
+
+Components                   : 1 (W)
+  orientation +              : 1
+  orientation -              : 0
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
+
+Gaps                   : 0
+
+Object names   :  1
+  unlocalized01:  1
+
+Component names:  1
+  chr_contig02 :  1
