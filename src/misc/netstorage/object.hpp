@@ -122,10 +122,13 @@ private:
     void AbortImpl() {}
 
     template <class TCaller>
-    typename TCaller::TReturn Meta(const TCaller& caller);
+    auto Meta(TCaller caller)                   -> decltype(caller(nullptr));
 
     template <class TCaller>
-    typename TCaller::TReturn MetaImpl(const TCaller& caller);
+    auto Meta(TCaller caller, bool restartable) -> decltype(caller(nullptr));
+
+    template <class TCaller>
+    auto MetaImpl(TCaller caller)               -> decltype(caller(nullptr));
 
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
     IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);

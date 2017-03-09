@@ -57,28 +57,16 @@ ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 }
 
 
-template <class TR, TR (ILocation::*TMethod)()>
-struct TCaller
+template <class TCaller>
+auto CObj::Meta(TCaller caller) -> decltype(caller(nullptr))
 {
-    typedef TR TReturn;
-    TR operator()(ILocation* l) const { return (l->*TMethod)(); }
-};
-
-
-struct TSetExpirationCaller
-{
-    typedef void TReturn;
-    const CTimeout& ttl;
-    TSetExpirationCaller(const CTimeout& t) : ttl(t) {}
-    void operator()(ILocation* l) const { return l->SetExpirationImpl(ttl); }
-};
+    return Meta(caller, m_Location != static_cast<ILocation*>(this));
+}
 
 
 template <class TCaller>
-inline typename TCaller::TReturn CObj::Meta(const TCaller& caller)
+auto CObj::Meta(TCaller caller, bool restartable) -> decltype(caller(nullptr))
 {
-    const bool restartable = m_Location != static_cast<ILocation*>(this);
-
     try {
         return caller(m_Location);
     }
@@ -92,12 +80,12 @@ inline typename TCaller::TReturn CObj::Meta(const TCaller& caller)
     m_Location = this;
     m_Selector->Restart();
     return caller(m_Location);
-}                                                                    
+}
 
 
 Uint8 CObj::GetSize()
 {
-    return Meta(TCaller<Uint8, &ILocation::GetSizeImpl>());
+    return Meta([](ILocation* l) { return l->GetSizeImpl(); });
 }
 
 
@@ -124,25 +112,25 @@ void CObj::SetAttribute(const string&, const string&)
 
 CNetStorageObjectInfo CObj::GetInfo()
 {
-    return Meta(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
+    return Meta([](ILocation* l) { return l->GetInfoImpl(); });
 }
 
 
 void CObj::SetExpiration(const CTimeout& ttl)
 {
-    return Meta(TSetExpirationCaller(ttl));
+    return Meta([&](ILocation* l) { return l->SetExpirationImpl(ttl); });
 }
 
 
 string CObj::FileTrack_Path()
 {
-    return Meta(TCaller<string, &ILocation::FileTrack_PathImpl>());
+    return Meta([&](ILocation* l) { return l->FileTrack_PathImpl(); });
 }
 
 
 ILocation::TUserInfo CObj::GetUserInfo()
 {
-    return Meta(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
+    return Meta([&](ILocation* l) { return l->GetUserInfoImpl(); });
 }
 
 
@@ -250,13 +238,13 @@ void CObj::CancelRelocate()
 
 bool CObj::Exists()
 {
-    return Meta(TCaller<bool, &ILocation::ExistsImpl>());
+    return Meta([&](ILocation* l) { return l->ExistsImpl(); });
 }
 
 
 ENetStorageRemoveResult CObj::Remove()
 {
-    return Meta(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
+    return Meta([&](ILocation* l) { return l->RemoveImpl(); });
 }
 
 
@@ -284,23 +272,14 @@ string CObj::GetLoc() const
 
 ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
-    const bool restartable = m_Selector->InProgress();
-    ERW_Result result = eRW_Error;
-
-    try {
+    auto f = [&](ILocation*)
+    {
+        ERW_Result result = eRW_Error;
         StartRead(buf, count, bytes_read, &result);
         return result;
-    }
-    catch (CNetStorageException& e) {
-        if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
-        if (!restartable) throw;
-    }
+    };
 
-    // Restarting location search,
-    // as object location might be changed while we were using it.
-    m_Selector->Restart();
-    StartRead(buf, count, bytes_read, &result);
-    return result;
+    return Meta(f, m_Selector->InProgress());
 }
 
 
@@ -360,7 +339,7 @@ IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 
 
 template <class TCaller>
-inline typename TCaller::TReturn CObj::MetaImpl(const TCaller& caller)
+auto CObj::MetaImpl(TCaller caller) -> decltype(caller(nullptr))
 {
     if (ILocation* l = m_Selector->First()) {
         for (;;) {
@@ -382,47 +361,48 @@ inline typename TCaller::TReturn CObj::MetaImpl(const TCaller& caller)
     } else {
         return caller(m_Location);
     }
-}                                                                    
+}
 
 
-Uint8 CObj::GetSizeImpl() {
-    return MetaImpl(TCaller<Uint8, &ILocation::GetSizeImpl>());
+Uint8 CObj::GetSizeImpl()
+{
+    return MetaImpl([&](ILocation* l) { return l->GetSizeImpl(); });
 }
 
 
 CNetStorageObjectInfo CObj::GetInfoImpl()
 {
-    return MetaImpl(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
+    return MetaImpl([&](ILocation* l) { return l->GetInfoImpl(); });
 }
 
 
 bool CObj::ExistsImpl()
 {
-    return MetaImpl(TCaller<bool, &ILocation::ExistsImpl>());
+    return MetaImpl([&](ILocation* l) { return l->ExistsImpl(); });
 }
 
 
 ENetStorageRemoveResult CObj::RemoveImpl()
 {
-    return MetaImpl(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
+    return MetaImpl([&](ILocation* l) { return l->RemoveImpl(); });
 }
 
 
 void CObj::SetExpirationImpl(const CTimeout& ttl)
 {
-    return MetaImpl(TSetExpirationCaller(ttl));
+    return MetaImpl([&](ILocation* l) { return l->SetExpirationImpl(ttl); });
 }
 
 
 string CObj::FileTrack_PathImpl()
 {
-    return MetaImpl(TCaller<string, &ILocation::FileTrack_PathImpl>());
+    return MetaImpl([&](ILocation* l) { return l->FileTrack_PathImpl(); });
 }
 
 
 ILocation::TUserInfo CObj::GetUserInfoImpl()
 {
-    return MetaImpl(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
+    return MetaImpl([&](ILocation* l) { return l->GetUserInfoImpl(); });
 }
 
 
