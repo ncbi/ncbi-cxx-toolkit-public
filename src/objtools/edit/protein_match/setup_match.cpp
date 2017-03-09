@@ -141,6 +141,16 @@ struct SIdCompare
 };
 
 
+static bool s_InList(const CSeq_id& id, const CBioseq::TId& id_list)
+{
+    for (auto pId : id_list) {
+        if (id.Match(*pId)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
     CRef<CSeq_id>& id) const
 {
@@ -154,27 +164,44 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         }
 
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
-        nucseq_id->Assign(*(feat->GetLocation().GetId()));
-
-        // Throw an exception if null pointer
+        const CSeq_id* id_ptr = feat->GetLocation().GetId();
+        if (!id_ptr) {
+            NCBI_THROW(CProteinMatchException,
+                eBadInput,
+                "Invalid CDS location");
+        }
+        nucseq_id->Assign(*id_ptr);
         ids.insert(nucseq_id);
     }
 
+    if (ids.empty()) {
+        NCBI_THROW(CProteinMatchException,
+            eBadInput,
+            "CDS locations not specified");
+    }
 
+
+    // Check that the ids point to the nucleotide sequence
+    const CBioseq& nuc_seq = nuc_prot_set.GetSet().GetNucFromNucProtSet();
+
+    for ( auto pId : ids) {
+        if (!s_InList(*pId, nuc_seq.GetId())) {
+            NCBI_THROW(CProteinMatchException,
+                eBadInput,
+                "Unrecognized CDS location id");
+        }
+    }
+
+/*
+    // Check that ids are in
     if (ids.size() > 1) {
         NCBI_THROW(CProteinMatchException, 
             eBadInput, 
             "Multiple CDS location ids found");
     }
-
-    if (ids.empty()) { // Change this - make sure there's some check
-        return false;
-    }
-
-    CRef<CSeq_id> nucseq_id = *(ids.begin());
+*/
     const bool with_version = true;
-
-    const string local_id_string = nucseq_id->GetSeqIdString(with_version);
+    const string local_id_string = nuc_seq.GetFirstId()->GetSeqIdString(with_version);
 
     if (id.IsNull()) {
         id = Ref(new CSeq_id());
