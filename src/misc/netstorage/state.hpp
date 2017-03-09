@@ -115,26 +115,6 @@ protected:
     }
 };
 
-struct SContext;
-
-class ISelector
-{
-public:
-    typedef auto_ptr<ISelector> Ptr;
-
-    virtual ~ISelector() {}
-
-    virtual ILocation* First() = 0;
-    virtual ILocation* Next() = 0;
-    virtual bool InProgress() const = 0;
-    virtual void Restart() = 0;
-    virtual TObjLoc& Locator() = 0;
-    virtual void SetLocator() = 0;
-
-    virtual ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags) = 0;
-    virtual const SContext& GetContext() const = 0;
-};
-
 struct SContext : CObject
 {
     CNetICacheClientExt icache_client;

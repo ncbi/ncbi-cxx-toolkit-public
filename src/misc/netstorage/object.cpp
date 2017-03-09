@@ -163,7 +163,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     _ASSERT(rw_state); // Cannot be a nullptr if result check passed
 
     // Selector can only be cloned after location is detected
-    ISelector* selector;
+    CSelector* selector;
     CNetStorageObject new_file(Clone(flags, &selector));
 
     if (m_Location->IsSame(selector->First())) {
@@ -377,7 +377,7 @@ ILocation::TUserInfo CObj::GetUserInfoImpl()
 
 void CObj::RemoveOldCopyIfExists() const
 {
-    ISelector* selector;
+    CSelector* selector;
     CNetStorageObject guard(Clone(fNST_Movable, &selector));
 
     for (ILocation* l = selector->First(); l; l = selector->Next()) {
@@ -566,7 +566,7 @@ TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
 }
 
 
-ISelector* CSelector::Clone(SNetStorageObjectImpl& fsm, TNetStorageFlags flags)
+CSelector* CSelector::Clone(SNetStorageObjectImpl& fsm, TNetStorageFlags flags)
 {
     flags = s_DefaultFlags(m_Context, flags);
     TObjLoc loc(m_Context->compound_id_pool, m_ObjectLoc.GetLocator());
@@ -581,14 +581,14 @@ const SContext& CSelector::GetContext() const
 }
 
 
-ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
+CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
 {
     TObjLoc loc(context->compound_id_pool, object_loc);
     return new CSelector(fsm, loc, context, cancel_relocate);
 }
 
 
-ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service)
+CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service)
 {
     flags = s_DefaultFlags(context, flags);
     TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
@@ -606,7 +606,7 @@ ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStora
 }
 
 
-ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
+CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
         const string& service)
 {
     flags = s_DefaultFlags(context, flags);

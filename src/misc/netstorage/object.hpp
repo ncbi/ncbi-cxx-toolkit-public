@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-class CSelector : public ISelector
+class CSelector
 {
 public:
     CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate);
@@ -52,7 +52,7 @@ public:
     void Restart();
     TObjLoc& Locator();
     void SetLocator();
-    ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
+    CSelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
     const SContext& GetContext() const;
 
 private:
@@ -71,7 +71,7 @@ private:
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, ISelector* selector, TNetStorageFlags flags) :
+    CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags) :
         m_Selector(selector->Clone(fsm, flags)),
         m_Location(this),
         m_IsOpened(false)
@@ -161,19 +161,19 @@ private:
 
     void RemoveOldCopyIfExists() const;
 
-    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, ISelector** selector) const
+    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CSelector** selector) const
     {
         _ASSERT(selector);
         auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
         return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
     }
 
-    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
-    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
-    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
+    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
+    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
+    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
 
     bool m_CancelRelocate = false;
-    ISelector::Ptr m_Selector;
+    unique_ptr<CSelector> m_Selector;
     ILocation* m_Location;
     bool m_IsOpened;
 };
