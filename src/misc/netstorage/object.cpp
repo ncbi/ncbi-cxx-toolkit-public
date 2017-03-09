@@ -40,8 +40,61 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
+TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
+{
+    return flags ? flags : context->default_flags;
+}
+
+
+CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, const TObjLoc& object_loc, TNetStorageFlags flags)
+{
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, object_loc.GetLocator());
+    loc.SetStorageAttrFlags(flags);
+    return new CSelector(fsm, loc, context, nullptr, flags);
+}
+
+
+CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
+{
+    TObjLoc loc(context->compound_id_pool, object_loc);
+    return new CSelector(fsm, loc, context, cancel_relocate);
+}
+
+
+CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service = kEmptyStr)
+{
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
+            context->random.GetRandUint8(), context->filetrack_api.config.site);
+
+    // Non empty service name means this is called by NetStorage server
+    if (!service.empty()) {
+        // Do not set fake service name used by NST health check script
+        if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
+            loc.SetServiceName(service);
+        }
+    }
+
+    return new CSelector(fsm, loc, context, nullptr, flags);
+}
+
+
+CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
+        const string& service)
+{
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
+            key, context->filetrack_api.config.site);
+
+    // Non empty service name means this is called by NetStorage server
+    if (!service.empty()) loc.SetServiceName(service);
+    return new CSelector(fsm, loc, context, cancel_relocate, flags);
+}
+
+
 CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
-    m_Selector(CSelector::Clone(&source->m_Selector->GetContext(), fsm, source->Locator(), flags)),
+    m_Selector(s_Create(&source->m_Selector->GetContext(), fsm, source->Locator(), flags)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -50,7 +103,7 @@ CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
 
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
-    m_Selector(Create(context, fsm, flags)),
+    m_Selector(s_Create(context, fsm, flags)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -58,7 +111,7 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags
 
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
-    m_Selector(Create(context, fsm, flags, service)),
+    m_Selector(s_Create(context, fsm, flags, service)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -69,7 +122,7 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags
 
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
-    m_Selector(Create(context, fsm, &m_CancelRelocate, object_loc)),
+    m_Selector(s_Create(context, fsm, &m_CancelRelocate, object_loc)),
     m_Location(this),
     m_IsOpened(true)
 {
@@ -77,7 +130,7 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_l
 
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service) :
-    m_Selector(Create(context, fsm, &m_CancelRelocate, key, flags, service)),
+    m_Selector(s_Create(context, fsm, &m_CancelRelocate, key, flags, service)),
     m_Location(this),
     m_IsOpened(true)
 {
@@ -604,12 +657,6 @@ void CSelector::SetLocator()
 }
 
 
-TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
-{
-    return flags ? flags : context->default_flags;
-}
-
-
 SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 {
     _ASSERT(copy);
@@ -618,56 +665,9 @@ SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 }
 
 
-CSelector* CSelector::Clone(SContext* context, SNetStorageObjectImpl& fsm, const TObjLoc& object_loc, TNetStorageFlags flags)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, object_loc.GetLocator());
-    loc.SetStorageAttrFlags(flags);
-    return new CSelector(fsm, loc, context, nullptr, flags);
-}
-
-
 SContext& CSelector::GetContext()
 {
     return *m_Context;
-}
-
-
-CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
-{
-    TObjLoc loc(context->compound_id_pool, object_loc);
-    return new CSelector(fsm, loc, context, cancel_relocate);
-}
-
-
-CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            context->random.GetRandUint8(), context->filetrack_api.config.site);
-
-    // Non empty service name means this is called by NetStorage server
-    if (!service.empty()) {
-        // Do not set fake service name used by NST health check script
-        if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
-            loc.SetServiceName(service);
-        }
-    }
-
-    return new CSelector(fsm, loc, context, nullptr, flags);
-}
-
-
-CSelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
-        const string& service)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            key, context->filetrack_api.config.site);
-
-    // Non empty service name means this is called by NetStorage server
-    if (!service.empty()) loc.SetServiceName(service);
-    return new CSelector(fsm, loc, context, cancel_relocate, flags);
 }
 
 

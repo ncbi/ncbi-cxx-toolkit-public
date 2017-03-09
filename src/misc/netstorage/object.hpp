@@ -52,7 +52,6 @@ public:
     void Restart();
     TObjLoc& Locator();
     void SetLocator();
-    static CSelector* Clone(SContext*, SNetStorageObjectImpl&, const TObjLoc&, TNetStorageFlags);
     SContext& GetContext();
 
 private:
@@ -128,10 +127,6 @@ private:
 
     void RemoveOldCopyIfExists();
     SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
-
-    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
-    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
-    static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
 
     bool m_CancelRelocate = false;
     unique_ptr<CSelector> m_Selector;
