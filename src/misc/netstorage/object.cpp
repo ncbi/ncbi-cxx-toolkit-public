@@ -40,6 +40,50 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
+CObj::CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags) :
+    m_Selector(selector->Clone(fsm, flags)),
+    m_Location(this),
+    m_IsOpened(false)
+{
+    _ASSERT(m_Selector.get());
+}
+
+
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
+    m_Selector(Create(context, fsm, flags)),
+    m_Location(this),
+    m_IsOpened(false)
+{
+}
+
+
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
+    m_Selector(Create(context, fsm, flags, service)),
+    m_Location(this),
+    m_IsOpened(false)
+{
+    // Server reports locator to the client before writing anything
+    // So, object must choose location for writing here to make locator valid
+    m_Selector->SetLocator();
+}
+
+
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
+    m_Selector(Create(context, fsm, &m_CancelRelocate, object_loc)),
+    m_Location(this),
+    m_IsOpened(true)
+{
+}
+
+
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service) :
+    m_Selector(Create(context, fsm, &m_CancelRelocate, key, flags, service)),
+    m_Location(this),
+    m_IsOpened(true)
+{
+}
+
+
 template <class TCaller>
 auto CObj::Meta(TCaller caller) -> decltype(caller(nullptr))
 {
@@ -563,6 +607,14 @@ void CSelector::SetLocator()
 TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
 {
     return flags ? flags : context->default_flags;
+}
+
+
+SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CSelector** selector) const
+{
+    _ASSERT(selector);
+    auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
+    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
 }
 
 

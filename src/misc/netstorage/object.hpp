@@ -71,44 +71,11 @@ private:
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags) :
-        m_Selector(selector->Clone(fsm, flags)),
-        m_Location(this),
-        m_IsOpened(false)
-    {
-        _ASSERT(m_Selector.get());
-    }
-
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
-        m_Selector(Create(context, fsm, flags)),
-        m_Location(this),
-        m_IsOpened(false)
-    {
-    }
-
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
-        m_Selector(Create(context, fsm, flags, service)),
-        m_Location(this),
-        m_IsOpened(false)
-    {
-        // Server reports locator to the client before writing anything
-        // So, object must choose location for writing here to make locator valid
-        m_Selector->SetLocator();
-    }
-
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
-        m_Selector(Create(context, fsm, &m_CancelRelocate, object_loc)),
-        m_Location(this),
-        m_IsOpened(true)
-    {
-    }
-
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr) :
-        m_Selector(Create(context, fsm, &m_CancelRelocate, key, flags, service)),
-        m_Location(this),
-        m_IsOpened(true)
-    {
-    }
+    CObj(SNetStorageObjectImpl& fsm, CSelector* selector, TNetStorageFlags flags);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr);
 
     ERW_Result Read(void*, size_t, size_t*) override;
     ERW_Result PendingCount(size_t* count) override { *count = 0; return eRW_Success; }
@@ -160,13 +127,7 @@ private:
     bool IsSame(const ILocation* other) const { return To<CObj>(other); }
 
     void RemoveOldCopyIfExists() const;
-
-    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CSelector** selector) const
-    {
-        _ASSERT(selector);
-        auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
-        return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
-    }
+    SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CSelector** selector) const;
 
     static CSelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
     static CSelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
