@@ -3494,7 +3494,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message,
                 // This 'fake' call needs to be done to have the locator
                 // properly formed.
                 // See JIRA: CXX-8041
-                object.Write(kEmptyStr);
+                object.Write("", 0);
             }
 
             if (m_ConnContext.NotNull()) {
@@ -3538,7 +3538,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message,
             // This 'fake' call needs to be done to have the locator
             // properly formed.
             // See JIRA: CXX-8041
-            object.Write(kEmptyStr);
+            object.Write("", 0);
         }
 
         // Log if needed
