@@ -69,7 +69,7 @@ private:
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc);

@@ -46,15 +46,6 @@ TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
 }
 
 
-CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, const TObjLoc& object_loc, TNetStorageFlags flags)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, object_loc.GetLocator());
-    loc.SetStorageAttrFlags(flags);
-    return new CSelector(fsm, loc, context, nullptr, flags);
-}
-
-
 CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
 {
     TObjLoc loc(context->compound_id_pool, object_loc);
@@ -93,8 +84,8 @@ CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_
 }
 
 
-CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
-    m_Selector(s_Create(&source->m_Selector->GetContext(), fsm, source->Locator(), flags)),
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags) :
+    m_Selector(new CSelector(fsm, loc, context, &m_CancelRelocate, flags)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -649,8 +640,16 @@ void CSelector::SetLocator()
 SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 {
     _ASSERT(copy);
+
+    auto context = &m_Selector->GetContext();
+
+    if (!flags) flags = context->default_flags;
+
+    TObjLoc loc = Locator();
+    loc.SetStorageAttrFlags(flags);
+
     auto l = [&](CObj& state) { *copy = &state; };
-    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, this, flags);
+    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, context, loc, flags);
 }
 
 
