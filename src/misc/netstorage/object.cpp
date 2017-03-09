@@ -41,7 +41,7 @@ namespace NDirectNetStorageImpl
 {
 
 CObj::CObj(SNetStorageObjectImpl& fsm, CObj* source, TNetStorageFlags flags) :
-    m_Selector(source->m_Selector->Clone(fsm, flags)),
+    m_Selector(CSelector::Clone(&source->m_Selector->GetContext(), fsm, source->Locator(), flags)),
     m_Location(this),
     m_IsOpened(false)
 {
@@ -618,16 +618,16 @@ SNetStorageObjectImpl* CObj::Clone(TNetStorageFlags flags, CObj** copy)
 }
 
 
-CSelector* CSelector::Clone(SNetStorageObjectImpl& fsm, TNetStorageFlags flags)
+CSelector* CSelector::Clone(SContext* context, SNetStorageObjectImpl& fsm, const TObjLoc& object_loc, TNetStorageFlags flags)
 {
-    flags = s_DefaultFlags(m_Context, flags);
-    TObjLoc loc(m_Context->compound_id_pool, m_ObjectLoc.GetLocator());
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, object_loc.GetLocator());
     loc.SetStorageAttrFlags(flags);
-    return new CSelector(fsm, loc, m_Context, nullptr, flags);
+    return new CSelector(fsm, loc, context, nullptr, flags);
 }
 
 
-const SContext& CSelector::GetContext() const
+SContext& CSelector::GetContext()
 {
     return *m_Context;
 }

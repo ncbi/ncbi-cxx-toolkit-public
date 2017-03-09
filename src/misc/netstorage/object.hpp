@@ -52,8 +52,8 @@ public:
     void Restart();
     TObjLoc& Locator();
     void SetLocator();
-    CSelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
-    const SContext& GetContext() const;
+    static CSelector* Clone(SContext*, SNetStorageObjectImpl&, const TObjLoc&, TNetStorageFlags);
+    SContext& GetContext();
 
 private:
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
