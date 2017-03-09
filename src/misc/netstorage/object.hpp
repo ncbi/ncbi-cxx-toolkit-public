@@ -69,8 +69,7 @@ private:
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened = false);
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc);
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened = false, ENetStorageObjectLocation location = eNFL_Unknown);
 
     ERW_Result Read(void*, size_t, size_t*) override;
     ERW_Result PendingCount(size_t* count) override { *count = 0; return eRW_Success; }

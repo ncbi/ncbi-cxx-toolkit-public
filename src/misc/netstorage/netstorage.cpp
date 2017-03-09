@@ -140,7 +140,9 @@ SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Open(const string& object_loc)
 {
-    return SNetStorageObjectImpl::Create<CObj>(m_Context, object_loc);
+    TObjLoc loc(m_Context->compound_id_pool, object_loc);
+
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, loc, loc.GetStorageAttrFlags(), true, loc.GetLocation());
 }
 
 
