@@ -115,7 +115,7 @@ public:
 };
 
 
-class NCBI_ID2PROC_SNP_EXPORT CID2SNPProcessor_Impl : public CObject
+class CID2SNPProcessor_Impl : public CObject
 {
 public:
     explicit
@@ -133,16 +133,7 @@ public:
                       CID2SNPProcessorParams& params,
                       CID2SNPProcessorState& state,
                       TReplies& replies);
-
-    TReplies ProcessSomeRequests(CID2SNPContext& context,
-                                 CID2_Request_Packet& packet,
-                                 CID2ProcessorResolver* resolver);
-
-    bool ProcessRequest(CID2SNPContext& context,
-                        TReplies& replies,
-                        CID2_Request& request,
-                        CID2ProcessorResolver* resolver);
-
+    
     CRef<CID2SNPProcessorContext> CreateContext(void);
     CRef<CID2SNPProcessorPacketContext> ProcessPacket(CID2SNPProcessorContext* context,
                                                       CID2_Request_Packet& packet,

@@ -325,29 +325,6 @@ CID2SNPContext::CID2SNPContext(void)
 }
 
 
-bool CID2SNPContext::operator<(const CID2SNPContext& b) const
-{
-    if ( m_CompressData != b.m_CompressData ) {
-        return m_CompressData < b.m_CompressData;
-    }
-    if ( m_ExplicitBlobState != b.m_ExplicitBlobState ) {
-        return m_ExplicitBlobState < b.m_ExplicitBlobState;
-    }
-    if ( m_AllowVDB != b.m_AllowVDB ) {
-        return m_AllowVDB < b.m_AllowVDB;
-    }
-    return false;
-}
-
-
-bool CID2SNPContext::operator==(const CID2SNPContext& b) const
-{
-    return m_CompressData == b.m_CompressData &&
-        m_ExplicitBlobState == b.m_ExplicitBlobState &&
-        m_AllowVDB == b.m_AllowVDB;
-}
-
-
 CID2SNPProcessor_Impl::CID2SNPProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
 {
