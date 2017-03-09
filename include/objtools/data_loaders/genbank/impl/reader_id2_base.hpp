@@ -255,15 +255,16 @@ protected:
 
     friend class CId2ReaderProcessorResolver;
 
-    void x_DumpPacket(TConn conn, const CID2_Request_Packet& packet);
-    void x_DumpReply(TConn conn, const char* source, CID2_Reply& reply);
+    void x_DumpPacket(TConn conn, const CID2_Request_Packet& packet, const char* msg = "Sending");
+    void x_DumpReply(TConn conn, CID2_Reply& reply, const char* msg = "Received");
     void x_SetContextData(CID2_Request& request);
     void x_SendToConnection(TConn conn, CID2_Request_Packet& packet);
-    void x_SendToConnection(CReaderRequestResult& result,
-                            SId2ProcessingState& state,
-                            CID2_Request_Packet& packet);
+    void x_SendID2Packet(CReaderRequestResult& result,
+                         SId2ProcessingState& state,
+                         CID2_Request_Packet& packet);
     CRef<CID2_Reply> x_ReceiveFromConnection(TConn conn);
-    CRef<CID2_Reply> x_ReceiveFromConnection(SId2ProcessingState& state, size_t pos = 0);
+    CRef<CID2_Reply> x_ReceiveID2ReplyStage(SId2ProcessingState& state, size_t pos);
+    CRef<CID2_Reply> x_ReceiveID2Reply(SId2ProcessingState& state);
     void x_AssignSerialNumbers(SId2PacketInfo& info,
                                CID2_Request_Packet& packet);
     int x_GetReplyIndex(CReaderRequestResult& result,
@@ -273,10 +274,6 @@ protected:
     bool x_DoneReply(SId2PacketInfo& info,
                      int num,
                      const CID2_Reply& reply);
-
-    void x_GetPacketReplies(CReaderRequestResult& result,
-                            SId2PacketReplies& replies,
-                            CID2_Request_Packet& packet);
 
 private:
     CAtomicCounter_WithAutoInit m_RequestSerialNumber;
