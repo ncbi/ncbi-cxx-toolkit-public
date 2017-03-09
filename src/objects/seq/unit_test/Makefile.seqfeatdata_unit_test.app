@@ -14,5 +14,5 @@ REQUIRES = objects
 
 CHECK_CMD =
 
-WATCHERS = grichenk
+WATCHERS = grichenk foleyjp
 
