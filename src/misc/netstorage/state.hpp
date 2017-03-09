@@ -134,6 +134,11 @@ struct SContext : CObject
         return TObjLoc(compound_id_pool, flags, app_domain, random.GetRandUint8(), filetrack_api.config.site);
     }
 
+    TObjLoc Create(const string& key, TNetStorageFlags flags)
+    {
+        return TObjLoc(compound_id_pool, flags, app_domain, key, filetrack_api.config.site);
+    }
+
 private:
     void Init();
 };

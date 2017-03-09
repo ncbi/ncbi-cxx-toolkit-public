@@ -53,37 +53,16 @@ CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_
 }
 
 
-CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
-        const string& service)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            key, context->filetrack_api.config.site);
-
-    // Non empty service name means this is called by NetStorage server
-    if (!service.empty()) loc.SetServiceName(service);
-    return new CSelector(fsm, loc, context, cancel_relocate, flags);
-}
-
-
-CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags) :
+CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened) :
     m_Selector(new CSelector(fsm, loc, context, &m_CancelRelocate, flags)),
     m_Location(this),
-    m_IsOpened(false)
+    m_IsOpened(is_opened)
 {
 }
 
 
 CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
     m_Selector(s_Create(context, fsm, &m_CancelRelocate, object_loc)),
-    m_Location(this),
-    m_IsOpened(true)
-{
-}
-
-
-CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service) :
-    m_Selector(s_Create(context, fsm, &m_CancelRelocate, key, flags, service)),
     m_Location(this),
     m_IsOpened(true)
 {

@@ -267,7 +267,9 @@ private:
 SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
-    return SNetStorageObjectImpl::Create<CObj>(m_Context, key, flags);
+    if (!flags) flags = m_Context->default_flags;
+
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, m_Context->Create(key, flags), flags, true);
 }
 
 
@@ -289,7 +291,12 @@ SDirectNetStorageByKeyImpl::SDirectNetStorageByKeyImpl(
 
 SNetStorageObjectImpl* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags, const string& key)
 {
-    return SNetStorageObjectImpl::Create<CObj>(m_Context, key, flags, m_ServiceName);
+    if (!flags) flags = m_Context->default_flags;
+
+    TObjLoc loc = m_Context->Create(key, flags);
+    s_SetServiceName(loc, m_ServiceName);
+
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, loc, flags, true);
 }
 
 
