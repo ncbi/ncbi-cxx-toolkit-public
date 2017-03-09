@@ -4103,6 +4103,7 @@ MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinl
 MNHM<USA-CO>	s	John May Museum of Natural History		
 MNHN	s	Museum National d'Histoire Naturelle		
 MNHN:IC	s	Museum National d'Histoire Naturelle, Ichtyologie collection
+MNHN:IE	s	Museum National d'Histoire Naturelle, Echinoderm collection
 MNHN:IM	s	Museum National d'Histoire Naturelle, Marine Invertebrate Collection
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustacean collection
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal collection
@@ -4799,6 +4800,7 @@ NOAA	s	National Oceanic and Atmospeheric Administration
 NOAA:MarFor	s	National Oceanic and Atmospeheric Administration, Marine Forensics
 NOAS	s	New Orleans Academy of Science		
 NOCC	s	National Orchid Conservation Center		
+NOCS-DC	s	National Oceanography Center Southampton Discovery Collections		
 NODCAR	c	marwa mokhtar Abd Rabo		
 NoF	c	The Fungus Culture Collection of the Northern Forestry Centre		
 NOI	s	Nanhai Oceanographic Institute		
