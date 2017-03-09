@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-class CObj : public INetStorageObjectState, private ILocation
+class CObj : public INetStorageObjectState
 {
 public:
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags, bool is_opened = false, ENetStorageObjectLocation location = eNFL_Unknown);
@@ -64,7 +64,7 @@ public:
     void SetExpiration(const CTimeout&);
 
     string FileTrack_Path();
-    TUserInfo GetUserInfo();
+    pair<string, string> GetUserInfo();
 
     CNetStorageObjectLoc& Locator();
     string Relocate(TNetStorageFlags, TNetStorageProgressCb cb);
@@ -78,42 +78,16 @@ private:
     template <class TCaller>
     auto Meta(TCaller caller)                   -> decltype(caller(nullptr));
 
-    template <class TCaller>
-    auto Meta(TCaller caller, bool restartable) -> decltype(caller(nullptr));
+    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*);
 
-    template <class TCaller>
-    auto MetaImpl(TCaller caller)               -> decltype(caller(nullptr));
-
-    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
-    INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
-    Uint8 GetSizeImpl();
-    CNetStorageObjectInfo GetInfoImpl();
-    bool ExistsImpl();
-    ENetStorageRemoveResult RemoveImpl();
-    void SetExpirationImpl(const CTimeout&);
-    string FileTrack_PathImpl();
-    TUserInfo GetUserInfoImpl();
-
-    void RemoveOldCopyIfExists();
+    void RemoveOldCopyIfExists(ILocation* current);
     SNetStorageObjectImpl* Clone(TNetStorageFlags flags, CObj** copy);
-
-    ILocation* First();
-    ILocation* Next();
-    bool InProgress() const;
-    void Restart();
-
-    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
-    ILocation* Top();
 
     bool m_CancelRelocate = false;
     TObjLoc m_ObjectLoc;
     CRef<SContext> m_Context;
+    list<unique_ptr<ILocation>> m_Locations;
     CLocatorHolding<CNotFound> m_NotFound;
-    CLocatorHolding<CNetCache> m_NetCache;
-    CLocatorHolding<CFileTrack> m_FileTrack;
-    vector<ILocation*> m_Locations;
-    size_t m_CurrentLocation;
-    ILocation* m_Location;
     bool m_IsOpened;
 };
 

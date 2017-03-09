@@ -45,38 +45,88 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TN
     m_ObjectLoc(loc),
     m_Context(context),
     m_NotFound(m_ObjectLoc, fsm),
-    m_NetCache(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate),
-    m_FileTrack(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate),
-    m_Location(this),
     m_IsOpened(is_opened)
 {
-    InitLocations(location, flags);
+    const bool primary_nc = location == eNFL_NetCache;
+    const bool primary_ft = location == eNFL_FileTrack;
+    const bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
+    const bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
+    const bool movable = flags & fNST_Movable;
+
+    if (primary_ft || secondary_ft || movable) {
+        unique_ptr<CFileTrack> ft(new CLocatorHolding<CFileTrack>(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
+        if (ft->Init()) m_Locations.emplace_back(ft.release());
+    }
+
+    if (primary_nc || secondary_nc || movable) {
+        unique_ptr<CNetCache> nc(new CLocatorHolding<CNetCache>(m_ObjectLoc, fsm, m_Context, &m_CancelRelocate));
+        if (nc->Init()) m_Locations.emplace_back(nc.release());
+    }
+
+    if (primary_nc || (!primary_ft && !secondary_ft && secondary_nc)) {
+        m_Locations.reverse();
+    }
+
+    if (m_Locations.size()) return;
+
+    // No locations
+    const bool ft = m_Context->filetrack_api;
+    const bool nc = m_Context->icache_client;
+
+    ostringstream os;
+
+    os << "No backends to use for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
+
+    if (secondary_ft && secondary_nc) {
+        os << ", requested FileTrack+NetCache";
+    } else if (secondary_ft) {
+        os << ", requested FileTrack";
+    } else if (secondary_nc) {
+        os << ", requested NetCache";
+    } else if (flags && !movable) {
+        os << ", zero requested backends";
+    }
+
+    os << " and ";
+
+    if (ft && nc) {
+        os << "configured FileTrack+NetCache";
+    } else if (ft) {
+        os << "configured FileTrack";
+    } else if (nc) {
+        os << "configured NetCache";
+    } else {
+        os << "no configured backends";
+    }
+
+    NCBI_THROW(CNetStorageException, eInvalidArg, os.str());
 }
 
 
 template <class TCaller>
 auto CObj::Meta(TCaller caller) -> decltype(caller(nullptr))
 {
-    return Meta(caller, m_Location != static_cast<ILocation*>(this));
-}
+    auto i = m_Locations.begin();
+    auto last = prev(m_Locations.end());
 
+    for (;;) {
+        try {
+            return caller(i->get());
+        }
+        catch (CNetStorageException& e) {
+            if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+        }
+        catch (int) {
+            // Just a signal to try next location
+        }
 
-template <class TCaller>
-auto CObj::Meta(TCaller caller, bool restartable) -> decltype(caller(nullptr))
-{
-    try {
-        return caller(m_Location);
+        if (i++ == last) break;
+
+        // Move failed location to the end
+        m_Locations.splice(m_Locations.end(), m_Locations, m_Locations.begin());
     }
-    catch (CNetStorageException& e) {
-        if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
-        if (!restartable) throw;
-    }
 
-    // Restarting location search,
-    // as object location might be changed while we were using it.
-    m_Location = this;
-    Restart();
-    return caller(m_Location);
+    return caller(&m_NotFound);
 }
 
 
@@ -125,7 +175,7 @@ string CObj::FileTrack_Path()
 }
 
 
-ILocation::TUserInfo CObj::GetUserInfo()
+pair<string, string> CObj::GetUserInfo()
 {
     return Meta([&](ILocation* l) { return l->GetUserInfoImpl(); });
 }
@@ -162,8 +212,6 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     array<char, 128 * 1024> buffer;
 
     // Use Read() to detect the current location
-    m_Location = this;
-    Restart();
     ERW_Result result = eRW_Error;
     auto rw_state = StartRead(buffer.data(), buffer.size(), &bytes_read, &result);
     s_Check(result, "reading");
@@ -174,7 +222,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CObj* new_obj;
     CNetStorageObject new_file(Clone(flags, &new_obj));
 
-    if (typeid(*m_Location) == typeid(*new_obj->First())) {
+    if (typeid(*m_Locations.front()) == typeid(*new_obj->m_Locations.front())) {
         rw_state->Close();
         return new_obj->m_ObjectLoc.GetLocator();
     }
@@ -206,7 +254,6 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
                 // m_CancelRelocate may only be set to true inside the callback
                 if (cb(progress), m_CancelRelocate) {
                     m_CancelRelocate = false;
-                    m_Location = this;
                     new_file--->Abort();
                     rw_state->Abort();
                     NCBI_THROW(CNetStorageException, eInterrupted,
@@ -260,14 +307,9 @@ string CObj::GetLoc() const
 
 ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
 {
-    auto f = [&](ILocation*)
-    {
-        ERW_Result result = eRW_Error;
-        StartRead(buf, count, bytes_read, &result);
-        return result;
-    };
-
-    return Meta(f, InProgress());
+    ERW_Result result = eRW_Error;
+    StartRead(buf, count, bytes_read, &result);
+    return result;
 }
 
 
@@ -280,253 +322,51 @@ bool CObj::Eof()
 ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     // If object already exists, it will be overwritten in the same backend
-    if (m_IsOpened && !Exists()) {
-        Restart();
-    }
+    if (m_IsOpened) Exists();
 
     ERW_Result result = eRW_Error;
-    ILocation* l = First();
-    EnterState(l->StartWrite(buf, count, bytes_written, &result));
-    m_Location = l;
-    if (m_IsOpened) RemoveOldCopyIfExists();
+    EnterState(m_Locations.front()->StartWrite(buf, count, bytes_written, &result));
+
+    if (m_IsOpened) {
+        CObj* old_obj;
+        CNetStorageObject guard(Clone(fNST_Movable, &old_obj));
+        old_obj->RemoveOldCopyIfExists(m_Locations.front().get());
+    }
+
     m_IsOpened = true;
     return result;
 }
 
 
-INetStorageObjectState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read,
-        ERW_Result* result)
+INetStorageObjectState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read, ERW_Result* result)
 {
-    for (ILocation* l = First(); l; l = Next()) {
-        auto rw_state = l->StartRead(buf, count, bytes_read, result);
-        if (rw_state) {
-            m_Location = l;
-            EnterState(rw_state);
-            return rw_state;
-        }
-    }
+    INetStorageObjectState* rw_state = nullptr;
 
-    *result = eRW_Error;
-    return nullptr;
+    auto f = [&](ILocation* l)
+    {
+        rw_state = l->StartRead(buf, count, bytes_read, result);
+
+        if (!rw_state) throw 0;
+
+        EnterState(rw_state);
+        return rw_state;
+    };
+
+    return Meta(f);
 }
 
 
-INetStorageObjectState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
+void CObj::RemoveOldCopyIfExists(ILocation* current)
 {
-    // This just cannot happen
-    _TROUBLE;
-    return NULL;
-}
+    auto f = [&](ILocation* l)
+    {
+        // Do not remove object from current location
+        if (typeid(*l) == typeid(*current)) throw 0;
 
+        return l->RemoveImpl();
+    };
 
-template <class TCaller>
-auto CObj::MetaImpl(TCaller caller) -> decltype(caller(nullptr))
-{
-    ILocation* l = First();
-
-    for (;;) {
-        m_Location = l;
-
-        try {
-            return caller(m_Location);
-        }
-        catch (CNetStorageException& e) {
-            if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
-
-            l = Next();
-
-            if (!l) throw;
-        }
-    }
-}
-
-
-Uint8 CObj::GetSizeImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->GetSizeImpl(); });
-}
-
-
-CNetStorageObjectInfo CObj::GetInfoImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->GetInfoImpl(); });
-}
-
-
-bool CObj::ExistsImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->ExistsImpl(); });
-}
-
-
-ENetStorageRemoveResult CObj::RemoveImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->RemoveImpl(); });
-}
-
-
-void CObj::SetExpirationImpl(const CTimeout& ttl)
-{
-    return MetaImpl([&](ILocation* l) { return l->SetExpirationImpl(ttl); });
-}
-
-
-string CObj::FileTrack_PathImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->FileTrack_PathImpl(); });
-}
-
-
-ILocation::TUserInfo CObj::GetUserInfoImpl()
-{
-    return MetaImpl([&](ILocation* l) { return l->GetUserInfoImpl(); });
-}
-
-
-void CObj::RemoveOldCopyIfExists()
-{
-    CObj* old_obj;
-    CNetStorageObject guard(Clone(fNST_Movable, &old_obj));
-
-    for (ILocation* l = old_obj->First(); l; l = old_obj->Next()) {
-        if (typeid(*l) == typeid(*m_Location)) continue;
-
-        try {
-            if (l->RemoveImpl() == eNSTRR_Removed) return;
-        }
-        catch (CNetStorageException& e) {
-            if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
-        }
-    }
-}
-
-
-void CObj::InitLocations(ENetStorageObjectLocation location,
-        TNetStorageFlags flags)
-{
-    // The order does matter:
-    // First, primary locations
-    // Then, secondary locations
-    // After, all other locations that have not yet been used
-    // And finally, the 'not found' location
-
-    const bool primary_nc = location == eNFL_NetCache;
-    const bool primary_ft = location == eNFL_FileTrack;
-    const bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
-    const bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
-    const bool movable = flags & fNST_Movable;
-
-    m_Locations.push_back(&m_NotFound);
-
-    if (!primary_nc && !secondary_nc && movable) {
-        if (m_NetCache.Init()) {
-            m_Locations.push_back(&m_NetCache);
-        }
-    }
-
-    if (!primary_ft && !secondary_ft && movable) {
-        if (m_FileTrack.Init()) {
-            m_Locations.push_back(&m_FileTrack);
-        }
-    }
-
-    if (!primary_nc && secondary_nc) {
-        if (m_NetCache.Init()) {
-            m_Locations.push_back(&m_NetCache);
-        }
-    }
-
-    if (!primary_ft && secondary_ft) {
-        if (m_FileTrack.Init()) {
-            m_Locations.push_back(&m_FileTrack);
-        }
-    }
-
-    if (primary_nc) {
-        if (m_NetCache.Init()) {
-            m_Locations.push_back(&m_NetCache);
-        }
-    }
-    
-    if (primary_ft) {
-        if (m_FileTrack.Init()) {
-            m_Locations.push_back(&m_FileTrack);
-        }
-    }
-
-    // No real locations, only CNotFound
-    if (m_Locations.size() == 1) {
-        const bool ft = m_Context->filetrack_api;
-        const bool nc = m_Context->icache_client;
-
-        ostringstream os;
-
-        os << "No backends to use for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
-
-        if (secondary_ft && secondary_nc) {
-            os << ", requested FileTrack+NetCache";
-        } else if (secondary_ft) {
-            os << ", requested FileTrack";
-        } else if (secondary_nc) {
-            os << ", requested NetCache";
-        } else if (flags && !movable) {
-            os << ", zero requested backends";
-        }
-
-        os << " and ";
-
-        if (ft && nc) {
-            os << "configured FileTrack+NetCache";
-        } else if (ft) {
-            os << "configured FileTrack";
-        } else if (nc) {
-            os << "configured NetCache";
-        } else {
-            os << "no configured backends";
-        }
-
-        NCBI_THROW(CNetStorageException, eInvalidArg, os.str());
-    }
-
-    Restart();
-}
-
-
-ILocation* CObj::First()
-{
-    return Top();
-}
-
-
-ILocation* CObj::Next()
-{
-    if (m_CurrentLocation) {
-        --m_CurrentLocation;
-        return Top();
-    }
-   
-    return NULL;
-}
-
-
-ILocation* CObj::Top()
-{
-    _ASSERT(m_Locations.size() > m_CurrentLocation);
-    ILocation* location = m_Locations[m_CurrentLocation];
-    _ASSERT(location);
-    return location;
-}
-
-
-bool CObj::InProgress() const
-{
-    return m_CurrentLocation != m_Locations.size() - 1;
-}
-
-
-void CObj::Restart()
-{
-    m_CurrentLocation = m_Locations.size() - 1;
+    Meta(f);
 }
 
 
@@ -538,12 +378,7 @@ TObjLoc& CObj::Locator()
 
 void CObj::SetLocator()
 {
-    if (ILocation* l = Top()) {
-        l->SetLocator();
-    } else {
-        NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
-    }
+    m_Locations.front()->SetLocator();
 }
 
 
