@@ -12,7 +12,7 @@
 # ASN_PROJ =
 # DTD_PROJ =
 LIB_PROJ = ncbi_xloader_snp
-EXPENDABLE_LIB_PROJ =
+EXPENDABLE_LIB_PROJ = id2snp
 
 ## Applications to be built as usual.
 # APP_PROJ =

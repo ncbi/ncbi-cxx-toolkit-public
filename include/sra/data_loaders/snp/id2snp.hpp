@@ -41,6 +41,31 @@ BEGIN_NAMESPACE(objects);
 
 class CID2SNPProcessor_Impl;
 
+class NCBI_ID2PROC_SNP_EXPORT CID2SNPContext
+{
+public:
+    CID2SNPContext(void);
+    
+    bool operator<(const CID2SNPContext& b) const;
+    bool operator==(const CID2SNPContext& b) const;
+    bool operator!=(const CID2SNPContext& b) const {
+        return !(*this == b);
+    }
+
+    friend class CID2SNPProcessor_Impl;
+
+    enum ECompressData {
+        eCompressData_never,
+        eCompressData_some, // if it's benefitial
+        eCompressData_always
+    };
+
+    ECompressData m_CompressData;
+    bool m_ExplicitBlobState;
+    bool m_AllowVDB;
+};
+
+
 class NCBI_ID2PROC_SNP_EXPORT CID2SNPProcessor : public CID2Processor
 {
 public:
@@ -49,15 +74,42 @@ public:
                      const string& driver_name);
     virtual ~CID2SNPProcessor(void);
 
+    // old interface
+    CID2SNPContext GetInitialContext(void) const;
+    void InitContext(CID2SNPContext& context,
+                     const CID2_Request& request);
+
+    TReplies ProcessSomeRequests(CID2SNPContext& context,
+                                 CID2_Request_Packet& packet,
+                                 CID2ProcessorResolver* resolver);
+    bool ProcessRequest(CID2SNPContext& context,
+                        TReplies& replies,
+                        CID2_Request& request,
+                        CID2ProcessorResolver* resolver);
+
     virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet,
-                                         CID2ProcessorResolver* resolver);
+                                         CID2ProcessorResolver* resolver) override;
 
     virtual bool ProcessRequest(TReplies& replies,
                                 CID2_Request& request,
-                                CID2ProcessorResolver *resolver);
+                                CID2ProcessorResolver *resolver) override;
+
+    // new  interface
+    virtual
+    CRef<CID2ProcessorContext> CreateContext(void) override;
+    virtual
+    CRef<CID2ProcessorPacketContext> ProcessPacket(CID2ProcessorContext* context,
+                                                   CID2_Request_Packet& packet,
+                                                   TReplies& replies) override;
+    virtual
+    void ProcessReply(CID2ProcessorContext* context,
+                      CID2ProcessorPacketContext* packet_context,
+                      CID2_Reply& reply,
+                      TReplies& replies) override;
 
 private:
     CRef<CID2SNPProcessor_Impl> m_Impl;
+    CID2SNPContext m_CommonContext;
 };
 
 

@@ -51,14 +51,16 @@ BEGIN_NAMESPACE(objects);
 
 
 CID2SNPProcessor::CID2SNPProcessor(void)
-    : m_Impl(new CID2SNPProcessor_Impl)
+    : m_Impl(new CID2SNPProcessor_Impl),
+      m_CommonContext(GetInitialContext())
 {
 }
 
 
 CID2SNPProcessor::CID2SNPProcessor(const CConfig::TParamTree* params,
                                    const string& driver_name)
-    : m_Impl(new CID2SNPProcessor_Impl(params, driver_name))
+    : m_Impl(new CID2SNPProcessor_Impl(params, driver_name)),
+      m_CommonContext(GetInitialContext())
 {
 }
 
@@ -68,20 +70,90 @@ CID2SNPProcessor::~CID2SNPProcessor(void)
 }
 
 
+CID2SNPContext CID2SNPProcessor::GetInitialContext(void) const
+{
+    return m_Impl->GetInitialContext();
+}
+
+
+void CID2SNPProcessor::InitContext(CID2SNPContext& context,
+                                   const CID2_Request& request)
+{
+    m_Impl->InitContext(context, request);
+}
+
+
+bool CID2SNPProcessor::ProcessRequest(CID2SNPContext& context,
+                                      TReplies& replies,
+                                      CID2_Request& request,
+                                      CID2ProcessorResolver* resolver)
+{
+    return m_Impl->ProcessRequest(context, replies, request, resolver);
+}
+
+
+CID2SNPProcessor::TReplies
+CID2SNPProcessor::ProcessSomeRequests(CID2SNPContext& context,
+                                      CID2_Request_Packet& packet,
+                                      CID2ProcessorResolver* resolver)
+{
+    return m_Impl->ProcessSomeRequests(context, packet, resolver);
+}
+
+
 bool CID2SNPProcessor::ProcessRequest(TReplies& replies,
                                       CID2_Request& request,
-                                      CID2ProcessorResolver* /*resolver*/)
+                                      CID2ProcessorResolver* resolver)
 {
-    return m_Impl->ProcessRequest(replies, request);
+    return ProcessRequest(m_CommonContext, replies, request, resolver);
 }
 
 
 CID2SNPProcessor::TReplies
 CID2SNPProcessor::ProcessSomeRequests(CID2_Request_Packet& packet,
-                                      CID2ProcessorResolver* /*resolver*/)
+                                      CID2ProcessorResolver* resolver)
 {
-    return m_Impl->ProcessSomeRequests(packet);
+    return ProcessSomeRequests(m_CommonContext, packet, resolver);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// new interface
+
+
+CRef<CID2ProcessorContext>
+CID2SNPProcessor::CreateContext(void)
+{
+    return CRef<CID2ProcessorContext>(m_Impl->CreateContext());
+}
+
+
+CRef<CID2ProcessorPacketContext>
+CID2SNPProcessor::ProcessPacket(CID2ProcessorContext* context,
+                                CID2_Request_Packet& packet,
+                                TReplies& replies)
+{
+    return CRef<CID2ProcessorPacketContext>(
+        m_Impl->ProcessPacket(dynamic_cast<CID2SNPProcessorContext*>(context),
+                              packet,
+                              replies));
+}
+
+
+void CID2SNPProcessor::ProcessReply(CID2ProcessorContext* context,
+                                    CID2ProcessorPacketContext* packet_context,
+                                    CID2_Reply& reply,
+                                    TReplies& replies)
+{
+    m_Impl->ProcessReply(dynamic_cast<CID2SNPProcessorContext*>(context),
+                         dynamic_cast<CID2SNPProcessorPacketContext*>(packet_context),
+                         reply,
+                         replies);
+}
+
+
+// end of new interface
+/////////////////////////////////////////////////////////////////////////////
 
 
 END_NAMESPACE(objects);

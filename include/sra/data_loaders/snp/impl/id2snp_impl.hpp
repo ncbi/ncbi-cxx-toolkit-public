@@ -37,7 +37,10 @@
 #include <corelib/ncbi_config.hpp>
 #include <sra/readers/sra/snpread.hpp>
 #include <util/limited_size_map.hpp>
+#include <objects/id2/ID2_Request.hpp>
+#include <objects/id2/ID2_Reply.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
+#include <sra/data_loaders/snp/id2snp.hpp>
 #include <vector>
 
 BEGIN_NCBI_NAMESPACE;
@@ -53,9 +56,64 @@ class CID2_Request_Packet;
 class CID2_Request_Get_Seq_id;
 class CID2_Request_Get_Blob_Id;
 class CID2_Request_Get_Blob_Info;
+class CID2S_Request_Get_Chunks;
 class CID2_Blob_Id;
 class CID2_Reply;
+class CID2_Reply_Get_Seq_id;
+class CID2_Reply_Get_Blob_Id;
 class CID2_Reply_Data;
+class CID2SNPContext;
+class CID2ProcessorResolver;
+class CID2SNPProcessorParams;
+class CID2SNPProcessorState;
+
+class CID2SNPProcessorContext : public CID2ProcessorContext
+{
+public:
+    CID2SNPContext m_Context;
+};
+
+
+struct SSNPDbTrackInfo {
+    SSNPDbTrackInfo(void)
+        : m_NAIndex(0),
+          m_NAVersion(0),
+          m_FilterIndex(0)
+        {
+        }
+    
+    size_t m_NAIndex;
+    size_t m_NAVersion;
+    size_t m_FilterIndex;
+};
+
+
+class CID2SNPProcessorPacketContext : public CID2ProcessorPacketContext
+{
+public:
+    typedef int TSerialNumber;
+    typedef vector< CRef<CID2_Request> > TRequests;
+    typedef vector< CRef<CID2_Reply> > TReplies;
+    
+    struct SRequestInfo {
+        SRequestInfo()
+            : m_OriginalSeqIdType(0),
+              m_SentBlobIds(false)
+            {
+            }
+        
+        TReplies m_AddedReplies;
+        // blob-id resolution
+        vector<SSNPDbTrackInfo> m_SNPTracks;
+        // seq-id resolution
+        int m_OriginalSeqIdType; // seq-id type requested by client
+        string m_SeqAcc; // known qualified text Seq-id (acc.ver)
+        bool m_SentBlobIds;
+    };
+    typedef map<TSerialNumber, SRequestInfo> TSNPRequests;
+    TSNPRequests m_SNPRequests;
+};
+
 
 class NCBI_ID2PROC_SNP_EXPORT CID2SNPProcessor_Impl : public CObject
 {
@@ -65,120 +123,139 @@ public:
                           const string& driver_name = kEmptyStr);
     ~CID2SNPProcessor_Impl(void);
 
-    struct SSNPSeqInfo {
-        SSNPSeqInfo(void)
-            : m_IsSNP(false),
-              m_ValidSNP(false)
+    typedef vector<CRef<CID2_Reply> > TReplies;
+    
+    CRef<CID2SNPProcessorParams> CreateParameters(void);
+    CRef<CID2SNPProcessorState> ProcessPacket(CID2_Request_Packet& packet,
+                                              CID2SNPProcessorParams& params,
+                                              TReplies& replies);
+    void ProcessReply(CID2_Reply& reply,
+                      CID2SNPProcessorParams& params,
+                      CID2SNPProcessorState& state,
+                      TReplies& replies);
+
+    TReplies ProcessSomeRequests(CID2SNPContext& context,
+                                 CID2_Request_Packet& packet,
+                                 CID2ProcessorResolver* resolver);
+
+    bool ProcessRequest(CID2SNPContext& context,
+                        TReplies& replies,
+                        CID2_Request& request,
+                        CID2ProcessorResolver* resolver);
+
+    CRef<CID2SNPProcessorContext> CreateContext(void);
+    CRef<CID2SNPProcessorPacketContext> ProcessPacket(CID2SNPProcessorContext* context,
+                                                      CID2_Request_Packet& packet,
+                                                      TReplies& replies);
+    void ProcessReply(CID2SNPProcessorContext* context,
+                      CID2SNPProcessorPacketContext* packet_context,
+                      CID2_Reply& reply,
+                      TReplies& replies);
+
+    const CID2SNPContext& GetInitialContext(void) const {
+        return m_InitialContext;
+    }
+    void InitContext(CID2SNPContext& context,
+                     const CID2_Request& main_request);
+
+    struct SSNPEntryInfo {
+        SSNPEntryInfo(void)
+            : m_Valid(false),
+              m_SeqIndex(0)
             {
             }
 
-        DECLARE_OPERATOR_BOOL(m_ValidSNP);
+        DECLARE_OPERATOR_BOOL(m_Valid);
 
         // parameters
-        string m_SNPAcc;
-        CSeq_id_Handle m_SeqId;
-        bool m_IsSNP;
-        bool m_ValidSNP;
+        SSNPDbTrackInfo m_Track;
+        bool m_Valid;
+        unsigned m_SeqIndex;
         // cached objects
         CSNPDb m_SNPDb;
         CSNPDbSeqIterator m_SeqIter;
         CRef<CID2_Blob_Id> m_BlobId;
     };
+    
+  protected:
+    enum EProcessStatus {
+        eNotProcessed,
+        eProcessed,
+        eNeedReplies
+    };
+    EProcessStatus x_ProcessGetBlobId(CID2SNPContext& context,
+                                      CID2SNPProcessorPacketContext& packet_context,
+                                      TReplies& replies,
+                                      CID2_Request& main_request,
+                                      CID2_Request_Get_Blob_Id& request);
+    EProcessStatus x_ProcessGetBlobInfo(CID2SNPContext& context,
+                                        CID2SNPProcessorPacketContext& packet_context,
+                                        TReplies& replies,
+                                        CID2_Request& main_request,
+                                        CID2_Request_Get_Blob_Info& request);
+    EProcessStatus x_ProcessGetChunks(CID2SNPContext& context,
+                                      CID2SNPProcessorPacketContext& packet_context,
+                                      TReplies& replies,
+                                      CID2_Request& main_request,
+                                      CID2S_Request_Get_Chunks& request);
+    void x_ProcessReplyGetSeqId(CID2SNPContext& context,
+                                CID2SNPProcessorPacketContext& packet_context,
+                                CID2_Reply& main_reply,
+                                TReplies& replies,
+                                CID2SNPProcessorPacketContext::SRequestInfo& info,
+                                CID2_Reply_Get_Seq_id& reply);
+    void x_ProcessReplyGetBlobId(CID2SNPContext& context,
+                                 CID2SNPProcessorPacketContext& packet_context,
+                                 CID2_Reply& main_reply,
+                                 TReplies& replies,
+                                 CID2SNPProcessorPacketContext::SRequestInfo& info,
+                                 CID2_Reply_Get_Blob_Id& reply);
 
-    typedef vector<CRef<CID2_Reply> > TReplies;
-    TReplies ProcessSomeRequests(CID2_Request_Packet& packet);
-
-    bool ProcessRequest(TReplies& replies,
-                        CID2_Request& request);
-
-    void ResetParameters(void);
-    void ProcessInit(const CID2_Request& main_request);
-    bool ProcessGetSeqId(TReplies& replies,
-                         CID2_Request& main_request,
-                         CID2_Request_Get_Seq_id& request);
-    bool ProcessGetBlobId(TReplies& replies,
-                          CID2_Request& main_request,
-                          CID2_Request_Get_Blob_Id& request);
-    bool ProcessGetBlobInfo(TReplies& replies,
-                            CID2_Request& main_request,
-                            CID2_Request_Get_Blob_Info& request);
-
-protected:
-    SSNPSeqInfo Resolve(TReplies& replies,
-                        CID2_Request& main_request,
-                        CID2_Request_Get_Seq_id& request);
-    SSNPSeqInfo Resolve(TReplies& replies,
-                        CID2_Request& main_request,
-                        CID2_Request_Get_Blob_Id& request);
-
-    // lookup
-    SSNPSeqInfo Resolve(const CSeq_id& id);
-    SSNPSeqInfo ResolveGi(TGi gi);
-    SSNPSeqInfo ResolveGeneral(const CDbtag& dbtag);
-    SSNPSeqInfo ResolveAcc(const CTextseq_id& id);
-    typedef int TAllowSeqType;
-    SSNPSeqInfo ResolveSNPAcc(const string& acc,
-                              const CTextseq_id& id);
-    SSNPSeqInfo ResolveProtAcc(const CTextseq_id& id);
-    SSNPSeqInfo GetRootSeq(const SSNPSeqInfo& seq);
-    bool IsValidRowId(SSNPSeqInfo& seq);
-    bool IsCorrectVersion(SSNPSeqInfo& seq, int version);
-
-    // get Seq-id
-    CRef<CSeq_id> GetAccVer(SSNPSeqInfo& seq);
-    CRef<CSeq_id> GetGeneral(SSNPSeqInfo& seq);
-    TGi GetGi(SSNPSeqInfo& seq);
-    void GetSeqIds(SSNPSeqInfo& seq, list<CRef<CSeq_id> >& ids);
-
+    
     // get various seq info
-    string GetLabel(SSNPSeqInfo& seq);
-    int GetTaxId(SSNPSeqInfo& seq);
-    int GetHash(SSNPSeqInfo& seq);
-    TSeqPos GetLength(SSNPSeqInfo& seq);
-    CSeq_inst::TMol GetType(SSNPSeqInfo& seq);
-    NCBI_gb_state GetGBState(SSNPSeqInfo& seq);
-    int GetID2BlobState(SSNPSeqInfo& seq);
-    int GetBioseqState(SSNPSeqInfo& seq);
-    CRef<CSeq_entry> GetSeq_entry(SSNPSeqInfo& seq);
 
     // conversion to/from blob id
-    SSNPSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
-    CID2_Blob_Id& GetBlobId(SSNPSeqInfo& id);
+    SSNPEntryInfo x_ResolveBlobId(const CID2_Blob_Id& id);
+    SSNPEntryInfo x_ResolveBlobId(const SSNPDbTrackInfo& track,
+                                  const string& acc_ver);
+    CID2_Blob_Id& x_GetBlobId(SSNPEntryInfo& id);
+
+    static void x_AddSeqIdRequest(CID2_Request_Get_Seq_id& request,
+                                  CID2SNPProcessorPacketContext::SRequestInfo& info);
+    static bool x_GetAccVer(string& acc_ver, const CSeq_id& id);
+    
+    bool x_IsSNPNA(const string& s);
 
     // opening SNP files (with caching)
-    CSNPDb GetSNPDb(const string& prefix);
-    CSNPDb& GetSNPDb(SSNPSeqInfo& seq);
+    CSNPDb GetSNPDb(const string& na);
+    CSNPDb& GetSNPDb(SSNPEntryInfo& seq);
 
     // SNP iterators
-    void ResetIteratorCache(SSNPSeqInfo& seq);
-    CSNPDbSeqIterator& GetContigIterator(SSNPSeqInfo& seq);
+    void ResetIteratorCache(SSNPEntryInfo& seq);
+    CSNPDbSeqIterator& GetSeqIterator(SSNPEntryInfo& seq);
     
-    void SetBlobState(CID2_Reply& main_reply,
+    void SetBlobState(CID2SNPContext& context,
+                      CID2_Reply& main_reply,
                       int blob_state);
 
-    bool ExcludedBlob(SSNPSeqInfo& seq,
+    bool ExcludedBlob(SSNPEntryInfo& seq,
                       const CID2_Request_Get_Blob_Info& request);
-    void WriteData(const SSNPSeqInfo& seq,
+    void WriteData(CID2SNPContext& context,
+                   const SSNPEntryInfo& seq,
                    CID2_Reply_Data& data,
                    const CSerialObject& obj);
-    bool WorthCompressing(const SSNPSeqInfo& seq);
+    bool WorthCompressing(const SSNPEntryInfo& seq);
+
+    CRef<CSerialObject> x_LoadBlob(CID2SNPContext& context, SSNPEntryInfo& info);
+    CRef<CSerialObject> x_LoadChunk(CID2SNPContext& context, SSNPEntryInfo& entry, int chunk_id);
     
     typedef limited_size_map<string, CSNPDb> TSNPDbCache;
-
-    enum ECompressData {
-        eCompressData_never,
-        eCompressData_some, // if it's benefitial
-        eCompressData_always
-    };
 
 private:
     CMutex m_Mutex;
     CVDBMgr m_Mgr;
     TSNPDbCache m_SNPDbCache;
-    ECompressData m_DefaultCompressData;
-    bool m_DefaultExplicitBlobState;
-    ECompressData m_CompressData;
-    bool m_ExplicitBlobState;
+    CID2SNPContext m_InitialContext;
 };
 
 
