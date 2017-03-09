@@ -423,6 +423,8 @@ protected:
     {
         // m_prev_row = the last line of the scaffold --
         // usually component, but could be non-breaking gap (which generates a warning)
+
+        // this function should not use m_this_row, which may be undefined (when at the end of the file), or not relevant (elsewhere)
     }
 
     virtual void OnObjectChange()
