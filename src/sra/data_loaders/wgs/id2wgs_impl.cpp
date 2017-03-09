@@ -1443,7 +1443,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobId(CID2WGSContext& context,
     TRACE_X(8, eDebug_resolve, "GetBlobId: done");
     if ( seq || seq.m_IsWGS ) {
         // wgs sequence
-        if ( seq && packet_context && sx_RequestedNA(request) ) {
+        if ( seq && packet_context && main_request.IsSetSerial_number() && sx_RequestedNA(request) ) {
             // there is sequence and it might have NA annotations in ID
             // delay replies until reply from ID
             packet_context->m_NARequests[main_request.GetSerial_number()].assign(replies.begin()+old_size, replies.end());
@@ -2053,7 +2053,7 @@ CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
     else {
         ProcessPacket(context, packet, replies, resolver);
     }
-    return move(replies);
+    return replies;
 }
 
 
@@ -2062,7 +2062,7 @@ CID2WGSProcessor_Impl::CreateContext(void)
 {
     CRef<CID2WGSProcessorContext> context(new CID2WGSProcessorContext);
     context->m_Context = m_InitialContext;
-    return move(context);
+    return context;
 }
 
 
@@ -2076,7 +2076,7 @@ CID2WGSProcessor_Impl::ProcessPacket(CID2WGSProcessorContext* context,
     if ( packet_context->m_NARequests.empty() ) {
         return null;
     }
-    return move(packet_context);
+    return packet_context;
 }
 
 
@@ -2089,7 +2089,7 @@ void CID2WGSProcessor_Impl::ProcessReply(CID2WGSProcessorContext* context,
         // ignore discarded replies
         return;
     }
-    if ( !packet_context ) {
+    if ( !packet_context || !reply.IsSetSerial_number() ) {
         // no post-processing
         replies.push_back(Ref(&reply));
         return;
