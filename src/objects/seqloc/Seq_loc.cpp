@@ -4075,6 +4075,8 @@ private:
     CRef<CInt_fuzz> x_SetFuzz(TFuzz&           fuzz,
                               const CInt_fuzz* copy_from)
     {
+        TFuzz copy_from_cref;
+        if (copy_from == fuzz) copy_from_cref.Reset(copy_from);
         // Since TFuzz is a const-ref, setting fuzz requires creating
         // a new object
         CRef<CInt_fuzz> new_fuzz(new CInt_fuzz);
@@ -4161,11 +4163,7 @@ private:
         case CInt_fuzz::e_Alt:
             {
                 // Use union
-                CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, NULL);
-                new_fuzz->SetAlt().insert(
-                    new_fuzz->SetAlt().end(),
-                    fz.GetAlt().begin(),
-                    fz.GetAlt().end());
+                CRef<CInt_fuzz> new_fuzz = x_SetFuzz(fuzz, fuzz);
                 new_fuzz->SetAlt().insert(
                     new_fuzz->SetAlt().end(),
                     ofz.GetAlt().begin(),
