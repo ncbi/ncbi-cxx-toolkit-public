@@ -556,9 +556,7 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
                     object_loc.GetShortUniqueKey(), 0, kEmptyStr,
                     nc_cache_name = object_loc.GetAppDomain()));
 
-        if (!writer.get()) {
-            return NULL;
-        }
+        _ASSERT(writer.get());
 
         m_Write.Set(writer);
         *result = m_Write.WriteImpl(buf, count, bytes_written);

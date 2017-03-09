@@ -178,12 +178,9 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CNetStorageObject new_file(Clone(flags, &selector));
 
     if (m_Location->IsSame(selector->First())) {
-        LOG_POST(Trace << "locations are the same");
         Close();
         return selector->Locator().GetLocator();
     }
-
-    LOG_POST(Trace << "locations are different");
 
     for (;;) {
         current += bytes_read;
@@ -297,18 +294,11 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
     }
 
     ERW_Result result = eRW_Error;
-    if (ILocation* l = m_Selector->First()) {
-        IState* rw_state = l->StartWrite(buf, count, bytes_written, &result);
-        if (rw_state) {
-            m_Location = l;
-            m_State = rw_state;
-            if (m_IsOpened) RemoveOldCopyIfExists();
-            m_IsOpened = true;
-            return result;
-        }
-    }
-
-    // Not reached (CNotFound location always throws exception)
+    ILocation* l = m_Selector->First();
+    m_State = l->StartWrite(buf, count, bytes_written, &result);
+    m_Location = l;
+    if (m_IsOpened) RemoveOldCopyIfExists();
+    m_IsOpened = true;
     return result;
 }
 
@@ -341,25 +331,21 @@ IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 template <class TCaller>
 auto CObj::MetaImpl(TCaller caller) -> decltype(caller(nullptr))
 {
-    if (ILocation* l = m_Selector->First()) {
-        for (;;) {
-            m_Location = l;
+    ILocation* l = m_Selector->First();
 
-            try {
-                return caller(m_Location);
-            }
-            catch (CNetStorageException& e) {
-                if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+    for (;;) {
+        m_Location = l;
 
-                l = m_Selector->Next();
-
-                if (!l) throw;
-
-                LOG_POST(Trace << "Exception: " << e);
-            }
+        try {
+            return caller(m_Location);
         }
-    } else {
-        return caller(m_Location);
+        catch (CNetStorageException& e) {
+            if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+
+            l = m_Selector->Next();
+
+            if (!l) throw;
+        }
     }
 }
 
