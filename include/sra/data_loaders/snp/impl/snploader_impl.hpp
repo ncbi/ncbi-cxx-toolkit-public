@@ -48,6 +48,7 @@ class CSNPDataLoader_Impl;
 class CSNPSeqChunkInfo;
 class CSNPSeqInfo;
 class CSNPFileInfo;
+class CID2SNPContext;
 
 class CSNPBlobId : public CBlobId
 {
