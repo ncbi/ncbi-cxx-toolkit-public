@@ -143,24 +143,14 @@ struct SContext : CObject
     TNetStorageFlags default_flags = 0;
     string app_domain;
     size_t relocate_chunk;
+    CRandom random;
 
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
     SContext(const string&, const string&,
             CCompoundIDPool::TInstance, const IRegistry&);
 
-    TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
-    {
-        return flags ? flags : default_flags;
-    }
-
-    ISelector* Create(SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
-    ISelector* Create(SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
-    ISelector* Create(SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
-
 private:
     void Init();
-
-    CRandom m_Random;
 };
 
 // The purpose of LocatorHolding templates is to provide object locator
@@ -395,34 +385,6 @@ private:
     CRef<SContext> m_Context;
     TState<CROFileTrack> m_Read;
     TState<CWOFileTrack> m_Write;
-};
-
-class CSelector : public ISelector
-{
-public:
-    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate);
-    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags);
-
-    ILocation* First();
-    ILocation* Next();
-    bool InProgress() const;
-    void Restart();
-    TObjLoc& Locator();
-    void SetLocator();
-    ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
-    const SContext& GetContext() const;
-
-private:
-    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
-    CLocation* Top();
-
-    TObjLoc m_ObjectLoc;
-    CRef<SContext> m_Context;
-    CLocatorHolding<CNotFound> m_NotFound;
-    CLocatorHolding<CNetCache> m_NetCache;
-    CLocatorHolding<CFileTrack> m_FileTrack;
-    vector<CLocation*> m_Locations;
-    size_t m_CurrentLocation;
 };
 
 }

@@ -31,6 +31,7 @@
 #include "object.hpp"
 
 #include <array>
+#include <sstream>
 
 
 BEGIN_NCBI_SCOPE
@@ -389,6 +390,232 @@ void CObj::RemoveOldCopyIfExists() const
             if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
         }
     }
+}
+
+
+CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate)
+    : m_ObjectLoc(loc),
+        m_Context(context),
+        m_NotFound(m_ObjectLoc, fsm),
+        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
+        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
+{
+    InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
+}
+
+CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate,
+        TNetStorageFlags flags)
+    : m_ObjectLoc(loc),
+        m_Context(context),
+        m_NotFound(m_ObjectLoc, fsm),
+        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
+        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
+{
+    InitLocations(eNFL_Unknown, flags);
+}
+
+void CSelector::InitLocations(ENetStorageObjectLocation location,
+        TNetStorageFlags flags)
+{
+    // The order does matter:
+    // First, primary locations
+    // Then, secondary locations
+    // After, all other locations that have not yet been used
+    // And finally, the 'not found' location
+
+    const bool primary_nc = location == eNFL_NetCache;
+    const bool primary_ft = location == eNFL_FileTrack;
+    const bool secondary_nc = flags & (fNST_NetCache | fNST_Fast);
+    const bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
+    const bool movable = flags & fNST_Movable;
+
+    m_Locations.push_back(&m_NotFound);
+
+    if (!primary_nc && !secondary_nc && movable) {
+        if (m_NetCache.Init()) {
+            m_Locations.push_back(&m_NetCache);
+        }
+    }
+
+    if (!primary_ft && !secondary_ft && movable) {
+        if (m_FileTrack.Init()) {
+            m_Locations.push_back(&m_FileTrack);
+        }
+    }
+
+    if (!primary_nc && secondary_nc) {
+        if (m_NetCache.Init()) {
+            m_Locations.push_back(&m_NetCache);
+        }
+    }
+
+    if (!primary_ft && secondary_ft) {
+        if (m_FileTrack.Init()) {
+            m_Locations.push_back(&m_FileTrack);
+        }
+    }
+
+    if (primary_nc) {
+        if (m_NetCache.Init()) {
+            m_Locations.push_back(&m_NetCache);
+        }
+    }
+    
+    if (primary_ft) {
+        if (m_FileTrack.Init()) {
+            m_Locations.push_back(&m_FileTrack);
+        }
+    }
+
+    // No real locations, only CNotFound
+    if (m_Locations.size() == 1) {
+        const bool ft = m_Context->filetrack_api;
+        const bool nc = m_Context->icache_client;
+
+        ostringstream os;
+
+        os << "No backends to use for locator=\"" << m_ObjectLoc.GetLocator() << "\"";
+
+        if (secondary_ft && secondary_nc) {
+            os << ", requested FileTrack+NetCache";
+        } else if (secondary_ft) {
+            os << ", requested FileTrack";
+        } else if (secondary_nc) {
+            os << ", requested NetCache";
+        } else if (flags && !movable) {
+            os << ", zero requested backends";
+        }
+
+        os << " and ";
+
+        if (ft && nc) {
+            os << "configured FileTrack+NetCache";
+        } else if (ft) {
+            os << "configured FileTrack";
+        } else if (nc) {
+            os << "configured NetCache";
+        } else {
+            os << "no configured backends";
+        }
+
+        NCBI_THROW(CNetStorageException, eInvalidArg, os.str());
+    }
+
+    Restart();
+}
+
+
+ILocation* CSelector::First()
+{
+    return Top();
+}
+
+
+ILocation* CSelector::Next()
+{
+    if (m_CurrentLocation) {
+        --m_CurrentLocation;
+        return Top();
+    }
+   
+    return NULL;
+}
+
+
+CLocation* CSelector::Top()
+{
+    _ASSERT(m_Locations.size() > m_CurrentLocation);
+    CLocation* location = m_Locations[m_CurrentLocation];
+    _ASSERT(location);
+    return location;
+}
+
+
+bool CSelector::InProgress() const
+{
+    return m_CurrentLocation != m_Locations.size() - 1;
+}
+
+
+void CSelector::Restart()
+{
+    m_CurrentLocation = m_Locations.size() - 1;
+}
+
+
+TObjLoc& CSelector::Locator()
+{
+    return m_ObjectLoc;
+}
+
+
+void CSelector::SetLocator()
+{
+    if (CLocation* l = Top()) {
+        l->SetLocator();
+    } else {
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+    }
+}
+
+
+TNetStorageFlags s_DefaultFlags(const SContext* context, TNetStorageFlags flags)
+{
+    return flags ? flags : context->default_flags;
+}
+
+
+ISelector* CSelector::Clone(SNetStorageObjectImpl& fsm, TNetStorageFlags flags)
+{
+    flags = s_DefaultFlags(m_Context, flags);
+    TObjLoc loc(m_Context->compound_id_pool, m_ObjectLoc.GetLocator());
+    loc.SetStorageAttrFlags(flags);
+    return new CSelector(fsm, loc, m_Context, nullptr, flags);
+}
+
+
+const SContext& CSelector::GetContext() const
+{
+    return *m_Context;
+}
+
+
+ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
+{
+    TObjLoc loc(context->compound_id_pool, object_loc);
+    return new CSelector(fsm, loc, context, cancel_relocate);
+}
+
+
+ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service)
+{
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
+            context->random.GetRandUint8(), context->filetrack_api.config.site);
+
+    // Non empty service name means this is called by NetStorage server
+    if (!service.empty()) {
+        // Do not set fake service name used by NST health check script
+        if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
+            loc.SetServiceName(service);
+        }
+    }
+
+    return new CSelector(fsm, loc, context, nullptr, flags);
+}
+
+
+ISelector* CObj::Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
+        const string& service)
+{
+    flags = s_DefaultFlags(context, flags);
+    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
+            key, context->filetrack_api.config.site);
+
+    // Non empty service name means this is called by NetStorage server
+    if (!service.empty()) loc.SetServiceName(service);
+    return new CSelector(fsm, loc, context, cancel_relocate, flags);
 }
 
 

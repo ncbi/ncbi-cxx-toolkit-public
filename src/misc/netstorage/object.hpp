@@ -40,6 +40,34 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
+class CSelector : public ISelector
+{
+public:
+    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate);
+    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags);
+
+    ILocation* First();
+    ILocation* Next();
+    bool InProgress() const;
+    void Restart();
+    TObjLoc& Locator();
+    void SetLocator();
+    ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
+    const SContext& GetContext() const;
+
+private:
+    void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
+    CLocation* Top();
+
+    TObjLoc m_ObjectLoc;
+    CRef<SContext> m_Context;
+    CLocatorHolding<CNotFound> m_NotFound;
+    CLocatorHolding<CNetCache> m_NetCache;
+    CLocatorHolding<CFileTrack> m_FileTrack;
+    vector<CLocation*> m_Locations;
+    size_t m_CurrentLocation;
+};
+
 class CObj : public INetStorageObjectState, private ILocation
 {
 public:
@@ -52,14 +80,14 @@ public:
     }
 
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
-        m_Selector(context->Create(fsm, flags)),
+        m_Selector(Create(context, fsm, flags)),
         m_Location(this),
         m_IsOpened(false)
     {
     }
 
     CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
-        m_Selector(context->Create(fsm, flags, service)),
+        m_Selector(Create(context, fsm, flags, service)),
         m_Location(this),
         m_IsOpened(false)
     {
@@ -69,14 +97,14 @@ public:
     }
 
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
-        m_Selector(context->Create(fsm, &m_CancelRelocate, object_loc)),
+        m_Selector(Create(context, fsm, &m_CancelRelocate, object_loc)),
         m_Location(this),
         m_IsOpened(true)
     {
     }
 
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr) :
-        m_Selector(context->Create(fsm, &m_CancelRelocate, key, flags, service)),
+        m_Selector(Create(context, fsm, &m_CancelRelocate, key, flags, service)),
         m_Location(this),
         m_IsOpened(true)
     {
@@ -139,6 +167,10 @@ private:
         auto l = [&](CObj& state) { *selector = state.m_Selector.get(); };
         return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
     }
+
+    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
+    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
+    static ISelector* Create(SContext* context, SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
 
     bool m_CancelRelocate = false;
     ISelector::Ptr m_Selector;
