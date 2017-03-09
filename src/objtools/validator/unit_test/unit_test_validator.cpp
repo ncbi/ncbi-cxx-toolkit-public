@@ -160,7 +160,7 @@ bool CExpectedError::Match(const CValidErrItem& err_item, bool ignore_severity)
     if (!NStr::Equal(msg, m_ErrMsg)) {
         return false;
     }
-    if (!ignore_severity && m_ErrCode != err_item.GetErrCode()) {
+    if (!ignore_severity && m_Severity != err_item.GetSeverity()) {
         return false;
     }
     return true;
@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ExtNotAllowed", "Bioseq-ext not allowed on virtual Bioseq"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "ExtNotAllowed", "Bioseq-ext not allowed on virtual Bioseq"));
 
     // repr = virtual
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_virtual);
@@ -830,7 +830,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
     entry->SetSeq().SetInst().SetExt().SetDelta();
     expected_errors[0]->SetErrCode("ExtNotAllowed");
     expected_errors[0]->SetErrMsg("Bioseq-ext not allowed on constructed Bioseq");
-    expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6947,6 +6946,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonFormat)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "40 E 50 N");
     expected_errors[0]->SetErrMsg("lat_lon format is incorrect - should be dd.dd N|S ddd.dd E|W");
+    expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11500,7 +11500,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     seh = scope.AddTopLevelSeqEntry(*nuc);
     eval = validator.Validate(seh, options);
     CExpectedError* no_pub = new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record.");
-    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Error, "MissingPubInfo", "No submission citation anywhere on this entire record.");
+    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubInfo", "No submission citation anywhere on this entire record.");
     CExpectedError* no_org = new CExpectedError("lcl|nuc", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record.");
     expected_errors.pop_back();
     expected_errors.push_back(no_pub);
@@ -11639,7 +11639,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtein)
                               "No proteins in nuc-prot set"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein",
                               "No protein Bioseq given"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingCDSproduct",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "MissingCDSproduct",
                               "Expected CDS product absent"));
 
     options |= CValidator::eVal_far_fetch_cds_products;
@@ -12466,7 +12466,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
     feat2->SetData().SetGene().SetLocus("locus2");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("gb|AY123456|");
-    expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -12507,7 +12506,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
     feat2->SetData().SetGene().SetLocus("locus2");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("gnl|abc|123456");
-    expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -19893,7 +19891,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
         "Coding region should not be 3' partial if mRNA is 3' complete"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -19914,7 +19912,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
         "Coding region should not be 3' partial if mRNA is 3' complete"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -20085,6 +20083,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
     // info because not other and not valid
     qual->SetVal("not a valid recombination class");
     expected_errors[0]->SetErrMsg("'not a valid recombination class' is not a legal value for recombination_class");
+    expected_errors[0]->SetSeverity(eDiag_Info);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 

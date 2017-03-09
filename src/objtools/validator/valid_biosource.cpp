@@ -1137,7 +1137,7 @@ const CSeq_entry *ctx)
             }
 
             if (!format_correct) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat,
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_LatLonFormat,
                     "lat_lon format is incorrect - should be dd.dd N|S ddd.dd E|W",
                     obj, ctx);
             } else {
