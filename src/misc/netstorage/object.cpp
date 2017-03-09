@@ -39,24 +39,6 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
-{
-    return m_State->ReadImpl(buf, count, bytes_read);
-}
-
-
-bool CObj::Eof()
-{
-    return m_State->EofImpl();
-}
-
-
-ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
-{
-    return m_State->WriteImpl(buf, count, bytes_written);
-}
-
-
 template <class TCaller>
 auto CObj::Meta(TCaller caller) -> decltype(caller(nullptr))
 {
@@ -171,14 +153,20 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     array<char, 128 * 1024> buffer;
 
     // Use Read() to detect the current location
-    s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
+    m_Location = this;
+    m_Selector->Restart();
+    ERW_Result result = eRW_Error;
+    auto rw_state = StartRead(buffer.data(), buffer.size(), &bytes_read, &result);
+    s_Check(result, "reading");
+
+    _ASSERT(rw_state); // Cannot be a nullptr if result check passed
 
     // Selector can only be cloned after location is detected
     ISelector* selector;
     CNetStorageObject new_file(Clone(flags, &selector));
 
     if (m_Location->IsSame(selector->First())) {
-        Close();
+        rw_state->Close();
         return selector->Locator().GetLocator();
     }
 
@@ -195,7 +183,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
         }
         while (bytes_read);
 
-        if (Eof()) break;
+        if (rw_state->Eof()) break;
 
         if (current >= max) {
             total += current;
@@ -209,19 +197,20 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
                 // m_CancelRelocate may only be set to true inside the callback
                 if (cb(progress), m_CancelRelocate) {
                     m_CancelRelocate = false;
+                    m_Location = this;
                     new_file--->Abort();
-                    Close();
+                    rw_state->Abort();
                     NCBI_THROW(CNetStorageException, eInterrupted,
                         "Request to interrupt Relocate has been received.");
                 }
             }
         }
 
-        s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
+        s_Check(rw_state->Read(buffer.data(), buffer.size(), &bytes_read), "reading");
     }
 
     new_file--->Close();
-    Close();
+    rw_state->Close();
     Remove();
     return new_file--->GetLoc();
 }
@@ -229,7 +218,6 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 
 void CObj::CancelRelocate()
 {
-    m_CancelRelocate = true;
 }
 
 
@@ -247,17 +235,11 @@ ENetStorageRemoveResult CObj::Remove()
 
 void CObj::Close()
 {
-    IState* rw_state = m_State;
-    m_State = this;
-    rw_state->CloseImpl();
 }
 
 
 void CObj::Abort()
 {
-    IState* rw_state = m_State;
-    m_State = this;
-    rw_state->AbortImpl();
 }
 
 
@@ -267,7 +249,7 @@ string CObj::GetLoc() const
 }
 
 
-ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
+ERW_Result CObj::Read(void* buf, size_t count, size_t* bytes_read)
 {
     auto f = [&](ILocation*)
     {
@@ -280,13 +262,13 @@ ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 }
 
 
-bool CObj::EofImpl()
+bool CObj::Eof()
 {
     return false;
 }
 
 
-ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
+ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     // If object already exists, it will be overwritten in the same backend
     if (m_IsOpened && !Exists()) {
@@ -295,7 +277,7 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 
     ERW_Result result = eRW_Error;
     ILocation* l = m_Selector->First();
-    m_State = l->StartWrite(buf, count, bytes_written, &result);
+    EnterState(l->StartWrite(buf, count, bytes_written, &result));
     m_Location = l;
     if (m_IsOpened) RemoveOldCopyIfExists();
     m_IsOpened = true;
@@ -303,24 +285,24 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 }
 
 
-IState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read,
+INetStorageObjectState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read,
         ERW_Result* result)
 {
     for (ILocation* l = m_Selector->First(); l; l = m_Selector->Next()) {
-        IState* rw_state = l->StartRead(buf, count, bytes_read, result);
+        auto rw_state = l->StartRead(buf, count, bytes_read, result);
         if (rw_state) {
             m_Location = l;
-            m_State = rw_state;
-            break;
+            EnterState(rw_state);
+            return rw_state;
         }
     }
 
-    // Not used
+    *result = eRW_Error;
     return nullptr;
 }
 
 
-IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
+INetStorageObjectState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 {
     // This just cannot happen
     _TROUBLE;

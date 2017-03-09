@@ -40,6 +40,9 @@
 BEGIN_NCBI_SCOPE
 
 
+template <class TBase>
+using TState = SNetStorageObjectState<SNetStorageObjectDirectState<TBase>>;
+
 namespace
 {
 
@@ -66,7 +69,7 @@ class CLocatorHolding : public TBase
 public:
     template <class... TArgs>
     CLocatorHolding(TObjLoc& object_loc, TArgs&&... args) :
-        TBase(std::forward<TArgs>(args)...),
+        TBase(object_loc, std::forward<TArgs>(args)...),
         m_ObjectLoc(object_loc)
     {}
 
@@ -77,27 +80,28 @@ private:
 };
 
 
-class CROState : public ILocatorHolding<IState>
+class CROState : public SNetStorageObjectIState
 {
 public:
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
+    CROState(bool* cancel_relocate) : m_CancelRelocate(cancel_relocate) {}
+    void CancelRelocate() override { _ASSERT(m_CancelRelocate); *m_CancelRelocate = true; }
+
+private:
+    bool* m_CancelRelocate;
 };
 
 
-class CWOState : public ILocatorHolding<IState>
+class CRWNotFound : public SNetStorageObjectIoState
 {
 public:
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    bool EofImpl();
-};
+    ERW_Result Read(void* buf, size_t count, size_t* read) override;
+    ERW_Result PendingCount(size_t* count) override;
+    bool Eof() override;
+    ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+    ERW_Result Flush() override { return eRW_Success; }
 
-
-class CRWNotFound : public ILocatorHolding<IState>
-{
-public:
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
-    bool EofImpl();
+    void Close() override { ExitState(); }
+    void Abort() override { ExitState(); }
 };
 
 
@@ -106,6 +110,8 @@ class CRONetCache : public CROState
 public:
     typedef auto_ptr<IReader> TReaderPtr;
 
+    CRONetCache(bool* cancel_relocate) : CROState(cancel_relocate) {}
+
     void Set(TReaderPtr reader, size_t blob_size)
     {
         m_Reader = reader;
@@ -113,9 +119,12 @@ public:
         m_BytesRead = 0;
     }
 
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    bool EofImpl();
-    void CloseImpl();
+    ERW_Result Read(void* buf, size_t count, size_t* read) override;
+    ERW_Result PendingCount(size_t* count) override;
+    bool Eof() override;
+
+    void Close() override;
+    void Abort() override;
 
 private:
     TReaderPtr m_Reader;
@@ -124,7 +133,7 @@ private:
 };
 
 
-class CWONetCache : public CWOState
+class CWONetCache : public SNetStorageObjectOState
 {
 public:
     typedef auto_ptr<IEmbeddedStreamWriter> TWriterPtr;
@@ -134,9 +143,11 @@ public:
         m_Writer = writer;
     }
 
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
-    void CloseImpl();
-    void AbortImpl();
+    ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+    ERW_Result Flush() override;
+
+    void Close() override;
+    void Abort() override;
 
 private:
     TWriterPtr m_Writer;
@@ -148,21 +159,26 @@ class CROFileTrack : public CROState
 public:
     typedef CRef<SFileTrackDownload> TRequest;
 
+    CROFileTrack(bool* cancel_relocate) : CROState(cancel_relocate) {}
+
     void Set(TRequest request)
     {
         m_Request = request;
     }
 
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    bool EofImpl();
-    void CloseImpl();
+    ERW_Result Read(void* buf, size_t count, size_t* read) override;
+    ERW_Result PendingCount(size_t* count) override;
+    bool Eof() override;
+
+    void Close() override;
+    void Abort() override;
 
 private:
     TRequest m_Request;
 };
 
 
-class CWOFileTrack : public CWOState
+class CWOFileTrack : public SNetStorageObjectOState
 {
 public:
     typedef CRef<SFileTrackUpload> TRequest;
@@ -172,8 +188,11 @@ public:
         m_Request = request;
     }
 
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
-    void CloseImpl();
+    ERW_Result Write(const void* buf, size_t count, size_t* written) override;
+    ERW_Result Flush() override;
+
+    void Close() override;
+    void Abort() override;
 
 private:
     TRequest m_Request;
@@ -190,14 +209,14 @@ public:
 class CNotFound : public CLocation
 {
 public:
-    CNotFound(TObjLoc& object_loc)
-        : m_RW(object_loc)
+    CNotFound(TObjLoc& object_loc, SNetStorageObjectImpl& fsm)
+        : m_RW(fsm, object_loc)
     {}
 
     void SetLocator();
 
-    IState* StartRead(void*, size_t, size_t*, ERW_Result*);
-    IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
+    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
+    INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
@@ -209,24 +228,24 @@ public:
 private:
     bool IsSame(const ILocation* other) const { return To<CNotFound>(other); }
 
-    CLocatorHolding<CRWNotFound> m_RW;
+    TState<CRWNotFound> m_RW;
 };
 
 
 class CNetCache : public CLocation
 {
 public:
-    CNetCache(TObjLoc& object_loc, SContext* context)
+    CNetCache(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
         : m_Context(context),
-          m_Read(object_loc),
-          m_Write(object_loc)
+          m_Read(fsm, object_loc, cancel_relocate),
+          m_Write(fsm, object_loc)
     {}
 
     bool Init();
     void SetLocator();
 
-    IState* StartRead(void*, size_t, size_t*, ERW_Result*);
-    IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
+    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
+    INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
@@ -240,25 +259,25 @@ private:
 
     CRef<SContext> m_Context;
     CNetICacheClientExt m_Client;
-    CLocatorHolding<CRONetCache> m_Read;
-    CLocatorHolding<CWONetCache> m_Write;
+    TState<CRONetCache> m_Read;
+    TState<CWONetCache> m_Write;
 };
 
 
 class CFileTrack : public CLocation
 {
 public:
-    CFileTrack(TObjLoc& object_loc, SContext* context)
+    CFileTrack(TObjLoc& object_loc, SNetStorageObjectImpl& fsm, SContext* context, bool* cancel_relocate)
         : m_Context(context),
-          m_Read(object_loc),
-          m_Write(object_loc)
+          m_Read(fsm, object_loc, cancel_relocate),
+          m_Write(fsm, object_loc)
     {}
 
     bool Init() { return m_Context->filetrack_api; }
     void SetLocator();
 
-    IState* StartRead(void*, size_t, size_t*, ERW_Result*);
-    IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
+    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
+    INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
@@ -271,59 +290,40 @@ private:
     bool IsSame(const ILocation* other) const { return To<CFileTrack>(other); }
 
     CRef<SContext> m_Context;
-    CLocatorHolding<CROFileTrack> m_Read;
-    CLocatorHolding<CWOFileTrack> m_Write;
+    TState<CROFileTrack> m_Read;
+    TState<CWOFileTrack> m_Write;
 };
 
 
-ERW_Result CROState::WriteImpl(const void*, size_t, size_t*)
+ERW_Result CRWNotFound::Read(void*, size_t, size_t*)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot write \"" << LocatorToStr() << "\" while reading.");
+    NCBI_THROW_FMT(CNetStorageException, eNotExists, "On calling Read() cannot open " << GetLoc());
     return eRW_Error; // Not reached
 }
 
 
-ERW_Result CWOState::ReadImpl(void*, size_t, size_t*)
+ERW_Result CRWNotFound::PendingCount(size_t*)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot read \"" << LocatorToStr() << "\" while writing.");
+    NCBI_THROW_FMT(CNetStorageException, eNotExists, "On calling PendingCount() cannot open " << GetLoc());
     return eRW_Error; // Not reached
 }
 
 
-bool CWOState::EofImpl()
+bool CRWNotFound::Eof()
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot check EOF status of \"" << LocatorToStr() <<
-            "\" while writing.");
-    return true; // Not reached
+    NCBI_THROW_FMT(CNetStorageException, eNotExists, "On calling Eof() cannot open " << GetLoc());
+    return false; // Not reached
 }
 
 
-ERW_Result CRWNotFound::ReadImpl(void*, size_t, size_t*)
+ERW_Result CRWNotFound::Write(const void*, size_t, size_t*)
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << LocatorToStr() << "\" for reading.");
+    NCBI_THROW_FMT(CNetStorageException, eNotExists, "On calling Write() cannot open " << GetLoc());
     return eRW_Error; // Not reached
 }
 
 
-ERW_Result CRWNotFound::WriteImpl(const void*, size_t, size_t*)
-{
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << LocatorToStr() << "\" for writing.");
-    return eRW_Error; // Not reached
-}
-
-
-bool CRWNotFound::EofImpl()
-{
-    return false;
-}
-
-
-ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
+ERW_Result CRONetCache::Read(void* buf, size_t count, size_t* bytes_read)
 {
     try {
         size_t bytes_read_local = 0;
@@ -333,82 +333,140 @@ ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
             *bytes_read = bytes_read_local;
         return rw_res;
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + GetLoc())
     return eRW_Error; // Not reached
 }
 
 
-bool CRONetCache::EofImpl()
+ERW_Result CRONetCache::PendingCount(size_t* count)
+{
+    try {
+        return m_Reader->PendingCount(count);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + GetLoc())
+    return eRW_Error; // Not reached
+}
+
+
+bool CRONetCache::Eof()
 {
     return m_BytesRead >= m_BlobSize;
 }
 
 
-void CRONetCache::CloseImpl()
+void CRONetCache::Close()
 {
+    ExitState();
     try {
         m_Reader.reset();
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after reading " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after reading " + GetLoc())
 }
 
 
-ERW_Result CWONetCache::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
+void CRONetCache::Abort()
+{
+    Close();
+}
+
+
+ERW_Result CWONetCache::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     try {
         return m_Writer->Write(buf, count, bytes_written);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + GetLoc())
     return eRW_Error; // Not reached
 }
 
 
-void CWONetCache::CloseImpl()
+ERW_Result CWONetCache::Flush()
 {
+    try {
+        return m_Writer->Flush();
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + GetLoc())
+    return eRW_Error; // Not reached
+}
+
+
+void CWONetCache::Close()
+{
+    ExitState();
     try {
         m_Writer->Close();
         m_Writer.reset();
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after writing " + LocatorToStr())
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after writing " + GetLoc())
 }
 
 
-void CWONetCache::AbortImpl()
+void CWONetCache::Abort()
 {
+    ExitState();
     m_Writer->Abort();
     m_Writer.reset();
 }
 
 
-ERW_Result CROFileTrack::ReadImpl(void* buf, size_t count, size_t* bytes_read)
+ERW_Result CROFileTrack::Read(void* buf, size_t count, size_t* bytes_read)
 {
     return m_Request->Read(buf, count, bytes_read);
 }
 
 
-bool CROFileTrack::EofImpl()
+ERW_Result CROFileTrack::PendingCount(size_t* count)
+{
+    *count = 0;
+    return eRW_Success;
+}
+
+
+bool CROFileTrack::Eof()
 {
     return m_Request->Eof();
 }
 
 
-void CROFileTrack::CloseImpl()
+void CROFileTrack::Close()
 {
+    ExitState();
     m_Request->FinishDownload();
     m_Request.Reset();
 }
 
 
-ERW_Result CWOFileTrack::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
+void CROFileTrack::Abort()
+{
+    ExitState();
+    m_Request.Reset();
+}
+
+
+ERW_Result CWOFileTrack::Write(const void* buf, size_t count, size_t* bytes_written)
 {
     m_Request->Write(buf, count, bytes_written);
     return eRW_Success;
 }
 
 
-void CWOFileTrack::CloseImpl()
+ERW_Result CWOFileTrack::Flush()
 {
+    return eRW_Success;
+}
+
+
+void CWOFileTrack::Close()
+{
+    ExitState();
     m_Request->FinishUpload();
+    m_Request.Reset();
+}
+
+
+void CWOFileTrack::Abort()
+{
+    ExitState();
     m_Request.Reset();
 }
 
@@ -420,16 +478,16 @@ void CNotFound::SetLocator()
 }
 
 
-IState* CNotFound::StartRead(void* buf, size_t count,
+INetStorageObjectState* CNotFound::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
     _ASSERT(result);
-    *result = m_RW.ReadImpl(buf, count, bytes_read);
+    *result = m_RW.Read(buf, count, bytes_read);
     return &m_RW;
 }
 
 
-IState* CNotFound::StartWrite(const void*, size_t, size_t*, ERW_Result*)
+INetStorageObjectState* CNotFound::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Object creation is disabled (no backend storages were provided)");
@@ -517,7 +575,7 @@ void CNetCache::SetLocator()
 }
 
 
-IState* CNetCache::StartRead(void* buf, size_t count,
+INetStorageObjectState* CNetCache::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
     _ASSERT(result);
@@ -536,7 +594,7 @@ IState* CNetCache::StartRead(void* buf, size_t count,
         }
 
         m_Read.Set(reader, blob_size);
-        *result =  m_Read.ReadImpl(buf, count, bytes_read);
+        *result =  m_Read.Read(buf, count, bytes_read);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + object_loc.GetLocator())
 
@@ -544,7 +602,7 @@ IState* CNetCache::StartRead(void* buf, size_t count,
 }
 
 
-IState* CNetCache::StartWrite(const void* buf, size_t count,
+INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
     _ASSERT(result);
@@ -559,7 +617,7 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
         _ASSERT(writer.get());
 
         m_Write.Set(writer);
-        *result = m_Write.WriteImpl(buf, count, bytes_written);
+        *result = m_Write.Write(buf, count, bytes_written);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + object_loc.GetLocator())
 
@@ -702,7 +760,7 @@ void CFileTrack::SetLocator()
 }
 
 
-IState* CFileTrack::StartRead(void* buf, size_t count,
+INetStorageObjectState* CFileTrack::StartRead(void* buf, size_t count,
         size_t* bytes_read, ERW_Result* result)
 {
     _ASSERT(result);
@@ -711,7 +769,7 @@ IState* CFileTrack::StartRead(void* buf, size_t count,
 
     try {
         m_Read.Set(request);
-        *result = m_Read.ReadImpl(buf, count, bytes_read);
+        *result = m_Read.Read(buf, count, bytes_read);
         return &m_Read;
     }
     catch (CNetStorageException& e) {
@@ -726,14 +784,14 @@ IState* CFileTrack::StartRead(void* buf, size_t count,
 }
 
 
-IState* CFileTrack::StartWrite(const void* buf, size_t count,
+INetStorageObjectState* CFileTrack::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
     _ASSERT(result);
 
     CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(Locator());
     m_Write.Set(request);
-    *result = m_Write.WriteImpl(buf, count, bytes_written);
+    *result = m_Write.Write(buf, count, bytes_written);
     SetLocator();
     return &m_Write;
 }
@@ -822,8 +880,8 @@ ILocation::TUserInfo CFileTrack::GetUserInfoImpl()
 class CSelector : public ISelector
 {
 public:
-    CSelector(const TObjLoc&, SContext*);
-    CSelector(const TObjLoc&, SContext*, TNetStorageFlags);
+    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate);
+    CSelector(SNetStorageObjectImpl& fsm, const TObjLoc&, SContext*, bool* cancel_relocate, TNetStorageFlags);
 
     ILocation* First();
     ILocation* Next();
@@ -831,7 +889,7 @@ public:
     void Restart();
     TObjLoc& Locator();
     void SetLocator();
-    ISelector* Clone(TNetStorageFlags);
+    ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags);
     const SContext& GetContext() const;
 
 private:
@@ -848,22 +906,23 @@ private:
 };
 
 
-CSelector::CSelector(const TObjLoc& loc, SContext* context)
+CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc, m_ObjectLoc),
-        m_NetCache(m_ObjectLoc, m_ObjectLoc, m_Context),
-        m_FileTrack(m_ObjectLoc, m_ObjectLoc, m_Context)
+        m_NotFound(m_ObjectLoc, fsm),
+        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
+        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
 {
     InitLocations(m_ObjectLoc.GetLocation(), m_ObjectLoc.GetStorageAttrFlags());
 }
 
-CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
+CSelector::CSelector(SNetStorageObjectImpl& fsm, const TObjLoc& loc, SContext* context, bool* cancel_relocate,
+        TNetStorageFlags flags)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc, m_ObjectLoc),
-        m_NetCache(m_ObjectLoc, m_ObjectLoc, m_Context),
-        m_FileTrack(m_ObjectLoc, m_ObjectLoc, m_Context)
+        m_NotFound(m_ObjectLoc, fsm),
+        m_NetCache(m_ObjectLoc, fsm, m_Context, cancel_relocate),
+        m_FileTrack(m_ObjectLoc, fsm, m_Context, cancel_relocate)
 {
     InitLocations(eNFL_Unknown, flags);
 }
@@ -1014,12 +1073,12 @@ void CSelector::SetLocator()
 }
 
 
-ISelector* CSelector::Clone(TNetStorageFlags flags)
+ISelector* CSelector::Clone(SNetStorageObjectImpl& fsm, TNetStorageFlags flags)
 {
     flags = m_Context->DefaultFlags(flags);
     TObjLoc loc(m_Context->compound_id_pool, m_ObjectLoc.GetLocator());
     loc.SetStorageAttrFlags(flags);
-    return new CSelector(loc, m_Context, flags);
+    return new CSelector(fsm, loc, m_Context, nullptr, flags);
 }
 
 
@@ -1161,14 +1220,14 @@ void SContext::Init()
 
 
 
-ISelector* SContext::Create(const string& object_loc)
+ISelector* SContext::Create(SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& object_loc)
 {
     TObjLoc loc(compound_id_pool, object_loc);
-    return new CSelector(loc, this);
+    return new CSelector(fsm, loc, this, cancel_relocate);
 }
 
 
-ISelector* SContext::Create(TNetStorageFlags flags, const string& service)
+ISelector* SContext::Create(SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service)
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
@@ -1182,11 +1241,11 @@ ISelector* SContext::Create(TNetStorageFlags flags, const string& service)
         }
     }
 
-    return new CSelector(loc, this, flags);
+    return new CSelector(fsm, loc, this, nullptr, flags);
 }
 
 
-ISelector* SContext::Create(const string& key, TNetStorageFlags flags,
+ISelector* SContext::Create(SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
         const string& service)
 {
     flags = DefaultFlags(flags);
@@ -1195,7 +1254,7 @@ ISelector* SContext::Create(const string& key, TNetStorageFlags flags,
 
     // Non empty service name means this is called by NetStorage server
     if (!service.empty()) loc.SetServiceName(service);
-    return new CSelector(loc, this, flags);
+    return new CSelector(fsm, loc, this, cancel_relocate, flags);
 }
 
 

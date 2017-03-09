@@ -61,31 +61,36 @@ private:
     static EMode GetMode(const string&);
 };
 
+template <class TBase>
+struct SNetStorageObjectDirectState : TBase
+{
+    template <class... TArgs>
+    SNetStorageObjectDirectState(CNetStorageObjectLoc& locator, TArgs&&... args) :
+        TBase(std::forward<TArgs>(args)...),
+        m_Locator(locator)
+    {
+    }
+
+    string GetLoc() const override           { return m_Locator.GetLocator(); }
+    CNetStorageObjectLoc& Locator() override { return m_Locator; }
+
+private:
+    CNetStorageObjectLoc& m_Locator;
+};
+
 
 namespace NDirectNetStorageImpl
 {
 
 typedef CNetStorageObjectLoc TObjLoc;
 
-class IState
-{
-public:
-    virtual ~IState() {}
-
-    virtual ERW_Result ReadImpl(void*, size_t, size_t*) = 0;
-    virtual bool EofImpl() = 0;
-    virtual ERW_Result WriteImpl(const void*, size_t, size_t*) = 0;
-    virtual void CloseImpl() {}
-    virtual void AbortImpl() { CloseImpl(); }
-};
-
 class ILocation
 {
 public:
     virtual ~ILocation() {}
 
-    virtual IState* StartRead(void*, size_t, size_t*, ERW_Result*) = 0;
-    virtual IState* StartWrite(const void*, size_t, size_t*, ERW_Result*) = 0;
+    virtual INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) = 0;
+    virtual INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) = 0;
     virtual Uint8 GetSizeImpl() = 0;
     virtual CNetStorageObjectInfo GetInfoImpl() = 0;
     virtual bool ExistsImpl() = 0;
@@ -123,7 +128,7 @@ public:
     virtual TObjLoc& Locator() = 0;
     virtual void SetLocator() = 0;
 
-    virtual ISelector* Clone(TNetStorageFlags) = 0;
+    virtual ISelector* Clone(SNetStorageObjectImpl&, TNetStorageFlags) = 0;
     virtual const SContext& GetContext() const = 0;
 };
 
@@ -145,9 +150,9 @@ struct SContext : CObject
         return flags ? flags : default_flags;
     }
 
-    ISelector* Create(const string&);
-    ISelector* Create(TNetStorageFlags, const string& = kEmptyStr);
-    ISelector* Create(const string&, TNetStorageFlags, const string& = kEmptyStr);
+    ISelector* Create(SNetStorageObjectImpl&, bool* cancel_relocate, const string&);
+    ISelector* Create(SNetStorageObjectImpl&, TNetStorageFlags, const string& = kEmptyStr);
+    ISelector* Create(SNetStorageObjectImpl&, bool* cancel_relocate, const string&, TNetStorageFlags, const string& = kEmptyStr);
 
 private:
     void Init();

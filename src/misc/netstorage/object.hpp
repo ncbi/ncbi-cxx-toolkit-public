@@ -40,29 +40,26 @@ BEGIN_NCBI_SCOPE
 namespace NDirectNetStorageImpl
 {
 
-class CObj : public INetStorageObjectState, private IState, private ILocation
+class CObj : public INetStorageObjectState, private ILocation
 {
 public:
-    CObj(SNetStorageObjectImpl&, ISelector* selector, TNetStorageFlags flags) :
-        m_Selector(selector->Clone(flags)),
-        m_State(this),
+    CObj(SNetStorageObjectImpl& fsm, ISelector* selector, TNetStorageFlags flags) :
+        m_Selector(selector->Clone(fsm, flags)),
         m_Location(this),
         m_IsOpened(false)
     {
         _ASSERT(m_Selector.get());
     }
 
-    CObj(SNetStorageObjectImpl&, SContext* context, TNetStorageFlags flags) :
-        m_Selector(context->Create(flags)),
-        m_State(this),
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
+        m_Selector(context->Create(fsm, flags)),
         m_Location(this),
         m_IsOpened(false)
     {
     }
 
-    CObj(SNetStorageObjectImpl&, SContext* context, TNetStorageFlags flags, const string& service) :
-        m_Selector(context->Create(flags, service)),
-        m_State(this),
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
+        m_Selector(context->Create(fsm, flags, service)),
         m_Location(this),
         m_IsOpened(false)
     {
@@ -71,33 +68,31 @@ public:
         m_Selector->SetLocator();
     }
 
-    CObj(SNetStorageObjectImpl&, SContext* context, const string& object_loc) :
-        m_Selector(context->Create(object_loc)),
-        m_State(this),
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc) :
+        m_Selector(context->Create(fsm, &m_CancelRelocate, object_loc)),
         m_Location(this),
         m_IsOpened(true)
     {
     }
 
-    CObj(SNetStorageObjectImpl&, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr) :
-        m_Selector(context->Create(key, flags, service)),
-        m_State(this),
+    CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr) :
+        m_Selector(context->Create(fsm, &m_CancelRelocate, key, flags, service)),
         m_Location(this),
         m_IsOpened(true)
     {
     }
 
-    ERW_Result Read(void*, size_t, size_t*);
-    ERW_Result PendingCount(size_t* count) { *count = 0; return eRW_Success; }
+    ERW_Result Read(void*, size_t, size_t*) override;
+    ERW_Result PendingCount(size_t* count) override { *count = 0; return eRW_Success; }
+    bool Eof() override;
 
-    ERW_Result Write(const void*, size_t, size_t*);
-    ERW_Result Flush() { return eRW_Success; }
+    ERW_Result Write(const void*, size_t, size_t*) override;
+    ERW_Result Flush() override { return eRW_Success; }
 
-    void Close();
-    void Abort();
+    void Close() override;
+    void Abort() override;
 
     string GetLoc() const;
-    bool Eof();
     Uint8 GetSize();
     list<string> GetAttributeList() const;
     string GetAttribute(const string&) const;
@@ -115,12 +110,6 @@ public:
     ENetStorageRemoveResult Remove();
 
 private:
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    bool EofImpl();
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
-    void CloseImpl() {}
-    void AbortImpl() {}
-
     template <class TCaller>
     auto Meta(TCaller caller)                   -> decltype(caller(nullptr));
 
@@ -130,8 +119,8 @@ private:
     template <class TCaller>
     auto MetaImpl(TCaller caller)               -> decltype(caller(nullptr));
 
-    IState* StartRead(void*, size_t, size_t*, ERW_Result*);
-    IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
+    INetStorageObjectState* StartRead(void*, size_t, size_t*, ERW_Result*) override;
+    INetStorageObjectState* StartWrite(const void*, size_t, size_t*, ERW_Result*) override;
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
@@ -151,11 +140,10 @@ private:
         return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Selector.get(), flags);
     }
 
+    bool m_CancelRelocate = false;
     ISelector::Ptr m_Selector;
-    IState* m_State;
     ILocation* m_Location;
     bool m_IsOpened;
-    bool m_CancelRelocate = false;
 };
 
 }
