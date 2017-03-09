@@ -78,9 +78,6 @@ private:
     CNetStorageObjectLoc& m_Locator;
 };
 
-template <class TBase>
-using TState = SNetStorageObjectState<SNetStorageObjectDirectState<TBase>>;
-
 
 namespace NDirectNetStorageImpl
 {
@@ -105,6 +102,9 @@ public:
 };
 
 using CLocation = SNetStorageObjectDirectState<ILocation>;
+
+template <class TBase>
+using TState = SNetStorageObjectState<SNetStorageObjectDirectState<TBase>>;
 
 struct SContext : CObject
 {
