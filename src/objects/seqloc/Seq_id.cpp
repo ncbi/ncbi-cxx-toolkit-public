@@ -943,44 +943,14 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
 }
 
 
-static bool s_IsFileOld(const string& file)
-{
-    static const char vcs_id_start[] = "# $Id: accguide.inc ";
-    if ( !NStr::StartsWith(kBuiltInGuide[0], vcs_id_start) ) {
-        return false;
-    }
-    const char* rev_start = kBuiltInGuide[0] + sizeof(vcs_id_start);
-    const char* date_start = strchr(rev_start, ' ');
-    if (date_start != NULL) {
-        ++date_start;
-    } else {
-        return false;
-    }
-    const char* time_start = strchr(date_start + 1, ' ');
-    if (time_start != NULL) {
-        ++time_start;
-    } else {
-        return false;
-    }
-    const char* time_end = strchr(time_start + 1, ' ');
-    if (time_end == NULL) {
-        return false;
-    }
-    string builtin_timestamp_str(date_start, time_end - date_start);
-    CTime  builtin_timestamp(builtin_timestamp_str, "Y-M-D h:m:sZ");
-    CTime  file_timestamp;
-    CFile(file).GetTime(&file_timestamp);
-    return file_timestamp < builtin_timestamp;
-}
-
-
 SAccGuide::SAccGuide(void)
     : count(0)
 {
     bool file_is_old = false;
     {{
         string file = g_FindDataFile("accguide.txt");
-        if ( !file.empty()  &&  !(file_is_old = s_IsFileOld(file))) {
+        if ( !file.empty()  &&
+             !(file_is_old = g_IsDataFileOld(file, kBuiltInGuide[0])) ) {
             try {
                 x_Load(file);
             } STD_CATCH_ALL_X(1, "SAccGuide::SAccGuide")

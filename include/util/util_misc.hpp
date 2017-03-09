@@ -94,6 +94,13 @@ extern string g_FindDataFile(const CTempString& name,
 NCBI_XUTIL_EXPORT
 extern void g_IgnoreDataFile(const string& pattern, bool do_ignore = true);
 
+/// Check whether the given file (a full path, as returned by
+/// g_FindDataFile) is older than a built-in version containing
+/// the specified "$Id: ..." line.
+NCBI_XUTIL_EXPORT
+extern bool g_IsDataFileOld(const CTempString& path,
+                            const CTempString& id_line);
+
 END_NCBI_SCOPE
 
 

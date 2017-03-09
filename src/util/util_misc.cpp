@@ -190,5 +190,35 @@ void g_IgnoreDataFile(const string& pattern, bool do_ignore)
 }
 
 
+bool g_IsDataFileOld(const CTempString& path, const CTempString& id_line)
+{
+    // $Id: FILENAME REVISION DATE TIME ...
+    SIZE_TYPE pos = id_line.find("$Id: ");
+    if (pos == NPOS) {
+        return false;
+    }
+    pos = id_line.find(' ', pos + 5); // skip filename
+    if (pos == NPOS) {
+        return false;
+    }
+    pos = id_line.find(' ', pos + 1); // skip revision
+    if (pos == NPOS) {
+        return false;
+    }
+    SIZE_TYPE end = id_line.find(' ', ++pos);
+    if (end == NPOS) {
+        return false;
+    }
+    end = id_line.find(' ', end + 1); // got date, now want time too
+    if (end == NPOS) {
+        return false;
+    }
+    CTempString builtin_timestamp_str = id_line.substr(pos, end - pos);
+    CTime       builtin_timestamp(builtin_timestamp_str, "Y-M-D h:m:sZ");
+    CTime       file_timestamp;
+    CFile(path).GetTime(&file_timestamp);
+    return file_timestamp < builtin_timestamp;
+}
+
 END_NCBI_SCOPE
 
