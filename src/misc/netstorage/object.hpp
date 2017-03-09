@@ -70,8 +70,6 @@ class CObj : public INetStorageObjectState, private ILocation
 {
 public:
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TNetStorageFlags flags);
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags);
-    CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& object_loc);
     CObj(SNetStorageObjectImpl& fsm, SContext* context, const string& key, TNetStorageFlags flags, const string& service = kEmptyStr);
 
@@ -101,6 +99,8 @@ public:
     void CancelRelocate();
     bool Exists();
     ENetStorageRemoveResult Remove();
+
+    void SetLocator() { m_Selector->SetLocator(); }
 
 private:
     template <class TCaller>

@@ -53,24 +53,6 @@ CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_
 }
 
 
-CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, TNetStorageFlags flags, const string& service = kEmptyStr)
-{
-    flags = s_DefaultFlags(context, flags);
-    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            context->random.GetRandUint8(), context->filetrack_api.config.site);
-
-    // Non empty service name means this is called by NetStorage server
-    if (!service.empty()) {
-        // Do not set fake service name used by NST health check script
-        if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
-            loc.SetServiceName(service);
-        }
-    }
-
-    return new CSelector(fsm, loc, context, nullptr, flags);
-}
-
-
 CSelector* s_Create(SContext* context, SNetStorageObjectImpl& fsm, bool* cancel_relocate, const string& key, TNetStorageFlags flags,
         const string& service)
 {
@@ -89,25 +71,6 @@ CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, const TObjLoc& loc, TN
     m_Location(this),
     m_IsOpened(false)
 {
-}
-
-
-CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags) :
-    m_Selector(s_Create(context, fsm, flags)),
-    m_Location(this),
-    m_IsOpened(false)
-{
-}
-
-
-CObj::CObj(SNetStorageObjectImpl& fsm, SContext* context, TNetStorageFlags flags, const string& service) :
-    m_Selector(s_Create(context, fsm, flags, service)),
-    m_Location(this),
-    m_IsOpened(false)
-{
-    // Server reports locator to the client before writing anything
-    // So, object must choose location for writing here to make locator valid
-    m_Selector->SetLocator();
 }
 
 

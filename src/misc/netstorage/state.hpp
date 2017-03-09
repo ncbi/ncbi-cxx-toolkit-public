@@ -129,6 +129,11 @@ struct SContext : CObject
     SContext(const string&, const string&,
             CCompoundIDPool::TInstance, const IRegistry&);
 
+    TObjLoc Create(TNetStorageFlags flags)
+    {
+        return TObjLoc(compound_id_pool, flags, app_domain, random.GetRandUint8(), filetrack_api.config.site);
+    }
+
 private:
     void Init();
 };

@@ -132,7 +132,9 @@ private:
 
 SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
-    return SNetStorageObjectImpl::Create<CObj>(m_Context, flags);
+    if (!flags) flags = m_Context->default_flags;
+
+    return SNetStorageObjectImpl::Create<CObj>(m_Context, m_Context->Create(flags), flags);
 }
 
 
@@ -142,10 +144,27 @@ SNetStorageObjectImpl* SDirectNetStorageImpl::Open(const string& object_loc)
 }
 
 
+void s_SetServiceName(TObjLoc& loc, const string& service)
+{
+    // Do not set fake service name used by NST health check script
+    if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
+        loc.SetServiceName(service);
+    }
+}
+
+
 SNetStorageObjectImpl* SDirectNetStorageImpl::Create(TNetStorageFlags flags, const string& service)
 {
+    if (!flags) flags = m_Context->default_flags;
 
-    return SNetStorageObjectImpl::Create<CObj>(m_Context, flags, service);
+    TObjLoc loc = m_Context->Create(flags);
+    s_SetServiceName(loc, service);
+
+    // Server reports locator to the client before writing anything
+    // So, object must choose location for writing here to make locator valid
+    auto l = [&](CObj& state) { state.SetLocator(); };
+
+    return SNetStorageObjectImpl::CreateAndStart<CObj>(l, m_Context, loc, flags);
 }
 
 
