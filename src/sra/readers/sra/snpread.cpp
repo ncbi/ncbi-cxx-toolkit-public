@@ -431,6 +431,18 @@ TSeqPos CSNPDb_Impl::GetPageSize(void) const
 }
 
 
+TSeqPos CSNPDb_Impl::GetOverviewZoom(void) const
+{
+    return kOverviewZoom;
+}
+
+
+TSeqPos CSNPDb_Impl::GetCoverageZoom(void) const
+{
+    return kCoverageZoom;
+}
+
+
 CSNPDb_Impl::TTrackInfoList::const_iterator
 CSNPDb_Impl::FindTrack(const string& name) const
 {

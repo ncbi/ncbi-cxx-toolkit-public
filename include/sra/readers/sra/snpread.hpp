@@ -252,6 +252,8 @@ public:
     TSeqInfoList::const_iterator FindSeq(const CSeq_id_Handle& seq_id) const;
 
     TSeqPos GetPageSize(void) const;
+    TSeqPos GetOverviewZoom(void) const;
+    TSeqPos GetCoverageZoom(void) const;
 
 protected:
     friend class CSNPDbTrackIterator;
@@ -492,6 +494,12 @@ public:
 
     TSeqPos GetPageSize(void) const {
         return GetDb().GetPageSize();
+    }
+    TSeqPos GetOverviewZoom(void) const {
+        return GetDb().GetOverviewZoom();
+    }
+    TSeqPos GetCoverageZoom(void) const {
+        return GetDb().GetCoverageZoom();
     }
     TSeqPos GetMaxSNPLength(void) const;
 
