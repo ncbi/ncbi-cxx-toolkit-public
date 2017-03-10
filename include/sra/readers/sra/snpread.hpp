@@ -370,6 +370,20 @@ public:
         : CRef<CSNPDb_Impl>(new CSNPDb_Impl(mgr, path_or_acc))
         {
         }
+
+    size_t GetTrackCount() const
+        {
+            return GetObject().GetTrackInfoList().size();
+        }
+
+    TSeqPos GetCoverageZoom() const
+        {
+            return GetObject().GetCoverageZoom();
+        }
+    TSeqPos GetOverviewZoom() const
+        {
+            return GetObject().GetOverviewZoom();
+        }
 };
 
 

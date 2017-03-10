@@ -640,7 +640,7 @@ CID2SNPProcessor_Impl::x_ProcessGetBlobId(CID2SNPContext& context,
             if ( !db ) {
                 continue;
             }
-            if ( track.m_FilterIndex >= db->GetTrackInfoList().size() ) {
+            if ( track.m_FilterIndex >= db.GetTrackCount() ) {
                 // bad track index
                 request.SetSources().erase(it);
                 continue;
@@ -965,14 +965,14 @@ void CID2SNPProcessor_Impl::x_ProcessReplyGetBlobId(CID2SNPContext& context,
                     // add SNP graph type info
                     CID2S_Seq_annot_Info& annot_info = sx_AddNew(snp_reply.SetAnnot_info());
                     annot_info.SetSeq_loc().SetWhole_seq_id(*seq_id);
-                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info)->GetCoverageZoom()));
+                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info).GetCoverageZoom()));
                     annot_info.SetGraph();
                 }}
                 {{
                     // add SNP overvew graph type info
                     CID2S_Seq_annot_Info& annot_info = sx_AddNew(snp_reply.SetAnnot_info());
                     annot_info.SetSeq_loc().SetWhole_seq_id(*seq_id);
-                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info)->GetOverviewZoom()));
+                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info).GetOverviewZoom()));
                     annot_info.SetGraph();
                 }}
             }
