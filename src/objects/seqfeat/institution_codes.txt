@@ -7024,7 +7024,7 @@ UWL	s	University of Wisconsin, Biology Department
 UWM	s	University of Wisconsin, Biological Sciences Department		
 UWMA	s	University of Wisconsin, Milwaukee, Department of Anthropology		
 UWMIL	s	University of Wisconsin, Milwaukee, Department of Biological Sciences		
-UWO	c	University of Western Ontario		
+UWO	sc	University of Western Ontario		
 UWOC	s	University of Western Ontario		
 UWP	s	University of Wrocklaw		
 UWPG	s	University of Winnipeg, Biology Department		

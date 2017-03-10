@@ -7057,7 +7057,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UWM\ts\tUniversity of Wisconsin, Biological Sciences Department\t\t",
 "UWMA\ts\tUniversity of Wisconsin, Milwaukee, Department of Anthropology\t\t",
 "UWMIL\ts\tUniversity of Wisconsin, Milwaukee, Department of Biological Sciences\t\t",
-"UWO\tc\tUniversity of Western Ontario\t\t",
+"UWO\tsc\tUniversity of Western Ontario\t\t",
 "UWOC\ts\tUniversity of Western Ontario\t\t",
 "UWP\ts\tUniversity of Wrocklaw\t\t",
 "UWPG\ts\tUniversity of Winnipeg, Biology Department\t\t",
