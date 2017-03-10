@@ -633,9 +633,6 @@ CID2SNPProcessor_Impl::x_ProcessGetBlobId(CID2SNPContext& context,
             if ( !track.m_NAIndex ) {
                 continue;
             }
-            if ( track.m_NAIndex != 89763  ) { // TODO
-                continue;
-            }
             CSNPDb db = GetSNPDb(GetNAAccession(track));
             if ( !db ) {
                 continue;
