@@ -1594,16 +1594,13 @@ static CConstRef<CBioSource> x_GetSourceFeatViaCDS  (
         if (cds_loc) {
             CRef<CSeq_loc> cleaned_location( new CSeq_loc );
             cleaned_location->Assign( *cds_loc );
-            if (cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
-                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, &scope));
-                cleaned_location->Assign(*rev_loc);
-            }
-            /*
-            CConstRef<CSeq_feat> src_feat
-                = GetOverlappingSource (*cleaned_location, scope);
-            */
             CConstRef<CSeq_feat> src_feat
                 = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
+            if (! src_feat  &&  cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
+                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, &scope));
+                cleaned_location->Assign(*rev_loc);
+                src_feat = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
+            }
             if (src_feat) {
                 const CSeq_feat& feat = *src_feat;
                 if (feat.IsSetData()) {
