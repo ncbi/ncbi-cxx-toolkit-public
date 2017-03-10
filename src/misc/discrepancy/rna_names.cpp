@@ -52,6 +52,7 @@ static const char* rrna_standard_name[] = {
     "18S ribosomal RNA",
     "21S ribosomal RNA",
     "23S ribosomal RNA",
+    "25S ribosomal RNA",
     "26S ribosomal RNA",
     "28S ribosomal RNA",
     "large subunit ribosomal RNA",
