@@ -45,12 +45,16 @@
 #include <objects/seqsplit/seqsplit__.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/annot_selector.hpp>
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -158,13 +162,32 @@ const int kFilterIndexMaxLength = 4;
 
 
 // splitter parameters for SNPs and graphs
+static const int kTSEId = 1;
+static const int kChunkIdFeat = 0;
+static const int kChunkIdGraph = 1;
+static const int kChunkIdMul = 2;
 static const TSeqPos kFeatChunkSize = 1000000;
 static const TSeqPos kGraphChunkSize = 10000000;
-static const char kGraphNameSuffix[] = "@@100";
-static const char kOverviewNameSuffix[] = "@@5000";
 
 
 BEGIN_LOCAL_NAMESPACE;
+
+
+template<class Cont>
+typename Cont::value_type::TObjectType& sx_AddNew(Cont& cont)
+{
+    typename Cont::value_type obj(new typename Cont::value_type::TObjectType);
+    cont.push_back(obj);
+    return *obj;
+}
+
+
+void sx_SetZoomLevel(CSeq_annot& annot, int zoom_level)
+{
+    CUser_object& obj = sx_AddNew(annot.SetDesc().Set()).SetUser();
+    obj.SetType().SetStr("AnnotationTrack");
+    obj.AddField("ZoomLevel", zoom_level);
+}
 
 
 bool IsValidNAIndex(size_t na_index)
@@ -524,7 +547,7 @@ CID2SNPProcessor_Impl::x_ResolveBlobId(const SSNPDbTrackInfo& track,
 
 bool CID2SNPProcessor_Impl::WorthCompressing(const SSNPEntryInfo& /*seq*/)
 {
-    return true;
+    return false;
 }
 
 
@@ -642,13 +665,83 @@ CID2SNPProcessor_Impl::x_ProcessGetBlobId(CID2SNPContext& context,
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+template<class Values>
+bool sx_HasNonZero(const Values& values, TSeqPos index, TSeqPos count)
+{
+    TSeqPos end = min(index+count, TSeqPos(values.size()));
+    for ( TSeqPos i = index; i < end; ++i ) {
+        if ( values[i] ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+template<class TValues>
+void sx_AddBits2(vector<char>& bits,
+                 TSeqPos bit_values,
+                 TSeqPos pos_index,
+                 const TValues& values)
+{
+    TSeqPos dst_ind = pos_index / bit_values;
+    TSeqPos src_ind = 0;
+    if ( TSeqPos first_offset = pos_index % bit_values ) {
+        TSeqPos first_count = bit_values - first_offset;
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, 0, first_count);
+        }
+        dst_ind += 1;
+        src_ind += first_count;
+    }
+    while ( src_ind < values.size() ) {
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, src_ind, bit_values);
+        }
+        ++dst_ind;
+        src_ind += bit_values;
+    }
+}
+
+
+static
+void sx_AddBits(vector<char>& bits,
+                TSeqPos kChunkSize,
+                const CSeq_graph& graph)
+{
+    TSeqPos comp = graph.GetComp();
+    _ASSERT(kChunkSize % comp == 0);
+    TSeqPos bit_values = kChunkSize / comp;
+    const CSeq_interval& loc = graph.GetLoc().GetInt();
+    TSeqPos pos = loc.GetFrom();
+    _ASSERT(pos % comp == 0);
+    _ASSERT(graph.GetNumval()*comp == loc.GetLength());
+    TSeqPos pos_index = pos/comp;
+    if ( graph.GetGraph().IsByte() ) {
+        auto& values = graph.GetGraph().GetByte().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+    else {
+        auto& values = graph.GetGraph().GetInt().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
 CRef<CSerialObject> CID2SNPProcessor_Impl::x_LoadBlob(CID2SNPContext& context,
                                                       SSNPEntryInfo& info)
 {
     CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
     split_info->SetChunks();
     CBioseq_set& skeleton = split_info->SetSkeleton().SetSet();
-    skeleton.SetId().SetId(1);
+    skeleton.SetId().SetId(kTSEId);
     skeleton.SetSeq_set();
 
                 
@@ -658,27 +751,91 @@ CRef<CSerialObject> CID2SNPProcessor_Impl::x_LoadBlob(CID2SNPContext& context,
     string na_acc = FormatTrack(info.m_Track);
     {{
         // overview graph
-        string overview_name = na_acc+kOverviewNameSuffix;
-        CRef<CSeq_annot> annot = it.GetOverviewAnnot(total_range, overview_name);
+        CRef<CSeq_annot> annot = it.GetOverviewAnnot(total_range, na_acc);
+        sx_SetZoomLevel(*annot, it.GetOverviewZoom());
         if ( annot ) {
-            /*
-            for ( auto& g : overvew_annot->GetData().GetGraph() ) {
+            for ( auto& g : annot->GetData().GetGraph() ) {
                 sx_AddBits(feat_chunks, kFeatChunkSize, *g);
             }
-            */
             skeleton.SetAnnot().push_back(annot);
         }
     }}
-    
+    {{
+        // coverage graphs
+        string graph_name = CombineWithZoomLevel(na_acc, it.GetCoverageZoom());
+        _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
+        const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
+        for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
+                continue;
+            }
+            int chunk_id = i*kChunkIdMul+kChunkIdGraph;
+            CID2S_Chunk_Info& chunk = sx_AddNew(split_info->SetChunks());
+            chunk.SetId().Set(chunk_id);
+            CID2S_Seq_annot_Info& annot_info = sx_AddNew(chunk.SetContent()).SetSeq_annot();
+            annot_info.SetName(graph_name);
+            annot_info.SetGraph();
+            CID2S_Seq_id_Interval& interval = annot_info.SetSeq_loc().SetSeq_id_interval();
+            interval.SetSeq_id(*it.GetSeqId());
+            interval.SetStart(i*kGraphChunkSize);
+            interval.SetLength(kGraphChunkSize);
+        }
+    }}
+    {{
+        // features
+        TSeqPos overflow = it.GetMaxSNPLength()-1;
+        for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !feat_chunks[i] ) {
+                continue;
+            }
+            int chunk_id = i*kChunkIdMul+kChunkIdFeat;
+            CID2S_Chunk_Info& chunk = sx_AddNew(split_info->SetChunks());
+            chunk.SetId().Set(chunk_id);
+            CID2S_Seq_annot_Info& annot_info = sx_AddNew(chunk.SetContent()).SetSeq_annot();
+            annot_info.SetName(na_acc);
+            CID2S_Feat_type_Info& feat_type = sx_AddNew(annot_info.SetFeat());
+            feat_type.SetType(CSeqFeatData::e_Imp);
+            feat_type.SetSubtypes().push_back(CSeqFeatData::eSubtype_variation);
+            CID2S_Seq_id_Interval& interval = annot_info.SetSeq_loc().SetSeq_id_interval();
+            interval.SetSeq_id(*it.GetSeqId());
+            interval.SetStart(i*kFeatChunkSize);
+            interval.SetLength(kFeatChunkSize+overflow);
+        }
+    }}
     return Ref<CSerialObject>(split_info);
 }
 
 
 CRef<CSerialObject> CID2SNPProcessor_Impl::x_LoadChunk(CID2SNPContext& context,
-                                                       SSNPEntryInfo& entry,
+                                                       SSNPEntryInfo& info,
                                                        int chunk_id)
 {
-    return null;
+    CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
+    CID2S_Chunk_Data& data = sx_AddNew(chunk->SetData());
+    int chunk_type = chunk_id%kChunkIdMul;
+    int i = chunk_id/kChunkIdMul;
+    data.SetId().SetBioseq_set(kTSEId);
+    
+    string na_acc = FormatTrack(info.m_Track);
+    CSNPDbSeqIterator& it = GetSeqIterator(info);
+    if ( chunk_type == kChunkIdFeat ) {
+        CRange<TSeqPos> range;
+        range.SetFrom(i*kFeatChunkSize);
+        range.SetToOpen((i+1)*kFeatChunkSize);
+        for ( auto annot : it.GetTableFeatAnnots(range, na_acc) ) {
+            data.SetAnnots().push_back(annot);
+        }
+    }
+    else if ( chunk_type == kChunkIdGraph ) {
+        CRange<TSeqPos> range;
+        range.SetFrom(i*kGraphChunkSize);
+        range.SetToOpen((i+1)*kGraphChunkSize);
+        if ( auto annot = it.GetCoverageAnnot(range, na_acc) ) {
+            sx_SetZoomLevel(*annot, it.GetCoverageZoom());
+            data.SetAnnots().push_back(annot);
+        }
+    }
+    return Ref<CSerialObject>(chunk);
 }
 
 
@@ -693,11 +850,11 @@ CID2SNPProcessor_Impl::x_ProcessGetBlobInfo(CID2SNPContext& context,
         return eNotProcessed;
     }
     if ( SSNPEntryInfo info = x_ResolveBlobId(request.GetBlob_id().GetBlob_id()) ) {
-        CRef<CID2_Reply> main_reply(new CID2_Reply);
+        CID2_Reply& main_reply = sx_AddNew(replies);
         if ( main_request.IsSetSerial_number() ) {
-            main_reply->SetSerial_number(main_request.GetSerial_number());
+            main_reply.SetSerial_number(main_request.GetSerial_number());
         }
-        CID2_Reply_Get_Blob& reply = main_reply->SetReply().SetGet_blob();
+        CID2_Reply_Get_Blob& reply = main_reply.SetReply().SetGet_blob();
         reply.SetBlob_id(x_GetBlobId(info));
         CID2_Reply_Data& data = reply.SetData();
 
@@ -714,8 +871,7 @@ CID2SNPProcessor_Impl::x_ProcessGetBlobInfo(CID2SNPContext& context,
         WriteData(context, info, data, *obj);
         TRACE_X(12, eDebug_resolve, "Seq("<<info<<"): "<<
                 " data size: "<<sx_GetSize(data));
-        main_reply->SetEnd_of_reply();
-        replies.push_back(main_reply);
+        main_reply.SetEnd_of_reply();
         return eProcessed;
     }
     return eNotProcessed;
@@ -731,11 +887,11 @@ CID2SNPProcessor_Impl::x_ProcessGetChunks(CID2SNPContext& context,
 {
     if ( SSNPEntryInfo info = x_ResolveBlobId(request.GetBlob_id()) ) {
         ITERATE ( CID2S_Request_Get_Chunks::TChunks, it, request.GetChunks() ) {
-            CRef<CID2_Reply> main_reply(new CID2_Reply);
+            CID2_Reply& main_reply = sx_AddNew(replies);
             if ( main_request.IsSetSerial_number() ) {
-                main_reply->SetSerial_number(main_request.GetSerial_number());
+                main_reply.SetSerial_number(main_request.GetSerial_number());
             }
-            CID2S_Reply_Get_Chunk& reply = main_reply->SetReply().SetGet_chunk();
+            CID2S_Reply_Get_Chunk& reply = main_reply.SetReply().SetGet_chunk();
             reply.SetBlob_id(request.SetBlob_id());
             reply.SetChunk_id(*it);
             CRef<CSerialObject> obj = x_LoadChunk(context, info, *it);
@@ -750,13 +906,12 @@ CID2SNPProcessor_Impl::x_ProcessGetChunks(CID2SNPContext& context,
             }
             else {
                 TRACE_X(11, eDebug_resolve, "GetChunk: "<<info<<'.'<<*it<<": bad chunk");
-                CRef<CID2_Error> error(new CID2_Error);
-                error->SetSeverity(CID2_Error::eSeverity_no_data);
-                error->SetMessage("Invalid chunk id");
-                main_reply->SetError().push_back(error);
+                CID2_Error& error = sx_AddNew(main_reply.SetError());
+                error.SetSeverity(CID2_Error::eSeverity_no_data);
+                error.SetMessage("Invalid chunk id");
             }
-            replies.push_back(main_reply);
         }
+        replies.back()->SetEnd_of_reply();
         return eProcessed;
     }
     return eNotProcessed;
@@ -770,12 +925,12 @@ void CID2SNPProcessor_Impl::x_ProcessReplyGetSeqId(CID2SNPContext& context,
                                                    CID2SNPProcessorPacketContext::SRequestInfo& info,
                                                    CID2_Reply_Get_Seq_id& reply)
 {
+    replies.push_back(Ref(&main_reply));
     if ( reply.IsSetSeq_id() ) {
         for ( auto& r : reply.GetSeq_id() ) {
             x_GetAccVer(info.m_SeqAcc, *r);
         }
     }
-    replies.push_back(Ref(&main_reply));
 }
 
 
@@ -792,39 +947,34 @@ void CID2SNPProcessor_Impl::x_ProcessReplyGetBlobId(CID2SNPContext& context,
         for ( auto& track : req_info.m_SNPTracks ) {
             if ( SSNPEntryInfo snp_info = x_ResolveBlobId(track, req_info.m_SeqAcc) ) {
                 string na_acc = FormatTrack(track);
-                CRef<CID2_Reply> snp_main_reply(new CID2_Reply);
-                snp_main_reply->SetSerial_number(main_reply.GetSerial_number());
-                CID2_Reply_Get_Blob_Id& snp_reply = snp_main_reply->SetReply().SetGet_blob_id();
+                CID2_Reply& snp_main_reply = sx_AddNew(replies);
+                snp_main_reply.SetSerial_number(main_reply.GetSerial_number());
+                CID2_Reply_Get_Blob_Id& snp_reply = snp_main_reply.SetReply().SetGet_blob_id();
                 snp_reply.SetSeq_id(reply.SetSeq_id());
                 snp_reply.SetBlob_id(x_GetBlobId(snp_info));
                 {{
                     // add SNP feat type info
-                    CRef<CID2S_Seq_annot_Info> annot_info(new CID2S_Seq_annot_Info);
-                    annot_info->SetName(na_acc);
-                    CRef<CID2S_Feat_type_Info> type_info(new CID2S_Feat_type_Info);
-                    type_info->SetType(CSeqFeatData::e_Imp);
-                    type_info->SetSubtypes().push_back(CSeqFeatData::eSubtype_variation);
-                    annot_info->SetFeat().push_back(type_info);
-                    annot_info->SetSeq_loc().SetWhole_seq_id(*seq_id);
-                    snp_reply.SetAnnot_info().push_back(annot_info);
+                    CID2S_Seq_annot_Info& annot_info = sx_AddNew(snp_reply.SetAnnot_info());
+                    annot_info.SetSeq_loc().SetWhole_seq_id(*seq_id);
+                    annot_info.SetName(na_acc);
+                    CID2S_Feat_type_Info& type_info = sx_AddNew(annot_info.SetFeat());
+                    type_info.SetType(CSeqFeatData::e_Imp);
+                    type_info.SetSubtypes().push_back(CSeqFeatData::eSubtype_variation);
                 }}
                 {{
                     // add SNP graph type info
-                    CRef<CID2S_Seq_annot_Info> annot_info(new CID2S_Seq_annot_Info);
-                    annot_info->SetName(na_acc+kGraphNameSuffix);
-                    annot_info->SetGraph();
-                    annot_info->SetSeq_loc().SetWhole_seq_id(*seq_id);
-                    snp_reply.SetAnnot_info().push_back(annot_info);
+                    CID2S_Seq_annot_Info& annot_info = sx_AddNew(snp_reply.SetAnnot_info());
+                    annot_info.SetSeq_loc().SetWhole_seq_id(*seq_id);
+                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info)->GetCoverageZoom()));
+                    annot_info.SetGraph();
                 }}
                 {{
                     // add SNP overvew graph type info
-                    CRef<CID2S_Seq_annot_Info> annot_info(new CID2S_Seq_annot_Info);
-                    annot_info->SetName(na_acc+kOverviewNameSuffix);
-                    annot_info->SetGraph();
-                    annot_info->SetSeq_loc().SetWhole_seq_id(*seq_id);
-                    snp_reply.SetAnnot_info().push_back(annot_info);
+                    CID2S_Seq_annot_Info& annot_info = sx_AddNew(snp_reply.SetAnnot_info());
+                    annot_info.SetSeq_loc().SetWhole_seq_id(*seq_id);
+                    annot_info.SetName(CombineWithZoomLevel(na_acc, GetSNPDb(snp_info)->GetOverviewZoom()));
+                    annot_info.SetGraph();
                 }}
-                replies.push_back(snp_main_reply);
             }
         }
         if ( reply.IsSetEnd_of_reply() ) {
