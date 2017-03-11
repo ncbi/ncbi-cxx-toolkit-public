@@ -110,10 +110,8 @@ auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
-bacterial_pipeline_proc needs attr_cd
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_alnutil
-bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
@@ -340,6 +338,7 @@ gene_info needs xncbi
 gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 genemark_proc needs bacterial_pipeline_proc
+genemark_proc needs xalgoseq
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
@@ -463,7 +462,7 @@ gpipe_objutil needs writedb
 gpipe_objutil needs xalnmgr
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
-gpipe_prodigal needs bacterial_pipeline_proc
+gpipe_prodigal needs prok_cluster_data
 gpipe_property needs gpipe_common
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
@@ -697,6 +696,10 @@ ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
+ncbi_id2proc_snp needs $(COMPRESS_LIBS)
+ncbi_id2proc_snp needs $(SOBJMGR_LIBS)
+ncbi_id2proc_snp needs $(SRAREAD_LIBS)
+ncbi_id2proc_snp needs id2
 ncbi_id2proc_wgs needs $(COMPRESS_LIBS)
 ncbi_id2proc_wgs needs $(SOBJMGR_LIBS)
 ncbi_id2proc_wgs needs $(SRAREAD_LIBS)
@@ -872,6 +875,9 @@ png needs3party $(Z_LIBS)
 process_annotation_stats needs xser
 proj needs pubmed
 proj needs seqset
+prok_cluster_data needs attr_cd
+prok_cluster_data needs bacterial_pipeline_proc
+prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 protein_match needs $(OBJMGR_LIBS)
 protein_match needs xobjutil
