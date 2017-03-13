@@ -634,7 +634,7 @@ bool CDB_UserHandler::HandleAll(const TExceptions& /* exceptions */)
     return false;
 }
 
-bool CDB_UserHandler::x_HandleAll(const TExceptions& exceptions)
+bool CDB_UserHandler::x_HandleAll(const TExceptions& /* exceptions */)
 {
 #if 1
     return false;

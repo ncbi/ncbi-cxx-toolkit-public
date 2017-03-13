@@ -45,7 +45,7 @@ namespace impl
 /////////////////////////////////////////////////////////////////////////////
 struct SNoLock
 {
-    void operator() (CDB_UserHandler::TExceptions& resource) const {}
+    void operator() (CDB_UserHandler::TExceptions& /*resource*/) const {}
 };
 
 struct SUnLock

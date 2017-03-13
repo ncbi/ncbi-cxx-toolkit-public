@@ -200,7 +200,7 @@ CDB_Result* CDBL_LangCmd::Result()
 
         if ((m_Status & 0x40) != 0) { // check for ret status
             m_Status ^= 0x40;
-            DBBOOL has_return_status = Check(dbhasretstat(GetCmd()));
+            DBBOOL has_return_status = (DBBOOL)Check(dbhasretstat(GetCmd()));
             if (has_return_status) {
                 SetResultSet( new CDBL_StatusResult(GetConnection(), GetCmd()) );
                 m_RowCount= 1;
