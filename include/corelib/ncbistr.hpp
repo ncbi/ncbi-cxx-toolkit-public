@@ -4418,6 +4418,13 @@ string NStr::NumericToString(char value,
 }
 
 template<> inline
+string NStr::NumericToString(signed char value,
+                             TNumToStringFlags flags, int base)
+{
+    return NStr::IntToString(value, flags, base);
+}
+
+template<> inline
 string NStr::NumericToString(unsigned char value,
                              TNumToStringFlags flags, int base)
 {
@@ -4426,6 +4433,13 @@ string NStr::NumericToString(unsigned char value,
 
 template<> inline
 void NStr::NumericToString(string& out_str, char value,
+                           TNumToStringFlags flags, int base)
+{
+    NStr::IntToString(out_str, value, flags, base);
+}
+
+template<> inline
+void NStr::NumericToString(string& out_str, signed char value,
                            TNumToStringFlags flags, int base)
 {
     NStr::IntToString(out_str, value, flags, base);
@@ -4459,6 +4473,29 @@ char NStr::StringToNumeric(const CTempString str,
         }
     }
     return (char) n;
+}
+
+template<> inline
+signed char NStr::StringToNumeric(const CTempString str,
+                                  TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    if (n < numeric_limits<signed char>::min()  ||  n > numeric_limits<signed char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<signed char>(): overflow", 0);
+        }
+    }
+    return (signed char) n;
 }
 
 template<> inline
@@ -4509,6 +4546,34 @@ bool NStr::StringToNumeric(const CTempString str,
         }
     }
     *value = (char) n;
+    return true;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString str,
+                           signed char* value, TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n < numeric_limits<signed char>::min()  ||  n > numeric_limits<signed char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<signed char>(): overflow", 0);
+        }
+    }
+    *value = (signed char) n;
     return true;
 }
 
