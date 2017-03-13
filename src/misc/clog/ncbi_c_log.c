@@ -134,7 +134,7 @@
  *  Global constants
  */
 
-static const char* kBaseLogDir  = "s:/log/";
+static const char* kBaseLogDir  = "/log/";
 
 
 
