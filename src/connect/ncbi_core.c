@@ -160,10 +160,10 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 struct MT_LOCK_tag g_CORE_MT_Lock_default = {
     1/* ref count */,
     0/* user data */,
-#ifndef NCBI_NO_THREADS
-    s_CORE_MT_Lock_default_handler,
-#else
+#ifdef NCBI_NO_THREADS
     0/* noop handler */,
+#else
+    s_CORE_MT_Lock_default_handler,
 #endif /*NCBI_NO_THREADS*/
     0/* cleanup */,
     kMT_LOCK_magic_number
