@@ -741,7 +741,7 @@ extern SSERV_Info* SERV_CreateNcbidInfo(unsigned int   host,
  */
 
 /*ARGSUSED*/
-static char* s_Standalone_Write(size_t reserve, const USERV_Info* u_info)
+static char* s_Standalone_Write(size_t reserve, const USERV_Info* u)
 {
     char* str = (char*) malloc(reserve + 1);
 
@@ -929,9 +929,9 @@ extern SSERV_Info* SERV_CreateHttpInfo(ESERV_Type     type,
  *  FIREWALL::   constructor and virtual functions
  */
 
-static char* s_Firewall_Write(size_t reserve, const USERV_Info* u_info)
+static char* s_Firewall_Write(size_t reserve, const USERV_Info* u)
 {
-    const char* name = SERV_TypeStr(u_info->firewall.type);
+    const char* name = SERV_TypeStr(u->firewall.type);
     size_t namelen = strlen(name);
     char* str = (char*) malloc(reserve + (namelen ? namelen + 1 : 0));
 
@@ -1007,7 +1007,7 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int   host,
  */
 
 /*ARGSUSED*/
-static char* s_Dns_Write(size_t reserve, const USERV_Info* u_info)
+static char* s_Dns_Write(size_t reserve, const USERV_Info* u)
 {
     char* str = (char*) malloc(reserve + 1);
 
