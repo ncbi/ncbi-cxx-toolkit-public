@@ -1265,6 +1265,11 @@ public:
         : m_Flags(flags)
         {
         }
+    static
+    CSafeFlags FromInt(storage_type flags)
+        {
+            return CSafeFlags(flags);
+        }
 
     storage_type get() const
         {
@@ -1280,6 +1285,15 @@ public:
     bool operator!=(const CSafeFlags& b) const
         {
             return get() != b.get();
+        }
+    // the following operators are necessary to allow comparison with 0
+    bool operator==(int v) const
+        {
+            return get() == storage_type(v);
+        }
+    bool operator!=(int v) const
+        {
+            return get() != storage_type(v);
         }
 
     CSafeFlags operator~() const
