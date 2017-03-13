@@ -55,22 +55,22 @@ public:
     void Close() override;
     void Abort() override;
 
-    string GetLoc() const;
-    Uint8 GetSize();
-    list<string> GetAttributeList() const;
-    string GetAttribute(const string&) const;
-    void SetAttribute(const string&, const string&);
-    CNetStorageObjectInfo GetInfo();
-    void SetExpiration(const CTimeout&);
+    string GetLoc() const override;
+    Uint8 GetSize() override;
+    list<string> GetAttributeList() const override;
+    string GetAttribute(const string&) const override;
+    void SetAttribute(const string&, const string&) override;
+    CNetStorageObjectInfo GetInfo() override;
+    void SetExpiration(const CTimeout&) override;
 
-    string FileTrack_Path();
-    pair<string, string> GetUserInfo();
+    string FileTrack_Path() override;
+    pair<string, string> GetUserInfo() override;
 
-    CNetStorageObjectLoc& Locator();
-    string Relocate(TNetStorageFlags, TNetStorageProgressCb cb);
+    CNetStorageObjectLoc& Locator() override;
+    string Relocate(TNetStorageFlags, TNetStorageProgressCb cb) override;
     void CancelRelocate();
-    bool Exists();
-    ENetStorageRemoveResult Remove();
+    bool Exists() override;
+    ENetStorageRemoveResult Remove() override;
 
     void SetLocator();
 

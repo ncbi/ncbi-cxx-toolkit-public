@@ -222,7 +222,10 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CObj* new_obj;
     CNetStorageObject new_file(Clone(flags, &new_obj));
 
-    if (typeid(*m_Locations.front()) == typeid(*new_obj->m_Locations.front())) {
+    auto& src = *m_Locations.front();
+    auto& dst = *new_obj->m_Locations.front();
+
+    if (typeid(src) == typeid(dst)) {
         rw_state->Close();
         return new_obj->m_ObjectLoc.GetLocator();
     }
