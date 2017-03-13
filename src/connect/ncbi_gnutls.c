@@ -329,7 +329,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
     int err;
 
     if (end == GNUTLS_SERVER) {
-        /*FIXME: not yet supported*/
+        CORE_LOG(eLOG_Error, "Server-side SSL not yet supported with GNUTLS");
         *error = 0;
         return 0;
     }
@@ -341,6 +341,9 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
 
     if (!acred
         ||  (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data))) {
+        CORE_LOGF(eLOG_Error, ("Cannot %s GNUTLS credentials: %s",
+                               acred ? "use"            : "set",
+                               acred ? "Invalid format" : "Not initialized"));
         /*FIXME: there's a NULL(data)-terminated array of credentials */
         *error = 0;
         return 0;
@@ -412,7 +415,7 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
             *desc = strdup(temp);
             gnutls_free(temp);
         }
-#  endif /*LIBGNUTLS_VERSION_NUMBER<3.1.10*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.1.10*/
         status = eIO_Success;
     }
 
