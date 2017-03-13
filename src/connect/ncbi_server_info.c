@@ -283,7 +283,6 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 &&  !(str = SOCK_StringToHostPortEx(str, &host, &port, lazy))){
                 return 0;
             }
-            assert(!ipv6  ||  (!lazy  &&  !host));
             if (str != end)
                 return 0;
             if (!ipv6)
