@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_EDIT___AUTODEF_MOD_COMBO__HPP
-#define OBJTOOLS_EDIT___AUTODEF_MOD_COMBO__HPP
+#ifndef OBJMGR_UTIL___AUTODEF_MOD_COMBO__HPP
+#define OBJMGR_UTIL___AUTODEF_MOD_COMBO__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -343,4 +343,4 @@ CAutoDefOptions::EHIVCloneIsolateRule CAutoDefModifierCombo::GetHIVCloneIsolateR
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif //OBJTOOLS_EDIT___AUTODEF_MOD_COMBO__HPP
+#endif //OBJMGR_UTIL___AUTODEF_MOD_COMBO__HPP

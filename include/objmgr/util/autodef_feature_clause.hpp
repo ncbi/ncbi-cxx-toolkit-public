@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_EDIT___AUTODEF_FEATURE_CLAUSE__HPP
-#define OBJTOOLS_EDIT___AUTODEF_FEATURE_CLAUSE__HPP
+#ifndef OBJMGR_UTIL___AUTODEF_FEATURE_CLAUSE__HPP
+#define OBJMGR_UTIL___AUTODEF_FEATURE_CLAUSE__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -295,4 +295,4 @@ CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_fea
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif //OBJTOOLS_EDIT___AUTODEF_FEATURE_CLAUSE__HPP
+#endif //OBJMGR_UTIL___AUTODEF_FEATURE_CLAUSE__HPP

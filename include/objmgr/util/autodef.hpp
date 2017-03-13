@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_EDIT___AUTODEF__HPP
-#define OBJTOOLS_EDIT___AUTODEF__HPP
+#ifndef OBJMGR_UTIL___AUTODEF__HPP
+#define OBJMGR_UTIL___AUTODEF__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -338,4 +338,4 @@ void CAutoDef::SetCustomFeatureClause(const string& custom_feature_clause)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif //OBJTOOLS_EDIT___AUTODEF__HPP
+#endif //OBJMGR_UTIL___AUTODEF__HPP

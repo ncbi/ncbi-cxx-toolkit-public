@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_EDIT___AUTODEF_SOURCE_DESC__HPP
-#define OBJTOOLS_EDIT___AUTODEF_SOURCE_DESC__HPP
+#ifndef OBJMGR_UTIL___AUTODEF_SOURCE_DESC__HPP
+#define OBJMGR_UTIL___AUTODEF_SOURCE_DESC__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -156,4 +156,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif //OBJTOOLS_EDIT___AUTODEF_SOURCE_DESC__HPP
+#endif //OBJMGR_UTIL___AUTODEF_SOURCE_DESC__HPP
