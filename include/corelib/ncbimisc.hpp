@@ -1375,6 +1375,12 @@ inline NCBI_NS_NCBI::CSafeFlags<E> operator~(E a)      \
 { return ~NCBI_NS_NCBI::CSafeFlags<E>(a); }
 
 
+#ifndef DECLARE_SAFE_FLAGS_TYPE
+# define DECLARE_SAFE_FLAGS_TYPE(Enum,Typedef) typedef underlying_type<Enum>::type Typedef
+# define DECLARE_SAFE_FLAGS(Enum) NCBI_EAT_SEMICOLON(safe_flags)
+#endif
+
+
 /// Helper operators for safe-flags enums.
 /// These operators will be used only for enums marked
 /// as safe-flag enums by macro DECLARE_SAFE_FLAGS()
