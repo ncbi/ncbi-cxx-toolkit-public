@@ -4040,9 +4040,10 @@ static EIO_Status s_Connect_(SOCK            sock,
             CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("%s[SOCK::Connect] "
-                                 " Failed to initialize secure session%s%s",
-                                 s_ID(sock, _id), *hostname ? " with " : "",
-                                 hostname));
+                                 " %s to initialize secure session%s%s",
+                                 s_ID(sock, _id),
+                                 sslcreate ? "Unable" : "Failed",
+                                 *hostname ? " with " : "", hostname));
             UTIL_ReleaseBuffer(strerr);
             return eIO_NotSupported;
         }
@@ -4603,8 +4604,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
             CORE_LOGF_ERRNO_EXX(132, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("%s[SOCK::CreateOnTop] "
-                                 " Failed to initialize secure session",
-                                 s_ID(x_sock, _id)));
+                                 " %s to initialize secure session",
+                                 s_ID(x_sock, _id),
+                                 sslcreate ? "Unable" : "Failed"));
             UTIL_ReleaseBuffer(strerr);
             x_sock->sock = SOCK_INVALID;
             SOCK_Close(x_sock);
@@ -7033,11 +7035,10 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
     case eSAF_Full:
 #ifdef NCBI_OS_UNIX
         if (sock->path[0]) {
-            size_t len = strlen(sock->path);
-            if (len < bufsize)
+            if ((len = strlen(sock->path)) < bufsize)
                 memcpy(buf, sock->path, len + 1);
             else
-                return 0;
+                return 0/*error*/;
         } else
 #endif /*NCBI_OS_UNIX*/
             if (!SOCK_HostPortToString(sock->host, sock->port, buf, bufsize))
@@ -7049,10 +7050,10 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
             *buf = '\0';
         else
 #endif /*NCBI_OS_UNIX*/
-            if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= bufsize)
-                return 0/*error*/;
-            else
+            if ((len = (size_t) sprintf(port, "%hu", sock->port)) < bufsize)
                 memcpy(buf, port, len + 1);
+            else
+                return 0/*error*/;
         break;
     case eSAF_IP:
 #ifdef NCBI_OS_UNIX
