@@ -93,7 +93,7 @@ public:
         /// Default is to print to cerr, but feel free to override in a subclass.
         /// In particular, it's reasonable to throw an exception here to halt
         /// the processing.
-        virtual void HandleError(EError eError, const string & sMessage ) const { 
+        virtual void HandleError(EError /*eError*/, const string & sMessage ) const { 
             cerr << "Error: " << sMessage << endl; }
     };
 
