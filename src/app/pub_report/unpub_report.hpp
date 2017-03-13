@@ -37,7 +37,6 @@
 #include <set>
 
 #include <corelib/ncbistre.hpp>
-#include <objects/general/Date.hpp>
 
 #include "base_report.hpp"
 
@@ -47,7 +46,9 @@ namespace ncbi
     class CEutilsClient;
     namespace objects
     {
+        class CDate_std;
         class CPub;
+        class CPubmed_entry;
     }
 }
 
@@ -63,7 +64,7 @@ class CUnpublishedReport : public CBaseReport
 {
 public:
 
-    CUnpublishedReport(ncbi::CNcbiOstream& out);
+    CUnpublishedReport(ncbi::CNcbiOstream& out, int max_date_check);
 
     virtual void CompleteReport();
     virtual void SetCurrentSeqId(const std::string& name);
@@ -71,26 +72,32 @@ public:
 
     void ReportUnpublished(const CPub& pub);
 
-    bool IsSetYear() const;
-    void SetYear(int year);
-    int GetYear() const;
+    bool IsSetDate() const;
+    const CDate_std& GetDate() const;
+
+    void SetDate(const CDate_std& date);
+    void ResetDate();
 
 private:
 
-    CHydraSearch& GetHydraSearch();
-    CEutilsClient& GetEUtils();
+    CHydraSearch& GetHydraSearch() const;
+    CEutilsClient& GetEUtils() const;
+
+    int RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const;
 
     typedef std::list<std::shared_ptr<CPubData>> TPubs;
 
     TPubs m_pubs,
           m_pubs_need_id,
-          m_pubs_need_year;
+          m_pubs_need_date;
 
     ncbi::CNcbiOstream& m_out;
-    shared_ptr<CHydraSearch> m_hydra_search;
-    shared_ptr<CEutilsClient> m_eutils;
+    mutable shared_ptr<CHydraSearch> m_hydra_search;
+    mutable shared_ptr<CEutilsClient> m_eutils;
 
-    int m_year;
+    CRef<CDate_std> m_date;
+
+    int m_max_date_check;
 };
 
 }

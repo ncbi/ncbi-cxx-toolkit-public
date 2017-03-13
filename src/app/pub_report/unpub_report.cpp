@@ -146,7 +146,6 @@ public:
     typedef set<string> TSeqIds;
 
     CPubData() :
-        m_year(0),
         m_title_words_set(false),
         m_full_title_set(false)
     {}
@@ -184,9 +183,6 @@ public:
     const string& GetUnique() const
     { return m_unique; }
 
-    int GetYear() const
-    { return m_year; }
-
     const string& GetVolume() const
     { return m_volume; }
 
@@ -215,16 +211,36 @@ public:
     void SetUnique(const string& unique)
     { m_unique = unique; }
 
-    void SetYear(const CDate& date)
+    void SetDate(const CDate_std& date)
     {
-        SetYear(0);
-        if (date.IsStd() && date.GetStd().IsSetYear()) {
-            SetYear(date.GetStd().GetYear());
+        if (date.IsSetYear() && date.IsSetMonth()) {
+            m_date.Reset(new CDate_std);
+            m_date->Assign(date);
         }
     }
 
-    void SetYear(int year)
-    { m_year = year; }
+    bool IsSetDate() const
+    {
+        return m_date.NotEmpty();
+    }
+
+    int GetYear() const
+    {
+        if (IsSetDate() && m_date->IsSetYear()) {
+            return m_date->GetYear();
+        }
+
+        return 0;
+    }
+
+    int GetMonth() const
+    {
+        if (IsSetDate() && m_date->IsSetMonth()) {
+            return m_date->GetMonth();
+        }
+
+        return 0;
+    }
 
     void AddSeqId(const string& seq_id)
     {
@@ -248,7 +264,7 @@ private:
     string m_unique;
 
     mutable string m_full_title;
-    int m_year;
+    CRef<CDate_std> m_date;
 
     mutable bool m_title_words_set,
                  m_full_title_set;
@@ -287,9 +303,9 @@ private:
 /////////////////////////////////////////////////
 
 
-CUnpublishedReport::CUnpublishedReport(CNcbiOstream& out) :
+CUnpublishedReport::CUnpublishedReport(CNcbiOstream& out, int max_date_check) :
     m_out(out),
-    m_year(0)
+    m_max_date_check(max_date_check)
 {}
 
 static void CollectDataGen(const CCit_gen& cit, CPubData& data)
@@ -306,8 +322,8 @@ static void CollectDataGen(const CCit_gen& cit, CPubData& data)
         data.SetTitle(cit.GetTitle());
     }
 
-    if (cit.IsSetDate()) {
-        data.SetYear(cit.GetDate());
+    if (cit.IsSetDate() && cit.GetDate().IsStd()) {
+        data.SetDate(cit.GetDate().GetStd());
     }
 }
 
@@ -338,8 +354,8 @@ static void CollectDataArt(const CCit_art& cit, CPubData& data)
         }
     }
 
-    if (imprint.IsSetDate()) {
-        data.SetYear(imprint.GetDate());
+    if (imprint.IsSetDate() && imprint.GetDate().IsStd()) {
+        data.SetDate(imprint.GetDate().GetStd());
     }
 
     if (imprint.IsSetVolume()) {
@@ -487,13 +503,13 @@ void CUnpublishedReport::ReportUnpublished(const CPub& pub)
             data->AddSeqId(cur_seq_id);
         }
 
-        if (data->GetYear() == 0) {
-            m_pubs_need_year.push_back(data);
+        if (!data->IsSetDate()) {
+            m_pubs_need_date.push_back(data);
         }
     }
 }
 
-CHydraSearch& CUnpublishedReport::GetHydraSearch()
+CHydraSearch& CUnpublishedReport::GetHydraSearch() const
 {
     if (m_hydra_search.get() == nullptr) {
         m_hydra_search.reset(new CHydraSearch);
@@ -502,7 +518,7 @@ CHydraSearch& CUnpublishedReport::GetHydraSearch()
     return *m_hydra_search;
 }
 
-CEutilsClient& CUnpublishedReport::GetEUtils()
+CEutilsClient& CUnpublishedReport::GetEUtils() const
 {
     if (m_eutils.get() == nullptr) {
         m_eutils.reset(new CEutilsClient);
@@ -612,15 +628,35 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const CPubData::TSeqI
     return ret;
 }
 
-static bool CheckDate(int year, const CCit_jour& juornal)
+static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& juornal)
 {
     bool ret = true;
     if (year && juornal.IsSetImp() && juornal.GetImp().IsSetDate()) {
         const CDate& pub_date = juornal.GetImp().GetDate();
         if (pub_date.IsStd() && pub_date.GetStd().IsSetYear()) {
 
-            int pub_year = pub_date.GetStd().GetYear();
-            ret = year - 1 <= pub_year && pub_year <= year + 1;
+            const CDate_std& std_pub_date = pub_date.GetStd();
+
+            CDate_std date_before,
+                      date_after;
+
+            date_before.SetYear(year);
+            if (month > 1) {
+                date_before.SetMonth(month - 1);
+            }
+            else {
+                date_before.SetYear(year - 1);
+                date_before.SetMonth(12);
+            }
+
+            date_after.SetYear(year + max_date_check);
+            date_after.SetMonth(month);
+
+            CDate::ECompare before = date_before.Compare(std_pub_date),
+                            after = date_after.Compare(std_pub_date);
+
+            ret = (before == CDate::eCompare_before || before == CDate::eCompare_same) &&
+                  (after == CDate::eCompare_after || after == CDate::eCompare_same);
         }
     }
 
@@ -729,8 +765,11 @@ static int ConvertPMCtoPMID(int pmc)
     return pmid;
 }
 
-static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const CPubData& data, CPubmed_entry& pubmed_entry)
+int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const
 {
+    CEutilsClient& eutils = GetEUtils();
+    CHydraSearch& hydra_search = GetHydraSearch();
+
     // TODO: look at MLA search
     string term = NStr::Join(data.GetSeqIds(), " AND ");
 
@@ -781,7 +820,7 @@ static int RetrievePMid(CEutilsClient& eutils, CHydraSearch& hydra_search, const
             const CCit_art& cit_art = pubmed_entry.GetMedent().GetCit();
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
 
-                bool proceed = CheckDate(data.GetYear(), cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry.GetMedent(), data.GetSeqIds());
+                bool proceed = CheckDate(data.GetYear(), data.GetMonth(), m_max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry.GetMedent(), data.GetSeqIds());
                 
                 if (proceed && cit_art.IsSetAuthors()) {
 
@@ -1038,7 +1077,7 @@ void CUnpublishedReport::CompleteReport()
     NON_CONST_ITERATE(TPubs, pub, m_pubs) {
 
         CPubmed_entry pubmed_entry;
-        int pmid = RetrievePMid(GetEUtils(), GetHydraSearch(), **pub, pubmed_entry);
+        int pmid = RetrievePMid(**pub, pubmed_entry);
 
         if (pmid) {
 
@@ -1064,32 +1103,40 @@ void CUnpublishedReport::SetCurrentSeqId(const std::string& name)
 
 void CUnpublishedReport::ClearData()
 {
-    if (GetYear()) {
-        NON_CONST_ITERATE(TPubs, pub, m_pubs_need_year) {
-            if (!(*pub)->GetYear()) {
-                (*pub)->SetYear(GetYear());
+    if (IsSetDate()) {
+        NON_CONST_ITERATE(TPubs, pub, m_pubs_need_date) {
+            if (!(*pub)->IsSetDate()) {
+                (*pub)->SetDate(GetDate());
             }
         }
     }
 
-    m_pubs_need_year.clear();
-    SetYear(0); // clears the current year
+    m_pubs_need_date.clear();
+    ResetDate(); // clears the current date
 }
 
-bool CUnpublishedReport::IsSetYear() const
+bool CUnpublishedReport::IsSetDate() const
 {
-    return m_year > 0;
+    return m_date.NotEmpty();
 }
 
-void CUnpublishedReport::SetYear(int year)
+void CUnpublishedReport::SetDate(const CDate_std& date)
 {
-    m_year = year;
+    if (date.IsSetYear() && date.IsSetMonth()) {
+        m_date.Reset(new CDate_std);
+        m_date->Assign(date);
+    }
 }
 
-int CUnpublishedReport::GetYear() const
+const CDate_std& CUnpublishedReport::GetDate() const
 {
-    return m_year;
+    static CDate_std invalid_date;
+    return IsSetDate() ? *m_date : invalid_date;
 }
 
+void CUnpublishedReport::ResetDate()
+{
+    m_date.Reset();
+}
 
 }

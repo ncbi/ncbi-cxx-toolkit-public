@@ -39,9 +39,10 @@
 
 #include <serial/objistr.hpp>
 
-#include <objects/seq/Seqdesc.hpp>
+#include <objects/general/Date_std.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 
 #include "journal_report.hpp"
 #include "journal_hook.hpp"
@@ -72,6 +73,8 @@ private:
 
     ESerialDataFormat GetSerialDataFormat() const;
 
+    int GetMaxDateCheck() const;
+
     CNcbiIstream* GetInputStream();
     CNcbiOstream* GetOutputStream();
 };
@@ -87,6 +90,7 @@ void CPubReportApp::Init(void)
     arg_desc->AddOptionalKey("o", "OutFile", "Single Output File", CArgDescriptions::eOutputFile);
     arg_desc->AddDefaultKey("Q", "ReportType", "Report Type", CArgDescriptions::eString, "j");
     arg_desc->AddDefaultKey("b", "BinaryFormat", "Binary mode", CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("max-date-check", "MaxDateCheck", "Maximal amount of years from the publication date", CArgDescriptions::eInteger, "1");
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
@@ -113,6 +117,18 @@ CNcbiOstream* CPubReportApp::GetOutputStream()
     }
 
     return out;
+}
+
+int CPubReportApp::GetMaxDateCheck() const
+{
+    int ret = 0;
+
+    const CArgs& args = GetArgs();
+    if (args["max-date-check"].HasValue()) {
+        ret = args["max-date-check"].AsInteger();
+    }
+
+    return ret;
 }
 
 bool CPubReportApp::IsJournalReport() const
@@ -149,7 +165,7 @@ int CPubReportApp::Run(void)
     }
     else if (IsUnpublishedReport()) {
 
-        shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out));
+        shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out, GetMaxDateCheck()));
         pub_hook.Reset(new CSkipPubUnpublishedHook(*unpub_report));
         report = unpub_report;
     }
@@ -157,8 +173,8 @@ int CPubReportApp::Run(void)
         NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
     }
 
-    CObjectTypeInfo desc_type_info = CType<CSeqdesc>();
-    desc_type_info.SetLocalSkipHook(*in_obj, pub_hook);
+    CObjectTypeInfo pub_type_info = CType<CPub_equiv>();
+    pub_type_info.SetLocalSkipHook(*in_obj, pub_hook);
 
     CObjectTypeInfo seq_entry_type_info = CType<CSeq_entry>();
     CRef<CSkipSeqEntryHook> seq_entry_hook(new CSkipSeqEntryHook(*report));

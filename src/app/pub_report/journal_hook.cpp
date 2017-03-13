@@ -78,17 +78,13 @@ CEutilsClient& CSkipPubJournalHook::GetEUtils()
 
 void CSkipPubJournalHook::SkipObject(CObjectIStream &in, const CObjectTypeInfo &info)
 {
-    CSeqdesc desc;
-    DefaultRead(in, ObjectInfo(desc));
+    CPub_equiv pubs;
+    DefaultRead(in, ObjectInfo(pubs));
 
-    if (desc.IsPub() && desc.GetPub().IsSetPub()) {
+    ITERATE(CPub_equiv::Tdata, pub, pubs.Get()) {
 
-        const CPub_equiv& pubs = desc.GetPub().GetPub();
-        ITERATE(CPub_equiv::Tdata, pub, pubs.Get()) {
-
-            if (IsJournal(**pub)) {
-                ProcessJournal((*pub)->GetArticle().GetFrom().GetJournal());
-            }
+        if (IsJournal(**pub)) {
+            ProcessJournal((*pub)->GetArticle().GetFrom().GetJournal());
         }
     }
 }

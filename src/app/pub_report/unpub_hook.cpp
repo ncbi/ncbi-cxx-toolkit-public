@@ -38,9 +38,7 @@
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Imprint.hpp>
-
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Pubdesc.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 
 #include <objects/general/Date_std.hpp>
 
@@ -56,9 +54,7 @@ namespace pub_report
 {
 
 CSkipPubUnpublishedHook::CSkipPubUnpublishedHook(CUnpublishedReport& report) :
-    m_report(report),
-    m_creation_date_processed(false),
-    m_update_date_processed(false)
+    m_report(report)
 {};
 
 static bool IsGenUnpublished(const CCit_gen& cit)
@@ -105,36 +101,29 @@ void CSkipPubUnpublishedHook::ProcessUnpublished(const CPub& pub)
 
 void CSkipPubUnpublishedHook::SkipObject(CObjectIStream &in, const CObjectTypeInfo &info)
 {
-    if (!m_report.IsSetYear()) {
-        m_creation_date_processed = false;
-        m_update_date_processed = false;
-    }
+    CPub_equiv pubs;
+    DefaultRead(in, ObjectInfo(pubs));
 
-    CSeqdesc desc;
-    DefaultRead(in, ObjectInfo(desc));
+    ITERATE(CPub_equiv::Tdata, pub, pubs.Get()) {
 
-    if (!m_update_date_processed && !m_creation_date_processed && desc.IsCreate_date()) {
-        if (desc.GetCreate_date().IsStd() && desc.GetCreate_date().GetStd().IsSetYear()) {
-            m_report.SetYear(desc.GetCreate_date().GetStd().GetYear());
-            m_creation_date_processed = true;
-        }
-    }
+        if ((*pub)->IsSub()) {
 
-    if (!m_update_date_processed && desc.IsUpdate_date()) {
-        if (desc.GetUpdate_date().IsStd() && desc.GetUpdate_date().GetStd().IsSetYear()) {
-            m_report.SetYear(desc.GetUpdate_date().GetStd().GetYear());
-            m_update_date_processed = true;
-        }
-    }
+            if ((*pub)->GetSub().IsSetDate() && (*pub)->GetSub().GetDate().IsStd()) {
 
-    if (desc.IsPub() && desc.GetPub().IsSetPub()) {
+                const CDate_std& sub_date = (*pub)->GetSub().GetDate().GetStd();
+                if (m_report.IsSetDate()) {
 
-        const CPub_equiv& pubs = desc.GetPub().GetPub();
-        ITERATE(CPub_equiv::Tdata, pub, pubs.Get()) {
-
-            if (IsUnpublished(**pub)) {
-                ProcessUnpublished(**pub);
+                    if (m_report.GetDate().Compare(sub_date) == CDate::eCompare_after) {
+                        m_report.SetDate(sub_date);
+                    }
+                }
+                else {
+                    m_report.SetDate(sub_date);
+                }
             }
+        }
+        else if (IsUnpublished(**pub)) {
+            ProcessUnpublished(**pub);
         }
     }
 }
