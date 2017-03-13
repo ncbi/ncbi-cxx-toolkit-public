@@ -66,7 +66,7 @@ bool CAutoDefWithTaxonomy::RegeneratePopsetTitles(CSeq_entry_Handle se)
     // update the title of the set 
     for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
         if (si->IsSet() && si->GetSet().GetCompleteBioseq_set()->NeedsDocsumTitle()) {
-            CAutoDef autodef;
+            CAutoDefWithTaxonomy autodef;
             CConstRef<CUser_object> options = GetOptionsForSet(si->GetSet());
             if (options) {
                 autodef.SetOptionsObject(*options);

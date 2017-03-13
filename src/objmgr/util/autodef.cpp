@@ -44,19 +44,11 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
 #include <serial/iterator.hpp>
-
-// remove this after separation of CAutoDef and CAutoDefWithTaxonomy
-#include <objects/taxon3/Taxon3_request.hpp>
-#include <objects/taxon3/T3Request.hpp>
-#include <objects/taxon3/SequenceOfInt.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
-#include <objects/taxon3/T3Reply.hpp>
-#include <objects/taxon3/taxon3.hpp>
-// end section to remove
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1299,109 +1291,6 @@ bool CAutoDef::RegenerateSequenceDefLines(CSeq_entry_Handle se)
 }
 
 
-bool CAutoDef::RegeneratePopsetTitles(CSeq_entry_Handle se)
-{
-    bool any = false;
-    // update the title of the set 
-    for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
-        if (si->IsSet() && si->GetSet().GetCompleteBioseq_set()->NeedsDocsumTitle()) {
-            CAutoDef autodef;
-            CConstRef<CUser_object> options = s_GetOptionsForSet(si->GetSet());
-            if (options) {
-                autodef.SetOptionsObject(*options);
-            }
-            autodef.AddSources(se);
-            string defline = autodef.GetDocsumDefLine(*si);
-
-            bool found_existing = false;
-            CBioseq_set_EditHandle bsseh(si->GetSet());
-            NON_CONST_ITERATE(CBioseq_set_EditHandle::TDescr::Tdata, it, bsseh.SetDescr().Set()) {
-                if ((*it)->IsTitle()) {
-                    if (!NStr::Equal((*it)->GetTitle(), defline)) {
-                        (*it)->SetTitle(defline);
-                        any = true;
-                    }
-                    found_existing = true;
-                    break;
-                }
-            }
-            if (!found_existing) {
-                CRef<CSeqdesc> new_desc(new CSeqdesc());
-                new_desc->SetTitle(defline);
-                bsseh.SetDescr().Set().push_back(new_desc);
-                any = true;
-            }
-        }
-    }
-    return any;
-}
-
-
-bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
-{
-    bool any = RegenerateSequenceDefLines(se);
-
-    any |= RegeneratePopsetTitles(se);
-    return any;
-}
-
-
-string CAutoDef::GetDocsumOrgDescription(CSeq_entry_Handle se)
-{
-    string joined_org = "Mixed organisms";
-
-    CRef<CT3Request> rq(new CT3Request());
-    CBioseq_CI bi(se, CSeq_inst::eMol_na);
-    while (bi) {
-        CSeqdesc_CI desc_ci(*bi, CSeqdesc::e_Source);
-        if (desc_ci && desc_ci->GetSource().IsSetOrg()) {
-            int taxid = desc_ci->GetSource().GetOrg().GetTaxId();
-            if (taxid > 0) {
-                rq->SetJoin().Set().push_back(taxid);
-            }
-        }
-        ++bi;
-    }
-    if (rq->IsJoin() && rq->GetJoin().Get().size() > 0) {
-        CTaxon3_request request;
-        request.SetRequest().push_back(rq);
-        CTaxon3 taxon3;
-        taxon3.Init();
-        CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
-        if (reply) {
-            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-            while (reply_it != reply->GetReply().end()) {
-                if ((*reply_it)->IsData()
-                    && (*reply_it)->GetData().GetOrg().IsSetTaxname()) {
-                    joined_org = (*reply_it)->GetData().GetOrg().GetTaxname();
-                    break;
-                }
-                ++reply_it;
-            }
-        }
-    }
-
-    return joined_org;
-}
-
-
-string CAutoDef::GetDocsumDefLine(CSeq_entry_Handle se)
-{
-    string org_desc = GetDocsumOrgDescription(se);
-
-    string feature_clauses = "";
-    CBioseq_CI bi(se, CSeq_inst::eMol_na);
-    if (bi) {
-        unsigned int genome_val = CBioSource::eGenome_unknown;
-        CSeqdesc_CI di(*bi, CSeqdesc::e_Source);
-        if (di && di->GetSource().IsSetGenome()) {
-            genome_val = di->GetSource().GetGenome();
-        }
-        feature_clauses = GetOneFeatureClauseList(*bi, genome_val);
-    }
-
-    return org_desc + feature_clauses;
-}
 
 
 END_SCOPE(objects)
