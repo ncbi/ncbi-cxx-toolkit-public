@@ -61,7 +61,7 @@
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <objtools/edit/loc_edit.hpp>
 
-#include <objtools/edit/autodef_options.hpp>
+#include <objmgr/util/autodef_options.hpp>
 
 #include <set>
 #include <sstream>
