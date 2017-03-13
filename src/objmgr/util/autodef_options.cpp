@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/edit/autodef_options.hpp>
+#include <objmgr/util/autodef_options.hpp>
 #include <corelib/ncbimisc.hpp>
 
 #include <objects/seqfeat/BioSource.hpp>

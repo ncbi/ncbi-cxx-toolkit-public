@@ -45,8 +45,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
-#include <objtools/edit/autodef_available_modifier.hpp>
-#include <objtools/edit/autodef_source_desc.hpp>
+#include <objmgr/util/autodef_available_modifier.hpp>
+#include <objmgr/util/autodef_source_desc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

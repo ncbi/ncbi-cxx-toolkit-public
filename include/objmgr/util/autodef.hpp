@@ -46,12 +46,12 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 
-#include <objtools/edit/autodef_available_modifier.hpp>
-#include <objtools/edit/autodef_source_desc.hpp>
-#include <objtools/edit/autodef_source_group.hpp>
-#include <objtools/edit/autodef_mod_combo.hpp>
-#include <objtools/edit/autodef_feature_clause.hpp>
-#include <objtools/edit/autodef_options.hpp>
+#include <objmgr/util/autodef_available_modifier.hpp>
+#include <objmgr/util/autodef_source_desc.hpp>
+#include <objmgr/util/autodef_source_group.hpp>
+#include <objmgr/util/autodef_mod_combo.hpp>
+#include <objmgr/util/autodef_feature_clause.hpp>
+#include <objmgr/util/autodef_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)    

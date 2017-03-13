@@ -33,7 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/edit/autodef.hpp>
+#include <objmgr/util/autodef.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)    

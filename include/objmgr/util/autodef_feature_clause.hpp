@@ -33,7 +33,7 @@
 *   descriptions and feature clauses.
 */
 
-#include <objtools/edit/autodef_feature_clause_base.hpp>
+#include <objmgr/util/autodef_feature_clause_base.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/MolInfo.hpp>
 
