@@ -52,13 +52,13 @@ BEGIN_NCBI_SCOPE
 
 CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
                                const STimeout* timeout,
-                               size_t buf_size, TConn_Flags fl,
+                               size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connpair.first, connpair.second,
-                                timeout, buf_size, fl, ptr, size));
+                                timeout, buf_size, flgs, ptr, size));
     CONN conn = csb->GetCONN();
     if (conn) {
         SOCK s/*dummy*/;
@@ -76,12 +76,12 @@ CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
 
 CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                const STimeout* timeout,
-                               size_t buf_size, TConn_Flags fl,
+                               size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(conn, close, timeout, buf_size, fl, ptr, size));
+        csb(new CConn_Streambuf(conn, close, timeout, buf_size, flgs, ptr, size));
     if (conn) {
         SOCK s/*dummy*/;
         // NB: CONN_Write(0 bytes) could have caused the same effect as GetSOCK
@@ -236,7 +236,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        const void*     data,
                                        size_t          size,
-                                       TSOCK_Flags     fl,
+                                       TSOCK_Flags     flgs,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
@@ -245,7 +245,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                                        max_try,
                                                        data,
                                                        size,
-                                                       fl),
+                                                       flgs),
                                 eIO_Unknown),
                      timeout, buf_size)
 {
@@ -272,30 +272,30 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          const STimeout*     timeout,
                          const void*         data,
                          size_t              size,
-                         TSOCK_Flags         fl)
+                         TSOCK_Flags         flgs)
 {
     EIO_Status status = eIO_Success;
     bool       proxy = false;
     SOCK       sock = 0;
 
     _ASSERT(net_info);
-    if ((fl & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
+    if ((flgs & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
         &&  net_info->debug_printout == eDebugPrintout_Data) {
-        fl &= ~fSOCK_LogDefault;
-        fl |=  fSOCK_LogOn;
+        flgs &= ~fSOCK_LogDefault;
+        flgs |=  fSOCK_LogOn;
     }
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
-            &&  (size  ||  (fl & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
+            &&  (size  ||  (flgs & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
             SSOCK_Init init;
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
             init.cred = net_info->credentials;
             SOCK s;
-            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, fl);
+            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flgs);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -337,7 +337,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         init.size = size;
         init.cred = net_info->credentials;
         status = SOCK_CreateInternal(net_info->host, net_info->port, timeout,
-                                     &sock, &init, fl);
+                                     &sock, &init, flgs);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
     string hostport(net_info->host);
@@ -358,11 +358,11 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
 CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        const void*         data,
                                        size_t              size,
-                                       TSOCK_Flags         fl,
+                                       TSOCK_Flags         flgs,
                                        const STimeout*     timeout,
                                        size_t              buf_size)
     : CConn_IOStream(s_SocketConnectorBuilder(&net_info, timeout,
-                                              data, size, fl),
+                                              data, size, flgs),
                      timeout, buf_size)
 {
     return;
@@ -422,7 +422,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        FHTTP_Adjust        adjust,
                        FHTTP_Cleanup       cleanup,
                        FHTTP_ParseHeader   parse_header,
-                       THTTP_Flags         fl,
+                       THTTP_Flags         flgs,
                        const STimeout*     timeout)
 {
     size_t len;
@@ -473,7 +473,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     CONNECTOR c = HTTP_CreateConnectorEx(x_net_info.get(),
-                                         fl,
+                                         flgs,
                                          parse_header,
                                          user_data,
                                          adjust,
@@ -487,7 +487,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    const string&   args,
                                    const string&   user_header,
                                    unsigned short  port,
-                                   THTTP_Flags     fl,
+                                   THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -502,7 +502,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            fl,
+                                            flgs,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
@@ -512,7 +512,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&   url,
-                                   THTTP_Flags     fl,
+                                   THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -527,7 +527,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            fl,
+                                            flgs,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
@@ -539,7 +539,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
 CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    EReqMethod      method,
                                    const string&   user_header,
-                                   THTTP_Flags     fl,
+                                   THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -554,7 +554,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            fl,
+                                            flgs,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
@@ -570,7 +570,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    void*               user_data,
                                    FHTTP_Adjust        adjust,
                                    FHTTP_Cleanup       cleanup,
-                                   THTTP_Flags         flags,
+                                   THTTP_Flags         flgs,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
@@ -585,7 +585,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             adjust  ? x_Adjust  : 0,
                                             cleanup ? x_Cleanup : 0,
                                             x_ParseHeader,
-                                            flags,
+                                            flgs,
                                             timeout),
                      timeout, buf_size),
       m_UserData(user_data),  m_UserAdjust(adjust),
@@ -601,7 +601,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    void*               user_data,
                                    FHTTP_Adjust        adjust,
                                    FHTTP_Cleanup       cleanup,
-                                   THTTP_Flags         flags,
+                                   THTTP_Flags         flgs,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
@@ -616,7 +616,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             adjust  ? x_Adjust  : 0,
                                             cleanup ? x_Cleanup : 0,
                                             x_ParseHeader,
-                                            flags,
+                                            flgs,
                                             timeout),
                      timeout, buf_size),
       m_UserData(user_data),  m_UserAdjust(adjust),
@@ -968,23 +968,23 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 static CConn_IOStream::TConn_Pair
 s_PipeConnectorBuilder(const string&         cmd,
                        const vector<string>& args,
-                       CPipe::TCreateFlags   flags,
+                       CPipe::TCreateFlags   flgs,
                        size_t                pipe_size,
                        CPipe*&               pipe)
 {
     pipe = new CPipe(pipe_size);
-    CONNECTOR c = PIPE_CreateConnector(cmd, args, flags, pipe, eNoOwnership);
+    CONNECTOR c = PIPE_CreateConnector(cmd, args, flgs, pipe, eNoOwnership);
     return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
 }
 
 
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
-                                   CPipe::TCreateFlags   flags,
+                                   CPipe::TCreateFlags   flgs,
                                    size_t                pipe_size,
                                    const STimeout*       timeout,
                                    size_t                buf_size)
-    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flags, pipe_size,
+    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flgs, pipe_size,
                                             m_Pipe),
                      timeout, buf_size), m_ExitCode(-1)
 {
@@ -1027,7 +1027,7 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 
 static CConn_IOStream::TConn_Pair
 s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
-                      TFTP_Flags           flag,
+                      TFTP_Flags           flgs,
                       const SFTP_Callback* cmcb,
                       const STimeout*      timeout)
 {
@@ -1042,7 +1042,7 @@ s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
         x_net_info = xx_net_info;
     } else
         x_net_info = net_info;
-    CONNECTOR c = FTP_CreateConnector(x_net_info, flag, cmcb);
+    CONNECTOR c = FTP_CreateConnector(x_net_info, flgs, cmcb);
     if (x_net_info != net_info)
         ConnNetInfo_Destroy((SConnNetInfo*) x_net_info);
     return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
@@ -1061,7 +1061,7 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  const string&        pass,
                                  const string&        path,
                                  unsigned short       port,
-                                 TFTP_Flags           flag,
+                                 TFTP_Flags           flgs,
                                  const SFTP_Callback* cmcb,
                                  const STimeout*      timeout,
                                  size_t               buf_size)
@@ -1070,7 +1070,7 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                                           user.c_str(),
                                                           pass.c_str(),
                                                           path.c_str(),
-                                                          flag,
+                                                          flgs,
                                                           cmcb),
                                 eIO_Unknown),
                      timeout, buf_size,
@@ -1081,12 +1081,12 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
 
 
 CConn_FtpStream::CConn_FtpStream(const SConnNetInfo&  net_info,
-                                 TFTP_Flags           flag,
+                                 TFTP_Flags           flgs,
                                  const SFTP_Callback* cmcb,
                                  const STimeout*      timeout,
                                  size_t               buf_size)
     : CConn_IOStream(s_FtpConnectorBuilder(&net_info,
-                                           flag,
+                                           flgs,
                                            cmcb,
                                            timeout),
                      timeout, buf_size,
@@ -1136,12 +1136,12 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
                                                  const string&        pass,
                                                  const string&        path,
                                                  unsigned short       port,
-                                                 TFTP_Flags           flag,
+                                                 TFTP_Flags           flgs,
                                                  const SFTP_Callback* cmcb,
                                                  Uint8                offset,
                                                  const STimeout*      timeout,
                                                  size_t               buf_size)
-    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb,
+    : CConn_FtpStream(host, user, pass, path, port, flgs, cmcb,
                       timeout, buf_size)
 {
     if (!file.empty())
@@ -1150,12 +1150,12 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
 
 
 CConn_FTPDownloadStream::CConn_FTPDownloadStream(const SConnNetInfo&  net_info,
-                                                 TFTP_Flags           flag,
+                                                 TFTP_Flags           flgs,
                                                  const SFTP_Callback* cmcb,
                                                  Uint8                offset,
                                                  const STimeout*      timeout,
                                                  size_t               buf_size)
-    : CConn_FtpStream(net_info, flag | fFTP_IgnorePath, cmcb,
+    : CConn_FtpStream(net_info, flgs | fFTP_IgnorePath, cmcb,
                       timeout, buf_size)
 {
     if (net_info.path[0])
@@ -1189,10 +1189,10 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
                                              const string&   file,
                                              const string&   path,
                                              unsigned short  port,
-                                             TFTP_Flags      flag,
+                                             TFTP_Flags      flgs,
                                              Uint8           offset,
                                              const STimeout* timeout)
-    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/,
+    : CConn_FtpStream(host, user, pass, path, port, flgs, 0/*cmcb*/,
                       timeout)
 {
     if (!file.empty())
@@ -1201,10 +1201,10 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
 
 
 CConn_FTPUploadStream::CConn_FTPUploadStream(const SConnNetInfo& net_info,
-                                             TFTP_Flags          flag,
+                                             TFTP_Flags          flgs,
                                              Uint8               offset,
                                              const STimeout*     timeout)
-    : CConn_FtpStream(net_info, flag | fFTP_IgnorePath, 0/*cmcb*/,
+    : CConn_FtpStream(net_info, flgs | fFTP_IgnorePath, 0/*cmcb*/,
                       timeout)
 {
     if (net_info.path[0])

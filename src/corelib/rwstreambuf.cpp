@@ -169,7 +169,7 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
 }
 
 
-ERW_Result CRWStreambuf::x_pushback(void)
+ERW_Result CRWStreambuf::x_Pushback(void)
 {
     if ( !m_Reader ) {
         _ASSERT(!gptr()  &&  !egptr());
@@ -193,12 +193,12 @@ CRWStreambuf::~CRWStreambuf()
     try {
         // Flush only if data pending and no error
         if (!x_Err  ||  x_ErrPos != x_GetPPos())
-            x_sync();
+            x_Sync();
         setp(0, 0);
     } NCBI_CATCH_ALL_X(2,  "Exception in ~CRWStreambuf() [IGNORED]");
     try {
         // Push any data still unred in the buffer back to the device
-        ERW_Result result = x_pushback();
+        ERW_Result result = x_Pushback();
         if (result != eRW_Success  &&  result != eRW_NotImplemented) {
             ERR_POST_X(13,
                        Critical << "CRWStreambuf::~CRWStreambuf():"
@@ -215,9 +215,9 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
     if (!s  &&  !m)
         return this;
 
-    if (x_pushback() != eRW_Success)
+    if (x_Pushback() != eRW_Success)
         ERR_POST_X(3,Critical << "CRWStreambuf::setbuf(): Read data pending");
-    if (x_sync() != 0)
+    if (x_Sync() != 0)
         ERR_POST_X(4,Critical << "CRWStreambuf::setbuf(): Write data pending");
     setp(0, 0);
 
@@ -423,7 +423,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
         return CT_EOF;
 
     // flush output buffer, if tied up to it
-    if (!(m_Flags & fUntie)  &&  x_sync() != 0)
+    if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
         return CT_EOF;
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -450,12 +450,12 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 }
 
 
-streamsize CRWStreambuf::x_read(CT_CHAR_TYPE* buf, streamsize m)
+streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(m_Reader);
 
     // flush output buffer, if tied up to it
-    if (!(m_Flags & fUntie)  &&  x_sync() != 0)
+    if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
         return 0;
 
     if (m < 0)
@@ -524,7 +524,7 @@ streamsize CRWStreambuf::x_read(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    return m_Reader ? x_read(buf, m) : 0;
+    return m_Reader ? x_Read(buf, m) : 0;
 }
 
 
@@ -537,7 +537,7 @@ streamsize CRWStreambuf::showmanyc(void)
 
     // flush output buffer, if tied up to it
     if (!(m_Flags & fUntie))
-        x_sync();
+        x_Sync();
 
     size_t count = 0;
     ERW_Result result;
@@ -582,7 +582,7 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
     } else if (which == IOS_BASE::in
                &&  ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
                     (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0))){
-        if (m_Reader  &&  x_read(0, (streamsize) off) == (streamsize) off)
+        if (m_Reader  &&  x_Read(0, (streamsize) off) == (streamsize) off)
             return x_GetGPos();
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));

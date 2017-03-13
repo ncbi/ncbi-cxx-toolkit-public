@@ -71,7 +71,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                  EIO_Status                  status,
                                  const STimeout*             timeout,
                                  size_t                      buf_size,
-                                 CConn_IOStream::TConn_Flags flags,
+                                 CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
     : m_Conn(0), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
@@ -84,8 +84,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
         ERR_POST_X(2, x_Message("CConn_Streambuf():  NULL connector"));
         return;
     }
-    if ((flags & (CConn_IOStream::fConn_Untie |
-                  CConn_IOStream::fConn_WriteBuffered))
+    if ((flgs & (CConn_IOStream::fConn_Untie |
+                 CConn_IOStream::fConn_WriteBuffered))
         == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
         m_Tie = true;
     }
@@ -99,7 +99,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
         return;
     }
     _ASSERT(m_Conn);
-    x_Init(timeout, buf_size, flags, ptr, size);
+    x_Init(timeout, buf_size, flgs, ptr, size);
 }
 
 
@@ -107,7 +107,7 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
                                  bool                        close,
                                  const STimeout*             timeout,
                                  size_t                      buf_size,
-                                 CConn_IOStream::TConn_Flags flags,
+                                 CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
     : m_Conn(conn), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
@@ -119,12 +119,12 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
         ERR_POST_X(1, x_Message("CConn_Streambuf():  NULL connection"));
         return;
     }
-    if ((flags & (CConn_IOStream::fConn_Untie |
-                  CConn_IOStream::fConn_WriteBuffered))
+    if ((flgs & (CConn_IOStream::fConn_Untie |
+                 CConn_IOStream::fConn_WriteBuffered))
         == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
         m_Tie = true;
     }
-    x_Init(timeout, buf_size, flags, ptr, size);
+    x_Init(timeout, buf_size, flgs, ptr, size);
 }
 
 
@@ -136,7 +136,7 @@ EIO_Status CConn_Streambuf::Status(EIO_Event direction) const
 
 
 void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
-                             CConn_IOStream::TConn_Flags flags,
+                             CConn_IOStream::TConn_Flags flgs,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
     _ASSERT(m_Status == eIO_Success);
@@ -147,23 +147,23 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Close,     timeout) ==eIO_Success);
     }
 
-    if (!(flags & (CConn_IOStream::fConn_ReadBuffered |
-                   CConn_IOStream::fConn_WriteBuffered))) {
+    if (!(flgs & (CConn_IOStream::fConn_ReadBuffered |
+                  CConn_IOStream::fConn_WriteBuffered))) {
         buf_size = 0;
     }
     if (buf_size) {
         m_WriteBuf = new
             CT_CHAR_TYPE[buf_size
-                         << ((flags & (CConn_IOStream::fConn_ReadBuffered |
-                                       CConn_IOStream::fConn_WriteBuffered))
-                             ==       (CConn_IOStream::fConn_ReadBuffered |
-                                       CConn_IOStream::fConn_WriteBuffered)
+                         << ((flgs & (CConn_IOStream::fConn_ReadBuffered |
+                                      CConn_IOStream::fConn_WriteBuffered))
+                             ==      (CConn_IOStream::fConn_ReadBuffered |
+                                      CConn_IOStream::fConn_WriteBuffered)
                              ? 1 : 0)];
-        if (flags & CConn_IOStream::fConn_ReadBuffered)
+        if (flgs & CConn_IOStream::fConn_ReadBuffered)
             m_BufSize = buf_size;
-        if (!(flags & CConn_IOStream::fConn_WriteBuffered))
+        if (!(flgs & CConn_IOStream::fConn_WriteBuffered))
             buf_size = 0;
-        if (flags & CConn_IOStream::fConn_ReadBuffered)
+        if (flgs & CConn_IOStream::fConn_ReadBuffered)
             m_ReadBuf = m_WriteBuf + buf_size;
     } /* else see ctor */
 
@@ -385,7 +385,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         return CT_EOF;
 
     // flush output buffer, if tied up to it
-    if (m_Tie  &&  x_sync() != 0)
+    if (m_Tie  &&  x_Sync() != 0)
         return CT_EOF;
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -414,12 +414,12 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-streamsize CConn_Streambuf::x_read(CT_CHAR_TYPE* buf, streamsize m)
+streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(m_Conn);
 
     // flush output buffer, if tied up to it
-    if (m_Tie  &&  x_sync() != 0)
+    if (m_Tie  &&  x_Sync() != 0)
         return 0;
 
     if (m < 0)
@@ -489,7 +489,7 @@ streamsize CConn_Streambuf::x_read(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    return m_Conn ? x_read(buf, m) : 0;
+    return m_Conn ? x_Read(buf, m) : 0;
 }
 
 
@@ -504,7 +504,7 @@ streamsize CConn_Streambuf::showmanyc(void)
 
     // flush output buffer, if tied up to it
     if (m_Tie)
-        x_sync();
+        x_Sync();
 
     const STimeout* tmo;
     const STimeout* timeout = CONN_GetTimeout(m_Conn, eIO_Read);
@@ -593,7 +593,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
     } else if (which == IOS_BASE::in
                &&  ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
                     (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0))){
-        if (m_Conn  &&  x_read(0, (streamsize) off) == (streamsize) off)
+        if (m_Conn  &&  x_Read(0, (streamsize) off) == (streamsize) off)
             return x_GetGPos();
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));

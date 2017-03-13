@@ -105,10 +105,10 @@ protected:
     CT_POS_TYPE x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pptr() - pbase()); }
 
-    int         x_sync(void)
+    int         x_Sync(void)
     { return pbase() < pptr() ? sync() : 0; }
 
-    streamsize  x_read(CT_CHAR_TYPE* buf, streamsize n);
+    streamsize  x_Read(CT_CHAR_TYPE* buf, streamsize n);
 
 private:
     CONN                m_Conn;      // underlying connection handle

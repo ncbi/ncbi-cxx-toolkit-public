@@ -123,12 +123,12 @@ protected:
     CT_POS_TYPE x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pbase() ? pbase() - pptr() : 0); }
 
-    int         x_sync(void)
+    int         x_Sync(void)
     { return pbase() < pptr() ? sync() : 0; }
 
-    streamsize  x_read(CT_CHAR_TYPE* s, streamsize n);
+    streamsize  x_Read(CT_CHAR_TYPE* s, streamsize n);
 
-    ERW_Result  x_pushback(void);
+    ERW_Result  x_Pushback(void);
 
 protected:
     TFlags            m_Flags;
