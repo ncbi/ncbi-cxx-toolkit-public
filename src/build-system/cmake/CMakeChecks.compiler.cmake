@@ -31,11 +31,13 @@ elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
     set(CMAKE_C_COMPILER ${CCACHE_EXECUTABLE})
     set(CMAKE_CXX_COMPILER ${CCACHE_EXECUTABLE})
 
+    set(CMAKE_C_COMPILE_OBJECT "CCACHE_BASEDIR=${top_src_dir} ${CMAKE_C_COMPILE_OBJECT}")
+    set(CMAKE_CXX_COMPILE_OBJECT "CCACHE_BASEDIR=${top_src_dir} ${CMAKE_CXX_COMPILE_OBJECT}")
+
     # pass these back for ccache to pick up
-    set(ENV{CCACHE_UMASK} 002)
     set(ENV{CCACHE_BASEDIR} ${top_src_dir})
     message(STATUS "Enabling ccache: ${CCACHE_EXECUTABLE}")
-    message(STATUS "ccache basedir: $ENV{CCACHE_BASEDIR}")
+    message(STATUS "  ccache basedir: ${top_src_dir}")
 
 endif()
 
