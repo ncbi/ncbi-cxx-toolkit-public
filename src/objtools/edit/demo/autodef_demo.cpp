@@ -46,7 +46,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/edit/autodef.hpp>
+#include <objtools/edit/autodef_with_tax.hpp>
 
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/object_manager.hpp>
