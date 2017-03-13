@@ -253,7 +253,7 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
 
 static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 {
-    static const STimeout* timeout = 0/*dummy*/;
+    const STimeout* timeout = 0;
     EIO_Status status;
     CONNECTOR  x_conn;
 
@@ -289,9 +289,9 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
             /* call current connector's "CLOSE" method */
             if (conn->meta.close) {
                 EIO_Status closed;
-                const STimeout* timeout = (conn->c_timeout == kDefaultTimeout
-                                           ? conn->meta.default_timeout
-                                           : conn->c_timeout);
+                timeout = (conn->c_timeout == kDefaultTimeout
+                           ? conn->meta.default_timeout
+                           : conn->c_timeout);
                 assert(timeout != kDefaultTimeout);
                 closed = conn->meta.close(conn->meta.c_close, timeout);
                 if (closed != eIO_Success)
