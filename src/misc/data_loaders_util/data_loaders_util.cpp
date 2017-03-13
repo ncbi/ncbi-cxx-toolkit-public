@@ -195,7 +195,7 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
                                             TLoaders loaders)
 {
 #ifdef HAVE_NCBI_VDB
-    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
     bool use_vdb_loader = args.Exist("vdb") && args["vdb"];
     if ( !use_vdb_loader ) {
         string vdbEnabled = reg.Get("Gpipe","enable_vdb");
@@ -349,7 +349,7 @@ void CDataLoadersUtil::x_SetupASNCacheDataLoader(const CArgs& args,
     typedef vector<string> TDbs;
 
     CArgValue::TStringArray asn_cache_str;
-    CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
     string cachePaths = reg.Get("ASN_CACHE","ASN_CACHE_PATH");
     if(cachePaths.size() > 0) {
         asn_cache_str.push_back(cachePaths);

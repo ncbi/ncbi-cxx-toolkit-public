@@ -508,7 +508,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     if (config == NULL) {
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
-        CNcbiRegistry* reg;
+        const CNcbiRegistry* reg;
         if (app != NULL && (reg = &app->GetConfig()) != NULL) {
             param_tree.reset(CConfig::ConvertRegToTree(*reg));
 

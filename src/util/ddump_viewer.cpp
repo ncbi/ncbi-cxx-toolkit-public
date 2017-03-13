@@ -93,7 +93,7 @@ bool CDebugDumpViewer::x_CheckAddr( const void* addr, bool report)
 
 bool CDebugDumpViewer::x_CheckLocation(const char* file, int line)
 {
-    CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
     string section("DebugDumpBpt");
     string value = cfg.Get( section, "enabled");
     // the section is absent? - enable all
@@ -106,7 +106,7 @@ bool CDebugDumpViewer::x_CheckLocation(const char* file, int line)
 
     // smth about this particular file?
     string name = CDirEntry(file).GetName();
-    value = cfg.Get( section, name);
+    value = cfg.Get(section, name);
     if (value.empty() || (value=="none")) {
         return !enabled; // none are "enabled"
     } else if (value == "all") {

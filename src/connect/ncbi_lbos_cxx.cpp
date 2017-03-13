@@ -293,7 +293,7 @@ void LBOS::AnnounceFromRegistry(const string& reg_sec)
     const string& reg_section = reg_sec.empty() ? kLBOSAnnounceRegistrySection
                                                 : reg_sec;
     LOG_POST(Error << "Registry section is " << reg_section);
-    CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     string host =     config.Get(reg_section, kLBOSServerHostVariable);
     string service =  config.Get(reg_section, kLBOSServiceVariable);
     string version =  config.Get(reg_section, kLBOSVersionVariable);

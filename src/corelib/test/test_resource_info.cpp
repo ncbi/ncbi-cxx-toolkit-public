@@ -209,7 +209,7 @@ int CResInfoTest::Run(void)
 
     // Test registry glue
     bool caught_exception = false;
-    CNcbiRegistry& reg = GetConfig();
+    const CNcbiRegistry& reg = GetConfig();
     string s = reg.GetEncryptedString("NCBI_KEY", "Paths",
                                       IRegistry::fPlaintextAllowed);
     _ASSERT(s == ".");
