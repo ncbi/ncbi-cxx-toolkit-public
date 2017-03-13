@@ -52,13 +52,13 @@ BEGIN_NCBI_SCOPE
 
 CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
                                const STimeout* timeout,
-                               size_t buf_size, TConn_Flags flags,
+                               size_t buf_size, TConn_Flags fl,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connpair.first, connpair.second,
-                                timeout, buf_size, flags, ptr, size));
+                                timeout, buf_size, fl, ptr, size));
     CONN conn = csb->GetCONN();
     if (conn) {
         SOCK s/*dummy*/;
@@ -76,13 +76,12 @@ CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
 
 CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                const STimeout* timeout,
-                               size_t buf_size, TConn_Flags flags,
+                               size_t buf_size, TConn_Flags fl,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(conn, close,
-                                timeout, buf_size, flags, ptr, size));
+        csb(new CConn_Streambuf(conn, close, timeout, buf_size, fl, ptr, size));
     if (conn) {
         SOCK s/*dummy*/;
         // NB: CONN_Write(0 bytes) could have caused the same effect as GetSOCK
@@ -237,7 +236,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        const void*     data,
                                        size_t          size,
-                                       TSOCK_Flags     flags,
+                                       TSOCK_Flags     fl,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
@@ -246,7 +245,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                                        max_try,
                                                        data,
                                                        size,
-                                                       flags),
+                                                       fl),
                                 eIO_Unknown),
                      timeout, buf_size)
 {
@@ -273,30 +272,30 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          const STimeout*     timeout,
                          const void*         data,
                          size_t              size,
-                         TSOCK_Flags         flags)
+                         TSOCK_Flags         fl)
 {
     EIO_Status status = eIO_Success;
     bool       proxy = false;
     SOCK       sock = 0;
 
     _ASSERT(net_info);
-    if ((flags & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
+    if ((fl & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
         &&  net_info->debug_printout == eDebugPrintout_Data) {
-        flags &= ~fSOCK_LogDefault;
-        flags |=  fSOCK_LogOn;
+        fl &= ~fSOCK_LogDefault;
+        fl |=  fSOCK_LogOn;
     }
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
-            &&  (size  ||  (flags & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
+            &&  (size  ||  (fl & ~(fSOCK_LogOn | fSOCK_LogDefault)))) {
             SSOCK_Init init;
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
             init.cred = net_info->credentials;
             SOCK s;
-            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flags);
+            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, fl);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -338,7 +337,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         init.size = size;
         init.cred = net_info->credentials;
         status = SOCK_CreateInternal(net_info->host, net_info->port, timeout,
-                                     &sock, &init, flags);
+                                     &sock, &init, fl);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
     string hostport(net_info->host);
@@ -359,11 +358,11 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
 CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        const void*         data,
                                        size_t              size,
-                                       TSOCK_Flags         flags,
+                                       TSOCK_Flags         fl,
                                        const STimeout*     timeout,
                                        size_t              buf_size)
     : CConn_IOStream(s_SocketConnectorBuilder(&net_info, timeout,
-                                              data, size, flags),
+                                              data, size, fl),
                      timeout, buf_size)
 {
     return;
@@ -423,7 +422,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        FHTTP_Adjust        adjust,
                        FHTTP_Cleanup       cleanup,
                        FHTTP_ParseHeader   parse_header,
-                       THTTP_Flags         flags,
+                       THTTP_Flags         fl,
                        const STimeout*     timeout)
 {
     size_t len;
@@ -474,7 +473,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     CONNECTOR c = HTTP_CreateConnectorEx(x_net_info.get(),
-                                         flags,
+                                         fl,
                                          parse_header,
                                          user_data,
                                          adjust,
@@ -488,7 +487,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    const string&   args,
                                    const string&   user_header,
                                    unsigned short  port,
-                                   THTTP_Flags     flags,
+                                   THTTP_Flags     fl,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -503,7 +502,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            flags,
+                                            fl,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
@@ -513,7 +512,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&   url,
-                                   THTTP_Flags     flags,
+                                   THTTP_Flags     fl,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -528,7 +527,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            flags,
+                                            fl,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)
@@ -540,7 +539,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
 CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    EReqMethod      method,
                                    const string&   user_header,
-                                   THTTP_Flags     flags,
+                                   THTTP_Flags     fl,
                                    const STimeout* timeout,
                                    size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -555,7 +554,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             x_ParseHeader,
-                                            flags,
+                                            fl,
                                             timeout),
                      timeout, buf_size),
       m_UserData(0), m_UserAdjust(0), m_UserCleanup(0), m_UserParseHeader(0)

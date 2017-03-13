@@ -69,7 +69,7 @@ typedef struct {
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static const char* x_GetType(SSockConnector* xxx)
+static const char* x_GetType(SSockConnector* unused)
 {
     return g_kNcbiSockNameAbbr;  /*NB: Important!*/
 }

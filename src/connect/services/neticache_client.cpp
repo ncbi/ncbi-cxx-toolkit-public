@@ -116,7 +116,7 @@ static string s_KeyVersionSubkeyToBlobID(
 {
     string blob_id(kEmptyStr);
     blob_id.reserve(1 + key.length() + 2 +
-        int(sizeof(version) * 1.5) + 2 + subkey.length() + 1);
+        int((double)sizeof(version) * 1.5) + 2 + subkey.length() + 1);
 
     string encoded_subkey(s_CheckKeySubkey(key, subkey, &blob_id));
 
