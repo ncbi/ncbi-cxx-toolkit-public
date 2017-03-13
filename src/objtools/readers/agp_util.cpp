@@ -1246,6 +1246,10 @@ void ReplaceUnprintableCharacters(string& text)
     if(p1==NPOS) break;
     SIZE_TYPE p2 = text.find(';', p1+2);
     if(p2!=NPOS) {
+      // allow tabs
+      if( text.substr(p1, p2-p1)=="&#x9") {
+        p1=p2; continue;
+      }
       text = text.substr(0,p1) + "?" + text.substr(p2+1);
     }
     else {
