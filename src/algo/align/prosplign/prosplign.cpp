@@ -208,13 +208,19 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          "postprocessing: postprocess flank regions only. Holes between good pieces will be filled back. It may decrease positives and identity",
          CArgDescriptions::eBoolean,
          CProSplignOutputOptions::default_fill_holes?"true":"false");
-    arg_desc->AddDefaultKey
-        ("min_hole_len",
-         "min_hole_len",
-         "postprocessing: fill back holes with both unaligned portions of nuc. and prot. less than min_hole_len;"
-         " 0 - don\'t fill",
-         CArgDescriptions::eInteger,
-         NStr::IntToString(CProSplignOutputOptions::default_min_hole_len));
+    try {
+        arg_desc->AddDefaultKey
+            ("min_hole_len",
+             "min_hole_len",
+             "postprocessing: fill back holes with both unaligned portions of nuc. and prot. less than min_hole_len;"
+             " 0 - don\'t fill",
+             CArgDescriptions::eInteger,
+             NStr::IntToString(CProSplignOutputOptions::default_min_hole_len));
+    } catch (CArgException &) {
+       /// Ignore exception, which owuld happen if an application sets up
+       /// command-line arguments for both splign and prosplign, creating a
+       /// duplicate argument
+    }
     arg_desc->SetConstraint("min_hole_len", new CArgAllow_Integers(0, 10000));
     arg_desc->AddDefaultKey
         ("cut_trailing_Ns",

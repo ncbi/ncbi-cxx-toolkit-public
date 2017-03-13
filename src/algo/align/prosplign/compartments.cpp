@@ -445,42 +445,49 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eInteger,
          NStr::IntToString(CCompartOptions::default_MaxExtent) );
 
-    argdescr->AddDefaultKey
-        ("compartment_penalty",
-         "double",
-         "Penalty to open a new compartment "
-         "(compartment identification parameter). "
-         "Multiple compartments will only be identified if "
-         "they have at least this level of coverage.",
-         CArgDescriptions::eDouble,
-         NStr::DoubleToString(CCompartOptions::default_CompartmentPenalty, 2));
-    
-    argdescr->AddDefaultKey
-        ("min_compartment_idty",
-         "double",
-         "Minimal compartment identity for multiple compartments",
-         CArgDescriptions::eDouble,
-         NStr::DoubleToString(CCompartOptions::default_MinCompartmentIdty, 2));
-    
-    argdescr->AddDefaultKey
-        ("min_singleton_idty",
-         "double",
-         "Minimal compartment identity for single compartment",
-         CArgDescriptions::eDouble,
-         NStr::DoubleToString(CCompartOptions::default_MinSingleCompartmentIdty, 2));
-    
+    try {
+        argdescr->AddDefaultKey
+            ("compartment_penalty",
+             "double",
+             "Penalty to open a new compartment "
+             "(compartment identification parameter). "
+             "Multiple compartments will only be identified if "
+             "they have at least this level of coverage.",
+             CArgDescriptions::eDouble,
+             NStr::DoubleToString(CCompartOptions::default_CompartmentPenalty, 2));
+        
+        argdescr->AddDefaultKey
+            ("min_compartment_idty",
+             "double",
+             "Minimal compartment identity for multiple compartments",
+             CArgDescriptions::eDouble,
+             NStr::DoubleToString(CCompartOptions::default_MinCompartmentIdty, 2));
+        
+        argdescr->AddDefaultKey
+            ("min_singleton_idty",
+             "double",
+             "Minimal compartment identity for single compartment",
+             CArgDescriptions::eDouble,
+             NStr::DoubleToString(CCompartOptions::default_MinSingleCompartmentIdty, 2));
+        
+        
+        argdescr->AddDefaultKey
+            ("max_intron",
+             "integer",
+             "Maximal intron length",
+             CArgDescriptions::eInteger,
+             NStr::IntToString(CCompartOptions::default_MaxIntron));
+    } catch (CArgException &) {
+       /// Ignore exception, which owuld happen if an application sets up
+       /// command-line arguments for both splign and prosplign, creating a
+       /// duplicate argument
+    }
+
     argdescr->AddDefaultKey
         ("by_coverage",
          "flag",
          "Ignore hit identity. Set all to 99.99%\nDeprecated: use -maximize arg",
          CArgDescriptions::eBoolean, default_ByCoverage?"T":"F");
-    
-    argdescr->AddDefaultKey
-        ("max_intron",
-         "integer",
-         "Maximal intron length",
-         CArgDescriptions::eInteger,
-         NStr::IntToString(CCompartOptions::default_MaxIntron));
 
     argdescr->AddDefaultKey
         ("max_overlap",
@@ -530,7 +537,11 @@ CCompartOptions::CCompartOptions(void) :
 CCompartOptions::CCompartOptions(const CArgs& args) :
     m_CompartmentPenalty(args["compartment_penalty"].AsDouble()),
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
-    m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
+/// In some applications min_singletom_idty will carry over from the splign
+/// command-line arguments, with no default
+    m_MinSingleCompartmentIdty(args["min_singleton_idty"]
+        ? args["min_singleton_idty"].AsDouble()
+        : default_MinSingleCompartmentIdty),
     m_MaxExtent(args["max_extent"].AsInteger()),
     m_MaxIntron(args["max_intron"].AsInteger()),
     m_MaxOverlap(args["max_overlap"].AsInteger())
