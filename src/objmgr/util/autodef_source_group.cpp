@@ -187,26 +187,27 @@ CAutoDefSourceDescription::TModifierVector CAutoDefSourceGroup::GetModifiersPres
     return mods;
 }
 
+//isOrgMod, subtype
+typedef pair<bool, int> TModPair;
+typedef map<TModPair, bool> TModMap;
 
 CAutoDefSourceDescription::TModifierVector CAutoDefSourceGroup::GetModifiersPresentForAny()
 {
     CAutoDefSourceDescription::TModifierVector mods;
     CAutoDefSourceDescription::TModifierVector::iterator mod_it_other;
-    bool found_mod;
+    TModMap present_any;
 
     mods.clear();
     ITERATE (TSourceDescriptionVector, it, m_SourceList) {
         ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, (*it)->GetModifiers()) {
-            found_mod = false;
-            mod_it_other = mods.begin();
-            while (mod_it_other != mods.end() && !found_mod) {
-                if (mod_it->Compare (*mod_it_other) == 0) {
-                    found_mod = true;
+            // don't include notes. both CSubSource::eSubtype_other and COrgMod::eSubtype_other
+            // are notes and have the same numerical value (255)
+            if (mod_it->GetSubtype() != (int)CSubSource::eSubtype_other) {
+                TModPair x(mod_it->IsOrgMod(), mod_it->GetSubtype());
+                if (present_any.find(x) == present_any.end()) {
+                    present_any[x] = true;
+                    mods.push_back(*mod_it);
                 }
-                mod_it_other++;
-            }
-            if (!found_mod) {
-                mods.push_back (*mod_it);
             }
         }
     }

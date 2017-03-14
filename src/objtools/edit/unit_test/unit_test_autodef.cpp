@@ -2135,5 +2135,55 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4185)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_6690)
+{
+    // do not include notes in deflines when calculating uniqueness
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    vector<string> notes = { "a", "b", "c" };
+    vector<string>::iterator nit = notes.begin();
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry->SetSet().SetSeq_set()) {
+        AddTitle(*it, "Sebaea microphylla.");
+        unit_test_util::SetOrgMod(*it, COrgMod::eSubtype_other, *nit);
+        ++nit;
+    }
+    entry->SetSet().ResetDescr();
+    AddTitle(entry, "Sebaea microphylla.");
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDef autodef;
+    autodef.AddSources(seh);
+
+    CAutoDefModifierCombo * mod_combo = autodef.FindBestModifierCombo();
+    BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
+    BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
+    delete mod_combo;
+
+    CheckDeflineMatches(entry, true);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+
+    nit = notes.begin();
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry->SetSet().SetSeq_set()) {
+        unit_test_util::SetOrgMod(*it, COrgMod::eSubtype_other, "");
+        unit_test_util::SetOrgMod(*it, CSubSource::eSubtype_other, *nit);
+        ++nit;
+    }
+
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    objects::CAutoDef autodef2;
+    autodef2.AddSources(seh);
+    mod_combo = autodef.FindBestModifierCombo();
+    BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
+    BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
+    delete mod_combo;
+
+    CheckDeflineMatches(entry, true);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
