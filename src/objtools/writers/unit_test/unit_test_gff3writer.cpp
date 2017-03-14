@@ -236,7 +236,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     ifstr.close();
     ofstr.close();
 
-    cerr << "    Produced new GTF file " << output << "." << endl;
+    cerr << "    Produced new GFF3 file " << output << "." << endl;
     cerr << " ... Done." << endl;
 }
 

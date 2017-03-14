@@ -157,6 +157,10 @@ public:
         CMappedFeat mf,
         string& mestr);
 
+    static bool GetStringForGoMarkup(
+        const vector<CRef<CUser_field > >& fields,
+        string& goMarkup);
+
     static bool IsThreeFeatFormat(
         const CSeq_annot&);
 

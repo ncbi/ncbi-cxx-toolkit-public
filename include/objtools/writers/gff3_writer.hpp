@@ -357,6 +357,9 @@ protected:
     bool xAssignFeatureAttributeFunction(
         CGffFeatureRecord&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributesGoMarkup(
+        CGffFeatureRecord&,
+        const CMappedFeat&);
     bool xAssignFeatureAttributeDbXref(
         CGffFeatureRecord&,
         CGffFeatureContext&,

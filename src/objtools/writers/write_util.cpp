@@ -1143,4 +1143,53 @@ bool CWriteUtil::IsThreeFeatFormat(
 }
 
 
+//  ----------------------------------------------------------------------------
+bool  CWriteUtil::GetStringForGoMarkup(
+    const vector<CRef<CUser_field > >& fields,
+    string& goMarkup)
+//  ----------------------------------------------------------------------------
+{
+    goMarkup = "";
+    for (const auto& field: fields) {
+        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
+                ||  !field->GetLabel().GetId() == 0) {
+            continue;
+        }
+        if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
+            continue;
+        }
+        string descriptive="", goId="", pubmedId="", evidence="";
+        const auto& subFields = field->GetData().GetFields();
+        for (const auto& subField: subFields) {
+            if (!subField->IsSetLabel()  ||  ! subField->GetLabel().IsStr()) {
+                continue;
+            }
+            const auto& subLabel = subField->GetLabel().GetStr();
+            if (subLabel == "text string") {
+                descriptive = subField->GetData().GetStr();
+                continue;
+            }
+            if (subLabel == "go id") {
+                goId = subField->GetData().GetStr();
+                continue;
+            }
+            if (subLabel == "pubmed id") {
+                pubmedId = NStr::IntToString(subField->GetData().GetInt());
+                continue;
+            }
+            if (subLabel == "evidence") {
+                evidence = subField->GetData().GetStr();
+                continue;
+            }
+        }
+        if (!goMarkup.empty()) {
+            goMarkup += ",";
+        }
+        goMarkup += descriptive + "|" + goId + "|" + pubmedId + "|" + evidence;
+    }
+    return true;
+}
+
+
+
 END_NCBI_SCOPE

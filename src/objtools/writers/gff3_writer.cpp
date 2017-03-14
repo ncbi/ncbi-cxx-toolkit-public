@@ -1805,6 +1805,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributeException(record, mf) ||
             !xAssignFeatureAttributeExperiment(record, mf) ||
             !xAssignFeatureAttributeFunction(record, mf) ||
+            !xAssignFeatureAttributesGoMarkup(record, mf) ||
             !xAssignFeatureAttributeExonNumber(record, mf)  ||
             !xAssignFeatureAttributeEcNumbers(record, mf)  ||
             !xAssignFeatureAttributePseudo(record, mf)  ||
@@ -2098,6 +2099,59 @@ bool CGff3Writer::xAssignFeatureAttributeFunction(
             record.SetAttribute("function", prot.GetActivity().front());
         }
         return true;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributesGoMarkup(
+    CGffFeatureRecord& record,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    const string& go_component = mf.GetNamedQual("go_component");
+    if (!go_component.empty()) {
+        record.SetAttribute("go_component", go_component);
+        return true;
+    }
+    if (mf.IsSetExt()) {
+        const auto& ext = mf.GetExt();
+        if (ext.IsSetType() && ext.GetType().IsStr() 
+                && ext.GetType().GetStr() == "GeneOntology") {
+            const auto& goFields = ext.GetData();
+            for (const auto& goField: goFields) {
+                if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
+                    continue;
+                }
+                string goMarkup = "";
+                const auto& goLabel = goField->GetLabel().GetStr();
+                if (goLabel == "Component"  &&  goField->IsSetData()  
+                        &&  goField->GetData().IsFields()) {
+                    const auto& fields = goField->GetData().GetFields();
+                    if (CWriteUtil::GetStringForGoMarkup(
+                            goField->GetData().GetFields(), goMarkup)) {
+                        record.SetAttribute("go_component", goMarkup);
+                    }
+                    continue;
+                }
+                if (goLabel == "Process") {
+                    const auto& fields = goField->GetData().GetFields();
+                    if (CWriteUtil::GetStringForGoMarkup(
+                            goField->GetData().GetFields(), goMarkup)) {
+                        record.SetAttribute("go_process", goMarkup);
+                    }
+                    continue;
+                }
+                if (goLabel == "Function") {
+                    const auto& fields = goField->GetData().GetFields();
+                    if (CWriteUtil::GetStringForGoMarkup(
+                            goField->GetData().GetFields(), goMarkup)) {
+                        record.SetAttribute("go_function", goMarkup);
+                    }
+                    continue;
+                }
+            }
+        }
     }
     return true;
 }
