@@ -82,6 +82,12 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 
     const CSeq_id& id = *ctx.GetPrimaryId();
 
+    if (!ctx.GetLocation().IsWhole()) {
+        // specific region is set
+        m_Region.Reset(&ctx.GetLocation());
+        m_IsSetRegion = true;
+    }
+
     // if no accession, do not show local or general in ACCESSION
     if ((id.IsGeneral()  ||  id.IsLocal())  &&
         (ctx.Config().IsModeEntrez()  ||  ctx.Config().IsModeGBench())) {
@@ -158,10 +164,6 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 
         sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
 
-    } else {
-        // specific region is set
-        m_Region.Reset(&ctx.GetLocation());
-        m_IsSetRegion = true;
     }
 }
 
