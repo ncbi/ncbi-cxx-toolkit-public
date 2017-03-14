@@ -128,7 +128,6 @@ CSafeStaticGuard::CSafeStaticGuard(void)
 
 void CSafeStaticGuard::DisableChildThreadsCheck()
 {
-    CMutexGuard guard(CSafeStaticPtr_Base::sm_ClassMutex);
     sm_ChildThreadsCheck = false;
 }
 
