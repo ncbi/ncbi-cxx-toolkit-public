@@ -81,6 +81,7 @@ public:
     typedef CStaticArraySet<const char *, PNocase_CStr> TLegalRepeatTypeSet;
     static const TLegalRepeatTypeSet &GetSetOfLegalRepeatTypes(void);
     static bool IsValidRptTypeValue(const string& val);
+    static bool FixRptTypeValue(string& val);
 
     // for pseudogene qualifiers
     typedef CStaticArraySet<const char *, PNocase_CStr> TLegalPseudogeneSet;

@@ -202,6 +202,58 @@ CGb_qual::GetSetOfLegalRepeatTypes(void)
     return sc_LegalRepeatTypes;
 }
 
+static string GetRptTypeValue(const string& val, bool& open_bracket, bool& close_bracket)
+{
+    string ret = val;
+    NStr::TruncateSpacesInPlace(ret);
+
+    open_bracket = NStr::StartsWith(ret, "(");
+    close_bracket = NStr::EndsWith(ret, ")");
+
+    if (open_bracket) {
+        ret = ret.substr(1);
+    }
+    if (close_bracket) {
+        ret.pop_back();
+    }
+    NStr::TruncateSpacesInPlace(ret);
+
+    return ret;
+}
+
+bool CGb_qual::FixRptTypeValue(string& val)
+{
+    const TLegalRepeatTypeSet& repeat_types = GetSetOfLegalRepeatTypes();
+
+    string origin = val;
+
+    // look for list of values
+    vector<string> rpt_types;
+    NStr::Split(val, ",", rpt_types, NStr::fSplit_NoMergeDelims);
+
+    NON_CONST_ITERATE(vector<string>, it, rpt_types) {
+        bool open_bracket = false,
+             close_bracket = false;
+
+        string v = GetRptTypeValue(*it, open_bracket, close_bracket);
+
+        auto correct_val_it = repeat_types.find(v.c_str());
+        if (correct_val_it != repeat_types.end()) {
+            v = *correct_val_it;
+            if (open_bracket) {
+                v = "(" + v;
+            }
+            if (close_bracket) {
+                v += ")";
+            }
+        }
+
+        *it = v;
+    }
+
+    val = NStr::Join(rpt_types, ",");
+    return origin != val;
+}
 
 bool CGb_qual::IsValidRptTypeValue(const string& val)
 {
@@ -213,15 +265,12 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
     vector<string> rpt_types;
     NStr::Split(val, ",", rpt_types, NStr::fSplit_NoMergeDelims);
     ITERATE(vector<string>, it, rpt_types) {
-        string v = (*it);
-        NStr::TruncateSpacesInPlace(v);
-        if (NStr::StartsWith(v, "(")) {
-            v = v.substr(1);
-        }
-        if (NStr::EndsWith(v, ")")) {
-            v = v.substr(0, v.length() - 1);
-        }
-        NStr::TruncateSpacesInPlace(v);
+
+        bool open_bracket = false,
+            close_bracket = false;
+
+        string v = GetRptTypeValue(*it, open_bracket, close_bracket);
+
         if (repeat_types.find(v.c_str()) == repeat_types.end()) {
             error = true;
             break;

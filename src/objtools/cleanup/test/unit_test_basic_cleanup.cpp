@@ -928,3 +928,33 @@ BOOST_AUTO_TEST_CASE(Test_double_comma)
 
     BOOST_CHECK_EQUAL(misc->GetComment(), "ORF30, len: 104 aa, similar to cytochrome c-553 precursor(c553)");
 }
+
+BOOST_AUTO_TEST_CASE(Test_repeat_type_qual)
+{
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue("non_valid_value"), false);
+
+    string test_val("dispersed,long_terminal_repeat");
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
+
+    string old_val(test_val);
+    BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
+    BOOST_CHECK_EQUAL(old_val, test_val);
+
+    test_val = "Centromeric_Repeat,Inverted";
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
+
+    BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), true);
+    BOOST_CHECK_EQUAL(test_val, "centromeric_repeat,inverted");
+
+    test_val = "Nested,(tandem),y_prime_element";
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
+
+    BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), true);
+    BOOST_CHECK_EQUAL(test_val, "nested,tandem,Y_prime_element");
+
+    test_val = "engineered_foreign_repetitive_element,(non_LTR_retrotransposon_polymeric_tract)";
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
+
+    BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
+}
+
