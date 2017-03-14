@@ -128,6 +128,10 @@ bool CBedTrackRecord::Write(
     CNcbiOstream& ostr )
 //  ----------------------------------------------------------------------------
 {
+    if (Name().empty()  &&  Title().empty()  &&  !UseScore()  &&  !ItemRgb()  &&  
+            Color().empty()  &&  Visibility().empty()) {
+        return true;
+    }
     ostr << "track";
     if (!Name().empty()) {
         ostr << " name=\"" << Name() << "\"";
