@@ -968,6 +968,13 @@ CFeatureItemBase::CFeatureItemBase
 {
     if (m_Feat) {
         x_SetObject(m_Feat.GetOriginalFeature());
+
+        CSeq_feat_Handle feat = m_Feat.GetSeq_feat_Handle();
+        const CSeq_annot_Handle& ah = feat.GetAnnot();
+        CSeq_entry_Handle seh = ah.GetParentEntry();
+        if (! seh) {
+        	x_SetExternal();
+        }
     }
 }
 
