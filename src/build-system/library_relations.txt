@@ -393,6 +393,7 @@ gpinit_register needs gc_organism
 gpinit_reports needs xmlwrapp
 gpinit_reports needs xregexp
 gpipe_advanced_cleanup needs gpipe_best_placement
+gpipe_advanced_cleanup needs prosplign
 gpipe_advanced_cleanup needs xalgoalignsplign
 gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs gpipe_objutil
