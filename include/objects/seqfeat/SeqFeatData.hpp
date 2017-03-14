@@ -487,6 +487,7 @@ public:
     static const string & GetRegulatoryClass(ESubtype subtype);
     static ESubtype GetRegulatoryClass(const string & class_name );
     static vector<string> GetRegulatoryClassList();
+    static bool FixRegulatoryClassValue(string& val);
 
     static vector<string> GetRecombinationClassList();
 

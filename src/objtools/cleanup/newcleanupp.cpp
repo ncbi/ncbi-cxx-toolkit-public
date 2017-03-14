@@ -3573,12 +3573,16 @@ void CNewCleanup_imp::GBQualBC (
         if (CGb_qual::CleanupReplace(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
-    }
-    else if (NStr::EqualNocase(gbq.GetQual(), "repeat_type")) {
+    } else if (NStr::EqualNocase(gbq.GetQual(), "repeat_type")) {
         if (CGb_qual::FixRptTypeValue(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
+    } else if (NStr::EqualNocase(gbq.GetQual(), "regulatory_class")) {
+        if (CSeqFeatData::FixRegulatoryClassValue(gbq.SetVal())) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     }
+
 
     x_ChangeTransposonToMobileElement(gbq);
     x_ChangeInsertionSeqToMobileElement(gbq);

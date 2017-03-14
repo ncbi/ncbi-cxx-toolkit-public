@@ -3957,6 +3957,23 @@ vector<string> CSeqFeatData::GetRegulatoryClassList()
     return choices;
 }
 
+bool CSeqFeatData::FixRegulatoryClassValue(string& val)
+{
+    static vector<string> regulatory_class_values;
+    if (regulatory_class_values.empty()) {
+        regulatory_class_values = GetRegulatoryClassList();
+    }
+
+    string original = val;
+
+    const string* valid_val = NStr::FindNoCase(regulatory_class_values, val);
+    if (valid_val != nullptr) {
+        val = *valid_val;
+    }
+
+    return original != val;
+}
+
 vector<string> CSeqFeatData::GetRecombinationClassList()
 {
     vector<string> choices;

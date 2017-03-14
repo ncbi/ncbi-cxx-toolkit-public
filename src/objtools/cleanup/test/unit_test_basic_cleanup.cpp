@@ -958,3 +958,18 @@ BOOST_AUTO_TEST_CASE(Test_repeat_type_qual)
     BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
 }
 
+BOOST_AUTO_TEST_CASE(Test_regulatory_class_qual)
+{
+    string test_val("tata_box");
+    BOOST_CHECK_EQUAL(CSeqFeatData::FixRegulatoryClassValue(test_val), true);
+    BOOST_CHECK_EQUAL(test_val, "TATA_box");
+
+    test_val = "minus_10_signal";
+    BOOST_CHECK_EQUAL(CSeqFeatData::FixRegulatoryClassValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "minus_10_signal");
+
+    test_val = "invalid_value";
+    BOOST_CHECK_EQUAL(CSeqFeatData::FixRegulatoryClassValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "invalid_value");
+}
+
