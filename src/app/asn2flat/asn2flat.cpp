@@ -34,7 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_signal.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <dbapi/driver/drivers.hpp>
+
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -49,13 +49,6 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers.hpp>
-#include <objtools/readers/fasta.hpp>
-
-#ifdef HAVE_NCBI_VDB
-#  include <sra/data_loaders/wgs/wgsloader.hpp>
-#endif
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_config.hpp>
@@ -67,6 +60,8 @@
 #include <util/compress/stream.hpp>
 
 #include <objmgr/util/objutil.hpp>
+
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -408,6 +403,8 @@ void CAsn2FlatApp::Init(void)
              "cancellation." );
      }}
 
+     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
+
      arg_desc->SetCurrentGroup(kEmptyStr);
      SetupArgDescriptions(arg_desc.release());
 }
@@ -430,16 +427,11 @@ CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
 
 int CAsn2FlatApp::Run(void)
 {
+    static const CDataLoadersUtil::TLoaders default_loaders =
+        CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
+
     // initialize conn library
     CONNECT_Init(&GetConfig());
-#ifdef HAVE_PUBSEQ_OS
-    // we may require PubSeqOS readers at some point, so go ahead and make
-    // sure they are properly registered
-    GenBankReaders_Register_Pubseq();
-    GenBankReaders_Register_Pubseq2();
-    DBAPI_RegisterDriver_FTDS();
-#endif
-
 
     const CArgs&   args = GetArgs();
 
@@ -451,12 +443,7 @@ int CAsn2FlatApp::Run(void)
         NCBI_THROW(CException, eUnknown, "Could not create object manager");
     }
     if (args["gbload"]  ||  args["id"]  ||  args["ids"]) {
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-#ifdef HAVE_NCBI_VDB
-        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
-                                                CObjectManager::eDefault,
-                                                88);
-#endif
+       CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
     }
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();

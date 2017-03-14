@@ -13,8 +13,8 @@ LIB  = $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr \
        $(ncbi_xloader_wgs) $(SRAREAD_LIBS) \
            xalnmgr xobjutil entrez2cli entrez2 tables \
 	   ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
-	   xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
-LIBS = $(VDB_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
+	   xregexp $(PCRE_LIB)  $(SRAREAD_LIBS) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
+LIBS = $(DATA_LOADERS_UTIL_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
 	   $(DL_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
