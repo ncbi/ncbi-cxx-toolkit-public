@@ -20238,6 +20238,70 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    THostStringsVector test_values;
+    test_values.push_back(pair<string, string>("Homo supiens", "Homo supiens")); // non-fixable spelling problem
+    test_values.push_back(pair<string, string>("HUMAN", "Homo sapiens"));
+    test_values.push_back(pair<string, string>("Homo sapiens", "Homo sapiens"));
+    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
+    test_values.push_back(pair<string, string>("Gallus Gallus", "Gallus gallus"));
+    test_values.push_back(pair<string, string>("Eschericia coli", "Escherichia coli")); // fixable spelling problem
+    test_values.push_back(pair<string, string>("Avian", "Avian"));
+    test_values.push_back(pair<string, string>("Bovine", "Bovine"));
+    test_values.push_back(pair<string, string>("Pig", "Pig"));
+    test_values.push_back(pair<string, string>(" Chicken", "Chicken")); // truncate space
+    test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
+    test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
+
+    vector<CRef<COrg_ref> > to_adjust;
+
+    ITERATE(THostStringsVector, it, test_values) {
+        AddSpecificHostDescriptor(entry, it->first);
+        AddSpecificHostFeat(entry, it->first);
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname("foo");
+        AddSpecificHost(*org, it->first);
+        to_adjust.push_back(org);
+    }
+    string error_message;
+
+    CTaxValidationAndCleanup tval;
+    tval.Init(*entry);
+    vector<CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
+    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 2); // three homo sapiens are combined
+
+    objects::CTaxon3 taxon3;
+    taxon3.Init();
+
+    size_t chunk_size = 3;
+    size_t i = 0;
+    while (i < spec_host_rq.size()) {
+        size_t len = min(chunk_size, spec_host_rq.size() - i);
+        vector< CRef<COrg_ref> >  tmp_rq(spec_host_rq.begin() + i, spec_host_rq.begin() + i + len);
+        CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(tmp_rq);
+        BOOST_CHECK_EQUAL(tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply), kEmptyStr);
+        i += chunk_size;
+    }
+
+    BOOST_CHECK_EQUAL(tval.IsSpecificHostMapUpdateComplete(), true);
+
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsForSpecificHosts(to_adjust), true);
+
+    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
+    THostStringsVector::iterator tvit = test_values.begin();
+    while (org != to_adjust.end()) {
+        BOOST_CHECK_EQUAL((*org)->GetOrgname().GetMod().front()->GetSubname(), tvit->second);
+        ++org;
+        ++tvit;
+    }
+
+}
+
+
+
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -20370,4 +20434,6 @@ BOOST_AUTO_TEST_CASE(Test_VR_433)
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 }
+
+
 

@@ -2434,15 +2434,22 @@ void CValidError_imp::ValidateSpecificHost
     if (org_rq_list.size() == 0) {
         return;
     }
-    CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
 
-    if (!reply || !reply->IsSetReply()) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-            "Taxonomy service connection failure", *(tval.GetTopReportObject()));
-        return;
+    size_t chunk_size = 1000;
+    size_t i = 0;
+    while (i < org_rq_list.size()) {
+        size_t len = min(chunk_size, org_rq_list.size() - i);
+        vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
+        CRef<CTaxon3_reply> tmp_spec_host_reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
+        string err_msg = tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply);
+        if (!NStr::IsBlank(err_msg)) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, *(tval.GetTopReportObject()));
+            return;
+        }
+        i += chunk_size;
     }
 
-    tval.ReportSpecificHostErrors(*reply, *this);
+    tval.ReportSpecificHostErrors(*this);
 }
 
 
@@ -3111,6 +3118,16 @@ void CSpecificHostRequest::Init(const string& host)
     m_SuggestedFix = kEmptyStr;
 }
 
+bool CSpecificHostRequest::MatchTryValue(const string& val) const
+{
+    ITERATE(vector<string>, it, m_ValuesToTry) {
+        if (NStr::EqualNocase(val, *it)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void CSpecificHostRequest::AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx)
 {
@@ -3526,6 +3543,15 @@ void CTaxValidationAndCleanup::x_CreateSpecificHostMap(bool for_fix)
 
 }
 
+void CTaxValidationAndCleanup::ReportSpecificHostErrors(CValidError_imp& imp)
+{
+    TSpecificHostRequests::iterator rq_it = m_SpecificHostRequests.begin();
+    while (rq_it != m_SpecificHostRequests.end()) {
+        rq_it->second.PostErrors(imp);
+        ++rq_it;
+    }
+}
+
 
 void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp)
 {
@@ -3539,11 +3565,7 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
         return;
     }
 
-    TSpecificHostRequests::iterator rq_it = m_SpecificHostRequests.begin();
-    while (rq_it != m_SpecificHostRequests.end()) {
-        rq_it->second.PostErrors(imp);
-        ++rq_it;
-    }
+    ReportSpecificHostErrors(imp);
 }
 
 
@@ -3556,11 +3578,76 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
         x_UpdateSpecificHostMapWithReply(reply, error_message);
         m_SpecificHostRequestsUpdated = true;
     }
+    return AdjustOrgRefsForSpecificHosts(org_refs);
+}
+
+
+bool CTaxValidationAndCleanup::AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs)
+{
     bool changed = false;
     NON_CONST_ITERATE(vector<CRef<COrg_ref> >, org, org_refs) {
         changed |= x_ApplySpecificHostMap(**org);
     }
     return changed;
+}
+
+
+TSpecificHostRequests::iterator CTaxValidationAndCleanup::x_FindHostFixRequest(const string& val)
+{
+    TSpecificHostRequests::iterator map_it = m_SpecificHostRequests.find(val);
+    if (map_it != m_SpecificHostRequests.end() && map_it->second.NumRemainingReplies() > 0) {
+        return map_it;
+    }
+    map_it = m_SpecificHostRequests.begin();
+    while (map_it != m_SpecificHostRequests.end()) {
+        if (map_it->second.MatchTryValue(val) && map_it->second.NumRemainingReplies() > 0) {
+            return map_it;
+        }
+        ++map_it;
+    }
+    return m_SpecificHostRequests.end();
+}
+
+
+string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
+{
+    string error_message = kEmptyStr;
+    CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
+    vector<CRef<COrg_ref> >::const_iterator rq_it = input.begin();
+
+    while (reply_it != reply.GetReply().end() && rq_it != input.end()) {
+        TSpecificHostRequests::iterator map_it = x_FindHostFixRequest((*rq_it)->GetTaxname());
+        if (map_it == m_SpecificHostRequests.end()) {
+            error_message = "Unexpected taxonomy response for " + (*rq_it)->GetTaxname();
+            return error_message;
+        }
+        map_it->second.AddReply(**reply_it);
+        ++rq_it;
+        ++reply_it;
+    }
+
+    if (reply_it != reply.GetReply().end()) {
+        error_message = "Unexpected taxonomy responses for specific host";
+    } else {
+        if (IsSpecificHostMapUpdateComplete()) {
+            m_SpecificHostRequestsUpdated = true;
+        }
+    }
+    return kEmptyStr;
+}
+
+
+bool CTaxValidationAndCleanup::IsSpecificHostMapUpdateComplete() const
+{
+    TSpecificHostRequests::const_iterator rq_it = m_SpecificHostRequests.cbegin();
+    while (rq_it != m_SpecificHostRequests.cend()) {
+        if (rq_it->second.NumRemainingReplies() > 0) {
+            return false;
+            break;
+        }
+        ++rq_it;
+    }
+    return true;
 }
 
 

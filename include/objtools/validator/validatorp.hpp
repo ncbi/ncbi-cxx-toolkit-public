@@ -309,13 +309,14 @@ public:
     };
     typedef int TResponseFlags;
 
-    size_t NumRemainingReplies() { return m_ValuesToTry.size() - m_RepliesProcessed; }
+    size_t NumRemainingReplies() const { return m_ValuesToTry.size() - m_RepliesProcessed; }
     void AddRequests(vector<CRef<COrg_ref> >& request_list) const;
     void AddReply(const CT3Reply& reply);
 
     void PostErrors(CValidError_imp& imp);
     const string& SuggestFix() const;
 
+    bool MatchTryValue(const string& val) const;
 
 private:
     string m_Host;
@@ -345,10 +346,14 @@ public:
                                          vector<CRef<COrg_ref> > org_refs, 
                                          string& error_message) const;
     vector<CRef<COrg_ref> > GetSpecificHostLookupRequest(bool for_fix);
+    string IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
+    bool IsSpecificHostMapUpdateComplete() const;
     void ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp);
+    void ReportSpecificHostErrors(CValidError_imp& imp);
     bool AdjustOrgRefsWithSpecificHostReply(const CTaxon3_reply& reply, 
                                             vector<CRef<COrg_ref> > org_refs, 
                                             string& error_message);
+    bool AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs);
 
     CConstRef<CSeq_entry> GetTopReportObject() const;
 
@@ -364,6 +369,7 @@ protected:
     void x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message);
     bool x_ApplySpecificHostMap(COrg_ref& org_ref) const;
     static void x_DefaultSpecificHostAdjustments(string& host_val);
+    TSpecificHostRequests::iterator x_FindHostFixRequest(const string& val);
 
     vector<CConstRef<CSeqdesc> > m_SrcDescs;
     vector<CConstRef<CSeq_entry> > m_DescCtxs;
