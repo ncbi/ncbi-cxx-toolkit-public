@@ -60,6 +60,8 @@ public:
 
     // should this item be skipped during formatting?
     bool Skip(void) const;
+    // is feature on external Seq-annot?
+    bool IsExternal(void) const;
 
     ~CFlatItem(void);
 
@@ -72,6 +74,7 @@ protected:
     void x_SetContext(CBioseqContext& ctx);
 
     void x_SetSkip(void);
+    void x_SetExternal(void);
 
 private:
 
@@ -81,6 +84,8 @@ private:
     CBioseqContext*             m_Context;
     // should this item be skipped?
     bool                        m_Skip;
+    // is feature on external Seq-annot?
+    bool                        m_External;
 };
 
 
@@ -126,6 +131,13 @@ bool CFlatItem::Skip(void) const
 
 
 inline
+bool CFlatItem::IsExternal(void) const
+{
+    return m_External;
+}
+
+
+inline
 CFlatItem::~CFlatItem(void)
 {
 }
@@ -157,6 +169,14 @@ void CFlatItem::x_SetSkip(void)
     m_Object.Reset();
     m_Context = 0;
 }
+
+
+inline
+void CFlatItem::x_SetExternal(void)
+{
+    m_External = true;
+}
+
 
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
