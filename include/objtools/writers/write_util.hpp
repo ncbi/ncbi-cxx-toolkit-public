@@ -161,6 +161,10 @@ public:
         const vector<CRef<CUser_field > >& fields,
         string& goMarkup);
 
+    static bool GetListOfGoIds(
+        const vector<CRef<CUser_field > >& fields,
+        list<std::string>& goIds);
+        
     static bool IsThreeFeatFormat(
         const CSeq_annot&);
 

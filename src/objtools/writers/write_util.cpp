@@ -1144,7 +1144,7 @@ bool CWriteUtil::IsThreeFeatFormat(
 
 
 //  ----------------------------------------------------------------------------
-bool  CWriteUtil::GetStringForGoMarkup(
+bool CWriteUtil::GetStringForGoMarkup(
     const vector<CRef<CUser_field > >& fields,
     string& goMarkup)
 //  ----------------------------------------------------------------------------
@@ -1190,6 +1190,35 @@ bool  CWriteUtil::GetStringForGoMarkup(
     return true;
 }
 
-
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetListOfGoIds(
+    const vector<CRef<CUser_field > >& fields,
+    list<std::string>& goIds)
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& field: fields) {
+        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
+                ||  !field->GetLabel().GetId() == 0) {
+            continue;
+        }
+        if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
+            continue;
+        }
+        string descriptive="", goId="", pubmedId="", evidence="";
+        const auto& subFields = field->GetData().GetFields();
+        for (const auto& subField: subFields) {
+            if (!subField->IsSetLabel()  ||  ! subField->GetLabel().IsStr()) {
+                continue;
+            }
+            const auto& subLabel = subField->GetLabel().GetStr();
+            if (subLabel == "go id") {
+                goId = subField->GetData().GetStr();
+                goIds.push_back(string("GO:")+goId);
+                continue;
+            }
+        }
+    }
+    return true;
+}
 
 END_NCBI_SCOPE
