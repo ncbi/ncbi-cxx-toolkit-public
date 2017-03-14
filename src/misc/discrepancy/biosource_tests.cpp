@@ -1131,6 +1131,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                     static vector<string> suspectable_products = {
                         "18S ribosomal RNA",
                         "5.8S ribosomal RNA",
+                        "25S ribosomal RNA",
                         "26S ribosomal RNA",
                         "28S ribosomal RNA",
                         "internal transcribed spacer 1",
