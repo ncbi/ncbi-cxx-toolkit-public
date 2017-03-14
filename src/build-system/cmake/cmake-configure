@@ -4,52 +4,145 @@ set -o errexit
 
 #############################################################################
 
-root=CMake-Debug
-CC=`which gcc`
-CXX=`which g++`
+#root=CMake-Debug
+if [ -z "$CC" ]; then
+    CC=`which gcc`
+fi
+if [ -z "$CXX" ]; then
+    CXX=`which g++`
+fi
 CMAKE_BUILD_TYPE=Debug
 BUILD_SHARED_LIBS=OFF
 export BOOST_ROOT=$NCBI/boost-1.53.0-ncbi1/
 
 #############################################################################
 
-while [ ! -z "$1" ]
+help() {
+    echo "
+GPipe Predefined Settings:
+ --gpipe-prod            for production use (--with-dll --without-debug)
+ --gpipe-dev             for development and debugging (--with-dll)
+ --gpipe-cgi             for deployment of web CGIs (--without-debug)
+ --gpipe-distrib         for external distribution to the public.
+
+ NOTE: The above will also set --with-build-root=...
+
+Options:
+ --with-debug            build debug versions of libs and apps
+ --with-max-debug        enable extra runtime checks (esp. of STL usage)
+ --without-debug         build non-debug versions of libs and apps
+ --with-dll              build all libraries as DLLs
+ --with-static           build all libraries statically
+ --without-dll           build all libraries statically
+ --with-build-root=DIR   specify a non-default build directory name
+ --with-ccache           use ccache if available
+ --with-distcc           use distcc if available
+ --with-xcode            generate XCode project
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  CXX         C++ compiler command
+  CPP         C++ compiler command (
+  CXXFLAGS    C++ compiler flags
+  CXXFLAGS    C++ compiler flags (same as CXXFLAGS)
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+"
+    exit 0
+}
+
+add_gpipe_warnings() {
+    export CFLAGS="${CFLAGS:-}${CFLAGS:+ }-Wmissing-prototypes"
+    export CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }${CPPFLAGS:-}${CPPFLAGS:+ }-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute"
+}
+
+for i in "$@"
 do
-    case "$1" in
+    case $i in
         --with-static|--without-dll)
             BUILD_SHARED_LIBS=OFF
+            shift
             ;;
 
         --with-dll)
             BUILD_SHARED_LIBS=ON
+            shift
             ;;
 
         --with-debug)
             CMAKE_BUILD_TYPE=Debug
+            shift
+            ;;
+
+        --with-max-debug)
+            CMAKE_BUILD_TYPE=Debug
+            export CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }-D_GLIBCXX_DEBUG"
+            shift
             ;;
 
         --without-debug)
             CMAKE_BUILD_TYPE=Release
+            shift
             ;;
 
         --with-ccache)
             CMAKE_USE_CCACHE=ON
+            shift
             ;;
 
         --with-distcc)
             CMAKE_USE_DISTCC=ON
+            shift
             ;;
 
         --with-xcode)
             XCODE="-G Xcode"
+            shift
             ;;
 
+        --gpipe-prod)
+            CMAKE_BUILD_TYPE=Release
+            BUILD_SHARED_LIBS=ON
+            add_gpipe_warnings
+            shift
+            ;;
+
+        --gpipe-dev)
+            CMAKE_BUILD_TYPE=Debug
+            BUILD_SHARED_LIBS=ON
+            add_gpipe_warnings
+            shift
+            ;;
+
+        --gpipe-cgi)
+            CMAKE_BUILD_TYPE=Release
+            BUILD_SHARED_LIBS=OFF
+            add_gpipe_warnings
+            shift
+            ;;
+
+        --gpipe-distrib)
+            CMAKE_BUILD_TYPE=Release
+            add_gpipe_warnings
+            shift
+            ;;
+
+        --with-build-root=*)
+            ROOT="${i#*=}"
+            shift # past argument=value
+            ;;
+
+        --help)
+            help
+            shift
+            ;;
         *)
             echo "error: option not understood: $1"
+            help
             exit 1
             ;;
     esac
-    shift
 done
 
 #############################################################################
@@ -63,24 +156,25 @@ done
 #############################################################################
 
 
-root="CMake-$CMAKE_BUILD_TYPE"
-if [ "$BUILD_SHARED_LIBS" == "ON" ]
-then
-    root="$root"DLL
+if [ -z "$ROOT" ]; then
+    ROOT="CMake-$CMAKE_BUILD_TYPE"
+    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+        ROOT="$ROOT"DLL
+    fi
 fi
 
-mkdir -p $root/build
-cd $root/build
+mkdir -p $ROOT/build
+cd $ROOT/build
 
-    #-DCMAKE_C_LINK_EXECUTABLE='touch <TARGET>' \
-    #-DCMAKE_CXX_LINK_EXECUTABLE='touch <TARGET>' \
+#    -DCMAKE_C_LINK_EXECUTABLE='touch <TARGET>' \
+#    -DCMAKE_CXX_LINK_EXECUTABLE='touch <TARGET>' \
 cmake ../../src $XCODE \
     -DCMAKE_C_COMPILER=$CC \
     -DCMAKE_CXX_COMPILER=$CXX \
     -DCMAKE_USE_CCACHE=$CMAKE_USE_CCACHE \
     -DCMAKE_USE_DISTCC=$CMAKE_USE_DISTCC \
     -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
-    -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS
-
-
-
+    -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS \
+    "-DCMAKE_C_FLAGS=$CFLAGS" \
+    "-DCMAKE_CXX_FLAGS=$CXXFLAGS" \
+    "-DCMAKE_LD_FLAGS=$LDFLAGS"
