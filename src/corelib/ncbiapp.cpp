@@ -1450,6 +1450,11 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
         }
     }
 
+    // [DEBUG.GuardAgainstThreadsOnStaticDataDestruction]
+    if ( !reg->GetBool("DEBUG", "GuardAgainstThreadsOnStaticDataDestruction", true, 0, IRegistry::eErrPost) ) {
+        CSafeStaticGuard::DisableChildThreadsCheck();
+    }
+
     // CPU and memory limitations
 
     // [NCBI.HeapSizeLimit]

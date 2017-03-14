@@ -111,6 +111,10 @@ CSafeStaticGuard::TStack* CSafeStaticGuard::sm_Stack;
 int CSafeStaticGuard::sm_RefCount;
 
 
+// CSafeStaticGuard reference counter
+bool CSafeStaticGuard::sm_ChildThreadsCheck = true;
+
+
 CSafeStaticGuard::CSafeStaticGuard(void)
 {
     // Initialize the guard only once
@@ -120,6 +124,14 @@ CSafeStaticGuard::CSafeStaticGuard(void)
 
     sm_RefCount++;
 }
+
+
+void CSafeStaticGuard::DisableChildThreadsCheck()
+{
+    CMutexGuard guard(CSafeStaticPtr_Base::sm_ClassMutex);
+    sm_ChildThreadsCheck = false;
+}
+
 
 static CSafeStaticGuard* sh_CleanupGuard;
 
@@ -140,6 +152,14 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
         return;
     }
     assert(sm_RefCount == 0);
+
+    if (sm_ChildThreadsCheck) {
+        if (const auto tc = CThread::GetThreadsCount()) {
+            string msg = "On static data destruction, child thread(s) still running: " + to_string(tc);
+            ERR_POST_X(1, Error << msg);
+            _ASSERT(CThread::GetThreadsCount() == 0);
+        }
+    }
 
     for ( int pass = 0; pass < 3; ++pass ) {
         // Call Cleanup() for all variables registered

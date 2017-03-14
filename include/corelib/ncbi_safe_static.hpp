@@ -257,6 +257,9 @@ public:
         sm_Stack->insert(ptr);
     }
 
+    /// Disable checking on child thread(s) running during destruction
+    static void DisableChildThreadsCheck();
+
 private:
     // Initialize the guard, return pointer to it.
     static CSafeStaticGuard* x_Get(void);
@@ -268,6 +271,9 @@ private:
     // Reference counter. The stack is destroyed when
     // the last reference is removed.
     static int sm_RefCount;
+
+    // Whether to check on child thread(s) running during destruction
+    static bool sm_ChildThreadsCheck;
 };
 
 
