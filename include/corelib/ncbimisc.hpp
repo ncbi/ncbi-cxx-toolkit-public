@@ -1221,6 +1221,8 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
+//#define NCBI_ENABLE_SAFE_FLAGS
+#ifdef NCBI_ENABLE_SAFE_FLAGS
 /////////////////////////////////////////////////////////////////////////////
 /// Support for safe enum flags
 /////////////////////////////////////////////////////////////////////////////
@@ -1374,13 +1376,6 @@ inline NCBI_NS_NCBI::CSafeFlags<E> operator^(E a, E b) \
 inline NCBI_NS_NCBI::CSafeFlags<E> operator~(E a)      \
 { return ~NCBI_NS_NCBI::CSafeFlags<E>(a); }
 
-
-#ifndef DECLARE_SAFE_FLAGS_TYPE
-# define DECLARE_SAFE_FLAGS_TYPE(Enum,Typedef) typedef underlying_type<Enum>::type Typedef
-# define DECLARE_SAFE_FLAGS(Enum) NCBI_EAT_SEMICOLON(safe_flags)
-#endif
-
-
 /// Helper operators for safe-flags enums.
 /// These operators will be used only for enums marked
 /// as safe-flag enums by macro DECLARE_SAFE_FLAGS()
@@ -1401,6 +1396,13 @@ ostream& operator<<(ostream& out, const CSafeFlags<E>& v)
 {
     return out << v.get();
 }
+
+#else // NCBI_ENABLE_SAFE_FLAGS
+// backup implementation of safe flag macros
+# define DECLARE_SAFE_FLAGS_TYPE(Enum,Typedef) typedef underlying_type<Enum>::type Typedef
+# define DECLARE_SAFE_FLAGS(Enum) NCBI_EAT_SEMICOLON(safe_flags)
+#endif // NCBI_ENABLE_SAFE_FLAGS
+
 
 END_NCBI_NAMESPACE;
 
