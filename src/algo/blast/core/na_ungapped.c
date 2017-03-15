@@ -2018,6 +2018,11 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
 
     ASSERT(scansub);
 
+    if (word_hits) {
+        memset(word_hits->last_pos, 0,
+               (query_info->last_context + 1) * sizeof(Int4));
+    }
+
     if (getenv("MAPPER_USE_SMALL_WORDS")) {
         s_index = SubjectIndexNew(subject, 10000, SUBJECT_INDEX_WORD_LENGTH);
     }
@@ -2055,7 +2060,9 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
                        numer of word hits managable. The other check is still
                        necessary, because depending on extension more
                        word hits can be discarded. */
-                    if (last_d == diag && s_off - last_p < lut_word_length + 3) {
+                    if (last_p != 0 && last_d == diag &&
+                        s_off - last_p < lut_word_length + 3) {
+
                         continue;
                     }
                     ASSERT(index < word_hits->num_arrays);
