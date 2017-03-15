@@ -688,7 +688,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
-    if (!x_SetupLocking())
+    if (x_SetupLocking() != 0)
         goto out;
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
