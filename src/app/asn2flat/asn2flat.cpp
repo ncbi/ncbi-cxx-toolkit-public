@@ -1197,9 +1197,11 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
         }
         break;
     case CBioseq_set::eClass_genbank:
-        if (bsst.GetBioseq_setCore()->GetSeq_set().size() == 1) {
-            CSeq_entry_CI it(bsst);
-            return x_DeduceTarget(*it);
+        {
+            CBioseq_CI bi(bsst, CSeq_inst::eMol_na);
+            if (bi) {
+                return *bi;
+            }
         }
         break;
     default:
