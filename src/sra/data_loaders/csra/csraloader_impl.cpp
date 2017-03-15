@@ -106,7 +106,7 @@ static int GetDebugLevel(void)
 
 
 NCBI_PARAM_DECL(size_t, CSRA_LOADER, GC_SIZE);
-NCBI_PARAM_DEF_EX(size_t, CSRA_LOADER, GC_SIZE, 10,
+NCBI_PARAM_DEF_EX(size_t, CSRA_LOADER, GC_SIZE, 100,
                   eParam_NoThread, CSRA_LOADER_GC_SIZE);
 
 static size_t GetGCSize(void)
