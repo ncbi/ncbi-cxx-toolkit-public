@@ -43,9 +43,8 @@ Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CXX         C++ compiler command
-  CPP         C++ compiler command (
   CXXFLAGS    C++ compiler flags
-  CXXFLAGS    C++ compiler flags (same as CXXFLAGS)
+  CPPFLAGS    C++ compiler flags (same as CXXFLAGS)
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
 "

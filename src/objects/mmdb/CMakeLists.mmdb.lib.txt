@@ -6,13 +6,13 @@ set(MODULE_EXT "asn")
 
 set(ASN mmdb1 mmdb2 mmdb3)
 
-foreach(asn ${ASN})
-    set(MODULE ${asn})
-    set(MODULE_PATH objects/${asn})
-    set(MODULE_PATH_RELATIVE "objects/${asn}")
-    RunDatatool("${asn}" "${MODULE_IMPORT}")
+foreach(ASN_FILE ${ASN})
+    set(MODULE ${ASN_FILE})
+    set(MODULE_PATH objects/${ASN_FILE})
+    set(MODULE_PATH_RELATIVE "objects/${ASN_FILE}")
+    RunDatatool("${ASN_FILE}" "${MODULE_IMPORT}")
     SET(MODULE_FILES ${MODULE_FILES} ${NEW_MODULE_FILES})
-endforeach(asn)
+endforeach(ASN_FILE)
 
 add_library(mmdb ${MODULE_FILES})
 

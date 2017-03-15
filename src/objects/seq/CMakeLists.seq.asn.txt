@@ -7,13 +7,13 @@ set(MODULE_EXT "asn")
 set(ASN seq seqalign seqblock seqfeat seqloc seqres seqtable)
 
 
-foreach(asn ${ASN})
-    set(MODULE ${asn})
-    set(MODULE_PATH_RELATIVE "objects/${asn}")
-    RunDatatool("${asn}" "${MODULE_IMPORT}")
+foreach(ASN_FILE ${ASN})
+    set(MODULE ${ASN_FILE})
+    set(MODULE_PATH_RELATIVE "objects/${ASN_FILE}")
+    RunDatatool("${ASN_FILE}" "${MODULE_IMPORT}")
     #
     SET(MODULE_FILES ${MODULE_FILES} ${NEW_MODULE_FILES})
-endforeach(asn)
+endforeach(ASN_FILE)
 
 add_library(seq ${MODULE_FILES}
             seqport_util seq_id_tree seq_id_handle seq_id_mapper

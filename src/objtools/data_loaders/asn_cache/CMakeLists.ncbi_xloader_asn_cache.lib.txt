@@ -8,7 +8,7 @@ target_link_libraries(ncbi_xloader_asn_cache
     asn_cache xobjmgr
 )
 add_dependencies(ncbi_xloader_asn_cache
-    seq seqset general cache_blob
+    seq seqset general-lib cache_blob
 )
 
 set(USES $(DL_LIBS) $(SOBJMGR_LIBS) asn_cache)
