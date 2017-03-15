@@ -644,7 +644,7 @@ void CSeqDBImpl::RetAmbigSeq(const char ** buffer) const
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
 
-    m_Atlas.RetRegion(*buffer);
+    m_Atlas.RetRegion(*buffer);//Keep this
     *buffer = 0;
 }
 
@@ -805,7 +805,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     }
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqIDs(vol_oid,  locked);
+        return vol->GetSeqIDs(vol_oid);
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -902,7 +902,7 @@ TGi CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
         if (gi>=ZERO_GI) return gi;
         // Fall back to parsing deflines
         list< CRef<CSeq_id> > ids =
-            vol->GetSeqIDs(vol_oid, locked);
+            vol->GetSeqIDs(vol_oid);
         ITERATE(list< CRef<CSeq_id> >, id, ids) {
             if ((**id).IsGi()) {
                 return (**id).GetGi();

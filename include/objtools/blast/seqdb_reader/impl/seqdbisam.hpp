@@ -200,10 +200,10 @@ public:
     ///   The lock hold object for this thread. [in|out]
     /// @return
     ///   true if the PIG was found
-    bool PigToOid(TPig pig, TOid & oid, CSeqDBLockHold & locked)
+    bool PigToOid(TPig pig, TOid & oid)
     {
         _ASSERT(m_IdentType == ePigId);
-        return x_IdentToOid(pig, oid, locked);
+        return x_IdentToOid(pig, oid);
     }
 
     /// GI or TI translation
@@ -222,10 +222,10 @@ public:
     ///   The lock hold object for this thread. [in|out]
     /// @return
     ///   true if the GI was found
-    bool IdToOid(Int8 id, TOid & oid, CSeqDBLockHold & locked)
+    bool IdToOid(Int8 id, TOid & oid)
     {
         _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
-        return x_IdentToOid(id, oid, locked);
+        return x_IdentToOid(id, oid);
     }
 
     /// Translate Gis and Tis to Oids for the given ID list.
@@ -246,8 +246,8 @@ public:
     ///   The lock holder object for this thread. [in|out]
     void IdsToOids(int              vol_start,
                    int              vol_end,
-                   CSeqDBGiList   & ids,
-                   CSeqDBLockHold & locked);
+                   CSeqDBGiList   & ids);
+                   
 
     /// Compute list of included OIDs based on a negative ID list.
     ///
@@ -276,8 +276,9 @@ public:
     ///   The lock holder object for this thread. [in|out]
     void IdsToOids(int                  vol_start,
                    int                  vol_end,
-                   CSeqDBNegativeList & ids,
-                   CSeqDBLockHold     & locked);
+                   CSeqDBNegativeList & ids);
+                   
+                   
 
     /// String translation
     ///
@@ -312,8 +313,9 @@ public:
     void StringToOids(const string   & acc,
                       vector<TOid>   & oids,
                       bool             adjusted,
-                      bool           & version_check,
-                      CSeqDBLockHold & locked);
+                      bool           & version_check);
+                      
+                      
 
     /// Seq-id translation
     ///
@@ -328,7 +330,7 @@ public:
     ///   The returned oid. [out]
     /// @param locked
     ///   The lock hold object for this thread. [in|out]
-    bool SeqidToOid(const string & acc, TOid & oid, CSeqDBLockHold & locked);
+    bool SeqidToOid(const string & acc, TOid & oid);
 
     /// Sequence hash lookup
     ///
@@ -346,8 +348,9 @@ public:
     /// @param locked
     ///   The lock hold object for this thread. [in|out]
     void HashToOids(unsigned         hash,
-                    vector<TOid>   & oids,
-                    CSeqDBLockHold & locked);
+                    vector<TOid>   & oids);
+                    
+                    
 
     /// Return any memory held by this object to the atlas.
     void UnLease();
@@ -364,8 +367,9 @@ public:
     /// @param locked Lock holder object for this thread. [in]
     void GetIdBounds(Int8           & low_id,
                      Int8           & high_id,
-                     int            & count,
-                     CSeqDBLockHold & locked);
+                     int            & count);
+                     
+                     
 
     /// Get String Bounds.
     ///
@@ -379,8 +383,9 @@ public:
     /// @param locked Lock holder object for this thread. [in]
     void GetIdBounds(string         & low_id,
                      string         & high_id,
-                     int            & count,
-                     CSeqDBLockHold & locked);
+                     int            & count);
+                     
+                     
 
     /// Check if a given ISAM index exists.
     ///
@@ -491,11 +496,12 @@ private:
 
     /// Load and extract all index samples into array at once
     template <class T>
-    void x_LoadIndex(CSeqDBMemLease & lease,
+    void x_LoadIndex(CSeqDBFileMemMap & lease,
                      vector<T>      & keys,
                      vector<TIndx>  & offs)
     {
-        const char * keydatap = lease.GetPtr(m_KeySampleOffset);
+        const char * keydatap = lease.GetFileDataPtr(m_KeySampleOffset);
+        
 
         for (int index=0; index < m_NumSamples; ++index) {
             keys.push_back(x_GetNumericKey(keydatap));
@@ -509,13 +515,15 @@ private:
 
     /// Load and extract a data page into array at once
     template <class T>
-    void x_LoadData(CSeqDBMemLease & lease,
+    void x_LoadData(CSeqDBFileMemMap & lease,
                     vector<T>      & keys,
                     vector<int>    & vals,
                     int              num_keys,
                     TIndx            begin)
     {
-        const char * keydatap = lease.GetPtr(begin);
+        
+        const char * keydatap = lease.GetFileDataPtr(begin);
+        
 
         for (int index=0; index < num_keys; ++index) {
             keys.push_back(x_GetNumericKey(keydatap));
@@ -538,17 +546,17 @@ private:
     ///   The lock holder object for this thread.
     template <class T>
     void x_TranslateGiList(int              vol_start,
-                           CSeqDBGiList   & gis,
-                           CSeqDBLockHold & locked)
+                           CSeqDBGiList   & gis)
+                           
     {
         int gilist_size = gis.GetSize<T>();
         if (! gilist_size) return;
 
         gis.InsureOrder(CSeqDBGiList::eGi);
 
-
+        x_InitLease();//Map files if needed
         if(m_Initialized == false) {
-            EErrorCode error = x_InitSearch(locked);
+            EErrorCode error = x_InitSearch();
 
             if(error != eNoError) {
                 // Most ordinary errors (missing GIs for example) are
@@ -561,7 +569,7 @@ private:
             }
         }
 
-        CSeqDBMemLease lease(m_Atlas);
+        //CSeqDBMemLease lease(m_Atlas);
 
         vector<T> sample_keys;
         vector<TIndx> page_offs;
@@ -573,9 +581,11 @@ private:
         keys.reserve(m_PageSize);
         vals.reserve(m_PageSize);
 
-        m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);
-        x_LoadIndex(lease, sample_keys, page_offs);
-        m_Atlas.RetRegion(lease);
+        //m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);// commented        
+        //CSeqDBFileMemMap lease(m_Atlas,m_IndexFname);
+        x_LoadIndex(m_IndexLease, sample_keys, page_offs);
+        //lease.Clear();
+        //m_Atlas.RetRegion(lease);
 
         int gilist_index = 0;
         int sample_index = 0;
@@ -598,13 +608,17 @@ private:
             if (sample_index + 1 == m_NumSamples) {
                 num_keys = m_NumTerms - sample_index * m_PageSize;
             }
-
-            m_Atlas.GetRegion(lease,
+            /*
+            m_Atlas.GetRegion(lease, // commented
                               m_DataFname,
                               page_offs[sample_index],
                               page_offs[sample_index + 1]);
-            x_LoadData(lease, keys, vals, num_keys, page_offs[sample_index]);
-            m_Atlas.RetRegion(lease);
+            */
+            
+            //CSeqDBFileMemMap lease(m_Atlas,m_DataFname);
+            x_LoadData(m_DataLease, keys, vals, num_keys, page_offs[sample_index]);            
+            //lease.Clear();
+            //m_Atlas.RetRegion(lease);
 
             int index = 0;
 
@@ -645,8 +659,8 @@ private:
     /// @return
     ///   true if the identifier was found.
     bool x_IdentToOid(Int8             id,
-                      TOid           & oid,
-                      CSeqDBLockHold & locked);
+                      TOid           & oid);
+                      
 
     /// Index file search
     ///
@@ -672,8 +686,8 @@ private:
                          int            * Data,
                          Uint4          * Index,
                          Int4           & SampleNum,
-                         bool           & done,
-                         CSeqDBLockHold & locked);
+                         bool           & done);
+                         
 
     /// Negative ID List Translation
     ///
@@ -694,14 +708,14 @@ private:
     x_SearchNegativeMulti(int                  vol_start,
                           int                  vol_end,
                           CSeqDBNegativeList & gis,
-                          bool                 use_tis,
-                          CSeqDBLockHold     & locked);
+                          bool                 use_tis);
+                          
 
     void
     x_SearchNegativeMultiSeq(int                  vol_start,
                              int                  vol_end,
-                             CSeqDBNegativeList & gis,                          
-                             CSeqDBLockHold     & locked);
+                             CSeqDBNegativeList & gis);                         
+                             
 
 
     /// Data file search
@@ -725,8 +739,8 @@ private:
     x_SearchDataNumeric(Int8             Number,
                         int            * Data,
                         Uint4          * Index,
-                        Int4             SampleNum,
-                        CSeqDBLockHold & locked);
+                        Int4             SampleNum);
+                        
 
     /// Numeric identifier lookup
     ///
@@ -745,8 +759,8 @@ private:
     EErrorCode
     x_NumericSearch(Int8             Number,
                     int            * Data,
-                    Uint4          * Index,
-                    CSeqDBLockHold & locked);
+                    Uint4          * Index);
+                    
 
     /// String identifier lookup
     ///
@@ -768,8 +782,8 @@ private:
     x_StringSearch(const string   & term_in,
                    vector<string> & term_out,
                    vector<string> & value_out,
-                   vector<TIndx>  & index_out,
-                   CSeqDBLockHold & locked);
+                   vector<TIndx>  & index_out);
+                   
 
     /// Initialize the search object
     ///
@@ -782,7 +796,7 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_InitSearch(CSeqDBLockHold & locked);
+    x_InitSearch(void);
 
     /// Determine the number of elements in the data page.
     ///
@@ -816,8 +830,8 @@ private:
     ///   true if results were found
     bool x_SparseStringToOids(const string   & acc,
                               vector<int>    & oids,
-                              bool             adjusted,
-                              CSeqDBLockHold & locked);
+                              bool             adjusted);
+                              
 
     /// Find the first character to differ in two strings
     ///
@@ -846,13 +860,13 @@ private:
     ///   The position of the first difference.
     int
     x_DiffCharLease(const string   & term_in,
-                    CSeqDBMemLease & lease,
+                    CSeqDBFileMemMap & lease,
                     const string   & file_name,
                     TIndx            file_length,
                     Uint4            at_least,
                     TIndx            KeyOffset,
-                    bool             ignore_case,
-                    CSeqDBLockHold & locked);
+                    bool             ignore_case);
+                    
 
     /// Find the first character to differ in two strings
     ///
@@ -911,8 +925,7 @@ private:
     /// @return
     ///   The offset of the sample in the index file.
     TIndx x_GetIndexKeyOffset(TIndx            sample_offset,
-                              Uint4            sample_num,
-                              CSeqDBLockHold & locked);
+                              Uint4            sample_num);
 
     /// Read a string from the index file.
     ///
@@ -932,8 +945,8 @@ private:
     void x_GetIndexString(TIndx            key_offset,
                           int              length,
                           string         & prefix,
-                          bool             trim_to_null,
-                          CSeqDBLockHold & locked);
+                          bool             trim_to_null);
+                          
 
     /// Find the first character to differ in two strings
     ///
@@ -952,8 +965,8 @@ private:
     ///   This thread's lock holder object.
     int x_DiffSample(const string   & term_in,
                      Uint4            SampleNum,
-                     TIndx          & KeyOffset,
-                     CSeqDBLockHold & locked);
+                     TIndx          & KeyOffset);
+                     
 
     /// Find matches in the given page of a string ISAM file.
     ///
@@ -977,8 +990,8 @@ private:
                           TIndx            sample_index,
                           vector<TIndx>  & indices_out,
                           vector<string> & keys_out,
-                          vector<string> & data_out,
-                          CSeqDBLockHold & locked);
+                          vector<string> & data_out);
+                          
 
     /// Find matches in the given memory area of a string ISAM file.
     ///
@@ -1027,8 +1040,8 @@ private:
     void x_LoadPage(TIndx             SampleNum1,
                     TIndx             SampleNum2,
                     const char     ** beginp,
-                    const char     ** endp,
-                    CSeqDBLockHold &  locked);
+                    const char     ** endp);
+                    
 
     /// Test a sample key value from a numeric index.
     ///
@@ -1052,7 +1065,7 @@ private:
     ///   If an exact match, the data found will be returned here.
     /// @return
     ///   -1, 0 or 1 when key_in is less, equal greater than key_out.
-    int x_TestNumericSample(CSeqDBMemLease & index_lease,
+    int x_TestNumericSample(CSeqDBFileMemMap & index_lease,
                             int              index,
                             Int8             key_in,
                             Int8           & key_out,
@@ -1073,7 +1086,7 @@ private:
     ///   The key found will be returned here.
     /// @param data_out
     ///   If an exact match, the data found will be returned here.
-    void x_GetNumericSample(CSeqDBMemLease & index_lease,
+    void x_GetNumericSample(CSeqDBFileMemMap & index_lease,
                             int              index,
                             Int8           & key_out,
                             int            & data_out);
@@ -1119,8 +1132,8 @@ private:
     void x_MapDataPage(int                 sample_index,
                        int               & start,
                        int               & num_elements,
-                       const void       ** data_page_begin,
-                       CSeqDBLockHold    & locked);
+                       const void       ** data_page_begin);
+                       
 
     /// Get a particular data element from a data page.
     /// @param dpage A pointer to that page in memory.  [in]
@@ -1138,17 +1151,17 @@ private:
                           int             & data);
 
     /// Find the least and greatest keys in this ISAM file.
-    void x_FindIndexBounds(CSeqDBLockHold & locked);
+    void x_FindIndexBounds();
 
     /// Check whether a numeric key is within this volume's bounds.
     /// @param key The key for which to do the check.
     /// @param locked The lock holder object for this thread.
-    bool x_OutOfBounds(Int8 key, CSeqDBLockHold & locked);
+    bool x_OutOfBounds(Int8 key);
 
     /// Check whether a string key is within this volume's bounds.
     /// @param key The key for which to do the check.
     /// @param locked The lock holder object for this thread.
-    bool x_OutOfBounds(string key, CSeqDBLockHold & locked);
+    bool x_OutOfBounds(string key);
 
     /// Converts a string to lower case.
     static void x_Lower(string & s)
@@ -1185,6 +1198,11 @@ private:
                                 string       & index_name,
                                 string       & data_name);
 
+    void x_InitLease(void) {
+        if(!m_IndexLease.IsMapped()) m_IndexLease.Init();
+        if(!m_DataLease.IsMapped()) m_DataLease.Init();
+    }
+
     // Data
 
     /// The memory management layer
@@ -1194,10 +1212,12 @@ private:
     ESeqDBIdType m_IdentType;
 
     /// A persistent lease on the ISAM index file.
-    CSeqDBMemLease m_IndexLease;
+    CSeqDBFileMemMap m_IndexLease;
+    
 
     /// A persistent lease on the ISAM data file.
-    CSeqDBMemLease m_DataLease;
+    CSeqDBFileMemMap m_DataLease;
+    
 
     /// The format type of database files found (eNumeric or eString).
     int m_Type;
@@ -1290,7 +1310,7 @@ private:
 };
 
 inline int
-CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
+CSeqDBIsam::x_TestNumericSample(CSeqDBFileMemMap & index_lease,
                                 int              index,
                                 Int8             key_in,
                                 Int8           & key_out,
@@ -1301,7 +1321,9 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
 
     TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
 
-    keydatap = index_lease.GetPtr(offset_begin);
+    
+    keydatap = index_lease.GetFileDataPtr(offset_begin);
+    
     key_out = x_GetNumericKey(keydatap);
 
     int rv = 0;
@@ -1319,7 +1341,7 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
 }
 
 inline void
-CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
+CSeqDBIsam::x_GetNumericSample(CSeqDBFileMemMap & index_lease,
                                int              index,
                                Int8           & key_out,
                                int            & data_out)
@@ -1328,7 +1350,9 @@ CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
 
     TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
 
-    keydatap = index_lease.GetPtr(offset_begin);
+    
+    keydatap = index_lease.GetFileDataPtr(offset_begin);
+    
     key_out = x_GetNumericKey(keydatap);
     data_out = x_GetNumericData(keydatap);
 }
@@ -1336,13 +1360,14 @@ CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
 /// Load and extract all index samples into array at once
 template <>
 inline void CSeqDBIsam::x_LoadIndex<TGi>(
-        CSeqDBMemLease & lease,
+        CSeqDBFileMemMap & lease,
         vector<TGi>    & keys,
         vector<TIndx>  & offs
 )
 {
-    const char * keydatap = lease.GetPtr(m_KeySampleOffset);
-
+    
+    const char * keydatap = lease.GetFileDataPtr(m_KeySampleOffset);
+    
     for (int index=0; index < m_NumSamples; ++index) {
         keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));
         // vals.push_back(x_GetNumericData(keydatap));
@@ -1356,14 +1381,15 @@ inline void CSeqDBIsam::x_LoadIndex<TGi>(
 /// Load and extract a data page into array at once
 template <>
 inline void CSeqDBIsam::x_LoadData<TGi>(
-        CSeqDBMemLease & lease,
+        CSeqDBFileMemMap & lease,
         vector<TGi>    & keys,
         vector<int>    & vals,
         int              num_keys,
         TIndx            begin
 )
 {
-    const char * keydatap = lease.GetPtr(begin);
+    
+    const char * keydatap = lease.GetFileDataPtr(begin);
 
     for (int index=0; index < num_keys; ++index) {
         keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));
@@ -1373,28 +1399,29 @@ inline void CSeqDBIsam::x_LoadData<TGi>(
 }
 
 template <> inline void
-CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
+CSeqDBIsam::x_LoadIndex<string>(CSeqDBFileMemMap & lease,
                                 vector<string> & keys,
                                 vector<TIndx>  & offs)
 {
     TIndx offset_begin = m_KeySampleOffset;
     TIndx sample_begin = offset_begin + sizeof(Uint4) * (m_NumSamples + 1);
 
-    // load offset array
-    const Uint4 * offset = (const Uint4 *) lease.GetPtr(offset_begin);
+    // load offset array    
+    const Uint4 * offset = (const Uint4 *) lease.GetFileDataPtr(offset_begin);
     for (int index=0; index <= m_NumSamples; ++index, ++offset) {
         // Get the data_offsets
         offs.push_back(SeqDB_GetStdOrd((Uint4*) offset));
     }
 
-    // load sample array
-    offset = (const Uint4 *) lease.GetPtr(sample_begin);
+    // load sample array    
+    offset = (const Uint4 *) lease.GetFileDataPtr(sample_begin);
     for (int index=0; index < m_NumSamples; ++index, ++offset) {
         // Get the index_offsets
         offset_begin = SeqDB_GetStdOrd((Uint4*) offset);
 
-        // Lookup the samples
-        const char * keydatap =  (const char *) lease.GetPtr(offset_begin) - 1;
+        // Lookup the samples        
+        const char * keydatap =  (const char *) lease.GetFileDataPtr(offset_begin) - 1;
+        
 
         const char * key_begin = ++ keydatap;
         while (*keydatap != 0x02) ++keydatap;
@@ -1407,13 +1434,14 @@ CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
 }
 
 template <> inline void
-CSeqDBIsam::x_LoadData<string>(CSeqDBMemLease & lease,
+CSeqDBIsam::x_LoadData<string>(CSeqDBFileMemMap & lease,
                                vector<string> & keys,
                                vector<int>    & vals,
                                int              num_keys,
                                TIndx            begin)
 {
-    const char * keydatap = (const char *) lease.GetPtr(begin) - 1;
+    const char * keydatap = (const char *) lease.GetFileDataPtr(begin) - 1;
+    
     for (int index=0; index < num_keys; ++index) {
 
         const char * key_begin = ++keydatap;
@@ -1495,25 +1523,16 @@ inline void
 CSeqDBIsam::x_MapDataPage(int                sample_index,
                           int              & start,
                           int              & num_elements,
-                          const void      ** data_page_begin,
-                          CSeqDBLockHold   & locked)
+                          const void      ** data_page_begin)
+                          
 {
     num_elements =
         x_GetPageNumElements(sample_index, & start);
 
     TIndx offset_begin = start * m_TermSize;
-    TIndx offset_end = offset_begin + m_TermSize * num_elements;
-
-    m_Atlas.Lock(locked);
-
-    if (! m_DataLease.Contains(offset_begin, offset_end)) {
-        m_Atlas.GetRegion(m_DataLease,
-                          m_DataFname,
-                          offset_begin,
-                          offset_end);
-    }
-
-    *data_page_begin =  m_DataLease.GetPtr(offset_begin);
+    //TIndx offset_end = offset_begin + m_TermSize * num_elements;
+        
+    *data_page_begin =  m_DataLease.GetFileDataPtr(m_DataFname,offset_begin);
 }
 
 inline void

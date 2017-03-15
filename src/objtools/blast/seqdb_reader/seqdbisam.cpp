@@ -26,7 +26,7 @@
  * Author:  Kevin Bealer
  *
  */
-
+//IRENA: ALL locking  removed from this file CSeqDBLockHold & stays in some functions but is not used
 /// @file seqdbisam.cpp
 /// Implementation for the CSeqDBIsam class, which manages an ISAM
 /// index of some particular kind of identifiers.
@@ -56,25 +56,24 @@ USING_SCOPE(objects);
 
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
+CSeqDBIsam::x_InitSearch(void)
 {
     if(m_Initialized == true)
         return eNoError;
 
     TIndx info_needed = 10 * sizeof(Int4);
 
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+        
     bool found_index_file =
-        m_Atlas.GetFileSize(m_IndexFname, m_IndexFileLength, locked);
-
+        m_Atlas.GetFileSizeL(m_IndexFname, m_IndexFileLength);
+    
     if ((! found_index_file) || (m_IndexFileLength < info_needed)) {
         return eWrongFile;
     }
 
-    m_Atlas.GetRegion(m_IndexLease, m_IndexFname, 0, info_needed);
-
-    Int4 * FileInfo = (Int4*) m_IndexLease.GetPtr(0);
+    
+    Int4 * FileInfo = (Int4*)m_IndexLease.GetFileDataPtr(m_IndexFname,0);
 
     // Check for consistence of files and parameters
 
@@ -105,8 +104,8 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
 
         TIndx disk_file_length(0);
         bool found_data_file =
-            m_Atlas.GetFileSize(m_DataFname, disk_file_length, locked);
-
+            m_Atlas.GetFileSizeL(m_DataFname, disk_file_length);
+        
         if ((! found_data_file) || (m_DataFileLength != disk_file_length)) {
             return eWrongFile;
         }
@@ -144,13 +143,14 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
                                  int            * Data,
                                  Uint4          * Index,
                                  Int4           & SampleNum,
-                                 bool           & done,
-                                 CSeqDBLockHold & locked)
+                                 bool           & done)
+                                 
 {
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
+        EErrorCode error = x_InitSearch();
 
         if(error != eNoError) {
             done = true;
@@ -158,7 +158,7 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
         }
     }
 
-    if (x_OutOfBounds(Number, locked)) {
+    if (x_OutOfBounds(Number)) {
         done = true;
         return eNotFound;
     }
@@ -174,22 +174,13 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
 
         TIndx offset_begin = m_KeySampleOffset + (m_TermSize * SampleNum);
-        TIndx offset_end   = offset_begin + m_TermSize;
-
-        m_Atlas.Lock(locked);
-
-        if (! m_IndexLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_IndexLease,
-                              m_IndexFname,
-                              offset_begin,
-                              offset_end);
-        }
-
+        //TIndx offset_end   = offset_begin + m_TermSize;
+        
         const void* keydatap(0);
 
         Int8 Key(0);
 
-        keydatap = m_IndexLease.GetPtr(offset_begin);
+        keydatap = m_IndexLease.GetFileDataPtr(m_IndexFname,offset_begin);
         Key = x_GetNumericKey (keydatap);
 
         // If this is an exact match, return the master term number.
@@ -236,13 +227,14 @@ void
 CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
                                   int                  vol_end,
                                   CSeqDBNegativeList & ids,
-                                  bool                 use_tis,
-                                  CSeqDBLockHold     & locked)
+                                  bool                 use_tis)
+                                  
 {
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
+        EErrorCode error = x_InitSearch();
 
         if(error != eNoError) {
             // Most ordinary errors (missing IDs for example) are
@@ -255,7 +247,8 @@ CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
         }
     }
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
+    
 
     // We can use Parabolic Binary Search for the negative GI list but
     // not for the ISAM file data, because in the negative ID list
@@ -282,8 +275,7 @@ CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
         x_MapDataPage(sample_index,
                       start,
                       num_elements,
-                      & data_page,
-                      locked);
+                      & data_page);
 
         for(int i = 0; i < num_elements; i++) {
             Int8 isam_key(0);
@@ -359,15 +351,15 @@ static bool s_IsSameAccession(vector <string> keys, int num_keys, int currIndex)
 void
 CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
                                      int              vol_end,
-                                     CSeqDBNegativeList & ids,                                     
-                                     CSeqDBLockHold & locked)
+                                     CSeqDBNegativeList & ids)                                     
+                                     
 {
         int gilist_size = ids.ListSize();
         if (! gilist_size) return;
         
-        
+        x_InitLease();//Map files if needed
         if(m_Initialized == false) {
-            EErrorCode error = x_InitSearch(locked);
+            EErrorCode error = x_InitSearch();
 
             if(error != eNoError) {
                 // Most ordinary errors (missing GIs for example) are
@@ -380,7 +372,7 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
             }
         }
         
-        CSeqDBMemLease lease(m_Atlas);
+        //CSeqDBMemLease lease(m_Atlas);
 
         vector<string> sample_keys;
         vector<TIndx> page_offs;
@@ -392,9 +384,11 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
         keys.reserve(m_PageSize);
         vals.reserve(m_PageSize);
 
-        m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);
-        x_LoadIndex(lease, sample_keys, page_offs);
-        m_Atlas.RetRegion(lease);
+        //m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength); // unchecked        
+        //CSeqDBFileMemMap lease(m_IndexFname);
+        x_LoadIndex(m_IndexLease, sample_keys, page_offs);
+        //lease.Clear();        
+        //m_Atlas.RetRegion(lease);
 
         int gilist_index = 0;
         int sample_index = 0;
@@ -409,13 +403,17 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
             if (sample_index + 1 == m_NumSamples) {
                 num_keys = m_NumTerms - sample_index * m_PageSize;
             }
-
-            m_Atlas.GetRegion(lease,
+            /*
+            m_Atlas.GetRegion(lease, // unchecked
                               m_DataFname,
                               page_offs[sample_index],
                               page_offs[sample_index + 1]);
-            x_LoadData(lease, keys, vals, num_keys, page_offs[sample_index]);
-            m_Atlas.RetRegion(lease);
+            */
+            
+            //CSeqDBFileMemMap lease(m_DataFname);
+            x_LoadData(m_DataLease, keys, vals, num_keys, page_offs[sample_index]);
+            //lease.Clear();            
+            //m_Atlas.RetRegion(lease);
 
 
             for(int i = 0; i < num_keys; i++) {
@@ -461,8 +459,8 @@ CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
                                 int            * Data,
                                 Uint4          * Index,
-                                Int4             SampleNum,
-                                CSeqDBLockHold & locked)
+                                Int4             SampleNum)
+                                
 {
     // Load the appropriate page of numbers into memory.
     _ASSERT(m_Type != eNumericNoData);
@@ -477,18 +475,10 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     const void * KeyDataPageStart = NULL;
 
     TIndx offset_begin = Start * m_TermSize;
-    TIndx offset_end = offset_begin + m_TermSize * NumElements;
-
-    m_Atlas.Lock(locked);
-
-    if (! m_DataLease.Contains(offset_begin, offset_end)) {
-        m_Atlas.GetRegion(m_DataLease,
-                          m_DataFname,
-                          offset_begin,
-                          offset_end);
-    }
-
-    KeyDataPageStart = m_DataLease.GetPtr(offset_begin);
+    //TIndx offset_end = offset_begin + m_TermSize * NumElements;
+        
+    KeyDataPageStart = m_DataLease.GetFileDataPtr(m_DataFname,offset_begin);
+    
 
     KeyDataPage = (char *)KeyDataPageStart - Start * m_TermSize;
 
@@ -545,34 +535,34 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_NumericSearch(Int8             Number,
                             int            * Data,
-                            Uint4          * Index,
-                            CSeqDBLockHold & locked)
+                            Uint4          * Index)
+                            
 {
     bool done      (false);
     Int4 SampleNum (0);
 
     EErrorCode error =
-        x_SearchIndexNumeric(Number, Data, Index, SampleNum, done, locked);
+        x_SearchIndexNumeric(Number, Data, Index, SampleNum, done);
 
     if (! done) {
-        error = x_SearchDataNumeric(Number, Data, Index, SampleNum, locked);
+        error = x_SearchDataNumeric(Number, Data, Index, SampleNum);
     }
 
     return error;
 }
 
 int CSeqDBIsam::x_DiffCharLease(const string   & term_in,
-                                CSeqDBMemLease & lease,
+                                CSeqDBFileMemMap & lease,
                                 const string   & file_name,
                                 TIndx            file_length,
                                 Uint4            at_least,
                                 TIndx            KeyOffset,
-                                bool             ignore_case,
-                                CSeqDBLockHold & locked)
+                                bool             ignore_case)
+                                
 {
     int result(-1);
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
 
     // Add one to term_end to insure we don't consider "AA" and "AAB"
     // as equal.
@@ -589,15 +579,8 @@ int CSeqDBIsam::x_DiffCharLease(const string   & term_in,
             result = int(file_length - offset_begin);
         }
     }
-
-    if (! lease.Contains(offset_begin, map_end)) {
-        m_Atlas.GetRegion( lease,
-                           file_name,
-                           offset_begin,
-                           term_end );
-    }
-
-    const char * file_data = lease.GetPtr(offset_begin);
+    
+    const char * file_data = (const char *)lease.GetFileDataPtr(file_name,offset_begin);
 
     Int4 dc_result =
         x_DiffChar(term_in,
@@ -744,8 +727,8 @@ void CSeqDBIsam::x_ExtractAllData(const string   & term_in,
                                   TIndx            sample_index,
                                   vector<TIndx>  & indices_out,
                                   vector<string> & keys_out,
-                                  vector<string> & data_out,
-                                  CSeqDBLockHold & locked)
+                                  vector<string> & data_out)
+                                  
 {
     // The object at sample_index is known to match; we will iterate
     // over the surrounding values to see if they match as well.  No
@@ -779,7 +762,7 @@ void CSeqDBIsam::x_ExtractAllData(const string   & term_in,
             end_off = sample_index + post_amt;
         }
 
-        x_LoadPage(beg_off, end_off, & beginp, & endp, locked);
+        x_LoadPage(beg_off, end_off, & beginp, & endp);
 
         if (! done_b) {
             Int4 diff_begin = x_DiffChar(term_in,
@@ -876,23 +859,14 @@ void CSeqDBIsam::x_ExtractData(const char     * key_start,
 
 CSeqDBIsam::TIndx
 CSeqDBIsam::x_GetIndexKeyOffset(TIndx            sample_offset,
-                                Uint4            sample_num,
-                                CSeqDBLockHold & locked)
+                                Uint4            sample_num)
+                                
 {
     TIndx offset_begin = sample_offset + (sample_num * sizeof(Uint4));
-    TIndx offset_end   = offset_begin + sizeof(Uint4);
+    //TIndx offset_end   = offset_begin + sizeof(Uint4);
 
-    m_Atlas.Lock(locked);
-
-    if (! m_IndexLease.Contains(offset_begin, offset_end)) {
-        m_Atlas.GetRegion(m_IndexLease,
-                          m_IndexFname,
-                          offset_begin,
-                          offset_end);
-    }
-
-    Int4 * key_offset_addr = (Int4 *) m_IndexLease.GetPtr(offset_begin);
-
+      
+    Int4 * key_offset_addr = (Int4 *)m_IndexLease.GetFileDataPtr(offset_begin);
     return SeqDB_GetStdOrd(key_offset_addr);
 }
 
@@ -900,22 +874,14 @@ void
 CSeqDBIsam::x_GetIndexString(TIndx            key_offset,
                              int              length,
                              string         & str,
-                             bool             trim_to_null,
-                             CSeqDBLockHold & locked)
+                             bool             trim_to_null)
+                             
 {
-    TIndx offset_end = key_offset + length;
-
-    m_Atlas.Lock(locked);
-
-    if (! m_IndexLease.Contains(key_offset, offset_end)) {
-        m_Atlas.GetRegion(m_IndexLease,
-                          m_IndexFname,
-                          key_offset,
-                          offset_end);
-    }
-
-    const char * key_offset_addr =
-        (const char *) m_IndexLease.GetPtr(key_offset);
+    //TIndx offset_end = key_offset + length;
+    
+    const char * key_offset_addr =        
+        (const char *)m_IndexLease.GetFileDataPtr(key_offset);
+    
 
     if (trim_to_null) {
         for(int i = 0; i<length; i++) {
@@ -934,8 +900,8 @@ CSeqDBIsam::x_GetIndexString(TIndx            key_offset,
 
 int CSeqDBIsam::x_DiffSample(const string   & term_in,
                              Uint4            SampleNum,
-                             TIndx          & KeyOffset,
-                             CSeqDBLockHold & locked)
+                             TIndx          & KeyOffset)
+                             
 {
     // Meaning:
     // a. Compute SampleNum*4
@@ -952,19 +918,10 @@ int CSeqDBIsam::x_DiffSample(const string   & term_in,
     }
 
     TIndx offset_begin = SampleOffset + (SampleNum * sizeof(Uint4));
-    TIndx offset_end   = offset_begin + sizeof(Uint4);
-
-    m_Atlas.Lock(locked);
-
-    if (! m_IndexLease.Contains(offset_begin, offset_end)) {
-        m_Atlas.GetRegion(m_IndexLease,
-                          m_IndexFname,
-                          offset_begin,
-                          offset_end);
-    }
-
-    KeyOffset = SeqDB_GetStdOrd((Int4*) m_IndexLease.GetPtr(offset_begin));
-
+    //TIndx offset_end   = offset_begin + sizeof(Uint4);
+    
+    KeyOffset = SeqDB_GetStdOrd((Int4*)m_IndexLease.GetFileDataPtr(offset_begin));
+    
     Uint4 max_lines_2 = m_MaxLineSize * 2;
 
     return x_DiffCharLease(term_in,
@@ -973,40 +930,31 @@ int CSeqDBIsam::x_DiffSample(const string   & term_in,
                            m_IndexFileLength,
                            max_lines_2,
                            KeyOffset,
-                           ignore_case,
-                           locked);
+                           ignore_case);
+                          
 }
 
 void CSeqDBIsam::x_LoadPage(TIndx             SampleNum1,
                             TIndx             SampleNum2,
                             const char     ** beginp,
-                            const char     ** endp,
-                            CSeqDBLockHold &  locked)
+                            const char     ** endp)
+                            
 {
     // Load the appropriate page of terms into memory.
 
     _ASSERT(SampleNum2 > SampleNum1);
 
     TIndx begin_offset = m_KeySampleOffset + SampleNum1       * sizeof(Uint4);
-    TIndx end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
-
-    m_Atlas.Lock(locked);
-
-    if (! m_IndexLease.Contains(begin_offset, end_offset)) {
-        m_Atlas.GetRegion(m_IndexLease, m_IndexFname, begin_offset, end_offset);
-    }
-
-    Uint4 * key_offsets((Uint4*) m_IndexLease.GetPtr(begin_offset));
+    //TIndx end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
+    
+    Uint4 * key_offsets((Uint4*)m_IndexLease.GetFileDataPtr(begin_offset));
+    
 
     Uint4 key_off1 = SeqDB_GetStdOrd(& key_offsets[0]);
     Uint4 key_off2 = SeqDB_GetStdOrd(& key_offsets[SampleNum2 - SampleNum1]);
-
-    if (! m_DataLease.Contains(key_off1, key_off2)) {
-        m_Atlas.GetRegion(m_DataLease, m_DataFname, key_off1, key_off2);
-    }
-
-    *beginp = (const char *) m_DataLease.GetPtr(key_off1);
-    *endp   = (const char *) m_DataLease.GetPtr(key_off2);
+    
+    *beginp = (const char *) m_DataLease.GetFileDataPtr(m_DataFname,key_off1);
+    *endp   = (const char *) m_DataLease.GetFileDataPtr(key_off2);    
 }
 
 
@@ -1024,8 +972,8 @@ CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_StringSearch(const string   & term_in,
                            vector<string> & terms_out,
                            vector<string> & values_out,
-                           vector<TIndx>  & indices_out,
-                           CSeqDBLockHold & locked)
+                           vector<TIndx>  & indices_out)
+                           
 {
     // These are always false; They may relate to the prior find_one /
     // expand_to_many method of getting multiple OIDs.
@@ -1035,15 +983,16 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
 
     size_t preexisting_data_count = values_out.size();
 
+    x_InitLease();//Map files if needed
     if (m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
+        EErrorCode error = x_InitSearch();
 
         if(error != eNoError) {
             return error;
         }
     }
 
-    if (x_OutOfBounds(term_in, locked)) {
+    if (x_OutOfBounds(term_in)) {
         return eNotFound;
     }
 
@@ -1073,11 +1022,11 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
 
         TIndx KeyOffset(0);
 
-        int diff = x_DiffSample(term_in, SampleNum, KeyOffset, locked);
+        int diff = x_DiffSample(term_in, SampleNum, KeyOffset);
 
         // If this is an exact match, return the master term number.
-
-        const char * KeyData = m_IndexLease.GetPtr(KeyOffset);
+                
+        const char * KeyData = (const char *)m_IndexLease.GetFileDataPtr(KeyOffset);
         TIndx BytesToEnd = m_IndexFileLength - KeyOffset;
 
         Uint4 max_lines_2 = m_MaxLineSize * 2;
@@ -1091,8 +1040,8 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
                              SampleNum,
                              indices_out,
                              terms_out,
-                             values_out,
-                             locked);
+                             values_out);
+                             
 
             return eNoError;
         }
@@ -1107,11 +1056,11 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
             while(SampleNum > 0) {
                 TIndx key_offset =
                     x_GetIndexKeyOffset(SampleOffset,
-                                        SampleNum,
-                                        locked);
+                                        SampleNum);
+                                        
 
                 string prefix;
-                x_GetIndexString(key_offset, Length, prefix, false, locked);
+                x_GetIndexString(key_offset, Length, prefix, false);
 
                 if (ignore_case) {
                     if (NStr::CompareNocase(prefix, term_in) != 0) {
@@ -1130,11 +1079,11 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
 
             TIndx key_offset =
                 x_GetIndexKeyOffset(SampleOffset,
-                                    SampleNum + 1,
-                                    locked);
+                                    SampleNum + 1);
+                                    
 
             string prefix;
-            x_GetIndexString(key_offset, max_lines_2, short_term, true, locked);
+            x_GetIndexString(key_offset, max_lines_2, short_term, true);
 
             break;
         } else {
@@ -1143,7 +1092,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
             if (follow_match) {
                 found_short = SampleNum;
 
-                x_GetIndexString(KeyOffset, max_lines_2, short_term, true, locked);
+                x_GetIndexString(KeyOffset, max_lines_2, short_term, true);
             }
         }
 
@@ -1170,7 +1119,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
     const char * beginp(0);
     const char * endp(0);
 
-    x_LoadPage(SampleNum, SampleNum + 1, & beginp, & endp, locked);
+    x_LoadPage(SampleNum, SampleNum + 1, & beginp, & endp);
 
     // Search the page for the term.
 
@@ -1250,7 +1199,8 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
         msg += m_IndexFname + "/" + m_DataFname + ")";
         NCBI_THROW(CSeqDBException, eFileErr, msg);
     }
-
+    m_IndexLease.Init(m_IndexFname);
+    m_DataLease.Init(m_DataFname);
     if(m_Type == eNumeric) {
         m_PageSize = DEFAULT_NISAM_SIZE;
     } else {
@@ -1298,23 +1248,19 @@ bool CSeqDBIsam::IndexExists(const string & dbname,
 
 CSeqDBIsam::~CSeqDBIsam()
 {
-    UnLease();
+    UnLease();    
 }
-
+//Remove this
 void CSeqDBIsam::UnLease()
 {
-    if (! m_IndexLease.Empty()) {
-        m_Atlas.RetRegion(m_IndexLease);
-    }
-    if (! m_DataLease.Empty()) {
-        m_Atlas.RetRegion(m_DataLease);
-    }
+    m_IndexLease.Clear();
+    m_DataLease.Clear();
 }
 
-bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid)
 {
     EErrorCode err =
-        x_NumericSearch(ident, & oid, 0, locked);
+        x_NumericSearch(ident, & oid, 0);
 
     if (err == eNoError) {
         return true;
@@ -1328,18 +1274,19 @@ bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
 void CSeqDBIsam::StringToOids(const string   & acc,
                               vector<TOid>   & oids,
                               bool             adjusted,
-                              bool           & version_check,
-                              CSeqDBLockHold & locked)
+                              bool           & version_check)
+                              
 {
     bool strip_version = version_check;
     version_check = false;
 
     _ASSERT(m_IdentType == eStringId);
 
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        if (eNoError != x_InitSearch(locked)) {
+        if (eNoError != x_InitSearch()) {
             return;
         }
     }
@@ -1359,8 +1306,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         if ((err = x_StringSearch(accession,
                                   keys_out,
                                   data_out,
-                                  indices_out,
-                                  locked)) < 0) {
+                                  indices_out)) < 0) {
             return;
         }
 
@@ -1372,8 +1318,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
             (err = x_StringSearch(locus_str,
                                   keys_out,
                                   data_out,
-                                  indices_out,
-                                  locked)) < 0) {
+                                  indices_out)) < 0) {
+                                  
             return;
         }
 
@@ -1386,8 +1332,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         (err = x_StringSearch(acc,
                               keys_out,
                               data_out,
-                              indices_out,
-                              locked)) < 0) {
+                              indices_out)) < 0) {
+                              
 
         return;
     }
@@ -1420,8 +1366,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
             err = x_StringSearch(nover,
                                  keys_out,
                                  data_out,
-                                 indices_out,
-                                 locked);
+                                 indices_out);
+                                 
 
             if (data_out.size()) {
                 version_check = true;
@@ -1455,8 +1401,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
             ((err = x_StringSearch(id,
                                    keys_out,
                                    data_out,
-                                   indices_out,
-                                   locked)) < 0)) {
+                                   indices_out)) < 0)) {
+                                   
             return;
         }
     }
@@ -1474,8 +1420,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
 
 bool CSeqDBIsam::x_SparseStringToOids(const string   &,
                                       vector<int>    &,
-                                      bool,
-                                      CSeqDBLockHold &)
+                                      bool)
+                                      
 {
     cerr << " this should be derived from readdb_acc2fastaEx().." << endl;
     _TROUBLE;
@@ -1484,23 +1430,24 @@ bool CSeqDBIsam::x_SparseStringToOids(const string   &,
 
 void CSeqDBIsam::IdsToOids(int              vol_start,
                            int              vol_end,
-                           CSeqDBGiList   & ids,
-                           CSeqDBLockHold & locked)
+                           CSeqDBGiList   & ids)
+                           
+                           
 {
     // The vol_start parameter is needed because translations in the
     // GI list should refer to global OIDs, not per-volume OIDs.
 
     switch (m_IdentType) {
     case eGiId:
-        x_TranslateGiList<TGi>(vol_start, ids, locked);
+        x_TranslateGiList<TGi>(vol_start, ids);
         break;
 
     case eTiId:
-        x_TranslateGiList<TTi>(vol_start, ids, locked);
+        x_TranslateGiList<TTi>(vol_start, ids);
         break;
 
     case eStringId:
-        x_TranslateGiList<string>(vol_start, ids, locked);
+        x_TranslateGiList<string>(vol_start, ids);
         break;
 
     default:
@@ -1512,48 +1459,51 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
 
 void CSeqDBIsam::IdsToOids(int                  vol_start,
                            int                  vol_end,
-                           CSeqDBNegativeList & ids,
-                           CSeqDBLockHold     & locked)
+                           CSeqDBNegativeList & ids)
+                           
+                           
 {
     // The vol_start parameter is needed because translations in the
     // GI list should refer to global OIDs, not per-volume OIDs.
 
     _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId || m_IdentType == eStringId);
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
+    
     ids.InsureOrder();
 
     if ((m_IdentType == eGiId) && ids.GetNumGis()) {
         x_SearchNegativeMulti(vol_start,
                               vol_end,
                               ids,
-                              false,
-                              locked);
+                              false);
+                              
     }
 
     if ((m_IdentType == eTiId) && ids.GetNumTis()) {
         x_SearchNegativeMulti(vol_start,
                               vol_end,
                               ids,
-                              true,
-                              locked);
+                              true);
+                              
     }
 
     if(m_IdentType == eStringId && ids.GetNumSis()) {
         x_SearchNegativeMultiSeq(vol_start,
                               vol_end,
-                              ids,
+                              ids);
                               //true,
-                              locked);
+                              
     }
 }
 
-void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
+void CSeqDBIsam::x_FindIndexBounds()
 {
     Int4 Start (0);
     Int4 Stop  (m_NumSamples - 1);
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
+    
 
     if (m_Type == eNumeric) {
         //
@@ -1566,8 +1516,8 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         x_MapDataPage(Start,
                       start,
                       num_elements,
-                      & data_page,
-                      locked);
+                      & data_page);
+                      
 
         _ASSERT(num_elements);
 
@@ -1590,8 +1540,8 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         x_MapDataPage(Stop,
                       start,
                       num_elements,
-                      & data_page,
-                      locked);
+                      & data_page);
+                      
 
         _ASSERT(num_elements);
 
@@ -1613,7 +1563,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         //
         // Load the first page
 
-        x_LoadPage(Start, Start + 1, & beginp, & endp, locked);
+        x_LoadPage(Start, Start + 1, & beginp, & endp);
 
         // Get first term
 
@@ -1632,7 +1582,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         //
         // Load the last page
 
-        x_LoadPage(Stop, Stop + 1, & beginp, & endp, locked);
+        x_LoadPage(Stop, Stop + 1, & beginp, & endp);
 
         // Advance to last item
 
@@ -1671,10 +1621,10 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
     }
 }
 
-bool CSeqDBIsam::x_OutOfBounds(Int8 key, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_OutOfBounds(Int8 key)
 {
     if (! m_FirstKey.IsSet()) {
-        x_FindIndexBounds(locked);
+        x_FindIndexBounds();
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
@@ -1694,10 +1644,10 @@ bool CSeqDBIsam::x_OutOfBounds(Int8 key, CSeqDBLockHold & locked)
     return false;
 }
 
-bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_OutOfBounds(string key)
 {
     if (! m_FirstKey.IsSet()) {
-        x_FindIndexBounds(locked);
+        x_FindIndexBounds();
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
@@ -1721,13 +1671,15 @@ bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
 
 void CSeqDBIsam::GetIdBounds(Int8           & low_id,
                              Int8           & high_id,
-                             int            & count,
-                             CSeqDBLockHold & locked)
+                             int            & count)
+                             
+                             
 {
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
+        EErrorCode error = x_InitSearch();
 
         if(error != eNoError) {
             count = 0;
@@ -1736,7 +1688,7 @@ void CSeqDBIsam::GetIdBounds(Int8           & low_id,
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
-        x_FindIndexBounds(locked);
+        x_FindIndexBounds();
     }
 
     low_id = m_FirstKey.GetNumeric();
@@ -1746,13 +1698,15 @@ void CSeqDBIsam::GetIdBounds(Int8           & low_id,
 
 void CSeqDBIsam::GetIdBounds(string         & low_id,
                              string         & high_id,
-                             int            & count,
-                             CSeqDBLockHold & locked)
+                             int            & count)
+                             
+                             
 {
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch(locked);
+        EErrorCode error = x_InitSearch();
 
         if(error != eNoError) {
             count = 0;
@@ -1761,7 +1715,7 @@ void CSeqDBIsam::GetIdBounds(string         & low_id,
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
-        x_FindIndexBounds(locked);
+        x_FindIndexBounds();
     }
 
     low_id = m_FirstKey.GetString();
@@ -1770,15 +1724,17 @@ void CSeqDBIsam::GetIdBounds(string         & low_id,
 }
 
 void CSeqDBIsam::HashToOids(unsigned         hash,
-                            vector<TOid>   & oids,
-                            CSeqDBLockHold & locked)
+                            vector<TOid>   & oids)
+                            
+                            
 {
     _ASSERT(m_IdentType == eHashId);
 
-    m_Atlas.Lock(locked);
-
+    //m_Atlas.Lock(locked);
+    
+    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        if (eNoError != x_InitSearch(locked)) {
+        if (eNoError != x_InitSearch()) {
             return;
         }
     }
@@ -1796,8 +1752,8 @@ void CSeqDBIsam::HashToOids(unsigned         hash,
     if ((err = x_StringSearch(key,
                               keys_out,
                               data_out,
-                              indices_out,
-                              locked)) < 0) {
+                              indices_out)) < 0) {
+                              
         return;
     }
 

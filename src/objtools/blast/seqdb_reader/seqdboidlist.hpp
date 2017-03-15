@@ -229,8 +229,8 @@ private:
     CRef<CSeqDB_BitSet>
     x_GetOidMask(const CSeqDB_Path & fn,
                  int                 vol_start,
-                 int                 vol_end,
-                 CSeqDBLockHold    & locked);
+                 int                 vol_end);
+                 
     
     /// Load an ID (GI or TI) list file into a bitset object.
     ///
@@ -253,8 +253,8 @@ private:
     ///   The user gi list to apply to the volumes.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_ApplyUserGiList(CSeqDBGiList   & gis,
-                           CSeqDBLockHold & locked);
+    void x_ApplyUserGiList(CSeqDBGiList   & gis);
+                           
     
     /// Apply a negative user GI list to a volume.
     ///
@@ -269,14 +269,14 @@ private:
     ///   The negative user gi list to apply to the volumes.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_ApplyNegativeList(CSeqDBNegativeList & neg,
-                             CSeqDBLockHold     & locked);
+    void x_ApplyNegativeList(CSeqDBNegativeList & neg);
+                             
     
     /// The memory management layer object.
     CSeqDBAtlas & m_Atlas;
 
     /// A memory lease which holds the mask file (if only one is used).
-    CSeqDBMemLease m_Lease;
+    CSeqDBFileMemMap m_Lease;
     
     /// The total number of OIDs represented in the bit set.
     int m_NumOIDs;

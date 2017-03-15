@@ -38,7 +38,6 @@
 ///     CSeqDBLockHold
 ///     CSeqDBMemReg
 ///     CRegionMap
-///     CSeqDBMemLease
 ///     CSeqDBMovingAverage
 ///     CSeqDBMapStrategy
 ///     CSeqDB_AtlasRegionHolder
@@ -142,7 +141,7 @@ void seqdb_log(int cl, const char * s1, int s2);
 
 /// CSeqDBAtlas class - a collection of memory maps.
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
-
+class CSeqDBFileMemMap;
 
 /// Return path with delimiters changed to platform preferred kind.
 ///
@@ -188,11 +187,9 @@ public:
     virtual ~CSeqDBFlushCB() {}
 };
 
-/// Forward declaration for CRegionMap.
+
 class CRegionMap;
 
-/// Forward declaration for CRegionMap.
-class CSeqDBMemLease;
 
 
 /// CSeqDBLockHold
@@ -223,9 +220,7 @@ public:
         INIT_CLASS_MARK();
     }
 
-    /// Get a hold a region of memory.
-    void HoldRegion(CSeqDBMemLease & lease);
-
+    
     /// Destructor
     ///
     /// The class will unlock the atlas's lock on destruction (if it
@@ -247,7 +242,7 @@ private:
     class CSeqDBAtlas & m_Atlas;
 
     /// These are memory leases that should not flush during GC.
-    vector<CRegionMap*> m_Holds;
+    //vector<CRegionMap*> m_Holds;
 
     /// If this is true, this thread owns the atlas lock.
     bool m_Locked;
@@ -365,7 +360,7 @@ public:
     ///   Pointer to the atlas.
     /// @return
     ///   Returns true if the mapping succeeded.
-    bool MapMmap(CSeqDBAtlas * atlas);
+    //bool MapMmap(CSeqDBAtlas * atlas);
 
     /// Read a region of a file into memory
     ///
@@ -383,71 +378,9 @@ public:
     ///   Pointer to the atlas.
     /// @return
     ///   Returns true if the read succeeded.
-    bool MapFile(CSeqDBAtlas * atlas);
+    //bool MapFile(CSeqDBAtlas * atlas);
 
-    /// Increment this region's reference count.
-    ///
-    /// This increments the count of "users" associated with this
-    /// region.  When too much memory is used, memory regions may be
-    /// freed.  This process (garbage collection) will skip over any
-    /// regions in use at the time.  This method is the way to
-    /// indicates that an operation is done using this memory region
-    /// and expects it to remain intact for the duration.
-    void AddRef()
-    {
-        CHECK_MARKER();
-        _ASSERT(m_Ref >= 0);
-        m_Ref ++;
-        m_Clock = 0;
-    }
-
-    /// Decrement this region's reference count.
-    ///
-    /// This decrements the count of "users" associated with this
-    /// region.  If the count becomes zero, the region becomes
-    /// available for the next run of garbage collection.  This method
-    /// indicates that an operation is done using this memory region.
-    void RetRef()
-    {
-        CHECK_MARKER();
-#ifdef _DEBUG
-        if (! (m_Ref > 0)) {
-            cout << "refcount non-positive  = " << m_Ref << endl;
-        }
-#endif
-
-        _ASSERT(m_Ref > 0);
-        m_Ref --;
-    }
-
-    /// Return true if memory region is in use.
-    ///
-    /// This returns true if any users (normally, CSeqMemLease
-    /// objects) are holding a reference on this memory region.
-    ///
-    /// @return
-    ///   true if memory region has current users.
-    bool InUse()
-    {
-        CHECK_MARKER();
-        return m_Ref != 0;
-    }
-
-    /// Return true if memory region contains the pointer.
-    ///
-    /// This method returns true if the specified pointer points to a
-    /// character in the memory area managed by this object.  It is
-    /// used to find the region to decrement when a user provides a
-    /// region to "give back".
-    ///
-    /// @return
-    ///   true if this memory region contains the pointer
-    bool InRange(const char * p) const
-    {
-        CHECK_MARKER();
-        _ASSERT(m_Data);
-        return ((p >= m_Data) && (p < (m_Data + (m_End - m_Begin))));
-    }
+    
 
     /// Return the name of the file.
     ///
@@ -537,91 +470,8 @@ public:
         CHECK_MARKER();
         return m_Fid;
     }
-
-    /// Get the garbage collection clock value.
-    ///
-    /// This method is used by the atlas code's garbage collection
-    /// routine.  The clock concept is borrowed from certain operating
-    /// system paging techniques, and is described further in the
-    /// garbage collection.  This function returns that clock value
-    /// plus a penalty, which is used to preferentially page out
-    /// regions with undesireable "shapes", e.g. that don't have a
-    /// size of exactly one (large) slice.
-    ///
-    /// @return
-    ///   The clock value plus the penalty for this region.
-    int GetClock()
-    {
-        CHECK_MARKER();
-        return m_Clock + m_Penalty;
-    }
-
-    /// Increase the garbage collection clock count.
-    ///
-    /// This method increments the clock value, used by the atlas
-    /// code's garbage collection routine.  This method should never
-    /// be called on an in-use region.  The higher the clock value
-    /// gets, the closer this region is to being freed by the garbage
-    /// collection code.
-    void BumpClock()
-    {
-        CHECK_MARKER();
-        _ASSERT(! m_Ref);
-        m_Clock++;
-    }
-
-    /// Test and select this region if the arguments match.
-    ///
-    /// This method takes arguments describing a section of a file.
-    /// If this region has the same fid, and the byte range of this
-    /// region encompasses the specified range, then the reference
-    /// count is incremented, the input parameters are expanded to
-    /// reflect the entire region, and start is set to point to the
-    /// beginning of the requested portion of the region.  This method
-    /// also returns a pointer to the beginning of the input range
-    /// (before adjusting begin and end).
-    ///
-    /// @param fid
-    ///   The number identifying this file to the atlas code.
-    /// @param begin
-    ///   The beginning offset of the selected area.
-    /// @param end
-    ///   The ending offset of the selected area.
-    /// @param start
-    ///   Returned pointer to the beginning of the mapped region.
-    /// @return
-    ///   Pointer to the requested portion of the region.
-    inline const char *
-    MatchAndUse(int              fid,
-                TIndx          & begin,
-                TIndx          & end,
-                const char    ** start);
-
-    /// In debugging / verbose code, dump information about this
-    /// memory region object.
-    void Show();
-
-    /// Get the data pointer and offset range of this region.
-    ///
-    /// This method returns a pointer to this region's data, and the
-    /// beginning and ending offsets of the region.
-    ///
-    /// @param region_start
-    ///   Returns the address of the region data.
-    /// @param begin_offset
-    ///   The beginning offset of the region data.
-    /// @param end_offset
-    ///   The end offset of the region data.
-    void GetBoundaries(const char ** region_start,
-                       TIndx      &  begin_offset,
-                       TIndx      &  end_offset)
-    {
-        CHECK_MARKER();
-        *region_start = m_Data;
-        begin_offset  = m_Begin;
-        end_offset    = m_End;
-    }
-
+ 
+    
     /// Less-than operator.
     ///
     /// This method defines an partial ordering over CRegionMap
@@ -652,37 +502,7 @@ public:
 private:
     CLASS_MARKER_FIELD("REGM")
 
-    /// Compute the penalty and the expanded offset range.
-    ///
-    /// The files are normally divided into "slices".  When a mapping
-    /// request asks for a specific range of offsets, we attempt to
-    /// expand the offset range to the entire slice that contains the
-    /// requested area.  When memory mapping is selected, a large
-    /// slice size is used.  For files, a smaller area is used.  The
-    /// penalty value returned indicates how desireable the selected
-    /// mapping is thought to be.  Mapping one whole slice gets a
-    /// value of zero.  Partial slices, areas overlapping the ends of
-    /// two slices, and other anomalies get higher penalties.
-    ///
-    /// @param begin
-    ///   The starting offset (this method may adjust it).
-    /// @param end
-    ///   The ending offset (this method may adjust it).
-    /// @param penalty
-    ///   The penalty for this mapping is returned.
-    /// @param file_size
-    ///   The total size of the file.
-    /// @param use_mmap
-    ///   Whether memory mapping will be used.
-    /// @param atlas
-    ///   A pointer to the atlas object.
-    static void x_Roundup(TIndx       & begin,
-                          TIndx       & end,
-                          int         & penalty,
-                          TIndx         file_size,
-                          bool          use_mmap,
-                          CSeqDBAtlas * atlas);
-
+    
     /// Pointer to allocated or mapped memory area.
     const char     * m_Data;
 
@@ -717,183 +537,6 @@ private:
     static EMemoryAdvise sm_MmapStrategy_Sequence;
 };
 
-
-/// CSeqDBMemLease
-///
-/// This object holds a reference on a region of memory managed by the
-/// atlas code, and prevent the region from being unmapped.  This
-/// allows for rapid access to that memory for the duration of the
-/// transaction, and for subsequent transactions, without needing to
-/// call GetRegion() until memory outside the region is needed.
-/// Since these objects can prevent large slices of memory from being
-/// unmapped, the SeqDB code uses a callback functor (CSeqDBFlushCB)
-/// to allow the garbage collection code to break these holds, and
-/// return the associated regions, if the memory bound is exceeded.
-
-class CSeqDBMemLease {
-public:
-    /// The type used for file offsets.
-    typedef CRegionMap::TIndx TIndx;
-
-    /// Constructor
-    ///
-    /// Initializes a memory lease object.
-    ///
-    /// @param atlas
-    ///   The main atlas pointer.
-    CSeqDBMemLease(CSeqDBAtlas & atlas)
-        : m_Atlas(atlas),
-          m_Data (0),
-          m_Begin(0),
-          m_End  (0),
-          m_RMap (0)
-    {
-        INIT_CLASS_MARK();
-    }
-
-    /// Destructor
-    ///
-    /// Verifies this object is not active at time of destruction.
-    ~CSeqDBMemLease()
-    {
-        CHECK_MARKER();
-        _ASSERT(m_Data == 0);
-        BREAK_MARKER();
-    }
-
-    /// Clears the lease object.
-    ///
-    /// This method releases the reference count on the held region .
-    /// It assumes the lock is held.
-    inline void Clear();
-
-    /// Check whether the held area includes an offset range.
-    ///
-    /// This checks whether the region associated with this object
-    /// already encompasses the desired offset range.  If so, there is
-    /// no need to call GetRegion, because you can already access it
-    /// from this object.  It assumes the atlas lock is held.
-    ///
-    /// @param begin
-    ///   Start of the offset range.
-    /// @param end
-    ///   End of the offset range.
-    /// @return
-    ///   Returns true if the held region includes the offset range.
-    inline bool Contains(TIndx begin, TIndx end) const;
-
-    /// Get a pointer to the internal region map.
-    ///
-    /// @return
-    ///   A pointer to the region map held here.
-    CRegionMap * GetRegionMap() const
-    {
-        return m_RMap;
-    }
-
-    /// Get a pointer to the specified offset.
-    ///
-    /// Given an offset (which is assumed to be available here), this
-    /// method returns a pointer to the data at that offset.
-    ///
-    /// @param offset
-    ///   The required offset relative to the start of the file.
-    /// @return
-    ///   A pointer to the data at the requested location.
-    const char * GetPtr(TIndx offset) const
-    {
-        CHECK_MARKER();
-        return (m_Data + (offset - m_Begin));
-    }
-
-    /// Return true if this object is inactive.
-    ///
-    /// An active object holds a reference to a region of a file.
-    /// This method returns true if this object is not active.
-    ///
-    /// @return
-    ///   true, if this object does not hold a reference.
-    bool Empty() const
-    {
-        CHECK_MARKER();
-        return m_Data == 0;
-    }
-
-    /// Verify the integrity of this object.
-    void Verify() const
-    {
-        CHECK_MARKER();
-    }
-
-    /// Get another reference to the held CRegionMap object.
-    ///
-    /// To call this method, this object must be active (already hold
-    /// a reference to a CRegionMap object).  This method gets an
-    /// additional hold on that object by incrementing the reference
-    /// count again.  This is the mechanism that prevents the region
-    /// from being collected while the user works with it, even if
-    /// this lease object (which is probably stored somewhere under a
-    /// CSeqDBVolume) is released and garbage collection occurs.  If
-    /// and when the user returns the pointer to the region to CSeqDB,
-    /// the atlas code will find the region and decrement the count.
-    inline void IncrementRefCnt();
-
-private:
-    CLASS_MARKER_FIELD("LEAS")
-
-    /// This method is declared private to prevent copy construction.
-    CSeqDBMemLease(const CSeqDBMemLease & ml);
-
-    /// This method is declared private to prevent assignment.
-    CSeqDBMemLease & operator =(const CSeqDBMemLease & ml);
-
-    /// Active the region, setting its data members.
-    ///
-    /// When the GetRegion call returns a region in a MemLease object,
-    /// it increments the reference count, and calls this method to
-    /// populate this object with the summary data it needs.  This
-    /// method is private so that only the atlas object can call it.
-    ///
-    /// @param begin
-    ///   The starting offset of the area this lease can access.
-    /// @param end
-    ///   The ending offset of the area this lease can access.
-    /// @param data
-    ///   The pointer to the data area this lease can access.
-    /// @param rmap
-    ///   A pointer to the object that manages the file region.
-    void x_SetRegion(TIndx        begin,
-                     TIndx        end,
-                     const char * data,
-                     CRegionMap * rmap)
-    {
-        CHECK_MARKER();
-        Clear();
-
-        m_Data  = data;
-        m_Begin = begin;
-        m_End   = end;
-        m_RMap  = rmap;
-    }
-
-    /// Access to the private data is restricted to the atlas code.
-    friend class CSeqDBAtlas;
-
-    /// The atlas associated with this object.
-    CSeqDBAtlas & m_Atlas;
-
-    /// Points to the beginning of the data area.
-    const char * m_Data;
-
-    /// Start offset of the data relative to the start of the file.
-    TIndx m_Begin;
-
-    /// End offset of the data relative to the start of the file.
-    TIndx m_End;
-
-    /// Points to the object that manages the file region.
-    class CRegionMap * m_RMap;
-};
 
 
 /// CSeqDBMovingAverage
@@ -1019,18 +662,7 @@ public:
     /// Constructor
     CSeqDBMapStrategy(CSeqDBAtlas & atlas);
 
-    /// Get current overhang amount.
-    ///
-    /// This returns the amount of memory to map past the end of the
-    /// (end-of-map) slice boundary.  This should prevent most cases
-    /// where a memory map 'straddles' the boundary between slices.
-    ///
-    /// @return
-    ///   Atlas will map this much data past the slice-end boundary.
-    TIndx GetOverhang()
-    {
-        return m_Overhang;
-    }
+    
 
     /// Return the slice size for mmap requests.
     TIndx GetSliceSize()
@@ -1075,7 +707,7 @@ public:
     void MentionOid(int oid, int num_oids);
 
     /// Tell SeqDB that a memory mapping failed.
-    void MentionMapFailure(Uint8 current);
+    //void MentionMapFailure(Uint8 current);
 
     /// Set the memory bound using a user specified value.
     void SetMemoryBound(Uint8 max)
@@ -1244,63 +876,18 @@ public:
         return DoesFileExist(fname.GetPathS(), locked);
     }
 
-    /// Get mapping of an entire file.
-    ///
-    /// A file is mapped or read, in its entirety.  The region is held
-    /// in memory until the pointer is returned with RetRegion().  The
-    /// atlas will be locked if necessary.
-    ///
-    /// @param fname
-    ///   The filename of the file to get.
-    /// @param length
-    ///   The length of the file is returned here.
-    /// @param locked
-    ///   The lock hold object for this thread.
-    /// @return
-    ///   A pointer to the beginning of the file's data.
-    const char * GetFile(const string   & fname,
-                         TIndx          & length,
-                         CSeqDBLockHold & locked);
-
-    /// Get mapping of an entire file.
-    ///
-    /// A file is mapped or read, in its entirety.  The region is held
-    /// in memory until the lease object is cleared.  The atlas will
-    /// be locked if necessary.
-    ///
-    /// @param lease
-    ///   The lease which owns the hold on the region.
-    /// @param fname
-    ///   The filename of the file to get.
-    /// @param length
-    ///   The length of the file is returned here.
-    /// @param locked
-    ///   The lock hold object for this thread.
-    void GetFile(CSeqDBMemLease & lease,
-                 const string   & fname,
-                 TIndx          & length,
-                 CSeqDBLockHold & locked);
-
-    /// Get mapping of an entire file.
-    ///
-    /// This version is like the previous but takes CSeqDB_Path.
-    ///
-    /// @param lease
-    ///   The lease which owns the hold on the region.
-    /// @param fname
-    ///   The filename of the file to get.
-    /// @param length
-    ///   The length of the file is returned here.
-    /// @param locked
-    ///   The lock hold object for this thread.
-    void GetFile(CSeqDBMemLease    & lease,
-                 const CSeqDB_Path & fname,
-                 TIndx             & length,
-                 CSeqDBLockHold    & locked)
+    bool DoesFileExist(const string & fname)
     {
-        GetFile(lease, fname.GetPathS(), length, locked);
+        TIndx length(0);
+        return GetFileSizeL(fname, length);
     }
 
+    bool DoesFileExist(const CSeqDB_Path & fname)
+    {
+        TIndx length(0);
+        return GetFileSizeL(fname.GetPathS(), length);
+    }
+  
     /// Get size of a file.
     ///
     /// Check whether a file exists and get the file's size.
@@ -1330,62 +917,6 @@ public:
     ///   true if the file exists.
     bool GetFileSizeL(const string & fname, TIndx & length);
 
-    /// Gets a partial mapping of the file.
-    ///
-    /// Part of a file is mapped or read.  The region is held in
-    /// memory until the pointer is released with RetRegion().  This
-    /// method may read or map a larger section of the file than was
-    /// asked for. It may also return a pointer into an area that was
-    /// mapped by a previous call.  The atlas will be locked if
-    /// necessary.
-    ///
-    /// @param fname
-    ///   The filename of the file to get.
-    /// @param begin
-    ///   The start offset of the area to map.
-    /// @param end
-    ///   The end offset of the area to map.
-    /// @param locked
-    ///   The lock hold object for this thread.
-    /// @return
-    ///   A pointer to the beginning of the file's data.
-    const char * GetRegion(const string   & fname,
-                           TIndx            begin,
-                           TIndx            end,
-                           CSeqDBLockHold & locked);
-
-    /// Gets a partial mapping of the file (assumes lock is held).
-    ///
-    /// Part of a file is mapped or read.  The region is held in
-    /// memory until the lease object is cleared.  This method may
-    /// read or map a larger section of the file than was asked for.
-    /// It may also return a pointer into an area that was mapped by a
-    /// previous call.  The atlas is assumed to be locked.
-    ///
-    /// @param lease
-    ///   The memory lease object to store the region hold.
-    /// @param fname
-    ///   The name of the file to get.
-    /// @param begin
-    ///   The starting file offset.
-    /// @param end
-    ///   The ending file offset.
-    void GetRegion(CSeqDBMemLease  & lease,
-                   const string    & fname,
-                   TIndx             begin,
-                   TIndx             end);
-
-    /// Release a hold on a region of memory.
-    ///
-    /// This method releases holds kept by CSeqDBMemLease objects.  It
-    /// release the reference count and resets the lease to an
-    /// inactive state.  The atlas lock is assumed to be held.  This
-    /// method assumes the lock is held.
-    ///
-    /// @param ml
-    ///   The memory lease object holding the reference.
-    void RetRegion(CSeqDBMemLease & ml);
-
     /// Release a mapping of the file, or free allocated memory.
     ///
     /// This method releases the holds that are gotten by the versions
@@ -1400,24 +931,7 @@ public:
     void RetRegion(const char * datap)
     {
         Verify(true);
-
-        for(int i = 0; i<eNumRecent; i++) {
-            CRegionMap * rec_map = m_Recent[i];
-
-            if (! rec_map)
-                break;
-
-            if (rec_map->InRange(datap)) {
-                rec_map->RetRef();
-
-                if (i) {
-                    x_AddRecent(rec_map);
-                }
-
-                return;
-            }
-        }
-
+                
         x_RetRegionNonRecent(datap);
 
         Verify(true);
@@ -1446,7 +960,7 @@ public:
     ///   If this is set to false, the atlas lock will be acquired.
     /// @param index
     ///   A value which will be inserted into the output messages.
-    void ShowLayout(bool locked, TIndx index);
+    //void ShowLayout(bool locked, TIndx index);
 
     /// Allocate memory that atlas will keep track of.
     ///
@@ -1607,19 +1121,7 @@ public:
     ///   Specify true if we are about to return to user code.
     void PossiblyGarbageCollect(Uint8 space_needed, bool returning);
 
-    /// Return the current overhang amount.
-    ///
-    /// This returns the amount of memory to map past the end of the
-    /// (end-of-map) slice boundary.  This should prevent most cases
-    /// where a memory map 'straddles' the boundary between slices.
-    ///
-    /// @return
-    ///   Atlas will map this much data past the slice-end boundary.
-    Uint8 GetOverhang()
-    {
-        return m_Strategy.GetOverhang();
-    }
-
+    
     /// Get the current slice size.
     ///
     /// This returns the current slice size used for mmap() style
@@ -1674,12 +1176,12 @@ public:
         if (! already_locked) {
             Lock(locked);
         }
-
+        /*
         ITERATE(TNameOffsetTable, iter, m_NameOffsetLookup) {
             CRegionMap & rmp = **iter;
             rmp.Verify();
         }
-
+        */
         if (! already_locked) {
             Unlock(locked);
         }
@@ -1796,73 +1298,14 @@ public:
         return path;
     }
 
-
+    map< string, CMemoryFile* > &GetFilesMemMap(void){return m_FileMemMap;}
+    
 private:
     /// Private method to prevent copy construction.
     CSeqDBAtlas(const CSeqDBAtlas &);
 
     /// Iterator type for m_Pool member.
     typedef map<const char *, size_t>::iterator TPoolIter;
-
-    /// Finds a matching region if any exists.
-    ///
-    /// This method searches the list of mapped regions to find one
-    /// with the same fid, and whose offset range includes the
-    /// specified range.  If found, all of the input fields are
-    /// adjusted to reflect those in the region management object
-    /// (except fid, which is identical anyway).  Also, a pointer to
-    /// the CRegionMap object is returned in *rmap, and a pointer to
-    /// the (pre-adjustment) begin offset is returned from the method.
-    /// If no region was found, NULL is returned and no changes are
-    /// made to the input parameters.
-    ///
-    /// @param fid
-    ///   The number identifying this file to the atlas code.
-    /// @param begin
-    ///   The beginning offset of the selected area.
-    /// @param end
-    ///   The ending offset of the selected area.
-    /// @param startp
-    ///   Returned pointer to the beginning of the mapped region.
-    /// @param rmap
-    ///   Returned pointer to the CRegionMap object.
-    /// @return
-    ///   Pointer to the requested portion of the region.
-    const char * x_FindRegion(int              fid,
-                              TIndx          & begin,
-                              TIndx          & end,
-                              const char    ** startp,
-                              CRegionMap    ** rmap);
-
-    /// Gets a partial mapping of the file.
-    ///
-    /// This method searches the list of mapped regions to find one
-    /// with the same fid, and whose offset range includes the
-    /// specified range.  If found, it will be used.  If not found, a
-    /// new region will be constructed and used.  The parameters work
-    /// as in In either case, the input fields are adjusted to reflect
-    /// those in the region management object.  Also, a pointer to the
-    /// CRegionMap object is returned in *rmap, and a pointer to the
-    /// (pre-adjustment) begin offset is returned from the method.  If
-    /// no region could be found or created, an exception is thrown.
-    ///
-    /// @param fname
-    ///   The name of the file to get a region of.
-    /// @param begin
-    ///   The beginning offset of the selected area.
-    /// @param end
-    ///   The ending offset of the selected area.
-    /// @param start
-    ///   Returned pointer to the beginning of the mapped region.
-    /// @param rmap
-    ///   Returned pointer to the CRegionMap object.
-    /// @return
-    ///   Pointer to the requested portion of the region.
-    const char * x_GetRegion(const string   & fname,
-                             TIndx          & begin,
-                             TIndx          & end,
-                             const char    ** start,
-                             CRegionMap    ** rmap);
 
     /// Try to find the region and free it.
     ///
@@ -1887,26 +1330,7 @@ private:
     ///   The maximum amount of allocated memory to keep.
     void x_GarbageCollect(Uint8 reduce_to);
 
-    /// Find the fid for the filename.
-    ///
-    /// Atlas maps filenames to fids.  The filename is looked up and
-    /// the fid is returned.  If the filename is not found, it is
-    /// added to the table and a newly generated fid is returned.  The
-    /// existence of the file is not verified.  The second field is
-    /// used to return a pointer to the internal filename string in
-    /// the map.  This will not change for a given filename, and
-    /// provides a permanent (for the lifetime of CSeqDBAtlas) address
-    /// for the filename, which can be used by structures like
-    /// CRegionMap, so that they don't have to copy string data.
-    ///
-    /// @param fname
-    ///   The filename to look up.
-    /// @param map_fname_ptr
-    ///   The address of the filename key in the lookup table.
-    /// @return
-    ///   The fid
-    int x_LookupFile(const string  & fname,
-                       const string ** map_fname_ptr);
+    
 
     /// Releases or deletes a memory region.
     ///
@@ -1919,62 +1343,7 @@ private:
     /// @param datap
     ///   Pointer to the area to delete or release a hold on.
     void x_RetRegionNonRecent(const char * datap);
-
-
-    /// Clear recent-region lookup table
-    ///
-    /// Functions which delete regions call this to flush the fast
-    /// lookup table for recently used region, on the grounds that it
-    /// may have been invalidated (it may contain dangling pointers).
-    /// This method carries a small performance cost because regions
-    /// will need to be looked up using the long process until the
-    /// table is repopulated.  Currently this is only called by the
-    /// garbage collection code, which normally runs very seldom.
-    void x_ClearRecent()
-    {
-        for(int i = 0; i<eNumRecent; i++) {
-            m_Recent[i] = 0;
-        }
-    }
-
-    /// Add most recently used region to the fast lookup table.
-    ///
-    /// Whenever a lookup finds a region, it is added to the beginning
-    /// of a fast region lookup table (m_Recent).  Existing entries in
-    /// the table will move down one slot.  If the new entry already
-    /// exists somewhere else in the table, it will be removed from
-    /// that point, and only entries between that point and the top of
-    /// the table will need to move.  If all slots in the table are
-    /// used, the last entry will simply be dropped.
-    ///
-    /// @param r
-    ///   The most recently used region.
-    void x_AddRecent(CRegionMap * r)
-    {
-        if (m_Recent[0] == r)
-            return;
-
-        Uint4 found_at = eNumRecent - 1;
-
-        for(Uint4 i = 0; i < (eNumRecent - 1); ++i) {
-            if (m_Recent[i] == r) {
-                found_at = i;
-                break;
-            }
-        }
-
-        // NOTE: The second conditional below SHOULDN'T be necessary if
-        // you read through the code above.  However, g++ doesn't trust it
-        // without the "<" condition and issues a warning:
-        // "array subscript is above array bounds"
-        while(found_at > 0  &&  found_at < eNumRecent) {
-            m_Recent[found_at] = m_Recent[found_at - 1];
-            --found_at;
-        }
-
-        m_Recent[0] = r;
-    }
-
+   
     /// Call all callbacks.
     ///
     /// This method calls all the GC callbacks in preparation for a
@@ -1993,14 +1362,14 @@ private:
     CMutex m_Lock;
 
     /// Set to true if memory mapping is enabled.
-    bool m_UseMmap;
+    bool m_UseMmap; // not used anywhere except constructor
 
     /// Bytes of "data" currently known to SeqDBAtlas.  This does not
     /// include metadata, such as the region map class itself..
     TIndx m_CurAlloc;
 
     /// All of the SeqDB region maps.
-    vector<CRegionMap*> m_Regions;
+    //vector<CRegionMap*> m_Regions;
 
     /// Maps from pointers to dynamically allocated blocks to the byte
     /// size of the allocation.
@@ -2012,56 +1381,31 @@ private:
     /// Lookup table of fids by filename.
     map<string, int> m_FileIDs;
 
-    /// RegionMapLess
-    ///
-    /// This functor provides an ordering over CRegionMap objects.
-
-    struct RegionMapLess
-        : public binary_function<const CRegionMap*, const CRegionMap*, bool>
-    {
-        /// Compare regions using less-than.
-        ///
-        /// This compares two CRegionMap objects using that class's
-        /// overloaded less-than operator.  It provides a partial
-        /// ordering for the TNameOffsetTable.
-        ///
-        /// @param L
-        ///   The first object.
-        /// @param R
-        ///   The second object.
-        /// @return
-        ///   Returns true if the first object comes before the second one.
-        inline bool operator()(const CRegionMap* L, const CRegionMap* R) const
-        {
-            _ASSERT(L);
-            _ASSERT(R);
-            return *L < *R;
-        }
-    };
+    
 
     /// Defines lookup of regions by fid, offset, and length.
-    typedef set<CRegionMap *, RegionMapLess> TNameOffsetTable;
+    //typedef set<CRegionMap *, RegionMapLess> TNameOffsetTable;
 
     /// Defines lookup of regions by starting memory address.
-    typedef map<const char *, CRegionMap*>   TAddressTable;
+    //typedef map<const char *, CRegionMap*>   TAddressTable;
 
     /// Map to find regions for Getting (x_FindRegion).
-    TNameOffsetTable m_NameOffsetLookup;
+    //TNameOffsetTable m_NameOffsetLookup;
 
     /// Map to find regions for Returning (x_RetRegionNonRecent).
-    TAddressTable m_AddressLookup;
+    //TAddressTable m_AddressLookup;
 
     // Recent region lookup
 
     /// Number of recently-used-region slots.
-    enum { eNumRecent = 8 };
+    //enum { eNumRecent = 8 };
 
     /// Table of recently used regions.
-    CRegionMap * m_Recent[ eNumRecent ];
+    //CRegionMap * m_Recent[ eNumRecent ];
 
     /// Atlas will try to garbage collect if more than this many
     /// regions are opened.
-    int m_OpenRegionsTrigger;
+    int m_OpenRegionsTrigger; // not used anywhere except constructor
 
     /// Cache of file existence and length.
     map< string, pair<bool, TIndx> > m_FileSize;
@@ -2077,49 +1421,12 @@ private:
 
     /// BlastDB search path.
     const string m_SearchPath;
+
+    bool m_Alloc;//m_pool was used for mrmory allocation
+    map< string, CMemoryFile* > m_FileMemMap;    
 };
 
-// Assumes lock is held.
 
-inline void CSeqDBMemLease::Clear()
-{
-    CHECK_MARKER();
-    m_Atlas.RetRegion(*this);
-}
-
-// ASSUMES lock is held.
-inline bool CSeqDBMemLease::Contains(TIndx begin, TIndx end) const
-{
-    CHECK_MARKER();
-    return m_Data && (m_Begin <= begin) && (end <= m_End);
-}
-
-
-const char *
-CRegionMap::MatchAndUse(int              fid,
-                        TIndx          & begin,
-                        TIndx          & end,
-                        const char    ** start)
-{
-    CHECK_MARKER();
-    _ASSERT(fid);
-    _ASSERT(m_Fid);
-
-    if ((fid == m_Fid) && (m_Begin <= begin) && (m_End   >= end)) {
-        AddRef();
-
-        const char * location = m_Data + (begin - m_Begin);
-
-        begin  = m_Begin;
-        end    = m_End;
-        *start = m_Data;
-        _ASSERT(*start);
-
-        return location;
-    }
-
-    return 0;
-}
 
 bool CRegionMap::operator < (const CRegionMap & other) const
 {
@@ -2148,12 +1455,6 @@ inline CSeqDBMemReg::~CSeqDBMemReg()
     m_Atlas.UnregisterExternal(*this);
 }
 
-inline void CSeqDBMemLease::IncrementRefCnt()
-{
-    CHECK_MARKER();
-    _ASSERT(m_Data && m_RMap);
-    m_RMap->AddRef();
-}
 
 /// Guard object for the SeqDBAtlas singleton.
 ///
@@ -2194,6 +1495,156 @@ private:
     /// The CSeqDBAtlas object itself.
     static CSeqDBAtlas * m_Atlas;
 };
+
+
+class CSeqDBFileMemMap {
+public:
+
+    typedef CNcbiStreamoff TIndx;
+    /// Constructor
+    ///
+    /// Initializes a memory map object.
+    ///
+    /// @param filename
+    ///   file to memory map    
+    CSeqDBFileMemMap(class CSeqDBAtlas & atlas, const string filename)
+        : m_Atlas(atlas),
+          m_DataPtr (NULL),
+          m_MappedFile( NULL),
+          m_Mapped(false)
+    {
+        Init(filename);
+    }
+
+    CSeqDBFileMemMap(class CSeqDBAtlas & atlas)
+        : m_Atlas(atlas),
+          m_DataPtr (NULL),
+          m_MappedFile( NULL),
+          m_Mapped(false)
+    {
+        
+    }
+
+    /// Destructor    
+    ~CSeqDBFileMemMap()
+    {
+        Clear();
+    }
+
+    /// Initializes a memory map object.
+    ///
+    /// @param filename
+    ///   file to memory map    
+    void Init(const string filename) {                
+        if(!m_MappedFile || m_Filename != filename)
+        {
+            m_Filename = filename;
+            Init();
+        }
+    }
+
+    //m_Filename is set
+    void Init(void) {                    
+            map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
+            if(fileMemMap.count(m_Filename) > 0) {        
+                m_MappedFile = fileMemMap[m_Filename];
+                //cerr << "********Exists in atlas CMemoryFile:" << m_Filename << endl;
+            }
+            else {
+                try {
+                    m_MappedFile = new CMemoryFile(m_Filename);
+                    fileMemMap.insert(map<string, CMemoryFile * >::value_type(m_Filename,m_MappedFile));
+                    m_Mapped = true;
+                    //cerr << "********Map             CMemoryFile:" << m_Filename << endl;
+                }
+                catch(...) {                    
+                     int openedFilesCount = fileMemMap.size();
+                     NCBI_THROW(CSeqDBException,
+                                eFileErr,
+                                "Error memory mapping: " + m_Filename + ". Number of files opened: " + NStr::IntToString(openedFilesCount));                    
+                }
+            }
+            //m_MappedFile.reset(new CMemoryFile(filename));
+            m_DataPtr = (char *) (m_MappedFile->GetPtr());            
+    }
+    
+
+    /// Clears the memory mapobject.
+    ///    
+    void Clear()
+    {
+        /*
+        if(m_MappedFile && m_Mapped) { 
+            map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
+            if(fileMemMap.count(m_Filename) > 0) {        
+                fileMemMap.erase(m_Filename); 
+                m_MappedFile->Unmap();
+                //cerr << "********Unmap CMemoryFile:" << m_Filename << endl;
+                delete m_MappedFile;
+                m_MappedFile = NULL;
+                m_Mapped = false;
+            }
+        }
+        */
+    }
+
+    bool IsMapped(){return m_Mapped;}
+
+    //Not used
+    int UnmapAllIndex(void)
+    {
+        map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
+        int count = 0;
+        for (map<string, CMemoryFile *>::iterator it=fileMemMap.begin(); it!=fileMemMap.end(); ++it) {
+            string filename = it->first;
+            if(NStr::Find(filename,".pin") != NPOS ||  NStr::Find(filename,".nin") != NPOS){                
+                it->second->Unmap();
+                //cerr << "********Cleaning:Unmap CMemoryFile:" << filename << endl;                
+                delete it->second;
+                fileMemMap.erase(filename);                 
+                count++;    
+            }
+                   
+        }
+        return count;
+    }
+    
+
+    /// Get a pointer to the specified offset.
+    ///
+    /// Given an offset (which is assumed to be available here), this
+    /// method returns a pointer to the data at that offset.
+    ///
+    /// @param offset
+    ///   The required offset relative to the start of the file.
+    /// @return
+    ///   A pointer to the data at the requested location.       
+    const char *GetFileDataPtr(const string   & fname,TIndx offset)                    
+    {
+        if(!m_MappedFile || m_Filename != fname) {
+            Init(fname);                        
+        }
+
+        return(const char *)(m_DataPtr + offset);    
+    }
+
+    const char *GetFileDataPtr(TIndx offset)                    
+    {
+        return(const char *)(m_DataPtr + offset);    
+    }
+
+private:
+    CSeqDBAtlas & m_Atlas;    
+     /// Points to the beginning of the data area.
+    const char * m_DataPtr;
+
+    string m_Filename;
+
+    bool m_Mapped;
+
+    CMemoryFile *m_MappedFile;
+};
+
 
 
 END_NCBI_SCOPE

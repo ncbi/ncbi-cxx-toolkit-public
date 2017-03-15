@@ -46,8 +46,8 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas              & atlas,
                              CRef<CSeqDBGiList>       & gi_list,
                              CRef<CSeqDBNegativeList> & neg_list,
                              CSeqDBLockHold           & locked)
-    : m_Atlas   (atlas),
-      m_Lease   (atlas),
+    : m_Atlas   (atlas),      
+      m_Lease   (atlas),      
       m_NumOIDs (0)
 {
     _ASSERT(gi_list.NotEmpty() || neg_list.NotEmpty() || filters.HasFilter());
@@ -97,9 +97,9 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
     }
     
     if (gi_list.NotEmpty()) {
-        x_ApplyUserGiList(*gi_list, locked);
+        x_ApplyUserGiList(*gi_list);
     } else if (neg_list.NotEmpty()) {
-        x_ApplyNegativeList(*neg_list, locked);
+        x_ApplyNegativeList(*neg_list);
     }
     
     while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
@@ -213,7 +213,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         
         switch(mask.GetType()) {
         case CSeqDB_AliasMask::eOidList:
-            f = x_GetOidMask(mask.GetPath(), vol_start, vol_end, locked);
+            f = x_GetOidMask(mask.GetPath(), vol_start, vol_end);
             break;
             
         case CSeqDB_AliasMask::eSiList:
@@ -255,10 +255,10 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
     return volume_map;
 }
 
-void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
-                                      CSeqDBLockHold & locked)
+void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis)
+                                      
 {
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
     
     if (gis.Empty()) {
         x_ClearBitRange(0, m_NumOIDs);
@@ -304,10 +304,10 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     m_AllBits->IntersectWith(*gilist_oids, true);
 }
 
-void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist,
-                                        CSeqDBLockHold     & locked)
+void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist)
+                                        
 {
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
     
     // Intersect the user GI list with the OID bit map.
     
@@ -399,10 +399,10 @@ void CSeqDBOIDList::x_ClearBitRange(int oid_start,
 CRef<CSeqDB_BitSet>
 CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
                             int                 vol_start,
-                            int                 vol_end,
-                            CSeqDBLockHold    & locked)
+                            int                 vol_end)
+                            
 {
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
     
     // Open file and get pointers
     
@@ -410,14 +410,14 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
     TCUC* bitend = 0;
     
     CSeqDBRawFile volmask(m_Atlas);
-    CSeqDBMemLease lease(m_Atlas);
+    CSeqDBFileMemMap lease(m_Atlas);
     
     Uint4 num_oids = 0;
     
     {
-        volmask.Open(fn, locked);
-        
-        volmask.ReadSwapped(lease, 0, & num_oids, locked);
+        volmask.Open(fn);
+        lease.Init(fn.GetPathS());
+        volmask.ReadSwapped(lease, 0, & num_oids);
         
         // This is the index of the last oid, not the count of oids...
         num_oids++;
@@ -426,13 +426,15 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
         
         // Cast forces signed/unsigned conversion.
         
-        volmask.GetRegion(lease, sizeof(Int4), file_length, locked);
-        bitmap = (TCUC*) lease.GetPtr(sizeof(Int4));
+        volmask.GetFileDataPtr(lease, sizeof(Int4), file_length);//does not use x_GetRegion - rename
+        
+        bitmap = (TCUC*) lease.GetFileDataPtr(sizeof(Int4));
+        
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
     
     CRef<CSeqDB_BitSet> bitset(new CSeqDB_BitSet(vol_start, vol_end, bitmap, bitend));
-    m_Atlas.RetRegion(lease);
+    //m_Atlas.RetRegion(lease);
     
     // Disable any enabled bits occuring after the volume end point
     // [this should not normally occur.]

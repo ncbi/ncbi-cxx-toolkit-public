@@ -882,7 +882,7 @@ private:
     ///
     /// Fetches the lines belonging to an alias file, either directly
     /// or via a combined alias file.
-    void x_ReadAliasFile(CSeqDBMemLease    & lease,
+    void x_ReadAliasFile(CSeqDBFileMemMap    & lease,
                          const CSeqDB_Path & fname,
                          const char       ** bp,
                          const char       ** ep,

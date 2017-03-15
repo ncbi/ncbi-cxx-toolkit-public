@@ -2872,7 +2872,7 @@ BOOST_AUTO_TEST_CASE(SharedMemoryMaps)
     seqdb2.GetSequence(0, & s2);
 
     try {
-        BOOST_REQUIRE(s1 == s2);
+        BOOST_REQUIRE(string(s1) == string(s2));
     }
     catch(...) {
         if (s1)

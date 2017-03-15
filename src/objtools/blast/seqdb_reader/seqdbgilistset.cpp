@@ -91,10 +91,11 @@ public:
     {
         CSeqDBAtlas::TIndx file_size(0);
 
-        CSeqDBMemLease memlease(atlas);
-        atlas.GetFile(memlease, fname.GetPathS(), file_size, locked);
-
-        const char * fbeginp = memlease.GetPtr(0);
+        CSeqDBFileMemMap memlease(atlas,fname.GetPathS());        
+        atlas.GetFileSizeL(fname.GetPathS(), file_size);         
+        
+        const char * fbeginp = memlease.GetFileDataPtr(0);
+        
         const char * fendp   = fbeginp + (int)file_size;
 
         try {
@@ -120,7 +121,7 @@ public:
             throw;
         }
 
-        memlease.Clear();
+        //memlease.Clear();
 
         int vector_size =
             (int(m_GisOids.size() * sizeof(m_GisOids[0])) +
@@ -210,7 +211,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     // allow GI list vectors to share the memory bound with memory
     // mapped file ranges.
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
 
     // Seperate indices are used for TIs and GIs.  (Attempting to use
     // the same file for both should also produce an error when the

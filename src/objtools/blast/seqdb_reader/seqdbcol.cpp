@@ -105,9 +105,9 @@ CSeqDBColumn::CSeqDBColumn(const string   & basename,
                            CSeqDBLockHold * lockedp)
     : m_AtlasHolder      (true, & m_FlushCB, lockedp),
       m_Atlas            (m_AtlasHolder.Get()),
-      m_IndexFile        (m_Atlas),
+      m_IndexFile        (m_Atlas),      
+      m_DataFile         (m_Atlas),     
       m_IndexLease       (m_Atlas),
-      m_DataFile         (m_Atlas),
       m_DataLease        (m_Atlas),
       m_NumOIDs          (0),
       m_DataLength       (0),
@@ -126,8 +126,8 @@ CSeqDBColumn::CSeqDBColumn(const string   & basename,
         CSeqDB_Path fn1(basename + "." + index_extn);
         CSeqDB_Path fn2(basename + "." + data_extn);
         
-        bool found1 = m_IndexFile.Open(fn1, *lockedp);
-        bool found2 = m_DataFile.Open(fn2, *lockedp);
+        bool found1 = m_IndexFile.Open(fn1);
+        bool found2 = m_DataFile.Open(fn2);
         
         if (! (found1 && found2)) {
             NCBI_THROW(CSeqDBException, eFileErr,
@@ -192,16 +192,15 @@ void CSeqDBColumn::x_GetFileRange(TIndx            begin,
     _ASSERT(index || (select_file == e_Data));
     
     CSeqDBRawFile  & file  = index ? m_IndexFile  : m_DataFile;
-    CSeqDBMemLease & lease = index ? m_IndexLease : m_DataLease;
+    CSeqDBFileMemMap & lease = index ? m_IndexLease : m_DataLease;
     
-    const char * ptr = file.GetRegion(lease, begin, end, locked);
+    const char * ptr = file.GetFileDataPtr(lease, begin, end);
     
     CTempString data(ptr, end-begin);
     
     if (lifetime) {
         CRef<CObject> hold(new CSeqDB_AtlasRegionHolder(m_Atlas, ptr));
-        blob.ReferTo(data, hold);
-        lease.IncrementRefCnt();
+        blob.ReferTo(data, hold);        
     } else {
         blob.ReferTo(data);
     }

@@ -252,13 +252,13 @@ private:
     CSeqDBRawFile m_IndexFile;
     
     /// Index file lease.
-    CSeqDBMemLease m_IndexLease;
+    CSeqDBFileMemMap m_IndexLease;
     
     /// Data file.
     CSeqDBRawFile m_DataFile;
     
     /// Data file lease.
-    CSeqDBMemLease m_DataLease;
+    CSeqDBFileMemMap m_DataLease;
     
     /// Number of OIDs (Blobs) in this column.
     Int4 m_NumOIDs;

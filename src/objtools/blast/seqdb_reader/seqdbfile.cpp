@@ -68,70 +68,47 @@ BEGIN_NCBI_SCOPE
 
 typedef CSeqDBAtlas::TIndx TIndx;
 
-TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBFileMemMap & lease,
                                  TIndx            offset,
-                                 Uint4          * value,
-                                 CSeqDBLockHold & locked) const
+                                 Uint4          * value) const
+                                 
 {
-    m_Atlas.Lock(locked);
-    
-    if (! lease.Contains(offset, offset + sizeof(*value))) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*value));
-    }
-    
-    *value = SeqDB_GetStdOrd((Uint4 *) lease.GetPtr(offset));
+    *value = SeqDB_GetStdOrd((Uint4 *) lease.GetFileDataPtr(m_FileName,offset));
     
     return offset + sizeof(*value);
 }
 
-TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBFileMemMap & lease,
                                  TIndx            offset,
-                                 Uint8          * value,
-                                 CSeqDBLockHold & locked) const
+                                 Uint8          * value) const
+                                 
 {
-    m_Atlas.Lock(locked);
-    
-    if (! lease.Contains(offset, offset + sizeof(*value))) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*value));
-    }
-    
-    *value = SeqDB_GetBroken((Int8 *) lease.GetPtr(offset));
+    *value = SeqDB_GetBroken((Int8 *) lease.GetFileDataPtr(m_FileName,offset));
     
     return offset + sizeof(*value);
 }
 
-TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBFileMemMap & lease,
                                  TIndx            offset,
-                                 string         * value,
-                                 CSeqDBLockHold & locked) const
+                                 string         * value) const                                 
 {
     Uint4 len = 0;
     
-    m_Atlas.Lock(locked);
-    
-    if (! lease.Contains(offset, offset + sizeof(len))) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
-    }
-    
-    len = SeqDB_GetStdOrd((Int4 *) lease.GetPtr(offset));
+    len = SeqDB_GetStdOrd((Int4 *) lease.GetFileDataPtr(m_FileName,offset));
     
     offset += sizeof(len);
     
-    if (! lease.Contains(offset, offset + len)) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
-    }
-    
-    value->assign(lease.GetPtr(offset), (int) len);
+    value->assign(lease.GetFileDataPtr(offset), (int) len);
     
     return offset + len;
 }
 
 CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
                              const string   & dbfilename,
-                             char             prot_nucl,
-                             CSeqDBLockHold & locked)
-    : m_Atlas   (atlas),
-      m_Lease   (atlas),
+                             char             prot_nucl)
+                             
+    : m_Atlas   (atlas),      
+      m_Lease    (atlas),
       m_FileName(dbfilename),
       m_File    (atlas)
 {
@@ -143,27 +120,29 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
     
     x_SetFileType(prot_nucl);
     
-    if (! m_File.Open(CSeqDB_Path(m_FileName), locked)) {
-        m_Atlas.Unlock(locked);
+    if (! m_File.Open(CSeqDB_Path(m_FileName))) {
+        //m_Atlas.Unlock(locked);
         
         string msg = string("Error: File (") + m_FileName + ") not found.";
         
         NCBI_THROW(CSeqDBException, eFileErr, msg);
-    }
+    }    
+    
+    m_Lease.Init(m_FileName);
 }
 
 CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                              const string   & dbname,
-                             char             prot_nucl,
-                             CSeqDBLockHold & locked)
-    : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl, locked),
+                             char             prot_nucl)
+                             
+    : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
+      m_HdrLease     (atlas),
+      m_SeqLease      (atlas),
+      m_AmbLease      (atlas),
       m_NumOIDs       (0),
       m_VolLen        (0),
       m_MaxLen        (0),
-      m_MinLen        (0),
-      m_HdrLease      (atlas),
-      m_SeqLease      (atlas),
-      m_AmbLease      (atlas),
+      m_MinLen        (0),      
       m_OffHdr        (0),
       m_EndHdr        (0),
       m_OffSeq        (0),
@@ -171,7 +150,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
       m_OffAmb        (0),
       m_EndAmb        (0)
 {
-    Verify();
+    //Verify();
     
     // Input validation
     
@@ -189,12 +168,12 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     
     TIndx offset = 0;
     
+    
     Uint4 f_format_version = 0;
     Uint4 f_db_seqtype = 0;
     
-    CSeqDBMemLease lease  (m_Atlas);
-    
-    offset = x_ReadSwapped(lease, offset, & f_format_version, locked);
+        
+    offset = x_ReadSwapped(m_Lease, offset, & f_format_version);
     
     TIndx off1(0), off2(0), off3(0), offend(0);
     
@@ -204,13 +183,23 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                        eFileErr,
                        "Error: Not a valid version 4 database.");
         }
+
+        offset = x_ReadSwapped(m_Lease, offset, & f_db_seqtype);
+
         
-        offset = x_ReadSwapped(lease, offset, & f_db_seqtype, locked);
-        offset = x_ReadSwapped(lease, offset, & m_Title,      locked);
-        offset = x_ReadSwapped(lease, offset, & m_Date,       locked);
-        offset = x_ReadSwapped(lease, offset, & m_NumOIDs,    locked);
-        offset = x_ReadSwapped(lease, offset, & m_VolLen,     locked);
-        offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
+        offset = x_ReadSwapped(m_Lease, offset, & m_Title);
+
+        
+        offset = x_ReadSwapped(m_Lease, offset, & m_Date);
+
+        
+        offset = x_ReadSwapped(m_Lease, offset, & m_NumOIDs);
+
+        
+        offset = x_ReadSwapped(m_Lease, offset, & m_VolLen);
+
+        
+        offset = x_ReadSwapped(m_Lease, offset, & m_MaxLen);
         
         TIndx region_bytes = 4 * (m_NumOIDs + 1);
         
@@ -220,11 +209,11 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
         offend = off3 + region_bytes;
     }
     catch(...) {
-        m_Atlas.RetRegion(lease);
+        //m_Atlas.RetRegion(lease);
         throw;
     }
     
-    m_Atlas.RetRegion(lease);
+    //m_Atlas.RetRegion(lease);
     
     char db_seqtype = ((f_db_seqtype == 1) ? 'p' : 'n');
     

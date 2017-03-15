@@ -159,11 +159,11 @@ private:
     /// Open file for a chosen algo_id
     /// @param algo_id The chosen algo_id [in]
     /// @param locked The lock holder object for this thread. [in]
-    void x_Open(Int4 algo_id, CSeqDBLockHold & locked);
+    void x_Open(Int4 algo_id);
 
     /// Open files and read field data from the atlas.
     /// @param locked The lock holder object for this thread. [in]
-    void x_ReadFields(CSeqDBLockHold & locked);
+    void x_ReadFields(void);
 
     /// Verify the algorithm exists.  If not, raise an exception
     void x_VerifyAlgorithmId(int algo_id) const {
@@ -190,9 +190,9 @@ private:
     static void s_GetFileRange(TIndx            begin,
                                TIndx            end,
                                CSeqDBRawFile  & file,
-                               CSeqDBMemLease & lease,
-                               CBlastDbBlob   & blob,
-                               CSeqDBLockHold & locked);
+                               CSeqDBFileMemMap & lease,
+                               CBlastDbBlob   & blob);
+                               
 
     /// Binary search for value associated with a key
     ///
@@ -219,13 +219,13 @@ private:
     CSeqDBRawFile m_IndexFile;
 
     /// Index file lease.
-    CSeqDBMemLease m_IndexLease;
+    CSeqDBFileMemMap m_IndexLease;
 
     /// Offset file.
     CSeqDBRawFile m_OffsetFile;
 
     /// Offset file lease.
-    CSeqDBMemLease m_OffsetLease;
+    CSeqDBFileMemMap m_OffsetLease;
 
     /// Number of data volumes
     Int4 m_NumVols;
@@ -234,7 +234,7 @@ private:
     vector<CSeqDBRawFile *> m_DataFile;
 
     /// Data file lease.
-    vector<CSeqDBMemLease *> m_DataLease;
+    vector<CSeqDBFileMemMap *> m_DataLease;
 
     /// GI size
     Int4 m_GiSize;

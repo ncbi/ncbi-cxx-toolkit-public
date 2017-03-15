@@ -90,15 +90,15 @@ public:
     ///   The lock holder object for this thread.
     /// @return
     ///   true if the file was opened successfully.
-    bool Open(const CSeqDB_Path & name, CSeqDBLockHold & locked)
+    bool Open(const CSeqDB_Path & name)
     {
         _ASSERT(name.Valid());
         
         // FIXME: should use path even in atlas code
-        bool success = m_Atlas.GetFileSize(name.GetPathS(), m_Length, locked);
+        bool success = m_Atlas.GetFileSizeL(name.GetPathS(), m_Length);
         
         if (success) {
-            m_FileName = name.GetPathS();
+            m_FileName = name.GetPathS();            
         }
         
         return success;
@@ -120,47 +120,17 @@ public:
     ///     The lock holder object for this thread.
     /// @return
     ///     A pointer to the file data at the start offset.
-    const char * GetRegion(CSeqDBMemLease & lease,
+    const char * GetFileDataPtr(CSeqDBFileMemMap & lease, // commented
                            TIndx            start,
-                           TIndx            end,
-                           CSeqDBLockHold & locked) const
+                           TIndx            end) const                            
     {
         _ASSERT(! m_FileName.empty());
         SEQDB_FILE_ASSERT(start    <  end);
         SEQDB_FILE_ASSERT(m_Length >= end);
+                
+        const char *p = (const char *)lease.GetFileDataPtr(m_FileName,start);
         
-        m_Atlas.Lock(locked);
-        
-        if (! lease.Contains(start, end)) {
-            m_Atlas.GetRegion(lease, m_FileName, start, end);
-        }
-        
-        return lease.GetPtr(start);
-    }
-    
-    /// Get a pointer to a section of the file.
-    ///
-    /// This method asks the atlas for a hold on the memory region
-    /// that includes the requested section of the file, and returns a
-    /// pointer to the start offset in that memory area.
-    ///
-    /// @param start
-    ///     The starting offset for the first byte of the region.
-    /// @param end
-    ///     The offset for the first byte after the region.
-    /// @param locked
-    ///     The lock holder object for this thread.
-    /// @return
-    ///     A pointer to the file data.
-    const char * GetRegion(TIndx            start,
-                           TIndx            end,
-                           CSeqDBLockHold & locked) const
-    {
-        _ASSERT(! m_FileName.empty());
-        SEQDB_FILE_ASSERT(start    <  end);
-        SEQDB_FILE_ASSERT(m_Length >= end);
-        
-        return m_Atlas.GetRegion(m_FileName, start, end, locked);
+        return p;
     }
     
     /// Get the length of the file.
@@ -189,14 +159,14 @@ public:
     ///     The starting offset of the value in the file.
     /// @param value
     ///     A pointer to the object.
-    /// @param locked
+    /// @param 
     ///     The lock holder object for this thread.
     /// @return
     ///     The offset of the first byte after the object.
-    TIndx ReadSwapped(CSeqDBMemLease & lease,
+    TIndx ReadSwapped(CSeqDBFileMemMap & lease,
                       TIndx            offset,
-                      Uint4          * value,
-                      CSeqDBLockHold & locked) const;
+                      Uint4          * value) const;
+                      
 
     /// Read an eight byte numerical object from the file
     ///
@@ -216,10 +186,10 @@ public:
     ///     The lock holder object for this thread.
     /// @return
     ///     The offset of the first byte after the object.
-    TIndx ReadSwapped(CSeqDBMemLease & lease,
+    TIndx ReadSwapped(CSeqDBFileMemMap & lease,
                       TIndx            offset,
-                      Uint8          * value,
-                      CSeqDBLockHold & locked) const;
+                      Uint8          * value) const;
+                      
 
     /// Read a string object from the file
     ///
@@ -238,11 +208,11 @@ public:
     ///     The lock holder object for this thread.
     /// @return
     ///     The offset of the first byte after the string.
-    TIndx ReadSwapped(CSeqDBMemLease & lease,
+    TIndx ReadSwapped(CSeqDBFileMemMap & lease,
                       TIndx            offset,
-                      string         * value,
-                      CSeqDBLockHold & locked) const;
-
+                      string         * value) const;
+                      
+    
     /// Read part of the file into a buffer
     ///
     /// Copy the file data from offsets start to end into the array at
@@ -257,7 +227,7 @@ public:
     ///     The starting offset for the first byte to read.
     /// @param end
     ///     The offset for the first byte after the area to read.
-    inline void ReadBytes(CSeqDBMemLease & lease,
+    inline void ReadBytes(CSeqDBFileMemMap & lease,
                           char           * buf,
                           TIndx            start,
                           TIndx            end) const;
@@ -268,7 +238,7 @@ private:
     
     /// The name of this file.
     string m_FileName;
-    
+           
     /// The length of this file.
     TIndx m_Length;
 };
@@ -310,14 +280,15 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBExtFile(CSeqDBAtlas    & atlas,
                   const string   & dbfilename,
-                  char             prot_nucl,
-                  CSeqDBLockHold & locked);
+                  char             prot_nucl);
+                  
     
     /// Destructor
     virtual ~CSeqDBExtFile()
     {
     }
-    
+
+        
     /// Release memory held in the atlas layer by this object.
     void UnLease()
     {
@@ -325,50 +296,6 @@ public:
     }
     
 protected:
-    /// Get a region of the file
-    ///
-    /// This method is called to load part of the file into the lease
-    /// object.  If the keep argument is set, an additional hold is
-    /// acquired on the object, so that the user will conceptually own
-    /// a hold on the object.  Such a hold should be returned with the
-    /// top level RetSequence() method.
-    ///
-    /// @param start
-    ///   The beginning offset of the region.
-    /// @param end
-    ///     The offset for the first byte after the area to read.
-    /// @param keep
-    ///     Specify true to get a returnable hold for the SeqDB client.
-    /// @param hold
-    ///     Specify true to get a request-duration hold.
-    /// @param locked
-    ///     The lock holder object for this thread.
-    const char * x_GetRegion(TIndx            start,
-                             TIndx            end,
-                             bool             keep,
-                             bool             hold,
-                             CSeqDBLockHold & locked,
-                             bool             in_lease = false) const
-    {
-        m_Atlas.Lock(locked);
-        
-        if (! m_Lease.Contains(start, end)) {
-            if (in_lease) {
-                return NULL;
-            }
-            m_Atlas.GetRegion(m_Lease, m_FileName, start, end);
-        }
-        
-        if (keep) {
-            m_Lease.IncrementRefCnt();
-        }
-        
-        if (hold) {
-            locked.HoldRegion(m_Lease);
-        }
-        
-        return m_Lease.GetPtr(start);
-    }
     
     /// Read part of the file into a buffer
     ///
@@ -408,12 +335,12 @@ protected:
     /// @return
     ///     The offset of the first byte after the object.
     template<class T>
-    TIndx x_ReadSwapped(CSeqDBMemLease & lease,
+    TIndx x_ReadSwapped(CSeqDBFileMemMap & lease,
                         TIndx            offset,
-                        T              * value,
-                        CSeqDBLockHold & locked)
+                        T              * value)
+                        
     {
-        return m_File.ReadSwapped(lease, offset, value, locked);
+        return m_File.ReadSwapped(lease, offset, value);
     }
     
     /// Get the volume's sequence data type.
@@ -445,7 +372,7 @@ protected:
     CSeqDBAtlas & m_Atlas;
     
     /// A memory lease used by this file.
-    mutable CSeqDBMemLease m_Lease;
+    mutable CSeqDBFileMemMap m_Lease;
 
     /// The name of this file.
     string m_FileName;
@@ -502,8 +429,8 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
-                  char             prot_nucl,
-                  CSeqDBLockHold & locked);
+                  char             prot_nucl);
+                  
     
     /// Destructor
     virtual ~CSeqDBIdxFile()
@@ -512,7 +439,7 @@ public:
         // deadlock in an error path, and destruction and construction
         // are necessarily single threaded in any case.
         
-        Verify();
+        //Verify();
         UnLease();
     }
     
@@ -641,20 +568,21 @@ public:
     /// Release any memory leases temporarily held here.
     void UnLease()
     {
-        Verify();
+        //Verify();
         x_ClrHdr();
         x_ClrSeq();
         x_ClrAmb();
     }
     
     /// Verify the integrity of this object and subobjects.
+    /*
     void Verify()
     {
         m_HdrLease.Verify();
         m_SeqLease.Verify();
         m_AmbLease.Verify();
     }
-    
+    */
 private:
     // Swapped data from .[pn]in file
     
@@ -685,63 +613,56 @@ private:
     /// Return header data (assumes locked).
     void x_ClrHdr() const
     {
-        if (! m_HdrLease.Empty()) {
-            m_HdrLease.Clear();
-        }
+       m_HdrLease.Clear();      
     }
     
     /// Return sequence data (assumes locked).
     void x_ClrSeq() const
     {
-        if (! m_SeqLease.Empty()) {
-            m_SeqLease.Clear();
-        }
+        m_SeqLease.Clear();
     }
     
     /// Return ambiguity data (assumes locked).
     void x_ClrAmb() const
     {
-        if (! m_AmbLease.Empty()) {
-            m_AmbLease.Clear();
-        }
+        m_AmbLease.Clear();        
     }
     
     /// Get header data (assumes locked).
     Uint4 * x_GetHdr() const
     {
-        if (m_HdrLease.Empty()) {
-            m_Atlas.GetRegion(m_HdrLease, m_FileName, m_OffHdr, m_EndHdr);
-        }
-        return (Uint4*) m_HdrLease.GetPtr(m_OffHdr);
+        
+        return (Uint4*) m_HdrLease.GetFileDataPtr(m_FileName, m_OffHdr);        
     }
     
     /// Get sequence data (assumes locked).
     Uint4 * x_GetSeq() const
     {
-        if (m_SeqLease.Empty()) {
-            m_Atlas.GetRegion(m_SeqLease, m_FileName, m_OffSeq, m_EndSeq);
-        }
-        return (Uint4*) m_SeqLease.GetPtr(m_OffSeq);
+        
+        return (Uint4*) m_SeqLease.GetFileDataPtr(m_FileName, m_OffSeq);        
     }
     
     /// Get ambiguity data (assumes locked).
     Uint4 * x_GetAmb() const
     {
         _ASSERT(x_GetSeqType() == 'n');
-        if (m_AmbLease.Empty()) {
-            m_Atlas.GetRegion(m_AmbLease, m_FileName, m_OffAmb, m_EndAmb);
-        }
-        return (Uint4*) m_AmbLease.GetPtr(m_OffAmb);
+        
+        return (Uint4*) m_AmbLease.GetFileDataPtr(m_FileName, m_OffAmb);        
     }
     
     /// A memory lease used by the header section of this file.
-    mutable CSeqDBMemLease m_HdrLease;
+    mutable CSeqDBFileMemMap m_HdrLease;
+    //mutable CMemoryFile *m_MmappedHdrIndex;
     
     /// A memory lease used by the sequence section of this file.
-    mutable CSeqDBMemLease m_SeqLease;
+    mutable CSeqDBFileMemMap m_SeqLease;
+    //mutable CMemoryFile* m_MmappedSeqIndex;
     
     /// A memory lease used by the ambiguity section of this file.
-    mutable CSeqDBMemLease m_AmbLease;
+    mutable CSeqDBFileMemMap m_AmbLease;
+    //mutable CMemoryFile *m_MmappedAmbIndex;
+
+    
     
     /// offset of the start of the header section.
     TIndx m_OffHdr;
@@ -765,6 +686,7 @@ private:
 bool
 CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
+    if(!m_Lease.IsMapped()) m_Lease.Init();
     if ('n' == x_GetSeqType()) {
         start = SeqDB_GetStdOrd(& x_GetAmb()[oid]);
         end   = SeqDB_GetStdOrd(& x_GetSeq()[oid+1]);
@@ -778,6 +700,7 @@ CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 {
+    if(!m_Lease.IsMapped()) m_Lease.Init();
     start = SeqDB_GetStdOrd(& x_GetHdr()[oid]);
     end   = SeqDB_GetStdOrd(& x_GetHdr()[oid+1]);
 }
@@ -785,6 +708,7 @@ CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
+    if(!m_Lease.IsMapped()) m_Lease.Init();
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
     
     if ('p' == x_GetSeqType()) {
@@ -797,6 +721,7 @@ CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStart(int oid, TIndx & start) const
 {
+    if(!m_Lease.IsMapped()) m_Lease.Init();
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
 }
 
@@ -838,9 +763,8 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBSeqFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
-                  char             prot_nucl,
-                  CSeqDBLockHold & locked)
-        : CSeqDBExtFile(atlas, dbname + ".-sq", prot_nucl, locked)
+                  char             prot_nucl)                  
+        : CSeqDBExtFile(atlas, dbname + ".-sq", prot_nucl)
     {
     }
     
@@ -888,14 +812,11 @@ public:
     ///     The lock holder object for this thread.
     /// @return
     ///     A pointer into the file data.
-    const char * GetRegion(TIndx            start,
-                           TIndx            end,
-                           bool             keep,
-                           bool             hold,
-                           CSeqDBLockHold & locked,
-                           bool             in_lease = false) const
+    const char * GetFileDataPtr(TIndx            start) const // commented                           
     {
-        return x_GetRegion(start, end, keep, hold, locked, in_lease);
+        const char *p = (const char *)m_Lease.GetFileDataPtr(start);
+        
+        return p;        
     }
 };
 
@@ -929,9 +850,8 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBHdrFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
-                  char             prot_nucl,
-                  CSeqDBLockHold & locked)
-        : CSeqDBExtFile(atlas, dbname + ".-hr", prot_nucl, locked)
+                  char             prot_nucl)                  
+        : CSeqDBExtFile(atlas, dbname + ".-hr", prot_nucl)
     {
     }
     
@@ -977,14 +897,13 @@ public:
     ///     The lock holder object for this thread.
     /// @return
     ///     A pointer into the file data.
-    const char * GetRegion(TIndx            start,
-                           TIndx            end,
-                           CSeqDBLockHold & locked) const
+    const char * GetFileDataPtr(TIndx            start) const // commented                           
     {
         // Header data never requires the 'hold' option because asn.1
         // processing is done immediately.
         
-        return x_GetRegion(start, end, false, false, locked);
+        const char *p = (const char *)m_Lease.GetFileDataPtr(start);
+        return p;
     }
 };
 
@@ -993,16 +912,13 @@ public:
 
 // Assumes locked.
 
-void CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
+void CSeqDBRawFile::ReadBytes(CSeqDBFileMemMap & lease,
                               char           * buf,
                               TIndx            start,
                               TIndx            end) const
 {
-    if (! lease.Contains(start, end)) {
-        m_Atlas.GetRegion(lease, m_FileName, start, end);
-    }
+      memcpy(buf, lease.GetFileDataPtr(m_FileName,start), end-start);
     
-    memcpy(buf, lease.GetPtr(start), end-start);
 }
 
 END_NCBI_SCOPE
