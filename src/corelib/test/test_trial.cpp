@@ -175,20 +175,33 @@ void TestSafeFlags()
     foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
     using namespace foo;
     CClassWithFlags::TFlags ff = CClassWithFlags::fFlag1;
-    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3));
-    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2));
-    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2));
-    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::EFlags(COtherClass<1>::eValue3)));
-    _ASSERT(CClassWithFlags::Foo(ff | CClassWithFlags::fFlag3));
-    _ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12 & ff));
-    _ASSERT(CClassWithFlags::Foo(ff ^ ff));
-    _ASSERT(CClassWithFlags::Foo(~ff));
-    _ASSERT(CClassWithFlags::Foo2(~ff|CClassWithFlags::fFlag2));
-    _ASSERT(CClassWithFlags::Foo2(CClassWithFlags::fFlag2));
-    _ASSERT(!CClassWithFlags::Foo(CClassWithFlags::eValue1));
+#ifdef NCBI_SAFE_FLAGS_ENABLED
+# define SAFE_ASSERT(v) _ASSERT(v)
+#else
+    // test compilation only
+# define SAFE_ASSERT(v) (void*)(v)
+#endif
+    SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3));
+    SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2));
+    SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12^CClassWithFlags::fFlag2));
+    SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::EFlags(COtherClass<1>::eValue3)));
+    SAFE_ASSERT(CClassWithFlags::Foo(ff | CClassWithFlags::fFlag3));
+    SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12 & ff));
+    SAFE_ASSERT(CClassWithFlags::Foo(ff ^ ff));
+    SAFE_ASSERT(CClassWithFlags::Foo(~ff));
+    SAFE_ASSERT(CClassWithFlags::Foo2(~ff|CClassWithFlags::fFlag2));
+    SAFE_ASSERT(CClassWithFlags::Foo2(CClassWithFlags::fFlag2));
+    SAFE_ASSERT(!CClassWithFlags::Foo(CClassWithFlags::eValue1));
+    SAFE_ASSERT(ff);
+    SAFE_ASSERT(ff != 0);
+    SAFE_ASSERT((ff & CClassWithFlags::fFlag2) == 0);
+    SAFE_ASSERT(ff == CClassWithFlags::fFlag1);
+    SAFE_ASSERT(ff != CClassWithFlags::fFlag2);
+    SAFE_ASSERT(ff != CClassWithFlags::fOtherFlag2);
+#undef SAFE_ASSERT
     // all below operations should cause compilation error
     //CClassWithFlags::Foo(CClassWithFlags::fOtherFlag1 | CClassWithFlags::fOtherFlag3);
-    //CClassWithFlags::Foo(COtherClass<1>::eValue3);
+    CClassWithFlags::Foo(COtherClass<1>::eValue3);
 }
 
 int CTestApplication::Run(void)
