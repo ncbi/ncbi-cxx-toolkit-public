@@ -222,7 +222,7 @@ public:
     };
     typedef Int8 TUnverified;
     TUnverified GetUnverifiedType(void) const;
-    bool ShowAnnotCommentAsCOMMENT(void) const { return m_ShowAnnotCommentAsCOMMENT; }
+    bool ShowAnnotCommentAsCOMMENT() const;
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
@@ -277,7 +277,7 @@ private:
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void);
     void x_SetDataFromUserObjects(void);
-    void x_SetDataFromAnnot(void);
+    void x_CheckForShowComments() const;
     void x_SetTaxname(void);
     void x_SetFiletrackURL(const CUser_object& uo);
     void x_SetAuthorizedAccess(const CUser_object& uo);
@@ -358,7 +358,8 @@ private:
     bool m_IsGenomeAssembly;
     bool m_IsCrossKingdom;
     TUnverified m_fUnverified;
-    bool m_ShowAnnotCommentAsCOMMENT;
+    mutable bool m_ShowAnnotCommentAsCOMMENT;
+    mutable bool m_ShowAnnotCommentAsCOMMENT_checked;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -738,7 +739,7 @@ inline
 SAnnotSelector& CFlatFileContext::SetAnnotSelector(void)
 {
     if ( m_Selector.get() == 0 ) {
-        m_Selector.reset(new SAnnotSelector);
+        m_Selector.reset(new SAnnotSelector(CSeq_annot::TData::e_Ftable));
     }
 
     return *m_Selector;

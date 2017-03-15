@@ -122,6 +122,7 @@ CBioseqContext::CBioseqContext
     m_IsCrossKingdom(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
+    m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -182,6 +183,7 @@ CBioseqContext::CBioseqContext
     m_IsCrossKingdom(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
+    m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -246,7 +248,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     
     x_SetDataFromUserObjects();
 
-    x_SetDataFromAnnot();
+    m_ShowAnnotCommentAsCOMMENT = false;
+    m_ShowAnnotCommentAsCOMMENT_checked = false;
     
     m_HasOperon = x_HasOperon();
 
@@ -326,8 +329,7 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
 {
     m_HasMultiIntervalGenes = false;
 
-    SAnnotSelector sel;
-    sel.SetFeatType( CSeqFeatData::e_Gene );
+    SAnnotSelector sel(CSeqFeatData::e_Gene);
 
     CFeat_CI gene_ci( m_Handle, sel );
     for( ; gene_ci ; ++gene_ci ) {
@@ -606,15 +608,26 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
     }
 }
 
-void CBioseqContext::x_SetDataFromAnnot(void)
+bool CBioseqContext::ShowAnnotCommentAsCOMMENT() const
 {
-    if( GetRepr() == CSeq_inst::eRepr_map ) {
+    if (!m_ShowAnnotCommentAsCOMMENT_checked)
+    {
+        x_CheckForShowComments();
+    }
+    return m_ShowAnnotCommentAsCOMMENT;
+}
+
+void CBioseqContext::x_CheckForShowComments() const
+{
+    m_ShowAnnotCommentAsCOMMENT_checked = true;
+
+    if (GetRepr() == CSeq_inst::eRepr_map) {
         // TODO: is this right?  Maybe handle it differently once
         // CAnnot_CI is able to handle CSeq_inst::eRepr_map.
         return;
     }
 
-    CAnnot_CI annot_ci(m_Handle);
+    CAnnot_CI annot_ci(m_Handle, SAnnotSelector(CSeq_annot::TData::e_Ftable));
     for( ; annot_ci; ++annot_ci ) {
         if( ! annot_ci->Seq_annot_IsSetDesc() ) {
             continue;
