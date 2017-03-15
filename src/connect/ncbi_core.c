@@ -32,7 +32,6 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <corelib/ncbiatomic.h>
 #include <stdlib.h>
 
 #ifdef NCBI_OS_UNIX
@@ -102,14 +101,21 @@ struct MT_LOCK_tag {
 
 #ifndef NCBI_NO_THREADS
 
+
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
 {
-#  if   defined(NCBI_POSIX_THREADS)  &&  \
-        defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#if defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#  define NCBI_RECURSIVE_MUTEX_INIT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#  define NCBI_RECURSIVE_MUTEX_INIT PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#endif
 
-    static pthread_mutex_t sx_Mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+#  if   defined(NCBI_POSIX_THREADS)  &&  \
+        defined(NCBI_RECURSIVE_MUTEX_INIT)
+
+    static pthread_mutex_t sx_Mutex = NCBI_RECURSIVE_MUTEX_INIT;
 
     switch (action) {
     case eMT_Lock:
@@ -152,9 +158,11 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #  else
 
-    static void* once = 0;
-    if (!NCBI_SwapPointers(&once, (void*) 1/*true*/))
+    static int/*bool*/ once = 0;
+    if ( !once ) {
+        once = 1;
         CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
+    }
     return -1/*not implemented*/;
 
 #  endif /*NCBI_..._THREADS*/
