@@ -100,6 +100,18 @@ bool CRNA_gen::IsLegalClass(const string& val)
     return (it != sc_AcceptedClasses.end());
 }
 
+bool CRNA_gen::FixncRNAClassValue(string& val)
+{
+    TAcceptedClasses::const_iterator it =
+        sc_AcceptedClasses.find(val.c_str());
+
+    string original = val;
+    if (it != sc_AcceptedClasses.end()) {
+        val = *it;
+    }
+
+    return original != val;
+}
 
 bool CRNA_gen::IsLegalClass() const
 {

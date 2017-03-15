@@ -973,3 +973,17 @@ BOOST_AUTO_TEST_CASE(Test_regulatory_class_qual)
     BOOST_CHECK_EQUAL(test_val, "invalid_value");
 }
 
+BOOST_AUTO_TEST_CASE(Test_ncRNA_class)
+{
+    string test_val("antisense_rna");
+    BOOST_CHECK_EQUAL(CRNA_gen::FixncRNAClassValue(test_val), true);
+    BOOST_CHECK_EQUAL(test_val, "antisense_RNA");
+
+    test_val = "hammerhead_ribozyme";
+    BOOST_CHECK_EQUAL(CRNA_gen::FixncRNAClassValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "hammerhead_ribozyme");
+
+    test_val = "invalid_value";
+    BOOST_CHECK_EQUAL(CRNA_gen::FixncRNAClassValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "invalid_value");
+}

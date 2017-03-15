@@ -292,6 +292,7 @@ private:
     void ProtActivityBC (  std::string & str );
     void ProtrefBC (CProt_ref& pr);
     void RnarefBC (CRNA_ref& rr);
+    void RnarefGenBC(CRNA_ref& rr);
 
     void GeneFeatBC (CGene_ref& gr, CSeq_feat& sf);
     void ProtFeatfBC (CProt_ref& pr, CSeq_feat& sf);

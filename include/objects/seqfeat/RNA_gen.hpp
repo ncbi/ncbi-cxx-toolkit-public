@@ -62,6 +62,7 @@ public:
     bool IsLegalClass() const;
     static bool IsLegalClass(const string& val);
     static vector<string> GetncRNAClassList();
+    static bool FixncRNAClassValue(string& val);
 
 private:
     // Prohibit copy constructor and assignment operator

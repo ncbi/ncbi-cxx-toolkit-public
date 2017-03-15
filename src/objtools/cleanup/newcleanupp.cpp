@@ -8135,6 +8135,92 @@ CNewCleanup_imp::x_RRNANameBC( string &name )
     }
 }
 
+void CNewCleanup_imp::RnarefGenBC(CRNA_ref& rr)
+{
+    bool changed = false;
+
+    CRNA_ref::C_Ext& ext = GET_MUTABLE(rr, Ext);
+    CRNA_gen& gen = GET_MUTABLE(ext, Gen);
+
+    if (FIELD_IS_SET(gen, Class)) {
+        const string& str = GET_FIELD(gen, Class);
+        if (NStr::IsBlank(str)) {
+            RESET_FIELD(gen, Class);
+            ChangeMade(CCleanupChange::eChangeRNAref);
+        }
+        else {
+            string& class_val = GET_MUTABLE(gen, Class);
+            if (CRNA_gen::FixncRNAClassValue(class_val)) {
+                ChangeMade(CCleanupChange::eChangeRNAref);
+            }
+        }
+    }
+    if (FIELD_IS_SET(gen, Product)) {
+        const string& str = GET_FIELD(gen, Product);
+        if (NStr::IsBlank(str)) {
+            RESET_FIELD(gen, Product);
+            ChangeMade(CCleanupChange::eChangeRNAref);
+        }
+    }
+    if (FIELD_IS_SET(gen, Quals)) {
+        CRNA_qual_set& qset = GET_MUTABLE(gen, Quals);
+        EDIT_EACH_QUAL_ON_RNAQSET(qitr, qset) {
+            CRNA_qual& qual = **qitr;
+            CLEAN_STRING_MEMBER(qual, Qual);
+            CLEAN_STRING_MEMBER(qual, Val);
+            if (!FIELD_IS_SET(qual, Qual) || !FIELD_IS_SET(qual, Val)) {
+                ERASE_QUAL_ON_RNAQSET(qitr, qset);
+                ChangeMade(CCleanupChange::eChangeRNAref);
+            }
+        }
+
+        if (QUAL_ON_RNAQSET_IS_EMPTY(qset)) {
+            RESET_FIELD(gen, Quals);
+            ChangeMade(CCleanupChange::eChangeRNAref);
+        }
+    }
+
+    if (FIELD_EQUALS(rr, Type, NCBI_RNAREF(miscRNA)) &&
+        FIELD_IS_SET(gen, Product) &&
+        !FIELD_IS_SET(gen, Class)) {
+        string & product = GET_MUTABLE(gen, Product);
+        const string *ncrna_name = NULL;
+        if (s_StartsWithNcrnaName(product, &ncrna_name)) {
+            _ASSERT(NULL != ncrna_name);
+            if (product.length() > (ncrna_name->length() + 1) &&
+                product[ncrna_name->length()] == ' ') {
+                SET_FIELD(gen, Class, *ncrna_name);
+                SET_FIELD(gen, Product, product.substr(ncrna_name->length() + 1));
+                TRUNCATE_SPACES(gen, Class);
+                TRUNCATE_SPACES(gen, Product);
+                SET_FIELD(rr, Type, NCBI_RNAREF(ncRNA));
+                ChangeMade(CCleanupChange::eChangeRNAref);
+            }
+            // no need to erase ncrna_name because it points to 
+            // global memory.
+        }
+    }
+
+    if ((FIELD_EQUALS(rr, Type, NCBI_RNAREF(mRNA)) ||
+        FIELD_EQUALS(rr, Type, NCBI_RNAREF(rRNA))) &&
+        STRING_FIELD_NOT_EMPTY(gen, Product) &&
+        RAW_FIELD_IS_EMPTY_OR_UNSET(gen, Class) &&
+        !FIELD_IS_SET(gen, Quals)) {
+        // convert RNA-Gen to name.
+        // Careful: this invalidates the "gen" variable.
+        const string product = GET_FIELD(gen, Product);
+        SET_FIELD(ext, Name, product);
+        return;
+    }
+
+    if (!FIELD_IS_SET(gen, Class) &&
+        !FIELD_IS_SET(gen, Product) &&
+        !FIELD_IS_SET(gen, Quals)) {
+        RESET_FIELD(rr, Ext);
+        ChangeMade(CCleanupChange::eChangeRNAref);
+    }
+}
+
 void CNewCleanup_imp::RnarefBC (
     CRNA_ref& rr
 )
@@ -8223,81 +8309,7 @@ void CNewCleanup_imp::RnarefBC (
                 break;
             case NCBI_RNAEXT(Gen):
                 {
-                    CRNA_gen& gen = GET_MUTABLE (ext, Gen);
-                    if (FIELD_IS_SET (gen, Class)) {
-                        const string& str = GET_FIELD (gen, Class);
-                        if (NStr::IsBlank (str)) {
-                            RESET_FIELD (gen, Class);
-                            ChangeMade(CCleanupChange::eChangeRNAref);
-                        }
-                    }
-                    if (FIELD_IS_SET (gen, Product)) {
-                        const string& str = GET_FIELD (gen, Product);
-                        if (NStr::IsBlank (str)) {
-                            RESET_FIELD (gen, Product);
-                            ChangeMade(CCleanupChange::eChangeRNAref);
-                        }
-                    }
-                    if (FIELD_IS_SET (gen, Quals)) {
-                        CRNA_qual_set& qset = GET_MUTABLE (gen, Quals);
-                        EDIT_EACH_QUAL_ON_RNAQSET (qitr, qset) {
-                            CRNA_qual& qual = **qitr;
-                            CLEAN_STRING_MEMBER (qual, Qual);
-                            CLEAN_STRING_MEMBER (qual, Val);
-                            if( ! FIELD_IS_SET(qual, Qual) || ! FIELD_IS_SET(qual, Val) ) {
-                                ERASE_QUAL_ON_RNAQSET( qitr, qset );
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            }
-                        }
-
-                        if( QUAL_ON_RNAQSET_IS_EMPTY(qset)  ) {
-                            RESET_FIELD(gen, Quals);
-                            ChangeMade(CCleanupChange::eChangeRNAref);
-                        }
-                    }
-
-                    if ( FIELD_EQUALS(rr, Type, NCBI_RNAREF(miscRNA)) && 
-                        FIELD_IS_SET (gen, Product) && 
-                        ! FIELD_IS_SET (gen, Class) )
-                    {
-                        string & product = GET_MUTABLE(gen, Product);
-                        const string *ncrna_name = NULL;
-                        if( s_StartsWithNcrnaName(product, &ncrna_name) ) {
-                            _ASSERT( NULL != ncrna_name );
-                            if( product.length() > (ncrna_name->length() + 1) && 
-                                product[ncrna_name->length()] == ' ' ) 
-                            {
-                                SET_FIELD( gen, Class, *ncrna_name );
-                                SET_FIELD( gen, Product, product.substr(ncrna_name->length() + 1) );
-                                TRUNCATE_SPACES( gen, Class );
-                                TRUNCATE_SPACES( gen, Product );
-                                SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            }
-                            // no need to erase ncrna_name because it points to 
-                            // global memory.
-                        }
-                    }
-
-                    if( ( FIELD_EQUALS(rr, Type, NCBI_RNAREF(mRNA)) || 
-                          FIELD_EQUALS(rr, Type, NCBI_RNAREF(rRNA)) ) &&
-                        STRING_FIELD_NOT_EMPTY(gen, Product) && 
-                        RAW_FIELD_IS_EMPTY_OR_UNSET(gen, Class) && 
-                        ! FIELD_IS_SET(gen, Quals) )
-                    {
-                        // convert RNA-Gen to name.
-                        // Careful: this invalidates the "gen" variable.
-                        const string product = GET_FIELD(gen, Product);
-                        SET_FIELD( ext, Name, product );
-                        break;
-                    }
-
-                    if (! FIELD_IS_SET (gen, Class) &&
-                        ! FIELD_IS_SET (gen, Product) &&
-                        ! FIELD_IS_SET (gen, Quals)) {
-                        RESET_FIELD (rr, Ext);
-                        ChangeMade(CCleanupChange::eChangeRNAref);
-                    }
+                    RnarefGenBC(rr);
                 }
                 break;
             default:
