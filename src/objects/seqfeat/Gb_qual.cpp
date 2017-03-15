@@ -311,6 +311,19 @@ bool CGb_qual::IsValidPseudogeneValue(const string& val)
     }
 }
 
+bool CGb_qual::FixPseudogeneValue(string& val)
+{
+    const TLegalPseudogeneSet& pseudogenes = GetSetOfLegalPseudogenes();
+    auto pseudogene_val = pseudogenes.find(val.c_str());
+
+    string original = val;;
+    if (pseudogene_val != pseudogenes.end()) {
+        val = *pseudogene_val;
+    }
+
+    return val != original;
+}
+
 
 const CGb_qual::TLegalRecombinationClassSet &
 CGb_qual::GetSetOfLegalRecombinationClassValues(void)

@@ -87,6 +87,7 @@ public:
     typedef CStaticArraySet<const char *, PNocase_CStr> TLegalPseudogeneSet;
     static const TLegalPseudogeneSet &GetSetOfLegalPseudogenes(void);
     static bool IsValidPseudogeneValue(const string& val);
+    static bool FixPseudogeneValue(string& val);
 
     // for misc_recomb qualifiers
     typedef CStaticArraySet<const char *, PNocase_CStr> TLegalRecombinationClassSet;

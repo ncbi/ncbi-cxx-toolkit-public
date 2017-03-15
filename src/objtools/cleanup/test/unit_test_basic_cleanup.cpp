@@ -931,7 +931,7 @@ BOOST_AUTO_TEST_CASE(Test_double_comma)
 
 BOOST_AUTO_TEST_CASE(Test_repeat_type_qual)
 {
-    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue("non_valid_value"), false);
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue("invalid_value"), false);
 
     string test_val("dispersed,long_terminal_repeat");
     BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
@@ -986,4 +986,22 @@ BOOST_AUTO_TEST_CASE(Test_ncRNA_class)
     test_val = "invalid_value";
     BOOST_CHECK_EQUAL(CRNA_gen::FixncRNAClassValue(test_val), false);
     BOOST_CHECK_EQUAL(test_val, "invalid_value");
+}
+
+BOOST_AUTO_TEST_CASE(Test_pseudogene_qual)
+{
+    string test_val("invalid_value");
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidPseudogeneValue(test_val), false);
+    BOOST_CHECK_EQUAL(CGb_qual::FixPseudogeneValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "invalid_value");
+
+    test_val = "Allelic";
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidPseudogeneValue(test_val), true);
+    BOOST_CHECK_EQUAL(CGb_qual::FixPseudogeneValue(test_val), true);
+    BOOST_CHECK_EQUAL(test_val, "allelic");
+
+    test_val = "unprocessed";
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidPseudogeneValue(test_val), true);
+    BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
+    BOOST_CHECK_EQUAL(test_val, "unprocessed");
 }

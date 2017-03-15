@@ -3581,6 +3581,10 @@ void CNewCleanup_imp::GBQualBC (
         if (CSeqFeatData::FixRegulatoryClassValue(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
+    } else if (NStr::EqualNocase(gbq.GetQual(), "pseudogene")) {
+        if (CGb_qual::FixPseudogeneValue(gbq.SetVal())) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     }
 
 
