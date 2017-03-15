@@ -178,6 +178,8 @@ BOOST_AUTO_TEST_CASE(BlastAsyncFormatFinalizeThrow)
     formatThr->Finalize();
     vector<SFormatResultValues> results_v;
     BOOST_REQUIRE_THROW(formatThr->QueueResults(0, results_v), CException);
+    formatThr->Finalize();
+    formatThr->Join();
 }
 
 // Attempt to insert the same batch number twice.
@@ -189,5 +191,7 @@ BOOST_AUTO_TEST_CASE(BlastAsyncFormatDuplicateThrow)
     vector<SFormatResultValues> results_v;
     formatThr->QueueResults(0, results_v);
     BOOST_REQUIRE_THROW(formatThr->QueueResults(0, results_v), CException);
+    formatThr->Finalize();
+    formatThr->Join();
 }
 BOOST_AUTO_TEST_SUITE_END()
