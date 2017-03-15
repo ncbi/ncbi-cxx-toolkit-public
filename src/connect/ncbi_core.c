@@ -32,6 +32,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include <corelib/ncbiatomic.h>
 #include <stdlib.h>
 
 #ifdef NCBI_OS_UNIX
@@ -100,6 +101,7 @@ struct MT_LOCK_tag {
 
 
 #ifndef NCBI_NO_THREADS
+
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
@@ -150,21 +152,25 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #  else
 
+    static void* once = 0;
+    if (!NCBI_SwapPointers(&once, (void*) 1/*true*/))
+        CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     return -1/*not implemented*/;
 
 #  endif /*NCBI_..._THREADS*/
 }
+
 #endif /*!NCBI_NO_THREADS*/
 
 
 struct MT_LOCK_tag g_CORE_MT_Lock_default = {
     1/* ref count */,
     0/* user data */,
-#ifdef NCBI_NO_THREADS
-    0/* noop handler */,
-#else
+#ifndef NCBI_NO_THREADS
     s_CORE_MT_Lock_default_handler,
-#endif /*NCBI_NO_THREADS*/
+#else
+    0/* noop handler */,
+#endif /*!NCBI_NO_THREADS*/
     0/* cleanup */,
     kMT_LOCK_magic_number
 };

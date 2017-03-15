@@ -97,7 +97,7 @@ static struct gcry_thread_cbs gcry_threads_user = {
 } /* extern "C" */
 #        endif /*__cplusplus*/
 
-#      endif /*NCBI_POSIX_THREADS*/
+#      endif /*NCBI_..._THREADS*/
 
 #    endif /*HAVE_LIBGCRYPT*/
 #  elif defined(NCBI_THREADS)
@@ -509,6 +509,46 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
 }
 
 
+static int x_SetupLocking(void)
+{
+    int err;
+
+#  if GNUTLS_VERSION_NUMBER <= 0x020B00
+#    ifdef HAVE_LIBGCRYPT
+#      if   defined(NCBI_POSIX_THREADS)
+    err = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#      elif defined(NCBI_THREADS)
+    MT_LOCK lk = CORE_GetLOCK();
+    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        err = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user);
+        MT_LOCK_Do(lk, eMT_Unlock);
+    } else
+        err = lk ? 0 : NCBI_NOTSUPPORTED;
+#      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
+    err = NCBI_NOTSUPPORTED;
+#      endif /*NCBI_POSIX_THREADS*/
+#    endif /*HAVE_LIBGCRYPT*/
+#  elif defined(NCBI_THREADS)
+    MT_LOCK lk = CORE_GetLOCK();
+    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
+                                gtls_user_mutex_lock, gtls_user_mutex_unlock);
+        MT_LOCK_Do(lk, eMT_Unlock);
+        err = 0;
+    } else
+        err = lk ? 0 : NCBI_NOTSUPPORTED;
+#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
+    err = NCBI_NOTSUPPORTED;
+#  else
+    err = 0;
+#  endif
+
+    return err;
+}
+
+
 static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
                                size_t* n_done, int* error)
 {
@@ -648,24 +688,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
-#  if GNUTLS_VERSION_NUMBER <= 0x020B00
-#    ifdef HAVE_LIBGCRYPT
-#      if   defined(NCBI_POSIX_THREADS)
-    if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
+    if (!x_SetupLocking())
         goto out;
-#      elif defined(NCBI_THREADS)
-    if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
-        goto out;
-#      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
-#      endif /*NCBI_POSIX_THREADS*/
-#    endif /*HAVE_LIBGCRYPT*/
-#  elif defined(NCBI_THREADS)
-    gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
-                            gtls_user_mutex_lock, gtls_user_mutex_unlock);
-#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
-#  endif
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
