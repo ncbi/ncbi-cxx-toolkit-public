@@ -124,6 +124,7 @@ public:
         eValue3 = eValue1 + eValue2
     };
 
+#ifdef NCBI_SAFE_FLAGS_ENABLED
     static int Foo(TFlags flags = fDefault)
         {
             if ( flags == fDefault ) {
@@ -132,8 +133,20 @@ public:
             else {
                 cout << "Foo("<<flags<<")" << endl;
             }
-            return flags.get() | 1;
+            return flags | 1;
         }
+    static int Foo(int flags)
+        {
+            cout << "Foo(int = " << flags << ")" << endl;
+            return 0;
+        }
+#else
+    static int Foo(int flags = fDefault)
+        {
+            cout << "Foo(int = " << flags << ")" << endl;
+            return 0;
+        }
+#endif
     static int Foo(EFlags flags)
         {
             return Foo(TFlags(flags));
@@ -141,11 +154,6 @@ public:
     static int Foo2(TFlags flags)
         {
             return Foo(flags);
-        }
-    static int Foo(int flags)
-        {
-            cout << "Foo(int = "<<flags<<")" << endl;
-            return 0;
         }
 };
 DECLARE_SAFE_FLAGS(CClassWithFlags::EFlags);
