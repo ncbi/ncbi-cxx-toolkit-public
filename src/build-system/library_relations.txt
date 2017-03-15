@@ -491,8 +491,8 @@ gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_val needs xmlwrapp
 gpipe_xlsx needs $(Z_LIB)
+gpipe_xlsx needs xncbi
 gpipe_xlsx needs3party $(LIBXLSXWRITER_LIBS)
-gpipe_xlsx needs3party $(ORIG_LIBS)
 gpipe_xlsx needs3party $(Z_LIBS)
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
@@ -1048,6 +1048,12 @@ test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
 test_dll needs3party $(ORIG_LIBS)
 test_mt needs xncbi
+test_stat_ext needs $(COMPRESS_LIBS)
+test_stat_ext needs $(XCONNEXT)
+test_stat_ext needs dbapi
+test_stat_ext needs ncbi_xdbapi_ftds
+test_stat_ext needs xconnect
+test_stat_ext needs xutil
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
 tiff needs3party $(ORIG_LIBS)
