@@ -2374,7 +2374,7 @@ bool CValidError_feat::ReadDonorSpliceSite
 
     if (strand == eNa_strand_minus) {
         // check donor and acceptor on minus strand
-        if (stop > 1) {
+        if (stop > 1 && stop <= seq_len) {
             in_gap = (vec.IsInGap(stop - 2) && vec.IsInGap (stop - 1));
             if (!in_gap) {
                 bad_seq = (vec[stop - 1] > 250 || vec[stop - 2] > 250);
@@ -2488,7 +2488,7 @@ bool CValidError_feat::ReadAcceptorSpliceSite
     }
     // read acceptor splice site from plus strand
     else {
-        if (start > 1) {
+        if (start > 1 && start <= seq_len) {
             in_gap = (vec.IsInGap(start - 2) && vec.IsInGap (start - 1));
             if (!in_gap) {
                 bad_seq = (vec[start - 2] > 250 || vec[start - 1] > 250);
