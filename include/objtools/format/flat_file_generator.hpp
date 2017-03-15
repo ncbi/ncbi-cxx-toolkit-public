@@ -96,6 +96,9 @@ public:
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
+    // for use when generating a range of a Seq-submit
+    void SetSubmit(const CSubmit_block& sub) { m_Ctx->SetSubmit(sub); }
+
     static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
         const CFlatFileConfig& cfg);
 

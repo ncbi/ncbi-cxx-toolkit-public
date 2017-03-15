@@ -258,6 +258,7 @@ public:
 
 protected:
     void HandleSeqSubmit(CObjectIStream& is );
+    void HandleSeqSubmit(CSeq_submit& sub);
     void HandleSeqId(const string& id);
 
     CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is);
@@ -608,13 +609,7 @@ int CAsn2FlatApp::Run(void)
                         CRef<CSeq_submit> sub(new CSeq_submit);
                         *is >> *sub;
                         if (sub->IsSetSub()  &&  sub->IsSetData()) {
-                            CRef<CScope> scope(new CScope(*m_Objmgr));
-                            scope->AddDefaults();
-                            if ( m_do_cleanup ) {
-                                CCleanup cleanup;
-                                cleanup.BasicCleanup( *sub );
-                            }
-                            m_FFGenerator->Generate(*sub, *scope, *m_Os);
+                            HandleSeqSubmit(*sub);
                             return 0;
                         } else {
                             NCBI_THROW(
@@ -633,21 +628,47 @@ int CAsn2FlatApp::Run(void)
     return 0;
 }
 
+
+void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
+{
+    if (!sub.IsSetSub() || !sub.IsSetData() || !sub.GetData().IsEntrys()) {
+        return;
+    }
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    scope->AddDefaults();
+    if (m_do_cleanup) {
+        CCleanup cleanup;
+        cleanup.BasicCleanup(sub);
+    }
+    const CArgs&   args = GetArgs();
+    if (args["from"] || args["to"] || args["strand"]) {
+        CRef<CSeq_entry> e(sub.SetData().SetEntrys().front());
+        CSeq_entry_Handle seh;
+        try {
+            seh = scope->GetSeq_entryHandle(*e);
+        } catch (CException&) {}
+
+        if (!seh) {  // add to scope if not already in it
+            seh = scope->AddTopLevelSeqEntry(*e);
+        }
+        // "remember" the submission block
+        m_FFGenerator->SetSubmit(sub.GetSub());
+        CSeq_loc loc;
+        x_GetLocation(seh, args, loc);
+        m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+    } else {
+        m_FFGenerator->Generate(sub, *scope, *m_Os);
+    }
+}
+
+
 //  ============================================================================
 void CAsn2FlatApp::HandleSeqSubmit(CObjectIStream& is )
 //  ============================================================================
 {
     CRef<CSeq_submit> sub(new CSeq_submit);
     is >> *sub;
-    if (sub->IsSetSub()  &&  sub->IsSetData()) {
-        CRef<CScope> scope(new CScope(*m_Objmgr));
-        scope->AddDefaults();
-        if ( m_do_cleanup ) {
-            CCleanup cleanup;
-            cleanup.BasicCleanup( *sub );
-        }
-        m_FFGenerator->Generate(*sub, *scope, *m_Os);
-    }
+    HandleSeqSubmit(*sub);
 }
 
 //  ============================================================================
@@ -1173,6 +1194,12 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
             if ( it->IsSeq() ) {
                 return it->GetSeq();
             }
+        }
+        break;
+    case CBioseq_set::eClass_genbank:
+        if (bsst.GetBioseq_setCore()->GetSeq_set().size() == 1) {
+            CSeq_entry_CI it(bsst);
+            return x_DeduceTarget(*it);
         }
         break;
     default:
