@@ -11,4 +11,3 @@ add_dependencies(ncbi_xloader_asn_cache
     seq seqset general-lib cache_blob
 )
 
-set(USES $(DL_LIBS) $(SOBJMGR_LIBS) asn_cache)
