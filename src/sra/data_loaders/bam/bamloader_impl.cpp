@@ -1298,7 +1298,8 @@ struct SBaseStat
         kStat_T = 3,
         kStat_Insert = 4,
         kStat_Gap = kStat_Insert,
-        kNumStat = 5
+        kStat_Match = 5,
+        kNumStat = 6
     };
     SBaseStat(void) {
         for ( int i = 0; i < kNumStat; ++i ) {
@@ -1322,11 +1323,11 @@ struct SBaseStat
         case 'G': cnts[kStat_G] += 1; break;
         case 'T': cnts[kStat_T] += 1; break;
         //case 'N': cnts[kStat_Insert] += 1; break;
-        //case '=': cnts[kStat_Match] += 1; break;
+        case '=': cnts[kStat_Match] += 1; break;
         }
     }
     void add_match() {
-        //cnts[kStat_Match] += 1;
+        cnts[kStat_Match] += 1;
     }
     void add_gap() {
         cnts[kStat_Gap] += 1;
@@ -1404,8 +1405,13 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             }
             if ( type == '=' ) {
                 // match
-                ss_pos += seglen;
-                read_pos += seglen;
+                for ( TSeqPos i = 0; i < seglen; ++i ) {
+                    if ( ss_pos < chunk_len && read_pos < read.size() ) {
+                        ss[ss_pos].add_match();
+                    }
+                    ++ss_pos;
+                    ++read_pos;
+                }
             }
             else if ( type == 'M' || type == 'X' ) {
                 // mismatch
@@ -1501,7 +1507,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             "Number of C bases",
             "Number of G bases",
             "Number of T bases",
-            "Number of inserts"
+            "Number of inserts",
+            "Number of matches"
         };
         graph->SetTitle(titles[i]);
         CSeq_interval& loc = graph->SetLoc().SetInt();
