@@ -74,6 +74,17 @@ private:
         const list<string>& new_proteins,
         const list<string>& dead_proteins);
 
+    void x_AppendMatchedProtein(
+        const string& nuc_accession,
+        const CSeq_annot& match);
+
+    void x_AppendNewProtein(
+        const string& nuc_accession,
+        const string& local_id);
+
+    void x_AppendDeadProtein(
+        const string& nuc_accession,
+        const string& prot_accession);
 
     bool x_TryProcessAlignment(const CSeq_align& alignment,
         SNucMatchInfo& nuc_match_info);

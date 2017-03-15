@@ -498,6 +498,60 @@ void CMatchTabulate::x_InitMatchTable()
 }
 
 
+void CMatchTabulate::x_AppendNewProtein(
+    const string& nuc_accession,
+    const string& local_id)
+{
+    x_AppendColumnValue("NA_Accession", nuc_accession);
+    x_AppendColumnValue("PROT_Accession", "---");
+    x_AppendColumnValue("PROT_LocalID", local_id);
+    x_AppendColumnValue("Mol_type", "PROT");
+    x_AppendColumnValue("Status", "New");
+    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+}
+
+
+void CMatchTabulate::x_AppendDeadProtein(
+    const string& nuc_accession,
+    const string& prot_accession)
+{
+    x_AppendColumnValue("NA_Accession", nuc_accession);
+    x_AppendColumnValue("PROT_Accession", prot_accession);
+    x_AppendColumnValue("PROT_LocalID", "---");
+    x_AppendColumnValue("Mol_type", "PROT");
+    x_AppendColumnValue("Status", "Dead");
+    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+}
+
+
+void CMatchTabulate::x_AppendMatchedProtein(
+    const string& nuc_accession,
+    const CSeq_annot& match)
+{
+    const CSeq_feat& query = x_GetQuery(match);
+    const CSeq_feat& subject = x_GetSubject(match);
+    string local_id = x_GetLocalID(query);
+    const string accver = x_GetAccessionVersion(subject);
+        
+    vector<string> accver_vec;
+    NStr::Split(accver, ".", accver_vec);
+
+    const string status = (x_GetComparisonClass(match) == "perfect") ? "Same" : "Changed";
+
+    if (local_id.empty()) {
+        local_id = "---";
+    }
+        
+    x_AppendColumnValue("NA_Accession", nuc_accession);
+    x_AppendColumnValue("PROT_Accession", accver_vec[0]);
+    x_AppendColumnValue("PROT_LocalID", local_id);
+    x_AppendColumnValue("Mol_type", "PROT");
+    x_AppendColumnValue("Status", status);
+
+    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+}
+
+
 bool CMatchTabulate::x_AppendToMatchTable(
     const SNucMatchInfo& nuc_match_info,
     const TMatches& matches,
@@ -518,6 +572,8 @@ bool CMatchTabulate::x_AppendToMatchTable(
 
     for (cit=matches.begin(); cit != matches.end(); ++cit) {
 
+        x_AppendMatchedProtein(nuc_match_info.accession, **cit); 
+    /*
         const CSeq_feat& query = x_GetQuery(**cit);
         const CSeq_feat& subject = x_GetSubject(**cit);
 
@@ -539,26 +595,34 @@ bool CMatchTabulate::x_AppendToMatchTable(
         x_AppendColumnValue("Status", status);
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+        */
     }
 
     for (string localID : new_proteins) {
+
+        x_AppendNewProtein(nuc_match_info.accession, localID);
+/*
         x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
         x_AppendColumnValue("PROT_Accession", "---");
         x_AppendColumnValue("PROT_LocalID", localID);
         x_AppendColumnValue("Mol_type", "PROT");
         x_AppendColumnValue("Status", "New");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+        */
     }
 
     for (string accver : dead_proteins) {
         vector<string> accver_vec;
         NStr::Split(accver, ".", accver_vec);
+        x_AppendDeadProtein(nuc_match_info.accession, accver_vec[0]);
+/*
         x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
         x_AppendColumnValue("PROT_Accession", accver_vec[0]);
         x_AppendColumnValue("PROT_LocalID", "---");
         x_AppendColumnValue("Mol_type", "PROT");
         x_AppendColumnValue("Status", "Dead");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+        */
     }
 
     return true;
