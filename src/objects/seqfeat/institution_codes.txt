@@ -4621,7 +4621,7 @@ NIAH	c	National Institute of Animal Health
 NIAID	c	National Institute of Allergy and Infectious Diseases		
 NIAS	sb	National Institute of Agrobiological Sciences		
 NIBH	c	National Institute of Bioscience and Human-Technology		
-NIBR	scb	National Institute of Biological Resources		
+NIBR	scb	National Institute of Biological Resources	NNIBR
 NIBSC	b	National Institute for Biological Standards and Control		
 NICC	s	National Insect Collection		
 NICD	s	Malaria Research Center		

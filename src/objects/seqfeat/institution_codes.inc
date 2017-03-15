@@ -4654,7 +4654,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NIAID\tc\tNational Institute of Allergy and Infectious Diseases\t\t",
 "NIAS\tsb\tNational Institute of Agrobiological Sciences\t\t",
 "NIBH\tc\tNational Institute of Bioscience and Human-Technology\t\t",
-"NIBR\tscb\tNational Institute of Biological Resources\t\t",
+"NIBR\tscb\tNational Institute of Biological Resources\tNNIBR",
 "NIBSC\tb\tNational Institute for Biological Standards and Control\t\t",
 "NICC\ts\tNational Insect Collection\t\t",
 "NICD\ts\tMalaria Research Center\t\t",
