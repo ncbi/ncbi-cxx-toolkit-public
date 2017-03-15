@@ -73,7 +73,7 @@ CRef<CSeq_loc> CFeatTrim::Apply(const CSeq_loc& loc,
     const TSeqPos from = range.GetFrom();
     const TSeqPos to = range.GetTo();
 
-    CRef<CSeq_loc> trimmed_loc;
+    CRef<CSeq_loc> trimmed_loc(new CSeq_loc());
     trimmed_loc->Assign(loc);
 
     x_TrimLocation(from, to, set_partial, trimmed_loc);
