@@ -59,6 +59,7 @@
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_data.hpp>
 #include <objtools/readers/gff2_reader.hpp>
+#include <objtools/readers/gff3_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -613,7 +614,7 @@ bool CGff2Record::UpdateFeature(
     else {
         // indicates the feature location is already under construction
         pFeature->SetLocation(*pFeature->SetLocation().Add(
-            *pAddLoc, CSeq_loc::fSortAndMerge_All, 0));
+            *pAddLoc, CSeq_loc::fSort | CSeq_loc::fMerge_Abutting, 0));
         if (pFeature->GetLocation().IsInt()) {
             CRef<CSeq_loc> pOld(new CSeq_loc);
             pOld->Assign(pFeature->GetLocation());
