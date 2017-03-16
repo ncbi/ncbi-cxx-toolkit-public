@@ -202,7 +202,7 @@ int CProteinMatchApp::Run(void)
         out_dir,
         args["o"].AsString());
 
-    CMatchTabulate match_tab;
+    CMatchTabulate match_tab(db_scope);
 
     const TTypeInfo root_info =  x_GetRootTypeInfo(*pInStream);
 
