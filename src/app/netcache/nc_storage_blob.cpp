@@ -1797,11 +1797,11 @@ CNCBlobAccessor::Purge(const CNCBlobKeyLight& nc_key, Uint8 when)
     if (when != 0) {
         string key(nc_key.Cache());
         if (nc_key.RawKey().empty()) {
-            TForgets::iterator i = s_Forgets.lower_bound(key);
+            TForgets::iterator i = s_Forgets.find(key);
             if (i == s_Forgets.end()) {
                 s_Forgets[key] = when;
                 res=true;
-            } else if (i->first == key && i->second < when) {
+            } else if (i->second < when) {
                 i->second = when;
                 res=true;
             }

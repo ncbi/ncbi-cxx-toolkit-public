@@ -296,6 +296,8 @@ private:
     void x_ReportError( EHTTPStatus sts, bool eol = true);
     void x_ReportError( const string& sts, bool eol = true);
     CNCMessageHandler& x_ReportOK(const string& sts);
+    void x_LogCmdEvent( const CTempString& evt);
+    void x_LogCmdLog(void);
 
     TNCCmdFlags               m_Flags;
     TNCUserFlags              m_UserFlags;
@@ -325,6 +327,8 @@ private:
     const SNCSpecificParams*  m_PrevAppSetup;
     /// Time when command started execution
     CSrvTime                  m_CmdStartTime;
+    CSrvTime                  m_CmdPrevTime;
+    vector<string>            m_CmdLog;
 
     /// Blob key in current command
     CNCBlobKey                m_NCBlobKey;

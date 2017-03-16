@@ -552,11 +552,19 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
 {
     s_Listener.m_SeenEvents[sock_idx] = s_ListenEvents[sock_idx];
     SListenSockInfo& sock_info = s_ListenSocks[sock_idx];
+    CSrvTime cmd_start = CSrvTime::Current();
     for (;;) {
 #ifdef NCBI_OS_LINUX
         struct sockaddr_in addr;
         socklen_t len = sizeof(addr);
         int new_sock = accept(sock_info.fd, (struct sockaddr*)&addr, &len);
+        CSrvTime cmd_len = CSrvTime::Current();
+        cmd_len -= cmd_start;
+        Uint8 len_usec = cmd_len.AsUSec();
+        cmd_start = CSrvTime::Current();
+        if (cmd_len > 1000000) {
+            SRV_LOG(Warning, "socket accept takes: " << len_usec << "mks");
+        }
         if (new_sock == -1) {
             int x_errno = errno;
             if (x_errno != EAGAIN  &&  x_errno != EWOULDBLOCK) {
