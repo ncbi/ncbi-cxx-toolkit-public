@@ -139,7 +139,7 @@ int main(int argc, const char* argv[])
                 "Example: %s www.ncbi.nlm.nih.gov 80 "
                 "/Service/bounce.cgi 'arg1+arg2+arg3'\n",
                 argv[0], argv[0]);
-        fprintf(stderr, "Too few arguments.\n");
+        CORE_LOG(eLOG_Fatal, "Too few arguments");
         return 1;
     }
 
@@ -171,8 +171,8 @@ int main(int argc, const char* argv[])
             if (strcmp(inp_file, "+") == 0)
                 inp_file = kDevNull;
             if (!(inp_fp = fopen(inp_file, "rb"))) {
-                fprintf(stderr, "Cannot open file '%s' for reading", inp_file);
-                assert(0);
+                CORE_LOGF(eLOG_Fatal,
+                          ("Cannot open file '%s' for reading", inp_file));
             }
         } else
             inp_fp = stdin;
@@ -187,9 +187,8 @@ int main(int argc, const char* argv[])
             status = CONN_Write(conn, buffer, n_read,
                                 &n_written, eIO_WritePersist);
             if (status != eIO_Success) {
-                fprintf(stderr, "Error writing to URL (%s)",
-                        IO_StatusStr(status));
-                assert(0);
+                CORE_LOGF(eLOG_Fatal,
+                          ("Unable to write to URL: %s",IO_StatusStr(status)));
             }
             assert(n_written == n_read);
         }
@@ -213,8 +212,8 @@ int main(int argc, const char* argv[])
     }
 
     if (status != eIO_Closed) {
-        fprintf(stderr, "Error reading from URL (%s)", IO_StatusStr(status));
-        assert(0);
+        CORE_LOGF(eLOG_Fatal,
+                  ("Unable to read from URL: %s", IO_StatusStr(status)));
     }
 
     /* Success:  close the connection, cleanup, and exit */

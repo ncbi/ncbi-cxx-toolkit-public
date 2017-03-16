@@ -90,17 +90,17 @@ int main(int argc, const char* argv[])
         /* read */
         status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_ReadPlain);
         if (status != eIO_Success) {
-            fprintf(stderr, "CONN_Read() failed (status: %s)\n",
-                    IO_StatusStr(status));
+            CORE_LOGF(eLOG_Error,
+                      ("CONN_Read() failed: %s", IO_StatusStr(status)));
             break;
         }
-        fprintf(stderr, "READ: %ld  bytes\n", (long) n_read);
+        CORE_LOGF(eLOG_Note, ("READ: %ld byte(s)", (long) n_read));
 
         /* write */
         status = CONN_Write(conn, buf, n_read, &n_written, eIO_WritePersist);
         if (status != eIO_Success) {
-            fprintf(stderr, "CONN_Write() failed (status: %s)\n",
-                    IO_StatusStr(status));
+            CORE_LOGF(eLOG_Fatal,
+                      ("CONN_Write() failed: %s", IO_StatusStr(status)));
             assert(0);
             break;
         }

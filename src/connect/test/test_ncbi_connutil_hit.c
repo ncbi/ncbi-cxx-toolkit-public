@@ -74,8 +74,9 @@ int main(int argc, char** argv)
 
     if ( argc < 4 ) {
         fprintf(stderr,
-                "Usage:   %s host port path args inp_file [user_header]\n"
-                "\nTwo few arguments.\n", argv[0]);
+                "Usage:   %s host port path args inp_file [user_header]\n",
+                argv[0]);
+        CORE_LOG(eLOG_Fatal, "Two few arguments");
         return 1;
     }
 
@@ -84,11 +85,12 @@ int main(int argc, char** argv)
         long offset;
 
         if ( !fp ) {
-            fprintf(stderr, "Non-existent file '%s'\n", inp_file);
+            CORE_LOGF(eLOG_Fatal, ("Non-existent file '%s'", inp_file));
             return 2;
         }
         if ( fseek(fp, 0, SEEK_END) != 0  ||  (offset = ftell(fp)) < 0 ) {
-            fprintf(stderr, "Cannot obtain size of file '%s'\n", inp_file);
+            CORE_LOGF(eLOG_Fatal,
+                      ("Cannot obtain size of file '%s'", inp_file));
             return 2;
         }
         fclose(fp);
@@ -111,7 +113,8 @@ int main(int argc, char** argv)
     {{ /* Pump data from the input file to socket */
         FILE* fp = fopen(inp_file, "rb");
         if ( !fp ) {
-            fprintf(stderr, "Cannot open file '%s' for reading\n", inp_file);
+            CORE_LOGF(eLOG_Fatal, 
+                      ("Cannot open file '%s' for reading", inp_file));
             return 4;
         }
 
@@ -120,9 +123,9 @@ int main(int argc, char** argv)
             size_t n_read = fread(buffer, 1, sizeof(buffer), fp);
             if ( n_read <= 0 ) {
                 if ( content_length ) {
-                    fprintf(stderr,
-                            "Cannot read last %lu bytes from file '%s'\n",
-                            (unsigned long) content_length, inp_file);
+                    CORE_LOGF(eLOG_Fatal,
+                              ("Cannot read last %lu bytes from file '%s'",
+                               (unsigned long) content_length, inp_file));
                     return 5;
                 }
                 break;
@@ -133,8 +136,9 @@ int main(int argc, char** argv)
             status = SOCK_Write(sock, buffer, n_read,
                                 &n_written, eIO_WritePersist);
             if ( status != eIO_Success ) {
-                fprintf(stderr, "Error writing to socket(%s)\n",
-                        IO_StatusStr(status));
+                CORE_LOGF(eLOG_Fatal,
+                          ("Error writing to socket: %s",
+                           IO_StatusStr(status)));
                 return 6;
             }
         }
@@ -155,9 +159,9 @@ int main(int argc, char** argv)
         }
 
         if ( status != eIO_Closed ) {
-            fprintf(stderr,
-                    "Error occurred after reading %ld bytes from socket(%s)\n",
-                    (long) content_length, IO_StatusStr(status));
+            CORE_LOGF(eLOG_Error,
+                      ("Read error after %ld byte(s) from socket: %s",
+                       (long) content_length, IO_StatusStr(status)));
         }
         fprintf(stdout, "\n");
     }}
