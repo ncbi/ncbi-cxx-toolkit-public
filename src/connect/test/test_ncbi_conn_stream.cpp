@@ -374,8 +374,8 @@ int CNCBITestApp::Run(void)
         size = 0;
         while (size < (10<<20)  &&  upload.good()) {
             char buf[4096];
-            size_t n = (size_t) rand() % sizeof(buf) + 1;
-            for (size_t i = 0;  i < n;  i++)
+            n = (size_t) rand() % sizeof(buf) + 1;
+            for (i = 0;  i < n;  i++)
                 buf[i] = rand() & 0xFF;
             if (upload.write(buf, n))
                 size += n;
