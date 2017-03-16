@@ -7163,6 +7163,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VTA\th\tJardin Botanique de la Villa Thuret\t\t",
 "VTB\tc\tBanco de Celulas Humanas e Animais Laboratorio de Patologia Celular e Molecular\t\t",
 "VTCC\tc\tVietnam Type Culture Collection, Center of Biotechnology\t\t",
+"VTMH\ts\tVirginia Tech Massey Herbarium\t\t",
 "VTT\tc\tVTT Biotechnology, Culture Collection\t\t",
 "VU\ts\tVoronezh State University\t\t",
 "VUT\tc\tSchool of Veterinary Medicine, Faculty of Agriculture\t\t",

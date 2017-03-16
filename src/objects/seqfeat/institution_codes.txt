@@ -7130,6 +7130,7 @@ VT	s	Pringle Herbarium, University of Vermont
 VTA	h	Jardin Botanique de la Villa Thuret		
 VTB	c	Banco de Celulas Humanas e Animais Laboratorio de Patologia Celular e Molecular		
 VTCC	c	Vietnam Type Culture Collection, Center of Biotechnology		
+VTMH	s	Virginia Tech Massey Herbarium		
 VTT	c	VTT Biotechnology, Culture Collection		
 VU	s	Voronezh State University		
 VUT	c	School of Veterinary Medicine, Faculty of Agriculture		
