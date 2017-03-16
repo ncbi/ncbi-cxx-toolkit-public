@@ -68,7 +68,7 @@ public:
 
     CNetStorageObjectLoc& Locator() override;
     string Relocate(TNetStorageFlags, TNetStorageProgressCb cb) override;
-    void CancelRelocate();
+    void CancelRelocate() override;
     bool Exists() override;
     ENetStorageRemoveResult Remove() override;
 
