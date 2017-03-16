@@ -106,14 +106,14 @@ struct MT_LOCK_tag {
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
 {
-#if defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
-#  define NCBI_RECURSIVE_MUTEX_INIT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
-#elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
-#  define NCBI_RECURSIVE_MUTEX_INIT PTHREAD_RECURSIVE_MUTEX_INITIALIZER
-#endif
 
-#  if   defined(NCBI_POSIX_THREADS)  &&  \
-        defined(NCBI_RECURSIVE_MUTEX_INIT)
+#  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#  endif /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
+
+#  if   defined(NCBI_POSIX_THREADS)  &&  defined(NCBI_RECURSIVE_MUTEX_INIT)
 
     static pthread_mutex_t sx_Mutex = NCBI_RECURSIVE_MUTEX_INIT;
 
@@ -158,10 +158,12 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #  else
 
-    static int/*bool*/ once = 0;
-    if ( !once ) {
-        once = 1;
-        CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
+    if (g_CORE_Log) {
+        static int/*bool*/ once = 0/*false*/;
+        if (!once) {
+            once = 1/*true*/;
+            CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
+        }
     }
     return -1/*not implemented*/;
 
