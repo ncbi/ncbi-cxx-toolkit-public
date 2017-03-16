@@ -160,7 +160,6 @@ BOOST_AUTO_TEST_CASE(BlastAsyncFormatTest)
     vector<SFormatResultValues> results_v;
     results_v.push_back(SFormatResultValues(q_vec, blast_results, formatter));
     formatThr->QueueResults(0, results_v);
-    formatThr->Finalize();
     formatThr->Join();
     
     string myReport = CNcbiOstrstreamToString(streamBuffer);

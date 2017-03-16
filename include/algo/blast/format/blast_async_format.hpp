@@ -80,6 +80,10 @@ public:
    /// Close queue for printing.  No calls to QueueResults allowed after this.
    void Finalize();
 
+   /// Calls Finalize (if not already called) then CThread::Join();
+   /// Should only be called if QueueResults will no longer be called.
+   void Join();
+
 protected:
     virtual ~CBlastAsyncFormatThread(void);
 

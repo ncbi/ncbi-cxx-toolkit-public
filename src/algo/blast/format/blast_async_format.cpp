@@ -73,6 +73,15 @@ CBlastAsyncFormatThread::Finalize()
 	m_Semaphore.Post();
 }
 
+void
+CBlastAsyncFormatThread::Join()
+{
+	if(m_Done == false)
+		Finalize();
+
+	CThread::Join();	
+}
+
 
 void* CBlastAsyncFormatThread::Main(void)
 {
