@@ -531,7 +531,9 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
         call_data->level >= data->fatal_err) {
         char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
         if (str) {
-            fprintf(data->fp, "%s\n", str);
+            size_t len = strlen(str);
+            str[len] = '\n';
+            fwrite(str, len, 1, data->fp);
             fflush(data->fp);
             free(str);
         }
@@ -577,7 +579,12 @@ extern void LOG_ToFILE_Ex
  int/*bool*/ auto_close
  )
 {
-    SLogData* data = (SLogData*)(fp ? malloc(sizeof(*data)) : 0);
+    SLogData* data;
+    if (fp) {
+        fflush(fp);
+        data = (SLogData*) malloc(sizeof(*data));
+    } else
+        data = 0;
     if (data) {
         data->fp         = fp;
         data->cut_off    = cut_off;
@@ -586,6 +593,8 @@ extern void LOG_ToFILE_Ex
         LOG_Reset(lg, data, s_LOG_FileHandler, s_LOG_FileCleanup);
     } else {
         LOG_Reset(lg, 0/*data*/, 0/*handler*/, 0/*cleanup*/);
+        if (fp  &&  auto_close)
+            fclose(fp);
     }
 }
 
