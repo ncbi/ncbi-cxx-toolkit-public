@@ -56,11 +56,12 @@ CBlastInputSourceConfig::CBlastInputSourceConfig
      unsigned int seqlen_thresh2guess   /* = numeric_limits<unsigned int>::max()*/,
      bool skip_seq_check                /* = false -RMH- */ )
 : m_Strand(strand), m_LowerCaseMask(lowercase), 
-  m_BelieveDeflines(believe_defline), m_Range(range), m_DLConfig(dlconfig),
+  m_BelieveDeflines(believe_defline), 
+  m_SkipSeqCheck(skip_seq_check), /* -RMH- */
+  m_Range(range), m_DLConfig(dlconfig),
   m_RetrieveSeqData(retrieve_seq_data),
   m_LocalIdCounter(local_id_counter),
   m_SeqLenThreshold2Guess(seqlen_thresh2guess),
-  m_SkipSeqCheck(skip_seq_check), /* -RMH- */
   m_GapsToNs(false)
 {
     // Set an appropriate default for the strand
