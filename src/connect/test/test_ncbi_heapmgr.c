@@ -111,6 +111,7 @@ int main(int argc, const char* argv[])
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*false*/);
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Warning, 0/*false*/);
     if (argc > 1)
         g_NCBI_ConnectRandomSeed = atoi(argv[1]);

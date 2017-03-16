@@ -532,7 +532,7 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
         char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
         if (str) {
             size_t len = strlen(str);
-            str[len] = '\n';
+            str[len++] = '\n';
             fwrite(str, len, 1, data->fp);
             fflush(data->fp);
             free(str);
