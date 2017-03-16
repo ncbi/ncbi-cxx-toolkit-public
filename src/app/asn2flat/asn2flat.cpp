@@ -826,6 +826,9 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
             m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+            // emulate the C Toolkit: only produce flatfile for first sequence
+            // when range is specified
+            return true;
         }
         else {
             int count = args["count"].AsInteger();
