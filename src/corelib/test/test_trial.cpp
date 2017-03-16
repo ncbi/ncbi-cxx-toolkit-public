@@ -124,7 +124,7 @@ public:
         eValue3 = eValue1 + eValue2
     };
 
-#ifdef NCBI_SAFE_FLAGS_ENABLED
+#ifdef NCBI_ENABLE_SAFE_FLAGS
     static int Foo(TFlags flags = fDefault)
         {
             if ( flags == fDefault ) {
@@ -133,7 +133,7 @@ public:
             else {
                 cout << "Foo("<<flags<<")" << endl;
             }
-            return flags | 1;
+            return flags.get() | 1;
         }
     static int Foo(int flags)
         {
@@ -175,7 +175,7 @@ void TestSafeFlags()
     foo::CClassWithFlags::Foo(~foo::CClassWithFlags::fFlag2);
     using namespace foo;
     CClassWithFlags::TFlags ff = CClassWithFlags::fFlag1;
-#ifdef NCBI_SAFE_FLAGS_ENABLED
+#ifdef NCBI_ENABLE_SAFE_FLAGS
 # define SAFE_ASSERT(v) _ASSERT(v)
 #else
     // test compilation only
