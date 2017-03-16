@@ -44,7 +44,7 @@ class CSeq_table;
 class CMatchTabulate {
 
 public:
-    CMatchTabulate(void);
+    CMatchTabulate(CRef<CScope> db_scope);
     virtual ~CMatchTabulate(void);
     void AppendToMatchTable(const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots,
@@ -74,6 +74,9 @@ private:
         const list<string>& new_proteins,
         const list<string>& dead_proteins);
 
+    void x_AppendNucleotide(
+        const SNucMatchInfo& nuc_match_info);
+
     void x_AppendMatchedProtein(
         const string& nuc_accession,
         const CSeq_annot& match);
@@ -90,6 +93,9 @@ private:
         SNucMatchInfo& nuc_match_info);
 
     bool x_IsPerfectAlignment(const CSeq_align& alignment) const;
+
+    void x_AppendProteins(const string& nuc_accession,
+        const list<CRef<CSeq_annot>>& annot_list);
 
     bool x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
         TMatches& matches,
@@ -123,6 +129,8 @@ private:
     CRef<CSeq_table> mMatchTable;
     map<string, size_t> mColnameToIndex;
     bool mMatchTableInitialized;
+
+    CRef<CScope> m_DBScope;
 };
 
 
