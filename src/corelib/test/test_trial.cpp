@@ -179,7 +179,7 @@ void TestSafeFlags()
 # define SAFE_ASSERT(v) _ASSERT(v)
 #else
     // test compilation only
-# define SAFE_ASSERT(v) (void*)(v)
+# define SAFE_ASSERT(v) (void)(v)
 #endif
     SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fFlag1 | CClassWithFlags::fFlag3));
     SAFE_ASSERT(CClassWithFlags::Foo(CClassWithFlags::fMask12&CClassWithFlags::fFlag2));
