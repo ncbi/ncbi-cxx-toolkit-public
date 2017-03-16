@@ -590,7 +590,7 @@ void CFlatGeneSynonymsQVal::Format
     // std::sort(sub.begin(), sub.end(), PNocase());
     stable_sort(sub.begin(), sub.end(), CLessThanNoCaseViaUpper() );
 
-    if (ctx.IsRefSeq()) {
+    if (ctx.IsRefSeq() && !ctx.Config().IsModeDump()) {
         x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style, 0, CFormatQual::eTrim_WhitespaceOnly );
     } else {
         ITERATE (vector<string>, it, sub) {
