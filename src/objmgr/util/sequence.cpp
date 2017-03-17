@@ -1096,8 +1096,14 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                     continue;
                 }
 
-                TFeatScore sc(cur_diff,
-                    ConstRef(&feat_it->GetMappedFeature()));
+                // quick fix for CFeat_CI returning wrong additional features
+                if (overlap_type == eOverlap_Contained) {
+                    ECompare cmp = Compare(feat_it->GetLocation(), loc, &scope, fCompareOverlapping);
+                    if (cmp != eContains && cmp != eSame) {
+                        continue;
+                    }
+                }
+                TFeatScore sc(cur_diff, ConstRef(&feat_it->GetMappedFeature()));
                 feats.push_back(sc);
             }
             catch (CObjmgrUtilException&) {
