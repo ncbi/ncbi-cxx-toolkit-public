@@ -47,7 +47,7 @@
 #if defined(NDEBUG)
 #  define verify(expr)  while ( expr ) break
 #else
-#  define verify(expr)  assert(expr)
+#  define verify(expr)  assert( expr )
 #endif
 
 #endif /* CONNECT___NCBI_ASSERT__H */
