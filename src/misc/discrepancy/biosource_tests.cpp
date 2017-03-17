@@ -1458,13 +1458,14 @@ static void GetOrgnameDifferences(const COrgName& first, const COrgName& second,
     bool first_mod_set = first.IsSetMod(),
          second_mod_set = second.IsSetMod();
 
-    COrgName::TMod::const_iterator it_first,
-        it_second;
-
-    if (first_mod_set && second_mod_set) {
+    COrgName::TMod::const_iterator it_first, it_second;
+    if (first_mod_set) {
         it_first = first.GetMod().cbegin();
+    }
+    if (second_mod_set) {
         it_second = second.GetMod().cbegin();
-
+    }
+    if (first_mod_set && second_mod_set) {
         COrgName::TMod::const_iterator end_first = first.GetMod().cend(),
             end_second = second.GetMod().cend();
 
