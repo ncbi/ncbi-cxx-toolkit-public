@@ -32,6 +32,9 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#ifdef NCBI_CXX_TOOLKIT
+#  include <corelib/ncbiatomic.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 #include <stdlib.h>
 
 #ifdef NCBI_OS_UNIX
@@ -83,23 +86,36 @@ extern const char* IO_StatusStr(EIO_Status status)
  *  MT locking
  */
 
-/* Check the validity of the MT locker */
-#define MT_LOCK_VALID  \
-    assert(lk->ref_count  &&  lk->magic_number == kMT_LOCK_magic_number)
+/* Check the validity of the MT lock */
+#define MT_LOCK_VALID  assert(lk->count  &&  lk->magic == kMT_LOCK_magic)
 
 
-/* MT locker data and callbacks */
+/* MT lock data and callbacks */
 struct MT_LOCK_tag {
-  unsigned int     ref_count;    /* reference counter */
-  void*            user_data;    /* for "handler()" and "cleanup()" */
-  FMT_LOCK_Handler handler;      /* locking function */
-  FMT_LOCK_Cleanup cleanup;      /* cleanup function */
-  unsigned int     magic_number; /* used internally to make sure it's init'd */
+  unsigned int     count;        /* reference count                          */
+  void*            data;         /* for "handler()" and "cleanup()"          */
+  FMT_LOCK_Handler handler;      /* handler callback for locking / unlocking */
+  FMT_LOCK_Cleanup cleanup;      /* cleanup callback for "data"              */
+  unsigned int     magic;        /* used internally to make sure it's init'd */
 };
-#define kMT_LOCK_magic_number  0x7A96283F
+#define kMT_LOCK_magic  0x7A96283F
 
 
 #ifndef NCBI_NO_THREADS
+
+static int/*bool*/ x_Once(void** once)
+{
+#  ifndef NCBI_CXX_TOOLKIT
+    /* poor man solution */
+    if (!*once) {
+        *once = (void*) 1;
+        return 1/*true*/;
+    } else
+        return 0/*false*/;
+#  else
+    return !NCBI_SwapPointers(once, (void*) 1);
+#  endif /*NCBI_CXX_TOOLKIT*/
+}
 
 
 /*ARGSUSED*/
@@ -107,15 +123,32 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
 {
 
-#  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
-#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
-#  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
-#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
-#  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
+#  if   defined(NCBI_POSIX_THREADS)
 
-#  if   defined(NCBI_POSIX_THREADS)  &&  defined(NCBI_RECURSIVE_MUTEX_INIT)
+#    if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#      define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#    elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#      define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#    endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
 
-    static pthread_mutex_t sx_Mutex = NCBI_RECURSIVE_MUTEX_INIT;
+    static pthread_mutex_t sx_Mutex
+#    ifdef  NCBI_RECURSIVE_MUTEX_INIT
+        =   NCBI_RECURSIVE_MUTEX_INIT
+#    endif/*NCBI_RECURSIVE_MUTEX_INIT*/
+        ;
+
+#    ifndef NCBI_RECURSIVE_MUTEX_INIT
+    /* NB: Without a static initializer there is a RACE CONDITION in
+           sx_Mutex's INIT/USE! */
+    static void* once = 0;
+    if (x_Once(&once)) {
+        pthread_mutexatr attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&sx_Mutex, &attr);
+        pthread_mutexattr_destroy(&attr);
+    }
+#    endif
 
     switch (action) {
     case eMT_Lock:
@@ -159,11 +192,9 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  else
 
     if (g_CORE_Log) {
-        static int/*bool*/ once = 0/*false*/;
-        if (!once) {
-            once = 1/*true*/;
+        static void* once = 0;
+        if (x_Once(&once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
-        }
     }
     return -1/*not implemented*/;
 
@@ -182,23 +213,23 @@ struct MT_LOCK_tag g_CORE_MT_Lock_default = {
     0/* noop handler */,
 #endif /*!NCBI_NO_THREADS*/
     0/* cleanup */,
-    kMT_LOCK_magic_number
+    kMT_LOCK_magic
 };
 
 
 extern MT_LOCK MT_LOCK_Create
-(void*            user_data,
+(void*            data,
  FMT_LOCK_Handler handler,
  FMT_LOCK_Cleanup cleanup)
 {
     MT_LOCK lk = (struct MT_LOCK_tag*) malloc(sizeof(struct MT_LOCK_tag));
 
     if (lk) {
-        lk->ref_count    = 1;
-        lk->user_data    = user_data;
-        lk->handler      = handler;
-        lk->cleanup      = cleanup;
-        lk->magic_number = kMT_LOCK_magic_number;
+        lk->count   = 1;
+        lk->data    = data;
+        lk->handler = handler;
+        lk->cleanup = cleanup;
+        lk->magic   = kMT_LOCK_magic;
     }
     return lk;
 }
@@ -206,28 +237,31 @@ extern MT_LOCK MT_LOCK_Create
 
 extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 {
-    MT_LOCK_VALID;
-    if (lk != &g_CORE_MT_Lock_default)
-        lk->ref_count++;
+    if (lk) {
+        MT_LOCK_VALID;
+        if (lk != &g_CORE_MT_Lock_default)
+            lk->count++;
+    }
     return lk;
 }
 
 
 extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 {
-    if (lk  &&  lk != &g_CORE_MT_Lock_default) {
+    if (lk) {
         MT_LOCK_VALID;
-
-        if (!--lk->ref_count) {
+        if (lk != &g_CORE_MT_Lock_default  &&  !--lk->count) {
+            /* NB: may still be locked while being deleted */
             if (lk->handler) {  /* weak extra protection */
-                verify(lk->handler(lk->user_data, eMT_Lock));
-                verify(lk->handler(lk->user_data, eMT_Unlock));
+                verify(lk->handler(lk->data, eMT_Lock));
+                verify(lk->handler(lk->data, eMT_Unlock));
             }
 
             if (lk->cleanup)
-                lk->cleanup(lk->user_data);
+                lk->cleanup(lk->data);
 
-            lk->magic_number++;
+            lk->count--;
+            lk->magic++;
             free(lk);
             lk = 0;
         }
@@ -239,10 +273,7 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
 {
     MT_LOCK_VALID;
-
-    return lk->handler
-        ? lk->handler(lk->user_data, how)
-        : -1/* rightful non-doing */;
+    return lk->handler ? lk->handler(lk->data, how) : -1/*rightful non-doing*/;
 }
 
 
@@ -252,26 +283,25 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
  */
 
 /* Lock/unlock the logger */
-#define LOG_LOCK_WRITE  verify(MT_LOCK_Do(lg->mt_lock, eMT_Lock))
-#define LOG_LOCK_READ   verify(MT_LOCK_Do(lg->mt_lock, eMT_LockRead))
-#define LOG_UNLOCK      verify(MT_LOCK_Do(lg->mt_lock, eMT_Unlock))
+#define LOG_LOCK_WRITE  verify(MT_LOCK_Do(lg->lock, eMT_Lock))
+#define LOG_LOCK_READ   verify(MT_LOCK_Do(lg->lock, eMT_LockRead))
+#define LOG_UNLOCK      verify(MT_LOCK_Do(lg->lock, eMT_Unlock))
 
 
 /* Check the validity of the logger */
-#define LOG_VALID  \
-    assert(lg->ref_count  &&  lg->magic_number == kLOG_magic_number)
+#define LOG_VALID  assert(lg->count  &&  lg->magic == kLOG_magic)
 
 
 /* Logger data and callbacks */
 struct LOG_tag {
-    unsigned int ref_count;
-    void*        user_data;
+    unsigned int count;
+    void*        data;
     FLOG_Handler handler;
     FLOG_Cleanup cleanup;
-    MT_LOCK      mt_lock;
-    unsigned int magic_number;  /* used internally, to make sure it's init'd */
+    MT_LOCK      lock;
+    unsigned int magic;
 };
-#define kLOG_magic_number  0x3FB97156
+#define kLOG_magic  0x3FB97156
 
 
 extern const char* LOG_LevelStr(ELOG_Level level)
@@ -293,20 +323,20 @@ extern const char* LOG_LevelStr(ELOG_Level level)
 
 
 extern LOG LOG_Create
-(void*        user_data,
+(void*        data,
  FLOG_Handler handler,
  FLOG_Cleanup cleanup,
- MT_LOCK      mt_lock)
+ MT_LOCK      lock)
 {
     LOG lg = (struct LOG_tag*) malloc(sizeof(struct LOG_tag));
 
     if (lg) {
-        lg->ref_count    = 1;
-        lg->user_data    = user_data;
-        lg->handler      = handler;
-        lg->cleanup      = cleanup;
-        lg->mt_lock      = mt_lock;
-        lg->magic_number = kLOG_magic_number;
+        lg->count   = 1;
+        lg->data    = data;
+        lg->handler = handler;
+        lg->cleanup = cleanup;
+        lg->lock    = MT_LOCK_AddRef(lock);
+        lg->magic   = kLOG_magic;
     }
     return lg;
 }
@@ -314,7 +344,7 @@ extern LOG LOG_Create
 
 extern LOG LOG_Reset
 (LOG          lg,
- void*        user_data,
+ void*        data,
  FLOG_Handler handler,
  FLOG_Cleanup cleanup)
 {
@@ -322,11 +352,11 @@ extern LOG LOG_Reset
     LOG_VALID;
 
     if (lg->cleanup)
-        lg->cleanup(lg->user_data);
+        lg->cleanup(lg->data);
 
-    lg->user_data = user_data;
-    lg->handler   = handler;
-    lg->cleanup   = cleanup;
+    lg->data    = data;
+    lg->handler = handler;
+    lg->cleanup = cleanup;
 
     LOG_UNLOCK;
     return lg;
@@ -338,7 +368,7 @@ extern LOG LOG_AddRef(LOG lg)
     LOG_LOCK_WRITE;
     LOG_VALID;
 
-    lg->ref_count++;
+    lg->count++;
 
     LOG_UNLOCK;
     return lg;
@@ -351,8 +381,8 @@ extern LOG LOG_Delete(LOG lg)
         LOG_LOCK_WRITE;
         LOG_VALID;
 
-        if (lg->ref_count > 1) {
-            lg->ref_count--;
+        if (lg->count > 1) {
+            lg->count--;
             LOG_UNLOCK;
             return lg;
         }
@@ -360,11 +390,10 @@ extern LOG LOG_Delete(LOG lg)
         LOG_UNLOCK;
 
         LOG_Reset(lg, 0, 0, 0);
-        lg->ref_count--;
-        lg->magic_number++;
+        lg->count--;
+        lg->magic++;
 
-        if (lg->mt_lock)
-            MT_LOCK_Delete(lg->mt_lock);
+        lg->lock = MT_LOCK_Delete(lg->lock);
         free(lg);
     }
     return 0;
@@ -373,26 +402,26 @@ extern LOG LOG_Delete(LOG lg)
 
 extern void LOG_WriteInternal
 (LOG           lg,
- SLOG_Handler* call_data
+ SLOG_Message* mess
  )
 {
-    assert(!call_data->raw_size  ||  call_data->raw_data);
+    assert(!mess->raw_size  ||  mess->raw_data);
 
     if (lg) {
         LOG_LOCK_READ;
         LOG_VALID;
 
         if (lg->handler)
-            lg->handler(lg->user_data, call_data);
+            lg->handler(lg->data, mess);
 
         LOG_UNLOCK;
 
-        if (call_data->dynamic  &&  call_data->message)
-            free((void*) call_data->message);
+        if (mess->dynamic  &&  mess->message)
+            free((void*) mess->message);
     }
 
     /* unconditional exit/abort on fatal error */
-    if (call_data->level == eLOG_Fatal) {
+    if (mess->level == eLOG_Fatal) {
 #ifdef NDEBUG
         fflush(0);
         _exit(255);
@@ -417,21 +446,21 @@ extern void LOG_Write
  size_t      raw_size
  )
 {
-    SLOG_Handler call_data;
+    SLOG_Message mess;
 
-    call_data.dynamic     = 0;
-    call_data.message     = message;
-    call_data.level       = level;
-    call_data.module      = module;
-    call_data.func        = func;
-    call_data.file        = file;
-    call_data.line        = line;
-    call_data.raw_data    = raw_data;
-    call_data.raw_size    = raw_size;
-    call_data.err_code    = code;
-    call_data.err_subcode = subcode;
+    mess.dynamic     = 0;
+    mess.message     = message;
+    mess.level       = level;
+    mess.module      = module;
+    mess.func        = func;
+    mess.file        = file;
+    mess.line        = line;
+    mess.raw_data    = raw_data;
+    mess.raw_size    = raw_size;
+    mess.err_code    = code;
+    mess.err_subcode = subcode;
 
-    LOG_WriteInternal(lg, &call_data);
+    LOG_WriteInternal(lg, &mess);
 }
 
 
@@ -441,46 +470,45 @@ extern void LOG_Write
  */
 
 /* Lock/unlock the registry  */
-#define REG_LOCK_WRITE  verify(MT_LOCK_Do(rg->mt_lock, eMT_Lock))
-#define REG_LOCK_READ   verify(MT_LOCK_Do(rg->mt_lock, eMT_LockRead))
-#define REG_UNLOCK      verify(MT_LOCK_Do(rg->mt_lock, eMT_Unlock))
+#define REG_LOCK_WRITE  verify(MT_LOCK_Do(rg->lock, eMT_Lock))
+#define REG_LOCK_READ   verify(MT_LOCK_Do(rg->lock, eMT_LockRead))
+#define REG_UNLOCK      verify(MT_LOCK_Do(rg->lock, eMT_Unlock))
 
 
 /* Check the validity of the registry */
-#define REG_VALID  \
-    assert(rg->ref_count  &&  rg->magic_number == kREG_magic_number)
+#define REG_VALID  assert(rg->count  &&  rg->magic == kREG_magic)
 
 
 /* Logger data and callbacks */
 struct REG_tag {
-    unsigned int ref_count;
-    void*        user_data;
+    unsigned int count;
+    void*        data;
     FREG_Get     get;
     FREG_Set     set;
     FREG_Cleanup cleanup;
-    MT_LOCK      mt_lock;
-    unsigned int magic_number;  /* used internally, to make sure it's init'd */
+    MT_LOCK      lock;
+    unsigned int magic;
 };
-#define kREG_magic_number  0xA921BC08
+#define kREG_magic  0xA921BC08
 
 
 extern REG REG_Create
-(void*        user_data,
+(void*        data,
  FREG_Get     get,
  FREG_Set     set,
  FREG_Cleanup cleanup,
- MT_LOCK      mt_lock)
+ MT_LOCK      lock)
 {
     REG rg = (struct REG_tag*) malloc(sizeof(struct REG_tag));
 
     if (rg) {
-        rg->ref_count    = 1;
-        rg->user_data    = user_data;
-        rg->get          = get;
-        rg->set          = set;
-        rg->cleanup      = cleanup;
-        rg->mt_lock      = mt_lock;
-        rg->magic_number = kREG_magic_number;
+        rg->count   = 1;
+        rg->data    = data;
+        rg->get     = get;
+        rg->set     = set;
+        rg->cleanup = cleanup;
+        rg->lock    = MT_LOCK_AddRef(lock);
+        rg->magic   = kREG_magic;
     }
     return rg;
 }
@@ -488,7 +516,7 @@ extern REG REG_Create
 
 extern void REG_Reset
 (REG          rg,
- void*        user_data,
+ void*        data,
  FREG_Get     get,
  FREG_Set     set,
  FREG_Cleanup cleanup,
@@ -498,12 +526,12 @@ extern void REG_Reset
     REG_VALID;
 
     if (rg->cleanup  &&  do_cleanup)
-        rg->cleanup(rg->user_data);
+        rg->cleanup(rg->data);
 
-    rg->user_data = user_data;
-    rg->get       = get;
-    rg->set       = set;
-    rg->cleanup   = cleanup;
+    rg->data    = data;
+    rg->get     = get;
+    rg->set     = set;
+    rg->cleanup = cleanup;
 
     REG_UNLOCK;
 }
@@ -514,7 +542,7 @@ extern REG REG_AddRef(REG rg)
     REG_LOCK_WRITE;
     REG_VALID;
 
-    rg->ref_count++;
+    rg->count++;
 
     REG_UNLOCK;
     return rg;
@@ -527,8 +555,8 @@ extern REG REG_Delete(REG rg)
         REG_LOCK_WRITE;
         REG_VALID;
 
-        if (rg->ref_count > 1) {
-            rg->ref_count--;
+        if (rg->count > 1) {
+            rg->count--;
             REG_UNLOCK;
             return rg;
         }
@@ -536,11 +564,10 @@ extern REG REG_Delete(REG rg)
         REG_UNLOCK;
 
         REG_Reset(rg, 0, 0, 0, 0, 1/*true*/);
-        rg->ref_count--;
-        rg->magic_number++;
+        rg->count--;
+        rg->magic++;
 
-        if (rg->mt_lock)
-            MT_LOCK_Delete(rg->mt_lock);
+        rg->lock = MT_LOCK_Delete(rg->lock);
         free(rg);
     }
     return 0;
@@ -568,7 +595,7 @@ extern const char* REG_Get
         REG_VALID;
 
         if (rg->get)
-            rg->get(rg->user_data, section, name, value, value_size);
+            rg->get(rg->data, section, name, value, value_size);
 
         REG_UNLOCK;
     }
@@ -591,7 +618,7 @@ extern int/*bool*/ REG_Set
         REG_VALID;
 
         result = (rg->set
-                  ? rg->set(rg->user_data, section, name, value, storage)
+                  ? rg->set(rg->data, section, name, value, storage)
                   : 0/*failed*/);
 
         REG_UNLOCK;

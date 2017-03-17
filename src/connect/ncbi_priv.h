@@ -212,7 +212,7 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
     do {                                                                \
         ELOG_Level _xx_level = (_level);                                \
         if (g_CORE_Log  ||  _xx_level == eLOG_Fatal) {                  \
-            SLOG_Handler _mess;                                         \
+            SLOG_Message _mess;                                         \
             _mess.dynamic     = _dynamic;                               \
             _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
                                                      (_message),        \

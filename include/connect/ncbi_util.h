@@ -267,16 +267,16 @@ extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
  *
  * @note The returned string must be deallocated using "free()".
  *
- * @param call_data
- *  Parts of the message
- * @param format_flags
- *  Which fields of "call_data" to use
+ * @param mess
+ *  Broken down message
+ * @param flags
+ *  Which fields of "mess" to use
  * @sa
  *  CORE_SetLOG, CORE_SetLOGFormatFlags
  */
 extern NCBI_XCONNECT_EXPORT char* LOG_ComposeMessage
-(const SLOG_Handler* call_data,
- TLOG_FormatFlags    format_flags
+(const SLOG_Message* mess,
+ TLOG_FormatFlags    flags
  );
 
 

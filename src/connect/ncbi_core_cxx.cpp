@@ -143,12 +143,12 @@ extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
  ***********************************************************************/
 
 extern "C" {
-static void s_LOG_Handler(void*       /*user_data*/,
-                          SLOG_Handler* call_data) THROWS_NONE
+static void s_LOG_Handler(void*       /*data*/,
+                          SLOG_Message* mess) THROWS_NONE
 {
     try {
         EDiagSev level;
-        switch (call_data->level) {
+        switch (mess->level) {
         case eLOG_Trace:
             level = eDiag_Trace;
             break;
@@ -174,21 +174,21 @@ static void s_LOG_Handler(void*       /*user_data*/,
             return;
         }
 
-        CDiagCompileInfo info(call_data->file,
-                              call_data->line,
-                              call_data->func,
-                              call_data->module);
+        CDiagCompileInfo info(mess->file,
+                              mess->line,
+                              mess->func,
+                              mess->module);
         CNcbiDiag diag(info, level);
-        diag.SetErrorCode(call_data->err_code, call_data->err_subcode);
-        diag << call_data->message;
-        if (call_data->raw_size) {
+        diag.SetErrorCode(mess->err_code, mess->err_subcode);
+        diag << mess->message;
+        if (mess->raw_size) {
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<
-                call_data->raw_size <<
-                " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
+                mess->raw_size <<
+                " byte" << (mess->raw_size != 1 ? "s" : "") << ")\n" <<
                 NStr::PrintableString
-                (CTempString(static_cast<const char*>(call_data->raw_data),
-                             call_data->raw_size),
+                (CTempString(static_cast<const char*>(mess->raw_data),
+                             mess->raw_size),
                  NStr::fNewLine_Passthru | NStr::fNonAscii_Quote) <<
                 "\n#################### [END] Raw Data";
         }

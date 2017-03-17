@@ -180,8 +180,8 @@ typedef enum {
 
 
 /** MT locking callback (operates like a [recursive] mutex or RW-lock).
- * @param user_data
- *  See "user_data" in MT_LOCK_Create()
+ * @param data
+ *  See "data" in MT_LOCK_Create()
  * @param how
  *  As passed to MT_LOCK_Do()
  * @return
@@ -195,23 +195,23 @@ typedef enum {
  *   MT_LOCK_Create, MT_LOCK_Delete
  */
 typedef int/*bool*/ (*FMT_LOCK_Handler)
-(void*    user_data,
+(void*    data,
  EMT_Lock how
  );
 
 /** MT lock cleanup callback.
- * @param user_data
- *  See "user_data" in MT_LOCK_Create()
+ * @param data
+ *  See "data" in MT_LOCK_Create()
  * @sa
  *  MT_LOCK_Create, MT_LOCK_Delete
  */
 typedef void (*FMT_LOCK_Cleanup)
-(void* user_data
+(void* data
  );
 
 
-/** Create new MT lock (with an internal reference counter set to 1).
- * @param user_data
+/** Create a new MT lock (with an internal reference count set to 1).
+ * @param data
  *  Unspecified data to call "handler" and "cleanup" with
  * @param handler
  *  Locking callback
@@ -221,13 +221,13 @@ typedef void (*FMT_LOCK_Cleanup)
  *  FMT_LOCK_Handler, FMT_LOCK_Cleanup, MT_LOCK_Delete
  */
 extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Create
-(void*            user_data,
+(void*            data,
  FMT_LOCK_Handler handler,
  FMT_LOCK_Cleanup cleanup
  );
 
 
-/** Increment internal reference counter by 1, then return "lk".
+/** Increment internal reference count by 1, then return "lk".
  * @param lk
  *  A handle previously obtained from MT_LOCK_Create
  * @sa
@@ -236,9 +236,9 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Create
 extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
 
 
-/** Decrement internal reference counter by 1, and if it reaches 0, then
- * destroy the handle, call "lk->cleanup(lk->user_data)", and return NULL;
- * otherwise (if the reference counter is still > 0), return "lk".
+/** Decrement internal reference count by 1, and if it reaches 0, then
+ * destroy the handle, call "lk->cleanup(lk->data)", and return NULL;
+ * otherwise (if the reference count is still > 0), return "lk".
  * @param lk
  *  A handle previously obtained from MT_LOCK_Create
  * @sa
@@ -247,7 +247,7 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
 extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
 
 
-/** Call "lk->handler(lk->user_data, how)".
+/** Call "lk->handler(lk->data, how)".
  * @param lk
  *  A handle previously obtained from MT_LOCK_Create
  * @param how
@@ -338,66 +338,64 @@ typedef struct {
     size_t      raw_size;
     int         err_code;
     int         err_subcode;
-} SLOG_Handler;
+} SLOG_Message;
 
 
 /** Log post callback.
- * @param user_data
+ * @param data
  *  Unspeficied data as passed to LOG_Create() or LOG_Reset()
- * @param call_data
+ * @param mess
  *  Composed from arguments passed to LOG_WriteInternal()
  * @sa
- *  SLOG_Handler, LOG_Create, LOG_Reset, LOG_WriteInternal
+ *  SLOG_Message, LOG_Create, LOG_Reset, LOG_WriteInternal
  */
 typedef void (*FLOG_Handler)
-(void*         user_data,
- SLOG_Handler* call_data
+(void*         data,
+ SLOG_Message* mess
  );
 
 
 /** Log cleanup callback.
- * @param user_data
+ * @param data
  *   Unspeficied data as passed to LOG_Create() or LOG_Reset()
  * @sa
  *  LOG_Create, LOG_Reset
  * 
  */
 typedef void (*FLOG_Cleanup)
-(void* user_data
+(void* data
  );
 
 
-/** Create new LOG (with an internal reference counter set to 1).
+/** Create a new LOG (with an internal reference count set to 1).
  * @par <b>ATTENTION:</b>
- *  If non-NULL "mt_lock" is specified then
- * MT_LOCK_Delete() will be called on it when this LOG gets deleted
- * -- be aware of it (hence, if the lock is also to be used with something
- * else, then call MT_LOCK_AddRef() on it before passing to LOG_Create)!
- * @param user_data
+ *  If non-NULL "lock" is specified then MT_LOCK_AddRef() is called on it here,
+ *  and MT_LOCK_Delete() will be called on it when this LOG gets deleted.
+ * @param data
  *  Unspecified data to call "handler" and "cleanup" with
  * @param handler
  *  Log post callback
  * @param cleanup
  *  Cleanup callback
- * @param mt_lock
- *  Protective MT lock (can be NULL)
+ * @param lock
+ *  Protective MT lock (may be NULL)
  * @sa
  *  MT_LOCK, MT_LOCK_AddRef, FLOG_Handler, FLOG_Cleanup, LOG_Reset, LOG_Delete
  */
 extern NCBI_XCONNECT_EXPORT LOG LOG_Create
-(void*        user_data,
+(void*        data,
  FLOG_Handler handler,
  FLOG_Cleanup cleanup,
- MT_LOCK      mt_lock
+ MT_LOCK      lock
  );
 
 
-/** Reset the "lg" to use the new "user_data", "handler" and "cleanup".
+/** Reset the "lg" to use the new "data", "handler" and "cleanup".
  * @par <b>NOTE:</b>
- *  It does not change the reference counter of the log.
+ *  It does not change the reference count of the log.
  * @param lg
  *  A log handle previously obtained from LOG_Create
- * @param user_data
+ * @param data
  *  New user data
  * @param handler
  *  New log post callback
@@ -410,13 +408,13 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Create
  */
 extern NCBI_XCONNECT_EXPORT LOG LOG_Reset
 (LOG          lg,
- void*        user_data,
+ void*        data,
  FLOG_Handler handler,
  FLOG_Cleanup cleanup
  );
 
 
-/** Increment internal reference counter by 1, then return "lg".
+/** Increment internal reference count by 1, then return "lg".
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @sa
@@ -425,9 +423,9 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Reset
 extern NCBI_XCONNECT_EXPORT LOG LOG_AddRef(LOG lg);
 
 
-/** Decrement internal reference counter by 1, and if it reaches 0, then
- * call "lg->cleanup(lg->user_data)", destroy the handle, and return NULL;
- * otherwise (if reference counter is still > 0), return "lg".
+/** Decrement internal reference count by 1, and if it reaches 0, then
+ * call "lg->cleanup(lg->data)", destroy the handle, and return NULL;
+ * otherwise (if reference count is still > 0), return "lg".
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @sa
@@ -480,10 +478,10 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
 
 
 /** Write message (perhaps with raw data attached) to the log by calling
- * "lg->handler(lg->user_data, call_data)".
+ * "lg->handler(lg->data, mess)".
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.
- *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ *  Instead, use the LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @sa
@@ -491,7 +489,7 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
  */
 extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
 (LOG           lg,
- SLOG_Handler* call_data
+ SLOG_Message* mess
  );
 
 
@@ -522,10 +520,10 @@ typedef enum {
  * the persistent storage.  Do not modify the "value" (leave it "as is",
  * i.e. default) if the requested entry is not found in the registry.
  * @par <b>NOTE:</b>
- *  Always terminate value by '\0'.
+ *  Always terminate value with '\0'.
  * @par <b>NOTE:</b>
  *  Do not put more than "value_size" bytes to "value".
- * @param user_data
+ * @param data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @param section
  *  Section name to search
@@ -539,7 +537,7 @@ typedef enum {
  *  REG_Create, REG_Reset
  */
 typedef void (*FREG_Get)
-(void*       user_data,
+(void*       data,
  const char* section,
  const char* name,
  char*       value,    
@@ -550,7 +548,7 @@ typedef void (*FREG_Get)
 /** Registry setter callback.
  * Store the "value" to  the registry section "section" under name "name",
  * and according to "storage".
- * @param user_data
+ * @param data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @param section
  *  Section name to add the key to
@@ -566,7 +564,7 @@ typedef void (*FREG_Get)
  *  REG_Create, REG_Reset, EREG_Storage
  */
 typedef int (*FREG_Set)
-(void*        user_data,
+(void*        data,
  const char*  section,
  const char*  name,
  const char*  value,
@@ -575,25 +573,23 @@ typedef int (*FREG_Set)
 
 
 /** Registry cleanup callback.
- * @param user_data
+ * @param data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @sa
  *  REG_Reset, REG_Delete
  */
 typedef void (*FREG_Cleanup)
-(void* user_data
+(void* data
  );
 
 
-/** Create new registry (with an internal reference counter set to 1).
+/** Create a new registry (with an internal reference count set to 1).
  * @par <b>ATTENTION:</b>
- *  if non-NULL "mt_lock" is specified then
- *  MT_LOCK_Delete() will be called on it when this REG gets destroyed
- *  -- be aware of it (hence, if the lock is also to be used with something
- *  else, then call MT_LOCK_AddRef() on it before passing to REG_Create)!
- * Passing NULL callbacks below causes limiting the functionality
- * only to those operations that have the callbacks set.
- * @param user_data
+ *  if non-NULL "lock" is specified then MT_LOCK_AddRef() is called on it here,
+ *  and MT_LOCK_Delete() will be called on it when this REG gets destroyed.
+ *  Passing NULL callbacks below causes limiting the functionality
+ *  only to those operations that have the callbacks set for.
+ * @param data
  *  Unspecified data to call "set", "get" and "cleanup" with 
  * @param get
  *  Getter callback
@@ -601,27 +597,27 @@ typedef void (*FREG_Cleanup)
  *  Setter callback
  * @param cleanup
  *  Cleanup callback
- * @param mt_lock
- *  Protective MT lock (can be NULL)
+ * @param lock
+ *  Protective MT lock (may be NULL)
  * @sa
  *  MT_LOCK, MT_LOCK_AddRef, REG_Get, REG_Set, REG_Reset, REG_Delete
  */
 extern NCBI_XCONNECT_EXPORT REG REG_Create
-(void*        user_data,
+(void*        data,
  FREG_Get     get,    
  FREG_Set     set,    
  FREG_Cleanup cleanup, 
- MT_LOCK      mt_lock
+ MT_LOCK      lock
  );
 
 
-/** Reset the registry handle to use the new "user_data", "set", "get",
+/** Reset the registry handle to use the new "data", "set", "get",
  * and "cleanup".
  * @par <b>NOTE:</b>
- *  No change to the internal reference counter.
+ *  No change to the internal reference count.
  * @param rg
  *  Registry handle as previously obtained from REG_Create
- * @param user_data
+ * @param data
  *  New user data
  * @param get
  *  New getter callback
@@ -636,7 +632,7 @@ extern NCBI_XCONNECT_EXPORT REG REG_Create
  */
 extern NCBI_XCONNECT_EXPORT void REG_Reset
 (REG          rg,
- void*        user_data,
+ void*        data,
  FREG_Get     get,   
  FREG_Set     set,  
  FREG_Cleanup cleanup,
@@ -644,7 +640,7 @@ extern NCBI_XCONNECT_EXPORT void REG_Reset
  );
 
 
-/** Increment internal reference counter by 1, then return "rg".
+/** Increment internal reference count by 1, then return "rg".
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @sa
@@ -653,9 +649,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Reset
 extern NCBI_XCONNECT_EXPORT REG REG_AddRef(REG rg);
 
 
-/** Decrement internal referecne counter by 1, and if it reaches 0, then
- * call "rg->cleanup(rg->user_data)", destroy the handle, and return NULL;
- * otherwise (if the reference counter is still > 0), return "rg".
+/** Decrement internal reference count by 1, and if it reaches 0, then
+ * call "rg->cleanup(rg->data)", destroy the handle, and return NULL;
+ * otherwise (if the reference count is still > 0), return "rg".
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @sa
@@ -664,12 +660,12 @@ extern NCBI_XCONNECT_EXPORT REG REG_AddRef(REG rg);
 extern NCBI_XCONNECT_EXPORT REG REG_Delete(REG rg);
 
 
-/** Copy the registry value stored in "section" under name "name"
- * to buffer "value";  if the entry is found in both transient and persistent
- * storages, then copy the one from the transient storage.
- * If the specified entry is not found in the registry (or if there is
- * no registry defined), and "def_value" is not NULL, then copy "def_value"
- * to "value" (although, only up to "value_size" characters).
+/** Copy the registry value stored in "section" under name "name" to buffer
+ * "value";  if the entry is found in both transient and persistent storages,
+ * then copy the one from the transient storage.
+ * If the specified entry is not found in the registry (or if there is no
+ * registry defined), and "def_value" is not NULL, then copy "def_value" to
+ * "value" (although, only up to "value_size" characters).
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @param section
@@ -684,7 +680,7 @@ extern NCBI_XCONNECT_EXPORT REG REG_Delete(REG rg);
  *  Default value (none if passed NULL)
  * @return
  *  Return "value" (however, if "value_size" is zero, then return NULL).
- *  If non-NULL, the returned "value" will be terminated by '\0'.
+ *  If non-NULL, the returned "value" will be terminated with '\0'.
  * @sa
  *  REG_Create, REG_Set
  */
@@ -699,7 +695,7 @@ extern NCBI_XCONNECT_EXPORT const char* REG_Get
 
 
 /** Store the "value" to the registry section "section" under name "name",
- * and according with "storage".
+ * and according to "storage".
  * @param rg
  *  Registry handle as previously obtained from REG_Create
  * @param section

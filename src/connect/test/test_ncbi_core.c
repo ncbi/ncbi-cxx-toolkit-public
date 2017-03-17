@@ -52,10 +52,10 @@
  */
 #if defined(__cplusplus)
 extern "C" {
-    static int/*bool*/ TEST_CORE_LockHandler(void* user_data, EMT_Lock how);
-    static void        TEST_CORE_LockCleanup(void* user_data);
-    static void TEST_CORE_LogHandler(void* user_data, SLOG_Handler* call_data);
-    static void TEST_CORE_LogCleanup(void* user_data);
+    static int/*bool*/ TEST_CORE_LockHandler(void* data, EMT_Lock how);
+    static void        TEST_CORE_LockCleanup(void* data);
+    static void        TEST_CORE_LogHandler (void* data, SLOG_Message* mess);
+    static void        TEST_CORE_LogCleanup (void* data);
 }
 #endif /* __cplusplus */
 
@@ -90,13 +90,13 @@ static void TEST_CORE_Io(void)
 }
 
 
-static int TEST_CORE_LockUserData;
+static int TEST_CORE_LockData;
 
 /* FMT_LOCK_Handler */
-static int/*bool*/ TEST_CORE_LockHandler(void* user_data, EMT_Lock how)
+static int/*bool*/ TEST_CORE_LockHandler(void* data, EMT_Lock how)
 {
     const char* str = 0;
-    assert(user_data == &TEST_CORE_LockUserData);
+    assert(data == &TEST_CORE_LockData);
 
     switch ( how ) {
     case eMT_Lock:
@@ -122,11 +122,11 @@ static int/*bool*/ TEST_CORE_LockHandler(void* user_data, EMT_Lock how)
 
 
 /* FMT_LOCK_Cleanup */
-static void TEST_CORE_LockCleanup(void* user_data)
+static void TEST_CORE_LockCleanup(void* data)
 {
-    assert(user_data == &TEST_CORE_LockUserData);
+    assert(data == &TEST_CORE_LockData);
     printf("TEST_CORE_LockCleanup()\n");
-    TEST_CORE_LockUserData = 222;
+    TEST_CORE_LockData = 222;
 }
 
 
@@ -136,15 +136,14 @@ static void TEST_CORE_Lock(void)
     MT_LOCK x_lock;
 
     /* dummy */
-    TEST_CORE_LockUserData = 111;
-    x_lock = MT_LOCK_Create(&TEST_CORE_LockUserData,
-                            0, TEST_CORE_LockCleanup);
+    TEST_CORE_LockData = 111;
+    x_lock = MT_LOCK_Create(&TEST_CORE_LockData, 0, TEST_CORE_LockCleanup);
     assert(x_lock);
 
     verify(MT_LOCK_AddRef(x_lock) == x_lock);
     verify(MT_LOCK_AddRef(x_lock) == x_lock);
     verify(MT_LOCK_Delete(x_lock) == x_lock);
-    assert(TEST_CORE_LockUserData == 111);
+    assert(TEST_CORE_LockData == 111);
 
     verify(MT_LOCK_Do(x_lock, eMT_LockRead));
     verify(MT_LOCK_Do(x_lock, eMT_Lock));
@@ -152,12 +151,12 @@ static void TEST_CORE_Lock(void)
     verify(MT_LOCK_Do(x_lock, eMT_Unlock));
 
     verify(MT_LOCK_Delete(x_lock) == x_lock);
-    assert(TEST_CORE_LockUserData == 111);
+    assert(TEST_CORE_LockData == 111);
     verify(MT_LOCK_Delete(x_lock) == 0);
-    assert(TEST_CORE_LockUserData == 222);
+    assert(TEST_CORE_LockData == 222);
 
     /* real */
-    x_lock = MT_LOCK_Create(&TEST_CORE_LockUserData,
+    x_lock = MT_LOCK_Create(&TEST_CORE_LockData,
                             TEST_CORE_LockHandler, TEST_CORE_LockCleanup);
     assert(x_lock);
 
@@ -181,27 +180,27 @@ static void TEST_CORE_Lock(void)
 }
 
 
-static int TEST_CORE_LogUserData;
+static int TEST_CORE_LogData;
 
 /* FLOG_Handler */
-static void TEST_CORE_LogHandler(void* user_data, SLOG_Handler* call_data)
+static void TEST_CORE_LogHandler(void* data, SLOG_Message* mess)
 {
-    printf("TEST_CORE_LogHandler(round %d):\n", TEST_CORE_LogUserData);
-    printf("   Message: %s\n", call_data->message ? call_data->message : "?");
-    printf("   Level:   %s\n", LOG_LevelStr(call_data->level));
-    printf("   Module:  %s\n", call_data->module ? call_data->module : "?");
-    printf("   Func:    %s\n", call_data->func ? call_data->func : "?");
-    printf("   File:    %s\n", call_data->file ? call_data->file : "?");
-    printf("   Line:    %d\n", call_data->line);
+    printf("TEST_CORE_LogHandler(round %d):\n", TEST_CORE_LogData);
+    printf("   Message: %s\n", mess->message ? mess->message : "?");
+    printf("   Level:   %s\n", LOG_LevelStr(mess->level));
+    printf("   Module:  %s\n", mess->module ? mess->module : "?");
+    printf("   Func:    %s\n", mess->func ? mess->func : "?");
+    printf("   File:    %s\n", mess->file ? mess->file : "?");
+    printf("   Line:    %d\n", mess->line);
 }
 
 
 /* FLOG_Cleanup */
-static void TEST_CORE_LogCleanup(void* user_data)
+static void TEST_CORE_LogCleanup(void* data)
 {
-    assert(user_data == &TEST_CORE_LogUserData);
-    printf("TEST_CORE_LogCleanup(round %d)\n", TEST_CORE_LogUserData);
-    TEST_CORE_LogUserData = 444;
+    assert(data == &TEST_CORE_LogData);
+    printf("TEST_CORE_LogCleanup(round %d)\n", TEST_CORE_LogData);
+    TEST_CORE_LogData = 444;
 }
 
 
@@ -235,12 +234,12 @@ static void TEST_CORE_Log(void)
     /* LOG API */
 
     /* MT-lock */
-    x_lock = MT_LOCK_Create(&TEST_CORE_LockUserData,
+    x_lock = MT_LOCK_Create(&TEST_CORE_LockData,
                             TEST_CORE_LockHandler, TEST_CORE_LockCleanup);
 
     /* dummy */
-    TEST_CORE_LogUserData = 1;
-    x_log = LOG_Create(&TEST_CORE_LogUserData,
+    TEST_CORE_LogData = 1;
+    x_log = LOG_Create(&TEST_CORE_LogData,
                        TEST_CORE_LogHandler, TEST_CORE_LogCleanup,
                        x_lock);
     assert(x_log);
@@ -248,7 +247,7 @@ static void TEST_CORE_Log(void)
     verify(LOG_AddRef(x_log) == x_log);
     verify(LOG_AddRef(x_log) == x_log);
     verify(LOG_Delete(x_log) == x_log);
-    assert(TEST_CORE_LogUserData == 1);
+    assert(TEST_CORE_LogData == 1);
 
     LOG_WRITE(0, 0, 0, eLOG_Trace, 0);
     LOG_Write(0, 0, 0, eLOG_Trace, 0, 0, 0, 0, 0, 0, 0);
@@ -256,13 +255,13 @@ static void TEST_CORE_Log(void)
     LOG_Write(x_log, 0, 0, eLOG_Trace, 0, 0, 0, 0, 0, 0, 0);
 
     verify(LOG_Delete(x_log) == x_log);
-    assert(TEST_CORE_LogUserData == 1);
+    assert(TEST_CORE_LogData == 1);
 
     /* reset to "real" logging */
-    LOG_Reset(x_log, &TEST_CORE_LogUserData,
+    LOG_Reset(x_log, &TEST_CORE_LogData,
               TEST_CORE_LogHandler, TEST_CORE_LogCleanup);
-    assert(TEST_CORE_LogUserData == 444);
-    TEST_CORE_LogUserData = 2;
+    assert(TEST_CORE_LogData == 444);
+    TEST_CORE_LogData = 2;
 
     /* do the test logging */
     LOG_WRITE(x_log, 0, 0, eLOG_Trace, 0);
@@ -277,7 +276,7 @@ static void TEST_CORE_Log(void)
 
     /* delete */
     verify(LOG_Delete(x_log) == 0);
-    assert(TEST_CORE_LogUserData == 444);
+    assert(TEST_CORE_LogData == 444);
 }
 
 

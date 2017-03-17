@@ -348,8 +348,8 @@ extern const char* NcbiMessagePlusError
 
 
 extern char* LOG_ComposeMessage
-(const SLOG_Handler* call_data,
- TLOG_FormatFlags    format_flags)
+(const SLOG_Message* mess,
+ TLOG_FormatFlags    flags)
 {
     static const char kRawData_Begin[] =
         "\n#################### [BEGIN] Raw Data (%lu byte%s):\n";
@@ -370,18 +370,18 @@ extern char* LOG_ComposeMessage
     size_t total_len;
 
     /* Adjust formatting flags */
-    if (call_data->level == eLOG_Trace  &&  !(format_flags & fLOG_None))
-        format_flags |= fLOG_Full;
-    if (format_flags == fLOG_Default) {
+    if (mess->level == eLOG_Trace  &&  !(flags & fLOG_None))
+        flags |= fLOG_Full;
+    if (flags == fLOG_Default) {
 #if !defined(_DEBUG)  ||  defined(NDEBUG)
-        format_flags = fLOG_Short;
+        flags = fLOG_Short;
 #else
-        format_flags = fLOG_Full;
+        flags = fLOG_Full;
 #endif /*!_DEBUG || NDEBUG*/
     }
 
     /* Pre-calculate total message length */
-    if ((format_flags & fLOG_DateTime) != 0) {
+    if ((flags & fLOG_DateTime) != 0) {
 #ifdef NCBI_OS_MSWIN /*Should be compiler-dependent but C-Tkit lacks it*/
         _strdate(&datetime[datetime_len]);
         datetime_len += strlen(&datetime[datetime_len]);
@@ -410,19 +410,18 @@ extern char* LOG_ComposeMessage
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
 #endif /*NCBI_OS_MSWIN*/
     }
-    if ((format_flags & fLOG_Level) != 0
-        &&  (call_data->level != eLOG_Note
-             ||  !(format_flags & fLOG_OmitNoteLevel))) {
-        level = LOG_LevelStr(call_data->level);
+    if ((flags & fLOG_Level) != 0
+        &&  (mess->level != eLOG_Note  ||  !(flags & fLOG_OmitNoteLevel))) {
+        level = LOG_LevelStr(mess->level);
         level_len = strlen(level) + 2;
     }
-    if ((format_flags & fLOG_Module) != 0  &&
-        call_data->module  &&  *call_data->module) {
-        module_len = strlen(call_data->module) + 3;
+    if ((flags & fLOG_Module) != 0
+        &&  mess->module  &&  *mess->module) {
+        module_len = strlen(mess->module) + 3;
     }
-    if ((format_flags & fLOG_Function) != 0  &&
-        call_data->func  &&  *call_data->func) {
-        function = call_data->func;
+    if ((flags & fLOG_Function) != 0
+        &&  mess->func  &&  *mess->func) {
+        function = mess->func;
         if (!module_len)
             function_len = 3;
         function_len += strlen(function) + 2;
@@ -430,19 +429,18 @@ extern char* LOG_ComposeMessage
             function_len = 0;
     } else
         function = 0;
-    if ((format_flags & fLOG_FileLine) != 0  &&
-        call_data->file  &&  *call_data->file) {
-        file_line_len = 12 + strlen(call_data->file) + 11;
+    if ((flags & fLOG_FileLine) != 0
+        &&  mess->file  &&  *mess->file) {
+        file_line_len = 12 + strlen(mess->file) + 11;
     }
-    if (call_data->message  &&  *call_data->message) {
-        message_len = strlen(call_data->message);
-    }
+    if (mess->message  &&  *mess->message)
+        message_len = strlen(mess->message);
 
-    if (call_data->raw_size) {
+    if (mess->raw_size) {
         data_len = (sizeof(kRawData_Begin)
                     + 20 + UTIL_PrintableStringSize((const char*)
-                                                    call_data->raw_data,
-                                                    call_data->raw_size) +
+                                                    mess->raw_data,
+                                                    mess->raw_size) +
                     sizeof(kRawData_End));
     }
 
@@ -462,18 +460,18 @@ extern char* LOG_ComposeMessage
     }
     if (file_line_len) {
         s += sprintf(s, "\"%s\", line %d: ",
-                     call_data->file, (int) call_data->line);
+                     mess->file, (int) mess->line);
     }
     if (module_len | function_len)
         *s++ = '[';
     if (module_len) {
-        memcpy(s, call_data->module, module_len -= 3);
+        memcpy(s, mess->module, module_len -= 3);
         s += module_len;
     }
     if (function_len) {
         memcpy(s, "::", 2);
         s += 2;
-        memcpy(s, function, function_len -= module_len ? 2 : 5);
+        memcpy(s, function, function_len -= (module_len ? 2 : 5));
         s += function_len;
     }
     if (module_len | function_len) {
@@ -487,18 +485,18 @@ extern char* LOG_ComposeMessage
         *s++ = ' ';
     }
     if (message_len) {
-        memcpy(s, call_data->message, message_len);
+        memcpy(s, mess->message, message_len);
         s += message_len;
     }
     if (data_len) {
         s += sprintf(s, kRawData_Begin,
-                     (unsigned long) call_data->raw_size,
-                     &"s"[call_data->raw_size == 1]);
+                     (unsigned long) mess->raw_size,
+                     &"s"[mess->raw_size == 1]);
 
         s = UTIL_PrintableString((const char*)
-                                 call_data->raw_data,
-                                 call_data->raw_size,
-                                 s, format_flags & fLOG_FullOctal);
+                                 mess->raw_data,
+                                 mess->raw_size,
+                                 s, flags & fLOG_FullOctal);
 
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else
@@ -521,23 +519,23 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
+static void s_LOG_FileHandler(void* data, SLOG_Message* mess)
 {
-    SLogData* data = (SLogData*) user_data;
-    assert(data  &&  data->fp);
-    assert(call_data);
+    SLogData* logdata = (SLogData*) data;
+    assert(logdata  &&  logdata->fp);
+    assert(mess);
 
-    if (call_data->level >= data->cut_off  ||
-        call_data->level >= data->fatal_err) {
-        char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
+    if (mess->level >= logdata->cut_off  ||
+        mess->level >= logdata->fatal_err) {
+        char* str = LOG_ComposeMessage(mess, s_LogFormatFlags);
         if (str) {
             size_t len = strlen(str);
             str[len++] = '\n';
-            fwrite(str, len, 1, data->fp);
-            fflush(data->fp);
+            fwrite(str, len, 1, logdata->fp);
+            fflush(logdata->fp);
             free(str);
         }
-        if (call_data->level >= data->fatal_err) {
+        if (mess->level >= logdata->fatal_err) {
 #ifdef NDEBUG
             exit(1);
 #else
@@ -555,16 +553,16 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-static void s_LOG_FileCleanup(void* user_data)
+static void s_LOG_FileCleanup(void* data)
 {
-    SLogData* data = (SLogData*) user_data;
+    SLogData* logdata = (SLogData*) data;
 
-    assert(data  &&  data->fp);
-    if (data->auto_close)
-        fclose(data->fp);
+    assert(logdata  &&  logdata->fp);
+    if (logdata->auto_close)
+        fclose(logdata->fp);
     else
-        fflush(data->fp);
-    free(user_data);
+        fflush(logdata->fp);
+    free(logdata);
 }
 #ifdef __cplusplus
 }
@@ -579,18 +577,18 @@ extern void LOG_ToFILE_Ex
  int/*bool*/ auto_close
  )
 {
-    SLogData* data;
+    SLogData* logdata;
     if (fp) {
         fflush(fp);
-        data = (SLogData*) malloc(sizeof(*data));
+        logdata = (SLogData*) malloc(sizeof(*logdata));
     } else
-        data = 0;
-    if (data) {
-        data->fp         = fp;
-        data->cut_off    = cut_off;
-        data->fatal_err  = fatal_err;
-        data->auto_close = auto_close;
-        LOG_Reset(lg, data, s_LOG_FileHandler, s_LOG_FileCleanup);
+        logdata = 0;
+    if (logdata) {
+        logdata->fp         = fp;
+        logdata->cut_off    = cut_off;
+        logdata->fatal_err  = fatal_err;
+        logdata->auto_close = auto_close;
+        LOG_Reset(lg, logdata, s_LOG_FileHandler, s_LOG_FileCleanup);
     } else {
         LOG_Reset(lg, 0/*data*/, 0/*handler*/, 0/*cleanup*/);
         if (fp  &&  auto_close)
