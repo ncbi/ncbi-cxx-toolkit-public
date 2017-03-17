@@ -107,9 +107,9 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
                              const string   & dbfilename,
                              char             prot_nucl)
                              
-    : m_Atlas   (atlas),      
-      m_Lease    (atlas),
+    : m_Atlas   (atlas), 
       m_FileName(dbfilename),
+      m_Lease    (atlas),      
       m_File    (atlas)
 {
     if ((prot_nucl != 'p') && (prot_nucl != 'n')) {
