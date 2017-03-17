@@ -110,9 +110,6 @@ public:
 public:
     void Init(void);
     int  Run (void);
-
-private:
-    unsigned int m_Seed;
 };
 
 
