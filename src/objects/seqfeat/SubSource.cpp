@@ -3911,6 +3911,8 @@ string CSubSource::FixIsolationSourceCapitalization(const string& value)
 {
     string fix = value;
 
+    s_InitializeQualMaps();
+
     TQualFixMap::iterator it = s_IsolationSourceMap.find(value);
     if (it != s_IsolationSourceMap.end()) {
         return it->second;
