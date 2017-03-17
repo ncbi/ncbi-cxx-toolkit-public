@@ -44,9 +44,9 @@ BEGIN_NCBI_SCOPE
 CSeqDBGiMask::CSeqDBGiMask(CSeqDBAtlas           & atlas,
                            const vector <string> & mask_name)
     : m_Atlas            (atlas),
-      m_IndexLease       (atlas),
-      m_OffsetLease      (atlas),
       m_MaskNames        (mask_name),
+      m_IndexLease       (atlas),
+      m_OffsetLease      (atlas),      
       m_AlgoId           (-1),
       m_IndexFile        (m_Atlas),      
       m_OffsetFile       (m_Atlas)

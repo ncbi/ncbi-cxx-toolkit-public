@@ -212,20 +212,20 @@ private:
     /// The set of gi masks found in alias description
     const vector<string> m_MaskNames;
 
+    /// Index file lease.
+    CSeqDBFileMemMap m_IndexLease;
+
+    /// Offset file lease.
+    CSeqDBFileMemMap m_OffsetLease;
+
     /// The current used mask id
     Int4 m_AlgoId;
 
     /// Index file.
     CSeqDBRawFile m_IndexFile;
 
-    /// Index file lease.
-    CSeqDBFileMemMap m_IndexLease;
-
     /// Offset file.
     CSeqDBRawFile m_OffsetFile;
-
-    /// Offset file lease.
-    CSeqDBFileMemMap m_OffsetLease;
 
     /// Number of data volumes
     Int4 m_NumVols;
