@@ -53,6 +53,19 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+namespace
+{
+
+CSeq_descr& _ParentDescr(CBioseq& bioseq)
+{
+    if (bioseq.GetParentSet())
+        return ((CBioseq_set*)(bioseq.GetParentSet().GetPointerOrNull()))->SetDescr();
+    else
+        return bioseq.SetDescr();
+}
+
+};
+
 void TSrcQuals::x_AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
@@ -124,10 +137,10 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
     {
         if (NStr::CompareNocase(mod->key, "bioproject") == 0)
-            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
+            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod->value);
         else
         if (NStr::CompareNocase(mod->key, "biosample") == 0)
-            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
+            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod->value);
         else
         if (!x_ParseAndAddTracks(bioseq, mod->key, mod->value))
         {
