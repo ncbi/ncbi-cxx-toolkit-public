@@ -1627,6 +1627,7 @@ extern EIO_Status URL_ConnectEx
     size_t      hdr_len;
     size_t      args_len;
     char        temp[80];
+    unsigned short x_port;
     EReqMethod  x_req_meth;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
 
@@ -1646,11 +1647,15 @@ extern EIO_Status URL_ConnectEx
 
     /*FIXME: the check to be removed*/
     if (cred  &&  cred < (NCBI_CRED) 4096) {
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
+            *temp = '\0';
         CORE_LOGF(eLOG_Critical,
-                  ("[URL_ConnectEx; http%s://%s:%hu%s%s] "
+                  ("[URL_ConnectEx; http%s://%s%s%s%s] "
                    " Obsolete feature 'encode_args' is no longer supported",
                    &"s"[!(flags & fSOCK_Secure)],
-                   host, port, &"/"[*path == '/'], path));
+                   host, temp, &"/"[*path == '/'], path));
         return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
 
@@ -1674,30 +1679,40 @@ extern EIO_Status URL_ConnectEx
         x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
     else if (content_length  &&  (x_req_meth == eReqMethod_Head  ||
                                   x_req_meth == eReqMethod_Get)) {
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
+            *temp = '\0';
         CORE_LOGF_X(3, eLOG_Warning,
-                    ("[URL_Connect; http%s://%s:%hu%s%s] "
+                    ("[URL_Connect; http%s://%s%s%s%s] "
                      " Content-Length (%lu) is ignored with request method %s",
                      &"s"[!(flags & fSOCK_Secure)],
-                     host, port, &"/"[*path == '/'], path,
+                     host, temp, &"/"[*path == '/'], path,
                      (unsigned long) content_length,
                      x_req_meth == eReqMethod_Get ? "GET" : "HEAD"));
         content_length = 0;
     }
 
     if (!(str = x_ReqMethod(x_req_meth, 0))) {
+        char tmp[40];
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
+            *temp = '\0';
         CORE_LOGF_X(4, eLOG_Error,
-                    ("[URL_Connect; http%s://%s:%hu%s%s] "
+                    ("[URL_Connect; http%s://%s%s%s%s] "
                      " Unsupported request method %s",
                      &"s"[!(flags & fSOCK_Secure)],
-                     host, port, &"/"[*path == '/'], path,
-                     x_ReqMethod(req_method, temp)));
+                     host, temp, &"/"[*path == '/'], path,
+                     x_ReqMethod(req_method, tmp)));
         assert(0);
         return x_URLConnectErrorReturn(s, eIO_NotSupported);
     }
 
+    x_port = port;
     if (x_req_meth != eReqMethod_Connect) {
-        if (!port)
-            port = flags & fSOCK_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
+        if (!x_port)
+            x_port = flags & fSOCK_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
         args_len = args ? strcspn(args, "#") : 0;
     } else
         args_len = 0;
@@ -1731,8 +1746,12 @@ extern EIO_Status URL_ConnectEx
         (x_req_meth == eReqMethod_Connect  &&  content_length
          &&  !BUF_Write(&buf, args, content_length))) {
         int x_errno = errno;
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
+            *temp = '\0';
         CORE_LOGF_ERRNO_X(5, eLOG_Error, x_errno,
-                          ("[URL_Connect; http%s://%s:%hu%s%s%s%.*s] "
+                          ("[URL_Connect; http%s://%s%s%s%s%s%.*s] "
                            " Cannot build HTTP header",
                            &"s"[!(flags & fSOCK_Secure)],
                            host, port, &"/"[*path == '/'], path,
@@ -1744,8 +1763,12 @@ extern EIO_Status URL_ConnectEx
     if (!(hdr = (char*) malloc(hdr_len = BUF_Size(buf)))
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
+            *temp = '\0';
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
-                          ("[URL_Connect; http%s://%s:%hu%s%s%s%.*s] "
+                          ("[URL_Connect; http%s://%s%s%s%s%s%.*s] "
                            " Cannot maintain HTTP header (%lu byte%s)",
                            &"s"[!(flags & fSOCK_Secure)],
                            host, port, &"/"[*path == '/'], path,
@@ -1770,27 +1793,32 @@ extern EIO_Status URL_ConnectEx
         SOCK_Destroy(s);
     } else {
         /* connect to HTTPD */
-        status = SOCK_CreateInternal(host, port, o_timeout, sock/*new*/,
+        status = SOCK_CreateInternal(host, x_port, o_timeout, sock/*new*/,
                                      &init, flags);
     }
     free(hdr);
 
     if (status != eIO_Success) {
+        char timeout[40];
         assert(!*sock);
         if (status == eIO_Timeout  &&  o_timeout) {
-            sprintf(temp, "[%u.%06u]",
+            sprintf(timeout, "[%u.%06u]",
                     (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
                     (unsigned int)                 (o_timeout->usec%1000000));
         } else
+            *timeout = '\0';
+        if (port)
+            sprintf(temp, ":%hu", port);
+        else
             *temp = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect; http%s://%s:%hu%s%s%s%.*s] "
+                    ("[URL_Connect; http%s://%s%s%s%s%s%.*s] "
                      " Failed to %s: %s%s",
                      &"s"[!(flags & fSOCK_Secure)],
-                     host, port, &"/"[*path == '/'], path,
+                     host, temp, &"/"[*path == '/'], path,
                      &"?"[!args_len], (int) args_len, args,
                      s ? "use connection" : "connect",
-                     IO_StatusStr(status), temp));
+                     IO_StatusStr(status), timeout));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
     return status;
