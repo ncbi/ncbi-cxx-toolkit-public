@@ -111,6 +111,7 @@ int main(int argc, const char* argv[])
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
+    /* the first init needed to clear up uninited mutex, if any */
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*false*/);
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Warning, 0/*false*/);
     if (argc > 1)
