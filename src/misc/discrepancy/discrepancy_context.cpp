@@ -622,7 +622,7 @@ const CSeq_id* CDiscrepancyContext::GetProteinId()
         return GetProteinId_protein_id;
     }
     const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
-    ITERATE(CBioseq::TId, id_it, bioseq_ids) {
+    ITERATE (CBioseq::TId, id_it, bioseq_ids) {
         const CSeq_id & seq_id = **id_it;
         if( seq_id.IsGeneral() && ! seq_id.GetGeneral().IsSkippable() ) {
             GetProteinId_protein_id = &seq_id;
@@ -648,7 +648,7 @@ bool CDiscrepancyContext::IsRefseq()
         return IsRefseq_is_refseq;
     }
     const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
-    ITERATE(CBioseq::TId, id_it, bioseq_ids) {
+    ITERATE (CBioseq::TId, id_it, bioseq_ids) {
         const CSeq_id & seq_id = **id_it;
         if( seq_id.IsOther() ) {
             // for historical reasons, "other" means "refseq"
@@ -742,9 +742,46 @@ string CDiscrepancyContext::GetProdForFeature(const CSeq_feat& feat)
 bool CDiscrepancyContext::IsPseudo(const CSeq_feat& feat)
 {
     if (m_IsPseudoMap.find(&feat) == m_IsPseudoMap.end()) {
-        m_IsPseudoMap[&feat] = sequence::IsPseudo(feat, *m_Scope);
+        //m_IsPseudoMap[&feat] = sequence::IsPseudo(feat, *m_Scope); // can do more efficiently!
+        m_IsPseudoMap[&feat] = x_IsPseudo(feat);
     }
     return m_IsPseudoMap[&feat];
+}
+
+
+bool CDiscrepancyContext::x_IsPseudo(const CSeq_feat& feat)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    }
+    if (feat.IsSetQual()) {
+        ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
+                return true;
+            }
+        }
+    }
+    if (feat.GetData().IsGene()) {
+        if (feat.GetData().GetGene().IsSetPseudo() && feat.GetData().GetGene().GetPseudo()) {
+            return true;
+        }
+    }
+    else {
+        if (feat.IsSetXref()) {
+            ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsGene() &&
+                    (*it)->GetData().GetGene().IsSetPseudo() &&
+                    (*it)->GetData().GetGene().GetPseudo()) {
+                    return true;
+                }
+            }
+        }
+        CConstRef<CSeq_feat> gene(GetGeneForFeature(feat));
+        if (gene && IsPseudo(*gene)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

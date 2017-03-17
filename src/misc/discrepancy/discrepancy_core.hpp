@@ -471,6 +471,7 @@ protected:
     map<const CSeq_feat*, bool> m_IsPseudoMap;
     map<const CSeq_feat*, const CSeq_feat*> m_GeneForFeatureMap;
     map<const CSeq_feat*, string> m_ProdForFeatureMap;
+    bool x_IsPseudo(const CSeq_feat& feat);
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
