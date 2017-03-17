@@ -554,10 +554,22 @@ SchedExecuteTask(SSrvThread* thr)
 }
 
 void
-ConfigureScheduler(CNcbiRegistry* reg, CTempString section)
+ConfigureScheduler(const CNcbiRegistry* reg, CTempString section)
 {
     s_MaxTaskLatency = Uint4(reg->GetInt(section, "max_task_delay", 500));
     s_IdleStopTimeout = reg->GetInt(section, "idle_thread_stop_timeout", 300);
+}
+
+bool ReConfig_Scheduler(const CTempString&, const CNcbiRegistry&, string&)
+{
+    return true;
+}
+
+void WriteSetup_Scheduler(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("max_task_delay").WriteText(is ).WriteNumber( s_MaxTaskLatency);
+    task.WriteText(eol).WriteText("idle_thread_stop_timeout").WriteText(is ).WriteNumber( s_IdleStopTimeout);
 }
 
 void

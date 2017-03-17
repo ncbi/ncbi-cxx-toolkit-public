@@ -89,10 +89,21 @@ InitTimeMan(void)
 }
 
 void
-ConfigureTimeMan(CNcbiRegistry* reg, CTempString section)
+ConfigureTimeMan(const CNcbiRegistry* reg, CTempString section)
 {
     Uint4 clock_freq = Uint4(reg->GetInt(section, "jiffies_per_sec", 100));
     s_JiffyTime.NSec() = kUSecsPerSecond * kNSecsPerUSec / clock_freq;
+}
+
+bool ReConfig_TimeMan(const CTempString&, const CNcbiRegistry&, string&)
+{
+    return true;
+}
+
+void WriteSetup_TimeMan(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("jiffies_per_sec").WriteText(is ).WriteNumber( kUSecsPerSecond * kNSecsPerUSec / s_JiffyTime.NSec());
 }
 
 void

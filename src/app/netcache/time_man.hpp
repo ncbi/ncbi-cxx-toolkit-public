@@ -36,7 +36,9 @@ BEGIN_NCBI_SCOPE
 
 void InitTime(void);
 void InitTimeMan(void);
-void ConfigureTimeMan(CNcbiRegistry* reg, CTempString section);
+void ConfigureTimeMan(const CNcbiRegistry* reg, CTempString section);
+bool ReConfig_TimeMan(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
+void WriteSetup_TimeMan(CSrvSocketTask& task);
 void IncCurJiffies(void);
 
 

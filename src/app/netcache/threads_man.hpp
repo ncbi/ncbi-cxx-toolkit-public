@@ -51,7 +51,9 @@ class CSrvStat;
 
 void InitCurThreadStorage(void);
 SSrvThread* GetCurThread(void);
-void ConfigureThreads(CNcbiRegistry* reg, CTempString section);
+void ConfigureThreads(const CNcbiRegistry* reg, CTempString section);
+bool ReConfig_Threads(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
+void WriteSetup_Threads(CSrvSocketTask& task);
 bool InitThreadsMan(void);
 void RunMainThread(void);
 void FinalizeThreadsMan(void);

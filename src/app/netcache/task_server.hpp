@@ -57,6 +57,7 @@ typedef Uint1 TSrvTaskFlags;
 class CNcbiRegistry;
 class CSrvSocketFactory;
 class CSrvTime;
+class CSrvSocketTask;
 
 
 // Helper types to use in CSrvRCUUser
@@ -169,6 +170,9 @@ public:
     /// Load (re-read) configuration from current conf file into another registry
     /// It is used in RECONF command to find changes in the configuration
     static bool ReadConfiguration( CNcbiRegistry*& reg);
+
+    static void WriteSetup(CSrvSocketTask& task);
+    static bool ReConfig(const CNcbiRegistry& new_reg, string& err_message);
     /// Finalizes TaskServer infrastructure. Method should be called even if
     /// Initialize() returned FALSE to give TaskServer a chance to finalize
     /// parts that were already initialized.

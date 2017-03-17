@@ -440,11 +440,22 @@ InitCurThreadStorage(void)
 }
 
 void
-ConfigureThreads(CNcbiRegistry* reg, CTempString section)
+ConfigureThreads(const CNcbiRegistry* reg, CTempString section)
 {
     s_MaxRunningThreads = TSrvThreadNum(reg->GetInt(section, "max_threads", 20));
     if (s_MaxRunningThreads > kMaxNumberOfThreads)
         s_MaxRunningThreads = kMaxNumberOfThreads;
+}
+
+bool ReConfig_Threads(const CTempString&, const CNcbiRegistry&, string&)
+{
+    return true;
+}
+
+void WriteSetup_Threads(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("max_threads").WriteText(is ).WriteNumber( s_MaxRunningThreads);
 }
 
 bool

@@ -163,6 +163,7 @@ static int s_SocketTimeout = 0;
 static Uint1 s_OldSocksDelBatch = 0;
 static Uint8 s_ConnTimeout = 10;
 static string s_HostName;
+static Uint8 s_AcceptDelay = 1000000;
 
 
 extern Uint8 s_CurJiffies;
@@ -173,7 +174,7 @@ extern SSrvThread** s_Threads;
 
 
 void
-ConfigureSockets(CNcbiRegistry* reg, CTempString section)
+ConfigureSockets(const CNcbiRegistry* reg, CTempString section)
 {
     s_SoftSocketLimit = reg->GetInt(section, "soft_sockets_limit", 1000);
     s_HardSocketLimit = reg->GetInt(section, "hard_sockets_limit", 2000);
@@ -183,6 +184,24 @@ ConfigureSockets(CNcbiRegistry* reg, CTempString section)
     s_OldSocksDelBatch = Uint1(reg->GetInt(section, "sockets_cleaning_batch", 10));
     if (s_OldSocksDelBatch < 10)
         s_OldSocksDelBatch = 10;
+    s_AcceptDelay = Uint8(reg->GetInt(section, "socket_accept_delay", 1000)) * kUSecsPerMSec;
+}
+
+bool ReConfig_Sockets(const CTempString& section, const CNcbiRegistry& new_reg, string&)
+{
+    ConfigureSockets( &new_reg, section);
+    return true;
+}
+
+void WriteSetup_Sockets(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("soft_sockets_limit").WriteText(is ).WriteNumber( s_SoftSocketLimit);
+    task.WriteText(eol).WriteText("hard_sockets_limit").WriteText(is ).WriteNumber( s_HardSocketLimit);
+    task.WriteText(eol).WriteText("connection_timeout").WriteText(is ).WriteNumber( s_ConnTimeout * s_JiffyTime.NSec() / kNSecsPerMSec);
+    task.WriteText(eol).WriteText("min_socket_inactivity").WriteText(is ).WriteNumber( s_SocketTimeout);
+    task.WriteText(eol).WriteText("sockets_cleaning_batch").WriteText(is ).WriteNumber( s_OldSocksDelBatch);
+    task.WriteText(eol).WriteText("socket_accept_delay").WriteText(is ).WriteNumber( s_AcceptDelay / kUSecsPerMSec);
 }
 
 void
@@ -562,7 +581,7 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
         cmd_len -= cmd_start;
         Uint8 len_usec = cmd_len.AsUSec();
         cmd_start = CSrvTime::Current();
-        if (cmd_len > 1000000) {
+        if (cmd_len > s_AcceptDelay) {
             SRV_LOG(Warning, "socket accept takes: " << len_usec << "mks");
         }
         if (new_sock == -1) {

@@ -98,6 +98,7 @@ static const size_t kInitLogBufSize = 10000000;
 static size_t s_LogBufSize = kInitLogBufSize;
 static int s_MaxFlushPeriod = 60;
 static int s_FileReopenPeriod = 60;
+static Uint8 s_LongCmd = 30000000;
 static string s_CmdLine;
 static string s_Pid;
 static string s_AppUID;
@@ -499,7 +500,7 @@ LogNoteThreadsStarted(void)
 }
 
 void
-ConfigureLogging(CNcbiRegistry* reg, CTempString section)
+ConfigureLogging(const CNcbiRegistry* reg, CTempString section)
 {
     s_LogRequests = reg->GetBool(section, "log_requests", true);
     s_LogBufSize = NStr::StringToUInt8_DataSize(
@@ -521,6 +522,30 @@ ConfigureLogging(CNcbiRegistry* reg, CTempString section)
             break;
         }
     }
+    s_LongCmd = Uint8(reg->GetInt(section, "log_long_cmd_after", 30000)) * kUSecsPerMSec;
+}
+
+bool ReConfig_Logging(const CTempString& section, const CNcbiRegistry& new_reg, string& /*err_message*/)
+{
+    ConfigureLogging(&new_reg, section);
+    return true;
+}
+
+bool IsLongCommand(Uint8 cmd_len)
+{
+    return cmd_len >= s_LongCmd;
+}
+
+void WriteSetup_Logging(CSrvSocketTask& task)
+{
+    string is("\": "), iss("\": \""), eol(",\n\"");
+    task.WriteText(eol).WriteText("log_requests").WriteText(is ).WriteBool( s_LogRequests);
+    task.WriteText(eol).WriteText("log_thread_buf_size").WriteText(is ).WriteNumber( s_LogBufSize);
+    task.WriteText(eol).WriteText("log_flush_period").WriteText(is ).WriteNumber( s_MaxFlushPeriod);
+    task.WriteText(eol).WriteText("log_reopen_period").WriteText(is ).WriteNumber( s_FileReopenPeriod);
+    task.WriteText(eol).WriteText("log_visible").WriteText(iss).WriteText(GetLogVisibility()).WriteText("\"");
+    task.WriteText(eol).WriteText("soft_fatal_action").WriteText(iss).WriteText(GetSoftFatalAction()).WriteText("\"");
+    task.WriteText(eol).WriteText("log_long_cmd_after").WriteText(is).WriteNumber( s_LongCmd / kUSecsPerMSec);
 }
 
 void

@@ -40,7 +40,9 @@ BEGIN_NCBI_SCOPE
 struct SSrvThread;
 
 
-void ConfigureScheduler(CNcbiRegistry* reg, CTempString section);
+void ConfigureScheduler(const CNcbiRegistry* reg, CTempString section);
+bool ReConfig_Scheduler(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
+void WriteSetup_Scheduler(CSrvSocketTask& task);
 void AssignThreadSched(SSrvThread* thr);
 void ReleaseThreadSched(SSrvThread* thr);
 void SchedCheckOverloads(void);

@@ -39,7 +39,9 @@ string GetLogFileName(void);
 string GetLogVisibility(void);
 string GetSoftFatalAction(void);
 void SetLogFileName(CTempString name);
-void ConfigureLogging(CNcbiRegistry* reg, CTempString section);
+void ConfigureLogging(const CNcbiRegistry* reg, CTempString section);
+bool ReConfig_Logging(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
+void WriteSetup_Logging(CSrvSocketTask& task);
 void InitLogging(void);
 void LogNoteThreadsStarted(void);
 void FinalizeLogging(void);
@@ -49,6 +51,7 @@ void StopThreadLogging(SSrvThread* thr);
 void ReleaseThreadLogging(SSrvThread* thr);
 void CheckLoggingFlush(SSrvThread* thr);
 void Logging_DiskSpaceAlert(void);
+bool IsLongCommand(Uint8 cmd_len);
 
 
 END_NCBI_SCOPE

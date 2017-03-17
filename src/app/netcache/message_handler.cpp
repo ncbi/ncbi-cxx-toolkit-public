@@ -45,6 +45,7 @@
 #include "active_handler.hpp"
 #include "nc_storage.hpp"
 #include "nc_storage_blob.hpp"
+#include "logging.hpp"
 
 
 
@@ -2906,7 +2907,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     CSrvTime cmd_len = CSrvTime::Current();
     cmd_len -= m_CmdStartTime;
     Uint8 len_usec = cmd_len.AsUSec();
-    if (cmd_len > 5000000) {
+    if (IsLongCommand(len_usec)) {
         x_LogCmdLog();
     }
 
@@ -3908,7 +3909,9 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         string section(params["section"]);
         WriteText("{\"").WriteText(section).WriteText("\": {\n\"section\": \"");
         WriteText(section).WriteText("\"");
-        if (section == "netcache") {
+        if (section == "task_server") {
+            CTaskServer::WriteSetup(*this);
+        } else if (section == "netcache") {
             TStringMap client;
             if (params.find("port") != params.end()) {
                 client["port"] = params["port"];
@@ -3972,9 +3975,9 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
 #if __NC_TASKS_MONITOR
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, tasks, blobs, db\"");
+            WriteText("task_server, netcache, storage, mirror, alerts, allalerts, env, stat, sync, tasks, blobs, db\"");
 #else
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, blobs, db\"");
+            WriteText("task_server, netcache, storage, mirror, alerts, allalerts, env, stat, sync, blobs, db\"");
 #endif
         }
         WriteText("\n}}");
@@ -4023,7 +4026,8 @@ CNCMessageHandler::x_DoCmd_ReConfig(void)
     bool result = false;
     if (params.find("section") != params.end()) {
         string section(params["section"]);
-        if (section != "mirror" &&
+        if (section != "task_server" &&
+            section != "mirror" &&
             section != "storage") {
             err_message += ": " + section;
             goto done;
@@ -4034,7 +4038,9 @@ CNCMessageHandler::x_DoCmd_ReConfig(void)
             err_message = "ERR:Failed to load registry";
             goto done;
         }
-        if (section == "mirror") {
+        if (section == "task_server") {
+            result = CTaskServer::ReConfig(*new_reg, err_message);
+        } else if (section == "mirror") {
             result = CNCDistributionConf::ReConfig(*new_reg, err_message);
             if (result) {
                 CNCPeriodicSync::ReConfig();

@@ -41,7 +41,9 @@ struct SSrvThread;
 struct SSocketsData;
 
 
-void ConfigureSockets(CNcbiRegistry* reg, CTempString section);
+void ConfigureSockets(const CNcbiRegistry* reg, CTempString section);
+bool ReConfig_Sockets(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
+void WriteSetup_Sockets(CSrvSocketTask& task);
 bool InitSocketsMan(void);
 bool StartSocketsMan(void);
 void DoSocketWait(void);

@@ -76,7 +76,7 @@ static string s_ConfName;
 string s_AppBaseName;
 static CMiniMutex s_SDListLock;
 static TShutdownList s_ShutdownList;
-
+static const char kSection[] = "task_server";
 
 
 
@@ -185,18 +185,21 @@ s_LoadConfFile(CNcbiRegistry*& reg)
 #endif
 }
 
+static void s_ConfigureTaskServer(const CNcbiRegistry* reg, CTempString section)
+{
+    s_SlowShutdownTO = reg->GetInt(kSection, "slow_shutdown_timeout", 10);
+    s_FastShutdownTO = reg->GetInt(kSection, "fast_shutdown_timeout", 2);
+    s_AbortShutdownTO = reg->GetInt(kSection, "max_shutdown_time", 0);
+}
+
 static bool
 s_ReadConfiguration(void)
 {
-    static const char kSection[] = "task_server";
-
     try {
         if (!s_LoadConfFile(s_Registry))
             return false;
 
-        s_SlowShutdownTO = s_Registry->GetInt(kSection, "slow_shutdown_timeout", 10);
-        s_FastShutdownTO = s_Registry->GetInt(kSection, "fast_shutdown_timeout", 2);
-        s_AbortShutdownTO = s_Registry->GetInt(kSection, "max_shutdown_time", 0);
+        s_ConfigureTaskServer(s_Registry,kSection);
         ConfigureTimeMan(s_Registry, kSection);
         ConfigureScheduler(s_Registry, kSection);
         ConfigureThreads(s_Registry, kSection);
@@ -221,6 +224,30 @@ CTaskServer::ReadConfiguration( CNcbiRegistry*& reg)
         return false;
     }
     return true;
+}
+
+void CTaskServer::WriteSetup(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("slow_shutdown_timeout").WriteText(is ).WriteNumber( s_SlowShutdownTO);
+    task.WriteText(eol).WriteText("fast_shutdown_timeout").WriteText(is ).WriteNumber( s_FastShutdownTO);
+    task.WriteText(eol).WriteText("max_shutdown_time").WriteText(is ).WriteNumber( s_AbortShutdownTO);
+    WriteSetup_TimeMan(task);
+    WriteSetup_Scheduler(task);
+    WriteSetup_Threads(task);
+    WriteSetup_Sockets(task);
+    WriteSetup_Logging(task);
+}
+
+bool CTaskServer::ReConfig(const CNcbiRegistry& new_reg, string& err_message)
+{
+    s_ConfigureTaskServer(&new_reg,kSection);
+    return 
+        ReConfig_TimeMan(kSection, new_reg, err_message) &&
+        ReConfig_Scheduler(kSection, new_reg, err_message) &&
+        ReConfig_Threads(kSection, new_reg, err_message) &&
+        ReConfig_Sockets(kSection, new_reg, err_message) &&
+        ReConfig_Logging(kSection, new_reg, err_message);
 }
 
 string
