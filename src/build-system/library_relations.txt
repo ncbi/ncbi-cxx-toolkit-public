@@ -880,7 +880,6 @@ prok_cluster_data needs attr_cd
 prok_cluster_data needs bacterial_pipeline_proc
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
-protein_match needs $(OBJMGR_LIBS)
 protein_match needs xobjutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
