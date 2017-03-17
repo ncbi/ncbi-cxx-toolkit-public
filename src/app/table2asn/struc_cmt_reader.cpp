@@ -66,7 +66,7 @@ CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& entry)
 {
     list<CStructComment> comments;
-    LoadComments(reader, comments);
+    LoadComments(reader, comments, CSeq_id::fParse_AnyLocal);
     for (const CStructComment& comment: comments)
        _AddStructuredComments(entry, comment);
 }

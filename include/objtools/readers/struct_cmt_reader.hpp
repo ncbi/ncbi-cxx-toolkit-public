@@ -52,7 +52,8 @@ public:
    };
 
    template<typename _container>
-   size_t LoadComments(ILineReader& reader, _container& cont)
+   size_t LoadComments(ILineReader& reader, _container& cont,
+            objects::CSeq_id::TParseFlags seqid_flags = objects::CSeq_id::fParse_Default)
    {
        vector<string> cols;
        _LoadHeaderLine(reader, cols);
@@ -75,7 +76,7 @@ public:
                // try to find destination sequence
                cont.push_back(CStructComment());
                CStructComment& cmt = cont.back();
-               cmt.m_id.Reset(new objects::CSeq_id(values[0], objects::CSeq_id::fParse_AnyLocal));
+               cmt.m_id.Reset(new objects::CSeq_id(values[0], seqid_flags));
                _BuildStructuredComment(cmt, cols, values);
            }
        }
