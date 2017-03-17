@@ -14,5 +14,5 @@ add_dependencies(hgvs
 target_link_libraries(hgvs
     entrez2cli ncbi_xloader_genbank objcoords
     variation xobjread xobjutil
-    xregexp
+    xregexp ${BOOST_LIBPATH} boost_system
 )
