@@ -142,7 +142,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
            sx_Mutex's INIT/USE! */
     static void* once = 0;
     if (x_Once(&once)) {
-        pthread_mutexatr attr;
+        pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&sx_Mutex, &attr);
