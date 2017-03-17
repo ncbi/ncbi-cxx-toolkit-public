@@ -1640,9 +1640,9 @@ private:
 
     string m_Filename;
 
-    bool m_Mapped;
-
     CMemoryFile *m_MappedFile;
+
+    bool m_Mapped;
 };
 
 

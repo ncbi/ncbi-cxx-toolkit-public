@@ -371,14 +371,14 @@ protected:
     /// The memory layer management object.
     CSeqDBAtlas & m_Atlas;
     
-    /// A memory lease used by this file.
-    mutable CSeqDBFileMemMap m_Lease;
-
     /// The name of this file.
     string m_FileName;
     
     /// Either 'p' for protein or 'n' for nucleotide.
     char m_ProtNucl;
+
+    /// A memory lease used by this file.
+    mutable CSeqDBFileMemMap m_Lease;
     
     /// The raw file object.
     CSeqDBRawFile m_File;
@@ -584,6 +584,19 @@ public:
     }
     */
 private:
+
+    /// A memory lease used by the header section of this file.
+    mutable CSeqDBFileMemMap m_HdrLease;
+    //mutable CMemoryFile *m_MmappedHdrIndex;
+    
+    /// A memory lease used by the sequence section of this file.
+    mutable CSeqDBFileMemMap m_SeqLease;
+    //mutable CMemoryFile* m_MmappedSeqIndex;
+    
+    /// A memory lease used by the ambiguity section of this file.
+    mutable CSeqDBFileMemMap m_AmbLease;
+    //mutable CMemoryFile *m_MmappedAmbIndex;
+
     // Swapped data from .[pn]in file
     
     /// The volume title.
@@ -650,20 +663,7 @@ private:
         return (Uint4*) m_AmbLease.GetFileDataPtr(m_FileName, m_OffAmb);        
     }
     
-    /// A memory lease used by the header section of this file.
-    mutable CSeqDBFileMemMap m_HdrLease;
-    //mutable CMemoryFile *m_MmappedHdrIndex;
-    
-    /// A memory lease used by the sequence section of this file.
-    mutable CSeqDBFileMemMap m_SeqLease;
-    //mutable CMemoryFile* m_MmappedSeqIndex;
-    
-    /// A memory lease used by the ambiguity section of this file.
-    mutable CSeqDBFileMemMap m_AmbLease;
-    //mutable CMemoryFile *m_MmappedAmbIndex;
-
-    
-    
+        
     /// offset of the start of the header section.
     TIndx m_OffHdr;
     

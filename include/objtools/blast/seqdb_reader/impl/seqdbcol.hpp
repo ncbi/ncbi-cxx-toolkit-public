@@ -250,13 +250,13 @@ private:
     
     /// Index file.
     CSeqDBRawFile m_IndexFile;
-    
-    /// Index file lease.
-    CSeqDBFileMemMap m_IndexLease;
-    
+       
     /// Data file.
     CSeqDBRawFile m_DataFile;
-    
+
+    /// Index file lease.
+    CSeqDBFileMemMap m_IndexLease;
+        
     /// Data file lease.
     CSeqDBFileMemMap m_DataLease;
     
