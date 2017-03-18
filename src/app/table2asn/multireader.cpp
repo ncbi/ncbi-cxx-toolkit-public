@@ -298,7 +298,6 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 CFormatGuess::EFormat CMultiReader::xGetFormat(CNcbiIstream& istr) const
     //  ----------------------------------------------------------------------------
 {
-    CFormatGuess::EFormat uFormat = CFormatGuess::eUnknown;
     CFormatGuess FG(istr);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
@@ -859,18 +858,13 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, 
 
         if (uFormat != CFormatGuess::eUnknown)
         {
-            m_context.m_logger->PutError(*auto_ptr<CLineError>(
-                CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Info,
-                "", 0, "", "", "",
-                string("Presuming annotation format by filename suffix: ") + CFormatGuess::GetFormatName(uFormat))));
+            LOG_POST("Presuming annotation format by filename suffix: " 
+                 << CFormatGuess::GetFormatName(uFormat));
         }
     }
     else
     {
-        m_context.m_logger->PutError(*auto_ptr<CLineError>(
-            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Info,
-            "", 0, "", "", "",
-            string("Recognized annotation format:") + CFormatGuess::GetFormatName(uFormat))));
+        LOG_POST("Recognized annotation format: " << CFormatGuess::GetFormatName(uFormat));
     }
 
     CRef<CSeq_entry> entry;
