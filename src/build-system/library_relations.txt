@@ -1460,7 +1460,9 @@ xsd_sample_lib needs xser
 xser needs xutil
 xslt needs3party $(LIBXML_LIBS)
 xslt needs3party $(ORIG_LIBS)
-xslt_libxml needs xid_utils
+xslt_libxml needs xncbi
+xslt_libxml needs3party $(LIBXML_LIBS)
+xslt_libxml needs3party $(LIBXSLT_LIBS)
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
