@@ -11,8 +11,7 @@ REQUIRES = MT Linux
 
 
 LIB =  netstorage ncbi_xcache_netcache xconnserv \
-       $(SDBAPI_LIB) xconnect connssl xutil xncbi
-LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(GNUTLS_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+       $(SDBAPI_LIB) xconnect xutil xncbi
+LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
-
