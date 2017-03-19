@@ -63,7 +63,6 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/objistrasn.hpp>
-#include <connect/ncbi_gnutls.h>
 
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/biosample_util/biosample_util.hpp>
@@ -84,15 +83,9 @@ using namespace xml;
 
 void LibSSLInit()
 {
-    static bool initialized = false;
-    if ( !initialized)
+    class CInPlaceConnIniter : protected CConnIniter
     {
-        class CInPlaceConnIniter : protected CConnIniter
-        {
-        } conn_initer;  /*NCBI_FAKE_WARNING*/
-        SOCK_SetupSSL(NcbiSetupGnuTls);
-        initialized = true;
-    }
+    } conn_initer;  /*NCBI_FAKE_WARNING*/
 }
 
 string PrepareUrl(bool use_dev_server, const string &args)
