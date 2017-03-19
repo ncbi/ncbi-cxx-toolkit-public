@@ -52,31 +52,7 @@ static const char* s_WinStrdup(const char* str)
     char*  s = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(*s));
     return s ? (const char*) memcpy(s, str, n) : 0;
 }
-
-#    define   MSWIN_STRDUP(s)         s_WinStrdup(s)
-
-#    ifndef   UTIL_ReleaseBuffer
-#      define UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
-#    endif
-
-#  else /*NCBI_OS_MSWIN && _UNICODE*/
-
-#    define   MSWIN_STRDUP(s)         (s)
-
-#    ifndef   UTIL_TcharToUtf8
-#      define UTIL_TcharToUtf8(x)     (x)
-#    endif
-
-#    ifndef   UTIL_ReleaseBuffer
-#      define UTIL_ReleaseBuffer(x)   /*void*/
-#    endif
-
-#  endif /*NCBI_OS_MSWIN && _UNICODE*/
-
-
-#  ifdef NCBI_OS_MSWIN
-
-#    ifdef _UNICODE
+#    define        ERR_STRDUP(s)          s_WinStrdup(s)
 
 extern const char* UTIL_TcharToUtf8(const TCHAR* str)
 {
@@ -93,9 +69,28 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* str)
     return s;
 }
 
-#    endif /*_UNICODE*/
+#    define        UTIL_ReleseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
 
-extern void UTIL_ReleaseBufferOnHeap(const void* ptr)
+#  else /*NCBI_OS_MSWIN && _UNICODE*/
+
+#    define        ERR_STRDUP(s)          strdup(s)
+
+#    ifdef         UTIL_TcharToUtf8
+#      undef       UTIL_TcharToUtf8
+#    endif
+#    define        UTIL_TcharToUtf8(x)    strdup(x)
+
+#    ifdef         UTIL_ReleaseBuffer
+#      undef       UTIL_ReleaseBuffer
+#    endif
+#    define        UTIL_ReleaseBuffer(x)  free((void*)(x))
+
+#  endif /*NCBI_OS_MSWIN && _UNICODE*/
+
+
+#  ifdef NCBI_OS_MSWIN
+
+extern void        UTIL_ReleaseBufferOnHeap(const void* ptr)
 {
     if (ptr)
         LocalFree((HLOCAL) ptr);
@@ -332,20 +327,20 @@ static const char* s_StrErrorInternal(int error)
         if (errsup[i].erroff < error) {
             const char* errstr = errsup[i].errfun(error - errsup[i].erroff);
             if (errstr  &&  *errstr)
-                return errstr;
+                return ERR_STRDUP(errstr);
         }
     }
 #endif /*NCBI_OS_LINUX || NCBI_OS_CYGWIN*/
 
     for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy*/;  ++i) {
         if (errmap[i].errnum == error)
-            return MSWIN_STRDUP(errmap[i].errstr);
+            return ERR_STRDUP(errmap[i].errstr);
     }
 
 #  if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
     return UTIL_TcharToUtf8(_wcserror(error));
 #  else
-    return strerror(error);
+    return ERR_STRDUP(strerror(error));
 #  endif /*NCBI_OS_MSWIN && _UNICODE*/
 }
 
