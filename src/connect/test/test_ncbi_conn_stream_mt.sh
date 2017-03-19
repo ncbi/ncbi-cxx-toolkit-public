@@ -20,7 +20,7 @@ case "`expr '(' $$ / 10 ')' '%' 4`" in
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
     # for netstat
     PATH=${PATH}:/sbin:/usr/sbin
-    CONN_GNUTLS_LOGLEVEL=2;  export CONN_GNUTLS_LOGLEVEL
+    CONN_TLS_LOGLEVEL=2;  export CONN_TLS_LOGLEVEL
     if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
       url='https://localhost:5556'
     else

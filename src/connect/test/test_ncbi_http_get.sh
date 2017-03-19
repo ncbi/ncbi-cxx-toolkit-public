@@ -27,15 +27,15 @@ if [ "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   # for netstat
   PATH=${PATH}:/sbin:/usr/sbin
   CONN_USESSL=1
-  CONN_GNUTLS_LOGLEVEL=2
-  export PATH CONN_USESSL CONN_GNUTLS_LOGLEVEL
+  CONN_TLS_LOGLEVEL=2
+  export PATH CONN_USESSL CONN_TLS_LOGLEVEL
   if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" !=###  "0" ]; then
     url='https://localhost:5556'
   else
     url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
 else
-  url='http://www.ncbi.nlm.nih.gov/entrez/viewer.cgi?view=0&maxplex=1&save=idf&val=4959943'
+  url='http://intranet.ncbi.nlm.nih.gov/Service/index.html'
 fi
 
 $CHECK_EXEC test_ncbi_http_get "$url"
