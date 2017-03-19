@@ -32,8 +32,8 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -130,7 +130,7 @@ int main(int argc, const char* argv[])
     /* Tune to the test URL using hard-coded pseudo-registry */
     CORE_SetREG( REG_Create(0, s_REG_Get, 0, 0, 0) );
 
-    SOCK_SetupSSL(NcbiSetupGnuTls);
+    SOCK_SetupSSL(NcbiSetupTls);
 
     /* Usage */
     if (argc < 4) {
