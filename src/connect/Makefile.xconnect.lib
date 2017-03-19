@@ -8,12 +8,12 @@
 include $(srcdir)/Makefile.connect.lib
 include $(srcdir)/Makefile.xxconnect.lib
 
-SRC  = $(SRC_C) $(SRC_CXX)
+SRC      = $(SRC_C) $(SRC_CXX)
 UNIX_SRC = $(LOCAL_LBSM)
 
-LIB  = xconnect
+LIB      = xconnect
 PROJ_TAG = core
 
-LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 WATCHERS = lavr mcelhany

@@ -1,8 +1,10 @@
 # $Id$
 
-CPPFLAGS = $(GNUTLS_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = $(TLS_INCLUDE) $(ORIG_CPPFLAGS)
 
-SRC      = ncbi_gnutls
+SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls
+
+SRC      = $(SRC_TLS)
 LIB      = connssl
 
 WATCHERS = lavr

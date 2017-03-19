@@ -286,12 +286,12 @@ static const char* s_StrError(SOCK sock, int error)
     if (sock) {
         FSSLError sslerror = sock->session  &&  s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
-            char errbuf[128];
+            char errbuf[256];
             const char* strerr = sslerror(sock->session == SESSION_INVALID
                                           ? 0 : sock->session, error,
                                           errbuf, sizeof(errbuf));
             if (strerr  &&  *strerr)
-                return MSWIN_STRDUP(strerr);
+                return ERR_STRDUP(strerr);
         }
     }
     return s_StrErrorInternal(error);
