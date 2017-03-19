@@ -32,8 +32,8 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_service_connector.h>
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -58,7 +58,7 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    SOCK_SetupSSL(NcbiSetupGnuTls);
+    SOCK_SetupSSL(NcbiSetupTls);
 
     net_info = ConnNetInfo_Create(service);
     ConnNetInfo_AppendArg(net_info, "testarg",  "val");

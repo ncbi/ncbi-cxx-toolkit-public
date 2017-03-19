@@ -30,12 +30,12 @@
  *
  */
 
-#include <connect/ncbi_base64.h>
-#include <connect/ncbi_gnutls.h>
-#include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_util.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <connect/ncbi_base64.h>
+#include <connect/ncbi_http_connector.h>
+#include <connect/ncbi_util.h>
+#include <connect/ncbi_tls.h>
 #include <ctype.h>
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
@@ -55,10 +55,11 @@
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#  define GNUTLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
-#  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
-#  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
+
+#define TLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
+#define TLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
+#define TLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -288,20 +289,22 @@ int main(int argc, char* argv[])
 
     cred = 0;
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
-    if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
+    if (*blk) {
+        status = SOCK_SetupSSLEx(NcbiSetupTls);
+        CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
+                              IO_StatusStr(status)));
+    }
+    if (net_info->scheme == eURL_Https) {
 #ifdef HAVE_LIBGNUTLS
         int err;
         char type[40];
         const char* file, *pass;
-        status = SOCK_SetupSSLEx(NcbiSetupGnuTls);
-        CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
-                              IO_StatusStr(status)));
-        if (!ConnNetInfo_GetValue(0, GNUTLS_PKCS12_TYPE, type, sizeof(type), 0)
+        if (!ConnNetInfo_GetValue(0, TLS_PKCS12_TYPE, type, sizeof(type), 0)
             ||  !*type) {
             strncpy0(type, "PEM", sizeof(type));
         }
-        pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
-        file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
+        pass = x_GetPkcs12Pass(TLS_PKCS12_PASS, blk, sizeof(blk));
+        file = ConnNetInfo_GetValue(0, TLS_PKCS12_FILE,
                                     blk, sizeof(blk)/2 - 1, 0);
         if (file  &&  *file  &&  access(file, R_OK) == 0) {
             if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
@@ -340,16 +343,20 @@ int main(int argc, char* argv[])
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
                 gnutls_certificate_set_verify_function(xcred,
                                                        x_CertVfyCB);
-  #endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-# if 0
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
+#  if 0
                 gnutls_certificate_set_retrieve_function2(xcred,
                                                           x_CertRtrCB);
 #  endif
             }
         }
-#else
-        CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
 #endif /*HAVE_LIBGNUTLS*/
+#ifdef HAVE_LIBMBEDTLS
+        CORE_LOG(eLOG_Warning, "MBEDTLS does not support credentials yet");
+#endif /*HAVE_LIBMBEDTLS*/
+#if !defined(HAVE_LIBMBEDTLS)  &&  !defined(HAVE_LIBGNUTLS)
+        CORE_LOG(eLOG_Warning, "SSL required but may not be supported");
+#endif /*!HAVE_LIBMBEDTLS && !HAVE_LIBGNUTLS*/
     }
 
     CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",

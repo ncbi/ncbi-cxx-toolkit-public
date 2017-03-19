@@ -32,15 +32,14 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/rwstream.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../ncbi_priv.h"
 
 #include "test_assert.h"  // This header must go last
 

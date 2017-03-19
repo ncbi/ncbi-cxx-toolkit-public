@@ -34,14 +34,14 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_ansi_ext.h"
+#include "ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_monkey.hpp>
-#include "ncbi_ansi_ext.h"
-#include "ncbi_priv.h"
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Core
@@ -514,7 +514,7 @@ extern void CONNECT_Init(const IRWRegistry* reg,
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
         g_CORE_Set = 0;
-        s_Init(reg, flag & eConnectInit_NoSSL ? 0 : NcbiSetupGnuTls,
+        s_Init(reg, flag & eConnectInit_NoSSL ? 0 : NcbiSetupTls,
                lock, flag, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
@@ -530,7 +530,7 @@ CConnIniter::CConnIniter(void)
         if (s_ConnectInit == eConnectInit_Intact) {
             CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
             CNcbiApplication* app = CNcbiApplication::Instance();
-            s_Init(app ? &app->GetConfig() : 0, NcbiSetupGnuTls);
+            s_Init(app ? &app->GetConfig() : 0, NcbiSetupTls);
         }
     }
     NCBI_CATCH_ALL_X(7, "CConn_Initer::CConn_Initer() failed");

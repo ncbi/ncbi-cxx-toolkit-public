@@ -33,8 +33,8 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    SOCK_SetupSSL(NcbiSetupGnuTls);
+    SOCK_SetupSSL(NcbiSetupTls);
 
     data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);

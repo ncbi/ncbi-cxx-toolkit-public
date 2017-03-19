@@ -32,7 +32,7 @@
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_connutil.h>
-#include <connect/ncbi_gnutls.h>
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    SOCK_SetupSSL(NcbiSetupGnuTls);
+    SOCK_SetupSSL(NcbiSetupTls);
 
     fprintf(stderr, "Running...\n"
             "  Executable:      '%s'\n"
