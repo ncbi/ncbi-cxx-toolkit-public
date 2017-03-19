@@ -103,19 +103,27 @@ struct MT_LOCK_tag {
 
 #ifndef NCBI_NO_THREADS
 
+#  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
+
+#  if defined(NCBI_POSIX_THREADS)  &&  !defined(NCBI_RECURSIVE_MUTEX_INIT)
 static int/*bool*/ x_Once(void** once)
 {
-#  ifndef NCBI_CXX_TOOLKIT
+#    ifndef NCBI_CXX_TOOLKIT
     /* poor man solution */
     if (!*once) {
         *once = (void*) 1;
         return 1/*true*/;
     } else
         return 0/*false*/;
-#  else
+#    else
     return !NCBI_SwapPointers(once, (void*) 1);
-#  endif /*NCBI_CXX_TOOLKIT*/
+#    endif /*NCBI_CXX_TOOLKIT*/
 }
+#endif /*NCBI_POSIX_THREADS && !NCBI_RECURSIVE_MUTEX_INIT*/
 
 
 /*ARGSUSED*/
@@ -125,12 +133,6 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #  if   defined(NCBI_POSIX_THREADS)
 
-#    if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
-#      define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
-#    elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
-#      define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
-#    endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
-
     static pthread_mutex_t sx_Mutex
 #    ifdef  NCBI_RECURSIVE_MUTEX_INIT
         =   NCBI_RECURSIVE_MUTEX_INIT
@@ -138,17 +140,17 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
         ;
 
 #    ifndef NCBI_RECURSIVE_MUTEX_INIT
-    /* NB: Without a static initializer there is a RACE CONDITION in
-           sx_Mutex's INIT/USE! */
-    static void* once = 0;
-    if (x_Once(&once)) {
+    /* NB: Without a static initializer there is a
+           RACE CONDITION in sx_Mutex's INIT/USE! */
+    static void* s_Once = 0;
+    if (x_Once(&s_Once)) {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&sx_Mutex, &attr);
         pthread_mutexattr_destroy(&attr);
     }
-#    endif
+#    endif /*!NCBI_RECURSIVE_MUTEX_INIT*/
 
     switch (action) {
     case eMT_Lock:
@@ -192,8 +194,8 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  else
 
     if (g_CORE_Log) {
-        static void* once = 0;
-        if (x_Once(&once))
+        static void* s_Once = 0;
+        if (x_Once(&s_Once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     }
     return -1/*not implemented*/;
