@@ -69,21 +69,23 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* str)
     return s;
 }
 
-#    define        UTIL_ReleseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
+#    ifndef        UTIL_ReleaseBuffer(x)
+#      define      UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
+#    endif
 
 #  else /*NCBI_OS_MSWIN && _UNICODE*/
 
-#    define        ERR_STRDUP(s)          strdup(s)
+#    define        ERR_STRDUP(s)           strdup(s)
 
 #    ifdef         UTIL_TcharToUtf8
 #      undef       UTIL_TcharToUtf8
 #    endif
-#    define        UTIL_TcharToUtf8(x)    strdup(x)
+#    define        UTIL_TcharToUtf8(x)     strdup(x)
 
 #    ifdef         UTIL_ReleaseBuffer
 #      undef       UTIL_ReleaseBuffer
 #    endif
-#    define        UTIL_ReleaseBuffer(x)  free((void*)(x))
+#    define        UTIL_ReleaseBuffer(x)   free((void*)(x))
 
 #  endif /*NCBI_OS_MSWIN && _UNICODE*/
 
