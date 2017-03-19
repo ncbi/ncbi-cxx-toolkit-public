@@ -1754,7 +1754,7 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect; http%s://%s%s%s%s%s%.*s] "
                            " Cannot build HTTP header",
                            &"s"[!(flags & fSOCK_Secure)],
-                           host, port, &"/"[*path == '/'], path,
+                           host, temp, &"/"[*path == '/'], path,
                            &"?"[!args_len], (int) args_len, args));
         BUF_Destroy(buf);
         return x_URLConnectErrorReturn(s, eIO_Unknown);
@@ -1771,7 +1771,7 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect; http%s://%s%s%s%s%s%.*s] "
                            " Cannot maintain HTTP header (%lu byte%s)",
                            &"s"[!(flags & fSOCK_Secure)],
-                           host, port, &"/"[*path == '/'], path,
+                           host, temp, &"/"[*path == '/'], path,
                            &"?"[!args_len], (int) args_len, args,
                            (unsigned long) hdr_len, &"s"[hdr_len == 1]));
         if (hdr)
