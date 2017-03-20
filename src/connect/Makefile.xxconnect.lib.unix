@@ -3,3 +3,4 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_conn_stream.o: CXXFLAGS += -fno-builtin-strspn
   ncbi_conn_test.o:   CXXFLAGS += -fno-builtin-strcpy
 endif
+include $(srcdir)/Makefile.connssl.lib.unix
