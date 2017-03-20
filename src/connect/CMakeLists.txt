@@ -11,13 +11,15 @@ if (${UNIX})
     set(os_src ${LOCAL_LBSM})
 endif(${UNIX})
 
+set(SRC_TLS ncbi_gnutls ncbi_mbedtls ncbi_tls)
+
 set(SRC_C
     ncbi_ansi_ext ncbi_buffer ncbi_types ncbi_priv ncbi_core ncbi_util
-    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector          
-    ncbi_socket_connector ncbi_file_connector ncbi_http_connector     
-    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service  
-    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail    
-    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version    
+    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector
+    ncbi_socket_connector ncbi_file_connector ncbi_http_connector
+    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service
+    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail
+    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version
     ncbi_lbos parson ncbi_ipv6
     ${os_src}
     )
@@ -28,7 +30,7 @@ set(SRC_CXX
     ncbi_misc ncbi_namedpipe ncbi_namedpipe_connector
     ncbi_pipe ncbi_pipe_connector ncbi_conn_reader_writer
     ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey
-    ncbi_gnutls
+    ${SRC_TLS}
     )
 
 
