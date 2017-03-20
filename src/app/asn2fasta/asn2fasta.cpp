@@ -204,10 +204,16 @@ void CAsn2FastaApp::Init(void)
     {{
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
-        arg_desc->AddOptionalKey("gap-mode", "GapMode", "Gap mode",
+        arg_desc->AddOptionalKey("gap-mode", "GapMode", "\
+ Gap mode:\n\
+   letters:  letters will show gaps as runs of Ns (default mode)\n\
+   count:    count shows gaps as '>?123'\n\
+   dashes:   will show gaps as runs of dashes\n\
+   one-dash: shows single gap literal as one das\n\
+",
             CArgDescriptions::eString);
         arg_desc->SetConstraint("gap-mode", &(*new CArgAllow_Strings,
-            "one-dash", "dashes", "letters", "count"));
+            "letters", "count", "dashes", "one-dash"));
 
         arg_desc->AddOptionalKey("width", "CHARS", "Output FASTA with an alternate number of columns", CArgDescriptions::eInteger);
         arg_desc->SetConstraint("width", new CArgAllow_Integers(1, kMax_Int));
