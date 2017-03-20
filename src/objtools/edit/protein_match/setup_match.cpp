@@ -192,14 +192,6 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         }
     }
 
-/*
-    // Check that ids are in
-    if (ids.size() > 1) {
-        NCBI_THROW(CProteinMatchException, 
-            eBadInput, 
-            "Multiple CDS location ids found");
-    }
-*/
     const bool with_version = true;
     const string local_id_string = nuc_seq.GetFirstId()->GetSeqIdString(with_version);
 

@@ -48,7 +48,9 @@ public:
     virtual ~CMatchTabulate(void);
     void AppendToMatchTable(const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots,
-        const string& nuc_id="");
+        const string& nuc_id,
+        const list<string>& local_prot_id,
+        const list<string>& prot_accessions);
 
     void WriteTable(CNcbiOstream& out) const;
 
@@ -95,20 +97,19 @@ private:
     bool x_IsPerfectAlignment(const CSeq_align& alignment) const;
 
     void x_AppendProteins(const string& nuc_accession,
-        const list<CRef<CSeq_annot>>& annot_list);
-
+        const list<CRef<CSeq_annot>>& annot_list,
+        const list<string>& local_prot_ids,
+        const list<string>& prot_accessions);
+/*
     bool x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
         TMatches& matches,
         list<string>& new_prot_ids,
         list<string>& dead_prot_ids);
-
+*/
     bool x_IsProteinMatch(const CSeq_annot& annot) const;
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
-    bool x_HasNovelSubject(const CSeq_annot& annot) const;
-    bool x_HasNovelQuery(const CSeq_annot& annot) const;
-    bool x_HasUnmappedQuery(const CSeq_annot& annot) const;
     CAnnotdesc::TName x_GetComparisonClass(const CSeq_annot& annot) const;
     const CSeq_feat& x_GetQuery(const CSeq_annot& compare_annot) const;
     const CSeq_feat& x_GetSubject(const CSeq_annot& compare_annot) const;

@@ -85,11 +85,11 @@ bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const
 
 
 void CMatchTabulate::x_AppendProteins(const string& nuc_accession, 
-    const list<CRef<CSeq_annot>>& annot_list)
+    const list<CRef<CSeq_annot>>& annot_list,
+    const list<string>& local_prot_ids,
+    const list<string>& prot_accessions)
 {
     
-    list<string> possible_new_proteins;
-    list<string> possible_dead_proteins;
 
     set<string> new_protein_skip;
     set<string> dead_protein_skip;
@@ -133,31 +133,10 @@ void CMatchTabulate::x_AppendProteins(const string& nuc_accession,
             }
             continue;
         }
-
-        if (x_HasCdsSubject(*pSeqAnnot) && 
-            x_HasNovelSubject(*pSeqAnnot)) {
-            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
-            const string accver = x_GetAccessionVersion(subject);
-            if (dead_protein_skip.find(accver) == dead_protein_skip.end()) {
-                possible_dead_proteins.push_back(accver);
-            }
-            continue;
-        }
-
-        if (x_HasCdsQuery(*pSeqAnnot) && 
-            (x_HasNovelQuery(*pSeqAnnot) ||
-             x_HasUnmappedQuery(*pSeqAnnot))) {
-            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
-            const string localid = x_GetLocalID(query);
-            if (new_protein_skip.find(localid) == new_protein_skip.end()) {
-                possible_new_proteins.push_back(localid);
-            }
-            continue;
-        }
     }
 
 
-    for (const string local_id : possible_new_proteins) {
+    for (const string local_id : local_prot_ids) {
         if(new_protein_skip.find(local_id) == new_protein_skip.end()) {
             new_protein_skip.insert(local_id);
             x_AppendNewProtein(nuc_accession, local_id);
@@ -165,7 +144,7 @@ void CMatchTabulate::x_AppendProteins(const string& nuc_accession,
     }
 
 
-    for (const string prot_accver : possible_dead_proteins) {
+    for (const string prot_accver : prot_accessions) {
         if (dead_protein_skip.find(prot_accver) == dead_protein_skip.end()) {
             dead_protein_skip.insert(prot_accver);
             vector<string> accver_vec;
@@ -173,89 +152,6 @@ void CMatchTabulate::x_AppendProteins(const string& nuc_accession,
             x_AppendDeadProtein(nuc_accession, accver_vec[0]);
         }
     }
-}
-
-
-bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
-    TMatches& matches,
-    list<string>& new_proteins,  // contains local ids for new proteins
-    list<string>& dead_proteins) // contains accessions for dead proteins
-{
-    dead_proteins.clear();
-    new_proteins.clear();
-
-    set<string> new_protein_skip;
-    set<string> dead_protein_skip;
-
-    for (CRef<CSeq_annot> pSeqAnnot : annot_list) {
-
-        // Match by algorithm
-        if (x_IsProteinMatch(*pSeqAnnot)) {
-            matches.push_back(pSeqAnnot);
-            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
-            const string& accver = x_GetAccessionVersion(subject);
-            dead_protein_skip.insert(accver);
-
-            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
-            const string local_id = x_GetLocalID(query);
-            new_protein_skip.insert(local_id);
-            continue;
-        }
-
-        // Match due to same accession
-        if (x_IsComparison(*pSeqAnnot) &&
-            x_HasCdsQuery(*pSeqAnnot) &&
-            x_HasCdsSubject(*pSeqAnnot)) {
-
-            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
-            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
-
-            const string query_accver = x_GetAccessionVersion(query);
-            if (NStr::IsBlank(query_accver)) {
-                continue;
-            }
-
-            const string subject_accver = x_GetAccessionVersion(subject);
-            if (subject_accver != query_accver) {
-                continue;
-            }
-
-            matches.push_back(pSeqAnnot);
-            dead_protein_skip.insert(subject_accver);
-
-            const string local_id = x_GetLocalID(query);
-            if (!NStr::IsBlank(local_id)) {
-                new_protein_skip.insert(local_id);
-            }
-        }
-    }
-
-
-    for (CRef<CSeq_annot> pSeqAnnot : annot_list) {
-        if (x_HasCdsSubject(*pSeqAnnot) && 
-            x_HasNovelSubject(*pSeqAnnot)) {
-            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
-            const string accver = x_GetAccessionVersion(subject);
-            if (dead_protein_skip.find(accver) == dead_protein_skip.end()) {
-                dead_protein_skip.insert(accver);
-                dead_proteins.push_back(accver);
-            }
-            continue;
-        }
-
-        if (x_HasCdsQuery(*pSeqAnnot) && 
-            (x_HasNovelQuery(*pSeqAnnot) ||
-             x_HasUnmappedQuery(*pSeqAnnot))) {
-            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
-            const string localid = x_GetLocalID(query);
-            if (new_protein_skip.find(localid) == new_protein_skip.end()) {
-                new_protein_skip.insert(localid);
-                new_proteins.push_back(localid);
-            }
-            continue;
-        }
-    }
-    return true;
 }
 
 
@@ -332,26 +228,6 @@ bool CMatchTabulate::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot)
 }
 
 
-bool CMatchTabulate::x_HasNovelSubject(const CSeq_annot& seq_annot) const 
-{
-    const string comparison_class = x_GetComparisonClass(seq_annot);
-    return (comparison_class == "s-novel");
-}
-
-
-bool CMatchTabulate::x_HasNovelQuery(const CSeq_annot& seq_annot) const 
-{
-    const string comparison_class = x_GetComparisonClass(seq_annot);
-    return (comparison_class == "q-novel");
-}
-
-
-bool CMatchTabulate::x_HasUnmappedQuery(const CSeq_annot& seq_annot) const
-{
-    return(x_GetComparisonClass(seq_annot) == "q-unmapped");
-}
-
-
 CAnnotdesc::TName CMatchTabulate::x_GetComparisonClass(const CSeq_annot& seq_annot) const 
 {
     if (seq_annot.IsSetDesc() &&
@@ -397,12 +273,6 @@ bool CMatchTabulate::x_FetchAccessionVersion(const CSeq_align& align,
             }
 
             if (id->IsGi()) {
-            /*
-                CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-                CGBDataLoader::RegisterInObjectManager(*obj_mgr);
-                CRef<CScope> gb_scope = Ref(new CScope(*obj_mgr));
-                gb_scope->AddDataLoader("GBLOADER");
-*/
                 accver = sequence::GetAccessionForGi(id->GetGi(), *m_DBScope);
                 return true;
             }
@@ -549,7 +419,9 @@ bool CMatchTabulate::x_IsComparison(const CSeq_annot& seq_annot) const
 void CMatchTabulate::AppendToMatchTable(
         const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots,
-        const string& nuc_id)
+        const string& nuc_id,
+        const list<string>& local_prot_ids,
+        const list<string>& prot_accessions)
 {
     if (!mMatchTableInitialized) {
         x_InitMatchTable();
@@ -565,7 +437,9 @@ void CMatchTabulate::AppendToMatchTable(
     x_AppendNucleotide(nuc_match_info);
 
     x_AppendProteins(nuc_match_info.accession, 
-        annots);
+        annots,
+        local_prot_ids,
+        prot_accessions);
 /*
     list<string> new_protein_ids;
     list<string> dead_protein_accessions;
