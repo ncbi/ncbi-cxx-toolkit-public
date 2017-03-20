@@ -234,7 +234,7 @@ CBlastPrelimSearch::Run()
                 CRef<SInternalData> chunk_data =
                     SplitQuery_CreateChunkData(chunk_qf, m_Options,
                                                m_InternalData,
-                                               IsMultiThreaded());
+                                               GetNumberOfThreads());
 
                 CRef<ILocalQueryData> query_data(
                         chunk_qf->MakeLocalQueryData( &*m_Options ) );

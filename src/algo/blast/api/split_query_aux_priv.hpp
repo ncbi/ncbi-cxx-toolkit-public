@@ -88,7 +88,7 @@ CRef<SInternalData>
 SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
                            CRef<CBlastOptions> options,
                            CRef<SInternalData> full_data,
-                           bool is_multi_threaded = false);
+                           size_t num_threaded =1);
 
 /// this might supercede the function below...
 void

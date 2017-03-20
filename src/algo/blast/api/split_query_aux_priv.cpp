@@ -185,7 +185,7 @@ CRef<SInternalData>
 SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
                            CRef<CBlastOptions> options,
                            CRef<SInternalData> full_data,
-                           bool is_multi_threaded /* = false */)
+                           size_t num_threads /*=1 No Thread*/)
 {
     BlastSeqSrc* seqsrc = 
         BlastSeqSrcCopy(full_data->m_SeqSrc->GetPointer());
@@ -193,7 +193,7 @@ SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
         BlastSetupPreliminarySearchEx(
                 qf, options, 
                 CRef<objects::CPssmWithParameters>(),
-                seqsrc, is_multi_threaded);
+                seqsrc, num_threads);
     BlastSeqSrcResetChunkIterator(seqsrc);
     setup_data->m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 
                                                BlastSeqSrcFree));
