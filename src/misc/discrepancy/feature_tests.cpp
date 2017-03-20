@@ -967,25 +967,26 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, COverlappingFeatures, eOncaller | eSubmitter |
             if (feat_start == gene_start || feat_stop == gene_stop) {
                 bool all_ok = true;
                 if (HasMixedStrands(loc_i)) {
-                    // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
+                    // compare intervals, to make sure that for each pair of feature interval and gene interval
+                    // where the gene interval contains the feature interval, the intervals are on the same strand
                     CSeq_loc_CI f_loc(loc_j);
-                    while (f_loc && all_ok) {
+                    bool found_bad = false;
+                    while (f_loc && !found_bad) {
+                        CConstRef<CSeq_loc> f_int = f_loc.GetRangeAsSeq_loc();
                         CSeq_loc_CI g_loc(loc_i);
-                        bool found = false;
-                        while (g_loc && !found) {
-                            if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
-                                sequence::ECompare cmp = context.Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()));
-                                if (cmp == sequence::eContained || cmp == sequence::eSame) {
-                                    found = true;
+                        while (g_loc && !found_bad) {
+                            CConstRef<CSeq_loc> g_int = g_loc.GetRangeAsSeq_loc();
+                            sequence::ECompare cmp = context.Compare(*f_int, *g_int);
+                            if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                                if (!StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
+                                    found_bad = true;
                                 }
                             }
                             ++g_loc;
                         }
-                        if (!found) {
-                            all_ok = false;
-                        }
                         ++f_loc;
                     }
+                    all_ok = !found_bad;
                 }
                 else {
                     all_ok = StrandsMatch(loc_j.GetStrand(), strand_i);
