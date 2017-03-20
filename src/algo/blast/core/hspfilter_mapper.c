@@ -3708,6 +3708,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair_info[num_pairs].trim_first = 0;
             pair_info[num_pairs].trim_second = 0;
             pair_info[num_pairs].valid_pair = 0;
+            pair_info[num_pairs].distance = 0;
 
             /* if the chains align on the opposite strands */
             ASSERT(first_frame != 0 && second_frame != 0);
