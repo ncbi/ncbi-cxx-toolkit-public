@@ -648,23 +648,21 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  *
  * NOTE:  UTIL_ReleaseBufferOnHeap() must be used to free the buffers returned
  *        from UTIL_TcharToUtf8OnHeap(),  and UTIL_ReleaseBuffer() to free the
- *        ones returned from UTIL_TcharToUtf8().
+ *        ones returned from UTIL_TcharToUtf8()/UTIL_Utf8ToTchar().
+ *
+ * NOTE:  If you change these macros (here and in #else) you need to make
+ *        similar changes in ncbi_strerror.c as well.
  */
-
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
 extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* str);
 extern const char*    UTIL_TcharToUtf8      (const wchar_t* str);
 extern const wchar_t* UTIL_Utf8ToTchar      (const    char* str);
-/*
- * NOTE:  If you change these macros (here and in #else) you need to make
- *        similar changes in ncbi_strerror.c as well.
- */
-#  define             UTIL_ReleaseBuffer(x)      UTIL_ReleaseBufferOnHeap(x)
+#  define             UTIL_ReleaseBuffer(x)        UTIL_ReleaseBufferOnHeap(x)
 #else
-#  define             UTIL_TcharToUtf8OnHeap(x)  (x)
-#  define             UTIL_TcharToUtf8(x)        (x)
-#  define             UTIL_Utf8ToTchar(x)        (x)
-#  define             UTIL_ReleaseBuffer(x)      /*void*/
+#  define             UTIL_TcharToUtf8OnHeap(x)    (x)
+#  define             UTIL_TcharToUtf8(x)          (x)
+#  define             UTIL_Utf8ToTchar(x)          (x)
+#  define             UTIL_ReleaseBuffer(x)        /*void*/
 #endif /*NCBI_OS_MSWIN && _UNICODE*/
 
 #ifdef NCBI_OS_MSWIN
