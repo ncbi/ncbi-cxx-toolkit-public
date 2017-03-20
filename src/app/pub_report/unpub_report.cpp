@@ -631,7 +631,7 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const CPubData::TSeqI
 static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& juornal)
 {
     bool ret = true;
-    if (year && juornal.IsSetImp() && juornal.GetImp().IsSetDate()) {
+    if (max_date_check && year && juornal.IsSetImp() && juornal.GetImp().IsSetDate()) {
         const CDate& pub_date = juornal.GetImp().GetDate();
         if (pub_date.IsStd() && pub_date.GetStd().IsSetYear()) {
 
