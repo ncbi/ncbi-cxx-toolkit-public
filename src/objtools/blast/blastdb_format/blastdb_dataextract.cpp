@@ -647,7 +647,7 @@ s_ConfigureDeflineTitle(const string& title, bool use_ctrl_a)
         
         try { 
             CSeq_id::ParseIDs(seqids, kPossibleId, CSeq_id::fParse_PartialOK);
-        } catch (const CException& e) {} 
+        } catch (const CException&) {} 
 
         if (!seqids.empty()) {
             retval += kSeparator;
