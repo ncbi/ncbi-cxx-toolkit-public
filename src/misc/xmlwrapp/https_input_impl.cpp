@@ -35,8 +35,6 @@
 #include <libxml/xmlIO.h>
 
 #include <misc/xmlwrapp/exception.hpp>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_conn_stream.hpp>
 
 #include "https_input_impl.hpp"
