@@ -84,6 +84,9 @@
 
 #include <ctype.h>
 
+// The "49518053" is just a random number to minimize the chance of the
+// variable name conflicting with another variable name and has no
+// particular meaning
 #define FASTA_LINE_EXPT(_eSeverity, _uLineNum, _MessageStrmOps,  _eErrCode, _eProblem, _sFeature, _sQualName, _sQualValue) \
     do {                                                                \
         stringstream err_strm_49518053;                                 \
@@ -91,6 +94,9 @@
         PostWarning(pMessageListener, (_eSeverity), (_uLineNum), (err_strm_49518053.str()),  (_eErrCode), (_eProblem), (_sFeature), (_sQualName), (_sQualValue)); \
     } while(0)
 
+// The "49518053" is just a random number to minimize the chance of the
+// variable name conflicting with another variable name and has no
+// particular meaning
 #define FASTA_PROGRESS(_MessageStrmOps)                                 \
     do {                                                                \
         stringstream err_strm_49518053;                                 \
@@ -173,26 +179,27 @@ inline bool s_ASCII_IsAlpha(unsigned char c)
     return s_ASCII_IsUpper(c)  ||  s_ASCII_IsLower(c);
 }
 
-inline unsigned char s_ASCII_ToUpper(unsigned char c)
+// The arg *must* be a lowercase letter or this won't work
+inline unsigned char s_ASCII_MustBeLowerToUpper(unsigned char c)
 {
-    return s_ASCII_IsLower(c) ? c + 'A' - 'a' : c;
+    return c + ('A' - 'a');
 }
 
 inline bool s_ASCII_IsAmbigNuc(unsigned char c)
 {
-    switch( s_ASCII_ToUpper(c) ) {
-    case 'U':
-    case 'R':
-    case 'Y':
-    case 'S':
-    case 'W':
-    case 'K':
-    case 'M':
-    case 'B':
-    case 'D':
-    case 'H':
-    case 'V':
-    case 'N':
+    switch(c) {
+    case 'U': case 'u':
+    case 'R': case 'r':
+    case 'Y': case 'y':
+    case 'S': case 's':
+    case 'W': case 'w':
+    case 'K': case 'k':
+    case 'M': case 'm':
+    case 'B': case 'b':
+    case 'D': case 'd':
+    case 'H': case 'h':
+    case 'V': case 'v':
+    case 'N': case 'n':
         return true;
     default:
         return false;
@@ -202,39 +209,8 @@ inline bool s_ASCII_IsAmbigNuc(unsigned char c)
 inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 {
     switch( c ) {
-    case 'A':
-    case 'C':
-    case 'G':
-    case 'T':
-    case 'a':
-    case 'c':
-    case 'g':
-    case 't':
-        return true;
-    default:
-        return false;
-    }
-}
-
-inline bool s_ASCII_IsValidNuc(unsigned char c)
-{
-    switch( s_ASCII_ToUpper(c) ) {
-    case 'A':
-    case 'C':
-    case 'G':
-    case 'T':
-    case 'U':
-    case 'R':
-    case 'Y':
-    case 'S':
-    case 'W':
-    case 'K':
-    case 'M':
-    case 'B':
-    case 'D':
-    case 'H':
-    case 'V':
-    case 'N':
+    case 'A': case 'C': case 'G': case 'T':
+    case 'a': case 'c': case 'g': case 't':
         return true;
     default:
         return false;
@@ -289,15 +265,6 @@ CFastaReader::~CFastaReader(void)
 void CFastaReader::SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length)
 {
     m_gapNmin = gapNmin; m_gap_Unknown_length = gap_Unknown_length;
-}
-
-inline
-void CFastaReader::CloseGap(bool atStartOfLine, ILineErrorListener * pMessageListener)
-{
-    if (m_CurrentGapLength > 0) {
-        x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
-        m_CurrentGapLength = 0;
-    }
 }
 
 CRef<CSerialObject>
@@ -855,13 +822,18 @@ void CFastaReader::CheckDataLine(
         return;
     }
     const bool bIgnoreHyphens = TestFlag(fHyphensIgnoreAndWarn);
-    size_t good = 0, bad = 0, len = s.length();
+    size_t good = 0, bad = 0;
+    // in case the data has huge sequences all on the first line we do need
+    // a cutoff and "70" seems reasonable since it's the default width of
+    // CFastaOstream (as of 2017-03-09)
+    size_t len_to_check = min(s.length(),
+                              static_cast<size_t>(70));
     const bool bIsNuc = (
         ( TestFlag(fAssumeNuc) && TestFlag(fForceType) ) ||
         ( m_CurrentSeq && m_CurrentSeq->IsSetInst() &&
           m_CurrentSeq->GetInst().IsSetMol() &&  m_CurrentSeq->IsNa() ) );
     size_t ambig_nuc = 0;
-    for (size_t pos = 0;  pos < len;  ++pos) {
+    for (size_t pos = 0;  pos < len_to_check;  ++pos) {
         unsigned char c = s[pos];
         if (s_ASCII_IsAlpha(c) ||  c == '*') {
             ++good;
@@ -882,7 +854,9 @@ void CFastaReader::CheckDataLine(
             ++bad;
         }
     }
-    if (bad >= good / 3  &&  (len > 3  ||  good == 0  ||  bad > good)) {
+    if (bad >= good / 3  &&
+        (len_to_check > 3  ||  good == 0  ||  bad > good))
+    {
         FASTA_ERROR( LineNumber(),
             "CFastaReader: Near line " << LineNumber()
             << ", there's a line that doesn't look like plausible data, "
@@ -892,15 +866,16 @@ void CFastaReader::CheckDataLine(
     // warn if more than a certain percentage is ambiguous nucleotides
     const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
     const size_t percent_ambig = (good == 0)?100:((ambig_nuc * 100) / good);
-    if( len > 3 && percent_ambig > kWarnPercentAmbiguous ) {
+    if( len_to_check > 3 && percent_ambig > kWarnPercentAmbiguous ) {
         FASTA_WARNING(LineNumber(), 
-            "FASTA-Reader: First data line in seq is about "
+            "FASTA-Reader: Start of first data line in seq is about "
             << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
             << kWarnPercentAmbiguous << "%)",   
             ILineError::eProblem_TooManyAmbiguousResidues,
             "first data line");
     }
 }
+
 
 void CFastaReader::ParseDataLine(
     const TStr& s, ILineErrorListener * pMessageListener)
@@ -912,33 +887,40 @@ void CFastaReader::ParseDataLine(
 
     CheckDataLine(s, pMessageListener);
 
-    size_t len = min(s.length(), s.find(';')); // ignore ;-delimited comments
-    if (m_SeqData.capacity() < m_SeqData.size() + len) {
+    // most lines won't have a comment (';') so optimize for that case as
+    // much as possible
+
+    const size_t s_len = s.length(); // avoid checking over and over
+
+    if (m_SeqData.capacity() < m_SeqData.size() + s_len) {
         // ensure exponential capacity growth to avoid quadratic runtime
-        m_SeqData.reserve(2 * max(m_SeqData.capacity(), len));
+        m_SeqData.reserve(2 * max(m_SeqData.capacity(), s_len));
     }
+
     if ((GetFlags() & (fSkipCheck | fParseGaps | fValidate)) == fSkipCheck
-        &&  m_CurrentMask.Empty()) {
-        m_SeqData.append(s.data(), len);
-        m_CurrentPos += len;
+        &&  m_CurrentMask.Empty())
+    {
+        // copy until comment char or end of line
+        size_t pos = 0;
+        char c = '\0';
+        for( ; pos < s_len && (c = s[pos]) != ';'; ++pos) {
+            m_SeqData.push_back(c);
+        }
+        m_CurrentPos += pos;
         return;
     }
 
     // we're stricter with nucs, so try to determine if we should
     // assume this is a nuc
-    bool bIsNuc = false;
-    if( ! TestFlag(fForceType) &&
-        FIELD_CHAIN_OF_2_IS_SET(*m_CurrentSeq, Inst, Mol) ) 
-    {
-        if( m_CurrentSeq->IsNa() ) {
-            bIsNuc = true;
-        }
-    } else {
-        bIsNuc = TestFlag(fAssumeNuc);
-    }
-        
-    m_SeqData.resize(m_CurrentPos + len);
+    const bool bIsNuc = (
+        (! TestFlag(fForceType) &&
+            FIELD_CHAIN_OF_2_IS_SET(*m_CurrentSeq, Inst, Mol))
+        ? m_CurrentSeq->IsNa()
+        : TestFlag(fAssumeNuc)
+    );
 
+    m_SeqData.resize(m_CurrentPos + s_len);
+        
     // these will stay as -1 and empty unless there's an error
     int bad_pos_line_num = -1;
     vector<TSeqPos> bad_pos_vec; 
@@ -951,43 +933,158 @@ void CFastaReader::ParseDataLine(
 
     bool bIgnorableHyphenSeen = false;
 
-    const char chLetterGap_lc = ( bIsNuc ? 'N' : 'X');
-    const char chLetterGap_uc = ( bIsNuc ? 'n' : 'x');
-    for (size_t pos = 0;  pos < len;  ++pos) {
-        unsigned char c = s[pos];
-        if ( ( (c == '-')         && bHyphensAreGaps) ||
-             ( (c == chLetterGap_lc || c == chLetterGap_uc) && bAllowLetterGaps) )
-        {
-            CloseMask();
-            // open a gap
-            size_t pos2 = pos + 1;
-            while (pos2 < len  &&  s[pos2] == c) {
-                ++pos2;
-            }
-            m_CurrentGapLength += pos2 - pos;
-            m_CurrentGapChar = toupper(c);
-            pos = pos2 - 1;
-        } else if( c == '-' && bHyphensIgnoreAndWarn ) {
-            bIgnorableHyphenSeen = true;
-        } else if (
-            s_ASCII_IsValidNuc(c) ||
-            ( ! bIsNuc &&  ( s_ASCII_IsAlpha(c) ||  c == '*' ) ) ||
-            c == '-' ) 
-        {
+    // indicates how the char should be treated
+    enum ECharType {
+        eCharType_NormalNonGap,
+        eCharType_MaskedNonGap,
+        eCharType_Gap,
+        eCharType_JustIgnore,
+        eCharType_HyphenToIgnoreAndWarn,
+        eCharType_Comment,
+        eCharType_Bad,
+    };
+
+    for (size_t pos = 0;  pos < s_len;  ++pos) {
+        const unsigned char c = s[pos];
+
+        // figure out what exactly should be done with the char
+        ECharType char_type = eCharType_Bad;
+        switch(c) {
+        // try to keep cases with consecutive letters on the same line
+        // and try to have all cases with the same result in alphabetical
+        // order.  This will to make it easier to
+        // tell if a letter was skipped or entered mult times
+
+        // some cases just set char_type but others can be implemented right
+        // in the first switch followed by a continue.  Try to minimize the
+        // latter because they can make this switch very long
+
+        case 'A': case 'B': case 'C': case 'D':
+        case 'G': case 'H':
+        case 'K':
+        case 'M':
+        case 'R': case 'S': case 'T': case 'U': case 'V': case 'W':
+        case 'Y':
             CloseGap(pos == 0);
-            if (s_ASCII_IsLower(c)) {
-                m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
-                OpenMask();
+            m_SeqData[m_CurrentPos] = c;
+            CloseMask();
+            ++m_CurrentPos;
+            continue;
+        case 'a': case 'b': case 'c': case 'd':
+        case 'g': case 'h':
+        case 'k':
+        case 'm':
+        case 'r': case 's': case 't': case 'u': case 'v': case 'w':
+        case 'y':
+            char_type = eCharType_MaskedNonGap;
+            break;
+
+        case 'E': case 'F':
+        case 'I': case 'J':
+        case 'L':
+        case 'O': case 'P': case 'Q':
+        case 'Z':
+        case '*':
+            if( bIsNuc ) {
+                char_type = eCharType_Bad;
             } else {
+                CloseGap(pos == 0);
                 m_SeqData[m_CurrentPos] = c;
                 CloseMask();
+                ++m_CurrentPos;
+                continue;
             }
+            break;
+        case 'e': case 'f':
+        case 'i': case 'j':
+        case 'l':
+        case 'o': case 'p': case 'q':
+        case 'z':
+            char_type = (bIsNuc ? eCharType_Bad : eCharType_MaskedNonGap );
+            break;
+
+        case 'N':
+            char_type = ( bIsNuc && bAllowLetterGaps ?
+                     eCharType_Gap : eCharType_NormalNonGap );
+            break;
+        case 'n':
+            char_type = ( bIsNuc && bAllowLetterGaps ?
+                     eCharType_Gap : eCharType_MaskedNonGap );
+            break;
+
+        case 'X':
+            char_type = ( bIsNuc ? eCharType_Bad :
+                     bAllowLetterGaps ? eCharType_Gap :
+                     eCharType_NormalNonGap);
+            break;
+        case 'x':
+            char_type = ( bIsNuc ? eCharType_Bad :
+                     bAllowLetterGaps ? eCharType_Gap :
+                     eCharType_MaskedNonGap);
+            break;
+
+        case '-':
+            char_type = (
+                bHyphensAreGaps ? eCharType_Gap :
+                bHyphensIgnoreAndWarn ? eCharType_HyphenToIgnoreAndWarn :
+                eCharType_NormalNonGap );
+            break;
+        case ';':
+            char_type = eCharType_Comment;
+            break;
+
+        case '\t': case '\n': case '\v': case '\f': case '\r': case ' ':
+            continue;
+
+        default:
+            char_type = eCharType_Bad;
+            break;
+        }
+
+        switch(char_type) {
+        case eCharType_NormalNonGap:
+            CloseGap(pos == 0);
+            m_SeqData[m_CurrentPos] = c;
+            CloseMask();
             ++m_CurrentPos;
-        } else if ( !isspace(c) ) {
+            break;
+        case eCharType_MaskedNonGap:
+            CloseGap(pos == 0);
+            m_SeqData[m_CurrentPos] = s_ASCII_MustBeLowerToUpper(c);
+            OpenMask();
+            ++m_CurrentPos;
+            break;
+        case eCharType_Gap: {
+            CloseMask();
+            // open a gap
+
+            size_t pos2 = pos + 1;
+            while( pos2 < s_len && s[pos2] == c ) {
+                ++pos2;
+            }
+            _ASSERT(pos2 <= s_len);
+            m_CurrentGapLength += pos2 - pos;
+            m_CurrentGapChar = toupper(c);
+            pos = pos2 - 1; // `- 1` compensates for the `++pos` in the `for`
+            break;
+        }
+        case eCharType_JustIgnore:
+            break;
+        case eCharType_HyphenToIgnoreAndWarn:
+            bIgnorableHyphenSeen = true;
+            break;
+        case eCharType_Comment:
+            // artificially advance pos to the end to break the pos loop
+            pos = s_len;
+            break;
+        case eCharType_Bad:
             if( bad_pos_line_num < 0 ) {
                 bad_pos_line_num = LineNumber();
             }
             bad_pos_vec.push_back(pos);
+            break;
+        default:
+            _TROUBLE;
         }
     }
 
@@ -2061,7 +2158,7 @@ void CFastaReader::x_ApplyAllMods(
         copy( unused_mods.begin(), unused_mods.end(),
             inserter(m_UnusedMods, m_UnusedMods.begin() ) );
     } else {
-        // user did not request fAddMods, so we warn that we found
+        // user did not request fAddMods, so we warn if we found
         // mods anyway
         smp.ParseTitle(
             title, 
@@ -2154,16 +2251,16 @@ void CFastaReader::PostWarning(
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, CObjReaderParseException::EErrCode _eErrCode, ILineError::EProblem _eProblem, CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const
 {
     if (find(m_ignorable.begin(), m_ignorable.end(), _eProblem) != m_ignorable.end())
+        // this is a problem that should be ignored
         return;
 
-
-    string sSeqId_49518053 = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);                  
+    string sSeqId = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);
     AutoPtr<CObjReaderLineException> pLineExpt(                        
         CObjReaderLineException::Create(                            
         (_eSeverity), _uLineNum,                        
         _MessageStrmOps,                                
         (_eProblem),                                            
-        sSeqId_49518053, (_sFeature),                           
+        sSeqId, (_sFeature),
         (_sQualName), (_sQualValue),                            
         _eErrCode) );                 
     if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    

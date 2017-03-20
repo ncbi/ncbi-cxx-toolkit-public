@@ -267,7 +267,12 @@ protected:
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities 
-    void CloseGap(bool atStartOfLine=true, ILineErrorListener * pMessageListener = 0);
+    void CloseGap(bool atStartOfLine=true, ILineErrorListener * pMessageListener = 0) {
+        if (m_CurrentGapLength > 0) {
+            x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
+            m_CurrentGapLength = 0;
+        }
+    }
     void OpenMask(void);
     void CloseMask(void)
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
@@ -403,7 +408,10 @@ enum EReadFastaFlags {
 typedef CFastaReader::TFlags TReadFastaFlags;
 
 
-/// Traditional interface for reading FASTA files.
+/// Traditional interface for reading FASTA files which is not
+/// just deprecated but dangerous due to an unsafe reinterpret_cast that
+/// occurs within and affects the caller's params.
+///
 /// @deprecated
 /// @sa CFastaReader
 NCBI_DEPRECATED
@@ -479,9 +487,11 @@ TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
     TSeqPos pos = m_CurrentPos;
     switch (pos_type) {
     case ePosWithGapsAndSegs:
-        pos += m_SegmentBase; // fall through
+        pos += m_SegmentBase;
+        // FALL THROUGH!!
     case ePosWithGaps:
-        pos += m_TotalGapLength; // fall through
+        pos += m_TotalGapLength;
+        // FALL THROUGH!!
     case eRawPos:
         return pos;
     default:
