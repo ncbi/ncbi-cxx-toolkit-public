@@ -34,6 +34,7 @@
 /// Parser for source modifiers, as found in (Sequin-targeted) FASTA files.
 
 #include <corelib/ncbi_autoinit.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <objects/general/User_object.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -122,16 +123,24 @@ public:
 
     struct PKeyEqual {
         bool operator()(const CTempString& lhs, const CTempString& rhs) const
-            { return CompareKeys(lhs, rhs) == 0; }
+            { return EqualKeys(lhs, rhs); }
     };
+
+    // more efficient than CompareKeys when you're just looking for equality.
+    static bool EqualKeys(const CTempString& lhs, const CTempString& rhs);
 
     struct SMod {
 
         CConstRef<CSeq_id> seqid;
         string key;
         string value;
-        size_t pos;
-        bool   used;
+        size_t pos = 0;
+        bool   used = false;
+
+        SMod(void) = default;
+        // This is usually used for making SMods as keys for searching maps
+        // and such.
+        explicit SMod(const CTempString & the_key) : key(the_key) { }
 
         bool operator < (const SMod& rhs) const;
         string ToString(void) const;
@@ -166,18 +175,26 @@ public:
             const string & sAllowedValues );
     };
 
+    /// Used for passing an empty mod to some funcs without having to
+    /// constantly recreate an empty one.
+    static CSafeStatic<CSourceModParser::SMod> kEmptyMod;
+
     /// Return all modifiers matching the given criteria (if any) without
     /// affecting their status (used vs. unused).
     TMods GetMods(TWhichMods which = fAllMods) const;
 
     /// If a modifier with either key is present, mark it as used and
     /// return it; otherwise, return NULL.
-    const SMod* FindMod(const CTempString& key,
-                        CTempString alt_key = kEmptyStr);
+    const SMod* FindMod(const SMod & smod,
+                        const SMod & alt_smod = kEmptyMod.Get());
 
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
     TModsRange FindAllMods(const CTempString& key);
+
+    /// Return all modifiers with the given key (e.g., db_xref), marking them
+    /// as used along the way.
+    TModsRange FindAllMods(const SMod & smod);
 
     /// Append a representation of the specified modifiers to s, with a space
     /// in between if s is not empty and doesn't already end with one.
@@ -297,16 +314,27 @@ int CSourceModParser::CompareKeys(const CTempString& lhs,
     while (it != lhs.end()  &&  it2 != rhs.end()) {
         unsigned char uc1 = kKeyCanonicalizationTable[(unsigned char)*it++];
         unsigned char uc2 = kKeyCanonicalizationTable[(unsigned char)*it2++];
-        if (uc1 > uc2) {
-            return 1;
-        } else if (uc1 < uc2) {
-            return -1;
+        if( uc1 != uc2 ) {
+            return ((uc1 < uc2) ? -1 : 1);
         }
     }
     if (it == lhs.end()) {
         return (it2 == rhs.end()) ? 0 : -1;
     } else {
         return 1;
+    }
+}
+
+inline
+bool CSourceModParser::EqualKeys(const CTempString& lhs,
+                                 const CTempString& rhs)
+{
+    // optimization for cases where they obviously aren't equal
+    if( lhs.length() != rhs.length() ) {
+        return false;
+    } else {
+        // not in optimized case so fall back on using CompareKeys
+        return CompareKeys(lhs, rhs) == 0;
     }
 }
 

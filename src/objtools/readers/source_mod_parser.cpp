@@ -72,10 +72,10 @@ BEGIN_SCOPE(objects)
 
 namespace
 {
-    class compare_subtype
+    class equal_subtype
     {
     public:
-        compare_subtype(CSubSource::TSubtype st) : m_st(st){};
+        equal_subtype(CSubSource::TSubtype st) : m_st(st){};
         bool operator()(const CRef<CSubSource>& st) const
         {
             return st->IsSetSubtype() && (st->GetSubtype() == m_st);
@@ -83,7 +83,199 @@ namespace
     private:
         CSubSource::TSubtype m_st;
     };
+
+#ifdef STATIC_SMOD
+#  error "STATIC_SMOD already defined"
+#endif
+
+// The macro makes sure that the var's name matches its key.
+// Due to kKeyCanonicalizationTable, it's okay to use '_' for '-'
+// because it will match both.
+#define STATIC_SMOD(key_str) \
+    CSafeStatic<CSourceModParser::SMod> s_Mod_##key_str([]() { \
+        return new CSourceModParser::SMod(#key_str); }, nullptr);
+
+    // For CBioseq
+    STATIC_SMOD(topology);
+    STATIC_SMOD(top);
+    STATIC_SMOD(molecule);
+    STATIC_SMOD(mol);
+    STATIC_SMOD(moltype);
+    STATIC_SMOD(mol_type);
+    STATIC_SMOD(strand);
+    STATIC_SMOD(comment);
+
+    // For CBioSource
+    STATIC_SMOD(organism);
+    STATIC_SMOD(org);
+    STATIC_SMOD(taxname);
+    STATIC_SMOD(location);
+    STATIC_SMOD(origin);
+    STATIC_SMOD(sub_clone);
+    STATIC_SMOD(lat_long);
+    STATIC_SMOD(latitude_longitude);
+    STATIC_SMOD(fwd_primer_seq);
+    STATIC_SMOD(rev_primer_seq);
+    STATIC_SMOD(fwd_primer_name);
+    STATIC_SMOD(rev_primer_name);
+    STATIC_SMOD(db_xref);
+    STATIC_SMOD(division);
+    STATIC_SMOD(div);
+    STATIC_SMOD(lineage);
+    STATIC_SMOD(gcode);
+    STATIC_SMOD(mgcode);
+    STATIC_SMOD(pgcode);
+    STATIC_SMOD(note);
+    STATIC_SMOD(notes);
+    STATIC_SMOD(focus);
+
+    // For CMolInfo
+    STATIC_SMOD(tech);
+    STATIC_SMOD(completeness);
+    STATIC_SMOD(completedness);
+
+    // For CGene_ref
+    STATIC_SMOD(gene);
+    STATIC_SMOD(allele);
+    STATIC_SMOD(gene_syn);
+    STATIC_SMOD(gene_synonym);
+    STATIC_SMOD(locus_tag);
+
+    // For CProt_ref
+    STATIC_SMOD(protein);
+    STATIC_SMOD(prot);
+    STATIC_SMOD(prot_desc);
+    STATIC_SMOD(protein_desc);
+    STATIC_SMOD(EC_number);
+    STATIC_SMOD(activity);
+    STATIC_SMOD(function);
+
+    // For CGB_block
+    STATIC_SMOD(secondary_accession);
+    STATIC_SMOD(secondary_accessions);
+    STATIC_SMOD(keyword);
+    STATIC_SMOD(keywords);
+
+    // For TPA Mods (CUser_object)
+    STATIC_SMOD(primary);
+    STATIC_SMOD(primary_accessions);
+
+    // For Genome Project DB Mods (CUser_object)
+    STATIC_SMOD(project);
+    STATIC_SMOD(projects);
+
+    // For Pub Mods (CSeq_descr)
+    STATIC_SMOD(PubMed);
+    STATIC_SMOD(PMID);
+
+
+#undef STATIC_SMOD
+
+    typedef set<const char*, CSourceModParser::PKeyCompare> TSModNameSet;
+
+    // Loads up a map of SMod to subtype
+    template<typename TEnum,
+             typename TSModEnumMap = map<CSourceModParser::SMod, TEnum>,
+             typename TEnumNameToValMap = map<string, TEnum>>
+    TSModEnumMap * s_InitSmodToEnumMap(
+        const CEnumeratedTypeValues* etv,
+        // names to skip
+        const TSModNameSet & skip_enum_names,
+        // extra values to add that aren't in the enum
+        const TEnumNameToValMap & extra_enum_names_to_vals )
+    {
+        unique_ptr<TSModEnumMap> smod_enum_map(new TSModEnumMap);
+
+        ITERATE (CEnumeratedTypeValues::TValues, it, etv->GetValues()) {
+            const string & enum_name = it->first;
+            const TEnum enum_val = static_cast<TEnum>(it->second);
+            if( skip_enum_names.find(enum_name.c_str()) !=
+                skip_enum_names.end() )
+            {
+                // skip this tag
+                continue;
+            }
+            auto emplace_result =
+                smod_enum_map->emplace(
+                    CSourceModParser::SMod(enum_name), enum_val);
+            // emplace must succeed
+            if( ! emplace_result.second) {
+                NCBI_USER_THROW_FMT(
+                   "s_InitSmodToEnumMap " << enum_name);
+            }
+        }
+
+        for(auto extra_smod_to_enum : extra_enum_names_to_vals) {
+            auto emplace_result =
+                smod_enum_map->emplace(
+                    CSourceModParser::SMod(extra_smod_to_enum.first),
+                    extra_smod_to_enum.second);
+            // emplace must succeed
+            if( ! emplace_result.second) {
+                NCBI_USER_THROW_FMT(
+                   "s_InitSmodToEnumMap " << extra_smod_to_enum.first);
+            }
+        }
+
+        return smod_enum_map.release();
+    }
+
+    typedef map<CSourceModParser::SMod, COrgMod::ESubtype> TSModOrgSubtypeMap;
+
+    TSModOrgSubtypeMap * s_InitSModOrgSubtypeMap(void)
+    {
+        const TSModNameSet kDeprecatedOrgSubtypes{
+            "dosage", "old-lineage", "old-name"};
+        const map<const char*, COrgMod::ESubtype> extra_smod_to_enum_names {
+            { "subspecies",    COrgMod::eSubtype_sub_species },
+            { "host",          COrgMod::eSubtype_nat_host    },
+            { "specific-host", COrgMod::eSubtype_nat_host    },
+        };
+
+        return s_InitSmodToEnumMap<COrgMod::ESubtype>(
+            COrgMod::GetTypeInfo_enum_ESubtype(),
+            kDeprecatedOrgSubtypes,
+            extra_smod_to_enum_names
+        );
+    }
+
+    // The subtype SMods are loaded from the names of the enum
+    // and they map to ESubtype enum values so we can't just use STATIC_SMOD
+    CSafeStatic<TSModOrgSubtypeMap> kSModOrgSubtypeMap(s_InitSModOrgSubtypeMap,
+                                                 nullptr);
+
+    typedef map<CSourceModParser::SMod,
+                CSubSource::ESubtype> TSModSubSrcSubtype;
+
+    TSModSubSrcSubtype * s_InitSModSubSrcSubtypeMap(void)
+    {
+        // some are skipped because they're handled specially and some are
+        // skipped because they're deprecated
+        TSModNameSet skip_enum_names {
+            // skip because handled specially elsewhere
+            "fwd_primer_seq", "rev_primer_seq",
+            "fwd_primer_name", "rev_primer_name",
+            // skip because deprecated
+            "transposon_name",
+            "plastid_name",
+            "insertion_seq_name",
+        };
+        const map<string, CSubSource::ESubtype> extra_smod_to_enum_names {
+            { "sub-clone",          CSubSource::eSubtype_subclone },
+            { "lat-long",           CSubSource::eSubtype_lat_lon  },
+            { "latitude-longitude", CSubSource::eSubtype_lat_lon  },
+        };
+        return s_InitSmodToEnumMap<CSubSource::ESubtype>(
+            CSubSource::GetTypeInfo_enum_ESubtype(),
+            skip_enum_names,
+            extra_smod_to_enum_names );
+    }
+                                                 
+    CSafeStatic<TSModSubSrcSubtype> kSModSubSrcSubtypeMap(
+        s_InitSModSubSrcSubtypeMap, nullptr);
 };
+
+CSafeStatic<CSourceModParser::SMod> CSourceModParser::kEmptyMod;
 
 // ASCII letters to lowercase, space and underscore to hyphen.
 const unsigned char CSourceModParser::kKeyCanonicalizationTable[257] =
@@ -441,7 +633,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     const SMod* mod = NULL;
 
     // top[ology]
-    if ((mod = FindMod("topology", "top")) != NULL) {
+    if ((mod = FindMod(s_Mod_topology.Get(), s_Mod_top.Get())) != NULL) {
         if (NStr::EqualNocase(mod->value, "linear")) {
             seq.SetInst().SetTopology(CSeq_inst::eTopology_linear);
         } else if (NStr::EqualNocase(mod->value, "circular")) {
@@ -458,7 +650,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         bool bMolSetViaMolMod = false;
 
         // mol[ecule]
-        if ((mod = FindMod("molecule", "mol")) != NULL) {
+        if ((mod = FindMod(s_Mod_molecule.Get(), s_Mod_mol.Get())) != NULL) {
             if (NStr::EqualNocase(mod->value, "dna")) {
                 seq.SetInst().SetMol( CSeq_inst::eMol_dna );
                 bMolSetViaMolMod = true;
@@ -474,7 +666,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
 
         // mol[-]type
         if( ! bMolSetViaMolMod ) {
-            if ((mod = FindMod("moltype", "mol-type")) != NULL) {
+            if ((mod = FindMod(s_Mod_moltype.Get(), s_Mod_mol_type.Get())) != NULL) {
                 TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
                 if (it == sc_BiomolMap.end()) {
                     x_HandleBadModValue(*mod);
@@ -487,7 +679,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 
     // strand
-    if ((mod = FindMod("strand")) != NULL) {
+    if ((mod = FindMod(s_Mod_strand.Get())) != NULL) {
         if (NStr::EqualNocase(mod->value, "single")) {
             seq.SetInst().SetStrand( CSeq_inst::eStrand_ss );
         } else if (NStr::EqualNocase(mod->value, "double")) {
@@ -500,7 +692,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 
     // comment
-    if ((mod = FindMod("comment")) != NULL) {
+    if ((mod = FindMod(s_Mod_comment.Get())) != NULL) {
         CRef<CSeqdesc> desc(new CSeqdesc);
         desc->SetComment( mod->value );
         seq.SetDescr().Set().push_back(desc);
@@ -516,11 +708,11 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     // org[anism]
     if (organism.empty())
     {
-        if ((mod = FindMod("organism", "org")) != NULL) {
+        if ((mod = FindMod(s_Mod_organism.Get(), s_Mod_org.Get())) != NULL) {
             organism = mod->value;
         }
         else
-        if ((mod = FindMod("taxname")) != NULL) {
+        if ((mod = FindMod(s_Mod_taxname.Get())) != NULL) {
             organism = mod->value;
         }
     }
@@ -540,7 +732,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // location
-    if ((mod = FindMod("location")) != NULL) {
+    if ((mod = FindMod(s_Mod_location.Get())) != NULL) {
         if (NStr::EqualNocase(mod->value, "mitochondrial")) {
             bsrc->SetGenome(CBioSource::eGenome_mitochondrion);
         } else if (NStr::EqualNocase(mod->value, "provirus")) {
@@ -560,7 +752,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // origin
-    if ((mod = FindMod("origin")) != NULL) {
+    if ((mod = FindMod(s_Mod_origin.Get())) != NULL) {
         try {
             // also check for special cases that don't match the enum name
             if( NStr::EqualNocase(mod->value, "natural mutant") ) {
@@ -576,98 +768,49 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         }
     }
 
-    struct SSubtypeAlias {
-        const char *name;
-        int         value;
-    };
-
     // handle orgmods
-    {{
-        // create lookup set for finding discouraged tags
-        static const char * kDeprecatedSubtypes_arr[] = {
-            "dosage", "old-lineage", "old-name"
-        };
-        const int kDeprecatedSubtypes_arr_len = sizeof(kDeprecatedSubtypes_arr) / sizeof(kDeprecatedSubtypes_arr[0]);
-        const set<const char*, CSourceModParser::PKeyCompare> kDeprecatedSubtypes( 
-            kDeprecatedSubtypes_arr, kDeprecatedSubtypes_arr + kDeprecatedSubtypes_arr_len);
-
-        const CEnumeratedTypeValues* etv = COrgMod::GetTypeInfo_enum_ESubtype();
-        ITERATE (CEnumeratedTypeValues::TValues, it, etv->GetValues()) {
-            if( kDeprecatedSubtypes.find(it->first.c_str()) != kDeprecatedSubtypes.end() ) {
-                // skip this bad tag
-            } else if ((mod = FindMod(it->first)) != NULL) {
-                CRef<COrgMod> org_mod(new COrgMod);
-                org_mod->SetSubtype(it->second);
-                org_mod->SetSubname(mod->value);
-                bsrc->SetOrg().SetOrgname().SetMod().push_back(org_mod);
-                reset_taxid = true;
-            }
+    for(const auto & smod_orgsubtype : kSModOrgSubtypeMap.Get()) {
+        const SMod & smod = smod_orgsubtype.first;
+        const COrgMod::ESubtype e_subtype = smod_orgsubtype.second;
+        if ((mod = FindMod(smod)) != NULL) {
+            CRef<COrgMod> org_mod(new COrgMod);
+            org_mod->SetSubtype(e_subtype);
+            org_mod->SetSubname(mod->value);
+            bsrc->SetOrg().SetOrgname().SetMod().push_back(org_mod);
+            reset_taxid = true;
         }
-    }}
-
-    // handle orgmod aliases
-    {{
-        static const SSubtypeAlias kOrgmodAliases[] = {
-            { "subspecies",    COrgMod::eSubtype_sub_species },
-            { "host",          COrgMod::eSubtype_nat_host    },
-            { "specific-host", COrgMod::eSubtype_nat_host    },
-            { NULL,            0                             }
-        };
-        for (const SSubtypeAlias* it = &kOrgmodAliases[0];
-             it->name != NULL;  ++it) {
-            if ((mod = FindMod(it->name)) != NULL) {
-                CRef<COrgMod> org_mod(new COrgMod);
-                org_mod->SetSubtype(it->value);
-                org_mod->SetSubname(mod->value);
-                bsrc->SetOrg().SetOrgname().SetMod().push_back(org_mod);
-                reset_taxid = true;
-            }
-        }
-    }}
+    }
 
     // handle subsources
-    {{
-        const CEnumeratedTypeValues* etv
-            = CSubSource::GetTypeInfo_enum_ESubtype();
-        ITERATE (CEnumeratedTypeValues::TValues, it, etv->GetValues()) {
-            // certain tags have to be handled differently
-            switch( it->second ) {
-                case CSubSource::eSubtype_fwd_primer_seq:
-                case CSubSource::eSubtype_rev_primer_seq:
-                case CSubSource::eSubtype_fwd_primer_name:
-                case CSubSource::eSubtype_rev_primer_name:
-                    // skip; we'll handle these below
-                    break;
-                case CSubSource::eSubtype_transposon_name:
-                case CSubSource::eSubtype_plastid_name:
-                case CSubSource::eSubtype_insertion_seq_name:
-                    // skip these deprecated tags
-                    break;
-                default:
-                    if ((mod = FindMod(it->first)) != NULL) {
-                        auto& subtype = bsrc->SetSubtype();
-                        CRef<CSubSource> subsource(new CSubSource);
-                        subsource->SetSubtype(it->second);
+    for( const auto & smod_subsrcsubtype : kSModSubSrcSubtypeMap.Get() ) {
+        const SMod & smod = smod_subsrcsubtype.first;
+        const CSubSource::ESubtype e_subtype = smod_subsrcsubtype.second;
+        if ((mod = FindMod(smod)) != NULL) {
+            auto& subtype = bsrc->SetSubtype();
+            CRef<CSubSource> subsource(new CSubSource);
+            subsource->SetSubtype(e_subtype);
 
-                        if( CSubSource::NeedsNoText(it->second) ) {
-                            subsource->SetName(kEmptyStr);
-                        } else {
-                            subsource->SetName(mod->value);
-                        }
-
-                        if (!CSubSource::IsMultipleValuesAllowed(it->second))
-                        {                
-                            auto existing = find_if(subtype.begin(), subtype.end(), compare_subtype(it->second));
-                            if (existing != subtype.end())
-                                subtype.erase(existing);
-                        }
-
-                        subtype.push_back(subsource);
-                    }
-                    break;
+            if( CSubSource::NeedsNoText(e_subtype) ) {
+                subsource->SetName(kEmptyStr);
+            } else {
+                subsource->SetName(mod->value);
             }
+
+            if (!CSubSource::IsMultipleValuesAllowed(e_subtype))
+            {
+                // since only one of this e_subtype is allowed, we erase any
+                // that are already in the subtype list.
+                // (Unfortunately, we cannot just use bsrc->RemoveSubSource
+                // because it will ResetSubtype if subtype ends up empty)
+                subtype.erase(
+                    remove_if(subtype.begin(), subtype.end(),
+                              equal_subtype(e_subtype)),
+                    subtype.end());
+            }
+
+            subtype.push_back(subsource);
         }
-    }}
+    }
 
     // handle PCR Primers
     {{
@@ -679,57 +822,41 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         bool used_fwd = false;
         bool used_rev = false;
 
-        if ((mod = FindMod("fwd-primer-name")) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_name.Get())) != NULL) {
             fwd_primer->SetName().Set( mod->value );
             used_fwd = true;
         }
-        if ((mod = FindMod("fwd-primer-seq")) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_seq.Get())) != NULL) {
             fwd_primer->SetSeq().Set( mod->value );
             NStr::ToLower( fwd_primer->SetSeq().Set() );
             used_fwd = true;
         }
-        if ((mod = FindMod("rev-primer-name")) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_name.Get())) != NULL) {
             rev_primer->SetName().Set( mod->value );
             used_rev = true;
         }
-        if ((mod = FindMod("rev-primer-seq")) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_seq.Get())) != NULL) {
             rev_primer->SetSeq().Set( mod->value );
             NStr::ToLower( rev_primer->SetSeq().Set() );
             used_rev = true;
         }
 
         if( used_fwd ) {
-            pcr_reaction->SetForward().Set().push_back( CRef<CPCRPrimer>(&*fwd_primer) );
+            pcr_reaction->SetForward().Set().push_back(
+                CRef<CPCRPrimer>(&*fwd_primer) );
         }
         if( used_rev ) {
-            pcr_reaction->SetReverse().Set().push_back( CRef<CPCRPrimer>(&*rev_primer) );
+            pcr_reaction->SetReverse().Set().push_back(
+                CRef<CPCRPrimer>(&*rev_primer) );
         }
         if( used_fwd || used_rev ) {
-            bsrc->SetPcr_primers().Set().push_back( CRef<CPCRReaction>(&*pcr_reaction) );
-        }
-    }}
-
-    // handle subsource aliases
-    {{
-        static const SSubtypeAlias kSubsourceAliases[] = {
-            { "sub-clone",          CSubSource::eSubtype_subclone },
-            { "lat-long",           CSubSource::eSubtype_lat_lon  },
-            { "latitude-longitude", CSubSource::eSubtype_lat_lon  },
-            { NULL,                 0                          }
-        };
-        for (const SSubtypeAlias* it = &kSubsourceAliases[0];
-             it->name != NULL;  ++it) {
-            if ((mod = FindMod(it->name)) != NULL) {
-                CRef<CSubSource> subsource(new CSubSource);
-                subsource->SetSubtype(it->value);
-                subsource->SetName(mod->value);
-                bsrc->SetSubtype().push_back(subsource);
-            }
+            bsrc->SetPcr_primers().Set().push_back(
+                CRef<CPCRReaction>(&*pcr_reaction) );
         }
     }}
 
     // db_xref
-    TModsRange db_xref_mods_range = FindAllMods( "db_xref" );
+    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref.Get() );
     for( TModsCI db_xref_iter = db_xref_mods_range.first; 
             db_xref_iter != db_xref_mods_range.second; 
             ++db_xref_iter ) {
@@ -755,34 +882,34 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // div[ision]
-    if ((mod = FindMod("division", "div")) != NULL) {
+    if ((mod = FindMod(s_Mod_division.Get(), s_Mod_div.Get())) != NULL) {
         bsrc->SetOrg().SetOrgname().SetDiv( mod->value );
     }
     
     // lineage
-    if ((mod = FindMod("lineage")) != NULL) {
+    if ((mod = FindMod(s_Mod_lineage.Get())) != NULL) {
         bsrc->SetOrg().SetOrgname().SetLineage( mod->value );
     }
     
     // gcode
-    if ((mod = FindMod("gcode")) != NULL) {
+    if ((mod = FindMod(s_Mod_gcode.Get())) != NULL) {
         bsrc->SetOrg().SetOrgname().SetGcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // mgcode
-    if ((mod = FindMod("mgcode")) != NULL) {
+    if ((mod = FindMod(s_Mod_mgcode.Get())) != NULL) {
         bsrc->SetOrg().SetOrgname().SetMgcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // pgcode
-    if ((mod = FindMod("pgcode")) != NULL) {
+    if ((mod = FindMod(s_Mod_pgcode.Get())) != NULL) {
         bsrc->SetOrg().SetOrgname().SetPgcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // note[s]
     TModsRange mods[2];
-    mods[0] = FindAllMods("note");
-    mods[1] = FindAllMods("notes");
+    mods[0] = FindAllMods(s_Mod_note.Get());
+    mods[1] = FindAllMods(s_Mod_notes.Get());
     for (size_t i = 0; i < 2; i++)
     {
         for (TModsCI it = mods[i].first; it != mods[i].second; it++)
@@ -795,7 +922,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // focus
-    if ((mod = FindMod("focus")) != NULL) {
+    if ((mod = FindMod(s_Mod_focus.Get())) != NULL) {
         if( NStr::EqualNocase( mod->value, "TRUE" ) ) {
             bsrc->SetIs_focus();
         }
@@ -856,7 +983,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     const SMod* mod = NULL;
 
     // mol[-]type
-    if ((mod = FindMod("moltype", "mol-type")) != NULL) {
+    if ((mod = FindMod(s_Mod_moltype.Get(), s_Mod_mol_type.Get())) != NULL) {
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
             // construct the possible bad values by hand
@@ -868,7 +995,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     }
 
     // tech
-    if ((mod = FindMod("tech")) != NULL) {
+    if ((mod = FindMod(s_Mod_tech.Get())) != NULL) {
         TTechMap::const_iterator it = sc_TechMap.find(mod->value.c_str());
         if (it == sc_TechMap.end()) {
             x_HandleBadModValue(*mod);
@@ -878,7 +1005,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     }
 
     // complete[d]ness
-    if ((mod = FindMod("completeness", "completedness")) != NULL) {
+    if ((mod = FindMod(s_Mod_completeness.Get(), s_Mod_completedness.Get())) != NULL) {
         TTechMap::const_iterator it = sc_CompletenessMap.find(mod->value.c_str());
         if (it == sc_CompletenessMap.end()) {
             x_HandleBadModValue(*mod);
@@ -893,22 +1020,22 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGene_ref>& gene)
     const SMod* mod = NULL;
 
     // gene
-    if ((mod = FindMod("gene")) != NULL) {
+    if ((mod = FindMod(s_Mod_gene.Get())) != NULL) {
         gene->SetLocus(mod->value);
     }
 
     // allele
-    if ((mod = FindMod("allele")) != NULL) {
+    if ((mod = FindMod(s_Mod_allele.Get())) != NULL) {
         gene->SetAllele( mod->value );
     }
 
     // gene_syn[onym]
-    if ((mod = FindMod("gene_syn", "gene_synonym")) != NULL) {
+    if ((mod = FindMod(s_Mod_gene_syn.Get(), s_Mod_gene_synonym.Get())) != NULL) {
         gene->SetSyn().push_back( mod->value );
     }
     
     // locus_tag
-    if ((mod = FindMod("locus_tag")) != NULL) {
+    if ((mod = FindMod(s_Mod_locus_tag.Get())) != NULL) {
         gene->SetLocus_tag( mod->value );
     }
 }
@@ -919,22 +1046,22 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
     const SMod* mod = NULL;
 
     // prot[ein]
-    if ((mod = FindMod("protein", "prot")) != NULL) {
+    if ((mod = FindMod(s_Mod_protein.Get(), s_Mod_prot.Get())) != NULL) {
         prot->SetName().push_back(mod->value);
     }
 
     // prot[ein]_desc
-    if ((mod = FindMod("prot_desc", "protein_desc")) != NULL) {
+    if ((mod = FindMod(s_Mod_prot_desc.Get(), s_Mod_protein_desc.Get())) != NULL) {
         prot->SetDesc( mod->value );
     }
     
     // EC_number 
-    if ((mod = FindMod("EC_number")) != NULL) {
+    if ((mod = FindMod(s_Mod_EC_number.Get())) != NULL) {
         prot->SetEc().push_back( mod->value );
     }
 
     // activity/function
-    if ((mod = FindMod("activity", "function")) != NULL) {
+    if ((mod = FindMod(s_Mod_activity.Get(), s_Mod_function.Get())) != NULL) {
         prot->SetActivity().push_back( mod->value );
     }
 }
@@ -945,7 +1072,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     const SMod* mod = NULL;
 
     // secondary-accession[s]
-    if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
+    if ((mod = FindMod(s_Mod_secondary_accession.Get(),
+                       s_Mod_secondary_accessions.Get())) != NULL)
     {
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
@@ -963,7 +1091,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     }
 
     // keyword[s]
-    if ((mod = FindMod("keyword", "keywords")) != NULL) {
+    if ((mod = FindMod(s_Mod_keyword.Get(), s_Mod_keywords.Get())) != NULL) {
         list<string> keywordList;
         NStr::Split(mod->value, ",;", keywordList, NStr::fSplit_MergeDelimiters);
         // trim every string and push it into the real keyword list
@@ -980,7 +1108,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
     const SMod* mod = NULL;
 
     // secondary-accession[s]
-    if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
+    if ((mod = FindMod(s_Mod_secondary_accession.Get(),
+                       s_Mod_secondary_accessions.Get())) != NULL)
     {
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
@@ -1058,7 +1187,7 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
     const SMod* mod = NULL;
 
     // primary[-accessions]
-    if ((mod = FindMod("primary", "primary-accessions")) != NULL) {
+    if ((mod = FindMod(s_Mod_primary.Get(), s_Mod_primary_accessions.Get())) != NULL) {
         CUser_object::TData data;
         list<CTempString> accns;
         NStr::Split(mod->value, ",", accns, NStr::fSplit_MergeDelimiters);
@@ -1084,7 +1213,7 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
     const SMod* mod = NULL;
 
     // project[s]
-    if ((mod = FindMod("project", "projects")) != NULL) {
+    if ((mod = FindMod(s_Mod_project.Get(), s_Mod_projects.Get())) != NULL) {
         CUser_object::TData data;
         list<CTempString> ids;
         NStr::Split(mod->value, ",;", ids, NStr::fSplit_MergeDelimiters);
@@ -1130,8 +1259,8 @@ void s_ApplyPubMods(CSeq_descr& sd, CSourceModParser::TModsRange range)
 void CSourceModParser::ApplyPubMods(CSeq_descr& sd)
 {
     // find PubMed IDs
-    s_ApplyPubMods(sd, FindAllMods("PubMed"));
-    s_ApplyPubMods(sd, FindAllMods("PMID"));
+    s_ApplyPubMods(sd, FindAllMods(s_Mod_PubMed.Get()));
+    s_ApplyPubMods(sd, FindAllMods(s_Mod_PMID.Get()));
 }
 
 CSourceModParser::CBadModError::CBadModError( 
@@ -1172,28 +1301,30 @@ CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
     }
 }
 
-
-const CSourceModParser::SMod* CSourceModParser::FindMod(const CTempString& key,
-                                                        CTempString alt_key )
+const CSourceModParser::SMod* CSourceModParser::FindMod(
+    const SMod & smod, const SMod & alt_smod)
 {
     // check against m_pModFilter, if any
     if( m_pModFilter ) {
-        if( ! (*m_pModFilter)(key) || ! (*m_pModFilter)(alt_key) ) {
+        if( ! (*m_pModFilter)(smod.key) || ! (*m_pModFilter)(alt_smod.key) ) {
             return NULL;
         }
     }
 
-    SMod mod;
-
     for (int tries = 0;  tries < 2;  ++tries) {
-        mod.key = ( tries == 0 ? key : alt_key );
-        mod.pos = 0;
-        if ( !mod.key.empty() ) {
-            TModsCI it = m_Mods.lower_bound(mod);
-            if (it != m_Mods.end()  &&  CompareKeys(it->key, mod.key) == 0) {
-                const_cast<SMod&>(*it).used = true;
-                return &*it;
-            }
+        const SMod & mod = ( tries == 0 ? smod : alt_smod );
+        if( mod.key.empty() ) {
+            continue;
+        }
+
+        TModsCI it = m_Mods.lower_bound(mod);
+        if (it != m_Mods.end()  &&  EqualKeys(it->key, mod.key)) {
+            // set iterators are const since changing an object could affect
+            // its order in the set.  However, in this case we know that
+            // changing the `used` field won't affect the order so we know
+            // that a const_cast to change it is safe to do.
+            const_cast<SMod&>(*it).used = true;
+            return &*it;
         }
     }
 
@@ -1204,15 +1335,23 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(const CTempString& key,
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key)
 {
-    SMod mod;
-    mod.key = key;
-    mod.pos = 0;
+    SMod smod(key);
+    return FindAllMods(smod);
+}
 
+CSourceModParser::TModsRange
+CSourceModParser::FindAllMods(const SMod & smod)
+{
     TModsRange r;
-    r.first = m_Mods.lower_bound(mod);
+    r.first = m_Mods.lower_bound(smod);
     for (r.second = r.first;
-         r.second != m_Mods.end()  &&  CompareKeys(r.second->key, key) == 0;
-         ++r.second) {
+         r.second != m_Mods.end()  &&  EqualKeys(r.second->key, smod.key);
+         ++r.second)
+    {
+        // set iterators are const since changing an object could affect
+        // its order in the set.  However, in this case we know that
+        // changing the `used` field won't affect the order so we know
+        // that a const_cast to change it is safe to do.
         const_cast<SMod&>(*r.second).used = true;
     }
     return r;
@@ -1384,14 +1523,17 @@ void CSourceModParser::SetAllUnused()
 {
     NON_CONST_ITERATE(TMods, it, m_Mods)
     {
+        // set iterators are const since changing an object could affect
+        // its order in the set.  However, in this case we know that
+        // changing the `used` field won't affect the order so we know
+        // that a const_cast to change it is safe to do.
         const_cast<SMod&>(*it).used = false;
     }
 }
 
 void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
 {
-    SMod newmod;
-    newmod.key = name;
+    SMod newmod(name);
     newmod.value = value;
     newmod.used = false;
 
