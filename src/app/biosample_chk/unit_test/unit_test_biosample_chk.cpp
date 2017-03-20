@@ -158,6 +158,8 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
         BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
     }
 
+#if 0
+    // commented out as a result of SQD-4222
     // ignore name elements if in taxname
     unit_test_util::SetOrgMod(*test_src, COrgMod::eSubtype_biovar, "XYZ");
     test_src->SetOrg().SetTaxname("B XYZ");
@@ -166,7 +168,7 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
     expected.clear();
     diff_list = test_src->GetBiosampleDiffs(*test_sample);
     CheckDiffs(expected, diff_list);
-
+#endif
 
 }
 

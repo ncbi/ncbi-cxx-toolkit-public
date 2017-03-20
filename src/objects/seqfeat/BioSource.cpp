@@ -1249,7 +1249,8 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample, bool i
     sort(sample_list.begin(), sample_list.end(), s_CompareNameVals);
 
     GetFieldDiffsFromNameValLists(rval, src_list, sample_list, is_local_copy);
-    x_RemoveNameElementDiffs(biosample, rval);
+    // commented out, SQD-4222
+    //x_RemoveNameElementDiffs(biosample, rval);
 
     if (x_ShouldIgnoreNoteForBiosample() && biosample.x_ShouldIgnoreNoteForBiosample()) {
         RemoveDiffByName(rval, "orgmod_note");
