@@ -2677,8 +2677,7 @@ static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
 }
 
 
-
-void CFlatGatherer::x_GatherFeaturesOnLocation
+void CFlatGatherer::x_GatherFeaturesOnWholeLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
  CBioseqContext& ctx) const
@@ -2691,25 +2690,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     // logic to handle offsets that occur when user sets 
     // the -from and -to command-line parameters
     CRef<CSeq_loc_Mapper> slice_mapper; // NULL (unset) if no slicing
-    if( ! ctx.GetLocation().IsWhole() ) {
-        // build slice_mapper for mapping locations
-        CSeq_id seq_id;
-        seq_id.Assign( *ctx.GetHandle().GetSeqId() );
-
-        const TSeqPos new_len = sequence::GetLength( ctx.GetLocation(), &scope );
-
-        CSeq_loc old_loc;
-        old_loc.SetInt().SetId( seq_id );
-        old_loc.SetInt().SetFrom( 0 );
-        old_loc.SetInt().SetTo( new_len - 1 );
-
-        slice_mapper.Reset( new CSeq_loc_Mapper( loc, old_loc ) );
-        slice_mapper->SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
-        slice_mapper->TruncateNonmappingRanges();
-
-        // skip gaps when we take slices
-        gap_it = CSeqMap_CI();
-    }
 
     // Gaps of length zero are only shown for SwissProt Genpept records
     const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
@@ -2742,12 +2722,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             /// we may need to assert proper product resolution
             ///
 
-            if( slice_mapper && (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
-                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
-                // unless they're a plain feature.
-                // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
-                continue;
-            }
 
             if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
                 vector<CMappedFeat> children =
@@ -2784,16 +2758,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
 
 
-            // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
             CMappedFeat mapped_feat;
-            if( slice_mapper )
-            {
-                CRange<TSeqPos> range = loc.GetTotalRange();
-                const CSeq_feat& feat = it->GetMappedFeature();
-                CScope& scope = ctx.GetScope();
-                mapped_feat = s_GetTrimmedMappedFeat(feat, range, scope);
-                feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
-            }
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
         
@@ -2833,9 +2798,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 }
             }
 
-            if (!slice_mapper) {
-                mapped_feat = *it;
-            }
+            mapped_feat = *it;
             item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
@@ -2895,6 +2858,269 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             out << item;
         }
         ++gap_it;
+    }
+}
+
+
+DEFINE_STATIC_MUTEX(sx_UniqueIdMutex);
+static size_t s_UniqueIdOffset = 0;
+CRef<CSeq_id> s_MakeUniqueId(CScope& scope)
+{
+    CMutexGuard guard(sx_UniqueIdMutex);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    bool good = false;
+    while (!good) {
+//        id->SetOther().SetAccession("X" + NStr::NumericToString(s_UniqueIdOffset));
+        id->SetLocal().SetStr("tmp_delta" + NStr::NumericToString(s_UniqueIdOffset));
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
+        if (bsh) {
+            s_UniqueIdOffset++;
+        } else {
+            good = true;
+        }
+    }
+    return id;
+}
+
+
+static CRef<CBioseq> s_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CRef<CBioseq> seq(new CBioseq());
+    seq->SetId().push_back(s_MakeUniqueId(scope));
+    seq->SetInst().Assign(bsh.GetInst());
+    seq->SetInst().ResetSeq_data();
+    seq->SetInst().ResetExt();
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    CRef<CDelta_seq> element(new CDelta_seq());
+    element->SetLoc().Assign(loc);
+    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
+    seq->SetInst().SetLength(sequence::GetLength(*loc.GetId(), &scope));
+    return seq;
+}
+
+
+static CRef<CSeq_loc> s_FixId(const CSeq_loc& loc, const CSeq_id& orig, const CSeq_id& temporary)
+{
+    bool any_change = false;
+    CRef<CSeq_loc> new_loc(new CSeq_loc());
+    new_loc->Assign(loc);
+    CSeq_loc_I it(*new_loc);
+    for (; it; ++it) {
+        const CSeq_id& id = it.GetSeq_id();
+        if (id.Equals(temporary)) {            
+            it.SetSeq_id(orig);
+            any_change = true;
+        }
+    }
+    if (any_change) {
+        new_loc->Assign(*it.MakeSeq_loc());
+    }
+    return new_loc;
+}
+
+
+CRef<CSeq_loc_Mapper> s_MakeSliceMapper(const CSeq_loc& loc, CBioseqContext& ctx)
+{
+    CSeq_id seq_id;
+    seq_id.Assign( *ctx.GetHandle().GetSeqId() );
+
+    const TSeqPos new_len = sequence::GetLength( ctx.GetLocation(), &(ctx.GetScope()));
+
+    CSeq_loc old_loc;
+    old_loc.SetInt().SetId( seq_id );
+    old_loc.SetInt().SetFrom( 0 );
+    old_loc.SetInt().SetTo( new_len - 1 );
+
+    CRef<CSeq_loc_Mapper> slice_mapper( new CSeq_loc_Mapper( loc, old_loc ) );
+    slice_mapper->SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
+    slice_mapper->TruncateNonmappingRanges();
+    return slice_mapper;
+}
+
+
+#define USE_DELTA
+void CFlatGatherer::x_GatherFeaturesOnRange
+(const CSeq_loc& loc,
+ SAnnotSelector& sel,
+ CBioseqContext& ctx) const
+{
+    CScope& scope = ctx.GetScope();
+    CFlatItemOStream& out = *m_ItemOS;
+
+    // logic to handle offsets that occur when user sets 
+    // the -from and -to command-line parameters
+    // build slice_mapper for mapping locations
+    CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
+
+    CSeq_feat_Handle prev_feat;
+    CConstRef<IFlatItem> item;
+#ifdef USE_DELTA
+    SAnnotSelector sel_cpy = sel;
+    sel_cpy.SetResolveAll();
+    sel_cpy.SetResolveDepth(kMax_Int);
+    sel_cpy.SetAdaptiveDepth(true);
+    CRef<CBioseq> delta = s_MakeTemporaryDelta(loc, scope);
+    CBioseq_Handle delta_bsh = scope.AddBioseq(*delta);
+    CFeat_CI it(delta_bsh, sel_cpy);
+#else
+    CFeat_CI it(scope, loc, sel);
+#endif
+    ctx.GetFeatTree().AddFeatures(it);
+    for ( ;  it;  ++it) {
+        try {
+            CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
+            const CSeq_feat& original_feat = it->GetOriginalFeature();
+
+            /// we need to cleanse CDD features
+
+            s_CleanCDDFeature(original_feat);
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            ///
+            /// HACK HACK HACK
+            /// we may need to assert proper product resolution
+            ///
+
+            if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
+                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
+                // unless they're a plain feature.
+                // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
+                continue;
+            }
+
+            if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
+                vector<CMappedFeat> children =
+                    ctx.GetFeatTree().GetChildren(*it);
+                if (children.size() == 1  &&
+                    children.front().IsSetProduct()) {
+
+                    /// resolve sequences
+                    CSeq_id_Handle rna =
+                        sequence::GetIdHandle(it->GetProduct(), &scope);
+                    CSeq_id_Handle prot =
+                        sequence::GetIdHandle(children.front().GetProduct(),
+                                              &scope);
+
+                    CBioseq_Handle rna_bsh;
+                    CBioseq_Handle prot_bsh;
+                    GetResolveOrder(scope,
+                                    rna, prot,
+                                    rna_bsh, prot_bsh);
+                }
+            }
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            // supress dupliacte features
+            if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
+                continue;
+            }
+            prev_feat = feat;
+
+            CConstRef<CSeq_loc> feat_loc(&it->GetLocation()); 
+
+#ifdef USE_DELTA
+            CMappedFeat mapped_feat = *it;
+            feat_loc = s_FixId(*feat_loc, *(ctx.GetBioseqIds().front()), *(delta->GetId().front()));
+#else
+            // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+            CRange<TSeqPos> range = loc.GetTotalRange();
+            const CSeq_feat& ft = it->GetMappedFeature();
+            CMappedFeat mapped_feat = s_GetTrimmedMappedFeat(ft, range, scope);
+            feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
+#endif
+            feat_loc = s_NormalizeNullsBetween( feat_loc );
+        
+            // make sure location ends on the current bioseq
+            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
+                // may need to map sig_peptide on a different segment
+                if (feat.GetData().IsCdregion()) {
+                    if (!ctx.Config().IsFormatFTable()) {
+                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
+                    }
+                }
+                continue;
+            }
+
+            item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
+            out << item;
+
+            // Add more features depending on user preferences
+
+            switch (feat.GetFeatSubtype()) {
+                case CSeqFeatData::eSubtype_mRNA:
+                {{
+                    // optionally map CDS from cDNA onto genomic
+                    if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
+                        x_CopyCDSFromCDNA(original_feat, ctx);
+                    }
+                    break;
+                }}
+                case CSeqFeatData::eSubtype_cdregion:
+                    {{  
+                        // map features from protein
+                        if (!ctx.Config().IsFormatFTable()) {
+                            x_GetFeatsOnCdsProduct(original_feat, ctx, 
+                                slice_mapper,
+                                CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
+                        }
+                        break;
+                    }}
+                default:
+                    break;
+            }
+        } catch (CException& e) {
+            // special case: Job cancellation exceptions make us stop
+            // generating features.
+            if( NStr::EqualNocase(e.what(), "job cancelled") ||
+                NStr::EqualNocase(e.what(), "job canceled") )
+            {
+                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
+                                << " [" << e << "]; flatfile may be truncated");
+#ifdef USE_DELTA
+                scope.RemoveBioseq(delta_bsh);
+#endif
+                return;
+            }
+
+            // for cases where a halt is requested, just rethrow the exception
+            if( e.GetErrCodeString() == string("eHaltRequested") ) {
+#ifdef USE_DELTA
+                scope.RemoveBioseq(delta_bsh);
+#endif
+                throw e;
+            }
+
+            // post to log, go on to next feature
+            LOG_POST_X(2, Error << "Error processing feature "
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
+                                << " [" << e << "]");
+        }
+    }  //  end of for loop
+
+#ifdef USE_DELTA
+    scope.RemoveBioseq(delta_bsh);
+#endif
+}
+
+
+void CFlatGatherer::x_GatherFeaturesOnLocation
+(const CSeq_loc& loc,
+ SAnnotSelector& sel,
+ CBioseqContext& ctx) const
+{
+    if( ctx.GetLocation().IsWhole() ) {
+        x_GatherFeaturesOnWholeLocation(loc, sel, ctx);
+    } else {
+        x_GatherFeaturesOnRange(loc, sel, ctx);
     }
 }
 
@@ -3221,6 +3447,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
     if (!prot_id) {
         return;
     }
+
     
     CBioseq_Handle  prot;
 
@@ -3269,9 +3496,6 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
-        if ( curr.IsSetData() ) {
-            const CSeqFeatData& currData = curr.GetData();
-        }
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
                 // merge might turn interval into point, so we give it 2 fuzzes to prevent that
@@ -3291,18 +3515,13 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
         CConstRef<IFlatItem> item;
         // for command-line args "-from" and "-to"
-        CMappedFeat mapped_feat;
+        CMappedFeat mapped_feat = *it;
         if( slice_mapper && loc ) {
             CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
             loc = slice_mapper->Map( *CFeatTrim::Apply(*loc, range) );
             if( loc->IsNull() ) {
                 continue;
             }
-            const CSeq_feat& feat = it->GetMappedFeature();
-            CScope& scope = ctx.GetScope();
-            mapped_feat = s_GetTrimmedMappedFeat(feat, range, scope);
-        } else {
-            mapped_feat = *it; 
         }
 
         item = ConstRef( x_NewFeatureItem(*it, ctx, 
