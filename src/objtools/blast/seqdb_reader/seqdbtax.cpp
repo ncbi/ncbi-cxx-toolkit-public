@@ -143,7 +143,6 @@ CTaxDBFileInfo::CTaxDBFileInfo()
            CFile(m_IndexFN).Exists() &&
            CFile(m_DataFN).Exists())) {
         m_MissingDB = true;
-        ERR_POST("Error: Tax database file not found.");
         return;
     }
     
@@ -157,7 +156,6 @@ CTaxDBFileInfo::CTaxDBFileInfo()
     
     if (idx_file_len < (data_start + sizeof(CSeqDBTaxId))) {
         m_MissingDB = true;
-        ERR_POST("Error: Tax database file not found.");
         return;
     }
     
