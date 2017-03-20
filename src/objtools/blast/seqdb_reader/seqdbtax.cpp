@@ -144,6 +144,7 @@ CTaxDBFileInfo::CTaxDBFileInfo()
            CFile(m_DataFN).Exists())) {
         m_MissingDB = true;
         ERR_POST("Error: Tax database file not found.");
+        return;
     }
     
     // Size for header data plus one taxid object.
@@ -157,6 +158,7 @@ CTaxDBFileInfo::CTaxDBFileInfo()
     if (idx_file_len < (data_start + sizeof(CSeqDBTaxId))) {
         m_MissingDB = true;
         ERR_POST("Error: Tax database file not found.");
+        return;
     }
     
     m_IndexFileMap.reset(new CMemoryFile(m_IndexFN));
@@ -174,6 +176,7 @@ CTaxDBFileInfo::CTaxDBFileInfo()
         m_MissingDB = true;
         m_IndexFileMap.reset();
         ERR_POST("Error: Tax database file has wrong magic number.");
+        return;
     }
     
     m_AllTaxidCount = SeqDB_GetStdOrd(magic_num_ptr ++);
@@ -193,6 +196,7 @@ CTaxDBFileInfo::CTaxDBFileInfo()
         if (taxid_array_size < m_AllTaxidCount) {
             m_AllTaxidCount = taxid_array_size;
         }
+        return;
     }
     
     m_DataFileMap.reset(new CMemoryFile(m_DataFN));
@@ -205,10 +209,12 @@ CTaxDBFileInfo::CTaxDBFileInfo()
 
 CTaxDBFileInfo::~CTaxDBFileInfo()
 {
+    if (!m_MissingDB) {
 	m_IndexFileMap->Unmap();
 	m_IndexFileMap.reset();
 	m_DataFileMap->Unmap();
 	m_DataFileMap.reset();
+    }
 }
 
 
