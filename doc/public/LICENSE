@@ -52,6 +52,10 @@ Authors:  Daniel Colascione, Microsoft Corporation
 License:  Microsoft Limited Public License
           [https://msdn.microsoft.com/en-US/cc300389]
 
+Location: {src,include}/connect/mbedtls
+Authors:  ARM Ltd.
+Licnse:   Apache 2.0 [src/connect/mbedtls/apache-2.0.txt]
+
 Location: {src,include}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
