@@ -51,6 +51,7 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
+#  include <connect/ncbi_gnutls.h>
 #  include <gnutls/gnutls.h>
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
