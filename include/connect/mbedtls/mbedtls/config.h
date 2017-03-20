@@ -62,7 +62,9 @@
  *
  * Uncomment if the CPU supports SSE2 (IA-32 specific).
  */
-//#define MBEDTLS_HAVE_SSE2
+#if defined(__SSE2__)  ||  (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#  define MBEDTLS_HAVE_SSE2
+#endif
 
 /**
  * \def MBEDTLS_HAVE_TIME
@@ -177,7 +179,9 @@
  *
  * Uncomment to get warnings on using deprecated functions.
  */
-//#define MBEDTLS_DEPRECATED_WARNING
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
+#  define MBEDTLS_DEPRECATED_WARNING
+#endif
 
 /**
  * \def MBEDTLS_DEPRECATED_REMOVED
@@ -1285,7 +1289,9 @@
  *
  * Uncomment this to enable pthread mutexes.
  */
-//#define MBEDTLS_THREADING_PTHREAD
+#ifdef NCBI_POSIX_THREADS
+#  define MBEDTLS_THREADING_PTHREAD
+#endif
 
 /**
  * \def MBEDTLS_VERSION_FEATURES
@@ -1379,7 +1385,9 @@
  *
  * Uncomment to enable use of ZLIB
  */
-//#define MBEDTLS_ZLIB_SUPPORT
+#if defined(HAVE_LIBZ) && 0
+#  define MBEDTLS_ZLIB_SUPPORT
+#endif
 /* \} name SECTION: mbed TLS feature support */
 
 /**
@@ -2322,7 +2330,9 @@
  *
  * Enable this layer to allow use of mutexes within mbed TLS
  */
-//#define MBEDTLS_THREADING_C
+#if defined(MBEDTLS_THREADING_ALT)  ||  defined(MBEDTLS_THREADING_PTHREAD)
+#  define MBEDTLS_THREADING_C
+#endif
 
 /**
  * \def MBEDTLS_TIMING_C
@@ -2596,5 +2606,7 @@
 #endif
 
 #include "check_config.h"
+
+#include "ncbicxx_rename_mbedtls.h"
 
 #endif /* MBEDTLS_CONFIG_H */

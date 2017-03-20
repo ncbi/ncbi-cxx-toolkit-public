@@ -40,7 +40,7 @@
 /* Establish default here! */
 #if   defined(HAVE_LIBGNUTLS)
 #  define NcbiSetupDefaultTls  NcbiSetupGnuTls
-#elif defined(HAVE_LIBMBEDTLS)
+#elif defined(HAVE_LIBMBEDTLS) || defined(NCBI_CXX_TOOLKIT)
 #  define NcbiSetupDefaultTls  NcbiSetupMbedTls
 #else
 #  define NcbiSetupDefaultTls  0

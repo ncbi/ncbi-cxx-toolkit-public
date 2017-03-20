@@ -37,7 +37,7 @@
 #include <connect/ncbi_mbedtls.h>
 #include <stdlib.h>
 
-#ifdef HAVE_LIBMBEDTLS
+#if defined(HAVE_LIBMBEDTLS) || defined(NCBI_CXX_TOOLKIT)
 
 #  include <mbedtls/ctr_drbg.h>
 #  include <mbedtls/debug.h>
