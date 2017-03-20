@@ -80,9 +80,10 @@ static EHTTP_HeaderParse x_ParseKeyHeader(const char* header,
         if (keypos == NPOS)
             return eHTTP_HeaderError;
         keypos += sizeof(kSubId) - 1;
-        CTempString tmp(NStr::GetField_Unsafe(header + keypos, 0, "; \t"));
+        CTempString tmp(NStr::GetField_Unsafe(header + keypos, 0, "; \t\r\n"));
         if (tmp.empty())
             return eHTTP_HeaderError;
+        NStr::TruncateSpacesInPlace(tmp);
         *subid = tmp;
     }
     return eHTTP_HeaderSuccess;
@@ -220,7 +221,7 @@ int CNCBITestApp::Run(void)
         + "_" + NStr::NumericToString(n);
 
     string user_header = string("Content-Type: application/octet-stream\r\n"
-                                "Cookie: ") + kSubId + subid + "\r\n"
+                                "Cookie:") + kSubId + subid + "\r\n"
         "File-Editable: false\r\n"
         "File-ID: " + file + "\r\n"
         "File-Expires: "
