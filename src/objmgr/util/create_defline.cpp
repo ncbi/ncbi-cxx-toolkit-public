@@ -76,6 +76,19 @@ CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh)
     m_InitializedFeatTree = false;
 }
 
+// constructor
+CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh, feature::CFeatTree& ftree)
+{
+    // initialize common bits (FSA)
+    x_Init();
+
+    // then store top SeqEntry Handle and reference to external CFeatTree
+    m_TopSEH = tseh;
+    m_ConstructedFeatTree = true;
+    m_InitializedFeatTree = true;
+    m_Feat_Tree = &ftree;
+}
+
 // destructor
 CDeflineGenerator::~CDeflineGenerator (void)
 
