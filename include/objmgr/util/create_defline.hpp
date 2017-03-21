@@ -75,6 +75,9 @@ public:
     /// Constructor
     CDeflineGenerator (const CSeq_entry_Handle& tseh);
 
+    /// Constructor
+    CDeflineGenerator (const CSeq_entry_Handle& tseh, feature::CFeatTree& ftree);
+
     /// Destructor
     ~CDeflineGenerator (void);
 
