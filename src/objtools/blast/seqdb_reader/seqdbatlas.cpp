@@ -531,7 +531,8 @@ void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
         PossiblyGarbageCollect(bytes, false);
 
         _ASSERT(memreg.m_Bytes == 0);
-        m_CurAlloc += memreg.m_Bytes = bytes;
+        //m_CurAlloc += memreg.m_Bytes = bytes;
+	memreg.m_Bytes = bytes;
     }
 }
 
@@ -540,8 +541,8 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     size_t bytes = memreg.m_Bytes;
 
     if (bytes > 0) {
-        _ASSERT((size_t)m_CurAlloc >= bytes);
-        m_CurAlloc     -= bytes;
+        //_ASSERT((size_t)m_CurAlloc >= bytes);
+        //m_CurAlloc     -= bytes;
         memreg.m_Bytes = 0;
     }
 }
