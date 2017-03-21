@@ -1248,6 +1248,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread(void)
     m_ReaderData.push( data);
     m_ReaderDataSize.push(0);
     m_ReaderMutex.unlock();
+    m_ReaderCv.notify_one();
 }
 
 /////////////////////////////////////////////////////////////////////////////
