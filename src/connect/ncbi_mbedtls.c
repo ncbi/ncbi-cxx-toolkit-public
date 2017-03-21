@@ -39,12 +39,17 @@
 
 #if defined(HAVE_LIBMBEDTLS) || defined(NCBI_CXX_TOOLKIT)
 
-#  include <mbedtls/ctr_drbg.h>
-#  include <mbedtls/debug.h>
-#  include <mbedtls/entropy.h>
-#  include <mbedtls/error.h>
-#  include <mbedtls/ssl.h>
-#  include <mbedtls/version.h>
+#  ifdef HAVE_LIBMBEDTLS /* external */
+#    define MBEDTLS_HEADER(x) <../include/mbedtls/x>
+#  else
+#    define MBEDTLS_HEADER(x) <mbedtls/x>
+#  endif
+#  include MBEDTLS_HEADER(ctr_drbg.h)
+#  include MBEDTLS_HEADER(debug.h)
+#  include MBEDTLS_HEADER(entropy.h)
+#  include MBEDTLS_HEADER(error.h)
+#  include MBEDTLS_HEADER(ssl.h)
+#  include MBEDTLS_HEADER(version.h)
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
