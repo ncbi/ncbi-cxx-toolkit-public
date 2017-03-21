@@ -888,7 +888,6 @@ pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs $(Z_LIB)
 python_ncbi_dbapi needs connect
-python_ncbi_dbapi needs connssl
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 python_ncbi_dbapi needs3party $(Z_LIBS)
@@ -1460,9 +1459,7 @@ xsd_sample_lib needs xser
 xser needs xutil
 xslt needs3party $(LIBXML_LIBS)
 xslt needs3party $(ORIG_LIBS)
-xslt_libxml needs xncbi
-xslt_libxml needs3party $(LIBXML_LIBS)
-xslt_libxml needs3party $(LIBXSLT_LIBS)
+xslt_libxml needs xid_utils
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
