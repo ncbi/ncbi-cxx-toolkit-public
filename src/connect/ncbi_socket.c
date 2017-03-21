@@ -4769,10 +4769,10 @@ static EIO_Status s_CreateListening(const char*    path,
         const char* failed = 0;
 #if    defined(NCBI_OS_MSWIN)  &&  defined(SO_EXCLUSIVEADDRUSE)
         /* The use of this option comes with caveats, but it is better
-         * to use it rather than having (or leaving) a chance for another
-         * process (which uses SO_REUSEADDR, maliciously or not) be able
-         * to bind to the same port number and snatch incoming connections.
-         * Until a connection exists originated from the port with this
+         * to use it rather than to have (or leave) a chance for another
+         * process (which uses SO_REUSEADDR, maliciously or not) to be able
+         * to bind to the same port number, and snatch incoming connections.
+         * Until a connection exists, that originated from the port with this
          * option set, the port (even if the listening instance was closed)
          * cannot be re-bound (important for service restarts!).  See MSDN.
          */
@@ -4784,7 +4784,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #elif !defined(NCBI_OS_MSWIN)
         /*
          * It was confirmed(?) that at least on Solaris 2.5 this precaution:
-         * 1) makes the address released immediately upon the process
+         * 1) makes the address(port) released immediately upon the process
          *    termination;
          * 2) still issues EADDRINUSE error on the attempt to bind() to the
          *    same address being in-use by a living process (if SOCK_STREAM).
