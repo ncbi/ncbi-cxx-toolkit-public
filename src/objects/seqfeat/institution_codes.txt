@@ -6560,6 +6560,7 @@ UCCC	s	Universidad de Concepcion, Museo de Zoologia
 UCCM	c	University of Calabar Collection of Microorganisms		
 UCD	scb	University of California, Davis		
 UCDBA	s	University of Chicago		
+UCDFST	c	Phaff Yeast Culture Collection		
 UCFC	s	University of Central Florida		
 UCGC	s	University of Colorado, Geological Museum		
 UCGE	c	Unit Cell of Genetic Engineering, Department of Biochemistry		

@@ -6593,6 +6593,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCCM\tc\tUniversity of Calabar Collection of Microorganisms\t\t",
 "UCD\tscb\tUniversity of California, Davis\t\t",
 "UCDBA\ts\tUniversity of Chicago\t\t",
+"UCDFST\tc\tPhaff Yeast Culture Collection\t\t",
 "UCFC\ts\tUniversity of Central Florida\t\t",
 "UCGC\ts\tUniversity of Colorado, Geological Museum\t\t",
 "UCGE\tc\tUnit Cell of Genetic Engineering, Department of Biochemistry\t\t",
