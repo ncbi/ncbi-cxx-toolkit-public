@@ -56,6 +56,9 @@
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
+#    include <gnutls/abstract.h>
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
 #endif /*HAVE_LIBGNUTLS*/
 #ifdef NCBI_MBEDTLS_HEADER
 #  include NCBI_MBEDTLS_HEADER(mbedtls/x509.h)
@@ -149,7 +152,7 @@ static int x_CertVfyCB(gnutls_session_t session)
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 
 
-#  if 0
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
 static int x_CertRtrCB(gnutls_session_t session,
                        const gnutls_datum_t* req_ca_dn,    int n_req_ca_dn,
                        const gnutls_pk_algorithm_t* algos, int n_algos,
@@ -219,18 +222,26 @@ static int x_CertRtrCB(gnutls_session_t session,
         }
     }
 
+    /* NB: this might be incorrect */
     if (type == GNUTLS_CRT_X509) {
-        *pcert   = &pcrt;
-        *n_pcert = 1;
-        *pkey    = key;
-    } else*/ {
-        *pcert   = 0;
-        *n_pcert = 0;
-        *pkey    = 0;
+        gnutls_certificate_credentials_t xcred;
+        if (gnutls_credentials_get(session, GNUTLS_CRD_CERTIFICATE,
+                                   (void**) &xcred) == 0) {
+            gnutls_datum_t* pcrt;
+            gnutls_certificate_get_crt_raw(xcred, 0, 0, &pcrt);
+            *pcert   = (gnutls_pcert_st*) pcrt;
+            *n_pcert = 1;
+            *pkey    = 0;
+            return 0;
+        }
     }
+
+    *pcert   = 0;
+    *n_pcert = 0;
+    *pkey    = 0;
     return 0;
 }
-#  endif/*0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
 
 #endif /*HAVE_LIBGNUTLS*/
 
@@ -347,15 +358,18 @@ int main(int argc, char* argv[])
                 gnutls_certificate_set_verify_function(xcred,
                                                        x_CertVfyCB);
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#  if 0
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
                 gnutls_certificate_set_retrieve_function2(xcred,
                                                           x_CertRtrCB);
-#  endif
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
             }
         }
 #endif /*HAVE_LIBGNUTLS*/
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         CORE_LOG(eLOG_Warning, "MBEDTLS does not support credentials yet");
+#  ifdef HAVE_LIBGNUTLS
+        net_info->credentials = 0;  /* do not clobber with foreign stuff */
+#  endif /*HAVE_LIBGNUTLS*/
 #endif /*HAVE_LIBMBEDTLS*/
 #if !defined(HAVE_LIBGNUTLS)   &&                                   \
     !defined(HAVE_LIBMBEDTLS)  &&                                   \
