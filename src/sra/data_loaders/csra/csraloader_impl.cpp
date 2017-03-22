@@ -127,24 +127,25 @@ CCSRABlobId::CCSRABlobId(const CTempString& str)
 
 
 CCSRABlobId::CCSRABlobId(EBlobType blob_type,
-                         const CCSRAFileInfo& file,
-                         const CSeq_id_Handle& seq_id)
+                         const TRefLock& ref)
     : m_BlobType(blob_type),
-      m_RefIdType(file.GetRefIdType()),
-      m_File(file.GetCSRAName()),
-      m_SeqId(seq_id),
-      m_FirstSpotId(0)
+      m_RefIdType(ref.first->m_File->GetRefIdType()),
+      m_File(ref.first->m_File->GetCSRAName()),
+      m_SeqId(ref.first->GetRefSeqId()),
+      m_FirstSpotId(0),
+      m_FileLock(ref.second)
 {
     _ASSERT(blob_type != eBlobType_reads);
 }
 
 
-CCSRABlobId::CCSRABlobId(const CCSRAFileInfo& file,
+CCSRABlobId::CCSRABlobId(const TFileLock& file,
                          TVDBRowId first_spot_id)
     : m_BlobType(eBlobType_reads),
-      m_RefIdType(file.GetRefIdType()),
-      m_File(file.GetCSRAName()),
-      m_FirstSpotId(first_spot_id)
+      m_RefIdType(file.first->GetRefIdType()),
+      m_File(file.first->GetCSRAName()),
+      m_FirstSpotId(first_spot_id),
+      m_FileLock(file.second)
 {
 }
 
@@ -435,7 +436,7 @@ bool CCSRABlobId::operator==(const CBlobId& id) const
 
 CCSRADataLoader_Impl::CCSRADataLoader_Impl(
     const CCSRADataLoader::SLoaderParams& params)
-    : m_SRRFiles(GetGCSize()),
+    : m_SRRFiles(new TSRRFiles(GetGCSize())),
       m_IdMapper(params.m_IdMapper)
 {
     m_DirPath = params.m_DirPath;
@@ -470,67 +471,64 @@ void CCSRADataLoader_Impl::AddCSRAFile(const string& csra)
 }
 
 
-CRef<CCSRAFileInfo> CCSRADataLoader_Impl::GetSRRFile(const string& acc)
+CCSRADataLoader_Impl::TFileLock CCSRADataLoader_Impl::GetSRRFile(const string& acc)
 {
     if ( !m_FixedFiles.empty() ) {
         // no dynamic SRR accessions
-        return null;
+        return TFileLock();
     }
-    CMutexGuard guard(m_Mutex);
-    TSRRFiles::iterator it = m_SRRFiles.find(acc);
-    if ( it != m_SRRFiles.end() ) {
-        return it->second;
-    }
-    CRef<CCSRAFileInfo> info;
-    try {
-        info = new CCSRAFileInfo(*this, acc, CCSraDb::eRefId_gnl_NAME);
-    }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == exc.eNotFoundDb ||
-             exc.GetErrCode() == exc.eProtectedDb ) {
-            // no such SRA table
-            return null;
+    TSRRFiles::CLock lock = m_SRRFiles->get_lock(acc);
+    if ( !*lock ) {
+        CFastMutexGuard guard(lock.GetValueMutex());
+        if ( !*lock ) {
+            try {
+                *lock = new CCSRAFileInfo(*this, acc, CCSraDb::eRefId_gnl_NAME);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                     exc.GetErrCode() == exc.eProtectedDb ) {
+                    // no such SRA table
+                    return TFileLock();
+                }
+                ERR_POST_X(4, "CCSRADataLoader::GetSRRFile("<<acc<<"): accession not found: "<<exc);
+                return TFileLock();
+            }
         }
-        ERR_POST_X(4, "CCSRADataLoader::GetSRRFile("<<acc<<"): accession not found: "<<exc);
-        return null;
     }
-    // store file in cache
-    m_SRRFiles[acc] = info;
-    return info;
+    return TFileLock(*lock, lock);
 }
 
 
-CRef<CCSRARefSeqInfo>
+CCSRADataLoader_Impl::TRefLock
 CCSRADataLoader_Impl::GetRefSeqInfo(const CSeq_id_Handle& idh)
 {
     string acc;
     if ( CCSRABlobId::GetGeneralSRAAccLabel(idh, &acc) ) {
-        CRef<CCSRAFileInfo> file = GetSRRFile(acc);
-        if ( !file ) {
-            return null;
+        TFileLock file = GetSRRFile(acc);
+        if ( !file.first ) {
+            return TRefLock();
         }
-        return file->GetRefSeqInfo(idh);
+        return TRefLock(file.first->GetRefSeqInfo(idh), move(file.second));
     }
-    CRef<CCSRARefSeqInfo> ret;
+    TRefLock ret;
     NON_CONST_ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-        CRef<CCSRARefSeqInfo> info = it->second->GetRefSeqInfo(idh);
-        if ( info ) {
-            if ( ret ) {
+        if ( CRef<CCSRARefSeqInfo> info = it->second->GetRefSeqInfo(idh) ) {
+            if ( ret.first ) {
                 // conflict
                 ERR_POST_X(1, "CCSRADataLoader::GetRefSeqInfo: "
                            "Seq-id "<<idh<<" appears in two files: "
-                           <<ret->m_File->GetCSRAName()<<" & "
+                           <<ret.first->m_File->GetCSRAName()<<" & "
                            <<info->m_File->GetCSRAName());
                 continue;
             }
-            ret = info;
+            ret.first = info;
         }
     }
     return ret;
 }
 
 
-CRef<CCSRAFileInfo>
+CCSRADataLoader_Impl::TFileLock
 CCSRADataLoader_Impl::GetReadsFileInfo(const CSeq_id_Handle& idh,
                                        TVDBRowId* spot_id_ptr,
                                        Uint4* read_id_ptr,
@@ -544,32 +542,32 @@ CCSRADataLoader_Impl::GetReadsFileInfo(const CSeq_id_Handle& idh,
         *ref_ptr = 0;
     }
     if ( !CCSRABlobId::GetGeneralSRAAccReadId(idh, &acc, &spot_id, &read_id) ) {
-        return null;
+        return TFileLock();
     }
-    CRef<CCSRAFileInfo> info;
+    TFileLock ret;
     NON_CONST_ITERATE ( TFixedFiles, it, m_FixedFiles ) {
         if ( it->second->m_CSRADb->GetSraIdPart() == acc ) {
-            if ( info ) {
+            if ( ret.first ) {
                 // duplicate id
                 ERR_POST_X(2, "CCSRADataLoader::GetReadsFileInfo: "
                            "Seq-id "<<idh<<" appears in two files: "
                            <<it->second->GetCSRAName()<<" & "
-                           <<info->GetCSRAName());
-                return null;
+                           <<ret.first->GetCSRAName());
+                return TFileLock();
             }
-            info = it->second;
+            ret.first = it->second;
         }
     }
-    if ( !info ) {
+    if ( !ret.first ) {
         // load by SRR accession
-        info = GetSRRFile(acc);
-    }
-    if ( !info ) {
-        return null;
+        ret = GetSRRFile(acc);
+        if ( !ret.first ) {
+            return ret;
+        }
     }
     // check if spot_id exists
-    if ( !info->IsValidReadId(spot_id, read_id, ref_ptr, ref_pos_ptr) ) {
-        return null;
+    if ( !ret.first->IsValidReadId(spot_id, read_id, ref_ptr, ref_pos_ptr) ) {
+        return TFileLock();
     }
     if ( spot_id_ptr ) {
         *spot_id_ptr = spot_id;
@@ -577,21 +575,23 @@ CCSRADataLoader_Impl::GetReadsFileInfo(const CSeq_id_Handle& idh,
     if ( read_id_ptr ) {
         *read_id_ptr = read_id;
     }
-    return info;
+    return ret;
 }
 
 
-CRef<CCSRAFileInfo>
+CCSRADataLoader_Impl::TFileLock
 CCSRADataLoader_Impl::GetFileInfo(const CCSRABlobId& blob_id)
 {
     if ( blob_id.m_RefIdType == CCSraDb::eRefId_SEQ_ID ) {
         TFixedFiles::iterator it = m_FixedFiles.find(blob_id.m_File);
         if ( it == m_FixedFiles.end() ) {
-            return null;
+            return TFileLock();
         }
-        return it->second;
+        return TFileLock(it->second, TSRRFiles::CLock());
     }
-    return GetSRRFile(blob_id.m_File);
+    TFileLock lock = GetSRRFile(blob_id.m_File);
+    _ASSERT(lock.second == blob_id.m_FileLock);
+    return lock;
 }
 
 
@@ -599,13 +599,19 @@ CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
     // return blob-id of blob with sequence
     // annots may be different
-    if ( CRef<CCSRARefSeqInfo> info = GetRefSeqInfo(idh) ) {
-        return info->GetBlobId(CCSRABlobId::eBlobType_refseq);
-    }
-    TVDBRowId spot_id;
-    if ( CRef<CCSRAFileInfo> info = GetReadsFileInfo(idh, &spot_id) ) {
-        return info->GetReadsBlobId(spot_id);
-    }
+    {{
+        TRefLock info = GetRefSeqInfo(idh);
+        if ( info.first ) {
+            return GetBlobId(info, CCSRABlobId::eBlobType_refseq);
+        }
+    }}
+    {{
+        TVDBRowId spot_id;
+        TFileLock info = GetReadsFileInfo(idh, &spot_id);
+        if ( info.first ) {
+            return GetReadsBlobId(info, spot_id);
+        }
+    }}
     return null;
 }
 
@@ -664,27 +670,25 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
         break;
     }
 
-    if ( CRef<CCSRARefSeqInfo> info = GetRefSeqInfo(idh) ) {
+    TRefLock ref = GetRefSeqInfo(idh);
+    if ( ref.first  ) {
         // refseq: annots and possibly ref sequence
-        if ( info->m_File->m_RefIdType == CCSraDb::eRefId_gnl_NAME ) {
+        if ( ref.first->m_File->m_RefIdType == CCSraDb::eRefId_gnl_NAME ) {
             // we have refseq+annot
             if ( need_align || need_graph ) {
-                CRef<CCSRABlobId> annot_blob_id =
-                    info->GetBlobId(CCSRABlobId::eBlobType_annot);
+                CRef<CCSRABlobId> annot_blob_id = GetBlobId(ref, CCSRABlobId::eBlobType_annot);
                 locks.insert(GetBlobById(data_source, *annot_blob_id));
             }
             if ( need_seq ) {
                 // include refseq blob
-                CRef<CCSRABlobId> refseq_blob_id =
-                    info->GetBlobId(CCSRABlobId::eBlobType_refseq);
+                CRef<CCSRABlobId> refseq_blob_id = GetBlobId(ref, CCSRABlobId::eBlobType_refseq);
                 locks.insert(GetBlobById(data_source, *refseq_blob_id));
             }
         }
         else {
             // we have orphan annot only
             if ( need_orphan ) {
-                CRef<CCSRABlobId> annot_blob_id =
-                    info->GetBlobId(CCSRABlobId::eBlobType_annot);
+                CRef<CCSRABlobId> annot_blob_id = GetBlobId(ref, CCSRABlobId::eBlobType_annot);
                 locks.insert(GetBlobById(data_source, *annot_blob_id));
             }
         }
@@ -700,22 +704,22 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
     TVDBRowId spot_id;
     CRef<CCSRARefSeqInfo> ref_info;
     TSeqPos ref_pos;
-    CRef<CCSRAFileInfo> info;
+    TFileLock file;
     if ( need_align ) {
-        info = GetReadsFileInfo(idh, &spot_id, 0, &ref_info, &ref_pos);
+        file = GetReadsFileInfo(idh, &spot_id, 0, &ref_info, &ref_pos);
     }
     else {
-        info = GetReadsFileInfo(idh, &spot_id);
+        file = GetReadsFileInfo(idh, &spot_id);
     }
-    if ( info ) {
+    if ( file.first ) {
         // short read: we have sequence blob and alignment on refseq
         if ( need_seq || need_graph ) {
-            if ( CRef<CCSRABlobId> blob_id = info->GetReadsBlobId(spot_id) ) {
+            if ( CRef<CCSRABlobId> blob_id = GetReadsBlobId(file, spot_id) ) {
                 locks.insert(GetBlobById(data_source, *blob_id));
             }
         }
         if ( need_align && ref_info ) {
-            if ( CRef<CCSRABlobId> blob_id = ref_info->GetBlobId(CCSRABlobId::eBlobType_annot) ) {
+            if ( CRef<CCSRABlobId> blob_id = GetBlobId(TRefLock(ref_info, move(file.second)), CCSRABlobId::eBlobType_annot) ) {
                 CDataLoader::TTSE_Lock tse_lock = GetBlobById(data_source, *blob_id);
                 tse_lock->x_LoadChunk(kMainChunkId);
                 int chunk_id = ref_info->GetAnnotChunkId(ref_pos);
@@ -733,16 +737,16 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
 void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
                                     CTSE_LoadLock& load_lock)
 {
-    CRef<CCSRAFileInfo> file_info = GetFileInfo(blob_id);
+    TFileLock file_info = GetFileInfo(blob_id);
     switch ( blob_id.m_BlobType ) {
     case CCSRABlobId::eBlobType_annot:
-        file_info->GetRefSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
+        file_info.first->GetRefSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
         break;
     case CCSRABlobId::eBlobType_refseq:
-        file_info->GetRefSeqInfo(blob_id)->LoadRefSeqBlob(load_lock);
+        file_info.first->GetRefSeqInfo(blob_id)->LoadRefSeqBlob(load_lock);
         break;
     case CCSRABlobId::eBlobType_reads:
-        file_info->LoadReadsBlob(blob_id, load_lock);
+        file_info.first->LoadReadsBlob(blob_id, load_lock);
         break;
     }
 }
@@ -752,16 +756,16 @@ void CCSRADataLoader_Impl::LoadChunk(const CCSRABlobId& blob_id,
                                     CTSE_Chunk_Info& chunk_info)
 {
     _TRACE("Loading chunk "<<blob_id.ToString()<<"."<<chunk_info.GetChunkId());
-    CRef<CCSRAFileInfo> file_info = GetFileInfo(blob_id);
+    TFileLock file_info = GetFileInfo(blob_id);
     switch ( blob_id.m_BlobType ) {
     case CCSRABlobId::eBlobType_annot:
-        file_info->GetRefSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
+        file_info.first->GetRefSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
         break;
     case CCSRABlobId::eBlobType_refseq:
-        file_info->GetRefSeqInfo(blob_id)->LoadRefSeqChunk(chunk_info);
+        file_info.first->GetRefSeqInfo(blob_id)->LoadRefSeqChunk(chunk_info);
         break;
     case CCSRABlobId::eBlobType_reads:
-        file_info->LoadReadsChunk(blob_id, chunk_info);
+        file_info.first->LoadReadsChunk(blob_id, chunk_info);
         break;
     }
 }
@@ -783,8 +787,9 @@ CCSRADataLoader_Impl::GetPossibleAnnotNames(void) const
 CCSraRefSeqIterator
 CCSRADataLoader_Impl::GetRefSeqIterator(const CSeq_id_Handle& idh)
 {
-    if ( CRef<CCSRARefSeqInfo> info = GetRefSeqInfo(idh) ) {
-        return info->GetRefSeqIterator();
+    TRefLock info = GetRefSeqInfo(idh);
+    if ( info.first  ) {
+        return info.first->GetRefSeqIterator();
     }
     return CCSraRefSeqIterator();
 }
@@ -795,8 +800,9 @@ CCSRADataLoader_Impl::GetShortReadIterator(const CSeq_id_Handle& idh)
 {
     TVDBRowId spot_id;
     Uint4 read_id;
-    if ( CRef<CCSRAFileInfo> info = GetReadsFileInfo(idh, &spot_id, &read_id) ) {
-        return CCSraShortReadIterator(info->m_CSRADb, spot_id, read_id);
+    TFileLock info = GetReadsFileInfo(idh, &spot_id, &read_id);
+    if ( info.first ) {
+        return CCSraShortReadIterator(info.first->m_CSRADb, spot_id, read_id);
     }
     return CCSraShortReadIterator();
 }
@@ -809,7 +815,7 @@ void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
             ids.push_back(CSeq_id_Handle::GetHandle(**it));
         }
     }
-    else if ( GetReadsFileInfo(idh) ) {
+    else if ( GetReadsFileInfo(idh).first ) {
         ids.push_back(idh);
     }
 }
@@ -1031,23 +1037,6 @@ void CCSRAFileInfo::AddRefSeq(const string& refseq_label,
 }
 
 
-void CCSRAFileInfo::GetShortSeqBlobId(CRef<CCSRABlobId>& ret,
-                                      const CSeq_id_Handle& idh) const
-{
-
-}
-
-
-void CCSRAFileInfo::GetRefSeqBlobId(CRef<CCSRABlobId>& ret,
-                                    const CSeq_id_Handle& idh)
-{
-    CRef<CCSRARefSeqInfo> info = GetRefSeqInfo(idh);
-    if ( info ) {
-        info->SetBlobId(ret, CCSRABlobId::eBlobType_refseq, idh);
-    }
-}
-
-
 CRef<CCSRARefSeqInfo>
 CCSRAFileInfo::GetRefSeqInfo(const CSeq_id_Handle& seq_id)
 {
@@ -1096,10 +1085,11 @@ bool CCSRAFileInfo::IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
 }
 
 
-CRef<CCSRABlobId> CCSRAFileInfo::GetReadsBlobId(TVDBRowId spot_id) const
+CRef<CCSRABlobId> CCSRADataLoader_Impl::GetReadsBlobId(const TFileLock& lock,
+                                                       TVDBRowId spot_id)
 {
     TVDBRowId first_spot_id = (spot_id-1)/kReadsPerBlob*kReadsPerBlob+1;
-    return Ref(new CCSRABlobId(*this, first_spot_id));
+    return Ref(new CCSRABlobId(lock, first_spot_id));
 }
 
 
@@ -1159,25 +1149,10 @@ CCSRARefSeqInfo::CCSRARefSeqInfo(CCSRAFileInfo* csra_file,
 }
 
 
-CRef<CCSRABlobId> CCSRARefSeqInfo::GetBlobId(CCSRABlobId::EBlobType type) const
+CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const TRefLock& ref,
+                                                  CCSRABlobId::EBlobType type)
 {
-    return Ref(new CCSRABlobId(type, *m_File, GetRefSeqId()));
-}
-
-
-void CCSRARefSeqInfo::SetBlobId(CRef<CCSRABlobId>& ret,
-                                CCSRABlobId::EBlobType blob_type,
-                                const CSeq_id_Handle& idh) const
-{
-    CRef<CCSRABlobId> id(new CCSRABlobId(blob_type, *m_File, GetRefSeqId()));
-    if ( ret ) {
-        ERR_POST_X(3, "CCSRADataLoader::GetBlobId: "
-                   "Seq-id "<<idh<<" appears in two files: "
-                   <<ret->ToString()<<" & "<<id->ToString());
-    }
-    else {
-        ret = id;
-    }
+    return Ref(new CCSRABlobId(type, ref));
 }
 
 

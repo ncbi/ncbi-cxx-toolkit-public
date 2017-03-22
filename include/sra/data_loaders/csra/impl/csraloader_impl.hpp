@@ -50,6 +50,169 @@ class CCSRARefSeqChunkInfo;
 class CCSRARefSeqInfo;
 class CCSRAFileInfo;
 
+template<class Key, class Value, class Less = less<Key> >
+class CCacheWithLock : public CObject
+{
+public:
+    typedef Key key_type;
+    typedef Value mapped_type;
+
+protected:
+    class CSlot;
+    typedef Less TLess;
+    typedef map<key_type, CRef<CSlot>, TLess> TMap;
+    typedef typename TMap::iterator TMapIterator;
+    typedef typename TMap::const_iterator TMapConstIterator;
+    typedef list<TMapIterator> TRemoveList;
+    typedef typename TRemoveList::iterator TRemoveListIterator;
+
+    class CSlot : public CObject {
+    public:
+        CSlot() {
+            m_LockCounter.Set(1);
+        }
+        TMapIterator        m_MapIter;
+        TRemoveListIterator m_RemoveListIter;
+        CAtomicCounter      m_LockCounter;
+        CFastMutex          m_ValueMutex;
+        mapped_type         m_Value;
+    };
+
+    TMap m_Map;
+    size_t m_SizeLimit;
+    size_t m_RemoveSize;
+    TRemoveList m_RemoveList;
+    CMutex m_Mutex;
+
+public:
+    class CLock {
+    protected:
+        CRef<CCacheWithLock> m_Cache;
+        CRef<CSlot> m_Slot;
+        friend class CCacheWithLock<key_type, mapped_type, TLess>;
+        
+        CLock(CCacheWithLock* cache, CSlot* slot)
+            : m_Cache(cache),
+              m_Slot(slot)
+            {
+                _ASSERT(cache);
+                _ASSERT(slot->m_LockCounter.Get() > 0);
+            }
+        
+    public:
+        CLock() {
+        }
+        ~CLock() {
+            Reset();
+        }
+        CLock(const CLock& lock)
+            : m_Cache(lock.m_Cache),
+              m_Slot(lock.m_Slot)
+            {
+                if ( m_Slot ) {
+                    m_Slot->m_LockCounter.Add(1);
+                }
+            }
+        CLock& operator=(const CLock& lock)
+            {
+                if ( m_Slot != lock.m_Slot ) {
+                    if ( m_Slot ) {
+                        m_Cache->Unlock(m_Slot);
+                    }
+                    m_Cache = lock.m_Cache;
+                    m_Slot = lock.m_Slot;
+                    if ( m_Slot ) {
+                        m_Slot->m_LockCounter.Add(1);
+                    }
+                }
+                return *this;
+            }
+        CLock(CLock&& lock) = default;
+        CLock& operator=(CLock&& lock) = default;
+
+        void Reset() {
+            if ( m_Slot ) {
+                m_Cache->Unlock(m_Slot);
+                m_Slot = null;
+                m_Cache = null;
+            }
+        }
+
+        CFastMutex& GetValueMutex() { return m_Slot.GetNCObject().m_ValueMutex; }
+        
+        mapped_type& operator*() const { return m_Slot.GetNCObject().m_Value; }
+        mapped_type* operator->() const { return m_Slot.GetNCPointer().m_Value; }
+        
+        bool operator==(CLock a) const {
+            return m_Slot == a.m_Slot;
+        }
+        bool operator!=(CLock a) const {
+            return !(*this == a);
+        }
+    };
+
+    CCacheWithLock(size_t size_limit = 0)
+        : m_SizeLimit(size_limit),
+          m_RemoveSize(0)
+        {
+        }
+    
+    CLock get_lock(const key_type& key) {
+        CMutexGuard guard(m_Mutex);
+        TMapIterator iter = m_Map.lower_bound(key);
+        if ( iter == m_Map.end() || m_Map.key_comp()(key, iter->first) ) {
+            // insert
+            typedef typename TMap::value_type TValue;
+            iter = m_Map.insert(iter, TValue(key, Ref(new CSlot())));
+            iter->second->m_MapIter = iter;
+        }
+        else if ( iter->second->m_LockCounter.Add(1) == 1 ) {
+            // first lock from remove list
+            _ASSERT(m_RemoveSize > 0);
+            _ASSERT(m_RemoveSize == m_RemoveList.size());
+            m_RemoveList.erase(iter->second->m_RemoveListIter);
+            --m_RemoveSize;
+        }
+        return CLock(this, iter->second);
+    }
+
+    size_t get_size_limit(void) const {
+        return m_SizeLimit;
+    }
+    void set_size_limit(size_t size_limit) {
+        if ( size_limit != m_SizeLimit ) {
+            CMutexGuard guard(m_Mutex);
+            m_SizeLimit = size_limit;
+            x_GC();
+        }
+    }
+
+protected:
+    void Unlock(CSlot* slot) {
+        CMutexGuard guard(m_Mutex);
+        _ASSERT(slot);
+        _ASSERT(slot->m_MapIter->second == slot);
+        if ( slot->m_LockCounter.Add(-1) == 0 ) {
+            // last lock removed
+            slot->m_RemoveListIter =
+                m_RemoveList.insert(m_RemoveList.end(), slot->m_MapIter);
+            ++m_RemoveSize;
+            x_GC();
+        }
+    }
+    
+    void x_GC() {
+        while ( m_RemoveSize > m_SizeLimit ) {
+            m_Map.erase(m_RemoveList.front());
+            m_RemoveList.pop_front();
+            --m_RemoveSize;
+        }
+    }
+    
+public:
+};
+
+
 class CCSRABlobId : public CBlobId
 {
 public:
@@ -58,12 +221,14 @@ public:
         eBlobType_refseq,
         eBlobType_reads
     };
+    typedef CCacheWithLock<string, CRef<CCSRAFileInfo> > TSRRFiles;
+    typedef pair<CRef<CCSRAFileInfo>, TSRRFiles::CLock> TFileLock;
+    typedef pair<CRef<CCSRARefSeqInfo>, TSRRFiles::CLock> TRefLock;
 
     explicit CCSRABlobId(const CTempString& str);
     CCSRABlobId(EBlobType blob_type,
-                const CCSRAFileInfo& file,
-                const CSeq_id_Handle& seq_id);
-    CCSRABlobId(const CCSRAFileInfo& file,
+                const TRefLock& ref);
+    CCSRABlobId(const TFileLock& file,
                 TVDBRowId first_spot_id);
     ~CCSRABlobId(void);
 
@@ -75,6 +240,7 @@ public:
     // First short read Seq-id for reads' blobs
     CSeq_id_Handle m_SeqId;
     TVDBRowId m_FirstSpotId;
+    TSRRFiles::CLock m_FileLock;
 
     // returns length of accession part or NPOS
     static SIZE_TYPE ParseReadId(CTempString str,
@@ -151,7 +317,7 @@ public:
 
     CCSraRefSeqIterator GetRefSeqIterator(void) const;
 
-    CRef<CCSRABlobId> GetBlobId(CCSRABlobId::EBlobType type) const;
+    //CRef<CCSRABlobId> GetBlobId(CCSRABlobId::EBlobType type) const;
     int GetAnnotChunkId(TSeqPos ref_pos) const;
 
     void LoadRanges(void);
@@ -169,12 +335,9 @@ public:
 
     void LoadRefSeqMainEntry(CTSE_LoadLock& load_lock);
 
-    void SetBlobId(CRef<CCSRABlobId>& ret,
-                   CCSRABlobId::EBlobType blob_type,
-                   const CSeq_id_Handle& idh) const;
-
 protected:
     friend class CCSRADataLoader_Impl;
+    friend class CCSRABlobId;
 
     // start of chunk and number of alignments in the chunk
     struct SChunkInfo {
@@ -239,14 +402,10 @@ public:
     bool IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                        CRef<CCSRARefSeqInfo>* ref_ptr = 0,
                        TSeqPos* ref_pos_ptr = 0);
-    CRef<CCSRABlobId> GetReadsBlobId(TVDBRowId spot_id) const;
+    //CRef<CCSRABlobId> GetReadsBlobId(TVDBRowId spot_id) const;
 
     void GetAnnotBlobId(CRef<CCSRABlobId>& ret,
                         const CSeq_id_Handle& idh);
-    void GetRefSeqBlobId(CRef<CCSRABlobId>& ret,
-                         const CSeq_id_Handle& idh);
-    void GetShortSeqBlobId(CRef<CCSRABlobId>& ret,
-                           const CSeq_id_Handle& idh) const;
 
     CRef<CCSRARefSeqInfo> GetRefSeqInfo(const CSeq_id_Handle& seq_id);
     CRef<CCSRARefSeqInfo> GetRefSeqInfo(const CCSRABlobId& blob_id)
@@ -317,7 +476,12 @@ public:
 
     void AddSrzDef(void);
     void AddCSRAFile(const string& csra);
-    CRef<CCSRAFileInfo> GetSRRFile(const string& acc);
+    
+    typedef CCacheWithLock<string, CRef<CCSRAFileInfo> > TSRRFiles;
+    typedef pair<CRef<CCSRAFileInfo>, TSRRFiles::CLock> TFileLock;
+    typedef pair<CRef<CCSRARefSeqInfo>, TSRRFiles::CLock> TRefLock;
+    
+    TFileLock GetSRRFile(const string& acc);
 
     int GetMinMapQuality(void) const
         {
@@ -340,24 +504,22 @@ public:
             return m_SpotGroups;
         }
 
-    CRef<CCSRARefSeqInfo> GetRefSeqInfo(const CSeq_id_Handle& idh);
-    CRef<CCSRAFileInfo> GetReadsFileInfo(const CSeq_id_Handle& idh,
-                                         TVDBRowId* spot_id_ptr = 0,
-                                         Uint4* read_id_ptr = 0,
-                                         CRef<CCSRARefSeqInfo>* ref_ptr = 0,
-                                         TSeqPos* ref_pos_ptr = 0);
-    CRef<CCSRAFileInfo> GetFileInfo(const CCSRABlobId& blob_id);
+    TRefLock GetRefSeqInfo(const CSeq_id_Handle& idh);
+    TFileLock GetReadsFileInfo(const CSeq_id_Handle& idh,
+                               TVDBRowId* spot_id_ptr = 0,
+                               Uint4* read_id_ptr = 0,
+                               CRef<CCSRARefSeqInfo>* ref_ptr = 0,
+                               TSeqPos* ref_pos_ptr = 0);
+    TFileLock GetFileInfo(const CCSRABlobId& blob_id);
     CCSraRefSeqIterator GetRefSeqIterator(const CSeq_id_Handle& idh);
     CCSraShortReadIterator GetShortReadIterator(const CSeq_id_Handle& idh);
-
-    CRef<CCSRABlobId> GetShortSeqBlobId(const CSeq_id_Handle& idh);
-
-    CRef<CCSRABlobId> GetRefSeqBlobId(const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
     CRef<CCSRABlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CRef<CCSRABlobId> GetBlobId(const TRefLock& lock, CCSRABlobId::EBlobType type);
+    CRef<CCSRABlobId> GetReadsBlobId(const TFileLock& lock, TVDBRowId spot_id);
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CCSRABlobId& blob_id);
     void LoadBlob(const CCSRABlobId& blob_id,
@@ -393,7 +555,6 @@ private:
     // second: SRA accession or csra file path
         
     typedef map<string, CRef<CCSRAFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CRef<CCSRAFileInfo> > TSRRFiles;
 
     // mutex guarding input into the map
     mutable CMutex  m_Mutex;
@@ -405,7 +566,7 @@ private:
     int m_PathInId;
     int m_SpotGroups;
     TFixedFiles m_FixedFiles;
-    TSRRFiles m_SRRFiles;
+    CRef<TSRRFiles> m_SRRFiles;
     AutoPtr<IIdMapper> m_IdMapper;
     string m_AnnotName;
 };
