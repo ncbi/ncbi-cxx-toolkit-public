@@ -1,6 +1,6 @@
 # $Id$
 
-CPPFLAGS = -I$(includedir)/connect/mbedtls $(TLS_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = -I$(includedir)/connect $(TLS_INCLUDE) $(ORIG_CPPFLAGS)
 
 SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls \
 	   mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse \
