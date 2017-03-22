@@ -879,8 +879,14 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         CSeq_id_Handle accession_handle = sequence::GetId(bio_seq_handles[i],
                                                         sequence::eGetId_Best);
 
-        CConstRef<CSeq_id> accession = accession_handle.GetSeqId();
-        (*accession).GetLabel(&accession_nbrs[i]);
+        CConstRef<CSeq_id> id = accession_handle.GetSeqId();        
+        if (id->Which() == CSeq_id::e_General){
+            const CDbtag& dtg = id->GetGeneral();
+            accession_nbrs[i] = CAlignFormatUtil::GetGnlID(dtg);
+        } 
+        if (accession_nbrs[i].empty()) {
+            accession_nbrs[i] = id->GetSeqIdString(true);
+        }
 
         tax_node_colors[i] = s_GetBlastNameColor(bcolormap,
                                                  blast_names[i]);
