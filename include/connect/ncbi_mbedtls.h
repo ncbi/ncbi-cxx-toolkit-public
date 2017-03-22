@@ -36,9 +36,9 @@
 #include <connect/ncbi_socket.h>
 
 #ifdef HAVE_LIBMBEDTLS  /* external */
-#  define NCBI_MBEDTLS_HEADER(x)  <../include/x>
-#elif defined(NCBI_CXX_TOOLKIT)
 #  define NCBI_MBEDTLS_HEADER(x)  <x>
+#elif defined(NCBI_CXX_TOOLKIT)
+#  define NCBI_MBEDTLS_HEADER(x)  <connect/mbedtls/x>
 #endif
 
 
