@@ -180,14 +180,14 @@ static FSSLPush                         s_Push;
 static void x_GnuTlsLogger(int level, const char* message)
 {
     /* do some basic filtering and EOL cut-offs */
-    int len = message ? strlen(message) : 0;
+    size_t len = message ? strlen(message) : 0;
     if (!len  ||  *message == '\n')
         return;
     if (strncasecmp(message, "ASSERT: ", 8) == 0)
         return;
     if (message[len - 1] == '\n')
-        len--;
-    CORE_LOGF(eLOG_Note, ("GNUTLS%d: %.*s", level, len, message));
+        --len;
+    CORE_LOGF(eLOG_Note, ("GNUTLS%d: %.*s", level, (int) len, message));
 }
 
 

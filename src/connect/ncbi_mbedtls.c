@@ -80,7 +80,7 @@ static int mbtls_user_mutex_lock(MT_LOCK* lock)
         case -1:
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
         case  0:
-            return MBEDTLS_THREADING_MUTEX_ERROR;
+            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
         case  1:
             return 0;
         default:
@@ -96,7 +96,7 @@ static int mbtls_user_mutex_unlock(MT_LOCK* lock)
         case -1:
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
         case  0:
-            return MBEDTLS_THREADING_MUTEX_ERROR;
+            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
         case  1:
             return 0;
         default:
@@ -151,12 +151,12 @@ static void x_MbedTlsLogger(void* unused, int level,
                             const char* message)
 {
     /* do some basic filtering and EOL cut-offs */
-    int len = message ? strlen(message) : 0;
+    size_t len = message ? strlen(message) : 0;
     if (!len  ||  *message == '\n')
         return;
     if (message[len - 1] == '\n')
-        len--;
-    CORE_LOGF(eLOG_Note, ("MBEDTLS%d: %.*s", level, len, message));
+        --len;
+    CORE_LOGF(eLOG_Note, ("MBEDTLS%d: %.*s", level, (int) len, message));
 }
 
 
