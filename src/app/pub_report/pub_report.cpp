@@ -42,6 +42,7 @@
 #include <objects/general/Date_std.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 
 #include "journal_report.hpp"
@@ -180,7 +181,36 @@ int CPubReportApp::Run(void)
     CRef<CSkipSeqEntryHook> seq_entry_hook(new CSkipSeqEntryHook(*report));
     seq_entry_type_info.SetLocalSkipHook(*in_obj, seq_entry_hook);
 
-    in_obj->Skip(CType<CBioseq_set>());
+    // supported types
+    set<TTypeInfo> known_types;
+    known_types.insert(CBioseq_set::GetTypeInfo());
+    known_types.insert(CSeq_submit::GetTypeInfo());
+    known_types.insert(CSeq_entry::GetTypeInfo());
+
+    set<TTypeInfo> types_found = in_obj->GuessDataType(known_types);
+    string strObjType;
+    if (types_found.size() == 1) {
+        const TTypeInfo& objtype = *(types_found.begin());
+        strObjType = objtype->GetName();
+        if (strObjType == "Bioseq-set") {
+            in_obj->Skip(CType<CBioseq_set>());
+        }
+        else if (strObjType == "Seq-submit") {
+            in_obj->Skip(CType<CSeq_submit>());
+        }
+        else if (strObjType == "Seq-entry") {
+            in_obj->Skip(CType<CSeq_entry>());
+        }
+        else {
+            // not supported type
+            strObjType.clear();
+        }
+    }
+    
+    if (strObjType.empty()) {
+        NCBI_THROW(CException, eUnknown,
+            "Failed to determine object type from the file: " + GetArgs()["i"].AsString());
+    }
 
     report->CompleteReport();
 
