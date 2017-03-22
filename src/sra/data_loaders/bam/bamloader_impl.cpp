@@ -1414,7 +1414,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                 }
             }
             else if ( type == 'M' || type == 'X' ) {
-                // mismatch
+                // mismatch ('X') or
+                // unspecified 'alignment match' ('M') that can be a mismatch too
                 for ( TSeqPos i = 0; i < seglen; ++i ) {
                     if ( ss_pos < chunk_len && read_pos < read.size() ) {
                         ss[ss_pos].add_base(read[read_pos]);
@@ -1501,6 +1502,10 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     }
     CRef<CSeq_id> ref_id(SerialClone(*GetRefSeq_id().GetSeqId()));
     for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
+        if (i == SBaseStat::kStat_Match && c_max[i] == 0) {
+            // do not generate empty 'matches' graph
+            continue;
+        }
         CRef<CSeq_graph> graph(new CSeq_graph);
         static const char* const titles[SBaseStat::kNumStat] = {
             "Number of A bases",

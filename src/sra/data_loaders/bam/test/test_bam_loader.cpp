@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
     sel.SetSearchUnresolved();
 
     CGraph_CI git(scope, *loc, sel);
-    BOOST_CHECK_EQUAL(git.GetSize() % 6, 0u);
+    BOOST_CHECK_EQUAL(git.GetSize() % 5, 0u); // no 'match' graph in this file
     BOOST_CHECK(git.GetSize());
 
     CAlign_CI it(scope, *loc, sel);
@@ -687,7 +687,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
         sel.AddNamedAnnots(pileup_name);
         CGraph_CI git(scope, *loc, sel);
         BOOST_CHECK(git.GetSize() > 0);
-        BOOST_CHECK(git.GetSize() % 6 == 0);
+        BOOST_CHECK(git.GetSize() % 5 == 0); // no 'match' graph in this file
         if ( 0 ) {
             for ( ; git; ++git ) {
                 NcbiCout << MSerial_AsnText << git->GetOriginalGraph();
