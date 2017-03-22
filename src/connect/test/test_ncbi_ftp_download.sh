@@ -44,7 +44,7 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     ;;
 esac
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 $CHECK_EXEC test_ncbi_ftp_download $file 2>&1
 exit_code=$?

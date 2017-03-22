@@ -1,8 +1,6 @@
 #! /bin/sh
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
-
-. ncbi_test_data
+. ./ncbi_test_data
 
 n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
 n="`expr ${n:-0} + 1`"
@@ -16,7 +14,8 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   0)
   ssl="`expr '(' $$ / 100 ')' '%' 2`"
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
-    CONN_TLS_LOGLEVEL=2;  export CONN_TLS_LOGLEVEL
+    : ${CONN_TLS_LOGLEVEL:=2};
+    export CONN_TLS_LOGLEVEL
     url='https://www.ncbi.nlm.nih.gov'
   else
     url='http://www.ncbi.nlm.nih.gov'
@@ -30,5 +29,7 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   huge_tar="http://ftp-ext.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
   ;;
 esac
+
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 . ./test_tar.sh

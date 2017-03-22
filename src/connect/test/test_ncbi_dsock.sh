@@ -24,13 +24,13 @@ client_log=test_ncbi_dsock_client.log
 
 rm -f $port $server_log $client_log
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
-
 if [ -x /sbin/ifconfig ]; then
   if [ "`arch`" = "x86_64" ]; then
     mtu="`/sbin/ifconfig lo 2>&1 | grep 'MTU:' | sed 's/^.*MTU:\([0-9][0-9]*\).*$/\1/'`"
   fi
 fi
+
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 test_ncbi_dsock server $port $mtu </dev/null >$server_log 2>&1 &
 spid=$!

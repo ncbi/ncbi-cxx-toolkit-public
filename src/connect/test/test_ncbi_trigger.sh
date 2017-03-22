@@ -24,7 +24,7 @@ client_log=test_ncbi_trigger_client.log
 
 rm -f $port $server_log $client_log
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 test_ncbi_trigger -delay 20000 -port $port server </dev/null >$server_log 2>&1 &
 spid=$!

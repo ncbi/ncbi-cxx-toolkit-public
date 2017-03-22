@@ -24,7 +24,7 @@ client_log=test_ncbi_socket_connector.log
 
 rm -f $port $server_log $client_log
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 # NB: socket_io_bouncer opens the log, too
 socket_io_bouncer $port </dev/null >>$server_log 2>&1 &

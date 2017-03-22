@@ -1,9 +1,7 @@
 #! /bin/sh
 # $Id$
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
-
-. ncbi_test_data
+. ./ncbi_test_data
 
 n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
 n="`expr ${n:-0} + 1`"
@@ -20,7 +18,7 @@ case "`expr '(' $$ / 10 ')' '%' 4`" in
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
     # for netstat
     PATH=${PATH}:/sbin:/usr/sbin
-    CONN_TLS_LOGLEVEL=2;  export CONN_TLS_LOGLEVEL
+    : ${CONN_TLS_LOGLEVEL:=2};  export CONN_TLS_LOGLEVEL
     if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
       url='https://localhost:5556'
     else
@@ -47,5 +45,7 @@ case "`expr '(' $$ / 10 ')' '%' 4`" in
   url='http://ftp-ext.ncbi.nlm.nih.gov/README.ftp'
   ;;
 esac
+
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 $CHECK_EXEC test_ncbi_conn_stream_mt -threads "`expr $$ % 10 + 2`" "$url"

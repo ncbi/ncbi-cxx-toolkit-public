@@ -23,7 +23,7 @@ client_log=test_ncbi_namedpipe_connector_client.log
 
 rm -f $server_log $client_log
 
-CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
+: ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
 test_ncbi_namedpipe_connector -suffix $$ server </dev/null >$server_log 2>&1 &
 

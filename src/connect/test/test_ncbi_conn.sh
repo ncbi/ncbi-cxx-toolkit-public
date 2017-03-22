@@ -22,7 +22,7 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-. ncbi_test_data
+. ./ncbi_test_data
 
 n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
 n="`expr ${n:-0} + 1`"
