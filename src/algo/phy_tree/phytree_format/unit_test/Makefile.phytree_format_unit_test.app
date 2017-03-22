@@ -1,8 +1,9 @@
 APP = phytree_format_unit_test
 SRC = phytree_format_unit_test
 
-LIB = xalgoalignnw phytree_format xalgophytree fastme xalnmgr biotree \
-      taxon1 test_boost tables $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS)
+LIB = xalgoalignnw phytree_format xalgophytree fastme biotree test_boost \
+      $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJREAD_LIBS) xobjutil \
+      $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
