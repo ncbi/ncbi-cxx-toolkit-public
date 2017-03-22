@@ -462,7 +462,7 @@ static EIO_Status x_InitLocking(void)
 {
     EIO_Status status;
 
-#  if 0/*def NCBI_THREADS*/
+#  ifdef NCBI_THREADS
     switch (mbedtls_version_check_feature("MBEDTLS_THREADING_C")) {
     case  0:
         break;
@@ -605,6 +605,13 @@ static void s_MbedTlsDelete(void* session)
 /* NB: Called under a lock */
 static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 {
+    static const char kMbedTls[] =
+#  ifdef HAVE_LIBMBEDTLS
+        "External "
+#  else
+        "Embedded "
+#  endif /*HAVE_LIBMBEDTLS*/
+        "MBEDTLS";
     int/*bool*/ report = 0/*false*/;
     EIO_Status status;
     char version[80];
@@ -614,8 +621,8 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     mbedtls_version_get_string(version);
     if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
         CORE_LOGF(eLOG_Critical,
-                  ("MBEDTLS version mismatch: %s headers vs. %s runtime",
-                   MBEDTLS_VERSION_STRING, version));
+                  ("%s version mismatch: %s headers vs. %s runtime",
+                   kMbedTls, MBEDTLS_VERSION_STRING, version));
         assert(0);
     }
 
@@ -642,8 +649,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
-    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("MBEDTLS V%s (LogLevel=%d)",
-                                                version, s_MbedTlsLogLevel));
+    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("%s V%s (LogLevel=%d)",
+                                                kMbedTls, version,
+                                                s_MbedTlsLogLevel));
 
     if ((status = x_InitLocking()) != eIO_Success) {
         mbedtls_ssl_config_free(&s_MbedTlsConf);
