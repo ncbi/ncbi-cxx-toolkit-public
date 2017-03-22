@@ -127,8 +127,24 @@ public:
                 }
                 return *this;
             }
-        CLock(CLock&& lock) = default;
-        CLock& operator=(CLock&& lock) = default;
+        CLock(CLock&& lock)
+            : m_Cache(move(lock.m_Cache)),
+              m_Slot(move(lock.m_Slot))
+            {
+            }
+        CLock& operator=(CLock&& lock)
+            {
+#ifdef NCBI_COMPILER_MSVC
+                // extra check on MSVC
+                if (this == &lock) {
+                    return *this;
+                }
+#endif
+                Reset();
+                m_Cache = move(lock.m_Cache);
+                m_Slot = move(lock.m_Slot);
+                return *this;
+            }
 
         void Reset() {
             if ( m_Slot ) {
