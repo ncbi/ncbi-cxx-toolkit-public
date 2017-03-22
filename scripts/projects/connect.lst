@@ -1,4 +1,5 @@
 corelib$
+corelib/test$
 connect$
 connect/ext
 connect/test
