@@ -37,19 +37,16 @@
 #include <connect/ncbi_mbedtls.h>
 #include <stdlib.h>
 
-#if defined(HAVE_LIBMBEDTLS) || defined(NCBI_CXX_TOOLKIT)
+#ifdef NCBI_MBEDTLS_HEADER
 
-#  ifdef HAVE_LIBMBEDTLS /* external */
-#    define MBEDTLS_HEADER(x) <../include/mbedtls/x>
-#  else
-#    define MBEDTLS_HEADER(x) <mbedtls/x>
-#  endif
-#  include MBEDTLS_HEADER(ctr_drbg.h)
-#  include MBEDTLS_HEADER(debug.h)
-#  include MBEDTLS_HEADER(entropy.h)
-#  include MBEDTLS_HEADER(error.h)
-#  include MBEDTLS_HEADER(ssl.h)
-#  include MBEDTLS_HEADER(version.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/ctr_drbg.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/debug.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/entropy.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/error.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/net_sockets.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/ssl.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/threading.h)
+#  include NCBI_MBEDTLS_HEADER(mbedtls/version.h)
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -57,8 +54,58 @@
 #    define NCBI_NOTSUPPORTED  ENOSYS
 #  else
 #    define NCBI_NOTSUPPORTED  EINVAL
-#  endif /*not implemented*/
+#  endif
 
+
+#  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
+#    ifdef MBEDTLS_THREADING_PTHREAD
+#      error "MBEDTLS_THREADING_ALT and MBEDTLS_THREADING_PTHREAD conflict"
+#    endif /*MBEDTLS_THREADING_PTHREAD*/
+static void mbtls_user_mutex_init(MT_LOCK* lock)
+{
+    if (lock)
+        *lock = MT_LOCK_AddRef(CORE_GetLOCK());
+}
+static void mbtls_user_mutex_deinit(MT_LOCK* lock)
+{
+    if (lock) {
+        MT_LOCK_Delete(*lock);
+        *lock = 0;
+    }
+}
+static int mbtls_user_mutex_lock(MT_LOCK* lock)
+{
+    if (lock) {
+        switch (MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock)) {
+        case -1:
+            return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
+        case  0:
+            return MBEDTLS_THREADING_MUTEX_ERROR;
+        case  1:
+            return 0;
+        default:
+            break;
+        }
+    }
+    return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+}
+static int mbtls_user_mutex_unlock(MT_LOCK* lock)
+{
+    if (lock) {
+        switch (MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)) {
+        case -1:
+            return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
+        case  0:
+            return MBEDTLS_THREADING_MUTEX_ERROR;
+        case  1:
+            return 0;
+        default:
+            break;
+        }
+    }
+    return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+}
+#  endif /*MBEDTLS_THREADING_ALT && NCBI_THREADS*/
 
 #  ifdef __cplusplus
 extern "C" {
@@ -132,28 +179,65 @@ static EIO_Status x_RetryStatus(SOCK sock, EIO_Event direction)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static EIO_Status x_ErrorToStatus(int* error, mbedtls_ssl_context* session,
+static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
                                   EIO_Event direction)
 {
+    SOCK       sock;
     EIO_Status status;
-    SOCK       sock = (SOCK)(session->p_bio);
 
-    assert(error  &&  *error <= 0);
+    assert(error <= 0);
 
-    if (!*error)
+    if (!error)
         return eIO_Success;
-    else if (*error == MBEDTLS_ERR_SSL_WANT_READ)
+    sock = (SOCK) session->p_bio;
+    switch (error) {
+    case MBEDTLS_ERR_SSL_WANT_READ:
         status = x_RetryStatus(sock, direction);
-    else if (*error == MBEDTLS_ERR_SSL_WANT_WRITE)
+        break;
+    case MBEDTLS_ERR_SSL_WANT_WRITE:
         status = x_RetryStatus(sock, direction);
-    else if (*error == MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE)
+        break;
+    case MBEDTLS_ERR_SSL_TIMEOUT:
+        status = eIO_Timeout;
+        break;
+    case MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE:
+    case MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE:
+    case MBEDTLS_ERR_SSL_INTERNAL_ERROR:
+        status = eIO_NotSupported;
+        break;
+    case MBEDTLS_ERR_THREADING_BAD_INPUT_DATA:
+    case MBEDTLS_ERR_SSL_BAD_INPUT_DATA:
+        status = eIO_InvalidArg;
+        break;
+    case MBEDTLS_ERR_NET_CONN_RESET:
+    case MBEDTLS_ERR_SSL_CONN_EOF:
+    case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
+    case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
         status = eIO_Closed;
-    else
+        break;
+    case MBEDTLS_ERR_NET_RECV_FAILED:
+        if (sock->r_status != eIO_Success  &&
+            sock->r_status != eIO_Unknown) {
+            status = sock->r_status;
+        } else
+            status = eIO_Unknown;
+        break;
+    case MBEDTLS_ERR_NET_SEND_FAILED:
+        if (sock->w_status != eIO_Success  &&
+            sock->w_status != eIO_Unknown) {
+            status = sock->w_status;
+        } else
+            status = eIO_Unknown;
+        break;
+    /*case MBEDTLS_ERR_SSL_NON_FATAL:*/
+    default:
         status = eIO_Unknown;
-#if 0
-    CORE_TRACEF(("MBEDTLS error %d -> CONNECT status %s",
-                 *error, IO_StatusStr(status)));
-#endif
+        break;
+    }
+
+    CORE_LOGF(eLOG_Trace, ("MBEDTLS error %d -> CONNECT status %s",
+                           error, IO_StatusStr(status)));
+
     return status;
 }
 
@@ -188,6 +272,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     int error;
 
     assert(status != eIO_Success);
+    assert(direction == eIO_Read  ||  direction == eIO_Write);
 
     switch (status) {
     case eIO_Timeout:
@@ -210,12 +295,34 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
         error = EINVAL;
         break;
     }
-#if 0
-    CORE_TRACEF(("CONNECT status %s -> %s %d", IO_StatusStr(status),
-                 error ? "error" : "errno",
-                 error ?  error  :  errno));
-#endif
-    return error;
+
+    {{
+        const char* x_what = error ? "error" : "errno";
+        int        x_error = error ?  error  :  errno;
+        CORE_LOGF(eLOG_Trace, ("CONNECT MBEDTLS status %s -> %s %d",
+                               IO_StatusStr(status), x_what, x_error));
+        if (!error)
+            errno = x_error; /* restore errno that may be clobbered by log */
+    }}
+
+    if (error)
+        errno = error;
+    else if (!(error = errno))
+        error = EINVAL;
+
+    switch (error) {
+    case EAGAIN:
+    case SOCK_EINTR:
+    case SOCK_ETIMEDOUT:
+        return direction == eIO_Read
+            ? MBEDTLS_ERR_SSL_WANT_READ
+            : MBEDTLS_ERR_SSL_WANT_WRITE;
+    case SOCK_ENOTCONN:
+        return MBEDTLS_ERR_NET_CONN_RESET;
+    default:
+        break;
+    }
+    return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 }
 
 
@@ -237,6 +344,11 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SOCK sock,
 
     if (cred  &&  (cred->type != eNcbiCred_MbedTls  ||  !cred->data)) {
         /*FIXME: there's a NULL(data)-terminated array of credentials */
+        CORE_LOGF(eLOG_Error,
+                  ("%s credentials in MBEDTLS session",
+                   cred->type != eNcbiCred_MbedTls
+                   ? "Foreign"
+                   : "Empty"));
         return 0;
     }
 
@@ -274,7 +386,7 @@ static EIO_Status s_MbedTlsOpen(void* session, int* error, char** desc)
     x_error = mbedtls_ssl_handshake((mbedtls_ssl_context*) session);
 
     if (x_error < 0) {
-        status = x_ErrorToStatus(&x_error, (mbedtls_ssl_context*) session,
+        status = x_ErrorToStatus(x_error, (mbedtls_ssl_context*) session,
                                  eIO_Open);
         *error = x_error;
     } else
@@ -346,6 +458,55 @@ static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
 }
 
 
+static EIO_Status x_InitLocking(void)
+{
+    EIO_Status status;
+
+#  if 0/*def NCBI_THREADS*/
+    switch (mbedtls_version_check_feature("MBEDTLS_THREADING_C")) {
+    case  0:
+        break;
+    case -1:
+        return eIO_NotSupported;
+    case -2:
+        return eIO_InvalidArg;
+    default:
+        return eIO_Unknown;
+    }
+#  endif /*NCBI_THREADS*/
+#  ifdef MBEDTLS_THREADING_PTHREAD
+    status = eIO_Success;
+#  elif defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
+    MT_LOCK lk = CORE_GetLOCK();
+    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        mbedtls_threading_set_alt(mbtls_user_mutex_init,
+                                  mbtls_user_mutex_deinit,
+                                  mbtls_user_mutex_lock,
+                                  mbtls_user_mutex_unlock);
+        MT_LOCK_Do(lk, eMT_Unlock);
+        status = eIO_Success;
+    } else
+        status = lk ? eIO_Success : eIO_NotSupported;
+#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,
+             "MBEDTLS locking uninited: Unknown threading model");
+    status = eIO_NotSupported;
+#  else
+    status = eIO_Success;
+#  endif
+
+    return status;
+}
+
+
+static void x_FreeLocking(void)
+{
+#  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
+    mbedtls_threading_free_alt();
+#  endif /*MBEDTLS_THREADING_ALT && NCBI_THREADS*/
+}
+
+
 static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
                                size_t* n_done, int* error)
 {
@@ -358,7 +519,7 @@ static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
     assert(x_read < 0  ||  x_read <= n_todo);
 
     if (x_read <= 0) {
-        status = x_ErrorToStatus(&x_read, (mbedtls_ssl_context*) session,
+        status = x_ErrorToStatus(x_read, (mbedtls_ssl_context*) session,
                                  eIO_Read);
         *error = x_read;
         x_read = 0;
@@ -382,7 +543,7 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
     assert(x_written < 0  ||  x_written <= n_todo);
 
     if (x_written <= 0) {
-        status = x_ErrorToStatus(&x_written, (mbedtls_ssl_context*) session,
+        status = x_ErrorToStatus(x_written, (mbedtls_ssl_context*) session,
                                  eIO_Write);
         *error = x_written;
         x_written = 0;
@@ -444,9 +605,19 @@ static void s_MbedTlsDelete(void* session)
 /* NB: Called under a lock */
 static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 {
+    int/*bool*/ report = 0/*false*/;
+    EIO_Status status;
     char version[80];
     const char* val;
     char buf[32];
+
+    mbedtls_version_get_string(version);
+    if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
+        CORE_LOGF(eLOG_Critical,
+                  ("MBEDTLS version mismatch: %s headers vs. %s runtime",
+                   MBEDTLS_VERSION_STRING, version));
+        assert(0);
+    }
 
     if (!pull  ||  !push)
         return eIO_InvalidArg;
@@ -459,15 +630,26 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
 
     val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
+    CORE_LOCK_READ;
     if (val  &&  *val) {
         s_MbedTlsLogLevel = atoi(val);
+        CORE_UNLOCK;
+        report = 1/*true*/;
         if (s_MbedTlsLogLevel) {
-            mbedtls_version_get_string(version);
             mbedtls_debug_set_threshold(s_MbedTlsLogLevel);
             mbedtls_ssl_conf_dbg(&s_MbedTlsConf, x_MbedTlsLogger, 0);
-            CORE_LOGF(eLOG_Note, ("MBEDTLS V%s (Loglevel=%d)",
-                                  version, s_MbedTlsLogLevel));
         }
+    } else
+        CORE_UNLOCK;
+
+    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("MBEDTLS V%s (LogLevel=%d)",
+                                                version, s_MbedTlsLogLevel));
+
+    if ((status = x_InitLocking()) != eIO_Success) {
+        mbedtls_ssl_config_free(&s_MbedTlsConf);
+        mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
+        memset(&s_MbedTlsConf, 0, sizeof(s_MbedTlsConf));
+        return status;
     }
 
     mbedtls_entropy_init(&s_MbedTlsEntropy);
@@ -490,16 +672,17 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 /* NB: Called under a lock */
 static void s_MbedTlsExit(void)
 {
-    s_Push            = 0;
-    s_Pull            = 0;
-    s_MbedTlsLogLevel = 0;
+    s_Push = 0;
+    s_Pull = 0;
 
     mbedtls_ctr_drbg_free(&s_MbedTlsCtrDrbg);
     mbedtls_entropy_free(&s_MbedTlsEntropy);
     mbedtls_ssl_config_free(&s_MbedTlsConf);
+    mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
     memset(&s_MbedTlsCtrDrbg, 0, sizeof(s_MbedTlsCtrDrbg));
     memset(&s_MbedTlsEntropy, 0, sizeof(s_MbedTlsEntropy));
     memset(&s_MbedTlsConf,    0, sizeof(s_MbedTlsConf));
+    x_FreeLocking();
 }
 
  
@@ -522,14 +705,14 @@ static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 }
 
 
-#endif /*HAVE_LIBMBEDTLS*/
+#endif /*NCBI_MBEDTLS_HEADER*/
 
 
 extern SOCKSSL NcbiSetupMbedTls(void)
 {
     static const struct SOCKSSL_struct kMbedTlsOps = {
         s_MbedTlsInit
-#ifdef HAVE_LIBMBEDTLS
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         , s_MbedTlsCreate
         , s_MbedTlsOpen
         , s_MbedTlsRead
@@ -538,11 +721,11 @@ extern SOCKSSL NcbiSetupMbedTls(void)
         , s_MbedTlsDelete
         , s_MbedTlsExit
         , s_MbedTlsError
-#endif /*HAVE_LIBMBEDTLS*/
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
     };
-#ifndef HAVE_LIBMBEDTLS
+#if !defined(HAVE_LIBMBEDTLS)  &&  !defined(NCBI_CXX_TOOLKIT)
     CORE_LOG(eLOG_Warning, "Unavailable feature MBEDTLS");
-#endif /*!HAVE_LIBMBEDTLS*/
+#endif /*!HAVE_LIBMBEDTLS && !NCBI_CXX_TOOLKIT*/
     return &kMbedTlsOps;
 }
 

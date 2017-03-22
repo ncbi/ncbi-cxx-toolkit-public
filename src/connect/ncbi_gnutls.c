@@ -47,7 +47,7 @@
 #    define NCBI_NOTSUPPORTED  ENOSYS
 #  else
 #    define NCBI_NOTSUPPORTED  EINVAL
-#  endif /*not implemented*/
+#  endif
 
 #  if GNUTLS_VERSION_NUMBER <= 0x020B00
 #    ifdef HAVE_LIBGCRYPT
@@ -213,14 +213,15 @@ inline
 static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
                                   EIO_Event direction)
 {
+    SOCK       sock;
     EIO_Status status;
-    SOCK       sock = (SOCK) gnutls_transport_get_ptr(session);
 
     assert(error  &&  *error <= 0/*GNUTLS_E_SUCCESS*/);
 
     if (!*error)
         return eIO_Success;
-    else if (*error == GNUTLS_E_AGAIN)
+    sock = (SOCK) gnutls_transport_get_ptr(session);
+    if      (*error == GNUTLS_E_AGAIN)
         status = x_RetryStatus(sock, direction);
     else if (*error == GNUTLS_E_INTERRUPTED)
         status = eIO_Interrupt;
@@ -246,10 +247,10 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
         status = eIO_Closed;
     else
         status = eIO_Unknown;
-#if 0
-    CORE_TRACEF(("GNUTLS error %d -> CONNECT status %s",
-                 *error, IO_StatusStr(status)));
-#endif
+
+    CORE_LOGF(eLOG_Trace, ("GNUTLS error %d -> CONNECT status %s",
+                           *error, IO_StatusStr(status)));
+
     return status;
 }
 
@@ -284,6 +285,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     int error;
 
     assert(status != eIO_Success);
+    assert(direction == eIO_Read  ||  direction == eIO_Write);
 
     switch (status) {
     case eIO_Timeout:
@@ -306,11 +308,16 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
         error = EINVAL;
         break;
     }
-#if 0
-    CORE_TRACEF(("CONNECT status %s -> %s %d", IO_StatusStr(status),
-                 error ? "error" : "errno",
-                 error ?  error  :  errno));
-#endif
+
+    {{
+        const char* x_what = error ? "error" : "errno";
+        int        x_error = error ?  error  :  errno;
+        CORE_LOGF(eLOG_Trace, ("CONNECT GNUTLS status %s -> %s %d",
+                               IO_StatusStr(status), x_what, x_error));
+        if (!error)
+            errno = x_error; /* restore errno that may be clobbered by log */
+    }}
+
     return error;
 }
 
@@ -434,8 +441,12 @@ static int x_IfToLog(void)
 
 
 /*ARGSUSED*/
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void x_set_errno(gnutls_session_t session, int error)
 {
+    assert(session);
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x010504
     gnutls_transport_set_errno(session, error);
 #  else
@@ -510,24 +521,29 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
 }
 
 
-static int x_SetupLocking(void)
+/* NB: there're no "deinit" methods in GNUTLS */
+static EIO_Status x_InitLocking(void)
 {
-    int err;
+    EIO_Status status;
 
 #  if GNUTLS_VERSION_NUMBER <= 0x020B00
 #    ifdef HAVE_LIBGCRYPT
 #      if   defined(NCBI_POSIX_THREADS)
-    err = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+    status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) == 0
+        ? eIO_Success
+        : eIO_NotSupported;
 #      elif defined(NCBI_THREADS)
     MT_LOCK lk = CORE_GetLOCK();
     if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
-        err = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user);
+        status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) == 0
+            ? eIO_Success
+            : eIO_NotSupported;
         MT_LOCK_Do(lk, eMT_Unlock);
     } else
-        err = lk ? 0 : NCBI_NOTSUPPORTED;
+        status = lk ? eIO_Success : eIO_NotSupported;
 #      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
-    err = NCBI_NOTSUPPORTED;
+    status = eIO_NotSupported;
 #      endif /*NCBI_POSIX_THREADS*/
 #    endif /*HAVE_LIBGCRYPT*/
 #  elif defined(NCBI_THREADS)
@@ -536,17 +552,17 @@ static int x_SetupLocking(void)
         gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
                                 gtls_user_mutex_lock, gtls_user_mutex_unlock);
         MT_LOCK_Do(lk, eMT_Unlock);
-        err = 0;
+        status = eIO_Success;
     } else
-        err = lk ? 0 : NCBI_NOTSUPPORTED;
+        status = lk ? eIO_Success : eIO_NotSupported;
 #  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
-    err = NCBI_NOTSUPPORTED;
+    status = eIO_NotSupported;
 #  else
-    err = 0;
+    status = eIO_Success;
 #  endif
 
-    return err;
+    return status;
 }
 
 
@@ -658,7 +674,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
+    int/*bool*/ report = 0/*false*/;
     const char* version;
+    EIO_Status status;
     const char* val;
     char buf[32];
 
@@ -682,30 +700,35 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (val  &&  *val) {
         s_GnuTlsLogLevel = atoi(val);
         CORE_UNLOCK;
+        report = 1/*true*/;
         if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
             if (val == buf)
                 gnutls_global_set_log_level(s_GnuTlsLogLevel);
-            CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
-                                  version, s_GnuTlsLogLevel));
         }
     } else
         CORE_UNLOCK;
 
-    if (x_SetupLocking() != 0)
+    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("GNUTLS V%s (LogLevel=%d)",
+                                                version, s_GnuTlsLogLevel));
+
+    if ((status = x_InitLocking()) != eIO_Success)
         goto out;
 
     if (!gnutls_check_version(LIBGNUTLS_VERSION)  ||
         gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
+        status = eIO_NotSupported;
         goto out;
     }
     if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
         gnutls_global_deinit();
+        status = eIO_Unknown;
         goto out;
     }
     if (gnutls_certificate_allocate_credentials(&xcred) != 0) {
         gnutls_anon_free_client_credentials(acred);
         gnutls_global_deinit();
+        status = eIO_Unknown;
         goto out;
     }
 
@@ -719,7 +742,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
  out:
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
-    return eIO_NotSupported;
+    return status;
 }
 
 

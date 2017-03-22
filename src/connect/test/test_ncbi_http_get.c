@@ -57,7 +57,9 @@
 #    include <gnutls/x509.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 #endif /*HAVE_LIBGNUTLS*/
-
+#ifdef NCBI_MBEDTLS_HEADER
+#  include NCBI_MBEDTLS_HEADER(mbedtls/x509.h)
+#endif /*NCBI_MBEDTLS_HEADER*/
 #define TLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
 #define TLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
 #define TLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
@@ -352,12 +354,14 @@ int main(int argc, char* argv[])
             }
         }
 #endif /*HAVE_LIBGNUTLS*/
-#ifdef HAVE_LIBMBEDTLS
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         CORE_LOG(eLOG_Warning, "MBEDTLS does not support credentials yet");
 #endif /*HAVE_LIBMBEDTLS*/
-#if !defined(HAVE_LIBMBEDTLS)  &&  !defined(HAVE_LIBGNUTLS)
+#if !defined(HAVE_LIBGNUTLS)   &&                                   \
+    !defined(HAVE_LIBMBEDTLS)  &&                                   \
+    !defined(NCBI_CXX_TOOLKIT)
         CORE_LOG(eLOG_Warning, "SSL required but may not be supported");
-#endif /*!HAVE_LIBMBEDTLS && !HAVE_LIBGNUTLS*/
+#endif /*!HAVE_LIBGNUTLS && !HAVE_LIBMBEDTLS && !NCBI_CXX_TOOLKIT*/
     }
 
     CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",
