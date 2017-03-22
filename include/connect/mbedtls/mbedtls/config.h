@@ -28,6 +28,8 @@
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
 
+#include <ncbiconf.h>
+
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
@@ -1278,7 +1280,9 @@
  *
  * Uncomment this to allow your own alternate threading implementation.
  */
-//#define MBEDTLS_THREADING_ALT
+#ifdef NCBI_THREADS
+#  define MBEDTLS_THREADING_ALT
+#endif
 
 /**
  * \def MBEDTLS_THREADING_PTHREAD
@@ -1289,9 +1293,7 @@
  *
  * Uncomment this to enable pthread mutexes.
  */
-#ifdef NCBI_POSIX_THREADS
-#  define MBEDTLS_THREADING_PTHREAD
-#endif
+//#define MBEDTLS_THREADING_PTHREAD
 
 /**
  * \def MBEDTLS_VERSION_FEATURES
