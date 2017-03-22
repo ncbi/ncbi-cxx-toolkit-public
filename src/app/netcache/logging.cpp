@@ -138,6 +138,9 @@ void
 SetLogFileName(CTempString name)
 {
     s_FileName = name;
+    if (!CDirEntry::IsAbsolutePath(s_FileName)) {
+        s_FileName = CDirEntry::NormalizePath(CDirEntry::ConcatPath(CDir::GetCwd(), s_FileName));
+    }
 }
 
 string GetLogFileName(void)

@@ -30,6 +30,7 @@
 #include "task_server_pch.hpp"
 
 #include <corelib/metareg.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include "server_core.hpp"
 #include "threads_man.hpp"
@@ -296,6 +297,9 @@ s_ProcessParameters(int& argc, const char** argv)
         if (param == "-conffile") {
             if (i + 1 < argc) {
                 s_ConfName = argv[i + 1];
+                if (!CDirEntry::IsAbsolutePath(s_ConfName)) {
+                    s_ConfName = CDirEntry::NormalizePath(CDirEntry::ConcatPath(CDir::GetCwd(), s_ConfName));
+                }
             }
             else {
                 cerr << "Parameter -conffile misses file name" << endl;

@@ -125,7 +125,22 @@ static CNCHeartBeat* s_HeartBeat;
 static string s_PidFile;
 static string s_HostRole;
 static string s_HostLocation;
+static string s_AppPath;
+static string s_CmdLineArgs;
 
+static void s_StoreStartupParams(int argc, const char* argv[])
+{
+    s_AppPath = argv[0];
+    if (!CDirEntry::IsAbsolutePath(s_AppPath)) {
+        s_AppPath = CDirEntry::NormalizePath(CDirEntry::ConcatPath(CDir::GetCwd(), s_AppPath));
+    }
+    for (int i = 1; i < argc; ++i) {
+        s_CmdLineArgs += argv[i];
+        if (i+1 < argc) {
+            s_CmdLineArgs.append(1, ' ');
+        }
+    }
+}
 
 CNCBlobKeyLight& CNCBlobKeyLight::operator=(const CTempString& packed_key)
 {
@@ -884,11 +899,13 @@ void CNCServer::WriteEnvInfo(CSrvSocketTask& task)
 {
     string is("\": "),iss("\": \""), eol(",\n\""), eos("\"");
     task.WriteText(eol).WriteText("hostname"    ).WriteText(iss).WriteText(   CTaskServer::GetHostName()).WriteText(eos);
+    task.WriteText(eol).WriteText("exe_path"    ).WriteText(iss).WriteText(   s_AppPath).WriteText(eos);
+    task.WriteText(eol).WriteText("cmdline_args").WriteText(iss).WriteText(   s_CmdLineArgs).WriteText(eos);
+    task.WriteText(eol).WriteText("config_path" ).WriteText(iss).WriteText(   GetConfName()).WriteText(eos);
     task.WriteText(eol).WriteText("workdir"     ).WriteText(iss).WriteText(   CDir::GetCwd()).WriteText(eos);
-    task.WriteText(eol).WriteText("pid"         ).WriteText(is ).WriteNumber( CProcess::GetCurrentPid());
-    task.WriteText(eol).WriteText("pidfile"     ).WriteText(iss).WriteText(   s_PidFile).WriteText(eos);
-    task.WriteText(eol).WriteText("conffile"    ).WriteText(iss).WriteText(   GetConfName()).WriteText(eos);
     task.WriteText(eol).WriteText("logfile"     ).WriteText(iss).WriteText(   GetLogFileName()).WriteText(eos);
+    task.WriteText(eol).WriteText("pidfile"     ).WriteText(iss).WriteText(   s_PidFile).WriteText(eos);
+    task.WriteText(eol).WriteText("pid"         ).WriteText(is ).WriteNumber( CProcess::GetCurrentPid());
     Int8 len = CFile(GetLogFileName()).GetLength();
     task.WriteText(eol).WriteText("logfile_size").WriteText(iss).WriteText(
         NStr::UInt8ToString_DataSize(len > 0 ? len : 0)).WriteText(eos);
@@ -1043,6 +1060,7 @@ int main(int argc, const char* argv[])
     }
 #endif
 
+    s_StoreStartupParams(argc, argv);
     if (!CTaskServer::Initialize(argc, argv)  ||  !s_ReadServerParams()) {
         cerr << "Failed to initialize: conffile: " << GetConfName() << ", logfile: " << GetLogFileName() << endl;
         CTaskServer::Finalize();
