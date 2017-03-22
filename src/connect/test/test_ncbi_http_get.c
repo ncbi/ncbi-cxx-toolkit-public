@@ -56,9 +56,9 @@
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
 #    include <gnutls/abstract.h>
-#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
 #endif /*HAVE_LIBGNUTLS*/
 #ifdef NCBI_MBEDTLS_HEADER
 #  include NCBI_MBEDTLS_HEADER(mbedtls/x509.h)
@@ -152,7 +152,7 @@ static int x_CertVfyCB(gnutls_session_t session)
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 
 
-#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
 static int x_CertRtrCB(gnutls_session_t session,
                        const gnutls_datum_t* req_ca_dn,    int n_req_ca_dn,
                        const gnutls_pk_algorithm_t* algos, int n_algos,
@@ -222,17 +222,28 @@ static int x_CertRtrCB(gnutls_session_t session,
         }
     }
 
-    /* NB: this might be incorrect */
     if (type == GNUTLS_CRT_X509) {
         gnutls_certificate_credentials_t xcred;
         if (gnutls_credentials_get(session, GNUTLS_CRD_CERTIFICATE,
                                    (void**) &xcred) == 0) {
-            gnutls_datum_t* pcrt;
-            gnutls_certificate_get_crt_raw(xcred, 0, 0, &pcrt);
-            *pcert   = (gnutls_pcert_st*) pcrt;
-            *n_pcert = 1;
-            *pkey    = 0;
-            return 0;
+            gnutls_x509_privkey_t key;
+            gnutls_x509_crt_t*    crt;
+            unsigned int          size;
+            if (gnutls_certificate_get_x509_crt(xcred, 0, &crt, &size) == 0 &&
+                gnutls_certificate_get_x509_key(xcred, 0, &key) == 0) {
+                gnutls_privkey_t xkey;
+                gnutls_pcert_st* xcrt = calloc(size, sizeof(*xcrt));
+                if (xcrt  &&  gnutls_privkey_init(&xkey) == 0) {
+                    unsigned int n;
+                    gnutls_privkey_import_x509(xkey, key, 0);
+                    for (n = 0;  n < size;  ++n)
+                        gnutls_pcert_import_x509(xcrt + n, crt[n], 0);
+                    *pcert   = xcrt;
+                    *n_pcert = size;
+                    *pkey    = xkey;
+                    return 0;
+                }
+            }
         }
     }
 
@@ -241,7 +252,7 @@ static int x_CertRtrCB(gnutls_session_t session,
     *pkey    = 0;
     return 0;
 }
-#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
 
 #endif /*HAVE_LIBGNUTLS*/
 
@@ -358,10 +369,10 @@ int main(int argc, char* argv[])
                 gnutls_certificate_set_verify_function(xcred,
                                                        x_CertVfyCB);
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
                 gnutls_certificate_set_retrieve_function2(xcred,
                                                           x_CertRtrCB);
-#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
             }
         }
 #endif /*HAVE_LIBGNUTLS*/
