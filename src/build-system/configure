@@ -28980,9 +28980,7 @@ if test -z "$MBEDTLS_LIBS"; then
    mbedtls_local=connect/mbedtls
    { echo "$as_me:$LINENO: using local mbedTLS copy in $mbedtls_local" >&5
 echo "$as_me: using local mbedTLS copy in $mbedtls_local" >&6;}
-   # This requires headers to wind up under .../mbedtls/mbedtls/...,
-   # but avoiding that would pollute the header namespace.
-   MBEDTLS_INCLUDE="-I\$(includedir)/$mbedtls_local -I\$(includedir0)/$mbedtls_local"
+   MBEDTLS_INCLUDE=""
    MBEDTLS_LIBS="$Z_LIBS"
              WithPackages="$WithPackages${WithPackagesSep}MBEDTLS"; WithPackagesSep=" "
 fi

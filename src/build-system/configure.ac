@@ -4305,9 +4305,7 @@ fi
 if test -z "$MBEDTLS_LIBS"; then
    mbedtls_local=connect/mbedtls
    AC_MSG_NOTICE([using local mbedTLS copy in $mbedtls_local])
-   # This requires headers to wind up under .../mbedtls/mbedtls/...,
-   # but avoiding that would pollute the header namespace.
-   MBEDTLS_INCLUDE="-I\$(includedir)/$mbedtls_local -I\$(includedir0)/$mbedtls_local"
+   MBEDTLS_INCLUDE=""
    MBEDTLS_LIBS="$Z_LIBS"
    NCBI_PACKAGE(MBEDTLS)
 fi
