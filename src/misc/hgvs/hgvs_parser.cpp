@@ -1592,7 +1592,7 @@ CRef<CVariation_ref> CHgvsParser::x_list(TIterator const& i, const CContext& con
                 HGVS_THROW(eSemantic, "Non-unique delimiters within a list");
             }
             ++it;
-        } 
+        }
 
         CRef<CVariation_ref> vr;
         if(it->value.id() == SGrammar::eID_expr1) {
@@ -1612,11 +1612,11 @@ CRef<CVariation_ref> CHgvsParser::x_list(TIterator const& i, const CContext& con
 
     if(delimiter == ";") {
         varset.SetType(CVariation_ref::TData::TSet::eData_set_type_haplotype);
-    } else if(delimiter == "+") { 
+    } else if(delimiter == "+") {
         varset.SetType(CVariation_ref::TData::TSet::eData_set_type_genotype);
     } else if(delimiter == "(+)") {
         varset.SetType(CVariation_ref::TData::TSet::eData_set_type_individual);
-    } else if(delimiter == ",") { 
+    } else if(delimiter == ",") {
         //if the context is rna (r.) then this describes multiple products from the same precursor;
         //otherwise this describes mosaic cases
         if(context.GetMolType(false)  == CContext::eMol_r) {
@@ -1870,6 +1870,14 @@ string CHgvsParser::x_InstToString(const CVariation_inst& inst, CSeq_loc& loc)
         NCBI_THROW(CException, eUnknown, "Cannot process this type of variation-inst");
     }
 
+    // According to the HGVS standard
+    // http://varnomen.hgvs.org/recommendations/DNA/variant/duplication/
+    // the 'dup' HGVS expressions are not to include the duplicated nucleotides.
+    // Format: “prefix”“position(s)_duplicated”“dup”, e.g. g.123_345dup
+    if (is_dup) {
+        loc.Assign(*hgvs_loc);
+        return out;
+    }
 
     //append the deltas
     ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {

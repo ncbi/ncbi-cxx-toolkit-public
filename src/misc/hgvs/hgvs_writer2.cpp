@@ -78,7 +78,7 @@ namespace variation {
 
 
 CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(
-        const CVariantPlacement& p, 
+        const CVariantPlacement& p,
         const CVariation_inst& inst)
 {
     CRef<CVariantPlacement> placement(new CVariantPlacement);
@@ -94,19 +94,19 @@ CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(
         //insertion: convert the loc to dinucleotide representation as necessary.
         CVariationUtil util(*m_scope);
         CVariationUtil::SFlankLocs flanks = util.CreateFlankLocs(p.GetLoc(), 1);
-        CRef<CSeq_loc> dinucleotide_loc = 
-            sequence::Seq_loc_Add( *flanks.upstream, 
-                                   p.GetLoc(), 
-                                   CSeq_loc::fSortAndMerge_All, 
+        CRef<CSeq_loc> dinucleotide_loc =
+            sequence::Seq_loc_Add( *flanks.upstream,
+                                   p.GetLoc(),
+                                   CSeq_loc::fSortAndMerge_All,
                                    NULL);
         placement->SetLoc(*dinucleotide_loc);
     } else if(inst.GetType() == CVariation_inst::eType_microsatellite
-              && !p.IsSetStart_offset() 
+              && !p.IsSetStart_offset()
               && !p.IsSetStop_offset())
     {
-        CRef<CSeq_loc> loc = 
-            sequence::Seq_loc_Merge( p.GetLoc(), 
-                                     CSeq_loc::fMerge_SingleRange, 
+        CRef<CSeq_loc> loc =
+            sequence::Seq_loc_Merge( p.GetLoc(),
+                                     CSeq_loc::fMerge_SingleRange,
                                      NULL);
 
         TSeqPos unit_length = x_GetInstLength(inst, p, false);
@@ -287,7 +287,7 @@ string CHgvsParser::x_AsHgvsExpression(
 
     if(variation.IsSetFrameshift()) {
         if(hgvs_data_str == "Xaa" || hgvs_data_str == "delinsXaa") {
-            //short-form of frameshift, e.g. p.Ser20fs is internally 
+            //short-form of frameshift, e.g. p.Ser20fs is internally
             //represented in "long form", ie. p.Ser20Xaafs.
             //When writing we'll drop Xaa to convert back to short-form
             hgvs_data_str = "";
@@ -430,9 +430,9 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
             NcbiCerr << MSerial_AsnText << literal;
             NCBI_THROW(CException, eUnknown, "Not supported");
         }
-        out = s_IntWithFuzzToStr(literal.GetLength(), 
-                                 NULL, 
-                                 false, 
+        out = s_IntWithFuzzToStr(literal.GetLength(),
+                                 NULL,
+                                 false,
                                  literal.IsSetFuzz() ? &literal.GetFuzz() : NULL);
     }
     return out;
@@ -463,32 +463,32 @@ TSignedSeqPos CHgvsParser::s_GetHgvsPos(TSeqPos abs_pos, const TSeqPos* atg_pos)
 
 
 string CHgvsParser::s_IntWithFuzzToStr(
-    long pos, 
-    const TSeqPos* hgvs_ref_pos, 
-    bool with_sign, 
+    long pos,
+    const TSeqPos* hgvs_ref_pos,
+    bool with_sign,
     const CInt_fuzz* fuzz)
 {
-/* 
- * with_sign indicates whether the sign is mandatory and must be factored out 
+/*
+ * with_sign indicates whether the sign is mandatory and must be factored out
  * (as offset part of an intronic expression)
  * In this case we'll prefix the sign in the end, and will adjust for sign
  * of values inside the expressions by multiplying by k
  */
 
-    const bool fuzz_gt = 
-           fuzz 
+    const bool fuzz_gt =
+           fuzz
         && fuzz->IsLim()
-        && (   fuzz->GetLim() == CInt_fuzz::eLim_gt 
+        && (   fuzz->GetLim() == CInt_fuzz::eLim_gt
             || fuzz->GetLim() == CInt_fuzz::eLim_tr);
 
-    const bool fuzz_lt = 
-           fuzz 
+    const bool fuzz_lt =
+           fuzz
         && fuzz->IsLim()
-        && (   fuzz->GetLim() == CInt_fuzz::eLim_lt 
+        && (   fuzz->GetLim() == CInt_fuzz::eLim_lt
             || fuzz->GetLim() == CInt_fuzz::eLim_tl);
 
     const long hgvs_pos = s_GetHgvsPos(pos, hgvs_ref_pos);
-    const int sign = hgvs_pos > 0 ? 1 
+    const int sign = hgvs_pos > 0 ? 1
                    : hgvs_pos < 0 ? -1
                    : fuzz_gt      ? 1
                    : fuzz_lt      ? -1
@@ -499,18 +499,18 @@ string CHgvsParser::s_IntWithFuzzToStr(
     string val = "";
     if(fuzz && fuzz->IsRange()) {
         const string from = NStr::LongToString(
-                k * s_GetHgvsPos(fuzz->GetRange().GetMin(), 
+                k * s_GetHgvsPos(fuzz->GetRange().GetMin(),
                                  hgvs_ref_pos));
         const string to   = NStr::LongToString(
-                k * s_GetHgvsPos(fuzz->GetRange().GetMax(), 
+                k * s_GetHgvsPos(fuzz->GetRange().GetMax(),
                                  hgvs_ref_pos));
         val = "(" + from + "_" + to + ")";
     } else {
         val = NStr::LongToString(k*hgvs_pos);
 
         val =   !fuzz                       ? val  // no-fuzz
-              : !hgvs_pos 
-                 && with_sign 
+              : !hgvs_pos
+                 && with_sign
                  && (fuzz_gt || fuzz_lt)    ? "?"  // fuzz-only offset, e.g. 10+? instead of 10+(0_?)
               : !hgvs_pos && fuzz_gt        ? "?"  // positive fuzz, e.g. ins? instead of ins(0_?)
               : !fuzz->IsLim()              ? "("   + val + ")"
@@ -519,8 +519,8 @@ string CHgvsParser::s_IntWithFuzzToStr(
               :                               "("   + val + ")";
     }
 
-    const string sign_str = (!with_sign  ? "" 
-                            : sign >= 0  ? "+" 
+    const string sign_str = (!with_sign  ? ""
+                            : sign >= 0  ? "+"
                             :              "-");
 
     return sign_str + val;
@@ -549,7 +549,7 @@ string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp, CScope* scope)
         const CSeq_id& id = sequence::GetId(vp.GetLoc(), NULL);
         idstr = scope && id.IsGi() ? sequence::GetAccessionForGi(id.GetGi(), *scope)
                                    : id.GetSeqIdString(true);
-    
+
         if(NStr::StartsWith(idstr, "LRG:")) {
             idstr = idstr.substr(4);
         }
@@ -574,7 +574,7 @@ string CHgvsParser::s_OffsetPointToString(
         //That is, intronic positions are reported relative to closest exon boundary, while near-gene positions are reported
         //relative to the coordinate system origin, which could be start of the sequence, cds-start, or cds-stop, depending on the context.
         //
-        // Note: not sure whether anchor_fuzz and/or offset_fuzz should be used, and whether it needs to be modified 
+        // Note: not sure whether anchor_fuzz and/or offset_fuzz should be used, and whether it needs to be modified
         long resolved_pos = anchor_pos + *offset_pos;
         return s_IntWithFuzzToStr(resolved_pos, &anchor_ref_pos, false, anchor_fuzz);
     } else {
@@ -590,7 +590,7 @@ string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
 }
 
 string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
-{    
+{
     //For protein placement we'll need seq-data (e.g. p.123Glu)
     CRef<CVariantPlacement> vp_ref;
 
@@ -602,7 +602,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
         util.AttachSeq(*vp_ref);
     }
     const CVariantPlacement& vp = vp_ref ? *vp_ref : orig_vp;
-        
+
     CBioseq_Handle bsh;
     {{
         const CSeq_id& id = sequence::GetId(vp.GetLoc(), NULL);
@@ -617,7 +617,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
         }
     }}
 
-    //we'll need to detect when an anchor in anchor+offset case occurs at last position of 
+    //we'll need to detect when an anchor in anchor+offset case occurs at last position of
     //the last exon; we'll need to know the effective length.
     size_t effective_seq_length = util.GetEffectiveTranscriptLength(bsh);
 
@@ -640,7 +640,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
     if(vp.GetLoc().IsEmpty() || vp.GetLoc().IsNull()) {
         loc_str = "?";
 
-        //Note: it is possible that the location is not known, but the sequence is known, e.g. if 
+        //Note: it is possible that the location is not known, but the sequence is known, e.g. if
         //protein variation was derived from a variation on a partial CDS.
 
         if(vp.GetMol() == CVariantPlacement::eMol_protein && vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data()) {
@@ -663,7 +663,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
             start_offset = vp.GetStart_offset();
         }
 
-        bool is_cdsstop_relative = cds_last_pos 
+        bool is_cdsstop_relative = cds_last_pos
                                 && (   pnt.GetPoint()  > cds_last_pos
                                     || (pnt.GetPoint() == cds_last_pos && vp.IsSetStart_offset()));
                                        //VAR-1076
@@ -822,9 +822,9 @@ string CHgvsParser::x_AsHgvsInstExpression(
         //Priority for using asserted-sequence:
         //use from placement (instantiate if necessary); otherwise use explicit packaged asserted-observation
         //seq-literal passed from above. Will only use it if have seq-data (SNP-5605) and don't have fuzz (VAR-638)
-        if(    placement 
-            && placement->IsSetSeq() 
-            && placement->GetSeq().IsSetSeq_data() 
+        if(    placement
+            && placement->IsSetSeq()
+            && placement->GetSeq().IsSetSeq_data()
             && !CTypeConstIterator<CInt_fuzz>(Begin(placement->GetLoc())))
         {
             asserted_seq.Reset(&placement->GetSeq());
@@ -879,10 +879,10 @@ string CHgvsParser::x_AsHgvsInstExpression(
         //  NC_000001:g.100000A=        - correct
         //  NC_000001:g.100000_100123=  - correct
         //  NC_000001:g.100000_100123124= - wrong, can't use literal's length "124"
-        inst_str = (   asserted_seq 
-                    && asserted_seq->GetLength() < s_max_literal_length  
+        inst_str = (   asserted_seq
+                    && asserted_seq->GetLength() < s_max_literal_length
                     && asserted_seq->IsSetSeq_data()
-                    && !is_prot ? asserted_seq_str : "") 
+                    && !is_prot ? asserted_seq_str : "")
                   + "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
         inst_str = "inv" + asserted_seq_str;
@@ -896,13 +896,13 @@ string CHgvsParser::x_AsHgvsInstExpression(
         if(inst.GetType() == CVariation_inst::eType_prot_other &&
            placement && placement->GetLoc().IsPnt() &&
               placement->GetLoc().GetPnt().GetPoint() == 0)
-        {   
+        {
             inst_str = "extMet-";
         } else if(inst.GetType() == CVariation_inst::eType_prot_other
                   && placement && placement->GetLoc().IsPnt()
-                  && bsh 
+                  && bsh
                   && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
-        {   
+        {
             inst_str = "ext*";
         } else if(inst.GetType() == CVariation_inst::eType_prot_other) {
             inst_str = "delins";
@@ -932,7 +932,12 @@ string CHgvsParser::x_AsHgvsInstExpression(
         }
 
         if(is_dup) {
-            inst_str = "dup" + asserted_seq_str;
+            // According to the HGVS standard
+            // http://varnomen.hgvs.org/recommendations/DNA/variant/duplication/
+            // the 'dup' HGVS expressions are not to include
+            // the duplicated nucleotides.
+            // Format: “prefix”“position(s)_duplicated”“dup”, e.g. g.123_345dup
+            inst_str = "dup";
             append_delta = false;
         } else {
             inst_str = "ins";
@@ -984,7 +989,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                 if(   inst_str == variant_str + ">"
                    || inst_str == "del" + variant_str + "ins")
                 {
-                    // instead of "G>G"          report "G=", but not "1=", 
+                    // instead of "G>G"          report "G=", but not "1=",
                     // since "1" will coalesce into prefixed position.
                     //instead of "delACTinsACT" report "ACT="
                     inst_str = (!variant_str.empty() && isdigit(variant_str.at(0)) ? "" : variant_str) + "=";
