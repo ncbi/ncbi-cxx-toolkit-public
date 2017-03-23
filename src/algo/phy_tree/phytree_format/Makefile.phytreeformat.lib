@@ -11,6 +11,7 @@ ASN_DEP = biotree seqset taxon1
 
 WATCHERS = boratyng
 
+DLL_LIB = taxon1 align_format
 
 USES_LIBRARIES =  \
     taxon1 xalgophytree
