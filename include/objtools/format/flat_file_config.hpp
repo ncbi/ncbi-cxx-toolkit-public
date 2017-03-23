@@ -382,7 +382,7 @@ public:
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
                     TView   view = fViewNucleotides,
-                    TGffOptions gff_options = fGffGTFCompat,
+                    TGffOptions gff_options_OBSOLETE = fGffGTFCompat,
                     TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
                     CGenbankBlockCallback* pGenbankBlockCallback = NULL,
                     const ICanceled * pCanceledCallback = NULL,
