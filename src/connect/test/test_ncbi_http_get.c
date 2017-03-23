@@ -60,9 +60,9 @@
 #    include <gnutls/abstract.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
 #endif /*HAVE_LIBGNUTLS*/
-#ifdef NCBI_MBEDTLS_HEADER
-#  include NCBI_MBEDTLS_HEADER(mbedtls/x509.h)
-#endif /*NCBI_MBEDTLS_HEADER*/
+#ifdef HAVE_LIBMBEDTLS
+#  include <mbedtls/x509.h>
+#endif /*HAVE_LIBMBEDTLS*/
 #define TLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
 #define TLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
 #define TLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
@@ -235,9 +235,13 @@ static int x_CertRtrCB(gnutls_session_t session,
                 gnutls_pcert_st* xcrt = calloc(size, sizeof(*xcrt));
                 if (xcrt  &&  gnutls_privkey_init(&xkey) == 0) {
                     unsigned int n;
-                    gnutls_privkey_import_x509(xkey, key, 0);
-                    for (n = 0;  n < size;  ++n)
+                    gnutls_privkey_import_x509
+                        (xkey, key, GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE);
+                    for (n = 0;  n < size;  ++n) {
                         gnutls_pcert_import_x509(xcrt + n, crt[n], 0);
+                        gnutls_x509_crt_deinit(crt[n]);
+                    }
+                    gnutls_free(crt);
                     *pcert   = xcrt;
                     *n_pcert = size;
                     *pkey    = xkey;
