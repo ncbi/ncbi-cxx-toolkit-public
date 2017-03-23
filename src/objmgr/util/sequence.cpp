@@ -1378,14 +1378,17 @@ CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBio
     //}
     ITERATE(CTSE_Handle::TSeq_feat_Handles, p, potentials) {
         try {
-            CConstRef<CSeq_id> p_id = p->GetLocationId().GetSeqId();
-            if (p_id) {
-                ITERATE(CBioseq::TId, id, b.GetId()) {
-                    CSeq_id::E_SIC cmp = p_id->Compare(**id);
-                    if (cmp == CSeq_id::e_YES) {
-                        return p->GetSeq_feat();
-                    } else if (cmp == CSeq_id::e_NO) {
-                        break;
+            CSeq_id_Handle id_h = p->GetLocationId();
+            if (id_h) {
+                CConstRef<CSeq_id> p_id = id_h.GetSeqId();
+                if (p_id) {
+                    ITERATE(CBioseq::TId, id, b.GetId()) {
+                        CSeq_id::E_SIC cmp = p_id->Compare(**id);
+                        if (cmp == CSeq_id::e_YES) {
+                            return p->GetSeq_feat();
+                        } else if (cmp == CSeq_id::e_NO) {
+                            break;
+                        }
                     }
                 }
             }
