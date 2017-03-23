@@ -38,6 +38,7 @@
 #include <util/random_gen.hpp>
 #include <sra/data_loaders/csra/csraloader.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <sra/readers/sra/csraread.hpp>
 
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -71,16 +72,22 @@ private:
                       const string& acc,
                       Int8 spot_id);
     Int8 FindMaxSpotId(const string& acc);
+    void LoadRefSeqs();
+    
+    bool TestShortReads(int idx);
+    bool TestRefSeqs(int idx);
 
     bool m_Verbose;
     bool m_PreLoad;
     bool m_FullSeq;
     bool m_ResetHistory;
+    bool m_TestRefSeqs;
     int m_Seed;
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
     vector<string> m_Accession;
     vector<Int8> m_MaxSpotId;
+    map<string, vector<CSeq_id_Handle> > m_RefIds;
     
     CRef<CObjectManager> m_OM;
     CRef<CScope> m_SharedScope;
@@ -116,6 +123,7 @@ bool CCSRATestApp::TestApp_Args(CArgDescriptions& args)
     args.AddFlag("full-seq", "Load full sequence");
     args.AddFlag("shared-scope", "Use shared scope in all threads");
     args.AddFlag("reset-history", "Reset scope's history after each iteration");
+    args.AddFlag("reference-sequences", "Test reference sequences retrieval");
 
     return true;
 }
@@ -153,7 +161,11 @@ bool CCSRATestApp::TestApp_Init(void)
         m_SharedScope->AddDefaults();
     }
     m_ResetHistory = args["reset-history"];
+    m_TestRefSeqs = args["reference-sequences"];
     m_FullSeq = args["full-seq"];
+    if ( m_TestRefSeqs ) {
+        LoadRefSeqs();
+    }
     if ( args["preload"] ) {
         Thread_Run(-1);
     }
@@ -236,7 +248,33 @@ Int8 CCSRATestApp::FindMaxSpotId(const string& acc)
     return a;
 }
 
+void CCSRATestApp::LoadRefSeqs()
+{
+    CVDBMgr mgr;
+    for ( auto& acc : m_Accession ) {
+        vector<CSeq_id_Handle> ids;
+        CCSraDb db(mgr, acc);
+        for ( CCSraRefSeqIterator it(db); it; ++it ) {
+            ids.push_back(CSeq_id_Handle::GetHandle("gnl|SRA|"+acc+"/"+it->m_Name));
+        }
+        if ( m_Verbose ) {
+            LOG_POST(Info<<": "<<acc<<" has "<<ids.size()<<" reference sequences");
+        }
+        m_RefIds[acc] = ids;;
+    }
+}
+
 bool CCSRATestApp::Thread_Run(int idx)
+{
+    if ( m_TestRefSeqs ) {
+        return TestRefSeqs(idx);
+    }
+    else {
+        return TestShortReads(idx);
+    }
+}
+
+bool CCSRATestApp::TestShortReads(int idx)
 {
     CRandom random(m_Seed+idx);
     for ( int ti = 0; ti < m_IterCount; ++ti ) {
@@ -314,6 +352,42 @@ bool CCSRATestApp::Thread_Run(int idx)
             }
         }
         _ASSERT(seq_count);
+        if ( m_ResetHistory ) {
+            scope.ResetHistory();
+        }
+    }
+    return true;
+}
+
+
+bool CCSRATestApp::TestRefSeqs(int idx)
+{
+    CRandom random(m_Seed+idx);
+    for ( int ti = 0; ti < m_IterCount; ++ti ) {
+        size_t index = random.GetRandIndexSize_t(m_Accession.size());
+        const string& acc = m_Accession[index];
+        vector<CSeq_id_Handle>& ids = m_RefIds[acc];
+        if ( ids.empty() ) {
+            continue;
+        }
+        size_t ref_index = random.GetRandIndexSize_t(ids.size());
+        const CSeq_id_Handle& id = ids[ref_index];
+        if ( m_Verbose ) {
+            LOG_POST(Info<<"T"<<idx<<"."<<ti<<": ref["<<index<<"]["<<ref_index<<"] "<<id);
+        }
+        
+        CRef<CScope> scope_ref = m_SharedScope;
+        if ( !scope_ref ) {
+            scope_ref = new CScope(*m_OM);
+            scope_ref->AddDefaults();
+        }
+        CScope& scope = *scope_ref;
+        {{
+            TSeqPos len = scope.GetSequenceLength(id);
+            CBioseq_Handle bh = scope.GetBioseqHandle(id);
+            _ASSERT(bh);
+            _ASSERT(bh.GetBioseqLength() == len);
+        }}
         if ( m_ResetHistory ) {
             scope.ResetHistory();
         }

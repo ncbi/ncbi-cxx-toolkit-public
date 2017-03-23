@@ -909,7 +909,6 @@ CCSRAFileInfo::CCSRAFileInfo(CCSRADataLoader_Impl& impl,
                              const string& csra,
                              CCSraDb::ERefIdType ref_id_type)
 {
-    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, csra, ref_id_type);
     for ( CCSraRefSeqIterator rit(m_CSRADb); rit; ++rit ) {
         CSeq_id_Handle seq_id = rit.GetRefSeq_id_Handle();
@@ -1040,7 +1039,6 @@ void CCSRAFileInfo::AddRefSeq(const string& refseq_label,
 CRef<CCSRARefSeqInfo>
 CCSRAFileInfo::GetRefSeqInfo(const CSeq_id_Handle& seq_id)
 {
-    //CMutexGuard guard(GetMutex());
     TRefSeqs::const_iterator it = m_RefSeqs.find(seq_id);
     if ( it != m_RefSeqs.end() ) {
         return it->second;
@@ -1062,7 +1060,6 @@ bool CCSRAFileInfo::IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                                   CRef<CCSRARefSeqInfo>* ref_ptr,
                                   TSeqPos* ref_pos_ptr)
 {
-    //CMutexGuard guard(GetMutex());
     CCSraShortReadIterator read_it(m_CSRADb, spot_id, read_id);
     if ( ref_ptr ) {
         *ref_ptr = 0;
@@ -1110,7 +1107,6 @@ void CCSRAFileInfo::LoadReadsChunk(const CCSRABlobId& /*blob_id*/,
 void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
                                        CTSE_LoadLock& load_lock)
 {
-    //CMutexGuard guard(GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     TVDBRowId first_spot_id = blob_id.m_FirstSpotId;
     TVDBRowId last_spot_id = first_spot_id + kReadsPerBlob - 1;
@@ -1220,7 +1216,6 @@ void CCSRARefSeqInfo::LoadRanges(void)
     if ( !m_AlignChunks.empty() ) {
         return;
     }
-    CMutexGuard guard(m_File->GetMutex());
     if ( !m_AlignChunks.empty() ) {
         return;
     }
@@ -1494,7 +1489,6 @@ int CCSRARefSeqInfo::GetAnnotChunkId(TSeqPos ref_pos) const
 
 void CCSRARefSeqInfo::LoadAnnotMainSplit(CTSE_LoadLock& load_lock)
 {
-    CMutexGuard guard(m_File->GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(1);
 
@@ -1556,7 +1550,6 @@ void CCSRARefSeqInfo::LoadAnnotMainSplit(CTSE_LoadLock& load_lock)
 
 void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
     if ( GetDebugLevel() >= 5 ) {
         LOG_POST_X(13, Info<<
                    "CCSRADataLoader:LoadAnnotMain("<<
@@ -1693,7 +1686,6 @@ void CCSRARefSeqInfo::LoadRefSeqBlob(CTSE_LoadLock& load_lock)
 
 void CCSRARefSeqInfo::LoadRefSeqMainEntry(CTSE_LoadLock& load_lock)
 {
-    CMutexGuard guard(m_File->GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
 
     CCSraRefSeqIterator it(*m_File, GetRefSeqId());
@@ -1722,7 +1714,6 @@ void CCSRARefSeqInfo::LoadRefSeqMainEntry(CTSE_LoadLock& load_lock)
 
 void CCSRARefSeqInfo::LoadRefSeqChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
     int range_id = chunk_info.GetChunkId();
     CTSE_Chunk_Info::TPlace place(GetRefSeqId(), 0);
     CRange<TSeqPos> range;
@@ -1963,7 +1954,6 @@ void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
                    chunk_info.GetBlobId().ToString()<<", "<<
                    chunk_info.GetChunkId());
     }
-    CMutexGuard guard(m_File->GetMutex());
     int range_id = chunk_info.GetChunkId() / eCSRAAnnotChunk_mul;
     TSeqPos pos = m_AlignChunks[range_id].start_pos;
     TSeqPos end = m_AlignChunks[range_id+1].start_pos;
@@ -2013,7 +2003,6 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                    chunk_info.GetBlobId().ToString()<<", "<<
                    chunk_info.GetChunkId());
     }
-    CMutexGuard guard(m_File->GetMutex());
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id / eCSRAAnnotChunk_mul;
     TSeqPos pos = m_GraphChunks[range_id].start_pos;

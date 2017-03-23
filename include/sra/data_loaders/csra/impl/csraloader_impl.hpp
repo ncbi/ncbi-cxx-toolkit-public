@@ -425,11 +425,6 @@ public:
             return GetRefSeqInfo(blob_id.m_SeqId);
         }
 
-    CMutex& GetMutex(void) const
-        {
-            return m_CSRAMutex;
-        }
-
     CCSraDb& GetDb(void)
         {
             return m_CSRADb;
@@ -473,7 +468,6 @@ protected:
     int m_MinMapQuality;
     bool m_PileupGraphs;
     bool m_QualityGraphs;
-    mutable CMutex m_CSRAMutex;
     CCSraDb m_CSRADb;
     vector<string> m_SeparateSpotGroups;
     TRefSeqs m_RefSeqs;
@@ -569,7 +563,6 @@ private:
     typedef map<string, CRef<CCSRAFileInfo> > TFixedFiles;
 
     // mutex guarding input into the map
-    mutable CMutex  m_Mutex;
     CVDBMgr m_Mgr;
     string  m_DirPath;
     int m_MinMapQuality;
