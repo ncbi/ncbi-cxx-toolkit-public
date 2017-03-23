@@ -150,6 +150,7 @@ public:
     CRef<CByteSourceReader> Open(void);
 
 protected:
+    CStreamByteSource(CNcbiIstream& in, bool nocheck);
     CNcbiIstream* m_Stream;
 };
 
