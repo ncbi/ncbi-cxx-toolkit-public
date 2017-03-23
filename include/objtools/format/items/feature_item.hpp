@@ -367,26 +367,6 @@ inline void CFeatureItem::x_AddQualExt()
     }
 }
 
-//    =============================================================================
-class CFeatureItemGff: public CFeatureItem
-//    =============================================================================
-{
-public:
-    CFeatureItemGff(
-        const CMappedFeat& feat,
-        CBioseqContext& ctx,
-        const CSeq_loc* loc,
-        CRef<feature::CFeatTree> ftree,
-        EMapped mapped )
-        : CFeatureItem( feat, ctx, ftree, loc, mapped ) {};
-
-    virtual ~CFeatureItemGff() {};
-
-protected:
-    virtual void x_AddQualsRna(const CMappedFeat& feat, CBioseqContext& ctx,
-         bool pseudo);
-};
-
 //  ============================================================================
 class NCBI_FORMAT_EXPORT CSourceFeatureItem: 
     public CFeatureItemBase
