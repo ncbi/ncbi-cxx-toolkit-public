@@ -37,16 +37,27 @@
 #include <connect/ncbi_mbedtls.h>
 #include <stdlib.h>
 
-#ifdef NCBI_MBEDTLS_HEADER
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
-#  include NCBI_MBEDTLS_HEADER(mbedtls/ctr_drbg.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/debug.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/entropy.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/error.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/net_sockets.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/ssl.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/threading.h)
-#  include NCBI_MBEDTLS_HEADER(mbedtls/version.h)
+#  ifdef HAVE_LIBMBEDTLS /* external */
+#    include <mbedtls/ctr_drbg.h>
+#    include <mbedtls/debug.h>
+#    include <mbedtls/entropy.h>
+#    include <mbedtls/error.h>
+#    include <mbedtls/net_sockets.h>
+#    include <mbedtls/ssl.h>
+#    include <mbedtls/threading.h>
+#    include <mbedtls/version.h>
+#  else
+#    include "mbedtls/mbedtls/ctr_drbg.h"
+#    include "mbedtls/mbedtls/debug.h"
+#    include "mbedtls/mbedtls/entropy.h"
+#    include "mbedtls/mbedtls/error.h"
+#    include "mbedtls/mbedtls/net_sockets.h"
+#    include "mbedtls/mbedtls/ssl.h"
+#    include "mbedtls/mbedtls/threading.h"
+#    include "mbedtls/mbedtls/version.h"
+#  endif
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -713,7 +724,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 }
 
 
-#endif /*NCBI_MBEDTLS_HEADER*/
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
 
 
 extern SOCKSSL NcbiSetupMbedTls(void)
