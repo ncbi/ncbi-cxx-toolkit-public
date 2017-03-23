@@ -258,28 +258,6 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
-{
-    int retval;
-    switch (direction) {
-    case eIO_Read:
-        retval = !sock->r_tv_set  ||  (sock->r_tv.tv_sec | sock->r_tv.tv_usec);
-        break;
-    case eIO_Write:
-        retval = !sock->w_tv_set  ||  (sock->w_tv.tv_sec | sock->w_tv.tv_usec);
-        break;
-    default:
-        retval = 0;
-        assert(0);
-        break;
-    }
-    return retval;
-}
-
-
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
 static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 {
     int error;
@@ -289,7 +267,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 
     switch (status) {
     case eIO_Timeout:
-        error = x_IsTimeout(sock, direction) ? SOCK_ETIMEDOUT : EAGAIN;
+        error = EAGAIN;
         break;
     case eIO_Closed:
         error = SOCK_ENOTCONN;
@@ -434,7 +412,7 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int x_IfToLog(void)
+static int/*bool*/ x_IfToLog(void)
 {
     return 7 < s_GnuTlsLogLevel  &&  s_GnuTlsLogLevel <= 10 ? 1/*T*/ : 0/*F*/;
 }

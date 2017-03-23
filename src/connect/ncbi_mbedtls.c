@@ -57,7 +57,7 @@
 #    include "mbedtls/mbedtls/ssl.h"
 #    include "mbedtls/mbedtls/threading.h"
 #    include "mbedtls/mbedtls/version.h"
-#  endif
+#  endif /*HAVE_LIBMBEDTLS*/
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -240,7 +240,8 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         } else
             status = eIO_Unknown;
         break;
-    /*case MBEDTLS_ERR_SSL_NON_FATAL:*/
+    case MBEDTLS_ERR_SSL_NON_FATAL:
+        /*return eIO_Interrupt;*/
     default:
         status = eIO_Unknown;
         break;
@@ -256,28 +257,6 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
-{
-    int retval;
-    switch (direction) {
-    case eIO_Read:
-        retval = !sock->r_tv_set  ||  (sock->r_tv.tv_sec | sock->r_tv.tv_usec);
-        break;
-    case eIO_Write:
-        retval = !sock->w_tv_set  ||  (sock->w_tv.tv_sec | sock->w_tv.tv_usec);
-        break;
-    default:
-        retval = 0;
-        assert(0);
-        break;
-    }
-    return retval;
-}
-
-
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
 static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 {
     int error;
@@ -287,7 +266,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 
     switch (status) {
     case eIO_Timeout:
-        error = x_IsTimeout(sock, direction) ? SOCK_ETIMEDOUT : EAGAIN;
+        error = EAGAIN;
         break;
     case eIO_Closed:
         error = SOCK_ENOTCONN;
@@ -324,7 +303,6 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     switch (error) {
     case EAGAIN:
     case SOCK_EINTR:
-    case SOCK_ETIMEDOUT:
         return direction == eIO_Read
             ? MBEDTLS_ERR_SSL_WANT_READ
             : MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -410,9 +388,9 @@ static EIO_Status s_MbedTlsOpen(void* session, int* error, char** desc)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int x_IfToLog(void)
+static int/*bool*/ x_IfToLog(void)
 {
-    return 7 < s_MbedTlsLogLevel ? 1/*T*/ : 0/*F*/;
+    return 4 < s_MbedTlsLogLevel ? 1/*T*/ : 0/*F*/;
 }
 
 
