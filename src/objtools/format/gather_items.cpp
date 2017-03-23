@@ -3473,7 +3473,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         CSeqFeatData::ESubtype subtype = curr.GetFeatSubtype();
 
         if ( cfg.HideCDDFeatures()  &&
-             subtype == CSeqFeatData::eSubtype_region  &&
+             (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
              s_IsCDD(curr) ) {
             // passing this test prevents mapping of COG CDD region features
             continue;
