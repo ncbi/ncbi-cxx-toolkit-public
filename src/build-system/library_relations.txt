@@ -863,7 +863,7 @@ pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
 pepXML needs xser
-phytree_format needs taxon1
+phytree_format needs align_format
 phytree_format needs xalgophytree
 pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs ec_hmm_relation_cd
