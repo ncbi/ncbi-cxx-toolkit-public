@@ -225,34 +225,44 @@ static int x_CertRtrCB(gnutls_session_t session,
         gnutls_certificate_credentials_t xcred;
         if (gnutls_credentials_get(session, GNUTLS_CRD_CERTIFICATE,
                                    (void**) &xcred) == 0) {
+            unsigned int          size;
             gnutls_x509_privkey_t key;
             gnutls_x509_crt_t*    crt;
-            unsigned int          size;
-            if (gnutls_certificate_get_x509_crt(xcred, 0, &crt, &size) == 0 &&
+            if (gnutls_certificate_get_x509_crt(xcred, 0, &crt, &size) == 0  &&
                 gnutls_certificate_get_x509_key(xcred, 0, &key) == 0) {
                 gnutls_privkey_t xkey;
-                gnutls_pcert_st* xcrt = calloc(size, sizeof(*xcrt));
+                gnutls_pcert_st* xcrt
+                    = (gnutls_pcert_st*) calloc(size, sizeof(*xcrt));
                 if (xcrt  &&  gnutls_privkey_init(&xkey) == 0) {
-                    unsigned int n;
-                    gnutls_privkey_import_x509
-                        (xkey, key, GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE);
-                    for (n = 0;  n < size;  ++n) {
-                        gnutls_pcert_import_x509(xcrt + n, crt[n], 0);
-                        gnutls_x509_crt_deinit(crt[n]);
+                    if (gnutls_privkey_import_x509
+                        (xkey, key, GNUTLS_PRIVKEY_IMPORT_AUTO_RELEASE) == 0) {
+                        unsigned int n, m;
+                        for (n = 0;  n < size;  ++n) {
+                            if (gnutls_pcert_import_x509(xcrt + n, crt[n], 0))
+                                break;
+                            gnutls_x509_crt_deinit(crt[n]);
+                        }
+                        for (m = n; m < size;  ++m)
+                            gnutls_x509_crt_deinit(crt[m]);
+                        gnutls_free(crt);
+                        if (n) {                        
+                            *pkey    = xkey;
+                            *pcert   = xcrt;
+                            *n_pcert = n;
+                            return 0;
+                        }
                     }
-                    gnutls_free(crt);
-                    *pcert   = xcrt;
-                    *n_pcert = size;
-                    *pkey    = xkey;
-                    return 0;
-                }
+                    gnutls_privkey_deinit(xkey);
+                    free(xcrt);
+                } else if (xcrt)
+                    free(xcrt);
             }
         }
     }
 
+    *pkey    = 0;
     *pcert   = 0;
     *n_pcert = 0;
-    *pkey    = 0;
     return 0;
 }
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
