@@ -5274,14 +5274,12 @@ const string& CTmpFile::GetFileName(void) const
 }
 
 
-CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
-                                    IOS_BASE::openmode mode)
+CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists, IOS_BASE::openmode mode)
 {
     if ( m_InFile.get() ) {
         switch (if_exists) {
         case eIfExists_Throw:
-            NCBI_THROW(CFileException, eTmpFile, 
-                       "AsInputFile() is already called");
+            NCBI_THROW(CFileException, eTmpFile, "AsInputFile() is already called");
             /*NOTREACHED*/
             break;
         case eIfExists_Reset:
@@ -5291,20 +5289,17 @@ CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
             return *m_InFile;
         }
     }
-    mode |= IOS_BASE::in;
-    m_InFile.reset(new CNcbiIfstream(m_FileName.c_str()));
+    m_InFile.reset(new CNcbiIfstream(m_FileName.c_str(), IOS_BASE::in | mode));
     return *m_InFile;
 }
 
 
-CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
-                                     IOS_BASE::openmode mode)
+CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists, IOS_BASE::openmode mode)
 {
     if ( m_OutFile.get() ) {
         switch (if_exists) {
         case eIfExists_Throw:
-            NCBI_THROW(CFileException, eTmpFile, 
-                       "AsOutputFile() is already called");
+            NCBI_THROW(CFileException, eTmpFile, "AsOutputFile() is already called");
             /*NOTREACHED*/
             break;
         case eIfExists_Reset:
@@ -5314,8 +5309,7 @@ CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
             return *m_OutFile;
         }
     }
-    mode |= IOS_BASE::out;
-    m_OutFile.reset(new CNcbiOfstream(m_FileName.c_str()));
+    m_OutFile.reset(new CNcbiOfstream(m_FileName.c_str(), IOS_BASE::out | mode));
     return *m_OutFile;
 }
 
