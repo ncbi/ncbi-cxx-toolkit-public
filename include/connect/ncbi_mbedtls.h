@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   MBEDTLS support for SSL in connection library
+ *   mbedTLS support for SSL (Secure Socket Layer) in connection library
  *
  */
 
@@ -47,10 +47,24 @@ extern "C" {
 #endif
 
 
+/** Explicitly setup mbedTLS library to support SSL in ncbi_socket.h[pp].
+ *
+ * @note Do not use this call!  Instead use NcbiSetupTls declared in
+ *       <connect/ncbi_tls.h>.
+ *
+ * @sa
+ *  NcbiSetupTls
+ */
 extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupMbedTls(void);
 
 
+/** Convert native mbedTLS certificate credentials handle into an abstract
+ *  toolkit handle.
+ *
+ * @note Does not create a copy of xcred, so xcred must remain valid for the
+ * entire duration of a session (or sessions) that it is being used in.
+ */
 extern NCBI_XCONNECT_EXPORT
 NCBI_CRED NcbiCredMbedTls(void* xcred);
 

@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   GNUTLS support for SSL in connection library
+ *   GNUTLS support for SSL (Secure Socket Layer) in connection library
  *
  */
 
@@ -47,10 +47,24 @@ extern "C" {
 #endif
 
 
+/** Explicitly setup GNUTLS library to support SSL in ncbi_socket.h[pp].
+ *
+ * @note Do not use this call!  Instead, use NcbiSetupTls declared in
+ *       <connect/ncbi_tls.h>.
+ *
+ * @sa
+ *  NcbiSetupTls
+ */
 extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupGnuTls(void);
 
 
+/** Convert native GNUTLS certificate credentials' handle into an abstract
+ *  toolkit handle.
+ *
+ * @note Does not create a copy of xcred, so xcred must remain valid for the
+ * entire duration of a session (or sessions) that it is being used in.
+ */
 extern NCBI_XCONNECT_EXPORT
 NCBI_CRED NcbiCredGnuTls(void* xcred);
 
