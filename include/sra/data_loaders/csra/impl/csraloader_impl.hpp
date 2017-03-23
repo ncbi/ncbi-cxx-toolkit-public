@@ -134,15 +134,11 @@ public:
             }
         CLock& operator=(CLock&& lock)
             {
-#ifdef NCBI_COMPILER_MSVC
-                // extra check on MSVC
-                if (this == &lock) {
-                    return *this;
+                if ( m_Slot != lock.m_Slot ) {
+                    Reset();
+                    m_Cache.Swap(lock.m_Cache);
+                    m_Slot.Swap(lock.m_Slot);
                 }
-#endif
-                Reset();
-                m_Cache = move(lock.m_Cache);
-                m_Slot = move(lock.m_Slot);
                 return *this;
             }
 
