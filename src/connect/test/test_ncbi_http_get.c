@@ -51,7 +51,6 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
-#  include <connect/ncbi_gnutls.h>
 #  include <gnutls/gnutls.h>
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
@@ -137,7 +136,7 @@ static int x_CertVfyCB(gnutls_session_t session)
             if (!err) {
                 CORE_LOGF(eLOG_Note,
                           ("Certificate[%u]: %s", n + 1, cinfo.data));
-                /*gnutls_*/free(cinfo.data);
+                gnutls_free(cinfo.data);
             }
         }
         if (err) {
