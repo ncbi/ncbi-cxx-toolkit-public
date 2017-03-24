@@ -836,9 +836,18 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
     }
 
     if(p.GetLoc().GetId()) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(*p.GetLoc().GetId());
-        if(bsh && bsh.GetState() != 0 && bsh.GetState() != CBioseq_Handle::fState_dead) { //dead is OK, beacuse supporting old versions
-            p.SetExceptions().push_back(CreateException("Bioseq is suppressed or withdrawn", CVariationException::eCode_bioseq_state));
+        
+        CBioseq_Handle bsh = 
+            m_scope->GetBioseqHandle(
+                    *p.GetLoc().GetId());
+        
+        if(bsh && bsh.GetState() != 0 
+               && bsh.GetState() != CBioseq_Handle::fState_dead) 
+        { //dead is OK, beacuse supporting old versions
+            p.SetExceptions().push_back(
+                    CreateException(
+                        "Bioseq is suppressed or withdrawn",
+                        CVariationException::eCode_bioseq_state));
         }
     }
 
@@ -851,8 +860,11 @@ CRef<CVariantPlacement> CVariationUtil::Remap(
         CSeq_loc_Mapper& mapper)
 {
     CRef<CVariantPlacement> p2 = x_Remap(p, mapper);
-    if(((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic)
-       || (p.GetMol() == CVariantPlacement::eMol_genomic
+
+    if(   ((   p.IsSetStart_offset() 
+            || p.IsSetStop_offset()) 
+           && p2->GetMol() == CVariantPlacement::eMol_genomic)
+       || (     p.GetMol() == CVariantPlacement::eMol_genomic
            && p2->GetMol() != CVariantPlacement::eMol_genomic
            && p2->GetMol() != CVariantPlacement::eMol_unknown) /*in case remapped to nothing*/)
     {
@@ -860,18 +872,23 @@ CRef<CVariantPlacement> CVariationUtil::Remap(
         //When mapping an offset-placement to a genomic placement, may need to resolve offsets.
         //or, when mapping from genomic to a product coordinates, may need to add offsets. In above cases
         //we need to use the seq-align-based mapping.
-        NCBI_THROW(CException, eUnknown, "Cannot use Mapper-based method to remap intronic cases; must remap via spliced-seg alignment instead.");
+        NCBI_USER_THROW(
+                "Cannot use Mapper-based method to remap intronic cases;"
+                "must remap via spliced-seg alignment instead.");
     }
 
-
     AttachSeq(*p2);
-    if(p.IsSetSeq() && p2->IsSetSeq()
+
+    if(   p.IsSetSeq() && p2->IsSetSeq()
        && p.GetSeq().GetLength() == p2->GetSeq().GetLength()
        && p.GetSeq().IsSetSeq_data() && p2->GetSeq().IsSetSeq_data()
        && p.GetSeq().GetSeq_data().Which() == p2->GetSeq().GetSeq_data().Which()
        && !p.GetSeq().GetSeq_data().Equals(p2->GetSeq().GetSeq_data()))
     {
-        p2->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+        p2->SetExceptions().push_back(
+                CreateException(
+                    "Mismatches in mapping", 
+                    CVariationException::eCode_mismatches_in_mapping));
     }
 
     CheckPlacement(*p2);
@@ -902,26 +919,42 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
 
     {{
-        //If we have offsets, then the distinction between point and one-point interval is important, e.g.
-        //NM_000155.3:c.-116-3_-116 - the location is an interval, but the anchor point is the same; we need to
-        //keep it as interval, as if we represent it as a point, then the corresponding HGVS is also a point: NM_000155.3:c.-116-3
-        bool equal_offsets = (!p2->IsSetStart_offset() && !p2->IsSetStop_offset())
-                          || ( p2->IsSetStart_offset() &&  p2->IsSetStop_offset() && p2->GetStart_offset() == p2->GetStop_offset());
+        // If we have offsets, then the distinction 
+        // between point and one-point interval is important, e.g.
+        // NM_000155.3:c.-116-3_-116 - the location is an interval, 
+        // but the anchor point is the same; we need to
+        // keep it as interval, as if we represent it as a point, 
+        // then the corresponding HGVS is also a point: NM_000155.3:c.-116-3
+        const bool equal_offsets = (   
+                 !p2->IsSetStart_offset() 
+              && !p2->IsSetStop_offset())
 
-        bool merge_single_range = p.GetLoc().IsInt() && mapped_loc->IsPnt() && !equal_offsets;
+          || (    p2->IsSetStart_offset() 
+              &&  p2->IsSetStop_offset() 
+
+              &&  p2->GetStart_offset()
+              ==  p2->GetStop_offset()   );
+
+        const bool merge_single_range = 
+                  p.GetLoc().IsInt() 
+               && mapped_loc->IsPnt() 
+               && !equal_offsets;
 
         if(   mapped_loc->IsInt()
            && mapped_loc->GetInt().IsSetFuzz_from()
            && mapped_loc->GetInt().IsSetFuzz_to()
            && sequence::GetLength(*mapped_loc, NULL) == 1)
         {
-            //workaround for CXX-4376. single-nt locations will not be collapsed to a point if both From and To fuzz is present
+            // workaround for CXX-4376. single-nt locations will 
+            // not be collapsed to a point if both From and To fuzz is present
             mapped_loc->SetInt().ResetFuzz_to();
         }
 
-        mapped_loc = sequence::Seq_loc_Merge(*mapped_loc,
-                                             merge_single_range ? CSeq_loc::fMerge_SingleRange : CSeq_loc::fSortAndMerge_All,
-                                             NULL);
+        mapped_loc = sequence::Seq_loc_Merge(
+                *mapped_loc,
+                merge_single_range ? CSeq_loc::fMerge_SingleRange 
+                                   : CSeq_loc::fSortAndMerge_All,
+                NULL);
     }}
 
 #if 1
