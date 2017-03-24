@@ -532,7 +532,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 return 0/*failure*/;
             if (!port  ||  port ^ (port & 0xFFFF))
                 return 0/*failure*/;
-            info->port = port;
+            info->port = (unsigned short) port;
         }
         if (len) {
             memcpy(info->host, url, len);
@@ -683,7 +683,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         info->pass[passlen] = '\0';
     }
     if (port >= 0  ||  scheme == eURL_File)
-        info->port = port < 0 ? 0 : port;
+        info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';

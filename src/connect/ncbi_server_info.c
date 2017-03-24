@@ -542,7 +542,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 len = 255;
             strncpy0((char*) &info->u + attr->ops.SizeOf(&info->u),
                      vhost, len);
-            info->vhost = len;
+            info->vhost = (unsigned char) len;
         }
         if (name) {
             strcpy((char*) info + SERV_SizeOfInfo(info), name);
