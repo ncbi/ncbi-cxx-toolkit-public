@@ -601,7 +601,6 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         "Embedded "
 #  endif /*HAVE_LIBMBEDTLS*/
         "MBEDTLS";
-    int/*bool*/ report = 0/*false*/;
     EIO_Status status;
     char version[80];
     const char* val;
@@ -628,19 +627,20 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
     CORE_LOCK_READ;
     if (val  &&  *val) {
+        ELOG_Level level;
         s_MbedTlsLogLevel = atoi(val);
         CORE_UNLOCK;
-        report = 1/*true*/;
         if (s_MbedTlsLogLevel) {
             mbedtls_debug_set_threshold(s_MbedTlsLogLevel);
             mbedtls_ssl_conf_dbg(&s_MbedTlsConf, x_MbedTlsLogger, 0);
-        }
-    } else
+            level = eLOG_Note;
+		} else
+            level = eLOG_Trace;
+        CORE_LOGF(level, ("%s V%s (LogLevel=%d)",
+                          kMbedTls, version, s_MbedTlsLogLevel));
+	}
+	else
         CORE_UNLOCK;
-
-    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("%s V%s (LogLevel=%d)",
-                                                kMbedTls, version,
-                                                s_MbedTlsLogLevel));
 
     if ((status = x_InitLocking()) != eIO_Success) {
         mbedtls_ssl_config_free(&s_MbedTlsConf);

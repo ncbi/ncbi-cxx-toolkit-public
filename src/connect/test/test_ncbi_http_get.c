@@ -51,6 +51,7 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 #ifdef HAVE_LIBGNUTLS
+#  include <connect/ncbi_gnutls.h>
 #  include <gnutls/gnutls.h>
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 #    include <gnutls/x509.h>
@@ -60,6 +61,7 @@
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
 #endif /*HAVE_LIBGNUTLS*/
 #ifdef HAVE_LIBMBEDTLS
+#  include <connect/ncbi_mbedtls.h>
 #  include <mbedtls/x509.h>
 #endif /*HAVE_LIBMBEDTLS*/
 #define TLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"

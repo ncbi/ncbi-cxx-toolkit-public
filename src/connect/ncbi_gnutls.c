@@ -548,17 +548,18 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
                                size_t* n_done, int* error)
 {
     EIO_Status status;
-    int        x_read;
+    ssize_t    x_read;
 
     assert(session);
 
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
-    assert(x_read < 0  ||  x_read <= n_todo);
+    assert(x_read < 0  ||  (size_t) x_read <= n_todo);
 
     if (x_read <= 0) {
-        status = x_ErrorToStatus(&x_read, (gnutls_session_t) session,
+        int x_error = (int) x_read;
+        status = x_ErrorToStatus(&x_error, (gnutls_session_t) session,
                                  eIO_Read);
-        *error = x_read;
+        *error = x_error;
         x_read = 0;
     } else
         status = eIO_Success;
@@ -572,17 +573,18 @@ static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
                                 size_t* n_done, int* error)
 {
     EIO_Status status;
-    int        x_written;
+    ssize_t    x_written;
 
     assert(session);
 
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
-    assert(x_written < 0  ||  x_written <= n_todo);
+    assert(x_written < 0  ||  (size_t) x_written <= n_todo);
 
     if (x_written <= 0) {
-        status = x_ErrorToStatus(&x_written, (gnutls_session_t) session,
+        int x_error = (int) x_written;
+        status = x_ErrorToStatus(&x_error, (gnutls_session_t) session,
                                  eIO_Write);
-        *error = x_written;
+        *error = x_error;
         x_written = 0;
     } else
         status = eIO_Success;
@@ -652,7 +654,6 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
-    int/*bool*/ report = 0/*false*/;
     const char* version;
     EIO_Status status;
     const char* val;
@@ -676,19 +677,20 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (!val  ||  !*val)
         val = getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */
     if (val  &&  *val) {
+        ELOG_Level level;
         s_GnuTlsLogLevel = atoi(val);
         CORE_UNLOCK;
-        report = 1/*true*/;
         if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
             if (val == buf)
                 gnutls_global_set_log_level(s_GnuTlsLogLevel);
-        }
+            level = eLOG_Note;
+		} else
+            level = eLOG_Trace;
+        CORE_LOGF(level, ("GNUTLS V%s (LogLevel=%d)",
+                          version, s_GnuTlsLogLevel));
     } else
         CORE_UNLOCK;
-
-    CORE_LOGF(report ? eLOG_Note : eLOG_Trace, ("GNUTLS V%s (LogLevel=%d)",
-                                                version, s_GnuTlsLogLevel));
 
     if ((status = x_InitLocking()) != eIO_Success)
         goto out;

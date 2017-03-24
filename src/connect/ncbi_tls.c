@@ -31,6 +31,8 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_connssl.h"
+#include "ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_mbedtls.h>
@@ -47,6 +49,27 @@
 #endif
 
 
+/*ARGSUSED*/
+#ifdef __cplusplus
+extern "C"
+#endif /*__cplusplus*/
+static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
+{
+    CORE_LOG(eLOG_Critical, "SSL has been explicitly disabled");
+    return eIO_NotSupported;
+}
+
+
+static SOCKSSL x_SetupNoTls(void)
+{
+    static const struct SOCKSSL_struct kNoTlsOps = {
+        s_NoTlsInit
+    };
+    CORE_LOG(eLOG_Trace, "SSL has been explicitly disabled");
+    return &kNoTlsOps;
+}
+
+
 extern SOCKSSL NcbiSetupTls(void)
 {
     static FSSLSetup s_Setup = (FSSLSetup)(-1L);
@@ -58,13 +81,15 @@ extern SOCKSSL NcbiSetupTls(void)
                 strcasecmp(str, "no")    == 0  ||
                 strcasecmp(str, "off")   == 0  ||
                 strcasecmp(str, "false") == 0) {
-                s_Setup = 0;
+                s_Setup = x_SetupNoTls;
             } else if (strcasecmp(str, "GNUTLS")  == 0) {
                 s_Setup = NcbiSetupGnuTls;
             } else if (strcasecmp(str, "MBEDTLS") == 0) {
                 s_Setup = NcbiSetupMbedTls;
-            } else
-                s_Setup = NcbiSetupDefaultTls;
+            } else {
+                CORE_LOGF(eLOG_Critical, ("Unknown TLS provider \"%s\"", str));
+                s_Setup = 0/*unknown provider*/;
+            }
         } else
             s_Setup = NcbiSetupDefaultTls;
     }

@@ -47,12 +47,12 @@ extern "C" {
 #endif
 
 
-/** Setup a TLS (Transport Layer Security) vendor library to support SSL
+/** Setup a TLS (Transport Layer Security) provider library to support SSL
  *  in ncbi_socket.h[pp].
  *
- * Currently we support mbedTLS and GNUTLS as the vendors.  This call selects
+ * Currently we support mbedTLS and GNUTLS as the providers.  This call selects
  * the library, which is the default, or which is requested via the registry
- * (aka .ini file) or through the process environment (takes precedence over
+ * (aka .ini file), or through the process environment (takes precedence over
  * the registry):
  *
  * [CONN]
@@ -63,16 +63,16 @@ extern "C" {
  * "Off", "No", "False", case-insensitively, are also accepted for "0"; and
  * "On", "Yes", "True" -- for "1".
  *
- * If the vendor is not present in the build, "0" is assumed.  "1" selects the
- * default vendor as currently configured within the toolkit.  With "0", SSL
- * will not be availbale for sockets, and any secure session will fail.
+ * If the provider is not present in the build, "0" is assumed.  "1" selects
+ * the default provider as currently configured within the toolkit.  With "0",
+ * SSL will not be availbale for sockets, and any secure session will fail.
  *
  * @note GNUTLS is only available as an external 3-rd party library, and must
  * be so configured --with-gnutls at the configuration stage of the build.
  * mbedTLS can also be used as an external installation, but the toolkit has
  * an embedded private copy of the library, which can be used transparently
  * without any additional dependencies.  That embedded copy will be used as
- * the default, if no other vendors are explicitly present.
+ * the default, if no other providers are explicitly present.
  */
 extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupTls(void);
