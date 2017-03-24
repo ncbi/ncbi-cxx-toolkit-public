@@ -4999,26 +4999,96 @@ void CFeatureItem::x_AddFTableRnaQuals(
         }
     }
 
-    if ( feat.IsSetProduct() ) {
+    if ( feat.IsSetProduct() && !cfg.HideProteinID()) {
         CBioseq_Handle prod = 
             ctx.GetScope().GetBioseqHandle(m_Feat.GetProductId());
         if ( prod ) {
-            CConstRef<CSeq_id> id = GetId(prod, eGetId_Best).GetSeqId();
-            string id_str;
-            if ( id->IsGenbank()  ||  id->IsEmbl()  ||  id->IsDdbj()  ||
-                 id->IsTpg()  ||  id->IsTpd()  ||  id->IsTpe()  ||
-                 id->IsOther() ||
-                 (id->IsLocal()  &&  !ctx.Config().SuppressLocalId()) ) {
-                id_str = id->GetSeqIdString(true);
-            } else if ( id->IsGeneral() ) {
-                id_str = id->AsFastaString();
-            }
-            if (! cfg.HideProteinID()) {
+            string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(), !ctx.Config().HideGI());
+            if (!NStr::IsBlank(id_str)) {
                 x_AddFTableQual("transcript_id", id_str);
             }
         }
     }
 }
+
+
+// originally SeqIdWriteForTable in the C Toolkit
+// specific Seq-ids are included in the value, in a specific order
+string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_local, bool giOK)
+
+{
+    if (!seq.IsSetId()) {
+        return kEmptyStr;
+    }
+    const CSeq_id* accn = NULL;
+    const CSeq_id* local = NULL;
+    const CSeq_id* patent = NULL;
+    const CSeq_id* pdb = NULL;
+    const CSeq_id* general = NULL;
+    const CSeq_id* gi = NULL;
+
+    ITERATE(CBioseq::TId, it, seq.GetId()) {
+        switch ((*it)->Which()) {
+        case CSeq_id::e_Local:
+            local = it->GetPointer();
+            break;
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Pir:
+        case CSeq_id::e_Swissprot:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Prf:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Gpipe:
+            accn = it->GetPointer();
+            break;
+        case CSeq_id::e_Patent:
+            patent = it->GetPointer();
+            break;
+        case CSeq_id::e_General:
+            if (!(*it)->GetGeneral().IsSkippable()) {
+                general = it->GetPointer();
+            }
+            break;
+        case CSeq_id::e_Pdb:
+            pdb = it->GetPointer();
+            break;
+        case CSeq_id::e_Gi:
+            gi = it->GetPointer();
+            break;
+        default:
+            break;
+        }
+    }
+
+
+    string label = kEmptyStr;
+
+    if (accn != NULL) {
+        label = accn->AsFastaString();
+    }
+
+    if (general != NULL) {
+        if (!label.empty()) {
+            label += "|";
+        }
+        label += general->AsFastaString();
+    }
+
+    if (local != NULL && (!suppress_local) && label.empty()) {
+        label = local->AsFastaString();
+    }
+
+    if (gi != NULL && giOK && label.empty()) {
+        label = gi->AsFastaString();
+    }
+
+    return label;
+}
+
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddFTableCdregionQuals(
@@ -5060,30 +5130,17 @@ void CFeatureItem::x_AddFTableCdregionQuals(
         }
         x_AddFTableQual("transl_except", "(pos:" + pos + ",aa:" + aa + ")");
     }
-    CConstRef<CSeq_id> id;
-    string id_str;
-    if ( prod ) {
-        id = GetId(prod, eGetId_Best).GetSeqId();
-    } else if ( feat.IsSetProduct() ) {
-        try { 
-            id.Reset(&GetId(feat.GetProduct(), &ctx.GetScope()));
-            if ( id->IsGi() ) {
-                // get "normal" id 
-            }
-        } catch (CObjmgrUtilException&) {
-            id.Reset();
+
+    if (cdr.IsSetCode()) {
+        int gcode = cdr.GetCode().GetId();
+        if (gcode > 1 && gcode != 255) {
+            x_AddFTableQual("transl_table", NStr::NumericToString(gcode));
         }
     }
-    if ( id ) {
-        if ( id->IsGenbank()  ||  id->IsEmbl()  ||  id->IsDdbj()  ||
-             id->IsTpg()  ||  id->IsTpd()  ||  id->IsTpe()  ||
-             id->IsOther() ||
-             (id->IsLocal()  &&  !ctx.Config().SuppressLocalId()) ) {
-            id_str = id->GetSeqIdString(true);
-        } else if ( id->IsGi() || id->IsGeneral() ) {
-            id_str = id->AsFastaString();
-        }
-        if (! cfg.HideProteinID() && !NStr::IsBlank(id_str)) {
+
+    if (prod && !cfg.HideProteinID()) {
+        string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(), !ctx.Config().HideGI());
+        if (!NStr::IsBlank(id_str)) {
             x_AddFTableQual("protein_id", id_str);
         }
     }
