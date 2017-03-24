@@ -3128,8 +3128,18 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 }
             }
             if (is_site_ref) {
+
                 CSeq_feat_EditHandle feh(*p);
+                CSeq_annot_Handle annot = feh.GetAnnot();
+
                 feh.Remove();
+
+                // remove old annot if now empty
+                if (CNewCleanup_imp::ShouldRemoveAnnot(*(annot.GetCompleteSeq_annot()))) {
+                    CSeq_annot_EditHandle annot_edit(annot);
+                    annot_edit.Remove();
+                }
+
             }
             any_change = true;
         }
