@@ -47,6 +47,9 @@
 #include "table2asn_context.hpp"
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -98,9 +101,9 @@ bool TSrcQuals::AddQualifiers(CSourceModParser& mod, const CBioseq& id)
     if (m_cols.empty())
         return false;
 
-    ITERATE(CBioseq::TId, id_it, id.GetId())
+    for (auto id_it: id.GetId() )
     {
-        string id = (**id_it).AsFastaString();
+        string id = id_it->AsFastaString();
         NStr::ToLower(id);
         if (AddQualifiers(mod, id))
             return true;
@@ -134,19 +137,29 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     mod.ApplyAllMods(bioseq);
 
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
-    NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
+    for (auto mod: unused_mods)
     {
-        if (NStr::CompareNocase(mod->key, "bioproject") == 0)
-            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod->value);
+        if (NStr::CompareNocase(mod.key, "bioproject") == 0)
+            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod.value);
         else
-        if (NStr::CompareNocase(mod->key, "biosample") == 0)
-            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod->value);
+        if (NStr::CompareNocase(mod.key, "biosample") == 0)
+            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod.value);
         else
-        if (!x_ParseAndAddTracks(bioseq, mod->key, mod->value))
+        if (NStr::CompareNocase(mod.key, "pmid") == 0)
+        {
+            CRef<CPub> pub(new CPub);
+            CRef<CSeqdesc> pubdesc(new CSeqdesc);
+            pubdesc->SetPub().SetPub().Set().push_back(pub);
+            CPubMedId pmid(NStr::StringToNumeric<TIntId>(mod.value));
+            pub->SetPmid(pmid);
+            bioseq.SetDescr().Set().push_back(pubdesc);
+        }
+        else
+        if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
         {
             m_context->m_logger->PutError(*auto_ptr<CLineError>(
                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                mod->key)));               
+                mod.key)));               
             return false;
         }
     }
