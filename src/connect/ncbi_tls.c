@@ -76,7 +76,7 @@ extern SOCKSSL NcbiSetupTls(void)
     if (s_Setup == (FSSLSetup)(-1L)) {
         char str[32];
         ConnNetInfo_GetValue(0, "USESSL", str, sizeof(str), 0);
-        if (!ConnNetInfo_Boolean(str)) {
+        if (!ConnNetInfo_Boolean(str)  &&  *str) {
             if (strcmp    (str, "0")     == 0  ||
                 strcasecmp(str, "no")    == 0  ||
                 strcasecmp(str, "off")   == 0  ||
