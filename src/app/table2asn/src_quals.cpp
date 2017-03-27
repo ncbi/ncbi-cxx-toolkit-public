@@ -254,7 +254,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
 
                     if (opt_map_filename.empty())
                     {
-                        CSeq_id id(id_text); // , CSeq_id::fParse_AnyLocal);
+                        CSeq_id id(id_text, CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal);
                         id_text = id.AsFastaString();
                         NStr::ToLower(id_text);
                         quals.m_lines_map[id_text] = newline;
