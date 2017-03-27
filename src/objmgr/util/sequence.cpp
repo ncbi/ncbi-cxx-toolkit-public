@@ -105,7 +105,6 @@ static string s_GetFastaTitle(const CBioseq& bs,
                               CDeflineGenerator::TUserFlags flags)
 {
     string title;
-    bool has_molinfo = false;
 
     const CSeq_descr::Tdata& descr = bs.GetDescr().Get();
     for ( CSeq_descr::Tdata::const_iterator it = descr.begin(); it != descr.end(); ++it ) {
@@ -116,21 +115,14 @@ static string s_GetFastaTitle(const CBioseq& bs,
             }
         }
         if ( sd->Which() == CSeqdesc::e_Molinfo ) {
-            has_molinfo = true;
+            return "";
         }
     }
     
-    if ( !title.empty() && ! has_molinfo ) {
-        while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
-            title.erase(title.end() - 1);
-        }
-        return title;
+    while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
+        title.erase(title.end() - 1);
     }
-    else {
-        CScope scope(*CObjectManager::GetInstance());
-        CDeflineGenerator gen;
-        return gen.GenerateDefline(bs, scope, flags);
-    }
+    return title;
 }
 
 const CBioSource* GetBioSource(const CBioseq& bioseq)
@@ -1381,16 +1373,16 @@ CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBio
             CSeq_id_Handle id_h = p->GetLocationId();
             if (id_h) {
                 CConstRef<CSeq_id> p_id = id_h.GetSeqId();
-                if (p_id) {
-                    ITERATE(CBioseq::TId, id, b.GetId()) {
-                        CSeq_id::E_SIC cmp = p_id->Compare(**id);
-                        if (cmp == CSeq_id::e_YES) {
-                            return p->GetSeq_feat();
-                        } else if (cmp == CSeq_id::e_NO) {
-                            break;
-                        }
+            if (p_id) {
+                ITERATE(CBioseq::TId, id, b.GetId()) {
+                    CSeq_id::E_SIC cmp = p_id->Compare(**id);
+                    if (cmp == CSeq_id::e_YES) {
+                        return p->GetSeq_feat();
+                    } else if (cmp == CSeq_id::e_NO) {
+                        break;
                     }
                 }
+            }
             }
         } catch (CException& ex) {
             CSeq_loc_CI li(p->GetLocation());
@@ -2957,18 +2949,16 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
         safe_title = m_Gen->GenerateDefline(bioseq, *scope, x_GetTitleFlags());
     } else {
         safe_title = sequence::s_GetFastaTitle(bioseq, x_GetTitleFlags());
-    }
-
-    if ( !(m_Flags & fKeepGTSigns) ) {
-        NON_CONST_ITERATE (string, it, safe_title) {
-            switch (*it) {
-            case '>':  *it = '_';  break;
-            default:   break;
-            }
+        if (safe_title.empty()) {
+            CScope scope(*CObjectManager::GetInstance());
+            safe_title = m_Gen->GenerateDefline(bioseq, scope, x_GetTitleFlags());
         }
     }
 
     if ( !safe_title.empty() ) {
+        if ( !(m_Flags & fKeepGTSigns) ) {
+            NStr::ReplaceInPlace(safe_title, ">", "_");
+        }
         m_Out << ' ' << safe_title;
     }
     m_Out << '\n';
@@ -3013,46 +3003,27 @@ void CFastaOstream::x_PrintIntModIfNotDup(
         (string)CNcbiOstrstreamToString(strm) );
 }
 
-
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
                                bool no_scope,
                                const string& custom_title)
 {
-    if ( no_scope && ! location ) {
-        x_WriteSeqIds(bioseq, NULL);
-        if( (m_Flags & fShowModifiers) != 0 ) {
-            CScope scope(*CObjectManager::GetInstance());
-            CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
-            x_WriteModifiers(bioseq_handle);
-        } else {
-            x_WriteSeqTitle(bioseq, NULL, custom_title);
-        }
-    }
-    else {
-        CScope scope(*CObjectManager::GetInstance());
-        WriteTitle(scope.AddBioseq(bioseq), location, custom_title);
+    x_WriteSeqIds(bioseq, location);
+    CScope scope(*CObjectManager::GetInstance());
+    if( m_Flags & fShowModifiers ) {
+        CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
+        x_WriteModifiers(bioseq_handle);
+    } else {
+        x_WriteSeqTitle(bioseq, (no_scope ? NULL : &scope), custom_title);
     }
 }
 
-
-void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
+void CFastaOstream::WriteTitle(const CBioseq_Handle& bioseq_handle,
                                const CSeq_loc* location,
                                const string& custom_title)
 {
-    x_WriteSeqIds(*handle.GetBioseqCore(), location);
-    if( (m_Flags & fShowModifiers) != 0 ) {
-        x_WriteModifiers(handle);
-    } else {
-        string safe_title = 
-            (custom_title.empty()
-             ? m_Gen->GenerateDefline(handle, x_GetTitleFlags())
-             : custom_title);
-        if ((m_Flags & fKeepGTSigns) == 0) {
-            NStr::ReplaceInPlace(safe_title, ">", "_");
-        }
-        m_Out << ' ' << safe_title << '\n';
-    }
+    const CBioseq& bioseq = *bioseq_handle.GetBioseqCore();
+    WriteTitle(bioseq, location, false, custom_title);
 }
 
 
