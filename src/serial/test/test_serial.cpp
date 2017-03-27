@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include "test_serial.hpp"
-
 #ifndef HAVE_NCBI_C
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,8 +223,9 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
         CTestSerialObject obj_copy;
         CObjectTypeInfo(type_info).SetPathReadHook(
             is.get(), "CTestSerialObject.*", new CReadSerialObjectHook(&obj_copy));
-
         *is >> obj_copy;
+        CObjectTypeInfo(type_info).SetPathReadHook(
+            is.get(), "CTestSerialObject.*", NULL);
 #ifndef HAVE_NCBI_C
         BOOST_CHECK(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // prepare data to read later
         CNcbiOstrstream ostrs;
         {
-            auto_ptr<CObjectOStream> os(
+            unique_ptr<CObjectOStream> os(
                 CObjectOStream::Open(eSerial_AsnText, ostrs));
             CObjectHookGuard<CTestSerialObject> w_hook(
                 *(new CWriteSerialObjectHook(&obj)), &(*os));
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find serial objects of a specific type
         // process them in CTestSerialObjectHook::Process()
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterObjects<CTestSerialObject>(*is, new CTestSerialObjectHook);
     }
@@ -277,15 +277,16 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find non-serial objects, here - strings
         // process them in CStringObjectHook::Process()
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterStdObjects<CTestSerialObject>(*is, new CStringObjectHook);
     }
+#if defined(NCBI_THREADS)
     {
         // find serial objects of a specific type
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject> i(*is);
         for ( ; i.IsValid(); ++i) {
@@ -299,17 +300,48 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // process them right here
         CNcbiIstrstream istrs(buf);
         for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
-                *CObjectIStream::Open(eSerial_AsnText, istrs))) {
+                *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
             LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
             cout << MSerial_AsnText << obj << endl;
         }
     }
-#if defined(NCBI_THREADS)
     {
         // find serial objects of a specific type
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        CObjectIStreamIterator<CTestSerialObject>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CTestSerialObject& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                return mem != nullptr;
+            });
+        for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
+                *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+            LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
+            cout << MSerial_AsnText << obj << endl;
+        }
+    }
+    {
+        // find serial objects of a specific type
+        // process them right here
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CTestSerialObject>::CParams params;
+        params.FilterByMember(2,
+            [](const CObjectIStream& istr, CTestSerialObject& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                return mem != nullptr && mem->GetPrimitiveValueBool();
+            });
+        for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject, CTestSerialObject>(
+                *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+            LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
+            cout << MSerial_AsnText << obj << endl;
+        }
+    }
+    {
+        // find serial objects of a specific type
+        // process them right here
+        CNcbiIstrstream istrs(buf);
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
         for ( ; i.IsValid(); ++i) {
@@ -323,7 +355,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // process them right here
         CNcbiIstrstream istrs(buf);
         for (CTestSerialObject& obj : CObjectIStreamAsyncIterator<CTestSerialObject>(
-            *CObjectIStream::Open(eSerial_AsnText, istrs))) {
+            *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
             LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
             cout << MSerial_AsnText << obj << endl;
         }
@@ -332,7 +364,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find serial objects of a specific type
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
         CObjectIStreamAsyncIterator<CTestSerialObject> eos;
@@ -345,7 +377,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find serial objects of a specific type
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,CWeb_Env> i(*is);
         for ( ; i.IsValid(); ++i) {
@@ -359,7 +391,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find serial objects of a specific type
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject,CWeb_Env> i(*is);
         for ( ; i.IsValid(); ++i) {
@@ -373,7 +405,23 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // process them right here
         CNcbiIstrstream istrs(buf);
         for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
-                *CObjectIStream::Open(eSerial_AsnText, istrs))) {
+                *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
+            LOG_POST("CWeb_Env @ " << NStr::PtrToString(&obj));
+            cout << MSerial_AsnText << obj << endl;
+        }
+    }
+    {
+        // find serial objects of a specific type with filter
+        // process them right here
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CWeb_Env>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CWeb_Env& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                return true;
+            });
+        for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
+                *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
             LOG_POST("CWeb_Env @ " << NStr::PtrToString(&obj));
             cout << MSerial_AsnText << obj << endl;
         }
@@ -382,7 +430,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find non-serial objects, here - strings
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,string> i(*is);
         for ( ; i.IsValid(); ++i) {
@@ -395,7 +443,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         // find non-serial objects, here - strings
         // process them right here
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,string> i(*is);
         CObjectIStreamIterator<CTestSerialObject,string> eos;
@@ -403,8 +451,65 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             LOG_POST("CIStreamStdIterator: obj = " << obj);
         });
     }
+// try to read empty file
+    string filename( CDirEntry::GetTmpName() );
+    {
+        ofstream ofs(filename.c_str());
+    }
+    {
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            unique_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_AsnText, ifs));
+            CObjectIStreamIterator<CTestSerialObject> i(*is);
+            for ( ; i.IsValid(); ++i) {
+            }
+        }
+    }
+    {
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            unique_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_AsnText, ifs));
+            CObjectIStreamIterator<CTestSerialObject, CWeb_Env> i(*is);
+            for ( ; i.IsValid(); ++i) {
+            }
+        }
+    }
+    {
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            unique_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_AsnText, ifs));
+            CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
+            for ( ; i.IsValid(); ++i) {
+            }
+        }
+    }
+    {
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            unique_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_AsnText, ifs));
+            CObjectIStreamAsyncIterator<CTestSerialObject> i(*is,
+                eNoOwnership,
+                CObjectIStreamAsyncIterator<CTestSerialObject>::CParams().ReadAndSkipInTheSameThread(true));
+            for ( ; i.IsValid(); ++i) {
+            }
+        }
+    }
+    {
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            unique_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_AsnText, ifs));
+            CObjectIStreamAsyncIterator<CTestSerialObject, CWeb_Env> i(*is);
+            for ( ; i.IsValid(); ++i) {
+            }
+        }
+    }
+    CFile(filename).Remove();
 #endif  //defined(NCBI_THREADS)
-
 }
 #endif    
 
