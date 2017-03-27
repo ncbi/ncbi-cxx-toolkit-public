@@ -1706,7 +1706,9 @@ Seq-annot ::= {
           "Mar2",
           "Mart2",
           "MEF3L",
-          "RGAG3"
+          "RGAG3",
+          "RTL2",
+          "SIRH1"
         }
       },
       location int {
