@@ -1,4 +1,5 @@
 corelib$
+db/sqlite
 serial$
 serial/impl$
 serial/datatool
@@ -45,10 +46,12 @@ objtools/readers$
 objtools/seqmasks_io$
 objtools/blast$
 objtools/blast/seqdb_reader
+-objtools/blast/seqdb_reader/seqdb2_info
 objtools/blast/gene_info_reader
 objtools/blast/services
 objtools/blast/blastdb_format
 objtools/blast/seqdb_writer
+-objtools/blast/seqdb_writer/demo
 objtools/cleanup$
 objtools/edit$
 objtools/format$
