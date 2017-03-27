@@ -77,6 +77,7 @@
 
 #include "table2asn_context.hpp"
 #include "visitors.hpp"
+#include "utils.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -205,17 +206,6 @@ namespace
             {
                 FindMaximumId(**set_it, id);
             }
-        }
-    }
-
-    bool AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
-    {
-        if (feature.IsSetId())
-            return true;
-        else
-        {
-           feature.SetId().SetLocal().SetId(id++);
-           return false;
         }
     }
 
@@ -773,6 +763,7 @@ void CFeatureTableReader::_MergeCDSFeatures_impl(CSeq_entry& entry)
                     //ParseCdregions(entry);
                     return;
                 case CBioseq_set::eClass_genbank:
+                case CBioseq_set::eClass_eco_set:
                     break;
                 default:
                     return;
@@ -849,7 +840,7 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
                 entry.SetSet().SetSeq_set().push_back(protein);
                 // move the cdregion into protein and step iterator to next
                 set_ftable.push_back(feature);
-                seq_ftable.erase(feat_it++);
+                feat_it = seq_ftable.erase(feat_it);
                 continue; // avoid iterator increment
             }
         }

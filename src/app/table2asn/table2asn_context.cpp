@@ -82,6 +82,7 @@
 #include "table2asn_context.hpp"
 
 #include "visitors.hpp"
+#include <objects/seqfeat/Feat_id.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -682,6 +683,17 @@ void CTable2AsnContext::UpdateTaxonFromTable(objects::CBioseq& bioseq)
         CRef<COrg_ref> org_ref = GetOrgRef(bioseq.SetDescr());
         if (org_ref.NotEmpty())
             org_ref->UpdateFromTable();
+    }
+}
+
+bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id)
+{
+    if (feature.IsSetId())
+        return true;
+    else
+    {
+        feature.SetId().SetLocal().SetId(id++);
+        return false;
     }
 }
 
