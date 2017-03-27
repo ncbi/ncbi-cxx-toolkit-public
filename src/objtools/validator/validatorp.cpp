@@ -3702,6 +3702,33 @@ CCacheImpl::GetBioseqHandleFromLocation(
 }
 
 
+CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(CBioseq_Handle bsh)
+{
+    TSeqTreeMap::iterator smit = m_SeqTreeMap.find(bsh);
+    if (smit == m_SeqTreeMap.end()) {
+        CFeat_CI f(bsh);
+        CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
+        m_SeqTreeMap[bsh] = tr;
+        return tr;
+    } else  {
+        return smit->second;
+    }
+}
+
+
+CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    return GetFeatTreeFromCache(bsh);
+}
+
+
+CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope)
+{
+    return GetFeatTreeFromCache(feat.GetLocation(), scope);
+}
+
+
 CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope& scope)
 {
     if (!feat) {
@@ -3712,21 +3739,10 @@ CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope&
     if (it == m_FeatGeneMap.end()) {
         try {
             CSeq_feat_Handle fh = scope.GetSeq_featHandle(*feat);
-            CBioseq_Handle bsh = scope.GetBioseqHandle(feat->GetLocation());
-            TSeqTreeMap::iterator smit = m_SeqTreeMap.find(bsh);
-            if (smit == m_SeqTreeMap.end()) {
-                CFeat_CI f(bsh);
-                CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
-                m_SeqTreeMap[bsh] = tr;
-                CMappedFeat mf = tr->GetBestGene(fh);
-                if (mf) {
-                    gene = mf.GetSeq_feat();
-                }
-            } else {
-                CMappedFeat mf = smit->second->GetBestGene(fh);
-                if (mf) {
-                    gene = mf.GetSeq_feat();
-                }
+            CRef<feature::CFeatTree> tr = GetFeatTreeFromCache(*feat, scope);
+            CMappedFeat mf = tr->GetBestGene(fh);
+            if (mf) {
+                gene = mf.GetSeq_feat();
             }
         } catch (CException& ex) {
             gene = sequence::GetGeneForFeature(*feat, scope);

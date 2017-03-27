@@ -110,6 +110,7 @@ BEGIN_SCOPE(validator)
 
 class CValidError_imp;
 class CTaxValidationAndCleanup;
+class CGeneCache;
 
 // =============================================================================
 //                            Caching classes
@@ -271,9 +272,14 @@ public:
     ~CGeneCache() {};
 
     CConstRef<CSeq_feat> GetGeneFromCache(const CSeq_feat* feat, CScope& scope);
+    CConstRef<CSeq_feat> GetmRNAFromCache(const CSeq_feat* feat, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(CBioseq_Handle bh);
     void Clear() { m_FeatGeneMap.clear(); m_SeqTreeMap.clear(); }
 
 private:
+
     typedef map<const CSeq_feat*, CConstRef<CSeq_feat> > TFeatGeneMap;
     TFeatGeneMap            m_FeatGeneMap;
     
@@ -588,6 +594,7 @@ public:
     inline CCacheImpl & GetCache(void) { return m_cache; }
 
     inline CConstRef<CSeq_feat> GetCachedGene(const CSeq_feat* f) { return m_GeneCache.GetGeneFromCache(f, *m_Scope); }
+    inline CGeneCache& GetGeneCache() { return m_GeneCache; }
 
     // flags derived from options parameter
     bool IsNonASCII(void)             const { return m_NonASCII; }

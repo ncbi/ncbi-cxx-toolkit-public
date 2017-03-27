@@ -5195,30 +5195,15 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
         TSeqPos gene_stop = feat.GetLocation().GetStop(eExtreme_Biological);
 
         // gene is ok if its partialness matches the overlapping coding region or mRNA
-        TFeatScores mRNAs;
-        GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_Contained, mRNAs, *m_Scope);
-        ITERATE (TFeatScores, s, mRNAs) {
-            const CSeq_loc& mrna_loc = s->second->GetLocation();
-            if (mrna_loc.GetStart(eExtreme_Biological) == gene_start
-                && mrna_loc.GetStop(eExtreme_Biological) == gene_stop
-                && s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)) {
+        CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        vector<CMappedFeat> children = tr->GetChildren(feat);
+        ITERATE(vector<CMappedFeat>, it, children) {
+            if ((it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA || it->GetData().IsCdregion()) &&
+                it->GetLocation().GetStart(eExtreme_Biological) == gene_start &&
+                it->GetLocation().GetStop(eExtreme_Biological) == gene_stop &&
+                s_MatchPartialType(feat.GetLocation(), it->GetLocation(), partial_type)) {
                 rval = true;
                 break;
-            }
-        }
-        if (!rval) {
-            TFeatScores cds;
-            GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Cdregion,
-                CSeqFeatData::eSubtype_cdregion, eOverlap_Contained, cds, *m_Scope);
-            ITERATE (TFeatScores, s, cds) {
-                const CSeq_loc& cds_loc = s->second->GetLocation();
-                if (cds_loc.GetStart(eExtreme_Biological) == gene_start
-                    && cds_loc.GetStop(eExtreme_Biological) == gene_stop
-                    && s_MatchPartialType(feat.GetLocation(), cds_loc, partial_type)) {
-                    rval = true;
-                    break;
-                }
             }
         }
     } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
