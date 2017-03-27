@@ -576,12 +576,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     }}
 
     {{
-        CSeq_descr pubs;
-        ApplyPubMods(pubs);
-        if ( !pubs.Get().empty() ) {
-            CSeq_descr::Tdata& sds = seq.SetDescr().Set();
-            sds.splice(sds.end(), pubs.Set());
-        }
+        ApplyPubMods(seq);
     }}
 };
 
@@ -1242,25 +1237,25 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
 
 
 static
-void s_ApplyPubMods(CSeq_descr& sd, CSourceModParser::TModsRange range)
+void s_ApplyPubMods(CBioseq& bioseq, const CSourceModParser::TModsRange& range)
 {
     for (CSourceModParser::TModsCI it = range.first;
          it != range.second;  ++it) {
-        int pmid = NStr::StringToInt(it->value, NStr::fConvErr_NoThrow);
-        CRef<CSeqdesc> desc(new CSeqdesc);
+        TIntId pmid = NStr::StringToNumeric<TIntId>(it->value, NStr::fConvErr_NoThrow);
         CRef<CPub> pub(new CPub);
         pub->SetPmid().Set(pmid);
-        desc->SetPub().SetPub().Set().push_back(pub);
-        sd.Set().push_back(desc);
+        CRef<CSeqdesc> pubdesc(new CSeqdesc);
+        pubdesc->SetPub().SetPub().Set().push_back(pub);
+        bioseq.SetDescr().Set().push_back(pubdesc);
     }
 }
 
 
-void CSourceModParser::ApplyPubMods(CSeq_descr& sd)
+void CSourceModParser::ApplyPubMods(CBioseq& seq)
 {
     // find PubMed IDs
-    s_ApplyPubMods(sd, FindAllMods(s_Mod_PubMed.Get()));
-    s_ApplyPubMods(sd, FindAllMods(s_Mod_PMID.Get()));
+    s_ApplyPubMods(seq, FindAllMods(s_Mod_PubMed.Get()));
+    s_ApplyPubMods(seq, FindAllMods(s_Mod_PMID.Get()));
 }
 
 CSourceModParser::CBadModError::CBadModError( 

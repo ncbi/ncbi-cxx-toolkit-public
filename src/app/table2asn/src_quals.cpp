@@ -47,9 +47,6 @@
 #include "table2asn_context.hpp"
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-#include <objects/pub/Pub.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -144,16 +141,6 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
         else
         if (NStr::CompareNocase(mod.key, "biosample") == 0)
             edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod.value);
-        else
-        if (NStr::CompareNocase(mod.key, "pmid") == 0)
-        {
-            CRef<CPub> pub(new CPub);
-            CRef<CSeqdesc> pubdesc(new CSeqdesc);
-            pubdesc->SetPub().SetPub().Set().push_back(pub);
-            CPubMedId pmid(NStr::StringToNumeric<TIntId>(mod.value));
-            pub->SetPmid(pmid);
-            bioseq.SetDescr().Set().push_back(pubdesc);
-        }
         else
         if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
         {
@@ -267,7 +254,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
 
                     if (opt_map_filename.empty())
                     {
-                        CSeq_id id(id_text, CSeq_id::fParse_AnyLocal);
+                        CSeq_id id(id_text); // , CSeq_id::fParse_AnyLocal);
                         id_text = id.AsFastaString();
                         NStr::ToLower(id_text);
                         quals.m_lines_map[id_text] = newline;

@@ -112,7 +112,7 @@ public:
     // void ApplyMods(CSubmit_block& sb);
     void ApplyTPAMods(CUser_object& tpa);
     void ApplyGenomeProjectsDBMods(CUser_object& gpdb);
-    void ApplyPubMods(CSeq_descr& sd);
+    void ApplyPubMods(CBioseq& seq);
 
     static int CompareKeys(const CTempString& lhs, const CTempString& rhs);
 
