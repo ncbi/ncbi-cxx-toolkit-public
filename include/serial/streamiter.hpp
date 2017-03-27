@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objectio.hpp>
 
 #include <queue>
 #include <future>
@@ -55,10 +56,204 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_THREADS)
 
+namespace ns_ObjectIStreamFilterIterator {
+template<typename TRoot>
+TMemberIndex xxx_MemberIndex(const string& mem_name);
+}
+template<typename...>
+class CObjectIStreamAsyncIterator;
+
+/////////////////////////////////////////////////////////////////////////////
+///  CObjectIStreamIterator
+///
+///  Synchronously read multiple same-type data objects from an input stream
+///  with optional filtering.
+///  @sa CObjectIStreamAsyncIterator
+///
+///  The algorithm assumes that the input stream on its top level consists
+///  exclusively of one or more serial objects of type TRoot.
+///
+///  There are two flavors of this template:
+///  - CObjectIStreamIterator<TRoot> - iterate through the top-level serial
+///    objects of type TRoot.
+///  - CObjectIStreamIterator<TRoot, TChild> - iterate through serial objects
+///    of type TChild which are contained within the top-level serial objects
+///    of type TRoot.
+///
+///  Usage:
+///  @code
+///
+///  CObjectIStream istr ....;
+///
+///  for (CSeq_entry& obj : CObjectIStreamIterator<CSeq_entry>(istr)) {
+///      // ...do something with "obj" here...
+///  }
+///
+///  for (CBioseq& obj : CObjectIStreamIterator<CSeq_entry,CBioseq>(istr)) {
+///      // ...do something with "obj" here...
+///  }
+///
+///
+///  CObjectIStreamIterator<CSeq_entry> it(istr);
+///  CObjectIStreamIterator<CSeq_entry> eos;
+///  for_each (it, eos, [](CSeq_entry& obj) { ... });
+///
+///  CObjectIStreamIterator<CSeq_entry,CBioseq> it(istr);
+///  CObjectIStreamIterator<CSeq_entry,CBioseq> eos;
+///  for_each (it, eos, [](CBioseq& obj) { ... });
+///
+///
+///  for (CObjectIStreamIterator<CSeq_entry> it(istr);  it.IsValid();  ++it) {
+///      CSeq_entry& obj = *it;
+///      // ...do something with "obj" here...
+///  }
+///
+///  for (CObjectIStreamIterator<CSeq_entry,CBioseq> it(istr);
+///       it.IsValid();  ++it) {
+///      CRef<CBioseq> obj(&*it);
+///      // ...do something with "obj" here...
+///  }
+///
+///  for (CObjectIStreamIterator<CSeq_entry, string> it(istr);
+///       it.IsValid();  ++it) {
+///      string& obj = *it;
+///  }
+///
+///  with filtering (only CTaxon1_data objects with optional 'org' member set are valid):
+///    CObjectIStreamIterator<CTaxon1_data> i(istr, eNoOwnership, 
+///        CObjectIStreamIterator<CTaxon1_data>::CParams().FilterByMember("org",
+///            [](const CObjectIStream& istr, CTaxon1_data& obj,
+///               TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+///               return mem != nullptr;
+///            }));
+///
+///  @endcode
+///
+///  @attention
+///   Input iterators only guarantee validity for single pass algorithms:
+///   once an input iterator has been incremented, all copies of its previous
+///   value may be invalidated. It is still possible to keep data objects
+///   for future use by placing them into CRef containers, when applicable.
+
+template<typename...>
+class CObjectIStreamIterator
+{
+public:
+
+    /// Object member filtering function
+    ///
+    /// @param istr
+    ///   Serial object stream
+    /// @param obj
+    ///   Object being checked. It is being populated and is incomplete.
+    /// @param mem_index
+    ///   Member index
+    /// @param mem
+    ///   Member information. If mem is nullptr, the member is missing in the stream.
+    /// @param extra
+    ///   Extra information provided by the caller when constructing iterator.
+    ///
+    /// @attention
+    ///   When using filtering with CObjectIStreamAsyncIterator, please note
+    ///   that the function may be called from different threads.
+    ///   Synchronization of access to shared data, if required, is the responsibility of the client.
+    template<typename TObj>
+    using FMemberFilter = function<bool(const CObjectIStream& istr, TObj& obj,
+                                        TMemberIndex mem_index, CObjectInfo* mem,
+                                        void* extra)>;
+    /// Filtering parameters
+    template<typename TObj>
+    class CParams
+    {
+    public:
+        CParams(void)
+            : m_Index(kInvalidMember)
+            , m_FnFilter(nullptr)
+            , m_Extra(nullptr) {
+        }
+        /// Filter by member index
+        CParams& FilterByMember(TMemberIndex index, FMemberFilter<TObj> fn, void* extra = nullptr) {
+            m_Index = index; m_FnFilter = fn; m_Extra = extra; return *this;
+        }
+        /// Filter by member name
+        CParams& FilterByMember(const string& mem_name, FMemberFilter<TObj> fn, void* extra = nullptr) {
+            m_Index = ns_ObjectIStreamFilterIterator::xxx_MemberIndex<TObj>(mem_name);
+            m_FnFilter = fn; m_Extra = extra; return *this;
+        }
+
+    private:
+//        void xxx_MemberIndex(const string& mem_name);
+        TMemberIndex        m_Index;
+        FMemberFilter<TObj> m_FnFilter;
+        void*               m_Extra;
+        template<typename...> friend class CObjectIStreamIterator;
+        template<typename...> friend class CObjectIStreamAsyncIterator;
+    };
+
+    /// Construct iterator upon an object serialization stream
+    ///
+    /// @param istr
+    ///   Serial object stream
+    /// @param own_istr
+    ///   eTakeOwnership means that the input stream will be deleted
+    ///   automatically when the iterator gets destroyed
+    /// @param params
+    ///   Filtering parameters (default is no filtering)
+    template<typename TObj>
+    CObjectIStreamIterator( CObjectIStream& istr,
+                            EOwnership deleteInStream   = eNoOwnership,
+                            const CParams<TObj>& params = CParams<TObj>()) = delete;
+
+    /// Construct end-of-stream (invalid) iterator
+    /// @sa IsValid()
+    CObjectIStreamIterator(void) = delete;
+
+    // Copy-ctor and assignment
+    CObjectIStreamIterator(const CObjectIStreamIterator&);
+    CObjectIStreamIterator& operator=(const CObjectIStreamIterator&);
+
+    /// Advance to the next data object
+    CObjectIStreamIterator& operator++(void);
+
+    // Comparison
+    bool operator==(const CObjectIStreamIterator&) const;
+    bool operator!=(const CObjectIStreamIterator&) const;
+
+    /// Check whether the iterator points to a data
+    /// TRUE if the iterator is constructed upon a serialization stream AND
+    /// if it's not end-of-stream or error-in-stream  
+    bool IsValid(void) const;
+
+    /// Return the underlying serial object stream
+    const CObjectIStream& GetObjectIStream(void) const;
+
+    /// Return data object which is currently pointed to by the iterator.
+    /// Throw an exception is the iterator does not point to a data, i.e.
+    /// if IsValid() is FALSE.
+    template<typename TObj>  TObj& operator*();
+
+    /// Return pointer to data object which is currently pointed to by the
+    /// iterator.
+    /// Return NULL is the iterator does not point to a data, i.e.
+    /// if IsValid() is FALSE.
+    template<typename TObj>  TObj* operator->();
+
+    /// Return self
+    CObjectIStreamIterator& begin(void);
+
+    /// Construct and return end-of-stream iterator
+    CObjectIStreamIterator  end(void);
+
+    // dtor
+    ~CObjectIStreamIterator();
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///   CObjectIStreamAsyncIterator
 ///
-///  Asynchronously read multiple same-type data objects from an input stream.
+///  Asynchronously read multiple same-type data objects from an input stream
+///  with optional filtering
 ///  @sa CObjectIStreamIterator
 ///
 ///  The algorithm assumes that the input stream on its top level consists
@@ -143,16 +338,31 @@ class CObjectIStreamAsyncIterator
 public:
 
     /// Asynchronous parsing parameters
-    class CParams
+    template<typename TObj>
+    class CParams : public CObjectIStreamIterator<>::CParams<TObj>
     {
     public:
+        using CParent       = CObjectIStreamIterator<>::CParams<TObj>;
+        template<typename TR>
+        using FMemberFilter = CObjectIStreamIterator<>::FMemberFilter<TR>;
+
         CParams(void)
             : m_ThreadPolicy(launch::async)
             , m_MaxParserThreads (16)
             , m_MaxTotalRawSize  (16 * 1024 * 1024)
             , m_MinRawBufferSize (128 * 1024)
-            , m_SameThread(false)
-        {}
+            , m_SameThread(false) {
+        }
+
+        /// Filter by member index
+        CParams& FilterByMember(TMemberIndex index, FMemberFilter<TObj> fn, void* extra = nullptr) {
+            CParent::FilterByMember(index, fn, extra); return *this;
+        }
+
+        /// Filter by member name
+        CParams& FilterByMember(const string& mem_name, FMemberFilter<TObj> fn, void* extra = nullptr) {
+            CParent::FilterByMember(mem_name, fn, extra); return *this;
+        }
 
         /// Parsing thread launch policy
         CParams& LaunchPolicy(launch policy) {
@@ -205,9 +415,12 @@ public:
     ///   automatically when the iterator gets destroyed
     /// @param params
     ///   Parsing algorithm's parameters
+    /// @param params
+    ///   Filtering and parsing parameters (default is no filtering)
+    template<typename TObj>
     CObjectIStreamAsyncIterator(CObjectIStream& istr,
-                                EOwnership      own_istr = eNoOwnership,
-                                const CParams&  params   = CParams()) = delete;
+                                EOwnership own_istr         = eNoOwnership,
+                                const CParams<TObj>& params = CParams<TObj>()) = delete;
 
     /// Construct end-of-stream (invalid) iterator
     /// @sa IsValid()
@@ -250,138 +463,11 @@ public:
     ~CObjectIStreamAsyncIterator();
 };
 
-#endif // NCBI_THREADS
-
-
-/////////////////////////////////////////////////////////////////////////////
-///  CObjectIStreamIterator
-///
-///  Synchronously read multiple same-type data objects from an input stream.
-///  @sa CObjectIStreamAsyncIterator
-///
-///  The algorithm assumes that the input stream on its top level consists
-///  exclusively of one or more serial objects of type TRoot.
-///
-///  There are two flavors of this template:
-///  - CObjectIStreamIterator<TRoot> - iterate through the top-level serial
-///    objects of type TRoot.
-///  - CObjectIStreamIterator<TRoot, TChild> - iterate through serial objects
-///    of type TChild which are contained within the top-level serial objects
-///    of type TRoot.
-///
-///  Usage:
-///  @code
-///
-///  CObjectIStream istr ....;
-///
-///  for (CSeq_entry& obj : CObjectIStreamIterator<CSeq_entry>(istr)) {
-///      // ...do something with "obj" here...
-///  }
-///
-///  for (CBioseq& obj : CObjectIStreamIterator<CSeq_entry,CBioseq>(istr)) {
-///      // ...do something with "obj" here...
-///  }
-///
-///
-///  CObjectIStreamIterator<CSeq_entry> it(istr);
-///  CObjectIStreamIterator<CSeq_entry> eos;
-///  for_each (it, eos, [](CSeq_entry& obj) { ... });
-///
-///  CObjectIStreamIterator<CSeq_entry,CBioseq> it(istr);
-///  CObjectIStreamIterator<CSeq_entry,CBioseq> eos;
-///  for_each (it, eos, [](CBioseq& obj) { ... });
-///
-///
-///  for (CObjectIStreamIterator<CSeq_entry> it(istr);  it.IsValid();  ++it) {
-///      CSeq_entry& obj = *it;
-///      // ...do something with "obj" here...
-///  }
-///
-///  for (CObjectIStreamIterator<CSeq_entry,CBioseq> it(istr);
-///       it.IsValid();  ++it) {
-///      CRef<CBioseq> obj(&*it);
-///      // ...do something with "obj" here...
-///  }
-///
-///  for (CObjectIStreamIterator<CSeq_entry, string> it(istr);
-///       it.IsValid();  ++it) {
-///      string& obj = *it;
-///  }
-///
-///  @endcode
-///
-///  @attention
-///   Input iterators only guarantee validity for single pass algorithms:
-///   once an input iterator has been incremented, all copies of its previous
-///   value may be invalidated. It is still possible to keep data objects
-///   for future use by placing them into CRef containers, when applicable.
-
-template<typename...>
-class CObjectIStreamIterator
-{
-public:
-
-    /// Construct iterator upon an object serialization stream
-    ///
-    /// @param istr
-    ///   Serial object stream
-    /// @param own_istr
-    ///   eTakeOwnership means that the input stream will be deleted
-    ///   automatically when the iterator gets destroyed
-    CObjectIStreamIterator(CObjectIStream& istr,
-                           EOwnership      own_istr = eNoOwnership) = delete;
-
-    /// Construct end-of-stream (invalid) iterator
-    /// @sa IsValid()
-    CObjectIStreamIterator(void) = delete;
-
-    // Copy-ctor and assignment
-    CObjectIStreamIterator(const CObjectIStreamIterator&);
-    CObjectIStreamIterator& operator=(const CObjectIStreamIterator&);
-
-    /// Advance to the next data object
-    CObjectIStreamIterator& operator++(void);
-
-    // Comparison
-    bool operator==(const CObjectIStreamIterator&) const;
-    bool operator!=(const CObjectIStreamIterator&) const;
-
-    /// Check whether the iterator points to a data
-    /// TRUE if the iterator is constructed upon a serialization stream AND
-    /// if it's not end-of-stream or error-in-stream  
-    bool IsValid(void) const;
-
-    /// Return the underlying serial object stream
-    const CObjectIStream& GetObjectIStream(void) const;
-
-    /// Return data object which is currently pointed to by the iterator.
-    /// Throw an exception is the iterator does not point to a data, i.e.
-    /// if IsValid() is FALSE.
-    template<typename TObj>  TObj& operator*();
-
-    /// Return pointer to data object which is currently pointed to by the
-    /// iterator.
-    /// Return NULL is the iterator does not point to a data, i.e.
-    /// if IsValid() is FALSE.
-    template<typename TObj>  TObj* operator->();
-
-    /// Return self
-    CObjectIStreamIterator& begin(void);
-
-    /// Construct and return end-of-stream iterator
-    CObjectIStreamIterator end(void);
-
-    // dtor
-    ~CObjectIStreamIterator();
-};
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /// template specializations and implementation
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot>
@@ -391,8 +477,12 @@ class CObjectIStreamIterator<TRoot>
     : public iterator< input_iterator_tag, TRoot, ptrdiff_t, TRoot*, TRoot& >
 {
 public:
+    using CParams = CObjectIStreamIterator<>::CParams<TRoot>;
+
     CObjectIStreamIterator( CObjectIStream& istr,
-                            EOwnership deleteInStream = eNoOwnership);
+                            EOwnership deleteInStream = eNoOwnership,
+                            const CParams& params     = CParams());
+
     CObjectIStreamIterator(void);
     CObjectIStreamIterator(const CObjectIStreamIterator&);
     CObjectIStreamIterator& operator=(const CObjectIStreamIterator&);
@@ -410,112 +500,196 @@ public:
     CObjectIStreamIterator& begin(void);
     CObjectIStreamIterator  end(void);
 
-private:
+protected:
     struct CData
     {
-        CData(CObjectIStream& istr, EOwnership deleteInStream);
+        CData(CObjectIStream& istr, EOwnership deleteInStream,
+              const CParams& params, TTypeInfo tinfo);
         ~CData(void);
-        CObjectIStream* m_Istr;
-        EOwnership      m_Own;
-        CRef<TRoot>     m_Value;
+
+        void x_BeginRead(void);
+        void x_EndRead(void);
+        void x_AcceptData(CObjectIStream& in, const CObjectInfo& type);
+        void x_Next(void);
+        bool x_NextNoFilter(const CObjectInfo& objinfo);
+        bool x_NextSeqWithFilter(const CObjectInfo& objinfo);
+        bool x_NextChoiceWithFilter(const CObjectInfo& objinfo);
+        bool x_NextContainerWithFilter(const CObjectInfo& objinfo);
+
+        CObjectIStream*    m_Istr;
+        EOwnership         m_Own;
+        CObjectTypeInfo    m_ValueType;
+        CObjectInfo        m_Value;
+        bool               m_HasReader;
+        bool               m_EndOfData;
+        CParams            m_Params;
+        mutex              m_ReaderMutex;
+        condition_variable m_ReaderCv;
+        thread             m_Reader;
+        enum EFilter {
+            eNone,
+            eOneSeq,
+            eOneRandom,
+            eAllSeq,
+            eAllRandom,
+            eOneChoice,
+            eAllChoice,
+            eOneContainer,
+            eAllContainer
+        } m_FilterType;
+
+        template<typename TR>
+        class x_CObjectIStreamIteratorHook : public CSkipObjectHook
+        {
+        public:
+            x_CObjectIStreamIteratorHook(
+                typename CObjectIStreamIterator<TR>::CData* pthis)
+                    : m_This(pthis) {
+            }
+            virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type) {
+                m_This->x_AcceptData(in,CObjectInfo(type.GetTypeInfo()));
+            }
+        private:
+            typename CObjectIStreamIterator<TR>::CData* m_This;
+        };
     };
+
+    CObjectIStreamIterator( CObjectIStream& istr,
+        const CParams& params, EOwnership deleteInStream);
+    void x_ReaderThread(void);
     shared_ptr<CData> m_Data;
 };
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot, TChild>
 
-#if defined(NCBI_THREADS)
-
 template<typename TRoot, typename TChild>
 class CObjectIStreamIterator<TRoot, TChild>
-    : public iterator< input_iterator_tag, TChild, ptrdiff_t, TChild*, TChild& >
+    : public CObjectIStreamIterator<TChild>
 {
 public:
+    using CParams = CObjectIStreamIterator<>::CParams<TChild>;
+
     CObjectIStreamIterator( CObjectIStream& istr,
-                            EOwnership deleteInStream = eNoOwnership);
+                            EOwnership deleteInStream  = eNoOwnership,
+                            const CParams& params      = CParams());
+
     CObjectIStreamIterator(void);
     CObjectIStreamIterator(const CObjectIStreamIterator&);
     CObjectIStreamIterator& operator=(const CObjectIStreamIterator&);
     ~CObjectIStreamIterator();
 
     CObjectIStreamIterator& operator++(void);
-    bool operator==(const CObjectIStreamIterator&) const;
-    bool operator!=(const CObjectIStreamIterator&) const;
-    bool IsValid(void) const;
-    const CObjectIStream& GetObjectIStream(void) const;
-
-    TChild& operator*();
-    TChild* operator->();
-
     CObjectIStreamIterator& begin(void);
     CObjectIStreamIterator  end(void);
 
-private:
-    struct CData
+protected:
+    using CParent       = CObjectIStreamIterator<TChild>;
+    void x_ReaderThread(void);
+
+    template<typename TR>
+    class x_CObjectIStreamIteratorReadHook : public CReadObjectHook
     {
-        CData(CObjectIStream& istr, EOwnership deleteInStream);
-        ~CData(void);
-        void x_ReaderThread(void);
-        void x_AcceptData(TChild& obj);
-        void x_Next(void);
-
-        CObjectIStream*    m_Istr;
-        EOwnership         m_Own;
-        TChild*            m_Value;
-        bool               m_EndOfData;
-        mutex              m_ReaderMutex;
-        condition_variable m_ReaderCv;
-        thread             m_Reader;
-
-        template<typename TR, typename TC>
-        class x_CObjectIStreamIteratorHook : public CSerial_FilterObjectsHook<TC>
-        {
-        public:
-            x_CObjectIStreamIteratorHook(
-                typename CObjectIStreamIterator<TR, TC>::CData* pthis)
-                    : m_This(pthis) {
-            }
-            virtual void Process(const TC& obj) {
-                m_This->x_AcceptData(const_cast<TC&>(obj));
-            }
-        private:
-            typename CObjectIStreamIterator<TR, TC>::CData* m_This;
-        };
+    public:
+        x_CObjectIStreamIteratorReadHook(
+            typename CObjectIStreamIterator<TR>::CData* pthis)
+                : m_This(pthis) {
+        }
+        virtual void ReadObject(CObjectIStream& in, const CObjectInfo& type) {
+            m_This->x_AcceptData(in,type);
+        }
+    private:
+        typename CObjectIStreamIterator<TR>::CData* m_This;
     };
-    shared_ptr<CData> m_Data;
 };
 
-#endif // NCBI_THREADS
+
+/////////////////////////////////////////////////////////////////////////////
+// helpers
+
+namespace ns_ObjectIStreamFilterIterator {
+
+template<typename TRoot>
+typename enable_if< is_base_of< CSerialObject, TRoot>::value, TTypeInfo>::type
+xxx_GetTypeInfo(void)
+{
+    return TRoot::GetTypeInfo();
+}
+
+template<typename TRoot>
+//typename enable_if< !is_base_of< CSerialObject, TRoot>::value, TTypeInfo>::type
+typename enable_if< is_pod<TRoot>::value || is_convertible<TRoot, std::string>::value, TTypeInfo>::type
+xxx_GetTypeInfo(void)
+{
+    return CStdTypeInfo<TRoot>::GetTypeInfo();
+}
+
+template<typename TRoot>
+TMemberIndex xxx_MemberIndex(const string& mem_name) 
+{
+    TTypeInfo tinfo = xxx_GetTypeInfo<TRoot>();
+    ETypeFamily type = tinfo->GetTypeFamily();
+    if (type == eTypeFamilyClass || type == eTypeFamilyChoice) {
+        const CClassTypeInfoBase* cinfo = CTypeConverter<CClassTypeInfoBase>::SafeCast(tinfo);
+        return cinfo->GetItems().Find(mem_name);
+    }
+    return kInvalidMember;
+}
+
+} // ns_ObjectIStreamFilterIterator
+
+#if 0
+template<typename...>
+template<typename TObj>
+void
+CObjectIStreamIterator<>::CParams<TObj>::xxx_MemberIndex(const string& mem_name) {
+    TTypeInfo tinfo = ns_ObjectIStreamFilterIterator::xxx_GetTypeInfo<TObj>();
+    ETypeFamily type = tinfo->GetTypeFamily();
+    if (type == eTypeFamilyClass || type == eTypeFamilyChoice) {
+        const CClassTypeInfoBase* cinfo = CTypeConverter<CClassTypeInfoBase>::SafeCast(tinfo);
+        return cinfo->GetItems().Find(mem_name);
+    }
+    return kInvalidMember;
+}
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot> implementation
 
 template<typename TRoot>
 CObjectIStreamIterator<TRoot>::CObjectIStreamIterator(void)
-    : m_Data(nullptr)
-{
+    : m_Data(nullptr) {
 }
 
 template<typename TRoot>
-CObjectIStreamIterator<TRoot>::CObjectIStreamIterator(
-    CObjectIStream& istr, EOwnership deleteInStream)
-    : m_Data( new CData(istr, deleteInStream))
+CObjectIStreamIterator<TRoot>::CObjectIStreamIterator( 
+    CObjectIStream& istr, const CParams& params, EOwnership deleteInStream)
+    : m_Data( new CData(istr, deleteInStream, params,
+        ns_ObjectIStreamFilterIterator::xxx_GetTypeInfo<TRoot>())) {
+}
+
+template<typename TRoot>
+CObjectIStreamIterator<TRoot>::CObjectIStreamIterator( 
+    CObjectIStream& istr, EOwnership deleteInStream, const CParams& params)
+    : CObjectIStreamIterator(istr, params, deleteInStream)
 {
+    if (m_Data->m_FilterType != CData::eNone) {
+        m_Data->m_HasReader = true;
+        m_Data->m_Reader = thread( mem_fun<void, CObjectIStreamIterator<TRoot> >(
+            &CObjectIStreamIterator<TRoot>::x_ReaderThread), this);
+    }
     ++(*this);
 }
 
 template<typename TRoot>
 CObjectIStreamIterator<TRoot>::CObjectIStreamIterator(
-    const CObjectIStreamIterator& v)
-        : m_Data(v.m_Data)
-{
+    const CObjectIStreamIterator& v) : m_Data(v.m_Data) {
 }
 
 template<typename TRoot>
 CObjectIStreamIterator<TRoot>&
-CObjectIStreamIterator<TRoot>::operator=(
-    const CObjectIStreamIterator& v) {
+CObjectIStreamIterator<TRoot>::operator=(const CObjectIStreamIterator& v) {
     m_Data = v.m_Data;
     return *this;
 }
@@ -526,30 +700,338 @@ CObjectIStreamIterator<TRoot>::~CObjectIStreamIterator() {
 
 template<typename TRoot>
 CObjectIStreamIterator<TRoot>::CData::CData(
-    CObjectIStream& istr, EOwnership deleteInStream)
+    CObjectIStream& istr, EOwnership deleteInStream,
+    const CParams& params, TTypeInfo tinfo)
     : m_Istr(&istr), m_Own(deleteInStream)
+    , m_ValueType(tinfo), m_Value(tinfo), m_HasReader(false)
+    , m_EndOfData(false), m_Params(params)
 {
+    ETypeFamily type = tinfo->GetTypeFamily();
+    if (type != eTypeFamilyClass && type != eTypeFamilyChoice && type != eTypeFamilyContainer) {
+        m_Params.m_FnFilter = nullptr;
+    }
+    m_FilterType = eNone;
+    if (m_Params.m_FnFilter) {
+        if (type == eTypeFamilyClass) {
+            const CClassTypeInfo* cinfo = CTypeConverter<CClassTypeInfo>::SafeCast(tinfo);
+            if (cinfo->Implicit()) {
+                const CItemInfo* itemInfo =
+                    cinfo->GetItems().GetItemInfo(cinfo->GetItems().FirstIndex());
+                if (itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer) {
+                    m_FilterType = m_Params.m_Index != kInvalidMember ? eOneContainer : eAllContainer;
+                }
+            }
+            if (m_FilterType == eNone) {
+                bool is_random = cinfo->RandomOrder();
+                if (m_Params.m_Index != kInvalidMember) {
+                    m_FilterType = is_random ? eOneRandom : eOneSeq;
+                } else {
+                    m_FilterType = is_random ? eAllRandom : eAllSeq;
+                }
+            }
+        } else if (type == eTypeFamilyChoice) {
+            m_FilterType = m_Params.m_Index != kInvalidMember ? eOneChoice : eAllChoice;
+        } else if (type == eTypeFamilyContainer) {
+            m_FilterType = m_Params.m_Index != kInvalidMember ? eOneContainer : eAllContainer;
+        }
+    }
 }
 
 template<typename TRoot>
-CObjectIStreamIterator<TRoot>::CData::~CData(void)
-{
+CObjectIStreamIterator<TRoot>::CData::~CData(void) {
+    if (m_Reader.joinable()) {
+        m_EndOfData = true;
+        m_ReaderCv.notify_all();
+        m_Reader.join();
+    }
     if (m_Istr && m_Own == eTakeOwnership) {
         delete m_Istr;
     }
 }
 
 template<typename TRoot>
-CObjectIStreamIterator<TRoot>&
-CObjectIStreamIterator<TRoot>::operator++(void)
+void
+CObjectIStreamIterator<TRoot>::CData::x_BeginRead(void) {
+    unique_lock<mutex> lck( m_ReaderMutex);
+    while (m_Value.GetObjectPtr() != nullptr) {
+        m_ReaderCv.wait(lck);
+    }
+}
+
+template<typename TRoot>
+void
+CObjectIStreamIterator<TRoot>::CData::x_EndRead(void) {
+    m_Value = CObjectInfo();
+    m_EndOfData = true;
+    m_ReaderCv.notify_one();
+}
+
+template<typename TRoot>
+void
+CObjectIStreamIterator<TRoot>::x_ReaderThread() {
+    m_Data->x_BeginRead();
+    try {
+        m_Data->m_ValueType.SetLocalSkipHook(*(m_Data->m_Istr), new typename CData::template x_CObjectIStreamIteratorHook<TRoot>(m_Data.get()));
+        while (Serial_FilterSkip(*(m_Data->m_Istr),m_Data->m_ValueType))
+            ;
+    } catch (CException& e) {
+        if (!m_Data->m_EndOfData) {
+            NCBI_REPORT_EXCEPTION("In CObjectIStreamIterator<>::x_ReaderThread",e);
+            throw;
+        }
+    }
+    m_Data->x_EndRead();
+}
+
+template<typename TRoot, typename TChild>
+void
+CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread() {
+    this->m_Data->x_BeginRead();
+    try {
+        this->m_Data->m_ValueType.SetLocalSkipHook(*(this->m_Data->m_Istr), new typename CParent::CData::template x_CObjectIStreamIteratorHook<TChild>(this->m_Data.get()));
+        this->m_Data->m_ValueType.SetLocalReadHook(*(this->m_Data->m_Istr), new x_CObjectIStreamIteratorReadHook<TChild>(this->m_Data.get()));
+        while (Serial_FilterSkip(*(this->m_Data->m_Istr),CObjectTypeInfo(CType<TRoot>())))
+            ;
+    } catch (CException& e) {
+        if (!this->m_Data->m_EndOfData) {
+            NCBI_REPORT_EXCEPTION("In CObjectIStreamIterator<>::x_ReaderThread",e);
+            throw;
+        }
+    }
+    this->m_Data->x_EndRead();
+}
+
+template<typename TRoot>
+void
+CObjectIStreamIterator<TRoot>::CData::x_AcceptData(
+    CObjectIStream& in, const CObjectInfo& objinfo)
 {
-    if (m_Data.get() != nullptr) {
-        if (m_Data->m_Istr->EndOfData()) {
-            m_Data.reset();
+    if (m_Istr->EndOfData()) {
+        m_EndOfData = true;
+    } else {
+        bool res = false;
+        switch ( m_FilterType) {
+        default:
+        case eNone:
+            res = x_NextNoFilter(objinfo);
+            break;
+        case eOneSeq:
+        case eOneRandom:
+        case eAllSeq:
+        case eAllRandom:
+            res = x_NextSeqWithFilter(objinfo);
+            break;
+        case eOneChoice:
+        case eAllChoice:
+            res = x_NextChoiceWithFilter(objinfo);
+            break;
+        case eOneContainer:
+        case eAllContainer:
+            res = x_NextContainerWithFilter(objinfo);
+            break;
+        }
+        if (res) {
+            unique_lock<mutex> lck(m_ReaderMutex);
+            m_Value = objinfo;
+            m_ReaderCv.notify_one();
+            while (m_Value.GetObjectPtr() != nullptr) {
+                if (m_EndOfData) {
+                    NCBI_THROW( CEofException, eEof,
+                        "CObjectIStreamIterator: abort data parsing");
+                }
+                m_ReaderCv.wait(lck);
+            }
         } else {
-            m_Data->m_Value.Reset( new TRoot);
-            m_Data->m_Istr->Read(&*(m_Data->m_Value),
-                m_Data->m_Value->GetThisTypeInfo());
+            in.SetDiscardCurrObject();
+        }
+    }
+}
+
+template<typename TRoot>
+void
+CObjectIStreamIterator<TRoot>::CData::x_Next(void) {
+    unique_lock<mutex> lck(m_ReaderMutex);
+    m_Value = CObjectInfo();
+    m_ReaderCv.notify_one();
+    while (m_Value.GetObjectPtr() == nullptr && !m_EndOfData) {
+        m_ReaderCv.wait(lck);
+    }
+}
+
+template<typename TRoot>
+bool
+CObjectIStreamIterator<TRoot>::CData::x_NextNoFilter(const CObjectInfo& objinfo)
+{
+    objinfo.GetTypeInfo()->DefaultReadData(*m_Istr, objinfo.GetObjectPtr());
+    return true;
+}
+
+template<typename TRoot>
+bool
+CObjectIStreamIterator<TRoot>::CData::x_NextSeqWithFilter(const CObjectInfo& objinfo)
+{
+    TMemberIndex mi = kInvalidMember;
+    set<TMemberIndex> done;
+    bool checked = false;
+    bool valid = true;
+    TRoot& obj = *CTypeConverter<TRoot>::SafeCast(objinfo.GetObjectPtr());
+
+    for ( CIStreamClassMemberIterator i(*m_Istr, objinfo); i; ++i ) {
+
+        TMemberIndex mi_now = (*i).GetMemberIndex();
+        CObjectInfoMI minfo(objinfo, mi_now);
+
+        if (valid) {
+// before read - validate missing members
+            switch (m_FilterType) {
+            case eOneRandom:
+            case eAllRandom:
+            default:
+                break;
+            case eOneSeq:
+                if (mi_now > m_Params.m_Index && !checked) {
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, m_Params.m_Index, nullptr, m_Params.m_Extra);
+                    checked = true;
+                }
+                break;
+            case eAllSeq:
+                for (++mi; valid && mi < mi_now; ++mi) {
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, mi, nullptr, m_Params.m_Extra);
+                }
+                break;
+            }
+        }
+
+// if still valid
+        if (valid) {
+// read next member
+            i.ReadClassMember(objinfo);
+
+// after read - validate member
+            switch (m_FilterType) {
+            default: break;
+            case eOneSeq:
+            case eOneRandom:
+                if (mi_now == m_Params.m_Index) {
+                    CObjectInfo oi = minfo.GetMember().GetTypeFamily() == eTypeFamilyPointer ?
+                        minfo.GetMember().GetPointedObject() : minfo.GetMember();
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, mi_now, &oi, m_Params.m_Extra);
+                    checked = true;
+                }
+                break;
+            case eAllRandom:
+                done.insert(mi_now);
+                // no break
+            case eAllSeq:
+                {
+                    CObjectInfo oi = minfo.GetMember().GetTypeFamily() == eTypeFamilyPointer ?
+                        minfo.GetMember().GetPointedObject() : minfo.GetMember();
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, mi_now, &oi, m_Params.m_Extra);
+                }
+                break;
+            }
+        } else {
+// object invalid - skip remaining members
+            i.SkipClassMember();
+        }
+        mi = mi_now;
+    }
+
+// finally - validate missing members
+    if (valid) {
+        switch (m_FilterType) {
+        default: break;
+        case eOneSeq:
+        case eOneRandom:
+            if (!checked) {
+                valid = m_Params.m_FnFilter( *m_Istr, obj, m_Params.m_Index, nullptr, m_Params.m_Extra);
+            }
+            break;
+        case eAllSeq:
+            {
+                TMemberIndex mi_last = objinfo.GetClassTypeInfo()->GetItems().LastIndex() + 1;
+                for (++mi; valid && mi < mi_last; ++mi) {
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, mi, nullptr, m_Params.m_Extra);
+                }
+            }
+            break;
+        case eAllRandom:
+            {
+                mi = objinfo.GetClassTypeInfo()->GetItems().FirstIndex();
+                TMemberIndex mi_last = objinfo.GetClassTypeInfo()->GetItems().LastIndex() + 1;
+                for (; valid && mi < mi_last; ++mi) {
+                    if (done.find(mi) == done.end()) {
+                        valid = m_Params.m_FnFilter( *m_Istr, obj, mi, nullptr, m_Params.m_Extra);
+                    }
+                }
+            }
+            break;
+        }
+    }
+    return valid;
+}
+
+template<typename TRoot>
+bool
+CObjectIStreamIterator<TRoot>::CData::x_NextChoiceWithFilter(const CObjectInfo& objinfo)
+{
+    bool valid = true;
+    objinfo.GetTypeInfo()->DefaultReadData(*m_Istr, objinfo.GetObjectPtr());
+    TRoot& obj = *CTypeConverter<TRoot>::SafeCast(objinfo.GetObjectPtr());
+    CObjectInfoCV cv = objinfo.GetCurrentChoiceVariant();
+    TMemberIndex i = cv.GetVariantIndex();
+    if (i == m_Params.m_Index) {
+        CObjectInfo oi = cv.GetVariant().GetTypeFamily() == eTypeFamilyPointer ?
+            cv.GetVariant().GetPointedObject() : cv.GetVariant();
+        valid = m_Params.m_FnFilter( *m_Istr, obj, i, &oi, m_Params.m_Extra);
+    } else {
+        valid = m_Params.m_FnFilter( *m_Istr, obj, m_Params.m_Index, nullptr, m_Params.m_Extra);
+    }
+    return valid;
+}
+
+template<typename TRoot>
+bool
+CObjectIStreamIterator<TRoot>::CData::x_NextContainerWithFilter(const CObjectInfo& objinfo)
+{
+    TMemberIndex mi = kInvalidMember;
+    bool checked = false;
+    bool valid = true;
+    TRoot& obj = *CTypeConverter<TRoot>::SafeCast(objinfo.GetObjectPtr());
+
+    for ( CIStreamContainerIterator i(*m_Istr, objinfo); i; ++i ) {
+        if (valid) {
+            CObjectInfo oi(i.ReadElement(objinfo.GetObjectPtr()));
+            ++mi;
+            if (oi.GetObjectPtr()) {
+                if (m_FilterType == eAllContainer || (m_FilterType == eOneContainer && mi == m_Params.m_Index)) {
+                    CObjectInfo oe = oi.GetTypeFamily() == eTypeFamilyPointer ? oi.GetPointedObject() : oi;
+                    valid = m_Params.m_FnFilter( *m_Istr, obj, mi, &oe, m_Params.m_Extra);
+                }
+            }
+        } else {
+            i.SkipElement();
+        }
+    }
+    return valid;
+}
+
+template<typename TRoot>
+CObjectIStreamIterator<TRoot>&
+CObjectIStreamIterator<TRoot>::operator++(void) {
+    if (m_Data.get() != nullptr) {
+        if (!m_Data->m_HasReader) {
+            if (m_Data->m_Istr->EndOfData()) {
+                m_Data.reset();
+            } else {
+                m_Data->m_Value = CObjectInfo(m_Data->m_ValueType);
+                m_Data->m_Istr->Read(m_Data->m_Value);
+            }
+        } else {
+            m_Data->x_Next();
+            if (m_Data->m_EndOfData) {
+                m_Data.reset();
+            }
         }
     }
     return *this;
@@ -571,26 +1053,25 @@ CObjectIStreamIterator<TRoot>::operator!=(
 
 template<typename TRoot>
 bool CObjectIStreamIterator<TRoot>::IsValid() const {
-    return m_Data.get() != nullptr && m_Data->m_Value.NotNull();
+    return m_Data.get() != nullptr && m_Data->m_Value.GetObjectPtr() != nullptr;
 }
 
 template<typename TRoot>
 const CObjectIStream&
-CObjectIStreamIterator<TRoot>::GetObjectIStream(void) const
-{
+CObjectIStreamIterator<TRoot>::GetObjectIStream(void) const {
     return *(m_Data->m_Istr);
 }
 
 template<typename TRoot>
 TRoot&
 CObjectIStreamIterator<TRoot>::operator*() {
-    return m_Data->m_Value.GetObject();
+    return *(TRoot*)(m_Data->m_Value.GetObjectPtr());
 }
 
 template<typename TRoot>
 TRoot*
 CObjectIStreamIterator<TRoot>::operator->() {
-    return IsValid() ? m_Data->m_Value.GetPointer() : nullptr;
+    return IsValid() ? (TRoot*)m_Data->m_Value.GetObjectPtr() : nullptr;
 }
 
 template<typename TRoot>
@@ -605,38 +1086,36 @@ CObjectIStreamIterator<TRoot>::end(void) {
     return CObjectIStreamIterator<TRoot>();
 }
 
-#if defined(NCBI_THREADS)
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot, TChild> implementation
 
 template<typename TRoot, typename TChild>
 CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator(void)
-    : m_Data(nullptr)
-{
+    : CParent() {
 }
 
 template<typename TRoot, typename TChild>
-CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator(
-    CObjectIStream& istr, EOwnership deleteInStream)
-    : m_Data(new CData(istr, deleteInStream))
+CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator( 
+    CObjectIStream& istr, EOwnership deleteInStream, const CParams& params)
+    : CParent(istr, params, deleteInStream)
 {
+    this->m_Data->m_HasReader = true;
+    this->m_Data->m_Reader = thread( mem_fun<void, CObjectIStreamIterator<TRoot,TChild> >(
+        &CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread), this);
     ++(*this);
 }
 
 template<typename TRoot, typename TChild>
 CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator(
-    const CObjectIStreamIterator& v)
-        : m_Data(v.m_Data)
-{
+    const CObjectIStreamIterator& v) : CParent(v) {
 }
 
 template<typename TRoot, typename TChild>
 CObjectIStreamIterator<TRoot, TChild>&
 CObjectIStreamIterator<TRoot, TChild>::operator=(
-    const CObjectIStreamIterator& v)
-{
-    m_Data = v.m_Data;
+    const CObjectIStreamIterator& v) {
+    CParent::operator=(v);
     return *this;
 }
 
@@ -645,144 +1124,10 @@ CObjectIStreamIterator<TRoot, TChild>::~CObjectIStreamIterator() {
 }
 
 template<typename TRoot, typename TChild>
-typename enable_if< is_base_of< CSerialObject, TChild>::value, void>::type
-x_Serial_FilterObjects(CObjectIStream& in,
-    CSerial_FilterObjectsHook<TChild>* hook, bool readall=true)
-{
-    Serial_FilterObjects< TRoot, TChild >( in, hook, readall);
-}
-
-template<typename TRoot, typename TChild>
-typename enable_if< !is_base_of< CSerialObject, TChild>::value, void>::type
-x_Serial_FilterObjects(CObjectIStream& in,
-    CSerial_FilterObjectsHook<TChild>* hook, bool readall=true)
-{
-    Serial_FilterStdObjects< TRoot, TChild >( in, hook, readall);
-}
-
-template<typename TRoot, typename TChild>
-CObjectIStreamIterator<TRoot,TChild>::CData::CData(
-    CObjectIStream& istr, EOwnership deleteInStream)
-    : m_Istr(&istr), m_Own(deleteInStream),
-        m_Value((TChild*)1), m_EndOfData(false),
-        m_Reader( mem_fun<void, CObjectIStreamIterator<TRoot, TChild>::CData >(
-            &CObjectIStreamIterator<TRoot, TChild>::CData::x_ReaderThread), this)
-{
-}
-
-template<typename TRoot, typename TChild>
-CObjectIStreamIterator<TRoot,TChild>::CData::~CData(void)
-{
-    if (m_Reader.joinable()) {
-        m_EndOfData = true;
-        m_ReaderCv.notify_all();
-        m_Reader.join();
-    }
-    if (m_Istr && m_Own == eTakeOwnership) {
-        delete m_Istr;
-    }
-}
-
-template<typename TRoot, typename TChild>
-void
-CObjectIStreamIterator<TRoot, TChild>::CData::x_ReaderThread()
-{
-    {
-        unique_lock<mutex> lck(m_ReaderMutex);
-        while (m_Value != nullptr) {
-            m_ReaderCv.wait(lck);
-        }
-    }
-    try {
-        x_Serial_FilterObjects< TRoot, TChild >( *m_Istr,
-            new x_CObjectIStreamIteratorHook< TRoot, TChild >(this));
-    } catch (CException& e) {
-        if (!m_EndOfData) {
-            NCBI_REPORT_EXCEPTION("In CObjectIStreamIterator thread",e);
-        }
-    }
-    m_Value = nullptr;
-    m_EndOfData = true;
-    m_ReaderCv.notify_one();
-}
-
-template<typename TRoot, typename TChild>
-void
-CObjectIStreamIterator<TRoot, TChild>::CData::x_AcceptData(TChild& obj)
-{
-    unique_lock<mutex> lck(m_ReaderMutex);
-    m_Value = &obj;
-    m_ReaderCv.notify_one();
-    while (m_Value != nullptr) {
-        if (m_EndOfData) {
-            NCBI_THROW( CEofException, eEof,
-                "CObjectIStreamIterator: abort data parsing");
-        }
-        m_ReaderCv.wait(lck);
-    }
-}
-
-template<typename TRoot, typename TChild>
-void
-CObjectIStreamIterator<TRoot, TChild>::CData::x_Next(void)
-{
-    unique_lock<mutex> lck(m_ReaderMutex);
-    m_Value = nullptr;
-    m_ReaderCv.notify_one();
-    while (m_Value == nullptr && !m_EndOfData) {
-        m_ReaderCv.wait(lck);
-    }
-}
-
-template<typename TRoot, typename TChild>
 CObjectIStreamIterator<TRoot, TChild>&
 CObjectIStreamIterator<TRoot, TChild>::operator++(void) {
-
-    if (m_Data.get() != nullptr) {
-        m_Data->x_Next();
-        if (m_Data->m_EndOfData) {
-            m_Data.reset();
-        }
-    }
+    CParent::operator++();
     return *this;
-}
-
-template<typename TRoot, typename TChild>
-bool
-CObjectIStreamIterator<TRoot, TChild>::operator==(
-    const CObjectIStreamIterator& v) const {
-    return m_Data.get() == v.m_Data.get();
-}
-
-template<typename TRoot, typename TChild>
-bool
-CObjectIStreamIterator<TRoot, TChild>::operator!=(
-    const CObjectIStreamIterator& v) const {
-    return m_Data.get() != v.m_Data.get();
-}
-
-template<typename TRoot, typename TChild>
-bool CObjectIStreamIterator<TRoot, TChild>::IsValid() const {
-    return m_Data.get() != nullptr && m_Data->m_Value != nullptr;
-}
-
-template<typename TRoot, typename TChild>
-const CObjectIStream&
-CObjectIStreamIterator<TRoot, TChild>::GetObjectIStream(void) const
-{
-    return *(m_Data->m_Istr);
-}
-
-template<typename TRoot, typename TChild>
-TChild&
-CObjectIStreamIterator<TRoot, TChild>::operator*() {
-    return *(m_Data->m_Value);
-}
-
-template<typename TRoot, typename TChild>
-TChild*
-CObjectIStreamIterator<TRoot, TChild>::operator->() {
-    return IsValid() ? m_Data->m_Value : nullptr;
 }
 
 template<typename TRoot, typename TChild>
@@ -806,10 +1151,11 @@ class CObjectIStreamAsyncIterator<TRoot>
     : public iterator< input_iterator_tag, TRoot, ptrdiff_t, TRoot*, TRoot& >
 {
 public:
+    using CParams = CObjectIStreamAsyncIterator<>::CParams<TRoot>;
+
     CObjectIStreamAsyncIterator( CObjectIStream& istr,
-                                 EOwnership deleteInStream  = eNoOwnership,
-                                 const CObjectIStreamAsyncIterator<>::CParams& params
-                                    =  CObjectIStreamAsyncIterator<>::CParams());
+                                 EOwnership deleteInStream = eNoOwnership,
+                                 const CParams& params     =  CParams());
     CObjectIStreamAsyncIterator(void);
     CObjectIStreamAsyncIterator(const CObjectIStreamAsyncIterator&);
     CObjectIStreamAsyncIterator& operator=(const CObjectIStreamAsyncIterator&);
@@ -829,28 +1175,29 @@ public:
 
 protected:
     typedef queue< CRef<TRoot> > TObjectsQueue;
-#if !NCBI_COMPILER_MSVC || _MSC_VER >= 1900
-    typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, TObjectsQueue&&)> FParserFunction;
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
+    typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, const CParams&, TObjectsQueue)> FParserFunction;
 #else
-    typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, TObjectsQueue)> FParserFunction;
+    typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, const CParams&, TObjectsQueue&&)> FParserFunction;
 #endif
     CObjectIStreamAsyncIterator( CObjectIStream& istr,
                                  EOwnership deleteInStream,
                                  FParserFunction parser,
-                                 const CObjectIStreamAsyncIterator<>::CParams& params);
+                                 const CParams& params);
 private: 
     static TObjectsQueue sx_ClearGarbageAndParse(
             CRef<CByteSource> bytesource,  ESerialDataFormat format,
-#if !NCBI_COMPILER_MSVC || _MSC_VER >= 1900
-            TObjectsQueue&& garbage
-#else
+            const CParams& params,
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
             TObjectsQueue garbage
+#else
+            TObjectsQueue&& garbage
 #endif
             );
     
     struct CData {
         CData(CObjectIStream& istr, EOwnership deleteInStream, FParserFunction parser,
-            const CObjectIStreamAsyncIterator<>::CParams& params);
+            const CParams& params);
         ~CData(void);
 
         using future_queue_t  = future<TObjectsQueue>;
@@ -874,6 +1221,7 @@ private:
         size_t          m_CurrentRawSize;
         launch          m_Policy;
         bool            m_EndOfData;
+        CParams         m_Params;
 
         mutex                        m_ReaderMutex;
         condition_variable           m_ReaderCv;
@@ -893,10 +1241,11 @@ class CObjectIStreamAsyncIterator<TRoot, TChild>
     : public CObjectIStreamAsyncIterator<TChild>
 {
 public:
+    using CParams = CObjectIStreamAsyncIterator<>::CParams<TChild>;
+
     CObjectIStreamAsyncIterator( CObjectIStream& istr,
-                                 EOwnership deleteInStream  = eNoOwnership,
-                                 const CObjectIStreamAsyncIterator<>::CParams& params
-                                    =  CObjectIStreamAsyncIterator<>::CParams());
+                                 EOwnership deleteInStream = eNoOwnership,
+                                 const CParams& params     = CParams());
     CObjectIStreamAsyncIterator(void);
     CObjectIStreamAsyncIterator(const CObjectIStreamAsyncIterator&);
     CObjectIStreamAsyncIterator& operator=(const CObjectIStreamAsyncIterator&);
@@ -913,25 +1262,13 @@ private:
 
     static TObjectsQueue sx_ClearGarbageAndParse(
             CRef<CByteSource> bytesource,  ESerialDataFormat format,
-#if !NCBI_COMPILER_MSVC || _MSC_VER >= 1900
-            TObjectsQueue&& garbage
-#else
+            const CParams& params,
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
             TObjectsQueue garbage
+#else
+            TObjectsQueue&& garbage
 #endif
             );
-
-    template<typename TC>
-    class x_CObjectIStreamIteratorHook : public CSerial_FilterObjectsHook<TC>
-    {
-    public:
-        x_CObjectIStreamIteratorHook(TObjectsQueue& rdata)
-                : m_Data(rdata) {
-        }
-        virtual void Process(const TC& obj) {
-            m_Data.push( CRef<TC>( const_cast<TC*>(&obj)));
-        }
-        TObjectsQueue& m_Data;
-    };
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -946,9 +1283,8 @@ CObjectIStreamAsyncIterator<TRoot>::CObjectIStreamAsyncIterator(void)
 template<typename TRoot>
 CObjectIStreamAsyncIterator<TRoot>::CObjectIStreamAsyncIterator(
         CObjectIStream& istr, EOwnership deleteInStream,
-        const CObjectIStreamAsyncIterator<>::CParams& params)
-    : CObjectIStreamAsyncIterator(
-        istr, deleteInStream,
+        const CParams& params)
+    : CObjectIStreamAsyncIterator( istr, deleteInStream,
         &CObjectIStreamAsyncIterator<TRoot>::sx_ClearGarbageAndParse, params)
 {
 }
@@ -956,7 +1292,7 @@ CObjectIStreamAsyncIterator<TRoot>::CObjectIStreamAsyncIterator(
 template<typename TRoot>
 CObjectIStreamAsyncIterator<TRoot>::CObjectIStreamAsyncIterator(
     CObjectIStream& istr,  EOwnership deleteInStream,
-    FParserFunction parser,  const CObjectIStreamAsyncIterator<>::CParams& params)
+    FParserFunction parser,  const CParams& params)
     : m_Data(new CData(istr, deleteInStream, parser, params))
 {
     ++(*this);
@@ -985,8 +1321,10 @@ template<typename TRoot>
 CObjectIStreamAsyncIterator<TRoot>&
 CObjectIStreamAsyncIterator<TRoot>::operator++() {
     if (m_Data.get() != nullptr) {
-        m_Data->x_UpdateFuturesQueue();
-        m_Data->x_UpdateObjectsQueue();
+        do {
+            m_Data->x_UpdateFuturesQueue();
+            m_Data->x_UpdateObjectsQueue();
+        } while (!IsValid() && !m_Data->m_EndOfData);
         if (!IsValid()) {
             m_Data.reset();
         }
@@ -1043,10 +1381,11 @@ typename CObjectIStreamAsyncIterator<TRoot>::TObjectsQueue
 CObjectIStreamAsyncIterator<TRoot>::sx_ClearGarbageAndParse(
         CRef<CByteSource> bytesource, 
         ESerialDataFormat format,
-#if !NCBI_COMPILER_MSVC || _MSC_VER >= 1900
-        TObjectsQueue&& garbage
-#else
+        const CParams& params,
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
         TObjectsQueue garbage
+#else
+        TObjectsQueue&& garbage
 #endif
         )
 {
@@ -1060,10 +1399,16 @@ CObjectIStreamAsyncIterator<TRoot>::sx_ClearGarbageAndParse(
     unique_ptr<CObjectIStream> istr { CObjectIStream::Create(format, *bytesource) };
 
     TObjectsQueue queue;
-    while(!istr->EndOfData()) {
-        CRef<TRoot> object(new TRoot);
-        istr->Read(&*object, object->GetThisTypeInfo());
-        queue.push(object);
+    if (params.m_FnFilter) {
+        for (TRoot& object : CObjectIStreamIterator<TRoot>( *istr, eNoOwnership, params)) {
+            queue.push( CRef<TRoot>(&object));
+        }
+    } else {
+        while(!istr->EndOfData()) {
+            CRef<TRoot> object(new TRoot);
+            istr->Read(&*object, object->GetThisTypeInfo());
+            queue.push(object);
+        }
     }
     return queue;
 }
@@ -1071,7 +1416,7 @@ CObjectIStreamAsyncIterator<TRoot>::sx_ClearGarbageAndParse(
 template<typename TRoot>
 CObjectIStreamAsyncIterator<TRoot>::CData::CData(
         CObjectIStream& istr, EOwnership deleteInStream, FParserFunction parser,
-        const CObjectIStreamAsyncIterator<>::CParams& params)
+        const CParams& params)
     : m_Istr(&istr)
     , m_Own(deleteInStream)
     , m_Parser(parser) 
@@ -1081,6 +1426,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::CData(
     , m_CurrentRawSize(0)
     , m_Policy(params.m_ThreadPolicy)
     , m_EndOfData(false)
+    , m_Params(params)
 {
     if (m_MaxRawSize != 0) {
         m_Reader = thread(
@@ -1177,7 +1523,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_UpdateFuturesQueue()
     swap(m_GarbageQueue, tmp_garbage_queue);
 
     m_FuturesQueue.push( async( m_Policy, m_Parser,
-        data,  m_Istr->GetDataFormat(), move(tmp_garbage_queue)));
+        data,  m_Istr->GetDataFormat(), m_Params, move(tmp_garbage_queue)));
 }
 
 template<typename TRoot>
@@ -1222,9 +1568,13 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread(void)
             startpos  + (CNcbiStreampos)(m_RawBufferSize);
 
         CStreamDelayBufferGuard guard(*(m_Istr));
-        do {
-            m_Istr->SkipAnyContentObject();
-        } while( !m_Istr->EndOfData() && m_Istr->GetStreamPos() < endpos);
+        try {
+            do {
+                m_Istr->SkipAnyContentObject();
+            } while( !m_Istr->EndOfData() && m_Istr->GetStreamPos() < endpos);
+        } catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("In CObjectIStreamAsyncIterator<>::x_ReaderThread",e);
+        }
 
         size_t this_buffer_size = m_Istr->GetStreamPos() - startpos;
         CRef< CByteSource > data = guard.EndDelayBuffer();
@@ -1251,6 +1601,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread(void)
     m_ReaderCv.notify_one();
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamAsyncIterator<TRoot,TChild> implementation
 
@@ -1263,7 +1614,7 @@ CObjectIStreamAsyncIterator<TRoot, TChild>::CObjectIStreamAsyncIterator(void)
 template<typename TRoot, typename TChild>
 CObjectIStreamAsyncIterator<TRoot, TChild>::CObjectIStreamAsyncIterator(
         CObjectIStream& istr, EOwnership deleteInStream,
-        const CObjectIStreamAsyncIterator<>::CParams& params)
+        const CParams& params)
     : CParent(istr, deleteInStream,
         &CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse, params)
 {
@@ -1312,10 +1663,11 @@ typename CObjectIStreamAsyncIterator<TRoot, TChild>::TObjectsQueue
 CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse(
         CRef<CByteSource> bytesource, 
         ESerialDataFormat format,
-#if !NCBI_COMPILER_MSVC || _MSC_VER >= 1900
-        TObjectsQueue&& garbage
-#else
+        const CParams& params,
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
         TObjectsQueue garbage
+#else
+        TObjectsQueue&& garbage
 #endif
         )
 {
@@ -1327,16 +1679,14 @@ CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse(
 
     // deserialize objects from bytesource
     unique_ptr<CObjectIStream> istr { CObjectIStream::Create(format, *bytesource) };
-
     TObjectsQueue queue;
-    try {
-        x_Serial_FilterObjects< TRoot, TChild >( *istr,
-            new x_CObjectIStreamIteratorHook< TChild >(queue));
-    } catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("In CObjectIStreamAsyncIterator thread",e);
+    for (TChild& object : CObjectIStreamIterator<TRoot, TChild>( *istr, eNoOwnership, params)) {
+        queue.push( CRef<TChild>(&object));
     }
     return queue;
 }
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
