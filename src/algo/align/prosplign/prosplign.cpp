@@ -308,7 +308,15 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          " If difference (in percentage) is more than cut_flanks_with_posit_dropoff, flank will be dropped",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_window));
-    arg_desc->SetConstraint("cut_flanks_with_posit_window", new CArgAllow_Integers(0, 10000));
+    arg_desc->SetConstraint("cut_flanks_with_posit_window", new CArgAllow_Integers(0, 100000));
+
+    arg_desc->AddDefaultKey
+        ("cut_flanks_with_posit_max_len",
+         "cut_flanks_with_posit_max_len",
+         "maximum length to cut for cut_flanks_with_posit_drop",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_dropoff));
+    arg_desc->SetConstraint("cut_flanks_with_posit_max_len", new CArgAllow_Integers(-1, 100000));
 
     arg_desc->AddDefaultKey
         ("cut_flanks_with_posit_gap_ratio",
@@ -345,6 +353,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
         SetCutFlanksWithPositDrop(default_cut_flanks_with_posit_drop);
         SetCutFlanksWithPositDropoff(default_cut_flanks_with_posit_dropoff);
         SetCutFlanksWithPositWindow(default_cut_flanks_with_posit_window);
+        SetCutFlanksWithPositMaxLen(default_cut_flanks_with_posit_max_len);
         SetCutFlanksWithPositGapRatio(default_cut_flanks_with_posit_gap_ratio);
        
         SetCutFlankPartialCodons(default_cut_flank_partial_codons);
@@ -373,6 +382,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
         SetCutFlanksWithPositDrop(false);
         SetCutFlanksWithPositDropoff(0);
         SetCutFlanksWithPositWindow(0);
+        SetCutFlanksWithPositMaxLen(0);
         SetCutFlanksWithPositGapRatio(0);
 
         SetCutFlankPartialCodons(false);
@@ -404,6 +414,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         SetCutFlanksWithPositDrop(false);
         SetCutFlanksWithPositDropoff(0);
         SetCutFlanksWithPositWindow(0);
+        SetCutFlanksWithPositMaxLen(0);
         SetCutFlanksWithPositGapRatio(0);
         
         SetCutFlankPartialCodons(false);
@@ -430,6 +441,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         SetCutFlanksWithPositDrop(args["cut_flanks_with_posit_drop"].AsBoolean());
         SetCutFlanksWithPositDropoff(args["cut_flanks_with_posit_dropoff"].AsInteger());
         SetCutFlanksWithPositWindow(args["cut_flanks_with_posit_window"].AsInteger());
+        SetCutFlanksWithPositMaxLen(args["cut_flanks_with_posit_max_len"].AsInteger());
         SetCutFlanksWithPositGapRatio(args["cut_flanks_with_posit_gap_ratio"].AsInteger());
 
         SetCutFlankPartialCodons(args["cut_flank_partial_codons"].AsBoolean());
@@ -571,6 +583,16 @@ CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlanksWithPositWindow(in
 int CProSplignOutputOptions::GetCutFlanksWithPositWindow() const
 {
     return cut_flanks_with_posit_window;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlanksWithPositMaxLen(int val)
+{
+    cut_flanks_with_posit_max_len = val;
+    return *this;
+}
+int CProSplignOutputOptions::GetCutFlanksWithPositMaxLen() const
+{
+    return cut_flanks_with_posit_max_len;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetCutFlanksWithPositGapRatio(int val)

@@ -79,6 +79,7 @@ public:
 
     ///trim flanks with positives dropoff over a cutoff, iterative
     ///flank 'good pieces' should not be dropped completely
+    ///applied inside an exon only
     int CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt& options) const; //returns new pc.beg
     int CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt& options) const; //returns new pc.end
     
@@ -1176,6 +1177,7 @@ size_t CProSplignTrimmer::RestoreThreePrime(size_t end) const {
 ///trim left flank with positives dropoff over a cutoff, iterative
 ///'pc' should not be dropped completely
 ///returns new pc.beg
+///applied inside an exon only
 int CProSplignTrimmer::CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt& options) const {
     if( !options.GetCutFlanksWithPositDrop() ) { // do not trim
         return pc.beg;
@@ -1186,6 +1188,7 @@ int CProSplignTrimmer::CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt&
 
         const double dropoff = options.GetCutFlanksWithPositDropoff()/(double)100;
         const int window_size = options.GetCutFlanksWithPositWindow();
+        const int max_cut_len = options.GetCutFlanksWithPositMaxLen();
         bool keep_trimming = true;
 
         //trim left flank
@@ -1219,14 +1222,24 @@ int CProSplignTrimmer::CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt&
             if( cur_end >= endpos ) return pc.beg; //nothing to trim if piece length is window size or less
             //initial window
             for( int pos = cur_pos; pos < cur_end; ++pos ) {
+                if( prot[pos] == INTRON_CHAR ) { //hit at intron, no cut
+                    return pc.beg;
+                }
                 if(m_posit[pos] == POSIT_CHAR) {
                     ++rposit;
                 }
             }
 
             //find cutting point
-            do {
-                //step
+            do {  //step
+
+                // time to stop?
+                if( prot[cur_end] == INTRON_CHAR ) { //hit an intron, stop
+                    break;
+                }
+                if( max_cut_len < cur_pos - begpos + 1 ) { // maximum length to cut reached
+                    break;
+                }
 
                 //in window
                 if( m_posit[cur_pos] == POSIT_CHAR ) {
@@ -1316,6 +1329,7 @@ int CProSplignTrimmer::CutFromLeft(CNPiece pc, const CProSplignOutputOptionsExt&
 ///trim right flank with positives dropoff over a cutoff, iterative
 ///'pc' should not be dropped completely
 ///returns new pc.end
+///applied inside an exon only
 int CProSplignTrimmer::CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt& options) const {
     if( !options.GetCutFlanksWithPositDrop() ) { // do not trim
         return pc.end;
@@ -1326,6 +1340,7 @@ int CProSplignTrimmer::CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt
 
         const double dropoff = options.GetCutFlanksWithPositDropoff()/(double)100;
         const int window_size = options.GetCutFlanksWithPositWindow();
+        const int max_cut_len = options.GetCutFlanksWithPositMaxLen();
         bool keep_trimming = true;
 
         while ( keep_trimming ) {
@@ -1356,6 +1371,9 @@ int CProSplignTrimmer::CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt
 
             //count posit in initial window 
             for( int pos = win_beg; pos < win_end; ++pos ) {
+                if( prot[pos] == INTRON_CHAR ) { //hit at intron, no cut
+                    return pc.end;
+                }
                 if(m_posit[pos] == POSIT_CHAR) {
                     ++wposit;
                 }
@@ -1369,6 +1387,16 @@ int CProSplignTrimmer::CutFromRight(CNPiece pc, const CProSplignOutputOptionsExt
                 //in window
                 --win_end;
                 --win_beg;
+
+                //time to stop?
+                if( max_cut_len < endpos - win_end ) {// maximum length to cut exceeded
+                    break;
+                }
+
+                if( prot[win_beg] == INTRON_CHAR ) { //hit at intron, stop
+                    break;
+                }
+
                 if( m_posit[win_end] == POSIT_CHAR ) {
                     _ASSERT(wposit > 0);
                     --wposit;
