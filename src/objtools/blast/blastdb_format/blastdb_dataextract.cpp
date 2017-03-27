@@ -36,6 +36,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 #include <util/checksum.hpp>
@@ -797,6 +798,22 @@ void CBlastDBExtractor::SetConfig(TSeqRange range, objects::ENa_strand strand,
 	m_FiltAlgoId = filt_algo_id;
 }
 
+static bool s_MatchPDBId(const CSeq_id & target_id, const CSeq_id & defline_id)
+{
+	if(defline_id.IsPdb()) {
+		if(target_id.GetPdb().IsSetChain_id()) {
+			if(defline_id.GetPdb().IsSetChain_id()) {
+				return ((target_id.GetPdb().GetChain() == defline_id.GetPdb().GetChain())  &&
+				        PNocase().Equals(target_id.GetPdb().GetMol(), defline_id.GetPdb().GetMol()));
+			}
+		}
+		else {
+			return PNocase().Equals(target_id.GetPdb().GetMol(), defline_id.GetPdb().GetMol());
+		}
+	}
+	return false;
+}
+
 void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set & dl_set,
         											   vector<string> & results,
         											   BlastDeflineFields fields,
@@ -806,10 +823,11 @@ void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set
 	CSeq_id target_seq_id (target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
 	Int8 num_id = NStr::StringToNumeric<Int8>(target_id, NStr::fConvErr_NoThrow);
 	bool can_be_gi = errno ? false: true;
+	bool isPDBId = target_seq_id.IsPdb();
 	ITERATE(CBlast_def_line_set::Tdata, itr, dl_set.Get()) {
 		 ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
-
-			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))) {
+			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))
+				 || (isPDBId && s_MatchPDBId(target_seq_id, **id))) {
 				 CBlastDeflineUtil::ExtractDataFromBlastDefline( **itr, results, fields, use_long_id);
 				 return;
 			 }
