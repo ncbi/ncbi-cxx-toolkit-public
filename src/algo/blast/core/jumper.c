@@ -1114,7 +1114,8 @@ Int4 JumperExtendRightCompressedWithTracebackOptimal(
                                  int query_length, int subject_length,
                                  Int4 match_score, Int4 mismatch_score,
                                  Int4 gap_open_score, Int4 gap_extend_score,
-                                 int max_mismatches, int window, Uint4* table,
+                                 int max_mismatches, int window, 
+                                 Int4 x_drop,  Uint4* table,
                                  Int4* query_ext_len, Int4* subject_ext_len,
                                  JumperPrelimEditBlock* edit_script,
                                  Int4* best_num_identical,
@@ -1246,6 +1247,10 @@ next_jp:
             num_ops = edit_script->num_ops;
             best_score = score;
             *best_num_identical = num_identical;
+        }
+
+        if (best_score - score > x_drop) {
+            break;
         }
 
         /* update recent errors */
@@ -2090,7 +2095,8 @@ Int4 JumperExtendLeftCompressedWithTracebackOptimal(
                                 Int4 query_offset, Int4 subject_offset,
                                 Int4 match_score, Int4 mismatch_score,
                                 Int4 gap_open_score, Int4 gap_extend_score,
-                                int max_mismatches, int window, Uint4* table,
+                                int max_mismatches, int window, 
+                                Int4 x_drop, Uint4* table,
                                 Int4* query_ext_len, Int4* subject_ext_len,
                                 JumperPrelimEditBlock* edit_script,
                                 Int4* best_num_identical)
@@ -2216,6 +2222,10 @@ next_jp:
             best_score = score;
             num_ops = edit_script->num_ops;
             *best_num_identical = num_identical;
+        }
+
+        if (best_score - score > x_drop) {
+            break;
         }
 
         /* update recent errors */
@@ -2540,6 +2550,7 @@ int JumperGappedAlignmentCompressedWithTraceback(const Uint1* query,
                                       -score_params->gap_extend,
                                       gap_align->max_mismatches,
                                       gap_align->mismatch_window,
+                                      gap_align->gap_x_dropoff,
                                       gap_align->jumper->table,
                                       &q_ext_len, &s_ext_len,
                                       *rev_prelim_block,
@@ -2570,6 +2581,7 @@ int JumperGappedAlignmentCompressedWithTraceback(const Uint1* query,
                                         -score_params->gap_extend,
                                         gap_align->max_mismatches,
                                         gap_align->mismatch_window,
+                                        gap_align->gap_x_dropoff,
                                         gap_align->jumper->table,
                                         &q_ext_len, &s_ext_len,
                                         *fwd_prelim_block,

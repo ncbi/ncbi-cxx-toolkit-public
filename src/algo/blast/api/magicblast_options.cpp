@@ -168,6 +168,9 @@ CMagicBlastOptionsHandle::SetGappedExtensionDefaults()
     m_Opts->SetMaxMismatches(5);
     m_Opts->SetMismatchWindow(10);
     SetSpliceAlignments(true);
+    // 0 means that the value will be set to max(-penalty, gap open +
+    // gap extend)
+    SetGapXDropoff(0);
 }
 
 

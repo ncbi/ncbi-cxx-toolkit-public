@@ -480,6 +480,10 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
        params->gap_x_dropoff_final = options->gap_x_dropoff_final;
    }
 
+   if (program_number == eBlastTypeMapping) {
+       params->gap_x_dropoff = options->gap_x_dropoff;
+   }
+
    return 0;
 }
 

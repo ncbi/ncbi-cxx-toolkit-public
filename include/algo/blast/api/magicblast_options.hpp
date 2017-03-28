@@ -110,6 +110,12 @@ public:
 
     /******************* Gapped extension options *******************/
 
+    /// Return x-dropoff parameter for gapped alignment
+    int GetGapXDropoff() const { return m_Opts->GetGapXDropoff(); }
+
+    /// Set x-dropoff parameter for gapped alignment
+    /// @param d x-dropoff value [in]
+    void SetGapXDropoff(int d) { m_Opts->SetGapXDropoff(d); }
 
     /************************ Scoring options ************************/
 
