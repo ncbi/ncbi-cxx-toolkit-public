@@ -2095,7 +2095,7 @@ bool CGff3Writer::xAssignFeatureAttributeFunction(
     }
     if (CSeqFeatData::e_Prot == mf.GetFeatType()) {
         const CProt_ref& prot = mf.GetData().GetProt();
-        if (prot.CanGetActivity()) {
+        if (prot.CanGetActivity()  &&  !prot.GetActivity().empty()) {
             record.SetAttribute("function", prot.GetActivity().front());
         }
         return true;
