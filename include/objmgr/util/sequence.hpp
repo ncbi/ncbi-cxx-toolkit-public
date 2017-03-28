@@ -864,7 +864,7 @@ protected:
                                     const CSeq_loc* location);
     virtual void x_WriteAsFasta   ( const CBioseq& bioseq );
     virtual void x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& best_id, bool& hide_prefix, const CBioseq& bioseq);
-    virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
+    //virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
     virtual void x_WriteSeqTitle  ( const CBioseq& bioseq,
                                     CScope* scope,
                                     const string& custom_title);
@@ -882,10 +882,10 @@ private:
 
     sequence::CDeflineGenerator::TUserFlags x_GetTitleFlags(void) const;
 
-    void x_PrintStringModIfNotDup(
-        bool *seen, const CTempString & key, const CTempString & value );
-    void x_PrintIntModIfNotDup(
-        bool *seen, const CTempString & key, const int value );
+    //void x_PrintStringModIfNotDup(
+    //    bool *seen, const CTempString & key, const CTempString & value );
+    //void x_PrintIntModIfNotDup(
+    //    bool *seen, const CTempString & key, const int value );
 
     CConstRef<CSeq_loc> x_MapMask(CSeq_loc_Mapper& mapper, const CSeq_loc& mask,
                                   const CSeq_id* base_seq_id, CScope* scope);

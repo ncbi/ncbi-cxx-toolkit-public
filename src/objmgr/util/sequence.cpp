@@ -101,21 +101,20 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 
-static string s_GetFastaTitle(const CBioseq& bs,
-                              CDeflineGenerator::TUserFlags flags)
+static string s_GetFastaTitle(const CBioseq& bs)
 {
     string title;
 
     const CSeq_descr::Tdata& descr = bs.GetDescr().Get();
     for ( CSeq_descr::Tdata::const_iterator it = descr.begin(); it != descr.end(); ++it ) {
         const CSeqdesc* sd = *it;
+        if ( sd->Which() == CSeqdesc::e_Molinfo ) {
+            return "";
+        }
         if ( sd->Which() == CSeqdesc::e_Title ) {
             if ( title == "" ) {
                 title = sd->GetTitle();
             }
-        }
-        if ( sd->Which() == CSeqdesc::e_Molinfo ) {
-            return "";
         }
     }
     
@@ -1178,7 +1177,7 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
         CBioseq_Handle bsh;
         try {
             bsh = scope.GetBioseqHandle(cds.GetLocation());
-        } catch (CException& ex) {
+        } catch (CException& ) {
             // multi-accession location, can't do this check
             return CConstRef<CSeq_feat>(NULL);
         }
@@ -1384,7 +1383,7 @@ CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBio
                 }
             }
             }
-        } catch (CException& ex) {
+        } catch (CException&) {
             CSeq_loc_CI li(p->GetLocation());
             while (li) {
                 try {
@@ -1397,7 +1396,7 @@ CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBio
                             break;
                         }
                     }
-                } catch (CException& ex) {
+                } catch (CException& ) {
                     // no Seq-id for this sublocation, keep trying
                 }
                 ++li;
@@ -2829,104 +2828,6 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     }
 }
 
-void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
-{
-    // print [topology=...], if necessary
-    if( handle.CanGetInst_Topology() ) {
-        CSeq_inst::ETopology topology = handle.GetInst_Topology();
-        if( topology == CSeq_inst::eTopology_circular ) {
-            m_Out << " [topology=circular]";
-        }
-    }
-
-    // handle modifiers retrieved from Biosource.Org-ref
-    // [organism=...], etc.
-
-    bool organism_seen = false;
-    bool strain_seen = false;
-    bool gcode_seen = false;
-    
-    try {
-        const COrg_ref & org = sequence::GetOrg_ref(handle);
-        if( org.IsSetTaxname() ) {
-            x_PrintStringModIfNotDup( &organism_seen, "organism", org.GetTaxname() );
-        }
-        if( org.IsSetOrgname() ) {
-            const COrg_ref::TOrgname & orgname = org.GetOrgname();
-            if( orgname.IsSetMod() ) {
-                ITERATE( COrgName::TMod, mod_iter, orgname.GetMod() ) {
-                    const COrgMod & mod = **mod_iter;
-                    if( mod.IsSetSubtype() ) {
-                        switch( mod.GetSubtype() ) {
-                            case COrgMod::eSubtype_strain:
-                                if( mod.IsSetSubname() ) {
-                                    x_PrintStringModIfNotDup( &strain_seen, "strain", mod.GetSubname() );
-                                }
-                                break;
-                            default:
-                                // ignore; do nothing
-                                break;
-                        }
-                    }
-                }
-            }
-            if( orgname.IsSetGcode() ) {
-                x_PrintIntModIfNotDup( &gcode_seen, "gcode", orgname.GetGcode() );
-            }
-        }
-    } catch( CException & ) {
-        // ignore exception; it probably just means there's no org-ref
-    }
-
-    typedef SStaticPair<CMolInfo::TTech, const char*> TTechMapEntry;
-    static const TTechMapEntry sc_TechArray[] = {
-        // note that the text values do *NOT* precisely correspond with
-        // the names in the ASN.1 schema files
-        { CMolInfo::eTech_unknown,            "?" },
-        { CMolInfo::eTech_standard,           "standard" },
-        { CMolInfo::eTech_est,                "EST" },
-        { CMolInfo::eTech_sts,                "STS" },
-        { CMolInfo::eTech_survey,             "survey" },
-        { CMolInfo::eTech_genemap,            "genetic map" },
-        { CMolInfo::eTech_physmap,            "physical map" },
-        { CMolInfo::eTech_derived,            "derived" },
-        { CMolInfo::eTech_concept_trans,      "concept-trans" },
-        { CMolInfo::eTech_seq_pept,           "seq-pept" },
-        { CMolInfo::eTech_both,               "both" },
-        { CMolInfo::eTech_seq_pept_overlap,   "seq-pept-overlap" },
-        { CMolInfo::eTech_seq_pept_homol,     "seq-pept-homol" },
-        { CMolInfo::eTech_concept_trans_a,    "concept-trans-a" },
-        { CMolInfo::eTech_htgs_1,             "htgs 1" },
-        { CMolInfo::eTech_htgs_2,             "htgs 2" },
-        { CMolInfo::eTech_htgs_3,             "htgs 3" },
-        { CMolInfo::eTech_fli_cdna,           "fli cDNA" },
-        { CMolInfo::eTech_htgs_0,             "htgs 0" },
-        { CMolInfo::eTech_htc,                "htc" },
-        { CMolInfo::eTech_wgs,                "wgs" },
-        { CMolInfo::eTech_barcode,            "barcode" },
-        { CMolInfo::eTech_composite_wgs_htgs, "composite-wgs-htgs" },
-        { CMolInfo::eTech_tsa,                "tsa" }
-    };
-    typedef CStaticPairArrayMap<CMolInfo::TTech, const char*>  TTechMap;
-    DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
-
-    // print some key-value pairs
-    bool tech_seen = false;
-    const CMolInfo * pMolInfo = sequence::GetMolInfo(handle);
-    if( pMolInfo != NULL ) {
-        const CMolInfo & molinfo = *pMolInfo;
-        if( molinfo.IsSetTech() ) {
-            TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
-            if( find_iter != sc_TechMap.end() ) {
-                x_PrintStringModIfNotDup( &tech_seen, "tech", 
-                    find_iter->second );
-            }
-        }
-    }
-
-    m_Out << '\n';
-}
-
 inline
 sequence::CDeflineGenerator::TUserFlags
 CFastaOstream::x_GetTitleFlags(void) const
@@ -2943,12 +2844,16 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     const string& custom_title)
 {
     string safe_title;
-    if ( !custom_title.empty() ) {
+    if( m_Flags & fShowModifiers ) {
+        CScope scope(*CObjectManager::GetInstance());
+        CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
+        safe_title = m_Gen->x_GetModifiers(bioseq_handle);
+    } else if ( !custom_title.empty() ) {
         safe_title = custom_title;
     } else if (scope) {
         safe_title = m_Gen->GenerateDefline(bioseq, *scope, x_GetTitleFlags());
     } else {
-        safe_title = sequence::s_GetFastaTitle(bioseq, x_GetTitleFlags());
+        safe_title = sequence::s_GetFastaTitle(bioseq);
         if (safe_title.empty()) {
             CScope scope(*CObjectManager::GetInstance());
             safe_title = m_Gen->GenerateDefline(bioseq, scope, x_GetTitleFlags());
@@ -2964,45 +2869,6 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     m_Out << '\n';
 }
 
-void CFastaOstream::x_PrintStringModIfNotDup(
-    bool *seen, const CTempString & key, const CTempString & value )
-{
-    _ASSERT( NULL != seen );
-    _ASSERT( ! key.empty() );
-    if( *seen ) {
-        ERR_POST_X(9, Warning << "CFastaOstream::x_PrintStringModIfNotDup: "
-            << "key " << key << " would appear multiple times, but only using the first." );
-        return;
-    }
-
-    if( value.empty() ) {
-        return;
-    }
-
-    m_Out << " [" << key << '=';
-    // The case of no quotes is much more common, so optimize for that
-    if( value.find_first_of("\"=") == string::npos ) {
-        // normal case: no weird characters in value name
-        m_Out << value ;
-    } else {
-        // rarer case: bad characters in value name, so
-        // we need surrounding double-quotes and we need to change
-        // double-quotes to single-quotes.
-        m_Out << '"' << NStr::Replace( value, "\"", "'") << '"';
-    }
-    m_Out << ']';
-    *seen = true;
-}
-
-void CFastaOstream::x_PrintIntModIfNotDup(
-    bool *seen, const CTempString & key, const int value )
-{
-    CNcbiOstrstream strm;
-    strm << value;
-    x_PrintStringModIfNotDup( seen, key, 
-        (string)CNcbiOstrstreamToString(strm) );
-}
-
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
                                bool no_scope,
@@ -3010,12 +2876,7 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
 {
     x_WriteSeqIds(bioseq, location);
     CScope scope(*CObjectManager::GetInstance());
-    if( m_Flags & fShowModifiers ) {
-        CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
-        x_WriteModifiers(bioseq_handle);
-    } else {
-        x_WriteSeqTitle(bioseq, (no_scope ? NULL : &scope), custom_title);
-    }
+    x_WriteSeqTitle(bioseq, (no_scope ? NULL : &scope), custom_title);
 }
 
 void CFastaOstream::WriteTitle(const CBioseq_Handle& bioseq_handle,

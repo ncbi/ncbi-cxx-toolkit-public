@@ -47,6 +47,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -55,6 +56,8 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 USING_SCOPE(feature);
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_SeqUtil
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
@@ -1026,7 +1029,7 @@ void CDeflineGenerator::x_SetBioSrc (
             }
             ++feat_it;
         }
-    } catch ( const exception& e ) {
+    } catch ( const exception&  ) {
         // ERR_POST(Error << "Unable to iterate source features while constructing default definition line");
     }
 }
@@ -2590,6 +2593,132 @@ static const char* s_tpaPrefixList [] = {
   "TSA:",
   "UNVERIFIED:"
 };
+
+string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & handle)
+{
+    std::strstream result;
+    // print [topology=...], if necessary
+    if (handle.CanGetInst_Topology()) {
+        CSeq_inst::ETopology topology = handle.GetInst_Topology();
+        if (topology == CSeq_inst::eTopology_circular) {
+            x_PrintStringMod(result, "topology", "circular");
+        }
+    }
+
+    // handle modifiers retrieved from Biosource.Org-ref
+    // [organism=...], etc.
+
+    bool strain_seen = false;
+
+    try {
+        const COrg_ref & org = sequence::GetOrg_ref(handle);
+        if (org.IsSetTaxname()) {
+            x_PrintStringMod(result, "organism", org.GetTaxname());
+        }
+        if (org.IsSetOrgname()) {
+            const COrg_ref::TOrgname & orgname = org.GetOrgname();
+            if (orgname.IsSetMod()) {
+                ITERATE(COrgName::TMod, mod_iter, orgname.GetMod()) {
+                    const COrgMod & mod = **mod_iter;
+                    if (mod.IsSetSubtype()) {
+                        switch (mod.GetSubtype()) {
+                        case COrgMod::eSubtype_strain:
+                            if (mod.IsSetSubname()) {
+                                if (strain_seen) {
+                                    ERR_POST_X(9, Warning << __FUNCTION__ << ": "
+                                        << "key strain would appear multiple times, but only using the first.");
+                                }
+                                else {
+                                    strain_seen = true;
+                                    x_PrintStringMod(result, "strain", mod.GetSubname());
+                                }
+                            }
+                            break;
+                        default:
+                            // ignore; do nothing
+                            break;
+                        }
+                    }
+                }
+            }
+            if (orgname.IsSetGcode()) {
+                x_PrintStringMod(result, "gcode", std::to_string(orgname.GetGcode()));
+            }
+        }
+    }
+    catch (CException &) {
+        // ignore exception; it probably just means there's no org-ref
+    }
+
+    typedef SStaticPair<CMolInfo::TTech, const char*> TTechMapEntry;
+    static const TTechMapEntry sc_TechArray[] = {
+        // note that the text values do *NOT* precisely correspond with
+        // the names in the ASN.1 schema files
+        { CMolInfo::eTech_unknown, "?" },
+        { CMolInfo::eTech_standard, "standard" },
+        { CMolInfo::eTech_est, "EST" },
+        { CMolInfo::eTech_sts, "STS" },
+        { CMolInfo::eTech_survey, "survey" },
+        { CMolInfo::eTech_genemap, "genetic map" },
+        { CMolInfo::eTech_physmap, "physical map" },
+        { CMolInfo::eTech_derived, "derived" },
+        { CMolInfo::eTech_concept_trans, "concept-trans" },
+        { CMolInfo::eTech_seq_pept, "seq-pept" },
+        { CMolInfo::eTech_both, "both" },
+        { CMolInfo::eTech_seq_pept_overlap, "seq-pept-overlap" },
+        { CMolInfo::eTech_seq_pept_homol, "seq-pept-homol" },
+        { CMolInfo::eTech_concept_trans_a, "concept-trans-a" },
+        { CMolInfo::eTech_htgs_1, "htgs 1" },
+        { CMolInfo::eTech_htgs_2, "htgs 2" },
+        { CMolInfo::eTech_htgs_3, "htgs 3" },
+        { CMolInfo::eTech_fli_cdna, "fli cDNA" },
+        { CMolInfo::eTech_htgs_0, "htgs 0" },
+        { CMolInfo::eTech_htc, "htc" },
+        { CMolInfo::eTech_wgs, "wgs" },
+        { CMolInfo::eTech_barcode, "barcode" },
+        { CMolInfo::eTech_composite_wgs_htgs, "composite-wgs-htgs" },
+        { CMolInfo::eTech_tsa, "tsa" }
+    };
+    typedef CStaticPairArrayMap<CMolInfo::TTech, const char*>  TTechMap;
+    DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
+
+    // print some key-value pairs
+    const CMolInfo * pMolInfo = sequence::GetMolInfo(handle);
+    if (pMolInfo != NULL) {
+        const CMolInfo & molinfo = *pMolInfo;
+        if (molinfo.IsSetTech()) {
+            TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
+            if (find_iter != sc_TechMap.end()) {
+                x_PrintStringMod(result, "tech", find_iter->second);
+            }
+        }
+    }
+    return result.str();
+}
+
+
+void CDeflineGenerator::x_PrintStringMod(std::ostream &out, const CTempString & key, const CTempString & value)
+{
+    _ASSERT(!key.empty());
+    if (value.empty()) {
+        return;
+    }
+
+    out << " [" << key << '=';
+    // The case of no quotes is much more common, so optimize for that
+    if (value.find_first_of("\"=") == string::npos) {
+        // normal case: no weird characters in value name
+        out << value;
+    }
+    else {
+        // rarer case: bad characters in value name, so
+        // we need surrounding double-quotes and we need to change
+        // double-quotes to single-quotes.
+        out << '"' << NStr::Replace(value, "\"", "'") << '"';
+    }
+    out << ']';
+}
+
 
 // main method
 string CDeflineGenerator::GenerateDefline (

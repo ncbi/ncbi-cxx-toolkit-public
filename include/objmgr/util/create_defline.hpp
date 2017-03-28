@@ -107,6 +107,7 @@ public:
         TUserFlags flags = 0
     );
 
+    string x_GetModifiers(const CBioseq_Handle & handle);
 private:
     // Prohibit copy constructor & assignment operator
     CDeflineGenerator (const CDeflineGenerator&);
@@ -114,6 +115,7 @@ private:
 
 private:
     /// internal methods
+    void x_PrintStringMod(std::ostream &out, const CTempString & key, const CTempString & value);
 
     void x_Init (void);
 
