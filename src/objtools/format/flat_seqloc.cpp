@@ -450,6 +450,34 @@ bool CFlatSeqLoc::x_Add
 }
 
 
+bool CFlatSeqLoc::x_FuzzToDisplayed(const CSeq_interval& si) const
+{
+    if (!si.IsSetFuzz_to()) {
+        return false;
+    }
+
+    const CInt_fuzz& to_fuzz = si.GetFuzz_to(); 
+/* Range fuzziness is not displayed
+    if (to_fuzz.IsRange()) {
+        return true;
+    }
+*/
+    if (to_fuzz.IsLim()) {
+        switch( to_fuzz.GetLim() ) {
+        case CInt_fuzz::eLim_tr:
+        case CInt_fuzz::eLim_gt:
+        case CInt_fuzz::eLim_tl:
+        case CInt_fuzz::eLim_lt:
+            return true;
+        default:
+            break;
+        }
+    }
+    return false;
+}
+
+
+
 bool CFlatSeqLoc::x_Add
 (const CSeq_interval& si,
  CNcbiOstrstream& oss,
@@ -476,9 +504,9 @@ bool CFlatSeqLoc::x_Add
     const CSeq_interval::TFuzz_from *from_fuzz = (si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0);
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
+
     if ( (type == eType_assembly) || 
-         ( to > 0  &&
-            (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to()) ) ) 
+         ((from != to || x_FuzzToDisplayed(si)) ) ) 
     {
         oss << "..";
 

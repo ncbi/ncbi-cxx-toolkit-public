@@ -113,6 +113,8 @@ private:
 
     bool x_IsAccessionVersion( CSeq_id_Handle id );
 
+    bool x_FuzzToDisplayed(const CSeq_interval& si) const;
+
     // data
     string     m_String;    // whole location, as a GB-style string
     
