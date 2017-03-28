@@ -18,6 +18,8 @@ algo/winmask$
 algo/segmask$
 algo/blast/blastinput/unit_test
 -algo/blast/blastinput/demo
+algo/sequence
+-algo/sequence/demo
 objects
 cgi$
 cgi/impl$
