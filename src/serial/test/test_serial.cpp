@@ -321,6 +321,49 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             cout << MSerial_AsnText << obj << endl;
         }
     }
+    // with exception transfer
+    {
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CTestSerialObject>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CTestSerialObject& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                return mem != nullptr;
+            });
+        // generates NCBI exception (wrong format)
+        bool gotit = false;
+        try {
+            for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
+                    *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership, params)) {
+            }
+        } catch (CSerialException& e) {
+            gotit = e.GetErrCode() == CSerialException::eFormatError;
+        } catch (...) {
+        }
+        BOOST_CHECK(gotit);
+    }
+    // with exception transfer
+    {
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CTestSerialObject>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CTestSerialObject& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                throw runtime_error("filter");
+                return mem != nullptr;
+            });
+        // generates runtime_error in filter function
+        bool gotit = false;
+        try {
+            for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
+                    *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+            }
+        } catch (CException&) {
+        } catch (exception&) {
+            gotit = true;
+        }
+        BOOST_CHECK(gotit);
+    }
     {
         // find serial objects of a specific type
         // process them right here
@@ -359,6 +402,21 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
             cout << MSerial_AsnText << obj << endl;
         }
+    }
+    // with exception transfer
+    {
+        CNcbiIstrstream istrs(buf);
+        // generates NCBI exception (wrong format)
+        bool gotit = false;
+        try {
+            for (CTestSerialObject& obj : CObjectIStreamAsyncIterator<CTestSerialObject>(
+                *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership)) {
+            }
+        } catch (CSerialException& e) {
+            gotit = e.GetErrCode() == CSerialException::eFormatError;
+        } catch (...) {
+        }
+        BOOST_CHECK(gotit);
     }
     {
         // find serial objects of a specific type
@@ -425,6 +483,49 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             LOG_POST("CWeb_Env @ " << NStr::PtrToString(&obj));
             cout << MSerial_AsnText << obj << endl;
         }
+    }
+    // with exception transfer
+    {
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CWeb_Env>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CWeb_Env& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                return true;
+            });
+        // generates NCBI exception (wrong format)
+        bool gotit = false;
+        try {
+            for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
+                    *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership, params)) {
+            }
+        } catch (CSerialException& e) {
+            gotit = e.GetErrCode() == CSerialException::eFormatError;
+        } catch (...) {
+        }
+        BOOST_CHECK(gotit);
+    }
+    // with exception transfer
+    {
+        CNcbiIstrstream istrs(buf);
+        CObjectIStreamIterator<CWeb_Env>::CParams params;
+        params.FilterByMember(1,
+            [](const CObjectIStream& istr, CWeb_Env& obj,
+            TMemberIndex mem_index, CObjectInfo* mem, void* extra)->bool {
+                throw runtime_error("filter");
+                return true;
+            });
+        // generates runtime_error in filter function
+        bool gotit = false;
+        try {
+            for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
+                    *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+            }
+        } catch (CException&) {
+        } catch (exception&) {
+            gotit = true;
+        }
+        BOOST_CHECK(gotit);
     }
     {
         // find non-serial objects, here - strings
