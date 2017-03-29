@@ -2847,7 +2847,7 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     if( m_Flags & fShowModifiers ) {
         CScope scope(*CObjectManager::GetInstance());
         CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
-        safe_title = m_Gen->x_GetModifiers(bioseq_handle);
+        safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
     } else if ( !custom_title.empty() ) {
         safe_title = custom_title;
     } else if (scope) {

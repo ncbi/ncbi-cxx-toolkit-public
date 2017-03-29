@@ -59,6 +59,58 @@ USING_SCOPE(feature);
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_SeqUtil
 
+class CDefLineJoiner
+{
+public:
+    CDefLineJoiner(bool show_mods = false)
+        : m_ShowMods(show_mods)
+    {
+    }
+    template<typename T1, typename T2>
+    void Add(T1 &name, T2 &value, bool includeType = true)
+    {
+        if (m_ShowMods)
+        {
+            if (value.empty()) {
+                return;
+            }
+            typename std::remove_const<T2>::type compaund;
+            // The case of no quotes is much more common, so optimize for that
+            if (value.find_first_of("\"=") != string::npos) {
+                // rarer case: bad characters in value name, so
+                // we need surrounding double-quotes and we need to change
+                // double-quotes to single-quotes.
+                compaund = T2("\"" + NStr::Replace(value, "\"", "'") + "\"");
+            }
+            //m_Joiner.Add(" [").Add(name).Add("=").Add(value).Add("]");
+            compaund = T2(" [") + name + "=" + compaund + "]";
+            m_Joiner.Add(compaund);
+        }
+        else
+        {
+            if (includeType) {
+                m_Joiner.Add(" ").Add(name);
+            }
+            if (!value.empty()) {
+                m_Joiner.Add(" ").Add(value);
+            }
+        }
+    }
+    template<typename T1>
+    void Add(T1 &name, int value, bool includeType = true)
+    {
+        Add(name, NStr::IntToString(value), includeType);
+    }
+    template<typename T>
+    void Join(T* result) const
+    {
+        m_Joiner.Join(result);
+    }
+private:
+    bool m_ShowMods;
+    CTextJoiner<24, CTempString> m_Joiner;
+};
+
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
 {
@@ -1430,8 +1482,6 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
 
     joiner.Add(m_Taxname);
 
-    const char * pls_pfx = " ";
-
     if ( ! m_Organelle.empty() && NStr::FindNoCase (m_Organelle, "plasmid") != NPOS) {
         joiner.Add(m_Organelle);
     }
@@ -1457,10 +1507,12 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
     if (! m_Plasmid.empty()) {
         if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
             NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
+            joiner.Add(" plasmid ").Add(m_Plasmid);
+        } else {
+            joiner.Add(" ").Add(m_Plasmid);
         }
-        joiner.Add(pls_pfx).Add(m_Plasmid);
     }
+    
     if (m_MICompleteness ==  NCBI_COMPLETENESS(complete)) {
         joiner.Add(", complete sequence");
     }
@@ -2594,26 +2646,39 @@ static const char* s_tpaPrefixList [] = {
   "UNVERIFIED:"
 };
 
-string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & handle)
+string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags flags)
 {
-    std::strstream result;
+    CDefLineJoiner joiner(true);
+
+    x_SetFlags (bsh, flags);
+    x_SetBioSrc (bsh);
+    if (m_IsChromosome || !m_Chromosome.empty()) {
+        joiner.Add("chromosome", m_Chromosome);
+    }
+    if (m_IsPlasmid || !m_Plasmid.empty()) {
+        joiner.Add("plasmid", m_Plasmid);
+    }
+    if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+        joiner.Add("completeness", CTempString("complete"));
+    }
+
     // print [topology=...], if necessary
-    if (handle.CanGetInst_Topology()) {
-        CSeq_inst::ETopology topology = handle.GetInst_Topology();
+    if (bsh.CanGetInst_Topology()) {
+        CSeq_inst::ETopology topology = bsh.GetInst_Topology();
         if (topology == CSeq_inst::eTopology_circular) {
-            x_PrintStringMod(result, "topology", "circular");
+            joiner.Add("topology", CTempString("circular"));
         }
     }
 
-    // handle modifiers retrieved from Biosource.Org-ref
+    // bsh modifiers retrieved from Biosource.Org-ref
     // [organism=...], etc.
 
     bool strain_seen = false;
 
     try {
-        const COrg_ref & org = sequence::GetOrg_ref(handle);
+        const COrg_ref & org = sequence::GetOrg_ref(bsh);
         if (org.IsSetTaxname()) {
-            x_PrintStringMod(result, "organism", org.GetTaxname());
+            joiner.Add("organism", org.GetTaxname());
         }
         if (org.IsSetOrgname()) {
             const COrg_ref::TOrgname & orgname = org.GetOrgname();
@@ -2630,7 +2695,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & handle)
                                 }
                                 else {
                                     strain_seen = true;
-                                    x_PrintStringMod(result, "strain", mod.GetSubname());
+                                    joiner.Add("strain", mod.GetSubname());
                                 }
                             }
                             break;
@@ -2642,7 +2707,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & handle)
                 }
             }
             if (orgname.IsSetGcode()) {
-                x_PrintStringMod(result, "gcode", std::to_string(orgname.GetGcode()));
+                joiner.Add("gcode", std::to_string(orgname.GetGcode()));
             }
         }
     }
@@ -2683,40 +2748,18 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & handle)
     DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
 
     // print some key-value pairs
-    const CMolInfo * pMolInfo = sequence::GetMolInfo(handle);
+    const CMolInfo * pMolInfo = sequence::GetMolInfo(bsh);
     if (pMolInfo != NULL) {
         const CMolInfo & molinfo = *pMolInfo;
         if (molinfo.IsSetTech()) {
             TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
             if (find_iter != sc_TechMap.end()) {
-                x_PrintStringMod(result, "tech", find_iter->second);
+                joiner.Add("tech", CTempString(find_iter->second));
             }
         }
     }
-    return result.str();
-}
-
-
-void CDeflineGenerator::x_PrintStringMod(std::ostream &out, const CTempString & key, const CTempString & value)
-{
-    _ASSERT(!key.empty());
-    if (value.empty()) {
-        return;
-    }
-
-    out << " [" << key << '=';
-    // The case of no quotes is much more common, so optimize for that
-    if (value.find_first_of("\"=") == string::npos) {
-        // normal case: no weird characters in value name
-        out << value;
-    }
-    else {
-        // rarer case: bad characters in value name, so
-        // we need surrounding double-quotes and we need to change
-        // double-quotes to single-quotes.
-        out << '"' << NStr::Replace(value, "\"", "'") << '"';
-    }
-    out << ']';
+    joiner.Join(&m_MainTitle);
+    return m_MainTitle;
 }
 
 
