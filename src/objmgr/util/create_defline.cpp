@@ -66,15 +66,14 @@ public:
         : m_ShowMods(show_mods)
     {
     }
-    template<typename T1, typename T2>
-    void Add(T1 &name, T2 &value, bool includeType = true)
+    void Add(const CTempString &name, const CTempString &value, bool includeType = true)
     {
         if (m_ShowMods)
         {
             if (value.empty()) {
                 return;
             }
-            m_Joiner.Add("[").Add(name).Add("=");
+            m_Joiner.Add(" [").Add(name).Add("=");
             // The case of no quotes is much more common, so optimize for that
             if (value.find_first_of("\"=") != string::npos) {
                 // rarer case: bad characters in value name, so
