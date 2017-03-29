@@ -126,9 +126,6 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
 bool
 CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 {
-    int current_read = 0;
-    bool first_added = false;
-
     // tags to indicate paired sequences
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
     seqdesc_first->SetUser().SetType().SetStr("Mapping");
@@ -150,37 +147,42 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 
     m_Index = 0;
     while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof()) {
-        CRef<CSeq_entry> entry = x_ReadOneSeq(*m_InputStream);
+        CRef<CSeq_entry> first;
+        CRef<CSeq_entry> second;
+        first = x_ReadOneSeq(*m_InputStream);
 
-        if (entry.NotEmpty()) {
-
-            if (m_IsPaired && (current_read & 1) == 0) {
-                first_added = true;
-            }
-
-            if (m_IsPaired && (current_read & 1) == 1) {
-                if (first_added) {
-                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
-                        push_back(seqdesc_first);
-                    entry->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+        // if paired rest the next sequence and mark a pair
+        if (m_IsPaired) {
+            second = x_ReadOneSeq(*m_InputStream);
+        
+            if (first.NotEmpty()) {
+                if (second.NotEmpty()) {
+                    first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
                 }
                 else {
-                    entry->SetSeq().SetDescr().Set().push_back(
-                                                        seqdesc_last_partial);
+                    first->SetSeq().SetDescr().Set().push_back(
+                                                      seqdesc_first_partial);
                 }
-                first_added = false;
+                bioseq_set.SetSeq_set().push_back(first);
             }
 
-            bioseq_set.SetSeq_set().push_back(entry);
+            if (second.NotEmpty()) {
+                if (first.NotEmpty()) {
+                    second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+                }
+                else {
+                    second->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_last_partial);
+                }
+                bioseq_set.SetSeq_set().push_back(second);
+            }
         }
         else {
-            if (first_added) {
-                bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
-                    push_back(seqdesc_first_partial);
+            // otherwise just add the read sequence
+            if (first.NotEmpty()) {
+                bioseq_set.SetSeq_set().push_back(first);
             }
-            first_added = false;
         }
-        current_read++;
     }
 
     return true;

@@ -147,11 +147,8 @@ private:
     CTempString x_ParseDefline(CTempString& line);
     bool x_ValidateSequence(const char* sequence, int length);
 
-    /// Read sequences in FASTA format
-    void x_ReadFasta(CBioseq_set& bioseq_set);
-
-    /// Read sequences in FASTQ format
-    void x_ReadFastq(CBioseq_set& bioseq_set);
+    /// Read sequences in FASTA or FASTQ format
+    void x_ReadFastaOrFastq(CBioseq_set& bioseq_set);
 
     /// Read one sequence from a FASTA file
     CRef<CSeq_entry> x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
