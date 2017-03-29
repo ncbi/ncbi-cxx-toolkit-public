@@ -2844,19 +2844,19 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     const string& custom_title)
 {
     string safe_title;
-    if( m_Flags & fShowModifiers ) {
-        CScope scope(*CObjectManager::GetInstance());
-        CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
-        safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
-    } else if ( !custom_title.empty() ) {
+    if (!custom_title.empty()) {
         safe_title = custom_title;
-    } else if (scope) {
-        safe_title = m_Gen->GenerateDefline(bioseq, *scope, x_GetTitleFlags());
-    } else {
-        safe_title = sequence::s_GetFastaTitle(bioseq);
-        if (safe_title.empty()) {
-            CScope scope(*CObjectManager::GetInstance());
-            safe_title = m_Gen->GenerateDefline(bioseq, scope, x_GetTitleFlags());
+    }
+    else {
+        scope = scope ? scope : &CScope(*CObjectManager::GetInstance());
+        CBioseq_Handle bioseq_handle = scope->AddBioseq(bioseq);
+        if (m_Flags & fShowModifiers) {
+            safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
+        } else {
+            safe_title = sequence::s_GetFastaTitle(bioseq);
+            if (safe_title.empty()) {
+                safe_title = m_Gen->GenerateDefline(bioseq_handle, x_GetTitleFlags());
+            }
         }
     }
 
@@ -2871,12 +2871,11 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
 
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
-                               bool no_scope,
+                               bool no_scope, // not used
                                const string& custom_title)
 {
     x_WriteSeqIds(bioseq, location);
-    CScope scope(*CObjectManager::GetInstance());
-    x_WriteSeqTitle(bioseq, (no_scope ? NULL : &scope), custom_title);
+    x_WriteSeqTitle(bioseq, NULL, custom_title);
 }
 
 void CFastaOstream::WriteTitle(const CBioseq_Handle& bioseq_handle,
