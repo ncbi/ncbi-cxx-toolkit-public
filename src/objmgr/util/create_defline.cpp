@@ -74,17 +74,17 @@ public:
             if (value.empty()) {
                 return;
             }
-            typename std::remove_const<T2>::type compaund;
+            m_Joiner.Add("[").Add(name).Add("=");
             // The case of no quotes is much more common, so optimize for that
             if (value.find_first_of("\"=") != string::npos) {
                 // rarer case: bad characters in value name, so
                 // we need surrounding double-quotes and we need to change
                 // double-quotes to single-quotes.
-                compaund = T2("\"" + NStr::Replace(value, "\"", "'") + "\"");
+                m_Joiner.Add("\"").Add(NStr::Replace(value, "\"", "'")).Add("\"");
+            } else {
+                m_Joiner.Add(value);
             }
-            //m_Joiner.Add(" [").Add(name).Add("=").Add(value).Add("]");
-            compaund = T2(" [") + name + "=" + compaund + "]";
-            m_Joiner.Add(compaund);
+            m_Joiner.Add("]");
         }
         else
         {
@@ -108,7 +108,7 @@ public:
     }
 private:
     bool m_ShowMods;
-    CTextJoiner<24, CTempString> m_Joiner;
+    CTextJoiner<64, CTempString> m_Joiner;
 };
 
 // constructor
@@ -2652,6 +2652,8 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags 
 
     x_SetFlags (bsh, flags);
     x_SetBioSrc (bsh);
+
+    joiner.Add("location", m_Organelle);
     if (m_IsChromosome || !m_Chromosome.empty()) {
         joiner.Add("chromosome", m_Chromosome);
     }
