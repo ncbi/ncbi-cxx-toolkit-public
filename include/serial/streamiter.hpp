@@ -526,6 +526,7 @@ protected:
         mutex              m_ReaderMutex;
         condition_variable m_ReaderCv;
         thread             m_Reader;
+        exception_ptr      m_ReaderExpt;
         enum EFilter {
             eNone,
             eOneSeq,
@@ -774,10 +775,9 @@ CObjectIStreamIterator<TRoot>::x_ReaderThread() {
         m_Data->m_ValueType.SetLocalSkipHook(*(m_Data->m_Istr), new typename CData::template x_CObjectIStreamIteratorHook<TRoot>(m_Data.get()));
         while (Serial_FilterSkip(*(m_Data->m_Istr),m_Data->m_ValueType))
             ;
-    } catch (CException& e) {
+    } catch (...) {
         if (!m_Data->m_EndOfData) {
-            NCBI_REPORT_EXCEPTION("In CObjectIStreamIterator<>::x_ReaderThread",e);
-            throw;
+            m_Data->m_ReaderExpt = current_exception();
         }
     }
     m_Data->x_EndRead();
@@ -792,10 +792,9 @@ CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread() {
         this->m_Data->m_ValueType.SetLocalReadHook(*(this->m_Data->m_Istr), new x_CObjectIStreamIteratorReadHook<TChild>(this->m_Data.get()));
         while (Serial_FilterSkip(*(this->m_Data->m_Istr),CObjectTypeInfo(CType<TRoot>())))
             ;
-    } catch (CException& e) {
+    } catch (...) {
         if (!this->m_Data->m_EndOfData) {
-            NCBI_REPORT_EXCEPTION("In CObjectIStreamIterator<>::x_ReaderThread",e);
-            throw;
+            this->m_Data->m_ReaderExpt = current_exception();
         }
     }
     this->m_Data->x_EndRead();
@@ -855,6 +854,9 @@ CObjectIStreamIterator<TRoot>::CData::x_Next(void) {
     m_ReaderCv.notify_one();
     while (m_Value.GetObjectPtr() == nullptr && !m_EndOfData) {
         m_ReaderCv.wait(lck);
+    }
+    if (m_ReaderExpt) {
+        rethrow_exception(m_ReaderExpt);
     }
 }
 
@@ -995,7 +997,6 @@ bool
 CObjectIStreamIterator<TRoot>::CData::x_NextContainerWithFilter(const CObjectInfo& objinfo)
 {
     TMemberIndex mi = kInvalidMember;
-    bool checked = false;
     bool valid = true;
     TRoot& obj = *CTypeConverter<TRoot>::SafeCast(objinfo.GetObjectPtr());
 
@@ -1572,8 +1573,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread(void)
             do {
                 m_Istr->SkipAnyContentObject();
             } while( !m_Istr->EndOfData() && m_Istr->GetStreamPos() < endpos);
-        } catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("In CObjectIStreamAsyncIterator<>::x_ReaderThread",e);
+        } catch (...) {
         }
 
         size_t this_buffer_size = m_Istr->GetStreamPos() - startpos;
