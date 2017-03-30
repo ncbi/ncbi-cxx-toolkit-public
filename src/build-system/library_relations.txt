@@ -47,6 +47,8 @@ ads needs pub
 affy needs3party $(CURL_LIBS)
 affy needs3party $(ORIG_LIBS)
 affy needs3party $(XERCES_LIBS)
+agp_db needs agp_lookup
+agp_db needs dbapi_util_blobstore
 agp_lookup needs $(GPIPE_COMMON_LIBS)
 agp_lookup needs gpipe_objutil
 agp_lookup needs xhtml
