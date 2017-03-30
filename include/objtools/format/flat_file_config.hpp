@@ -648,6 +648,11 @@ public:
         m_GffOptions |= fGffForFlybase;
     };
 
+    void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks) 
+    {
+        m_fGenbankBlocks = genbank_blocks;
+    };
+
     // check if the given section is shown
     bool IsShownGenbankBlock(FGenbankBlocks fTGenbankBlocksMask) const
     {
