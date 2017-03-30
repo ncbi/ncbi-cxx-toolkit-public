@@ -6,4 +6,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 
 WATCHERS = foleyjp
 
-
+REQUIRES = MT
