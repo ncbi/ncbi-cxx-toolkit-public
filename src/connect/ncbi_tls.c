@@ -90,8 +90,8 @@ extern SOCKSSL NcbiSetupTls(void)
                 CORE_LOGF(eLOG_Critical, ("Unknown TLS provider \"%s\"", str));
                 s_Setup = 0/*unknown provider*/;
             }
-        } else
-            s_Setup = NcbiSetupDefaultTls;
+        } else if (!(s_Setup = NcbiSetupDefaultTls))
+            CORE_LOGF(eLOG_Critical, "No TLS support included in this build");
     }
     return s_Setup ? s_Setup() : 0;
 }
