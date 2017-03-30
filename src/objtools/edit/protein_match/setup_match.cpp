@@ -45,10 +45,9 @@ void CMatchSetup::GatherNucProtSets(
 }
 
 
-CBioseq& CMatchSetup::x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const
+CBioseq& CMatchSetup::x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const 
 {
-
-    NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set.SetSet().SetSeq_set()) {
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set.SetSeq_set()) {
         CSeq_entry& se = **seq_it;
         if (se.IsSeq() && se.GetSeq().IsNa()) {
             return se.SetSeq();
@@ -61,7 +60,28 @@ CBioseq& CMatchSetup::x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const
 }
 
 
-bool CMatchSetup::x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& acc) const
+const CBioseq& CMatchSetup::x_FetchNucSeqRef(const CBioseq_set& nuc_prot_set) const 
+{
+    ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set.GetSeq_set()) {
+        const CSeq_entry& se = **seq_it;
+        if (se.IsSeq() && se.GetSeq().IsNa()) {
+            return se.GetSeq();
+        }
+    }
+
+    NCBI_THROW(CProteinMatchException, 
+        eInputError,
+        "No nucleotide sequence found");
+}
+
+
+CBioseq& CMatchSetup::x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const
+{
+    return x_FetchNucSeqRef(nuc_prot_set.SetSet());
+}
+
+
+bool CMatchSetup::GetReplacedIdFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
 {
     if (!nuc_seq.IsSetInst()) {
         return false;
@@ -76,7 +96,7 @@ bool CMatchSetup::x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq, CR
 
     for (auto pReplacesId : seq_inst.GetHist().GetReplaces().GetIds()) {
         if (pReplacesId->IsGenbank() || pReplacesId->IsOther()) {
-            acc = pReplacesId;
+            id = pReplacesId;
             return true;
         }
     }
@@ -85,16 +105,32 @@ bool CMatchSetup::x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq, CR
 }
 
 
-
 bool CMatchSetup::GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
 {
+    CRef<CSeq_id> other_id;
     for (auto pNucId : nuc_seq.GetId()) {
-        if (pNucId->IsGenbank() || pNucId->IsOther()) {
+        if (pNucId->IsGenbank()) {
             id = pNucId;
             return true;
         }
+
+        if (pNucId->IsOther()) {
+            other_id = pNucId;
+        }
+    }
+
+    if (other_id && !other_id.IsNull()) {
+        id = other_id;
+        return true;
     }
     return false;
+}
+
+
+bool CMatchSetup::GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const
+{
+    const CBioseq& nuc_seq = x_FetchNucSeqRef(nuc_prot_set);
+    return GetNucSeqId(nuc_seq, id);
 }
 
 
@@ -112,7 +148,7 @@ CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq)
     }
 
     CRef<CSeq_id> pReplacedId;
-    const bool use_replaced_id = x_TryFetchReplacedAccessionFromHist(nuc_seq, pReplacedId);
+    const bool use_replaced_id = GetReplacedIdFromHist(nuc_seq, pReplacedId);
 
     if (use_replaced_id) {
         db_bsh = m_DBScope->GetBioseqHandle(*pReplacedId);

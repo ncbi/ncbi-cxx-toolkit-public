@@ -33,6 +33,9 @@
 #include <objects/seq/Annotdesc.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CObjectIStream;
+
 BEGIN_SCOPE(objects)
 
 class CSeq_annot;
@@ -52,7 +55,15 @@ public:
         const list<string>& local_prot_id,
         const list<string>& prot_accessions);
 
-    void WriteTable(CNcbiOstream& out) const;
+
+    void GenerateMatchTable(
+        const map<string, list<string>>& local_prot_ids,
+        const map<string, list<string>>& prot_accessions,
+        const map<string, string>& nuc_id_replacements,
+        CObjectIStream& align_istr, 
+        CObjectIStream& annot_istr);
+
+    void WriteTable(CNcbiOstream& out) const;;
 
     static void WriteTable(const CSeq_table& table,
         CNcbiOstream& out);
@@ -64,6 +75,13 @@ public:
     struct SNucMatchInfo {
         string accession;
         string status;
+    };
+
+    struct SProtMatchInfo {
+        string nuc_accession;
+        string prot_accession;
+        string local_id;
+        bool same;
     };
 
 private:
@@ -79,6 +97,19 @@ private:
     void x_AppendNucleotide(
         const SNucMatchInfo& nuc_match_info);
 
+    void x_AppendNucleotide(
+        const pair<string, bool>& nuc_match_info);
+
+    void x_AppendMatchedProtein(
+        const string& nuc_accession,
+        const string& prot_accession,
+        const string& local_id,
+        const string& comp_class);
+
+    void x_AppendMatchedProtein(
+        const SProtMatchInfo& prot_match_info);
+
+
     void x_AppendMatchedProtein(
         const string& nuc_accession,
         const CSeq_annot& match);
@@ -91,21 +122,31 @@ private:
         const string& nuc_accession,
         const string& prot_accession);
 
-    bool x_TryProcessAlignment(const CSeq_align& alignment,
+    bool x_TryProcessAlignment(const CSeq_align& align,
         SNucMatchInfo& nuc_match_info);
 
-    bool x_IsPerfectAlignment(const CSeq_align& alignment) const;
+    void x_ProcessAlignments(const list<CRef<CSeq_align>>& align,
+        map<string, bool>& nuc_match_info);
+
+    void x_ProcessAlignments(CObjectIStream& istr,
+        const map<string, string>& nuc_id_replacements,
+        map<string, bool>& nuc_match);
+
+    bool x_IsPerfectAlignment(const CSeq_align& align) const;
 
     void x_AppendProteins(const string& nuc_accession,
         const list<CRef<CSeq_annot>>& annot_list,
         const list<string>& local_prot_ids,
         const list<string>& prot_accessions);
-/*
-    bool x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
-        TMatches& matches,
-        list<string>& new_prot_ids,
-        list<string>& dead_prot_ids);
-*/
+
+    void x_ProcessProteins(
+        CObjectIStream& istr,
+        const map<string, bool>& nuc_accessions,
+        const map<string, list<string>>& local_prot_ids,
+        const map<string, list<string>>& prot_accessions,
+        const map<string, string>& nuc_id_replacement_map);
+
+
     bool x_IsProteinMatch(const CSeq_annot& annot) const;
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& annot) const;
@@ -115,13 +156,18 @@ private:
     const CSeq_feat& x_GetSubject(const CSeq_annot& compare_annot) const;
     bool x_FetchAccessionVersion(const CSeq_align& align,
         string& accver);
+    bool x_FetchAccession(const CSeq_align& align, string& accession);
+
+
     void x_AddColumn(const string& colName);
     void x_AppendColumnValue(const string& colName,
         const string& colVal);
     bool x_HasCdsQuery(const CSeq_annot& annot) const;
     bool x_HasCdsSubject(const CSeq_annot& annot) const;
     bool x_IsComparison(const CSeq_annot& annot) const;
+    string x_GetSubjectNucleotideAccession(const CSeq_annot& compare_annot);
 
+    string x_GetAccession(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CUser_object& user_obj) const;
     string x_GetLocalID(const CSeq_feat& seq_feat) const;

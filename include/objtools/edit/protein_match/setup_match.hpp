@@ -59,10 +59,13 @@ public:
 
     bool GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const;
 
+    bool GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const;
+
+    bool GetReplacedIdFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const;
 private:
     CBioseq& x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const;
-    bool x_TryFetchReplacedAccessionFromHist(const CBioseq& nuc_seq,
-        CRef<CSeq_id>& id) const;
+    CBioseq& x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const;
+    const CBioseq& x_FetchNucSeqRef(const CBioseq_set& nuc_prot_set) const;
 
     CRef<CScope> m_DBScope;
 };

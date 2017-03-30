@@ -74,7 +74,6 @@ bool CBinRunner::CheckBinary(void) const
 void CBinRunner::Exec(const string& arguments) 
 {
     string exec_str = m_pBinary->GetPath() + " " + arguments;
-
     try {
         CExec::System(exec_str.c_str());
     } 
