@@ -657,7 +657,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_VBASE2, "http://www.vbase2.org/vgene.php?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VectorBase, "https://www.vectorbase.org/Genome/BRCGene/?feature=" },
-    { CDbtag::eDbtagType_Vega, "http://vega.sanger.ac.uk/id/"  },
+    { CDbtag::eDbtagType_Vega, "http://vega.archive.ensembl.org/id/"  },
     { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
     { CDbtag::eDbtagType_WormBase, "https://www.wormbase.org/search/gene/" },
     { CDbtag::eDbtagType_Xenbase, "https://www.xenbase.org/gene/showgene.do?method=display&geneId=" },
