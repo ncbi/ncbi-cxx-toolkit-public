@@ -811,7 +811,9 @@ special  N00092  ddbj_other_nuc # D00092.1
 special  N00093  ddbj_other_nuc # (M34437.1 = X04797.1 =) D00093.1
 special  N00094  ddbj_other_nuc # (X05040.1 =) D00094.1
 special  N18624  gb_other_nuc   # *L29496.1 / M23263.1
-special  N20000-N99999  gb_est
+special  N20001-N97317  gb_est
+special  N97318-N97531  gb_gss
+special  N97532-N99999  gb_est
 
 # Nominally gb_est.
 special  T02634-T02808  gb_gss
