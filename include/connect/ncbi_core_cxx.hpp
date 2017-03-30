@@ -37,8 +37,8 @@
  *
  */
 
-#include <connect/ncbi_core.h>
 #include <corelib/ncbireg.hpp>
+#include <connect/ncbi_tls.h>
 
 
 /** @addtogroup UtilityFunc
@@ -132,13 +132,17 @@ typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 ///  Lock to use (new lock will get created if NULL)
 /// @param flag
 ///  Ownership control
+/// @param ssl
+///  TLS provider to use for SSL (ignored if eConnectInit_NoSSL,
+///                               0 selects default)
 /// @note LOG will get created out of CNcbiDiag automatically.
 /// @sa
 ///  REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c, CConnIniter, CNcbiApplication
 extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 (const IRWRegistry* reg  = 0,
  CRWLock*           lock = 0,
- TConnectInitFlags  flag = eConnectInit_OwnNothing);
+ TConnectInitFlags  flag = eConnectInit_OwnNothing,
+ FSSLSetup          ssl  = 0);
 
 
 /////////////////////////////////////////////////////////////////////////////
