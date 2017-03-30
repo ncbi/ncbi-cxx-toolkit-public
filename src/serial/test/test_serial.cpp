@@ -335,6 +335,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         try {
             for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
                     *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership, params)) {
+                cout << MSerial_AsnText << obj << endl;
             }
         } catch (CSerialException& e) {
             gotit = e.GetErrCode() == CSerialException::eFormatError;
@@ -357,6 +358,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         try {
             for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
                     *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+                cout << MSerial_AsnText << obj << endl;
             }
         } catch (CException&) {
         } catch (exception&) {
@@ -411,6 +413,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         try {
             for (CTestSerialObject& obj : CObjectIStreamAsyncIterator<CTestSerialObject>(
                 *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership)) {
+                cout << MSerial_AsnText << obj << endl;
             }
         } catch (CSerialException& e) {
             gotit = e.GetErrCode() == CSerialException::eFormatError;
@@ -498,6 +501,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         try {
             for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
                     *CObjectIStream::Open(eSerial_AsnBinary, istrs), eTakeOwnership, params)) {
+                cout << MSerial_AsnText << obj << endl;
             }
         } catch (CSerialException& e) {
             gotit = e.GetErrCode() == CSerialException::eFormatError;
@@ -520,6 +524,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
         try {
             for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
                     *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership, params)) {
+                cout << MSerial_AsnText << obj << endl;
             }
         } catch (CException&) {
         } catch (exception&) {
