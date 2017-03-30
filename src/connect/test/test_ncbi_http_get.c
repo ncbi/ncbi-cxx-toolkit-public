@@ -331,7 +331,8 @@ int main(int argc, char* argv[])
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
     if (*blk) {
         status = SOCK_SetupSSLEx(NcbiSetupTls);
-        CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
+        CORE_LOGF(eLOG_Note, ("SSL request%s acknowledged: %s",
+                              status != eIO_Success ? " NOT" : "",
                               IO_StatusStr(status)));
     }
     if (net_info->scheme == eURL_Https) {
