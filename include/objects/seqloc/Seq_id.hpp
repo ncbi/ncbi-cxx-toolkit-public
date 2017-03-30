@@ -285,6 +285,7 @@ public:
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
         eAcc_gb_wgsm_nuc    = e_Genbank | eAcc_wgs_master | fAcc_nuc,
         eAcc_gb_wgsm_prot   = e_Genbank | eAcc_wgs_master | fAcc_prot,
+        eAcc_gb_chromosome  = e_Genbank | eAcc_chromosome | fAcc_nuc,  // CM
         eAcc_gb_sts         = e_Genbank | eAcc_sts        | fAcc_nuc,  // G
         eAcc_gb_mga         = e_Genbank | eAcc_mga        | fAcc_nuc,  // unused
         eAcc_gb_optical_map = e_Genbank | eAcc_optical_map| fAcc_nuc,  // MAP_
@@ -297,6 +298,7 @@ public:
         eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,  // A
         eAcc_embl_tsa_nuc   = e_Embl | eAcc_tsa        | fAcc_nuc,  // IAAA
         eAcc_embl_tsa_prot  = e_Embl | eAcc_tsa        | fAcc_prot, // unused
+        eAcc_embl_gss       = e_Embl | eAcc_gss        | fAcc_nuc,  // AJ864682
         eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,  // unused
         eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,  // unused
         eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,  // AN
@@ -358,8 +360,9 @@ public:
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
 
-        eAcc_gb_tpa_nuc        = e_Tpg | eAcc_other | fAcc_nuc,       // BK
-        eAcc_gb_tpa_prot       = e_Tpg | eAcc_other | fAcc_prot,      // DAA
+        eAcc_gb_tpa_nuc        = e_Tpg | eAcc_other      | fAcc_nuc,  // BK
+        eAcc_gb_tpa_prot       = e_Tpg | eAcc_other      | fAcc_prot, // DAA
+        eAcc_gb_tpa_segset     = e_Tpg | eAcc_segset     | fAcc_nuc,  // BL
         eAcc_gb_tpa_con        = e_Tpg | eAcc_con        | fAcc_nuc,  // GJ
         eAcc_gb_tpa_wgs_nuc    = e_Tpg | eAcc_wgs        | fAcc_nuc,  // DAAA
         eAcc_gb_tpa_wgs_prot   = e_Tpg | eAcc_wgs        | fAcc_prot, // HAA

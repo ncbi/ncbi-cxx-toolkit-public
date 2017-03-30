@@ -89,12 +89,12 @@ version  1 # of file format
 4+8   L???  gb_wgs_nuc
 4+9   L???  gb_wgs_nuc
 4+10  L???  gb_wgs_nuc
-4+8   M???  gb_wgs_nuc
-4+9   M???  gb_wgs_nuc
-4+10  M???  gb_wgs_nuc
-4+8   N???  gb_wgs_nuc
-4+9   N???  gb_wgs_nuc
-4+10  N???  gb_wgs_nuc
+4+8   M???  gb_wgs_nuc # gb_tsa_nuc?
+4+9   M???  gb_wgs_nuc # gb_tsa_nuc?
+4+10  M???  gb_wgs_nuc # gb_tsa_nuc?
+4+8   N???  gb_wgs_nuc # gb_tsa_nuc?
+4+9   N???  gb_wgs_nuc # gb_tsa_nuc?
+4+10  N???  gb_wgs_nuc # gb_tsa_nuc?
 4+8   O???  embl_wgs_nuc
 4+9   O???  embl_wgs_nuc
 4+10  O???  embl_wgs_nuc
@@ -164,46 +164,46 @@ version  1 # of file format
 # 6-character accessions (mixed, but generally nucleotide)
 1+5  A  embl_patent
 1+5  B  gb_gss
-1+5  C  ddbj_est
-1+5  D  ddbj_dirsub
+1+5  C  ddbj_est *
+1+5  D  ddbj_dirsub *
 1+5  E  ddbj_patent
-1+5  F  embl_est
+1+5  F  embl_est *
 1+5  G  gb_sts
 1+5  H  gb_est
 1+5  I  gb_patent
 1+5  J  gsdb_dirsub
 1+5  K  gsdb_dirsub
-1+5  L  gsdb_dirsub
-1+5  M  gsdb_dirsub
+1+5  L  gsdb_dirsub *
+1+5  M  gsdb_dirsub *
 1+5  N  unreserved_nuc *
 1+5  O  swissprot
 1+5  P  swissprot
 1+5  Q  swissprot
 1+5  R  gb_est
 1+5  S  gb_backbone
-1+5  T  gb_est
-1+5  U  gb_dirsub
+1+5  T  gb_est *
+1+5  U  gb_dirsub *
 1+5  V  embl_dirsub
 1+5  W  gb_est
-1+5  X  embl_dirsub
-1+5  Y  embl_dirsub
-1+5  Z  embl_dirsub
+1+5  X  embl_dirsub *
+1+5  Y  embl_dirsub *
+1+5  Z  embl_dirsub *
 1+5  ?  unreserved_nuc
 
 # 8-character nucleotide accessions
 2+6  AA  gb_est
-2+6  AB  ddbj_dirsub
+2+6  AB  ddbj_dirsub *
 2+6  AC  gb_htgs
 2+6  AD  gb_gsdb
 2+6  AE  gb_genome
-2+6  AF  gb_dirsub
-2+6  AG  ddbj_genome
+2+6  AF  gb_dirsub *
+2+6  AG  ddbj_gss *
 2+6  AH  gb_segset
 2+6  AI  gb_est
-2+6  AJ  embl_dirsub
+2+6  AJ  embl_dirsub *
 2+6  AK  ddbj_mrna
-2+6  AL  embl_other_nuc # nominally for genome projects, but unrestricted
-2+6  AM  embl_dirsub
+2+6  AL  embl_dirsub *
+2+6  AM  embl_dirsub *
 2+6  AN  embl_con
 2+6  AO  unreserved_nuc
 2+6  AP  ddbj_genome
@@ -211,11 +211,11 @@ version  1 # of file format
 2+6  AR  gb_patent
 2+6  AS  gb_other_nuc
 2+6  AT  ddbj_est
-2+6  AU  ddbj_est
+2+6  AU  ddbj_est *
 2+6  AV  ddbj_est
 2+6  AW  gb_est
-2+6  AX  embl_patent
-2+6  AY  gb_dirsub
+2+6  AX  embl_patent *
+2+6  AY  gb_dirsub *
 2+6  AZ  gb_gss
 2+6  BA  ddbj_con
 2+6  BB  ddbj_est
@@ -228,9 +228,10 @@ version  1 # of file format
 2+6  BI  gb_est
 2+6  BJ  ddbj_est
 2+6  BK  gb_tpa_nuc
-2+6  BL  gb_tpa_nuc
+2+6  BL  gb_tpa_nuc # Fallback to placate older clients
+2+6  BL  gb_tpa_segset # Formally CON but not necessarily genomic
 2+6  BM  gb_est
-2+6  BN  embl_other_nuc * # nominally for TPAs, mixed in practice
+2+6  BN  embl_tpa_nuc
 2+6  BO  unreserved_nuc
 2+6  BP  ddbj_est
 2+6  BQ  gb_est
@@ -240,7 +241,7 @@ version  1 # of file format
 2+6  BU  gb_est
 2+6  BV  gb_sts
 2+6  BW  ddbj_est
-2+6  BX  embl_other_nuc
+2+6  BX  embl_dirsub *
 2+6  BY  ddbj_est
 2+6  BZ  gb_gss
 2+6  CA  gb_est
@@ -255,15 +256,16 @@ version  1 # of file format
 2+6  CJ  ddbj_est
 2+6  CK  gb_est
 2+6  CL  gb_gss
-2+6  CM  gb_con
+2+6  CM  gb_con # Fallback to placate older clients
+2+6  CM  gb_chromosome
 2+6  CN  gb_est
 2+6  CO  gb_est
-2+6  CP  gb_genome
+2+6  CP  gb_genome *
 2+6  CQ  embl_patent
-2+6  CR  embl_other_nuc
+2+6  CR  embl_dirsub *
 2+6  CS  embl_patent
-2+6  CT  embl_other_nuc
-2+6  CU  embl_other_nuc
+2+6  CT  embl_dirsub *
+2+6  CU  embl_dirsub *
 2+6  CV  gb_est
 2+6  CW  gb_gss
 2+6  CX  gb_est
@@ -273,7 +275,7 @@ version  1 # of file format
 2+6  DB  ddbj_est
 2+6  DC  ddbj_est
 2+6  DD  ddbj_patent
-2+6  DE  ddbj_gss
+2+6  DE  ddbj_gss *
 2+6  DF  ddbj_con
 2+6  DG  ddbj_con
 2+6  DH  ddbj_gss
@@ -284,10 +286,10 @@ version  1 # of file format
 2+6  DM  ddbj_patent
 2+6  DN  gb_est
 2+6  DO  unreserved_nuc
-2+6  DP  gb_htgs
-2+6  DQ  gb_dirsub
+2+6  DP  gb_htgs # HTG scaffolds; look like gb_con, but built on htgs parts
+2+6  DQ  gb_dirsub *
 2+6  DR  gb_est
-2+6  DS  gb_con
+2+6  DS  gb_con *
 2+6  DT  gb_est
 2+6  DU  gb_gss
 2+6  DV  gb_est
@@ -300,7 +302,7 @@ version  1 # of file format
 2+6  EC  gb_est
 2+6  ED  gb_gss
 2+6  EE  gb_est
-2+6  EF  gb_dirsub
+2+6  EF  gb_dirsub *
 2+6  EG  gb_est
 2+6  EH  gb_est
 2+6  EI  gb_gss
@@ -315,7 +317,7 @@ version  1 # of file format
 2+6  ER  gb_gss
 2+6  ES  gb_est
 2+6  ET  gb_gss
-2+6  EU  gb_dirsub
+2+6  EU  gb_dirsub *
 2+6  EV  gb_est
 2+6  EW  gb_est
 2+6  EX  gb_est
@@ -330,15 +332,15 @@ version  1 # of file format
 2+6  FG  gb_est
 2+6  FH  gb_gss
 2+6  FI  gb_gss
-2+6  FJ  gb_dirsub
+2+6  FJ  gb_dirsub *
 2+6  FK  gb_est
 2+6  FL  gb_est
-2+6  FM  embl_dirsub
-2+6  FN  embl_dirsub
-2+6  FO  embl_dirsub
-2+6  FP  embl_other_nuc
-2+6  FQ  embl_other_nuc
-2+6  FR  embl_other_nuc *
+2+6  FM  embl_dirsub *
+2+6  FN  embl_dirsub *
+2+6  FO  embl_dirsub *
+2+6  FP  embl_dirsub *
+2+6  FQ  embl_dirsub *
+2+6  FR  embl_dirsub *
 2+6  FS  ddbj_est
 2+6  FT  ddbj_gss
 2+6  FU  ddbj_patent
@@ -363,11 +365,11 @@ version  1 # of file format
 2+6  GN  embl_patent
 2+6  GO  gb_est
 2+6  GP  gb_patent
-2+6  GQ  gb_dirsub
+2+6  GQ  gb_dirsub *
 2+6  GR  gb_est
 2+6  GS  gb_gss
 2+6  GT  gb_est
-2+6  GU  gb_dirsub
+2+6  GU  gb_dirsub *
 2+6  GV  gb_patent
 2+6  GW  gb_est
 2+6  GX  gb_patent
@@ -385,19 +387,19 @@ version  1 # of file format
 2+6  HJ  gb_patent
 2+6  HK  gb_patent
 2+6  HL  gb_patent
-2+6  HM  gb_dirsub
+2+6  HM  gb_dirsub *
 2+6  HN  gb_gss
 2+6  HO  gb_est
 2+6  HP  gb_tsa_nuc
-2+6  HQ  gb_dirsub
+2+6  HQ  gb_dirsub *
 2+6  HR  gb_gss
 2+6  HS  gb_est
 2+6  HT  ddbj_tpa_nuc # fallback to placate older clients
 2+6  HT  ddbj_tpa_con
 2+6  HU  ddbj_tpa_nuc # fallback to placate older clients
 2+6  HU  ddbj_tpa_chromosome
-2+6  HV  gb_patent
-2+6  HW  gb_patent
+2+6  HV  ddbj_patent
+2+6  HW  ddbj_patent
 2+6  HX  ddbj_est
 2+6  HY  ddbj_est
 2+6  HZ  ddbj_patent
@@ -414,7 +416,7 @@ version  1 # of file format
 2+6  JK  gb_est
 2+6  JL  gb_tsa_nuc
 2+6  JM  gb_gss
-2+6  JN  gb_dirsub
+2+6  JN  gb_dirsub *
 2+6  JO  gb_tsa_nuc
 2+6  JP  gb_tsa_nuc
 2+6  JQ  gb_dirsub
@@ -432,14 +434,14 @@ version  1 # of file format
 2+6  KC  gb_dirsub
 2+6  KD  gb_con
 2+6  KE  gb_con
-2+6  KF  gb_dirsub
+2+6  KF  gb_dirsub *
 2+6  KG  gb_gss
 2+6  KH  gb_patent
 2+6  KI  gb_con
-2+6  KJ  gb_dirsub
+2+6  KJ  gb_dirsub *
 2+6  KK  gb_con
 2+6  KL  gb_con
-2+6  KM  gb_dirsub
+2+6  KM  gb_dirsub *
 2+6  KN  gb_con
 2+6  KO  gb_gss
 2+6  KP  gb_dirsub
@@ -449,6 +451,7 @@ version  1 # of file format
 2+6  KT  gb_dirsub
 2+6  KU  gb_dirsub
 2+6  KV  gb_con
+2+6  KW  gb_other_nuc
 2+6  KX  gb_dirsub
 2+6  KY  gb_dirsub
 2+6  KZ  gb_con
@@ -462,18 +465,19 @@ version  1 # of file format
 2+6  LH  ddbj_tsa_nuc
 2+6  LI  ddbj_tsa_nuc
 2+6  LJ  ddbj_tsa_nuc
-2+6  LK  embl_other_nuc *
-2+6  LL  embl_other_nuc *
-2+6  LM  embl_other_nuc *
-2+6  LN  embl_other_nuc
-2+6  LO  embl_other_nuc
-2+6  LP  embl_other_nuc
-2+6  LQ  embl_other_nuc
-2+6  LR  embl_other_nuc
-2+6  LS  embl_other_nuc
-2+6  LT  embl_other_nuc *
+2+6  LK  embl_dirsub *
+2+6  LL  embl_dirsub
+2+6  LM  embl_dirsub *
+2+6  LN  embl_dirsub *
+2+6  LO  embl_dirsub *
+2+6  LP  embl_patent
+2+6  LQ  embl_patent
+2+6  LR  embl_dirsub # embl_patent?
+2+6  LS  embl_dirsub # embl_patent?
+2+6  LT  embl_dirsub *
 2+6  LU  ddbj_est
 2+6  LV  ddbj_patent
+2+6  LW  ddbj_other_nuc
 2+6  LX  ddbj_patent
 2+6  LY  ddbj_patent
 2+6  LZ  ddbj_other_nuc
@@ -504,6 +508,224 @@ version  1 # of file format
 #gnl  TRACE_CHGR  general_nuc
 
 # SPECIAL CASES
+# Mostly in the same order as baseline assignments, but embl_tpa_prot
+# specials are at the very end because there are so many of them.  To
+# keep to a rough limit of 100 lines per prefix, resort to *_other_nuc
+# for some heavily mixed ranges.
+
+# Some GenBank "TPA" 8-character protein accessions are really native.
+special  DAA00001           gb_prot
+special  DAA02110-DAA02116  gb_prot
+special  DAA34794-DAA34795  gb_prot
+
+# Nominally ddbj_est.
+special  C21595-C21827  ddbj_dirsub
+special  C22715-C22762  ddbj_dirsub
+special  C22783-C22911  ddbj_dirsub
+special  C24689-C24767  ddbj_dirsub
+special  C75685-C75936  ddbj_dirsub
+special  C95573-C95642  ddbj_dirsub
+special  C99933-C99976  ddbj_dirsub
+
+# Nominally ddbj_dirsub.  Split out EST ranges, and give the benefit
+# of the doubt to sequences that look like ddbj_con, ddbj_genome,
+# ddbj_mrna, or ddbj_other_nuc.
+special  D00922         ddbj_est
+special  D11487-D12469  ddbj_est
+special  D15075-D17289  ddbj_other_nuc # 62 EST ranges
+special  D17812-D21053  ddbj_est
+special  D21355-D26768  ddbj_other_nuc # 118 EST ranges
+special  D26771-D28109  ddbj_est
+special  D28170-D28183  ddbj_est
+special  D28185-D28196  ddbj_est
+special  D28198         ddbj_est
+special  D28200         ddbj_est
+special  D28203         ddbj_est
+special  D28205-D28206  ddbj_est
+special  D28208-D28215  ddbj_est
+special  D28217-D28224  ddbj_est
+special  D28227         ddbj_est
+special  D28229         ddbj_est
+special  D28232         ddbj_est
+special  D28234         ddbj_est
+special  D28281-D28288  ddbj_est
+special  D28290-D28310  ddbj_est
+special  D28312-D28318  ddbj_est
+special  D28320-D28326  ddbj_est
+special  D28603-D28744  ddbj_est
+special  D29018-D29624  ddbj_est
+special  D29993-D30029  ddbj_est
+special  D30816-D31599  ddbj_est
+special  D32304-D32958  ddbj_est
+special  D32960-D33769  ddbj_est
+special  D33771-D34214  ddbj_est
+special  D34216-D34410  ddbj_est
+special  D34412-D34589  ddbj_est
+special  D34640-D35674  ddbj_est
+special  D35676-D36684  ddbj_est
+special  D36686-D42011  ddbj_other_nuc # 101 EST ranges
+special  D42187-D43617  ddbj_est
+special  D44612-D49352  ddbj_other_nuc # 70 EST ranges
+special  D50936-D60141  ddbj_other_nuc # 1208 EST ranges
+special  D60143-D61376  ddbj_est
+special  D61420-D61685  ddbj_est
+special  D61708-D62388  ddbj_est
+special  D62390-D63133  ddbj_est
+special  D63171-D63317  ddbj_est
+special  D63319-D63324  ddbj_est
+special  D63330         ddbj_est
+special  D63746-D63758  ddbj_est
+special  D64179-D65034  ddbj_est
+special  D65036-D65241  ddbj_est
+special  D65243-D65978  ddbj_est
+special  D65980-D66873  ddbj_est
+special  D67099-D68048  ddbj_est
+special  D68050-D68323  ddbj_est
+special  D68325-D68600  ddbj_est
+special  D68602-D69603  ddbj_est
+special  D69605-D70813  ddbj_est
+special  D70900-D76413  ddbj_other_nuc # 45 EST ranges
+special  D76447-D77996  ddbj_est
+special  D78209-D89649  ddbj_other_nuc # 91 EST ranges
+
+special  F38006         embl_dirsub # Nominally embl_est.
+
+# Nominally gsdb_dirsub.  Split out EST, GSS, and STS ranges, and
+# give the benefit of the doubt to sequences that look like gb_cdna,
+# gb_con, gb_genome, gsdb_dirsub, or gb_other_nuc.
+special  L00738-L00844  gb_sts
+special  L00846-L00850  gb_sts
+special  L00852-L00891  gb_sts
+special  L00893-L00916  gb_sts
+special  L00994-L01014  gb_sts
+special  L01996-L02021  gb_sts
+special  L02080-L02091  gb_sts
+special  L04198-L04215  gb_sts
+special  L07331-L07332  gb_sts
+special  L07863         gb_sts
+special  L08881-L15794  gb_other_nuc # 6 EST ranges and 23 STS ranges
+special  L17188-L17290  gb_sts
+special  L18193-L18255  gb_sts
+special  L18857-L18858  gb_est
+special  L19032-L19041  gb_est
+special  L19143-L19155  gb_est
+special  L19160         gb_est
+special  L19202-L19214  gb_est
+special  L20451-L20461  gb_est
+special  L23479-L23493  gb_sts
+special  L23992         gb_sts
+special  L23997         gb_sts
+special  L24693         gb_sts
+special  L24826         gb_sts
+special  L25137         gb_sts
+special  L25173-L25249  gb_est
+special  L25344-L25345  gb_est
+special  L25347         gb_est
+special  L25417-L25420  gb_est
+special  L25449-L25525  gb_est
+special  L25888         gb_sts
+special  L26606-L26848  gb_est
+special  L27444         gb_est
+special  L28178-L28418  gb_sts
+special  L28420-L28422  gb_sts
+special  L30148         gb_est
+special  L31430-L31437  gb_sts
+special  L31440-L31489  gb_sts
+special  L31968-L32015  gb_est
+special  L32028-L32065  gb_est
+special  L33494-L33675  gb_est
+special  L34798-L34802  gb_sts
+special  L34957-L35007  gb_est
+special  L35580-L35581  gb_sts
+special  L35773-L35843  gb_est
+special  L36534         gb_sts
+special  L37208-L37288  gb_sts
+special  L37453-L37515  gb_est
+special  L37607-L37659  gb_est
+special  L37974-L38013  gb_est
+special  L38026-L38243  gb_est
+special  L38525-L38543  gb_est
+special  L38741         gb_est
+special  L38750-L38760  gb_est
+special  L38763         gb_est
+special  L38774         gb_est
+special  L38787         gb_est
+special  L39872-L39873  gb_sts
+special  L40034         gb_sts
+special  L40040-L40041  gb_sts
+special  L40351-L40352  gb_sts
+special  L40420-L40424  gb_est
+special  L41967         gb_sts
+special  L43576-L43577  gb_est
+special  L43579-L43580  gb_est
+special  L44279-L44576  gb_est
+special  L46401-L46582  gb_est
+special  L46914-L47098  gb_est
+special  L47214-L47215  gb_sts
+special  L47542         gb_sts
+special  L47554-L47568  gb_sts
+special  L47842-L47965  gb_est
+special  L48016         gb_sts
+special  L48736-L48796  gb_gss
+special  L48818-L48873  gb_est
+special  L49057-L49120  gb_est
+special  L76101-L76131  gb_est
+special  L76151         gb_sts
+special  L77669-L77670  gb_sts
+special  L77674-L77683  gb_sts
+special  L77685-L77686  gb_sts
+special  L77689         gb_sts
+special  L77878-L77883  gb_sts
+special  L77993         gb_sts
+special  L81201-L81260  gb_est
+
+# Nominally gsdb_dirsub.  Split out EST and STS ranges, and give the
+# benefit of the doubt to sequences that look like gb_cdna, gb_con,
+# gb_genome, gsdb_dirsub, or gb_other_nuc.
+special  M23606-M23610  gb_sts
+special  M61953-M62300  gb_est
+special  M75734-M75848  gb_est
+special  M75850-M75852  gb_est
+special  M75854-M75855  gb_est
+special  M75857         gb_est
+special  M75859-M75863  gb_est
+special  M75868-M75869  gb_est
+special  M75872         gb_est
+special  M75874         gb_est
+special  M75876-M75881  gb_est
+special  M75885         gb_est
+special  M75890         gb_est
+special  M75892-M75902  gb_est
+special  M75904-M75905  gb_est
+special  M75912         gb_est
+special  M75915         gb_est
+special  M75917-M75943  gb_est
+special  M75945-M75946  gb_est
+special  M75951         gb_est
+special  M75955         gb_est
+special  M75964-M75965  gb_est
+special  M75988         gb_est
+special  M76111-M76122  gb_est
+special  M77851-M79278  gb_est
+special  M79465-M80184  gb_est
+special  M80369-M80376  gb_sts
+special  M83631-M83639  gb_sts
+special  M84924-M84934  gb_sts
+special  M84943         gb_sts
+special  M85308-M86179  gb_est
+special  M88774-M89469  gb_est
+special  M91216-M91222  gb_est
+special  M91387-M91403  gb_est
+special  M91480-M91511  gb_est
+special  M92283-M92284  gb_est
+special  M92935         gb_est
+special  M94585-M94622  gb_sts
+special  M94635-M94643  gb_sts
+special  M94655-M94662  gb_sts
+special  M95212-M95280  gb_sts
+special  M95301-M95323  gb_sts
+special  M96605-M96621  gb_est
+special  M98979-M98996  gb_sts
 
 # Early N accessions were assigned haphazardly, and sometimes ambiguously.
 # (These are all secondary accessions nowadays, though.)  "*" denotes what,
@@ -591,573 +813,1832 @@ special  N00094  ddbj_other_nuc # (X05040.1 =) D00094.1
 special  N18624  gb_other_nuc   # *L29496.1 / M23263.1
 special  N20000-N99999  gb_est
 
-# Some GenBank "TPA" 8-character protein accessions are really native.
-special  DAA00974-DAA00975  gb_prot
-special  DAA01471           gb_prot
-special  DAA01543           gb_prot
-special  DAA06450-DAA06453  gb_prot
-special  DAA06495           gb_prot
-special  DAA06633-DAA06636  gb_prot
-special  DAA12517-DAA33856  gb_prot
+# Nominally gb_est.
+special  T02634-T02808  gb_gss
+special  T09496-T09993  gb_gss
 
-# Some "EMBL" 8-character nucleotide accessions are really third party
-# annotations.
-special  BN000001-BN000002  embl_tpa_nuc
-special  BN000021-BN000024  embl_tpa_nuc
-special  BN000061           embl_tpa_nuc
-special  BN000065-BN000068  embl_tpa_nuc
-special  BN000070           embl_tpa_nuc
-special  BN000073           embl_tpa_nuc
-special  BN000081           embl_tpa_nuc
-special  BN000084           embl_tpa_nuc
-special  BN000087-BN000088  embl_tpa_nuc
-special  BN000090           embl_tpa_nuc
-special  BN000093           embl_tpa_nuc
-special  BN000098-BN000101  embl_tpa_nuc
-special  BN000109           embl_tpa_nuc
-special  BN000112-BN000137  embl_tpa_nuc
-special  BN000141-BN000147  embl_tpa_nuc
-special  BN000149           embl_tpa_nuc
-special  BN000151-BN000157  embl_tpa_nuc
-special  BN000159-BN000160  embl_tpa_nuc
-special  BN000162-BN000166  embl_tpa_nuc
-special  BN000168           embl_tpa_nuc
-special  BN000170-BN000171  embl_tpa_nuc
-special  BN000173           embl_tpa_nuc
-special  BN000211-BN000258  embl_tpa_nuc
-special  BN000265           embl_tpa_nuc
-special  BN000267-BN000268  embl_tpa_nuc
-special  BN000272-BN000273  embl_tpa_nuc
-special  BN000275-BN000407  embl_tpa_nuc
-special  BN000431-BN000432  embl_tpa_nuc
-special  BN000434-BN000435  embl_tpa_nuc
-special  BN000437-BN000454  embl_tpa_nuc
-special  BN000457           embl_tpa_nuc
-special  BN000479-BN000483  embl_tpa_nuc
-special  BN000499-BN000503  embl_tpa_nuc
-special  BN000505-BN000515  embl_tpa_nuc
-special  BN000517-BN000667  embl_tpa_nuc
-special  BN000669-BN000670  embl_tpa_nuc
-special  BN000674           embl_tpa_nuc
-special  BN000676-BN000681  embl_tpa_nuc
-special  BN000684-BN000687  embl_tpa_nuc
-special  BN000689-BN000692  embl_tpa_nuc
-special  BN000695-BN000711  embl_tpa_nuc
-special  BN000713-BN000719  embl_tpa_nuc
-special  BN000728-BN000732  embl_tpa_nuc
-special  BN000734-BN000769  embl_tpa_nuc
-special  BN000772-BN000783  embl_tpa_nuc
-special  BN000785-BN000805  embl_tpa_nuc
-special  BN000808-BN000812  embl_tpa_nuc
-special  BN000817-BN000819  embl_tpa_nuc
-special  BN000821-BN000822  embl_tpa_nuc
-special  BN000824-BN000832  embl_tpa_nuc
-special  BN000834-BN000849  embl_tpa_nuc
-special  BN000851-BN000861  embl_tpa_nuc
-special  BN000863-BN000877  embl_tpa_nuc
-special  BN000881-BN000887  embl_tpa_nuc
-special  BN000889-BN000892  embl_tpa_nuc
-special  BN000914-BN000926  embl_tpa_nuc
-special  BN000945-BN000958  embl_tpa_nuc
-special  BN000962           embl_tpa_nuc
-special  BN000965           embl_tpa_nuc
-special  BN000968-BN000973  embl_tpa_nuc
-special  BN000975           embl_tpa_nuc
-special  BN000978           embl_tpa_nuc
-special  BN000980-BN000985  embl_tpa_nuc
-special  BN000987-BN001080  embl_tpa_nuc
-special  BN001082-BN001085  embl_tpa_nuc
-special  BN001087           embl_tpa_nuc
-special  BN001089-BN001119  embl_tpa_nuc
-special  BN001167-BN001171  embl_tpa_nuc
-special  BN001179-BN001183  embl_tpa_nuc
-special  BN001188           embl_tpa_nuc
-special  BN001190-BN001201  embl_tpa_nuc
-special  BN001209           embl_tpa_nuc
-special  BN001212-BN001274  embl_tpa_nuc
-special  BN001277           embl_tpa_nuc
-special  BN001281-BN001308  embl_tpa_nuc
-special  BN001315           embl_tpa_nuc
-special  BN001360-BN001492  embl_tpa_nuc
-special  BN001496-BN001497  embl_tpa_nuc
-special  BN001505-BN001509  embl_tpa_nuc
-special  BN001513-BN001515  embl_tpa_nuc
-special  BN001518-BN001519  embl_tpa_nuc
-special  BN001525-BN001527  embl_tpa_nuc
+# Nominally gb_dirsub.
+special  U01537-U01551  gb_est
+special  U01921         gb_est
+special  U13686         gb_est
+special  U14111-U14114  gb_est
+special  U14171         gb_est
+special  U15041-U15047  gb_est
+special  U15988         gb_est
+special  U17154         gb_est
+special  U17513-U17564  gb_est
+special  U17582-U17584  gb_est
+special  U17905-U17909  gb_est
+special  U17976-U17977  gb_est
+special  U17999-U18008  gb_est
+special  U18010-U18017  gb_est
+special  U19036         gb_est
+special  U19135-U19141  gb_est
+special  U19502-U19510  gb_gss
+special  U19512-U19515  gb_est
+special  U19678-U19693  gb_est
+special  U19732         gb_est
+special  U19772         gb_est
+special  U19823         gb_est
+special  U21073-U21081  gb_est
+special  U21083-U21085  gb_est
+special  U21457-U21470  gb_est
+special  U21493-U21545  gb_gss
+special  U23049-U26690  gb_other_nuc # 21 EST ranges and 1 GSS range
+special  U27989-U31698  gb_other_nuc # 18 EST ranges and 1 GSS range
+special  U33921         gb_est
+special  U34233-U34244  gb_est
+special  U34396-U34400  gb_est
+special  U35429         gb_est
+special  U36594-U36596  gb_est
+special  U37151-U37164  gb_est
+special  U37229         gb_est
+special  U37231-U37234  gb_est
+special  U37588         gb_gss
+special  U37913-U37935  gb_est
+special  U37937-U38174  gb_est
+special  U39396         gb_est
+special  U39407-U39408  gb_est
+special  U39588-U39607  gb_est
+special  U40055         gb_est
+special  U40140-U40143  gb_est
+special  U40153         gb_est
+special  U40589         gb_est
+special  U40629         gb_est
+special  U41133-U41161  gb_est
+special  U41297         gb_est
+special  U42490-U42491  gb_est
+special  U42570-U42579  gb_est
+special  U42751         gb_est
+special  U43146         gb_est
+special  U44093-U44102  gb_est
+special  U44135-U44377  gb_est
+special  U44981-U44990  gb_est
+special  U46160-U53560  gb_other_nuc # 30 EST ranges and 5 GSS ranges
+special  U54592-U54607  gb_est
+special  U54706-U54733  gb_est
+special  U54735-U54739  gb_est
+special  U54779         gb_est
+special  U55034         gb_est
+special  U55777         gb_est
+special  U55962-U55991  gb_est
+special  U56653-U56660  gb_est
+special  U57844         gb_est
+special  U58051-U58082  gb_est
+special  U58979         gb_est
+special  U59417         gb_est
+special  U59419         gb_est
+special  U59755-U59756  gb_est
+special  U60299-U60311  gb_est
+special  U60606-U60638  gb_gss
+special  U60799         gb_est
+special  U61299-U61300  gb_gss
+special  U61522-U61525  gb_gss
+special  U62909         gb_est
+special  U63519         gb_est
+special  U63522-U63528  gb_est
+special  U64597         gb_est
+special  U64679         gb_est
+special  U64965-U64966  gb_est
+special  U65082         gb_est
+special  U65383-U65389  gb_est
+special  U65438-U65439  gb_est
+special  U65740         gb_est
+special  U65903-U65905  gb_gss
+special  U65917         gb_est
+special  U66210-U66213  gb_gss
+special  U66215         gb_gss
+special  U66423         gb_est
+special  U66576-U66577  gb_est
+special  U66693-U66697  gb_est
+special  U66718         gb_est
+special  U67850-U70383  gb_other_nuc # 13 EST ranges and 5 GSS ranges
+special  U72041-U95639  gb_other_nuc # 103 EST ranges, 35 GSS ranges, and 1 STS range
+special  U97486         gb_gss
+special  U97488         gb_gss
+special  U97490         gb_gss
+special  U97493         gb_gss
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_con, embl_genome, or embl_other_nuc, but split
+# out EST ranges.
+special  X61801-X61899  embl_est
+special  X62402         embl_est
+special  X65268-X65275  embl_est
+special  X65374-X65393  embl_est
+special  X71637-X71641  embl_est
+special  X71643-X71652  embl_est
+special  X73542-X73548  embl_est
+special  X73704-X73804  embl_est
+special  X76318         embl_est
+special  X76487         embl_est
+special  X78018-X78028  embl_est
+special  X82204         embl_est
+special  X83032-X83034  embl_est
+special  X83304-X83366  embl_est
+special  X84313         embl_est
+special  X84711-X84721  embl_est
+special  X85546-X85725  embl_est
+special  X86144-X86146  embl_est
+special  X86218-X86220  embl_est
+special  X87300-X87305  embl_est
+special  X89987-X89996  embl_est
+special  X90532-X90545  embl_est
+special  X91308-X91335  embl_est
+special  X91672-X91734  embl_est
+special  X92440         embl_est
+special  X92790-X92803  embl_est
+special  X93012-X93014  embl_est
+special  X93079         embl_est
+special  X93227-X93300  embl_est
+special  X93413-X93460  embl_est
+special  X93811-X93867  embl_est
+special  X93915-X93919  embl_est
+special  X93988-X93989  embl_est
+special  X94486-X94532  embl_est
+special  X95581         embl_est
+special  X95686         embl_est
+special  X96619-X96625  embl_est
+special  X97503-X97519  embl_est
+special  X97896-X97897  embl_est
+special  X98134-X98140  embl_est
+special  X98198-X98204  embl_est
+special  X98425-X98428  embl_est
+special  X98548-X98554  embl_est
+special  X99272         embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome or embl_other_nuc, but split out EST
+# ranges.
+special  Y07823         embl_est
+special  Y08464-Y08483  embl_est
+special  Y08705-Y08714  embl_est
+special  Y09139         embl_est
+special  Y09316-Y09320  embl_est
+special  Y09359-Y09364  embl_est
+special  Y09375-Y09377  embl_est
+special  Y09459-Y09464  embl_est
+special  Y09519-Y09523  embl_est
+special  Y09543-Y09545  embl_est
+special  Y09726-Y09732  embl_est
+special  Y09875         embl_est
+special  Y09981-Y09986  embl_est
+special  Y10008-Y10010  embl_est
+special  Y10037-Y10042  embl_est
+special  Y10056-Y10060  embl_est
+special  Y10217-Y10220  embl_est
+special  Y10671-Y10672  embl_est
+special  Y11191         embl_est
+special  Y11308         embl_est
+special  Y11615         embl_est
+special  Y14396-Y14402  embl_est
+special  Y16130-Y16131  embl_est
+special  Y16971-Y16974  embl_est
+special  Y18366         embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome or embl_other_nuc, but split out EST
+# ranges.
+special  Z12653-Z23155  embl_other_nuc # 69 EST ranges
+special  Z24464-Z24546  embl_est
+special  Z24760-Z24766  embl_est
+special  Z24769-Z25279  embl_est
+special  Z25283-Z25392  embl_est
+special  Z25400-Z25417  embl_est
+special  Z25486-Z25508  embl_est
+special  Z25510-Z25518  embl_est
+special  Z25546-Z25586  embl_est
+special  Z25588-Z25733  embl_est
+special  Z25776-Z25794  embl_est
+special  Z25799-Z25801  embl_est
+special  Z25805-Z25808  embl_est
+special  Z25825-Z25826  embl_est
+special  Z25832-Z25850  embl_est
+special  Z25889-Z26039  embl_est
+special  Z26045-Z26132  embl_est
+special  Z26184-Z26235  embl_est
+special  Z26237-Z26238  embl_est
+special  Z26243-Z26244  embl_est
+special  Z26323-Z26330  embl_est
+special  Z26342-Z26480  embl_est
+special  Z26495-Z26517  embl_est
+special  Z26525-Z26579  embl_est
+special  Z26658-Z26752  embl_est
+special  Z26754-Z26764  embl_est
+special  Z26772-Z26823  embl_est
+special  Z26868-Z26874  embl_est
+special  Z26952-Z26966  embl_est
+special  Z26971-Z27066  embl_est
+special  Z27095-Z27104  embl_est
+special  Z27240         embl_est
+special  Z27249-Z27303  embl_est
+special  Z28355-Z38124  embl_other_nuc # 84 EST ranges
+special  Z38136-Z46221  embl_est
+special  Z46243-Z46248  embl_est
+special  Z46291-Z46298  embl_est
+special  Z46428-Z46430  embl_est
+special  Z46510-Z46520  embl_est
+special  Z46526-Z46594  embl_est
+special  Z46677-Z46718  embl_est
+special  Z46813-Z46822  embl_est
+special  Z46830-Z46832  embl_est
+special  Z46974-Z46980  embl_est
+special  Z47057-Z47065  embl_est
+special  Z47278-Z47348  embl_est
+special  Z47350-Z47351  embl_est
+special  Z47382-Z47408  embl_est
+special  Z47575-Z47720  embl_est
+special  Z47801-Z47802  embl_est
+special  Z47985         embl_est
+special  Z48368-Z48427  embl_est
+special  Z48445-Z48448  embl_est
+special  Z48453-Z48467  embl_est
+special  Z48545-Z48560  embl_est
+special  Z48608-Z48611  embl_est
+special  Z48637         embl_est
+special  Z49229-Z49232  embl_est
+special  Z49744-Z49745  embl_est
+special  Z54295-Z54305  embl_est
+special  Z54309-Z54311  embl_est
+special  Z69578-Z69584  embl_est
+special  Z69945-Z69972  embl_est
+special  Z69974-Z69975  embl_est
+special  Z69983-Z69984  embl_est
+special  Z71789-Z71924  embl_est
+special  Z72392-Z72421  embl_est
+special  Z74621-Z74661  embl_est
+special  Z78280-Z78408  embl_est
+special  Z81149-Z81290  embl_est
+special  Z82016-Z82017  embl_est
+special  Z82913-Z82935  embl_est
+special  Z83019-Z83066  embl_est
+special  Z83980-Z84196  embl_est
+special  Z92674-Z92705  embl_est
+special  Z93025-Z93038  embl_est
+special  Z93725-Z93763  embl_est
+special  Z94848-Z94863  embl_est
+special  Z97038-Z97047  embl_est
+special  Z97731-Z97830  embl_est
+special  Z97862-Z97872  embl_est
+special  Z98057-Z98138  embl_est
+special  Z98443-Z98527  embl_est
+special  Z98764-Z98819  embl_est
+special  Z98821-Z98845  embl_est
+special  Z99067-Z99089  embl_est
+special  Z99348-Z99435  embl_est
+
+# Nominally ddbj_dirsub.
+special  AB001540-AB128048  ddbj_other_nuc # 197 EST ranges
+special  AB158145           ddbj_est
+special  AB158279-AB158287  ddbj_est
+special  AB158432           ddbj_est
+special  AB159214-AB159217  ddbj_est
+special  AB159736-AB159739  ddbj_est
+special  AB163429           ddbj_est
+special  AB163431           ddbj_est
+special  AB166724           ddbj_est
+special  AB178168-AB308274  ddbj_other_nuc # 80 EST ranges
+special  AB327169           ddbj_est
+special  AB331173-AB331192  ddbj_est
+special  AB331734-AB331746  ddbj_est
+special  AB331927-AB331949  ddbj_est
+special  AB334239           ddbj_est
+special  AB353143           ddbj_est
+special  AB354879           ddbj_est
+special  AB361047-AB361052  ddbj_est
+special  AB361241-AB361244  ddbj_est
+special  AB361292-AB361358  ddbj_est
+special  AB364678-AB364679  ddbj_est
+special  AB371430-AB371572  ddbj_est
+special  AB372866-AB372875  ddbj_est
+special  AB373997-AB374042  ddbj_est
+special  AB374263-AB374265  ddbj_est
+special  AB375019-AB375060  ddbj_est
+special  AB433981           ddbj_est
+special  AB434937-AB434950  ddbj_est
+special  AB437321-AB437344  ddbj_est
+special  AB446243-AB446391  ddbj_est
+special  AB447894-AB447981  ddbj_est
+special  AB448953-AB449020  ddbj_est
+special  AB450689-AB450761  ddbj_est
+special  AB458260-AB458300  ddbj_est
+special  AB458688-AB458789  ddbj_est
+special  AB461364-AB461372  ddbj_est
+special  AB471888-AB471891  ddbj_est
+special  AB474609-AB474619  ddbj_est
+special  AB474621-AB474714  ddbj_est
+special  AB474716-AB474721  ddbj_est
+special  AB474726-AB474739  ddbj_est
+special  AB474741-AB474748  ddbj_est
+special  AB480784-AB480824  ddbj_est
+special  AB485714-AB485715  ddbj_est
+special  AB485764-AB485770  ddbj_est
+special  AB485960-AB485992  ddbj_est
+special  AB492065-AB492083  ddbj_est
+special  AB505865-AB505873  ddbj_est
+special  AB509259           ddbj_est
+special  AB516772-AB516956  ddbj_est
+special  AB517053-AB517143  ddbj_est
+special  AB517145           ddbj_est
+special  AB529438-AB529445  ddbj_est
+special  AB535102-AB535104  ddbj_est
+special  AB537328-AB537329  ddbj_est
+special  AB542429-AB542450  ddbj_est
+special  AB552736-AB552841  ddbj_est
+special  AB553313-AB553315  ddbj_est
+special  AB568279-AB568290  ddbj_est
+special  AB571597-AB571602  ddbj_est
+special  AB572918-AB572921  ddbj_est
+special  AB573693-AB573709  ddbj_est
+special  AB575970-AB575978  ddbj_est
+special  AB576812-AB576850  ddbj_est
+special  AB585974-AB585996  ddbj_est
+special  AB594978-AB595127  ddbj_est
+special  AB602400-AB602424  ddbj_est
+special  AB613266           ddbj_est
+special  AB617526           ddbj_est
+special  AB626803           ddbj_est
+special  AB640724           ddbj_est
+special  AB646299-AB646300  ddbj_est
+special  AB646321-AB646345  ddbj_est
+special  AB668572-AB668577  ddbj_est
+special  AB669437-AB669464  ddbj_est
+special  AB709967-AB710073  ddbj_est
+special  AB734662-AB734675  ddbj_est
+special  AB738045-AB738062  ddbj_est
+special  AB742236-AB742251  ddbj_est
+special  AB757677-AB757705  ddbj_est
+special  AB811436           ddbj_est
+special  AB823195-AB823214  ddbj_est
+special  AB827265-AB827267  ddbj_est
+special  AB862603-AB862877  ddbj_est
+special  AB863290-AB863461  ddbj_est
+special  AB899003-AB899014  ddbj_est
+special  AB922020-AB922116  ddbj_est
+
+# Nominally gb_dirsub.
+special  AF000235-AF373213  gb_other_nuc # 585 EST ranges and 303 GSS ranges
+special  AF384864-AF384865  gb_gss
+special  AF387113-AF387121  gb_gss
+special  AF390017           gb_est
+special  AF390858           gb_est
+special  AF391795           gb_est
+special  AF391801-AF391804  gb_est
+special  AF391806-AF391807  gb_est
+special  AF396672           gb_gss
+special  AF396868           gb_est
+special  AF397194           gb_gss
+special  AF400792-AF400848  gb_gss
+special  AF401241-AF401271  gb_gss
+special  AF405213-AF405230  gb_est
+special  AF408415-AF408416  gb_est
+special  AF411092-AF411099  gb_est
+special  AF416103-AF416138  gb_gss
+special  AF420231           gb_est
+special  AF425300           gb_est
+special  AF435833-AF435837  gb_gss
+special  AF436075           gb_est
+special  AF439734           gb_est
+special  AF439736           gb_est
+special  AF439961-AF439972  gb_est
+special  AF440734           gb_gss
+special  AF441178-AF441182  gb_est
+special  AF441184-AF441187  gb_est
+special  AF441725           gb_gss
+special  AF441760-AF441769  gb_gss
+special  AF447921           gb_gss
+special  AF448511-AF448512  gb_est
+special  AF449707-AF449712  gb_gss
+special  AF451165-AF451181  gb_est
+special  AF451183-AF451189  gb_est
+special  AF453446           gb_est
+special  AF454762           gb_est
+special  AF455790-AF455802  gb_gss
+special  AF456411           gb_est
+special  AF461771           gb_est
+special  AF465471-AF465474  gb_gss
+special  AF468668-AF468672  gb_est
+special  AF469688-AF469692  gb_est
+special  AF472511           gb_gss
+special  AF486818-AF486819  gb_est
+special  AF487314-AF487325  gb_est
+special  AF487327-AF487329  gb_est
+special  AF492012-AF492014  gb_gss
+special  AF492272           gb_gss
+special  AF492356           gb_est
+special  AF494494-AF494495  gb_gss
+special  AF503187-AF503189  gb_est
+special  AF503588           gb_est
+special  AF506703-AF506706  gb_est
+special  AF507053           gb_est
+special  AF507058           gb_est
+special  AF507060           gb_est
+special  AF509571           gb_gss
+special  AF510188-AF510190  gb_est
+special  AF515664-AF515665  gb_gss
+special  AF516758-AF516766  gb_est
+special  AF520437-AF520439  gb_est
+special  AF520964           gb_est
+special  AF521604           gb_gss
+special  AF521978-AF522027  gb_est
+special  AF524047-AF524260  gb_gss
+special  AF524262-AF524826  gb_gss
+special  AF525702           gb_est
+special  AF525774-AF525775  gb_gss
+special  AF527684-AF527733  gb_est
+special  AF529172           gb_gss
+special  AF533598-AF533600  gb_est
+special  AF534530-AF534533  gb_gss
+special  AF537199-AF537202  gb_gss
+special  AF538926-AF538927  gb_est
+special  AF542503           gb_gss
+
+special  AG266800-AG266855  ddbj_dirsub # Nominally ddbj_gss.
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome or embl_other_nuc, but split out EST and
+# GSS ranges.
+special  AJ003249-AJ013072  embl_other_nuc # 29 EST ranges
+special  AJ131530-AJ131531  embl_est
+special  AJ131534           embl_est
+special  AJ131640           embl_est
+special  AJ131743           embl_est
+special  AJ132447-AJ132453  embl_est
+special  AJ132743-AJ132744  embl_est
+special  AJ132746-AJ132747  embl_est
+special  AJ132768           embl_est
+special  AJ132770           embl_est
+special  AJ133279-AJ133310  embl_est
+special  AJ133423           embl_est
+special  AJ133627-AJ133630  embl_est
+special  AJ133823-AJ133832  embl_est
+special  AJ133887-AJ133891  embl_est
+special  AJ223808-AJ252067  embl_other_nuc # 37 EST ranges
+special  AJ269829-AJ320073  embl_other_nuc # 106 EST ranges
+special  AJ344568-AJ344620  embl_est
+special  AJ345961-AJ346853  embl_est
+special  AJ347704-AJ347708  embl_est
+special  AJ348845-AJ348907  embl_est
+special  AJ388667-AJ441054  embl_other_nuc # 46 EST ranges
+special  AJ441341-AJ456950  embl_est
+special  AJ457094-AJ457095  embl_est
+special  AJ457215-AJ457787  embl_est
+special  AJ457797-AJ457801  embl_est
+special  AJ457995-AJ458180  embl_est
+special  AJ459102-AJ459105  embl_est
+special  AJ460001-AJ486853  embl_est
+special  AJ487042-AJ519345  embl_other_nuc # 41 EST ranges
+special  AJ532915-AJ583526  embl_other_nuc # 46 EST ranges
+special  AJ601557-AJ646868  embl_other_nuc # 55 EST ranges
+special  AJ646897-AJ697608  embl_est
+special  AJ697763-AJ697764  embl_est
+special  AJ698954           embl_est
+special  AJ699509-AJ703791  embl_est
+special  AJ704820           embl_est
+special  AJ704866-AJ704927  embl_est
+special  AJ705105-AJ715323  embl_est
+special  AJ716425-AJ717291  embl_est
+special  AJ719195-AJ719266  embl_est
+special  AJ721139-AJ744704  embl_est
+special  AJ745200-AJ745660  embl_est
+special  AJ746228-AJ746232  embl_est
+special  AJ746346           embl_est
+special  AJ746581-AJ747913  embl_est
+special  AJ749659-AJ749668  embl_est
+special  AJ750001-AJ767053  embl_est
+special  AJ767069-AJ780913  embl_est
+special  AJ781008-AJ781024  embl_est
+special  AJ783757           embl_est
+special  AJ784436-AJ784774  embl_est
+special  AJ785005-AJ785280  embl_est
+special  AJ785296-AJ785566  embl_est
+special  AJ785755           embl_est
+special  AJ786842-AJ809161  embl_est
+special  AJ810177-AJ810178  embl_est
+special  AJ812737-AJ821279  embl_est
+special  AJ821281-AJ821793  embl_est
+special  AJ821924-AJ829440  embl_est
+special  AJ831476-AJ831483  embl_est
+special  AJ831580-AJ831586  embl_est
+special  AJ831846-AJ832104  embl_est
+special  AJ833020-AJ833569  embl_est
+special  AJ843898-AJ920257  embl_other_nuc # 63 EST ranges and 2 GSS ranges
+special  AJ920420-AJ936931  embl_est
+special  AJ937840-AJ937842  embl_est
+special  AJ937844-AJ937846  embl_est
+special  AJ937848-AJ937851  embl_est
+special  AJ937853-AJ937854  embl_est
+special  AJ937856           embl_est
+special  AJ938183-AJ964871  embl_est
+special  AJ966338           embl_est
+special  AJ966532-AJ966570  embl_est
+special  AJ967011-AJ967015  embl_est
+special  AJ968963-AJ968985  embl_est
+special  AJ970155-AJ970160  embl_est
+special  AJ972495-AJ972503  embl_est
+special  AJ973481-AJ973591  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_con, embl_genome, or embl_other_nuc, but split
+# out EST and GSS ranges.
+special  AL022607-AL022715  embl_est
+special  AL022730-AL023086  embl_est
+special  AL023993-AL024449  embl_est
+special  AL024459-AL024460  embl_est
+special  AL033283-AL033374  embl_est
+special  AL034585-AL042364  embl_other_nuc # 182 EST ranges
+special  AL042366-AL043422  embl_est
+special  AL043424-AL049170  embl_other_nuc # 72 EST ranges
+special  AL079357-AL079851  embl_est
+special  AL079853-AL079877  embl_est
+special  AL079879-AL080030  embl_est
+special  AL080032-AL080055  embl_est
+special  AL110302-AL110468  embl_est
+special  AL117695-AL118492  embl_est
+special  AL118560-AL121566  embl_est
+special  AL132634           embl_est
+special  AL132645-AL132647  embl_est
+special  AL132695-AL132706  embl_est
+special  AL132781-AL132790  embl_est
+special  AL132802-AL132817  embl_est
+special  AL132829-AL132837  embl_est
+special  AL132910-AL132942  embl_est
+special  AL133667-AL135743  embl_est
+special  AL137939-AL138463  embl_est
+special  AL138519           embl_est
+special  AL157506-AL157686  embl_est
+special  AL160494-AL161251  embl_other_nuc # Fallback to placate older clients
+special  AL160494-AL161251  embl_gss
+special  AL162087-AL162101  embl_est
+special  AL163072-AL163135  embl_est
+special  AL163154           embl_est
+special  AL163196           embl_est
+special  AL163331-AL163480  embl_est
+special  AL163493-AL163504  embl_est
+special  AL163513-AL163522  embl_est
+special  AL163614-AL163635  embl_est
+special  AL163643           embl_est
+special  AL163692-AL163701  embl_est
+special  AL163712-AL163759  embl_est
+special  AL163761-AL163762  embl_est
+special  AL163773-AL163784  embl_est
+special  AL163892-AL163901  embl_est
+special  AL352973-AL352975  embl_est
+special  AL352994-AL353006  embl_est
+special  AL353958-AL353985  embl_est
+special  AL354617-AL354621  embl_est
+special  AL355193-AL355214  embl_est
+special  AL355755-AL355764  embl_est
+special  AL355890-AL355912  embl_est
+special  AL355914-AL355915  embl_est
+special  AL355917-AL355918  embl_est
+special  AL360374-AL365136  embl_est
+special  AL365523-AL389869  embl_est
+special  AL391923-AL391974  embl_est
+special  AL392063-AL392067  embl_est
+special  AL441606-AL441620  embl_est
+special  AL441622-AL441623  embl_est
+special  AL449467-AL449917  embl_est
+special  AL450491-AL450982  embl_est
+special  AL499630-AL500520  embl_est
+special  AL500542-AL512267  embl_est
+special  AL513551-AL540319  embl_other_nuc # 490 EST ranges
+special  AL540321-AL541353  embl_est
+special  AL541355-AL583950  embl_other_nuc # 393 EST ranges
+special  AL583964-AL589147  embl_est
+special  AL589204-AL589622  embl_est
+special  AL593862-AL596018  embl_other_nuc # 251 EST ranges
+special  AL596479-AL603622  embl_est
+special  AL627462-AL663681  embl_other_nuc # 3583 EST ranges
+special  AL663683-AL666314  embl_est
+special  AL666316-AL666416  embl_est
+special  AL666418-AL666705  embl_est
+special  AL666707-AL666821  embl_est
+special  AL666823-AL667261  embl_est
+special  AL667264-AL667371  embl_est
+special  AL667373-AL668474  embl_est
+special  AL668476-AL668875  embl_est
+special  AL668877-AL669016  embl_est
+special  AL669018-AL669138  embl_est
+special  AL669140-AL669810  embl_est
+special  AL669812           embl_est
+special  AL669890           embl_est
+special  AL669994-AL669997  embl_est
+special  AL671927-AL683797  embl_other_nuc # 1244 EST ranges
+special  AL691524-AL713628  embl_est
+special  AL713805-AL713837  embl_est
+special  AL714032-AL731499  embl_est
+special  AL731899-AL732289  embl_est
+special  AL732297-AL732307  embl_est
+special  AL749534-AL749539  embl_est
+special  AL749541-AL750301  embl_est
+special  AL750303-AL751363  embl_est
+special  AL773605-AL805894  embl_other_nuc # 3341 EST ranges
+special  AL808211-AL823461  embl_est
+special  AL824717-AL831324  embl_est
+special  AL834580-AL837504  embl_est
+special  AL837529-AL840622  embl_est
+special  AL840645-AL840932  embl_est
+special  AL841430-AL844138  embl_est
+special  AL844226-AL844479  embl_est
+special  AL845558-AL901606  embl_other_nuc # 5767 EST ranges
+special  AL901610-AL928536  embl_est
+special  AL929474-AL929490  embl_est
+special  AL929609-AL935024  embl_est
+special  AL935073-AL935113  embl_est
+special  AL954873-AL973407  embl_other_nuc # 638 EST ranges
+
+# Nominally embl_dirsub.
+special  AM003907-AM039430  embl_est
+special  AM041272-AM041897  embl_est
+special  AM041899-AM041928  embl_est
+special  AM042018-AM042538  embl_est
+special  AM042715-AM048613  embl_est
+special  AM049439-AM049915  embl_est
+special  AM051087-AM051089  embl_est
+special  AM051366-AM055585  embl_est
+special  AM056504-AM062638  embl_est
+special  AM062766-AM063038  embl_est
+special  AM063043-AM071350  embl_est
+special  AM071401-AM071405  embl_est
+special  AM071408           embl_est
+special  AM071410-AM071411  embl_est
+special  AM071520-AM072286  embl_est
+special  AM072430-AM072444  embl_est
+special  AM075249-AM075607  embl_est
+special  AM083343-AM083946  embl_est
+special  AM085154-AM085297  embl_est
+special  AM088777-AM109845  embl_est
+special  AM110258-AM110692  embl_est
+special  AM111128-AM111305  embl_est
+special  AM111350-AM111351  embl_est
+special  AM111376-AM113422  embl_est
+special  AM113870           embl_est
+special  AM115672-AM115694  embl_est
+special  AM117760-AM117779  embl_est
+special  AM137442-AM156757  embl_est
+special  AM157797-AM158083  embl_est
+special  AM159647-AM160600  embl_est
+special  AM161052-AM161090  embl_est
+special  AM161647-AM162203  embl_est
+special  AM165128-AM167516  embl_est
+special  AM168256-AM168269  embl_est
+special  AM168526-AM176418  embl_est
+special  AM177644-AM179408  embl_est
+special  AM180191-AM180250  embl_est
+special  AM184308-AM228715  embl_est
+special  AM229723-AM230448  embl_est
+special  AM231596-AM231607  embl_est
+special  AM231751-AM231752  embl_est
+special  AM232089-AM232226  embl_est
+special  AM233524           embl_est
+special  AM233688-AM233739  embl_est
+special  AM237575-AM237581  embl_est
+special  AM237631-AM237802  embl_est
+special  AM237808-AM237828  embl_est
+special  AM259062-AM259066  embl_est
+special  AM260753-AM260790  embl_est
+special  AM261635-AM261651  embl_est
+special  AM261893-AM261919  embl_est
+special  AM263561-AM265360  embl_est
+special  AM265378-AM265389  embl_est
+special  AM265633-AM265637  embl_est
+special  AM267321-AM267478  embl_est
+special  AM268883-AM268894  embl_est
+special  AM279675           embl_est
+special  AM283547-AM284142  embl_est
+special  AM285455-AM285649  embl_est
+special  AM286691           embl_est
+special  AM287291-AM291980  embl_est
+special  AM292305           embl_est
+special  AM292925-AM292926  embl_est
+special  AM293570-AM293588  embl_est
+special  AM293624           embl_est
+special  AM295342-AM295345  embl_est
+special  AM296550-AM384871  embl_est
+special  AM384993-AM422606  embl_other_nuc # 21 EST ranges
+special  AM493773-AM493867  embl_est
+special  AM495471-AM495722  embl_est
+special  AM496020-AM496068  embl_est
+special  AM496070-AM497466  embl_est
+special  AM498769-AM500636  embl_est
+special  AM500638           embl_est
+special  AM502267-AM502286  embl_est
+special  AM503942-AM503952  embl_est
+special  AM504150-AM600638  embl_est
+special  AM695771-AM696203  embl_est
+special  AM696311-AM696688  embl_est
+special  AM713476-AM743079  embl_est
+special  AM743198-AM748699  embl_other_nuc # 23 EST ranges
+special  AM750062-AM765799  embl_est
+special  AM766003-AM773228  embl_est
+special  AM774151           embl_est
+special  AM779939-AM849033  embl_est
+special  AM849823-AM850054  embl_est
+special  AM851127-AM882506  embl_est
+special  AM894321-AM950290  embl_other_nuc # 183 EST ranges
+special  AM950553-AM980446  embl_est
+special  AM981402-AM982512  embl_est
+special  AM982822-AM983454  embl_est
+special  AM983577-AM988621  embl_est
+special  AM991118-AM991127  embl_est
+special  AM992040-AM992047  embl_est
+special  AM992256-AM992457  embl_est
+
+# Nominally ddbj_est.
+special  AU024804-AU029241  ddbj_dirsub
+special  AU036596-AU036726  ddbj_gss
+special  AU046301-AU050022  ddbj_dirsub
+special  AU050808-AU050815  ddbj_dirsub
+special  AU062283-AU062350  ddbj_dirsub
+special  AU066497-AU066498  ddbj_dirsub
+special  AU066500           ddbj_dirsub
+special  AU066504           ddbj_dirsub
+special  AU066506           ddbj_dirsub
+special  AU066511-AU066512  ddbj_dirsub
+special  AU066514-AU066515  ddbj_dirsub
+special  AU066521-AU066524  ddbj_dirsub
+special  AU066527-AU066529  ddbj_dirsub
+special  AU066535           ddbj_dirsub
+special  AU066540-AU066542  ddbj_dirsub
+special  AU066544           ddbj_dirsub
+special  AU066546           ddbj_dirsub
+special  AU066548-AU066553  ddbj_dirsub
+special  AU066555           ddbj_dirsub
+special  AU066557-AU066558  ddbj_dirsub
+special  AU078429-AU078598  ddbj_dirsub
+special  AU090535           ddbj_dirsub
+special  AU279339           ddbj_dirsub
+special  AU279378           ddbj_dirsub
+
+special  AX114121           embl_dirsub # Nominally embl_patent.
+
+# Nominally gb_dirsub.
+special  AY007260           gb_est
+special  AY026952-AY027433  gb_gss
+special  AY030235-AY030236  gb_est
+special  AY032615-AY032616  gb_est
+special  AY032902           gb_est
+special  AY032979           gb_est
+special  AY033289           gb_est
+special  AY038985-AY038987  gb_gss
+special  AY039709-AY039712  gb_gss
+special  AY042532           gb_est
+special  AY048753           gb_est
+special  AY055854           gb_gss
+special  AY063513           gb_est
+special  AY079522-AY080585  gb_gss
+special  AY093804-AY093817  gb_est
+special  AY096240           gb_est
+special  AY120880           gb_est
+special  AY123938           gb_gss
+special  AY125856-AY125890  gb_est
+special  AY127080-AY127557  gb_gss
+special  AY139011-AY139023  gb_est
+special  AY156078-AY156082  gb_gss
+special  AY160080-AY160082  gb_gss
+special  AY160682           gb_est
+special  AY166588           gb_est
+special  AY166650-AY166651  gb_gss
+special  AY168429-AY168439  gb_est
+special  AY174766-AY174778  gb_gss
+special  AY189691-AY189692  gb_est
+special  AY189695           gb_est
+special  AY196929-AY196933  gb_est
+special  AY198434-AY201593  gb_gss
+special  AY201595-AY201640  gb_gss
+special  AY201642-AY201691  gb_gss
+special  AY201693-AY203610  gb_gss
+special  AY243511           gb_est
+special  AY244458           gb_gss
+special  AY245441           gb_est
+special  AY265801-AY265804  gb_gss
+special  AY270178-AY270181  gb_gss
+special  AY282782-AY282785  gb_gss
+special  AY311391           gb_est
+special  AY321461-AY321462  gb_est
+special  AY325801-AY325802  gb_est
+special  AY326073           gb_est
+special  AY345126           gb_est
+special  AY347477           gb_est
+special  AY352272-AY352273  gb_gss
+special  AY356158-AY356311  gb_est
+special  AY357293-AY357295  gb_est
+special  AY366892-AY366899  gb_gss
+special  AY377860-AY377864  gb_est
+special  AY391730-AY391744  gb_gss
+special  AY395905           gb_est
+special  AY449735-AY449746  gb_est
+special  AY457064-AY457065  gb_est
+special  AY460108-AY460111  gb_est
+special  AY465830-AY465832  gb_est
+special  AY489065-AY489066  gb_gss
+special  AY491396-AY491398  gb_gss
+special  AY494600-AY494604  gb_est
+special  AY517518           gb_est
+special  AY518259-AY518264  gb_est
+special  AY547439-AY547457  gb_est
+special  AY553914           gb_est
+special  AY560545-AY560546  gb_est
+special  AY560548-AY560550  gb_est
+special  AY577286-AY577287  gb_est
+special  AY580990-AY580994  gb_gss
+special  AY583837           gb_gss
+special  AY589693-AY589694  gb_est
+special  AY589700-AY589701  gb_est
+special  AY589704           gb_est
+special  AY589708-AY589710  gb_est
+special  AY648006-AY648007  gb_gss
+special  AY651316           gb_est
+special  AY665687           gb_gss
+special  AY678444-AY678449  gb_est
+special  AY679774-AY679778  gb_est
+special  AY685649-AY685661  gb_gss
+special  AY686735-AY686747  gb_est
+special  AY688838-AY688840  gb_est
+special  AY714068-AY714071  gb_est
+special  AY736327           gb_est
+special  AY740678           gb_est
+special  AY750901-AY750904  gb_est
+special  AY758600-AY760022  gb_gss
+special  AY760098-AY760631  gb_gss
+special  AY760640-AY761013  gb_gss
+special  AY788904           gb_est
+special  AY796341           gb_est
+special  AY803125-AY803165  gb_est
+special  AY822675-AY822677  gb_gss
+special  AY831429           gb_est
+special  AY831657-AY831667  gb_gss
+special  AY838273-AY838277  gb_gss
+special  AY857201           gb_gss
+special  AY866420-AY866424  gb_gss
+special  AY870328           gb_gss
+special  AY872191-AY872255  gb_gss
+special  AY872390-AY873704  gb_gss
+special  AY879586-AY879591  gb_est
+special  AY885220-AY885221  gb_est
+special  AY898612           gb_gss
+special  AY922984-AY922988  gb_est
+special  AY928802-AY928805  gb_est
+special  AY952968-AY952970  gb_est
+special  AY966462-AY966485  gb_est
+special  AY987852           gb_est
+special  AY993980-AY993984  gb_gss
+special  AY994354-AY994356  gb_est
+
+# Nominally embl_dirsub.
+special  BX000562-BX000687  embl_est
+special  BX000710-BX000759  embl_est
+special  BX000976-BX000979  embl_est
+special  BX072585-BX088684  embl_other_nuc # 403 EST ranges
+special  BX088730-BX119313  embl_est
+special  BX119401-BX119900  embl_est
+special  BX248593           embl_est
+special  BX248783-BX248982  embl_est
+special  BX248986-BX249708  embl_est
+special  BX249763-BX251408  embl_est
+special  BX251414-BX255275  embl_est
+special  BX255279-BX255804  embl_est
+special  BX255991-BX279521  embl_other_nuc # 815 EST ranges
+special  BX279530-BX283066  embl_est
+special  BX283068-BX284108  embl_est
+special  BX294120-BX294121  embl_est
+special  BX294198-BX294232  embl_est
+special  BX295243-BX295348  embl_est
+special  BX295350-BX295358  embl_est
+special  BX295360-BX295378  embl_est
+special  BX295380-BX295516  embl_est
+special  BX295518           embl_est
+special  BX296570-BX318042  embl_other_nuc # 309 EST ranges
+special  BX318044-BX318558  embl_est
+special  BX318560-BX321855  embl_other_nuc # 42 EST ranges
+special  BX323813-BX465182  embl_other_nuc # 5821 EST ranges
+special  BX466087-BX466922  embl_est
+special  BX467129-BX469883  embl_est
+special  BX470269-BX510298  embl_est
+special  BX511045-BX511047  embl_est
+special  BX511314-BX511323  embl_est
+special  BX511333-BX526833  embl_est
+special  BX526835-BX530014  embl_est
+special  BX540327-BX540980  embl_other_nuc # 79 EST ranges
+special  BX548257-BX569683  embl_est
+special  BX601649-BX629297  embl_est
+special  BX629361-BX640397  embl_est
+special  BX641173-BX647061  embl_est
+special  BX663509           embl_est
+special  BX664722-BX677662  embl_other_nuc # 573 EST ranges
+special  BX677677-BX678768  embl_est
+special  BX678777-BX679656  embl_est
+special  BX679676-BX681414  embl_est
+special  BX681419-BX682226  embl_est
+special  BX682240-BX682527  embl_est
+special  BX682559-BX682952  embl_est
+special  BX682956-BX769172  embl_est
+special  BX769177-BX784021  embl_est
+special  BX784033           embl_est
+special  BX784044-BX784278  embl_est
+special  BX784281-BX784385  embl_est
+special  BX834112-BX841509  embl_est
+special  BX842705-BX861002  embl_other_nuc # 596 EST ranges
+special  BX861004-BX861521  embl_est
+special  BX861523-BX861681  embl_est
+special  BX861683-BX862186  embl_est
+special  BX862188-BX867356  embl_other_nuc # 51 EST ranges
+special  BX867358-BX867914  embl_est
+special  BX867916-BX872506  embl_other_nuc # 66 EST ranges
+special  BX872508-BX873028  embl_est
+special  BX873030-BX879623  embl_other_nuc # 76 EST ranges
+special  BX879625-BX880165  embl_est
+special  BX880167-BX889492  embl_other_nuc # 119 EST ranges
+special  BX889494-BX890135  embl_est
+special  BX890137-BX890188  embl_est
+special  BX890190-BX890198  embl_est
+special  BX890200-BX890202  embl_est
+special  BX890204-BX890224  embl_est
+special  BX890226-BX890232  embl_est
+special  BX890234-BX890308  embl_est
+special  BX890310-BX890394  embl_est
+special  BX890396-BX890483  embl_est
+special  BX890485-BX890537  embl_est
+special  BX897754-BX899178  embl_est
+special  BX899182-BX901874  embl_est
+special  BX908815-BX927274  embl_other_nuc # 343 EST ranges
+special  BX927416-BX928738  embl_est
+special  BX928759-BX929267  embl_est
+special  BX950875-BX957214  embl_est
+special  BX957366-BX957367  embl_est
+
+# Nominally gb_genome.
+special  CP000925           gb_dirsub
+special  CP002027           gb_dirsub
+special  CP006698           gb_dirsub
+special  CP010455-CP010456  gb_dirsub
+special  CP013186           gb_dirsub
+special  CP014940           gb_dirsub
+special  CP014992           gb_dirsub
+special  CP016816           gb_dirsub
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome, but split out EST ranges.
+special  CR278161-CR293495  embl_est
+special  CR354614-CR394505  embl_other_nuc # 315 EST ranges
+special  CR407721-CR450243  embl_est
+special  CR450855-CR457481  embl_other_nuc # 307 EST ranges
+special  CR457485-CR477643  embl_est
+special  CR502047           embl_est
+special  CR513801-CR559927  embl_other_nuc # 134 EST ranges
+special  CR559947-CR589873  embl_est
+special  CR627501-CR628310  embl_est
+special  CR628421-CR631118  embl_est
+special  CR735161-CR749142  embl_est
+special  CR749881-CR751205  embl_est
+special  CR751241-CR751527  embl_est
+special  CR751621-CR752637  embl_est
+special  CR752662-CR752728  embl_est
+special  CR752730-CR752981  embl_est
+special  CR752983-CR753092  embl_est
+special  CR753094-CR753178  embl_est
+special  CR753180-CR753308  embl_est
+special  CR753310-CR753327  embl_est
+special  CR753329-CR753416  embl_est
+special  CR753418-CR753420  embl_est
+special  CR753422-CR753508  embl_est
+special  CR753510-CR753608  embl_est
+special  CR753610-CR753633  embl_est
+special  CR753635-CR753650  embl_est
+special  CR753652-CR753793  embl_est
+special  CR753795-CR753802  embl_est
+special  CR753804-CR753811  embl_est
+special  CR753907-CR759280  embl_est
+special  CR759282-CR759423  embl_est
+special  CR759425-CR759701  embl_est
+special  CR759703-CR759731  embl_est
+special  CR762499-CR764089  embl_est
+special  CR764098-CR767811  embl_est
+special  CR767822-CR769762  embl_est
+special  CR770518-CR774176  embl_est
+special  CR774201-CR775849  embl_est
+special  CR786583-CR788225  embl_est
+special  CR788341-CR790347  embl_est
+special  CR790390-CR792412  embl_est
+special  CR848861-CR857055  embl_other_nuc # 70 EST ranges
+special  CR926157           embl_est
+special  CR926498-CR926878  embl_est
+special  CR926880-CR926886  embl_est
+special  CR926888-CR926910  embl_est
+special  CR926912-CR927049  embl_est
+special  CR927051-CR927214  embl_est
+special  CR927216-CR927367  embl_est
+special  CR927369-CR927455  embl_est
+special  CR927457-CR927478  embl_est
+special  CR927480-CR927552  embl_est
+special  CR927554-CR931631  embl_est
+special  CR938765-CR940296  embl_est
+special  CR942245-CR942270  embl_est
+special  CR942275           embl_est
+special  CR942825-CR944659  embl_est
+special  CR974421           embl_est
+special  CR974599-CR999998  embl_est
+
+# Nominally embl_dirsub.
+special  CT000001-CT005229  embl_est
+special  CT009777-CT010161  embl_est
+special  CT010409-CT010425  embl_est
+special  CT025916-CT025917  embl_est
+special  CT485799-CT485989  embl_est
+special  CT563249-CT571240  embl_est
+special  CT571279-CT572707  embl_est
+special  CT574594-CT583622  embl_est
+special  CT583731-CT737118  embl_est
+special  CT737258           embl_est
+special  CT737431-CT762374  embl_other_nuc # 1381 EST ranges
+special  CT762376-CT762504  embl_est
+special  CT762507-CT766183  embl_other_nuc # 153 EST ranges
+special  CT766185-CT766353  embl_est
+special  CT766355-CT773818  embl_other_nuc # 322 EST ranges
+special  CT773820-CT773949  embl_est
+special  CT773951-CT774143  embl_est
+special  CT774146-CT774910  embl_other_nuc # 37 EST ranges
+special  CT774912-CT775059  embl_est
+special  CT775061-CT777270  embl_other_nuc # 84 EST ranges
+special  CT777272-CT777416  embl_est
+special  CT777418-CT780755  embl_other_nuc # 137 EST ranges
+special  CT780757-CT780877  embl_est
+special  CT780879-CT781911  embl_other_nuc # 39 EST ranges
+special  CT781913-CT782070  embl_est
+special  CT782072-CT782090  embl_est
+special  CT782092-CT782100  embl_est
+special  CT782102-CT782110  embl_est
+special  CT782112-CT782124  embl_est
+special  CT782126-CT782150  embl_est
+special  CT782152-CT782183  embl_est
+special  CT782185-CT782187  embl_est
+special  CT782189-CT782321  embl_est
+special  CT782323-CT786110  embl_other_nuc # 147 EST ranges
+special  CT786112-CT786237  embl_est
+special  CT786239-CT792224  embl_other_nuc # 219 EST ranges
+special  CT792226-CT792352  embl_est
+special  CT792354-CT793395  embl_other_nuc # 36 EST ranges
+special  CT793397-CT793519  embl_est
+special  CT793521-CT794722  embl_other_nuc # 48 EST ranges
+special  CT794724-CT794853  embl_est
+special  CT794855-CT823556  embl_other_nuc # 2036 EST ranges
+special  CT842009-CT842118  embl_est
+special  CT842120-CT842121  embl_est
+special  CT842123-CT842130  embl_est
+special  CT842132-CT842147  embl_est
+special  CT842149-CT842158  embl_est
+special  CT842160-CT842178  embl_est
+special  CT842180-CT842181  embl_est
+special  CT842183-CT842516  embl_est
+special  CT842518-CT842528  embl_est
+special  CT842530-CT842531  embl_est
+special  CT842533-CT842540  embl_est
+special  CT842542-CT863709  embl_est
+special  CT863715-CT863733  embl_est
+special  CT868744-CT928681  embl_est
+special  CT928683-CT938375  embl_est
+special  CT938377-CT940347  embl_other_nuc # 367 EST ranges
+special  CT943670-CT950687  embl_est
+special  CT962514-CT963069  embl_est
+special  CT963097-CT963104  embl_est
+special  CT971504-CT971571  embl_est
+special  CT978604           embl_est
+special  CT978606-CT978646  embl_est
+special  CT978648-CT978649  embl_est
+special  CT978651-CT978652  embl_est
+special  CT978654           embl_est
+special  CT978656-CT978677  embl_est
+special  CT978679           embl_est
+special  CT978681           embl_est
+special  CT978683           embl_est
+special  CT978685-CT978926  embl_est
+special  CT978928-CT978956  embl_est
+special  CT978958-CT989251  embl_est
+special  CT989258-CT990465  embl_est
+special  CT990474-CT990486  embl_est
+special  CT990490-CT990531  embl_est
+
+# Nominally embl_dirsub.
+special  CU062670-CU062842  embl_est
+special  CU062844-CU062846  embl_est
+special  CU062848-CU074269  embl_est
+special  CU074339-CU074382  embl_est
+special  CU074423-CU075311  embl_est
+special  CU075931-CU076039  embl_est
+special  CU234182-CU234194  embl_est
+special  CU302207           embl_est
+special  CU302209-CU302216  embl_est
+special  CU302324           embl_est
+special  CU306818-CU310069  embl_est
+special  CU310076-CU311182  embl_est
+special  CU367886-CU368379  embl_est
+special  CU368381-CU368441  embl_est
+special  CU368443-CU368521  embl_est
+special  CU368523-CU368526  embl_est
+special  CU368528-CU368600  embl_est
+special  CU368602-CU368745  embl_est
+special  CU368747-CU368750  embl_est
+special  CU368752-CU369046  embl_est
+special  CU369048-CU369187  embl_est
+special  CU369189-CU369553  embl_est
+special  CU369555-CU369565  embl_est
+special  CU369567-CU372896  embl_est
+special  CU372931-CU392058  embl_est
+special  CU394257-CU405559  embl_est
+special  CU415883-CU424422  embl_est
+special  CU424474           embl_est
+special  CU424496-CU442700  embl_est
+special  CU442764-CU457374  embl_est
+special  CU457503-CU487206  embl_other_nuc # 81 EST ranges and 1 GSS range
+special  CU487231-CU498825  embl_est
+special  CU498835-CU499386  embl_other_nuc # 43 EST ranges
+special  CU499388-CU524144  embl_est
+special  CU524146-CU524185  embl_est
+special  CU524187-CU524607  embl_est
+special  CU524609-CU524647  embl_est
+special  CU524649-CU525008  embl_est
+special  CU525010-CU525305  embl_est
+special  CU525307-CU525317  embl_est
+special  CU525319-CU525433  embl_est
+special  CU525435-CU525727  embl_est
+special  CU525729-CU525806  embl_est
+special  CU525808-CU525920  embl_est
+special  CU525922-CU530337  embl_est
+special  CU530421-CU538870  embl_est
+special  CU539140-CU550647  embl_est
+special  CU550735-CU565320  embl_est
+special  CU565322-CU596014  embl_other_nuc # 231 EST ranges
+special  CU596016-CU606845  embl_est
+special  CU607105-CU611033  embl_est
+special  CU611062-CU618304  embl_est
+special  CU618343-CU627974  embl_est
+special  CU628007-CU633156  embl_est
+special  CU637754-CU638663  embl_est
+special  CU639489-CU640365  embl_est
+special  CU640490-CU640880  embl_est
+special  CU651679-CU660012  embl_other_nuc # 41 EST ranges
+special  CU660014-CU672219  embl_est
+special  CU681473-CU681818  embl_est
+special  CU682012-CU682338  embl_est
+special  CU682367-CU682456  embl_est
+special  CU682458-CU682575  embl_est
+special  CU682577-CU682600  embl_est
+special  CU682602-CU682603  embl_est
+special  CU682605-CU682621  embl_est
+special  CU682623-CU682639  embl_est
+special  CU682641-CU682661  embl_est
+special  CU682663-CU682763  embl_est
+special  CU682765-CU682766  embl_est
+special  CU682768-CU682776  embl_est
+special  CU682778-CU682779  embl_est
+special  CU682781-CU682810  embl_est
+special  CU682812-CU683823  embl_est
+special  CU683828-CU683864  embl_est
+special  CU684056-CU686587  embl_est
+special  CU693503-CU694195  embl_est
+special  CU695349-CU740080  embl_est
+special  CU862081-CU896531  embl_est
+special  CU896700-CU905499  embl_est
+special  CU905513-CU914123  embl_est
+special  CU983906-CU984539  embl_est
+special  CU986307-CU993795  embl_est
+special  CU993823-CU999999  embl_est
+
+# Nominally ddbj_gss.
+special  DE990447-DE990894  ddbj_dirsub
+special  DE997363-DE998419  ddbj_dirsub
+
+# Nominally gb_dirsub.
+special  DQ000203-DQ000205  gb_est
+special  DQ003271-DQ003274  gb_est
+special  DQ005448-DQ005452  gb_est
+special  DQ006915-DQ006921  gb_est
+special  DQ008074-DQ008087  gb_est
+special  DQ009493           gb_est
+special  DQ010056           gb_est
+special  DQ023561-DQ023596  gb_est
+special  DQ054537           gb_est
+special  DQ056320-DQ056336  gb_est
+special  DQ062432           gb_est
+special  DQ068265-DQ068267  gb_est
+special  DQ071657-DQ071667  gb_est
+special  DQ072281-DQ072378  gb_gss
+special  DQ073526-DQ073530  gb_gss
+special  DQ079655-DQ079657  gb_est
+special  DQ082731           gb_est
+special  DQ090495-DQ090499  gb_est
+special  DQ092578-DQ092599  gb_gss
+special  DQ093275-DQ093284  gb_gss
+special  DQ103519-DQ103523  gb_gss
+special  DQ114785           gb_gss
+special  DQ115593-DQ115640  gb_gss
+special  DQ118389-DQ118393  gb_est
+special  DQ119294           gb_est
+special  DQ124861-DQ124867  gb_gss
+special  DQ131496           gb_gss
+special  DQ137423-DQ137425  gb_gss
+special  DQ138061-DQ138069  gb_est
+special  DQ156350-DQ156363  gb_gss
+special  DQ159946-DQ159947  gb_est
+special  DQ160233-DQ160240  gb_gss
+special  DQ172857-DQ172899  gb_est
+special  DQ176001-DQ176002  gb_gss
+special  DQ178992-DQ178994  gb_gss
+special  DQ190447-DQ190449  gb_est
+special  DQ205195-DQ205199  gb_est
+special  DQ207956           gb_est
+special  DQ211055-DQ211083  gb_est
+special  DQ211697           gb_est
+special  DQ217772           gb_est
+special  DQ219385-DQ219392  gb_gss
+special  DQ225105-DQ225107  gb_est
+special  DQ238007-DQ238010  gb_est
+special  DQ256365-DQ256368  gb_est
+special  DQ286755-DQ286759  gb_est
+special  DQ296475-DQ296480  gb_est
+special  DQ301872-DQ301876  gb_est
+special  DQ306698-DQ306705  gb_est
+special  DQ323032-DQ323035  gb_gss
+special  DQ329527-DQ329529  gb_gss
+special  DQ334866           gb_gss
+special  DQ341431-DQ341441  gb_est
+special  DQ349205-DQ349206  gb_est
+special  DQ351716-DQ351721  gb_gss
+special  DQ351838-DQ351840  gb_est
+special  DQ354361           gb_est
+special  DQ394888-DQ394890  gb_est
+special  DQ399337-DQ399338  gb_gss
+special  DQ530238           gb_gss
+special  DQ641039           gb_gss
+special  DQ672588           gb_est
+special  DQ821447-DQ821472  gb_est
+special  DQ822605-DQ822689  gb_est
+special  DQ858157-DQ858164  gb_est
+special  DQ866805           gb_gss
+special  DQ873299-DQ873317  gb_est
+special  DQ883824-DQ884159  gb_est
+special  DQ886384-DQ886389  gb_est
+special  DQ988883-DQ988928  gb_gss
+special  DQ999011-DQ999023  gb_est
+
+# Nominally gb_con.
+special  DS483562           gb_dirsub
+special  DS483659           gb_dirsub
+special  DS483744-DS484493  gb_other_nuc # 159 dirsub ranges
+special  DS484496-DS484515  gb_dirsub
+special  DS484518-DS484535  gb_dirsub
+special  DS484538-DS484550  gb_dirsub
+special  DS484552-DS484553  gb_dirsub
+special  DS484555-DS484574  gb_dirsub
+special  DS484576-DS484611  gb_dirsub
+special  DS484614-DS484623  gb_dirsub
+special  DS484625-DS484626  gb_dirsub
+special  DS484628-DS484633  gb_dirsub
+special  DS484635-DS484637  gb_dirsub
+special  DS484639           gb_dirsub
+special  DS484641-DS484654  gb_dirsub
+special  DS484656-DS484675  gb_dirsub
+special  DS484677-DS484686  gb_dirsub
+special  DS484688-DS484703  gb_dirsub
+special  DS484706-DS484707  gb_dirsub
+special  DS484709-DS484710  gb_dirsub
+special  DS484712-DS484716  gb_dirsub
+special  DS484718-DS484742  gb_dirsub
+special  DS484745-DS485146  gb_other_nuc # 80 dirsub ranges
+special  DS485148-DS485167  gb_dirsub
+special  DS485169           gb_dirsub
+special  DS485172-DS485174  gb_dirsub
+special  DS485176-DS485178  gb_dirsub
+special  DS485181-DS485182  gb_dirsub
+special  DS485184           gb_dirsub
+special  DS485186           gb_dirsub
+special  DS485189-DS485190  gb_dirsub
+special  DS485192           gb_dirsub
+special  DS485194-DS485195  gb_dirsub
+special  DS485198-DS485201  gb_dirsub
+special  DS485203-DS485205  gb_dirsub
+special  DS485208-DS485209  gb_dirsub
+special  DS485211           gb_dirsub
+special  DS485215-DS485216  gb_dirsub
+special  DS485218-DS485221  gb_dirsub
+special  DS485223-DS485230  gb_dirsub
+special  DS485233           gb_dirsub
+special  DS485235-DS485236  gb_dirsub
+special  DS485238-DS485240  gb_dirsub
+special  DS485242-DS485243  gb_dirsub
+special  DS485245-DS485247  gb_dirsub
+special  DS485249-DS485268  gb_dirsub
+special  DS485270-DS485271  gb_dirsub
+special  DS485273           gb_dirsub
+special  DS485275           gb_dirsub
+special  DS485277-DS485278  gb_dirsub
+special  DS485280-DS485281  gb_dirsub
+special  DS485283-DS485285  gb_dirsub
+special  DS485287-DS485288  gb_dirsub
+special  DS485290-DS485292  gb_dirsub
+special  DS485294           gb_dirsub
+special  DS485296-DS485306  gb_dirsub
+special  DS485309-DS485311  gb_dirsub
+special  DS485313-DS485316  gb_dirsub
+special  DS485318-DS485320  gb_dirsub
+special  DS485322-DS485326  gb_dirsub
+special  DS485328-DS485331  gb_dirsub
+special  DS485333-DS485343  gb_dirsub
+special  DS485345           gb_dirsub
+special  DS485349           gb_dirsub
+special  DS485351           gb_dirsub
+special  DS485353-DS485354  gb_dirsub
+special  DS485356-DS485365  gb_dirsub
+special  DS485368           gb_dirsub
+special  DS485370-DS485371  gb_dirsub
+special  DS485374-DS485376  gb_dirsub
+special  DS485378-DS485379  gb_dirsub
+special  DS485381-DS485390  gb_dirsub
+special  DS485392-DS485393  gb_dirsub
+special  DS485395           gb_dirsub
+special  DS485397-DS485401  gb_dirsub
+special  DS485403           gb_dirsub
+special  DS485407           gb_dirsub
+special  DS485409-DS485411  gb_dirsub
+special  DS485415-DS485416  gb_dirsub
+special  DS485418-DS485430  gb_dirsub
+special  DS485433-DS485434  gb_dirsub
+special  DS485436-DS485443  gb_dirsub
+special  DS485448           gb_dirsub
+special  DS485450-DS485454  gb_dirsub
+special  DS485456-DS485457  gb_dirsub
+special  DS485459-DS485462  gb_dirsub
+special  DS485464-DS485473  gb_dirsub
+special  DS485475-DS485478  gb_dirsub
+special  DS485481-DS485483  gb_dirsub
+special  DS485488           gb_dirsub
+special  DS485490-DS485492  gb_dirsub
+special  DS485494-DS485498  gb_dirsub
+special  DS485500-DS485501  gb_dirsub
+special  DS485503-DS485506  gb_dirsub
+special  DS485509           gb_dirsub
+special  DS485512           gb_dirsub
+special  DS485514-DS485515  gb_dirsub
+special  DS485517-DS485518  gb_dirsub
+special  DS485520-DS485523  gb_dirsub
+special  DS485525-DS485545  gb_dirsub
+special  DS485547-DS486008  gb_other_nuc # 95 dirsub ranges
+
+# Nominally gb_dirsub.
+special  EF053039-EF053049  gb_gss
+special  EF063001           gb_est
+special  EF095769           gb_gss
+special  EF165098           gb_gss
+special  EF182756-EF182758  gb_gss
+special  EF189906-EF189916  gb_est
+special  EF204530-EF204533  gb_gss
+special  EF208191           gb_gss
+special  EF210438-EF210453  gb_gss
+special  EF377525-EF377537  gb_est
+special  EF422869           gb_est
+special  EF473211-EF473215  gb_est
+special  EF494771-EF494773  gb_est
+special  EF552376           gb_est
+special  EF578434-EF578635  gb_gss
+special  EF592824-EF592944  gb_gss
+
+# Nominally gb_dirsub.
+special  EU152056-EU152079  gb_est
+special  EU239816           gb_est
+special  EU306364-EU306386  gb_gss
+special  EU364506-EU364507  gb_est
+special  EU368044           gb_est
+special  EU369669           gb_est
+special  EU420034           gb_est
+special  EU597223-EU597228  gb_est
+
+# Nominally gb_dirsub.
+special  FJ710154-FJ710155  gb_est
+special  FJ842632-FJ842642  gb_est
+
+# Nominally embl_dirsub.
+special  FM000001-FM160408  embl_est
+special  FM164769           embl_est
+special  FM164940           embl_est
+special  FM165392           embl_est
+special  FM165707-FM172746  embl_est
+special  FM178562-FM178778  embl_est
+special  FM180579-FM196445  embl_est
+special  FM205236-FM205493  embl_est
+special  FM205777-FM205831  embl_est
+special  FM207878-FM207900  embl_est
+special  FM208280-FM208711  embl_est
+special  FM208851           embl_est
+special  FM208900           embl_est
+special  FM212937           embl_est
+special  FM215048-FM242054  embl_est
+special  FM246886-FM251871  embl_est
+special  FM253361           embl_est
+special  FM253366-FM253368  embl_est
+special  FM253372           embl_est
+special  FM253378           embl_est
+special  FM864313-FM864344  embl_est
+special  FM864347-FM865295  embl_est
+special  FM868295-FM872275  embl_est
+special  FM879143-FM881767  embl_est
+special  FM882258-FM883162  embl_est
+special  FM885959-FM886821  embl_est
+special  FM887038-FM896881  embl_est
+special  FM897212-FM897213  embl_est
+special  FM897377-FM945301  embl_est
+special  FM945441-FM945999  embl_est
+special  FM946183-FM954971  embl_est
+special  FM957013-FM957079  embl_est
+special  FM958532-FM985957  embl_est
+special  FM992847-FM992850  embl_est
+special  FM999776-FM999787  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome, but split out EST ranges.
+special  FN000001-FN177896  embl_est
+special  FN179489-FN182188  embl_est
+special  FN182288-FN185725  embl_est
+special  FN186135-FN190445  embl_est
+special  FN190447-FN252183  embl_est
+special  FN252460-FN252789  embl_est
+special  FN263376-FN292969  embl_est
+special  FN377870-FN386264  embl_est
+special  FN393571-FN393732  embl_est
+special  FN393830-FN393849  embl_est
+special  FN424437-FN428571  embl_est
+special  FN430839-FN431219  embl_est
+special  FN431234-FN431660  embl_est
+special  FN432032-FN432041  embl_est
+special  FN432154-FN432328  embl_est
+special  FN432729-FN432775  embl_est
+special  FN433834-FN433837  embl_est
+special  FN435336-FN435350  embl_est
+special  FN539079-FN543092  embl_est
+special  FN551261-FN551733  embl_est
+special  FN552552-FN552591  embl_est
+special  FN552699-FN552705  embl_est
+special  FN555710-FN555987  embl_est
+special  FN557216-FN557223  embl_est
+special  FN561898-FN561924  embl_est
+special  FN562175-FN562396  embl_est
+special  FN564151-FN564158  embl_est
+special  FN565576-FN566839  embl_est
+special  FN588437-FN594512  embl_est
+special  FN600697           embl_est
+special  FN601407-FN610843  embl_est
+special  FN611035-FN640462  embl_est
+special  FN640581-FN641653  embl_est
+special  FN641925-FN643079  embl_est
+special  FN646764-FN647626  embl_est
+special  FN651825-FN651826  embl_est
+special  FN652903-FN652904  embl_est
+special  FN661971-FN662351  embl_est
+special  FN664012-FN665290  embl_est
+special  FN669777-FN673545  embl_est
+special  FN679295-FN686775  embl_est
+special  FN691927           embl_est
+special  FN692044-FN706436  embl_est
+special  FN706565-FN773062  embl_est
+special  FN773104-FN773170  embl_est
+special  FN796618-FN796723  embl_est
+special  FN796987-FN806772  embl_est
+special  FN806826-FN806848  embl_est
+special  FN811794-FN811851  embl_est
+special  FN811944-FN812314  embl_est
+special  FN813225-FN813226  embl_est
+special  FN813467-FN813469  embl_est
+special  FN814310-FN820203  embl_est
+special  FN822244-FN822743  embl_est
+special  FN823242-FN823254  embl_est
+special  FN868597           embl_est
+special  FN868902-FN868929  embl_est
+special  FN869177-FN869376  embl_est
+special  FN870962-FN907899  embl_est
+special  FN908254-FN908302  embl_est
+special  FN985040           embl_est
+special  FN985644-FN993914  embl_est
+special  FN997680-FN998838  embl_est
+special  FN999023-FN999906  embl_est
+
+# Nominally embl_dirsub.
+special  FO000003-FO076577  embl_est
+special  FO082887-FO117570  embl_est
+special  FO117633-FO181358  embl_est
+special  FO181544-FO203352  embl_est
+special  FO203528-FO393391  embl_est
+special  FO680693-FO681285  embl_est
+special  FO704924-FO722023  embl_est
+special  FO981374-FO999999  embl_est
+
+# Nominally embl_dirsub.
+special  FP000001-FP003579  embl_est
+special  FP003602-FP009753  embl_est
+special  FP009755-FP009758  embl_est
+special  FP009760-FP009761  embl_est
+special  FP009763-FP009764  embl_est
+special  FP009766-FP012228  embl_est
+special  FP024615-FP057328  embl_est
+special  FP057330-FP057370  embl_est
+special  FP057373-FP057454  embl_other_nuc # 33 EST ranges
+special  FP057456-FP057462  embl_est
+special  FP057465-FP057560  embl_other_nuc # 43 EST ranges
+special  FP057562-FP057566  embl_est
+special  FP057568-FP057656  embl_other_nuc # 39 EST ranges
+special  FP057664-FP057702  embl_other_nuc # 16 EST ranges
+special  FP057704-FP057709  embl_est
+special  FP057711-FP058036  embl_other_nuc # 141 EST ranges
+special  FP058042-FP058155  embl_other_nuc # 45 EST ranges
+special  FP058162-FP058163  embl_est
+special  FP058165           embl_est
+special  FP058167           embl_est
+special  FP058169           embl_est
+special  FP058171-FP058172  embl_est
+special  FP058174           embl_est
+special  FP058176-FP058177  embl_est
+special  FP058180           embl_est
+special  FP058183-FP058190  embl_est
+special  FP058192-FP058271  embl_other_nuc # 33 EST ranges
+special  FP058282           embl_est
+special  FP058284           embl_est
+special  FP058286           embl_est
+special  FP058293-FP058514  embl_other_nuc # 95 EST ranges
+special  FP058526-FP058527  embl_est
+special  FP058529           embl_est
+special  FP058531-FP058532  embl_est
+special  FP058534           embl_est
+special  FP058537           embl_est
+special  FP058539           embl_est
+special  FP058542-FP058543  embl_est
+special  FP058545           embl_est
+special  FP058547-FP058553  embl_est
+special  FP058556-FP058658  embl_other_nuc # 44 EST ranges
+special  FP058673-FP058706  embl_other_nuc # 15 EST ranges
+special  FP058708-FP058713  embl_est
+special  FP058715-FP059322  embl_other_nuc # 248 EST ranges
+special  FP059328           embl_est
+special  FP059330-FP059332  embl_est
+special  FP059334           embl_est
+special  FP059337           embl_est
+special  FP059339           embl_est
+special  FP059341           embl_est
+special  FP059343           embl_est
+special  FP059345           embl_est
+special  FP059348-FP059352  embl_est
+special  FP059354-FP059385  embl_other_nuc # 14 EST ranges
+special  FP059387-FP059393  embl_est
+special  FP059395-FP059833  embl_other_nuc # 187 EST ranges
+special  FP059841-FP059887  embl_other_nuc # 22 EST ranges
+special  FP059895-FP060210  embl_other_nuc # 136 EST ranges
+special  FP060212-FP060217  embl_est
+special  FP060219-FP060469  embl_other_nuc # 104 EST ranges
+special  FP060477-FP061762  embl_other_nuc # 552 EST ranges
+special  FP061764-FP061769  embl_est
+special  FP061771-FP062313  embl_other_nuc # 234 EST ranges
+special  FP062315-FP062321  embl_est
+special  FP062324-FP062896  embl_other_nuc # 246 EST ranges
+special  FP062906-FP062999  embl_other_nuc # 39 EST ranges
+special  FP063008-FP063034  embl_other_nuc # 11 EST ranges
+special  FP063036-FP063040  embl_est
+special  FP063043-FP063447  embl_other_nuc # 166 EST ranges
+special  FP063449-FP063453  embl_est
+special  FP063455-FP063802  embl_other_nuc # 154 EST ranges
+special  FP063804-FP063812  embl_est
+special  FP063814-FP063898  embl_other_nuc # 35 EST ranges
+special  FP063900-FP063904  embl_est
+special  FP063906-FP064076  embl_other_nuc # 74 EST ranges
+special  FP064082-FP064562  embl_other_nuc # 208 EST ranges
+special  FP064569-FP065157  embl_other_nuc # 251 EST ranges
+special  FP065159-FP067333  embl_est
+special  FP067453-FP074848  embl_est
+special  FP089705-FP089949  embl_est
+special  FP090914-FP091223  embl_est
+special  FP101920-FP101950  embl_est
+special  FP104570-FP236120  embl_est
+special  FP236870-FP243270  embl_est
+special  FP245546-FP312611  embl_est
+special  FP318637-FP325096  embl_est
+special  FP331359-FP339571  embl_est
+special  FP339630-FP340170  embl_est
+special  FP340462-FP340488  embl_est
+special  FP350355-FP360034  embl_est
+special  FP360036-FP458874  embl_est
+special  FP458876-FP475875  embl_est
+special  FP489021-FP539727  embl_est
+special  FP539730-FP565142  embl_est
+special  FP565937-FP578983  embl_est
+special  FP579010-FP583343  embl_est
+special  FP583356-FP628470  embl_est
+special  FP628472-FP671119  embl_est
+special  FP671140-FP680548  embl_est
+special  FP680607-FP690338  embl_est
+special  FP690350-FP700052  embl_est
+special  FP700189-FP710243  embl_est
+special  FP710258-FP791398  embl_est
+special  FP791400-FP884219  embl_est
+special  FP884235-FP885524  embl_est
+special  FP885545-FP885822  embl_est
+special  FP885927-FP893245  embl_est
+special  FP893247-FP924936  embl_est
+special  FP927985-FP928978  embl_est
+special  FP928990-FP928995  embl_est
+special  FP929145-FP999998  embl_est
+
+# Nominally embl_dirsub.
+special  FQ000001           embl_est
+special  FQ000005-FQ014216  embl_est
+special  FQ014236-FQ032656  embl_est
+special  FQ032836-FQ073829  embl_est
+special  FQ073967-FQ116746  embl_est
+special  FQ116748-FQ209379  embl_est
+special  FQ235350-FQ242479  embl_est
+special  FQ312199-FQ323093  embl_est
+special  FQ323164-FQ361146  embl_est
+special  FQ361149-FQ377486  embl_est
+special  FQ377488-FQ377516  embl_est
+special  FQ398062-FQ439981  embl_est
+special  FQ439983-FQ440019  embl_est
+special  FQ440021-FQ440022  embl_est
+special  FQ440024           embl_est
+special  FQ440026           embl_est
+special  FQ440028           embl_est
+special  FQ440030-FQ440032  embl_est
+special  FQ440034-FQ456868  embl_est
+special  FQ456875-FQ482045  embl_est
+special  FQ482048-FQ482071  embl_est
+special  FQ660554-FQ670147  embl_est
+special  FQ790408-FQ828345  embl_est
+special  FQ828348-FQ857191  embl_est
+special  FQ859091-FQ859175  embl_est
+special  FQ859187-FQ865452  embl_est
+special  FQ865457-FQ908260  embl_est
+special  FQ908267-FQ958209  embl_est
+special  FQ958213-FQ976554  embl_est
+special  FQ976923-FQ999999  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_con or embl_genome, but split out EST and TPA(!)
+# ranges.
+special  FR595163-FR647444  embl_est
+special  FR660151-FR666602  embl_est
+special  FR668536           embl_est
+special  FR669245-FR669246  embl_est
+special  FR686584           embl_est
+special  FR686963-FR686965  embl_est
+special  FR688150-FR689535  embl_est
+special  FR691564           embl_est
+special  FR697056-FR714330  embl_est
+special  FR719326-FR719692  embl_est
+special  FR726163-FR726165  embl_est
+special  FR728240-FR728241  embl_est
+special  FR729927-FR731105  embl_est
 special  FR734011-FR734074  embl_tpa_nuc
+special  FR734407-FR744448  embl_est
+special  FR746042-FR746044  embl_est
+special  FR746111-FR747822  embl_est
+special  FR748230-FR749648  embl_est
 special  FR749997           embl_tpa_nuc
-special  FR821738-FR821742  embl_tpa_nuc
-special  FR821745-FR821746  embl_tpa_nuc
-special  FR821748           embl_tpa_nuc
-special  FR821751           embl_tpa_nuc
-special  FR821754           embl_tpa_nuc
+special  FR753167-FR754317  embl_est
+special  FR754554-FR771822  embl_est
+special  FR773977           embl_est
+special  FR775966           embl_est
+special  FR819721-FR819744  embl_est
+special  FR821738-FR821754  embl_tpa_nuc
 special  FR822741           embl_tpa_nuc
+special  FR828827-FR831799  embl_est
+special  FR836483-FR837532  embl_est
+special  FR837542-FR837592  embl_est
+special  FR839767-FR845655  embl_est
+special  FR846456-FR846460  embl_est
+special  FR846537-FR846887  embl_est
+special  FR847124-FR847145  embl_est
+special  FR847228-FR847840  embl_est
+special  FR847888-FR847943  embl_est
+special  FR848368-FR848371  embl_est
+special  FR850135-FR850157  embl_est
+special  FR851958           embl_est
+special  FR852768           embl_est
+special  FR852894-FR852904  embl_est
+special  FR854398-FR856581  embl_est
+special  FR863689-FR864978  embl_est
+special  FR869720-FR869795  embl_est
 special  FR872817           embl_tpa_nuc
+special  FR873995-FR874005  embl_est
 special  FR877768-FR877777  embl_tpa_nuc
+special  FR877779-FR878008  embl_est
+special  FR878032-FR878040  embl_est
+
+special  GQ162211-GQ162212  gb_est # Nominally gb_dirsub.
+
+# Nominally gb_dirsub.
+special  GU357827-GU357840  gb_est
+special  GU385812           gb_est
+
+# Nominally embl_dirsub.
+special  HE575663-HE575667  embl_est
+special  HE578177-HE578180  embl_est
+special  HE578289-HE578716  embl_est
+special  HE580226-HE580228  embl_est
 special  HE580237-HE580238  embl_tpa_nuc
 special  HE583424-HE583588  embl_tpa_nuc
+special  HE600073-HE600122  embl_est
+special  HE602495-HE602530  embl_est
+special  HE612182           embl_est
 special  HE613800           embl_tpa_nuc
+special  HE617969-HE646283  embl_est
+special  HE681861-HE681882  embl_est
+special  HE775617-HE792769  embl_est
+special  HE795538-HE795641  embl_est
+special  HE799315-HE799645  embl_est
+special  HE802076-HE802106  embl_est
 special  HE804769-HE804772  embl_tpa_nuc
+special  HE858615-HE859937  embl_est
+special  HE862417-HE862958  embl_est
+special  HE957083-HE961812  embl_est
+special  HE962539           embl_est
 special  HE963851-HE964756  embl_tpa_nuc
 special  HE967761           embl_tpa_nuc
+special  HE967924-HE967957  embl_est
+special  HE981808-HE983324  embl_est
+special  HE985332-HE993548  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome, but split out EST, TPA(!), and WGS ranges.
+special  HF546137-HF546200  embl_est
+special  HF546978           embl_est
 special  HF564658-HF564815  embl_tpa_nuc
+special  HF566097-HF566123  embl_est
+special  HF567775-HF567843  embl_est
+special  HF913790-HF920632  embl_wgs_nuc
 special  HF933207-HF933230  embl_tpa_nuc
+special  HF952730-HF952771  embl_est
+special  HF953988-HF954002  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_genome, but split out EST and TPA(!) ranges.
+special  HG000495-HG000664  embl_est
+special  HG001312-HG001319  embl_est
+special  HG313979-HG314002  embl_tpa_nuc
+special  HG314154-HG314951  embl_est
 special  HG322958-HG323812  embl_tpa_nuc
+special  HG326529-HG326598  embl_est
 special  HG328835-HG329089  embl_tpa_nuc
+special  HG421036-HG421067  embl_est
+special  HG424982-HG425075  embl_est
 special  HG425120-HG425123  embl_tpa_nuc
 special  HG426065-HG426183  embl_tpa_nuc
-special  HG491497-HG491561  embl_tpa_nuc
-special  HG491563-HG491602  embl_tpa_nuc
-special  HG491604-HG491606  embl_tpa_nuc
-special  HG491609-HG491816  embl_tpa_nuc
-special  HG491818-HG491854  embl_tpa_nuc
-special  HG491856-HG491986  embl_tpa_nuc
-special  HG491988-HG492046  embl_tpa_nuc
-special  HG492048-HG492151  embl_tpa_nuc
-special  HG492153-HG492337  embl_tpa_nuc
-special  HG492341-HG492370  embl_tpa_nuc
-special  HG492372-HG492501  embl_tpa_nuc
-special  HG492503-HG492507  embl_tpa_nuc
-special  HG492510-HG492513  embl_tpa_nuc
-special  HG492579-HG492581  embl_tpa_nuc
-special  HG492590           embl_tpa_nuc
-special  HG492628-HG492631  embl_tpa_nuc
-special  HG492633-HG492657  embl_tpa_nuc
-special  HG492659-HG492683  embl_tpa_nuc
-special  HG492686-HG492695  embl_tpa_nuc
-special  HG492698-HG492703  embl_tpa_nuc
-special  HG492706-HG492708  embl_tpa_nuc
-special  HG492710-HG492716  embl_tpa_nuc
-special  HG492724           embl_tpa_nuc
-special  HG492727-HG492728  embl_tpa_nuc
-special  HG492733-HG492737  embl_tpa_nuc
-special  HG492740-HG492845  embl_tpa_nuc
-special  HG492848-HG492887  embl_tpa_nuc
-special  HG492889-HG492907  embl_tpa_nuc
-special  HG492910-HG492958  embl_tpa_nuc
-special  HG492960-HG492972  embl_tpa_nuc
-special  HG492975-HG492979  embl_tpa_nuc
-special  HG492981-HG492996  embl_tpa_nuc
-special  HG492998-HG493026  embl_tpa_nuc
-special  HG493028-HG493068  embl_tpa_nuc
-special  HG493070-HG493110  embl_tpa_nuc
-special  HG493113-HG493114  embl_tpa_nuc
-special  HG493118-HG493134  embl_tpa_nuc
-special  HG493144-HG493147  embl_tpa_nuc
-special  HG493149-HG493153  embl_tpa_nuc
-special  HG493155-HG493176  embl_tpa_nuc
-special  HG493178-HG493184  embl_tpa_nuc
-special  HG493204-HG493211  embl_tpa_nuc
-special  HG493213-HG493226  embl_tpa_nuc
-special  HG493228-HG493230  embl_tpa_nuc
-special  HG493232-HG493261  embl_tpa_nuc
-special  HG493264-HG493286  embl_tpa_nuc
-special  HG493288-HG493300  embl_tpa_nuc
-special  HG493302-HG493324  embl_tpa_nuc
-special  HG493326-HG493342  embl_tpa_nuc
-special  HG493344-HG493352  embl_tpa_nuc
-special  HG493355-HG493365  embl_tpa_nuc
-special  HG493367-HG493403  embl_tpa_nuc
-special  HG493406-HG493428  embl_tpa_nuc
-special  HG493430-HG493461  embl_tpa_nuc
-special  HG493463-HG493530  embl_tpa_nuc
-special  HG493534-HG493764  embl_tpa_nuc
-special  HG493766           embl_tpa_nuc
-special  HG493768-HG493960  embl_tpa_nuc
-special  HG493962-HG494119  embl_tpa_nuc
-special  HG494121-HG494202  embl_tpa_nuc
-special  HG494204-HG494212  embl_tpa_nuc
-special  HG494214-HG494280  embl_tpa_nuc
-special  HG494282-HG494300  embl_tpa_nuc
-special  HG494302-HG494307  embl_tpa_nuc
-special  HG494309-HG494379  embl_tpa_nuc
-special  HG494381-HG494403  embl_tpa_nuc
-special  HG494409-HG494410  embl_tpa_nuc
-special  HG494413-HG494458  embl_tpa_nuc
-special  HG494461-HG494507  embl_tpa_nuc
-special  HG494509-HG494512  embl_tpa_nuc
-special  HG494514-HG494564  embl_tpa_nuc
-special  HG494566-HG494651  embl_tpa_nuc
-special  HG494653-HG494656  embl_tpa_nuc
-special  HG494659-HG494797  embl_tpa_nuc
-special  HG494799-HG494818  embl_tpa_nuc
-special  HG494828-HG495321  embl_tpa_nuc
-special  HG495323-HG495350  embl_tpa_nuc
-special  HG495352-HG495371  embl_tpa_nuc
-special  HG495377-HG495468  embl_tpa_nuc
-special  HG495470-HG495514  embl_tpa_nuc
-special  HG495516-HG495590  embl_tpa_nuc
-special  HG495593-HG495739  embl_tpa_nuc
-special  HG495741-HG495744  embl_tpa_nuc
-special  HG495746-HG495751  embl_tpa_nuc
-special  HG495753-HG496006  embl_tpa_nuc
-special  HG496018-HG496062  embl_tpa_nuc
-special  HG496064-HG496135  embl_tpa_nuc
-special  HG496138-HG496355  embl_tpa_nuc
-special  HG496358-HG496629  embl_tpa_nuc
-special  HG496633           embl_tpa_nuc
-special  HG496635-HG496664  embl_tpa_nuc
-special  HG496666-HG496839  embl_tpa_nuc
-special  HG496844-HG496982  embl_tpa_nuc
-special  HG496984-HG497466  embl_tpa_nuc
-special  HG497468-HG498094  embl_tpa_nuc
-special  HG498096-HG498423  embl_tpa_nuc
-special  HG498427           embl_tpa_nuc
-special  HG498429-HG498865  embl_tpa_nuc
-special  HG498874-HG498918  embl_tpa_nuc
-special  HG498921-HG498939  embl_tpa_nuc
-special  HG498941-HG499061  embl_tpa_nuc
-special  HG499064-HG499151  embl_tpa_nuc
-special  HG499153-HG499155  embl_tpa_nuc
-special  HG499159-HG499180  embl_tpa_nuc
-special  HG499184-HG499325  embl_tpa_nuc
-special  HG499327-HG499331  embl_tpa_nuc
-special  HG499333-HG499345  embl_tpa_nuc
-special  HG499366-HG499436  embl_tpa_nuc
-special  HG499438-HG499466  embl_tpa_nuc
-special  HG499468-HG499525  embl_tpa_nuc
-special  HG499527-HG499616  embl_tpa_nuc
-special  HG499618-HG499742  embl_tpa_nuc
-special  HG499752-HG499790  embl_tpa_nuc
-special  HG499792-HG499826  embl_tpa_nuc
-special  HG499828-HG499986  embl_tpa_nuc
-special  HG499988-HG500074  embl_tpa_nuc
-special  HG500076-HG500121  embl_tpa_nuc
-special  HG500123-HG500132  embl_tpa_nuc
-special  HG500134-HG500295  embl_tpa_nuc
-special  HG500297-HG500335  embl_tpa_nuc
-special  HG500338-HG500422  embl_tpa_nuc
-special  HG500424-HG500431  embl_tpa_nuc
-special  HG500435-HG500461  embl_tpa_nuc
-special  HG500463-HG500508  embl_tpa_nuc
-special  HG500511-HG500595  embl_tpa_nuc
-special  HG500597-HG500777  embl_tpa_nuc
-special  HG500780-HG500792  embl_tpa_nuc
-special  HG500794-HG500883  embl_tpa_nuc
-special  HG500885-HG500920  embl_tpa_nuc
-special  HG500922-HG501032  embl_tpa_nuc
-special  HG501034-HG501079  embl_tpa_nuc
-special  HG501081-HG501082  embl_tpa_nuc
-special  HG501084-HG501129  embl_tpa_nuc
-special  HG501131-HG501300  embl_tpa_nuc
-special  HG501302-HG501752  embl_tpa_nuc
-special  HG501754-HG501767  embl_tpa_nuc
-special  HG501769-HG501796  embl_tpa_nuc
-special  HG501798-HG501997  embl_tpa_nuc
-special  HG502005-HG502015  embl_tpa_nuc
-special  HG502029-HG502030  embl_tpa_nuc
-special  HG502037-HG502040  embl_tpa_nuc
-special  HG502042-HG502045  embl_tpa_nuc
-special  HG502049           embl_tpa_nuc
-special  HG502056-HG502066  embl_tpa_nuc
-special  HG502071-HG502082  embl_tpa_nuc
-special  HG502085-HG502089  embl_tpa_nuc
-special  HG502091-HG502092  embl_tpa_nuc
-special  HG502097-HG502421  embl_tpa_nuc
-special  HG502424-HG502447  embl_tpa_nuc
-special  HG502449-HG502500  embl_tpa_nuc
-special  HG502503-HG502552  embl_tpa_nuc
-special  HG502554-HG502634  embl_tpa_nuc
-special  HG502646-HG502765  embl_tpa_nuc
-special  HG502767-HG502784  embl_tpa_nuc
-special  HG502786-HG502870  embl_tpa_nuc
-special  HG502873           embl_tpa_nuc
-special  HG502882-HG502887  embl_tpa_nuc
-special  HG502889-HG502896  embl_tpa_nuc
-special  HG502899-HG502927  embl_tpa_nuc
-special  HG502931           embl_tpa_nuc
-special  HG502935-HG502973  embl_tpa_nuc
-special  HG502975-HG503004  embl_tpa_nuc
-special  HG503007-HG503067  embl_tpa_nuc
-special  HG503069-HG503086  embl_tpa_nuc
-special  HG503088-HG503207  embl_tpa_nuc
-special  HG503209           embl_tpa_nuc
-special  HG503216-HG503288  embl_tpa_nuc
-special  HG503290-HG503333  embl_tpa_nuc
-special  HG503339-HG503383  embl_tpa_nuc
-special  HG503385-HG503422  embl_tpa_nuc
-special  HG503424-HG503655  embl_tpa_nuc
-special  HG503657-HG503687  embl_tpa_nuc
-special  HG503689-HG503800  embl_tpa_nuc
-special  HG503803-HG503839  embl_tpa_nuc
-special  HG503844-HG503860  embl_tpa_nuc
-special  HG503862-HG503894  embl_tpa_nuc
-special  HG503897-HG504222  embl_tpa_nuc
-special  HG504224-HG504246  embl_tpa_nuc
-special  HG504248-HG504284  embl_tpa_nuc
-special  HG504286-HG504363  embl_tpa_nuc
-special  HG504366           embl_tpa_nuc
-special  HG504368-HG504436  embl_tpa_nuc
-special  HG504446-HG504637  embl_tpa_nuc
-special  HG504639-HG504704  embl_tpa_nuc
-special  HG504709-HG504797  embl_tpa_nuc
-special  HG504799-HG504803  embl_tpa_nuc
-special  HG504810-HG504855  embl_tpa_nuc
-special  HG504858-HG505155  embl_tpa_nuc
-special  HG505158-HG505202  embl_tpa_nuc
-special  HG505204-HG505255  embl_tpa_nuc
-special  HG505261-HG505281  embl_tpa_nuc
-special  HG505283-HG505290  embl_tpa_nuc
-special  HG505292-HG505296  embl_tpa_nuc
-special  HG505298-HG505303  embl_tpa_nuc
-special  HG505305-HG505418  embl_tpa_nuc
-special  HG505422-HG505531  embl_tpa_nuc
-special  HG505533-HG505583  embl_tpa_nuc
-special  HG505585-HG505644  embl_tpa_nuc
-special  HG505647-HG505854  embl_tpa_nuc
-special  HG505856-HG505861  embl_tpa_nuc
-special  HG505863-HG505918  embl_tpa_nuc
-special  HG505920-HG505933  embl_tpa_nuc
-special  HG505952-HG505953  embl_tpa_nuc
-special  HG505972           embl_tpa_nuc
-special  HG505974-HG506000  embl_tpa_nuc
-special  HG506002-HG506007  embl_tpa_nuc
-special  HG506009-HG506022  embl_tpa_nuc
-special  HG506029-HG506091  embl_tpa_nuc
-special  HG506093-HG506132  embl_tpa_nuc
-special  HG506134-HG506214  embl_tpa_nuc
-special  HG506219-HG506230  embl_tpa_nuc
-special  HG506232-HG506238  embl_tpa_nuc
-special  HG506240-HG506292  embl_tpa_nuc
-special  HG506294-HG506307  embl_tpa_nuc
-special  HG506309-HG506376  embl_tpa_nuc
-special  HG506378-HG506490  embl_tpa_nuc
-special  HG506494-HG506509  embl_tpa_nuc
-special  HG506511-HG506581  embl_tpa_nuc
-special  HG506583-HG506680  embl_tpa_nuc
-special  HG506682-HG506717  embl_tpa_nuc
-special  HG506719-HG506721  embl_tpa_nuc
-special  HG506723-HG506739  embl_tpa_nuc
-special  HG506741           embl_tpa_nuc
-special  HG506743-HG506744  embl_tpa_nuc
-special  HG506746           embl_tpa_nuc
-special  HG506748-HG506947  embl_tpa_nuc
-special  HG506949-HG506976  embl_tpa_nuc
-special  HG506978-HG507013  embl_tpa_nuc
-special  HG507015-HG507054  embl_tpa_nuc
-special  HG507058-HG507140  embl_tpa_nuc
-special  HG507142-HG507155  embl_tpa_nuc
-special  HG507157-HG507194  embl_tpa_nuc
-special  HG507196-HG507251  embl_tpa_nuc
-special  HG507253-HG507255  embl_tpa_nuc
-special  HG507257-HG507265  embl_tpa_nuc
-special  HG507267-HG507297  embl_tpa_nuc
-special  HG507299-HG507325  embl_tpa_nuc
-special  HG507327-HG507405  embl_tpa_nuc
-special  HG507407-HG507462  embl_tpa_nuc
-special  HG507464-HG507503  embl_tpa_nuc
-special  HG507505-HG507584  embl_tpa_nuc
-special  HG507586-HG507625  embl_tpa_nuc
-special  HG507627-HG507675  embl_tpa_nuc
-special  HG507677-HG507711  embl_tpa_nuc
-special  HG507713-HG507853  embl_tpa_nuc
-special  HG507856-HG507907  embl_tpa_nuc
-special  HG507909-HG507911  embl_tpa_nuc
-special  HG507915-HG507936  embl_tpa_nuc
-special  HG507939-HG508136  embl_tpa_nuc
-special  HG508138-HG508204  embl_tpa_nuc
-special  HG508206-HG508227  embl_tpa_nuc
-special  HG508229-HG508244  embl_tpa_nuc
-special  HG508246-HG508248  embl_tpa_nuc
-special  HG508251-HG508259  embl_tpa_nuc
-special  HG508261-HG508280  embl_tpa_nuc
-special  HG508284-HG508367  embl_tpa_nuc
-special  HG508369-HG508388  embl_tpa_nuc
-special  HG508390-HG508501  embl_tpa_nuc
-special  HG508503-HG508567  embl_tpa_nuc
-special  HG508570-HG508667  embl_tpa_nuc
-special  HG508669-HG508686  embl_tpa_nuc
-special  HG508689-HG508748  embl_tpa_nuc
-special  HG508750-HG508811  embl_tpa_nuc
-special  HG508813-HG508843  embl_tpa_nuc
-special  HG508845-HG508857  embl_tpa_nuc
-special  HG508859-HG508956  embl_tpa_nuc
-special  HG508958-HG508971  embl_tpa_nuc
-special  HG509011           embl_tpa_nuc
-special  HG509017-HG509023  embl_tpa_nuc
-special  HG509025-HG509032  embl_tpa_nuc
-special  HG509034-HG509048  embl_tpa_nuc
-special  HG509050-HG509064  embl_tpa_nuc
-special  HG509066-HG509076  embl_tpa_nuc
-special  HG509079-HG509200  embl_tpa_nuc
-special  HG509203-HG509252  embl_tpa_nuc
-special  HG509254-HG509258  embl_tpa_nuc
-special  HG509260-HG509392  embl_tpa_nuc
-special  HG509394-HG509415  embl_tpa_nuc
-special  HG509417-HG509445  embl_tpa_nuc
-special  HG509447-HG509497  embl_tpa_nuc
-special  HG509501-HG509890  embl_tpa_nuc
-special  HG509892-HG509994  embl_tpa_nuc
-special  HG509996-HG510196  embl_tpa_nuc
-special  HG510198-HG510205  embl_tpa_nuc
-special  HG510208-HG510212  embl_tpa_nuc
-special  HG510214           embl_tpa_nuc
-special  HG510217-HG510224  embl_tpa_nuc
-special  HG510227           embl_tpa_nuc
-special  HG510229-HG510236  embl_tpa_nuc
-special  HG510239           embl_tpa_nuc
-special  HG510242-HG510299  embl_tpa_nuc
-special  HG510302-HG510311  embl_tpa_nuc
-special  HG510313-HG510318  embl_tpa_nuc
-special  HG510320-HG510399  embl_tpa_nuc
-special  HG510401-HG510413  embl_tpa_nuc
-special  HG510416-HG510554  embl_tpa_nuc
-special  HG510567-HG510744  embl_tpa_nuc
-special  HG510746-HG510796  embl_tpa_nuc
-special  HG510798-HG510825  embl_tpa_nuc
-special  HG510827           embl_tpa_nuc
-special  HG510830-HG510866  embl_tpa_nuc
-special  HG510869-HG510893  embl_tpa_nuc
-special  HG510895-HG510914  embl_tpa_nuc
-special  HG510916-HG510930  embl_tpa_nuc
-special  HG510932-HG511013  embl_tpa_nuc
-special  HG511015-HG511016  embl_tpa_nuc
-special  HG511019-HG511027  embl_tpa_nuc
-special  HG511029-HG511036  embl_tpa_nuc
-special  HG511038           embl_tpa_nuc
-special  HG511040-HG511043  embl_tpa_nuc
-special  HG511048-HG511112  embl_tpa_nuc
-special  HG511114-HG511218  embl_tpa_nuc
-special  HG511222-HG511307  embl_tpa_nuc
-special  HG511309-HG511317  embl_tpa_nuc
-special  HG511319-HG511338  embl_tpa_nuc
-special  HG511340-HG511350  embl_tpa_nuc
-special  HG511352-HG511555  embl_tpa_nuc
-special  HG511558-HG511735  embl_tpa_nuc
-special  HG511737-HG511977  embl_tpa_nuc
-special  HG511979-HG512018  embl_tpa_nuc
-special  HG512033-HG512068  embl_tpa_nuc
-special  HG512070-HG512083  embl_tpa_nuc
-special  HG512085-HG512259  embl_tpa_nuc
-special  HG512261-HG512516  embl_tpa_nuc
-special  HG512518-HG512563  embl_tpa_nuc
-special  HG512566           embl_tpa_nuc
-special  HG512568-HG512569  embl_tpa_nuc
-special  HG512572-HG512573  embl_tpa_nuc
-special  HG512576-HG512616  embl_tpa_nuc
-special  HG512618           embl_tpa_nuc
-special  HG512620-HG512739  embl_tpa_nuc
-special  HG512741-HG512769  embl_tpa_nuc
-special  HG512771           embl_tpa_nuc
-special  HG512775-HG512789  embl_tpa_nuc
-special  HG512805-HG512826  embl_tpa_nuc
-special  HG512837-HG512857  embl_tpa_nuc
-special  HG512859-HG512884  embl_tpa_nuc
+special  HG491497-HG512884  embl_tpa_nuc
+special  HG516089-HG518058  embl_est
 special  HG518794-HG528968  embl_tpa_nuc
 special  HG531973-HG532008  embl_tpa_nuc
 special  HG780872-HG792014  embl_tpa_nuc
+special  HG792878-HG792996  embl_est
+special  HG798530-HG798533  embl_est
 special  HG931734-HG931849  embl_tpa_nuc
+special  HG964498-HG964527  embl_est
+special  HG965112-HG965128  embl_est
+special  HG970048-HG970064  embl_est
 special  HG975377-HG975438  embl_tpa_nuc
-special  HG977712-HG977767  embl_tpa_nuc
-special  HG977770-HG978127  embl_tpa_nuc
-special  HG978132-HG978145  embl_tpa_nuc
-special  HG978147-HG978188  embl_tpa_nuc
-special  HG978190-HG978200  embl_tpa_nuc
-special  HG978203-HG978224  embl_tpa_nuc
-special  HG978226-HG978233  embl_tpa_nuc
-special  HG978235-HG978237  embl_tpa_nuc
-special  HG978239-HG978241  embl_tpa_nuc
-special  HG978243           embl_tpa_nuc
-special  HG978245-HG978262  embl_tpa_nuc
-special  HG978264-HG978278  embl_tpa_nuc
-special  HG978281-HG978282  embl_tpa_nuc
-special  HG978284-HG978354  embl_tpa_nuc
-special  HG978356-HG978368  embl_tpa_nuc
-special  HG978370-HG978374  embl_tpa_nuc
-special  HG978379-HG978514  embl_tpa_nuc
-special  HG978517-HG978884  embl_tpa_nuc
-special  HG978886-HG978887  embl_tpa_nuc
-special  HG978889-HG978892  embl_tpa_nuc
-special  HG978911-HG978925  embl_tpa_nuc
-special  HG978928           embl_tpa_nuc
-special  HG978932-HG978946  embl_tpa_nuc
-special  HG978948-HG978967  embl_tpa_nuc
-special  HG978969-HG978984  embl_tpa_nuc
-special  HG978987           embl_tpa_nuc
-special  HG978989-HG979011  embl_tpa_nuc
-special  HG979014           embl_tpa_nuc
-special  HG979020-HG979023  embl_tpa_nuc
-special  HG979028-HG979132  embl_tpa_nuc
-special  HG979134-HG979300  embl_tpa_nuc
-special  HG979302-HG979402  embl_tpa_nuc
-special  HG979404-HG979412  embl_tpa_nuc
-special  HG979414           embl_tpa_nuc
-special  HG979417-HG979538  embl_tpa_nuc
-special  HG979540-HG979544  embl_tpa_nuc
-special  HG979546-HG979549  embl_tpa_nuc
-special  HG979551-HG979558  embl_tpa_nuc
-special  HG979560           embl_tpa_nuc
-special  HG979563-HG979577  embl_tpa_nuc
-special  HG979579           embl_tpa_nuc
-special  HG979584           embl_tpa_nuc
-special  HG979586           embl_tpa_nuc
-special  HG979591-HG979601  embl_tpa_nuc
-special  HG979603-HG979606  embl_tpa_nuc
-special  HG979609-HG979614  embl_tpa_nuc
-special  HG979616-HG979681  embl_tpa_nuc
-special  HG979684-HG979705  embl_tpa_nuc
-special  HG979707           embl_tpa_nuc
-special  HG979709-HG979751  embl_tpa_nuc
-special  HG979753-HG979771  embl_tpa_nuc
-special  HG979777-HG979781  embl_tpa_nuc
-special  HG979784-HG979785  embl_tpa_nuc
-special  HG979790-HG979802  embl_tpa_nuc
-special  HG979804-HG979808  embl_tpa_nuc
-special  HG979810-HG979862  embl_tpa_nuc
-special  HG979865-HG979871  embl_tpa_nuc
-special  HG979874-HG979875  embl_tpa_nuc
-special  HG979877-HG979893  embl_tpa_nuc
-special  HG979901-HG979904  embl_tpa_nuc
-special  HG979906-HG979929  embl_tpa_nuc
-special  HG979933-HG979940  embl_tpa_nuc
-special  HG979946-HG979948  embl_tpa_nuc
-special  HG979950-HG979968  embl_tpa_nuc
-special  HG979970-HG979971  embl_tpa_nuc
-special  HG979973-HG979975  embl_tpa_nuc
-special  HG979977-HG979978  embl_tpa_nuc
-special  HG979980-HG979996  embl_tpa_nuc
-special  HG979998-HG980035  embl_tpa_nuc
-special  HG980037-HG980062  embl_tpa_nuc
-special  HG980065-HG980089  embl_tpa_nuc
-special  HG980091-HG980093  embl_tpa_nuc
-special  HG980097-HG980113  embl_tpa_nuc
-special  HG980118-HG980123  embl_tpa_nuc
-special  HG980126-HG980178  embl_tpa_nuc
-special  HG980180-HG980181  embl_tpa_nuc
-special  HG980183-HG980195  embl_tpa_nuc
-special  HG980197-HG980223  embl_tpa_nuc
-special  HG980225-HG980236  embl_tpa_nuc
-special  HG980238-HG980419  embl_tpa_nuc
-special  HG980421-HG980433  embl_tpa_nuc
-special  HG980435-HG980684  embl_tpa_nuc
-special  HG980686-HG980922  embl_tpa_nuc
-special  HG980924-HG981073  embl_tpa_nuc
-special  HG981075-HG981100  embl_tpa_nuc
-special  HG981102-HG981574  embl_tpa_nuc
-special  HG981576-HG981649  embl_tpa_nuc
-special  HG981651-HG981819  embl_tpa_nuc
-special  HG981821-HG982225  embl_tpa_nuc
-special  HG982227-HG982424  embl_tpa_nuc
-special  HG982426-HG983278  embl_tpa_nuc
+special  HG977712-HG983278  embl_tpa_nuc
 special  HG983548-HG986399  embl_tpa_nuc
+
+special  HM042681           gb_est # Nominally gb_dirsub.
+
+# Nominally gb_dirsub.
+special  HQ385980-HQ385998  gb_est
+special  HQ436350           gb_est
+special  HQ596498-HQ596504  gb_est
+special  HQ603829-HQ603854  gb_est
+special  HQ616895-HQ616912  gb_est
+special  HQ634394-HQ634477  gb_est
+
+special  JN376805-JN377341  gb_est # Nominally gb_dirsub.
+
+special  KF487514           gb_est # Nominally gb_dirsub.
+
+special  KJ472321-KJ472336  gb_est # Nominally gb_dirsub.
+
+special  KM673248-KM673271  gb_est # Nominally gb_dirsub.
+
+# Nominally embl_dirsub.
 special  LK000001-LK020668  embl_tpa_nuc
-special  LK937705-LK937781  embl_tpa_nuc
-special  LK937783-LK937941  embl_tpa_nuc
-special  LK937943-LK937944  embl_tpa_nuc
-special  LK937946-LK938425  embl_tpa_nuc
-special  LK938428-LK938636  embl_tpa_nuc
-special  LK938638-LK938665  embl_tpa_nuc
-special  LK938667-LK938681  embl_tpa_nuc
-special  LK938683-LK938685  embl_tpa_nuc
-special  LK938687-LK938815  embl_tpa_nuc
-special  LK938817-LK938886  embl_tpa_nuc
-special  LK938890-LK939125  embl_tpa_nuc
+special  LK937705-LK939125  embl_tpa_nuc
+special  LK985528-LK995307  embl_est
+
+# Nominally embl_dirsub.
 special  LM378690-LM383429  embl_tpa_nuc
 special  LM608092-LM611902  embl_tpa_nuc
 special  LM644135-LM644234  embl_tpa_nuc
+special  LM994684-LM994695  embl_est
+
+# Nominally embl_dirsub.  Give the benefit of the doubt to sequences
+# that look like embl_con, but split out EST and TPA(!) ranges.
 special  LN607841-LN608991  embl_tpa_nuc
-special  LN714474-LN714502  embl_tpa_nuc
-special  LN714504-LN714514  embl_tpa_nuc
+special  LN624403-LN624404  embl_est
+special  LN651082-LN651092  embl_est
+special  LN651553-LN678462  embl_est
+special  LN680257-LN680271  embl_est
+special  LN714474-LN714514  embl_tpa_nuc
 special  LN794245-LN794246  embl_tpa_nuc
 special  LN809256-LN809883  embl_tpa_nuc
 special  LN846618-LN846619  embl_tpa_nuc
@@ -1165,15 +2646,21 @@ special  LN847449-LN848230  embl_tpa_nuc
 special  LN849001           embl_tpa_nuc
 special  LN871971-LN872940  embl_tpa_nuc
 special  LN874312-LN874522  embl_tpa_nuc
+special  LN879549-LN879837  embl_est
 special  LN898187-LN898198  embl_tpa_nuc
 special  LN901194-LN901210  embl_tpa_nuc
+special  LN901386-LN901412  embl_est
+
+# Nominally embl_dirsub.
+special  LT159851-LT159865  embl_est
 special  LT548096-LT548244  embl_tpa_nuc
+special  LT556286-LT558089  embl_est
 special  LT571433-LT571435  embl_tpa_nuc
 special  LT605004           embl_tpa_nuc
 special  LT631550-LT631670  embl_tpa_nuc
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special LT746381-LT999999  unreserved_nuc
+#special LT828649-LT999999  unreserved_nuc
 
 # Some "EMBL" 8-character protein accessions are really third party
 # annotations.
