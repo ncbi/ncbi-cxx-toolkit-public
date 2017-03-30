@@ -34,7 +34,6 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <unistd.h>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
