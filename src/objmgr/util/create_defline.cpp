@@ -2657,7 +2657,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags 
         joiner.Add("chromosome", m_Chromosome);
     }
     if (m_IsPlasmid || !m_Plasmid.empty()) {
-        joiner.Add("plasmid", m_Plasmid);
+        joiner.Add("plasmid-name", m_Plasmid);
     }
     if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
         joiner.Add("completeness", CTempString("complete"));
