@@ -1250,8 +1250,7 @@ void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CSco
     CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     CRef<objects::CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
     CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
-    pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
-    pentry->SetSeq().SetInst().SetLength(bioseq->GetInst().GetLength());
+    pentry->SetSeq().SetInst().Assign(bioseq->GetInst());
     AdjustProtFeatForNucProtSet (entry);
 }
 
