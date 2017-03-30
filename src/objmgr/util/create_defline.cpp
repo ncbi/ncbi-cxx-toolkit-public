@@ -59,6 +59,7 @@ USING_SCOPE(feature);
 
 #define NCBI_USE_ERRCODE_X   ObjMgr_SeqUtil
 
+enum EHidePart { eHideNone, eHideType, eHideValue };
 class CDefLineJoiner
 {
 public:
@@ -66,11 +67,11 @@ public:
         : m_ShowMods(show_mods)
     {
     }
-    void Add(const CTempString &name, const CTempString &value, bool includeType = true)
+    void Add(const CTempString &name, const CTempString &value, EHidePart hide = eHideNone)
     {
         if (m_ShowMods)
         {
-            if (value.empty()) {
+            if (name.empty() || value.empty()) {
                 return;
             }
             m_Joiner.Add(" [").Add(name).Add("=");
@@ -87,7 +88,7 @@ public:
         }
         else
         {
-            if (includeType) {
+            if (eHideNone == hide && !name.empty()) {
                 m_Joiner.Add(" ").Add(name);
             }
             if (!value.empty()) {
@@ -95,13 +96,7 @@ public:
             }
         }
     }
-    template<typename T1>
-    void Add(T1 &name, int value, bool includeType = true)
-    {
-        Add(name, NStr::IntToString(value), includeType);
-    }
-    template<typename T>
-    void Join(T* result) const
+    void Join(std::string* result) const
     {
         m_Joiner.Join(result);
     }
@@ -1156,65 +1151,49 @@ static bool x_EndsWithStrain (
 void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
-    string clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<12, CTempString> joiner;
+    CDefLineJoiner joiner;
 
-    joiner.Add(m_Taxname);
+    joiner.Add("organism", m_Taxname, eHideType);
 
     if (! m_Strain.empty()) {
         CTempString add(m_Strain, 0, m_Strain.find(';'));
         if (! x_EndsWithStrain (m_Taxname, add)) {
-            joiner.Add(" strain ").Add(add);
+            joiner.Add("strain", add);
         }
     }
     if (! m_Breed.empty()) {
-        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
+        joiner.Add("breed", m_Breed.substr (0, m_Breed.find(';')));
     }
     if (! m_Cultivar.empty()) {
-        joiner.Add(" cultivar ").Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
+        joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
     if (! m_Isolate.empty()) {
         // x_EndsWithStrain just checks for supplied pattern, using here for isolate
         if (! x_EndsWithStrain (m_Taxname, m_Isolate)) {
-            joiner.Add(" isolate ").Add(m_Isolate);
+            joiner.Add("isolate", m_Isolate);
         }
     }
+
     if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
+        joiner.Add("location", "chromosome", eHideType);
+        joiner.Add("chromosome", m_Chromosome, eHideType);
+    } else if ( !m_Plasmid.empty()) {
+        joiner.Add("location", m_Organelle, eHideType); //"plasmid"
+        joiner.Add("plasmid-name", m_Plasmid, eHideType);
+    } else if (! m_Organelle.empty()) {
+        joiner.Add("location", m_Organelle, eHideType);
     }
+    
+    string clnbuf;
+    vector<CTempString> clnvec;
     if (m_has_clone) {
         x_DescribeClones (clnvec, clnbuf);
         ITERATE (vector<CTempString>, it, clnvec) {
-            joiner.Add(*it);
+            joiner.Add("clone", *it, eHideType);
         }
     }
     if (! m_Map.empty()) {
-        joiner.Add(" map ").Add(m_Map);
-    }
-
-    if (! m_Organelle.empty()) {
-        if (NStr::FindNoCase(m_Organelle, "chromosome") != NPOS) {
-            /*
-            if (m_Chromosome.empty()) {
-                joiner.Add(" ").Add(m_Organelle);
-            }
-            */
-        } else if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS) {
-            if (m_Plasmid.empty() && m_Chromosome.empty()) {
-                joiner.Add(" ").Add(m_Organelle);
-            }
-        } else {
-            joiner.Add(" ").Add(m_Organelle);
-        }
-    }
-
-    if (! m_Plasmid.empty()) {
-        if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS) {
-            joiner.Add(" plasmid ").Add(m_Plasmid);
-        } else {
-            joiner.Add(" ").Add(m_Plasmid);
-        }
+        joiner.Add("map", m_Map);
     }
 
     joiner.Join(&m_MainTitle);
@@ -1231,48 +1210,27 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
     // require taxname to be set
     if (m_Taxname.empty()) return;
 
-    const char * seq_tag, * gen_tag, * pls_pfx = " ";
+    CDefLineJoiner joiner;
 
-    CTextJoiner<6, CTempString> joiner;
+    joiner.Add("organism", m_Taxname, eHideType);
 
-
-    switch (m_MICompleteness) {
-        case NCBI_COMPLETENESS(partial):
-        case NCBI_COMPLETENESS(no_left):
-        case NCBI_COMPLETENESS(no_right):
-        case NCBI_COMPLETENESS(no_ends):
-            seq_tag = ", partial sequence";
-            gen_tag = ", genome";
-            break;
-        default:
-            seq_tag = ", complete sequence";
-            gen_tag = ", complete genome";
-            break;
-    }
-
-    joiner.Add(m_Taxname);
-
+    bool add_gen_tag = false;
     if (NStr::FindNoCase (m_Taxname, "plasmid") != NPOS) {
-        joiner.Add(seq_tag);
-    } else if (m_IsPlasmid) {
+        //
+    } else if (m_IsPlasmid || ! m_Plasmid.empty()) {
         if (m_Plasmid.empty()) {
-            joiner.Add(" unnamed plasmid").Add(seq_tag);
+            joiner.Add("", "unnamed plasmid", eHideType);
         } else {
+            if ( !m_IsPlasmid) { // do we need this?
+                joiner.Add("location", m_Organelle, eHideType);
+            }
             if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
                 NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-                pls_pfx = " plasmid ";
+                joiner.Add("plasmid", m_Plasmid);
+            } else {
+                joiner.Add("", m_Plasmid, eHideType);
             }
-            joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
         }
-    } else if (! m_Plasmid.empty() ) {
-        if (! m_Organelle.empty()) {
-            joiner.Add(" ").Add(m_Organelle);
-        }
-        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
-            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
-        }
-        joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
     } else if ( ! m_Organelle.empty() ) {
         if ( m_Chromosome.empty() ) {
             switch (m_Genome) {
@@ -1281,29 +1239,35 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
                 case NCBI_GENOME(kinetoplast):
                 case NCBI_GENOME(plastid):
                 case NCBI_GENOME(apicoplast):
-                    joiner.Add(" ").Add(m_Organelle);
+                    joiner.Add("location", m_Organelle, eHideType);
                     break;
             }
-            joiner.Add(gen_tag);
-        } else if (m_IsChromosome) {
-            joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
+            add_gen_tag = true;
         } else {
-            joiner.Add(" ").Add(m_Organelle).Add(" chromosome ").Add(m_Chromosome)
-                .Add(seq_tag);
+            if (! m_IsChromosome) {
+                joiner.Add("location", m_Organelle, eHideType);
+            }
+            joiner.Add("chromosome", m_Chromosome);
         }
     } else if (! m_Segment.empty()) {
         if (m_Segment.find ("DNA") == NPOS &&
             m_Segment.find ("RNA") == NPOS &&
             m_Segment.find ("segment") == NPOS &&
             m_Segment.find ("Segment") == NPOS) {
-            joiner.Add(" segment ").Add(m_Segment).Add(seq_tag);
+            joiner.Add("segment", m_Segment);
         } else {
-            joiner.Add(" ").Add(m_Segment).Add(seq_tag);
+            joiner.Add("", m_Segment, eHideType);
         }
     } else if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
+        joiner.Add("chromosome", m_Chromosome);
     } else {
-        joiner.Add(gen_tag);
+        add_gen_tag = true;
+    }
+
+    if (add_gen_tag) {
+        joiner.Add("completeness", (x_IsComplete() ? ", complete genome" : ", genome"), eHideType);
+    } else {
+        joiner.Add("completeness", (x_IsComplete() ? ", complete sequence" : ", partial sequence"), eHideType);
     }
     joiner.Join(&m_MainTitle);
 
@@ -1475,45 +1439,45 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
 void CDeflineGenerator::x_SetTitleFromGPipe (void)
 
 {
-    string clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<12, CTempString> joiner;
+    CDefLineJoiner joiner;
 
-    joiner.Add(m_Taxname);
+    joiner.Add("organism", m_Taxname, eHideType);
 
     if ( ! m_Organelle.empty() && NStr::FindNoCase (m_Organelle, "plasmid") != NPOS) {
-        joiner.Add(m_Organelle);
+        joiner.Add("location", m_Organelle, eHideType);
     }
 
     if (! m_Strain.empty()) {
         CTempString add(m_Strain, 0, m_Strain.find(';'));
         if (! x_EndsWithStrain (m_Taxname, add)) {
-            joiner.Add(" strain ").Add(add);
+            joiner.Add("strain", add);
         }
     }
     if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
+        joiner.Add("chromosome", m_Chromosome);
     }
     if (m_has_clone) {
+        string clnbuf;
+        vector<CTempString> clnvec;
         x_DescribeClones (clnvec, clnbuf);
         ITERATE (vector<CTempString>, it, clnvec) {
-            joiner.Add(*it);
+            joiner.Add("clone", *it, eHideType);
         }
     }
     if (! m_Map.empty()) {
-        joiner.Add(" map ").Add(m_Map);
+        joiner.Add("map", m_Map);
     }
     if (! m_Plasmid.empty()) {
         if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
             NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            joiner.Add(" plasmid ").Add(m_Plasmid);
+            joiner.Add("plasmid", m_Plasmid);
         } else {
-            joiner.Add(" ").Add(m_Plasmid);
+            joiner.Add("", m_Plasmid);
         }
     }
     
-    if (m_MICompleteness ==  NCBI_COMPLETENESS(complete)) {
-        joiner.Add(", complete sequence");
+    if (x_IsComplete()) {
+        joiner.Add("completeness", ", complete sequence", eHideType);
     }
 
     joiner.Join(&m_MainTitle);
@@ -1712,58 +1676,30 @@ bool CDeflineGenerator::x_CDShasLowQualityException (
     return false;
 }
 
-/*
 static const char* s_proteinOrganellePrefix [] = {
-  "",
-  "",
-  "chloroplast",
-  "chromoplast",
-  "kinetoplast",
-  "mitochondrion",
-  "plastid",
-  "macronuclear",
-  "extrachromosomal",
-  "plasmid",
-  "",
-  "",
-  "cyanelle",
-  "proviral",
-  "virus",
-  "nucleomorph",
-  "apicoplast",
-  "leucoplast",
-  "protoplast",
-  "endogenous virus",
-  "hydrogenosome",
-  "chromosome",
-  "chromatophore"
-};
-*/
-
-static const char* s_proteinOrganellePrefix [] = {
-  "",
-  "",
-  "chloroplast",
-  "chromoplast",
-  "kinetoplast",
-  "mitochondrion",
-  "plastid",
-  "macronuclear",
-  "",
-  "plasmid",
-  "",
-  "",
-  "cyanelle",
-  "",
-  "",
-  "nucleomorph",
-  "apicoplast",
-  "leucoplast",
-  "protoplast",
-  "endogenous virus",
-  "hydrogenosome",
-  "",
-  "chromatophore"
+  "",                  // "",
+  "",                  // "",
+  "chloroplast",       // "chloroplast",
+  "chromoplast",       // "chromoplast",
+  "kinetoplast",       // "kinetoplast",
+  "mitochondrion",     // "mitochondrion",
+  "plastid",           // "plastid",
+  "macronuclear",      // "macronuclear",
+  "",                  // "extrachromosomal",
+  "plasmid",           // "plasmid",
+  "",                  // "",
+  "",                  // "",
+  "cyanelle",          // "cyanelle",
+  "",                  // "proviral",
+  "",                  // "virus",
+  "nucleomorph",       // "nucleomorph",
+  "apicoplast",        // "apicoplast",
+  "leucoplast",        // "leucoplast",
+  "protoplast",        // "protoplast",
+  "endogenous virus",  // "endogenous virus",
+  "hydrogenosome",     // "hydrogenosome",
+  "",                  // "chromosome",
+  "chromatophore"      // "chromatophore"
 };
 
 static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
@@ -1800,7 +1736,6 @@ void CDeflineGenerator::x_SetTitleFromProtein (
     CConstRef<CGene_ref>  gene;
     CConstRef<CBioSource> src;
     CTempString           locus_tag;
-    bool                  partial = false;
 
     // gets longest protein on Bioseq, parts set, or seg set, even if not
     // full-length
@@ -1809,17 +1744,6 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
     if (prot_feat) {
         prot = &prot_feat->GetData().GetProt();
-    }
-
-    switch (m_MICompleteness) {
-        case NCBI_COMPLETENESS(partial):
-        case NCBI_COMPLETENESS(no_left):
-        case NCBI_COMPLETENESS(no_right):
-        case NCBI_COMPLETENESS(no_ends):
-            partial = true;
-            break;
-        default:
-            break;
     }
 
     const CMappedFeat& mapped_cds = GetMappedCDSForProduct (bsh);
@@ -1954,7 +1878,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         m_MainTitle.erase (pos + 1);
     }
 
-    if (partial /* && m_MainTitle.find(", partial") == NPOS */) {
+    if (! x_IsComplete() /* && m_MainTitle.find(", partial") == NPOS */) {
         m_MainTitle += ", partial";
     }
 
@@ -2068,44 +1992,43 @@ void CDeflineGenerator::x_SetTitleFromSegSeq  (
 {
     const char * completeness = "complete";
     bool         cds_found    = false;
-    string       locus, product, clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<13, CTempString> joiner;
+    string       locus, product;
+    CDefLineJoiner joiner;
 
     if (m_Taxname.empty()) {
         m_Taxname = "Unknown";
     }
+    joiner.Add("organism", m_Taxname, eHideType);
 
     if ( !m_LocalAnnotsOnly ) {
         cds_found = x_GetSegSeqInfoViaCDS(locus, product, completeness, bsh);
     }
-
-    joiner.Add(m_Taxname);
-
     if ( !cds_found) {
         if (! m_Strain.empty()
             &&  ! x_EndsWithStrain (m_Taxname, m_Strain) ) {
-            joiner.Add(" strain ").Add(m_Strain);
+            joiner.Add("strain", m_Strain);
         } else if (! m_Clone.empty()
                    /* && m_Clone.find(" clone ") != NPOS */) {
+            string clnbuf;
+            vector<CTempString> clnvec;
             x_DescribeClones (clnvec, clnbuf);
             ITERATE (vector<CTempString>, it, clnvec) {
-                joiner.Add(*it);
+                joiner.Add("clone", *it, eHideType);
             }
         } else if (! m_Isolate.empty() ) {
-            joiner.Add(" isolate ").Add(m_Isolate);
+            joiner.Add("isolate", m_Isolate);
         }
     }
     if (! product.empty()) {
-        joiner.Add(" ").Add(product);
-    }
-    if (! locus.empty()) {
-        joiner.Add(" (").Add(locus).Add(")");
-    }
-    if ((! product.empty()) || (! locus.empty())) {
-        joiner.Add(" gene, ").Add(completeness).Add(" cds");
+        joiner.Add("product", product, eHideType);
     }
     joiner.Join(&m_MainTitle);
+    if (! locus.empty()) {
+        m_MainTitle += " (" + locus + ")";
+    }
+    if ((! product.empty()) || (! locus.empty())) {
+        m_MainTitle += " gene, " + string(completeness) + " cds";
+    }
     NStr::TruncateSpacesInPlace(m_MainTitle);
 }
 
@@ -2113,57 +2036,55 @@ void CDeflineGenerator::x_SetTitleFromSegSeq  (
 void CDeflineGenerator::x_SetTitleFromWGS (void)
 
 {
-    string clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<14, CTempString> joiner;
+    CDefLineJoiner joiner;
 
-    joiner.Add(m_Taxname);
+    joiner.Add("organism", m_Taxname, eHideType);
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
-            joiner.Add(" strain ");
-            joiner.Add(m_Strain.substr (0, m_Strain.find(';')));
+            joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
         }
     } else if (! m_Breed.empty()) {
-        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
+        joiner.Add("breed", m_Breed.substr (0, m_Breed.find(';')));
     } else if (! m_Cultivar.empty()) {
-        joiner.Add(" cultivar ");
-        joiner.Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
+        joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
     if (! m_Isolate.empty()) {
         // x_EndsWithStrain just checks for supplied pattern, using here for isolate
         if (! x_EndsWithStrain (m_Taxname, m_Isolate)) {
-            joiner.Add(" isolate ").Add(m_Isolate);
+            joiner.Add("isolate", m_Isolate);
         }
     }
     if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
+        joiner.Add("chromosome", m_Chromosome);
     }
     if (! m_Clone.empty()) {
+        string clnbuf;
+        vector<CTempString> clnvec;
         x_DescribeClones (clnvec, clnbuf);
         ITERATE (vector<CTempString>, it, clnvec) {
-            joiner.Add(*it);
+            joiner.Add("clone", *it, eHideType);
         }
     }
     if (! m_Map.empty()) {
-        joiner.Add(" map ").Add(m_Map);
+        joiner.Add("map", m_Map);
     }
     if (! m_Plasmid.empty()) {
         if (m_IsWGS) {
-            joiner.Add(" plasmid ").Add(m_Plasmid);
+            joiner.Add("plasmid", m_Plasmid);
         }
     }
     if (m_Genome == NCBI_GENOME(plasmid) && m_Topology == NCBI_SEQTOPOLOGY(circular)) {
     } else if (m_Genome == NCBI_GENOME(chromosome)) {
     } else if (! m_GeneralStr.empty()) {
         if (m_GeneralStr != m_Chromosome  &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
-            joiner.Add(" ").Add(m_GeneralStr);
+            joiner.Add("", m_GeneralStr, eHideType);
         }
     } else if (m_GeneralId > 0) {
         string tmp = NStr::NumericToString (m_GeneralId);
         if (! tmp.empty()) {
             if (tmp != m_Chromosome  &&  (! m_IsWGS  ||  tmp != m_Plasmid)) {
-                joiner.Add(" ").Add(tmp);
+                joiner.Add("", tmp, eHideType);
             }
         }
     }
@@ -2176,37 +2097,34 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
 void CDeflineGenerator::x_SetTitleFromMap (void)
 
 {
-    string clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<14, CTempString> joiner;
+    CDefLineJoiner joiner;
 
-    joiner.Add(m_Taxname);
+    joiner.Add("organism", m_Taxname, eHideType);
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
-            joiner.Add(" strain ");
-            joiner.Add(m_Strain.substr (0, m_Strain.find(';')));
+            joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
         }
     }
     if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
+        joiner.Add("chromosome", m_Chromosome);
     } else if (m_IsChromosome) {
-        joiner.Add(" chromosome");
+        joiner.Add("location", "chromosome", eHideType);
     }
     if (! m_Plasmid.empty()) {
-        joiner.Add(" plasmid ").Add(m_Plasmid);
+        joiner.Add("plasmid", m_Plasmid);
     } else if (m_IsPlasmid) {
-        joiner.Add(" plasmid");
+        joiner.Add("location", "plasmid", eHideType);
     }
     if (! m_Isolate.empty()) {
-        joiner.Add(" isolate ").Add(m_Isolate);
+        joiner.Add("isolate", m_Isolate);
     }
+    joiner.Join(&m_MainTitle);
 
     if (! m_rEnzyme.empty()) {
-        joiner.Add(", ").Add(m_rEnzyme).Add(" whole genome map");
+        m_MainTitle += ", " + m_rEnzyme + " whole genome map";
     }
 
-    joiner.Join(&m_MainTitle);
     NStr::TruncateSpacesInPlace(m_MainTitle);
 }
 
@@ -2492,7 +2410,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     CBioSource::TGenome   genome;
     size_t                pos, tpos = NPOS, opos = NPOS;
     int                   len1, len2;
-    bool                  partial = false;
     CConstRef<CBioSource> src;
 
     if (m_Source.Empty()) return;
@@ -2517,17 +2434,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
                 }
             }
         }
-    }
-
-    switch (m_MICompleteness) {
-        case NCBI_COMPLETENESS(partial):
-        case NCBI_COMPLETENESS(no_left):
-        case NCBI_COMPLETENESS(no_right):
-        case NCBI_COMPLETENESS(no_ends):
-            partial = true;
-            break;
-        default:
-            break;
     }
 
     s_TrimMainTitle (m_MainTitle);
@@ -2597,7 +2503,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     // then reconstruct partial (organelle) [taxname] suffix
 
-    if (partial) {
+    if ( !x_IsComplete()) {
         m_MainTitle += ", partial";
     }
 
@@ -2634,6 +2540,21 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
         m_MainTitle += " [" + string(taxname) + "]";
     }
 }
+
+bool CDeflineGenerator::x_IsComplete() const
+{
+    switch (m_MICompleteness) {
+    case NCBI_COMPLETENESS(complete):
+        return true;
+    case NCBI_COMPLETENESS(partial):
+    case NCBI_COMPLETENESS(no_left):
+    case NCBI_COMPLETENESS(no_right):
+    case NCBI_COMPLETENESS(no_ends):
+        return false;
+    }
+    return true;
+}
+
 
 static const char* s_tpaPrefixList [] = {
   "TPA:",
@@ -2675,6 +2596,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags 
     // [organism=...], etc.
 
     bool strain_seen = false;
+    string gcode; // should be in the same scope as joiner.Join() because joiner stores CTempString
 
     try {
         const COrg_ref & org = sequence::GetOrg_ref(bsh);
@@ -2692,7 +2614,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags 
                             if (mod.IsSetSubname()) {
                                 if (strain_seen) {
                                     ERR_POST_X(9, Warning << __FUNCTION__ << ": "
-                                        << "key strain would appear multiple times, but only using the first.");
+                                        << "key 'strain' would appear multiple times, but only using the first.");
                                 }
                                 else {
                                     strain_seen = true;
@@ -2708,7 +2630,8 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags 
                 }
             }
             if (orgname.IsSetGcode()) {
-                joiner.Add("gcode", std::to_string(orgname.GetGcode()));
+                gcode = std::to_string(orgname.GetGcode());
+                joiner.Add("gcode", gcode);
             }
         }
     }

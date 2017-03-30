@@ -174,6 +174,7 @@ private:
         const CBioseq_Handle& bsh
     );
 
+    bool x_IsComplete() const;
 private:
     /// internal feature tree for parent mapping
     CRef<feature::CFeatTree> m_Feat_Tree;

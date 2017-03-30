@@ -2735,6 +2735,8 @@ void CFastaOstream::x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& b
         case CSeq_id::e_Tpd:
             hide_prefix = true;
             break;
+        default:
+            break;
         }
     }
 }
@@ -2850,17 +2852,13 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq_Handle & bioseq_handle,
     string safe_title;
     if (!custom_title.empty()) {
         safe_title = custom_title;
-    }
-    else {
-        //const CBioseq& bioseq
-        if (m_Flags & fShowModifiers) {
-            safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
-        } else {
-            const CBioseq& bioseq = *bioseq_handle.GetBioseqCore();
-            safe_title = sequence::s_GetFastaTitle(bioseq);
-            if (safe_title.empty()) {
-                safe_title = m_Gen->GenerateDefline(bioseq_handle, x_GetTitleFlags());
-            }
+    } else if (m_Flags & fShowModifiers) {
+        safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
+    } else {
+        const CBioseq& bioseq = *bioseq_handle.GetBioseqCore();
+        safe_title = sequence::s_GetFastaTitle(bioseq);
+        if (safe_title.empty()) {
+            safe_title = m_Gen->GenerateDefline(bioseq_handle, x_GetTitleFlags());
         }
     }
 
