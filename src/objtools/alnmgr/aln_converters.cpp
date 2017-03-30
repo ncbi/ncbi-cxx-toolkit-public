@@ -892,7 +892,15 @@ CSeq_id_Handle s_GetBestSynonym(const CSeq_id_Handle& idh,
     mapper.CollectSynonyms(idh, syn_set);
     CSeq_id_Handle best_id = idh;
     int best_score = idh.GetSeqId()->BestRankScore();
+#ifdef _DEBUG
+    TGi gi = best_id.IsGi() ? best_id.GetGi() : ZERO_GI;
+#endif
     ITERATE(CSeq_loc_Mapper_Base::TSynonyms, it, syn_set) {
+#ifdef _DEBUG
+        if (it->IsGi()) {
+            gi = it->GetGi();
+        }
+#endif
         int score = it->GetSeqId()->BestRankScore();
         if (score < best_score) {
             best_id = *it;
@@ -902,6 +910,13 @@ CSeq_id_Handle s_GetBestSynonym(const CSeq_id_Handle& idh,
     ITERATE(CSeq_loc_Mapper_Base::TSynonyms, it, syn_set) {
         syn_map[*it] = best_id;
     }
+#ifdef _DEBUG
+        const CTextseq_id* txt_id = best_id.GetSeqId()->GetTextseq_Id();
+        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
+            ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                << " instead of GI " << gi);
+        }
+#endif
     return best_id;
 }
 

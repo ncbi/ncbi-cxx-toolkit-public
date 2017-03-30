@@ -1001,9 +1001,18 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
     BOOST_REQUIRE_EQUAL(kStop, ssl.seqloc->GetInt().GetTo());
 
+    const string accession = "NC_000001";
+    const int version = 11;
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    BOOST_REQUIRE_EQUAL(GI_CONST(kGi), ssl.seqloc->GetInt().GetId().GetGi());
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(GI_CONST(kGi), ssl.seqloc->GetInt().GetId().GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Other, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(accession, ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
+        BOOST_REQUIRE_EQUAL(version, ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
+    }
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -1014,7 +1023,6 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     BOOST_REQUIRE(b.IsNa());
-    const string accession("NC_000001");
     bool found_gi = false, found_accession = false;
     ITERATE(CBioseq::TId, id, b.GetId()) {
         if ((*id)->Which() == CSeq_id::e_Gi) {
@@ -1714,9 +1722,20 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     const TGi gi = GI_CONST(1945386);
-    BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+    const string gb_name = "HSU93236";
+    const string gb_accession = "U93236";
+    const int gb_version = 1;
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Genbank, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gb_name, ssl.seqloc->GetInt().GetId().GetGenbank().GetName());
+        BOOST_REQUIRE_EQUAL(gb_accession, ssl.seqloc->GetInt().GetId().GetGenbank().GetAccession());
+        BOOST_REQUIRE_EQUAL(gb_version, ssl.seqloc->GetInt().GetId().GetGenbank().GetVersion());
+    }
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -1729,8 +1748,16 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
     CRef<CSeq_id> id = FindBestChoice(b.GetId(), CSeq_id::BestRank);
     BOOST_REQUIRE(id.NotNull());
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, id->Which());
-    BOOST_REQUIRE_EQUAL(gi, id->GetGi());
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, id->Which());
+        BOOST_REQUIRE_EQUAL(gi, id->GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Genbank, id->Which());
+        BOOST_REQUIRE_EQUAL(gb_name, id->GetGenbank().GetName());
+        BOOST_REQUIRE_EQUAL(gb_accession, id->GetGenbank().GetAccession());
+        BOOST_REQUIRE_EQUAL(gb_version, id->GetGenbank().GetVersion());
+    }
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
@@ -1767,9 +1794,19 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    const string accession("X65215.1");
-    BOOST_REQUIRE_EQUAL(GI_CONST(555), ssl.seqloc->GetInt().GetId().GetGi());
+
+    const TGi gi = GI_CONST(555);
+    const string accession = "X65215";
+    const int version = 1;
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Embl, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(accession, ssl.seqloc->GetInt().GetId().GetEmbl().GetAccession());
+        BOOST_REQUIRE_EQUAL(version, ssl.seqloc->GetInt().GetId().GetEmbl().GetVersion());
+    }
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -1984,12 +2021,28 @@ BOOST_AUTO_TEST_CASE(ParseDefline)
     CScope scope(*CObjectManager::GetInstance());
 
     const TGi gi = GI_CONST(129295);
+    const string name = "OVAX_CHICK";
+    const string accession = "P01013";
+    const string release = "reviewed";
     blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetId()->Which());
-    BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetId()->GetGi());
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
+
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetId()->GetGi());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, ssl.seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(name, ssl.seqloc->GetId()->GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, ssl.seqloc->GetId()->GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, ssl.seqloc->GetId()->GetSwissprot().GetRelease());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, ssl.seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(name, ssl.seqloc->GetInt().GetId().GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, ssl.seqloc->GetInt().GetId().GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, ssl.seqloc->GetInt().GetId().GetSwissprot().GetRelease());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(BadProtStrand)
@@ -2231,25 +2284,76 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     BOOST_REQUIRE_EQUAL((size_t)7, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
     gi = GI_CONST(1346057);
+    string name = "G11A_ORYSA";
+    string accession = "P47997";
+    string release = "reviewed";
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetInt().GetId().GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetInt().GetId().GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetInt().GetId().GetSwissprot().GetRelease());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetId()->GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetId()->GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetId()->GetSwissprot().GetRelease());
+    }
 
     v = source->GetNextSeqLocBatch(scope);
     BOOST_REQUIRE_EQUAL((size_t)8, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
     gi = GI_CONST(1170625);
+    name = "KCC1_YEAST";
+    accession = "P27466";
+    release = "reviewed";
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetInt().GetId().GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetInt().GetId().GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetInt().GetId().GetSwissprot().GetRelease());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetId()->GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetId()->GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetId()->GetSwissprot().GetRelease());
+    }
 
     v = source->GetNextSeqLocBatch(scope);
     BOOST_REQUIRE_EQUAL((size_t)4, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
     gi = GI_CONST(114152);
+    name = "ARK1_HUMAN";
+    accession = "P25098";
+    release = "reviewed";
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
-    BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetInt().GetId().Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetInt().GetId().GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetInt().GetId().GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetInt().GetId().GetSwissprot().GetRelease());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Swissprot, v[0].seqloc->GetId()->Which());
+        BOOST_REQUIRE_EQUAL(name, v[0].seqloc->GetId()->GetSwissprot().GetName());
+        BOOST_REQUIRE_EQUAL(accession, v[0].seqloc->GetId()->GetSwissprot().GetAccession());
+        BOOST_REQUIRE_EQUAL(release, v[0].seqloc->GetId()->GetSwissprot().GetRelease());
+    }
 
     BOOST_REQUIRE(source->End());
 }
@@ -2643,7 +2747,8 @@ BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
 // Test case for WB-1304: save GI (i.e.: best ranked Seq-id) if available
 BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput) 
 {
-    const CSeq_id gi(CSeq_id::e_Gi, 568802206);
+    const CSeq_id id(CSeq_id::PreferAccessionOverGi() ?
+        "ref|NT_026437.13|" : "gi|568802206");
     const string input("NT_026437.13");
     typedef vector<pair<SDataLoaderConfig::EConfigOpts, string> > TVecOpts;
     TVecOpts opts;
@@ -2662,12 +2767,12 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
         CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
         TSeqLocVector query_loc = blast_input.GetAllSeqLocs(*scope);
         BOOST_REQUIRE_EQUAL(1U, query_loc.size());
-        if (gi.AsFastaString() != query_loc[0].seqloc->GetId()->AsFastaString()) {
-            BOOST_CHECK_EQUAL(gi.AsFastaString(),
-                              query_loc[0].seqloc->GetId()->AsFastaString());
-            BOOST_CHECK_MESSAGE(gi.AsFastaString() ==
-                                query_loc[0].seqloc->GetId()->AsFastaString(),
-                                "Failed using " + config->second + " data loader");
+        string fasta_id = id.AsFastaString();
+        string fasta_query = query_loc[0].seqloc->GetId()->AsFastaString();
+        if (fasta_id != fasta_query) {
+            BOOST_CHECK_EQUAL(fasta_id, fasta_query);
+            BOOST_CHECK_MESSAGE(fasta_id == fasta_query,
+                "Failed using " + config->second + " data loader");
         }
     }
 }

@@ -272,7 +272,10 @@ BOOST_AUTO_TEST_CASE(WriteMaskInfoXmlNoParseSeqids)
 
 BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1TextParseSeqids)
 {
-    boost::test_tools::output_test_stream out("data/sample_parse_seqids_seqloc_asn1_text.out");
+    boost::test_tools::output_test_stream out(
+        CSeq_id::PreferAccessionOverGi() ?
+        "data/sample_prefacc_parse_seqids_seqloc_asn1_text.out" :
+        "data/sample_parse_seqids_seqloc_asn1_text.out");
     const bool kParseSeqids(true);
     auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_text"));
     writer->Print(m_BioseqHandleWithGi, m_Masks, kParseSeqids);
@@ -299,8 +302,12 @@ BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1BinaryParseSeqids)
     const bool kMatchOrSave(true);
     const bool kTextOrBin(false);
     boost::test_tools::output_test_stream
-        out("data/sample_parse_seqids_seqloc_asn1_bin.out", kMatchOrSave,
-            kTextOrBin);
+        out(
+        CSeq_id::PreferAccessionOverGi() ?
+        "data/sample_prefacc_parse_seqids_seqloc_asn1_bin.out" :
+        "data/sample_parse_seqids_seqloc_asn1_bin.out",
+        kMatchOrSave,
+        kTextOrBin);
     const bool kParseSeqids(true);
     auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_bin"));
     writer->Print(m_BioseqHandleWithGi, m_Masks, kParseSeqids);
@@ -321,7 +328,10 @@ BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1BinaryNoParseSeqids)
 
 BOOST_AUTO_TEST_CASE(WriteSeqLocXmlParseSeqids)
 {
-    boost::test_tools::output_test_stream out("data/sample_parse_seqids_seqloc_xml.out");
+    boost::test_tools::output_test_stream out(
+        CSeq_id::PreferAccessionOverGi() ?
+        "data/sample_prefacc_parse_seqids_seqloc_xml.out" :
+        "data/sample_parse_seqids_seqloc_xml.out");
     const bool kParseSeqids(true);
     auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_xml"));
     writer->Print(m_BioseqHandleWithGi, m_Masks, kParseSeqids);

@@ -358,11 +358,19 @@ const string kAddedFeatTitle = "Added Feature";
 const string kAddedAnnotName = "TestAnnot";
 static void s_AddFeat(const CBioseq_Handle& handle) 
 {
-    TGi gi;
-    CSeq_id_Handle sid = GetId(handle, eGetId_ForceGi);
-    if (!sid)
-        THROW("Bioseq does not have a gi seq_id");
-    gi = sid.GetGi();
+    CSeq_id id;
+    if ( !CSeq_id::AvoidGi() ) {
+        CSeq_id_Handle sid = GetId(handle, eGetId_ForceGi);
+        if (!sid)
+            THROW("Bioseq does not have a gi seq_id");
+        id.SetGi(sid.GetGi());
+    }
+    else {
+        CSeq_id_Handle sid = GetId(handle, eGetId_ForceAcc);
+        if (!sid)
+            THROW("Bioseq does not have an accession.version seq_id");
+        id.Assign(*sid.GetSeqId());
+    }
     CSeq_annot_EditHandle feat_annot;
     CSeq_annot_CI annot_it(handle);
     for(; annot_it; ++annot_it) {
@@ -378,7 +386,7 @@ static void s_AddFeat(const CBioseq_Handle& handle)
     CRef<CSeq_feat> new_feat(new CSeq_feat);
     new_feat->SetTitle(kAddedFeatTitle);
     new_feat->SetData().SetComment();
-    new_feat->SetLocation().SetWhole().SetGi(gi);
+    new_feat->SetLocation().SetWhole().Assign(id);
     CSeq_feat_EditHandle fh = feat_annot.AddFeat(*new_feat);
     feat_annot.TakeFeat(fh);
 }

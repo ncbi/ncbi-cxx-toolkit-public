@@ -157,18 +157,40 @@ struct CDeltaBlastTestFixture {
     {
         int num_ids = 0;
         TGi last_id = INVALID_GI;
-        ITERATE(CSeq_align_set::Tdata, itr, sas->Get()){
+        string last_acc;
+        CTextseq_id::TVersion last_ver = -1;
+        ITERATE(CSeq_align_set::Tdata, itr, sas->Get()) {
             const CSeq_id& seqid = (*itr)->GetSeq_id(1);
+            if ( !CSeq_id::PreferAccessionOverGi() ) {
+                BOOST_REQUIRE(seqid.IsGi() || seqid.IsGeneral());
+            }
+            else {
+                BOOST_REQUIRE(seqid.IsOther() ||
+                    seqid.IsGeneral() ||
+                    seqid.IsGenbank());
+            }
 
-            BOOST_REQUIRE(seqid.IsGi() || seqid.IsGeneral());
-
-            if (seqid.IsGi()) {
+            const CTextseq_id* txt_id = seqid.GetTextseq_Id();
+            if (CSeq_id::PreferAccessionOverGi() && txt_id) {
+                string acc = txt_id->GetAccession();
+                CTextseq_id::TVersion ver = txt_id->IsSetVersion() ?
+                    txt_id->GetVersion() : -1;
+                if (acc != last_acc || ver != last_ver) {
+                    num_ids++;
+                    last_acc = acc;
+                    last_ver = ver;
+                }
+                last_id = INVALID_GI;
+            }
+            else if (!CSeq_id::PreferAccessionOverGi() && seqid.IsGi()) {
                 TGi new_gi = seqid.GetGi();
             
                 if (new_gi != last_id) {
                         num_ids++;
                         last_id = new_gi;
                 }
+                last_acc.clear();
+                last_ver = -1;
             }
             else {
                 BOOST_REQUIRE(seqid.GetGeneral().IsSetTag());
@@ -178,6 +200,8 @@ struct CDeltaBlastTestFixture {
                     num_ids++;
                     last_id = GI_FROM(int, new_tag);
                 }
+                last_acc.clear();
+                last_ver = -1;
             }
             
         }

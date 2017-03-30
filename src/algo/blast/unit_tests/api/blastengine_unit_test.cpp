@@ -404,9 +404,20 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     BOOST_REQUIRE(second_hit->GetNamedScore("num_ident", num_ident));
     BOOST_REQUIRE_EQUAL(kNumIdent[1], num_ident);
 
-    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[0]), first_hit->GetSeq_id(1).GetGi());
-    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[1]), second_hit->GetSeq_id(1).GetGi());
-
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, first_hit->GetSeq_id(1).Which());
+        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[0]), first_hit->GetSeq_id(1).GetGi());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, second_hit->GetSeq_id(1).Which());
+        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[1]), second_hit->GetSeq_id(1).GetGi());
+    }
+    else {
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Ddbj, first_hit->GetSeq_id(1).Which());
+        BOOST_REQUIRE_EQUAL("BP722565", first_hit->GetSeq_id(1).GetDdbj().GetAccession());
+        BOOST_REQUIRE_EQUAL(1, first_hit->GetSeq_id(1).GetDdbj().GetVersion());
+        BOOST_REQUIRE_EQUAL(CSeq_id::e_Ddbj, second_hit->GetSeq_id(1).Which());
+        BOOST_REQUIRE_EQUAL("BP723807", second_hit->GetSeq_id(1).GetDdbj().GetAccession());
+        BOOST_REQUIRE_EQUAL(1, second_hit->GetSeq_id(1).GetDdbj().GetVersion());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch) 

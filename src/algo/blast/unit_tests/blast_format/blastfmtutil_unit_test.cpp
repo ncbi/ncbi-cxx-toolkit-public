@@ -124,15 +124,22 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
     
     scope->AddDataLoader(name);
     TGi gi = sequence::GetGiForAccession("NM_001256", *scope);
-    CSeq_id id;
-    id.SetGi(gi);
-    const CBioseq_Handle& handle = scope->GetBioseqHandle(id);
+    CBioseq_Handle handle;
+    if ( !CSeq_id::AvoidGi() ) {
+        CSeq_id id;
+        id.SetGi(gi);
+        handle = scope->GetBioseqHandle(id);
+    }
+    else {
+        CSeq_id id("NM_001256");
+        handle = scope->GetBioseqHandle(id);
+    }
     const CRef<CBlast_def_line_set> bdls = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdls->Get();
     ITERATE(list< CRef< CBlast_def_line > >, iter, bdl){
         const CBioseq::TId& cur_id = (*iter)->GetSeqid();
         TGi cur_gi =  FindGi(cur_id);
-        BOOST_REQUIRE (gi==cur_gi);
+        BOOST_REQUIRE (CSeq_id::AvoidGi() || gi==cur_gi);
 
         BOOST_WARN_MESSAGE((*iter)->IsSetLinks(), "Links are not set, test is inactive");
         if ((*iter)->IsSetLinks()){

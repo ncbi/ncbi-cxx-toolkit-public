@@ -40,6 +40,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
 #include <util/util_misc.hpp>
@@ -2244,7 +2245,8 @@ int CSeq_id::BaseTextScore(void) const
 {
     switch (Which()) {
     case e_not_set:                                return 83;
-    case e_Giim:    case e_Gi:                     return 20;
+    case e_Giim:                                   return 20;
+    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 20;
     case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
     case e_Local:   case e_Patent:                 return 10;
     case e_Gpipe:   case e_Named_annot_track:      return 9;
@@ -2264,7 +2266,7 @@ int CSeq_id::BaseBestRankScore(void) const
     case e_Gpipe:                                 return 68;
     case e_Patent:                                return 67;
     case e_Other:                                 return 65;
-    case e_Gi:                                    return 51;
+    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 51;
     default:                                      return 60;
     }
 }
@@ -2277,7 +2279,7 @@ int CSeq_id::BaseFastaNAScore(void) const
     case e_not_set: case e_Giim:
     case e_Pir: case e_Swissprot: case e_Prf:  return 255;
     case e_Local:                              return 230;
-    case e_Gi:                                 return 120;
+    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 120;
     case e_General:
         {
         const string& db = GetGeneral().GetDb();
@@ -2301,7 +2303,7 @@ int CSeq_id::BaseFastaAAScore(void) const
     switch (Which()) {
     case e_not_set: case e_Giim:   return 255;
     case e_Local:                  return 230;
-    case e_Gi:                     return 120;
+    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 120;
     case e_General:
         {
         const string& db = GetGeneral().GetDb();
@@ -2501,6 +2503,29 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
     case CSeq_id::e_Gi:        // TGi
         return;
     }
+}
+
+
+NCBI_PARAM_DECL(bool, SeqId, PreferAccessionOverGi);
+NCBI_PARAM_DEF_EX(bool, SeqId, PreferAccessionOverGi, false, eParam_NoThread,
+    SEQ_ID_PREFER_ACCESSION_OVER_GI);
+typedef NCBI_PARAM_TYPE(SeqId, PreferAccessionOverGi) TPreferAccessionOverGi;
+
+NCBI_PARAM_DECL(bool, SeqId, AvoidGi);
+NCBI_PARAM_DEF_EX(bool, SeqId, AvoidGi, false, eParam_NoThread,
+    SEQ_ID_AVOID_GI);
+typedef NCBI_PARAM_TYPE(SeqId, AvoidGi) TAvoidGi;
+
+
+bool CSeq_id::PreferAccessionOverGi(void)
+{
+    return TPreferAccessionOverGi::GetDefault() || AvoidGi();
+}
+
+
+bool CSeq_id::AvoidGi(void)
+{
+    return TAvoidGi::GetDefault();
 }
 
 

@@ -310,9 +310,17 @@ string GetLabel(const vector<CSeq_id_Handle>& ids)
 {
     string ret;
     CSeq_id_Handle best_id;
-    int best_score = kMax_Int;
+    int best_score = CSeq_id::kMaxScore;
+#ifdef _DEBUG
+    TGi gi = ZERO_GI;
+#endif
     ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
         CConstRef<CSeq_id> id = it->GetSeqId();
+#ifdef _DEBUG
+        if (id->IsGi()) {
+            gi = id->GetGi();
+        }
+#endif
         int score = id->TextScore();
         if ( score < best_score ) {
             best_score = score;
@@ -321,6 +329,13 @@ string GetLabel(const vector<CSeq_id_Handle>& ids)
     }
     if ( best_id ) {
         ret = GetLabel(best_id);
+#ifdef _DEBUG
+        const CTextseq_id* txt_id = best_id.GetSeqId()->GetTextseq_Id();
+        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
+            ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                << " instead of GI " << gi);
+        }
+#endif
     }
     return ret;
 }
@@ -330,9 +345,17 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
 {
     string ret;
     const CSeq_id* best_id = 0;
-    int best_score = kMax_Int;
+    int best_score = CSeq_id::kMaxScore;
+#ifdef _DEBUG
+    TGi gi = ZERO_GI;
+#endif
     ITERATE ( vector<CRef<CSeq_id> >, it, ids ) {
         const CSeq_id& id = **it;
+#ifdef _DEBUG
+        if (id.IsGi()) {
+            gi = id.GetGi();
+        }
+#endif
         int score = id.TextScore();
         if ( score < best_score ) {
             best_score = score;
@@ -341,6 +364,13 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
     }
     if ( best_id ) {
         ret = GetLabel(*best_id);
+#ifdef _DEBUG
+        const CTextseq_id* txt_id = best_id->GetTextseq_Id();
+        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
+            ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                << " instead of GI " << gi);
+        }
+#endif
     }
     return ret;
 }

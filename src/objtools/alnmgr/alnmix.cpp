@@ -245,10 +245,28 @@ CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
     CRef<CSeq_id> id1cref(&id1);
     CRef<CSeq_id> id2cref(&(const_cast<CSeq_id&>(id2)));
     if (CSeq_id::BestRank(id1cref) > CSeq_id::BestRank(id2cref)) {
+#ifdef _DEBUG
+        if (id1.IsGi()) {
+            const CTextseq_id* txt_id = id2.GetTextseq_Id();
+            if (txt_id && !txt_id->IsSetVersion()) {
+                ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                    << " instead of GI " << id1.GetGi());
+            }
+        }
+#endif
         id1.Reset();
         SerialAssign<CSeq_id>(id1, id2);
     }
-}    
+#ifdef _DEBUG
+    else if (id2.IsGi()) {
+        const CTextseq_id* txt_id = id1.GetTextseq_Id();
+        if (txt_id && !txt_id->IsSetVersion()) {
+            ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                << " instead of GI " << id2.GetGi());
+        }
+    }
+#endif
+}
 
 
 void

@@ -134,13 +134,20 @@ struct CPsiBlastTestFixture {
     {
         int num_gis = 0;
         TGi last_gi = INVALID_GI;
+        CSeq_id last_id;
         ITERATE(CSeq_align_set::Tdata, itr, sas->Get()){
             const CSeq_id& seqid = (*itr)->GetSeq_id(1);
-            TGi new_gi = seqid.GetGi();
-            if (new_gi != last_gi)
-            {
-                 num_gis++;
-                 last_gi = new_gi;
+            if ( !CSeq_id::PreferAccessionOverGi() ) {
+                TGi new_gi = seqid.GetGi();
+                if (new_gi != last_gi)
+                {
+                     num_gis++;
+                     last_gi = new_gi;
+                }
+            }
+            else if ( !seqid.Equals(last_id) ) {
+                num_gis++;
+                last_id.Assign(seqid);
             }
         }
         return num_gis;

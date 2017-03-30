@@ -2008,10 +2008,18 @@ CSeq_id_Handle CDefaultSynonymMapper::GetBestSynonym(const CSeq_id& id)
         return id_syn->second;
     }
     CSeq_id_Handle best;
-    int best_rank = kMax_Int;
+    int best_rank = CSeq_id::kMaxScore;
     CConstRef<CSynonymsSet> syn_set = m_Scope->GetSynonyms(idh);
+#ifdef _DEBUG
+    TGi gi = ZERO_GI;
+#endif
     ITERATE(CSynonymsSet, syn_it, *syn_set) {
         CSeq_id_Handle synh = syn_set->GetSeq_id_Handle(syn_it);
+#ifdef _DEBUG
+        if (synh.IsGi()) {
+            gi = synh.GetGi();
+        }
+#endif
         int rank = synh.GetSeqId()->BestRankScore();
         if (rank < best_rank) {
             best = synh;
@@ -2026,6 +2034,13 @@ CSeq_id_Handle CDefaultSynonymMapper::GetBestSynonym(const CSeq_id& id)
     ITERATE(CSynonymsSet, syn_it, *syn_set) {
         m_SynMap[syn_set->GetSeq_id_Handle(syn_it)] = best;
     }
+#ifdef _DEBUG
+    const CTextseq_id* txt_id = best.GetSeqId()->GetTextseq_Id();
+    if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
+        ERR_POST("Using version-less accession " << txt_id->GetAccession()
+            << " instead of GI " << gi);
+    }
+#endif
     return best;
 }
 

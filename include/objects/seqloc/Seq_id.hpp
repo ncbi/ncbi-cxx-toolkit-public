@@ -540,6 +540,10 @@ public:
     /// All rankings give a slight bonus to accessions that carry
     /// versions.
 
+    enum EMaxScore {
+        kMaxScore = 99999
+    };
+
     int AdjustScore       (int base_score) const;
     int BaseTextScore     (void)           const;
     int BaseBestRankScore (void)           const;
@@ -577,6 +581,13 @@ public:
     /// Collect partially matching textseq-ids.
     /// @sa GetMatchingIds
     void GetMatchingTextseqIds(TSeqIdHandles& matches) const;
+
+    /// Check if the option to prefer accession.version over GI is enabled
+    /// (SeqId/PreferAccessionOverGi or SEQ_ID_PREFER_ACCESSION_OVER_GI).
+    static bool PreferAccessionOverGi(void);
+    /// Check if the option to avoid GI ids is enabled
+    /// (SeqId/AvoidGi or SEQ_ID_AVOID_GI).
+    static bool AvoidGi(void);
 
 private:
     // returns next type if determined along the way

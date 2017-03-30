@@ -415,7 +415,12 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
-    BOOST_REQUIRE(*(use_these.begin()) == "gi:158292535");
+    if ( !CSeq_id::PreferAccessionOverGi() ) {
+        BOOST_REQUIRE(*(use_these.begin()) == "gi:158292535");
+    }
+    else {
+        BOOST_REQUIRE(*(use_these.begin()) == "seqid:XP_558472.3");
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

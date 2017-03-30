@@ -177,8 +177,16 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq, CSeq_id::E_Choice choice)
 {
     const CBioseq::TId& seq_id_ls = bioseq.GetId();
     CConstRef<CSeq_id> best_seq_id;
-    int best_score = 99999;
+    int best_score = CSeq_id::kMaxScore;
+#ifdef _DEBUG
+    TGi gi = ZERO_GI;
+#endif
     ITERATE (CBioseq::TId, it, seq_id_ls) {
+#ifdef _DEBUG
+        if ((*it)->IsGi()) {
+            gi = (*it)->GetGi();
+        }
+#endif
         if (choice == (*it)->Which()) {
             return *it;
         } else if (best_score > (*it)->BaseBestRankScore()) {
@@ -186,6 +194,13 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq, CSeq_id::E_Choice choice)
             best_score = (*it)->BaseBestRankScore();
         }
     }
+#ifdef _DEBUG
+        const CTextseq_id* txt_id = best_seq_id->GetTextseq_Id();
+        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
+            ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                << " instead of GI " << gi);
+        }
+#endif
     return best_seq_id;  
 }
 

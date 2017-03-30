@@ -379,13 +379,13 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
 
     switch ( (type & eGetId_TypeMask) ) {
     case eGetId_ForceGi:
-        {{
+        if ( !CSeq_id::AvoidGi() ) {
             ITERATE (CScope::TIds, iter, ids) {
                 if (iter->IsGi()) {
                     return *iter;
                 }
             }
-        }}
+        }
         if ((type & eGetId_ThrowOnError) != 0) {
             NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
                     "sequence::GetId(): gi seq-id not found in the list");
@@ -490,7 +490,8 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
             ///          note that in the C Toolkit, the
             ///          canonical ID appears to be gnl|TRACE|<tid>.
             /// - Short Read Archive: gnl|SRA|...
-            if (idh.IsGi()) return idh;
+            if (!CSeq_id::PreferAccessionOverGi()  &&
+                idh.IsGi()) return idh;
             if (idh.Which() == CSeq_id::e_General) {
                 CConstRef<CSeq_id> id = idh.GetSeqId();
                 _ASSERT(id  &&  id->IsGeneral());
@@ -548,6 +549,8 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
 
 TGi GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
 {
+    if ( CSeq_id::AvoidGi() ) return ZERO_GI;
+
     // Clear throw-on-error flag
     EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
     try {
@@ -576,6 +579,8 @@ TGi GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
 
 TGi GetGiForId(const objects::CSeq_id& id, CScope& scope, EGetIdType flags)
 {
+    if ( CSeq_id::AvoidGi() ) return ZERO_GI;
+
     // Clear throw-on-error flag
     EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
     CSeq_id_Handle idh = GetId(id, scope, get_id_flags);

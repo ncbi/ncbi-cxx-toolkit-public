@@ -208,7 +208,7 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq)
 {
     const CBioseq::TId& seq_id_ls = bioseq.GetId();
     CConstRef<CSeq_id> best_seq_id;
-    int best_score = 99999;
+    int best_score = CSeq_id::kMaxScore;
     ITERATE (CBioseq::TId, it, seq_id_ls) {
         if (IsAccession(**it)) {
             return *it;
