@@ -1340,7 +1340,7 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
                                                 &m_CurrentRow.m_RawData);
 
         m_RawDataAvailable = true;
-        return *m_DataSource.m_Stream;
+        return bool(*m_DataSource.m_Stream);
     }
 }
 
