@@ -149,7 +149,8 @@ inline
 CFlatItem::CFlatItem(CBioseqContext* ctx) :
     m_Object(0),
     m_Context(ctx),
-    m_Skip(false)
+    m_Skip(false),
+    m_External(false)
 {
 }
 
