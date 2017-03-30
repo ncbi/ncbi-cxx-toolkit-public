@@ -60,7 +60,7 @@ char* strdup(const char* str);
 
 #elif defined(NCBI_COMPILER_MSVC)
 #  define  strdup      _strdup
-#ndif /*HAVE_STRDUP*/
+#endif /*HAVE_STRDUP*/
 
 
 #ifndef HAVE_STRNDUP
