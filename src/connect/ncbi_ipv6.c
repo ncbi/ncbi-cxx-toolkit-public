@@ -552,7 +552,7 @@ static const char* x_DNSToIPv4(unsigned int* addr,
             return 0/*failure*/;
         }
         assert(e <= end);
-        *--ptr = d;
+        *--ptr = (unsigned char) d;
         str = ++e;
     }
     *addr = temp;
@@ -579,7 +579,7 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
         assert(str <= end);
         if (!ptr  ||  *str++ != '.')
             return 0/*failure*/;
-        val = ptr - xdigits;
+        val = (unsigned char)(ptr - xdigits);
         if (n & 1) {
             val   <<= 4;
             *dst-- |= val;
