@@ -39,7 +39,8 @@ APP_PROJ = example_value_convert \
            test_table_printer \
            test_random \
            test_timsort \
-		   test_metaphone
+           test_metaphone \
+           test_row_reader
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map
