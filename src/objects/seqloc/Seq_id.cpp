@@ -754,7 +754,8 @@ struct SAccGuide : public CObject
         : count(0)
         { x_Load(lr); }
 
-    void AddRule(const CTempString& rule);
+    void AddRule(const CTempString& rule, TAccInfo& prev_type,
+                 CTempString& prev_type_name);
     TAccInfo Find(TFormatCode fmt, const CTempString& acc_or_pfx,
                   string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
@@ -770,7 +771,8 @@ private:
     void x_InitGeneral(void);
 };
 
-void SAccGuide::AddRule(const CTempString& rule)
+void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
+                        CTempString& prev_type_name)
 {
     CTempString         tmp1, tmp2;
     vector<CTempStringEx> tokens;
@@ -808,12 +810,18 @@ void SAccGuide::AddRule(const CTempString& rule)
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
             if (old != CSeq_id::eAcc_unknown) {
+                string old_name;
+                if (old == prev_type) {
+                    old_name = prev_type_name;
+                } else {
+                    old_name = "0x" + NStr::UIntToString(old, 16);
+                }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << tokens[1]
-                           << " from 0x" << hex << old << key_used
+                           << " from " << old_name << key_used
                            << " to unrecognized accession type " << tokens[2]);
             } else {
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
@@ -821,7 +829,8 @@ void SAccGuide::AddRule(const CTempString& rule)
                            << " for " << tokens[1]);
             }
         } else {
-            TAccInfo value = it->second;
+            prev_type_name = it->first;
+            TAccInfo value = prev_type = it->second;
             if (tokens.size() == 4) {
                 value = TAccInfo(value | CSeq_id::fAcc_specials);
             }
@@ -848,20 +857,27 @@ void SAccGuide::AddRule(const CTempString& rule)
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
             if (old) {
+                string old_name;
+                if (old == prev_type) {
+                    old_name = prev_type_name;
+                } else {
+                    old_name = "0x" + NStr::UIntToString(old, 16);
+                }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
                 ERR_POST_X(4, Warning << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for special case " << tokens[1]
-                           << "; falling back to " << old << key_used);
+                           << "; falling back to " << old_name << key_used);
             } else {
                 ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for stray(!) special case " << tokens[1]);
             }
         } else {
-            TAccInfo value = it->second;
+            prev_type_name = it->first;
+            TAccInfo value = prev_type = it->second;
             if (pos2 == NPOS) {
                 rules[fmt].specials[tokens[1]] = TPair(tokens[1], value);
             } else {
@@ -882,13 +898,20 @@ void SAccGuide::AddRule(const CTempString& rule)
                            << ": unrecognized accession type " << tokens[2]
                            << " for " << key);
             } else {
+                string old_name;
+                if (it2->second == prev_type) {
+                    old_name = prev_type_name;
+                } else {
+                    old_name = "0x" + NStr::UIntToString(it2->second, 16);
+                }
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
-                           << ": ignoring refinement of " << key
-                           << " from 0x" << hex << it2->second
-                           << " to unrecognized accession type " << tokens[2]);
+                           << ": ignoring refinement of " << key << " from "
+                           << old_name << " to unrecognized accession type "
+                           << tokens[2]);
             }
         } else {
-            general[key] = it->second;
+            prev_type_name = it->first;
+            general[key] = prev_type = it->second;
         }
     } else {
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
@@ -966,8 +989,10 @@ SAccGuide::SAccGuide(void)
         }
         static const unsigned int kNumBuiltInRules
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
+        TAccInfo    prev_type = CSeq_id::eAcc_unknown;
+        CTempString prev_type_name;
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
-            AddRule(kBuiltInGuide[i]);
+            AddRule(kBuiltInGuide[i], prev_type, prev_type_name);
         }
     }
     x_InitGeneral();
@@ -996,8 +1021,10 @@ void SAccGuide::x_Load(const string& filename)
 
 void SAccGuide::x_Load(ILineReader& in)
 {
+    TAccInfo    prev_type = CSeq_id::eAcc_unknown;
+    CTempString prev_type_name;
     do {
-        AddRule(*++in);
+        AddRule(*++in, prev_type, prev_type_name);
     } while ( !in.AtEOF() );
 }
 
