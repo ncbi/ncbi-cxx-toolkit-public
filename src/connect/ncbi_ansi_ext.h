@@ -58,7 +58,9 @@ extern "C" {
 NCBI_XCONNECT_EXPORT
 char* strdup(const char* str);
 
-#endif /*HAVE_STRDUP*/
+#elif defined(NCBI_COMPILER_MSVC)
+#  define  strdup      _strdup
+#ndif /*HAVE_STRDUP*/
 
 
 #ifndef HAVE_STRNDUP
