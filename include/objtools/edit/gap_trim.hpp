@@ -1,5 +1,5 @@
-#ifndef CLEANUP___GAP_TRIM__HPP
-#define CLEANUP___GAP_TRIM__HPP
+#ifndef EDIT___GAP_TRIM__HPP
+#define EDIT___GAP_TRIM__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -33,9 +33,13 @@
  *   .......
  *
  */
+
+#include <corelib/ncbistd.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +59,9 @@ class CBioseq_set_Handle;
 class CSeq_annot_Handle;
 class CSeq_feat_Handle;
 
-class NCBI_CLEANUP_EXPORT CFeatGapInfo : public CObject {
+BEGIN_SCOPE(edit)
+
+class NCBI_XOBJEDIT_EXPORT CFeatGapInfo : public CObject {
 public:
     CFeatGapInfo() {};
     CFeatGapInfo(CSeq_feat_Handle sf);
@@ -101,9 +107,11 @@ protected:
 };
 
 typedef vector<CRef<CFeatGapInfo> > TGappedFeatList;
-NCBI_CLEANUP_EXPORT TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope);
+NCBI_XOBJEDIT_EXPORT 
+TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope);
 
+END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* CLEANUP___GAP_TRIM__HPP */
+#endif  /* EDIT___GAP_TRIM__HPP */

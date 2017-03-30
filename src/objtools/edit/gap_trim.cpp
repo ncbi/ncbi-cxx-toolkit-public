@@ -32,18 +32,18 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objtools/cleanup/gap_trim.hpp>
+#include <objtools/edit/gap_trim.hpp>
 #include <objtools/edit/loc_edit.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
-
+#include <objects/seqfeat/Seq_feat.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
+BEGIN_SCOPE(edit)
 
 CFeatGapInfo::CFeatGapInfo(CSeq_feat_Handle sf)
 {
@@ -212,9 +212,6 @@ void CFeatGapInfo::Trim(CSeq_loc& loc, bool make_partial, CScope& scope)
         if (make_partial)
             options |= edit::eSplitLocOption_make_partial;
         edit::SplitLocationForGap(loc, *loc2, start, stop, loc.GetId(), options);
-        if (loc.Which() != CSeq_loc::e_not_set) {
-            TSeqPos new_len = sequence::GetLength(loc, &scope);
-        }
     }
 }
 
@@ -289,7 +286,6 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
     }
 
     if (trim && Trimmable()) {
-        TSeqPos left_trim = 0, right_trim = 0;
         Trim(new_feat->SetLocation(), make_partial, m_Feature.GetScope());
         new_feat->SetPartial(new_feat->GetLocation().IsPartialStart(objects::eExtreme_Positional) || new_feat->GetLocation().IsPartialStop(objects::eExtreme_Positional));
         if (new_feat->GetData().IsCdregion()) {
@@ -399,6 +395,6 @@ TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope)
 }
 
 
-
+END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

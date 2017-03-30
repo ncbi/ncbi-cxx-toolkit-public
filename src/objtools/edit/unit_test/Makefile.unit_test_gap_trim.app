@@ -5,10 +5,10 @@ SRC = unit_test_gap_trim
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xcleanup xunittestutil xobjutil valid taxon3 submit xconnect \
-      xregexp $(PCRE_LIB) $(COMPRESS_LIBS) test_boost $(SOBJMGR_LIBS)
+LIB  = $(OBJEDIT_LIBS) xunittestutil $(XFORMAT_LIBS) xalnmgr xobjutil \
+       tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 

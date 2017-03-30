@@ -63,7 +63,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/misc/sequence_macros.hpp>
-#include <objtools/cleanup/gap_trim.hpp>
+#include <objtools/edit/gap_trim.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <serial/objistrasn.hpp>
@@ -75,6 +75,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 using namespace unit_test_util;
+using namespace edit;
 
 // Needed under windows for some reason.
 #ifdef BOOST_NO_EXCEPTIONS
@@ -88,7 +89,7 @@ namespace boost
 
 #endif
 
-TGappedFeatList TryOneCase(TSeqPos start, TSeqPos stop, bool is_minus = false)
+edit::TGappedFeatList TryOneCase(TSeqPos start, TSeqPos stop, bool is_minus = false)
 {
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
 
@@ -101,13 +102,13 @@ TGappedFeatList TryOneCase(TSeqPos start, TSeqPos stop, bool is_minus = false)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     CFeat_CI f(seh);
 
-    TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     return gapped_list;
 }
 
 void TestTrimMiscOnRight(TSeqPos start, TSeqPos stop, bool is_minus)
 {
-    TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
+    edit::TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -126,7 +127,7 @@ void TestTrimMiscOnRight(TSeqPos start, TSeqPos stop, bool is_minus)
 
 void TestTrimMiscOnLeft(TSeqPos start, TSeqPos stop, bool is_minus)
 {
-    TGappedFeatList gapped_list = TryOneCase(17, 33, is_minus);
+    edit::TGappedFeatList gapped_list = TryOneCase(17, 33, is_minus);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -145,7 +146,7 @@ void TestTrimMiscOnLeft(TSeqPos start, TSeqPos stop, bool is_minus)
 
 void TestSplitMisc(TSeqPos start, TSeqPos stop, bool is_minus)
 {
-    TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
+    edit::TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -168,7 +169,7 @@ void TestSplitMisc(TSeqPos start, TSeqPos stop, bool is_minus)
 
 void TestRemoveMisc(TSeqPos start, TSeqPos stop, bool is_minus)
 {
-    TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
+    edit::TGappedFeatList gapped_list = TryOneCase(start, stop, is_minus);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -184,7 +185,7 @@ void TestRemoveMisc(TSeqPos start, TSeqPos stop, bool is_minus)
 BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMisc)
 {
     // no gap
-    TGappedFeatList gapped_list = TryOneCase(0, 5);
+    edit::TGappedFeatList gapped_list = TryOneCase(0, 5);
     BOOST_CHECK_EQUAL(gapped_list.size(), 0);
     gapped_list = TryOneCase(30, 34);
     BOOST_CHECK_EQUAL(gapped_list.size(), 0);
@@ -211,7 +212,7 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMisc)
 }
 
 
-TGappedFeatList TryOneCDSCase(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFrame frame_one)
+edit::TGappedFeatList TryOneCDSCase(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFrame frame_one)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
@@ -238,7 +239,7 @@ TGappedFeatList TryOneCDSCase(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdr
     unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
 
     CFeat_CI f(seh);
-    TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     return gapped_list;
 }
 
@@ -262,7 +263,7 @@ void CheckQual(const CSeq_feat& feat, const string& qual, const string& val)
 
 void TestSplitCDS(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFrame frame_one, CCdregion::TFrame frame_two)
 {
-    TGappedFeatList gapped_list = TryOneCDSCase(start, stop, gap_len, frame_one);
+    edit::TGappedFeatList gapped_list = TryOneCDSCase(start, stop, gap_len, frame_one);
 
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
@@ -292,7 +293,7 @@ void TestSplitCDS(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFram
 
 void TestTrimCDS(TSeqPos start, TSeqPos stop, CCdregion::TFrame frame_before, CCdregion::TFrame frame_after)
 {
-    TGappedFeatList gapped_list = TryOneCDSCase(start, stop, 10, frame_before);
+    edit::TGappedFeatList gapped_list = TryOneCDSCase(start, stop, 10, frame_before);
 
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
@@ -381,7 +382,7 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
     unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
 
     CFeat_CI f(seh);
-    TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);

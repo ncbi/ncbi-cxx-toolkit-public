@@ -188,10 +188,6 @@ void CFlatFileGenerator::Generate
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-    if ( m_Ctx->GetLocation() && !m_Ctx->GetLocation()->IsWhole()) {
-        m_Ctx->SetConfig().SetStyle(CFlatFileConfig::eStyle_Master);
-    }
-
     if ( m_Ctx->GetConfig().BasicCleanup() )
     {
 
