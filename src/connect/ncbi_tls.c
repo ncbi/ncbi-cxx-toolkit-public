@@ -91,7 +91,7 @@ extern SOCKSSL NcbiSetupTls(void)
                 s_Setup = 0/*unknown provider*/;
             }
         } else if (!(s_Setup = NcbiSetupDefaultTls))
-            CORE_LOGF(eLOG_Critical, "No TLS support included in this build");
+            CORE_LOG(eLOG_Critical, "No TLS support included in this build");
     }
     return s_Setup ? s_Setup() : 0;
 }
