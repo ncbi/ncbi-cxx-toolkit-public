@@ -123,8 +123,6 @@ public:
         eFormat_DDBJ,
         eFormat_GBSeq,
         eFormat_FTable,
-        eFormat_GFF, // version 2, w/GTF
-        eFormat_GFF3,
         eFormat_FeaturesOnly,
         eFormat_SAM,
         eFormat_AGP,
@@ -410,8 +408,6 @@ public:
     bool IsFormatDDBJ   (void) const { return m_Format == eFormat_DDBJ;    }
     bool IsFormatGBSeq  (void) const { return m_Format == eFormat_GBSeq;   }
     bool IsFormatFTable (void) const { return m_Format == eFormat_FTable;  }
-    bool IsFormatGFF    (void) const { return m_Format == eFormat_GFF;     }
-    bool IsFormatGFF3   (void) const { return m_Format == eFormat_GFF3;    }
 	bool IsFormatAGP    (void) const { return m_Format == eFormat_AGP;     }
 	bool IsFormatLite   (void) const { return m_Format == eFormat_Lite;    }
 
@@ -422,8 +418,6 @@ public:
     void SetFormatDDBJ   (void) { m_Format = eFormat_DDBJ;     }
     void SetFormatGBSeq  (void) { m_Format = eFormat_GBSeq;    }
     void SetFormatFTable (void) { m_Format = eFormat_FTable;   }
-    void SetFormatGFF    (void) { m_Format = eFormat_GFF;      }
-    void SetFormatGFF3   (void) { m_Format = eFormat_GFF3;     }
     void SetFormatAGP    (void) { m_Format = eFormat_AGP;      }
     void SetFormatLite   (void) { m_Format = eFormat_Lite;     }
 

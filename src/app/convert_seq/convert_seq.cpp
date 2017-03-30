@@ -127,7 +127,7 @@ void CConversionApp::Init(void)
     arg_desc->SetConstraint
         ("outfmt", &(*new CArgAllow_Strings,
                      "asn", "asnb", "xml", "ddbj", "embl", "genbank", "fasta",
-                     "gff", "gff3", "tbl", "gbseq/xml", "agp"));
+                     "tbl", "gbseq/xml", "agp"));
     arg_desc->AddOptionalKey
         ("outflags", "Flags",
          "Format-specific output flags, in C-style decimal, hex, or octal"
@@ -206,8 +206,6 @@ static const TFormatElem sc_FormatArray[] = {
     TFormatElem("embl",      CFlatFileConfig::eFormat_EMBL),
     TFormatElem("gbseq/xml", CFlatFileConfig::eFormat_GBSeq),
     TFormatElem("genbank",   CFlatFileConfig::eFormat_GenBank),
-    TFormatElem("gff",       CFlatFileConfig::eFormat_GFF),
-    TFormatElem("gff3",      CFlatFileConfig::eFormat_GFF3),
     TFormatElem("tbl",       CFlatFileConfig::eFormat_FTable)
 };
 typedef CStaticArrayMap<const char*, TFFFormat, PNocase_CStr> TFormatMap;
@@ -341,11 +339,6 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
                               CFlatFileConfig::fViewAll);
         CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(entry);
         ff.Generate(seh, out);
-        if (outfmt == "gff3") {
-            out << "##FASTA" << endl;
-            CFastaOstream fasta_out(out);
-            fasta_out.Write(seh);
-        }
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
         if (args["outflags"]) {

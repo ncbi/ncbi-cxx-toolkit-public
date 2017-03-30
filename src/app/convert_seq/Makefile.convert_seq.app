@@ -13,4 +13,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects
 
-WATCHERS = ucko drozdov
+WATCHERS = ucko drozdov foleyjp

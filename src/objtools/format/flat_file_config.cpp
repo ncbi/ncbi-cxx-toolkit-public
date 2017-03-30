@@ -315,9 +315,8 @@ CFlatFileConfig::CFlatFileConfig(
     m_pCanceledCallback(pCanceledCallback),
     m_BasicCleanup(basicCleanup), m_Custom(custom)
 {
-    // GFF/GFF3 and FTable always require master style
-    if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
-        m_Format == eFormat_FTable) {
+    // FTable always require master style
+    if (m_Format == eFormat_FTable) {
         m_Style = eStyle_Master;
     }
 }
