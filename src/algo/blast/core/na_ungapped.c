@@ -2071,9 +2071,6 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
                     /* if the word hit list for the current word hit is full,
                        then extend hits from this list */
                     if (word_hits->num[index] >= word_hits->array_size) {
-                        Int4 range = word_hits->pair_arrays[index][
-                              word_hits->num[index] - 1].qs_offsets.s_off +
-                            lut_word_length;
                         hits_extended += BlastNaExtendJumper(
                                                 word_hits->pair_arrays[index],
                                                 word_hits->num[index],
@@ -2084,7 +2081,7 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
                                                 query_info,
                                                 gap_align,
                                                 hsp_list,
-                                                range,
+                                                scan_range[2] + lut_word_length,
                                                 s_index);
 
                         word_hits->num[index] = 0;
@@ -2124,9 +2121,6 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
         /* extend word hits from all lists */
         for (i = 0;i < word_hits->num_arrays;i++) {
             if (word_hits->num[i] > 0) {
-                Int4 range = word_hits->pair_arrays[i][
-                                word_hits->num[i] - 1].qs_offsets.s_off +
-                    lut_word_length;
                 hits_extended += BlastNaExtendJumper(word_hits->pair_arrays[i],
                                                  word_hits->num[i],
                                                  word_params, score_params,
@@ -2136,7 +2130,7 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
                                                  query_info,
                                                  gap_align,
                                                  hsp_list,
-                                                 range,
+                                                 scan_range[2] + lut_word_length,
                                                  s_index);
                 
             }
