@@ -372,11 +372,14 @@ bool CGff3Reader::xUpdateAnnotCds(
     for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
             ++it) {
         string parentId = *it;
-
+        bool parentIsGene = false;
         //update parent location:
         IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(parentId);
         if (featIt != m_MapIdToFeature.end()) {
             CRef<CSeq_feat> pParent = featIt->second;
+            if (pParent->GetData().IsGene()) {
+                parentIsGene = true;
+            }
             if (!record.UpdateFeature(m_iFlags, pParent)) {
                 return false;
             }
@@ -390,7 +393,7 @@ bool CGff3Reader::xUpdateAnnotCds(
 
         //generate applicable CDS ID:
         string siblingId("cds");
-        if (!record.GetAttribute("ID", siblingId)  ||  (m_iFlags & CGff3Reader::fEukaryoteMode)) {
+        if (!record.GetAttribute("ID", siblingId)  ||  !parentIsGene) {
             siblingId = string("cds:") + parentId;
         }
         impliedCdsFeats[siblingId] = parentId;
