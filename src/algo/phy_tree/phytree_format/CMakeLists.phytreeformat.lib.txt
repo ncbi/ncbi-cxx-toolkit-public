@@ -9,5 +9,5 @@ add_dependencies(phytree_format
 )
 
 target_link_libraries(phytree_format
-    taxon1 xalgophytree
+    align_format xalgophytree
 )
