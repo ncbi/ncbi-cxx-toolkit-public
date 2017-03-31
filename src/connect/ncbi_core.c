@@ -41,21 +41,12 @@
 #  include <unistd.h>
 #endif /*NCBI_OS_UNIX*/
 
-#if defined(NCBI_CXX_TOOLKIT)  &&  defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
-#  if defined(NCBI_OS_MSWIN)
-#    define WIN32_LEAN_AND_MEAN
-#    include <windows.h>
-#    define NCBI_WIN32_THREADS
-#  elif defined(NCBI_OS_UNIX)
-#    include <pthread.h>
-#    define NCBI_POSIX_THREADS
-#  else
-#    define NCBI_NO_THREADS
-#  endif /*NCBI_OS*/
-#else
-#  define   NCBI_NO_THREADS
-#endif /*NCBI_CXX_TOOLKT && _MT && !NCBI_WITHOUT_MT*/
-
+#if   defined(NCBI_POSIX_THREADS)
+#  include <pthread.h>
+#elif defined(NCBI_WIN32_THREADS)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#endif
 
 
 /******************************************************************************
