@@ -82,6 +82,7 @@ NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE);
 NCBI_PARAM_DECL(string, GENBANK, ID2_PROCESSOR);
 NCBI_PARAM_DECL(bool, GENBANK, VDB_WGS);
+NCBI_PARAM_DECL(bool, GENBANK, VDB_SNP);
 
 #ifdef _DEBUG
 # define DEFAULT_DEBUG_LEVEL CId2ReaderBase::eTraceError
@@ -99,6 +100,8 @@ NCBI_PARAM_DEF_EX(string, GENBANK, ID2_PROCESSOR, "",
                   eParam_NoThread, GENBANK_ID2_PROCESSOR);
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_WGS, true,
                   eParam_NoThread, GENBANK_VDB_WGS);
+NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, false,
+                  eParam_NoThread, GENBANK_VDB_SNP);
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
@@ -1623,6 +1626,10 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
             if ( NCBI_PARAM_TYPE(GENBANK, VDB_WGS)::GetDefault() ) {
                 // enable VDB-based WGS sequences
                 param->SetValue().push_back("vdb-wgs");
+            }
+            if ( NCBI_PARAM_TYPE(GENBANK, VDB_SNP)::GetDefault() ) {
+                // enable VDB-based SNP sequences
+                param->SetValue().push_back("vdb-snp");
             }
             request.SetParams().Set().push_back(param);
         }
