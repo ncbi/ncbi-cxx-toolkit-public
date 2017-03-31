@@ -1007,15 +1007,17 @@ CID2SNPProcessor_Impl::ProcessPacket(CID2SNPProcessorContext* context,
 {
     CRef<CID2SNPProcessorPacketContext> ret(new CID2SNPProcessorPacketContext);
     ERASE_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
+        // init request can come without serial number
+        if ( (*it)->GetRequest().IsInit() ) {
+            InitContext(context->m_Context, **it);
+            continue;
+        }
         if ( !(*it)->IsSetSerial_number() ) {
             // cannot process requests with no serial number
             continue;
         }
         EProcessStatus status = eNotProcessed;
         switch ( (*it)->GetRequest().Which() ) {
-        case CID2_Request::TRequest::e_Init:
-            InitContext(context->m_Context, **it);
-            break;
         case CID2_Request::TRequest::e_Get_blob_id:
             status = x_ProcessGetBlobId(context->m_Context, *ret, replies, **it,
                                         (*it)->SetRequest().SetGet_blob_id());
