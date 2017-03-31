@@ -591,7 +591,6 @@
 1.2.7.10	Oxalate oxidoreductase
 1.2.7.11	2-oxoacid oxidoreductase (ferredoxin)
 1.2.98.1	Formaldehyde dismutase
-1.2.99.2	Carbon-monoxide dehydrogenase (acceptor)
 1.2.99.5	Formylmethanofuran dehydrogenase
 1.2.99.6	Carboxylate reductase
 1.2.99.7	Aldehyde dehydrogenase (FAD-independent)
@@ -1021,7 +1020,6 @@
 1.8.98.2	Sulfiredoxin
 1.8.98.3	Sulfite reductase (coenzyme F420)
 1.8.99.2	Adenylyl-sulfate reductase
-1.8.99.3	Hydrogensulfite reductase
 1.8.99.5	Dissimilatory sulfite reductase
 1.9.3.1	Cytochrome-c oxidase
 1.9.6.1	Nitrate reductase (cytochrome)
@@ -1626,7 +1624,6 @@
 1.14.99.29	Deoxyhypusine monooxygenase
 1.14.99.34	Monoprenyl isoflavone epoxidase
 1.14.99.35	Thiophene-2-carbonyl-CoA monooxygenase
-1.14.99.36	Beta-carotene 15,15'-monooxygenase
 1.14.99.37	Taxadiene 5-alpha-hydroxylase
 1.14.99.38	Cholesterol 25-hydroxylase
 1.14.99.39	Ammonia monooxygenase
@@ -1681,7 +1678,6 @@
 1.17.7.3	(E)-4-hydroxy-3-methylbut-2-enyl-diphosphate synthase (flavodoxin)
 1.17.7.4	4-hydroxy-3-methylbut-2-enyl diphosphate reductase
 1.17.8.1	Hydroxysqualene dehydroxylase
-1.17.98.1	Bile-acid 7-alpha-dehydroxylase
 1.17.98.2	Bacteriochlorophyllide c C-7(1)-hydroxylase
 1.17.99.1	4-methylphenol dehydrogenase (hydroxylating)
 1.17.99.2	Ethylbenzene hydroxylase
@@ -2237,7 +2233,6 @@
 2.3.1.151	2,3',4,6-tetrahydroxybenzophenone synthase
 2.3.1.152	Alcohol O-cinnamoyltransferase
 2.3.1.153	Anthocyanin 5-(6'''-hydroxycinnamoyltransferase)
-2.3.1.154	Propionyl-CoA C(2)-trimethyltridecanoyltransferase
 2.3.1.155	Acetyl-CoA C-myristoyltransferase
 2.3.1.156	Phloroisovalerophenone synthase
 2.3.1.157	Glucosamine-1-phosphate N-acetyltransferase
@@ -2438,7 +2433,6 @@
 2.4.1.41	Polypeptide N-acetylgalactosaminyltransferase
 2.4.1.43	Polygalacturonate 4-alpha-galacturonosyltransferase
 2.4.1.44	Lipopolysaccharide 3-alpha-galactosyltransferase
-2.4.1.45	2-hydroxyacylsphingosine 1-beta-galactosyltransferase
 2.4.1.46	Monogalactosyldiacylglycerol synthase
 2.4.1.47	N-acylsphingosine galactosyltransferase
 2.4.1.48	Heteroglycan alpha-mannosyltransferase
@@ -2530,13 +2524,11 @@
 2.4.1.153	UDP-N-acetylglucosamine--dolichyl-phosphate N-acetylglucosaminyltransferase
 2.4.1.155	Alpha-1,6-mannosyl-glycoprotein 6-beta-N-acetylglucosaminyltransferase
 2.4.1.156	Indolylacetyl-myo-inositol galactosyltransferase
-2.4.1.157	1,2-diacylglycerol 3-glucosyltransferase
 2.4.1.158	13-hydroxydocosanoate 13-beta-glucosyltransferase
 2.4.1.159	Flavonol-3-O-glucoside L-rhamnosyltransferase
 2.4.1.160	Pyridoxine 5'-O-beta-D-glucosyltransferase
 2.4.1.161	Oligosaccharide 4-alpha-D-glucosyltransferase
 2.4.1.162	Aldose beta-D-fructosyltransferase
-2.4.1.163	Beta-galactosyl-N-acetylglucosaminylgalactosylglucosyl-ceramide beta-1,3-acetylglucosaminyltransferase
 2.4.1.164	Galactosyl-N-acetylglucosaminylgalactosylglucosyl-ceramide beta-1,6-N-acetylglucosaminyltransferase
 2.4.1.165	N-acetylneuraminylgalactosylglucosylceramide beta-1,4-N-acetylgalactosaminyltransferase
 2.4.1.166	Raffinose--raffinose alpha-galactosyltransferase
@@ -2675,7 +2667,6 @@
 2.4.1.304	UDP-Gal:alpha-D-GlcNAc-diphosphoundecaprenol beta-1,4-galactosyltransferase
 2.4.1.305	UDP-Glc:alpha-D-GlcNAc-glucosaminyl-diphosphoundecaprenol beta-1,3-glucosyltransferase
 2.4.1.306	UDP-GalNAc:alpha-D-GalNAc-diphosphoundecaprenol alpha-1,3-N-acetylgalactosaminyltransferase
-2.4.1.307	UDP-Gal:alpha-D-GalNAc-1,3-alpha-D-GalNAc-diphosphoundecaprenol beta-1,3-galactosyltransferase
 2.4.1.308	GDP-Fuc:beta-D-Gal-1,3-alpha-D-GalNAc-1,3-alpha-GalNAc-diphosphoundecaprenol alpha-1,2-fucosyltransferase
 2.4.1.309	UDP-Gal:alpha-L-Fuc-1,2-beta-Gal-1,3-alpha-GalNAc-1,3-alpha-GalNAc-diphosphoundecaprenol alpha-1,3-galactosyltransferase
 2.4.1.310	Vancomycin aglycone glucosyltransferase
@@ -2779,7 +2770,6 @@
 2.4.99.8	Alpha-N-acetylneuraminate alpha-2,8-sialyltransferase
 2.4.99.9	Lactosylceramide alpha-2,3-sialyltransferase
 2.4.99.10	Neolactotetraosylceramide alpha-2,3-sialyltransferase
-2.4.99.11	Lactosylceramide alpha-2,6-N-sialyltransferase
 2.4.99.12	Lipid IV(A) 3-deoxy-D-manno-octulosonic acid transferase
 2.4.99.13	(Kdo)-lipid IV(A) 3-deoxy-D-manno-octulosonic acid transferase
 2.4.99.14	(Kdo)(2)-lipid IV(A) (2-8) 3-deoxy-D-manno-octulosonic acid transferase
@@ -2979,7 +2969,6 @@
 2.6.1.65	N(6)-acetyl-beta-lysine transaminase
 2.6.1.66	Valine--pyruvate transaminase
 2.6.1.67	2-aminohexanoate transaminase
-2.6.1.68	Ornithine(lysine) transaminase
 2.6.1.70	Aspartate--phenylpyruvate transaminase
 2.6.1.71	Lysine--pyruvate 6-transaminase
 2.6.1.72	D-4-hydroxyphenylglycine transaminase
@@ -3742,7 +3731,7 @@
 3.1.3.100	Thiamine phosphate phosphatase
 3.1.3.101	Validoxylamine A 7'-phosphate phosphatase
 3.1.3.102	FMN hydrolase
-3.1.3.103	3-deoxy-D-glycero-D-galacto-nononate 9-phosphatase
+3.1.3.103	3-deoxy-D-glycero-D-galacto-nonulopyranosonate 9-phosphatase
 3.1.3.104	5-amino-6-(5-phospho-D-ribitylamino)uracil phosphatase
 3.1.4.1	Phosphodiesterase I
 3.1.4.2	Glycerophosphocholine phosphodiesterase
@@ -4081,7 +4070,6 @@
 3.3.2.1	Isochorismatase
 3.3.2.2	Lysoplasmalogenase
 3.3.2.4	Trans-epoxysuccinate hydrolase
-3.3.2.5	Alkenylglycerophosphoethanolamine hydrolase
 3.3.2.6	Leukotriene-A(4) hydrolase
 3.3.2.7	Hepoxilin-epoxide hydrolase
 3.3.2.8	Limonene-1,2-epoxide hydrolase
@@ -4699,7 +4687,6 @@
 3.6.1.16	CDP-glycerol diphosphatase
 3.6.1.17	Bis(5'-nucleosyl)-tetraphosphatase (asymmetrical)
 3.6.1.18	FAD diphosphatase
-3.6.1.19	Nucleoside-triphosphate diphosphatase
 3.6.1.20	5'-acylphosphoadenosine hydrolase
 3.6.1.21	ADP-sugar diphosphatase
 3.6.1.22	NAD(+) diphosphatase
@@ -5862,7 +5849,6 @@
 6.3.2.17	Tetrahydrofolate synthase
 6.3.2.18	Gamma-glutamylhistamine synthase
 6.3.2.20	Indoleacetate--lysine synthetase
-6.3.2.21	Ubiquitin--calmodulin ligase
 6.3.2.23	Homoglutathione synthase
 6.3.2.24	Tyrosine--arginine ligase
 6.3.2.25	Tubulin--tyrosine ligase
