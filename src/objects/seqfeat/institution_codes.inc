@@ -7010,6 +7010,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UTLH\ts\tUniversity of Technology, Human Sciences Department\t\t",
 "UTLPA\ts\tUniversity of Texas at Austin, Laboratory of Physical Anthropology\t\t",
 "UTMC\ts\tUniversidad del Magdalena\t\t",
+"UTMC<IRN>\tc\tUniversity of Tehran Microorganisms Collection\t\t",
 "UTMZ\ts\tUniversity of Tennessee, Museum of Zoology\t\t",
 "UTV\ts\tUniversita degli Studi della Tuscia, Dipartimento di Agrobiologia e Agrochimica\t\t",
 "UTZM\ts\tUniversity of Tsukubo\t\t",

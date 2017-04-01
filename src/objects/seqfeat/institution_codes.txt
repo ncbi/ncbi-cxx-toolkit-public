@@ -6977,6 +6977,7 @@ UTKI	s	University of Teheran
 UTLH	s	University of Technology, Human Sciences Department		
 UTLPA	s	University of Texas at Austin, Laboratory of Physical Anthropology		
 UTMC	s	Universidad del Magdalena		
+UTMC<IRN>	c	University of Tehran Microorganisms Collection		
 UTMZ	s	University of Tennessee, Museum of Zoology		
 UTV	s	Universita degli Studi della Tuscia, Dipartimento di Agrobiologia e Agrochimica		
 UTZM	s	University of Tsukubo		
