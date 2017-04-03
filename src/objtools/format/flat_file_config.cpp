@@ -308,18 +308,42 @@ CFlatFileConfig::CFlatFileConfig(
     CGenbankBlockCallback* pGenbankBlockCallback,
     const ICanceled * pCanceledCallback,
     bool basicCleanup, TCustom custom ) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
+    m_Format(format), m_Mode(mode), m_Style(style), 
+    m_Flags(flags), m_View(view),
+    m_RefSeqConventions(false), m_GffOptions(gff_options),
     m_fGenbankBlocks(genbank_blocks),
     m_GenbankBlockCallback(pGenbankBlockCallback),
     m_pCanceledCallback(pCanceledCallback),
     m_BasicCleanup(basicCleanup), m_Custom(custom)
 {
-    // FTable always require master style
+    // FTable always requires master style
     if (m_Format == eFormat_FTable) {
         m_Style = eStyle_Master;
     }
 }
+
+
+CFlatFileConfig::CFlatFileConfig(
+    TFormat format,
+    TMode mode,
+    TStyle style,
+    TFlags flags,
+    TView view) :
+    m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view)
+{
+    m_RefSeqConventions = false;
+    SetGenbankBlocks(fGenbankBlocks_All);
+    SetGenbankBlockCallback(NULL);
+    SetCanceledCallback(NULL);
+    BasicCleanup(false);
+    SetCustom(0);
+
+    // FTable always requires master style
+    if (m_Format == eFormat_FTable) {
+        m_Style = eStyle_Master;
+    }
+}
+
 
 // -- destructor
 CFlatFileConfig::~CFlatFileConfig(void)
@@ -859,7 +883,6 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     CFlatFileConfig::EStyle         style          = x_GetStyle(args);
     CFlatFileConfig::EFlags         flags          = x_GetFlags(args);
     CFlatFileConfig::EView          view           = x_GetView(args);
-    CFlatFileConfig::EGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
     CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
     CFlatFileConfig::ECustom        custom         = x_GetCustom(args);
 
@@ -868,7 +891,6 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     SetStyle(style);
     SetFlags(flags);
     SetView(view);
-    m_GffOptions = gff_options;
     m_fGenbankBlocks = genbank_blocks;
     m_BasicCleanup = args["cleanup"];
     SetCustom(custom);

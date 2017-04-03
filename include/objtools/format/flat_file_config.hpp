@@ -375,17 +375,26 @@ public:
     };
 
     // constructor
-    CFlatFileConfig(TFormat format = eFormat_GenBank,
-                    TMode   mode = eMode_GBench,
-                    TStyle  style = eStyle_Normal,
-                    TFlags  flags = 0,
-                    TView   view = fViewNucleotides,
-                    TGffOptions gff_options_OBSOLETE = fGffGTFCompat,
+    NCBI_DEPRECATED
+    CFlatFileConfig(TFormat format,
+                    TMode   mode,
+                    TStyle  style,
+                    TFlags  flags,
+                    TView   view,
+                    TGffOptions gff_options_OBSOLETE,
                     TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
                     CGenbankBlockCallback* pGenbankBlockCallback = NULL,
                     const ICanceled * pCanceledCallback = NULL,
                     bool basicCleanup = false,
                     TCustom custom = 0 );
+
+    // constructor
+    CFlatFileConfig(TFormat format = eFormat_GenBank,
+                    TMode   mode = eMode_GBench,
+                    TStyle  style = eStyle_Normal,
+                    TFlags  flags = 0,
+                    TView   view = fViewNucleotides);
+
     // destructor
     ~CFlatFileConfig(void);
 
@@ -597,52 +606,62 @@ public:
 
     // -- GffOptions
     // getters
+    NCBI_DEPRECATED
     bool GffGenerateIdTags   (void) const 
     { 
         return (0 != (m_GffOptions & fGffGenerateIdTags));
     };
 
+    NCBI_DEPRECATED
     bool GffGTFCompat        (void) const 
     { 
         return (0 != (m_GffOptions & fGffGTFCompat));
     };
 
+    NCBI_DEPRECATED
     bool GffGTFOnly          (void) const 
     { 
         return (0 != (m_GffOptions & fGffGTFOnly));
     };
 
+    NCBI_DEPRECATED
     bool GffShowSeq          (void) const 
     { 
         return (0 != (m_GffOptions & fGffShowSeq));
     };
 
+    NCBI_DEPRECATED
     bool GffForFlybase       (void) const 
     { 
         return (0 != (m_GffOptions & fGffForFlybase));
     };
 
     // setters
+    NCBI_DEPRECATED
     void SetGffGenerateIdTags (bool val = true)
     {
         m_GffOptions |= fGffGenerateIdTags;
     };
 
+    NCBI_DEPRECATED
     void SetGffGTFCompat      (bool val = true)
     {
         m_GffOptions |= fGffGTFCompat;
     };
 
+    NCBI_DEPRECATED
     void SetGffGTFOnly        (bool val = true)
     {
         m_GffOptions |= fGffGTFOnly;
     };
 
+    NCBI_DEPRECATED
     void SetGffShowSeq        (bool val = true)
     {
         m_GffOptions |= fGffShowSeq;
     };
 
+    NCBI_DEPRECATED
     void SetGffForFlybase     (bool val = true)
     {
         m_GffOptions |= fGffForFlybase;
@@ -724,8 +743,8 @@ private:
     TFormat     m_Format;
     TMode       m_Mode;
     TStyle      m_Style;
-    TView       m_View;
     TFlags      m_Flags;  // custom flags
+    TView       m_View;
     bool        m_RefSeqConventions;
     TGffOptions m_GffOptions;
     TGenbankBlocks m_fGenbankBlocks;
