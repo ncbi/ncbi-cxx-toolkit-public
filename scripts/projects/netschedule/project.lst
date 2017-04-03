@@ -16,6 +16,7 @@ connect/services$
 connect/services/test$
 connect/services/impl$
 connect/test$
+check
 db$
 db/bdb$
 app$
