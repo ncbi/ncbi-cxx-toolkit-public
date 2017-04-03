@@ -84,13 +84,12 @@ CFlatFileGenerator::CFlatFileGenerator
  CFlatFileConfig::TFlags  flags,
  CFlatFileConfig::TView   view,
  CFlatFileConfig::TCustom custom) :
-    m_Ctx(new CFlatFileContext(CFlatFileConfig(format, mode, style, flags, view,
-          CFlatFileConfig::fGffGTFCompat, CFlatFileConfig::fGenbankBlocks_All,
-          NULL, NULL, false, custom)))
+    m_Ctx(new CFlatFileContext(CFlatFileConfig(format, mode, style, flags, view)))
 {
     if ( !m_Ctx ) {
        NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
     }
+    m_Ctx->SetConfig().SetCustom(custom);
 }
 
 
