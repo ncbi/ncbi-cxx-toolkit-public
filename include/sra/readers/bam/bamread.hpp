@@ -422,6 +422,19 @@ public:
 
     CBamAlignIterator& operator++(void);
 
+    bool UsesAlignAccessDB() const
+        {
+            return m_AADBImpl;
+        }
+    bool UsesRawIndex() const
+        {
+            return m_RawImpl;
+        }
+    CBamRawAlignIterator* GetRawIndexIteratorPtr() const
+        {
+            return m_RawImpl? &m_RawImpl.GetNCObject().m_Iter: 0;
+        }
+    
     CTempString GetRefSeqId(void) const;
     TSeqPos GetRefSeqPos(void) const;
 
@@ -434,6 +447,10 @@ public:
     TSeqPos GetCIGARRefSize(void) const;
     TSeqPos GetCIGARShortSize(void) const;
 
+    // raw CIGAR access
+    Uint2 GetRawCIGAROpsCount() const;
+    Uint4 GetRawCIGAROp(Uint2 index) const;
+    
     CRef<CSeq_id> GetRefSeq_id(void) const;
     CRef<CSeq_id> GetShortSeq_id(void) const;
     CRef<CSeq_id> GetShortSeq_id(const string& str) const;
@@ -563,6 +580,20 @@ inline
 CRef<CSeq_annot> CBamAlignIterator::GetSeq_annot(void) const
 {
     return x_GetSeq_annot(0);
+}
+
+
+inline
+Uint2 CBamAlignIterator::GetRawCIGAROpsCount() const
+{
+    return m_RawImpl->m_Iter.GetCIGAROpsCount();
+}
+
+
+inline
+Uint4 CBamAlignIterator::GetRawCIGAROp(Uint2 index) const
+{
+    return m_RawImpl->m_Iter.GetCIGAROp(index);
 }
 
 

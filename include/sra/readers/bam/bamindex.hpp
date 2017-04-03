@@ -508,6 +508,10 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
             return get_record_end();
         }
 
+    CTempString get_read_raw() const
+        {
+            return CTempString(get_read_ptr(), (get_read_len()+1)/2);
+        }
     string get_read() const;
     uint32_t get_cigar_pos() const;
     uint32_t get_cigar_ref_size() const;
@@ -601,7 +605,19 @@ public:
         {
             return m_AlignInfo.get_read();
         }
+    CTempString GetShortSequenceRaw() const
+        {
+            return m_AlignInfo.get_read_raw();
+        }
 
+    Uint2 GetCIGAROpsCount() const
+        {
+            return m_AlignInfo.get_cigar_ops_count();
+        }
+    Uint4 GetCIGAROp(Uint2 index) const
+        {
+            return m_AlignInfo.get_cigar_op_data(index);
+        }
     TSeqPos GetCIGARPos() const
         {
             return m_AlignInfo.get_cigar_pos();

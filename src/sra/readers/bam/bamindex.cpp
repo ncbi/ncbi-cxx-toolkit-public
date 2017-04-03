@@ -264,7 +264,7 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
 
 static size_t ReadVDBFile(AutoArray<char>& data, const string& path)
 {
-    CVDBFile file(path);
+    CBamVDBFile file(path);
     size_t fsz = file.GetSize();
     data.reset(new char[fsz]);
     file.ReadExactly(0, data.get(), fsz);
@@ -770,15 +770,15 @@ static const char kBaseSymbols[] = "=ACMGRSVTWYHKDBN";
 
 static const char kCIGARSymbols[] = "MIDNSHP=X???????";
 enum ECIGARType { // matches to kCIGARSymbols
-    kCIGAR_M,
-    kCIGAR_I,
-    kCIGAR_D,
-    kCIGAR_N,
-    kCIGAR_S,
-    kCIGAR_H,
-    kCIGAR_P,
-    kCIGAR_eq,
-    kCIGAR_X
+    kCIGAR_M,  // 0
+    kCIGAR_I,  // 1
+    kCIGAR_D,  // 2
+    kCIGAR_N,  // 3
+    kCIGAR_S,  // 4
+    kCIGAR_H,  // 5
+    kCIGAR_P,  // 6
+    kCIGAR_eq, // 7
+    kCIGAR_X   // 8
 };
 
 string SBamAlignInfo::get_read() const

@@ -113,7 +113,7 @@ CPagedFile::CPagedFile(const string& file_name)
                                            CMemoryFile::eMMS_Shared));
         break;
     case eUseVDBFile:
-        m_VDBFile = CVDBFile(file_name);
+        m_VDBFile = CBamVDBFile(file_name);
         break;
     }
 }

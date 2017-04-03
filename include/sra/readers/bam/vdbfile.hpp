@@ -49,12 +49,12 @@ SPECIALIZE_BAM_REF_TRAITS(VPath, );
 SPECIALIZE_BAM_REF_TRAITS(KFile, const);
 
 
-class NCBI_BAMREAD_EXPORT CVFSManager
+class NCBI_BAMREAD_EXPORT CBamVFSManager
     : public CBamRef<VFSManager>
 {
     typedef CBamRef<VPath> TParent;
 public:
-    CVFSManager(void)
+    CBamVFSManager(void)
         {
             x_Init();
         }
@@ -64,19 +64,19 @@ private:
 };
 
 
-class NCBI_BAMREAD_EXPORT CVDBPath
+class NCBI_BAMREAD_EXPORT CBamVDBPath
     : public CBamRef<VPath>
 {
     typedef CBamRef<VPath> TParent;
 public:
-    CVDBPath(void)
+    CBamVDBPath(void)
         {
         }
-    CVDBPath(ENull /*null*/)
+    CBamVDBPath(ENull /*null*/)
         {
         }
     explicit
-    CVDBPath(const CVFSManager& mgr, const string& path)
+    CBamVDBPath(const CBamVFSManager& mgr, const string& path)
         {
             x_Init(mgr, path);
         }
@@ -88,26 +88,26 @@ public:
     static bool IsPlainAccession(const string& acc_or_path);
 
 private:
-    void x_Init(const CVFSManager& mgr, const string& path);
+    void x_Init(const CBamVFSManager& mgr, const string& path);
 };
 
 
-class NCBI_BAMREAD_EXPORT CVDBFile
+class NCBI_BAMREAD_EXPORT CBamVDBFile
     : public CBamRef<const KFile>
 {
 public:
-    CVDBFile()
+    CBamVDBFile()
         {
         }
-    CVDBFile(ENull /*null*/)
+    CBamVDBFile(ENull /*null*/)
         {
         }
-    CVDBFile(const CVFSManager& mgr, const CVDBPath& path)
+    CBamVDBFile(const CBamVFSManager& mgr, const CBamVDBPath& path)
         {
             x_Init(mgr, path);
         }
     explicit
-    CVDBFile(const string& path);
+    CBamVDBFile(const string& path);
 
     size_t GetSize() const;
     size_t Read(size_t file_pos, char* buffer, size_t buffer_size);
@@ -115,9 +115,9 @@ public:
     void ReadExactly(size_t file_pos, char* buffer, size_t buffer_size);
 
 private:
-    void x_Init(const CVFSManager& mgr, const CVDBPath& path);
+    void x_Init(const CBamVFSManager& mgr, const CBamVDBPath& path);
 
-    CVDBPath m_Path;
+    CBamVDBPath m_Path;
 };
 
 

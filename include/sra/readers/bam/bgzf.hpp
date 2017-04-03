@@ -107,7 +107,7 @@ private:
     // three variants: direct file IO, memory mapped file, or VDB KFile
     CFileIO m_File;
     AutoPtr<CMemoryFileMap> m_MemFile;
-    CVDBFile m_VDBFile;
+    CBamVDBFile m_VDBFile;
 
     // cache for loaded pages
     CRef<TPageCache> m_PageCache;

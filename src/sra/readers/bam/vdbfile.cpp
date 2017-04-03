@@ -55,11 +55,11 @@ DEFINE_BAM_REF_TRAITS(VPath, );
 DEFINE_BAM_REF_TRAITS(KFile, const);
 
 
-void CVFSManager::x_Init()
+void CBamVFSManager::x_Init()
 {
     if ( rc_t rc = VFSManagerMake(x_InitPtr()) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVFSManager: "
+                        "CBamVFSManager: "
                         "cannot get VFSManager", rc);
     }
 }
@@ -75,7 +75,7 @@ bool s_HasWindowsDriveLetter(const string& s)
 #endif
 
 
-bool CVDBPath::IsPlainAccession(const string& acc_or_path)
+bool CBamVDBPath::IsPlainAccession(const string& acc_or_path)
 {
 #ifdef NCBI_OS_MSWIN
     return !s_HasWindowsDriveLetter(acc_or_path) &&
@@ -86,7 +86,7 @@ bool CVDBPath::IsPlainAccession(const string& acc_or_path)
 }
 
 
-bool CVDBPath::HasSchemaPrefix(const string& path)
+bool CBamVDBPath::HasSchemaPrefix(const string& path)
 {
     // Convert Windows path with drive letter
     // C:\Users\Public -> /C/Users/Public
@@ -103,7 +103,7 @@ bool CVDBPath::HasSchemaPrefix(const string& path)
 }
 
 
-bool CVDBPath::IsSysPath(const string& acc_or_path)
+bool CBamVDBPath::IsSysPath(const string& acc_or_path)
 {
     if (IsPlainAccession(acc_or_path)) {
         return false;
@@ -115,101 +115,101 @@ bool CVDBPath::IsSysPath(const string& acc_or_path)
 }
 
 
-void CVDBPath::x_Init(const CVFSManager& mgr, const string& path)
+void CBamVDBPath::x_Init(const CBamVFSManager& mgr, const string& path)
 {
     if (IsSysPath(path)) {
         if (rc_t rc = VFSManagerMakeSysPath(mgr, x_InitPtr(), path.c_str())) {
             NCBI_THROW2_FMT(CBamException, eInitFailed,
-                "CVDBPath(" << path << "): "
+                "CBamVDBPath(" << path << "): "
                 "cannot create VPath", rc);
         }
     }
     else {
         if (rc_t rc = VFSManagerMakePath(mgr, x_InitPtr(), path.c_str())) {
             NCBI_THROW2_FMT(CBamException, eInitFailed,
-                "CVDBPath(" << path << "): "
+                "CBamVDBPath(" << path << "): "
                 "cannot create VPath", rc);
         }
     }
 }
 
 
-CTempString CVDBPath::GetString() const
+CTempString CBamVDBPath::GetString() const
 {
     String str;
     if ( rc_t rc = VPathGetPath(*this, &str) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBPath::GetString(): "
+                        "CBamVDBPath::GetString(): "
                         "VPathGetPath() failed", rc);
     }
     return CTempString(str.addr, str.size);
 }
 
 
-CVDBFile::CVDBFile(const string& path)
+CBamVDBFile::CBamVDBFile(const string& path)
 {
-    CVFSManager mgr;
-    x_Init(mgr, CVDBPath(mgr, path));
+    CBamVFSManager mgr;
+    x_Init(mgr, CBamVDBPath(mgr, path));
 }
 
 
-void CVDBFile::x_Init(const CVFSManager& mgr, const CVDBPath& path)
+void CBamVDBFile::x_Init(const CBamVFSManager& mgr, const CBamVDBPath& path)
 {
     if ( rc_t rc = VFSManagerOpenFileRead(mgr, x_InitPtr(), path) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBFile("<<path.GetString()<<"): "
+                        "CBamVDBFile("<<path.GetString()<<"): "
                         "cannot open KFile", rc);
     }
     m_Path = path;
 }
 
 
-size_t CVDBFile::GetSize() const
+size_t CBamVDBFile::GetSize() const
 {
     uint64_t size;
     if ( rc_t rc = KFileSize(*this, &size) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBFile::GetSize(): "
+                        "CBamVDBFile::GetSize(): "
                         "cannot get size for "<<m_Path.GetString(), rc);
     }
     if ( size_t(size) != size ) {
         NCBI_THROW_FMT(CBamException, eInitFailed,
-                       "CVDBFile::GetSize(): "
+                       "CBamVDBFile::GetSize(): "
                        "size of "<<m_Path.GetString()<<" is too big: "<<size);
     }
     return size_t(size);
 }
 
 
-size_t CVDBFile::Read(size_t pos, char* buffer, size_t buffer_size)
+size_t CBamVDBFile::Read(size_t pos, char* buffer, size_t buffer_size)
 {
     size_t nread;
     if ( rc_t rc = KFileRead(*this, pos, buffer, buffer_size, &nread) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBFile::Read(): "
+                        "CBamVDBFile::Read(): "
                         "read failed from "<<m_Path.GetString(), rc);
     }
     return nread;
 }
 
 
-size_t CVDBFile::ReadAll(size_t pos, char* buffer, size_t buffer_size)
+size_t CBamVDBFile::ReadAll(size_t pos, char* buffer, size_t buffer_size)
 {
     size_t nread;
     if ( rc_t rc = KFileReadAll(*this, pos, buffer, buffer_size, &nread) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBFile::ReadAll(): "
+                        "CBamVDBFile::ReadAll(): "
                         "read failed from "<<m_Path.GetString(), rc);
     }
     return nread;
 }
 
 
-void CVDBFile::ReadExactly(size_t pos, char* buffer, size_t buffer_size)
+void CBamVDBFile::ReadExactly(size_t pos, char* buffer, size_t buffer_size)
 {
     if ( rc_t rc = KFileReadExactly(*this, pos, buffer, buffer_size) ) {
         NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBFile::ReadExactly(): "
+                        "CBamVDBFile::ReadExactly(): "
                         "read failed from "<<m_Path.GetString(), rc);
     }
 }
