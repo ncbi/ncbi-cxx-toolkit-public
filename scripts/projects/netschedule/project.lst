@@ -10,6 +10,7 @@ util/qparse/test$
 util/bitset$ update-only
 util/cache$ update-only
 util/math$ update-only
+util/test
 connect$
 connect/services$
 connect/services/test$
