@@ -590,15 +590,13 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
             ref=true;
             name_space = m_ResolveTypes ? m_TargetNamespace :
                                           m_PrefixToNamespace[m_ValuePrefix];
-            NStr::ReplaceInPlace(name_space, ":", "/");
-            name = m_Value + name_space;
+            name = m_Value + NStr::Replace(name_space, ":", "/");
         }
     }
     if (GetAttribute("name")) {
         ref=false;
         name_space = m_TargetNamespace;
-        NStr::ReplaceInPlace(name_space, ":", "/");
-        name = m_Value + name_space;
+        name = m_Value + NStr::Replace(name_space, ":", "/");;
         if (owner) {
             name = CreateTmpEmbeddedName(owner->GetName(), emb);
             m_MapElement[name].SetEmbedded();
