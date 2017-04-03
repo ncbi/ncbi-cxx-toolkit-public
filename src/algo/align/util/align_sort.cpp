@@ -72,7 +72,6 @@ public:
         return align;
     }
     virtual bool EndOfData() const       { return m_Iter == m_Aligns.end(); }
-    virtual size_t DataSizeSoFar() const { return 1;   }
 private:
     TList m_Aligns;
     typename TList::iterator m_Iter;
@@ -245,7 +244,7 @@ CAlignSort::CAlignSort(CScope &scope,
 : m_Filter(filter)
 , m_MemoryLimit(memory_limit)
 , m_CountLimit(count_limit)
-, m_DataSizeLimit(0)
+, m_ReachedLimit(false)
 , m_Extractor(scope)
 {
     NStr::Split(sorting_keys, ", \t\r\n", m_Extractor.key_toks, NStr::eMergeDelims);
@@ -325,7 +324,6 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
     ///
     //LOG_POST(Error << "pass 1: extracting alignments");
 
-    size_t last_flush_point = 0;
     vector<string> tmp_volumes;
 
     try {
@@ -340,7 +338,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
             val.second = align;
             aligns.push_back(val);
 
-            if (m_MemoryLimit && !m_DataSizeLimit &&
+            if (m_MemoryLimit && !m_ReachedLimit &&
                 m_Extractor.count % 10000 == 0)
             {
                 /// check to see if we've exceeded memory limits
@@ -350,18 +348,16 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 if (GetMemoryUsage(&total_mem,
                                    &resident_mem,
                                    &shared_mem)) {
-                    if (total_mem > m_MemoryLimit) {
-                        m_DataSizeLimit = align_source.DataSizeSoFar();
+                    if (total_mem > m_MemoryLimit &&
+                        (!m_CountLimit || m_CountLimit > aligns.size()))
+                    {
+                        m_CountLimit = aligns.size();
                     }
                 }
             }
 
-            if ((m_CountLimit  &&  aligns.size() >= m_CountLimit)  ||
-               (m_DataSizeLimit  &&
-                align_source.DataSizeSoFar() - last_flush_point
-                    >= m_DataSizeLimit))
-            {
-                last_flush_point = align_source.DataSizeSoFar();
+            if (m_CountLimit  &&  aligns.size() >= m_CountLimit) {
+                m_ReachedLimit = true;
                 std::sort(aligns.begin(), aligns.end(), m_Predicate);
 
                 string fname = m_TmpPath;

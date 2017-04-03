@@ -45,7 +45,6 @@ public:
     virtual ~IAlignSource() {}
     virtual bool EndOfData() const = 0;
     virtual CRef<CSeq_align> GetNext() = 0;
-    virtual size_t DataSizeSoFar() const = 0;
     virtual void Reset()
     {
         NCBI_THROW(CException, eUnknown, "Reset not supported");

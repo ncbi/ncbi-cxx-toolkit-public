@@ -149,7 +149,7 @@ private:
 
     size_t m_MemoryLimit;
     size_t m_CountLimit;
-    size_t m_DataSizeLimit;
+    bool m_ReachedLimit;
 
     SAlignExtractor m_Extractor;
     SSortKey_Less m_Predicate;
