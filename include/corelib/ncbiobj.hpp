@@ -2029,8 +2029,9 @@ public:
         {
         }
 
-    explicit CObjectFor(const TObjectType& data)
-        : m_Data(data)
+    template<class... Args>
+    explicit CObjectFor(Args&&... args)
+        : m_Data(std::forward<Args>(args)...)
         {
         }
 
