@@ -50,6 +50,8 @@
 #include "xsdparser.hpp"
 #include "wsdllexer.hpp"
 #include "wsdlparser.hpp"
+#include "jsdlexer.hpp"
+#include "jsdparser.hpp"
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
@@ -297,9 +299,7 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& fx = args["fx"] ) {
-        if (srctype == SourceFile::eDTD ||
-            srctype == SourceFile::eXSD ||
-            srctype == SourceFile::eWSDL) {
+        if (srctype != SourceFile::eASN) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( fx.AsString() == "m" ) {
@@ -316,9 +316,7 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& ax = args["fxs"] ) {
-        if (srctype == SourceFile::eDTD ||
-            srctype == SourceFile::eXSD ||
-            srctype == SourceFile::eWSDL) {
+        if (srctype != SourceFile::eASN) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( ax.AsString() == "m" ) {
@@ -776,6 +774,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     lexer.AllowIDsEndingWithMinus(generator.GetOpt("lax_syntax"));
                     ASNParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
+                    CDataType::SetSourceDataSpec(EDataSpec::eASN);
                 }
                 break;
             case SourceFile::eDTD:
@@ -783,16 +782,16 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     DTDLexer lexer(fName,name);
                     DTDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
-                    CDataType::SetXmlSourceSpec(true);
+                    CDataType::SetSourceDataSpec(EDataSpec::eDTD);
                 }
                 break;
             case SourceFile::eXSD:
                 {
                     name = fName.GetFileName();
-		    XSDLexer lexer(fName,name);
+		            XSDLexer lexer(fName,name);
                     XSDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
-                    CDataType::SetXmlSourceSpec(true);
+                    CDataType::SetSourceDataSpec(EDataSpec::eXSD);
                 }
                 break;
             case SourceFile::eWSDL:
@@ -801,7 +800,16 @@ SourceFile::EType CDataTool::LoadDefinitions(
                     WSDLLexer lexer(fName,name);
                     WSDLParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
-                    CDataType::SetXmlSourceSpec(true);
+                    CDataType::SetSourceDataSpec(EDataSpec::eXSD);
+                }
+                break;
+            case SourceFile::eJSON:
+                {
+                    name = fName.GetFileName();
+		            JSDLexer lexer(fName,name);
+                    JSDParser parser(lexer);
+                    fileSet.AddFile(parser.Modules(name));
+                    CDataType::SetSourceDataSpec(EDataSpec::eJSON);
                 }
                 break;
             }

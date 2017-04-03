@@ -94,6 +94,10 @@ SourceFile::EType SourceFile::GetType(void) const
         return eXSD;
     } else if (NStr::CompareNocase(ext,".wsdl") == 0) {
         return eWSDL;
+    } else if (NStr::CompareNocase(ext,".json") == 0) {
+        return eJSON;
+    } else if (NStr::CompareNocase(ext,".jsd") == 0) {
+        return eJSON;
     }
     return eUnknown;
 }

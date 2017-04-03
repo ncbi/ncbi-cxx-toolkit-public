@@ -234,6 +234,7 @@ private:
     void EndArray(void);
     void NameSeparator(void);
 
+    bool m_FileHeader;
     bool m_BlockStart;
     bool m_ExpectValue;
     string m_SkippedMemberId;

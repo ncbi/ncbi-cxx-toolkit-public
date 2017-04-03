@@ -326,6 +326,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
                 "\n";
         }
         methods <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
+        methods <<  "    info->DataSpec(" << CDataType::GetSourceDataSpecString() << ");\n";
         methods <<
             "}\n"
             "END_ALIAS_INFO\n"

@@ -225,6 +225,7 @@ public:
         eSequence, // (a,b,c)
         eChoice,   // (a|b|c)
         eSet,      // (a,b,c)
+        eAlias,
 
         eBoolean,
         eInteger,
@@ -266,6 +267,7 @@ public:
     void SetTypeName( const string& name);
     const string& GetTypeName( void) const;
 
+    void SetDefaultRefsOccurence(EOccurrence occ);
     void SetOccurrence( const string& ref_name, EOccurrence occ);
     EOccurrence GetOccurrence(const string& ref_name) const;
 

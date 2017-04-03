@@ -270,6 +270,12 @@ public:
     size_t GetCodeVersion(void) const {
         return m_CodeVer;
     }
+    void DataSpec(EDataSpec spec) {
+        m_DataSpec = spec;
+    }
+    EDataSpec GetDataSpec(void) const {
+        return m_DataSpec;
+    }
 private:
     // private constructors to avoid copying
     CTypeInfo(const CTypeInfo&);
@@ -282,6 +288,7 @@ private:
     string m_ModuleName;
     mutable CNamespaceInfoItem* m_InfoItem;
     size_t m_CodeVer;
+    EDataSpec m_DataSpec;
 
 protected:
     void SetCreateFunction(TTypeCreate func);

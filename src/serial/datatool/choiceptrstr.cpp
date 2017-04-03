@@ -38,6 +38,7 @@
 #include "code.hpp"
 #include "namespace.hpp"
 #include "srcutil.hpp"
+#include "type.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -163,6 +164,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         }
     }
     code.Methods() <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
+    code.Methods() <<  "    info->DataSpec(" << CDataType::GetSourceDataSpecString() << ");\n";
     code.Methods() <<
         "}\n"
         "END_CLASS_INFO\n"

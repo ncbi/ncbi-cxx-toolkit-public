@@ -200,6 +200,14 @@ enum ENsQualifiedMode {
     eNSQualified
 };
 
+enum class EDataSpec {
+    eUnknown,
+    eASN,
+    eDTD,
+    eXSD,
+    eJSON
+};
+
 /// Type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 

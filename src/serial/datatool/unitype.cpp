@@ -261,7 +261,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 if (GetDataMember()->Optional()) {
                     tmp += " minOccurs=\"0\"";
                 }
-                if (GetXmlSourceSpec()) {
+                if (!IsASNDataSpec()) {
                     tmp += " maxOccurs=\"unbounded\"";
                 }
                 if (isNillable) {
@@ -271,7 +271,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             opentag.push_back(tmp + ">");
             closetag.push_front("</xs:element>");
 
-            if (typeContainer && !GetXmlSourceSpec() && !GetEnforcedStdXml()) {
+            if (typeContainer && IsASNDataSpec() && !GetEnforcedStdXml()) {
                 asn_container = true;
                 opentag.push_back("<xs:complexType>");
                 closetag.push_front("</xs:complexType>");
@@ -289,7 +289,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
 
             if (!isNillable) {
                 tmp = "<xs:" + xsdk;
-                if (!GetXmlSourceSpec()) {
+                if (IsASNDataSpec()) {
                     if (!asn_container) {
                         tmp += " minOccurs=\"0\" maxOccurs=\"unbounded\"";
                     }
@@ -430,7 +430,7 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
     const CBlockDataValue* block =
         dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        if (CDataType::GetXmlSourceSpec()) {
+        if (!CDataType::IsASNDataSpec()) {
             return m_ElementType->CheckValue(value);
         }
         value.Warning("block of values expected", 18);
@@ -446,7 +446,7 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue&  value) const
 {
-    if (CDataType::GetXmlSourceSpec()) {
+    if (!CDataType::IsASNDataSpec()) {
         return m_ElementType->CreateDefault(value);
     }
     NCBI_THROW(CDatatoolException,eNotImplemented,
@@ -455,7 +455,7 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue&  value) const
 
 string CUniSequenceDataType::GetDefaultString(const CDataValue& value) const
 {
-    if (CDataType::GetXmlSourceSpec()) {
+    if (!CDataType::IsASNDataSpec()) {
         return m_ElementType->GetDefaultString(value);
     }
     return CParent::GetDefaultString(value);

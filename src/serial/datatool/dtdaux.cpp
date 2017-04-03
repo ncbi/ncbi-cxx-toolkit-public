@@ -381,6 +381,14 @@ const string& DTDElement::GetTypeName( void) const
 }
 
 
+void DTDElement::SetDefaultRefsOccurence(EOccurrence occ)
+{
+    for (const string& ref : m_Refs) {
+        if (m_RefOcc.find(ref) == m_RefOcc.end()) {
+            m_RefOcc[ref] = occ;
+        }
+    }
+}
 void DTDElement::SetOccurrence( const string& ref_name, EOccurrence occ)
 {
     m_RefOcc[ref_name] = occ;

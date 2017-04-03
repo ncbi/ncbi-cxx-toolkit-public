@@ -441,6 +441,9 @@ string CObjectIStreamJson::ReadFileHeader(void)
             }
         }
     }
+    if (TopFrame().GetTypeInfo()->GetDataSpec() == EDataSpec::eJSON) {
+        return kEmptyStr;
+    }
     m_FileHeader = true;
     StartBlock('{');
     string str( ReadKey());

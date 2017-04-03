@@ -1469,6 +1469,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         }
     }
     methods <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
+    methods <<  "    info->DataSpec(" << CDataType::GetSourceDataSpecString() << ");\n";
     methods <<
         "}\n"
         "END_CLASS_INFO\n"

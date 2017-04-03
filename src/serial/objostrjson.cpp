@@ -67,6 +67,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamJson(CNcbiOstream& out,
 
 CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut ? eTakeOwnership : eNoOwnership),
+    m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
     m_StringEncoding(eEncoding_UTF8),
@@ -79,6 +80,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut),
+    m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
     m_StringEncoding(eEncoding_UTF8),
@@ -135,16 +137,25 @@ void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)
     if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
         m_Output.PutString(m_JsonpPrefix);
     }
-    StartBlock();
-    if (!type->GetName().empty()) {
-        m_Output.PutEol();
-        WriteKey(type->GetName());
+    if (type->GetDataSpec() != EDataSpec::eJSON) {
+        m_FileHeader = true;
+        StartBlock();
+        if (!type->GetName().empty()) {
+            m_Output.PutEol();
+            WriteKey(type->GetName());
+        }
     }
 }
 
 void CObjectOStreamJson::EndOfWrite(void)
 {
-    EndBlock();
+    if (m_FileHeader) {
+        EndBlock();
+        m_FileHeader = false;
+    } else {
+        m_BlockStart = false;
+        m_ExpectValue = false;
+    }
     if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
         m_Output.PutString(m_JsonpSuffix);
     }

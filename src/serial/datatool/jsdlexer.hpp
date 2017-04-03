@@ -1,5 +1,5 @@
-#ifndef DATATOOL__HPP
-#define DATATOOL__HPP
+#ifndef JSDLEXER_HPP
+#define JSDLEXER_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,52 +26,34 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author: Andrei Gourianov
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   JSON Schema lexer
+*
+* ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include "generate.hpp"
-#include "fileutil.hpp"
+#include "dtdlexer.hpp"
 #include <list>
 
 BEGIN_NCBI_SCOPE
 
-#define DATATOOL_VERSION_MAJOR  2
-#define DATATOOL_VERSION_MINOR 17
-#define DATATOOL_VERSION_PATCH  0
-const size_t DATATOOL_VERSION = DATATOOL_VERSION_MAJOR*10000 + DATATOOL_VERSION_MINOR*100 + DATATOOL_VERSION_PATCH; 
-
-class CArgs;
-class CFileSet;
-
-class CDataTool : public CNcbiApplication
+class JSDLexer : public DTDLexer
 {
 public:
-    CDataTool(void);
-    void Init(void);
-    int Run(void);
-    
-    string GetConfigValue(const string& section, const string& name) const;
-    bool HasConfig(void) const;
+    JSDLexer(CNcbiIstream& in, const string& name);
+    virtual ~JSDLexer(void);
 
-private:
-    bool ProcessModules(void);
-    bool ProcessData(void);
-    bool GenerateCode(bool undo=false);
-
-    SourceFile::EType LoadDefinitions(
-        CFileSet& fileSet, const list <string>& modulesPath,
-        const CArgValue::TStringArray& names,
-        bool split_names,
-        SourceFile::EType srctype = SourceFile::eUnknown);
-
-    CCodeGenerator generator;
+protected:
+    void SkipWhitespace(void);
+    virtual void LookupComments(void);
+    virtual TToken LookupToken(void);
+    TToken LookupNumber(void);
+    void LookupIdentifier(void);
+    TToken LookupKeyword(void);
 };
 
 END_NCBI_SCOPE
 
-#endif  /* DATATOOL__HPP */
+#endif // JSDLEXER_HPP

@@ -1,5 +1,5 @@
-#ifndef DATATOOL__HPP
-#define DATATOOL__HPP
+#ifndef JSDPARSER_HPP
+#define JSDPARSER_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,52 +26,51 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author: Andrei Gourianov
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   JSON Schema parser
+*
+* ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include "generate.hpp"
-#include "fileutil.hpp"
-#include <list>
+#include <corelib/ncbiutil.hpp>
+#include "dtdparser.hpp"
+#include "jsdlexer.hpp"
 
 BEGIN_NCBI_SCOPE
 
-#define DATATOOL_VERSION_MAJOR  2
-#define DATATOOL_VERSION_MINOR 17
-#define DATATOOL_VERSION_PATCH  0
-const size_t DATATOOL_VERSION = DATATOOL_VERSION_MAJOR*10000 + DATATOOL_VERSION_MINOR*100 + DATATOOL_VERSION_PATCH; 
 
-class CArgs;
-class CFileSet;
+/////////////////////////////////////////////////////////////////////////////
+// JSDParser
 
-class CDataTool : public CNcbiApplication
+class JSDParser : public DTDParser
 {
 public:
-    CDataTool(void);
-    void Init(void);
-    int Run(void);
-    
-    string GetConfigValue(const string& section, const string& name) const;
-    bool HasConfig(void) const;
+    JSDParser( JSDLexer& lexer);
+    virtual ~JSDParser(void);
 
-private:
-    bool ProcessModules(void);
-    bool ProcessData(void);
-    bool GenerateCode(bool undo=false);
+protected:
+    virtual void BeginDocumentTree(void);
+    virtual void BuildDocumentTree(CDataTypeModule& module);
 
-    SourceFile::EType LoadDefinitions(
-        CFileSet& fileSet, const list <string>& modulesPath,
-        const CArgValue::TStringArray& names,
-        bool split_names,
-        SourceFile::EType srctype = SourceFile::eUnknown);
+    void ParseRoot(void);
+    void ParseObjectContent(DTDElement* owner);
+    void ParseMemberDefinition(DTDElement* owner);
+    void ParseArrayContent(DTDElement& node);
+    void ParseNode(DTDElement& node);
+    void ParseRequired(DTDElement& node);
 
-    CCodeGenerator generator;
+    void SkipUnknown(TToken tokend);
+
+    const string& Value(void);
+
+    TToken GetNextToken(void);
+
+    string m_StringValue;
+    list<string> m_URI;
 };
 
 END_NCBI_SCOPE
 
-#endif  /* DATATOOL__HPP */
+#endif // JSDPARSER_HPP

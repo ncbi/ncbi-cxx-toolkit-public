@@ -92,7 +92,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     if (!use.empty()) {
         out << " use=\"" << use << "\"";
     } else {
-        if (GetXmlSourceSpec()) {
+        if (!IsASNDataSpec()) {
             if (optional) {
                 out << " minOccurs=\"0\"";
             }
@@ -265,7 +265,7 @@ const char* CBoolDataType::GetXMLContents(void) const
 
 string CBoolDataType::GetSchemaTypeString(void) const
 {
-    if (GetXmlSourceSpec()) {
+    if (!IsASNDataSpec()) {
         return "xs:boolean";
     }
     if (GetParentType() && 

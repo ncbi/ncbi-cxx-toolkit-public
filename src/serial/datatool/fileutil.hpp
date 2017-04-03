@@ -58,7 +58,8 @@ public:
         eASN,      // ASN file
         eDTD,      // DTD file
         eXSD,      // XSD file
-        eWSDL      // WSDL file
+        eWSDL,     // WSDL file
+        eJSON      // JSON schema file
     };
     EType GetType(void) const;
     string GetFileName(void) const

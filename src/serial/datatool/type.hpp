@@ -284,11 +284,15 @@ public:
     static bool GetEnforcedStdXml(void) {
         return sm_EnforcedStdXml;
     }
-    static void SetXmlSourceSpec(bool set = true) {
-        sm_XmlSourceSpec = set;
+    static void SetSourceDataSpec(EDataSpec spec) {
+        sm_SourceDataSpec = spec;
     }
-    static bool GetXmlSourceSpec(void) {
-        return sm_XmlSourceSpec;
+    static EDataSpec GetSourceDataSpec(void) {
+        return sm_SourceDataSpec;
+    }
+    static string GetSourceDataSpecString(void);
+    static bool IsASNDataSpec(void) {
+        return sm_SourceDataSpec == EDataSpec::eASN;
     }
 
     virtual const char* GetDEFKeyword(void) const;
@@ -364,7 +368,7 @@ private:
     CDataType& operator=(const CDataType&);
     static bool sm_EnableDTDEntities;
     static bool sm_EnforcedStdXml;
-    static bool sm_XmlSourceSpec;
+    static EDataSpec sm_SourceDataSpec;
     static set<string> sm_SavedNames;
     static map<string,string> sm_ClassToMember;
 };

@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 bool CDataType::sm_EnableDTDEntities = false;
 bool CDataType::sm_EnforcedStdXml = false;
-bool CDataType::sm_XmlSourceSpec = false;
+EDataSpec CDataType::sm_SourceDataSpec = EDataSpec::eUnknown;
 set<string> CDataType::sm_SavedNames;
 map<string,string> CDataType::sm_ClassToMember;
 
@@ -771,7 +771,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         if (uniseq) {
             nonempty = uniseq->IsNonEmpty();
         }
-        noprefix = GetXmlSourceSpec();
+        noprefix = !IsASNDataSpec();
         code->AddMember(dType, GetTag(), nonempty, noprefix);
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());
@@ -922,6 +922,18 @@ void CDataType::x_AddSavedName(const string& name)
 const char* CDataType::GetDEFKeyword(void) const
 {
     return "-";
+}
+
+string CDataType::GetSourceDataSpecString(void)
+{
+    switch (sm_SourceDataSpec) {
+    case EDataSpec::eASN:  return "ncbi::EDataSpec::eASN";
+    case EDataSpec::eDTD:  return "ncbi::EDataSpec::eDTD";
+    case EDataSpec::eXSD:  return "ncbi::EDataSpec::eXSD";
+    case EDataSpec::eJSON: return "ncbi::EDataSpec::eJSON";
+    default: break;
+    }
+    return "ncbi::EDataSpec::eUnknown";
 }
 
 string CDataType::GetFullName(void) const

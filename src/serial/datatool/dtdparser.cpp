@@ -562,7 +562,7 @@ string DTDParser::CreateEmbeddedName(const DTDElement& node, int depth) const
             if (!refname.empty()) {
                 string::size_type name = refname.find(':');
                 name = (name != string::npos && (name+1) < refname.size()) ? (name+1) : 0;
-                new_var += (char)toupper((unsigned char) refname[name]);;
+                new_var += (char)toupper((unsigned char) refname[name]);
 // try to avoid very long names
                 if (new_var.size() > 8) {
                     break;
@@ -892,7 +892,8 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module, const string& name_spa
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
         DTDElement::EType type = i->second.GetType();
-        if (i->second.GetName().empty() &&
+        if (m_SrcType != eJson &&
+            i->second.GetName().empty() &&
             i->first != s_SpecialName &&
             type != DTDElement::eAny) {
             ParseError(i->first.c_str(),"definition");
@@ -1038,6 +1039,22 @@ CDataType* DTDParser::x_Type(
                 } else {
                     type = TypesBlock(new CDataSetType(),node,ignoreAttrib);
                 }
+            }
+            break;
+        case DTDElement::eAlias:
+            {
+                string base(node.GetTypeName());
+                map<string, DTDElement>::const_iterator b;
+                for (b = m_MapElement.find(base);
+                    b != m_MapElement.end(); b = m_MapElement.find(base)) {
+                    if (b->second.GetType() != DTDElement::eAlias) {
+                        base = b->second.GetName();
+                        break;
+                    }
+                    base = b->second.GetTypeName();
+                }
+                type = new CReferenceDataType(base);
+                type->SetIsAlias(true);
             }
             break;
         case DTDElement::eString:

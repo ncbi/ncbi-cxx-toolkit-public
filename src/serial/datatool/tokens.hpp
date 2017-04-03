@@ -154,7 +154,14 @@ enum TToken {
     K_PORT           = 410,
     K_ADDRESS        = 411,
     K_BODY           = 412,
-    K_HEADER         = 413
+    K_HEADER         = 413,
+
+    K_BEGIN_OBJECT   = 501,
+    K_END_OBJECT     = 502,
+    K_BEGIN_ARRAY    = 503,
+    K_END_ARRAY      = 504,
+    K_KEY            = 505,
+    K_VALUE          = 506
 };
 
 END_NCBI_SCOPE
