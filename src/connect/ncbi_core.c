@@ -41,12 +41,14 @@
 #  include <unistd.h>
 #endif /*NCBI_OS_UNIX*/
 
-#if   defined(NCBI_POSIX_THREADS)
-#  include <pthread.h>
-#elif defined(NCBI_WIN32_THREADS)
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#endif
+#ifdef NCBI_CXX_TOOLKIT
+#  if   defined(NCBI_POSIX_THREADS)
+#    include <pthread.h>
+#  elif defined(NCBI_WIN32_THREADS)
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#  endif
+#endif /*NCBI_CXX_TOOLKIT*/
 
 
 /******************************************************************************
@@ -92,7 +94,7 @@ struct MT_LOCK_tag {
 #define kMT_LOCK_magic  0x7A96283F
 
 
-#ifndef NCBI_NO_THREADS
+#if defined(NCBI_CXX_TOOLKIT)  &&  defined(NCBI_THREADS)
 
 #  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
 #    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
@@ -114,7 +116,7 @@ static int/*bool*/ x_Once(void** once)
     return !NCBI_SwapPointers(once, (void*) 1);
 #    endif /*NCBI_CXX_TOOLKIT*/
 }
-#endif /*NCBI_POSIX_THREADS && !NCBI_RECURSIVE_MUTEX_INIT*/
+#  endif /*NCBI_POSIX_THREADS && !NCBI_RECURSIVE_MUTEX_INIT*/
 
 
 /*ARGSUSED*/
@@ -194,17 +196,17 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  endif /*NCBI_..._THREADS*/
 }
 
-#endif /*!NCBI_NO_THREADS*/
+#endif /*NCBI_CXX_TOOLKIT && NCBI_THREADS*/
 
 
 struct MT_LOCK_tag g_CORE_MT_Lock_default = {
     1/* ref count */,
     0/* user data */,
-#ifndef NCBI_NO_THREADS
+#if defined(NCBI_CXX_TOOLKIT)  &&  defined(NCBI_THREADS)
     s_CORE_MT_Lock_default_handler,
 #else
     0/* noop handler */,
-#endif /*!NCBI_NO_THREADS*/
+#endif /*NCBI_CXX_TOOLKIT && NCBI_THREADS*/
     0/* cleanup */,
     kMT_LOCK_magic
 };
