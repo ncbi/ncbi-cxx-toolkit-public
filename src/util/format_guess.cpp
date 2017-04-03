@@ -575,6 +575,8 @@ CFormatGuess::EnsureTestBuffer()
     // If its all comment, read a twice as long buffer
     // Stop when its no longer all comment, end of the stream,
     //   or Multiplier hits 1024 
+
+
     int Multiplier = 1;
     while(true) {
         m_iTestBufferSize = Multiplier * s_iTestBufferGranularity;
@@ -1751,13 +1753,21 @@ bool CFormatGuess::TestFormatSra(EMode /* not used */ )
 
 bool CFormatGuess::TestFormatBam(EMode mode)
 {
-    // Check for a gzip header whose first (only) extra field spans
-    // at least six bytes and has the tag BC.
-    return (TestFormatGZip(mode)  &&  m_iTestDataSize >= 18
-            &&  (m_pTestBuffer[3] & 4) != 0 // extra field present
-            &&  (static_cast<unsigned char>(m_pTestBuffer[10]) >= 6
-                 ||  m_pTestBuffer[11] != 0) // at least six bytes
-            &&  m_pTestBuffer[12] == 'B'  &&  m_pTestBuffer[13] == 'C');
+    //rw-9:
+    // the original heuristic to "guess" at the content of a gzip archive
+    // broke down and we found a whole class of false positives for the
+    // BAM format- on our very own FTP site no less!
+    //To really be sure we are dealing indeed with BAM we would have to
+    // decompress the beginning of the archive and peek inside- however, gzip
+    // decompression is not available in this module.
+
+    //If reliable BAM detection is needed, use objtools/readers/format_guess_ex
+    // instead. It's a drop in replacement, and it's not any slower for any file
+    // format that can be detected reliably here (because it calls this code
+    // before doing any of the more fancy stuff). And because of the fancy
+    // stuff it does, it will even classify some files this code can't (though
+    // possibly at considerable extra expense).
+    return false;
 }
 
 
