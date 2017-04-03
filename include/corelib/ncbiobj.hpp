@@ -2025,10 +2025,6 @@ class CObjectFor : public CObject
 public:
     typedef T TObjectType;          ///< Define alias for template parameter
 
-    CObjectFor(void)
-        {
-        }
-
     template<class... Args>
     explicit CObjectFor(Args&&... args)
         : m_Data(std::forward<Args>(args)...)
