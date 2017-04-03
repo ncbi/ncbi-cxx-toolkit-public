@@ -172,6 +172,8 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("35 57' 18'' N 79 43' 34\" W", true), "35.9550 N 79.7261 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("35 57' 18'' N 79 43' 34' W", true), "35.9550 N 79.7261 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("37:22N 005:59W", true), "37.37 N 5.98 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("60.42.726'N, 05.05.595E", true), "");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("15.48 N -90.23 W", true), "15.48 N 90.23 W");
@@ -1068,6 +1070,8 @@ BOOST_AUTO_TEST_CASE(Test_CheckCellLine)
     msg = CSubSource::CheckCellLine("aRO81-1", "Homo sapiens");
     BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that aRO81-1 from Homo sapiens is known to be contaminated by HT-29 from Human. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
     
+    msg = CSubSource::CheckCellLine("IPRI-OL-7", "Orgyia leucostigma");
+    BOOST_CHECK_EQUAL(msg, "The International Cell Line Authentication Committee database indicates that IPRI-OL-7 from Orgyia leucostigma is known to be contaminated by IPRI-CF-124 from Choristoneura fumiferana. Please see http://iclac.org/databases/cross-contaminations/ for more information and references.");
 }
 
 
@@ -1802,6 +1806,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_693)
     BOOST_CHECK_EQUAL(CSubSource::FixTissueTypeCapitalization("CLINICAL"), "clinical");
 
     BOOST_CHECK_EQUAL(CSubSource::FixIsolationSourceCapitalization("Bovine (feces)"), "bovine feces");
+    BOOST_CHECK_EQUAL(CSubSource::FixIsolationSourceCapitalization("BLOOD"), "blood");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixIsolationSourceCapitalization("Leaf"), "leaf");
+    BOOST_CHECK_EQUAL(CSubSource::FixIsolationSourceCapitalization("Roots"), "roots");
+
 }
 
 

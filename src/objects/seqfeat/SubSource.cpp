@@ -1584,6 +1584,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     // replace all '#' with ' '
     NStr::ReplaceInPlace (cpy, "#", " ");
+    NStr::ReplaceInPlace(cpy, "\"", "''");
 
     // now make all letters uppercase (note, do not do this before converting 'o' and 'O'(
     cpy = NStr::ToUpper (cpy);
