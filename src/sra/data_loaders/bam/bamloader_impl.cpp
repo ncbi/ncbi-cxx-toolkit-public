@@ -1291,56 +1291,111 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 
 BEGIN_LOCAL_NAMESPACE;
 
-struct SBaseStat
+struct SBaseStats
 {
     typedef unsigned TCount;
+
     enum {
         kStat_A = 0,
         kStat_C = 1,
         kStat_G = 2,
         kStat_T = 3,
-        kStat_Insert = 4,
-        kStat_Gap = kStat_Insert,
+        kStat_Gap = 4,
         kStat_Match = 5,
         kNumStat = 6
     };
-    SBaseStat(void) {
-        for ( int i = 0; i < kNumStat; ++i ) {
-            cnts[i] = 0;
+    
+    TSeqPos len;
+    vector<TCount> cc[kNumStat];
+    
+    explicit
+    SBaseStats(TSeqPos len)
+        : len(len)
+        {
+            for ( int k = 0; k < kNumStat; ++k ) {
+                cc[k].resize(len);
+            }
         }
-    }
 
-    TCount total() const {
-        TCount ret = 0;
-        for ( int i = 0; i < kNumStat; ++i ) {
-            ret += cnts[i];
+    void add_match(TSeqPos pos)
+        {
+            if ( pos < len ) {
+                cc[kStat_Match][pos] += 1;
+            }
         }
-        return ret;
-    }
-
-
-    void add_base(char b) {
-        switch ( b ) {
-        case 'A': cnts[kStat_A] += 1; break;
-        case 'C': cnts[kStat_C] += 1; break;
-        case 'G': cnts[kStat_G] += 1; break;
-        case 'T': cnts[kStat_T] += 1; break;
-        //case 'N': cnts[kStat_Insert] += 1; break;
-        case '=': cnts[kStat_Match] += 1; break;
+    void add_base(TSeqPos pos, char b)
+        {
+            if ( pos < len ) {
+                switch ( b ) {
+                case 'A': cc[kStat_A][pos] += 1; break;
+                case 'C': cc[kStat_C][pos] += 1; break;
+                case 'G': cc[kStat_G][pos] += 1; break;
+                case 'T': cc[kStat_T][pos] += 1; break;
+                case '=': cc[kStat_Match][pos] += 1; break;
+                }
+            }
         }
-    }
-    void add_match() {
-        cnts[kStat_Match] += 1;
-    }
-    void add_gap() {
-        cnts[kStat_Gap] += 1;
-    }
-    void add_gaps(TCount count) {
-        cnts[kStat_Gap] += count;
-    }
+    void add_base_raw(TSeqPos pos, Uint1 b)
+        {
+            if ( pos < len ) {
+                switch ( b ) {
+                case 1: /* A */ cc[kStat_A][pos] += 1; break;
+                case 2: /* C */ cc[kStat_C][pos] += 1; break;
+                case 4: /* G */ cc[kStat_G][pos] += 1; break;
+                case 8: /* T */ cc[kStat_T][pos] += 1; break;
+                case 0: /* = */ cc[kStat_Match][pos] += 1; break;
+                }
+            }
+        }
+    void add_gap(TSignedSeqPos gap_pos, TSeqPos gap_len)
+        {
+            if ( gap_pos < 0 ) {
+                if ( TSignedSeqPos(gap_len + gap_pos) <= 0 ) {
+                    // gap is fully before graph segment
+                    return;
+                }
+                gap_len += gap_pos;
+                gap_pos = 0;
+            }
+            else if ( TSeqPos(gap_pos) >= len ) {
+                // gap is fully after graph segment
+                return;
+            }
+            TSeqPos gap_end = gap_pos + gap_len;
+            if ( gap_end > len ) {
+                // gap goes beyond end of graph segment
+                gap_end = len;
+            }
+            cc[kStat_Gap][gap_pos] += 1;
+            if ( gap_end < len ) {
+                cc[kStat_Gap][gap_end] -= 1;
+            }
+        }
+    void finish_add()
+        {
+            TCount g = 0;
+            for ( TSeqPos i = 0; i < len; ++i ) {
+                g += cc[kStat_Gap][i];
+                cc[kStat_Gap][i] = g;
+            }
+        }
 
-    TCount cnts[kNumStat];
+    void get_maxs(TCount (&c_max)[kNumStat]) const
+        {
+            for ( int k = 0; k < kNumStat; ++k ) {
+                c_max[k] = *max_element(cc[k].begin(), cc[k].end());
+            }
+        }
 };
+
+
+static inline
+Uint1 sx_GetBaseRaw(CTempString read_raw, TSeqPos pos)
+{
+    Uint1 b2 = read_raw[pos/2];
+    return pos%2? b2&0xf: b2>>4;
+}
+
 
 END_LOCAL_NAMESPACE;
 
@@ -1363,113 +1418,132 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
     size_t count = 0, skipped = 0;
 
-    vector<SBaseStat> ss(chunk_len);
-    SBaseStat::TCount whole_chunk_gap_count = 0;
+    SBaseStats ss(chunk_len);
     
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
     CBamAlignIterator ait(*m_File, GetRefSeqId(), chunk_pos, chunk_len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
-    for( ; ait; ++ait ){
-        TSeqPos align_pos = ait.GetRefSeqPos();
-        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
-        if ( align_end > ref_len ) {
-            ++skipped;
-            continue;
-        }
-        if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
-            ++skipped;
-            continue;
-        }
-        ++count;
+    if ( CBamRawAlignIterator* rit = ait.GetRawIndexIteratorPtr() ) {
+        for( ; *rit; ++*rit ){
+            if ( min_quality > 0 && rit->GetMapQuality() < min_quality ) {
+                ++skipped;
+                continue;
+            }
+            ++count;
 
-        TSeqPos ss_pos = align_pos - chunk_pos;
-        TSeqPos read_pos = ait.GetCIGARPos();
-        CTempString read = ait.GetShortSequence();
-        CTempString cigar = ait.GetCIGAR();
-        const char* ptr = cigar.data();
-        const char* end = ptr + cigar.size();
-        while ( ptr != end ) {
-            char type = *ptr;
-            TSeqPos seglen = 0;
-            for ( ; ++ptr != end; ) {
-                char c = *ptr;
-                if ( c >= '0' && c <= '9' ) {
-                    seglen = seglen*10+(c-'0');
-                }
-                else {
-                    break;
-                }
-            }
-            if ( seglen == 0 ) {
-                ERR_POST_X(4, "Bad CIGAR length: "<<type<<"0 in "<<cigar);
-                break;
-            }
-            if ( type == '=' ) {
-                // match
-                for ( TSeqPos i = 0; i < seglen; ++i ) {
-                    if ( ss_pos < chunk_len && read_pos < read.size() ) {
-                        ss[ss_pos].add_match();
-                    }
-                    ++ss_pos;
-                    ++read_pos;
-                }
-            }
-            else if ( type == 'M' || type == 'X' ) {
-                // mismatch ('X') or
-                // unspecified 'alignment match' ('M') that can be a mismatch too
-                for ( TSeqPos i = 0; i < seglen; ++i ) {
-                    if ( ss_pos < chunk_len && read_pos < read.size() ) {
-                        ss[ss_pos].add_base(read[read_pos]);
-                    }
-                    ++ss_pos;
-                    ++read_pos;
-                }
-            }
-            else if ( type == 'I' || type == 'S' ) {
-                if ( type == 'S' ) {
-                    // soft clipping already accounted in seqpos
-                    continue;
-                }
-                read_pos += seglen;
-            }
-            else if ( type == 'D' || type == 'N' ) {
-                // gap
-                TSeqPos ref_pos = ss_pos + chunk_pos; // temporary
-                if ( ref_pos < chunk_pos ) {
-                    // skip part of gap before chunk range
-                    TSeqPos before = min(chunk_pos - ref_pos, seglen);
-                    ss_pos += before;
-                    seglen -= before;
-                }
-                if ( ss_pos == 0 && seglen >= chunk_len ) {
-                    ++whole_chunk_gap_count;
-                    ss_pos += chunk_len;
-                    seglen -= chunk_len;
-                }
-                else if ( ss_pos < chunk_len ) {
-                    TSeqPos inside = min(chunk_len - ss_pos, seglen);
-                    for ( TSeqPos i = 0; i < inside; ++i ) {
-                        ss[ss_pos].add_gap();
+            CTempString read_raw = rit->GetShortSequenceRaw();
+            TSeqPos align_pos = rit->GetRefSeqPos();
+            TSeqPos ss_pos = align_pos - chunk_pos;
+            TSeqPos read_pos = 0;
+            for ( Uint2 i = 0, count = rit->GetCIGAROpsCount(); i < count; ++i ) {
+                Uint4 op = rit->GetCIGAROp(i);
+                Uint4 seglen = op >> 4;
+                switch ( op & 0xf ) {
+                case 7: // =
+                    // match
+                    for ( TSeqPos i = 0; i < seglen; ++i ) {
+                        ss.add_match(ss_pos);
                         ++ss_pos;
                     }
-                    seglen -= inside;
-                }
-                if ( seglen > 0 ) {
-                    // align continues beyond chunk end
+                    read_pos += seglen;
+                    break;
+                case 0: // M
+                case 8: // X
+                    // mismatch ('X') or
+                    // unspecified 'alignment match' ('M') that can be a mismatch too
+                    for ( TSeqPos i = 0; i < seglen; ++i ) {
+                        ss.add_base_raw(ss_pos, sx_GetBaseRaw(read_raw, read_pos));
+                        ++ss_pos;
+                        ++read_pos;
+                    }
+                    break;
+                case 1: // I
+                case 4: // S
+                    read_pos += seglen;
+                    break;
+                case 2: // D
+                case 3: // N
+                    ss.add_gap(ss_pos, seglen);
+                    ss_pos += seglen;
+                    break;
+                default: // P
                     break;
                 }
-            }
-            else if ( type != 'P' ) {
-                ERR_POST_X(4, "Bad CIGAR char: "<<type<<" in "<<cigar);
-                break;
             }
         }
     }
-    if ( whole_chunk_gap_count ) {
-        for ( TSeqPos i = 0; i < chunk_len; ++i ) {
-            ss[i].add_gaps(whole_chunk_gap_count);
+    else {
+        for( ; ait; ++ait ){
+            TSeqPos align_pos = ait.GetRefSeqPos();
+            TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+            if ( align_end > ref_len ) {
+                ++skipped;
+                continue;
+            }
+            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+                ++skipped;
+                continue;
+            }
+            ++count;
+
+            TSignedSeqPos ss_pos = align_pos - chunk_pos;
+            TSeqPos read_pos = ait.GetCIGARPos();
+            CTempString read = ait.GetShortSequence();
+            CTempString cigar = ait.GetCIGAR();
+            const char* ptr = cigar.data();
+            const char* end = ptr + cigar.size();
+            while ( ptr != end ) {
+                char type = *ptr;
+                TSeqPos seglen = 0;
+                for ( ; ++ptr != end; ) {
+                    char c = *ptr;
+                    if ( c >= '0' && c <= '9' ) {
+                        seglen = seglen*10+(c-'0');
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if ( seglen == 0 ) {
+                    ERR_POST_X(4, "Bad CIGAR length: "<<type<<"0 in "<<cigar);
+                    break;
+                }
+                if ( type == '=' ) {
+                    // match
+                    for ( TSeqPos i = 0; i < seglen; ++i ) {
+                        ss.add_match(ss_pos);
+                        ++ss_pos;
+                    }
+                    read_pos += seglen;
+                }
+                else if ( type == 'M' || type == 'X' ) {
+                    // mismatch ('X') or
+                    // unspecified 'alignment match' ('M') that can be a mismatch too
+                    for ( TSeqPos i = 0; i < seglen; ++i ) {
+                        ss.add_base(ss_pos, read[read_pos]);
+                        ++ss_pos;
+                        ++read_pos;
+                    }
+                }
+                else if ( type == 'I' || type == 'S' ) {
+                    if ( type == 'S' ) {
+                        // soft clipping already accounted in seqpos
+                        continue;
+                    }
+                    read_pos += seglen;
+                }
+                else if ( type == 'D' || type == 'N' ) {
+                    // gap
+                    ss.add_gap(ss_pos, seglen);
+                    ss_pos += seglen;
+                }
+                else if ( type != 'P' ) {
+                    ERR_POST_X(4, "Bad CIGAR char: "<<type<<" in "<<cigar);
+                    break;
+                }
+            }
         }
     }
 
@@ -1480,20 +1554,10 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                    count<<" skipped: "<<skipped);
     }
 
-    int c_min[SBaseStat::kNumStat], c_max[SBaseStat::kNumStat];
-    for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
-        c_min[i] = kMax_Int;
-        c_max[i] = 0;
-    }
-    for ( size_t j = 0; j < chunk_len; ++j ) {
-        const SBaseStat& s = ss[j];
-        for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
-            int c = s.cnts[i];
-            c_min[i] = min(c_min[i], c);
-            c_max[i] = max(c_max[i], c);
-        }
-    }
-
+    ss.finish_add();
+    SBaseStats::TCount c_max[SBaseStats::kNumStat];
+    ss.get_maxs(c_max);
+    
     CRef<CSeq_annot> annot(new CSeq_annot);
     {
         string name = m_File->GetAnnotName();
@@ -1504,13 +1568,13 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         annot->SetDesc().Set().push_back(desc);
     }
     CRef<CSeq_id> ref_id(SerialClone(*GetRefSeq_id().GetSeqId()));
-    for ( int i = 0; i < SBaseStat::kNumStat; ++i ) {
-        if (i == SBaseStat::kStat_Match && c_max[i] == 0) {
+    for ( int k = 0; k < SBaseStats::kNumStat; ++k ) {
+        if (k == SBaseStats::kStat_Match && c_max[k] == 0) {
             // do not generate empty 'matches' graph
             continue;
         }
         CRef<CSeq_graph> graph(new CSeq_graph);
-        static const char* const titles[SBaseStat::kNumStat] = {
+        static const char* const titles[SBaseStats::kNumStat] = {
             "Number of A bases",
             "Number of C bases",
             "Number of G bases",
@@ -1518,33 +1582,25 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             "Number of inserts",
             "Number of matches"
         };
-        graph->SetTitle(titles[i]);
+        graph->SetTitle(titles[k]);
         CSeq_interval& loc = graph->SetLoc().SetInt();
         loc.SetId(*ref_id);
         loc.SetFrom(chunk_pos);
         loc.SetTo(chunk_pos+chunk_len-1);
         graph->SetNumval(chunk_len);
 
-        if ( c_max[i] < 256 ) {
+        if ( c_max[k] < 256 ) {
             CByte_graph& data = graph->SetGraph().SetByte();
-            CByte_graph::TValues& vv = data.SetValues();
-            vv.reserve(chunk_len);
-            for ( size_t j = 0; j < chunk_len; ++j ) {
-                vv.push_back(ss[j].cnts[i]);
-            }
-            data.SetMin(c_min[i]);
-            data.SetMax(c_max[i]);
+            data.SetValues().assign(ss.cc[k].begin(), ss.cc[k].end());
+            data.SetMin(0);
+            data.SetMax(c_max[k]);
             data.SetAxis(0);
         }
         else {
             CInt_graph& data = graph->SetGraph().SetInt();
-            CInt_graph::TValues& vv = data.SetValues();
-            vv.reserve(chunk_len);
-            for ( size_t j = 0; j < chunk_len; ++j ) {
-                vv.push_back(ss[j].cnts[i]);
-            }
-            data.SetMin(c_min[i]);
-            data.SetMax(c_max[i]);
+            data.SetValues().assign(ss.cc[k].begin(), ss.cc[k].end());
+            data.SetMin(0);
+            data.SetMax(c_max[k]);
             data.SetAxis(0);
         }
         annot->SetData().SetGraph().push_back(graph);
