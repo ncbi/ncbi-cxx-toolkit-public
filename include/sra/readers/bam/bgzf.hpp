@@ -36,6 +36,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/simple_buffer.hpp>
 #include <sra/readers/bam/vdbfile.hpp>
+#include <sra/readers/bam/cache_with_lock.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,73 +47,15 @@ class CPagedFilePage;
 class CBGZFFile;
 class CBGZFStream;
 
-class NCBI_BAMREAD_EXPORT CPagedFile : public CObject
+class CPagedFilePage : public CObject
 {
 public:
     typedef Uint8 TFilePos;
 
-    explicit
-    CPagedFile(const string& file_name);
-    ~CPagedFile();
-
-protected:
-    friend class CPagedFilePage;
-    void x_Select(CPagedFilePage& page, TFilePos pos);
-    void x_Release(CPagedFilePage& page);
-
-private:
-    CFastMutex m_Mutex;
-    // three variants: direct file IO, memory mapped file, or VDB KFile
-    CFileIO m_File;
-    AutoPtr<CMemoryFile> m_MemFile;
-    CVDBFile m_VDBFile;
-};
-
-
-class CPagedFilePage
-{
-public:
-    typedef CPagedFile::TFilePos TFilePos;
-
-    CPagedFilePage()
-        : m_FilePos(-1),
-          m_Size(0),
-          m_Ptr(0)
-    {
-    }
-    CPagedFilePage(CPagedFile& file, TFilePos pos)
-        : m_FilePos(-1),
-          m_Size(0),
-          m_Ptr(0)
-    {
-        file.x_Select(*this, pos);
-    }
-
-    void Reset()
-    {
-        if (m_File) {
-            m_File->x_Release(*this);
-            m_File = null;
-        }
-    }
-    void Select(CPagedFile& file)
-    {
-        if (m_File != &file) {
-            Reset();
-        }
-        m_File = &file;
-    }
-    void Select(TFilePos pos)
-    {
-        m_File->x_Select(*this, pos);
-    }
-    void Select(CPagedFile& file, TFilePos pos)
-    {
-        Select(file);
-        Select(pos);
-    }
-
-    TFilePos GetPageFilePos() const
+    CPagedFilePage();
+    ~CPagedFilePage();
+    
+    TFilePos GetFilePos() const
     {
         return m_FilePos;
     }
@@ -127,18 +70,47 @@ public:
 
     bool Contains(TFilePos file_pos) const
     {
-        return (file_pos - m_FilePos) < m_Size;
+        return (file_pos - GetFilePos()) < GetPageSize();
     }
 
 protected:
     friend class CPagedFile;
-
+    
 private:
-    CRef<CPagedFile> m_File;
-    TFilePos m_FilePos;
+    volatile TFilePos m_FilePos;
     size_t m_Size;
     const char* m_Ptr;
     CSimpleBufferT<char> m_Buffer;
+    CMemoryFileMap* m_MemFile;
+};
+
+
+class NCBI_BAMREAD_EXPORT CPagedFile : public CObject
+{
+public:
+    typedef CPagedFilePage::TFilePos TFilePos;
+
+    explicit
+    CPagedFile(const string& file_name);
+    ~CPagedFile();
+
+    typedef CCacheWithLock<TFilePos, CPagedFilePage> TPageCache;
+    typedef TPageCache::CLock TPage;
+
+    TPage GetPage(TFilePos pos);
+
+private:
+    void x_ReadPage(CPagedFilePage& page, TFilePos file_pos);
+    
+    CFastMutex m_Mutex;
+    
+    // three variants: direct file IO, memory mapped file, or VDB KFile
+    CFileIO m_File;
+    AutoPtr<CMemoryFileMap> m_MemFile;
+    CVDBFile m_VDBFile;
+
+    // cache for loaded pages
+    CRef<TPageCache> m_PageCache;
 };
 
 
@@ -234,6 +206,15 @@ public:
             return !(*this == b);
         }
 
+    static CBGZFPos GetInvalid()
+        {
+            return CBGZFPos(TVirtualPos(-1));
+        }
+    bool IsInvalid() const
+        {
+            return GetVirtualPos() == TVirtualPos(-1);
+        }
+
 private:    
     TVirtualPos m_VirtualPos;
 
@@ -244,7 +225,7 @@ ostream& operator<<(ostream& out, const CBGZFPos& p);
 typedef pair<CBGZFPos, CBGZFPos> CBGZFRange;
 
 
-class CBGZFBlockInfo
+class CBGZFBlock
 {
 public:
     typedef Uint8 TFileBlockPos; // position of block start in a file
@@ -252,12 +233,8 @@ public:
     typedef Uint4 TDataSize; // size of uncompressed data
     typedef Uint4 TCRC32;
 
-    CBGZFBlockInfo()
-        : m_FileBlockPos(0),
-          m_FileBlockSize(0),
-          m_DataSize(0)
-        {
-        }
+    CBGZFBlock();
+    ~CBGZFBlock();
 
 
     TFileBlockPos GetFileBlockPos() const
@@ -281,12 +258,14 @@ public:
     static const TDataSize kMaxDataSize = 1<<16;
 
 protected:
+    friend class CBGZFFile;
     friend class CBGZFStream;
 
 private:
-    TFileBlockPos m_FileBlockPos;
+    volatile TFileBlockPos m_FileBlockPos;
     TFileBlockSize m_FileBlockSize;
     TDataSize m_DataSize;
+    AutoArray<char> m_Data;
 };
 
 
@@ -300,8 +279,22 @@ public:
 protected:
     friend class CBGZFStream;
 
+    typedef CBGZFPos::TFileBlockPos TFileBlockPos;
+    typedef CCacheWithLock<TFileBlockPos, CBGZFBlock> TBlockCache;
+    typedef TBlockCache::CLock TBlock;
+
+    TBlock GetBlock(TFileBlockPos file_pos,
+                    CPagedFile::TPage& page,
+                    CSimpleBufferT<char>& buffer);
+    
+    bool x_ReadBlock(CBGZFBlock& block,
+                     TFileBlockPos file_pos,
+                     CPagedFile::TPage& page,
+                     CSimpleBufferT<char>& buffer);
+    
 private:
     CRef<CPagedFile> m_File;
+    CRef<TBlockCache> m_BlockCache;
 };
 
 
@@ -316,25 +309,60 @@ public:
     void Close();
     void Open(CBGZFFile& file);
 
+    CBGZFBlock::TDataSize GetBlockDataSize() const
+        {
+            return m_Block? m_Block->GetDataSize(): 0;
+        }
+    CBGZFBlock::TFileBlockPos GetBlockFilePos() const
+        {
+            return m_Block? m_Block->GetFileBlockPos(): 0;
+        }
+    CBGZFBlock::TFileBlockPos GetNextBlockFilePos() const
+        {
+            return m_Block? m_Block->GetNextFileBlockPos(): 0;
+        }
+    bool HaveBytesInBlock() const
+        {
+            return m_ReadPos < GetBlockDataSize();
+        }
+
     CBGZFPos GetPos() const
         {
-            return CBGZFPos(m_BlockInfo.GetFileBlockPos(), m_ReadPos);
+            return CBGZFPos(GetBlockFilePos(), m_ReadPos);
         }
-    void Seek(CBGZFPos pos);
+    CBGZFPos GetNextBlockPos() const
+        {
+            return CBGZFPos(GetNextBlockFilePos(), 0);
+        }
+    CBGZFPos GetSeekPos() const
+        {
+            if ( HaveBytesInBlock() ) {
+                return GetPos();
+            }
+            else {
+                return GetNextBlockPos();
+            }
+        }
+    CBGZFPos GetEndPos() const
+        {
+            return m_EndPos;
+        }
+    // seek to position to read till end_pos, or EOF if end_pos is invalid
+    void Seek(CBGZFPos pos, CBGZFPos end_pos = CBGZFPos::GetInvalid());
 
     // return non-zero number of available bytes in current decompressed buffer
     size_t GetNextAvailableBytes();
     // return true if there are more bytes before this position
-    bool HaveNextAvailableBytes(CBGZFPos pos)
+    bool HaveNextAvailableBytes()
         {
-            if ( m_ReadPos < m_BlockInfo.GetDataSize() ) {
-                return GetPos() < pos;
+            if ( HaveBytesInBlock() ) {
+                return GetPos() < m_EndPos;
             }
-            return HaveNextDataBlock(pos);
+            return HaveNextDataBlock();
         }
     // return true if there are more data blocks before this position
     // current buffer must be read till the end
-    bool HaveNextDataBlock(CBGZFPos pos);
+    bool HaveNextDataBlock();
 
     // read up to count bytes into a buffer, may return smaller number
     size_t Read(char* buf, size_t count);
@@ -345,15 +373,20 @@ public:
     const char* Read(size_t count);
     
 private:
+    bool x_NextBlock();
+    
     const char* x_Read(CBGZFPos::TFileBlockPos file_pos, size_t size, char* buffer);
-    void x_ReadBlock(CBGZFPos::TFileBlockPos file_pos);
+    
+    // returns false if m_EndPos is invalid and EOF happened
+    bool x_ReadBlock(CBGZFPos::TFileBlockPos file_pos);
 
     CRef<CBGZFFile> m_File;
-    CPagedFilePage m_Page;
-    CBGZFBlockInfo m_BlockInfo;
+    CPagedFile::TPage m_Page;
+    CBGZFFile::TBlock m_Block;
     CBGZFPos::TByteOffset m_ReadPos;
-    AutoArray<char> m_Data;
-    CSimpleBufferT<char> m_ReadBuffer;
+    CSimpleBufferT<char> m_InReadBuffer;
+    CSimpleBufferT<char> m_OutReadBuffer;
+    CBGZFPos m_EndPos;
 };
 
 

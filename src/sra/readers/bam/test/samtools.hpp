@@ -62,11 +62,19 @@ ostream& operator<<(ostream& out, const SBamAlignment& a);
 class CBamFile
 {
 public:
+    enum EIndexType {
+        eWithIndex,
+        eWithoutIndex
+    };
+    
     CBamFile(void);
-    explicit CBamFile(const string& path);
+    explicit
+    CBamFile(const string& path,
+             EIndexType index_type = eWithIndex);
     ~CBamFile(void);
 
-    void Open(const string& path);
+    void Open(const string& path,
+              EIndexType index_type = eWithIndex);
     void Close(void);
     
     typedef int TRefSeqIndex;

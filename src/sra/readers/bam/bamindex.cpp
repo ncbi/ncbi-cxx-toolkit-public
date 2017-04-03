@@ -61,7 +61,7 @@ class CSeq_entry;
 
 static const uint32_t kBlockBits = 14;
 static const uint32_t kBlockSize = 1<<kBlockBits;
-static const uint32_t kBlockBase = 4681;
+static const uint32_t kBinNumberBase = 4681;
 static const float kEstimatedCompression = 0.25;
 
 static inline
@@ -225,6 +225,7 @@ void SBamIndexBinInfo::Read(CNcbiIstream& in)
 
 void SBamIndexRefIndex::Read(CNcbiIstream& in)
 {
+    m_EstimatedLength = 0;
     int32_t n_bin = s_ReadInt32(in);
     m_Bins.resize(n_bin);
     const SBamIndexBinInfo::TBin kSpecialBin = 37450;
@@ -240,6 +241,9 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
             m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
             m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
         }
+        else {
+            m_EstimatedLength = max(m_EstimatedLength, bin.GetSeqRange().GetToOpen());
+        }
     }
     gfx::timsort(m_Bins.begin(), m_Bins.end());
     m_Bins.erase(lower_bound(m_Bins.begin(), m_Bins.end(), kSpecialBin), m_Bins.end());
@@ -249,6 +253,7 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
     for ( int32_t i_intv = 0; i_intv < n_intv; ++i_intv ) {
         m_Intervals[i_intv] = s_ReadFilePos(in);
     }
+    m_EstimatedLength = max(m_EstimatedLength, n_intv*kBlockSize);
 }
 
 
@@ -558,6 +563,7 @@ void CBamHeader::Read(CNcbiIstream& file_stream)
         m_Refs[i_ref].Read(in);
         m_RefByName[m_Refs[i_ref].m_Name] = i_ref;
     }
+    m_AlignStart = CBGZFPos::GetInvalid();
 }
 
 
@@ -574,6 +580,7 @@ void CBamHeader::Read(CBGZFStream& stream)
         m_Refs[i_ref].Read(stream);
         m_RefByName[m_Refs[i_ref].m_Name] = i_ref;
     }
+    m_AlignStart = stream.GetSeekPos();
 }
 
 
@@ -667,8 +674,7 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
     }
     const SBamIndexRefIndex& ref = index.GetRef(ref_index);
     TSeqPos beg = ref_range.GetFrom();
-    TSeqPos end = min(ref_range.GetToOpen(),
-                      TSeqPos(ref.m_Intervals.size()*kBlockSize));
+    TSeqPos end = min(ref_range.GetToOpen(), ref.m_EstimatedLength);
     if ( end <= beg ) {
         return;
     }
@@ -679,12 +685,13 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
     // set limits
     CBGZFRange limit;
     // start limit is from intervals and beg position
-    _ASSERT((beg>>kBlockBits)<ref.m_Intervals.size());
-    limit.first = ref.m_Intervals[beg>>kBlockBits];
+    if ( (beg>>kBlockBits)<ref.m_Intervals.size() ) {
+        limit.first = ref.m_Intervals[beg>>kBlockBits];
+    }
     // end limit is from low-level block after end position
-    limit.second = CBGZFPos(CBGZFPos::TVirtualPos(-1));
+    limit.second = CBGZFPos::GetInvalid();
     SBamIndexBinInfo::TBin end_bin =
-        SBamIndexBinInfo::TBin(kBlockBase + (end >> kBlockBits) + 1);
+        SBamIndexBinInfo::TBin(kBinNumberBase + (end >> kBlockBits) + 1);
     auto end_it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), end_bin);
     if ( end_it != ref.m_Bins.end() ) {
         limit.second = end_it->m_Chunks[0].first;
@@ -693,13 +700,29 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
     vector<CBGZFRange> ranges;
     for ( unsigned k = 0; k <= 5; ++k ) {
         unsigned shift = kBlockBits+3*k;
-        unsigned base = kBlockBase>>(3*k);
+        unsigned base = kBinNumberBase>>(3*k);
         AddBinsRanges(ranges, limit, ref,
                       base + (beg>>shift),
                       base + (end>>shift));
     }
     gfx::timsort(ranges.begin(), ranges.end());
     AddSortedRanges(ranges);
+}
+
+
+void CBamFileRangeSet::AddWhole(const CBamHeader& header)
+{
+    CBGZFRange whole;
+    whole.first = header.GetAlignStart();
+    whole.second = CBGZFPos::GetInvalid();
+    m_Ranges += whole;
+}
+
+
+void CBamFileRangeSet::SetWhole(const CBamHeader& header)
+{
+    Clear();
+    AddWhole(header);
 }
 
 
@@ -722,6 +745,14 @@ CBamRawDb::~CBamRawDb()
 }
 
 
+void CBamRawDb::Open(const string& bam_path)
+{
+    m_File = new CBGZFFile(bam_path);
+    CBGZFStream stream(*m_File);
+    m_Header.Read(stream);
+}
+
+
 void CBamRawDb::Open(const string& bam_path, const string& index_path)
 {
     m_Index.Read(index_path);
@@ -735,6 +766,20 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
 // SBamAlignInfo
 /////////////////////////////////////////////////////////////////////////////
 
+static const char kBaseSymbols[] = "=ACMGRSVTWYHKDBN";
+
+static const char kCIGARSymbols[] = "MIDNSHP=X???????";
+enum ECIGARType { // matches to kCIGARSymbols
+    kCIGAR_M,
+    kCIGAR_I,
+    kCIGAR_D,
+    kCIGAR_N,
+    kCIGAR_S,
+    kCIGAR_H,
+    kCIGAR_P,
+    kCIGAR_eq,
+    kCIGAR_X
+};
 
 string SBamAlignInfo::get_read() const
 {
@@ -744,12 +789,12 @@ string SBamAlignInfo::get_read() const
         char c = *ptr++;
         uint32_t b1 = (c >> 4)&0xf;
         uint32_t b2 = (c     )&0xf;
-        ret += "=ACMGRSVTWYHKDBN"[b1];
+        ret += kBaseSymbols[b1];
         if ( len == 1 ) {
             len = 0;
         }
         else {
-            ret += "=ACMGRSVTWYHKDBN"[b2];
+            ret += kBaseSymbols[b2];
             len -= 2;
         }
     }
@@ -759,37 +804,43 @@ string SBamAlignInfo::get_read() const
 
 uint32_t SBamAlignInfo::get_cigar_pos() const
 {
-    uint32_t ret = 0;
+    // ignore optional starting hard break
+    // return optional starting soft break
+    // or 0 if there is no soft break
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
         uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
         switch ( op & 0xf ) {
-        case 4: // S ?
-            ret += op >> 4;
-            break;
+        case kCIGAR_H:
+            continue;
+        case kCIGAR_S:
+            return op >> 4;
         default:
-            break;
+            return 0;
         }
     }
-    return ret;
+    return 0;
 }
 
 
 uint32_t SBamAlignInfo::get_cigar_ref_size() const
 {
+    // ignore hard and soft breaks, ignore insertions
+    // only match/mismatch, deletes, and skips remain
     uint32_t ret = 0;
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
         uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
+        uint32_t seglen = op >> 4;
         switch ( op & 0xf ) {
-        case 0: // M
-        case 2: // D
-        case 3: // N ?
-        case 7: // =
-        case 8: // X
-            ret += op >> 4;
+        case kCIGAR_M:
+        case kCIGAR_eq:
+        case kCIGAR_X:
+        case kCIGAR_D:
+        case kCIGAR_N:
+            ret += seglen;
             break;
         default:
             break;
@@ -801,18 +852,20 @@ uint32_t SBamAlignInfo::get_cigar_ref_size() const
 
 uint32_t SBamAlignInfo::get_cigar_read_size() const
 {
+    // ignore hard and soft breaks, ignore deletions and skips
+    // only match/mismatch and inserts remain
     uint32_t ret = 0;
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
         uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
+        uint32_t seglen = op >> 4;
         switch ( op & 0xf ) {
-        case 0: // M
-        case 1: // I
-        case 4: // S ?
-        case 7: // =
-        case 8: // X
-            ret += op >> 4;
+        case kCIGAR_M:
+        case kCIGAR_eq:
+        case kCIGAR_X:
+        case kCIGAR_I:
+            ret += seglen;
             break;
         default:
             break;
@@ -824,18 +877,153 @@ uint32_t SBamAlignInfo::get_cigar_read_size() const
 
 string SBamAlignInfo::get_cigar() const
 {
+    // ignore hard and soft breaks
     CNcbiOstrstream ret;
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
         uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
-        uint32_t len = op >> 4;
-        op &= 0xf;
-        if ( len != 1 )
-            ret << len;
-        ret << "MIDNSHP=X???????"[op];
+        switch ( op & 0xf ) {
+        case kCIGAR_H:
+        case kCIGAR_S:
+            continue;
+        default:
+            break;
+        }
+        uint32_t seglen = op >> 4;
+        ret << kCIGARSymbols[op & 0xf] << seglen;
     }
     return CNcbiOstrstreamToString(ret);
+}
+
+
+static inline int sx_TagDataSize(char type)
+{
+    switch (type) {
+    case 'A':
+    case 'c':
+    case 'C':
+        return 1;
+    case 's':
+    case 'S':
+        return 2;
+    case 'i':
+    case 'I':
+    case 'f':
+        return 4;
+    case 'Z':
+    case 'H':
+        return -'Z';
+    case 'B':
+        return -'B';
+    default:
+        return 0;
+    }
+}
+
+
+static inline int sx_GetStringLen(const char* beg, const char* end)
+{
+    for ( const char* ptr = beg; ptr != end; ++ptr ) {
+        if ( !*ptr ) {
+            return ptr-beg;
+        }
+    }
+    // no zero termination -> bad string
+    return -1;
+}
+
+
+const char* SBamAlignInfo::get_aux_data(char c1, char c2) const
+{
+    const char* end = get_aux_data_end();
+    const char* ptr = get_aux_data_ptr();
+    for ( ;; ) {
+        if ( ptr+3 > end ) {
+            // end of data
+            return 0;
+        }
+        if ( ptr[0] == c1 && ptr[1] == c2 ) {
+            return ptr;
+        }
+        int size = sx_TagDataSize(ptr[2]);
+        ptr += 3;
+        if ( size > 0 ) {
+            if ( ptr+size > end ) {
+                // end of data
+                return 0;
+            }
+            ptr += size;
+        }
+        else if ( size == -'Z' ) {
+            // zero terminated
+            size = sx_GetStringLen(ptr, end);
+            if ( size < 0 ) {
+                // no termination, cannot continue parsing
+                return 0;
+            }
+            ptr += size+1;
+        }
+        else if ( size == -'B' ) {
+            if ( ptr+5 > end ) {
+                // end of data
+                return 0;
+            }
+            size = sx_TagDataSize(ptr[0]);
+            uint32_t count = SBamUtil::MakeUint4(ptr+1);
+            ptr += 5;
+            // array
+            if ( size > 0 ) {
+                size *= count;
+                if ( ptr+size > end ) {
+                    // end of data
+                    return 0;
+                }
+                ptr += size;
+            }
+            else if ( size == -'Z' ) {
+                // zero terminated
+                for ( uint32_t i = 0; i < count; ++i ) {
+                    size = sx_GetStringLen(ptr, end);
+                    if ( size < 0 ) {
+                        // no termination, cannot continue parsing
+                        return 0;
+                    }
+                    ptr += size+1;
+                }
+            }
+            else {
+                // bad element type, cannot continue parsing
+                return 0;
+            }
+        }
+        else {
+            // bad type, cannot continue parsing
+            return 0;
+        }
+    }        
+    return 0;
+}
+
+
+CTempString SBamAlignInfo::get_aux_data_string(char c1, char c2) const
+{
+    const char* data = get_aux_data(c1, c2);
+    if ( !data || data[2] != 'Z' ) {
+        return CTempString();
+    }
+    data += 3;
+    int len = sx_GetStringLen(data, get_aux_data_end());
+    if ( len < 0 ) {
+        return CTempString();
+    }
+    return CTempString(data, len);
+}
+
+
+CTempString SBamAlignInfo::get_short_seq_accession_id() const
+{
+    return get_aux_data_string('R', 'G');
 }
 
 
@@ -843,7 +1031,7 @@ void SBamAlignInfo::Read(CBGZFStream& in)
 {
     m_RecordSize = SBamUtil::MakeUint4(in.Read(4));
     m_RecordPtr = in.Read(m_RecordSize);
-    _ASSERT(get_qual_ptr() <= get_qual_end());
+    _ASSERT(get_aux_data_ptr() <= get_aux_data_end());
 }
 
 
@@ -869,6 +1057,18 @@ CBamRawAlignIterator::CBamRawAlignIterator(CBamRawDb& bam_db,
 }
 
 
+void CBamRawAlignIterator::x_Select(const CBamHeader& header)
+{
+    m_RefIndex = size_t(-1);
+    m_RefRange = CRange<TSeqPos>::GetEmpty();
+    m_Ranges.SetWhole(header);
+    m_NextRange = m_Ranges.begin();
+    if ( x_UpdateRange() ) {
+        Next();
+    }
+}
+
+
 void CBamRawAlignIterator::x_Select(const CBamIndex& index,
                                     size_t ref_index,
                                     CRange<TSeqPos> ref_range)
@@ -878,7 +1078,7 @@ void CBamRawAlignIterator::x_Select(const CBamIndex& index,
     m_Ranges.SetRanges(index, ref_index, ref_range);
     m_NextRange = m_Ranges.begin();
     if ( x_UpdateRange() ) {
-        x_Settle();
+        Next();
     }
 }
 
@@ -891,7 +1091,7 @@ bool CBamRawAlignIterator::x_UpdateRange()
     }
     else {
         m_CurrentRangeEnd = m_NextRange->second;
-        m_Reader.Seek(m_NextRange->first);
+        m_Reader.Seek(m_NextRange->first, m_NextRange->second);
         ++m_NextRange;
         return true;
     }
@@ -902,33 +1102,87 @@ bool CBamRawAlignIterator::x_NeedToSkip()
 {
     _ASSERT(*this);
     m_AlignInfo.Read(m_Reader);
-    if ( size_t(m_AlignInfo.get_ref_index()) != m_RefIndex ) {
-        // wrong reference sequence
-        return true;
-    }
-    TSeqPos pos = m_AlignInfo.get_ref_pos();
-    if ( pos >= m_RefRange.GetToOpen() ) {
-        // after search range
-        x_Stop();
-        return false;
-    }
-    if ( pos < m_RefRange.GetFrom() ) {
-        TSeqPos end = pos + m_AlignInfo.get_cigar_ref_size();
-        if ( end <= m_RefRange.GetFrom() ) {
-            // before search range
+    if ( m_RefIndex != size_t(-1) ) {
+        if ( size_t(m_AlignInfo.get_ref_index()) != m_RefIndex ) {
+            // wrong reference sequence
             return true;
+        }
+        TSeqPos pos = m_AlignInfo.get_ref_pos();
+        if ( pos >= m_RefRange.GetToOpen() ) {
+            // after search range
+            x_Stop();
+            return false;
+        }
+        if ( pos < m_RefRange.GetFrom() ) {
+            TSeqPos end = pos + m_AlignInfo.get_cigar_ref_size();
+            if ( end <= m_RefRange.GetFrom() ) {
+                // before search range
+                return true;
+            }
         }
     }
     return false;
 }
 
 
-void CBamRawAlignIterator::x_Settle()
+void CBamRawAlignIterator::Next()
 {
-    while ( x_NeedToSkip() ) {
-        if ( !x_NextAnnot() ) {
-            return;
+    while ( x_NextAnnot() && x_NeedToSkip() ) {
+        // continue
+    }
+}
+
+
+void CBamRawAlignIterator::GetSegments(vector<int>& starts, vector<TSeqPos>& lens) const
+{
+    TSeqPos refpos = GetRefSeqPos();
+    TSeqPos seqpos = 0;
+
+    // ignore hard breaks
+    // omit soft breaks in the alignment
+    const char* ptr = m_AlignInfo.get_cigar_ptr();
+    for ( uint16_t count = m_AlignInfo.get_cigar_ops_count(); count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(ptr);
+        ptr += 4;
+        TSeqPos seglen = op >> 4;
+        int refstart, seqstart;
+        switch ( op & 0xf ) {
+        case kCIGAR_H:
+        case kCIGAR_P: // ?
+            continue;
+        case kCIGAR_S:
+            seqpos += seglen;
+            continue;
+        case kCIGAR_M:
+        case kCIGAR_eq:
+        case kCIGAR_X:
+            refstart = refpos;
+            refpos += seglen;
+            seqstart = seqpos;
+            seqpos += seglen;
+            break;
+        case kCIGAR_I:
+            refstart = kInvalidSeqPos;
+            seqstart = seqpos;
+            seqpos += seglen;
+            break;
+        case kCIGAR_D:
+        case kCIGAR_N:
+            refstart = refpos;
+            refpos += seglen;
+            seqstart = kInvalidSeqPos;
+            break;
+        default:
+            NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                           "Bad CIGAR segment: " << (op & 0xf) << " in " <<GetCIGAR());
         }
+        if ( seglen == 0 ) {
+            NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                           "Zero CIGAR segment: in " << GetCIGAR());
+        }
+        starts.push_back(refstart);
+        starts.push_back(seqstart);
+        lens.push_back(seglen);
     }
 }
 

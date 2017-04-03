@@ -191,11 +191,11 @@ inline bool Matches(char ac, char rc)
 string GetShortSeqData(const CBamAlignIterator& it)
 {
     string ret;
-    const CBamString& src = it.GetShortSequence();
+    string src = it.GetShortSequence();
     //bool minus = it.IsSetStrand() && IsReverse(it.GetStrand());
     TSeqPos src_pos = it.GetCIGARPos();
 
-    const CBamString& CIGAR = it.GetCIGAR();
+    string CIGAR = it.GetCIGAR();
     const char* ptr = CIGAR.data();
     const char* end = ptr + CIGAR.size();
     char type;
@@ -592,13 +592,13 @@ int CBAMTestApp::Run(void)
         }
 
         if ( args["header"] ) {
-            out << bam_db.GetHeaderText() << '\n';
+            out << bam_db.GetHeaderText() << endl;
         }
         if ( args["refseq_table"] ) {
             out << "RefSeq table:\n";
             for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
                 out << "RefSeq: " << it.GetRefSeqId() << " " << it.GetLength()
-                    << '\n';
+                    << endl;
             }
         }
         int limit_count = args["limit_count"].AsInteger();
@@ -684,7 +684,6 @@ int CBAMTestApp::Run(void)
                     TSeqPos ref_pos;
                     try {
                         ref_pos = it.GetRefSeqPos();
-                        _ASSERT(ref_pos != kInvalidSeqPos);
                     }
                     catch ( CBamException& exc ) {
                         if ( exc.GetErrCode() != exc.eNoData ) {
@@ -709,7 +708,7 @@ int CBAMTestApp::Run(void)
                     int qual = it.GetMapQuality();
                     string ref_seq_id;
                     if ( ref_pos == kInvalidSeqPos ) {
-                        _ASSERT(ref_size == 0);
+                        _ASSERT(ref_size == 0 || ref_size == it.GetShortSequence().size());
                         _ASSERT(qual == 0);
                         if ( verbose ) {
                             out << count << ": Unaligned\n";
@@ -725,6 +724,7 @@ int CBAMTestApp::Run(void)
                                 << " Qual = " << qual
                                 << '\n';
                         }
+                        _ASSERT(!ref_seq_id.empty());
                     }
                     string short_seq_id = it.GetShortSeqId();
                     string short_seq_acc = it.GetShortSeqAcc();
@@ -775,7 +775,7 @@ int CBAMTestApp::Run(void)
                                 << endl;
                         }
                     }
-                    if ( verbose || print_seq_entry || make_seq_entry ) {
+                    if ( verbose ) {
                         string data = it.GetShortSequence();
                         if ( verbose ) {
                             out << "Sequence[" << data.size() << "]"
@@ -796,20 +796,12 @@ int CBAMTestApp::Run(void)
                                 << NStr::PrintableString(cigar)
                                 << endl;
                         }
-                        if ( print_seq_entry || make_seq_entry ) {
-                            CRef<CSeq_entry> entry = it.GetMatchEntry();
-                            if ( make_seq_entry ) {
-                                entries.push_back(entry);
-                            }
-                            if ( print_seq_entry ) {
-                                out << MSerial_AsnText << *entry << '\n';
-                            }
-                        }
                         if ( ref_pos == p_ref_pos && strand == p_strand &&
                              cigar == p_cigar ) {
                             if ( data != p_data ) {
                                 out << "Error: match data at the same place "
-                                    << "is not the same"
+                                    << "is not the same: "
+                                    << data << " vs " << p_data
                                     << endl;
                             }
                         }
@@ -822,6 +814,15 @@ int CBAMTestApp::Run(void)
                         }
                         p_data = data;
                         p_cigar = cigar;
+                    }
+                    if ( print_seq_entry || make_seq_entry ) {
+                        CRef<CSeq_entry> entry = it.GetMatchEntry();
+                        if ( make_seq_entry ) {
+                            entries.push_back(entry);
+                        }
+                        if ( print_seq_entry ) {
+                            out << MSerial_AsnText << *entry << '\n';
+                        }
                     }
                     if ( !sv.empty() && qual < min_quality ) {
                         skipped_by_quality_count += 1;
@@ -942,10 +943,15 @@ int CBAMTestApp::Run(void)
             }
             else {
                 NON_CONST_ITERATE ( TRefIds, it, ref_ids ) {
-                    out << it->first << ": " << it->second.size() << NcbiFlush;
-                    sort(it->second.begin(), it->second.end());
-                    out << "    " << it->second[0].GetFrom() << "-"
-                        << it->second.back().GetToOpen()-1 << NcbiEndl;
+                    if ( it->first.empty() ) {
+                        out << "Unmapped alignments: " << it->second.size() << NcbiEndl;
+                    }
+                    else {
+                        out << "Ref " << it->first << ": " << it->second.size() << NcbiFlush;
+                        sort(it->second.begin(), it->second.end());
+                        out << "    " << it->second[0].GetFrom() << "-"
+                            << it->second.back().GetToOpen()-1 << NcbiEndl;
+                    }
                 }
                 if ( collect_short && !short_ids.empty() ) {
                     sort(short_ids.begin(), short_ids.end());

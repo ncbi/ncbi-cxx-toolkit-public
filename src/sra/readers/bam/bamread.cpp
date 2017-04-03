@@ -329,6 +329,20 @@ string CSrzPath::FindAccPath(const string& acc, EMissing missing)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM, USE_RAW_INDEX);
+NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, false,
+                  eParam_NoThread, BAM_USE_RAW_INDEX);
+
+
+bool CBamDb::UseRawIndex(EUseAPI use_api)
+{
+    if ( use_api == eUseDefaultAPI )
+        return NCBI_PARAM_TYPE(BAM, USE_RAW_INDEX)::GetDefault();
+    else
+        return use_api == eUseRawIndex;
+}
+
+
 static
 void sx_MapId(CSeq_id& id, IIdMapper* idmapper)
 {
@@ -396,9 +410,6 @@ CBamMgr::CBamMgr(void)
                     "Cannot create AlignAccessMgr", rc);
     }
 }
-
-
-SPECIALIZE_BAM_REF_TRAITS(VFSManager, );
 
 
 #ifdef NCBI_OS_MSWIN
@@ -494,13 +505,28 @@ struct VPathReleaser
         { VPathRelease(kpath); }
 };
 
-CBamDb::CBamDb(const CBamMgr& mgr,
-               const string& db_name)
-    : m_DbName(db_name)
+
+CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
+                             const string& db_name)
 {
     AutoPtr<VPath, VPathReleaser> kdb_name(sx_GetVPath(db_name));
-    if ( rc_t rc = AlignAccessMgrMakeBAMDB(mgr, x_InitPtr(), kdb_name.get()) ) {
-        *x_InitPtr() = 0;
+    if ( rc_t rc = AlignAccessMgrMakeBAMDB(mgr, m_DB.x_InitPtr(), kdb_name.get()) ) {
+        *m_DB.x_InitPtr() = 0;
+        NCBI_THROW3(CBamException, eInitFailed,
+                    "Cannot open BAM DB", rc, db_name);
+    }
+}
+
+CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
+                             const string& db_name,
+                             const string& idx_name)
+{
+    AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(db_name));
+    AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(idx_name));
+    if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr, m_DB.x_InitPtr(),
+                                                kdb_name.get(),
+                                                kidx_name.get()) ) {
+        *m_DB.x_InitPtr() = 0;
         NCBI_THROW3(CBamException, eInitFailed,
                     "Cannot open BAM DB", rc, db_name);
     }
@@ -509,18 +535,30 @@ CBamDb::CBamDb(const CBamMgr& mgr,
 
 CBamDb::CBamDb(const CBamMgr& mgr,
                const string& db_name,
-               const string& idx_name)
+               EUseAPI use_api)
+    : m_DbName(db_name)
+{
+    if ( UseRawIndex(use_api) ) {
+        m_RawDB = new CObjectFor<CBamRawDb>(db_name);
+    }
+    else {
+        m_AADB = new SAADBImpl(mgr, db_name);
+    }
+}
+
+
+CBamDb::CBamDb(const CBamMgr& mgr,
+               const string& db_name,
+               const string& idx_name,
+               EUseAPI use_api)
     : m_DbName(db_name),
       m_IndexName(idx_name)
 {
-    AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(db_name));
-    AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(idx_name));
-    if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr, x_InitPtr(),
-                                                kdb_name.get(),
-                                                kidx_name.get()) ) {
-        *x_InitPtr() = 0;
-        NCBI_THROW3(CBamException, eInitFailed,
-                    "Cannot open BAM DB", rc, db_name);
+    if ( UseRawIndex(use_api) ) {
+        m_RawDB = new CObjectFor<CBamRawDb>(db_name, idx_name);
+    }
+    else {
+        m_AADB = new SAADBImpl(mgr, db_name, idx_name);
     }
 }
 
@@ -539,89 +577,116 @@ CRef<CSeq_id> CBamDb::GetShortSeq_id(const string& str, bool external) const
 
 TSeqPos CBamDb::GetRefSeqLength(const string& id) const
 {
-    if ( m_RefSeqLengths.empty() ) {
-        for ( CBamRefSeqIterator it(*this); it; ++it ) {
-            TSeqPos len;
-            try {
-                len = it.GetLength();
+    if ( !m_RefSeqLengths ) {
+        DEFINE_STATIC_FAST_MUTEX(sx_RefSeqMutex);
+        CFastMutexGuard guard(sx_RefSeqMutex);
+        if ( !m_RefSeqLengths ) {
+            AutoPtr<TRefSeqLengths> lengths(new TRefSeqLengths);
+            for ( CBamRefSeqIterator it(*this); it; ++it ) {
+                TSeqPos len;
+                try {
+                    len = it.GetLength();
+                }
+                catch ( CBamException& /*ignored*/ ) {
+                    len = kInvalidSeqPos;
+                }
+                (*lengths)[it.GetRefSeqId()] = len;
             }
-            catch ( CBamException& /*ignored*/ ) {
-                len = kInvalidSeqPos;
-            }
-            m_RefSeqLengths[it.GetRefSeqId()] = len;
+            m_RefSeqLengths = lengths;
         }
     }
-    TRefSeqLengths::const_iterator it = m_RefSeqLengths.find(id);
-    return it == m_RefSeqLengths.end()? kInvalidSeqPos: it->second;
+    TRefSeqLengths::const_iterator it = m_RefSeqLengths->find(id);
+    return it == m_RefSeqLengths->end()? kInvalidSeqPos: it->second;
 }
 
 
 string CBamDb::GetHeaderText(void) const
 {
-    CBamRef<const BAMFile> file;
-    if ( rc_t rc = AlignAccessDBExportBAMFile(*this, file.x_InitPtr()) ) {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot get BAMFile pointer", rc);
+    if ( UsesRawIndex() ) {
+        return m_RawDB->GetData().GetHeader().GetText();
     }
-    const char* header;
-    size_t size;
-    if ( rc_t rc = BAMFileGetHeaderText(file, &header, &size) ) {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot get BAM header text", rc);
+    else {
+        CMutexGuard guard(m_AADB->m_Mutex);
+        CBamRef<const BAMFile> file;
+        if ( rc_t rc = AlignAccessDBExportBAMFile(m_AADB->m_DB, file.x_InitPtr()) ) {
+            NCBI_THROW2(CBamException, eOtherError,
+                        "Cannot get BAMFile pointer", rc);
+        }
+        const char* header;
+        size_t size;
+        if ( rc_t rc = BAMFileGetHeaderText(file, &header, &size) ) {
+            NCBI_THROW2(CBamException, eOtherError,
+                        "Cannot get BAM header text", rc);
+        }
+        return string(header, size);
     }
-    return string(header, size);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
+CBamRefSeqIterator::CBamRefSeqIterator()
+{
+}
+
+
 CBamRefSeqIterator::CBamRefSeqIterator(const CBamDb& bam_db)
     : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership)
 {
-    AlignAccessRefSeqEnumerator* ptr = 0;
-    m_LocateRC = AlignAccessDBEnumerateRefSequences(bam_db, &ptr);
-    if ( m_LocateRC == 0 ) {
-        m_Iter.SetReferencedPointer(ptr);
-    }
-    else if ( GetRCObject(m_LocateRC) == rcRow &&
-              GetRCState(m_LocateRC) == rcNotFound ) {
-        // no reference sequences found
+    if ( bam_db.UsesRawIndex() ) {
+        m_RawDB = bam_db.m_RawDB;
+        if ( m_RawDB->GetData().GetHeader().GetRefs().empty() ) {
+            m_RawDB = null;
+        }
+        m_RefIndex = 0;
     }
     else {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot find first refseq", m_LocateRC);
+        CMutexGuard guard(bam_db.m_AADB->m_Mutex);
+        AlignAccessRefSeqEnumerator* ptr = 0;
+        if ( rc_t rc = AlignAccessDBEnumerateRefSequences(bam_db.m_AADB->m_DB, &ptr) ) {
+            if ( !(GetRCObject(rc) == rcRow &&
+                   GetRCState(rc) == rcNotFound) ) {
+                // error
+                NCBI_THROW2(CBamException, eOtherError, "Cannot find first refseq", rc);
+            }
+            // no reference sequences found
+        }
+        else {
+            // found first reference sequences
+            m_AADBImpl = new SAADBImpl();
+            m_AADBImpl->m_Iter.SetReferencedPointer(ptr);
+            x_AllocBuffers();
+        }
     }
-    x_AllocBuffers();
 }
 
 
 void CBamRefSeqIterator::x_AllocBuffers(void)
 {
-    m_RefSeqId.reserve(32);
+    m_AADBImpl->m_RefSeqIdBuffer.reserve(32);
 }
 
 
 void CBamRefSeqIterator::x_InvalidateBuffers(void)
 {
-    m_RefSeqId.clear();
-    m_RefSeq_id.Reset();
+    m_AADBImpl->m_RefSeqIdBuffer.clear();
 }
 
 
 CBamRefSeqIterator::CBamRefSeqIterator(const CBamRefSeqIterator& iter)
-    : m_Iter(iter.m_Iter),
-      m_LocateRC(iter.m_LocateRC)
 {
-    x_AllocBuffers();
+    *this = iter;
 }
 
 
 CBamRefSeqIterator& CBamRefSeqIterator::operator=(const CBamRefSeqIterator& iter)
 {
     if ( this != &iter ) {
-        x_InvalidateBuffers();
-        m_Iter = iter.m_Iter;
-        m_LocateRC = iter.m_LocateRC;
+        m_AADBImpl = iter.m_AADBImpl;
+        m_RawDB = iter.m_RawDB;
+        m_RefIndex = iter.m_RefIndex;
+        m_IdMapper = iter.m_IdMapper;
+        m_CachedRefSeq_id.Reset();
     }
     return *this;
 }
@@ -629,32 +694,42 @@ CBamRefSeqIterator& CBamRefSeqIterator::operator=(const CBamRefSeqIterator& iter
 
 void CBamRefSeqIterator::x_CheckValid(void) const
 {
-    if ( !m_Iter ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "CBamRefSeqIterator is invalid", m_LocateRC);
+    if ( !*this ) {
+        NCBI_THROW(CBamException, eNoData, "CBamRefSeqIterator is invalid");
     }
 }
 
 
 CBamRefSeqIterator& CBamRefSeqIterator::operator++(void)
 {
-    x_CheckValid();
-    x_InvalidateBuffers();
-    m_LocateRC = AlignAccessRefSeqEnumeratorNext(m_Iter);
-    if ( m_LocateRC != 0 &&
-         !(GetRCObject(m_LocateRC) == rcRow &&
-           GetRCState(m_LocateRC) == rcNotFound) ) {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot find next refseq", m_LocateRC);
+    if ( m_AADBImpl ) {
+        x_InvalidateBuffers();
+        if ( rc_t rc = AlignAccessRefSeqEnumeratorNext(m_AADBImpl->m_Iter) ) {
+            m_AADBImpl.Reset();
+            if ( !(GetRCObject(rc) == rcRow &&
+                   GetRCState(rc) == rcNotFound) ) {
+                // error
+                NCBI_THROW2(CBamException, eOtherError,
+                            "Cannot find next refseq", rc);
+            }
+            // no more reference sequences
+        }
     }
+    else {
+        if( ++m_RefIndex == m_RawDB->GetData().GetHeader().GetRefs().size() ) {
+            // no more reference sequences
+            m_RawDB.Reset();
+        }
+    }
+    m_CachedRefSeq_id.Reset();
     return *this;
 }
 
 
 bool CBamRefSeqIterator::x_CheckRC(CBamString& buf,
-                                  rc_t rc,
-                                  size_t size,
-                                  const char* msg) const
+                                   rc_t rc,
+                                   size_t size,
+                                   const char* msg) const
 {
     if ( rc == 0 ) {
         // no error, update size and finish
@@ -686,12 +761,12 @@ bool CBamRefSeqIterator::x_CheckRC(CBamString& buf,
 
 
 void CBamRefSeqIterator::x_GetString(CBamString& buf,
-                                    const char* msg, TGetString func) const
+                                     const char* msg, TGetString func) const
 {
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_Iter, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, buf.x_data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -699,45 +774,103 @@ void CBamRefSeqIterator::x_GetString(CBamString& buf,
 }
 
 
-const CBamString& CBamRefSeqIterator::GetRefSeqId(void) const
+CTempString CBamRefSeqIterator::GetRefSeqId(void) const
 {
-    x_GetString(m_RefSeqId, "RefSeqId",
-                AlignAccessRefSeqEnumeratorGetID);
-    return m_RefSeqId;
+    if ( m_AADBImpl ) {
+        x_GetString(m_AADBImpl->m_RefSeqIdBuffer, "RefSeqId",
+                    AlignAccessRefSeqEnumeratorGetID);
+        return m_AADBImpl->m_RefSeqIdBuffer;
+    }
+    else {
+        return m_RawDB->GetData().GetHeader().GetRefName(m_RefIndex);
+    }
 }
 
 
 CRef<CSeq_id> CBamRefSeqIterator::GetRefSeq_id(void) const
 {
-    if ( !m_RefSeq_id ) {
-        m_RefSeq_id = sx_GetRefSeq_id(GetRefSeqId(), GetIdMapper());
+    if ( !m_CachedRefSeq_id ) {
+        m_CachedRefSeq_id = sx_GetRefSeq_id(GetRefSeqId(), GetIdMapper());
     }
-    return m_RefSeq_id;
+    return m_CachedRefSeq_id;
 }
 
 
 TSeqPos CBamRefSeqIterator::GetLength(void) const
 {
-    uint64_t length;
-    if ( rc_t rc = AlignAccessRefSeqEnumeratorGetLength(m_Iter, &length) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "CBamRefSeqIterator::GetLength() cannot get length", rc);
+    if ( m_AADBImpl ) {
+        uint64_t length;
+        if ( rc_t rc = AlignAccessRefSeqEnumeratorGetLength(m_AADBImpl->m_Iter, &length) ) {
+            NCBI_THROW2(CBamException, eNoData,
+                        "CBamRefSeqIterator::GetLength() cannot get length", rc);
+        }
+        if ( length >= kInvalidSeqPos ) {
+            NCBI_THROW(CBamException, eOtherError,
+                       "CBamRefSeqIterator::GetLength() length is too big");
+        }
+        return TSeqPos(length);
     }
-    if ( length >= kInvalidSeqPos ) {
-        NCBI_THROW(CBamException, eOtherError,
-                   "CBamRefSeqIterator::GetLength() length is too big");
+    else {
+        return m_RawDB->GetData().GetHeader().GetRefLength(m_RefIndex);
     }
-    return TSeqPos(length);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
+CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db)
+    : m_RawDB(&db),
+      m_Iter(db)
+{
+}
+
+
+CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
+                                      const string& ref_label,
+                                      TSeqPos ref_pos,
+                                      TSeqPos window)
+    : m_RawDB(&db),
+      m_Iter(db, ref_label, ref_pos, window)
+{
+}
+
+
+void CBamAlignIterator::SRawImpl::x_InvalidateBuffers()
+{
+    m_ShortSequence.clear();
+    m_CIGAR.clear();
+}
+
+
+CBamAlignIterator::SAADBImpl::SAADBImpl(const CBamDb::SAADBImpl& db,
+                                        AlignAccessAlignmentEnumerator* ptr)
+    : m_DB(&db),
+      m_Guard(db.m_Mutex)
+{
+    m_Iter.SetReferencedPointer(ptr);
+    m_RefSeqId.reserve(32);
+    m_ShortSeqId.reserve(32);
+    m_ShortSeqAcc.reserve(32);
+    m_ShortSequence.reserve(256);
+    m_CIGAR.reserve(32);
+    m_Strand = eStrand_not_read;
+}
+
+
+void CBamAlignIterator::SAADBImpl::x_InvalidateBuffers()
+{
+    m_RefSeqId.clear();
+    m_ShortSeqId.clear();
+    m_ShortSeqAcc.clear();
+    m_ShortSequence.clear();
+    m_CIGAR.clear();
+    m_Strand = eStrand_not_read;
+}
+
+
 CBamAlignIterator::CBamAlignIterator(void)
     : m_BamFlagsAvailability(eBamFlags_NotTried)
 {
-    m_LocateRC = 1;
-    x_AllocBuffers();
 }
 
 
@@ -745,20 +878,27 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
     : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
-    AlignAccessAlignmentEnumerator* ptr = 0;
-    m_LocateRC = AlignAccessDBEnumerateAlignments(bam_db, &ptr);
-    if ( m_LocateRC == 0 ) {
-        m_Iter.SetReferencedPointer(ptr);
-    }
-    else if ( GetRCObject(m_LocateRC) == rcRow &&
-              GetRCState(m_LocateRC) == rcNotFound ) {
-        // header only
+    if ( bam_db.UsesRawIndex() ) {
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject());
+        if ( !m_RawImpl->m_Iter ) {
+            m_RawImpl.Reset();
+        }
     }
     else {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot find first alignment", m_LocateRC);
+        CMutexGuard guard(bam_db.m_AADB->m_Mutex);
+        AlignAccessAlignmentEnumerator* ptr = 0;
+        if ( rc_t rc = AlignAccessDBEnumerateAlignments(bam_db.m_AADB->m_DB, &ptr) ) {
+            if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
+                // error
+                NCBI_THROW2(CBamException, eNoData, "Cannot find first alignment", rc);
+            }
+            // no alignments
+        }
+        else {
+            // found first alignment
+            m_AADBImpl = new SAADBImpl(*bam_db.m_AADB, ptr);
+        }
     }
-    x_AllocBuffers();
 }
 
 
@@ -769,67 +909,44 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
-    AlignAccessAlignmentEnumerator* ptr = 0;
-    m_LocateRC = AlignAccessDBWindowedAlignments(bam_db, &ptr,
-                                                 ref_id.c_str(),
-                                                 ref_pos, window);
-    if ( m_LocateRC == 0 ) {
-        m_Iter.SetReferencedPointer(ptr);
-    }
-    else if ( AlignAccessAlignmentEnumeratorIsEOF(m_LocateRC) ) {
-        // no alignments found
+    if ( bam_db.UsesRawIndex() ) {
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window);
+        if ( !m_RawImpl->m_Iter ) {
+            m_RawImpl.Reset();
+        }
     }
     else {
-        NCBI_THROW2(CBamException, eOtherError,
-                    "Cannot find first alignment", m_LocateRC);
+        CMutexGuard guard(bam_db.m_AADB->m_Mutex);
+        AlignAccessAlignmentEnumerator* ptr = 0;
+        if ( rc_t rc = AlignAccessDBWindowedAlignments(bam_db.m_AADB->m_DB, &ptr,
+                                                       ref_id.c_str(), ref_pos, window) ) {
+            if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
+                // error
+                NCBI_THROW2(CBamException, eNoData, "Cannot find first alignment", rc);
+            }
+            // no alignments
+        }
+        else {
+            // found first alignment
+            m_AADBImpl = new SAADBImpl(*bam_db.m_AADB, ptr);
+        }
     }
-    x_AllocBuffers();
-}
-
-
-void CBamAlignIterator::x_AllocBuffers(void)
-{
-    m_RefSeqId.reserve(32);
-    m_ShortSeqId.reserve(32);
-    m_ShortSeqAcc.reserve(32);
-    m_ShortSequence.reserve(256);
-    m_CIGAR.reserve(32);
-    m_Strand = eStrand_not_read;
-}
-
-
-void CBamAlignIterator::x_InvalidateBuffers(void)
-{
-    m_RefSeqId.clear();
-    m_ShortSeqId.clear();
-    m_ShortSeqAcc.clear();
-    m_ShortSequence.clear();
-    m_CIGAR.clear();
-    m_RefSeq_id.Reset();
-    m_ShortSeq_id.Reset();
-    m_Strand = eStrand_not_read;
 }
 
 
 CBamAlignIterator::CBamAlignIterator(const CBamAlignIterator& iter)
-    : m_Iter(iter.m_Iter),
-      m_IdMapper(iter.m_IdMapper),
-      m_SpotIdDetector(iter.m_SpotIdDetector),
-      m_LocateRC(iter.m_LocateRC),
-      m_BamFlagsAvailability(iter.m_BamFlagsAvailability)
 {
-    x_AllocBuffers();
+    *this = iter;
 }
 
 
 CBamAlignIterator& CBamAlignIterator::operator=(const CBamAlignIterator& iter)
 {
     if ( this != &iter ) {
-        x_InvalidateBuffers();
-        m_Iter = iter.m_Iter;
+        m_AADBImpl = iter.m_AADBImpl;
+        m_RawImpl = iter.m_RawImpl;
         m_IdMapper = iter.m_IdMapper;
         m_SpotIdDetector = iter.m_SpotIdDetector;
-        m_LocateRC = iter.m_LocateRC;
         m_BamFlagsAvailability = iter.m_BamFlagsAvailability;
     }
     return *this;
@@ -839,8 +956,7 @@ CBamAlignIterator& CBamAlignIterator::operator=(const CBamAlignIterator& iter)
 void CBamAlignIterator::x_CheckValid(void) const
 {
     if ( !*this ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "CBamAlignIterator is invalid", m_LocateRC);
+        NCBI_THROW(CBamException, eNoData, "CBamAlignIterator is invalid");
     }
 }
 
@@ -848,16 +964,29 @@ void CBamAlignIterator::x_CheckValid(void) const
 CBamAlignIterator& CBamAlignIterator::operator++(void)
 {
     x_CheckValid();
-    x_InvalidateBuffers();
-    m_LocateRC = AlignAccessAlignmentEnumeratorNext(m_Iter);
-    if ( m_LocateRC ) {
-        if ( GetRCObject(m_LocateRC) == rcRow &&
-             GetRCState(m_LocateRC) == rcNotFound ) {
+    m_RefSeq_id.Reset();
+    m_ShortSeq_id.Reset();
+    if ( m_AADBImpl ) {
+        if ( rc_t rc = AlignAccessAlignmentEnumeratorNext(m_AADBImpl->m_Iter) ) {
+            m_AADBImpl.Reset();
+            if ( !(GetRCObject(rc) == rcRow &&
+                   GetRCState(rc) == rcNotFound) ) {
+                // error
+                NCBI_THROW2(CBamException, eOtherError, "Cannot find next alignment", rc);
+            }
             // end of iteration, keep the error code
         }
         else {
-            NCBI_THROW2(CBamException, eOtherError,
-                        "Cannot find next alignment", m_LocateRC);
+            // next alignment
+            m_AADBImpl->x_InvalidateBuffers();
+        }
+    }
+    else {
+        if ( !++m_RawImpl->m_Iter ) {
+            m_RawImpl.Reset();
+        }
+        else {
+            m_RawImpl->x_InvalidateBuffers();
         }
     }
     return *this;
@@ -904,7 +1033,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf,
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_Iter, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, buf.x_data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -918,7 +1047,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf, uint64_t& pos,
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_Iter, &pos, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, &pos, buf.x_data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -926,154 +1055,209 @@ void CBamAlignIterator::x_GetString(CBamString& buf, uint64_t& pos,
 }
 
 
-const CBamString& CBamAlignIterator::GetRefSeqId(void) const
+CTempString CBamAlignIterator::GetRefSeqId(void) const
 {
-    x_GetString(m_RefSeqId, "RefSeqId",
-                AlignAccessAlignmentEnumeratorGetRefSeqID);
-    return m_RefSeqId;
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_RawDB->GetData().GetHeader().GetRefName(m_RawImpl->m_Iter.GetRefSeqIndex());
+    }
+    else {
+        x_GetString(m_AADBImpl->m_RefSeqId, "RefSeqId",
+                    AlignAccessAlignmentEnumeratorGetRefSeqID);
+        return m_AADBImpl->m_RefSeqId;
+    }
 }
 
 
 TSeqPos CBamAlignIterator::GetRefSeqPos(void) const
 {
-    x_CheckValid();
-    uint64_t pos = 0;
-    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetRefSeqPos(m_Iter, &pos) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot get RefSeqPos", rc);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetRefSeqPos();
     }
-    return TSeqPos(pos);
+    else {
+        x_CheckValid();
+        uint64_t pos = 0;
+        if ( rc_t rc = AlignAccessAlignmentEnumeratorGetRefSeqPos(m_AADBImpl->m_Iter, &pos) ) {
+            if ( GetRCObject(rc) == RCObject(rcData) &&
+                 GetRCState(rc) == rcNotFound ) {
+                return kInvalidSeqPos;
+            }
+            NCBI_THROW2(CBamException, eNoData,
+                        "Cannot get RefSeqPos", rc);
+        }
+        return TSeqPos(pos);
+    }
 }
 
 
-const CBamString& CBamAlignIterator::GetShortSeqId(void) const
+CTempString CBamAlignIterator::GetShortSeqId(void) const
 {
-    x_GetString(m_ShortSeqId, "ShortSeqId",
-                AlignAccessAlignmentEnumeratorGetShortSeqID);
-    return m_ShortSeqId;
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetShortSeqId();
+    }
+    else {
+        x_GetString(m_AADBImpl->m_ShortSeqId, "ShortSeqId",
+                    AlignAccessAlignmentEnumeratorGetShortSeqID);
+        return m_AADBImpl->m_ShortSeqId;
+    }
 }
 
 
-const CBamString& CBamAlignIterator::GetShortSeqAcc(void) const
+CTempString CBamAlignIterator::GetShortSeqAcc(void) const
 {
-    x_GetString(m_ShortSeqAcc, "ShortSeqAcc",
-                AlignAccessAlignmentEnumeratorGetShortSeqAccessionID);
-    return m_ShortSeqAcc;
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetShortSeqAcc();
+    }
+    else {
+        x_GetString(m_AADBImpl->m_ShortSeqAcc, "ShortSeqAcc",
+                    AlignAccessAlignmentEnumeratorGetShortSeqAccessionID);
+        return m_AADBImpl->m_ShortSeqAcc;
+    }
 }
 
 
-const CBamString& CBamAlignIterator::GetShortSequence(void) const
+CTempString CBamAlignIterator::GetShortSequence(void) const
 {
-    x_GetString(m_ShortSequence, "ShortSequence",
-                AlignAccessAlignmentEnumeratorGetShortSequence);
-    return m_ShortSequence;
+    if ( m_RawImpl ) {
+        if ( m_RawImpl->m_ShortSequence.empty() ) {
+            m_RawImpl->m_ShortSequence = m_RawImpl->m_Iter.GetShortSequence();
+        }
+        return m_RawImpl->m_ShortSequence;
+    }
+    else {
+        x_GetString(m_AADBImpl->m_ShortSequence, "ShortSequence",
+                    AlignAccessAlignmentEnumeratorGetShortSequence);
+        return m_AADBImpl->m_ShortSequence;
+    }
 }
 
 
 inline void CBamAlignIterator::x_GetCIGAR(void) const
 {
-    x_GetString(m_CIGAR, m_CIGARPos, "CIGAR",
+    x_GetString(m_AADBImpl->m_CIGAR, m_AADBImpl->m_CIGARPos, "CIGAR",
                 AlignAccessAlignmentEnumeratorGetCIGAR);
 }
 
 
 TSeqPos CBamAlignIterator::GetCIGARPos(void) const
 {
-    x_GetCIGAR();
-    return TSeqPos(m_CIGARPos);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetCIGARPos();
+    }
+    else {
+        x_GetCIGAR();
+        return TSeqPos(m_AADBImpl->m_CIGARPos);
+    }
 }
 
 
-const CBamString& CBamAlignIterator::GetCIGAR(void) const
+CTempString CBamAlignIterator::GetCIGAR(void) const
 {
-    x_GetCIGAR();
-    return m_CIGAR;
+    if ( m_RawImpl ) {
+        if ( m_RawImpl->m_CIGAR.empty() ) {
+            m_RawImpl->m_CIGAR = m_RawImpl->m_Iter.GetCIGAR();
+        }
+        return m_RawImpl->m_CIGAR;
+    }
+    else {
+        x_GetCIGAR();
+        return m_AADBImpl->m_CIGAR;
+    }
 }
 
 
 TSeqPos CBamAlignIterator::GetCIGARRefSize(void) const
 {
-    x_GetCIGAR();
-    TSeqPos ref_size = 0;
-    const char* ptr = m_CIGAR.data();
-    const char* end = ptr + m_CIGAR.size();
-    char type;
-    TSeqPos len;
-    while ( ptr != end ) {
-        type = *ptr;
-        for ( len = 0; ++ptr != end; ) {
-            char c = *ptr;
-            if ( c >= '0' && c <= '9' ) {
-                len = len*10+(c-'0');
-            }
-            else {
-                break;
-            }
-        }
-        if ( type == 'M' || type == '=' || type == 'X' ) {
-            // match
-            ref_size += len;
-        }
-        else if ( type == 'I' || type == 'S' ) {
-            // insert
-        }
-        else if ( type == 'D' || type == 'N' ) {
-            // delete
-            ref_size += len;
-        }
-        else if ( type != 'P' ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR char: " << type << " in " << m_CIGAR);
-        }
-        if ( len == 0 ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR length: " << type << "0 in " << m_CIGAR);
-        }
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetCIGARRefSize();
     }
-    return ref_size;
+    else {
+        TSeqPos ref_size = 0;
+        x_GetCIGAR();
+        const char* ptr = m_AADBImpl->m_CIGAR.data();
+        const char* end = ptr + m_AADBImpl->m_CIGAR.size();
+        char type;
+        TSeqPos len;
+        while ( ptr != end ) {
+            type = *ptr;
+            for ( len = 0; ++ptr != end; ) {
+                char c = *ptr;
+                if ( c >= '0' && c <= '9' ) {
+                    len = len*10+(c-'0');
+                }
+                else {
+                    break;
+                }
+            }
+            if ( type == 'M' || type == '=' || type == 'X' ) {
+                // match
+                ref_size += len;
+            }
+            else if ( type == 'I' || type == 'S' ) {
+                // insert
+            }
+            else if ( type == 'D' || type == 'N' ) {
+                // delete
+                ref_size += len;
+            }
+            else if ( type != 'P' ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR char: " << type << " in " << m_AADBImpl->m_CIGAR);
+            }
+            if ( len == 0 ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR length: " << type << "0 in " << m_AADBImpl->m_CIGAR);
+            }
+        }
+        return ref_size;
+    }
 }
 
 
 TSeqPos CBamAlignIterator::GetCIGARShortSize(void) const
 {
-    x_GetCIGAR();
-    TSeqPos short_size = 0;
-    const char* ptr = m_CIGAR.data();
-    const char* end = ptr + m_CIGAR.size();
-    char type;
-    TSeqPos len;
-    while ( ptr != end ) {
-        type = *ptr;
-        for ( len = 0; ++ptr != end; ) {
-            char c = *ptr;
-            if ( c >= '0' && c <= '9' ) {
-                len = len*10+(c-'0');
-            }
-            else {
-                break;
-            }
-        }
-        if ( type == 'M' || type == '=' || type == 'X' ) {
-            // match
-            short_size += len;
-        }
-        else if ( type == 'I' || type == 'S' ) {
-            // insert
-            short_size += len;
-        }
-        else if ( type == 'D' || type == 'N' ) {
-            // delete
-        }
-        else if ( type != 'P' ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR char: " << type << " in " << m_CIGAR);
-        }
-        if ( len == 0 ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR length: " << type << "0 in " << m_CIGAR);
-        }
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetCIGARShortSize();
     }
-    return short_size;
+    else {
+        TSeqPos short_size = 0;
+        x_GetCIGAR();
+        const char* ptr = m_AADBImpl->m_CIGAR.data();
+        const char* end = ptr + m_AADBImpl->m_CIGAR.size();
+        char type;
+        TSeqPos len;
+        while ( ptr != end ) {
+            type = *ptr;
+            for ( len = 0; ++ptr != end; ) {
+                char c = *ptr;
+                if ( c >= '0' && c <= '9' ) {
+                    len = len*10+(c-'0');
+                }
+                else {
+                    break;
+                }
+            }
+            if ( type == 'M' || type == '=' || type == 'X' ) {
+                // match
+                short_size += len;
+            }
+            else if ( type == 'I' || type == 'S' ) {
+                // insert
+                short_size += len;
+            }
+            else if ( type == 'D' || type == 'N' ) {
+                // delete
+            }
+            else if ( type != 'P' ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR char: " << type << " in " << m_AADBImpl->m_CIGAR);
+            }
+            if ( len == 0 ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR length: " << type << "0 in " << m_AADBImpl->m_CIGAR);
+            }
+        }
+        return short_size;
+    }
 }
 
 
@@ -1151,25 +1335,25 @@ void CBamAlignIterator::SetShortSeq_id(CRef<CSeq_id> seq_id)
 void CBamAlignIterator::x_GetStrand(void) const
 {
     x_CheckValid();
-    if ( m_Strand != eStrand_not_read ) {
+    if ( m_AADBImpl->m_Strand != eStrand_not_read ) {
         return;
     }
     
-    m_Strand = eStrand_not_set;
+    m_AADBImpl->m_Strand = eStrand_not_set;
     AlignmentStrandDirection dir;
-    if ( AlignAccessAlignmentEnumeratorGetStrandDirection(m_Iter, &dir) != 0 ) {
+    if ( AlignAccessAlignmentEnumeratorGetStrandDirection(m_AADBImpl->m_Iter, &dir) != 0 ) {
         return;
     }
     
     switch ( dir ) {
     case asd_Forward:
-        m_Strand = eNa_strand_plus;
+        m_AADBImpl->m_Strand = eNa_strand_plus;
         break;
     case asd_Reverse:
-        m_Strand = eNa_strand_minus;
+        m_AADBImpl->m_Strand = eNa_strand_minus;
         break;
     default:
-        m_Strand = eNa_strand_unknown;
+        m_AADBImpl->m_Strand = eNa_strand_unknown;
         break;
     }
 }
@@ -1177,72 +1361,102 @@ void CBamAlignIterator::x_GetStrand(void) const
 
 bool CBamAlignIterator::IsSetStrand(void) const
 {
-    x_GetStrand();
-    return m_Strand != eStrand_not_set;
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.IsSetStrand();
+    }
+    else {
+        x_GetStrand();
+        return m_AADBImpl->m_Strand != eStrand_not_set;
+    }
 }
 
 
 ENa_strand CBamAlignIterator::GetStrand(void) const
 {
-    if ( !IsSetStrand() ) {
-        NCBI_THROW(CBamException, eNoData,
-                   "Strand is not set");
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetStrand();
     }
-    return ENa_strand(m_Strand);
+    else {
+        if ( !IsSetStrand() ) {
+            NCBI_THROW(CBamException, eNoData,
+                       "Strand is not set");
+        }
+        return ENa_strand(m_AADBImpl->m_Strand);
+    }
 }
 
 
 Uint1 CBamAlignIterator::GetMapQuality(void) const
 {
-    x_CheckValid();
-    uint8_t q = 0;
-    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetMapQuality(m_Iter, &q) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot get MapQuality", rc);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetMapQuality();
     }
-    return q;
+    else {
+        x_CheckValid();
+        uint8_t q = 0;
+        if ( rc_t rc = AlignAccessAlignmentEnumeratorGetMapQuality(m_AADBImpl->m_Iter, &q) ) {
+            NCBI_THROW2(CBamException, eNoData,
+                        "Cannot get MapQuality", rc);
+        }
+        return q;
+    }
 }
 
 
 bool CBamAlignIterator::IsPaired(void) const
 {
-    x_CheckValid();
-    bool f;
-    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetIsPaired(m_Iter, &f) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot get IsPaired flag", rc);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.IsPaired();
     }
-    return f;
+    else {
+        x_CheckValid();
+        bool f;
+        if ( rc_t rc = AlignAccessAlignmentEnumeratorGetIsPaired(m_AADBImpl->m_Iter, &f) ) {
+            NCBI_THROW2(CBamException, eNoData,
+                        "Cannot get IsPaired flag", rc);
+        }
+        return f;
+    }
 }
 
 
 bool CBamAlignIterator::IsFirstInPair(void) const
 {
-    x_CheckValid();
-    bool f;
-    if ( rc_t rc=AlignAccessAlignmentEnumeratorGetIsFirstInPair(m_Iter, &f) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot get IsFirstInPair flag", rc);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.IsFirstInPair();
     }
-    return f;
+    else {
+        x_CheckValid();
+        bool f;
+        if ( rc_t rc=AlignAccessAlignmentEnumeratorGetIsFirstInPair(m_AADBImpl->m_Iter, &f) ) {
+            NCBI_THROW2(CBamException, eNoData,
+                        "Cannot get IsFirstInPair flag", rc);
+        }
+        return f;
+    }
 }
 
 
 bool CBamAlignIterator::IsSecondInPair(void) const
 {
-    x_CheckValid();
-    bool f;
-    if ( rc_t rc=AlignAccessAlignmentEnumeratorGetIsSecondInPair(m_Iter, &f) ) {
-        NCBI_THROW2(CBamException, eNoData,
-                    "Cannot get IsSecondInPair flag", rc);
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.IsSecondInPair();
     }
-    return f;
+    else {
+        x_CheckValid();
+        bool f;
+        if ( rc_t rc=AlignAccessAlignmentEnumeratorGetIsSecondInPair(m_AADBImpl->m_Iter, &f) ) {
+            NCBI_THROW2(CBamException, eNoData,
+                        "Cannot get IsSecondInPair flag", rc);
+        }
+        return f;
+    }
 }
 
 
 CBamFileAlign::CBamFileAlign(const CBamAlignIterator& iter)
 {
-    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetBAMAlignment(iter.m_Iter, x_InitPtr()) ) {
+    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetBAMAlignment(iter.m_AADBImpl->m_Iter, x_InitPtr()) ) {
         *x_InitPtr() = 0;
         NCBI_THROW2(CBamException, eNoData,
                     "Cannot get BAM file alignment", rc);
@@ -1269,42 +1483,53 @@ bool CBamFileAlign::TryGetFlags(Uint2& flags) const
 
 Uint2 CBamAlignIterator::GetFlags(void) const
 {
-    x_CheckValid();
-    try {
-        Uint2 flags = CBamFileAlign(*this).GetFlags();
-        if ( m_BamFlagsAvailability != eBamFlags_Available ) {
-            m_BamFlagsAvailability = eBamFlags_Available;
-        }
-        return flags;
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetFlags();
     }
-    catch ( CBamException& /* will be rethrown */ ) {
-        if ( m_BamFlagsAvailability != eBamFlags_NotAvailable ) {
-            m_BamFlagsAvailability = eBamFlags_NotAvailable;
+    else {
+        x_CheckValid();
+        try {
+            Uint2 flags = CBamFileAlign(*this).GetFlags();
+            if ( m_BamFlagsAvailability != eBamFlags_Available ) {
+                m_BamFlagsAvailability = eBamFlags_Available;
+            }
+            return flags;
         }
-        throw;
+        catch ( CBamException& /* will be rethrown */ ) {
+            if ( m_BamFlagsAvailability != eBamFlags_NotAvailable ) {
+                m_BamFlagsAvailability = eBamFlags_NotAvailable;
+            }
+            throw;
+        }
     }
 }
 
 
 bool CBamAlignIterator::TryGetFlags(Uint2& flags) const
 {
-    if ( !*this || m_BamFlagsAvailability == eBamFlags_NotAvailable ) {
-        return false;
+    if ( m_RawImpl ) {
+        flags = m_RawImpl->m_Iter.GetFlags();
+        return true;
     }
-    if ( !CBamFileAlign(*this).TryGetFlags(flags) ) {
-        m_BamFlagsAvailability = eBamFlags_NotAvailable;
-        return false;
+    else {
+        if ( !*this || m_BamFlagsAvailability == eBamFlags_NotAvailable ) {
+            return false;
+        }
+        if ( !CBamFileAlign(*this).TryGetFlags(flags) ) {
+            m_BamFlagsAvailability = eBamFlags_NotAvailable;
+            return false;
+        }
+        if ( m_BamFlagsAvailability != eBamFlags_Available ) {
+            m_BamFlagsAvailability = eBamFlags_Available;
+        }
+        return true;
     }
-    if ( m_BamFlagsAvailability != eBamFlags_Available ) {
-        m_BamFlagsAvailability = eBamFlags_Available;
-    }
-    return true;
 }
 
 
 CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
 {
-    const CBamString& data = GetShortSequence();
+    CTempString data = GetShortSequence();
     TSeqPos length = TSeqPos(data.size());
     if ( length == 0 ) {
         // no actual sequence
@@ -1327,6 +1552,9 @@ CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
 
 CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
 {
+    if ( GetRefSeqPos() == kInvalidSeqPos ) {
+        return null;
+    }
     CRef<CSeq_align> align(new CSeq_align);
     align->SetType(CSeq_align::eType_diags);
     CDense_seg& denseg = align->SetSegs().SetDenseg();
@@ -1336,55 +1564,64 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
     CDense_seg::TLens& lens = denseg.SetLens();
 
     TSeqPos segcount = 0;
-    TSeqPos refpos = GetRefSeqPos();
-    TSeqPos seqpos = GetCIGARPos();
-    const char* ptr = m_CIGAR.data();
-    const char* end = ptr + m_CIGAR.size();
-    char type;
-    TSeqPos seglen;
-    TSeqPos refstart = 0, seqstart = 0;
-    while ( ptr != end ) {
-        type = *ptr;
-        for ( seglen = 0; ++ptr != end; ) {
-            char c = *ptr;
-            if ( c >= '0' && c <= '9' ) {
-                seglen = seglen*10+(c-'0');
+    if ( m_RawImpl ) {
+        m_RawImpl->m_Iter.GetSegments(starts, lens);
+        segcount = lens.size();
+    }
+    else {
+        TSeqPos refpos = GetRefSeqPos();
+        TSeqPos seqpos = GetCIGARPos();
+        const char* ptr = m_AADBImpl->m_CIGAR.data();
+        const char* end = ptr + m_AADBImpl->m_CIGAR.size();
+        char type;
+        TSeqPos seglen;
+        TSeqPos refstart = 0, seqstart = 0;
+        while ( ptr != end ) {
+            type = *ptr;
+            for ( seglen = 0; ++ptr != end; ) {
+                char c = *ptr;
+                if ( c >= '0' && c <= '9' ) {
+                    seglen = seglen*10+(c-'0');
+                }
+                else {
+                    break;
+                }
+            }
+            if ( type == 'M' || type == '=' || type == 'X' ) {
+                // match
+                refstart = refpos;
+                refpos += seglen;
+                seqstart = seqpos;
+                seqpos += seglen;
+            }
+            else if ( type == 'I' || type == 'S' ) {
+                refstart = kInvalidSeqPos;
+                seqstart = seqpos;
+                seqpos += seglen;
+            }
+            else if ( type == 'D' || type == 'N' ) {
+                // delete
+                refstart = refpos;
+                refpos += seglen;
+                seqstart = kInvalidSeqPos;
+            }
+            else if ( type == 'P' ) {
+                continue;
             }
             else {
-                break;
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR char: " <<type<< " in " <<m_AADBImpl->m_CIGAR);
             }
+            if ( seglen == 0 ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR length: " << type <<
+                               "0 in " << m_AADBImpl->m_CIGAR);
+            }
+            starts.push_back(refstart);
+            starts.push_back(seqstart);
+            lens.push_back(seglen);
+            ++segcount;
         }
-        if ( type == 'M' || type == '=' || type == 'X' ) {
-            // match
-            refstart = refpos;
-            refpos += seglen;
-            seqstart = seqpos;
-            seqpos += seglen;
-        }
-        else if ( type == 'I' || type == 'S' ) {
-            refstart = kInvalidSeqPos;
-            seqstart = seqpos;
-            seqpos += seglen;
-        }
-        else if ( type == 'D' || type == 'N' ) {
-            // delete
-            refstart = refpos;
-            refpos += seglen;
-            seqstart = kInvalidSeqPos;
-        }
-        else if ( type != 'P' ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR char: " <<type<< " in " <<m_CIGAR);
-        }
-        if ( seglen == 0 ) {
-            NCBI_THROW_FMT(CBamException, eBadCIGAR,
-                           "Bad CIGAR length: " << type <<
-                           "0 in " << m_CIGAR);
-        }
-        starts.push_back(refstart);
-        starts.push_back(seqstart);
-        lens.push_back(seglen);
-        ++segcount;
     }
     if ( GetStrand() == eNa_strand_minus ) {
         CDense_seg::TStrands& strands = denseg.SetStrands();
@@ -1424,17 +1661,16 @@ CRef<CSeq_entry>
 CBamAlignIterator::x_GetMatchEntry(const string* annot_name) const
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
-    CRef<CSeq_annot> annot = x_GetSeq_annot(annot_name);
-    annot->SetData().SetAlign().push_back(GetMatchAlign());
-    CRef<CBioseq> seq = GetShortBioseq();
-    if ( seq ) {
-        seq->SetAnnot().push_back(annot);
+    if ( CRef<CBioseq> seq = GetShortBioseq() ) {
         entry->SetSeq(*seq);
     }
     else {
-        CBioseq_set& set = entry->SetSet();
-        set.SetSeq_set();
-        set.SetAnnot().push_back(annot);
+        entry->SetSet().SetSeq_set();
+    }
+    if ( CRef<CSeq_align> align = GetMatchAlign() ) {
+        CRef<CSeq_annot> annot = x_GetSeq_annot(annot_name);
+        entry->SetAnnot().push_back(annot);
+        annot->SetData().SetAlign().push_back(align);
     }
     return entry;
 }

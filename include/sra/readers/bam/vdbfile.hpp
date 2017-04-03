@@ -33,7 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <sra/readers/bam/bamread.hpp>
+#include <sra/readers/bam/bamread_base.hpp>
 
 #include <kfs/file.h>
 struct VFSManager;

@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_annot;
+class CBGZFStream;
 
 struct NCBI_BAMREAD_EXPORT SBamHeaderRefInfo
 {
@@ -90,10 +91,16 @@ public:
     static SBamHeaderRefInfo ReadRef(CNcbiIstream& in);
     static SBamHeaderRefInfo ReadRef(CBGZFStream& in);
 
+    CBGZFPos GetAlignStart() const
+        {
+            return m_AlignStart;
+        }
+
 private:
     string m_Text;
     map<string, size_t> m_RefByName;
     TRefs m_Refs;
+    CBGZFPos m_AlignStart;
 };
 
 
@@ -132,6 +139,7 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
     Uint8 m_MappedCount;
     Uint8 m_UnmappedCount;
     vector<CBGZFPos> m_Intervals;
+    TSeqPos m_EstimatedLength;
 };
 
 
@@ -294,6 +302,8 @@ public:
                    size_t ref_index, COpenRange<TSeqPos> ref_range);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range);
+    void SetWhole(const CBamHeader& header);
+    void AddWhole(const CBamHeader& header);
 
     typedef CRangeUnion<CBGZFPos> TRanges;
     typedef TRanges::const_iterator const_iterator;
@@ -331,6 +341,11 @@ public:
     CBamRawDb()
         {
         }
+    explicit
+    CBamRawDb(const string& bam_path)
+        {
+            Open(bam_path);
+        }
     CBamRawDb(const string& bam_path, const string& index_path)
         {
             Open(bam_path, index_path);
@@ -338,6 +353,7 @@ public:
     ~CBamRawDb();
 
 
+    void Open(const string& bam_path);
     void Open(const string& bam_path, const string& index_path);
 
 
@@ -463,6 +479,10 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return get_cigar_ptr()+get_cigar_ops_count()*4;
         }
+    uint32_t get_cigar_op_data(uint16_t index) const
+        {
+            return SBamUtil::MakeUint4(get_cigar_ptr()+index*4);
+        }
     const char* get_read_ptr() const
         {
             return get_cigar_end();
@@ -479,11 +499,11 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return get_phred_quality_ptr() + get_read_len();
         }
-    const char* get_qual_ptr() const
+    const char* get_aux_data_ptr() const
         {
             return get_phred_quality_end();
         }
-    const char* get_qual_end() const
+    const char* get_aux_data_end() const
         {
             return get_record_end();
         }
@@ -493,6 +513,10 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
     uint32_t get_cigar_ref_size() const;
     uint32_t get_cigar_read_size() const;
     string get_cigar() const;
+
+    const char* get_aux_data(char c1, char c2) const;
+    CTempString get_aux_data_string(char c1, char c2) const;
+    CTempString get_short_seq_accession_id() const;
 
 private:
     const char* m_RecordPtr;
@@ -506,6 +530,12 @@ public:
     CBamRawAlignIterator()
         : m_CurrentRangeEnd(0)
         {
+        }
+    explicit
+    CBamRawAlignIterator(CBamRawDb& bam_db)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
@@ -524,6 +554,10 @@ public:
 
     DECLARE_OPERATOR_BOOL(m_CurrentRangeEnd.GetVirtualPos() != 0);
 
+    void Select(CBamRawDb& bam_db)
+        {
+            x_Select(bam_db.GetHeader());
+        }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range)
@@ -537,12 +571,7 @@ public:
         {
             x_Select(index, ref_index, ref_range);
         }
-    void Next()
-        {
-            if ( x_NextAnnot() ) {
-                x_Settle();
-            }
-        }
+    void Next();
 
     CBamRawAlignIterator& operator++()
         {
@@ -550,12 +579,10 @@ public:
             return *this;
         }
 
-    /*
-    CTempString GetRefSeqId() const
+    int32_t GetRefSeqIndex() const
         {
-            return m_RefIndex.GetRefName(m_AlignInfo.get_ref_index());
+            return m_AlignInfo.get_ref_index();
         }
-    */
     TSeqPos GetRefSeqPos() const
         {
             return m_AlignInfo.get_ref_pos();
@@ -564,10 +591,16 @@ public:
     CTempString GetShortSeqId() const
         {
             return CTempString(m_AlignInfo.get_read_name_ptr(),
-                               m_AlignInfo.get_read_name_len());
+                               m_AlignInfo.get_read_name_len()-1); // exclude trailing zero
         }
-    CTempString GetShortSeqAcc() const;
-    string GetShortSequence() const;
+    CTempString GetShortSeqAcc() const
+        {
+            return m_AlignInfo.get_short_seq_accession_id();
+        }
+    string GetShortSequence() const
+        {
+            return m_AlignInfo.get_read();
+        }
 
     TSeqPos GetCIGARPos() const
         {
@@ -607,15 +640,19 @@ public:
                 eNa_strand_minus: eNa_strand_plus;
         }
 
+    bool IsMapped() const
+        {
+            return (GetFlags() & m_AlignInfo.fAlign_SelfIsUnmapped) == 0;
+        }
+    
     Uint1 GetMapQuality() const
         {
-            return m_AlignInfo.get_map_quality();
+            return IsMapped()? m_AlignInfo.get_map_quality(): 0;
         }
 
     bool IsPaired() const
         {
-            return (GetFlags() & (m_AlignInfo.fAlign_WasPaired |
-                                  m_AlignInfo.fAlign_IsMappedAsPair)) != 0;
+            return (GetFlags() & m_AlignInfo.fAlign_IsMappedAsPair) != 0;
         }
     bool IsFirstInPair() const
         {
@@ -626,15 +663,17 @@ public:
             return (GetFlags() & m_AlignInfo.fAlign_IsSecond) != 0;
         }
 
+    void GetSegments(vector<int>& starts, vector<TSeqPos>& lens) const;
+
 protected:
+    void x_Select(const CBamHeader& header);
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range);
     bool x_UpdateRange();
     bool x_NextAnnot()
         {
             _ASSERT(*this);
-            return m_Reader.HaveNextAvailableBytes(m_CurrentRangeEnd) ||
-                x_UpdateRange();
+            return m_Reader.HaveNextAvailableBytes() || x_UpdateRange();
         }
     void x_Stop()
         {
@@ -642,7 +681,6 @@ protected:
             m_CurrentRangeEnd = CBGZFPos(0);
         }
     bool x_NeedToSkip();
-    void x_Settle();
     
 private:
     size_t m_RefIndex;

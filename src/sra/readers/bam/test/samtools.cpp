@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "samtools.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -79,7 +80,7 @@ ostream& operator<<(ostream& out, const SBamAlignment& a)
     ITERATE ( vector<Uint4>, i, a.CIGAR ) {
         int type = *i&15;
         int len = *i>>4;
-        out << len << SAM_CIGAR[type];
+        out << SAM_CIGAR[type] << len;
     }
     return out;
 }
@@ -176,12 +177,13 @@ CBamFile::CBamFile(void)
 }
 
 
-CBamFile::CBamFile(const string& path)
+CBamFile::CBamFile(const string& path,
+                   EIndexType index_type)
     : m_File(0),
       m_Index(0),
       m_Header(0)
 {
-    Open(path);
+    Open(path, index_type);
 }
 
 
@@ -191,7 +193,8 @@ CBamFile::~CBamFile(void)
 }
 
 
-void CBamFile::Open(const string& path)
+void CBamFile::Open(const string& path,
+                    EIndexType index_type)
 {
     Close();
     m_File = bam_open(path.c_str(), "r");
@@ -200,11 +203,13 @@ void CBamFile::Open(const string& path)
         NCBI_THROW(CException, eUnknown,
                    "Cannot open BAM file "+path);
     }
-    m_Index = bam_index_load(path.c_str());
-    if ( !m_Index ) {
-        Close();
-        NCBI_THROW(CException, eUnknown,
-                   "Cannot open BAM file index "+path);
+    if ( index_type == eWithIndex ) {
+        m_Index = bam_index_load(path.c_str());
+        if ( !m_Index ) {
+            Close();
+            NCBI_THROW(CException, eUnknown,
+                       "Cannot open BAM file index "+path);
+        }
     }
     m_Header = bam_header_read(m_File);
     if ( !m_Header ) {

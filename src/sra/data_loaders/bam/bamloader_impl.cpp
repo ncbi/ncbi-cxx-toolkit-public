@@ -404,7 +404,7 @@ bool CBAMDataLoader_Impl::IsShortSeq(const CSeq_id_Handle& idh)
 CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const CBAMDataLoader::SBamFileName& bam)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, bam);
     for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
         string refseq_label = rit.GetRefSeqId();
@@ -419,7 +419,7 @@ CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const string& refseq_label,
                            const CSeq_id_Handle& seq_id)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, bam);
     AddRefSeq(refseq_label, seq_id);
 }
@@ -651,7 +651,7 @@ void CBamRefSeqInfo::LoadRanges(void)
     if ( m_LoadedRanges ) {
         return;
     }
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     if ( m_LoadedRanges ) {
         return;
     }
@@ -981,7 +981,7 @@ void CBamRefSeqInfo::x_LoadRangesScan(void)
 
 void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     LoadRanges();
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(kTSEId);
@@ -1030,7 +1030,7 @@ void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
 
 void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(kTSEId);
     load_lock->SetSeq_entry(*entry);
@@ -1069,7 +1069,7 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 
 void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     LoadRanges();
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
@@ -1141,7 +1141,7 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
 
 void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     int range_id = chunk_info.GetChunkId()/kChunkIdMul;
@@ -1197,28 +1197,31 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
                    count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
                    " skipped: "<<skipped);
     }
-    int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq;
-    CRef<CTSE_Chunk_Info> seq_chunk;
-    ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
-        if ( !m_Seq2Chunk.insert(TSeq2Chunk::value_type(*it, seq_chunk_id)).second ) {
-            continue;
+    {{
+        CMutexGuard guard(m_File->GetMutex());
+        int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq;
+        CRef<CTSE_Chunk_Info> seq_chunk;
+        ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
+            if ( !m_Seq2Chunk.insert(TSeq2Chunk::value_type(*it, seq_chunk_id)).second ) {
+                continue;
+            }
+            if ( !seq_chunk ) {
+                seq_chunk = new CTSE_Chunk_Info(seq_chunk_id);
+            }
+            seq_chunk->x_AddBioseqId(*it);
         }
-        if ( !seq_chunk ) {
-            seq_chunk = new CTSE_Chunk_Info(seq_chunk_id);
+        if ( seq_chunk ) {
+            seq_chunk->x_AddBioseqPlace(kTSEId);
+            split_info.AddChunk(*seq_chunk);
         }
-        seq_chunk->x_AddBioseqId(*it);
-    }
-    if ( seq_chunk ) {
-        seq_chunk->x_AddBioseqPlace(kTSEId);
-        split_info.AddChunk(*seq_chunk);
-    }
+    }}
     chunk_info.SetLoaded();
 }
 
 
 void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
@@ -1344,7 +1347,7 @@ END_LOCAL_NAMESPACE;
 
 void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_File->GetMutex());
+    //CMutexGuard guard(m_File->GetMutex());
     size_t range_id = chunk_info.GetChunkId()/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
     TSeqPos chunk_pos = chunk.GetRefSeqRange().GetFrom();
@@ -1383,8 +1386,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 
         TSeqPos ss_pos = align_pos - chunk_pos;
         TSeqPos read_pos = ait.GetCIGARPos();
-        const CBamString& read = ait.GetShortSequence();
-        const CBamString& cigar = ait.GetCIGAR();
+        CTempString read = ait.GetShortSequence();
+        CTempString cigar = ait.GetCIGAR();
         const char* ptr = cigar.data();
         const char* end = ptr + cigar.size();
         while ( ptr != end ) {

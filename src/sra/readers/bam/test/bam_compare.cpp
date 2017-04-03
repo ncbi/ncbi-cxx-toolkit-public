@@ -135,6 +135,7 @@ void CBAMCompareApp::Init(void)
     arg_desc->AddOptionalKey("check_id", "CheckId",
                              "Compare alignments with the specified sequence",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("raw", "Compare with raw index version");
     arg_desc->AddFlag("make_seq_entry", "Generated Seq-entries");
     arg_desc->AddFlag("print_seq_entry", "Print generated Seq-entry");
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
@@ -177,11 +178,11 @@ inline bool Matches(char ac, char rc)
 string GetShortSeqData(const CBamAlignIterator& it)
 {
     string ret;
-    const CBamString& src = it.GetShortSequence();
+    string src = it.GetShortSequence();
     //bool minus = it.IsSetStrand() && IsReverse(it.GetStrand());
     TSeqPos src_pos = it.GetCIGARPos();
 
-    const CBamString& CIGAR = it.GetCIGAR();
+    string CIGAR = it.GetCIGAR();
     const char* ptr = CIGAR.data();
     const char* end = ptr + CIGAR.size();
     char type;
@@ -253,6 +254,8 @@ int CBAMCompareApp::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
+
+    int ret_code = 0;
 
     string path;
 
@@ -331,31 +334,90 @@ int CBAMCompareApp::Run(void)
 
     out << "File: " << path << NcbiEndl;
     CBamMgr mgr;
-    CBamDb bam_db;
+    CBamDb bam_db, bam_db2;
     if ( args["no_index"] ) {
-        bam_db = CBamDb(mgr, path);
+        if ( !args["raw"] ) {
+            bam_db = CBamDb(mgr, path);
+        }
+        else {
+            bam_db = CBamDb(mgr, path, CBamDb::eUseAlignAccess);
+            bam_db2 = CBamDb(mgr, path, CBamDb::eUseRawIndex);
+        }
     }
     else {
-        bam_db = CBamDb(mgr, path, path+".bai");
+        if ( !args["raw"] ) {
+            bam_db = CBamDb(mgr, path, path+".bai");
+        }
+        else {
+            bam_db = CBamDb(mgr, path, path+".bai", CBamDb::eUseAlignAccess);
+            bam_db2 = CBamDb(mgr, path, path+".bai", CBamDb::eUseRawIndex);
+        }
     }
 
+    AutoPtr<IIdMapper> mapper;
     if ( args["mapfile"] ) {
-        bam_db.SetIdMapper(new CIdMapperConfig(args["mapfile"].AsInputFile(),
-                                               args["genome"].AsString(),
-                                               false),
-                           eTakeOwnership);
+        mapper.reset(new CIdMapperConfig(args["mapfile"].AsInputFile(),
+                                         args["genome"].AsString(),
+                                         false));
     }
     else if ( !args["genome"].AsString().empty() ) {
         LOG_POST("Genome: "<<args["genome"].AsString());
-        bam_db.SetIdMapper(new CIdMapperBuiltin(args["genome"].AsString(),
-                                                false),
-                           eTakeOwnership);
+        mapper.reset(new CIdMapperBuiltin(args["genome"].AsString(),
+                                          false));
+    }
+    if ( mapper ) {
+        if ( bam_db2 ) {
+            bam_db2.SetIdMapper(mapper.get(), eNoOwnership);
+        }
+        bam_db.SetIdMapper(mapper.release(), eTakeOwnership);
     }
 
-    if ( args["refseq_table"] ) {
+    bool print_refseqs = args["refseq_table"];
+    if ( bam_db2 ) {
+        if ( bam_db.GetHeaderText() != bam_db2.GetHeaderText() ) {
+            ret_code = 1;
+            out << "Raw: Header: " << bam_db2.GetHeaderText()
+                << endl
+                << "VDB: Header: " << bam_db.GetHeaderText()
+                << endl;
+        }
+    }
+    if ( bam_db2 || print_refseqs ) {
+        CBamRefSeqIterator it2;
+        if ( bam_db2 ) {
+            it2 = CBamRefSeqIterator(bam_db2);
+        }
         for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
-            out << "RefSeq: " << it.GetRefSeqId()
-                << '\n';
+            if ( print_refseqs ) {
+                out << "RefSeq: " << it.GetRefSeqId()
+                    << " = " << it.GetRefSeq_id()->AsFastaString()
+                    << " " << it.GetLength()
+                    << endl;
+            }
+            if ( bam_db2 ) {
+                if ( !it2 ) {
+                    ret_code = 1;
+                    out << "Raw: no reference"
+                        << endl;
+                }
+                else {
+                    if ( it2.GetRefSeqId() != it.GetRefSeqId() ||
+                         !it2.GetRefSeq_id()->Equals(*it.GetRefSeq_id()) ||
+                         it2.GetLength() != it.GetLength() ) {
+                        ret_code = 1;
+                        out << "Raw: RefSeq: " << it2.GetRefSeqId()
+                            << " = " << it2.GetRefSeq_id()->AsFastaString()
+                            << " " << it2.GetLength()
+                            << endl;
+                    }
+                    ++it2;
+                }
+            }
+        }
+        if ( it2 ) {
+            ret_code = 1;
+            out << "Raw: has more refs: " << it2.GetRefSeqId()
+                << endl;
         }
     }
     typedef map<string, int> TRefSeqIndex;
@@ -368,8 +430,6 @@ int CBAMCompareApp::Run(void)
         }
     }
 
-    int ret_code = 0;
-
     size_t limit_count = size_t(max(0, args["limit_count"].AsInteger()));
     bool ignore_errors = args["ignore_errors"];
     bool verbose = args["verbose"];
@@ -381,7 +441,7 @@ int CBAMCompareApp::Run(void)
     bool short_id_conflicts = args["short_id_conflicts"];
     if ( 1 ) {
         size_t count = 0;
-        CBamAlignIterator it;
+        CBamAlignIterator it, it2;
         bool collect_short = false;
         bool range_only = args["range_only"];
         bool no_ref_size = args["no_ref_size"];
@@ -443,9 +503,17 @@ int CBAMCompareApp::Run(void)
             it = CBamAlignIterator(bam_db, query_id,
                                    query_range.GetFrom(),
                                    query_range.GetLength());
+            if ( bam_db2 ) {
+                it2 = CBamAlignIterator(bam_db2, query_id,
+                                        query_range.GetFrom(),
+                                        query_range.GetLength());
+            }
         }
         else {
             it = CBamAlignIterator(bam_db);
+            if ( bam_db2 ) {
+                it2 = CBamAlignIterator(bam_db2);
+            }
         }
         string p_ref_seq_id, p_short_seq_id, p_short_seq_acc, p_data, p_cigar;
         TSeqPos p_ref_pos = 0, p_ref_size = 0;
@@ -476,6 +544,18 @@ int CBAMCompareApp::Run(void)
                     ref_pos = kInvalidSeqPos;
                     ++unaligned_count;
                 }
+                if ( bam_db2 ) {
+                    if ( !it2 ) {
+                        ret_code = 1;
+                        out << "Raw: no more alignments" << endl;
+                    }
+                    else if ( it2.GetRefSeqPos() != ref_pos ) {
+                        ret_code = 1;
+                        out << "Raw: different ref pos: "
+                            << it2.GetRefSeqPos() << " vs " << ref_pos
+                            << endl;
+                    }
+                }
                 if ( range_only ) {
                     TSeqPos ref_end = ref_pos;
                     if ( !no_ref_size ) {
@@ -487,13 +567,16 @@ int CBAMCompareApp::Run(void)
                     if ( count == limit_count ) {
                         break;
                     }
+                    if ( it2 ) {
+                        ++it2;
+                    }
                     continue;
                 }
                 TSeqPos ref_size = it.GetCIGARRefSize();
                 Uint8 qual = it.GetMapQuality();
                 string ref_seq_id;
                 if ( ref_pos == kInvalidSeqPos ) {
-                    _ASSERT(ref_size == 0);
+                    _ASSERT(ref_size == 0 || ref_size == it.GetShortSequence().size());
                     _ASSERT(qual == 0);
                     if ( verbose ) {
                         out << count << ": Unaligned\n";
@@ -509,6 +592,7 @@ int CBAMCompareApp::Run(void)
                             << " Qual = " << qual
                             << '\n';
                     }
+                    _ASSERT(!ref_seq_id.empty());
                 }
                 string short_seq_id = it.GetShortSeqId();
                 string short_seq_acc = it.GetShortSeqAcc();
@@ -560,7 +644,7 @@ int CBAMCompareApp::Run(void)
                     aln.short_range.SetFrom(short_pos).SetLength(short_size);
                     aln.short_sequence = it.GetShortSequence();
                     {{
-                        const CBamString& cigar = it.GetCIGAR();
+                        string cigar = it.GetCIGAR();
                         const char* ptr = cigar.data();
                         const char* end = ptr + cigar.size();
                         char type;
@@ -614,19 +698,22 @@ int CBAMCompareApp::Run(void)
                             << ": " << data
                             << '\n';
                     }
-                    string cigar = it.GetCIGAR();
-                    if ( verbose ) {
-                        out << "CIGAR: " << cigar
-                            << '\n';
-                    }
-                    if ( cigar.empty() ) {
-                        out << "Error: Empty CIGAR"
-                            << NcbiEndl;
-                    }
-                    else if ( !cigar[cigar.size()-1] ) {
-                        out << "Error: Bad CIGAR: "
-                            << NStr::PrintableString(cigar)
-                            << NcbiEndl;
+                    string cigar;
+                    if ( ref_pos != kInvalidSeqPos ) {
+                        cigar = it.GetCIGAR();
+                        if ( verbose ) {
+                            out << "CIGAR: " << cigar
+                                << '\n';
+                        }
+                        if ( cigar.empty() ) {
+                            out << "Error: Empty CIGAR"
+                                << NcbiEndl;
+                        }
+                        else if ( !cigar[cigar.size()-1] ) {
+                            out << "Error: Bad CIGAR: "
+                                << NStr::PrintableString(cigar)
+                                << NcbiEndl;
+                        }
                     }
                     if ( print_seq_entry || make_seq_entry ) {
                         CRef<CSeq_entry> entry = it.GetMatchEntry();
@@ -721,6 +808,119 @@ int CBAMCompareApp::Run(void)
                 if ( collect_short ) {
                     short_ids.push_back(make_pair(short_seq_id, ref_pos));
                 }
+                if ( it2 ) {
+                    if ( ref_pos != kInvalidSeqPos &&
+                         (it2.GetRefSeqId() != it.GetRefSeqId() ||
+                          !it2.GetRefSeq_id()->Equals(*it.GetRefSeq_id())) ) {
+                        ret_code = 1;
+                        out << "Raw: different ref id "
+                            << it2.GetRefSeqId()
+                            << " vs "
+                            << it.GetRefSeqId()
+                            << endl;
+                    }
+                    if ( it2.GetShortSeqId() != it.GetShortSeqId() ||
+                         !it2.GetShortSeq_id()->Equals(*it.GetShortSeq_id()) ) {
+                        ret_code = 1;
+                        out << "Raw: different read id "
+                            << it2.GetShortSeqId()
+                            << " vs "
+                            << it.GetShortSeqId()
+                            << endl;
+                    }
+                    if ( it2.GetShortSeqAcc() != it.GetShortSeqAcc() ) {
+                        ret_code = 1;
+                        out << "Raw: different read acc "
+                            << it2.GetShortSeqAcc()
+                            << " vs "
+                            << it.GetShortSeqAcc()
+                            << endl;
+                    }
+                    if ( it2.GetFlags() != it.GetFlags() ) {
+                        ret_code = 1;
+                        out << "Raw: different flags "
+                            << it2.GetFlags()
+                            << " vs "
+                            << it.GetFlags()
+                            << endl;
+                    }
+                    if ( it2.IsPaired() != it.IsPaired() ) {
+                        ret_code = 1;
+                        out << "Raw: different IsPaired "
+                            << it2.IsPaired()
+                            << " vs "
+                            << it.IsPaired()
+                            << endl;
+                    }
+                    if ( it2.IsFirstInPair() != it.IsFirstInPair() ) {
+                        ret_code = 1;
+                        out << "Raw: different IsFirstInPair "
+                            << it2.IsFirstInPair()
+                            << " vs "
+                            << it.IsFirstInPair()
+                            << endl;
+                    }
+                    if ( it2.IsSecondInPair() != it.IsSecondInPair() ) {
+                        ret_code = 1;
+                        out << "Raw: different IsSecondInPair "
+                            << it2.IsSecondInPair()
+                            << " vs "
+                            << it.IsSecondInPair()
+                            << endl;
+                    }
+                    if ( ref_pos != kInvalidSeqPos ) {
+                        if ( it2.GetCIGARRefSize() != it.GetCIGARRefSize() ) {
+                            ret_code = 1;
+                            out << "Raw: different ref size "
+                                << it2.GetCIGARRefSize()
+                                << " vs "
+                                << it.GetCIGARRefSize()
+                                << endl;
+                        }
+                        if ( it2.GetCIGARPos() != it.GetCIGARPos() ||
+                             it2.GetCIGARShortSize() != it.GetCIGARShortSize() ) {
+                            ret_code = 1;
+                            out << "Raw: different read pos "
+                                << it2.GetCIGARPos() << "+" << it2.GetCIGARShortSize()
+                                << " vs "
+                                << it.GetCIGARPos() << "+" << it.GetCIGARShortSize()
+                                << endl;
+                        }
+                        if ( it2.IsSetStrand() != it.IsSetStrand() ||
+                             it2.GetStrand() != it.GetStrand() ) {
+                            ret_code = 1;
+                            out << "Raw: different strands "
+                                << it2.GetStrand()
+                                << " vs "
+                                << it.GetStrand()
+                                << endl;
+                        }
+                        if ( it2.GetMapQuality() != it.GetMapQuality() ) {
+                            ret_code = 1;
+                            out << "Raw: different qualities "
+                                << it2.GetMapQuality()
+                                << " vs "
+                                << it.GetMapQuality()
+                                << endl;
+                        }
+                        if ( it2.GetCIGAR() != it.GetCIGAR() ) {
+                            ret_code = 1;
+                            out << "Raw: different CIGAR "
+                                << it2.GetCIGAR()
+                                << " vs "
+                                << it.GetCIGAR()
+                                << endl;
+                        }
+                    }
+                    if ( !it2.GetMatchEntry()->Equals(*it.GetMatchEntry()) ) {
+                        ret_code = 1;
+                        out << "Raw: different entries " << MSerial_AsnText
+                            << *it2.GetMatchEntry()
+                            << " vs "
+                            << *it.GetMatchEntry()
+                            << endl;
+                    }
+                }
             }
             catch ( CException& exc ) {
                 ERR_POST("Error: "<<exc);
@@ -729,17 +929,37 @@ int CBAMCompareApp::Run(void)
                 }
             }
             if ( limit_count > 0 && count == limit_count ) break;
+            if ( bam_db2 ) {
+                if ( !it2 ) {
+                    ret_code = 1;
+                    out << "Raw: no more alignments" << endl;
+                }
+                else {
+                    ++it2;
+                }
+            }
         }
         out << "Loaded: " << count << " alignments." << NcbiEndl;
+        if ( bam_db2 ) {
+            if ( bool(it) != bool(it2) ) {
+                ret_code = 1;
+                out << "Raw: different number of alignments" << endl;
+            }
+        }
         if ( range_only ) {
             out << "Range: " << ref_min << "-" << ref_max-1 << NcbiEndl;
         }
         else {
             NON_CONST_ITERATE ( TRefIds, it, ref_ids ) {
-                out << it->first << ": " << it->second.size() << NcbiFlush;
-                sort(it->second.begin(), it->second.end());
-                out << "    " << it->second[0].GetFrom() << "-"
-                    << it->second.back().GetToOpen()-1 << NcbiEndl;
+                if ( it->first.empty() ) {
+                    out << "Unmapped alignments: " << it->second.size() << NcbiEndl;
+                }
+                else {
+                    out << "Ref " << it->first << ": " << it->second.size() << NcbiFlush;
+                    sort(it->second.begin(), it->second.end());
+                    out << "    " << it->second[0].GetFrom() << "-"
+                        << it->second.back().GetToOpen()-1 << NcbiEndl;
+                }
             }
             if ( collect_short && !short_ids.empty() ) {
                 sort(short_ids.begin(), short_ids.end());
@@ -751,7 +971,10 @@ int CBAMCompareApp::Run(void)
         if ( 1 ) {
             vector<samtools::SBamAlignment> alns2, alnsout2;
 
-            samtools::CBamFile bam(path);
+            samtools::CBamFile bam(path,
+                                   args["no_index"]?
+                                   samtools::CBamFile::eWithoutIndex:
+                                   samtools::CBamFile::eWithIndex);
             if ( !query_id.empty() ) {
                 bam.Fetch(query_id,
                           query_range.GetFrom(),
@@ -772,6 +995,25 @@ int CBAMCompareApp::Run(void)
                     alns2.insert(alns2.end(), alns2t.begin(), alns2t.end());
                 }
             }
+            if ( 1 ) {
+                // remove hard breaks
+                for ( auto& a : alns2 ) {
+                    if ( !a.CIGAR.empty() && (a.CIGAR.back() & 0xf) == 5 ) {
+                        a.CIGAR.pop_back();
+                    }
+                    if ( !a.CIGAR.empty() && (a.CIGAR.front() & 0xf) == 5 ) {
+                        a.CIGAR.erase(a.CIGAR.begin());
+                    }
+                }
+            }
+            if ( 1 ) {
+                // reset quality of unmapped sequences
+                for ( auto& a : alns2 ) {
+                    if ( a.ref_seq_index == -1 ) {
+                        a.quality = 0;
+                    }
+                }
+            }
 
             out << "SamTools count: " << alns2.size() << NcbiEndl;
             sort(alns1.begin(), alns1.end());
@@ -782,7 +1024,7 @@ int CBAMCompareApp::Run(void)
                 size_t size2 = alns2.size(), i2 = 0;
                 out << "SRA SDK and SamTools results differ:" << NcbiEndl;
                 while ( i1 < size1 || i2 < size2 ) {
-                    if ( i2 < size2 &&
+                    if ( i2 < size2 && query_range != CRange<TSeqPos>::GetWhole() &&
                          !alns2[i2].ref_range.IntersectingWith(query_range) ) {
                         alnsout2.push_back(alns2[i2]);
                         ++i2;
@@ -853,6 +1095,9 @@ int CBAMCompareApp::Run(void)
         }
     }
     out << "Exiting" << NcbiEndl;
+    if ( ret_code ) {
+        out << "***** Errors were found *****" << NcbiEndl;
+    }
     return ret_code;
 }
 

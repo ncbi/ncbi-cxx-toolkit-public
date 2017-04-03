@@ -43,7 +43,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objtools/readers/iidmapper.hpp>
 
-typedef uint32_t rc_t; // from <klib/rc.h>
+#include <sra/readers/bam/bamread_base.hpp>
 
 //#include <align/bam.h>
 struct BAMFile;
@@ -55,6 +55,8 @@ struct AlignAccessDB;
 struct AlignAccessRefSeqEnumerator;
 struct AlignAccessAlignmentEnumerator;
 
+#include <sra/readers/bam/bamindex.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -64,144 +66,6 @@ class CSeq_align;
 class CSeq_id;
 class CBamFileAlign;
 
-/////////////////////////////////////////////////////////////////////////////
-//  CBamException
-/////////////////////////////////////////////////////////////////////////////
-
-#ifndef NCBI_EXCEPTION3_VAR
-/// Create an instance of the exception with one additional parameter.
-# define NCBI_EXCEPTION3_VAR(name, exc_cls, err_code, msg, extra1, extra2) \
-    exc_cls name(DIAG_COMPILE_INFO, 0, exc_cls::err_code, msg,          \
-                 extra1, extra2)
-#endif
-
-#ifndef NCBI_EXCEPTION3
-# define NCBI_EXCEPTION3(exc_cls, err_code, msg, extra1, extra2)        \
-    NCBI_EXCEPTION3_VAR(NCBI_EXCEPTION_EMPTY_NAME,                      \
-                        exc_cls, err_code, msg, extra1, extra2)
-#endif
-
-#ifndef NCBI_THROW3
-# define NCBI_THROW3(exc_cls, err_code, msg, extra1, extra2)            \
-    throw NCBI_EXCEPTION3(exc_cls, err_code, msg, extra1, extra2)
-#endif
-
-#ifndef NCBI_RETHROW3
-# define NCBI_RETHROW3(prev_exc, exc_cls, err_code, msg, extra1, extra2) \
-    throw exc_cls(DIAG_COMPILE_INFO, &(prev_exc), exc_cls::err_code, msg, \
-                  extra1, extra2)
-#endif
-
-
-class CBamRcFormatter
-{
-public:
-    explicit CBamRcFormatter(rc_t rc)
-        : m_RC(rc)
-        {
-        }
-
-    rc_t GetRC(void) const
-        {
-            return m_RC;
-        }
-private:
-    rc_t m_RC;
-};
-NCBI_BAMREAD_EXPORT
-ostream& operator<<(ostream& out, const CBamRcFormatter& f);
-
-class NCBI_BAMREAD_EXPORT CBamException
-    : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    /// Error types that CBamXxx classes can generate.
-    enum EErrCode {
-        eOtherError,
-        eNullPtr,       ///< Null pointer error
-        eAddRefFailed,  ///< AddRef failed
-        eInvalidArg,    ///< Invalid argument error
-        eInitFailed,    ///< Initialization failed
-        eNoData,        ///< Data not found
-        eBadCIGAR       ///< Bad CIGAR string
-    };
-    /// Constructors.
-    CBamException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  EDiagSev severity = eDiag_Error);
-    CBamException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  rc_t rc,
-                  EDiagSev severity = eDiag_Error);
-    CBamException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  rc_t rc,
-                  const string& param,
-                  EDiagSev severity = eDiag_Error);
-    CBamException(const CBamException& other);
-
-    ~CBamException(void) throw();
-
-    /// Report "non-standard" attributes.
-    virtual void ReportExtra(ostream& out) const;
-
-    virtual const char* GetType(void) const;
-
-    /// Translate from the error code value to its string representation.
-    typedef int TErrCode;
-    virtual TErrCode GetErrCode(void) const;
-
-    /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
-
-    rc_t GetRC(void) const
-        {
-            return m_RC;
-        }
-
-    const string& GetParam(void) const
-        {
-            return m_Param;
-        }
-
-    static void ReportError(const char* msg, rc_t rc);
-
-protected:
-    /// Constructor.
-    CBamException(void);
-
-    /// Helper clone method.
-    virtual const CException* x_Clone(void) const;
-
-private:
-    rc_t   m_RC;
-    string m_Param;
-};
-
-
-template<class Object>
-struct CBamRefTraits
-{
-};
-
-#define SPECIALIZE_BAM_REF_TRAITS(T, Const)                             \
-    template<>                                                          \
-    struct CBamRefTraits<Const T>                                       \
-    {                                                                   \
-        static rc_t x_Release(const T* t);                              \
-        static rc_t x_AddRef (const T* t);                              \
-    }
-#define DEFINE_BAM_REF_TRAITS(T, Const)                                 \
-    rc_t CBamRefTraits<Const T>::x_Release(const T* t)                  \
-    { return T##Release(t); }                                           \
-    rc_t CBamRefTraits<Const T>::x_AddRef (const T* t)                  \
-    { return T##AddRef(t); }
 
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessMgr, const);
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessDB,  const);
@@ -209,99 +73,6 @@ SPECIALIZE_BAM_REF_TRAITS(AlignAccessRefSeqEnumerator, );
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessAlignmentEnumerator, );
 SPECIALIZE_BAM_REF_TRAITS(BAMFile, const);
 SPECIALIZE_BAM_REF_TRAITS(BAMAlignment, const);
-
-
-template<class Object>
-class CBamRef
-{
-protected:
-    typedef CBamRef<Object> TSelf;
-    typedef CBamRefTraits<Object> TTraits;
-public:
-    typedef Object TObject;
-
-    CBamRef(void)
-        : m_Object(0)
-        {
-        }
-    explicit CBamRef(const TSelf& ref)
-        : m_Object(s_AddRef(ref))
-        {
-        }
-    TSelf& operator=(const TSelf& ref)
-        {
-            if ( this != &ref ) {
-                Release();
-                m_Object = s_AddRef(ref);
-            }
-            return *this;
-        }
-    ~CBamRef(void)
-        {
-            Release();
-        }
-
-    void Release(void)
-        {
-            if ( m_Object ) {
-                if ( rc_t rc = TTraits::x_Release(m_Object) ) {
-                    CBamException::ReportError("Cannot release ref", rc);
-                }
-                m_Object = 0;
-            }
-        }
-    
-    TObject* GetPointer(void) const
-        {
-            if ( !m_Object ) {
-                NCBI_THROW(CBamException, eNullPtr,
-                           "Null BAM pointer");
-            }
-            return m_Object;
-        }
-
-    operator TObject*(void) const
-        {
-            return m_Object;
-        }
-    TObject* operator->(void) const
-        {
-            return GetPointer();
-        }
-    TObject& operator*(void) const
-        {
-            return *GetPointer();
-        }
-
-public:
-    void SetReferencedPointer(TObject* ptr)
-        {
-            Release();
-            m_Object = ptr;
-        }
-
-    TObject** x_InitPtr(void)
-        {
-            Release();
-            return &m_Object;
-        }
-
-protected:
-    static TObject* s_AddRef(const TSelf& ref)
-        {
-            TObject* obj = ref.m_Object;
-            if ( obj ) {
-                if ( rc_t rc = TTraits::x_AddRef(obj) ) {
-                    NCBI_THROW2(CBamException, eAddRefFailed,
-                                "Cannot add ref", rc);
-                }
-            }
-            return obj;
-        }
-
-private:
-    TObject* m_Object;
-};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -365,6 +136,7 @@ private:
 
 class CBamMgr;
 class CBamDb;
+class CBamRefSeqIterator;
 class CBamAlignIterator;
 
 class NCBI_BAMREAD_EXPORT CBamMgr
@@ -375,14 +147,36 @@ public:
 };
 
 class NCBI_BAMREAD_EXPORT CBamDb
-    : public CBamRef<const AlignAccessDB>
 {
 public:
+    enum EUseAPI {
+        eUseDefaultAPI,  // use underlying API determined by config
+        eUseAlignAccess, // use VDB AlignAccess module
+        eUseRawIndex     // use raw index and BAM file access
+    };
     CBamDb(void)
         {
         }
-    CBamDb(const CBamMgr& mgr, const string& db_name);
-    CBamDb(const CBamMgr& mgr, const string& db_name, const string& idx_name);
+    CBamDb(const CBamMgr& mgr,
+           const string& db_name,
+           EUseAPI use_api = eUseDefaultAPI);
+    CBamDb(const CBamMgr& mgr,
+           const string& db_name,
+           const string& idx_name,
+           EUseAPI use_api = eUseDefaultAPI);
+
+    DECLARE_OPERATOR_BOOL(m_AADB || m_RawDB);
+    
+    static bool UseRawIndex(EUseAPI use_api);
+    
+    bool UsesAlignAccessDB() const
+        {
+            return m_AADB;
+        }
+    bool UsesRawIndex() const
+        {
+            return m_RawDB;
+        }
 
     const string& GetDbName(void) const
         {
@@ -410,11 +204,25 @@ public:
     string GetHeaderText(void) const;
 
 private:
+    friend class CBamRefSeqIterator;
+    friend class CBamAlignIterator;
+
+    struct SAADBImpl : public CObject
+    {
+        SAADBImpl(const CBamMgr& mgr, const string& db_name);
+        SAADBImpl(const CBamMgr& mgr, const string& db_name, const string& idx_name);
+
+        mutable CMutex m_Mutex;
+        CBamRef<const AlignAccessDB> m_DB;
+    };
+    
     string m_DbName;
     string m_IndexName;
     AutoPtr<IIdMapper> m_IdMapper;
     typedef map<string, TSeqPos> TRefSeqLengths;
-    mutable TRefSeqLengths m_RefSeqLengths;
+    mutable AutoPtr<TRefSeqLengths> m_RefSeqLengths;
+    CRef<SAADBImpl> m_AADB;
+    CRef< CObjectFor<CBamRawDb> > m_RawDB;
 };
 
 
@@ -464,6 +272,10 @@ public:
         {
             return string(data(), size());
         }
+    operator CTempString() const
+        {
+            return CTempString(data(), size());
+        }
 
 protected:
     friend class CBamAlignIterator;
@@ -499,12 +311,13 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CBamString& str)
 class NCBI_BAMREAD_EXPORT CBamRefSeqIterator
 {
 public:
+    CBamRefSeqIterator();
     explicit CBamRefSeqIterator(const CBamDb& bam_db);
 
     CBamRefSeqIterator(const CBamRefSeqIterator& iter);
     CBamRefSeqIterator& operator=(const CBamRefSeqIterator& iter);
 
-    DECLARE_OPERATOR_BOOL(!m_LocateRC);
+    DECLARE_OPERATOR_BOOL(m_AADBImpl || m_RawDB);
 
     void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
         {
@@ -517,7 +330,7 @@ public:
 
     CBamRefSeqIterator& operator++(void);
 
-    const CBamString& GetRefSeqId(void) const;
+    CTempString GetRefSeqId(void) const;
     CRef<CSeq_id> GetRefSeq_id(void) const;
 
     TSeqPos GetLength(void) const;
@@ -535,11 +348,17 @@ private:
     void x_GetString(CBamString& buf,
                      const char* msg, TGetString func) const;
 
-    CBamRef<AlignAccessRefSeqEnumerator> m_Iter;
+    struct SAADBImpl : public CObject
+    {
+        CBamRef<AlignAccessRefSeqEnumerator> m_Iter;
+        mutable CBamString m_RefSeqIdBuffer;
+    };
+
+    CRef<SAADBImpl> m_AADBImpl;
+    CRef< CObjectFor<CBamRawDb> > m_RawDB;
+    size_t m_RefIndex;
     AutoPtr<IIdMapper> m_IdMapper;
-    rc_t m_LocateRC;
-    mutable CBamString m_RefSeqId;
-    mutable CRef<CSeq_id> m_RefSeq_id;
+    mutable CRef<CSeq_id> m_CachedRefSeq_id;
 };
 
 
@@ -559,7 +378,8 @@ class NCBI_BAMREAD_EXPORT CBamAlignIterator
 {
 public:
     CBamAlignIterator(void);
-    explicit CBamAlignIterator(const CBamDb& bam_db);
+    explicit
+    CBamAlignIterator(const CBamDb& bam_db);
     CBamAlignIterator(const CBamDb& bam_db,
                       const string& ref_id,
                       TSeqPos ref_pos,
@@ -568,7 +388,7 @@ public:
     CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
 
-    DECLARE_OPERATOR_BOOL(!m_LocateRC);
+    DECLARE_OPERATOR_BOOL(m_AADBImpl || m_RawImpl);
 
     void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
         {
@@ -602,15 +422,15 @@ public:
 
     CBamAlignIterator& operator++(void);
 
-    const CBamString& GetRefSeqId(void) const;
+    CTempString GetRefSeqId(void) const;
     TSeqPos GetRefSeqPos(void) const;
 
-    const CBamString& GetShortSeqId(void) const;
-    const CBamString& GetShortSeqAcc(void) const;
-    const CBamString& GetShortSequence(void) const;
+    CTempString GetShortSeqId(void) const;
+    CTempString GetShortSeqAcc(void) const;
+    CTempString GetShortSequence(void) const;
 
     TSeqPos GetCIGARPos(void) const;
-    const CBamString& GetCIGAR(void) const;
+    CTempString GetCIGAR(void) const;
     TSeqPos GetCIGARRefSize(void) const;
     TSeqPos GetCIGARShortSize(void) const;
 
@@ -649,9 +469,6 @@ private:
                                 uint64_t *start_pos,
                                 char *buffer, size_t bsize, size_t *size);
 
-    void x_AllocBuffers(void);
-    void x_InvalidateBuffers(void);
-
     void x_CheckValid(void) const;
     bool x_CheckRC(CBamString& buf,
                    rc_t rc, size_t size, const char* msg) const;
@@ -667,29 +484,55 @@ private:
     CRef<CSeq_entry> x_GetMatchEntry(const string* annot_name) const;
     CRef<CSeq_annot> x_GetSeq_annot(const string* annot_name) const;
 
-    CBamRef<AlignAccessAlignmentEnumerator> m_Iter;
+    struct SAADBImpl : public CObject {
+        CConstRef<CBamDb::SAADBImpl> m_DB;
+        CMutexGuard m_Guard;
+        CBamRef<AlignAccessAlignmentEnumerator> m_Iter;
+        mutable CBamString m_RefSeqId;
+        mutable CBamString m_ShortSeqId;
+        mutable CBamString m_ShortSeqAcc;
+        mutable CBamString m_ShortSequence;
+        mutable uint64_t m_CIGARPos;
+        mutable CBamString m_CIGAR;
+        mutable int m_Strand;
+
+        SAADBImpl(const CBamDb::SAADBImpl& db, AlignAccessAlignmentEnumerator* ptr);
+        
+        void x_InvalidateBuffers();
+    };
+    struct SRawImpl : public CObject {
+        CRef< CObjectFor<CBamRawDb> > m_RawDB;
+        CBamRawAlignIterator m_Iter;
+        mutable string m_ShortSequence;
+        mutable string m_CIGAR;
+
+        explicit
+        SRawImpl(CObjectFor<CBamRawDb>& db);
+        SRawImpl(CObjectFor<CBamRawDb>& db,
+                 const string& ref_label,
+                 TSeqPos ref_pos,
+                 TSeqPos window);
+        
+        void x_InvalidateBuffers();
+    };
+
+    CRef<SAADBImpl> m_AADBImpl;
+    CRef<SRawImpl> m_RawImpl;
+    
     AutoPtr<IIdMapper> m_IdMapper;
     CIRef<ISpotIdDetector> m_SpotIdDetector;
-    rc_t m_LocateRC;
-    mutable CBamString m_RefSeqId;
-    mutable CBamString m_ShortSeqId;
-    mutable CBamString m_ShortSeqAcc;
-    mutable CBamString m_ShortSequence;
-    mutable uint64_t m_CIGARPos;
-    mutable CBamString m_CIGAR;
-    mutable CRef<CSeq_id> m_RefSeq_id;
-    mutable CRef<CSeq_id> m_ShortSeq_id;
     enum EStrandValues {
         eStrand_not_read = -2,
         eStrand_not_set = -1
     };
-    mutable int m_Strand;
     enum EBamFlagsAvailability {
         eBamFlags_NotTried,
         eBamFlags_NotAvailable,
         eBamFlags_Available
     };
     mutable EBamFlagsAvailability m_BamFlagsAvailability;
+    mutable CRef<CSeq_id> m_RefSeq_id;
+    mutable CRef<CSeq_id> m_ShortSeq_id;
 };
 
 
