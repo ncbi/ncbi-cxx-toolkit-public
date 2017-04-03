@@ -34,6 +34,7 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -652,14 +653,6 @@ public:
             (*thread)->Run();
         }
 
-        enum ETimeUnits {
-            eNsec = 1, eUsec = 1000, eMsec = 1000 * 1000
-        };
-
-        timespec time_delay, time_rem;
-        time_delay.tv_sec = 0;
-        time_delay.tv_nsec = 100 * eMsec;
-
         long sumval = 0;
         vector<CSeqDBDemo_Thread*>::iterator thr;
         while (!threads.empty()) {
@@ -686,7 +679,7 @@ public:
                 threads.erase(thr);
                 sumval += *retval;
             } else {
-                nanosleep(&time_delay, &time_rem);
+                SleepMilliSec(100);
             }
         }
         cout << "Threads combined returned " << sumval << endl;
