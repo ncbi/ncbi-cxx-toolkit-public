@@ -764,6 +764,8 @@
           <string>ABCDABCDABCDABCD0000008C</string>
           <string>ABCDABCDABCDABCD0000008E</string>
           <string>ABCDABCDABCDABCD00000090</string>
+          <string>ABCDABCDABCDABCD1000008E</string>
+          <string>ABCDABCDABCDABCD10000090</string>
         </array>
         <key>isa</key>
         <string>PBXGroup</string>
@@ -1787,6 +1789,46 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD1000008E</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>jsdlexer.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/jsdlexer.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD1000008F</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD1000008E</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD10000090</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>jsdparser.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/jsdparser.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD10000091</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD10000090</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD00000092</key>
       <dict>
         <key>isa</key>
@@ -2475,6 +2517,8 @@
           <string>ABCDABCDABCDABCD0000008D</string>
           <string>ABCDABCDABCDABCD0000008F</string>
           <string>ABCDABCDABCDABCD00000091</string>
+          <string>ABCDABCDABCDABCD1000008F</string>
+          <string>ABCDABCDABCDABCD10000091</string>
         </array>
         <key>isa</key>
         <string>PBXSourcesBuildPhase</string>
