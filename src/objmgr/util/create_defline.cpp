@@ -215,7 +215,7 @@ for (SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Sel); Itr;  ++Itr)
 #define comma_space twochars(',',' ')
 #define semicolon_space twochars(';',' ')
 
-void x_CleanAndCompress(string& dest, const CTempString& instr)
+void x_CleanAndCompress(string& dest, const CTempString& instr, bool isProt)
 {
     size_t left = instr.size();
     // this is the input stream
@@ -306,8 +306,10 @@ void x_CleanAndCompress(string& dest, const CTempString& instr)
 
     dest.resize(out - dest.c_str());
 
-    NStr::ReplaceInPlace (dest, ". [", " [");
-    NStr::ReplaceInPlace (dest, ", [", " [");
+    if (isProt) {
+        NStr::ReplaceInPlace (dest, ". [", " [");
+        NStr::ReplaceInPlace (dest, ", [", " [");
+    }
 }
 
 static const char* x_OrganelleName (
@@ -1719,7 +1721,7 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
     if (suffix.length() != taxlen + 1) return str;
     if (NStr::StartsWith(suffix, taxname)) {
         str.erase (cp);
-        x_CleanAndCompress(final, str);
+        x_CleanAndCompress(final, str, true);
 
     }
     return final;
@@ -2801,7 +2803,7 @@ string CDeflineGenerator::GenerateDefline (
     // produce final result
     string penult = prefix + decoded + suffix;
 
-    x_CleanAndCompress (final, penult);
+    x_CleanAndCompress (final, penult, m_IsAA);
 
     if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
         if (!final.empty() && islower ((unsigned char) final[0]) && capitalize) {
