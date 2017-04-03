@@ -1,4 +1,5 @@
 corelib$
+corelib/test$
 util$
 util/regexp
 util/xregexp
@@ -24,3 +25,4 @@ dll
 misc$
 misc/third_party
 misc/third_party_static
+
