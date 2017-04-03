@@ -43,6 +43,10 @@ for v in "$DATATOOL_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
 done
 DEFDT_VERSION_FILE="${TREE_ROOT}/src/build-system/datatool_version.txt"
 PTB_SLN="${BUILD_TREE_ROOT}/static/UtilityProjects/PTB.xcodeproj"
+NCBICONF_MSVC="${TREE_ROOT}/include/common/config/ncbiconf_xcode_site.h"
+if test -e "${NCBICONF_MSVC}"; then
+  NCBICONF_MSVC=
+fi
 DT="datatool"
 
 # -------------------------------------------------------------------------
@@ -94,7 +98,13 @@ if test ! -x "$DATATOOL_EXE"; then
   cmd="`dirname $0`/xcodebuild.sh -project $PTB_SLN -target $DT -configuration ReleaseDLL"
   echo "$cmd"
   echo "=============================================================================="
+  if test "${NCBICONF_MSVC}" != ""; then
+    echo // > "${NCBICONF_MSVC}"
+  fi
   $cmd
+  if test "${NCBICONF_MSVC}" != ""; then
+    rm "${NCBICONF_MSVC}"
+  fi
 else
   echo "=============================================================================="
   echo "Using PREBUILT $DT at $DATATOOL_EXE"
