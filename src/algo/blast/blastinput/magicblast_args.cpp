@@ -205,7 +205,7 @@ int
 CMagicBlastAppArgs::GetQueryBatchSize() const
 {
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
-    return blast::GetQueryBatchSize(ProgramNameToEnum(GetTask()), m_IsUngapped, is_remote, false);
+    return blast::GetQueryBatchSize(eMapper, false, is_remote, true);
 }
 
 END_SCOPE(blast)

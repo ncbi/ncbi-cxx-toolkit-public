@@ -280,9 +280,9 @@ CBlastBioseqMaker::IsEmptyBioseq(const CBioseq& bioseq)
 }
 
 CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
-                               TSeqPos num_seqs)
+                               TSeqPos batch_size)
     : m_Source(source),
-      m_NumSeqsInBatch(num_seqs),
+      m_BatchSize(batch_size),
       m_BioseqSet(new CBioseq_set)
     
 {}
@@ -290,15 +290,15 @@ CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
 void
 CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)
 {
-    m_Source->GetNextNumSequences(bioseq_set, m_NumSeqsInBatch);
+    m_Source->GetNextSequenceBatch(bioseq_set, m_BatchSize);
 }
 
 CRef<CBioseq_set>
 CBlastInputOMF::GetNextSeqBatch(void)
 {
-    m_BioseqSet->SetSeq_set().clear();
-    m_Source->GetNextNumSequences(*m_BioseqSet, m_NumSeqsInBatch);
-    return m_BioseqSet;
+    CRef<CBioseq_set> bioseq_set(new CBioseq_set);
+    GetNextSeqBatch(*bioseq_set);
+    return bioseq_set;
 }
 
 

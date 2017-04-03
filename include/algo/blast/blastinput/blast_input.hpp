@@ -417,8 +417,8 @@ class NCBI_BLASTINPUT_EXPORT CBlastInputSourceOMF : public CObject
 {
 protected:
     virtual ~CBlastInputSourceOMF() {}
-    virtual void GetNextNumSequences(CBioseq_set& bioseq_set,
-                                     TSeqPos num_seqs) = 0;
+    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
+                                      TSeqPos batch_size) = 0;
 
     virtual bool End(void) = 0;
 
@@ -430,13 +430,13 @@ class NCBI_BLASTINPUT_EXPORT CBlastInputOMF : public CObject
 {
 public:
     CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
-                   TSeqPos num_seqs_in_batch = kMax_Int);
+                   TSeqPos batch_size);
 
     void GetNextSeqBatch(CBioseq_set& bioseq_set);
     CRef<CBioseq_set> GetNextSeqBatch(void);
 
-    void SetNumSeqsInBatch(TSeqPos num) {m_NumSeqsInBatch = num;}
-    TSeqPos GetNumSeqsInBatch(void) {return m_NumSeqsInBatch;}
+    void SetBatchSize(TSeqPos num) {m_BatchSize = num;}
+    TSeqPos GetBatchSize(void) {return m_BatchSize;}
 
     bool End(void) {return m_Source->End();}
 
@@ -445,7 +445,7 @@ private:
     CBlastInputOMF& operator=(const CBlastInputOMF& rhs);
 
     CRef<CBlastInputSourceOMF> m_Source;
-    TSeqPos m_NumSeqsInBatch;
+    TSeqPos m_BatchSize;
     CRef<CBioseq_set> m_BioseqSet;
 };
 

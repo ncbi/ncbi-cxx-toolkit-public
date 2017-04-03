@@ -49,33 +49,29 @@ public:
 
     /// Constructor
     /// @param infile Input stream for query sequences [in]
-    /// @param num_seqs_in_batch Number of sequences to read in a single batch
-    /// [in]
     /// @param is_bin Is input in binary ASN.1 format [in]
     /// @param is_paired Are queries paired [in]
     /// @param validate Should sequence validation be applied to each read
     /// sequence; if true sequences that do not pass validation will be
     /// rejected [in]
-    CASN1InputSourceOMF(CNcbiIstream& infile, TSeqPos num_seqs_in_bacth,
-                        bool is_bin = false, bool is_paired = false,
-                        bool validate = true);
+    CASN1InputSourceOMF(CNcbiIstream& infile, bool is_bin = false,
+                        bool is_paired = false, bool validate = true);
 
     /// Constructor for reading sequences from two files for paired short reads
     /// @param infile1 Input stream for query sequences [in]
     /// @param infile2 Input stream for query mates [in]
-    /// @param num_seqs_in_batch Number of sequences to read in a single batch
-    /// [in]
     /// @param is_bin Is input in binary ASN.1 format [in]
     /// @param validate Should sequence validation be applied to each read
     /// sequence; if true sequences that do not pass validation will be
     /// rejected [in]
     CASN1InputSourceOMF(CNcbiIstream& infile1, CNcbiIstream& infile2,
-                        TSeqPos num_seqs_in_bacth, bool is_bin = false,
-                        bool validate = true);
+                        bool is_bin = false, bool validate = true);
 
     virtual ~CASN1InputSourceOMF() {}
 
-    virtual void GetNextNumSequences(CBioseq_set& bioseq_set, TSeqPos num_seqs);
+    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
+                                      TSeqPos batch_size);
+
     virtual bool End(void) {return m_InputStream->eof();}
 
 
@@ -91,12 +87,13 @@ private:
     CRef<CSeq_entry> x_ReadOneSeq(CNcbiIstream& instream);
 
     /// Read sequences from one stream
-    bool x_ReadFromSingleFile(CBioseq_set& bioseq_set);
+    bool x_ReadFromSingleFile(CBioseq_set& bioseq_set, TSeqPos batch_size);
 
     /// Read sequences from two streams
-    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set);
+    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, TSeqPos batch_size);
 
-    TSeqPos m_NumSeqsInBatch;
+    /// Number of bases added so far
+    TSeqPos m_BasesAdded;
     CNcbiIstream* m_InputStream;
     // for reading paired reads from two FASTA files
     CNcbiIstream* m_SecondInputStream;
@@ -106,8 +103,6 @@ private:
     bool m_Validate;
     /// Is input binary ASN1
     bool m_IsBinary;
-    /// Used for indexing Seq-entries when reading from two files
-    int m_Index;
 };
 
 

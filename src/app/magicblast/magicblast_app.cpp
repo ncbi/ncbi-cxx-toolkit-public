@@ -115,12 +115,7 @@ void CMagicBlastApp::Init()
 
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
-    CArgDescriptions* arg_desc = m_CmdLineArgs->SetCommandLine();
-    arg_desc->SetCurrentGroup("Mapping options");
-    arg_desc->AddOptionalKey("batch_size", "num", "Number of query sequences "
-                             "read in a single batch",
-                             CArgDescriptions::eInteger);
-    SetupArgDescriptions(arg_desc);
+    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
 static char s_Complement(char c)
@@ -1091,8 +1086,7 @@ s_QueryOptsInFmtToFastaInFmt(CMapperQueryOptionsArgs::EInputFormat infmt)
 // Create input source object for reading query sequences
 static CRef<CBlastInputSourceOMF>
 s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
-                    CRef<CMagicBlastAppArgs> cmd_line_args,
-                    int batch_size)
+                    CRef<CMagicBlastAppArgs> cmd_line_args)
 {
     CRef<CBlastInputSourceOMF> retval;
 
@@ -1107,14 +1101,12 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
             retval.Reset(new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
                     *query_opts->GetMateInputStream(),
-                    batch_size,
                     s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()),
                     query_opts->DoQualityFilter()));
         }
         else {
             retval.Reset(new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
-                    batch_size,
                     s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()),
                     query_opts->IsPaired(),
                     query_opts->DoQualityFilter()));
@@ -1128,14 +1120,12 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
             retval.Reset(new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
                                     *query_opts->GetMateInputStream(),
-                                    batch_size,
                                     infmt == CMapperQueryOptionsArgs::eASN1bin,
                                     query_opts->DoQualityFilter()));
         }
         else {
             retval.Reset(new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
-                                    batch_size,
                                     infmt == CMapperQueryOptionsArgs::eASN1bin,
                                     query_opts->IsPaired(),
                                     query_opts->DoQualityFilter()));
@@ -1144,7 +1134,7 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 
     case CMapperQueryOptionsArgs::eSra:
         retval.Reset(new CSraInputSource(query_opts->GetSraAccessions(),
-                                         batch_size, query_opts->IsPaired(),
+                                         query_opts->IsPaired(),
                                          query_opts->DoQualityFilter()));
         break;
         
@@ -1291,27 +1281,21 @@ int CMagicBlastApp::Run(void)
         // message.
         int num_query_threads = 1;
         int num_db_threads = 1;
-        int batch_size = 0;
+        int batch_size = m_CmdLineArgs->GetQueryBatchSize();
 
         // we thread searches against smaller databases by queries and against
         // larger database by database
         if (db_size < kLargeDb) {
             num_query_threads = m_CmdLineArgs->GetNumThreads();
-            batch_size = 500000;
         }
         else {
             num_db_threads = m_CmdLineArgs->GetNumThreads();
-            batch_size = 1000000;
+            batch_size *= 2;
         }
 
         /*** Process the input ***/
-//        int batch_size = m_CmdLineArgs->GetQueryBatchSize() / num_query_threads;
-        if (args["batch_size"]) {
-            batch_size = args["batch_size"].AsInteger();
-        }
         CRef<CBlastInputSourceOMF> fasta = s_CreateInputSource(query_opts,
-                                                               m_CmdLineArgs,
-                                                               batch_size);
+                                                               m_CmdLineArgs);
         CBlastInputOMF input(fasta, batch_size);
 
 

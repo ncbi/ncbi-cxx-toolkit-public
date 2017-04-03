@@ -123,18 +123,19 @@ public:
     };
 
 
-    CShortReadFastaInputSource(CNcbiIstream& infile, TSeqPos num_seqs_in_bacth,
+    CShortReadFastaInputSource(CNcbiIstream& infile,
                                EInputFormat format = eFasta,
                                bool paired = false, bool validate = true);
 
     CShortReadFastaInputSource(CNcbiIstream& infile1, CNcbiIstream& infile2,
-                               TSeqPos num_seqs_in_bacth,
                                EInputFormat format = eFasta,
                                bool validate = true);
 
     virtual ~CShortReadFastaInputSource() {}
 
-    virtual void GetNextNumSequences(CBioseq_set& bioseq_set, TSeqPos num_seqs);
+    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
+                                      TSeqPos num_seqs);
+
     virtual bool End(void) {return m_LineReader->AtEOF();}
 
     /// Get number of rejected queries
@@ -148,7 +149,7 @@ private:
     bool x_ValidateSequence(const char* sequence, int length);
 
     /// Read sequences in FASTA or FASTQ format
-    void x_ReadFastaOrFastq(CBioseq_set& bioseq_set);
+    void x_ReadFastaOrFastq(CBioseq_set& bioseq_set, TSeqPos batch_size);
 
     /// Read one sequence from a FASTA file
     CRef<CSeq_entry> x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
@@ -157,13 +158,15 @@ private:
     CRef<CSeq_entry> x_ReadFastqOneSeq(CRef<ILineReader> line_reader);
 
     /// Read sequences from two FASTA or FASTQ files (for paired reads)
-    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, EInputFormat format);
+    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, TSeqPos batch_size,
+                            EInputFormat format);
 
     /// Read sequences in FASTC format: defline, new line, a pair of sequences
     /// on a single line separated by '><'
-    void x_ReadFastc(CBioseq_set& bioseq_set);
+    void x_ReadFastc(CBioseq_set& bioseq_set, TSeqPos batch_size);
 
-    TSeqPos m_NumSeqsInBatch;
+    /// Number of bases added so far
+    TSeqPos m_BasesAdded;
     /// string::capacity() can be used instead
     TSeqPos m_SeqBuffLen;
     CRef<ILineReader> m_LineReader;
@@ -179,8 +182,6 @@ private:
     Int4 m_NumRejected;
     /// Input format: FASTA, FASTQ, FASTC
     EInputFormat m_Format;
-    /// Used for indexing Seq-entries when reading from two files
-    int m_Index;
 };
 
 

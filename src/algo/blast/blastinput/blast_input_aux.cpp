@@ -105,8 +105,10 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */,
 	retval = 500000;
 	break;
     case eMegablast:
-    case eMapper:
         retval = 5000000;
+        break;
+    case eMapper:
+        retval = 50000000;
         break;
     case eTblastn:
         retval = 20000;

@@ -48,12 +48,10 @@ USING_SCOPE(objects);
 
 
 CASN1InputSourceOMF::CASN1InputSourceOMF(CNcbiIstream& infile,
-                                         TSeqPos num_seqs,
                                          bool is_bin,
                                          bool is_paired,
                                          bool validate)
-    : m_NumSeqsInBatch(num_seqs),
-      m_InputStream(&infile),
+    : m_InputStream(&infile),
       m_SecondInputStream(NULL),
       m_IsPaired(is_paired),
       m_Validate(validate),
@@ -62,11 +60,9 @@ CASN1InputSourceOMF::CASN1InputSourceOMF(CNcbiIstream& infile,
 
 CASN1InputSourceOMF::CASN1InputSourceOMF(CNcbiIstream& infile1,
                                          CNcbiIstream& infile2,
-                                         TSeqPos num_seqs,
                                          bool is_bin,
                                          bool validate)
-    : m_NumSeqsInBatch(num_seqs),
-      m_InputStream(&infile1),
+    : m_InputStream(&infile1),
       m_SecondInputStream(&infile2),
       m_IsPaired(true),
       m_Validate(validate),
@@ -75,14 +71,14 @@ CASN1InputSourceOMF::CASN1InputSourceOMF(CNcbiIstream& infile1,
 
 
 void
-CASN1InputSourceOMF::GetNextNumSequences(CBioseq_set& bioseq_set,
-                                         TSeqPos /* num_seqs */)
+CASN1InputSourceOMF::GetNextSequenceBatch(CBioseq_set& bioseq_set,
+                                          TSeqPos batch_size)
 {
     if (m_SecondInputStream) {
-        x_ReadFromTwoFiles(bioseq_set);
+        x_ReadFromTwoFiles(bioseq_set, batch_size);
     }
     else {
-        x_ReadFromSingleFile(bioseq_set);
+        x_ReadFromSingleFile(bioseq_set, batch_size);
     }
 }
 
@@ -116,7 +112,15 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
                            seq_entry->GetSeq().GetInst().GetLength())) {
 
         retval = seq_entry;
-        m_Index++;
+        if (!seq_entry->GetSeq().GetInst().IsSetLength()) {
+            string message = "Sequence length not set";
+            if (seq_entry->GetSeq().GetFirstId()) {
+                message += (string)" in the instance of " +
+                    seq_entry->GetSeq().GetFirstId()->GetSeqIdString();
+            }
+            NCBI_THROW(CInputException, eInvalidInput, message);
+        }
+        m_BasesAdded += seq_entry->GetSeq().GetInst().GetLength();
     }
 
     return retval;
@@ -124,7 +128,8 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
 
 
 bool
-CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
+CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set,
+                                          TSeqPos batch_size)
 {
     // tags to indicate paired sequences
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
@@ -145,8 +150,8 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
     seqdesc_last_partial->SetUser().AddField("has_pair",
                                              fLastSegmentFlag | fPartialFlag);
 
-    m_Index = 0;
-    while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof()) {
+    m_BasesAdded = 0;
+    while (m_BasesAdded < batch_size && !m_InputStream->eof()) {
         CRef<CSeq_entry> first;
         CRef<CSeq_entry> second;
         first = x_ReadOneSeq(*m_InputStream);
@@ -190,7 +195,8 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 
 
 bool
-CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
+CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
+                                        TSeqPos batch_size)
 {
     // tags to indicate paired sequences
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
@@ -211,8 +217,8 @@ CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
     seqdesc_last_partial->SetUser().AddField("has_pair",
                                              fLastSegmentFlag | fPartialFlag);
 
-    m_Index = 0;
-    while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof() &&
+    m_BasesAdded = 0;
+    while (m_BasesAdded < batch_size && !m_InputStream->eof() &&
            !m_SecondInputStream->eof()) {
 
         CRef<CSeq_entry> first = x_ReadOneSeq(*m_InputStream); 

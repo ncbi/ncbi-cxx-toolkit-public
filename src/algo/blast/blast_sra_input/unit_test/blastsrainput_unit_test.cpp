@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
     const bool kCheckForPairs = true;
     const bool kFilter = true;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, 2, kCheckForPairs, kFilter);
+    CSraInputSource input_source(accessions, kCheckForPairs, kFilter);
 
     unordered_map<string, int> ref_flags = {
         {"gnl|SRA|SRR4423739.1.1", eFirstSegment},
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
     };
 
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextNumSequences(*queries, 0);
+    input_source.GetNextSequenceBatch(*queries, 2);
 
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 2u);
 
@@ -119,10 +119,10 @@ BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
     const bool kCheckForPairs = false;
     const bool kFilter = true;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, 2, kCheckForPairs, kFilter);
+    CSraInputSource input_source(accessions, kCheckForPairs, kFilter);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextNumSequences(*queries, 0);
+    input_source.GetNextSequenceBatch(*queries, 300);
 
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 2u);
 
@@ -145,48 +145,41 @@ BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
 // Test that all input SRA accessions are read
 BOOST_AUTO_TEST_CASE(MultipleAccessions)
 {
-    const int kBatchSize = 200000;
+    const int kBatchSize = 30000000;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CSraInputSource input_source(accessions, kBatchSize);
+    CSraInputSource input_source(accessions);
     CRef<CBioseq_set> queries;
-    while (!input_source.End()) {
-        queries.Reset(new CBioseq_set);
-        input_source.GetNextNumSequences(*queries, 0);
+    queries.Reset(new CBioseq_set);
+    input_source.GetNextSequenceBatch(*queries, kBatchSize);
 
-        // all batches except the last one must have kBatchSize sequences
-        BOOST_REQUIRE(input_source.End() ||
-                      queries->GetSeq_set().size() >= (size_t)kBatchSize);
-
-    }
+    // the first query must be from the first SRA accession
+    const CSeq_id* fid = queries->GetSeq_set().front()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(fid->GetSeqIdString().find(accessions.front()) != string::npos);
 
     // the last query must be from the last SRA accession
-    const CSeq_id* id = queries->GetSeq_set().back()->GetSeq().GetFirstId();
-    BOOST_REQUIRE(id->GetSeqIdString().find(accessions.back()) != string::npos);
-
+    const CSeq_id* lid = queries->GetSeq_set().back()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(lid->GetSeqIdString().find(accessions.back()) != string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(MultipleAccessionsForceSingle)
 {
-    const int kBatchSize = 200000;
+    const int kBatchSize = 30000000;
     const bool kCheckForPairs = false;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CSraInputSource input_source(accessions, kBatchSize, kCheckForPairs);
+    CSraInputSource input_source(accessions, kCheckForPairs);
     CRef<CBioseq_set> queries;
-    while (!input_source.End()) {
-        queries.Reset(new CBioseq_set);
-        input_source.GetNextNumSequences(*queries, 0);
+    queries.Reset(new CBioseq_set);
+    input_source.GetNextSequenceBatch(*queries, kBatchSize);
 
-        // all batches except the last one must have kBatchSize sequences
-        BOOST_REQUIRE(input_source.End() ||
-                      queries->GetSeq_set().size() >= (size_t)kBatchSize);
-
-    }
+    // the first query must be from the first SRA accession
+    const CSeq_id* fid = queries->GetSeq_set().front()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(fid->GetSeqIdString().find(accessions.front()) != string::npos);
 
     // the last query must be from the last SRA accession
-    const CSeq_id* id = queries->GetSeq_set().back()->GetSeq().GetFirstId();
-    BOOST_REQUIRE(id->GetSeqIdString().find(accessions.back()) != string::npos);
+    const CSeq_id* lid = queries->GetSeq_set().back()->GetSeq().GetFirstId();
+    BOOST_REQUIRE(lid->GetSeqIdString().find(accessions.back()) != string::npos);
 }
 
 
