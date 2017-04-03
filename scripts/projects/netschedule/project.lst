@@ -11,7 +11,9 @@ util/cache$ update-only
 util/math$ update-only
 connect$
 connect/services$
+connect/services/test$
 connect/services/impl$
+connect/test$
 db$
 db/bdb$
 app$
