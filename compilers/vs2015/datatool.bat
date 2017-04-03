@@ -87,6 +87,10 @@ for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%"
 )
 set DEFDT_VERSION_FILE=%TREE_ROOT%\src\build-system\datatool_version.txt
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
+set NCBICONF_MSVC=%TREE_ROOT%\include\common\config\ncbiconf_msvc_site.h
+if exist "%NCBICONF_MSVC%" (
+  set NCBICONF_MSVC=
+)
 set DT=datatool.exe
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
@@ -156,7 +160,13 @@ if not exist "%DATATOOL_EXE%" (
     echo Building %DT% locally, please wait
     echo ******************************************************************************
     @echo %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "datatool.exe"
+    if not "%NCBICONF_MSVC%"=="" (
+      echo // > "%NCBICONF_MSVC%"
+    )
     %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "datatool.exe"
+    if not "%NCBICONF_MSVC%"=="" (
+      del "%NCBICONF_MSVC%"
+    )
   ) else (
     echo ERROR: do not know how to build %DT%
   )

@@ -278,13 +278,7 @@ if not errorlevel 1 (
   echo ==============  DO NOT RELOAD THE SOLUTION NOW!                 ============== 
   echo ******************************************************************************
   echo %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
-  if not "%NCBICONF_MSVC%"=="" (
-    echo // > "%NCBICONF_MSVC%"
-  )
   %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
-  if not "%NCBICONF_MSVC%"=="" (
-    del "%NCBICONF_MSVC%"
-  )
 )
 echo -
 echo -
