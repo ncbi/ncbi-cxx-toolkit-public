@@ -382,7 +382,12 @@ public:
     /// (e.g. '-arg') the argument can also be found by 'arg' name if there
     /// is no another argument named 'arg'.
     ///
-    /// Throw an exception if such argument does not exist.
+    /// Throw an exception if such argument does not exist (not described
+    /// in the CArgDescriptions).
+    ///
+    /// @attention  CArgValue::operator bool() can return TRUE even if the
+    ///             argument was not specified in the command-line -- if the
+    ///             argument has a default value.
     /// @sa
     ///   Exist() above.
     const CArgValue& operator[] (const string& name) const;
