@@ -135,7 +135,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #    ifndef NCBI_RECURSIVE_MUTEX_INIT
     /* NB: Without a static initializer there is a
            RACE CONDITION in sx_Mutex's INIT/USE! */
-    static void* s_Once = 0;
+    static void* /*bool*/ s_Once = 0/*false*/;
     if (x_Once(&s_Once)) {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
@@ -187,7 +187,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  else
 
     if (g_CORE_Log) {
-        static void* s_Once = 0;
+        static void* /*bool*/ s_Once = 0/*false*/;
         if (x_Once(&s_Once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     }
