@@ -393,7 +393,7 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
             break;
         case eRead:
             db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile,
-                CSQLITE_Connection::fReadOnly));
+                CSQLITE_Connection::fReadOnly | m_DbFlags));
             break;
         case eMemory:
             db_conn.Connection.reset(CSQLITE_Connection::CreateInMemoryDatabase(m_DbFile));

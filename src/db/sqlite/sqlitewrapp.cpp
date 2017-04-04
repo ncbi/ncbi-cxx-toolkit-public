@@ -391,11 +391,11 @@ CSQLITE_HandleFactory::CreateObject(void)
     }
 #endif
     try {
+        int flags = (m_Conn->GetFlags() & CSQLITE_Connection::fReadOnly)
+            ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
         SQLITE_SAFE_CALL((sqlite3_open_v2(m_Conn->GetFileName().c_str(),
                                           &result,
-                                          SQLITE_OPEN_READWRITE
-                                                | SQLITE_OPEN_CREATE
-                                                | SQLITE_OPEN_NOMUTEX,
+                                          flags | SQLITE_OPEN_NOMUTEX,
                                           vfs)),
                          result, eDBOpen,
                          "Error opening database '"
@@ -503,8 +503,9 @@ CSQLITE_Connection::SetupNewConnection(sqlite3* handle)
     sqlite3_extended_result_codes(handle, 1);
 
     if (m_Flags & fReadOnly) {
-        // The database is read-only, do not execute any PRAGMA commands.
-        return;
+        // The database is read-only, disable VACUUM pragma.
+        m_Flags &= ~eAllVacuum;
+        m_Flags |= fVacuumOff;
     }
 
     x_ExecuteSql(handle, "PRAGMA read_uncommitted = 1");

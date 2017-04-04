@@ -432,6 +432,7 @@ int CLDS2TestApplication::Run(void)
         m_DbFile = CDirEntry::CreateAbsolutePath(
             CDirEntry::ConcatPath(m_SrcDir, "../lds2.db"));
     }
+    bool memorydb = m_DbFile == ":memory:";
 
     m_Fmt = eSerial_AsnText;
     m_RunStress = args["stress"];
@@ -471,29 +472,29 @@ int CLDS2TestApplication::Run(void)
         }
     }
 
+    bool readonly = args["readonly"];
     if ( m_RunStress ) {
+        // Even in readonly mode create ASN.1 files for stress test.
         x_InitStressTest();
     }
 
-    cout << "Converting and indexing data..." << endl;
-    m_Mgr.Reset(new CLDS2_Manager(m_DbFile));
-    if ( args["group_aligns"] ) {
-        m_Mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+    if ( !readonly  ||  memorydb ) {
+        cout << "Converting and indexing data..." << endl;
+        m_Mgr.Reset(new CLDS2_Manager(m_DbFile));
+        if ( args["group_aligns"] ) {
+            m_Mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+        }
+        m_Mgr->ResetData(); // Re-create the database
+        m_Mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
+
+        CStopWatch sw(CStopWatch::eStart);
+        m_Mgr->AddDataDir(m_DataDir);
+        m_Mgr->UpdateData();
+        cout << "Data indexing done in " << sw.Elapsed() << " sec" << endl;
     }
-    m_Mgr->ResetData(); // Re-create the database
-    m_Mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
 
-    CStopWatch sw(CStopWatch::eStart);
-    m_Mgr->AddDataDir(m_DataDir);
-    m_Mgr->UpdateData();
-    cout << "Data indexing done in " << sw.Elapsed() << " sec" << endl;
-
-    if (m_DbFile != ":memory:") {
+    if ( !memorydb ) {
         m_Mgr.Reset();
-    }
-    else if ( args["readonly"] ) {
-        // Reopen database in read-only mode.
-        m_Mgr->GetDatabase()->Open(CLDS2_Database::eRead);
     }
 
     if ( args["id"] ) {
