@@ -217,7 +217,7 @@ typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
  * (in most cases automatically) by CONNECT_Init() API:  for C Toolkit it gets
  * always called before [Nlm_]Main();  in C++ Toolkit it gets called by
  * most of C++ classes' ctors, except for sockets;  so if your application
- * does not use any C++ classes besides sockets, it has to set CORE_LOCK
+ * does not use any C++ classes besides sockets, it has to set CORE_SetLOCK
  * explicitly, as described above.
  *
  * @sa
@@ -241,7 +241,7 @@ typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
  * @note
  *  This call, when used for the very first time in the application, enqueues
  *  SOCK_ShutdownAPI() to be called upon application exit on plaftorms that
- *  provide this functionality. In any case, the application can opt for
+ *  provide this functionality.  In any case, the application can opt for
  *  explicit SOCK_ShutdownAPI() call when it is done with all sockets.
  * @sa
  *  SOCK_ShutdownAPI
@@ -253,7 +253,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
  * @attention  No function from the SOCK API should be called after this call!
  * @note
  *  You can safely call it more than once;  just, all calls after the first
- *  one will have no result.
+ *  one will have no effect.
+ * @warning
+ *  Once the API has been shut down with this call, it cannot be reactivated
+ *  with SOCK_InitializeAPI() -- it will always return eIO_NotSupported.
  * @sa
  *  SOCK_InitializeAPI
  */
@@ -261,9 +264,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 
 /** By default (on UNIX platforms) the SOCK API functions automagically call
- * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
- * you must call SOCK_AllowSigPipeAPI() before you call any other.
- * function from the SOCK API.
+ * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature you
+ * must call SOCK_AllowSigPipeAPI() before you call any other function from the
+ * SOCK API.
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 

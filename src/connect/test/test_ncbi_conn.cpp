@@ -203,7 +203,7 @@ int CTestApp::Run(void)
     } else if ((timeout = args[1].AsDouble()) < 0.0)
         timeout = DEF_CONN_TIMEOUT;
 
-    m_Tee << NcbiEndl << "NCBI Connectivity Test (Timeout = "
+    m_Tee << NcbiEndl << "NCBI Connectivity Test Suite (Timeout = "
           << setprecision(6) << timeout << "s, "
           << (CConnTest::IsNcbiInhouseClient() ? "" : "non-")
           << "local client)" << NcbiEndl;
@@ -239,7 +239,7 @@ int CTestApp::Run(void)
         }
     } else {
         _ASSERT(everything == CConnTest::eStatefulService);
-        m_Tee << NcbiEndl << "NCBI Connectivity Test PASSED!";
+        m_Tee << NcbiEndl << "NCBI Connectivity Test Suite PASSED!";
     }
     m_Tee << NcbiEndl << NcbiEndl << NcbiFlush;
 
