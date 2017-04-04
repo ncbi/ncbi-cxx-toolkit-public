@@ -575,12 +575,14 @@ void CBedReader::x_SetFeatureDisplayData(
         if ( !m_usescore ) {
             display_data->AddField( 
                 "score",
-                NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow) );
+                NStr::StringToInt(fields[4],
+				NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
         }
         else {
             display_data->AddField( 
                 "greylevel",
-               NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow) );
+               	NStr::StringToInt(fields[4], 
+				NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
         }
     }
     if ( m_columncount >= 7 ) {
@@ -1558,7 +1560,8 @@ CBedReader::xReadBedRecordRaw(
     int score(-1);
     if (m_columncount >= 7  &&  columns[6] != ".") {
         try {
-            score = NStr::StringToInt(columns[6]);
+            score = NStr::StringToInt(columns[6], 
+			NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols);
         }
         catch(std::exception&) {
             AutoPtr<CObjReaderLineException> pErr(
