@@ -1147,7 +1147,7 @@ static inline unsigned int ud(time_t one, time_t two)
 }
 
 
-static size_t rnd(size_t minimal, size_t maximal)
+static inline size_t rnd(size_t minimal, size_t maximal)
 {
     return minimal <= maximal ? minimal + rand() % (maximal - minimal + 1) : 0;
 }
