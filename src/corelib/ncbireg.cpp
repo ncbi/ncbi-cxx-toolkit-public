@@ -1573,7 +1573,7 @@ void CNcbiRegistry::x_Init(void)
     m_FileRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
     x_Add(*m_FileRegistry, ePriority_File, sm_FileRegName);
 
-    m_SysRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
+    m_SysRegistry.Reset(new CCompoundRWRegistry(cf));
     x_Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
 
     const TXChar* xoverride_path = NcbiSys_getenv(_TX("NCBI_CONFIG_OVERRIDES"));
