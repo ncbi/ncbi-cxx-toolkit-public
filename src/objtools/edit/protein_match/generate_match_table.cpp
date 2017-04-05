@@ -97,6 +97,7 @@ void CMatchTabulate::x_ProcessAlignments(
     const map<string, string>& nuc_id_replacements,
     map<string, bool>& nuc_match) 
 {
+    string prev_accession = "";
     for (const CSeq_align& align :
             CObjectIStreamIterator<CSeq_align>(istr)) 
     {
@@ -106,16 +107,18 @@ void CMatchTabulate::x_ProcessAlignments(
                 if (nuc_id_replacements.find(accession) != nuc_id_replacements.end()) {
                     accession = nuc_id_replacements.at(accession); 
                 }
-                if (!x_IsPerfectAlignment(align)) {
+
+                if ((accession == prev_accession) ||
+                    !x_IsPerfectAlignment(align)) {
                     nuc_match[accession] = false;
                     continue;
                 }
                 nuc_match[accession] = true;
             }
+            prev_accession = accession;
         }
     }
 }
-
 
 
 void CMatchTabulate::x_ProcessProteins(
