@@ -61,8 +61,8 @@ public:
     {
         m_pInterval.Reset(new CSeq_interval());
         m_pInterval->SetId(id);
-        m_pInterval->SetFrom(start-1);
-        m_pInterval->SetTo(stop-2);
+        m_pInterval->SetFrom(start);
+        m_pInterval->SetTo(stop-1);
         m_pInterval->SetStrand(strand);
     };
 
