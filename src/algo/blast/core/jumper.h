@@ -38,7 +38,7 @@
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_hspstream.h>
-#include "spliced_hits.h"
+#include <algo/blast/core/spliced_hits.h>
 
 
 #ifdef __cplusplus

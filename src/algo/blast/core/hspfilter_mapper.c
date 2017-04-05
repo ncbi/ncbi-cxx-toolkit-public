@@ -34,8 +34,8 @@
 #include <algo/blast/core/hspfilter_mapper.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/spliced_hits.h>
 #include "jumper.h"
-#include "spliced_hits.h"
 
 /* Pair configurations, in the order of prefernece */
 #define PAIR_CONVERGENT 0
@@ -1759,45 +1759,6 @@ static Int4 s_SortChains(HSPChain** saved, Int4 num_queries,
     return 0;
 }
 
-/* Convert internal HSPChain structure to BlastHSPChain used to report results */
-static BlastHSPChain* s_HSPChainToBlastHSPChain(HSPChain* chain)
-{
-    BlastHSPChain* new_chain = NULL;
-    HSPContainer* h = NULL;
-    Int4 num_hsps = 0;
-    Int4 index = 0;
-
-    if (!chain || !chain->hsps) {
-        return NULL;
-    }
-
-    new_chain = Blast_HSPChainNew();
-    if (!new_chain) {
-        return NULL;
-    }
-
-    new_chain->query_index = chain->context / NUM_STRANDS;
-    new_chain->oid = chain->oid;
-    new_chain->score = chain->score;
-    new_chain->adapter = chain->adapter;
-    new_chain->polyA = chain->polyA;
-
-    /* move hsps */
-    for (h = chain->hsps; h; h = h->next) {
-        num_hsps++;
-    }
-    new_chain->num_hsps = num_hsps;
-    new_chain->hsp_array = calloc(num_hsps, sizeof(BlastHSP*));
-    if (!new_chain->hsp_array) {
-        return NULL;
-    }
-    for (h = chain->hsps; h; h = h->next) {
-        new_chain->hsp_array[index++] = h->hsp;
-        h->hsp = NULL;
-    }
-
-    return new_chain;
-}
 
 /* Separate HSPs that overlap on the query to different chains (most output
    formats do not support query overlaps) */
@@ -1865,10 +1826,7 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
                       Boolean is_paired)
 {
     Int4 query_idx;
-    Int4 num_results = 0;
-    Int4 num = 0;
     const Int4 kPairBonus = 21;
-    Int4* num_unique_chains = NULL;
 
     /* remove poor scoring chains and find chain multiplicity */
     if (!getenv("MAPPER_NO_PRUNNING")) {
@@ -1892,29 +1850,28 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
     /* Compute number of results to store, and number of unique mappings for
        each query (some chains may be copied to create pairs) */
 
-    num_unique_chains = calloc(query_info->num_queries, sizeof(Int4));
-    if (!num_unique_chains) {
-        return -1;
-    }
-
     /* count number of unique mappings */
     for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
         HSPChain* chain = saved[query_idx];
         HSPChain* prev = chain;
+        Int4 num_unique = 1;
 
         if (!chain) {
             continue;
         }
-
-        num_unique_chains[query_idx]++;
 
         chain = chain->next;
         for (; chain; chain = chain->next, prev = prev->next) {
             if (prev->oid != chain->oid ||
                 s_FindFragmentStart(prev) != s_FindFragmentStart(chain)) {
 
-                num_unique_chains[query_idx]++;
+                num_unique++;
             }
+        }
+
+        /* FIXME: for tabular output check count computed earlier */
+        for (chain = saved[query_idx]; chain; chain = chain->next) {
+            chain->count = num_unique;
         }
     }
 
@@ -1936,74 +1893,8 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
         }
     }
 
-    /* count number of chains to report */
-    for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
-        HSPChain* chain = saved[query_idx];
-
-        for (; chain; chain = chain->next) {
-            num_results++;
-        }
-    }
-
-    results->chain_array = calloc(num_results, sizeof(BlastHSPChain*));
-    if (!results->chain_array) {
-        if (num_unique_chains) {
-            free(num_unique_chains);
-        }
-        return -1;
-    }
-    results->num_results = num_results;
-
-    /* iterate over queries */
-    for (query_idx = 0;query_idx < query_info->num_queries;query_idx++) {
-        HSPChain* chain = saved[query_idx];
-
-        /* skip queries for which there are no saved results */
-        if (!chain) {
-            continue;
-        }
-
-        for (; chain; chain = chain->next) {
-            BlastHSPChain* new_chain = NULL;
-            BlastHSPChain* pair = NULL;
-            
-            /* pairs are processed together so that we can store their pointers
-               so a chain whose pair's context is smaller was already processed
-            */
-            if (chain->pair && chain->context > chain->pair->context) {
-                continue;
-            }
-            
-            new_chain = s_HSPChainToBlastHSPChain(chain);
-            ASSERT(new_chain);
-            if (!new_chain) {
-                return -1;
-            }
-            new_chain->multiplicity = num_unique_chains[new_chain->query_index];
-
-            results->chain_array[num++] = new_chain;
-
-            if (chain->pair) {
-                pair = s_HSPChainToBlastHSPChain(chain->pair);
-                chain->pair->compartment = -1;
-
-                new_chain->pair = pair;
-                pair->pair = new_chain;
-                pair->multiplicity = num_unique_chains[pair->query_index];
-                results->chain_array[num++] = pair;
-            }
-        }
-
-    }
-    ASSERT(num == results->num_results);
-
-    for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
-        saved[query_idx] = HSPChainFree(saved[query_idx]);
-    }
-
-    if (num_unique_chains) {
-        sfree(num_unique_chains);
-    }
+    results->chain_array = saved;
+    results->num_queries = query_info->num_queries;
 
     return 0;
 }
@@ -2024,9 +1915,7 @@ s_BlastHSPMapperFinal(void* data, void* mapping_results)
                    spl_data->query, &params->scoring_options, params->paired);
     }
 
-    if (spl_data->saved_chains) {
-        sfree(spl_data->saved_chains);
-    }
+    spl_data->saved_chains = NULL;
 
    return 0;
 }

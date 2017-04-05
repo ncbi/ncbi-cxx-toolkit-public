@@ -936,62 +936,6 @@ Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
                                     Int4 masklevel, Int4 query_length);
 
 
-/********************************************************************************
-          Mapping hits API.
-********************************************************************************/
-
-
-/** Structre to store a spliced alignment */
-typedef struct BlastHSPChain
-{
-    Int4 num_hsps;             /**< Number of HSPs in the chain */
-    BlastHSP** hsp_array;      /**< Array of pointers to HSPs */
-
-    Int4 query_index;          /**< Index of query sequence */
-    Int4 oid;                  /**< Oid for the subject sequence */
-    Int4 score;                /**< Alignment score for the chain */
-    Int4 adapter;              /**< Position of detected adapted sequence in
-                                    the query */
-    Int4 polyA;                /**< Position of PolyA seqence in the query */
-
-    struct BlastHSPChain* pair;  /**< Pointer to mapped mate alignment for
-                                      paired short reads */
-
-    Int4 multiplicity;         /**< Number of idependent mappings for the same
-                                    query (including this one) */
-} BlastHSPChain;
-
-
-/** Structure that contains BLAST mapping results */
-typedef struct BlastMappingResults
-{
-    Int4 num_results;
-    BlastHSPChain** chain_array;
-} BlastMappingResults;
-
-
-/** Initialize the chain structure.
- */
-NCBI_XBLAST_EXPORT
-BlastHSPChain* Blast_HSPChainNew(void);
-
-/** Free the chain structure
- * @param ch Chain to be freed
- */
-NCBI_XBLAST_EXPORT
-BlastHSPChain* Blast_HSPChainFree(BlastHSPChain* ch);
-
-/** Initialize BlastMappingResults structure
- */
-NCBI_XBLAST_EXPORT
-BlastMappingResults* Blast_MappingResultsNew(void);
-
-/** Free BlastMappingResults structure
- */
-NCBI_XBLAST_EXPORT
-BlastMappingResults* Blast_MappingResultsFree(BlastMappingResults* results);
-
-
 #ifdef __cplusplus
 }
 #endif

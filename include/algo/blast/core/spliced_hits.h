@@ -46,42 +46,64 @@ typedef struct HSPContainer
 } HSPContainer;
 
 
-/* Create HSPContainer and take ownership of the HSP */
+/** Create HSPContainer and take ownership of the HSP */
 HSPContainer* HSPContainerNew(BlastHSP** hsp);
 
-/* Free the list of HSPs, along with the stored HSPs */
+/** Free the list of HSPs, along with the stored HSPs */
 HSPContainer* HSPContainerFree(HSPContainer* hc);
 
-/* Clone a list of HSP containers */
+/** Clone a list of HSP containers */
 HSPContainer* HSPContainerDup(HSPContainer* inh);
 
-/* A chain of HSPs: spliced alignment */
+/** A chain of HSPs: spliced alignment */
 typedef struct HSPChain
 {
-    Int4 context;  /* query context */
-    Int4 oid;      /* subject oid */
-    Int4 score;    /* score for the whole chain */
-    HSPContainer* hsps;  /* list of HSPs that belong to this chain */
-    Int4 compartment;    /* compartment number for the chain (needed
-                            for reporting results) */
+    Int4 context;           /**< Contex number of query sequence */
+    Int4 oid;               /**< Subject oid */
+    Int4 score;             /**< Alignment score for the chain */
+    HSPContainer* hsps;     /**< A list of HSPs that belong to this chain */
     
-    Int4 count;    /* number of chains with the same or larger score found
-                      for the same query */
-    struct HSPChain* pair;  /* pointer to the pair (for paired reads) */
-    Uint1 pair_conf;        /* pair configuration */
+    Int4 count;             /**< Number of placements for the read */
+    struct HSPChain* pair;  /**< Pointer to mapped mate alignmemt
+                               (for paired reads) */
+    Uint1 pair_conf;        /**< Pair configuration */
 
-    Int4 adapter;  /* adapter start position */
-    Int4 polyA;    /* start of polyA tail */
-    struct HSPChain* next;
+    Int4 adapter;   /**< Position of detected adapter sequence in the query */
+    Int4 polyA;     /**< Position of detected PolyA sequence in the query */
+    struct HSPChain* next;  /**< Pointer to the next chain in a list */
 } HSPChain;
 
 
+/** Deallocate a chain or list of chains */
+NCBI_XBLAST_EXPORT
 HSPChain* HSPChainFree(HSPChain* chain_list);
 
+/** Allocate a chain */
+NCBI_XBLAST_EXPORT
 HSPChain* HSPChainNew(Int4 context);
 
-/* Clone a single HSP chain */
+/** Clone a single HSP chain */
 HSPChain* CloneChain(const HSPChain* chain);
+
+
+/** Structure that contains BLAST mapping results */
+typedef struct BlastMappingResults
+{
+    Int4 num_queries;
+    HSPChain** chain_array;
+} BlastMappingResults;
+
+
+/** Initialize BlastMappingResults structure
+ */
+NCBI_XBLAST_EXPORT
+BlastMappingResults* Blast_MappingResultsNew(void);
+
+/** Free BlastMappingResults structure
+ */
+NCBI_XBLAST_EXPORT
+BlastMappingResults* Blast_MappingResultsFree(BlastMappingResults* results);
+
 
 
 #ifdef __cplusplus

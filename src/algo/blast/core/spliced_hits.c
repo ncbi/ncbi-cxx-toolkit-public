@@ -30,7 +30,7 @@
  */
 
 
-#include "spliced_hits.h"
+#include <algo/blast/core/spliced_hits.h>
 
 
 /* Create HSPContainer and take ownership of the HSP */
@@ -130,7 +130,6 @@ HSPChain* HSPChainNew(Int4 context)
         return NULL;
     }
     retval->context = context;
-    retval->compartment = -1;
     retval->adapter = -1;
 
     return retval;
@@ -161,4 +160,29 @@ HSPChain* CloneChain(const HSPChain* chain)
 
     return retval;
 }
+
+BlastMappingResults* Blast_MappingResultsNew(void)
+{
+    BlastMappingResults* retval = calloc(1, sizeof(BlastMappingResults));
+    return retval;
+}
+
+BlastMappingResults* Blast_MappingResultsFree(BlastMappingResults* results)
+{
+    if (!results) {
+        return NULL;
+    }
+
+    if (results->chain_array) {
+        Int4 i;
+        for (i = 0;i < results->num_queries;i++) {
+            HSPChainFree(results->chain_array[i]);
+        }
+        sfree(results->chain_array);
+    }
+    sfree(results);
+
+    return NULL;
+}
+
 

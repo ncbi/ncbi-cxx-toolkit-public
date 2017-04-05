@@ -400,16 +400,19 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
                     CRef<CSeq_id> product_id,
                     CRef<CSeq_id> genomic_id,
                     int product_length,
-                    const BlastHSPChain* chain)
+                    const HSPChain* chain)
 {
     spliced_seg.SetProduct_id(*product_id);
     spliced_seg.SetGenomic_id(*genomic_id);
-    
-    _ASSERT(chain->num_hsps > 0);
-    _ASSERT(chain->hsp_array[0]);
-    ENa_strand product_strand = s_Frame2Strand(chain->hsp_array[0]->query.frame);
+    _ASSERT(chain->hsps);
+    int num_hsps = 0;
+    for (HSPContainer* h = chain->hsps; h; h = h->next) {
+        num_hsps++;
+    }
+    _ASSERT(num_hsps > 0);
+    ENa_strand product_strand = s_Frame2Strand(chain->hsps->hsp->query.frame);
     ENa_strand genomic_strand = s_Frame2Strand(
-                                        chain->hsp_array[0]->subject.frame);
+                                        chain->hsps->hsp->subject.frame);
 
     spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
     spliced_seg.SetProduct_length(product_length);
@@ -417,8 +420,8 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
     CSpliced_seg::TExons& exons = spliced_seg.SetExons();
     const Uint1 kGap = 15; // Gap in BLASTNA
 
-    for (int k=0;k < chain->num_hsps;k++) {
-        BlastHSP* hsp = chain->hsp_array[k];
+    for (HSPContainer* h = chain->hsps; h; h = h->next) {
+        BlastHSP* hsp = h->hsp;
         _ASSERT(hsp);
 
         _ASSERT(hsp->gap_info->size > 1 ||

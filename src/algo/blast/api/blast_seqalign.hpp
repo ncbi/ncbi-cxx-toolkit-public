@@ -160,7 +160,7 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
                     CRef<CSeq_id> product_id,
                     CRef<CSeq_id> genomic_id,
                     int product_length,
-                    const BlastHSPChain* chain);
+                    const HSPChain* chain);
 
 
 END_SCOPE(blast)

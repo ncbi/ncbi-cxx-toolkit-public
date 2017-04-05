@@ -41,6 +41,7 @@
 #include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_hspfilter.h>
+#include <algo/blast/core/spliced_hits.h>
 #include <connect/ncbi_core.h>
 
 #ifdef __cplusplus

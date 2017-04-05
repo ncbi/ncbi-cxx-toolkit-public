@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/general/User_object.hpp>
+#include <algo/blast/core/spliced_hits.h>
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/magicblast.hpp>
 
@@ -173,22 +174,23 @@ void CMagicBlast::x_Validate(void)
 
 // Compute BTOP string and percent identity from JumperEdits structure that
 // contains base mismatch infotmation
-static void s_ComputeBtopAndIdentity(const BlastHSPChain* chain,
+static void s_ComputeBtopAndIdentity(const HSPChain* chain,
                                      string& btop,
                                      double& perc_id)
 {
     _ASSERT(chain);
-    _ASSERT(chain->hsp_array[0]);
+    _ASSERT(chain->hsps->hsp);
     const Uint1 kGap = 15;
     
     int num_identical = 0;
     int len = 0;
-    for (int k=0;k < chain->num_hsps;k++) {
-        const BlastHSP* hsp = chain->hsp_array[k];
+    HSPContainer* h = chain->hsps;
+    BlastHSP* prev = NULL;
+    for (; h; prev = h->hsp, h = h->next) {
+        const BlastHSP* hsp = h->hsp;
         const JumperEditsBlock* hsp_edits = hsp->map_info->edits;
 
-        if (k > 0) {
-            const BlastHSP* prev = chain->hsp_array[k - 1];
+        if (prev) {
             int intron = hsp->subject.offset - prev->subject.end;
             if (intron > 0) {
                 btop += (string)"^" + NStr::IntToString(intron) + "^";
@@ -246,7 +248,7 @@ static void s_ComputeBtopAndIdentity(const BlastHSPChain* chain,
 }
 
 
-static CRef<CSeq_align> s_CreateSeqAlign(const BlastHSPChain* chain,
+static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
                                          CRef<ILocalQueryData>& qdata,
                                          CRef<IBlastSeqInfoSrc>& seqinfo_src)
 {
@@ -254,11 +256,12 @@ static CRef<CSeq_align> s_CreateSeqAlign(const BlastHSPChain* chain,
     align->SetType(CSeq_align::eType_partial);
     align->SetDim(2);
 
-    CConstRef<CSeq_loc> query_loc = qdata->GetSeq_loc(chain->query_index);
+    int query_index = chain->context / NUM_STRANDS;
+    CConstRef<CSeq_loc> query_loc = qdata->GetSeq_loc(query_index);
     CRef<CSeq_id> query_id(new CSeq_id);
     SerialAssign(*query_id, CSeq_loc_CI(*query_loc).GetSeq_id());
     _ASSERT(query_id);
-    TSeqPos query_length = qdata->GetSeqLength(chain->query_index);
+    TSeqPos query_length = qdata->GetSeqLength(query_index);
 
     CRef<CSeq_id> subject_id;
     TSeqPos subj_length;
@@ -280,8 +283,8 @@ static CRef<CSeq_align> s_CreateSeqAlign(const BlastHSPChain* chain,
     // for SAM
     // context is needed mostly for printing query sequences, mostly for
     // convinience and fast lookup
-    user_object->AddField("context", chain->hsp_array[0]->context);
-    user_object->AddField("num_hits", chain->multiplicity);
+    user_object->AddField("context", chain->context);
+    user_object->AddField("num_hits", chain->count);
 
     // for tabular
     string btop;
@@ -306,35 +309,37 @@ CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
     _ASSERT(seqinfo_src);
     seqinfo_src->GarbageCollect();
 
-    for (int i=0;i < results->num_results;i++) {
+    for (int i=0;i < results->num_queries;i++) {
         // single spliced alignment
-        BlastHSPChain* chain = results->chain_array[i];
+        HSPChain* chain = results->chain_array[i];
+        for (; chain; chain = chain->next) {
 
-        // mate pairs are processed together when the first one is encountered,
-        // so skip the second of the pair
-        if (chain->pair && chain->query_index > chain->pair->query_index) {
-            continue;
-        }
+            // mate pairs are processed together when the first one is
+            // encountered, so skip the second of the pair
+            if (chain->pair && chain->context > chain->pair->context) {
+                continue;
+            }
 
-        CRef<CSeq_align> align;
+            CRef<CSeq_align> align;
 
-        // pairs are reported as disc seg alignment composed of two
-        // spliced segs
-        if (chain->pair) {
-            align.Reset(new CSeq_align);
-            align->SetType(CSeq_align::eType_partial);
-            align->SetDim(2);
+            // pairs are reported as disc seg alignment composed of two
+            // spliced segs
+            if (chain->pair) {
+                align.Reset(new CSeq_align);
+                align->SetType(CSeq_align::eType_partial);
+                align->SetDim(2);
 
-            CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
-            disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src));
-            disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
+                CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
+                disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src));
+                disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
                                                   seqinfo_src));
-        }
-        else {
-            align = s_CreateSeqAlign(chain, qdata, seqinfo_src);
-        }
+            }
+            else {
+                align = s_CreateSeqAlign(chain, qdata, seqinfo_src);
+            }
 
-        seq_aligns->Set().push_back(align);
+            seq_aligns->Set().push_back(align);
+        }
     }
 
     return seq_aligns;
