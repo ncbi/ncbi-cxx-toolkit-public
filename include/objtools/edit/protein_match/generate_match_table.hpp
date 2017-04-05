@@ -49,12 +49,13 @@ class CMatchTabulate {
 public:
     CMatchTabulate(CRef<CScope> db_scope);
     virtual ~CMatchTabulate(void);
+/*
     void AppendToMatchTable(const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots,
         const string& nuc_id,
         const list<string>& local_prot_id,
         const list<string>& prot_accessions);
-
+*/
 
     void GenerateMatchTable(
         const map<string, list<string>>& local_prot_ids,
@@ -88,12 +89,6 @@ private:
 
     void x_InitMatchTable(void);
 
-    bool x_AppendToMatchTable(
-        const SNucMatchInfo& nuc_match_info,
-        const TMatches& matches,
-        const list<string>& new_proteins,
-        const list<string>& dead_proteins);
-
     void x_AppendNucleotide(
         const SNucMatchInfo& nuc_match_info);
 
@@ -109,11 +104,6 @@ private:
     void x_AppendMatchedProtein(
         const SProtMatchInfo& prot_match_info);
 
-
-    void x_AppendMatchedProtein(
-        const string& nuc_accession,
-        const CSeq_annot& match);
-
     void x_AppendNewProtein(
         const string& nuc_accession,
         const string& local_id);
@@ -122,22 +112,11 @@ private:
         const string& nuc_accession,
         const string& prot_accession);
 
-    bool x_TryProcessAlignment(const CSeq_align& align,
-        SNucMatchInfo& nuc_match_info);
-
-    void x_ProcessAlignments(const list<CRef<CSeq_align>>& align,
-        map<string, bool>& nuc_match_info);
-
     void x_ProcessAlignments(CObjectIStream& istr,
         const map<string, string>& nuc_id_replacements,
         map<string, bool>& nuc_match);
 
     bool x_IsPerfectAlignment(const CSeq_align& align) const;
-
-    void x_AppendProteins(const string& nuc_accession,
-        const list<CRef<CSeq_annot>>& annot_list,
-        const list<string>& local_prot_ids,
-        const list<string>& prot_accessions);
 
     void x_ProcessProteins(
         CObjectIStream& istr,
