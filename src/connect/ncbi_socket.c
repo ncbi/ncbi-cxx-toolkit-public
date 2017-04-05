@@ -755,6 +755,24 @@ static void s_ShowDataLayout(void)
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_Once(void** once)
+{
+#    ifndef NCBI_CXX_TOOLKIT
+    /* poor man solution */
+    if (!*once) {
+        *once = (void*) 1;
+        return 1/*true*/;
+    } else
+        return 0/*false*/;
+#    else
+    return !NCBI_SwapPointers(once, (void*) 1);
+#    endif /*NCBI_CXX_TOOLKIT*/
+}
+
+
 static EIO_Status s_Init(void)
 {
     CORE_TRACE("[SOCK::InitializeAPI]  Begin");
@@ -781,7 +799,7 @@ static EIO_Status s_Init(void)
 #  endif /*NCBI_OS_MSWIN*/
 #endif /*_DEBUG && !NDEBUG*/
 
-#if defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
     {{
         WSADATA wsadata;
         int error = WSAStartup(MAKEWORD(1,1), &wsadata);
@@ -809,21 +827,15 @@ static EIO_Status s_Init(void)
     }
 #endif /*platform-specific init*/
 
-    s_Initialized = 1/*inited*/;
 #ifndef NCBI_OS_MSWIN
     {{
-        static void*/*bool*/ s_AtExitSet = 0;
-#ifdef NCBI_CXX_TOOLKIT
-        if (!NCBI_SwapPointers(&s_AtExitSet, (void*) 1))
+        static void* /*bool*/ s_AtExitSet = 0/*false*/;
+        if (x_Once(&s_AtExitSet))
             atexit((void (*)(void)) SOCK_ShutdownAPI);
-#else
-        if (!s_AtExitSet) {
-            s_AtExitSet = (void*) 1;
-            atexit((void (*)(void)) SOCK_ShutdownAPI);
-        }
-#endif /*NCBI_CXX_TOOLKIT*/
     }}
 #endif /*NCBI_OS_MSWIN*/
+
+    s_Initialized = 1/*inited*/;
 
     CORE_UNLOCK;
     CORE_TRACE("[SOCK::InitializeAPI]  End");
@@ -843,8 +855,7 @@ static EIO_Status s_Send(SOCK, const void*, size_t, size_t*, int);
 
 static EIO_Status s_InitAPI_(int secure)
 {
-    static const struct SOCKSSL_struct kNoSSL = { 0 };
-    EIO_Status status = eIO_Success;
+    EIO_Status status;
 
     if (!s_Initialized  &&  (status = s_Init()) != eIO_Success)
         return status;
@@ -854,29 +865,34 @@ static EIO_Status s_InitAPI_(int secure)
     if (s_Initialized < 0)
         return eIO_NotSupported;
 
-    if (secure  &&  !s_SSL) {
-        if (s_SSLSetup) {
-            SOCKSSL ssl = s_SSLSetup();
+    if (!secure  ||  s_SSL)
+        return eIO_Success;
+
+    if (s_SSLSetup) {
+        CORE_LOCK_WRITE;
+        if (!s_SSL) {
+            static const struct SOCKSSL_struct kNoSSL = { 0 };
+            SOCKSSL ssl = s_SSLSetup ? s_SSLSetup() : 0;
             if (ssl  &&  ssl->Init) {
-                CORE_LOCK_WRITE;
-                if (!s_SSL) {
-                    s_SSL = ((status = ssl->Init(s_Recv,s_Send)) == eIO_Success
-                             ? ssl : &kNoSSL);
-                }
-                CORE_UNLOCK;
-            } else
+                s_SSL = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
+                         ? ssl : &kNoSSL);
+            } else {
+                s_SSL = &kNoSSL;
                 status = eIO_NotSupported;
-        } else {
-            static int once = 1/*true*/;
-            if (once) {
-                once = 0/*false*/;
-                CORE_LOG(eLOG_Critical, "Secure socket layer (SSL) has not"
-                         " been properly initialized in the NCBI Toolkit. "
-                         " Have you forgotten to call SOCK_SetupSSL()?");
             }
-            status = eIO_NotSupported;
+        } else
+            status = eIO_Success;
+        CORE_UNLOCK;
+    } else {
+        static void* /*bool*/ s_Once = 0/*false*/;
+        if (x_Once(&s_Once)) {
+            CORE_LOG(eLOG_Critical, "Secure socket layer (SSL) has not"
+                     " been properly initialized in the NCBI Toolkit. "
+                     " Have you forgotten to call SOCK_SetupSSL()?");
         }
+        status = eIO_NotSupported;
     }
+
     return status;
 }
 
@@ -912,6 +928,22 @@ extern EIO_Status SOCK_InitializeAPI(void)
 }
 
 
+/* Must be called under a lock */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static void x_ShutdownSSL(void)
+{
+    if (s_Initialized > 0) {
+        FSSLExit sslexit = s_SSLSetup  &&  s_SSL ? s_SSL->Exit : 0;
+        s_SSLSetup = 0;
+        s_SSL      = 0;
+        if (sslexit)
+            sslexit();
+    }
+}
+
+
 extern EIO_Status SOCK_ShutdownAPI(void)
 {
     if (s_Initialized < 0)
@@ -927,13 +959,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     }
     s_Initialized = -1/*deinited*/;
 
-    if (s_SSL) {
-        FSSLExit sslexit = s_SSL->Exit;
-        s_SSLSetup = 0;
-        s_SSL      = 0;
-        if (sslexit)
-            sslexit();
-    }
+    x_ShutdownSSL();
 
 #ifdef NCBI_OS_MSWIN
     {{
@@ -1188,15 +1214,14 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 /* a non-standard helper */
 static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
 {
-    static int once = 1/*true*/;
+    static void* /*bool*/ s_Once = 0/*false*/;
     /* cached IP address of the local host */
     static unsigned int s_LocalHostAddress = 0;
     if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
         s_LocalHostAddress = s_gethostbyname_(0, log);
     if (s_LocalHostAddress)
         return s_LocalHostAddress;
-    if (once  &&  reget != eOff) {
-        once = 0/*false*/;
+    if (!s_Once  &&  reget != eOff  &&  x_Once(&s_Once)) {
         CORE_LOGF_X(9, reget == eDefault ? eLOG_Warning : eLOG_Error,
                     ("[SOCK::GetLocalHostAddress] "
                      " Cannot obtain local host address%s",
@@ -1208,7 +1233,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
 
 static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
-    static int once = 1/*true*/;
+    static void* /*bool*/ s_Once = 0/*false*/;
     unsigned int retval = s_gethostbyname_(hostname, log);
 
     if (!retval) {
@@ -1219,9 +1244,9 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             info.host = hostname;
             s_ErrorCallback(&info);
         }
-    } else if (once  &&  !hostname  &&  SOCK_IsLoopbackAddress(retval)) {
+    } else if (!s_Once  &&  !hostname
+               &&  SOCK_IsLoopbackAddress(retval)  &&  x_Once(&s_Once)) {
         char addr[40 + 1];
-        once = 0/*false*/;
         *addr = " "[SOCK_ntoa(retval, addr + 1, sizeof(addr) - 1) ? 1 : 0];
         CORE_LOGF_X(155, eLOG_Warning,
                     ("[SOCK::gethostbyname] "
@@ -1380,14 +1405,14 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 static const char* s_gethostbyaddr(unsigned int host, char* name,
                                    size_t namesize, ESwitch log)
 {
-    static int once = 1/*true*/;
+    static void* /*bool*/ s_Once = 0/*false*/;
     const char* retval = s_gethostbyaddr_(host, name, namesize, log);
-    if (once  &&  retval
+    if (!s_Once  &&  retval
         &&  ((SOCK_IsLoopbackAddress(host)
               &&  strncasecmp(retval, "localhost", 9) != 0)  ||
              (!host
-              &&  strncasecmp(retval, "localhost", 9) == 0))) {
-        once = 0/*false*/;
+              &&  strncasecmp(retval, "localhost", 9) == 0))
+        &&  x_Once(&s_Once)) {
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr] "
                      " Got \"%.*s\" for %s address", MAXHOSTNAMELEN,
@@ -1405,6 +1430,9 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
 
 /* Switch the specified socket I/O between blocking and non-blocking mode
  */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 {
 #if   defined(NCBI_OS_MSWIN)
@@ -1422,6 +1450,9 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 
 /* Set close-on-exec flag
  */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 {
 #if   defined(NCBI_OS_UNIX)
@@ -1437,6 +1468,9 @@ static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 
 
 /*ARGSUSED*/
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
@@ -1455,6 +1489,9 @@ static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
 
 
 #ifdef SO_KEEPALIVE
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ s_SetKeepAlive(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
 #  ifdef NCBI_OS_MSWIN
@@ -1469,6 +1506,9 @@ static int/*bool*/ s_SetKeepAlive(TSOCK_Handle x_sock, int/*bool*/ on_off)
 
 
 #ifdef SO_OOBINLINE
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ s_SetOobInline(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
 #  ifdef NCBI_OS_MSWIN
@@ -8267,23 +8307,16 @@ extern void SOCK_SetupSSL(FSSLSetup setup)
 {
     CORE_LOCK_WRITE;
 
-    if (!setup) {
-        s_SSLSetup = 0;
-        if (s_SSL) {
-            FSSLExit sslexit = s_SSL->Exit;
-            s_SSL = 0;
-            if (sslexit)
-                sslexit();
-        }
-    } else if (s_SSLSetup != setup) {
-        if (!s_SSLSetup)
-            s_SSLSetup = setup;
-        else if (s_Initialized < 0)
-            s_SSLSetup = 0;
-        else
+    if (!setup)
+        x_ShutdownSSL();
+    else if (s_SSLSetup != setup) {
+        if (s_SSLSetup) {
+            CORE_UNLOCK;
             CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
+            return;
+        }
+        s_SSLSetup = s_Initialized < 0 ? 0 : setup;
     }
-
     g_CORE_Set |= eCORE_SetSSL;
 
     CORE_UNLOCK;

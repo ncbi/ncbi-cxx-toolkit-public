@@ -49,7 +49,7 @@
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif
 
-#  if GNUTLS_VERSION_NUMBER <= 0x020B00
+#  if GNUTLS_VERSION_NUMBER < 0x020C00
 #    ifdef HAVE_LIBGCRYPT
 
 #      include <gcrypt.h>
@@ -111,7 +111,7 @@ static int gtls_user_mutex_init(void** lock)
 }
 static int gtls_user_mutex_deinit(void** lock)
 {
-    MT_LOCK_Delete(*((MT_LOCK*) lock));
+    MT_LOCK_Delete((MT_LOCK)(*lock));
     *lock = 0;
     return 0;
 }
@@ -499,12 +499,11 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
 }
 
 
-/* NB: there're no "deinit" methods in GNUTLS */
 static EIO_Status x_InitLocking(void)
 {
     EIO_Status status;
 
-#  if GNUTLS_VERSION_NUMBER <= 0x020B00
+#  if GNUTLS_VERSION_NUMBER < 0x020C00
 #    ifdef HAVE_LIBGCRYPT
 #      if   defined(NCBI_POSIX_THREADS)
     status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) == 0
@@ -745,6 +744,10 @@ static void s_GnuTlsExit(void)
 
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
+
+    /* If GNUTLS is loaded as DLL, it still has init count 1, so make sure
+     * cleanup worked completely (MSVC2015 ReleaseDLL build breaks) */
+    gnutls_global_deinit();
 }
 
  

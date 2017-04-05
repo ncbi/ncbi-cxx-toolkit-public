@@ -103,6 +103,9 @@ struct MT_LOCK_tag {
 #  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
 
 #  if defined(NCBI_POSIX_THREADS)  &&  !defined(NCBI_RECURSIVE_MUTEX_INIT)
+#    ifdef __GNUC__
+inline
+#    endif /*__GNUC__*/
 static int/*bool*/ x_Once(void** once)
 {
 #    ifndef NCBI_CXX_TOOLKIT
@@ -255,7 +258,6 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
             if (lk->cleanup)
                 lk->cleanup(lk->data);
 
-            lk->count--;
             lk->magic++;
             free(lk);
             lk = 0;

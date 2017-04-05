@@ -115,9 +115,8 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 {
     if (!reg)
         return 0;
-    if (pass_ownership) {
+    if (pass_ownership)
         reg->AddReference();
-    }
     return REG_Create(reg,
                       s_REG_Get, s_REG_Set,
                       pass_ownership ? s_REG_Cleanup : 0, 0);
@@ -128,9 +127,8 @@ extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
 {
     if (!reg)
         return 0;
-    if (pass_ownership) {
+    if (pass_ownership)
         reg->AddReference();
-    }
     return REG_Create(const_cast<IRWRegistry*> (reg),
                       s_REG_Get, 0/*no setter*/,
                       pass_ownership ? s_REG_Cleanup : 0, 0);
@@ -169,9 +167,8 @@ static void s_LOG_Handler(void*       /*data*/,
             level = eDiag_Fatal;
             break;
         }
-        if (!IsVisibleDiagPostLevel(level)) {
+        if (!IsVisibleDiagPostLevel(level))
             return;
-        }
 
         CDiagCompileInfo info(mess->file,
                               mess->line,
@@ -224,14 +221,12 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
             lock->Unlock();
             break;
         case eMT_TryLock:
-            if (!lock->TryWriteLock()) {
+            if (!lock->TryWriteLock())
                 return 0/*false*/;
-            }
             break;
         case eMT_TryLockRead:
-            if (!lock->TryReadLock()) {
+            if (!lock->TryReadLock())
                 return 0/*false*/;
-            }
             break;
         default:
             NCBI_THROW(CCoreException, eCore, "Lock used with unknown op #" +
@@ -308,9 +303,8 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
 extern "C" {
 static const char* s_GetRequestDTab(void)
 {
-    if (!CDiagContext::GetRequestContext().IsSetDtab()) {
+    if (!CDiagContext::GetRequestContext().IsSetDtab())
         CDiagContext::GetRequestContext().SetDtab("");
-    }
     return CDiagContext::GetRequestContext().GetDtab().c_str();
 }
 }
@@ -442,7 +436,7 @@ static void s_Fini(void) THROWS_NONE
     if (s_CORE_Set & eCORE_SetLOG)
         CORE_SetLOG(0);
     if (s_CORE_Set & eCORE_SetLOCK)
-        CORE_SetLOCK(0);
+        CORE_SetLOCK(&g_CORE_MT_Lock_default);
     g_CORE_Set &= ~s_CORE_Set;
     s_CORE_Set  =  0;
 }
