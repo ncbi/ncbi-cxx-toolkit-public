@@ -193,6 +193,8 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
       m_SearchPath        (GenerateSearchPath())
 {
     m_Alloc = false;
+    m_OpenedFilesCount = 0;
+    m_MaxOpenedFilesCount = 0;
     Verify(true);
 }
 
@@ -201,14 +203,18 @@ CSeqDBAtlas::~CSeqDBAtlas()
     Verify(true);
 
     int count = 0;
+    //int openedFilesCount = GetOpenedFilseCount();
+    //cerr << "********Before Cleaning: openedFilesCount=" << openedFilesCount << endl;                
     for (map<string, CMemoryFile *>::iterator it=m_FileMemMap.begin(); it!=m_FileMemMap.end(); ++it) {
             string filename = it->first;
             it->second->Unmap();
+            ChangeOpenedFilseCount(false);
             //cerr << "********Cleaning:Unmap CMemoryFile:" << filename << endl;                
             delete it->second;
-            //fileMemMap.erase(filename);                 
             count++;                       
     }
+    //openedFilesCount = GetOpenedFilseCount();
+    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount " maxOpenedFilesCount="<< maxOpenedFilesCount << endl;                
     x_GarbageCollect(0);
 
     // Clear mapped file regions
