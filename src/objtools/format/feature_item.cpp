@@ -1607,8 +1607,6 @@ void CFeatureItem::x_AddQuals(
         return;
     }
 
-    m_Feat_Tree->AddGenesForFeat (m_Feat);
-
 
     //
     //  Collect/Compute data that will be shared between several qualifier
