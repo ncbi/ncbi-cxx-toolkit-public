@@ -109,6 +109,7 @@ namespace
     STATIC_SMOD(organism);
     STATIC_SMOD(org);
     STATIC_SMOD(taxname);
+    STATIC_SMOD(taxid);
     STATIC_SMOD(location);
     STATIC_SMOD(origin);
     STATIC_SMOD(sub_clone);
@@ -923,8 +924,14 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         }
     }
 
-    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != 0)
+
+    if ((mod = FindMod(s_Mod_taxid.Get())) != NULL) {
+        bsrc->SetOrg().SetTaxId( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
+    }
+    else 
+    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != 0) {
        bsrc->SetOrg().SetTaxId(0);
+    }
 }
 
 typedef SStaticPair<const char*, CMolInfo::TTech> TTechMapEntry;
