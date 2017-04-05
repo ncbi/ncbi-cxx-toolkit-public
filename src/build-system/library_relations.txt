@@ -548,8 +548,8 @@ gui_opengl needs ximage
 gui_opengl needs3party $(FTGL_LIBS)
 gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
-gui_print needs $(COMPRESS_LIBS)
 gui_print needs gui_opengl
+gui_utils needs $(COMPRESS_LIBS)
 gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xutil
@@ -1078,6 +1078,7 @@ trackmgrgridcli needs xconnserv
 tv_objects needs biotree
 tvlib needs $(OBJMGR_LIBS)
 tvlib needs gui_glmesa
+tvlib needs ncbi_xcache_netcache
 tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
@@ -1167,11 +1168,10 @@ w_seq_desktop needs w_wx
 w_seq_graphic needs genesbyloc
 w_seq_graphic needs gui_config
 w_seq_graphic needs gui_graph
-w_seq_graphic needs gui_objects
-w_seq_graphic needs hgvs
 w_seq_graphic needs ncbi_xcache_netcache
 w_seq_graphic needs w_aln_score
 w_seq_graphic needs w_gl
+w_seq_graphic needs w_loaders
 w_seq_graphic needs w_seq
 w_seq_text needs gui_config
 w_seq_text needs w_gl
@@ -1483,6 +1483,7 @@ xsvcgi needs gui_objutils
 xsvcgi needs ncbi_xcache_netcache
 xsvcgi needs ncbi_xloader_bam
 xsvcgi needs ncbi_xloader_csra
+xsvcgi needs ncbi_xloader_snp
 xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs uudutil
