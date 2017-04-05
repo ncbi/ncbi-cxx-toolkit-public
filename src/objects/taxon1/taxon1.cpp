@@ -376,7 +376,7 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
 //    stored internally.
 ///
 CRef< CTaxon2_data >
-CTaxon1::Lookup(const COrg_ref& inp_orgRef )
+CTaxon1::Lookup(const COrg_ref& inp_orgRef, string* psLog)
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -395,7 +395,12 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
     SerialAssign< COrg_ref >( req.SetLookup(), inp_orgRef );
     // Set version db tag
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
-    COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
+    if( m_bWithSynonyms ) {
+	COrgrefProp::SetOrgrefProp( req.SetLookup(), "syn", m_bWithSynonyms );
+    }
+    if( psLog ) {
+        COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
+    }
 
     if( SendRequest( req, resp ) ) {
         if( resp.IsLookup() ) {
@@ -404,7 +409,9 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 	    
             SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
 	    x_ConvertOrgrefProps( *pData );
-	    
+            if( psLog ) {
+                pData->GetProperty( "log", *psLog );
+            }
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Lookup" );
         }
@@ -414,7 +421,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 }
 
 CConstRef< CTaxon2_data >
-CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
+CTaxon1::LookupMerge(COrg_ref& inp_orgRef, string* psLog)
 {
     //CTaxon2_data* pData = 0;
 
@@ -437,8 +444,9 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "merge", true );
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "syn", m_bWithSynonyms );
-    COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
-
+    if( psLog ) {
+        COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
+    }
     if( SendRequest( req, resp ) ) {
         if( resp.IsLookup() ) {
             // Correct response, return object
@@ -446,6 +454,9 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 	    
             SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
 	    x_ConvertOrgrefProps( *pData );
+            if( psLog ) {
+                pData->GetProperty( "log", *psLog );
+            }
 	    SerialAssign< COrg_ref >( inp_orgRef, pData->GetOrg() );
 	    
         } else { // Internal: wrong respond type

@@ -123,9 +123,16 @@ public:
     // 2. LookupMerge function modifies given OrgRef to correspond to the
     //    found one and returns constant pointer to the Taxon2Data structure
     //    stored internally.
+    // 3. If non-null pointer psLog specified, then lookup log string is returned.
+    //    The latter has following format: each operation record begins with <
+    //    and ends with >, fields inside record are delimited with |, first field
+    //    is operation name (add,delete,update,hit,error,warning,consult,restart),
+    //    second field is path to the component in orgref, third field is old value
+    //    of the component, forth field is a new value for the component, 
+    //    fifth field is comment text.
     ///
-    CRef< CTaxon2_data > Lookup(const COrg_ref& inp_orgRef);
-    CConstRef< CTaxon2_data > LookupMerge(COrg_ref& inp_orgRef);
+    CRef< CTaxon2_data > Lookup(const COrg_ref& inp_orgRef, string* psLog = 0);
+    CConstRef< CTaxon2_data > LookupMerge(COrg_ref& inp_orgRef, string* psLog = 0);
 
     //-----------------------------------------------
     // Get tax_id by OrgRef

@@ -225,6 +225,9 @@ COrgRefCache::Insert2( CTaxon1Node& node )
     req.SetLookup().SetTaxId( node.GetTaxId() );
     // Set version db tag
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
+    if( m_host.m_bWithSynonyms ) {
+	COrgrefProp::SetOrgrefProp( req.SetLookup(), "syn", m_host.m_bWithSynonyms );
+    }
 
     if( m_host.SendRequest( req, resp ) ) {
         if( resp.IsLookup() ) {
