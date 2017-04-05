@@ -53,23 +53,35 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+const string NSnp::sm_dbTag_dbSNP("dbSNP");
+
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
-bool  NSnp::IsSnp(const CMappedFeat &mapped_feat)
+bool NSnp::IsSnp(const CMappedFeat &mapped_feat)
 {
     return IsSnp(mapped_feat.GetOriginalFeature());
 }
 
-bool  NSnp::IsSnp(const CSeq_feat &feat)
+bool NSnp::IsSnp(const CSeq_feat &feat)
 {
-    bool isSnp = false;
-    if (feat.IsSetData()) {
-        isSnp = (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_variation);
-    }
-    return isSnp;
+    return feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_variation && GetTag(feat).NotEmpty() && IsSnp(*GetTag(feat));
 }
 
+bool NSnp::IsSnp(const CDbtag& tag)
+{
+    return tag.GetType() == CDbtag::eDbtagType_dbSNP;
+    }
+
+CConstRef<CDbtag> NSnp::GetTag(const CSeq_feat& SrcFeat)
+{
+    return SrcFeat.GetNamedDbxref(sm_dbTag_dbSNP);
+}
+
+CConstRef<CDbtag> NSnp::GetTag(const CMappedFeat& SrcFeat)
+{
+    return GetTag(SrcFeat.GetOriginalFeature());
+}
 
 
 CTime NSnp::GetCreateTime(const CMappedFeat &feat)
@@ -93,21 +105,22 @@ CTime NSnp::GetCreateTime(const CMappedFeat &feat)
     return time;
 }
 
-int NSnp::GetRsid(const CMappedFeat &mapped_feat)
+NSnp::TRsid NSnp::GetRsid(const CMappedFeat &mapped_feat)
 {
     return GetRsid(mapped_feat.GetOriginalFeature());
 }
 
-int NSnp::GetRsid(const CSeq_feat &feat)
+NSnp::TRsid NSnp::GetRsid(const CSeq_feat &feat)
 {
-    int rsid = 0;
-
-    CConstRef<CDbtag> ref = feat.GetNamedDbxref("dbSNP");
+    CConstRef<CDbtag> ref = GetTag(feat);
     if (ref) {
-        rsid = ref->GetTag().GetId();
+        return GetRsid(*ref);
     }
-
-    return rsid;
+    return 0;
+}
+NSnp::TRsid NSnp::GetRsid(const CDbtag& tag)
+{
+    return tag.GetTag().GetId8();
 }
 
 int NSnp::GetLength(const CMappedFeat &mapped_feat)
@@ -206,9 +219,7 @@ CSnpBitfield NSnp::GetBitfield(const CSeq_feat &feat)
 {
     CSnpBitfield b;
 
-    CConstRef<CDbtag> ref = feat.GetNamedDbxref("dbSNP");
-
-    if(ref) {
+    if(IsSnp(feat)) {
         b = feat;
     }
 
