@@ -177,6 +177,9 @@ protected:
                                   TConstObjectPtr memberPtr);
     virtual bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
+    virtual void WriteClassMemberSpecialCase(
+        const CMemberId& memberId, TTypeInfo memberType,
+        TConstObjectPtr memberPtr, ESpecialCaseWrite how);
 #endif
 
     // low level I/O

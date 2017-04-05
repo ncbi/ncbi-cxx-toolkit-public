@@ -344,10 +344,14 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
             return;
         }
         if (memberInfo->Nillable()) {
-            out.WriteClassMemberSpecialCase( CMemberId(classType->GetName()),
-                memberInfo->GetTypeInfo(), memberInfo->GetItemPtr(objectPtr),
-                CObjectOStream::eWriteAsNil);
-            return;
+            if (out.GetDataFormat() != eSerial_AsnText && out.GetDataFormat() != eSerial_AsnBinary) {
+                out.WriteClassMemberSpecialCase( CMemberId(classType->GetName()),
+                    memberInfo->GetTypeInfo(), memberInfo->GetItemPtr(objectPtr),
+                    CObjectOStream::eWriteAsNil);
+                return;
+            } else {
+                goto do_write;
+            }
         }
         if (memberInfo->NonEmpty() ||
             memberInfo->GetTypeInfo()->GetTypeFamily() != eTypeFamilyContainer) {
@@ -360,6 +364,7 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
             }
         } 
     }
+do_write:
     out.WriteNamedType(classType,
                        memberInfo->GetTypeInfo(),
                        memberInfo->GetItemPtr(objectPtr));

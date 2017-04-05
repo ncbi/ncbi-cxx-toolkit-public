@@ -200,6 +200,11 @@ void CObjectIStreamJson::UnexpectedMember(const CTempString& id,
     ThrowError(fFormatError, message);
 }
 
+template<typename Type> inline
+Type CObjectIStreamJson::x_UseMemberDefault(void)
+{
+    return GetMemberDefault() ? CTypeConverter<Type>::Get(GetMemberDefault()) : Type();
+}
 
 int CObjectIStreamJson::ReadEscapedChar(bool* encoded /*=0*/)
 {
@@ -316,10 +321,9 @@ string CObjectIStreamJson::x_ReadString(EStringType type)
     return str;
 }
 
-string CObjectIStreamJson::x_ReadData(EStringType type /*= eStringTypeVisible*/)
+void CObjectIStreamJson::x_ReadData(string& str, EStringType type /*= eStringTypeVisible*/)
 {
     SkipWhiteSpace();
-    string str;
     for (;;) {
         bool encoded = false;
         char c = ReadEncodedChar(type, encoded);
@@ -334,16 +338,20 @@ string CObjectIStreamJson::x_ReadData(EStringType type /*= eStringTypeVisible*/)
         }
     }
     str.reserve(str.size());
-    return str;
 }
 
-string CObjectIStreamJson::x_ReadDataAndCheck(EStringType type)
+bool CObjectIStreamJson::x_ReadDataAndCheck(string& str, EStringType type)
 {
-    string d(x_ReadData(type));
-    if (d == "null") {
-        NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
+    x_ReadData(str, type);
+    if (str == "null") {
+        if ((ExpectSpecialCase() & CObjectIStream::eReadAsNil)!=0) {
+            SetSpecialCaseUsed(CObjectIStream::eReadAsNil);
+            return false;
+        } else {
+            NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
+        }
     }
-    return d;
+    return true;
 }
 
 void  CObjectIStreamJson::x_SkipData(void)
@@ -472,7 +480,8 @@ void CObjectIStreamJson::EndOfRead(void)
 
 bool CObjectIStreamJson::ReadBool(void)
 {
-    return NStr::StringToBool( x_ReadDataAndCheck());
+    string str;
+    return x_ReadDataAndCheck(str) ? NStr::StringToBool(str) : x_UseMemberDefault<bool>();
 }
 
 void CObjectIStreamJson::SkipBool(void)
@@ -482,7 +491,8 @@ void CObjectIStreamJson::SkipBool(void)
 
 char CObjectIStreamJson::ReadChar(void)
 {
-    return x_ReadDataAndCheck().at(0);
+    string str;
+    return x_ReadDataAndCheck(str) ? str.at(0) : x_UseMemberDefault<char>();
 }
 
 void CObjectIStreamJson::SkipChar(void)
@@ -492,12 +502,14 @@ void CObjectIStreamJson::SkipChar(void)
 
 Int8 CObjectIStreamJson::ReadInt8(void)
 {
-    return NStr::StringToInt8( x_ReadDataAndCheck());
+    string str;
+    return x_ReadDataAndCheck(str) ? NStr::StringToInt8(str) : x_UseMemberDefault<Int8>();
 }
 
 Uint8 CObjectIStreamJson::ReadUint8(void)
 {
-    return NStr::StringToUInt8( x_ReadDataAndCheck());
+    string str;
+    return x_ReadDataAndCheck(str) ? NStr::StringToUInt8(str) : x_UseMemberDefault<Uint8>();
 }
 
 void CObjectIStreamJson::SkipSNumber(void)
@@ -513,7 +525,8 @@ void CObjectIStreamJson::SkipUNumber(void)
 double CObjectIStreamJson::ReadDouble(void)
 {
     char* endptr;
-    return NStr::StringToDoublePosix( x_ReadDataAndCheck().c_str(), &endptr, NStr::fDecimalPosixFinite);
+    string str;
+    return x_ReadDataAndCheck(str) ? NStr::StringToDoublePosix( str.c_str(), &endptr, NStr::fDecimalPosixFinite) : x_UseMemberDefault<double>();
 }
 
 void CObjectIStreamJson::SkipFNumber(void)
@@ -531,6 +544,10 @@ void CObjectIStreamJson::ReadString(string& s,
             m_Input.PeekChar(3) == 'l') {
             m_ExpectValue = false;
             m_Input.SkipChars(4);
+            if ((ExpectSpecialCase() & CObjectIStream::eReadAsNil)!=0) {
+                SetSpecialCaseUsed(CObjectIStream::eReadAsNil);
+                return;
+            }
             NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
         }
     }
@@ -545,7 +562,8 @@ void CObjectIStreamJson::SkipString(EStringType /*type*/)
 void CObjectIStreamJson::ReadNull(void)
 {
     if (m_ExpectValue) {
-        x_ReadData();
+        string str;
+        x_ReadData(str);
     }
 }
 
@@ -588,7 +606,7 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
     if (PeekChar(true) == '\"') {
         value = ReadValue(eStringTypeUTF8);
     } else {
-        value = x_ReadData();
+        x_ReadData(value);
     }
     obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
 }
@@ -1158,7 +1176,8 @@ CObjectIStream::EPointerType CObjectIStreamJson::ReadPointerType(void)
 {
     char c = PeekChar(true);
     if (c == 'n') {
-        string s = x_ReadData();
+        string s;
+        x_ReadData(s);
         if (s != "null") {
             ThrowError(fFormatError, "null expected");
         }

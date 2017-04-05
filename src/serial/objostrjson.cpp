@@ -416,6 +416,16 @@ bool CObjectOStreamJson::WriteClassMember(const CMemberId& memberId,
     return CObjectOStream::WriteClassMember(memberId,buffer);
 }
 
+void CObjectOStreamJson::WriteClassMemberSpecialCase(
+    const CMemberId& memberId, TTypeInfo memberType,
+    TConstObjectPtr memberPtr, ESpecialCaseWrite how)
+{
+    if (how == eWriteAsNil) {
+        BeginClassMember(memberId);
+        WriteKeywordValue("null");
+        EndClassMember();
+    }
+}
 
 void CObjectOStreamJson::BeginNamedType(TTypeInfo namedTypeInfo)
 {

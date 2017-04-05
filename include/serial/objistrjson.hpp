@@ -209,13 +209,15 @@ private:
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
     void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
+    template<typename Type>
+    Type x_UseMemberDefault(void);
 
     int ReadEscapedChar(bool* encoded=0);
     char ReadEncodedChar(EStringType type, bool& encoded);
     TUnicodeSymbol ReadUtf8Char(char c);
     string x_ReadString(EStringType type);
-    string x_ReadData(EStringType type = eStringTypeUTF8);
-    string x_ReadDataAndCheck(EStringType type = eStringTypeUTF8);
+    void x_ReadData(string& data, EStringType type = eStringTypeUTF8);
+    bool x_ReadDataAndCheck(string& data, EStringType type = eStringTypeUTF8);
     void   x_SkipData(void);
     string ReadKey(void);
     string ReadValue(EStringType type = eStringTypeVisible);
