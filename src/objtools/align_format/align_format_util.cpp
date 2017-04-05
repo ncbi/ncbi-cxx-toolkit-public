@@ -2614,11 +2614,11 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
 {
     list<string> linkout_list;
     map<int, vector < CBioseq::TId > >  linkout_map;
-        
-    GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
-    list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
-    CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();    
-    linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
+    if(bdl.size() > 0) {    
+    	GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
+    	list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
+    	CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();    
+    	linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
                                        rid,
                                        cdd_rid, 
                                        entrez_term,
@@ -2634,6 +2634,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                        preComputedResID,                                      
                                        linkout_map,
                                        !is_na && bdl.size() > 1); 
+    }
     return linkout_list;
 }
 
