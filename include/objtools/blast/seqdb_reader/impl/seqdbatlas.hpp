@@ -1299,6 +1299,19 @@ public:
     }
 
     map< string, CMemoryFile* > &GetFilesMemMap(void){return m_FileMemMap;}
+    int ChangeOpenedFilseCount(bool incr) 
+    {
+        if(incr) {
+            m_OpenedFilesCount++;
+        }
+        else {
+            m_OpenedFilesCount--;
+        }   
+        m_MaxOpenedFilesCount = max(m_MaxOpenedFilesCount,m_OpenedFilesCount);
+        return m_OpenedFilesCount;
+    }    
+
+    int GetOpenedFilseCount(void) { return m_OpenedFilesCount;}
     
 private:
     /// Private method to prevent copy construction.
@@ -1424,6 +1437,8 @@ private:
 
     bool m_Alloc;//m_pool was used for mrmory allocation
     map< string, CMemoryFile* > m_FileMemMap;    
+    int m_OpenedFilesCount;
+    int m_MaxOpenedFilesCount;
 };
 
 
@@ -1545,26 +1560,32 @@ public:
 
     //m_Filename is set
     void Init(void) {                    
+            
             map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
-            if(fileMemMap.count(m_Filename) > 0) {        
+            if(IsIndexFile() && fileMemMap.count(m_Filename) > 0) {        
                 m_MappedFile = fileMemMap[m_Filename];
-                //cerr << "********Exists in atlas CMemoryFile:" << m_Filename << endl;
+                //int threadID = CThread::GetSelf();            
+                //cerr << "********Exists in atlas CMemoryFile:" << m_Filename << " threadID=" << threadID << endl;
             }
             else {
                 try {
                     m_MappedFile = new CMemoryFile(m_Filename);
-                    fileMemMap.insert(map<string, CMemoryFile * >::value_type(m_Filename,m_MappedFile));
+		    m_Atlas.ChangeOpenedFilseCount(true);
+                    //int openedFilesCount = m_Atlas.ChangeOpenedFilseCount(true);
+                    if(IsIndexFile()) {
+                        fileMemMap.insert(map<string, CMemoryFile * >::value_type(m_Filename,m_MappedFile));
+                    }
                     m_Mapped = true;
-                    //cerr << "********Map             CMemoryFile:" << m_Filename << endl;
+                    //int threadID = CThread::GetSelf();            
+                    //cerr << "********Map             CMemoryFile:" << m_Filename << " openedFilesCount=" << openedFilesCount << " threadID=" << threadID << endl;
                 }
                 catch(...) {                    
-                     int openedFilesCount = fileMemMap.size();
+                     int openedFilesCount = m_Atlas.GetOpenedFilseCount();
                      NCBI_THROW(CSeqDBException,
                                 eFileErr,
                                 "Error memory mapping: " + m_Filename + ". Number of files opened: " + NStr::IntToString(openedFilesCount));                    
                 }
             }
-            //m_MappedFile.reset(new CMemoryFile(filename));
             m_DataPtr = (char *) (m_MappedFile->GetPtr());            
     }
     
@@ -1573,19 +1594,17 @@ public:
     ///    
     void Clear()
     {
-        /*
-        if(m_MappedFile && m_Mapped) { 
-            map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
-            if(fileMemMap.count(m_Filename) > 0) {        
-                fileMemMap.erase(m_Filename); 
+        
+        if(m_MappedFile && m_Mapped && !IsIndexFile()) { 
                 m_MappedFile->Unmap();
-                //cerr << "********Unmap CMemoryFile:" << m_Filename << endl;
+		m_Atlas.ChangeOpenedFilseCount(false);
+                //int threadID = CThread::GetSelf();            
+                //int openedFilesCount = m_Atlas.ChangeOpenedFilseCount(false);
+                //cerr << "********Unmap CMemoryFile:" << m_Filename  << " openedFilesCount=" << openedFilesCount << " threadID=" << threadID << endl;
                 delete m_MappedFile;
                 m_MappedFile = NULL;
                 m_Mapped = false;
-            }
-        }
-        */
+        }        
     }
 
     bool IsMapped(){return m_Mapped;}
@@ -1631,6 +1650,11 @@ public:
     const char *GetFileDataPtr(TIndx offset)                    
     {
         return(const char *)(m_DataPtr + offset);    
+    }
+
+    bool IsIndexFile() {
+        bool isIndex = (NStr::Find(m_Filename,".pin") != NPOS ||  NStr::Find(m_Filename,".nin") != NPOS) ? true : false;      
+        return isIndex;
     }
 
 private:
