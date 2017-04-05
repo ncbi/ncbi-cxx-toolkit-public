@@ -420,19 +420,20 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     // pool contains connections with appropriate server names only.
                     if (pool_name == t_con->PoolName()) {
                         it = m_NotInUse.erase(it);
-                        if(t_con->Refresh()) {
+                        CDB_Connection* dbcon = MakeCDBConnection(t_con);
+                        if (dbcon->Refresh()) {
                             /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
-                                return SetDatabase(MakeCDBConnection(t_con), params);
+                                return SetDatabase(dbcon, params);
                             } else {
-                                return MakeCDBConnection(t_con);
+                                return dbcon;
                             }
                             */
-                            
-                            return MakeCDBConnection(t_con);
+
+                            return dbcon;
                         }
                         else {
-                            delete t_con;
+                            delete dbcon;
                         }
                     }
                 }
@@ -450,19 +451,20 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (server_name == t_con->ServerName()
                         ||  server_name == t_con->GetRequestedServer()) {
                         it = m_NotInUse.erase(it);
-                        if (t_con->Refresh()) {
+                        CDB_Connection* dbcon = MakeCDBConnection(t_con);
+                        if (dbcon->Refresh()) {
                             /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
-                                return SetDatabase(MakeCDBConnection(t_con), params);
+                                return SetDatabase(dbcon, params);
                             } else {
-                                return MakeCDBConnection(t_con);
+                                return dbcon;
                             }
                             */
 
-                            return MakeCDBConnection(t_con);
+                            return dbcon;
                         }
                         else {
-                            delete t_con;
+                            delete dbcon;
                         }
                     }
                 }

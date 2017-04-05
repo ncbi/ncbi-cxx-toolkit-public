@@ -374,6 +374,8 @@ private:
         m_ConnImpl = NULL;;
     }
 
+    bool x_IsAlive(void);
+    
     // The constructor should be called by "I_DriverContext" only!
     friend class impl::CDriverContext;
     friend class CAutoTrans;

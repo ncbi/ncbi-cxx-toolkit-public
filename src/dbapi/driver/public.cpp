@@ -293,9 +293,14 @@ bool CDB_Connection::IsAlive()
 {
     if (m_ConnImpl == NULL  ||  !m_ConnImpl->IsAlive()) {
         return false;
+    } else {
+        return x_IsAlive();
     }
+}
 
-    // Otherwise, try to confirm that the network connection hasn't closed.
+bool CDB_Connection::x_IsAlive()
+{
+    // Try to confirm that the network connection hasn't closed.
     // (Done only when no separate network library is necessary.)
     // XXX - consider caching GetLowLevelHandle result, or at least
     // availability.
@@ -409,7 +414,7 @@ void CDB_Connection::SetDatabaseName(const string& name)
 bool CDB_Connection::Refresh()
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->Refresh();
+    return m_ConnImpl->Refresh()  &&  x_IsAlive();
 }
 
 const string& CDB_Connection::ServerName() const
