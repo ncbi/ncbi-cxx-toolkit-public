@@ -1669,48 +1669,19 @@ void CFeatureItem::x_AddQuals(
         } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
 
-            CConstRef<CSeq_feat> overlap;
-            CScope& scope = ctx.GetScope();
-            const CSeq_feat& orig = m_Feat.GetOriginalFeature();
-            /*
-            if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(orig, scope);
-                if (mrna) {
-                    overlap = sequence::GetGeneForFeature(*mrna, scope);
-                }
-            }
-            */
-            if (! overlap) {
-                overlap = sequence::GetGeneForFeature(orig, scope);
-            }
-            if (overlap) {
-                gene_feat = overlap;
+            CMappedFeat mapped_gene = m_Feat_Tree->GetBestGene(m_Feat);
+            if (mapped_gene) {
+                gene_feat = mapped_gene.GetOriginalSeq_feat();
                 gene_ref = &gene_feat->GetData().GetGene();
             } else {
                 // e.g., check sig_peptide for gene overlapping parent CDS
                 CSeq_feat_Handle parent_feat_handle;
                 if( parentFeatureItem ) {
                     parent_feat_handle = parentFeatureItem->GetFeat();
+                    CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
+                        gene_feat, parent_feat_handle );
                 }
-                CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
-                    gene_feat, parent_feat_handle );
             }
-
-            /*
-            CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
-            if (mapped_gene && subtype != CSeqFeatData::eSubtype_primer_bind) {
-                gene_feat = &mapped_gene.GetOriginalFeature();
-                gene_ref = &gene_feat->GetData().GetGene();
-            } else {
-                // e.g., check sig_peptide for gene overlapping parent CDS
-                CSeq_feat_Handle parent_feat_handle;
-                if( parentFeatureItem ) {
-                    parent_feat_handle = parentFeatureItem->GetFeat();
-                }
-                CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
-                    gene_feat, parent_feat_handle );
-            }
-            */
         }
     }
 
