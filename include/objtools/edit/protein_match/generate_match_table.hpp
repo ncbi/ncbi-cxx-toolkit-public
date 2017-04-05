@@ -49,13 +49,6 @@ class CMatchTabulate {
 public:
     CMatchTabulate(CRef<CScope> db_scope);
     virtual ~CMatchTabulate(void);
-/*
-    void AppendToMatchTable(const CSeq_align& alignment,
-        const list<CRef<CSeq_annot>>& annots,
-        const string& nuc_id,
-        const list<string>& local_prot_id,
-        const list<string>& prot_accessions);
-*/
 
     void GenerateMatchTable(
         const map<string, list<string>>& local_prot_ids,
@@ -71,13 +64,6 @@ public:
 
     TSeqPos GetNum_rows(void) const;
 
-    typedef list<CRef<CSeq_annot>> TMatches;
-
-    struct SNucMatchInfo {
-        string accession;
-        string status;
-    };
-
     struct SProtMatchInfo {
         string nuc_accession;
         string prot_accession;
@@ -90,17 +76,7 @@ private:
     void x_InitMatchTable(void);
 
     void x_AppendNucleotide(
-        const SNucMatchInfo& nuc_match_info);
-
-    void x_AppendNucleotide(
         const pair<string, bool>& nuc_match_info);
-
-    void x_AppendMatchedProtein(
-        const string& nuc_accession,
-        const string& prot_accession,
-        const string& local_id,
-        const string& comp_class);
-
     void x_AppendMatchedProtein(
         const SProtMatchInfo& prot_match_info);
 
@@ -125,16 +101,13 @@ private:
         const map<string, list<string>>& prot_accessions,
         const map<string, string>& nuc_id_replacement_map);
 
-
-    bool x_IsProteinMatch(const CSeq_annot& annot) const;
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
     CAnnotdesc::TName x_GetComparisonClass(const CSeq_annot& annot) const;
     const CSeq_feat& x_GetQuery(const CSeq_annot& compare_annot) const;
     const CSeq_feat& x_GetSubject(const CSeq_annot& compare_annot) const;
-    bool x_FetchAccessionVersion(const CSeq_align& align,
-        string& accver);
+
     bool x_FetchAccession(const CSeq_align& align, string& accession);
 
 

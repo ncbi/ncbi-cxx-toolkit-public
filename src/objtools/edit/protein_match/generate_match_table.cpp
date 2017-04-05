@@ -35,25 +35,6 @@ CMatchTabulate::CMatchTabulate(CRef<CScope> db_scope) :
 
 CMatchTabulate::~CMatchTabulate() {}
 
-/*
-bool CMatchTabulate::x_TryProcessAlignment(const CSeq_align& alignment,
-    CMatchTabulate::SNucMatchInfo& nuc_match_info) 
-{
-    nuc_match_info.status = x_IsPerfectAlignment(alignment) ? "Same" : "Changed";
-
-    string accver;
-    if (!x_FetchAccessionVersion(alignment, accver)) {
-        return false;
-    }
-
-    vector<string> accver_vec;
-    NStr::Split(accver, ".", accver_vec);
-
-    nuc_match_info.accession = accver_vec[0];
-
-    return true;
-}
-*/
 
 bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const 
 {
@@ -87,23 +68,6 @@ bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const
 }
 
 
-
-/*
-void CMatchTabulate::x_ProcessAlignments(
-        const list<CRef<CSeq_align>>& alignments        map<string, bool>& nuc_match_info)
-        map<string, bool>& nuc_match_info)
-
-    for (const CRef<CSeq_align>& alignment : alignments) {
-        string accession;
-        if (!x_FetchAccession(*alignment, accession)) {
-            // Throw an exception
-        }
-        if (!NStr::IsBlank(accession)) {
-            nuc_match_info[accession] = x_IsPerfectAlignment(*alignment); 
-        }
-    }
-}
-*/
 
 void CMatchTabulate::GenerateMatchTable(
     const map<string, list<string>>& local_prot_ids,
@@ -374,58 +338,8 @@ string CMatchTabulate::x_GetSubjectNucleotideAccession(const CSeq_annot& compare
 }
 
 
-bool CMatchTabulate::x_IsProteinMatch(const CSeq_annot& seq_annot) const
-{
-    return x_IsCdsComparison(seq_annot) && x_IsGoodGloballyReciprocalBest(seq_annot);
-}
-
-
-bool CMatchTabulate::x_FetchAccessionVersion(const CSeq_align& align,
-    string& accver) 
-{
-    const bool withVersion = true;
-
-    map<string, string> id_map;
-
-
-    if (align.IsSetSegs() &&
-        align.GetSegs().IsDenseg() &&
-        align.GetSegs().GetDenseg().IsSetIds()) {
-        for (CRef<CSeq_id> id : align.GetSegs().GetDenseg().GetIds()) {
-            if (id->IsGenbank()) { 
-                id_map["genbank"] = id->GetSeqIdString(withVersion);
-                break;
-            }
-
-            if (id->IsOther()) {
-                id_map["other"] = id->GetSeqIdString(withVersion);
-            }
-
-            // Could optimize this by only performing look up if no genbank id has been 
-            // found after the loop over look ups is complete
-            if (id->IsGi() && (id_map.find("genbank") == id_map.end())) {
-                id_map["genbank"] = sequence::GetAccessionForGi(id->GetGi(), *m_DBScope);
-                break;
-            }
-        }
-    }
-
-    if (id_map.find("genbank") != id_map.end()) {
-        accver = id_map["genbank"];
-        return true;
-    }
-
-    if (id_map.find("other") != id_map.end()) {
-        accver = id_map["other"];
-        return true;
-    }
-
-    return false;
-}
-
-
 bool CMatchTabulate::x_FetchAccession(const CSeq_align& align,
-    string& accver) 
+    string& accession) 
 {
     const bool withVersion = false;
 
@@ -455,12 +369,12 @@ bool CMatchTabulate::x_FetchAccession(const CSeq_align& align,
     }
 
     if (id_map.find("genbank") != id_map.end()) {
-        accver = id_map["genbank"];
+        accession = id_map["genbank"];
         return true;
     }
 
     if (id_map.find("other") != id_map.end()) {
-        accver = id_map["other"];
+        accession = id_map["other"];
         return true;
     }
 
@@ -629,7 +543,7 @@ void CMatchTabulate::x_InitMatchTable()
     mMatchTable->SetNum_rows(0);
 }
 
-
+/*
 void CMatchTabulate::x_AppendNucleotide(
     const SNucMatchInfo& nuc_match_info)
 {
@@ -641,7 +555,7 @@ void CMatchTabulate::x_AppendNucleotide(
 
     mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
 }
-
+*/
 
 void CMatchTabulate::x_AppendNucleotide(
     const pair<string, bool>& match_info)
@@ -682,7 +596,7 @@ void CMatchTabulate::x_AppendDeadProtein(
     mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
 }
 
-
+/*
 void CMatchTabulate::x_AppendMatchedProtein(
     const string& nuc_accession,
     const string& prot_accession,
@@ -710,7 +624,7 @@ void CMatchTabulate::x_AppendMatchedProtein(
 
     mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
 }
-
+*/
 
 void CMatchTabulate::x_AppendMatchedProtein(
     const SProtMatchInfo& match_info)
