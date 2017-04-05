@@ -41,6 +41,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objects/variation/Variation.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
@@ -61,6 +62,12 @@ BEGIN_SCOPE(objects)
 class NCBI_SNPUTIL_EXPORT NSnp
 {
 public:
+    // tag for SNPs features, meaning is the same as for CDbtag::eDbtagType_dbSNP, but that one is unfortunately a enum, and
+    // the corresponding string value is not exposed
+    const static string sm_dbTag_dbSNP;
+
+    // RS ID
+    typedef CObject_id::TId8 TRsid;
 	// clinical significance
 	// values are taken from [human_9606].[dbo].[ClinSigCode] on 05/26/2011
 	// and later coordinated with CPhenotype::EClinical_significance (05/14/2013)
@@ -77,6 +84,12 @@ public:
     ///   - false otherwise
     static bool             IsSnp(const CMappedFeat &mapped_feat);
     static bool             IsSnp(const CSeq_feat &feat);
+    static bool             IsSnp(const CDbtag& tag);
+
+    /// find a SNP tag in the feature
+    /// returns NULL if no such tag (sm_dbTag_dbSNP)
+    static CConstRef<CDbtag> GetTag(const CSeq_feat& SrcFeat);
+    static CConstRef<CDbtag> GetTag(const CMappedFeat& SrcFeat);
 
     /// Get Create Time
     /// It will fetch the creation time based on the CAnnotDescr of the feature's
@@ -96,7 +109,7 @@ public:
     /// @return
     ///   - rsid of SNP as set in its Tag data
     ///   - 0 if no rsid found
-    static int              GetRsid(const CMappedFeat &mapped_feat);
+    static TRsid              GetRsid(const CMappedFeat &mapped_feat);
 
     /// Return rsid of SNP
     ///
@@ -105,7 +118,9 @@ public:
     /// @return
     ///   - rsid of SNP as set in its Tag data
     ///   - 0 if no rsid found
-    static int              GetRsid(const CSeq_feat &feat);
+    static TRsid              GetRsid(const CSeq_feat &feat);
+
+    static TRsid              GetRsid(const CDbtag& tag);
 
     /// Return distance of neighbors in flanking sequence
     ///
@@ -362,15 +377,14 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
     if(!NSnp::IsSnp(SrcFeat)) {
         return false;
     }
-    CConstRef<CDbtag> tag = SrcFeat.GetNamedDbxref("dbSNP");
-    if(!tag) {
-        return false;
-    }
-    int Rsid(NSnp::GetRsid(SrcFeat));
+    NSnp::TRsid Rsid(NSnp::GetRsid(SrcFeat));
     if (!Rsid) {
         return false;
     }
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
+    if (!bf.isGood()) {
+        return false;
+    }
     CSnpBitfield::EVariationClass VarClass(bf.GetVariationClass());
 
     // read the alleles from the feature
@@ -421,7 +435,7 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
     if(TmpVarRef.GetData().IsInstance())
         pVariation->SetData().SetInstance().Assign(TmpVarRef.GetData().GetInstance());
 
-    pVariation->SetId().Assign(*tag);
+    pVariation->SetId().Assign(*NSnp::GetTag(SrcFeat));
 
     CVariantProperties& prop(pVariation->SetVariant_prop());
     DecodeBitfield(prop, bf);
