@@ -205,7 +205,7 @@ static void WriteContainerElement(CObjectOStream& out, const CSeq_entry& entry)
 
 bool CSubmissionCollector::ProcessFile(const string& name)
 {
-    CNcbiIfstream in(name);
+    CNcbiIfstream in(name.c_str());
     unique_ptr<CObjectIStream> obj_in(CObjectIStream::Open(eSerial_AsnText, in, eNoOwnership));
 
     bool process = true;
