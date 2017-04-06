@@ -21,6 +21,7 @@ algo/blast/blastinput/unit_test
 -algo/blast/blastinput/demo
 algo/sequence
 -algo/sequence/demo
+-algo/sequence/unit_test
 objects
 cgi$
 cgi/impl$
