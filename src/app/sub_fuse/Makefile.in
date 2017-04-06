@@ -1,4 +1,4 @@
-APP_PROJ = sub_fuse
+APP_PROJ = sfuse
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
