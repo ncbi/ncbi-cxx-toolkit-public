@@ -526,6 +526,7 @@ static EIO_Status x_InitLocking(void)
 #  elif defined(NCBI_THREADS)
     MT_LOCK lk = CORE_GetLOCK();
     if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        /* Note that this call causes global_init/global_deinit to be called */
         gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
                                 gtls_user_mutex_lock, gtls_user_mutex_unlock);
         MT_LOCK_Do(lk, eMT_Unlock);

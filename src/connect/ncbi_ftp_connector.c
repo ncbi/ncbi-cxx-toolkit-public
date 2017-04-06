@@ -38,7 +38,7 @@
  *
  *   Note:  We do not implement transfers of files whose names include
  *          CR or LF characters:  for those to work, all FTP commands will
- *          have be required to terminate with CRLF at the user level
+ *          have to be required to terminate with CRLF at the user level
  *          (currently, LF alone acts as the command terminator), and all
  *          solitary CRs to be recoded as 'CR\0' (per the RFC), yet all
  *          solitary LFs to be passed through.  Nonetheless, we escape all
@@ -1718,10 +1718,10 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
                                     strncasecmp(c - 3, "PWD",  3) == 0  ||
                                     strncasecmp(c - 3, "MKD",  3) == 0  ||
                                     strncasecmp(c - 3, "RMD",  3) == 0)) {
-                status = s_FTPDir(xxx, s, *c ? c + 1 : c);
+                status = s_FTPDir (xxx, s, *c ? c + 1 : c);
             } else if  (size == 4  &&  (strncasecmp(s, "CDUP", 4) == 0  ||
                                         strncasecmp(s, "XCUP", 4) == 0)) {
-                status = s_FTPDir(xxx, s, *c ? c + 1 : c);
+                status = s_FTPDir (xxx, s, *c ? c + 1 : c);
             } else if  (size == 4  &&   strncasecmp(s, "SYST", 4) == 0) {
                 status = s_FTPSyst(xxx, s);
             } else if  (size == 4  &&   strncasecmp(s, "STAT", 4) == 0) {
