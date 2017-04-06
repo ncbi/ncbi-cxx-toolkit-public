@@ -391,6 +391,10 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             nuc_id_replacement_map,
             *align_istr_ptr,
             *annot_istr_ptr);
+
+        if (!keep_temps) {
+            x_DeleteTempFiles();
+        }
     } 
     catch(...)
     {
