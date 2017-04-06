@@ -330,8 +330,13 @@ void SNetServiceXSiteAPI::AllowXSiteConnections()
 
     SConnNetInfo* net_info = ConnNetInfo_Create(kXSiteFwd);
 
+    // ATTENTION!
+    //   We specifically set "fSERV_Promiscuous" flag here to avoid a
+    //   fallback hit to DISPD.CGI if the service is marked as "Down" in the
+    //   local LBSM table (and thus, is not immediately "visible" unless
+    //   the "fSERV_Promiscuous" flag is set.
     SSERV_Info* sinfo = SERV_GetInfo(kXSiteFwd,
-            fSERV_Standalone, SERV_LOCALHOST, net_info);
+            fSERV_Standalone|fSERV_Promiscuous, SERV_LOCALHOST, net_info);
 
     ConnNetInfo_Destroy(net_info);
 
