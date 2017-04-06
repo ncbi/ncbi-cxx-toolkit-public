@@ -4245,7 +4245,8 @@ MSEM	s	Museu Geologic del Seminari de Barcelona
 MSEN	s	Montrose Natural History and Antiquarian Society		
 MSF	s	Sauriermuseum Frick		
 MSGP	s	Nusee des Services Geologiques du Portugal		
-MSI	h	Marine Science Institute, University of the Philippines		
+MSI	sc	Marine Science Institute, University of the Philippines		
+MSI:PMS-ICBG	c	Marine Science Institute, University of the Philippines, Philippine Mollusk Symbiont-International Cooperative Biodiversity Group
 MSIE	s	Museum of Shanghai		
 MSINR	s	Museum Sichuan Institute of Natural Resources		
 MSIR	s	Mauritius Sugar Industry		
