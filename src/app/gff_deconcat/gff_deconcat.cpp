@@ -51,8 +51,10 @@ public:
 
     virtual const char* GetErrCodeString() const {
         switch (GetErrCode()) {
-            case eInvalidOutputDir:
-                return "eInvalidOutputDir";
+        case eInvalidOutputDir:
+            return "eInvalidOutputDir";
+
+        default: return CException::GetErrCodeString();
         }
     }
 
