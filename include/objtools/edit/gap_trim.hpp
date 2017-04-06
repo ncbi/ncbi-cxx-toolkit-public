@@ -68,9 +68,10 @@ public:
     ~CFeatGapInfo() {};
 
     void CollectGaps(const CSeq_loc& feat_loc, CScope& scope);
-    void CalculateRelevantIntervals(bool unknown_length, bool known_length);
+    void CalculateRelevantIntervals(bool unknown_length, bool known_length, bool ns = false);
     bool HasKnown() const { return m_Known; };
     bool HasUnknown() const { return m_Unknown; };
+    bool HasNs() const { return m_Ns; };
 
     bool Trimmable() const;
     bool Splittable() const;
@@ -85,7 +86,13 @@ public:
 
 
 protected:
-    typedef pair<bool, pair<size_t, size_t> > TGapInterval;
+    typedef enum {
+        eGapIntervalType_unknown = 0,
+        eGapIntervalType_known,
+        eGapIntervalType_n
+    } EGapIntervalType;
+
+    typedef pair<EGapIntervalType, pair<size_t, size_t> > TGapInterval;
     typedef vector<TGapInterval> TGapIntervalList;
     TGapIntervalList m_Gaps;
 
@@ -99,11 +106,13 @@ protected:
 
     bool m_Known;
     bool m_Unknown;
+    bool m_Ns;
 
     CSeq_feat_Handle m_Feature;
 
     void x_AdjustOrigLabel(CSeq_feat& feat, size_t& id_offset, string& id_label, const string& qual);
     static void x_AdjustFrame(CCdregion& cdregion, TSeqPos frame_adjust);
+    bool x_UsableInterval(const TGapInterval& interval, bool unknown_length, bool known_length, bool ns);
 };
 
 typedef vector<CRef<CFeatGapInfo> > TGappedFeatList;

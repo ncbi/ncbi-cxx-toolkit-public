@@ -62,6 +62,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seq/Seq_ext.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/edit/gap_trim.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
@@ -396,6 +397,124 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDSGapInIntron)
     BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
 }
 
+
+void AddNsToGoodDelta(CBioseq& seq)
+{
+    seq.SetInst().ResetSeq_data();
+    seq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    seq.SetInst().SetExt().SetDelta().AddLiteral("NNNATGCCCANNNTGATGCCCNNN", objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap_seg1(new objects::CDelta_seq());
+    gap_seg1->SetLiteral().SetSeq_data().SetGap();
+    gap_seg1->SetLiteral().SetLength(10);
+    seq.SetInst().SetExt().SetDelta().Set().push_back(gap_seg1);
+    seq.SetInst().SetExt().SetDelta().AddLiteral("NNNCCCATGNNNATGATGNNN", objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap_seg2(new objects::CDelta_seq());
+    gap_seg2->SetLiteral().SetSeq_data().SetGap();
+    gap_seg2->SetLiteral().SetLength(10);
+    gap_seg2->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    seq.SetInst().SetExt().SetDelta().Set().push_back(gap_seg2);
+    seq.SetInst().SetExt().SetDelta().AddLiteral("CCCATGNNNATGATG", objects::CSeq_inst::eMol_dna);
+    seq.SetInst().SetLength(80);
+}
+
+
+edit::TGappedFeatList TryMiscWithNs(TSeqPos start, TSeqPos stop, bool is_minus = false)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    AddNsToGoodDelta(entry->SetSeq());
+
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+
+    misc->SetLocation().SetInt().SetFrom(start);
+    misc->SetLocation().SetInt().SetTo(stop);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CFeat_CI f(seh);
+
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    return gapped_list;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
+{
+    edit::TGappedFeatList gapped_list;
+
+    // feature entirely in Ns
+    gapped_list = TryMiscWithNs(10, 12);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
+    // feature ends in Ns
+    gapped_list = TryMiscWithNs(8, 12);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
+    // feature starts in Ns
+    gapped_list = TryMiscWithNs(0, 5);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
+    // just first segment, Ns but no gaps
+    gapped_list = TryMiscWithNs(0, 23);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+
+    // feature has Ns and gaps - if not include gaps, trimmable, if include gaps, remove
+    gapped_list = TryMiscWithNs(21, 30);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
+
+    // whole sequence
+    gapped_list = TryMiscWithNs(0, 79);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+
+
+
+
+}
 
 
 

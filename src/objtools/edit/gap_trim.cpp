@@ -36,6 +36,7 @@
 #include <objtools/edit/loc_edit.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -57,41 +58,84 @@ void CFeatGapInfo::CollectGaps(const CSeq_loc& feat_loc, CScope& scope)
     m_Gaps.clear();
     m_Unknown = false;
     m_Known = false;
+    m_Ns = false;
 
     m_Start = feat_loc.GetStart(objects::eExtreme_Positional);
     m_Stop = feat_loc.GetStop(objects::eExtreme_Positional);
     CRef<CSeq_loc> total_loc = sequence::Seq_loc_Merge(feat_loc, CSeq_loc::fMerge_SingleRange, &scope);
     CConstRef<objects::CSeqMap> seq_map = CSeqMap::GetSeqMapForSeq_loc(*total_loc, &scope);
 
+    // use CSeqVector for finding Ns
+    CSeqVector vec(*seq_map, scope, CBioseq_Handle::eCoding_Iupac);
+
     CSeqMap_CI seq_map_ci = seq_map->ResolvedRangeIterator(&scope,
         0,
         objects::sequence::GetLength(feat_loc, &scope),
         feat_loc.GetStrand(),
         size_t(-1),
-        objects::CSeqMap::fFindGap);
+        objects::CSeqMap::fFindGap | objects::CSeqMap::fFindData);
 
     for (; seq_map_ci; ++seq_map_ci)
     {
 
-        if (seq_map_ci.GetType() != objects::CSeqMap::eSeqGap)
+        if (seq_map_ci.GetType() == objects::CSeqMap::eSeqGap)
         {
-            continue;
-        }
-
-        TSeqPos gap_start = m_Start + seq_map_ci.GetPosition();
-        TSeqPos gap_stop = gap_start + seq_map_ci.GetLength() - 1;
-        bool is_unknown = seq_map_ci.IsUnknownLength();
-        if (is_unknown) {
-            m_Unknown = true;
+            TSeqPos gap_start = m_Start + seq_map_ci.GetPosition();
+            TSeqPos gap_stop = gap_start + seq_map_ci.GetLength() - 1;
+            bool is_unknown = seq_map_ci.IsUnknownLength();
+            if (is_unknown) {
+                m_Unknown = true;
+            } else {
+                m_Known = true;
+            }
+            m_Gaps.push_back(TGapInterval(is_unknown ? eGapIntervalType_unknown : eGapIntervalType_known, pair<size_t, size_t>(gap_start, gap_stop)));
         } else {
-            m_Known = true;
+            // look for Ns
+            TSeqPos map_start = seq_map_ci.GetPosition();
+            TSeqPos map_stop = map_start + seq_map_ci.GetLength() - 1;
+            bool in_ns = false;
+            TSeqPos gap_start;
+            for (TSeqPos i = map_start; i <= map_stop; ++i) {
+                char letter = vec[i];
+                if (letter == 'N') {
+                    if (!in_ns) {
+                        // start new gap
+                        gap_start = m_Start + i;
+                        in_ns = true;
+                    }
+                } else if (in_ns) {
+                    // end previous gap
+                    TSeqPos gap_stop = m_Start + i - 1;
+                    m_Gaps.push_back(TGapInterval(eGapIntervalType_n, pair<size_t, size_t>(gap_start, gap_stop)));
+                    m_Ns = true;
+                    in_ns = false;
+                }
+            }
+            if (in_ns) {
+                TSeqPos gap_stop = m_Start + map_stop;
+                m_Gaps.push_back(TGapInterval(eGapIntervalType_n, pair<size_t, size_t>(gap_start, gap_stop)));
+                m_Ns = true;
+            }
         }
-        m_Gaps.push_back(TGapInterval(is_unknown, pair<size_t, size_t>(gap_start, gap_stop)));
     }
 }
 
 
-void CFeatGapInfo::CalculateRelevantIntervals(bool unknown_length, bool known_length)
+bool CFeatGapInfo::x_UsableInterval(const TGapInterval& interval, bool unknown_length, bool known_length, bool ns)
+{
+    if (interval.first == eGapIntervalType_unknown && !unknown_length) {
+        return false;
+    } else if (interval.first == eGapIntervalType_known && !known_length) {
+        return false;
+    } else if (interval.first == eGapIntervalType_n && !ns) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CFeatGapInfo::CalculateRelevantIntervals(bool unknown_length, bool known_length, bool ns)
 {
     m_InsideGaps.clear();
     m_LeftGaps.clear();
@@ -102,9 +146,7 @@ void CFeatGapInfo::CalculateRelevantIntervals(bool unknown_length, bool known_le
         size_t skip_left = 0;
         TGapIntervalList::iterator it = m_Gaps.begin();
         while (it != m_Gaps.end()) {
-            if (it->first && !unknown_length) {
-                break;
-            } else if (!it->first && !known_length) {
+            if (!x_UsableInterval(*it, unknown_length, known_length, ns)) {
                 break;
             }
 
@@ -126,9 +168,7 @@ void CFeatGapInfo::CalculateRelevantIntervals(bool unknown_length, bool known_le
         TGapIntervalList::reverse_iterator rit = m_Gaps.rbegin();
         size_t skip_right = 0;
         while (rit != m_Gaps.rend()) {
-            if (rit->first && !unknown_length) {
-                break;
-            } else if (!rit->first && !known_length) {
+            if (!x_UsableInterval(*rit, unknown_length, known_length, ns)) {
                 break;
             }
             if (m_RightGaps.empty()) {
@@ -147,7 +187,7 @@ void CFeatGapInfo::CalculateRelevantIntervals(bool unknown_length, bool known_le
             ++rit;
         }
         for (size_t offset = skip_left; offset < m_Gaps.size() - skip_right; offset++) {
-            if ((m_Gaps[offset].first && unknown_length) || (!m_Gaps[offset].first && known_length)) {
+            if (x_UsableInterval(m_Gaps[offset], unknown_length, known_length, ns)) {
                 m_InsideGaps.push_back(m_Gaps[offset].second);
             }
         }
@@ -385,7 +425,7 @@ TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope)
     while (feat_it) {
         if (!feat_it->GetData().IsProt()) {
             CRef<CFeatGapInfo> fgap(new CFeatGapInfo(*feat_it));
-            if (fgap->HasKnown() || fgap->HasUnknown()) {
+            if (fgap->HasKnown() || fgap->HasUnknown() || fgap->HasNs()) {
                 gapped_feats.push_back(fgap);
             }
         }
