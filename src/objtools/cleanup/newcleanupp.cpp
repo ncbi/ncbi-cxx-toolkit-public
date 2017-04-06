@@ -3034,7 +3034,7 @@ void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
     TCitSet cit_set;
     ITERATE (CPub_set::TPub, cit_it, pub_set.GetPub()) {
         string label;
-        (*cit_it)->GetLabel(&label, CPub::eContent, false);
+        (*cit_it)->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
         // the following line may fail due to dups 
         // (that's okay; it lets us automatically remove dups)
         cit_set.insert( TCit(label, *cit_it) );
