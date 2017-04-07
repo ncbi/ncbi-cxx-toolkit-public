@@ -298,6 +298,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLDomainSystem;
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
 /// Arugment to specify if Igblast alignment should be extends at 5' end
 NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign;
+/// Arugment to to detect overlap at vdj junction
+NCBI_BLASTINPUT_EXPORT extern const string kArgDetectOverlap;
 ///Argument to specify minimal required V length
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinVLength;
 ///Argument to specify minimal required J gene length

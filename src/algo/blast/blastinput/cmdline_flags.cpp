@@ -182,6 +182,7 @@ const string kArgGLOrigin("organism");
 const string kArgGLDomainSystem("domain_system");
 const string kArgGLFocusV("focus_on_V_segment");
 const string kArgExtendAlign("extend_align5end");
+const string kArgDetectOverlap("allow_vdj_overlap");
 const string kArgMinVLength("min_V_length");
 const string kArgMinJLength("min_J_length");
 const string kArgNumClonotype("num_clonotype");

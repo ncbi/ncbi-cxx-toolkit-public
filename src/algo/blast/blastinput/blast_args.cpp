@@ -1556,6 +1556,9 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgClonotypeFile, "clonotype_out", 
                                 "Output file name for clonotype info",
                                CArgDescriptions::eOutputFile);
+        
+        arg_desc.AddFlag(kArgDetectOverlap, "Allow V(D)J genes to overlap. Available only when D_penalty and J_penalty use the default values (-4 and -3, respectively)", true);
+
        
     }
 
@@ -1586,14 +1589,15 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgMinVLength, 
                            new CArgAllowValuesGreaterThanOrEqual(9));
 
-    arg_desc.AddDefaultKey(kArgMinJLength, "Min_J_Length",
-                           "Minimal required J gene length",
-                           CArgDescriptions::eInteger, "0");
+    if (! m_IsProtein) {
+        arg_desc.AddDefaultKey(kArgMinJLength, "Min_J_Length",
+                               "Minimal required J gene length",
+                               CArgDescriptions::eInteger, "0");
+        
+        arg_desc.SetConstraint(kArgMinJLength, 
+                               new CArgAllowValuesGreaterThanOrEqual(0));
+    }
 
-    arg_desc.SetConstraint(kArgMinJLength, 
-                           new CArgAllowValuesGreaterThanOrEqual(0));
-    
-    
     if (! m_IsProtein) {
         arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
     }
@@ -1646,9 +1650,13 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_ExtendAlign = args.Exist(kArgExtendAlign) ? args[kArgExtendAlign] : false;
+    m_IgOptions->m_DetectOverlap = args.Exist(kArgDetectOverlap) ? args[kArgDetectOverlap] : false;
     m_IgOptions->m_MinVLength = args[kArgMinVLength].AsInteger();
-    m_IgOptions->m_MinJLength = args[kArgMinJLength].AsInteger();
-   
+    if (args.Exist(kArgMinJLength) && args[kArgMinJLength]) {
+        m_IgOptions->m_MinJLength = args[kArgMinJLength].AsInteger();
+    } else {
+        m_IgOptions->m_MinJLength = 0;
+    }
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     if (!m_IsProtein) {
         string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])

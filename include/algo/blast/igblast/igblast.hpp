@@ -81,6 +81,7 @@ public:
     bool m_ExtendAlign;
     int m_MinVLength;
     int m_MinJLength;
+    bool m_DetectOverlap;
 };
 
 class CIgAnnotation : public CObject
@@ -295,7 +296,12 @@ private:
                          CRef<IQueryFactory>           &qf,
                          CRef<CBlastOptionsHandle>     &opts_hndl,
                          int db_type);
-
+    void x_SetupNoOverlapDSearch(const vector<CRef <CIgAnnotation> > &annots,
+                                 CRef<CSearchResultSet>        &results,
+                                 CRef<IQueryFactory>           &qf,
+                                 CRef<CBlastOptionsHandle>     &opts_hndl,
+                                 int db_type);
+    
     /// Prepare blast option handle and query for specified database search
     void x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annot,
                          CRef<IQueryFactory>           &qf);
@@ -308,6 +314,11 @@ private:
     void x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                       CRef<CSearchResultSet>        &results_J,
                       vector<CRef <CIgAnnotation> > &annot);
+
+    void x_AnnotateD(CRef<CSearchResultSet>        &results_D,
+                     vector<CRef <CIgAnnotation> > &annot);   
+    void x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
+                     vector<CRef <CIgAnnotation> > &annot);
 
     /// Annotate the query chaintype and domains based on blast results
     void x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results, 
@@ -358,7 +369,15 @@ private:
     void x_ExtendAlign(CRef<CSearchResultSet> & results);
     void x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int length);
     void x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot);
-    
+    void x_ProcessDJResult(CRef<CSearchResultSet>& results_V, 
+                           CRef<CSearchResultSet>& results_D,
+                           CRef<CSearchResultSet>& results_J,
+                           vector<CRef <CIgAnnotation> > &annots);
+    void x_ProcessDGeneResult(CRef<CSearchResultSet>& results_V, 
+                              CRef<CSearchResultSet>& results_D,
+                              CRef<CSearchResultSet>& results_J,
+                              vector<CRef <CIgAnnotation> > &annots); 
+        
 };
 
 END_SCOPE(blast)
