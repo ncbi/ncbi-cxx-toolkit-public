@@ -58,7 +58,8 @@ USING_SCOPE(objects);
 CSubmissionCollector::CSubmissionCollector(CNcbiOstream& out) :
     m_out(out),
     m_header_not_set(true),
-    m_cur_id(1)
+    m_cur_offset(0),
+    m_cur_max_id(0)
 {}
 
 static void StartWriting(CObjectOStream& out, const CSeq_submit& seq_submit)
@@ -125,13 +126,13 @@ static void StartWriting(CObjectOStream& out, const CSeq_submit& seq_submit)
     out.BeginContainer(seqset_container_type);
 }
 
-void CSubmissionCollector::AdjustLocalIds(CSeq_entry& entry, map<int, int>& substitution, bool xrefs)
+void CSubmissionCollector::AdjustLocalIds(CSeq_entry& entry)
 {
     if (entry.IsSet()) {
 
         if (entry.SetSet().IsSetSeq_set()) {
             for (auto cur_entry : entry.SetSet().SetSeq_set()) {
-                AdjustLocalIds(*cur_entry, substitution);
+                AdjustLocalIds(*cur_entry);
             }
         }
     }
@@ -140,57 +141,49 @@ void CSubmissionCollector::AdjustLocalIds(CSeq_entry& entry, map<int, int>& subs
 
         for (auto annot : entry.SetAnnot()) {
             if (annot->IsFtable()) {
-                AdjustLocalIds(*annot, substitution, xrefs);
+                AdjustLocalIds(*annot);
             }
         }
     }
 }
 
-void CSubmissionCollector::AdjustLocalIds(CSeq_annot& annot, map<int, int>& substitution, bool xrefs)
+void CSubmissionCollector::AdjustLocalIds(CSeq_annot& annot)
 {
     _ASSERT(annot.IsFtable() && "annot should be a feature table at this point");
+
     if (annot.IsSetData()) {
 
         for (auto feat : annot.SetData().SetFtable()) {
 
-            if (xrefs) {
-                AdjustXrefLocalIds(*feat, substitution);
-            }
-            else {
-                AdjustLocalIds(*feat, substitution);
-            }
+            AdjustLocalIds(*feat);
         }
     }
 }
 
-void CSubmissionCollector::AdjustLocalIds(CSeq_feat& feat, map<int, int>& substitution)
+void CSubmissionCollector::AdjustLocalIds(CSeq_feat& feat)
 {
     if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
 
         CObject_id& obj_id = feat.SetId().SetLocal();
+
         int id = obj_id.GetId();
+        obj_id.SetId(id + m_cur_offset);
 
-        substitution[id] = m_cur_id;
-        obj_id.SetId(m_cur_id);
-        ++m_cur_id;
+        if (id > m_cur_max_id) {
+            m_cur_max_id = id;
+        }
     }
-}
 
-void CSubmissionCollector::AdjustXrefLocalIds(CSeq_feat& feat, map<int, int>& substitution)
-{
     if (feat.IsSetXref()) {
 
         for (auto xref : feat.SetXref()) {
 
             if (xref->IsSetId() && xref->GetId().IsLocal() && xref->GetId().GetLocal().IsId()) {
 
-                CObject_id& obj_id = feat.SetId().SetLocal();
-                int id = obj_id.GetId();
+                CObject_id& obj_id = xref->SetId().SetLocal();
 
-                auto cur_subst = substitution.find(id);
-                if (cur_subst != substitution.end()) {
-                    obj_id.SetId(cur_subst->second);
-                }
+                int id = obj_id.GetId();
+                obj_id.SetId(id + m_cur_offset);
             }
         }
     }
@@ -240,26 +233,23 @@ bool CSubmissionCollector::ProcessFile(const string& name)
         if (seq_submit.GetData().IsEntrys()) {
             NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, entry, seq_submit.SetData().SetEntrys()) {
 
-                map<int, int> substitution;
-
+                m_cur_max_id = 0;
                 if ((*entry)->IsSet() && (*entry)->GetSet().IsSetClass() && (*entry)->GetSet().GetClass() == CBioseq_set::eClass_genbank) {
 
                     if ((*entry)->GetSet().IsSetSeq_set()) {
                         NON_CONST_ITERATE(CBioseq_set::TSeq_set, internal_entry, (*entry)->SetSet().SetSeq_set()) {
 
-                            AdjustLocalIds(**internal_entry, substitution);
-                            AdjustLocalIds(**internal_entry, substitution, true);
-
+                            AdjustLocalIds(**internal_entry);
                             WriteContainerElement(m_out, **internal_entry);
                         }
                     }
                 }
                 else {
-                    AdjustLocalIds(**entry, substitution);
-                    AdjustLocalIds(**entry, substitution, true);
-
+                    AdjustLocalIds(**entry);
                     WriteContainerElement(m_out, **entry);
                 }
+
+                m_cur_offset += m_cur_max_id;
             }
         }
     }

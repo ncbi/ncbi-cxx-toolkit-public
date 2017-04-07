@@ -63,16 +63,15 @@ public:
 
 private:
 
-    void AdjustLocalIds(CSeq_entry& entry, map<int, int>& substitution, bool xrefs = false);
-    void AdjustLocalIds(CSeq_annot& annot, map<int, int>& substitution, bool xrefs);
-    void AdjustLocalIds(CSeq_feat& feat, map<int, int>& substitution);
-
-    void AdjustXrefLocalIds(CSeq_feat& feat, map<int, int>& substitution);
+    void AdjustLocalIds(CSeq_entry& entry);
+    void AdjustLocalIds(CSeq_annot& annot);
+    void AdjustLocalIds(CSeq_feat& feat);
 
     CObjectOStreamAsn m_out;
     bool m_header_not_set;
 
-    int m_cur_id;
+    int m_cur_offset,
+        m_cur_max_id;
 };
 
 }
