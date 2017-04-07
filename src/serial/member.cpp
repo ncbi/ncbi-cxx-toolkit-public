@@ -755,6 +755,9 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
                 if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
                     memberInfo->GetTypeInfo()->SetDefault(
                         memberInfo->GetItemPtr(classPtr));
+                    if (memberInfo->GetDefault()) {
+                        memberInfo->GetTypeInfo()->Assign(memberInfo->GetItemPtr(classPtr),memberInfo->GetDefault());
+                    }
                 }
             } else {
                 NCBI_RETHROW(e, CSerialException, eFormatError,
@@ -839,6 +842,9 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
                 if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
                     memberInfo->GetTypeInfo()->SetDefault(
                         memberInfo->GetItemPtr(classPtr));
+                    if (memberInfo->GetDefault()) {
+                        memberInfo->GetTypeInfo()->Assign(memberInfo->GetItemPtr(classPtr),memberInfo->GetDefault());
+                    }
                 }
             } else {
                 NCBI_RETHROW(e, CSerialException, eFormatError,
@@ -925,6 +931,9 @@ CMemberInfoFunctions::ReadMissingWithSetFlagMember(CObjectIStream& /*in*/,
     _ASSERT(memberInfo->HaveSetFlag());
     if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
         memberInfo->GetTypeInfo()->SetDefault(memberInfo->GetItemPtr(classPtr));
+        if (memberInfo->GetDefault()) {
+            memberInfo->GetTypeInfo()->Assign(memberInfo->GetItemPtr(classPtr),memberInfo->GetDefault());
+        }
     }
 }
 
