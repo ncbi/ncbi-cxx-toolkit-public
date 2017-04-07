@@ -1970,8 +1970,10 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
             m_Ostream << "<table border=1>\n";
             m_Ostream << "<tr><td> </td><td>Nucleotide sequence</td>";
             m_Ostream << "<td>Translation</td>";
+            m_Ostream << "<td>Start</td>";
+            m_Ostream << "<td>End</td>";
         } else {
-            m_Ostream << header << "Sub-region sequence details (nucleotide sequence, translation)" << endl;
+            m_Ostream << header << "Sub-region sequence details (nucleotide sequence, translation, start, end)" << endl;
         }
         if (isHtml) {
             m_Ostream << "<tr><td>CDR3</td><td>";
@@ -1982,10 +1984,20 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         if (isHtml) {
             m_Ostream << "</td><td>";
         }
-        m_Ostream << m_Cdr3SeqTrans;
+        m_Ostream << m_Cdr3SeqTrans << m_FieldDelimiter;
+        if (isHtml) {
+            m_Ostream << "</td><td>";
+        }
+        m_Ostream << m_Cdr3Start + 1 << m_FieldDelimiter;
+        if (isHtml) {
+            m_Ostream << "</td><td>";
+        }
+        m_Ostream << m_Cdr3End + 1 << m_FieldDelimiter;
+
         if (isHtml) {
             m_Ostream << "</td></tr>\n</table>";
         }
+        
         m_Ostream << endl << endl;
     }
    
