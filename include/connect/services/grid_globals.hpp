@@ -82,11 +82,9 @@ private:
     unsigned int m_InfiniteLoopTime;
     struct SJobActivity {
         CStopWatch elasped_time;
-        bool flag;
-        SJobActivity(CStopWatch elapsed_time_val, bool flag_val) :
-            elasped_time(elapsed_time_val), flag(flag_val) {}
-        SJobActivity() :
-            elasped_time(CStopWatch(CStopWatch::eStart)), flag(false) {}
+        bool is_stuck;
+        SJobActivity(CStopWatch et, bool is) : elasped_time(et), is_stuck(is) {}
+        SJobActivity() : elasped_time(CStopWatch(CStopWatch::eStart)), is_stuck(false) {}
     };
 
     typedef map<CWorkerNodeJobContext*, SJobActivity> TActiveJobs;

@@ -158,7 +158,7 @@ void CWNJobWatcher::Print(CNcbiOstream& os) const
             NStr::PrintableString(it->first->GetJobInput()) <<
             "\" -- running for " <<
             (int) it->second.elasped_time.Elapsed() << " seconds.";
-        if (it->second.flag)
+        if (it->second.is_stuck)
             os << "!!! LONG RUNNING JOB !!!";
         os << "\n";
     }
@@ -170,11 +170,11 @@ void CWNJobWatcher::CheckForInfiniteLoop()
         size_t count = 0;
         CMutexGuard guard(m_ActiveJobsMutex);
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
-            if (!it->second.flag) {
+            if (!it->second.is_stuck) {
                 if ( it->second.elasped_time.Elapsed() > m_InfiniteLoopTime) {
                     ERR_POST_X(3, "An infinite loop is detected in job "
                                   << it->first->GetJobKey());
-                    it->second.flag = true;
+                    it->second.is_stuck = true;
                     CGridGlobals::GetInstance().
                         RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
                 }
@@ -194,7 +194,7 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode worker)
     CMutexGuard guard(m_ActiveJobsMutex);
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
         CNetScheduleJob& job = it->first->GetJob();
-        if (!it->second.flag)
+        if (!it->second.is_stuck)
             worker.GetNSExecutor().ReturnJob(job);
         else {
             job.error_msg = "Job execution time exceeded " +
