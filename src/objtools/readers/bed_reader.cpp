@@ -1558,9 +1558,9 @@ CBedReader::xReadBedRecordRaw(
     }
 
     int score(-1);
-    if (m_columncount >= 7  &&  columns[6] != ".") {
+    if (m_columncount >= 5  &&  columns[4] != ".") {
         try {
-            score = NStr::StringToInt(columns[6], 
+            score = NStr::StringToInt(columns[4], 
 			NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols);
         }
         catch(std::exception&) {
