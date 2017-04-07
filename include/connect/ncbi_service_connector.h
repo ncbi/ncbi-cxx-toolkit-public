@@ -63,7 +63,7 @@ typedef struct {
     FSERVICE_Cleanup     cleanup;       /* Called prior to connector destroy */
     FHTTP_ParseHeader    parse_header;  /* Called when data source is HTTP(S)*/
     FSERVICE_GetNextInfo get_next_info; /* Called to get connection point(s) */
-    THTTP_Flags          flags;         /* fHTTP_Flushable|NoAutoRy|AdjOnRed */
+    THTTP_Flags          flags;         /* fHTTP_Flushbl|NoAutoRy|AdjOnRedir */
 } SSERVICE_Extra;
 
 

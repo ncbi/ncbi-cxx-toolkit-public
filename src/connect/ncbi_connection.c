@@ -1041,16 +1041,16 @@ extern EIO_Status CONN_ReadLine
         status = s_CONN_Read(conn, x_buf, size ? x_size : 0, &x_read, 0);
         conn->r_status = status;
 
-        for (i = 0; i < x_read  &&  len < size; i++) {
+        for (i = 0;  i < x_read  &&  len < size;  ++i) {
             char c = x_buf[i];
             if (c == '\n') {
                 done = 1/*true*/;
-                i++;
+                ++i;
                 break;
             }
             if (x_buf == w)
                 line[len] = c;
-            len++;
+            ++len;
         }
         if (i < x_read) {
             assert(done  ||  len >= size);

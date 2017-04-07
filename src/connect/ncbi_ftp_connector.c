@@ -1003,7 +1003,7 @@ static EIO_Status x_FTPPort(SFTPConnector* xxx,
     memcpy(octet,                &host, sizeof(host));
     memcpy(octet + sizeof(host), &port, sizeof(port));
     for (n = 0;  n < sizeof(octet);  n++)
-        s += sprintf(s, "%s%u", &","[!n], octet[n]);
+        s += sprintf(s, &",%u"[!n], octet[n]);
     assert(s < buf + sizeof(buf));
     status = s_FTPCommand(xxx, "PORT", buf);
     if (status != eIO_Success)
