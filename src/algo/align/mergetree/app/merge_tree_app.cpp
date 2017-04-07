@@ -32,12 +32,17 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_system.hpp>
+
+#include <connect/ncbi_util.h>
+#include <connect/ncbi_core_cxx.hpp>
 
 #include <serial/serialbase.hpp>
 #include <serial/serial.hpp>
@@ -51,6 +56,8 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <util/sync_queue.hpp>
+
 #include <algo/align/mergetree/merge_tree.hpp>
 
 #define MARKLINE cerr << __LINE__ << endl;
@@ -61,31 +68,6 @@ USING_SCOPE(objects);
 
 ////////////////////////////////////////////////////
 
-class CMergeyApp : public CNcbiApplication
-{
-public:
-    virtual void Init(void);
-    virtual int Run();
-
-
-};
-
-
-void
-CMergeyApp::Init(void)
-{
-    auto_ptr<CArgDescriptions> argList(new CArgDescriptions());
-
-    //argList->SetUsageContext(GetArguments().GetProgramBasename(), "Mergey Test App");
-
-    argList->AddKey("input", "infile", "seqalign file", CArgDescriptions::eInputFile);
-    argList->AddDefaultKey("output", "outfile", "seqalign file", CArgDescriptions::eOutputFile, "-");
-    argList->AddDefaultKey("timer", "double", "seconds", CArgDescriptions::eDouble, "120.0");
-    
-    argList->AddFlag("G", "no genbank");
-
-    SetupArgDescriptions(argList.release());
-}
 
 string s_Strand(ENa_strand strand) {
     if(strand == eNa_strand_plus)
@@ -118,9 +100,94 @@ bool s_TimerCallback(void* Data) {
     return false;    
 }
 
+typedef vector<CRef<objects::CSeq_align> > TAlignVec;
+typedef CSyncQueue<TAlignVec, deque<TAlignVec>, CSyncQueue_Traits_ConcurrencyOn> TSyncQueue;
+class CMergeTreeThread : public CThread 
+{
+public:
+    
+    CMergeTreeThread() : CThread() { ; }
+
+    CRef<CScope> Scope;
+    double SecondsLimit;
+    CMergeTree::SScoring Scoring;
+    TSyncQueue  *InQueue, *OutQueue;
+
+    virtual void *  Main (void);
+};
+
+
+void *  CMergeTreeThread::Main (void)
+{
+    list< CRef<CSeq_align> > MergedAligns;
+    
+    CTreeAlignMerger TreeMerger;
+    TreeMerger.SetScope(Scope);
+    TreeMerger.SetScoring(Scoring);
+
+    STimerCallbackData CbData;
+    CbData.StartTime = CTime(CTime::eCurrent);
+    CbData.SecondsLimit = SecondsLimit; 
+    TreeMerger.SetInterruptCallback(s_TimerCallback, &CbData);
+
+    CTimeSpan PopSpan((long)2);
+
+    // work with queue
+    while(!InQueue->IsEmpty()) {
+        TAlignVec InAligns, OutAligns;
+        try {
+            InAligns = InQueue->Pop(&PopSpan);
+        } catch(CException& e) { break; }
+        
+        list< CRef<CSeq_align> > In, Out;
+        In.insert(In.end(), InAligns.begin(), InAligns.end());
+        
+        CbData.StartTime = CTime(CTime::eCurrent);
+        CbData.SecondsLimit = SecondsLimit; 
+
+        TreeMerger.Merge(In, Out);
+        
+        ITERATE(list<CRef<CSeq_align> >, OutIter, Out) {
+            OutAligns.push_back(*OutIter);
+        }
+        OutQueue->Push(OutAligns);
+    }
+
+    return NULL;
+}
+
+class CMergeyApp : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int Run();
+
+
+};
+
+
+void
+CMergeyApp::Init(void)
+{
+    auto_ptr<CArgDescriptions> argList(new CArgDescriptions());
+
+    //argList->SetUsageContext(GetArguments().GetProgramBasename(), "Mergey Test App");
+
+    argList->AddKey("input", "infile", "seqalign file", CArgDescriptions::eInputFile);
+    argList->AddDefaultKey("output", "outfile", "seqalign file", CArgDescriptions::eOutputFile, "-");
+    argList->AddDefaultKey("timer", "double", "seconds", CArgDescriptions::eDouble, "120.0");
+    argList->AddDefaultKey("ratio", "integer", "match value", CArgDescriptions::eInteger, "3");    
+    argList->AddDefaultKey("threads", "integer", "thread count. core logic is sequential, but seperate seq-id-pairs can thread.", CArgDescriptions::eInteger, "1");    
+    
+    argList->AddFlag("G", "no genbank");
+
+    SetupArgDescriptions(argList.release());
+}
+
 int
 CMergeyApp::Run()
 {
+    CORE_SetLOCK(MT_LOCK_cxx2c());
     const CArgs& args = GetArgs();
     
   
@@ -262,27 +329,95 @@ CMergeyApp::Run()
 
 
     cerr << "OrigAligns.size: " << OrigAligns.size() << endl;
+    if(OrigAligns.empty()) {
+        cerr << "No alignments read in." << endl;
+        return 0;
+    }
+    
     
     list< CRef<CSeq_align> > MergedAligns;
     
-    CTreeAlignMerger TreeMerger;
-    TreeMerger.SetScope(Scope);
+    int ThreadCount = args["threads"].AsInteger();
+    double Timer = args["timer"].AsDouble();
+    int Ratio = args["ratio"].AsInteger();
+    
     CMergeTree::SScoring Scoring;
-    Scoring.Match = 4;
+    Scoring.Match = Ratio;
     Scoring.MisMatch = -1;
     Scoring.GapOpen = -1;
     Scoring.GapExtend = -1;
-    TreeMerger.SetScoring(Scoring);
 
-    STimerCallbackData CbData;
-    CbData.StartTime = CTime(CTime::eCurrent);
-    CbData.SecondsLimit = args["timer"].AsDouble();
-    TreeMerger.SetInterruptCallback(s_TimerCallback, &CbData);
+    // Uses Threaded Mode with even 1 Thread
+    // Uses 'old no-threads at all' on 0 Threads
+    if(ThreadCount > 0) {
+        typedef pair<objects::CSeq_id_Handle, objects::ENa_strand> TSeqIdPair;
+        typedef pair<TSeqIdPair, TSeqIdPair> TMapKey;
+        typedef vector<CRef<objects::CSeq_align> > TAlignVec;
+        typedef map<TMapKey, TAlignVec> TAlignGroupMap;
+        typedef pair<TMapKey, TAlignVec> TAlignGroupPair;
+        TAlignGroupMap AlignGroupMap;
+        ITERATE(list<CRef<CSeq_align> >, AlignIter, OrigAligns) {
+            const CSeq_align& Align = **AlignIter;
+            TMapKey Key;
+            Key.first.first   = CSeq_id_Handle::GetHandle(Align.GetSeq_id(0));
+            Key.first.second  = Align.GetSeqStrand(0);
+            Key.second.first   = CSeq_id_Handle::GetHandle(Align.GetSeq_id(1));
+            Key.second.second  = Align.GetSeqStrand(1);
+            AlignGroupMap[Key].push_back(*AlignIter);
+        }
+        CSyncQueue<TAlignVec, deque<TAlignVec>, CSyncQueue_Traits_ConcurrencyOn> ThreadQueue(AlignGroupMap.size());
+        CSyncQueue<TAlignVec, deque<TAlignVec>, CSyncQueue_Traits_ConcurrencyOn> ThreadResults(AlignGroupMap.size());
+        ITERATE(TAlignGroupMap, AlignGroupIter, AlignGroupMap) {
+            ThreadQueue.Push(AlignGroupIter->second);
+        }
 
-    TreeMerger.Merge(OrigAligns, MergedAligns);
+        // Make threads
+        list< CMergeTreeThread* > Threads;
+        list< list<CRef<CSeq_align> >* > Outs;
+        for(int i = 0; i < ThreadCount; i++) {
+            CMergeTreeThread* New = new CMergeTreeThread();
+            //New->Scope = Scope;
+            New->Scope.Reset(new CScope(*OM));
+            New->Scope->AddDefaults();
+            New->SecondsLimit = Timer;
+            New->Scoring = Scoring;
+            New->InQueue = &ThreadQueue;
+            New->OutQueue = &ThreadResults;
+            Threads.push_back(New);
+        }
+
+        // dispatch queue to threads
+        ITERATE(list< CMergeTreeThread* >, ThreadIter, Threads) {
+            (*ThreadIter)->Run();
+        }
+        ITERATE(list< CMergeTreeThread* >, ThreadIter, Threads) {
+            (*ThreadIter)->Join();
+        }
+        
+        while(!ThreadResults.IsEmpty()) {
+            TAlignVec OutBatch = ThreadResults.Pop();
+            ITERATE(TAlignVec, AlignIter, OutBatch) {
+                MergedAligns.push_back(*AlignIter);
+            }
+        }
+    } // End Non-Zero ThreadCount
+    else if(ThreadCount == 0) {
+        CTreeAlignMerger TreeMerger;
+        TreeMerger.SetScope(Scope);
+        TreeMerger.SetScoring(Scoring);
+
+        STimerCallbackData CbData;
+        CbData.StartTime = CTime(CTime::eCurrent);
+        CbData.SecondsLimit = Timer;
+        TreeMerger.SetInterruptCallback(s_TimerCallback, &CbData);
+
+        TreeMerger.Merge(OrigAligns, MergedAligns);
+    } // end Zero ThreadCount
+    
     //TreeMerger.Merge_Pairwise(OrigAligns, MergedAligns);
     //TreeMerger.Merge_Dist(OrigAligns, MergedAligns);
     
+
     cerr << "MergedAligns.size: " << MergedAligns.size() << endl;
     
     CNcbiOstream& Out = args["output"].AsOutputFile();
