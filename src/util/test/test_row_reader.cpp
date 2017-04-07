@@ -547,7 +547,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected overflow exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected overflow exception context");
         }
 
@@ -556,7 +556,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected wrong type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected overflow exception context");
         }
 
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
 
@@ -574,7 +574,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field name exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field name exception context");
         }
 
@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field type exception context");
         }
 
@@ -592,7 +592,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field extended type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field extended type exception context");
         }
     }
@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_ACCESS_BY_NAME_OUT_OF_RANGE)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
 
@@ -621,7 +621,7 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_ACCESS_BY_NAME_OUT_OF_RANGE)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("row stream context:") == string::npos)
+            if (what.find("Row reader context:") == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
     }
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -692,7 +692,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -700,7 +700,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -708,7 +708,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -716,7 +716,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 
@@ -732,7 +732,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -748,7 +748,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 
@@ -763,7 +763,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -771,7 +771,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -787,7 +787,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("row stream context:") != string::npos)
+        if (what.find("Row reader context:") != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 }
@@ -921,7 +921,7 @@ BOOST_AUTO_TEST_CASE(RR_NULL_FIELD_VALUE)
                     BOOST_FAIL("Expected 'field is null' exception");
                 } catch (const exception &  exc) {
                     string  what = exc.what();
-                    if (what.find("row stream context:") == string::npos)
+                    if (what.find("Row reader context:") == string::npos)
                         BOOST_FAIL("Expected field is null exception context");
                 }
                 try {
@@ -929,7 +929,7 @@ BOOST_AUTO_TEST_CASE(RR_NULL_FIELD_VALUE)
                     BOOST_FAIL("Expected 'field is null' exception");
                 } catch (const exception &  exc) {
                     string  what = exc.what();
-                    if (what.find("row stream context:") == string::npos)
+                    if (what.find("Row reader context:") == string::npos)
                         BOOST_FAIL("Expected field is null exception context");
                 }
                 break;
@@ -1007,7 +1007,7 @@ BOOST_AUTO_TEST_CASE(RR_SET_NON_EXISTING_FILE_STREAM)
 
 BOOST_AUTO_TEST_CASE(RR_FILE_STREAM)
 {
-    TTabDelimitedStream     src_stream("test_delim_stream.txt");
+    TTabDelimitedStream     src_stream("test_row_reader.txt");
 
     int     line_no = 0;
     for (auto &  row : src_stream) {
@@ -1055,7 +1055,7 @@ BOOST_AUTO_TEST_CASE(RR_FILE_STREAM)
 
 BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_FILE_STR)
 {
-    TTabDelimitedStream     src_stream("test_delim_stream.txt");
+    TTabDelimitedStream     src_stream("test_row_reader.txt");
 
     for (auto &  row : src_stream) {
         BOOST_CHECK(row.GetType() == eRR_Data);
@@ -1132,7 +1132,7 @@ BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_STR_FILE)
     }
 
 
-    src_stream.SetDataSource("test_delim_stream.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
 
     int     line_no = 0;
     for (auto &  row : src_stream) {
@@ -1210,7 +1210,7 @@ BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
     }
 
 
-    src_stream.SetDataSource("test_delim_stream.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
 
     int     line_no = 0;
     for (++it; it != end_it; ++it) {
@@ -1258,9 +1258,9 @@ BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
 
 BOOST_AUTO_TEST_CASE(RR_SET_FILE_TWICE)
 {
-    TTabDelimitedStream     src_stream("test_delim_stream.txt");
-    src_stream.SetDataSource("test_delim_stream.txt");
-    src_stream.SetDataSource("test_delim_stream.txt");
+    TTabDelimitedStream     src_stream("test_row_reader.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
 }
 
 
@@ -1279,7 +1279,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_STREAM_EVENT)
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
 
 
-    src_stream.SetDataSource("test_delim_stream.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
     int     line_no = 0;
     for (++it; it != end_it; ++it)
     {
@@ -1304,7 +1304,7 @@ BOOST_AUTO_TEST_CASE(RR_VALID_COUNT)
     {}
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
 
-    src_stream.SetDataSource("test_delim_stream.txt");
+    src_stream.SetDataSource("test_row_reader.txt");
     src_stream.Validate();
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 2);
     BOOST_CHECK(src_stream.GetTraits().GetValidCount() == 4);
