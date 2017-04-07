@@ -172,8 +172,9 @@ void CWNJobWatcher::CheckForInfiniteLoop()
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
             if (!it->second.is_stuck) {
                 if ( it->second.elasped_time.Elapsed() > m_InfiniteLoopTime) {
-                    ERR_POST_X(3, "An infinite loop is detected");
-                    GetDiagContext().Extra().Print("job_key", it->first->GetJobKey());
+                    const auto job_key = it->first->GetJobKey();
+                    ERR_POST_X(3, "An infinite loop is detected in job " << job_key);
+                    GetDiagContext().Extra().Print("job_key", job_key);
  
                     it->second.is_stuck = true;
                     CGridGlobals::GetInstance().
