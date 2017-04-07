@@ -745,6 +745,26 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
             }
         }
 
+        {{
+            cerr << "Unique IDs: " << QueryIDH.AsString() << " and " << SubjtIDH.AsString() << endl;
+            TAlignVec Unique, Other;
+            x_SplitGlobalUnique(Aligns, Unique, Other);
+            cerr << " Unique Split: " << Aligns.size() << " into " << Unique.size() << " and " << Other.size() << endl;
+            // Merge the Uniques
+            // Then add the result to Others, 
+            // Replace the Input , proceed
+            if(!Unique.empty()) {
+                list<CRef<CSeq_align> > Ins, Outs;
+                Ins.insert(Ins.end(), Unique.begin(), Unique.end());
+                Merge_AllAtOnce(Ins, Outs);
+                cerr << "  Unique Merged " << Ins.size() << " to " << Outs.size() << endl;
+                ITERATE(list<CRef<CSeq_align> >, OutIter, Outs) {
+                    Other.push_back(*OutIter);
+                }
+                Aligns = Other;
+            }
+        }}
+
         x_Merge_Dist_Impl(Aligns, QueryIDH, SubjtIDH, QueryBSH, SubjtBSH, Output);
 
     } // end id-strand-map loop
@@ -826,6 +846,32 @@ CTreeAlignMerger::x_MakeMergeableGroups(list<CRef<CSeq_align> > Input,
     }
 }
 
+
+void
+CTreeAlignMerger::x_SplitGlobalUnique(const TAlignVec& Input, 
+                                            TAlignVec& Unique, 
+                                            TAlignVec& Other)
+{
+    ITERATE(TAlignVec, Outer, Input) {
+        bool Intersected = false;
+        TSeqRange OuterRanges[] = { (*Outer)->GetSeqRange(0), (*Outer)->GetSeqRange(1) };
+        ITERATE(TAlignVec, Inner, Input) {
+            if(Outer == Inner)
+                continue;
+            TSeqRange InnerRanges[] = { (*Inner)->GetSeqRange(0), (*Inner)->GetSeqRange(1) };
+
+            if( OuterRanges[0].IntersectingWith(InnerRanges[0]) ||
+                OuterRanges[1].IntersectingWith(InnerRanges[1]) ) {
+                Intersected = true;
+                break;
+            }
+        }
+        if(Intersected)
+            Other.push_back(*Outer);
+        else
+            Unique.push_back(*Outer);
+    }
+}
 
 
 class CAlignDistGraph 
