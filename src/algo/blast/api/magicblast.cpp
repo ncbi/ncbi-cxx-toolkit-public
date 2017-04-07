@@ -35,6 +35,7 @@
 #include <objects/general/User_object.hpp>
 #include <algo/blast/core/spliced_hits.h>
 #include <algo/blast/api/prelim_stage.hpp>
+#include <algo/blast/api/blast_results.hpp>
 #include <algo/blast/api/magicblast.hpp>
 
 #include "blast_seqalign.hpp"
@@ -62,6 +63,40 @@ CMagicBlast::CMagicBlast(CRef<IQueryFactory> query_factory,
 
 
 CRef<CSeq_align_set> CMagicBlast::Run(void)
+{
+    x_Run();
+
+    // close HSP stream and create internal results structure
+    BlastMappingResults* results = Blast_MappingResultsNew();
+    CRef< CStructWrapper<BlastMappingResults> > wrapped_results;
+    wrapped_results.Reset(WrapStruct(results, Blast_MappingResultsFree));
+
+    BlastHSPStreamMappingClose(m_InternalData->m_HspStream->GetPointer(),
+                               results);
+
+    // build and return results
+    return x_BuildSeqAlignSet(results);
+}
+
+
+CRef<CMagicBlastResultSet> CMagicBlast::RunEx(void)
+{
+    x_Run();
+
+    // close HSP stream and create internal results structure
+    BlastMappingResults* results = Blast_MappingResultsNew();
+    CRef< CStructWrapper<BlastMappingResults> > wrapped_results;
+    wrapped_results.Reset(WrapStruct(results, Blast_MappingResultsFree));
+
+    BlastHSPStreamMappingClose(m_InternalData->m_HspStream->GetPointer(),
+                               results);
+
+    // build and return results
+    return x_BuildResultSet(results);
+}
+
+
+int CMagicBlast::x_Run(void)
 {
     CRef<CBlastPrelimSearch> prelim_search(new CBlastPrelimSearch(m_Queries,
                                                             m_Options,
@@ -143,16 +178,7 @@ CRef<CSeq_align_set> CMagicBlast::Run(void)
 
     }
 
-    // close HSP stream and create internal results structure
-    BlastMappingResults* results = Blast_MappingResultsNew();
-    CRef< CStructWrapper<BlastMappingResults> > wrapped_results;
-    wrapped_results.Reset(WrapStruct(results, Blast_MappingResultsFree));
-
-    BlastHSPStreamMappingClose(m_InternalData->m_HspStream->GetPointer(),
-                               results);
-
-    // create and return results as ASN.1 objects
-    return x_CreateSeqAlignSet(results);
+    return 0;
 }
 
 
@@ -298,51 +324,159 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
 }
 
 CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
-                                                BlastMappingResults* results)
+                                           HSPChain* chains,
+                                           CRef<ILocalQueryData> qdata,
+                                           CRef<IBlastSeqInfoSrc> seqinfo_src)
 {
     CRef<CSeq_align_set> seq_aligns = CreateEmptySeq_align_set();
 
-    CRef<ILocalQueryData> qdata = m_Queries->MakeLocalQueryData(m_Options);
-    
+    // single spliced alignment
+    for (HSPChain* chain = chains; chain; chain = chain->next) {
+
+        // mate pairs are processed together when the first one is
+        // encountered, so skip the second of the pair
+        if (chain->pair && chain->context > chain->pair->context) {
+            continue;
+        }
+
+        CRef<CSeq_align> align;
+
+        // pairs are reported as disc seg alignment composed of two
+        // spliced segs
+        if (chain->pair) {
+            align.Reset(new CSeq_align);
+            align->SetType(CSeq_align::eType_partial);
+            align->SetDim(2);
+
+            CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
+            disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src));
+            disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
+                                                  seqinfo_src));
+        }
+        else {
+            align = s_CreateSeqAlign(chain, qdata, seqinfo_src);
+        }
+
+        seq_aligns->Set().push_back(align);
+    }
+
+    return seq_aligns;
+}
+
+
+CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
+                                           const BlastMappingResults* results)
+{
+    TSeqAlignVector aligns;
+    aligns.reserve(results->num_queries);
+
+    CSearchResultSet::TQueryIdVector query_ids;
+    query_ids.reserve(results->num_queries);
+
+    CRef<ILocalQueryData> query_data = m_Queries->MakeLocalQueryData(m_Options);
     CRef<IBlastSeqInfoSrc> seqinfo_src;
     seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
     _ASSERT(seqinfo_src);
     seqinfo_src->GarbageCollect();
 
-    for (int i=0;i < results->num_queries;i++) {
-        // single spliced alignment
-        HSPChain* chain = results->chain_array[i];
-        for (; chain; chain = chain->next) {
+    _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
 
-            // mate pairs are processed together when the first one is
-            // encountered, so skip the second of the pair
-            if (chain->pair && chain->context > chain->pair->context) {
-                continue;
+    CRef<CSeq_align_set> retval(new CSeq_align_set);
+    for (int index=0;index < results->num_queries;index++) {
+        HSPChain* chains = results->chain_array[index];
+        CRef<CSeq_align_set> seq_aligns(x_CreateSeqAlignSet(chains, query_data,
+                                                            seqinfo_src));
+
+        for (auto it: seq_aligns->Get()) {
+            retval->Set().push_back(it);
+        }
+    }
+    
+    return retval;
+}
+
+
+CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
+                                           const BlastMappingResults* results)
+{
+    CRef<ILocalQueryData> query_data = m_Queries->MakeLocalQueryData(m_Options);
+    CRef<IBlastSeqInfoSrc> seqinfo_src;
+    seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
+    _ASSERT(seqinfo_src);
+    seqinfo_src->GarbageCollect();
+
+    BlastQueryInfo* query_info = m_InternalData->m_QueryInfo;
+    _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
+
+    CRef<CMagicBlastResultSet> retval(new CMagicBlastResultSet);
+    retval->reserve(results->num_queries);
+
+    for (int index=0;index < results->num_queries;index++) {
+        HSPChain* chains = results->chain_array[index];
+        CConstRef<CSeq_id> query_id(query_data->GetSeq_loc(index)->GetId());
+        CRef<CSeq_align_set> aligns(x_CreateSeqAlignSet(chains, query_data,
+                                                        seqinfo_src));
+
+        CRef<CMagicBlastResults> res;
+
+        if (query_info->contexts[index * NUM_STRANDS].segment_flags ==
+            eFirstSegment) {
+
+            CConstRef<CSeq_id> mate_id(
+                                 query_data->GetSeq_loc(index + 1)->GetId());
+
+            chains = results->chain_array[index + 1];
+            CRef<CSeq_align_set> mate_aligns(x_CreateSeqAlignSet(chains,
+                                                    query_data, seqinfo_src));
+
+            for (auto it: mate_aligns->Get()) {
+                aligns->Set().push_back(it);
             }
 
-            CRef<CSeq_align> align;
+            index++;
 
-            // pairs are reported as disc seg alignment composed of two
-            // spliced segs
-            if (chain->pair) {
-                align.Reset(new CSeq_align);
-                align->SetType(CSeq_align::eType_partial);
-                align->SetDim(2);
+            res.Reset(new CMagicBlastResults(query_id, mate_id, aligns));
+        }
+        else {
+            res.Reset(new CMagicBlastResults(query_id, aligns));
+        }
 
-                CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
-                disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src));
-                disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
-                                                  seqinfo_src));
-            }
-            else {
-                align = s_CreateSeqAlign(chain, qdata, seqinfo_src);
-            }
+        retval->push_back(res);
+    }
+    
+    return retval;
+}
 
-            seq_aligns->Set().push_back(align);
+
+CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
+                                       CConstRef<CSeq_id> mate_id,
+                                       CRef<CSeq_align_set> aligns)
+    : m_QueryId(query_id),
+      m_MateId(mate_id),
+      m_Aligns(aligns),
+      m_Paired(true)
+{}
+
+
+CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
+                                       CRef<CSeq_align_set> aligns)
+    : m_QueryId(query_id),
+      m_Aligns(aligns),
+      m_Paired(false)
+{}
+
+
+CRef<CSeq_align_set> CMagicBlastResultSet::GetFlatResults(void)
+{
+    CRef<CSeq_align_set> retval(new CSeq_align_set);
+
+    for (auto result: *this) {
+        for (auto it: result->GetSeqAlign()->Get()) {
+            retval->Set().push_back(it);
         }
     }
 
-    return seq_aligns;
+    return retval;
 }
 
 

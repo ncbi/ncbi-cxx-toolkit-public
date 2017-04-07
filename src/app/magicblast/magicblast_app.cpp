@@ -485,6 +485,23 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align_set& aligns,
     return ostr;
 }
 
+CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
+                           const CMagicBlastResultSet& results,
+                           const BLAST_SequenceBlk* queries,
+                           const BlastQueryInfo* query_info,
+                           bool is_paired, int batch_number)
+{
+    int compartment = 0;
+    for (auto r: results) {
+        for (auto it: r->GetSeqAlign()->Get()) {
+            PrintTabular(ostr, *it, queries, query_info, is_paired,
+                         batch_number, compartment++);
+            ostr << endl;
+        }
+    }
+
+    return ostr;
+}
 
 CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
                              CRef<CLocalDbAdapter> db_adapter,
@@ -1058,6 +1075,24 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align_set& aligns,
 }
 
 
+CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
+                       const BLAST_SequenceBlk* queries,
+                       const BlastQueryInfo* query_info,
+                       int batch_number,
+                       bool trim_read_id)
+{
+    for (auto r: results) {
+        for (auto it: r->GetSeqAlign()->Get()) {
+            PrintSAM(ostr, *it, queries, query_info, batch_number, 0,
+                     trim_read_id);
+            ostr << endl;
+        }
+    }
+
+    return ostr;
+}                       
+
+
 static CShortReadFastaInputSource::EInputFormat
 s_QueryOptsInFmtToFastaInFmt(CMapperQueryOptionsArgs::EInputFormat infmt)
 {
@@ -1336,7 +1371,7 @@ int CMagicBlastApp::Run(void)
                     CRef<IQueryFactory> queries(
                                   new CObjMgrFree_QueryFactory(query_batch));
 
-                    CRef<CSeq_align_set> results;
+                    CRef<CMagicBlastResultSet> results;
                     CRef<CBlastOptions> options = opt.Clone();
                     CRef<CMagicBlastOptionsHandle> magic_opts(
                                    new CMagicBlastOptionsHandle(options));
@@ -1373,7 +1408,7 @@ int CMagicBlastApp::Run(void)
                     CMagicBlast magicblast(queries, thread_db_adapter, magic_opts);
                     // these are threads by database chunks
                     magicblast.SetNumberOfThreads(num_db_threads);
-                    results = magicblast.Run();
+                    results = magicblast.RunEx();
 
                     // format ouput
                     if (fmt_args->GetFormattedOutputChoice() ==
@@ -1393,7 +1428,8 @@ int CMagicBlastApp::Run(void)
                     else if (fmt_args->GetFormattedOutputChoice() ==
                              CFormattingArgs::eAsnText) {
 
-                        os_vector[thread_index] << MSerial_AsnText << *results;
+                        os_vector[thread_index] << MSerial_AsnText <<
+                            *results->GetFlatResults();
                     }
                     else {
                 

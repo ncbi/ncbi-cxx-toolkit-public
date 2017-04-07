@@ -33,6 +33,7 @@
 #ifndef ALGO_BLAST_API___MAGICBLAST__HPP
 #define ALGO_BLAST_API___MAGICBLAST__HPP
 
+#include <algo/blast/core/spliced_hits.h>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
@@ -49,6 +50,7 @@ BEGIN_SCOPE(blast)
 
 // Forward declarations
 class IQueryFactory;
+class CMagicBlastResultSet;
 
 /// BLAST RNA-Seq mapper
 class NCBI_XBLAST_EXPORT CMagicBlast : public CObject, public CThreadable
@@ -73,6 +75,8 @@ public:
     /// Run the RNA-Seq mapping
     CRef<CSeq_align_set> Run(void);
 
+    CRef<CMagicBlastResultSet> RunEx(void);
+
     TSearchMessages GetSearchMessages(void) const
     {return m_Messages;}
 
@@ -86,8 +90,20 @@ protected:
     /// Perform sanity checks on input arguments
     void x_Validate(void);
 
+    int x_Run(void);
+
+
+    CRef<CSeq_align_set> x_BuildSeqAlignSet(
+                                      const BlastMappingResults* results);
+
+    CRef<CMagicBlastResultSet> x_BuildResultSet(
+                                      const BlastMappingResults* results);
+
+    
     /// Create results
-    CRef<CSeq_align_set> x_CreateSeqAlignSet(BlastMappingResults* results);
+    static CRef<CSeq_align_set> x_CreateSeqAlignSet(HSPChain* results,
+                                           CRef<ILocalQueryData> qdata,
+                                           CRef<IBlastSeqInfoSrc> seqinfo_src);
 
 private:
     /// Queries
@@ -104,6 +120,99 @@ private:
 
     /// Warning and error messages
     TSearchMessages m_Messages;
+};
+
+
+/// Magic-BLAST results for a single query/read or a pair of reads
+class NCBI_XBLAST_EXPORT CMagicBlastResults : public CObject
+{
+public:
+    /// Constructor for a pair
+    CMagicBlastResults(CConstRef<CSeq_id> query_id, CConstRef<CSeq_id> mate_id,
+                       CRef<CSeq_align_set> aligns);
+
+    /// Constructor for a single read
+    CMagicBlastResults(CConstRef<CSeq_id> query_id,
+                       CRef<CSeq_align_set> aligns);
+
+    /// Get Alignments
+    CRef<CSeq_align_set> GetSeqAlign(void) {return m_Aligns;}
+
+    /// Are alignments computed for paired reads
+    bool IsPaired(void) const {return m_Paired;}
+
+private:
+    /// Query id
+    CConstRef<CSeq_id> m_QueryId;
+
+    /// Mate id if results are for paired reads
+    CConstRef<CSeq_id> m_MateId;
+
+    /// Alignments for a single or a pair of reads
+    CRef<CSeq_align_set> m_Aligns;
+
+    /// True if results are for paired reads
+    bool m_Paired;
+};
+
+
+/// Results of Magic-BLAST mapping
+class NCBI_XBLAST_EXPORT CMagicBlastResultSet : public CObject
+{
+public:
+
+    /// data type contained by this container
+    typedef CRef<CMagicBlastResults> value_type;
+
+    /// size_type type definition
+    typedef vector<value_type>::size_type size_type;
+
+    /// const_iterator type definition
+    typedef vector<value_type>::const_iterator const_iterator;
+
+    /// iterator type definition
+    typedef vector<value_type>::iterator iterator;
+
+    /// Create an empty results set
+    CMagicBlastResultSet(void) {}
+
+    /// Get all results as a single Seq-align-set object
+    CRef<CSeq_align_set> GetFlatResults(void);
+
+    /// Get number of results, provided to facilitate STL-style iteration
+    size_type size() const {return m_Results.size();}
+
+    /// Is the container empty
+    bool empty() const {return size() == 0;}
+    
+    /// Returns const iteartor to the beginning of the container,
+    /// provided to facilitate STL-style iteartion
+    const_iterator begin() const {return m_Results.begin();}
+
+    /// Returns const iterator to the end of the container
+    const_iterator end() const {return m_Results.end();}
+
+    /// Returns iterator to the beginning of the container
+    iterator begin() {return m_Results.begin();}
+
+    /// Returns iterator to the end of the container
+    iterator end() {return m_Results.end();}
+
+    /// Clear all results
+    void clear() {m_Results.clear();}
+
+    /// Reserve memory for a number of result elemetns
+    void reserve(size_t num) {m_Results.reserve(num);}
+
+    /// Add results to the end of the container
+    void push_back(CMagicBlastResultSet::value_type& element)
+    {m_Results.push_back(element);}
+
+private:
+    CMagicBlastResultSet(const CMagicBlastResultSet&);
+    CMagicBlastResultSet& operator=(const CMagicBlastResultSet&);
+
+    vector< CRef<CMagicBlastResults> > m_Results;
 };
 
 
