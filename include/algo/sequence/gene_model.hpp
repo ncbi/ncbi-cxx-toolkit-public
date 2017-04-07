@@ -179,8 +179,10 @@ public:
     /// Similar to s_ProjectRNA(...)
     /// Postcondition: seq-vector of the returned loc is of exact same length and has no indels 
     ///                relative to the seq-vector of the product_cds_loc truncated to the alignment boundaries.
+    /// 1-2 bp overlaps converted to gaps preserving frame if convert_overlaps = true
     static CRef<objects::CSeq_loc> s_ProjectCDS(const objects::CSeq_align& spliced_aln, 
-                                                const objects::CSeq_loc& product_cds_loc);
+                                                const objects::CSeq_loc& product_cds_loc,
+                                                bool convert_overlaps = true);
 
 private:
     struct SImplementation;

@@ -215,8 +215,13 @@ T53Partialness GetTerminalPartialness(
     } else {
         // cds-exons 5p/3p-terminal partialness is based on whether the 
         // product-cds-loc terminals are covered by the alignment.
-        const TSeqPos cds_start = product_cds_loc->GetStart(eExtreme_Positional);
-        const TSeqPos cds_stop  = product_cds_loc->GetStop(eExtreme_Positional);
+        TSeqPos cds_start = product_cds_loc->GetStart(eExtreme_Positional);
+        TSeqPos cds_stop  = product_cds_loc->GetStop(eExtreme_Positional);
+        if (spliced_aln.GetSegs().GetSpliced().GetProduct_type()
+            == CSpliced_seg::eProduct_type_protein) {
+            cds_start *= 3;
+            cds_stop = cds_stop*3+2;
+        }
         
         bool start_covered = false;
         bool stop_covered = false;
@@ -224,11 +229,11 @@ T53Partialness GetTerminalPartialness(
                 spliced_aln.GetSegs().GetSpliced().GetExons()) 
         {
             const CSpliced_exon& exon = **it;
-            start_covered |= cds_start >= exon.GetProduct_start().GetNucpos()
-                          && cds_start <= exon.GetProduct_end().GetNucpos();
+            start_covered |= cds_start >= exon.GetProduct_start().AsSeqPos()
+                          && cds_start <= exon.GetProduct_end  ().AsSeqPos();
 
-            stop_covered |= cds_stop >= exon.GetProduct_start().GetNucpos()
-                         && cds_stop <= exon.GetProduct_end().GetNucpos();
+            stop_covered  |= cds_stop  >= exon.GetProduct_start().AsSeqPos()
+                          && cds_stop  <= exon.GetProduct_end  ().AsSeqPos();
         }
 
         partialness.first  = !start_covered 
@@ -295,7 +300,7 @@ void AugmentPartialness(CSeq_loc& loc, T53Partialness partialness)
 struct NTweakExon
 {
 public:
-    static CRef<CSeq_loc> TweakExon(const CSeq_loc& orig_loc)
+    static CRef<CSeq_loc> TweakExon(const CSeq_loc& orig_loc, bool convert_overlaps)
     {
         if(!orig_loc.IsPacked_int()) {
             NCBI_THROW(CException, eUnknown, "Expected packed-int");
@@ -317,8 +322,10 @@ public:
             NcbiCerr << "Subs:  " << AsString(loc->GetPacked_int()) << "\n";
             AdjustBiostops                   (loc->SetPacked_int());
             NcbiCerr << "Adj2:  " << AsString(loc->GetPacked_int()) << "\n";
+            if (convert_overlaps) {
             ConvertOverlapsToGaps            (loc->SetPacked_int());
             NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
+            }
             CollapseNonframeshiftting        (loc->SetPacked_int());
             NcbiCerr << "Final: " << AsString(loc->GetPacked_int()) << "\n";
             NcbiCerr << "Tweaked: " 
@@ -328,7 +335,9 @@ public:
             AdjustBiostops            (loc->SetPacked_int());
             SubsumeMicroIntervals     (loc->SetPacked_int());
             AdjustBiostops            (loc->SetPacked_int());
+            if (convert_overlaps) {
             ConvertOverlapsToGaps     (loc->SetPacked_int());
+            }
             CollapseNonframeshiftting (loc->SetPacked_int());
         }
 
@@ -749,7 +758,8 @@ public:
 static CRef<CSeq_loc> ProjectExon_oldlogic(
         const CSpliced_exon& spliced_exon, 
         const CSeq_id& aln_genomic_id,  //of the parent alignment (if not specified in spliced_exon)
-        ENa_strand aln_genomic_strand)  //of the parent alignment (if not specified in spliced_exon)
+        ENa_strand aln_genomic_strand,  //of the parent alignment (if not specified in spliced_exon)
+        bool convert_overlaps)
 {
     CRef<CSeq_loc> exon_loc(new CSeq_loc(CSeq_loc::e_Packed_int));
 
@@ -844,7 +854,7 @@ static CRef<CSeq_loc> ProjectExon_oldlogic(
         exon_loc->SetPacked_int().Set().push_back(chunk);
     }
 
-    exon_loc = NTweakExon::TweakExon(*exon_loc);
+    exon_loc = NTweakExon::TweakExon(*exon_loc, convert_overlaps);
     return exon_loc;
 }
 
@@ -1159,12 +1169,13 @@ static CRef<CSeq_loc> ProjectExon_newlogic(
 static CRef<CSeq_loc> ProjectExon(
         const CSpliced_exon& exon, 
         const CSeq_id& aln_genomic_id, 
-        ENa_strand aln_genomic_strand)  
+        ENa_strand aln_genomic_strand,
+        bool convert_overlaps)  
 {
     CRef<CSeq_loc> exon_loc;
    
     try {
-        exon_loc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand);
+        exon_loc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand, convert_overlaps);
     } catch(CException&) {
         exon_loc = ProjectExon_newlogic(exon, aln_genomic_id, aln_genomic_strand);
 
@@ -1259,7 +1270,8 @@ terminals of "naively-mapped" exons.
 CRef<CSeq_loc> ProjectCDSExon(
         const CSeq_align& spliced_aln,
         const CSpliced_exon& spliced_exon,
-        const CSeq_loc& product_cds_loc)
+        const CSeq_loc& product_cds_loc,
+        bool convert_overlaps)
 {
     CRef<CSeq_align> exon_aln(SerialClone(spliced_aln)); 
     exon_aln->ResetScore();
@@ -1500,7 +1512,8 @@ CRef<CSeq_loc> TruncateToCDS(
 
 
 CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln, 
-                            CConstRef<CSeq_loc> product_cds_loc, 
+                            CConstRef<CSeq_loc> product_cds_loc,
+                            bool convert_overlaps,
                             size_t unaligned_ends_partialness_thr = 0)
 {
     CRef<CSeq_loc> exons_loc(new CSeq_loc(CSeq_loc::e_Mix));
@@ -1518,7 +1531,8 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
                 ProjectExon(
                       spliced_exon, 
                       spliced_aln.GetSeq_id(1), 
-                      spliced_aln.GetSeqStrand(1)),
+                      spliced_aln.GetSeqStrand(1),
+                      convert_overlaps),
                 genomic_collapsed_cds);
 
         const T53Partialness partialness =
@@ -1667,6 +1681,7 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
         ProjectExons(
                 spliced_aln,
                 CConstRef<CSeq_loc>(NULL),
+                true,
                 unaligned_ends_partialness_thr);
 
     TSeqPos cds_start(kInvalidSeqPos), 
@@ -1699,11 +1714,13 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
 
 CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
         const CSeq_align& spliced_aln,
-        const CSeq_loc& product_cds_loc)
+        const CSeq_loc& product_cds_loc,
+        bool convert_overlaps)
 {
     return ProjectExons(
             spliced_aln, 
-            CConstRef<CSeq_loc>(&product_cds_loc));
+            CConstRef<CSeq_loc>(&product_cds_loc),
+            convert_overlaps);
 }
 
 
