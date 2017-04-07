@@ -11,3 +11,5 @@ target_link_libraries(test_hash-app
     xncbi
 )
 
+add_test(NAME test_hash-app
+         COMMAND $<TARGET_FILE:test_hash-app>)

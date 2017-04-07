@@ -11,3 +11,5 @@ target_link_libraries(test_ncbi_tree-app
     xncbi
 )
 
+add_test(NAME test_ncbi_tree-app
+         COMMAND $<TARGET_FILE:test_ncbi_tree-app>)

@@ -5,3 +5,5 @@ add_executable(test_strdbl
 target_link_libraries(test_strdbl
     xncbi
 )
+add_test(NAME test_strdbl
+         COMMAND $<TARGET_FILE:test_strdbl>)

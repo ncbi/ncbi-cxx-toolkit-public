@@ -11,3 +11,5 @@ target_link_libraries(test_fstream_pushback-app
     test_mt xpbacktest
 )
 
+add_test(NAME test_fstream_pushback-app
+         COMMAND $<TARGET_FILE:test_fstream_pushback-app>)

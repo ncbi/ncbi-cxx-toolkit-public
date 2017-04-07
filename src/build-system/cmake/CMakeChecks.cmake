@@ -51,6 +51,12 @@ SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH false)
 
 
+############################################################################
+#
+# Testing
+enable_testing()
+
+
 #
 # Basic checks
 #
