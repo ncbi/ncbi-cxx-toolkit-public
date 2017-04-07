@@ -123,6 +123,8 @@ private:
     x_MakeMergeableGroups(list<CRef<objects::CSeq_align> > Input, 
                           TAlignGroupMap& AlignGroupMap);
 
+    void x_SplitGlobalUnique(const TAlignVec& Input, TAlignVec& Unique, TAlignVec& Other);
+
     void 
     x_Merge_Dist_Impl(TAlignVec& Aligns,
                       objects::CSeq_id_Handle QueryIDH, objects::CSeq_id_Handle SubjtIDH,
