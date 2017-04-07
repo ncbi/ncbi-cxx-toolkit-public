@@ -47,6 +47,9 @@
 #  include <corelib/ncbistl.hpp>
 #  include <boost/static_assert.hpp>
 #  include <boost/version.hpp>
+#  ifndef BOOST_STATIC_ASSERT_MSG
+#    define BOOST_STATIC_ASSERT_MSG(a, m) BOOST_STATIC_ASSERT(a)
+#  endif
 BEGIN_LOCAL_NAMESPACE;
 BOOST_STATIC_ASSERT_MSG(BOOST_VERSION == NCBI_EXPECTED_BOOST_VERSION,
     "Boost version skew detected; please remember to use $(BOOST_INCLUDE)!"
