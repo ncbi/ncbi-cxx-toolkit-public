@@ -653,7 +653,6 @@ CVariation_inst::TType
 CVariation_inst::TType
     CVariationUtilities::GetVariationType(const CVariation& var)
 {
-    LOG_POST(Trace << MSerial_AsnText << var);
     if(!var.IsSetData()) {
         return CVariation_inst::eType_unknown;
     }
