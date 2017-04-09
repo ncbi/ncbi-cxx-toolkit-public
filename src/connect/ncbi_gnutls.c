@@ -746,8 +746,8 @@ static void s_GnuTlsExit(void)
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
 
-    /* If GNUTLS is loaded as DLL, it still has init count 1, so make sure
-     * cleanup worked completely (MSVC2015 ReleaseDLL build breaks) */
+    /* If GNUTLS is loaded as a DLL, it still has init count 1, so make sure
+     * cleanup worked completely (MSVC2015 ReleaseDLL build breaks if not) */
     gnutls_global_deinit();
 }
 
