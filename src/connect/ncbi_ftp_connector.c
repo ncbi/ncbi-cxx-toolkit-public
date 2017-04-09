@@ -89,7 +89,9 @@ typedef struct {
     unsigned              send:1;  /* true when in send mode (STOR/APPE)     */
     unsigned              open:1;  /* true when data open ok in send mode    */
     unsigned              rclr:1;  /* true when "rest" to clear by next cmd  */
-    unsigned              soft:12; /* learned server features (future ext)   */
+    unsigned              abor:1;  /* last cmd was ABOR (proftpd bug w/450)  */
+    unsigned              free:1;  /* unused                                 */
+    unsigned              soft:10; /* learned server features (future ext)   */
     TFTP_Features         feat;    /* FTP server features as discovered      */
     TFTP_Flags            flag;    /* connector flags per constructor        */
     SFTP_Callback         cmcb;    /* user-provided command callback         */
@@ -209,7 +211,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
 
     assert(xxx->cntl);
 
-    for (lineno = 0 ; ; lineno++) {
+    for (lineno = 0;  ;  ++lineno) {
         EIO_Status rdstat;
         const char* msg;
         char buf[1024];
@@ -241,7 +243,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
             m = 0;
         }
         msg += strspn(msg, " \t");
-        if (status == eIO_Success  &&  replycb)
+        if (status == eIO_Success  &&  replycb  &&  !(c == 450  &&  xxx->abor))
             status  = replycb(xxx, lineno  &&  m ? 0 : c, lineno, msg);
         if (!lineno) {
             *code = c;
@@ -250,6 +252,10 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
         }
         if (m)
             break;
+    }
+    if (*code == 450  &&  xxx->abor) {
+        xxx->abor = 0/*false*/;
+        status = x_FTPParseReply(xxx, code, line, maxlinelen, replycb);
     }
     return status;
 }
@@ -313,6 +319,10 @@ static EIO_Status s_FTPDrainReply(SFTPConnector* xxx, int* code, int cXX)
     int        quit = *code;
     *code = 0;
     while ((status = s_FTPReply(xxx, &c, 0, 0, 0)) == eIO_Success) {
+        if (c == 450  &&  xxx->abor) {
+            xxx->abor = 0/*false*/;
+            continue;
+        }
         *code = c;
         if ((quit  &&  quit == c)  ||  (cXX  &&  c / 100 == cXX))
             break;
@@ -800,6 +810,7 @@ static EIO_Status x_FTPAbort(SFTPConnector*  xxx,
                        ? eIO_Open/*warning*/ : eIO_Close/*silent*/, 0);
     }
     assert(!xxx->data);
+    xxx->abor = 1/*true*/;
     if (status == eIO_Success) {
         int         code = 426;
         int/*bool*/ sync = xxx->sync;
@@ -1624,6 +1635,8 @@ static EIO_Status s_FTPNegotiate(SFTPConnector* xxx,
 static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
 {
     EIO_Status status = eIO_Success;
+    int/*bool*/ abor = xxx->abor;
+    xxx->abor = 0/*false*/;
     while (SOCK_Wait(xxx->cntl, eIO_Read, &kZeroTimeout) == eIO_Success) {
         char buf[80];
         int  code;
@@ -1634,6 +1647,10 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         }
         status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
         if (status == eIO_Success) {
+            if (code == 450  &&  abor) {
+                abor = 0/*false*/;
+                continue;
+            }
             assert(!xxx->data  ||  xxx->send);
             CORE_LOGF_X(12, xxx->data ? eLOG_Error : eLOG_Warning,
                         ("[FTP%s%s]  %spurious response %d from server%s%s",
@@ -1649,6 +1666,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         if (status == eIO_Closed)
             break;
     }
+    xxx->abor = abor;
     return status;
 }
 
@@ -1764,6 +1782,8 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         free(s);
  out:
     xxx->w_status = status;
+    if (status != eIO_Timeout)
+        xxx->abor = 0/*false*/;
     BUF_Erase(xxx->wbuf);
     return status;
 }
@@ -1876,6 +1896,7 @@ static EIO_Status s_VT_Open
                                &xxx->cntl, 0, 0, fSOCK_KeepAlive
                                | (xxx->flag & fFTP_LogControl
                                   ? fSOCK_LogOn : fSOCK_LogDefault));
+        xxx->sync = 0/*false*/;
         if (status == eIO_Success) {
             SOCK_DisableOSSendDelay(xxx->cntl, 1/*yes,disable*/);
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
@@ -1889,7 +1910,7 @@ static EIO_Status s_VT_Open
             status  = x_FTPDir(xxx, 0,  xxx->info->path);
         }
         if (status == eIO_Success) {
-            xxx->send = xxx->open = xxx->rclr = 0/*false*/;
+            xxx->send = xxx->open = xxx->rclr = xxx->abor = 0/*false*/;
             assert(xxx->sync);
             xxx->rest = 0;
             break;
