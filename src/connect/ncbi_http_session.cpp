@@ -748,16 +748,16 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         NCBI_THROW(CHttpSessionException, eBadRequest,
             "An attempt to execute HTTP request already being executed");
     }
-    SConnNetInfo* connnetinfo = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
-        connnetinfo->version = 1;
+        net_info->version = 1;
     }
-    connnetinfo->req_method = m_Method;
+    net_info->req_method = m_Method;
 
     // Save headers set automatically (e.g. from CONN_HTTP_USER_HEADER).
-    if (connnetinfo->http_user_header) {
+    if (net_info->http_user_header) {
         CHttpHeaders usr_hdr;
-        usr_hdr.ParseHttpHeader(connnetinfo->http_user_header);
+        usr_hdr.ParseHttpHeader(net_info->http_user_header);
         m_Headers->Merge(usr_hdr);
     }
 
@@ -770,10 +770,10 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
     if ( !m_Timeout.IsDefault() ) {
         STimeout sto;
-        ConnNetInfo_SetTimeout(connnetinfo, g_CTimeoutToSTimeout(m_Timeout, sto));
+        ConnNetInfo_SetTimeout(net_info, g_CTimeoutToSTimeout(m_Timeout, sto));
     }
     if ( !m_Retries.IsNull() ) {
-        connnetinfo->max_try = x_RetriesToMaxtry(m_Retries);
+        net_info->max_try = x_RetriesToMaxtry(m_Retries);
     }
 
     m_Stream.Reset(new TStreamRef);
@@ -783,19 +783,19 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         m_IsService = false;
         m_Stream->SetConnStream(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
-            connnetinfo,
+            net_info,
             headers.c_str(),
             sx_ParseHeader,
             this,
             sx_Adjust,
             0, // cleanup
-            // Always set AdjustOnRedirect flag - we need this to send correct cookies.
+            // Always set AdjustOnRedirect flag - to send correct cookies.
             m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect));
     }
     else {
         // Try to resolve service name.
         m_IsService = true;
-        ConnNetInfo_SetUserHeader(connnetinfo, headers.c_str());
+        ConnNetInfo_SetUserHeader(net_info, headers.c_str());
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
         x_extra.data = this;
@@ -805,10 +805,10 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         m_Stream->SetConnStream(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
-            connnetinfo,
+            net_info,
             &x_extra));
     }
-    ConnNetInfo_Destroy(connnetinfo);
+    ConnNetInfo_Destroy(net_info);
 }
 
 
