@@ -255,6 +255,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
     }
     if (*code == 450  &&  xxx->abor) {
         xxx->abor = 0/*false*/;
+        /* http://bugs.proftpd.org/show_bug.cgi?id=4252 */
         status = x_FTPParseReply(xxx, code, line, maxlinelen, replycb);
     }
     return status;
