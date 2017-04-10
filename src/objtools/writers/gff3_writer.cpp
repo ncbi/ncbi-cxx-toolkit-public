@@ -1436,7 +1436,7 @@ bool CGff3Writer::xWriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
@@ -1798,14 +1798,15 @@ bool CGff3Writer::xAssignFeatureAttributes(
     }
 
     //attributes common to all feature types:
-    if (!xAssignFeatureAttributeProduct(record, mf) ||
+    if (//!xAssignFeatureAttributesQualifiers(record, mf) ||
+            !xAssignFeatureAttributeProduct(record, mf) ||
             !xAssignFeatureAttributeParent(record, fc, mf)  ||
             !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
             !xAssignFeatureAttributePartial(record, mf) ||
             !xAssignFeatureAttributeException(record, mf) ||
             !xAssignFeatureAttributeExperiment(record, mf) ||
             !xAssignFeatureAttributeFunction(record, mf) ||
-            !xAssignFeatureAttributesGoMarkup(record, mf) ||
+            !xAssignFeatureAttributesGoMarkup(record, mf) ||            
             !xAssignFeatureAttributeExonNumber(record, mf)  ||
             !xAssignFeatureAttributeEcNumbers(record, mf)  ||
             !xAssignFeatureAttributePseudo(record, mf)  ||
@@ -2124,13 +2125,13 @@ bool CGff3Writer::xAssignFeatureAttributesGoMarkup(
                 if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
                     continue;
                 }
-                string goMarkup = "";
                 const auto& goLabel = goField->GetLabel().GetStr();
                 if (goLabel == "Component"  &&  goField->IsSetData()  
                         &&  goField->GetData().IsFields()) {
                     const auto& fields = goField->GetData().GetFields();
-                    if (CWriteUtil::GetStringForGoMarkup(fields, goMarkup)) {
-                        record.SetAttribute("go_component", goMarkup);
+                    vector<string> goStrings;
+                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                        record.SetAttributes("go_component", goStrings);
                     }
                     CWriteUtil::GetListOfGoIds(fields, goIds);
                     continue;
@@ -2138,8 +2139,9 @@ bool CGff3Writer::xAssignFeatureAttributesGoMarkup(
                 if (goLabel == "Process"  &&  goField->IsSetData()  
                         &&  goField->GetData().IsFields()) {
                     const auto& fields = goField->GetData().GetFields();
-                    if (CWriteUtil::GetStringForGoMarkup(fields, goMarkup)) {
-                        record.SetAttribute("go_process", goMarkup);
+                    vector<string> goStrings;
+                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                        record.SetAttributes("go_process", goStrings);
                     }
                     CWriteUtil::GetListOfGoIds(fields, goIds);
                     continue;
@@ -2147,15 +2149,17 @@ bool CGff3Writer::xAssignFeatureAttributesGoMarkup(
                 if (goLabel == "Function"  &&  goField->IsSetData()  
                         &&  goField->GetData().IsFields()) {
                     const auto& fields = goField->GetData().GetFields();
-                    if (CWriteUtil::GetStringForGoMarkup(fields, goMarkup)) {
-                        record.SetAttribute("go_function", goMarkup);
+                    vector<string> goStrings;
+                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                        record.SetAttributes("go_function", goStrings);
                     }
                     CWriteUtil::GetListOfGoIds(fields, goIds);
                     continue;
                 }
             }
             if (!goIds.empty()) {
-                record.SetAttribute("Ontology_term", NStr::Join(goIds, ","));
+                //record.SetAttribute("Ontology_term", NStr::Join(goIds, ","));
+                record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
             }
         }
     }
@@ -2690,6 +2694,30 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
         return true;
     }
     record.SetAttribute("gene_biotype", biotype);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributesQualifiers(
+    CGffFeatureRecord& record,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    const CSeq_feat::TQual& quals = mf.GetQual();
+    for (const auto& qual: quals) {
+        if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
+            continue;
+        }
+        const string& key = qual->GetQual();
+        const string& value = qual->GetVal();
+        CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
+        //for now, retain all random junk:
+        //if (!CSeqFeatData::IsLegalQualifier(subtype, equal)) {
+        //    continue;
+        //}
+        record.SetAttribute(key, value);
+    } 
     return true;
 }
 

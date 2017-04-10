@@ -1149,7 +1149,21 @@ bool CWriteUtil::GetStringForGoMarkup(
     string& goMarkup)
 //  ----------------------------------------------------------------------------
 {
-    goMarkup = "";
+    vector<string> strings;
+    if (! CWriteUtil::GetStringsForGoMarkup(fields, strings)) {
+        return false;
+    }
+    goMarkup = NStr::Join(strings, ",");
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetStringsForGoMarkup(
+    const vector<CRef<CUser_field > >& fields,
+    vector<string>& goMarkup)
+//  ----------------------------------------------------------------------------
+{
+    goMarkup.clear();
     for (const auto& field: fields) {
         if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
                 ||  !field->GetLabel().GetId() == 0) {
@@ -1182,10 +1196,7 @@ bool CWriteUtil::GetStringForGoMarkup(
                 continue;
             }
         }
-        if (!goMarkup.empty()) {
-            goMarkup += ",";
-        }
-        goMarkup += descriptive + "|" + goId + "|" + pubmedId + "|" + evidence;
+        goMarkup.push_back(descriptive + "|" + goId + "|" + pubmedId + "|" + evidence);
     }
     return true;
 }

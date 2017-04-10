@@ -428,6 +428,9 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributesQualifiers(
+        CGffFeatureRecord&,
+        const CMappedFeat&);
     //end mss-234//
     bool xAssignFeatureAttributeModelEvidence(
         CGffFeatureRecord&,
