@@ -536,8 +536,13 @@ bool CVcfWriter::x_WriteFeatureId(
 
     vector<string> ids;
     const CVariation_ref& var = mf.GetData().GetVariation();
-    if ( var.IsSetId()  &&  var.GetId().GetTag().IsStr() ) {
-        ids.push_back( var.GetId().GetTag().GetStr() );
+    if ( var.IsSetId() ) {
+        if (var.GetId().GetTag().IsStr() ) {
+            ids.push_back( var.GetId().GetTag().GetStr() );
+        }
+        else {
+            ids.push_back( NStr::IntToString(var.GetId().GetTag().GetId()) );
+        }
     }
 
     if ( ids.empty() ) {
