@@ -611,7 +611,8 @@ CNCActiveSyncControl::x_StartScanSlots(void)
     if ( m_CntUnfinished == 0 && CNCBlobStorage::NeedStopWrite()) {
         // in this scenario, I do not start sync, but still accept sync requests from others
         RunAfter(CNCDistributionConf::GetPeriodicSyncInterval() / kUSecsPerSecond);
-        if (!m_Stuck && !CNCBlobStorage::IsDraining()) {
+        if (!m_Stuck && !CNCBlobStorage::IsDraining() &&
+            !CNCDistributionConf::GetPeers().empty()) {
             m_Stuck = true;
             CNCPeriodicSync::ReInitialize();
         }
