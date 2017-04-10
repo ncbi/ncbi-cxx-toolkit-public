@@ -1555,6 +1555,11 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     }
 
     cpy = orig_lat_lon;
+
+    // remove containing quotes
+    if (NStr::StartsWith(cpy, "\"") && NStr::EndsWith(cpy, "\"")) {
+        cpy = cpy.substr(1, cpy.length() - 2);
+    }
     
     // replace all 'O' (capital o) following non-alpha characters with '0' (zero)
     pos = NStr::Find (cpy, "O");
