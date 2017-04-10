@@ -1567,26 +1567,19 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
     if( (subtype == CSeqFeatData::eSubtype_regulatory) ||
         CSeqFeatData::IsRegulatory(subtype) )
     {
-        switch (qtype) 
-        {
-        case eQual_regulatory_class:
-            {
-                const CSeqFeatData::ESubtype regulatory_class_subtype =
-                    CSeqFeatData::GetRegulatoryClass(val);
-                if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
+        if (qtype == eQual_regulatory_class) {
+            const CSeqFeatData::ESubtype regulatory_class_subtype =
+                CSeqFeatData::GetRegulatoryClass(val);
+            if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
                     // msg will be sent in caller x_AddQualifierToFeature
-                    return false; 
-                } else {
-                    // okay 
-                    // (Note that at this time we don't validate
-                    // if the regulatory_class actually matches the
-                    // subtype)
-                    x_AddGBQualToFeature(sfp, qual, val);
-                    return true;
-                }
-            }
-        default:
-            break;
+                return false; 
+            } 
+            // okay 
+            // (Note that at this time we don't validate
+            // if the regulatory_class actually matches the
+            // subtype)
+            x_AddGBQualToFeature(sfp, qual, val);
+            return true;
         }
     }
 
