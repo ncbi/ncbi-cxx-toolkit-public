@@ -1798,7 +1798,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
     }
 
     //attributes common to all feature types:
-    if (//!xAssignFeatureAttributesQualifiers(record, mf) ||
+    if (!xAssignFeatureAttributesQualifiers(record, mf) ||
             !xAssignFeatureAttributeProduct(record, mf) ||
             !xAssignFeatureAttributeParent(record, fc, mf)  ||
             !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
