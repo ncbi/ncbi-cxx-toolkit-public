@@ -1,0 +1,27 @@
+#!/bin/sh
+
+WITH_VARS="libsxslt|DIR gnutls|DIR boost|DIR libxlsxwriter|DIR z|DIR bz2|dir lzo|DIR samtools|DIR glpk|DIR curl|dir sge|DIR"
+WITH_LIBXSLT_DOC="use libexslt installation in DIR"
+WITH_GNUTLS_DOC="use GNUTLS installation in DIR"
+WITH_BOOST_DOC="use Boost installation in DIR"
+WITH_LIBXLSXWRITER_DOC="use libxlsxwriter installation in DIR"
+WITH_Z_DOC="use zlib installation in DIR"
+WITH_BZ2_DOC="use bzlib installation in DIR"
+WITH_LZO_DOC="use LZO installation in DIR (requires 2.x or up)"
+WITH_SAMTOOLS_DOC="use SAMtools installation in DIR"
+WITH_GLPK_DOC="use GNU Linear Programming Kit installation in DIR"
+WITH_CURL_DOC="use libcurl installation in DIR"
+WITH_SGE_DOC="use Sun/Univa Grid Engine installation in DIR"
+
+#WITHOUT_VARS="libsxslt gnutls boost libxlsxwriter z bz2 lzo"
+WITHOUT_LIBXSLT_DOC="don not use libxslt"
+WITHOUT_BOOST_DOC="don not use Boost"
+WITHOUT_LIBXLSXWRITER_DOC="don not use libxlsxwriter"
+WITHOUT_Z_DOC="use internal copy of zlib"
+WIHTOUT_BZ2_DOC="use internal copy of bzlib"
+WIHTOUT_LZO_DOC="don not use LZO"
+WITH_SAMTOOLS_DOC="do not use SAMtools"
+WITHOUT_GLPK_DOC="do not 1use GNU Linear Programming Kit"
+WIHTOUT_CURL_DOC="do not use libcurl"
+WITHOUT_SGE_DOC="do not use Sun/Univa Grid Engine"
+
