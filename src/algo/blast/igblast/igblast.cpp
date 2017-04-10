@@ -55,6 +55,8 @@ static int max_allowed_VJ_distance_with_D = 90;
 static int max_allowed_VJ_distance_without_D = 40;
 static int max_allowed_VD_distance = 55;
 static int extend_length = 30;
+static int max_allowed_V_end_to_J_end =150;
+static int max_v_j_overlap = 7;
 
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
@@ -446,19 +448,19 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
             mask_list.push_back(mask);
             m_Query->SetMaskedRegions(iq, mask_list);
         } else {
-            // Excluding the V gene except the last 7 bp for D and J gene search;
-            // also limit the J match to 150bp beyond V gene.
+            // Excluding the V gene except the last max_v_j_overlap bp for D and J gene search;
+            // also limit the J match to max_allowed_V_end_to_J_end beyond V gene.
             int v_overlap;
             if (m_IgOptions->m_DetectOverlap && m_IgOptions->m_J_penalty == -3 && m_IgOptions->m_D_penalty == -4) {
-                v_overlap = 7;  
+                v_overlap = max_v_j_overlap;  
             } else {
                 v_overlap = 0;
             }
             bool ms = (*annot)->m_MinusStrand;
             int begin = (ms)? 
-              (*annot)->m_GeneInfo[0] - 150: (*annot)->m_GeneInfo[1] - 1 - v_overlap;
+              (*annot)->m_GeneInfo[0] - max_allowed_V_end_to_J_end: (*annot)->m_GeneInfo[1] - 1 - v_overlap;
             int end = (ms)? 
-              (*annot)->m_GeneInfo[0] + v_overlap: (*annot)->m_GeneInfo[1] + 150;
+              (*annot)->m_GeneInfo[0] + v_overlap: (*annot)->m_GeneInfo[1] + max_allowed_V_end_to_J_end;
             if (begin > 0) {
                 CRef<CSeqLocInfo> mask(
                   new CSeqLocInfo(new CSeq_interval(*q_id, 0, begin), 0));
@@ -519,9 +521,9 @@ void CIgBlast::x_SetupNoOverlapDSearch(const vector<CRef <CIgAnnotation> > &anno
             // Excluding the V gene and J gene
             bool ms = (*annot)->m_MinusStrand;
             int v_end_or_j_begin = (ms)? 
-                max((*annot)->m_GeneInfo[0] - 150, (*annot)->m_GeneInfo[5] - 1): (*annot)->m_GeneInfo[1] -1;
+                max((*annot)->m_GeneInfo[0] - max_allowed_V_end_to_J_end, (*annot)->m_GeneInfo[5] - 1): (*annot)->m_GeneInfo[1] -1;
             int j_begin_or_v_end = (ms)? 
-                (*annot)->m_GeneInfo[0]: min((*annot)->m_GeneInfo[4], (*annot)->m_GeneInfo[1] + 150);
+                (*annot)->m_GeneInfo[0]: min((*annot)->m_GeneInfo[4], (*annot)->m_GeneInfo[1] + max_allowed_V_end_to_J_end);
             if (v_end_or_j_begin > 0) {
                 CRef<CSeqLocInfo> mask(
                   new CSeqLocInfo(new CSeq_interval(*q_id, 0, v_end_or_j_begin), 0));
