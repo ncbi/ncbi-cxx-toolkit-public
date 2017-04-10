@@ -1568,12 +1568,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
         CSeqFeatData::IsRegulatory(subtype) )
     {
         if (qtype == eQual_regulatory_class) {
-            const CSeqFeatData::ESubtype regulatory_class_subtype =
-                CSeqFeatData::GetRegulatoryClass(val);
-            if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
+            if (val != "other") { // RW-374 "other" is a special case 
+                const CSeqFeatData::ESubtype regulatory_class_subtype =
+                    CSeqFeatData::GetRegulatoryClass(val);
+                if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
                     // msg will be sent in caller x_AddQualifierToFeature
-                return false; 
-            } 
+                    return false; 
+                } 
+            }
             // okay 
             // (Note that at this time we don't validate
             // if the regulatory_class actually matches the
