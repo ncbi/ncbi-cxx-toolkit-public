@@ -1557,7 +1557,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "Output file name for clonotype info",
                                CArgDescriptions::eOutputFile);
         
-        arg_desc.AddFlag(kArgDetectOverlap, "Allow V(D)J genes to overlap. Available only when D_penalty and J_penalty use the default values (-4 and -3, respectively)", true);
+        arg_desc.AddFlag(kArgDetectOverlap, "Allow V(D)J genes to overlap.  This option is active only when D_penalty and J_penalty are set to -4 and -3, respectively", true);
 
        
     }
