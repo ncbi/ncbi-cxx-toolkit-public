@@ -43,6 +43,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
+
 #include "subs_collector.hpp"
 
 /////////////////////////////////////////////////
@@ -230,6 +232,8 @@ bool CSubmissionCollector::ProcessFile(const string& name)
             m_header_not_set = false;
         }
 
+        CCleanup cleanup;
+
         if (seq_submit.GetData().IsEntrys()) {
             NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, entry, seq_submit.SetData().SetEntrys()) {
 
@@ -240,12 +244,14 @@ bool CSubmissionCollector::ProcessFile(const string& name)
                         NON_CONST_ITERATE(CBioseq_set::TSeq_set, internal_entry, (*entry)->SetSet().SetSeq_set()) {
 
                             AdjustLocalIds(**internal_entry);
+                            cleanup.BasicCleanup(**internal_entry);
                             WriteContainerElement(m_out, **internal_entry);
                         }
                     }
                 }
                 else {
                     AdjustLocalIds(**entry);
+                    cleanup.BasicCleanup(**entry);
                     WriteContainerElement(m_out, **entry);
                 }
 
