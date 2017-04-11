@@ -292,7 +292,7 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.wxwidgets.cmake)
 if (APPLE)
   find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0")
 else ()
-  find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRAFLAGS -lnsl)
+  find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRAFLAGS -lnsl)
 endif()
 # Fast-CGI lib:  (module to add to the "xcgi" library)
 set(FASTCGI_OBJS    fcgibuf)
@@ -331,35 +331,18 @@ set(SABLOT_INCLUDE      ${NCBI_TOOLS_ROOT}/Sablot-1.0.2/include)
 set(SABLOT_LIBS        -L${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -Wl,-rpath,/opt/ncbi/64/Sablot-1.0.2/lib64:${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -lsablot -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
 set(SABLOT_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -Wl,-rpath,/opt/ncbi/64/Sablot-1.0.2/lib64:${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -lsablot -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
 
-#find_external_library(libxml INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
+find_external_library(libxml INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
+set(LIBXML_INCLUDE     ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
 
-set(LIBXML_INCLUDE     ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2 
-                       ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include)
-set(LIBXML_LIBS        -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -Wl,-rpath,/opt/ncbi/64/libxml-2.7.8/${buildconf}/lib:${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxml2 )
+#if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
+#  set(LIBXML_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxml2-static)
+#endif(EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
 
-if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
-  set(LIBXML_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxml2-static)
-endif(EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
+find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBXML_LIBS})
+set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
 
-#find_external_library(libxslt INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/")
-set(LIBXSLT_INCLUDE    ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2 
-                       ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include 
-                      ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include)
-
-set(LIBXSLT_MAIN_LIBS  -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -Wl,-rpath,/opt/ncbi/64/libxml-2.7.8/${buildconf}/lib:${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxslt )
-set(LIBXSLT_MAIN_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxslt-static)
-set(XSLTPROC           ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/bin/xsltproc)
-set(LIBEXSLT_INCLUDE   ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2 
-                       ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include 
-                      ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include 
-                      ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include)
-set(LIBEXSLT_LIBS      -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -Wl,-rpath,/opt/ncbi/64/libxml-2.7.8/${buildconf}/lib:${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lexslt )
-set(LIBEXSLT_STATIC_LIBS=-L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lexslt-static)
-set(LIBXSLT_LIBS       ${LIBEXSLT_LIBS} ${LIBXSLT_MAIN_LIBS})
-
-#find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/")
-#set(LIBEXSLT_INCLUDE "${LIBEXSLT_INCLUDE} ${LIBXML_INCLUDE}")
-#set(LIBXSLT_LIBS ${LIBEXSLT_LIBS} ${LIBXSLT_MAIN_LIBS})
+find_external_library(libxslt INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
+set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
 
 if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxslt-static.a)
   set(LIBXSLT_STATIC_LIBS ${LIBEXSLT_STATIC_LIBS} ${LIBXSLT_MAIN_STATIC_LIBS})
