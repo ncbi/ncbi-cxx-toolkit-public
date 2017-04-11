@@ -2756,10 +2756,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
 
             CConstRef<CSeq_loc> feat_loc(&it->GetLocation()); 
 
-
-
-            CMappedFeat mapped_feat;
-
             feat_loc = s_NormalizeNullsBetween( feat_loc );
         
             // make sure location ends on the current bioseq
@@ -2798,8 +2794,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
                 }
             }
 
-            mapped_feat = *it;
-            item.Reset( x_NewFeatureItem(mapped_feat, ctx, feat_loc, m_Feat_Tree) );
+            item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
             // Add more features depending on user preferences
