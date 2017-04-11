@@ -1467,6 +1467,9 @@ private:
 
     /// Return sequence to buffer
     void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
+
+    /// Initialize Id Set
+    void x_InitIdSet();
 };
 
 END_NCBI_SCOPE

@@ -112,6 +112,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     try {
         if (gi_list || neg_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
             m_NeedTotalsScan = true;
+            x_InitIdSet();
         }
 
         if ((! m_OidListSetup) && (oid_begin || oid_end)) {
@@ -1789,44 +1790,47 @@ void CSeqDBImpl::HashToOids(unsigned hash, vector<int> & oids)
     }
 }
 
+void CSeqDBImpl::x_InitIdSet()
+{
+	if (m_IdSet.Blank()) {
+	        if (! m_UserGiList.Empty()) {
+	            // Note: this returns a 'blank' IdSet list for positive
+	            // lists that specify filtering using CSeq-id objects.
+
+	            if (m_UserGiList->GetNumGis()) {
+	                vector<TGi> gis;
+	                m_UserGiList->GetGiList(gis);
+
+	                CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
+	                m_IdSet = new_ids;
+	            } else if (m_UserGiList->GetNumTis()) {
+	                vector<TTi> tis;
+	                m_UserGiList->GetTiList(tis);
+
+	                CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
+	                m_IdSet = new_ids;
+	            }
+	        } else if (! m_NegativeList.Empty()) {
+	            const vector<TGi> & ngis = m_NegativeList->GetGiList();
+	            const vector<TTi> & ntis = m_NegativeList->GetTiList();
+	            const vector<string> & stis = m_NegativeList->GetSiList();
+
+	            if (! ngis.empty()) {
+	                CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
+	                m_IdSet = new_ids;
+	            } else if (! ntis.empty()) {
+	                CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
+	                m_IdSet = new_ids;
+	            } else if (!stis.empty()) {
+	                CSeqDBIdSet new_ids(stis, CSeqDBIdSet::eSi, false);
+	                m_IdSet = new_ids;
+	            }
+	        }
+	    }
+}
+
 CSeqDBIdSet CSeqDBImpl::GetIdSet()
 {
-    if (m_IdSet.Blank()) {
-        if (! m_UserGiList.Empty()) {
-            // Note: this returns a 'blank' IdSet list for positive
-            // lists that specify filtering using CSeq-id objects.
-
-            if (m_UserGiList->GetNumGis()) {
-                vector<TGi> gis;
-                m_UserGiList->GetGiList(gis);
-
-                CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
-                m_IdSet = new_ids;
-            } else if (m_UserGiList->GetNumTis()) {
-                vector<TTi> tis;
-                m_UserGiList->GetTiList(tis);
-
-                CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
-                m_IdSet = new_ids;
-            }
-        } else if (! m_NegativeList.Empty()) {
-            const vector<TGi> & ngis = m_NegativeList->GetGiList();
-            const vector<TTi> & ntis = m_NegativeList->GetTiList();
-            const vector<string> & stis = m_NegativeList->GetSiList();
-
-            if (! ngis.empty()) {
-                CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
-                m_IdSet = new_ids;
-            } else if (! ntis.empty()) {
-                CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
-                m_IdSet = new_ids;
-            } else if (!stis.empty()) {
-                CSeqDBIdSet new_ids(stis, CSeqDBIdSet::eSi, false);
-                m_IdSet = new_ids;
-            }
-        }
-    }
-
     return m_IdSet;
 }
 
