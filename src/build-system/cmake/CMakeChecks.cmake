@@ -382,13 +382,10 @@ find_library(MAGIC_LIBS magic)
 find_library(CURL_LIBS curl)
 
 # libmimetic (MIME handling)
-set(MIMETIC_INCLUDE  ${NCBI_TOOLS_ROOT}/mimetic-0.9.7-ncbi1/include)
-set(MIMETIC_LIBS    -L${NCBI_TOOLS_ROOT}/mimetic-0.9.7-ncbi1/GCC481-Debug64/lib -Wl,-rpath,/opt/ncbi/64/mimetic-0.9.7-ncbi1/GCC481-Debug64/lib:${NCBI_TOOLS_ROOT}/mimetic-0.9.7-ncbi1/GCC481-Debug64/lib -lmimetic )
+find_external_library(mimetic INCLUDES mimetic/mimetic.h LIBS mimetic HINTS "${NCBI_TOOLS_ROOT}/mimetic-0.9.7-ncbi1/")
 
 # libgSOAP++
-set(GSOAP_PATH     ${NCBI_TOOLS_ROOT}/gsoap-2.8.15)
-set(GSOAP_INCLUDE  ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include)
-set(GSOAP_LIBS     -L${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib -Wl,-rpath,/opt/ncbi/64/gsoap-2.8.15/GCC442-DebugMT64/lib:${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib -lgsoapssl++ -lssl -lcrypto -lz )
+find_external_library(gsoap INCLUDES stdsoap2.h LIBS gsoapssl++ INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/" EXTRAFLAGS -lssl -lcrypto -lz)
 set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/soapcpp2)
 set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/wsdl2h)
 
