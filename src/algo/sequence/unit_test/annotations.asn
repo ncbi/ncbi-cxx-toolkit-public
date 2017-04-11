@@ -6385,7 +6385,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "collagen, type II, alpha 1"
+        ext name "collagen type II alpha 1 chain"
       },
       partial TRUE,
       except TRUE,
@@ -7130,8 +7130,64 @@ Seq-annot ::= {
       },
       dbxref {
         {
+          db "GeneID",
+          tag id 406947
+        },
+        {
           db "miRBase",
           tag str "MIMAT0000646"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "hsa-miR-155-5p"
+        }
+      },
+      location int {
+        from 12608165,
+        to 12608187,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
+        }
+      },
+      dbxref {
+        {
+          db "miRBase",
+          tag str "MIMAT0000646"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "hsa-miR-155-3p"
+        }
+      },
+      location int {
+        from 12608204,
+        to 12608225,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406947
+        },
+        {
+          db "miRBase",
+          tag str "MIMAT0004658"
         }
       }
     },
@@ -7262,7 +7318,7 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
-      id local id 25763,
+      id local id 73063,
       data gene {
         locus "snoRNA:CG32479-a",
         syn {
@@ -7289,7 +7345,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 25764
+          id local id 73064
         }
       },
       dbxref {
@@ -7326,9 +7382,15 @@ Seq-annot ::= {
           version 3
         }
       },
+      qual {
+        {
+          qual "orig_transcript_id",
+          val "gnl|FlyBase|CR43576-RA"
+        }
+      },
       xref {
         {
-          id local id 25763
+          id local id 73063
         }
       },
       dbxref {
@@ -7347,7 +7409,7 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
-      id local id 24194,
+      id local id 48499,
       data gene {
         locus "mir-2279",
         desc "mir-2279 stem loop",
@@ -7370,13 +7432,13 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 24195
+          id local id 48500
         },
         {
-          id local id 24196
+          id local id 48501
         },
         {
-          id local id 24197
+          id local id 48502
         }
       },
       dbxref {
@@ -7413,15 +7475,21 @@ Seq-annot ::= {
           version 1
         }
       },
+      qual {
+        {
+          qual "orig_transcript_id",
+          val "gnl|FlyBase|CR42911-RM"
+        }
+      },
       xref {
         {
-          id local id 24194
+          id local id 48499
         },
         {
-          id local id 24196
+          id local id 48501
         },
         {
-          id local id 24197
+          id local id 48502
         }
       },
       dbxref {
@@ -7453,12 +7521,18 @@ Seq-annot ::= {
           version 1
         }
       },
+      qual {
+        {
+          qual "orig_transcript_id",
+          val "gnl|FlyBase|CR42911-RA"
+        }
+      },
       xref {
         {
-          id local id 24194
+          id local id 48499
         },
         {
-          id local id 24195
+          id local id 48500
         }
       },
       dbxref {
@@ -7494,12 +7568,18 @@ Seq-annot ::= {
           version 1
         }
       },
+      qual {
+        {
+          qual "orig_transcript_id",
+          val "gnl|FlyBase|CR42911-RB"
+        }
+      },
       xref {
         {
-          id local id 24194
+          id local id 48499
         },
         {
-          id local id 24195
+          id local id 48500
         }
       },
       dbxref {
@@ -9290,7 +9370,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "deiodinase, iodothyronine type III"
+        ext name "iodothyronine deiodinase 3"
       },
       partial TRUE,
       except TRUE,
@@ -10232,7 +10312,8 @@ Seq-annot ::= {
     {
       data gene {
         locus "OR4C45",
-        desc "olfactory receptor family 4 subfamily C member 45 (gene/pseudogene)"
+        desc "olfactory receptor family 4 subfamily C member 45
+ (gene/pseudogene)"
       },
       location int {
         from 49972873,
@@ -10248,17 +10329,14 @@ Seq-annot ::= {
         {
           db "HGNC",
           tag str "HGNC:31270"
-        },
-        {
-          db "HPRD",
-          tag id 17723
         }
       }
     },
     {
       data rna {
         type mRNA,
-        ext name "olfactory receptor family 4 subfamily C member 45"
+        ext name "olfactory receptor family 4 subfamily C member 45
+ (gene/pseudogene)"
       },
       except TRUE,
       comment "The RefSeq transcript has 1 substitution compared to this
