@@ -3,5 +3,5 @@
 #
 
 # Include projects from this directory
-include(CMakeLists.test_genomic_collections_svc.app.txt)
+include(CMakeLists.gc_cli.app.txt)
 

@@ -7,4 +7,4 @@ include(CMakeLists.genome_collection.asn.txt)
 include(CMakeLists.gencoll_client.asn.txt)
 
 # Recurse subdirectories
-add_subdirectory(test )
+add_subdirectory(gc_cli )

@@ -26,7 +26,7 @@
  * Authors:  Vinay Kumar
  *
  * File Description:
- *   Test for accessing the genomic_collection service.
+ *   Client for accessing the genomic_collection service.
  *
  */
 
@@ -163,7 +163,8 @@ private:
     }
 };
 
-class CTestGenomicCollectionsSvcApplication : public CNcbiApplication
+
+class CClientGenomicCollectionsSvcApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -172,14 +173,14 @@ private:
     int RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr);
 };
 
-void CTestGenomicCollectionsSvcApplication::Init(void)
+void CClientGenomicCollectionsSvcApplication::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
     // Specify USAGE context
     argDesc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Genomic Collections Service tester");
+                              "Genomic Collections Service client application");
 
     argDesc->AddKey("request", "request",
                             "Type of request", CArgDescriptions::eString);
@@ -203,7 +204,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
                     CArgDescriptions::eString);
     
     argDesc->AddOptionalKey("rel_id", "release_id",
-                    "Message to use for test",
+                    "Release id for the assembly to retrieve",
                     CArgDescriptions::eInteger);
     argDesc->SetDependency("acc", argDesc->eExcludes, "rel_id");
     
@@ -284,8 +285,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-//  Run test (printout arguments obtained from command-line)
-int CTestGenomicCollectionsSvcApplication::Run(void)
+int CClientGenomicCollectionsSvcApplication::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -346,10 +346,8 @@ void ForEachID(const string& ids, FUNC func)
     for_each(id.begin(), id.end(), func);
 }
 
-int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr)
+int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr)
 {
-    LOG_POST("testing genomic collections cgi.");
-
     const string request = args["request"].AsString();
     
     try {
@@ -472,5 +470,5 @@ int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsSer
 int main(int argc, const char* argv[])
 {
     GetDiagContext().SetOldPostFormat(false);
-    return CTestGenomicCollectionsSvcApplication().AppMain(argc, argv);
+    return CClientGenomicCollectionsSvcApplication().AppMain(argc, argv);
 }

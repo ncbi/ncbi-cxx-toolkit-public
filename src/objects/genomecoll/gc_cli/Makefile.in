@@ -10,7 +10,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = test_genomic_collections_svc
+APP_PROJ = gc_cli
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
