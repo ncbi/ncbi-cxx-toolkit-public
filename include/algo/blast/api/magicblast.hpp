@@ -135,11 +135,33 @@ public:
     CMagicBlastResults(CConstRef<CSeq_id> query_id,
                        CRef<CSeq_align_set> aligns);
 
-    /// Get Alignments
-    CRef<CSeq_align_set> GetSeqAlign(void) {return m_Aligns;}
+    /// Get alignments
+    CConstRef<CSeq_align_set> GetSeqAlign(void) const {return m_Aligns;}
+
+    /// Get non-const alignments
+    CRef<CSeq_align_set> SetSeqAlign(void) {return m_Aligns;}
 
     /// Are alignments computed for paired reads
     bool IsPaired(void) const {return m_Paired;}
+
+    /// Is the first segment of a paired read aligned
+    bool FirstAligned(void) const {return m_FirstAligned;}
+
+    /// Is the last segmenet of a paired read aligned
+    bool LastAligned(void) const {return m_LastAligned;}
+
+    /// Get query sequence id
+    const CSeq_id& GetQueryId(void) const {return *m_QueryId;}
+
+    /// Get sequence id of the first segment of a paired read
+    const CSeq_id& GetFirstId(void) const {return GetQueryId();}
+
+    /// Get sequence id of the last sequence of a paired read
+    const CSeq_id& GetLastId(void) const {return *m_MateId;}
+
+private:
+    void x_SetIsAligned(void);
+
 
 private:
     /// Query id
@@ -153,6 +175,12 @@ private:
 
     /// True if results are for paired reads
     bool m_Paired;
+
+    /// Is the first of segment of paired read aligned
+    bool m_FirstAligned;
+
+    /// Is the last segment of paired read aligned
+    bool m_LastAligned;
 };
 
 

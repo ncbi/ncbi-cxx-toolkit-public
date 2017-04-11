@@ -455,7 +455,9 @@ CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
       m_MateId(mate_id),
       m_Aligns(aligns),
       m_Paired(true)
-{}
+{
+    x_SetIsAligned();
+}
 
 
 CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
@@ -463,8 +465,35 @@ CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
     : m_QueryId(query_id),
       m_Aligns(aligns),
       m_Paired(false)
-{}
+{
+    x_SetIsAligned();
+}
 
+
+void CMagicBlastResults::x_SetIsAligned(void)
+{
+    m_FirstAligned = false;
+    m_LastAligned = false;
+
+    if (!m_Paired) {
+        m_FirstAligned = !m_Aligns->Get().empty();
+        return;
+    }
+
+    for (auto it: m_Aligns->Get()) {
+        if (it->GetSegs().IsDisc()) {
+            m_FirstAligned = true;
+            m_LastAligned = true;
+            break;
+        }
+        else if (it->GetSeq_id(0).Match(*m_QueryId)) {
+            m_FirstAligned = true;
+        }
+        else if (it->GetSeq_id(0).Match(*m_MateId)) {
+            m_LastAligned = true;
+        }
+    }
+}
 
 CRef<CSeq_align_set> CMagicBlastResultSet::GetFlatResults(void)
 {
