@@ -3,9 +3,17 @@ include(CMakeParseArguments)
 function(find_external_library)
   list(GET ARGN 0 ARG_LIBNAME_ORIG)
   string(TOUPPER ${ARG_LIBNAME_ORIG} ARG_LIBNAME)
-  cmake_parse_arguments(ARG "" "HINTS;INCLUDES;LIBS;EXTRAFLAGS" "" ${ARGN})
+  cmake_parse_arguments(ARG "" "INCLUDES;LIBS;HINTS;INCLUDE_HINTS;LIBS_HINTS;EXTRAFLAGS" "" ${ARGN})
 
-  message ("ARG_LIBNAME_ORIG ${ARG_LIBNAME_ORIG} LIBNAME ${ARG_LIBNAME} VALUE ${${ARG_LIBNAME}} HINTS ${ARG_HINTS} INCLUDES ${ARG_INCLUDES} LIBS ${ARG_LIBS} EXTRAFLAGS ${ARG_EXTRAFLAGS}")
+  if (NOT "${ARG_HINTS}" STREQUAL "")
+    set(ARG_INCLUDE_HINTS "${ARG_HINTS}/include")
+    set(ARG_LIBS_HINTS "${ARG_HINTS}/lib")
+  endif()
+
+  #debug
+  #message("ARG_LIBNAME_ORIG ${ARG_LIBNAME_ORIG} LIBNAME ${ARG_LIBNAME} VALUE ${${ARG_LIBNAME}}")
+  #message("HINTS ${ARG_HINTS} INCLUDE_HINTS ${ARG_INCLUDE_HINTS} LIBS_HINTS ${ARG_LIBS_HINTS}")
+  #message("INCLUDES ${ARG_INCLUDES} LIBS ${ARG_LIBS} EXTRAFLAGS ${ARG_EXTRAFLAGS}")
 
   if (NOT ARG_LIBNAME)
     message(FATAL_ERROR "find_external_library: library name not provided")
@@ -23,34 +31,33 @@ function(find_external_library)
   unset(EXT_INCLUDE_DIR CACHE)
 
   if (NOT "${${ARG_LIBNAME}}" STREQUAL "")
-     find_library(EXT_LIBRARY NAMES ${LIBS}
+     find_library(EXT_LIBRARY NAMES ${ARG_LIBS}
                   PATH "${${ARG_LIBNAME}}/lib"
                   NO_DEFAULT_PATH
                   NO_CMAKE_ENVIRONMENT_PATH
                   NO_CMAKE_PATH
                   NO_SYSTEM_ENVIRONMENT_PATH
                   NO_CMAKE_SYSTEM_PATH)
-     find_path(EXT_INCLUDE_DIR NAMES ${INCLUDES}
+     find_path(EXT_INCLUDE_DIR NAMES ${ARG_INCLUDES}
                PATH "${${ARG_LIBNAME}}/include"
                NO_DEFAULT_PATH
                NO_CMAKE_ENVIRONMENT_PATH
                NO_CMAKE_PATH
                NO_SYSTEM_ENVIRONMENT_PATH
                NO_CMAKE_SYSTEM_PATH)
-  elseif (NOT "${ARG_HINTS}" STREQUAL "")
+  elseif (NOT "${ARG_LIBS_HINTS}" STREQUAL "")
      find_library(EXT_LIBRARY NAMES ${ARG_LIBS}
                   HINTS
-                 "${ARG_HINTS}/lib")
+                 "${ARG_LIBS_HINTS}")
      find_path(EXT_INCLUDE_DIR NAMES ${ARG_INCLUDES}
                HINTS
-              "${ARG_HINTS}/include")
+              "${ARG_INCLUDE_HINTS}")
   else()
-     find_library(EXT_LIBRARY NAMES ${LIBS})
-     find_path(EXT_INCLUDE_DIR NAMES ${INCLUDES})
+     find_library(EXT_LIBRARY NAMES ${ARG_LIBS})
+     find_path(EXT_INCLUDE_DIR NAMES ${ARG_INCLUDES})
   endif()
 
-  message("EXT_LIBRARY: ${EXT_LIBRARY} EXT_INCLUDE_DIR: ${EXT_INCLUDE_DIR}")
-  message("${ARG_HINTS}/lib")
+  #message("EXT_LIBRARY: ${EXT_LIBRARY} EXT_INCLUDE_DIR: ${EXT_INCLUDE_DIR}")
   FIND_PACKAGE_HANDLE_STANDARD_ARGS("${ARG_LIBNAME}"
                                     REQUIRED_VARS EXT_LIBRARY EXT_INCLUDE_DIR)
   unset(FINAL_LIBS)

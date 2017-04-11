@@ -24,4 +24,3 @@ WITH_SAMTOOLS_DOC="do not use SAMtools"
 WITHOUT_GLPK_DOC="do not 1use GNU Linear Programming Kit"
 WIHTOUT_CURL_DOC="do not use libcurl"
 WITHOUT_SGE_DOC="do not use Sun/Univa Grid Engine"
-

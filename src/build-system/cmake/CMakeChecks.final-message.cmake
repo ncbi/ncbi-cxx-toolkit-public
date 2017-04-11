@@ -8,6 +8,8 @@ foreach (d ${Defs} )
     set(DefsStr "${DefsStr} -D${d}")
 endforeach()
 
+STRING(SUBSTRING "${EXTERNAL_LIBRARIES_COMMENT}" 1 -1 EXTERNAL_LIBRARIES_COMMENT)
+
 message("------------------------------------------------------------------------------")
 message("Build Target:   ${CMAKE_BUILD_TYPE}")
 message("Shared Libs:    ${BUILD_SHARED_LIBS}")
@@ -40,5 +42,8 @@ message("  include:      ${wxWidgets_INCLUDE_DIRS}")
 message("  lib:          ${wxWidgets_LIBRARIES}")
 message("  definitions:  ${wxWidgets_DEFNITIONS}")
 message("  flags:        ${wxWidgets_CXX_FLAGS}")
+message("GnuTLS:         ${GNUTLS_COMMENT}")
+message("GnuTLS include: ${GNUTLS_INCLUDE}")
+message("${EXTERNAL_LIBRARIES_COMMENT}")
 
 message("------------------------------------------------------------------------------")
