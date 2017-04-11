@@ -48,33 +48,99 @@ BEGIN_NCBI_SCOPE
 
 
 
-
-/// Default traits:
-///  - The very basic 1-char-delimited format (no header, comments,
-///    empty lines, etc.)
+/// Trait that describes the very basic character(s) delimited format
+///  - No header, comments, empty lines, etc.
 ///  - Illustrates and explains the trait's API
 ///  - Can be used to derive more complex user-defined traits
-template <char DelimiterValue>
-class CRowReaderStream_SingleCharDelimited : public CRowReaderStream_Base
+template <NStr::TSplitFlags SplitFlags, char ... Arguments>
+class CRowReaderStream_CharDelimited : public CRowReaderStream_Base
 {
 public:
+    CRowReaderStream_CharDelimited()
+    {
+        join(Arguments...);
+    }
+
     /// Tokenize the raw line and put the tokens into the tokens vector
     ERR_Action Tokenize(const CTempString    raw_line,
                         vector<CTempString>& tokens)
     {
-        NStr::Split(raw_line, string(1, DelimiterValue), tokens, 0);
+        NStr::Split(raw_line, m_Delimiters, tokens, SplitFlags);
         return eRR_Continue_Data;
     }
 
+    // The RR_TRAITS_PARENT_STREAM accepts one parameter so the ',' character
+    // may not appear in its arguments. On the other hand the template has two
+    // parameters spearated by ',' so a typedef below comes handy.
+    typedef CRowReaderStream_CharDelimited<SplitFlags, Arguments ...> TSelf;
+
     // Standard typedefs and methods to bind to the "parent stream"
-    RR_TRAITS_PARENT_STREAM(CRowReaderStream_SingleCharDelimited<DelimiterValue>);
+    RR_TRAITS_PARENT_STREAM(TSelf);
+
+private:
+    void join(char delim)
+    {
+        m_Delimiters += string(1, delim);
+    }
+
+    template <typename ... Args>
+    void join(char delim, Args ... args)
+    {
+        m_Delimiters += string(1, delim);
+        join(args...);
+    }
+
+    // Delimiters combined into one string
+    string  m_Delimiters;
 };
 
 
+
+/// Partial specialization of the CRowReaderStream_CharDelimited<...> template
+/// for the case when the data fields are delimited by a single character out
+/// of the specified set of characters.
+template <char ... Arguments>
+class CRowReaderStream_SingleCharDelimited :
+    public CRowReaderStream_CharDelimited<0, Arguments...>
+{
+    RR_TRAITS_PARENT_STREAM(CRowReaderStream_SingleCharDelimited<Arguments...>);
+};
+
+/// Partial specialization of the CRowReaderStream_CharDelimited<...> template
+/// for the case when the data fields are delimited by one or more characters
+/// out of the specified set of characters.
+template <char ... Arguments>
+class CRowReaderStream_MultiCharDelimited :
+    public CRowReaderStream_CharDelimited<NStr::fSplit_MergeDelimiters, Arguments...>
+{
+    RR_TRAITS_PARENT_STREAM(CRowReaderStream_MultiCharDelimited<Arguments...>);
+};
+
+/// Partial specialization of the CRowReaderStream_CharDelimited<...> template
+/// for the case when the data fields are delimited by the specified string.
+template <char ... Arguments>
+class CRowReaderStream_StringDelimited :
+    public CRowReaderStream_CharDelimited<NStr::fSplit_ByPattern, Arguments...>
+{
+    RR_TRAITS_PARENT_STREAM(CRowReaderStream_StringDelimited<Arguments...>);
+};
+
+
+/// An example of the traits where the data fields are delimited by single
+/// character '\t'
 typedef CRowReaderStream_SingleCharDelimited<'\t'> TRowReaderStream_SingleTabDelimited;
+/// An example of the traits where the data fields are delimited by single
+/// character ' '
 typedef CRowReaderStream_SingleCharDelimited<' '> TRowReaderStream_SingleSpaceDelimited;
+/// An example of the traits where the data fields are delimited by single
+/// character ','
 typedef CRowReaderStream_SingleCharDelimited<','> TRowReaderStream_SingleCommaDelimited;
 
+/// An example of the traits where the delimiters are '\t', ' ' and '\v'
+typedef CRowReaderStream_MultiCharDelimited<'\t', ' ', '\v'> TRowReaderStream_MultiSpaceDelimited;
+
+/// An example of the traits where a delimiter is the "***" string
+typedef CRowReaderStream_StringDelimited<'*', '*', '*'> TRowReaderStream_ThreeStarDelimited;
 
 
 

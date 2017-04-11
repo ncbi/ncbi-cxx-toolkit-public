@@ -45,6 +45,10 @@ typedef CRowReader<TRowReaderStream_SingleSpaceDelimited> TSpaceDelimitedStream;
 typedef CRowReader<TRowReaderStream_SingleCommaDelimited> TCommaDelimitedStream;
 
 
+const string kRRDataFileName = "test_row_reader.txt";
+const string kRRContextPattern = "Row reader context:";
+
+
 BOOST_AUTO_TEST_CASE(RR_EMPTY_STREAM)
 {
     string                  data = "";
@@ -547,7 +551,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected overflow exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected overflow exception context");
         }
 
@@ -556,7 +560,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected wrong type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected overflow exception context");
         }
 
@@ -565,7 +569,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
 
@@ -574,7 +578,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field name exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field name exception context");
         }
 
@@ -583,7 +587,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field type exception context");
         }
 
@@ -592,7 +596,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
             BOOST_FAIL("Expected no field extended type exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field extended type exception context");
         }
     }
@@ -612,7 +616,7 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_ACCESS_BY_NAME_OUT_OF_RANGE)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
 
@@ -621,7 +625,7 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_ACCESS_BY_NAME_OUT_OF_RANGE)
             BOOST_FAIL("Expected no field exception");
         } catch (const exception &  exc) {
             string  what = exc.what();
-            if (what.find("Row reader context:") == string::npos)
+            if (what.find(kRRContextPattern) == string::npos)
                 BOOST_FAIL("Expected no field exception context");
         }
     }
@@ -684,7 +688,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -692,7 +696,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -700,7 +704,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -708,7 +712,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -716,7 +720,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 
@@ -732,7 +736,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -740,7 +744,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -748,7 +752,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 
@@ -763,7 +767,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -771,7 +775,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
     try {
@@ -779,7 +783,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field type exception context");
     }
     try {
@@ -787,7 +791,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
         BOOST_FAIL("Expected no field extended type exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
-        if (what.find("Row reader context:") != string::npos)
+        if (what.find(kRRContextPattern) != string::npos)
             BOOST_FAIL("Not expected no field extended type exception context");
     }
 }
@@ -921,7 +925,7 @@ BOOST_AUTO_TEST_CASE(RR_NULL_FIELD_VALUE)
                     BOOST_FAIL("Expected 'field is null' exception");
                 } catch (const exception &  exc) {
                     string  what = exc.what();
-                    if (what.find("Row reader context:") == string::npos)
+                    if (what.find(kRRContextPattern) == string::npos)
                         BOOST_FAIL("Expected field is null exception context");
                 }
                 try {
@@ -929,7 +933,7 @@ BOOST_AUTO_TEST_CASE(RR_NULL_FIELD_VALUE)
                     BOOST_FAIL("Expected 'field is null' exception");
                 } catch (const exception &  exc) {
                     string  what = exc.what();
-                    if (what.find("Row reader context:") == string::npos)
+                    if (what.find(kRRContextPattern) == string::npos)
                         BOOST_FAIL("Expected field is null exception context");
                 }
                 break;
@@ -1007,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(RR_SET_NON_EXISTING_FILE_STREAM)
 
 BOOST_AUTO_TEST_CASE(RR_FILE_STREAM)
 {
-    TTabDelimitedStream     src_stream("test_row_reader.txt");
+    TTabDelimitedStream     src_stream(kRRDataFileName);
 
     int     line_no = 0;
     for (auto &  row : src_stream) {
@@ -1055,7 +1059,7 @@ BOOST_AUTO_TEST_CASE(RR_FILE_STREAM)
 
 BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_FILE_STR)
 {
-    TTabDelimitedStream     src_stream("test_row_reader.txt");
+    TTabDelimitedStream     src_stream(kRRDataFileName);
 
     for (auto &  row : src_stream) {
         BOOST_CHECK(row.GetType() == eRR_Data);
@@ -1132,7 +1136,7 @@ BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_STR_FILE)
     }
 
 
-    src_stream.SetDataSource("test_row_reader.txt");
+    src_stream.SetDataSource(kRRDataFileName);
 
     int     line_no = 0;
     for (auto &  row : src_stream) {
@@ -1210,7 +1214,7 @@ BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
     }
 
 
-    src_stream.SetDataSource("test_row_reader.txt");
+    src_stream.SetDataSource(kRRDataFileName);
 
     int     line_no = 0;
     for (++it; it != end_it; ++it) {
@@ -1258,9 +1262,9 @@ BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
 
 BOOST_AUTO_TEST_CASE(RR_SET_FILE_TWICE)
 {
-    TTabDelimitedStream     src_stream("test_row_reader.txt");
-    src_stream.SetDataSource("test_row_reader.txt");
-    src_stream.SetDataSource("test_row_reader.txt");
+    TTabDelimitedStream     src_stream(kRRDataFileName);
+    src_stream.SetDataSource(kRRDataFileName);
+    src_stream.SetDataSource(kRRDataFileName);
 }
 
 
@@ -1279,7 +1283,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_STREAM_EVENT)
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
 
 
-    src_stream.SetDataSource("test_row_reader.txt");
+    src_stream.SetDataSource(kRRDataFileName);
     int     line_no = 0;
     for (++it; it != end_it; ++it)
     {
@@ -1304,7 +1308,7 @@ BOOST_AUTO_TEST_CASE(RR_VALID_COUNT)
     {}
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
 
-    src_stream.SetDataSource("test_row_reader.txt");
+    src_stream.SetDataSource(kRRDataFileName);
     src_stream.Validate();
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 2);
     BOOST_CHECK(src_stream.GetTraits().GetValidCount() == 4);
@@ -1396,6 +1400,103 @@ BOOST_AUTO_TEST_CASE(RR_COPY_ITERATORS)
     }
 
     BOOST_CHECK(it2 == src_stream.end());
+}
+
+
+
+BOOST_AUTO_TEST_CASE(RR_MULTI_SPACE_DATA_STREAM)
+{
+    typedef CRowReader<TRowReaderStream_MultiSpaceDelimited>    TMultiSpaceDelimitedStream;
+
+    string                      data = "11\t12 13\v14\r\n"
+                                       "21\t22 23\v\t\r\n"
+                                       "31\t\r\n"
+                                       "41\t \v";
+    CNcbiIstrstream             data_stream(data.c_str());
+    TMultiSpaceDelimitedStream  src_stream(&data_stream, "");
+
+    int     line_no = 0;
+    for (auto &  row : src_stream) {
+        switch (line_no) {
+            case 0:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("11\t12 13\v14"));
+                BOOST_CHECK(row[0].Get<int>() == 11);
+                BOOST_CHECK(row[1].Get<int>() == 12);
+                BOOST_CHECK(row[2].Get<int>() == 13);
+                BOOST_CHECK(row[3].Get<int>() == 14);
+                break;
+            case 1:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("21\t22 23\v\t"));
+                BOOST_CHECK(row[0].Get<int>() == 21);
+                BOOST_CHECK(row[1].Get<int>() == 22);
+                BOOST_CHECK(row[2].Get<int>() == 23);
+                BOOST_CHECK(row[3].GetOriginalData() == string(""));
+                break;
+            case 2:
+                BOOST_CHECK(row.GetNumberOfFields() == 2);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("31\t"));
+                BOOST_CHECK(row[0].Get<int>() == 31);
+                BOOST_CHECK(row[1].GetOriginalData() == string(""));
+                break;
+            case 3:
+                BOOST_CHECK(row.GetNumberOfFields() == 2);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("41\t \v"));
+                BOOST_CHECK(row[0].Get<int>() == 41);
+                BOOST_CHECK(row[1].GetOriginalData() == string(""));
+                break;
+        }
+        ++line_no;
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_THREE_STAR_DATA_STREAM)
+{
+    typedef CRowReader<TRowReaderStream_ThreeStarDelimited>    TThreeStarDelimitedStream;
+
+    string                      data = "11***12***13***14\r\n"
+                                       "21***22***23***\r\n"
+                                       "31***";
+    CNcbiIstrstream             data_stream(data.c_str());
+    TThreeStarDelimitedStream   src_stream(&data_stream, "");
+
+    int     line_no = 0;
+    for (auto &  row : src_stream) {
+        switch (line_no) {
+            case 0:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("11***12***13***14"));
+                BOOST_CHECK(row[0].Get<int>() == 11);
+                BOOST_CHECK(row[1].Get<int>() == 12);
+                BOOST_CHECK(row[2].Get<int>() == 13);
+                BOOST_CHECK(row[3].Get<int>() == 14);
+                break;
+            case 1:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("21***22***23***"));
+                BOOST_CHECK(row[0].Get<int>() == 21);
+                BOOST_CHECK(row[1].Get<int>() == 22);
+                BOOST_CHECK(row[2].Get<int>() == 23);
+                BOOST_CHECK(row[3].GetOriginalData() == string(""));
+                break;
+            case 2:
+                BOOST_CHECK(row.GetNumberOfFields() == 2);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("31***"));
+                BOOST_CHECK(row[0].Get<int>() == 31);
+                BOOST_CHECK(row[1].GetOriginalData() == string(""));
+                break;
+        }
+        ++line_no;
+    }
 }
 
 
