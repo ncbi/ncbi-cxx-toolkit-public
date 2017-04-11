@@ -221,6 +221,11 @@ Switch to SC-18
 Switch to GCC 4.9.3
 
 March 17, 2017
-version 6.12.1 (cxx-9128)
+version 6.12.1 (CXX-9128)
 Added reporting of time consumed by different parts of command processing.
 Added option to report and reload task_server settings.
+
+April 11, 2017
+version 6.13.0 (CXX-9179)
+Modified reporting to add EXE path and command line.
+Corrected re-initialization of periodic synchronization after disk space problems.
