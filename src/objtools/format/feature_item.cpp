@@ -1669,7 +1669,7 @@ void CFeatureItem::x_AddQuals(
         } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
 
-            CMappedFeat mapped_gene = m_Feat_Tree->GetBestGene(m_Feat);
+            CMappedFeat mapped_gene = ctx.GetFeatTree().GetBestGene(m_Feat);
             if (mapped_gene) {
                 gene_feat = mapped_gene.GetOriginalSeq_feat();
                 gene_ref = &gene_feat->GetData().GetGene();
