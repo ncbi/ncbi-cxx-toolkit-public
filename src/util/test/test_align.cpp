@@ -463,7 +463,7 @@ ostream& operator<<(ostream& out, const SARange& r)
 }
 
 
-void AC_AddToCollection(TAlignColl& coll, const SARange* ranges, int count)
+void AC_AddToCollection(TAlignColl& coll, const SARange* ranges, size_t count)
 {
     for (size_t i = 0; i < count;  ++i)   {
         const SARange& st = ranges[i];
