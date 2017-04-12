@@ -732,7 +732,8 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
 
     // Already executing this job, so do nothing
     // (and rely on that execution to report its result later)
-    if (!m_WorkerNode->m_JobsInProgress.Add(job.job_id)) {
+    if (!m_WorkerNode->m_JobsInProgress.Add(job)) {
+        LOG_POST(Warning << "Got already processing job " << job.job_id);
         return false;
     }
 

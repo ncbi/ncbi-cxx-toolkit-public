@@ -162,6 +162,7 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
     CRequestContextSwitcher request_state_guard(job_context->m_RequestContext);
 
     bool recycle_job_context = false;
+    m_WorkerNode->m_JobsInProgress.Update(job_context->m_Job);
 
     try {
         switch (job_context->m_JobCommitStatus) {
@@ -219,7 +220,7 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
         }
     }
 
-    m_WorkerNode->m_JobsInProgress.Remove(job_context->m_Job.job_id);
+    m_WorkerNode->m_JobsInProgress.Remove(job_context->m_Job);
 
     if (recycle_job_context)
         job_context->x_PrintRequestStop();

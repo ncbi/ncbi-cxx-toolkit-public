@@ -37,7 +37,7 @@
 #include "wn_cleanup.hpp"
 #include "netschedule_api_impl.hpp"
 
-#include <unordered_set>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 
@@ -258,23 +258,40 @@ struct SGridWorkerNodeImpl : public CObject
     /// Bookkeeping of jobs being executed (to prevent simultaneous runs of the same job)
     struct SJobsInProgress
     {
-        bool Add(const string& id)
+        bool Add(const CNetScheduleJob& job)
         {
             TFastMutexGuard lock(m_Mutex);
-            return m_Ids.insert(id).second;
+            auto it = m_Jobs.find(job.job_id);
+
+            if (it == m_Jobs.end()) {
+                return m_Jobs.emplace(job.job_id, job.auth_token).second;
+            }
+
+            it->second = job.auth_token;
+            return false;
         }
 
-        size_t Remove(const string& id)
+        void Update(CNetScheduleJob& job)
         {
             TFastMutexGuard lock(m_Mutex);
-            const size_t erased = m_Ids.erase(id);
-            _ASSERT(erased);
-            return erased;
+            auto it = m_Jobs.find(job.job_id);
+
+            _ASSERT(it != m_Jobs.end());
+            job.auth_token = it->second;
+        }
+
+        void Remove(const CNetScheduleJob& job)
+        {
+            TFastMutexGuard lock(m_Mutex);
+            auto it = m_Jobs.find(job.job_id);
+
+            _ASSERT(it != m_Jobs.end());
+            m_Jobs.erase(it);
         }
 
     private:
         CFastMutex m_Mutex;
-        unordered_set<string> m_Ids;
+        unordered_map<string, string> m_Jobs;
     };
 
     SJobsInProgress m_JobsInProgress;
