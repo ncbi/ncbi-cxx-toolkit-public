@@ -77,9 +77,9 @@ typedef const SSERV_Info* SSERV_InfoCPtr;
  */
 enum ESERV_TypeSpecial {
     fSERV_Any               = 0,
-    fSERV_All               = 0x0000FFFF,
+    fSERV_All               = 0x0000FFFF,  /**< Server type mask          */
     fSERV_Stateless         = 0x00100000,  /**< Stateless servers only    */
-    fSERV_Reserved          = 0x00400000,
+    fSERV_Reserved          = 0x00400000,  /**< Reserved, MBZ             */
     fSERV_ReverseDns        = 0x00800000,  /**< LB-DNS translation        */
     /* The following allow to get currently inactive service instances    */
     fSERV_IncludeDown       = 0x08000000,

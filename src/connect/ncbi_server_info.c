@@ -56,8 +56,8 @@
  *                 "fixed" area (SSERV_Ops::SizeOf() returns the size of the
  *                 type-dependent "u" plus all the string parameters);
  *   SSERV_Info::vhost (if non-zero) is stored past the parameters;
- *   SSERV_Info::extra defines the "extra" opaque bytes (which may be used to
- *                 store keep private information) that follow vhost (or the
+ *   SSERV_Info::extra defines the size of "extra" opaque bytes (which may be
+ *                 used to keep private information) that follow vhost (or the
  *                 SSERV_Info::u's block if vhost is empty), zero means none;
  *   SERV_SizeOfInfo() returns the size that includes all of the above.
  * Service name may be stored right past the entire info, contiguously.
@@ -118,9 +118,7 @@ static const SSERV_Attr* s_GetAttrByTag (const char* tag);
 extern const char* SERV_TypeStr(ESERV_Type type)
 {
     const SSERV_Attr* attr = s_GetAttrByType(type);
-    if (attr)
-        return attr->tag;
-    return "";
+    return attr ? attr->tag : "";
 }
 
 
