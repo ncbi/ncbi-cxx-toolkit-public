@@ -458,7 +458,7 @@ set(ENTREZ_LIBS entrez2cli entrez2)
 set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout einfo uilist ehistory)
 
 #GLPK
-find_external_library(glpk INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
+find_external_library(GLPK INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
 find_external_library(samtools INCLUDES bam.h LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
 #LAPACK
