@@ -4050,6 +4050,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     TSOCK_Handle    x_sock;
     EIO_Status      status;
     int             error;
+    int             type;
     int             n;
 
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
@@ -4139,7 +4140,17 @@ static EIO_Status s_Connect_(SOCK            sock,
     }
 
     /* create the new socket */
-    if ((x_sock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID) {
+    type  = SOCK_STREAM;
+#ifdef NCBI_OS_LINUX
+#  ifdef SOCK_NONBLOCK
+    type |= SOCK_NONBLOCK;
+#  endif /*SOCK_NONBLOCK*/
+#  ifdef SOCK_CLOEXEC
+    if (!sock->crossexec  ||  sock->session)
+        type |= SOCK_CLOEXEC;
+#  endif /*SOCK_CLOEXEC*/
+#endif /*NCBI_OS_LINUX*/
+    if ((x_sock = socket(addr.sa.sa_family, type, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(23, eLOG_Error,
                             error, strerr ? strerr : "",
@@ -4162,7 +4173,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         g_MONKEY_SockHasSocket(sock, x_sock);
 #endif /*NCBI_MONKEY*/
 
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     assert(!sock->event);
     if (!(sock->event = WSACreateEvent())) {
         DWORD err = GetLastError();
@@ -4188,7 +4199,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         s_Close_(sock, -2/*silent abort*/);
         return eIO_Unknown;
     }
-#else
+#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
     /* set non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -4228,27 +4239,29 @@ static EIO_Status s_Connect_(SOCK            sock,
 #endif /*SO_OOBINLINE*/
     }
 
+#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
     if ((!sock->crossexec  ||  sock->session)  &&  !s_SetCloexec(x_sock, 1)) {
         const char* strerr;
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
         error = err;
-#else
+#  else
         error = errno;
         strerr = SOCK_STRERROR(error);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(129, eLOG_Warning,
                             error, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(sock, _id)));
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         UTIL_ReleaseBufferOnHeap(strerr);
-#else
+#  else
         UTIL_ReleaseBuffer(strerr);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
     }
+#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
 
     /* establish connection to the peer */
     sock->connected = 0/*false*/;
@@ -4745,6 +4758,7 @@ static EIO_Status s_CreateListening(const char*    path,
     mode_t          u;
 #endif /*NCBI_OS_UNIX*/
     const char*     cp;
+    int             type;
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
 #endif /*NCBI_OS_MSWIN*/
@@ -4786,7 +4800,17 @@ static EIO_Status s_CreateListening(const char*    path,
     }
 
     /* create new(listening) socket */
-    if ((x_lsock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID){
+    type  = SOCK_STREAM;
+#ifdef NCBI_OS_LINUX
+#  ifdef SOCK_NONBLOCK
+    type |= SOCK_NONBLOCK;
+#  endif /*SOCK_NONBLOCK*/
+#  ifdef SOCK_CLOEXEC
+    if (!(flags & fSOCK_KeepOnExec))
+        type |= SOCK_CLOEXEC;
+#  endif /*SOCK_CLOEXEC*/
+#endif /*NCBI_OS_LINUX*/
+    if ((x_lsock = socket(addr.sa.sa_family, type, 0)) == SOCK_INVALID){
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         if (!path) {
             if (port)
@@ -4932,7 +4956,7 @@ static EIO_Status s_CreateListening(const char*    path,
     assert((path  &&  !port)  ||
            (port  &&  !path));
 
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     if (!(event = WSACreateEvent())) {
         DWORD err = GetLastError();
         const char* strerr = s_WinStrerror(err);
@@ -4960,7 +4984,7 @@ static EIO_Status s_CreateListening(const char*    path,
         WSACloseEvent(event);
         return eIO_Unknown;
     }
-#else
+#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
     /* set non-blocking mode */
     if (!s_SetNonblock(x_lsock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -4978,7 +5002,7 @@ static EIO_Status s_CreateListening(const char*    path,
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
-#endif /*NCBI_OS_MSWIN*/
+#endif
 
     /* listen */
     if (listen(x_lsock, backlog) != 0) {
@@ -5024,16 +5048,17 @@ static EIO_Status s_CreateListening(const char*    path,
     (*lsock)->event    = event;
 #endif /*NCBI_OS*/
 
+#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
     if (!(flags & fSOCK_KeepOnExec)  &&  !s_SetCloexec(x_lsock, 1/*true*/)) {
         const char* strerr;
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
         error = err;
-#else
+#  else
         error = errno;
         strerr = SOCK_STRERROR(error);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
@@ -5044,12 +5069,13 @@ static EIO_Status s_CreateListening(const char*    path,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Cannot set socket close-on-exec mode",
                              x_id, (unsigned int) x_lsock, cp));
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         UTIL_ReleaseBufferOnHeap(strerr);
-#else
+#  else
         UTIL_ReleaseBuffer(strerr);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
     }
+#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
 
     /* statistics & logging */
     if ((*lsock)->log == eOn  ||  ((*lsock)->log == eDefault && s_Log == eOn)){
@@ -7266,6 +7292,7 @@ extern EIO_Status DSOCK_Create(SOCK* sock)
 
 extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 {
+    int          type;
 #ifdef NCBI_OS_MSWIN
     HANDLE       event;
 #endif /*NCBI_OS_MSWIN*/
@@ -7279,8 +7306,18 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     if ((flags & fSOCK_Secure)  ||  s_InitAPI(0) != eIO_Success)
         return eIO_NotSupported;
 
+    type  = SOCK_DGRAM;
+#ifdef NCBI_OS_LINUX
+#  ifdef SOCK_NONBLOCK
+    type |= SOCK_NONBLOCK;
+#  endif /*SOCK_NONBLOCK*/
+#  ifdef SOCK_CLOEXEC
+    if (!(flags & fSOCK_KeepOnExec))
+        type |= SOCK_CLOEXEC;
+#  endif /*SOCK_CLOEXEC*/
+#endif /*NCBI_OS_LINUX*/
     /* create new datagram socket */
-    if ((x_sock = socket(AF_INET, SOCK_DGRAM, 0)) == SOCK_INVALID) {
+    if ((x_sock = socket(AF_INET, type, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(76, eLOG_Error,
                             error, strerr ? strerr : "",
@@ -7291,7 +7328,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         return eIO_Unknown;
     }
 
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     if (!(event = WSACreateEvent())) {
         DWORD err = GetLastError();
         const char* strerr = s_WinStrerror(err);
@@ -7317,7 +7354,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         WSACloseEvent(event);
         return eIO_Unknown;
     }
-#else
+#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
     /* set to non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -7330,7 +7367,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
     }
-#endif /*NCBI_OS_MSWIN*/
+#endif
 
     if (!(*sock = (SOCK) calloc(1, sizeof(**sock)))) {
         SOCK_CLOSE(x_sock);
@@ -7360,28 +7397,30 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);
 
+#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
     if (!(*sock)->crossexec  &&  !s_SetCloexec(x_sock, 1/*true*/)) {
         const char* strerr;
         char _id[MAXIDLEN];
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
         error = err;
-#else
+#  else
         error = errno;
         strerr = SOCK_STRERROR(error);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(130, eLOG_Warning,
                             error, strerr ? strerr : "",
                             ("%s[DSOCK::Create]  Cannot set"
                              " socket close-on-exec mode",
                              s_ID(*sock, _id)));
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         UTIL_ReleaseBufferOnHeap(strerr);
-#else
+#  else
         UTIL_ReleaseBuffer(strerr);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
     }
+#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
