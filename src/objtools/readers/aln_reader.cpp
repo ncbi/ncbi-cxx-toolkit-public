@@ -162,6 +162,29 @@ CAlnReader::~CAlnReader()
 }
 
 
+
+int s_GetGCD(const int a, const int b)
+{
+    if (a == 0) {
+        return b;
+    }
+
+    if (b == 0) {
+        return a;
+    }
+
+
+    if (a > b) {
+        const int r = a%b;
+        return s_GetGCD(b,r);
+    }
+
+    // b < a
+    const int r = b%a;
+    return s_GetGCD(a, r);
+}
+
+
 void CAlnReader::Read(bool guess, bool generate_local_ids)
 {
     if (m_ReadDone) {
@@ -189,7 +212,8 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment: Invalid input or alphabet", 0);
     }
-    
+   
+/* 
     size_t first_len = strlen (afp->sequences[0]);
     for (int i = 1; i < afp->num_sequences; i++) {
         if (strlen (afp->sequences[i]) != first_len) {
@@ -198,6 +222,56 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
                        "Error reading alignment: Not all sequences have same length", 0);
         }
     }
+*/
+
+    size_t max_len = strlen(afp->sequences[0]);
+    size_t min_len = max_len;
+    int max_index = 0;
+
+    for (auto i=0; i<afp->num_sequences; ++i) {
+        size_t curr_len = strlen(afp->sequences[i]);
+        if (curr_len > max_len) {
+            max_len = curr_len;
+            max_index = i;
+        } 
+        else 
+        if (curr_len < min_len){
+            min_len = curr_len;
+        }
+    }
+
+    if (min_len == 0) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Error reading alignment: Missing sequence data", 0);
+    }
+
+
+
+    if (max_len != min_len) { 
+        // First check for duplications in the longest sequence
+        const int repeat_interval = s_GetGCD(max_len, min_len);
+        const int num_repeats = max_len/repeat_interval;
+
+        char* data_string = afp->sequences[max_index];
+        bool is_repeated=true;
+        for (int i=1; i<num_repeats; ++i) {
+            if (strncmp(data_string, data_string + i*repeat_interval, repeat_interval) != 0){
+                is_repeated=false;
+                break;
+            }
+        }
+        AlignmentFileFree(afp);
+
+        if (is_repeated) {
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "Error reading alignment: Possible sequence replication", 0);
+        }   
+        else {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                       "Error reading alignment: Not all sequences have same length", 0);
+        }
+    }
+
     
     // if we're trying to guess whether this is an alignment file,
     // and no tell-tale alignment format lines were found,
