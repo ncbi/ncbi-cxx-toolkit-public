@@ -1013,7 +1013,7 @@ void CTbl2AsnApp::ProcessOneFile()
     {
         log_name = GenerateOutputFilename(".log");
         CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath().c_str());
-        m_logger->SetProgressOstream(error_log, eTakeOwnership);
+        m_logger->SetProgressOstream(error_log);
         SetDiagStream(error_log);
     }
 
