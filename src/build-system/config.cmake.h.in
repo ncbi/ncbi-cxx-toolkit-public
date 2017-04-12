@@ -842,7 +842,7 @@
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */
-#define NCBI_TLS_VAR
+#undef NCBI_TLS_VAR
 
 /* Define to 1 if building universal (multi-architecture) binaries. */
 /* #undef NCBI_UNIVERSAL_BUILD */
