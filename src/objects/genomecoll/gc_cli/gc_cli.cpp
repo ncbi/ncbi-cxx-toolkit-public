@@ -175,10 +175,8 @@ private:
 
 void CClientGenomicCollectionsSvcApplication::Init(void)
 {
-    // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
-    // Specify USAGE context
     argDesc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Genomic Collections Service client application");
 
@@ -199,20 +197,22 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
                             CArgDescriptions::eOutputFile,
                             "-");
 
-    argDesc->AddOptionalKey("acc", "assembly_accession",
-                    "Accession for the assembly to retrieve",
+    argDesc->AddOptionalKey("acc", "ACC_VER",
+                    "Comma-separated list of accessions",
                     CArgDescriptions::eString);
     
-    argDesc->AddOptionalKey("rel_id", "release_id",
-                    "Release id for the assembly to retrieve",
-                    CArgDescriptions::eInteger);
-    argDesc->SetDependency("acc", argDesc->eExcludes, "rel_id");
+    argDesc->AddOptionalKey("acc_file", "acc_file",
+                    "File with list of accessions - one per line",
+                    CArgDescriptions::eInputFile);
+    argDesc->SetDependency("acc_file", argDesc->eExcludes, "acc");
     
-    argDesc->AddOptionalKey("-mode", "mode",
-                            "mode",
-                            CArgDescriptions::eInteger);
-    argDesc->AddOptionalKey("-smode", "mode",
-                            "string mode",
+    argDesc->AddOptionalKey("rel_id", "release_id",
+                    "Comma-separated list of release id's'",
+                    CArgDescriptions::eInteger);
+    argDesc->SetDependency("rel_id", argDesc->eExcludes, "acc");
+    
+    argDesc->AddOptionalKey("-mode", "AssemblyOnly",
+                            "Assembly retrieval mode",
                             CArgDescriptions::eString);
 
     argDesc->AddOptionalKey("-level", "level",
@@ -224,25 +224,21 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
     argDesc->AddOptionalKey("-asm_flags", "assembly_flags",
                             "Assembly flags.  If not set use client default (scaffold).",
                             CArgDescriptions::eInteger);
-    // argDesc->SetConstraint("-asm_flags", &(*new CArgAllow_Strings,"0","1","2","3","4","5","6","7"));
     argDesc->AddAlias("af","-asm_flags");
 
     argDesc->AddOptionalKey("-chr_flags", "chromosome_flags",
                             "Chromosome flags",
                             CArgDescriptions::eInteger);
-    // argDesc->SetConstraint( "-chr_flags", &(*new CArgAllow_Strings,"0","1","2","3","4","5","6","7"));
     argDesc->AddAlias("chrf","-chr_flags");
     
     argDesc->AddOptionalKey( "-scf_flags", "scaffold_flags",
                              "Scaffold flags",
                              CArgDescriptions::eInteger);
-    // argDesc->SetConstraint( "-scf_flags", &(*new CArgAllow_Strings,"0","1","2","3","4","5","6","7"));
     argDesc->AddAlias("sf", "-scf_flags");
     
     argDesc->AddOptionalKey("-comp_flags", "component_flags",
                             "Component flags",
                             CArgDescriptions::eInteger);
-    // argDesc->SetConstraint("-comp_flags", &(*new CArgAllow_Strings,"0","1","2","3","4","5","6","7"));
     argDesc->AddAlias("cmpf","-comp_flags");
 
     argDesc->AddDefaultKey( "f", "format",
@@ -266,13 +262,7 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
                             "Get assembly by sequence - sort",
                             CArgDescriptions::eString);
 
-    argDesc->AddOptionalKey("-limit", "limit",
-                            "Find best assembly - return limit",
-                            CArgDescriptions::eInteger);
-
-    argDesc->AddOptionalKey("top_asm", "top_assembly",
-                            "Get assembly by sequence - return top assembly only",
-                            CArgDescriptions::eBoolean);
+    argDesc->AddFlag("top_asm", "Get assembly by sequence - return top assembly only");
 
     argDesc->AddOptionalKey("equiv", "equivalency",
                             "Get equivalent assemblies - equivalency type",
@@ -280,14 +270,12 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
 
     argDesc->AddFlag("nocache", "Do not use database cache; force fresh data");
 
-    // Setup arg.descriptions for this application
     SetupArgDescriptions(argDesc.release());
 }
 
 /////////////////////////////////////////////////////////////////////////////
 int CClientGenomicCollectionsSvcApplication::Run(void)
 {
-    // Get arguments
     const CArgs& args = GetArgs();
     CNcbiOstream& ostr = args["o"].AsOutputFile();
     
@@ -346,6 +334,28 @@ void ForEachID(const string& ids, FUNC func)
     for_each(id.begin(), id.end(), func);
 }
 
+static void GetAccessionsFromFile(CNcbiIstream& istr, list<string>& accessions)
+{
+    string line;
+    while (NcbiGetlineEOL(istr, line)) {
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()  ||  line[0] == '#') {
+            continue;
+        }
+        accessions.push_back(line);
+    }
+}
+
+static list<string> GetAccessions(const CArgs& args)
+{
+    list<string> accessions;
+    if (args["acc"].HasValue())
+        NStr::Split(args["acc"].AsString(), ",", accessions, NStr::fSplit_Tokenize);
+    else if(args["acc_file"].HasValue())
+        GetAccessionsFromFile(args["acc_file"].AsInputFile(), accessions);
+    return accessions;
+}
+
 int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr)
 {
     const string request = args["request"].AsString();
@@ -353,19 +363,17 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
     try {
         if(request == "get-chrtype-valid")
         {
-            string type = args["type"].AsString();
-            string loc  = args["loc"].AsString();
-
-            ostr << service.ValidateChrType(type, loc);
+            ostr << service.ValidateChrType(args["type"].AsString(), args["loc"].AsString());
         }
         else if(request == "get-assembly")
         {
             if(args["-mode"])
             {
+                const int mode = NStr::StringToInt(args["-mode"].AsString());
                 if (args["acc"])
-                    ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, args["-mode"].AsInteger())); });
+                    ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, mode)); });
                 else if (args["rel_id"])
-                    ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsInteger())); });
+                    ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), mode)); });
                 else
                     ERR_POST(Error << "Either accession or release id should be provided");
             }
@@ -387,77 +395,53 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
         }
         else if(request == "get-assembly-blob")
         {
-            if(!args["-smode"] || args["-smode"].AsString().empty())
+            if(!args["-mode"])
                 ERR_POST(Error << "Invalid get-assembly-blob string mode");
 
             if (args["acc"])
-                ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, args["-smode"].AsString())); });
+                ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, args["-mode"].AsString())); });
             else if (args["rel_id"])
-                ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-smode"].AsString())); });
+                ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsString())); });
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
         }
         else if(request == "get-best-assembly")
         {
-            list<string> acc;
-            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
-
+            const list<string> acc = GetAccessions(args);
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
             if(acc.size() == 1)
-            {
-                CRef<CGCClient_AssemblyInfo> reply(service.FindBestAssembly(acc.front(), filter, sort));
-                ostr << *reply;
-            }
+                ostr << *service.FindBestAssembly(acc.front(), filter, sort);
             else
-            {
-                CRef<CGCClient_AssemblySequenceInfo> reply(service.FindBestAssembly(acc, filter, sort));
-                ostr << *reply;
-            }
+                ostr << *service.FindBestAssembly(acc, filter, sort);
         }
         else if(request == "get-all-assemblies")
         {
-            list<string> acc;
-            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
-
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
-            CRef<CGCClient_AssembliesForSequences> reply(service.FindAllAssemblies(acc, filter, sort));
-            ostr << *reply;
+            ostr << *service.FindAllAssemblies(GetAccessions(args), filter, sort);
         }
         else if(request == "get-assembly-by-sequence")
         {
-            list<string> acc, filter_s;
-            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
+            list<string> filter_s;
             NStr::Split(args["filter"] ? args["filter"].AsString() : "all", ",", filter_s, NStr::fSplit_Tokenize);
 
             int filter = 0;
             ITERATE(list<string>, it, filter_s)
                 filter |= ENUM_METHOD_NAME(EGCClient_GetAssemblyBySequenceFilter)()->FindValue(*it);
 
-            int sort = args["sort"] ? CGCClient_GetAssemblyBySequenceRequest::ENUM_METHOD_NAME(ESort)()->FindValue(args["sort"].AsString()) : CGCClient_GetAssemblyBySequenceRequest::eSort_default;
-            bool top_asm = args["top_asm"] ? args["top_asm"].AsBoolean() : false;
+            const int sort = args["sort"] ? CGCClient_GetAssemblyBySequenceRequest::ENUM_METHOD_NAME(ESort)()->FindValue(args["sort"].AsString()) : CGCClient_GetAssemblyBySequenceRequest::eSort_default;
 
-            if(top_asm)
-            {
-                CRef<CGCClient_AssemblySequenceInfo> reply(service.FindOneAssemblyBySequences(acc, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort)));
-                ostr << *reply;
-            }
+            if (args["top_asm"].HasValue())
+                ostr << *service.FindOneAssemblyBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort));
             else
-            {
-                CRef<CGCClient_AssembliesForSequences> reply(service.FindAssembliesBySequences(acc, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort)));
-                ostr << *reply;
-            }
+                ostr << *service.FindAssembliesBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort));
         }
         else if(request == "get-equivalent-assemblies")
         {
-            string acc = args["acc"].AsString();
-            int equiv = args["equiv"].AsInteger();
-
-            CRef<CGCClient_EquivalentAssemblies> reply(service.GetEquivalentAssemblies(acc, equiv));
-            ostr << *reply;
+            ostr << *service.GetEquivalentAssemblies(args["acc"].AsString(), args["equiv"].AsInteger());
         }
     } catch (CException& ex) {
         ERR_POST(Error << "Caught an exception from client library ..." << ex.what());
