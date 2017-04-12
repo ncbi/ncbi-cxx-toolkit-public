@@ -561,7 +561,7 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
     ostr << 0 << sep;
 
     // query and subject strand
-    ostr << "-" << sep << "-";
+    ostr << "-" << sep << "-" << sep;
 
     // query length
     int query_len = 0;
