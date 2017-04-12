@@ -361,19 +361,19 @@ public:
     }
 
     // Utility functions to implement field value conversions
-    static void GetFieldValueConverted(const string& str_value,
+    static void GetFieldValueConverted(const CTempString& str_value,
                                        CTime& converted)
     {
-        converted = CTime(str_value);
+        converted = CTime(string(str_value.data(), str_value.size()));
     }
 
-    static void GetFieldValueConverted(const string& str_value,
+    static void GetFieldValueConverted(const CTempString& str_value,
                                        string& converted)
     {
-        converted = str_value;
+        converted = string(str_value.data(), str_value.size());
     }
 
-    static void GetFieldValueConverted(const string& str_value,
+    static void GetFieldValueConverted(const CTempString& str_value,
                                        bool& converted)
     {
         converted = NStr::StringToBool(str_value);
@@ -383,7 +383,7 @@ public:
     // and covering all the arithmetic types
     template<typename T,
              typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    static void GetFieldValueConverted(const string& str_value, T& converted)
+    static void GetFieldValueConverted(const CTempString& str_value, T& converted)
     {
         errno = 0;
         try {
@@ -393,16 +393,19 @@ public:
         } catch (const CException& exc) {
             NCBI_RETHROW2(exc, CRowReaderException,
                           eFieldConvert, "Cannot convert field value '" +
-                          str_value + "' to " + typeid(T).name(), nullptr);
+                          string(str_value.data(), str_value.size()) +
+                          "' to " + typeid(T).name(), nullptr);
         } catch (const exception& exc) {
             NCBI_THROW2(CRowReaderException, eFieldConvert,
                         "Cannot convert field value '" +
-                        str_value + "' to " + typeid(T).name() + ": " +
+                        string(str_value.data(), str_value.size()) +
+                        "' to " + typeid(T).name() + ": " +
                         exc.what(), nullptr);
         } catch (...) {
             NCBI_THROW2(CRowReaderException, eFieldConvert,
                         "Unknown error while converting field value '" +
-                        str_value + "' to " + typeid(T).name(), nullptr);
+                        string(str_value.data(), str_value.size()) +
+                        "' to " + typeid(T).name(), nullptr);
         }
     }
 };

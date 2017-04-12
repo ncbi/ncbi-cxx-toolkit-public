@@ -142,7 +142,7 @@ public:
     CRR_Field(const CRR_Field&& other_field);
 
 private:
-    string x_GetStringValue(void) const;
+    CTempString x_GetStringValue(void) const;
 
 private:
     friend class CRowReader<TTraits>;
@@ -737,14 +737,14 @@ CRR_Field<TTraits>::CRR_Field(const CRR_Field&& other_field) :
 
 
 template <typename TTraits>
-string CRR_Field<TTraits>::x_GetStringValue(void) const
+CTempString CRR_Field<TTraits>::x_GetStringValue(void) const
 {
     if (m_IsNull)
         NCBI_THROW2(CRowReaderException, eNullField,
                     "The field value is translated to NULL", nullptr);
     if (m_Translated)
         return m_TranslatedValue;
-    return string(m_OriginalData.data(), m_OriginalData.size());
+    return m_OriginalData;
 }
 
 // End of the CRR_Field implementation
