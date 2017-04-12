@@ -141,7 +141,7 @@ string CConnTest::x_TimeoutMsg(void)
     int n = ::sprintf(tmo, "%u", m_Timeout->sec);
     if (m_Timeout->usec)
         ::sprintf(tmo + n, ".%06u", m_Timeout->usec);
-    string result("Make sure the specified timeout value ");
+    string result("Make sure the specified timeout value of ");
     result += tmo;
     result += "s is adequate for your network throughput\n";
     return result;
@@ -1402,7 +1402,7 @@ bool CConnTest::IsNcbiInhouseClient(void)
     static const STimeout kFast = { 2, 0 };
     CConn_HttpStream http("https:///Service/getenv.cgi",
                           fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
-    char line[1024];
+    char line[256];
     if (!http  ||  !http.getline(line, sizeof(line)))
         return false;
     int code;
