@@ -59,6 +59,7 @@ protected:
     void ParseMemberDefinition(DTDElement* owner);
     void ParseArrayContent(DTDElement& node);
     void ParseNode(DTDElement& node);
+    void AdjustMinOccurence(DTDElement& node, int occ);
     void ParseRequired(DTDElement& node);
 
     void SkipUnknown(TToken tokend);

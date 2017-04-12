@@ -120,9 +120,9 @@ void JSDParser::ParseMemberDefinition(DTDElement* owner)
 
 void JSDParser::ParseArrayContent(DTDElement& node)
 {
-    node.SetOccurrence(DTDElement::eZeroOrMore);
     string node_id = NStr::Join(m_URI,"/");
     DTDElement& item = m_MapElement[node_id];
+    item.SetOccurrence(DTDElement::eZeroOrMore);
     ParseNode(item);
     item.SetEmbedded();
 	AddElementContent(node,node_id);
@@ -133,12 +133,14 @@ void JSDParser::ParseNode(DTDElement& node)
     string key;
     TToken tok;
     node.SetSourceLine( Lexer().CurrentLine());
+    node.SetNillable(true);
     for (tok = GetNextToken(); tok != K_END_OBJECT; tok = GetNextToken()) {
         if (tok == K_KEY) {
             key = Value();
             tok = GetNextToken();
             if (tok == K_VALUE) {
-                if (key == "title") {
+                if (key == "$schema") {
+                } else if (key == "title") {
                     if (!node.IsNamed()) {
                         node.SetName(Value());
                     }
@@ -154,17 +156,28 @@ void JSDParser::ParseNode(DTDElement& node)
                     } else if (Value() == "null") {
                         node.SetType(DTDElement::eEmpty);
                     } else if (Value() == "object") {
+                        node.SetNillable(false);
                         node.SetType(DTDElement::eSet);
                     } else if (Value() == "array") {
+                        node.SetNillable(false);
                         node.SetType(DTDElement::eSequence);
                     }
                 } else if (key == "default") {
                     node.SetDefault(Value());
+                    AdjustMinOccurence(node, 0);
                 } else if (key == "description") {
                     node.Comments().Add(Value());
                 } else if (key == "$ref") {
                     node.SetTypeName(Value());
                     node.SetType(DTDElement::eAlias);
+                } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
+                }
+            } else if (tok == T_NUMBER) {
+                if (key == "minItems") {
+                    AdjustMinOccurence(node, NStr::StringToInt(Value()));
+                } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
             } else if (tok == K_BEGIN_OBJECT) {
                 if (key == "properties") {
@@ -179,6 +192,7 @@ void JSDParser::ParseNode(DTDElement& node)
                     ParseObjectContent(nullptr);
                     m_URI.pop_back();
                 } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_OBJECT);
                 }
             } else if (tok == K_BEGIN_ARRAY) {
@@ -186,12 +200,38 @@ void JSDParser::ParseNode(DTDElement& node)
                     ParseRequired(node);
                 } else if (key == "type") {
                     ParseError("type arrays not supported", "string");
+                } else if (key == "items") {
+                    ParseError("tuple validation not supported", "{");
                 } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_ARRAY);
                 }
             }
         }
     }
+}
+
+void JSDParser::AdjustMinOccurence(DTDElement& node, int occ)
+{
+    DTDElement::EOccurrence occNow = node.GetOccurrence();
+    DTDElement::EOccurrence occNew = occNow;
+    if (occ == 0) {
+        if (occNow == DTDElement::eOne) {
+            occNew = DTDElement::eZeroOrOne;
+        } else if (occNow == DTDElement::eOneOrMore) {
+            occNew = DTDElement::eZeroOrMore;
+        }
+    } else {
+        if (occ != 1) {
+            ERR_POST_X(8, Warning << GetLocation() << "Unsupported property minItems= " << occ);
+        }
+        if (occNow == DTDElement::eZeroOrOne) {
+            occNew = DTDElement::eOne;
+        } else if (occNow == DTDElement::eZeroOrMore) {
+            occNew = DTDElement::eOneOrMore;
+        }
+    }
+    node.SetOccurrence(occNew);
 }
 
 void JSDParser::ParseRequired(DTDElement& node)
@@ -202,7 +242,9 @@ void JSDParser::ParseRequired(DTDElement& node)
             m_URI.push_back(Value());
             string node_id = NStr::Join(m_URI,"/");
             m_URI.pop_back();
-            node.SetOccurrence(node_id, DTDElement::eOne);
+            if (m_MapElement[node_id].GetDefault().empty()) {
+                node.SetOccurrence(node_id, DTDElement::eOne);
+            }
         }
     }
 }
