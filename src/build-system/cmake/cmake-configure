@@ -322,10 +322,14 @@ while [ $# != 0 ]; do
 
         #NCBI C++ Toolkit specific configuration flags
         "--with-static"|"--without-dll")
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF";;
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            ;;
 
         "--with-dll")
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=ON";;
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            ;;
 
         "--with-debug")
             BUILD_TYPE="Debug";;
@@ -350,19 +354,22 @@ while [ $# != 0 ]; do
         #Gpipe specific configuration flags
         "--gpipe-prod")
             BUILD_TYPE="Release"
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=ON"
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
             add_gpipe_warnings
             ;;
 
         "--gpipe-dev")
             BUILD_TYPE="Debug"
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=ON"
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
             add_gpipe_warnings
             ;;
 
         "--gpipe-cgi")
             BUILD_TYPE="Release"
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF"
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
             add_gpipe_warnings
             ;;
 
