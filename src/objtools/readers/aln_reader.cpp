@@ -162,8 +162,7 @@ CAlnReader::~CAlnReader()
 }
 
 
-
-int s_GetGCD(const int a, const int b)
+int CAlnReader::x_GetGCD(const int a, const int b) const
 {
     if (a == 0) {
         return b;
@@ -176,12 +175,57 @@ int s_GetGCD(const int a, const int b)
 
     if (a > b) {
         const int r = a%b;
-        return s_GetGCD(b,r);
+        return x_GetGCD(b,r);
+    }
+    // b > a
+    const int r = b%a;
+    return x_GetGCD(a, r);
+}
+
+
+void s_GetSequenceLengthInfo(const TAlignmentFilePtr afp, 
+        size_t& min_len, 
+        size_t& max_len, 
+        int& max_index) 
+{
+
+    if (afp->num_sequences == 0) {
+        return;
     }
 
-    // b < a
-    const int r = b%a;
-    return s_GetGCD(a, r);
+    max_len = strlen(afp->sequences[0]);
+    min_len = max_len;
+    max_index = 0;
+
+    for (auto i=0; i<afp->num_sequences; ++i) {
+        size_t curr_len = strlen(afp->sequences[i]);
+        if (curr_len > max_len) {
+            max_len = curr_len;
+            max_index = i;
+        } 
+        else 
+        if (curr_len < min_len){
+            min_len = curr_len;
+        }
+    }
+}
+
+
+bool CAlnReader::x_IsReplicatedSequence(const char* seq_data, 
+    const int length,
+    const int repeat_interval) const
+{
+    if (length%repeat_interval != 0) {
+        return false;
+    }
+
+    const int num_repeats = length/repeat_interval;
+    for (int i=1; i<num_repeats; ++i) {
+        if (strncmp(seq_data, seq_data + i*repeat_interval, repeat_interval) != 0){
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -212,33 +256,15 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment: Invalid input or alphabet", 0);
     }
-   
-/* 
-    size_t first_len = strlen (afp->sequences[0]);
-    for (int i = 1; i < afp->num_sequences; i++) {
-        if (strlen (afp->sequences[i]) != first_len) {
-            AlignmentFileFree (afp);
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                       "Error reading alignment: Not all sequences have same length", 0);
-        }
-    }
-*/
+ 
 
-    size_t max_len = strlen(afp->sequences[0]);
-    size_t min_len = max_len;
-    int max_index = 0;
-
-    for (auto i=0; i<afp->num_sequences; ++i) {
-        size_t curr_len = strlen(afp->sequences[i]);
-        if (curr_len > max_len) {
-            max_len = curr_len;
-            max_index = i;
-        } 
-        else 
-        if (curr_len < min_len){
-            min_len = curr_len;
-        }
-    }
+    // Check sequence lengths
+    size_t max_len, min_len;
+    int max_index;
+    s_GetSequenceLengthInfo(afp, 
+        min_len,
+        max_len,
+        max_index);
 
     if (min_len == 0) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -248,18 +274,10 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
 
 
     if (max_len != min_len) { 
-        // First check for duplications in the longest sequence
-        const int repeat_interval = s_GetGCD(max_len, min_len);
-        const int num_repeats = max_len/repeat_interval;
-
-        char* data_string = afp->sequences[max_index];
-        bool is_repeated=true;
-        for (int i=1; i<num_repeats; ++i) {
-            if (strncmp(data_string, data_string + i*repeat_interval, repeat_interval) != 0){
-                is_repeated=false;
-                break;
-            }
-        }
+        // Check for replicated intervals in the longest sequence
+        const int repeat_interval = x_GetGCD(max_len, min_len);
+        const bool is_repeated = 
+            x_IsReplicatedSequence(afp->sequences[max_index], max_len, repeat_interval);
         AlignmentFileFree(afp);
 
         if (is_repeated) {

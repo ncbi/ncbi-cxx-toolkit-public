@@ -39,6 +39,7 @@
 #include <objtools/readers/fasta_reader_utils.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 // class CAlnError holds error information
@@ -211,7 +212,11 @@ private:
     CAlnReader(const CAlnReader& value);
     CAlnReader& operator=(const CAlnReader& value);
 
+    int x_GetGCD(const int a, const int b) const;
 
+    bool x_IsReplicatedSequence(const char* sequence_data,
+        int sequence_length,
+        int repeat_interval) const;
 
     /// A bunch of strings listing characters with various
     /// meanings in an alignment file.
