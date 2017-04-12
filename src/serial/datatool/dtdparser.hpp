@@ -134,6 +134,8 @@ protected:
     CDataValue* x_AttribValue(const DTDAttribute& att, const string& value);
     CDataType* EnumeratedBlock(const DTDAttribute& att,
                                CEnumDataType* enumType);
+    CDataType* EnumeratedBlock(const DTDElement& node,
+                               CEnumDataType* enumType);
     void SetCommentsIfEmpty(CComments* comments);
 
 #if defined(NCBI_DTDPARSER_TRACE)

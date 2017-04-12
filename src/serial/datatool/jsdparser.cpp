@@ -198,6 +198,8 @@ void JSDParser::ParseNode(DTDElement& node)
             } else if (tok == K_BEGIN_ARRAY) {
                 if (key == "required") {
                     ParseRequired(node);
+                } else if (key == "enum") {
+                    ParseEnumeration(node);
                 } else if (key == "type") {
                     ParseError("type arrays not supported", "string");
                 } else if (key == "items") {
@@ -244,6 +246,30 @@ void JSDParser::ParseRequired(DTDElement& node)
             m_URI.pop_back();
             if (m_MapElement[node_id].GetDefault().empty()) {
                 node.SetOccurrence(node_id, DTDElement::eOne);
+            }
+        }
+    }
+}
+
+void JSDParser::ParseEnumeration(DTDElement& node)
+{
+    if (node.GetType() == DTDElement::eInteger) {
+        node.ResetType(DTDElement::eUnknown);
+        node.SetType(DTDElement::eIntEnum);
+    } else if (node.GetType() == DTDElement::eString) {
+        node.ResetType(DTDElement::eUnknown);
+        node.SetType(DTDElement::eEnum);
+    } else {
+        ParseError("enum restriction not supported", "string or integer type");
+    }
+    bool isint = node.GetType() == DTDElement::eIntEnum;
+    TToken tok;
+    for (tok = GetNextToken(); tok != K_END_ARRAY; tok = GetNextToken()) {
+        if (tok != T_SYMBOL) {
+            if ((isint && tok == T_NUMBER) || (!isint && tok == K_VALUE)) {
+                node.AddContent(Value());
+            } else {
+                ParseError("enum restriction not supported", isint? "integer" : "string");
             }
         }
     }

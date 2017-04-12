@@ -225,7 +225,10 @@ public:
         eSequence, // (a,b,c)
         eChoice,   // (a|b|c)
         eSet,      // (a,b,c)
+
         eAlias,
+        eEnum,
+        eIntEnum,
 
         eBoolean,
         eInteger,

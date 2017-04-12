@@ -1057,6 +1057,12 @@ CDataType* DTDParser::x_Type(
                 type->SetIsAlias(true);
             }
             break;
+        case DTDElement::eEnum:
+            type = EnumeratedBlock(node, new CEnumDataType());
+            break;
+        case DTDElement::eIntEnum:
+            type = EnumeratedBlock(node, new CIntEnumDataType());
+            break;
         case DTDElement::eString:
             type = new CStringDataType();
             break;
@@ -1504,6 +1510,21 @@ CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
         }
         enumType->AddValue( *i, v).SetSourceLine(
             att.GetEnumValueSourceLine(*i));
+    }
+    return enumType;
+}
+
+CDataType* DTDParser::EnumeratedBlock(const DTDElement& node,
+    CEnumDataType* enumType)
+{
+    int v=1;
+    const list<string>& enums = node.GetContent();
+    list<string>::const_iterator i;
+    for (i = enums.begin(); i != enums.end(); ++i, ++v) {
+        if (enumType->IsInteger()) {
+            v = NStr::StringToInt(*i);
+        }
+        enumType->AddValue( *i, v).SetSourceLine( node.GetSourceLine());
     }
     return enumType;
 }
