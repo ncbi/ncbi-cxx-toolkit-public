@@ -250,7 +250,7 @@ public:
 
 struct SNetServiceXSiteAPI : public CObject
 {
-    static void InitXSite(CConfig* config, const string& section);
+    static void InitXSite(CSynonymsRegistry& registry, const string& section);
     static void ConnectXSite(CSocket&, SNetServerImpl::SConnectDeadline&,
             const SServerAddress&);
 

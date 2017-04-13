@@ -355,11 +355,9 @@ bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
     return m_AllowXSiteConnections.load();
 }
 
-void SNetServiceXSiteAPI::InitXSite(CConfig* config, const string& section)
+void SNetServiceXSiteAPI::InitXSite(CSynonymsRegistry& registry, const string& section)
 {
-    if (TServConn_AllowXsiteConn::GetDefault() ||
-            config->GetBool(section, "allow_xsite_conn",
-                CConfig::eErr_NoThrow, false)) {
+    if (registry.Get({ "netservice_api", section }, "allow_xsite_conn", false)) {
         AllowXSiteConnections();
     }
 }
@@ -451,7 +449,7 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
-void SNetServiceXSiteAPI::InitXSite(CConfig*, const string&)
+void SNetServiceXSiteAPI::InitXSite(CSynonymsRegistry&, const string&)
 {
 }
 
@@ -572,7 +570,10 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             }
         }
 
-        InitXSite(config, section);
+        CConfigRegistry config_registry(config);
+        CSynonymsRegistry registry(config_registry);
+
+        InitXSite(registry, section);
 
         m_UseSmartRetries = config->GetBool(section,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);
