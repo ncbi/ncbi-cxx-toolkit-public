@@ -280,23 +280,37 @@ public:
     using TValuePtr = shared_ptr<SValue>;
     using TValues = map<string, map<string, TValuePtr>>;
 
+    bool Has(const SRegSynonyms& sections, SRegSynonyms names);
     TValuePtr Get(const SRegSynonyms& sections, SRegSynonyms names);
 
 private:
+    TValuePtr Find(const SRegSynonyms& sections, SRegSynonyms names);
+
     TValues m_Values;
 };
 
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const SRegSynonyms& sections, SRegSynonyms names)
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Find(const SRegSynonyms& sections, SRegSynonyms names)
 {
     _ASSERT(sections.size());
     _ASSERT(names.size());
 
-    auto section = *sections.begin();
-    auto name = *names.begin();
+    auto section = sections.front();
+    auto name = names.front();
     auto& section_values = m_Values[section];
     auto found = section_values.find(name);
 
-    if (found != section_values.end()) return section_values[name];
+    return found != section_values.end() ? found->second : nullptr;
+}
+
+bool CCachedSynRegistryImpl::CCache::Has(const SRegSynonyms& sections, SRegSynonyms names)
+{
+    auto found = Find(sections, names);
+    return found && found->type == SValue::Read;
+}
+
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const SRegSynonyms& sections, SRegSynonyms names)
+{
+    if (auto found = Find(sections, names)) return found;
 
     TValuePtr value(new SValue);
 
@@ -357,9 +371,7 @@ bool CCachedSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
     _ASSERT(m_Registry);
 
-    auto cached = m_Cache->Get(section, name);
-
-    return (cached->type == CCache::SValue::Read) || m_Registry->Has(section, name);
+    return (m_Cache->Has(section, name)) || m_Registry->Has(section, name);
 }
 
 template string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
