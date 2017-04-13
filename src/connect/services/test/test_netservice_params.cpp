@@ -37,6 +37,7 @@
 #include "../netservice_params.hpp"
 
 #include <random>
+#include <array>
 
 USING_NCBI_SCOPE;
 
@@ -144,6 +145,7 @@ struct SRandomGenerator : SValueGenerator
     size_t GetParamsNumber()   { return m_ParamsRange(  m_Generator); }
     size_t GetSectionsNumber() { return m_SectionsRange(m_Generator); }
     size_t GetNamesNumber()    { return m_NamesRange(   m_Generator); }
+    size_t GetRandom()         { return m_RandomRange(  m_Generator); }
 
     string GetSection() { return GetString(m_SectionLengthRange(m_Generator)); }
     string GetName()    { return GetString(m_NameLengthRange(   m_Generator)); }
@@ -152,6 +154,7 @@ private:
     uniform_int_distribution<size_t> m_ParamsRange;
     uniform_int_distribution<size_t> m_SectionsRange;
     uniform_int_distribution<size_t> m_NamesRange;
+    uniform_int_distribution<size_t> m_RandomRange;
     uniform_int_distribution<size_t> m_SectionLengthRange;
     uniform_int_distribution<size_t> m_NameLengthRange;
 };
@@ -190,25 +193,43 @@ private:
     size_t m_Index = 0;
     shared_ptr<void> m_Value;
 };
-     
+
+using TMemoryRegistries = array<CMemoryRegistry, kPrioritiesSize - 1>;
+
+struct SParamIndices
+{
+    SParamIndices(size_t r) : m_Random(r) {}
+
+    size_t GetPriority() const          { return   m_Random % kPrioritiesSize; }
+    size_t GetType()const               { return  (m_Random / kPrioritiesSize) % TTypes::Size(); }
+    size_t GetSection(size_t max) const { return ((m_Random / kPrioritiesSize) / TTypes::Size()) % max; }
+    size_t GetName(size_t max) const    { return ((m_Random / kPrioritiesSize) / TTypes::Size()) % max; }
+
+private:
+    const size_t m_Random;
+};
+
 struct SRandomParam
 {
     SRegSynonyms sections;
     SRegSynonyms names;
     SValueHolder value;
-    size_t priority;
+    SParamIndices indices;
 
-    SRandomParam(SRandomGenerator& generator, size_t i) :
+    SRandomParam(SRandomGenerator& generator) :
         sections({}),
         names({}),
-        priority((i / TTypes::Size()) % kPrioritiesSize)
+        indices(generator.GetRandom())
     {
-        Init(generator, i % TTypes::Size());
+        Init(generator);
     }
 
     set<pair<string, string>> GetCartesianProduct() const;
     void SetValue(IRWRegistry& registry) const;
     void CheckValue(IRegistry& registry) const;
+
+    void SetValue(TMemoryRegistries& registries) const;
+    void CheckValue(ISynRegistry& registry) const;
 
 private:
     template <typename TType>
@@ -220,7 +241,13 @@ private:
         BOOST_CHECK(registry.GetValue(section, name, TType{}) == value);
     }
 
-    void Init(SRandomGenerator& generator, size_t i);
+    template <typename TType>
+    void CompareValue(ISynRegistry& registry, TType value) const
+    {
+        BOOST_CHECK(registry.Get(sections, names, TType{}) == value);
+    }
+
+    void Init(SRandomGenerator& generator);
 };
 
 set<pair<string, string>> SRandomParam::GetCartesianProduct() const
@@ -238,6 +265,8 @@ set<pair<string, string>> SRandomParam::GetCartesianProduct() const
 
 void SRandomParam::SetValue(IRWRegistry& registry) const
 {
+    const size_t priority = indices.GetPriority();
+
     if (!priority) return;
 
     const auto& section = sections.front();
@@ -254,6 +283,7 @@ void SRandomParam::SetValue(IRWRegistry& registry) const
 
 void SRandomParam::CheckValue(IRegistry& registry) const
 {
+    const size_t priority = indices.GetPriority();
     const auto& section = sections.front();
     const auto& name = names.front();
 
@@ -272,9 +302,47 @@ void SRandomParam::CheckValue(IRegistry& registry) const
     }
 }
 
-void SRandomParam::Init(SRandomGenerator& generator, size_t i)
+void SRandomParam::SetValue(TMemoryRegistries& registries) const
 {
-    switch (i) {
+    const size_t priority = indices.GetPriority();
+
+    if (!priority) return;
+
+    const auto& section = sections[indices.GetSection(sections.size())];
+    const auto& name = names[indices.GetName(names.size())];
+
+    switch (value.GetIndex()) {
+        case 0:  registries[priority - 1].SetValue(section, name, value.Get<0>()); break;
+        case 1:  registries[priority - 1].SetValue(section, name, value.Get<1>()); break;
+        case 2:  registries[priority - 1].SetValue(section, name, value.Get<2>()); break;
+        case 3:  registries[priority - 1].SetValue(section, name, value.Get<3>()); break;
+        default: _TROUBLE;
+    }
+}
+
+void SRandomParam::CheckValue(ISynRegistry& registry) const
+{
+    const size_t priority = indices.GetPriority();
+
+    if (priority) {
+        BOOST_CHECK(registry.Has(sections, names));
+
+        switch (value.GetIndex()) {
+            case 0:  CompareValue(registry, value.Get<0>()); break;
+            case 1:  CompareValue(registry, value.Get<1>()); break;
+            case 2:  CompareValue(registry, value.Get<2>()); break;
+            case 3:  CompareValue(registry, value.Get<3>()); break;
+            default: _TROUBLE;
+        }
+    } else {
+        BOOST_CHECK(!registry.Has(sections, names));
+    }
+}
+
+void SRandomParam::Init(SRandomGenerator& generator)
+{
+    const size_t type = indices.GetType();
+    switch (type) {
         case 0:  value.Set(generator.GetValue<TTypes::GetType<0>>()); break;
         case 1:  value.Set(generator.GetValue<TTypes::GetType<1>>()); break;
         case 2:  value.Set(generator.GetValue<TTypes::GetType<2>>()); break;
@@ -310,7 +378,7 @@ SFixture::SFixture()
     random_params.reserve(params_number);
 
     while (params_number--) {
-        SRandomParam param(generator, params_number);
+        SRandomParam param(generator);
 
         sections_number = sections.size();
 
@@ -373,6 +441,25 @@ BOOST_AUTO_TEST_CASE(ConfigRegistry)
 
     for (auto& param : random_params) {
         param.CheckValue(config_registry);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(SynRegistry)
+{
+    TMemoryRegistries registries;
+
+    for (auto& param : random_params) {
+        param.SetValue(registries);
+    }
+
+    CSynRegistry syn_registry;
+
+    for (auto& registry : registries) {
+        syn_registry.Add(&registry);
+    }
+
+    for (auto& param : random_params) {
+        param.CheckValue(syn_registry);
     }
 }
 
