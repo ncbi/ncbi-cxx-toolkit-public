@@ -236,6 +236,7 @@ public:
     }
 
     void SetAuthString(const string& auth) { m_Auth = auth; }
+    string& Scope() { return m_Scope; }
 
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);

@@ -723,7 +723,7 @@ void CNetScheduleServerListener::OnInit(
     SCfgReader<string> client_node(ns_impl->m_ClientNode,
             config, module, "client_node", ns_impl->m_ClientNode);
 
-    SCfgReader<string> scope(m_Scope, config, module, "scope");
+    SCfgReader<string> scope(Scope(), config, module, "scope");
 
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
