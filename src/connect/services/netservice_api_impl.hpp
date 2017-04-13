@@ -113,8 +113,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     SNetServerPoolImpl(INetServerConnectionListener* listener,
             bool old_style_auth);
 
-    void Init(CConfig* config, const string& section,
-            INetServerConnectionListener* listener);
+    void Init(ISynRegistry& registry, const string& section, INetServerConnectionListener* listener);
 
     SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);

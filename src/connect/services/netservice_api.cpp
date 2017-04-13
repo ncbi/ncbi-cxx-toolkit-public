@@ -609,70 +609,52 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         m_ClientName = app->GetProgramDisplayName();
     }
 
-    m_ServerPool->Init(config, section, m_Listener.GetPointerOrNull());
+    m_ServerPool->Init(registry, section, m_Listener.GetPointerOrNull());
 
     Construct();
 
     m_Listener->OnInit(api_impl, registry, section);
 }
 
-void SNetServerPoolImpl::Init(CConfig* config, const string& section,
-        INetServerConnectionListener* listener)
+void SNetServerPoolImpl::Init(ISynRegistry& registry, const string& section, INetServerConnectionListener* listener)
 {
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
 
-    const auto CONNECTION_TIMEOUT_DEFAULT = 2.0;
-    const auto COMMUNICATION_TIMEOUT_DEFAULT = 12.0;
-    const auto FIRST_SERVER_TIMEOUT_DEFAULT = 0.3;
+    const auto kConnTimeoutDefault = 2.0;
+    const auto kCommTimeoutDefault = 12.0;
+    const auto kFirstServerTimeoutDefault = 0.3;
 
-    g_CTimeoutToSTimeout(CTimeout(CONNECTION_TIMEOUT_DEFAULT), m_ConnTimeout);
-    g_CTimeoutToSTimeout(CTimeout(COMMUNICATION_TIMEOUT_DEFAULT), m_CommTimeout);
-    g_CTimeoutToSTimeout(CTimeout(FIRST_SERVER_TIMEOUT_DEFAULT), m_FirstServerTimeout);
+    g_CTimeoutToSTimeout(CTimeout(kConnTimeoutDefault), m_ConnTimeout);
+    g_CTimeoutToSTimeout(CTimeout(kCommTimeoutDefault), m_CommTimeout);
+    g_CTimeoutToSTimeout(CTimeout(kFirstServerTimeoutDefault), m_FirstServerTimeout);
    
-    if (config != NULL) {
-        m_LBSMAffinity.first = config->GetString(section, "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
+    m_LBSMAffinity.first = registry.Get(section, "use_lbsm_affinity", "");
 
-        // Get affinity value from the local LBSM configuration file.
-        if (!m_LBSMAffinity.first.empty()) {
-            m_LBSMAffinity.second = LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinity.first.c_str());
-        }
-
-        double conn_timeout = config->Get(section, "connection_timeout",
-                CConfig::eErr_NoThrow, CONNECTION_TIMEOUT_DEFAULT);
-
-        if (conn_timeout > 0) 
-            g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
-
-        double comm_timeout = config->Get(section, "communication_timeout",
-                CConfig::eErr_NoThrow, COMMUNICATION_TIMEOUT_DEFAULT);
-
-        if (comm_timeout > 0)
-            g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
-
-        double first_srv_timeout = config->Get(section, "first_server_timeout",
-                CConfig::eErr_NoThrow, FIRST_SERVER_TIMEOUT_DEFAULT);
-
-        if (first_srv_timeout > 0)
-            g_CTimeoutToSTimeout(CTimeout(first_srv_timeout), m_FirstServerTimeout);
-        else if (comm_timeout > 0)
-            m_FirstServerTimeout = m_CommTimeout;
-
-        double max_total_time = config->Get(section, "max_connection_time", CConfig::eErr_NoThrow, 0.0);
-        if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
-
-        max_requests = config->GetInt(section, "rebalance_requests",
-                CConfig::eErr_NoThrow, max_requests);
-
-        max_seconds = config->GetDouble(section, "rebalance_time",
-                CConfig::eErr_NoThrow, max_seconds);
+    // Get affinity value from the local LBSM configuration file.
+    if (!m_LBSMAffinity.first.empty()) {
+        m_LBSMAffinity.second = LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinity.first.c_str());
     }
 
-    CMemoryRegistry empty_registry;
-    CConfig empty_config(empty_registry);
-    CConfigRegistry config_registry(config ? config : &empty_config);
-    CSynRegistry syn_registry(&config_registry);
-    CCachedSynRegistry registry(&syn_registry);
+    double conn_timeout = registry.Get(section, "connection_timeout", kConnTimeoutDefault);
+    if (conn_timeout > 0) g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
+
+    double comm_timeout = registry.Get(section, "communication_timeout", kCommTimeoutDefault);
+    if (comm_timeout > 0) g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
+
+    double first_srv_timeout = registry.Get(section, "first_server_timeout", kFirstServerTimeoutDefault);
+
+    if (first_srv_timeout > 0) {
+        g_CTimeoutToSTimeout(CTimeout(first_srv_timeout), m_FirstServerTimeout);
+    } else if (comm_timeout > 0) {
+        m_FirstServerTimeout = m_CommTimeout;
+    }
+
+    double max_total_time = registry.Get(section, "max_connection_time", 0.0);
+    if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
+
+    max_requests = registry.Get(section, "rebalance_requests", max_requests);
+    max_seconds = registry.Get(section, "rebalance_time", max_seconds);
 
     m_ThrottleParams.Init(registry, section);
 
