@@ -123,6 +123,29 @@ private:
     shared_ptr<CConfig> m_Config;
 };
 
+struct SRegSynonyms : vector<string>
+{
+    using TBase = vector<string>;
+
+    SRegSynonyms(const char* v) : TBase({v}) {}
+    SRegSynonyms(const string v) : TBase({v}) {}
+
+    template <typename T>
+    SRegSynonyms(initializer_list<T> l)
+    {
+        for (auto& s : l) {
+            emplace_back(s);
+        }
+    }
+
+    SRegSynonyms(initializer_list<SRegSynonyms> src)
+    {
+        for (auto& s : src) {
+            insert(end(), s.begin(), s.end());
+        }
+    }
+};
+
 class NCBI_XNCBI_EXPORT ISynRegistry
 {
     template <typename TType> struct TR;
@@ -131,69 +154,27 @@ public:
     virtual ~ISynRegistry() {}
 
     // XXX:
-    // Microsoft VS 2013 has a bug (violates 13.3.3.2/3.1.1 of the standard).
-    // So, to avoid overload 'issues' it would report (string vs initializer_list<string>),
-    // parameter 'name' has type of 'const char*' (instead of 'const string&').
-
-    // XXX:
     // Since there is no such thing as a virtual template method, a workaround is used:
     // Template methods (ISynRegistry::Get) call virtual methods (ISynRegistry::VGet).
     // Their overrides (TSynRegistry<TImpl>::VGet) call actual implementations (TImpl::TGet).
 
     template <typename TType>
-    typename TR<TType>::T Get(const string& section, const char* name, TType default_value)
-    {
-        return VGet(section, name, static_cast<typename TR<TType>::T>(default_value));
-    }
-
-    template <typename TType>
-    typename TR<TType>::T Get(const string& section, initializer_list<string> names, TType default_value)
-    {
-        return VGet(section, names, static_cast<typename TR<TType>::T>(default_value));
-    }
-
-    template <typename TType>
-    typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value)
-    {
-        return VGet(sections, name, static_cast<typename TR<TType>::T>(default_value));
-    }
-
-    template <typename TType>
-    typename TR<TType>::T Get(initializer_list<string> sections, initializer_list<string> names, TType default_value)
+    typename TR<TType>::T Get(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
     {
         return VGet(sections, names, static_cast<typename TR<TType>::T>(default_value));
     }
 
-    bool Has(const string& section, const char* name)
-    {
-        return HasImpl(section, name);
-    }
-
-    bool Has(const string& section, initializer_list<string> names);
-    bool Has(initializer_list<string> sections, const char* name);
-    bool Has(initializer_list<string> sections, initializer_list<string> names);
+    bool Has(const SRegSynonyms& sections, SRegSynonyms names);
 
     virtual void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) = 0;
 
 protected:
-    virtual string VGet(const string& section, const char* name, string default_value) = 0;
-    virtual bool   VGet(const string& section, const char* name, bool default_value) = 0;
-    virtual int    VGet(const string& section, const char* name, int default_value) = 0;
-    virtual double VGet(const string& section, const char* name, double default_value) = 0;
-    virtual string VGet(const string& section, initializer_list<string> names, string default_value) = 0;
-    virtual bool   VGet(const string& section, initializer_list<string> names, bool default_value) = 0;
-    virtual int    VGet(const string& section, initializer_list<string> names, int default_value) = 0;
-    virtual double VGet(const string& section, initializer_list<string> names, double default_value) = 0;
-    virtual string VGet(initializer_list<string> sections, const char* name, string default_value) = 0;
-    virtual bool   VGet(initializer_list<string> sections, const char* name, bool default_value) = 0;
-    virtual int    VGet(initializer_list<string> sections, const char* name, int default_value) = 0;
-    virtual double VGet(initializer_list<string> sections, const char* name, double default_value) = 0;
-    virtual string VGet(initializer_list<string> sections, initializer_list<string> names, string default_value) = 0;
-    virtual bool   VGet(initializer_list<string> sections, initializer_list<string> names, bool default_value) = 0;
-    virtual int    VGet(initializer_list<string> sections, initializer_list<string> names, int default_value) = 0;
-    virtual double VGet(initializer_list<string> sections, initializer_list<string> names, double default_value) = 0;
+    virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
+    virtual bool   VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value) = 0;
+    virtual int    VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value) = 0;
+    virtual double VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value) = 0;
 
-    virtual bool   HasImpl(const string& section, const char* name) = 0;
+    virtual bool   HasImpl(const string& section, const string& name) = 0;
 };
 
 template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
@@ -208,22 +189,10 @@ public:
     TSynRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
 
 protected:
-    string VGet(const string& section, const char* name, string default_value) final;
-    bool   VGet(const string& section, const char* name, bool default_value) final;
-    int    VGet(const string& section, const char* name, int default_value) final;
-    double VGet(const string& section, const char* name, double default_value) final;
-    string VGet(const string& section, initializer_list<string> names, string default_value) final;
-    bool   VGet(const string& section, initializer_list<string> names, bool default_value) final;
-    int    VGet(const string& section, initializer_list<string> names, int default_value) final;
-    double VGet(const string& section, initializer_list<string> names, double default_value) final;
-    string VGet(initializer_list<string> sections, const char* name, string default_value) final;
-    bool   VGet(initializer_list<string> sections, const char* name, bool default_value) final;
-    int    VGet(initializer_list<string> sections, const char* name, int default_value) final;
-    double VGet(initializer_list<string> sections, const char* name, double default_value) final;
-    string VGet(initializer_list<string> sections, initializer_list<string> names, string default_value) final;
-    bool   VGet(initializer_list<string> sections, initializer_list<string> names, bool default_value) final;
-    int    VGet(initializer_list<string> sections, initializer_list<string> names, int default_value) final;
-    double VGet(initializer_list<string> sections, initializer_list<string> names, double default_value) final;
+    string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) final;
+    bool   VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value) final;
+    int    VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value) final;
+    double VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value) final;
 };
 
 class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
@@ -235,19 +204,9 @@ public:
 
 protected:
     template <typename TType>
-    TType TGet(const string& section, const char* name, TType default_value);
+    TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
 
-    template <typename TType>
-    TType TGet(const string& section, initializer_list<string> names, TType default_value);
-
-    template <typename TType>
-    TType TGet(initializer_list<string> sections, const char* name, TType default_value);
-
-    template <typename TType>
-    TType TGet(initializer_list<string> sections, initializer_list<string> names, TType default_value);
-
-
-    bool HasImpl(const string& section, const char* name) final
+    bool HasImpl(const string& section, const string& name) final
     {
         _ASSERT(m_Registry);
         return m_Registry->HasEntry(section, name);
@@ -270,10 +229,10 @@ public:
     void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) override;
 
 protected:
-    template <typename TSections, typename TNames, typename TType>
-    TType TGet(TSections sections, TNames names, TType default_value);
+    template <typename TType>
+    TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
 
-    bool HasImpl(const string& section, const char* name) final;
+    bool HasImpl(const string& section, const string& name) final;
 
 private:
     shared_ptr<ISynRegistry> m_Registry;
@@ -282,132 +241,36 @@ private:
 
 using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
 
-extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(const string& section, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(const string& section, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(const string& section, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(const string& section, const char* name, double default_value);
-extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, double default_value);
-extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, double default_value);
-extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::TGet(string section, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::TGet(string section, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::TGet(string section, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::TGet(string section, const char* name, double default_value);
-extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, double default_value);
-extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, double default_value);
-extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 template <typename TImpl>
-string TSynRegistry<TImpl>::VGet(const string& section, const char* name, string default_value)
-{
-    return TImpl::TGet(section, name, default_value);
-}
-
-template <typename TImpl>
-bool TSynRegistry<TImpl>::VGet(const string& section, const char* name, bool default_value)
-{
-    return TImpl::TGet(section, name, default_value);
-}
-
-template <typename TImpl>
-int TSynRegistry<TImpl>::VGet(const string& section, const char* name, int default_value)
-{
-    return TImpl::TGet(section, name, default_value);
-}
-
-template <typename TImpl>
-double TSynRegistry<TImpl>::VGet(const string& section, const char* name, double default_value)
-{
-    return TImpl::TGet(section, name, default_value);
-}
-
-template <typename TImpl>
-string TSynRegistry<TImpl>::VGet(const string& section, initializer_list<string> names, string default_value)
-{
-    return TImpl::TGet(section, names, default_value);
-}
-
-template <typename TImpl>
-bool TSynRegistry<TImpl>::VGet(const string& section, initializer_list<string> names, bool default_value)
-{
-    return TImpl::TGet(section, names, default_value);
-}
-
-template <typename TImpl>
-int TSynRegistry<TImpl>::VGet(const string& section, initializer_list<string> names, int default_value)
-{
-    return TImpl::TGet(section, names, default_value);
-}
-
-template <typename TImpl>
-double TSynRegistry<TImpl>::VGet(const string& section, initializer_list<string> names, double default_value)
-{
-    return TImpl::TGet(section, names, default_value);
-}
-
-template <typename TImpl>
-string TSynRegistry<TImpl>::VGet(initializer_list<string> sections, const char* name, string default_value)
-{
-    return TImpl::TGet(sections, name, default_value);
-}
-
-template <typename TImpl>
-bool TSynRegistry<TImpl>::VGet(initializer_list<string> sections, const char* name, bool default_value)
-{
-    return TImpl::TGet(sections, name, default_value);
-}
-
-template <typename TImpl>
-int TSynRegistry<TImpl>::VGet(initializer_list<string> sections, const char* name, int default_value)
-{
-    return TImpl::TGet(sections, name, default_value);
-}
-
-template <typename TImpl>
-double TSynRegistry<TImpl>::VGet(initializer_list<string> sections, const char* name, double default_value)
-{
-    return TImpl::TGet(sections, name, default_value);
-}
-
-template <typename TImpl>
-string TSynRegistry<TImpl>::VGet(initializer_list<string> sections, initializer_list<string> names, string default_value)
+string TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value)
 {
     return TImpl::TGet(sections, names, default_value);
 }
 
 template <typename TImpl>
-bool TSynRegistry<TImpl>::VGet(initializer_list<string> sections, initializer_list<string> names, bool default_value)
+bool TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value)
 {
     return TImpl::TGet(sections, names, default_value);
 }
 
 template <typename TImpl>
-int TSynRegistry<TImpl>::VGet(initializer_list<string> sections, initializer_list<string> names, int default_value)
+int TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value)
 {
     return TImpl::TGet(sections, names, default_value);
 }
 
 template <typename TImpl>
-double TSynRegistry<TImpl>::VGet(initializer_list<string> sections, initializer_list<string> names, double default_value)
+double TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value)
 {
     return TImpl::TGet(sections, names, default_value);
 }

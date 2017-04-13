@@ -173,136 +173,50 @@ void CSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
     m_Registry = s_MakeShared(registry, ownership);
 }
 
-template <typename TType, class TFunc>
-TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
-{
-    _ASSERT(list.size());
-
-    const TType empty_value{};
-
-    for (const auto& element : list) {
-        auto value = func(element, empty_value);
-
-        if (value != empty_value) return value;
-    }
-
-    return default_value;
-}
-
 template <typename TType>
-TType CSynRegistryImpl::TGet(const string& section, const char* name, TType default_value)
+TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
     _ASSERT(m_Registry);
+    _ASSERT(sections.size());
+    _ASSERT(names.size());
 
-    try {
-        return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
-    }
-    catch (CStringException& ex) {
-        LOG_POST(Warning << ex.what());
-    }
-    catch (CRegistryException& ex) {
-        LOG_POST(Warning << ex.what());
+    for (const auto& section : sections) {
+        for (const auto& name : names) {
+            if (!HasImpl(section, name)) continue;
+
+            try {
+                return m_Registry->GetValue(section, name.c_str(), default_value, IRegistry::eThrow);
+            }
+            catch (CStringException& ex) {
+                LOG_POST(Warning << ex.what());
+            }
+            catch (CRegistryException& ex) {
+                LOG_POST(Warning << ex.what());
+            }
+        }
     }
 
     return default_value;
 }
 
-template <typename TType>
-TType CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, TType default_value)
+bool ISynRegistry::Has(const SRegSynonyms& sections, SRegSynonyms names)
 {
-    auto f = [&](const string& name, TType value)
-    {
-        return VGet(section, name.c_str(), value);
-    };
+    _ASSERT(sections.size());
+    _ASSERT(names.size());
 
-    return s_Iterate(names, default_value, f);
+    for (const auto& section : sections) {
+        for (const auto& name : names) {
+             if (HasImpl(section, name)) return true;
+        }
+    }
+
+    return false;
 }
 
-template <typename TType>
-TType CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, TType default_value)
-{
-    auto f = [&](const string& section, TType value)
-    {
-        return VGet(section, name, value);
-    };
-
-    return s_Iterate(sections, default_value, f);
-}
-
-template <typename TType>
-TType CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, TType default_value)
-{
-    auto outer_f = [&](const string& section, TType value)
-    {
-        auto inner_f = [&](const string& name, TType inner_value)
-        {
-            // XXX:
-            // GCC-4.9.3 has a bug (62272).
-            // So, to avoid internal compiler error, 'this' has to be used.
-            return this->VGet(section, name.c_str(), inner_value);
-        };
-
-        return s_Iterate(names, value, inner_f);
-    };
-
-    return s_Iterate(sections, default_value, outer_f);
-}
-
-bool ISynRegistry::Has(const string& section, initializer_list<string> names)
-{
-    auto f = [&](const string& name, bool)
-    {
-        return Has(section, name.c_str());
-    };
-
-    return s_Iterate(names, false, f);
-}
-
-bool ISynRegistry::Has(initializer_list<string> sections, const char* name)
-{
-    auto f = [&](const string& section, bool)
-    {
-        return Has(section, name);
-    };
-
-    return s_Iterate(sections, false, f);
-}
-
-bool ISynRegistry::Has(initializer_list<string> sections, initializer_list<string> names)
-{
-    auto outer_f = [&](const string& section, bool)
-    {
-        auto inner_f = [&](const string& name, bool)
-        {
-            // XXX:
-            // GCC-4.9.3 has a bug (62272).
-            // So, to avoid internal compiler error, 'this' has to be used
-            // (it was not failing in this particular case, added 'this' just in case).
-            return this->Has(section, name.c_str());
-        };
-
-        return s_Iterate(names, false, inner_f);
-    };
-
-    return s_Iterate(sections, false, outer_f);
-}
-
-template string CSynRegistryImpl::TGet(const string& section, const char* name, string default_value);
-template bool   CSynRegistryImpl::TGet(const string& section, const char* name, bool default_value);
-template int    CSynRegistryImpl::TGet(const string& section, const char* name, int default_value);
-template double CSynRegistryImpl::TGet(const string& section, const char* name, double default_value);
-template string CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, string default_value);
-template bool   CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, bool default_value);
-template int    CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, int default_value);
-template double CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, double default_value);
-template string CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, string default_value);
-template bool   CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, bool default_value);
-template int    CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, int default_value);
-template double CSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, double default_value);
-template string CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, string default_value);
-template bool   CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-template int    CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, int default_value);
-template double CSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, double default_value);
+template string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 class CCachedSynRegistryImpl::CCache
 {
@@ -338,73 +252,13 @@ public:
     using TValuePtr = shared_ptr<SValue>;
     using TValues = map<string, map<string, TValuePtr>>;
 
-    TValuePtr Get(const string& section, const char* name);
-    TValuePtr Get(const string& section, initializer_list<string> names);
-    TValuePtr Get(initializer_list<string> sections, const char* name);
-    TValuePtr Get(initializer_list<string> sections, initializer_list<string> names);
+    TValuePtr Get(const SRegSynonyms& sections, SRegSynonyms names);
 
 private:
     TValues m_Values;
 };
 
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const string& section, const char* name)
-{
-    auto& section_values = m_Values[section];
-    auto found = section_values.find(name);
-
-    if (found != section_values.end()) return section_values[name];
-
-    TValuePtr value(new SValue);
-    section_values.insert(make_pair(name, value));
-    return value;
-}
-
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const string& section, initializer_list<string> names)
-{
-    _ASSERT(names.size());
-
-    auto name = *names.begin();
-    auto& section_values = m_Values[section];
-    auto found = section_values.find(name);
-
-    if (found != section_values.end()) return section_values[name];
-
-    TValuePtr value(new SValue);
-
-    for (auto& n : names) {
-        auto result = section_values.insert(make_pair(n, value));
-
-        // If failed, corresponding parameter has already been read with a different set of synonyms
-        _ASSERT(result.second);
-    }
-
-    return value;
-}
-
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(initializer_list<string> sections, const char* name)
-{
-    _ASSERT(sections.size());
-
-    auto section = *sections.begin();
-    auto& section_values = m_Values[section];
-    auto found = section_values.find(name);
-
-    if (found != section_values.end()) return section_values[name];
-
-    TValuePtr value(new SValue);
-
-    for (auto& s : sections) {
-        auto& sv = m_Values[s];
-        auto result = sv.insert(make_pair(name, value));
-
-        // If failed, corresponding parameter has already been read with a different set of synonyms
-        _ASSERT(result.second);
-    }
-
-    return value;
-}
-
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(initializer_list<string> sections, initializer_list<string> names)
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const SRegSynonyms& sections, SRegSynonyms names)
 {
     _ASSERT(sections.size());
     _ASSERT(names.size());
@@ -446,8 +300,8 @@ void CCachedSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
     m_Registry->Reset(registry, ownership);
 }
 
-template <typename TSections, typename TNames, typename TType>
-TType CCachedSynRegistryImpl::TGet(TSections sections, TNames names, TType default_value)
+template <typename TType>
+TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
     _ASSERT(m_Registry);
 
@@ -472,7 +326,7 @@ TType CCachedSynRegistryImpl::TGet(TSections sections, TNames names, TType defau
     return cached_value;
 }
 
-bool CCachedSynRegistryImpl::HasImpl(const string& section, const char* name)
+bool CCachedSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
     _ASSERT(m_Registry);
 
@@ -481,21 +335,9 @@ bool CCachedSynRegistryImpl::HasImpl(const string& section, const char* name)
     return (cached->type == CCache::SValue::Read) || m_Registry->Has(section, name);
 }
 
-template string CCachedSynRegistryImpl::TGet(string section, const char* name, string default_value);
-template bool   CCachedSynRegistryImpl::TGet(string section, const char* name, bool default_value);
-template int    CCachedSynRegistryImpl::TGet(string section, const char* name, int default_value);
-template double CCachedSynRegistryImpl::TGet(string section, const char* name, double default_value);
-template string CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, string default_value);
-template bool   CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, bool default_value);
-template int    CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, int default_value);
-template double CCachedSynRegistryImpl::TGet(string section, initializer_list<string> names, double default_value);
-template string CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, string default_value);
-template bool   CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, bool default_value);
-template int    CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, int default_value);
-template double CCachedSynRegistryImpl::TGet(initializer_list<string> sections, const char* name, double default_value);
-template string CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, string default_value);
-template bool   CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-template int    CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, int default_value);
-template double CCachedSynRegistryImpl::TGet(initializer_list<string> sections, initializer_list<string> names, double default_value);
+template string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+template bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+template int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+template double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 END_NCBI_SCOPE
