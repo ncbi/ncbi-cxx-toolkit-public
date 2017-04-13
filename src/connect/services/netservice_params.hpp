@@ -147,8 +147,8 @@ NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 class NCBI_XNCBI_EXPORT CConfigRegistry : public IRegistry
 {
 public:
-    CConfigRegistry(CConfig* config, EOwnership ownership = eNoOwnership);
-    void Reset(CConfig* config, EOwnership ownership = eNoOwnership);
+    CConfigRegistry(CConfig* config = nullptr, EOwnership ownership = eNoOwnership);
+    void Reset(CConfig* config = nullptr, EOwnership ownership = eNoOwnership);
 
 private:
     bool x_Empty(TFlags flags) const override;
@@ -210,7 +210,7 @@ public:
     bool Has(initializer_list<string> sections, const char* name);
     bool Has(initializer_list<string> sections, initializer_list<string> names);
 
-    virtual void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) = 0;
+    virtual void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) = 0;
 
 protected:
     virtual string VGet(const string& section, const char* name, string default_value) = 0;
@@ -265,9 +265,9 @@ protected:
 class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
 {
 public:
-    CSynRegistryImpl(IRegistry* registry, EOwnership ownership = eNoOwnership);
+    CSynRegistryImpl(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
 
-    void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
+    void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) override;
 
 protected:
     template <typename TType>
@@ -285,6 +285,7 @@ protected:
 
     bool HasImpl(const string& section, const char* name) final
     {
+        _ASSERT(m_Registry);
         return m_Registry->HasEntry(section, name);
     }
 
@@ -299,10 +300,10 @@ class NCBI_XNCBI_EXPORT CCachedSynRegistryImpl : public ISynRegistry
     class CCache;
 
 public:
-    CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership = eNoOwnership);
+    CCachedSynRegistryImpl(ISynRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
     ~CCachedSynRegistryImpl();
 
-    void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
+    void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) override;
 
 protected:
     template <typename TSections, typename TNames, typename TType>

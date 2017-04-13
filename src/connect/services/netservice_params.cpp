@@ -125,12 +125,10 @@ shared_ptr<T> s_MakeShared(T* ptr, EOwnership ownership)
 CConfigRegistry::CConfigRegistry(CConfig* config, EOwnership ownership) :
     m_Config(s_MakeShared(config, ownership))
 {
-    _ASSERT(config);
 }
 
 void CConfigRegistry::Reset(CConfig* config, EOwnership ownership)
 {
-    _ASSERT(config);
     m_Config = s_MakeShared(config, ownership);
 }
 
@@ -142,6 +140,8 @@ bool CConfigRegistry::x_Empty(TFlags flags) const
 
 const string& CConfigRegistry::x_Get(const string& section, const string& name, TFlags) const
 {
+    _ASSERT(m_Config);
+
     try {
         return m_Config->GetString(section, name, CConfig::eErr_Throw);
     }
@@ -154,6 +154,8 @@ const string& CConfigRegistry::x_Get(const string& section, const string& name, 
 
 bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags flags) const
 {
+    _ASSERT(m_Config);
+
     try {
         m_Config->GetString(section, name, CConfig::eErr_Throw);
     }
@@ -206,6 +208,8 @@ TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
 template <typename TType>
 TType CSynRegistryImpl::TGet(const string& section, const char* name, TType default_value)
 {
+    _ASSERT(m_Registry);
+
     try {
         return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
     }
@@ -461,6 +465,8 @@ void CCachedSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
 template <typename TSections, typename TNames, typename TType>
 TType CCachedSynRegistryImpl::TGet(TSections sections, TNames names, TType default_value)
 {
+    _ASSERT(m_Registry);
+
     auto cached = m_Cache->Get(sections, names);
     auto& cached_type = cached->type;
     auto& cached_value = cached->value;
@@ -484,6 +490,8 @@ TType CCachedSynRegistryImpl::TGet(TSections sections, TNames names, TType defau
 
 bool CCachedSynRegistryImpl::HasImpl(const string& section, const char* name)
 {
+    _ASSERT(m_Registry);
+
     auto cached = m_Cache->Get(section, name);
 
     return (cached->type == CCache::SValue::Read) || m_Registry->Has(section, name);
