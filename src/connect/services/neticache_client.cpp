@@ -65,7 +65,7 @@ BEGIN_NCBI_SCOPE
 class CNetICacheServerListener : public CNetCacheServerListener
 {
 protected:
-    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
 };
 
 const char* const kNetICacheDriverName = "netcache";
@@ -198,23 +198,14 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     ICache::TFlags m_CacheFlags;
 };
 
-void CNetICacheServerListener::OnInit(CObject* api_impl,
-    CConfig* config, const string& config_section)
+void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
 {
-    CNetCacheServerListener::OnInit(api_impl, config, config_section);
+    CNetCacheServerListener::OnInit(api_impl, registry, config_section);
 
     SNetICacheClientImpl* icache_impl =
         static_cast<SNetICacheClientImpl*>(api_impl);
 
-    if (config) {
-        CConfigRegistry config_registry(config);
-        CSynRegistry registry(&config_registry);
-        icache_impl->Init(registry, config_section);
-    } else {
-        CMemoryRegistry empty_registry;
-        CSynRegistry registry(&empty_registry);
-        icache_impl->Init(registry, config_section);
-    }
+    icache_impl->Init(registry, config_section);
 }
 
 void SNetICacheClientImpl::Init(ISynRegistry& registry, const string& config_section)
@@ -882,7 +873,7 @@ public:
 
     CRef<INetServerProperties> AllocServerProperties() override;
     CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name) override;
-    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -905,10 +896,9 @@ CConfig* CSetValidWarningSuppressor::OnPreInit(CObject* api_impl,
             client_name);
 }
 
-void CSetValidWarningSuppressor::OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section)
+void CSetValidWarningSuppressor::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
 {
-    m_DelegateListener->OnInit(api_impl, config, config_section);
+    m_DelegateListener->OnInit(api_impl, registry, config_section);
 }
 
 void CSetValidWarningSuppressor::OnConnected(CNetServerConnection& connection)

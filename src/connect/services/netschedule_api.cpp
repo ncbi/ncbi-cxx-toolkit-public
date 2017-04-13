@@ -618,17 +618,16 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
-void CNetScheduleServerListener::OnInit(
-    CObject* api_impl, CConfig* config, const string& section)
+void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
     _ASSERT(ns_impl);
 
     SetDiagUserAndHost();
-    ns_impl->Init(config, section);
+    ns_impl->Init(registry, section);
 }
 
-void SNetScheduleAPIImpl::Init(CConfig* config, string module)
+void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string module)
 {
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
@@ -638,9 +637,6 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
         (user.empty() ? kEmptyStr : user + '@') +
         GetDiagContext().GetHost();
 
-    CConfigRegistry config_registry(config);
-    CSynRegistry syn_registry(&config_registry);
-    CCachedSynRegistry registry(&syn_registry);
     CNetScheduleOwnConfigLoader loader;
     auto sections = { module, loader.GetSection() };
 

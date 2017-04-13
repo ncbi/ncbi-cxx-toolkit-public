@@ -118,22 +118,13 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
     return NULL;
 }
 
-void CNetCacheServerListener::OnInit(CObject* api_impl,
-    CConfig* config, const string& config_section)
+void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
 
-    if (config) {
-        CConfigRegistry config_registry(config);
-        CSynRegistry registry(&config_registry);
-        nc_impl->Init(registry, config_section);
-    } else {
-        CMemoryRegistry empty_registry;
-        CSynRegistry registry(&empty_registry);
-        nc_impl->Init(registry, config_section);
-    }
+    nc_impl->Init(registry, config_section);
 }
 
 void SNetCacheAPIImpl::Init(ISynRegistry& registry, const string& config_section)

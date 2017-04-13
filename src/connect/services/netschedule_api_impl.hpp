@@ -244,7 +244,7 @@ public:
 
     CRef<INetServerProperties> AllocServerProperties() override;
 
-    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -426,7 +426,7 @@ public:
     void UseOldStyleAuth();
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
-    void Init(CConfig* config, string module);
+    void Init(ISynRegistry& registry, string module);
     void InitAffinities(ISynRegistry& registry, initializer_list<string> sections);
     string MakeAuthString();
 

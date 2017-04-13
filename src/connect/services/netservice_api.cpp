@@ -593,7 +593,17 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     Construct();
 
-    m_Listener->OnInit(api_impl, config, section);
+    IRegistry* config_registry = nullptr;
+
+    if (config) {
+        config_registry = new CConfigRegistry(config);
+    } else {
+        config_registry = new CMemoryRegistry;
+    }
+
+    CSynRegistry syn_registry(config_registry, eTakeOwnership);
+    CCachedSynRegistry registry(&syn_registry);
+    m_Listener->OnInit(api_impl, registry, section);
 }
 
 void SNetServerPoolImpl::Init(CConfig* config, const string& section,
@@ -1519,7 +1529,7 @@ CNetService g_DiscoverService(const string& service_name,
             return CRef<INetServerProperties>(new INetServerProperties);
         }
 
-        void OnInit(CObject*, CConfig*, const string&) override {}
+        void OnInit(CObject*, ISynRegistry&, const string&) override {}
         void OnConnected(CNetServerConnection&) override {}
         void OnError(const string&, CNetServer&) override {}
         void OnWarning(const string&, CNetServer&) override {}

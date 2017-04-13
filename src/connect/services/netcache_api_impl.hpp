@@ -57,7 +57,7 @@ public:
     CRef<INetServerProperties> AllocServerProperties() override;
 
     CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name) override;
-    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
