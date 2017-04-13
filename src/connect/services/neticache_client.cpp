@@ -194,7 +194,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
-    void Init(CConfig* config, const string& config_section);
+    void Init(CSynonymsRegistry& registry, const string& config_section);
 
     ICache::TFlags m_CacheFlags;
 };
@@ -207,40 +207,29 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     SNetICacheClientImpl* icache_impl =
         static_cast<SNetICacheClientImpl*>(api_impl);
 
-    icache_impl->Init(config, config_section);
+    if (config) {
+        CConfigRegistry config_registry(config);
+        CSynonymsRegistry registry(config_registry);
+        icache_impl->Init(registry, config_section);
+    } else {
+        CMemoryRegistry empty_registry;
+        CSynonymsRegistry registry(empty_registry);
+        icache_impl->Init(registry, config_section);
+    }
 }
 
-void SNetICacheClientImpl::Init(CConfig* config, const string& config_section)
+void SNetICacheClientImpl::Init(CSynonymsRegistry& registry, const string& config_section)
 {
-    if (m_DefaultParameters.GetCacheName().empty()) {
-        if (config == NULL) {
-            NCBI_THROW(CNetCacheException,
-                eAuthenticationError, "ICache database name is not defined");
-        } else {
-            try {
-                m_DefaultParameters.SetCacheName(
-                        config->GetString(config_section,
-                                "name", CConfig::eErr_Throw, kEmptyStr));
-            }
-            catch (exception&) {
-                m_DefaultParameters.SetCacheName(
-                        config->GetString(config_section,
-                                "cache_name", CConfig::eErr_Throw,
-                                        "default_cache"));
-            }
-        }
+    auto cache_name = m_DefaultParameters.GetCacheName();
+
+    if (cache_name.empty()) cache_name = registry.Get(config_section, { "name", "cache_name" }, "default_cache");
+
+    if (cache_name.length() > MAX_ICACHE_CACHE_NAME_LENGTH) {
+        NCBI_THROW(CNetCacheException, eAuthenticationError, "NetICache: cache name is too long");
     }
 
-    if (m_DefaultParameters.GetCacheName().length() >
-            MAX_ICACHE_CACHE_NAME_LENGTH) {
-        NCBI_THROW(CNetCacheException,
-            eAuthenticationError, "NetICache: cache name is too long");
-    }
-
-    if (config != NULL)
-        m_DefaultParameters.SetTryAllServers(
-                config->GetBool(config_section,
-                        "try_all_servers", CConfig::eErr_NoThrow, false));
+    m_DefaultParameters.SetCacheName(cache_name);
+    m_DefaultParameters.SetTryAllServers(registry.Get(config_section, "try_all_servers", false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
