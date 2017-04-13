@@ -162,7 +162,7 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
 
-CSynonymsRegistryImpl::CSynonymsRegistryImpl(IRegistry* registry, EOwnership ownership) :
+CSynRegistryImpl::CSynRegistryImpl(IRegistry* registry, EOwnership ownership) :
     m_Registry(s_MakeShared(registry, ownership))
 {
 }
@@ -184,7 +184,7 @@ TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
 }
 
 template <typename TType>
-TType ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, TType default_value)
+TType ISynRegistry::GetImpl(const string& section, initializer_list<string> names, TType default_value)
 {
     auto f = [&](const string& name, TType value)
     {
@@ -195,7 +195,7 @@ TType ISynonymsRegistry::GetImpl(const string& section, initializer_list<string>
 }
 
 template <typename TType>
-TType ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
+TType ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
 {
     auto f = [&](const string& section, TType value)
     {
@@ -205,7 +205,7 @@ TType ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* 
     return s_Iterate(sections, default_value, f);
 }
 
-bool ISynonymsRegistry::Has(const string& section, initializer_list<string> names)
+bool ISynRegistry::Has(const string& section, initializer_list<string> names)
 {
     auto f = [&](const string& name, bool)
     {
@@ -215,7 +215,7 @@ bool ISynonymsRegistry::Has(const string& section, initializer_list<string> name
     return s_Iterate(names, false, f);
 }
 
-bool ISynonymsRegistry::Has(initializer_list<string> sections, const char* name)
+bool ISynRegistry::Has(initializer_list<string> sections, const char* name)
 {
     auto f = [&](const string& section, bool)
     {
@@ -225,13 +225,13 @@ bool ISynonymsRegistry::Has(initializer_list<string> sections, const char* name)
     return s_Iterate(sections, false, f);
 }
 
-template string ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
-template bool   ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
-template int    ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
-template double ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
-template string ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
-template bool   ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
-template int    ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
-template double ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+template string ISynRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
+template bool   ISynRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+template int    ISynRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
+template double ISynRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
+template string ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+template bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+template int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+template double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
 END_NCBI_SCOPE

@@ -119,16 +119,16 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
 
     if (config) {
         CConfigRegistry config_registry(config);
-        CSynonymsRegistry registry(&config_registry);
+        CSynRegistry registry(&config_registry);
         nc_impl->Init(registry, config_section);
     } else {
         CMemoryRegistry empty_registry;
-        CSynonymsRegistry registry(&empty_registry);
+        CSynRegistry registry(&empty_registry);
         nc_impl->Init(registry, config_section);
     }
 }
 
-void SNetCacheAPIImpl::Init(ISynonymsRegistry& registry, const string& config_section)
+void SNetCacheAPIImpl::Init(ISynRegistry& registry, const string& config_section)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,

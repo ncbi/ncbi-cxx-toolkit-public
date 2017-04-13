@@ -157,12 +157,12 @@ private:
     shared_ptr<CConfig> m_Config;
 };
 
-class NCBI_XNCBI_EXPORT ISynonymsRegistry
+class NCBI_XNCBI_EXPORT ISynRegistry
 {
     template <typename TType> struct TR;
 
 public:
-    virtual ~ISynonymsRegistry() {}
+    virtual ~ISynRegistry() {}
 
     // XXX:
     // Microsoft VS 2013 has a bug (violates 13.3.3.2/3.1.1 of the standard).
@@ -219,24 +219,24 @@ private:
     virtual bool   HasImpl(const string& section, const char* name) = 0;
 };
 
-template <typename TType> struct ISynonymsRegistry::TR              { using T = TType;  };
-template <>               struct ISynonymsRegistry::TR<const char*> { using T = string; };
+template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
+template <>               struct ISynRegistry::TR<const char*> { using T = string; };
 
-extern template NCBI_XNCBI_EXPORT string ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
-extern template NCBI_XNCBI_EXPORT string ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
 template <class TImpl>
-class TSynonymsRegistry : public TImpl
+class TSynRegistry : public TImpl
 {
 public:
     template <class... TArgs>
-    TSynonymsRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
+    TSynRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
 
 private:
     string GetValue(const string& section, const char* name, string default_value) final;
@@ -253,13 +253,13 @@ private:
     double GetValue(initializer_list<string> sections, const char* name, double default_value) final;
 };
 
-class NCBI_XNCBI_EXPORT CSynonymsRegistryImpl : public ISynonymsRegistry
+class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
 {
 public:
-    CSynonymsRegistryImpl(IRegistry* registry, EOwnership ownership = eNoOwnership);
+    CSynRegistryImpl(IRegistry* registry, EOwnership ownership = eNoOwnership);
 
 protected:
-    using ISynonymsRegistry::GetImpl;
+    using ISynRegistry::GetImpl;
 
     template <typename TType>
     TType GetImpl(const string& section, const char* name, TType default_value)
@@ -276,76 +276,76 @@ private:
     shared_ptr<IRegistry> m_Registry;
 };
 
-using CSynonymsRegistry = TSynonymsRegistry<CSynonymsRegistryImpl>;
+using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
 
 template <typename TImpl>
-string TSynonymsRegistry<TImpl>::GetValue(const string& section, const char* name, string default_value)
+string TSynRegistry<TImpl>::GetValue(const string& section, const char* name, string default_value)
 {
     return TImpl::GetImpl(section, name, default_value);
 }
 
 template <typename TImpl>
-bool TSynonymsRegistry<TImpl>::GetValue(const string& section, const char* name, bool default_value)
+bool TSynRegistry<TImpl>::GetValue(const string& section, const char* name, bool default_value)
 {
     return TImpl::GetImpl(section, name, default_value);
 }
 
 template <typename TImpl>
-int TSynonymsRegistry<TImpl>::GetValue(const string& section, const char* name, int default_value)
+int TSynRegistry<TImpl>::GetValue(const string& section, const char* name, int default_value)
 {
     return TImpl::GetImpl(section, name, default_value);
 }
 
 template <typename TImpl>
-double TSynonymsRegistry<TImpl>::GetValue(const string& section, const char* name, double default_value)
+double TSynRegistry<TImpl>::GetValue(const string& section, const char* name, double default_value)
 {
     return TImpl::GetImpl(section, name, default_value);
 }
 
 template <typename TImpl>
-string TSynonymsRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, string default_value)
+string TSynRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, string default_value)
 {
     return TImpl::GetImpl(section, names, default_value);
 }
 
 template <typename TImpl>
-bool TSynonymsRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, bool default_value)
+bool TSynRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, bool default_value)
 {
     return TImpl::GetImpl(section, names, default_value);
 }
 
 template <typename TImpl>
-int TSynonymsRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, int default_value)
+int TSynRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, int default_value)
 {
     return TImpl::GetImpl(section, names, default_value);
 }
 
 template <typename TImpl>
-double TSynonymsRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, double default_value)
+double TSynRegistry<TImpl>::GetValue(const string& section, initializer_list<string> names, double default_value)
 {
     return TImpl::GetImpl(section, names, default_value);
 }
 
 template <typename TImpl>
-string TSynonymsRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, string default_value)
+string TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, string default_value)
 {
     return TImpl::GetImpl(sections, name, default_value);
 }
 
 template <typename TImpl>
-bool TSynonymsRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, bool default_value)
+bool TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, bool default_value)
 {
     return TImpl::GetImpl(sections, name, default_value);
 }
 
 template <typename TImpl>
-int TSynonymsRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, int default_value)
+int TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, int default_value)
 {
     return TImpl::GetImpl(sections, name, default_value);
 }
 
 template <typename TImpl>
-double TSynonymsRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, double default_value)
+double TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, double default_value)
 {
     return TImpl::GetImpl(sections, name, default_value);
 }

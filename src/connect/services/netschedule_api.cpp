@@ -740,7 +740,7 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
 
             if (use_affinities.ReadOnce() && use_affinities_value) {
                 CConfigRegistry config_registry(config);
-                CSynonymsRegistry registry(&config_registry);
+                CSynRegistry registry(&config_registry);
                 InitAffinities(registry, module);
             }
 
@@ -1389,7 +1389,7 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(ISynonymsRegistry& registry, const string& section)
+void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, const string& section)
 {
     const bool claim_new_affinities = registry.Get(section, "claim_new_affinities", false);
     const bool process_any_job =      registry.Get(section, "process_any_job", false);
