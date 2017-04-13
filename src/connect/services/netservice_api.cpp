@@ -550,7 +550,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     if (config != NULL) {
         CConfigRegistry config_registry(config);
-        CSynonymsRegistry registry(config_registry);
+        CSynonymsRegistry registry(&config_registry);
 
         if (m_ServiceName.empty()) {
             m_ServiceName = registry.Get(section, { "service", "service_name" }, kEmptyStr);

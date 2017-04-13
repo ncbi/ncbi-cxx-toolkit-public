@@ -740,7 +740,7 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
 
             if (use_affinities.ReadOnce() && use_affinities_value) {
                 CConfigRegistry config_registry(config);
-                CSynonymsRegistry registry(config_registry);
+                CSynonymsRegistry registry(&config_registry);
                 InitAffinities(registry, module);
             }
 

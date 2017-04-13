@@ -209,11 +209,11 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
 
     if (config) {
         CConfigRegistry config_registry(config);
-        CSynonymsRegistry registry(config_registry);
+        CSynonymsRegistry registry(&config_registry);
         icache_impl->Init(registry, config_section);
     } else {
         CMemoryRegistry empty_registry;
-        CSynonymsRegistry registry(empty_registry);
+        CSynonymsRegistry registry(&empty_registry);
         icache_impl->Init(registry, config_section);
     }
 }

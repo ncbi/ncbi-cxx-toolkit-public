@@ -145,7 +145,7 @@ NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 class NCBI_XNCBI_EXPORT CConfigRegistry : public IRegistry
 {
 public:
-    CConfigRegistry(CConfig* config);
+    CConfigRegistry(CConfig* config, EOwnership ownership = eNoOwnership);
 
 private:
     bool x_Empty(TFlags flags) const override;
@@ -154,7 +154,7 @@ private:
     const string& x_GetComment(const string& section, const string& name, TFlags flags) const override;
     void x_Enumerate(const string& section, list<string>& entries, TFlags flags) const override;
 
-    CConfig* m_Config;
+    shared_ptr<CConfig> m_Config;
 };
 
 class NCBI_XNCBI_EXPORT CSynonymsRegistry
@@ -162,7 +162,7 @@ class NCBI_XNCBI_EXPORT CSynonymsRegistry
     template <typename TType> struct TR;
 
 public:
-    CSynonymsRegistry(IRegistry& registry) : m_Registry(registry) {}
+    CSynonymsRegistry(IRegistry* registry, EOwnership ownership = eNoOwnership);
 
     // XXX:
     // Microsoft VS 2013 has a bug (violates 13.3.3.2/3.1.1 of the standard).
@@ -179,7 +179,7 @@ public:
     typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value);
 
 private:
-    IRegistry& m_Registry;
+    shared_ptr<IRegistry> m_Registry;
 };
 
 template <typename TType> struct CSynonymsRegistry::TR              { using T = TType;  };
@@ -188,7 +188,7 @@ template <>               struct CSynonymsRegistry::TR<const char*> { using T = 
 template <typename TType>
 typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, const char* name, TType default_value)
 {
-    return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
+    return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
 }
 
 template <typename TType>

@@ -114,8 +114,15 @@ unsigned long s_GetRetryDelay()
     return retry_delay;
 }
 
-CConfigRegistry::CConfigRegistry(CConfig* config) :
-    m_Config(config)
+template <class T>
+shared_ptr<T> s_MakeShared(T* ptr, EOwnership ownership)
+{
+    if (ownership == eTakeOwnership) return shared_ptr<T>(ptr);
+    return { shared_ptr<T>(), ptr };
+}
+
+CConfigRegistry::CConfigRegistry(CConfig* config, EOwnership ownership) :
+    m_Config(s_MakeShared(config, ownership))
 {
     _ASSERT(config);
 }
@@ -146,6 +153,11 @@ const string& CConfigRegistry::x_GetComment(const string& section, const string&
 void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, TFlags flags) const
 {
     NCBI_ALWAYS_TROUBLE("Not implemented");
+}
+
+CSynonymsRegistry::CSynonymsRegistry(IRegistry* registry, EOwnership ownership) :
+    m_Registry(s_MakeShared(registry, ownership))
+{
 }
 
 END_NCBI_SCOPE
