@@ -303,10 +303,9 @@ CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(co
     for (auto& s : sections) {
         for (auto& n : names) {
             auto& sv = m_Values[s];
-            auto result = sv.insert(make_pair(n, value));
 
             // If failed, corresponding parameter has already been read with a different set of synonyms
-            _ASSERT(result.second);
+            _VERIFY(sv.insert(make_pair(n, value)).second);
         }
     }
 
