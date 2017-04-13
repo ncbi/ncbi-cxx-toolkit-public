@@ -628,55 +628,6 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
-// This class makes parameter reading to be performed only once
-template <typename TDestType, typename TSrcType = TDestType>
-struct SCfgReader
-{
-    SCfgReader(TDestType& dest,
-            CConfig*& config,
-            const string& section,
-            const string& param,
-            const TSrcType& def_value = TSrcType(),
-            const list<string>* synonyms = 0,
-            bool already_read = false) :
-        m_Dest(dest),
-        m_Config(config),
-        m_Section(section),
-        m_Param(param),
-        m_DefValue(def_value),
-        m_AlreadyRead(already_read),
-        m_Synonyms(synonyms)
-    {
-        if (!m_AlreadyRead) m_Dest = m_DefValue;
-    }
-
-    bool ReadOnce()
-    {
-        _ASSERT(m_Config);
-
-        if (m_AlreadyRead) return false;
-
-        try {
-            m_Dest = m_Config->Get(m_Section, m_Param,
-                    CConfig::eErr_Throw, m_DefValue, m_Synonyms);
-        }
-        catch (CConfigException&) {
-            return false;
-        }
-
-        return m_AlreadyRead = true;
-    }
-
-private:
-    TDestType& m_Dest;
-    CConfig*& m_Config;
-    const string& m_Section;
-    const string m_Param;
-    const TSrcType m_DefValue;
-    bool m_AlreadyRead;
-    const list<string>* m_Synonyms;
-};
-
 void CNetScheduleServerListener::OnInit(
     CObject* api_impl, CConfig* config, const string& section)
 {
@@ -689,65 +640,40 @@ void CNetScheduleServerListener::OnInit(
 
 void SNetScheduleAPIImpl::Init(CConfig* config, string module)
 {
+    if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
+
     const string& user(GetDiagContext().GetUsername());
     m_ClientNode =
         m_Service->GetClientName() + "::" +
         (user.empty() ? kEmptyStr : user + '@') +
         GetDiagContext().GetHost();
 
-    auto_ptr<CConfig> config_holder;
+    CConfigRegistry config_registry(config);
+    CSynRegistry syn_registry(&config_registry);
+    CCachedSynRegistry registry(&syn_registry);
     CNetScheduleOwnConfigLoader loader;
+    auto sections = { module, loader.GetSection() };
 
-    string& queue_ref = m_Queue;
-
-    if (!queue_ref.empty()) {
-        limits::Check<limits::SQueueName>(queue_ref);
-    }
-
-    const list<string> embedded_synonyms{"use_embedded_input"};
-    bool use_affinities_value;
-
-    SCfgReader<string> queue(queue_ref,
-            config, module, "queue_name", kEmptyStr, 0, !queue_ref.empty());
-
-    SCfgReader<bool> embedded(m_UseEmbeddedStorage,
-            config, module, "use_embedded_storage", true, &embedded_synonyms);
-
-    SCfgReader<bool> use_affinities(use_affinities_value,
-            config, module, "use_affinities");
-
-    SCfgReader<string> job_group(m_JobGroup,
-            config, module, "job_group");
-
-    SCfgReader<unsigned, int> job_ttl(m_JobTtl,
-            config, module, "job_ttl");
-
-    SCfgReader<string> client_node(m_ClientNode,
-            config, module, "client_node", m_ClientNode);
-
-    SCfgReader<string> scope(GetListener()->Scope(), config, module, "scope");
+    bool affinities_initialized = false;
 
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
     // 2) Setup everything using received config from server
     for (int phase = 0; phase < 2; ++phase) {
-        if (config) {
-            if (queue.ReadOnce()) {
-                limits::Check<limits::SQueueName>(queue_ref);
-            }
+        if (m_Queue.empty()) {
+            m_Queue = registry.Get(sections, "queue_name", "");
+            if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
+        }
 
-            embedded.ReadOnce();
+        m_UseEmbeddedStorage =   registry.Get(sections, { "use_embedded_storage", "use_embedded_input" }, true);
+        m_JobGroup =             registry.Get(sections, "job_group", "");
+        m_JobTtl =               registry.Get(sections, "job_ttl", 0);
+        m_ClientNode =           registry.Get(sections, "client_node", m_ClientNode);
+        GetListener()->Scope() = registry.Get(sections, "scope", "");
 
-            if (use_affinities.ReadOnce() && use_affinities_value) {
-                CConfigRegistry config_registry(config);
-                CSynRegistry registry(&config_registry);
-                InitAffinities(registry, module);
-            }
-
-            job_group.ReadOnce();
-            job_ttl.ReadOnce();
-            client_node.ReadOnce();
-            scope.ReadOnce();
+        if (!affinities_initialized && registry.Get(sections, "use_affinities", false)) {
+            affinities_initialized = true;
+            InitAffinities(registry, sections);
         }
 
         if (!m_ClientNode.empty()) {
@@ -763,8 +689,7 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
             if (CConfig* alt = loader.Get(this, config, module)) {
-                config_holder.reset(alt);
-                config = alt;
+                config_registry.Reset(alt, eTakeOwnership);
                 continue;
             }
         }
@@ -1389,12 +1314,12 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, const string& section)
+void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, initializer_list<string> sections)
 {
-    const bool claim_new_affinities = registry.Get(section, "claim_new_affinities", false);
-    const bool process_any_job =      registry.Get(section, "process_any_job", false);
-    const string affinity_list =      registry.Get(section, "affinity_list", kEmptyStr);
-    const string affinity_ladder =    registry.Get(section, "affinity_ladder", kEmptyStr);
+    const bool claim_new_affinities = registry.Get(sections, "claim_new_affinities", false);
+    const bool process_any_job =      registry.Get(sections, "process_any_job", false);
+    const string affinity_list =      registry.Get(sections, "affinity_list", kEmptyStr);
+    const string affinity_ladder =    registry.Get(sections, "affinity_ladder", kEmptyStr);
 
     if (affinity_ladder.empty()) {
 

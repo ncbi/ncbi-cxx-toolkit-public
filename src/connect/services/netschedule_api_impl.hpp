@@ -207,6 +207,8 @@ public:
 
     CConfig* Get(SNetScheduleAPIImpl* impl, CConfig* config, string& section);
 
+    string GetSection() const { return m_Section; }
+
 protected:
     virtual bool Transform(const CTempString& prefix, string& name);
 
@@ -430,7 +432,7 @@ public:
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
     void Init(CConfig* config, string module);
-    void InitAffinities(ISynRegistry& registry, const string& section);
+    void InitAffinities(ISynRegistry& registry, initializer_list<string> sections);
     string MakeAuthString();
 
 private:

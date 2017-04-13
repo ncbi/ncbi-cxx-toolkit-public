@@ -148,6 +148,7 @@ class NCBI_XNCBI_EXPORT CConfigRegistry : public IRegistry
 {
 public:
     CConfigRegistry(CConfig* config, EOwnership ownership = eNoOwnership);
+    void Reset(CConfig* config, EOwnership ownership = eNoOwnership);
 
 private:
     bool x_Empty(TFlags flags) const override;

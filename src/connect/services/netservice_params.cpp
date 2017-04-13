@@ -127,6 +127,12 @@ CConfigRegistry::CConfigRegistry(CConfig* config, EOwnership ownership) :
     _ASSERT(config);
 }
 
+void CConfigRegistry::Reset(CConfig* config, EOwnership ownership)
+{
+    _ASSERT(config);
+    m_Config = s_MakeShared(config, ownership);
+}
+
 bool CConfigRegistry::x_Empty(TFlags flags) const
 {
     NCBI_ALWAYS_TROUBLE("Not implemented");
