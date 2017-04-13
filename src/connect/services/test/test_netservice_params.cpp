@@ -230,6 +230,7 @@ struct SRandomParam
 
     void SetValue(TMemoryRegistries& registries) const;
     void CheckValue(ISynRegistry& registry) const;
+    void CheckCachedValue(CCachedSynRegistry& registry) const;
 
 private:
     template <typename TType>
@@ -245,6 +246,12 @@ private:
     void CompareValue(ISynRegistry& registry, TType value) const
     {
         BOOST_CHECK(registry.Get(sections, names, TType{}) == value);
+    }
+
+    template <typename TType>
+    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, TType value) const
+    {
+        BOOST_CHECK(registry.Get(sub_sections, sub_names, TType{}) == value);
     }
 
     void Init(SRandomGenerator& generator);
@@ -336,6 +343,43 @@ void SRandomParam::CheckValue(ISynRegistry& registry) const
         }
     } else {
         BOOST_CHECK(!registry.Has(sections, names));
+    }
+}
+
+void SRandomParam::CheckCachedValue(CCachedSynRegistry& registry) const
+{
+    // Use random subsets of sections and names for cache checks
+    SRegSynonyms sub_sections(sections);
+    SRegSynonyms sub_names(names);
+
+    random_shuffle(sub_sections.begin(), sub_sections.end());
+    random_shuffle(sub_names.begin(), sub_names.end());
+
+    sub_sections.resize(1 + indices.GetSection(sections.size()));
+    sub_names.resize(1 + indices.GetName(names.size()));
+
+    const size_t priority = indices.GetPriority();
+
+    if (priority) {
+        BOOST_CHECK(registry.Has(sub_sections, sub_names));
+
+        switch (value.GetIndex()) {
+            case 0:  CompareCachedValue(registry, sub_sections, sub_names, value.Get<0>()); break;
+            case 1:  CompareCachedValue(registry, sub_sections, sub_names, value.Get<1>()); break;
+            case 2:  CompareCachedValue(registry, sub_sections, sub_names, value.Get<2>()); break;
+            case 3:  CompareCachedValue(registry, sub_sections, sub_names, value.Get<3>()); break;
+            default: _TROUBLE;
+        }
+    } else {
+        BOOST_CHECK(!registry.Has(sub_sections, sub_names));
+
+        switch (value.GetIndex()) {
+            case 0:  CompareCachedValue(registry, sub_sections, sub_names, TTypes::GetType<0>()); break;
+            case 1:  CompareCachedValue(registry, sub_sections, sub_names, TTypes::GetType<1>()); break;
+            case 2:  CompareCachedValue(registry, sub_sections, sub_names, TTypes::GetType<2>()); break;
+            case 3:  CompareCachedValue(registry, sub_sections, sub_names, TTypes::GetType<3>()); break;
+            default: _TROUBLE;
+        }
     }
 }
 
@@ -460,6 +504,37 @@ BOOST_AUTO_TEST_CASE(SynRegistry)
 
     for (auto& param : random_params) {
         param.CheckValue(syn_registry);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CachedSynRegistry)
+{
+    TMemoryRegistries registries;
+
+    for (auto& param : random_params) {
+        param.SetValue(registries);
+    }
+
+    CSynRegistry syn_registry;
+
+    for (auto& registry : registries) {
+        syn_registry.Add(&registry);
+    }
+
+    CCachedSynRegistry cached_syn_registry(&syn_registry);
+
+    // Check (and cache) values
+    for (auto& param : random_params) {
+        param.CheckValue(cached_syn_registry);
+    }
+
+    for (auto& registry : registries) {
+        registry.Clear();
+    }
+
+    // Check cached values
+    for (auto& param : random_params) {
+        param.CheckCachedValue(cached_syn_registry);
     }
 }
 
