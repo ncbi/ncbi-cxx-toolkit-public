@@ -173,6 +173,11 @@ CSynRegistryImpl::CSynRegistryImpl(IRegistry* registry, EOwnership ownership) :
 {
 }
 
+void CSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
+{
+    m_Registry = s_MakeShared(registry, ownership);
+}
+
 template <typename TType, class TFunc>
 TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
 {
@@ -417,6 +422,11 @@ CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry* registry, EOwnershi
 
 CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 {
+}
+
+void CCachedSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
+{
+    m_Registry->Reset(registry, ownership);
 }
 
 template <typename TSections, typename TNames, typename TType>

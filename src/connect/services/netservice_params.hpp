@@ -205,6 +205,8 @@ public:
     bool Has(initializer_list<string> sections, const char* name);
     bool Has(initializer_list<string> sections, initializer_list<string> names);
 
+    virtual void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) = 0;
+
 protected:
     template <typename TType>
     TType GetImpl(const string& section, initializer_list<string> names, TType default_value);
@@ -283,6 +285,8 @@ class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
 public:
     CSynRegistryImpl(IRegistry* registry, EOwnership ownership = eNoOwnership);
 
+    void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
+
 protected:
     using ISynRegistry::GetImpl;
 
@@ -310,6 +314,8 @@ class NCBI_XNCBI_EXPORT CCachedSynRegistryImpl : public ISynRegistry
 public:
     CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership = eNoOwnership);
     ~CCachedSynRegistryImpl();
+
+    void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
 
 protected:
     template <typename TSections, typename TNames, typename TType>

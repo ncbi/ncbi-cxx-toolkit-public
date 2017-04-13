@@ -689,7 +689,8 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
             if (CConfig* alt = loader.Get(this, config, module)) {
-                config_registry.Reset(alt, eTakeOwnership);
+                unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
+                registry.Reset(new_config_registry.release(), eTakeOwnership);
                 continue;
             }
         }
