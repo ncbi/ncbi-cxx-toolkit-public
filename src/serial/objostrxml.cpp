@@ -416,26 +416,35 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 {
     bool skipname = valueName.empty() ||
                   (m_WriteNamedIntegersByValue && values.IsInteger());
+    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() == EDataSpec::eJSON;
     if ( !m_SkipNextTag && !values.GetName().empty() ) {
         // global enum
-        OpenTagStart();
-        m_Output.PutString(values.GetName());
-        if ( !skipname ) {
-            m_Output.PutString(" value=\"");
-            m_Output.PutString(valueName);
-            m_Output.PutChar('\"');
-        }
-        if ( values.IsInteger() ) {
-            OpenTagEnd();
-            m_Output.PutInt4(value);
-            CloseTagStart();
+        if (valueonly) {
+            if ( values.IsInteger() ) {
+                m_Output.PutInt4(value);
+            } else {
+                m_Output.PutString(valueName);
+            }
+        } else {
+            OpenTagStart();
             m_Output.PutString(values.GetName());
-            CloseTagEnd();
-        }
-        else {
-            _ASSERT(!valueName.empty());
-            SelfCloseTagEnd();
-            m_LastTagAction = eTagClose;
+            if ( !skipname ) {
+                m_Output.PutString(" value=\"");
+                m_Output.PutString(valueName);
+                m_Output.PutChar('\"');
+            }
+            if ( values.IsInteger() ) {
+                OpenTagEnd();
+                m_Output.PutInt4(value);
+                CloseTagStart();
+                m_Output.PutString(values.GetName());
+                CloseTagEnd();
+            }
+            else {
+                _ASSERT(!valueName.empty());
+                SelfCloseTagEnd();
+                m_LastTagAction = eTagClose;
+            }
         }
     }
     else {

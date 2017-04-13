@@ -1316,13 +1316,24 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
 
 TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 {
+    TEnumValueType value;
+    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() == EDataSpec::eJSON;
+    if (valueonly) {
+        if (values.IsInteger()) {
+            value = ReadInt4();
+        } else {
+            string str;
+            ReadString(str);
+            value = values.FindValue( str);
+        }
+        return value;
+    }
     const string& enumName = values.GetName();
     if ( !m_SkipNextTag && !enumName.empty() ) {
         // global enum
         OpenTag(enumName);
         _ASSERT(InsideOpeningTag());
     }
-    TEnumValueType value;
     if ( InsideOpeningTag() ) {
         // try to read attribute 'value'
         if ( IsEndOfTagChar( SkipWS()) ) {
