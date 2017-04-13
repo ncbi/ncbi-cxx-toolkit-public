@@ -55,25 +55,6 @@
 // is closed on the client side.
 #define COMMUNICATION_TIMEOUT_DEFAULT 12.0
 
-// How many seconds the API should wait before attempting to
-// connect to a misbehaving server again.
-#define THROTTLE_RELAXATION_PERIOD_DEFAULT 0
-
-// The parameters below describe different conditions that
-// trigger server throttling.
-#define THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT 0
-
-// Connection failure rate, which is when reached, triggers
-// server throttling.
-#define THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR 0
-
-// THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR cannot be greater
-// than CONNECTION_ERROR_HISTORY_MAX.
-#define THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR 0
-
-// Whether to check with LBSMD before re-enabling the server.
-#define THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT false
-
 // The size of an internal array, which is used for calculation
 // of the connection failure rate.
 #define CONNECTION_ERROR_HISTORY_MAX 128

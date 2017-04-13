@@ -101,6 +101,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
 
     void ResetServerConnections();
+    void InitThrottle(CConfig* config, const string& section);
 
     virtual ~SNetServerPoolImpl();
 
@@ -120,11 +121,19 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     STimeout m_CommTimeout;
     STimeout m_FirstServerTimeout;
 
+    // The parameters below describe different conditions that trigger server throttling.
     int m_MaxConsecutiveIOFailures;
+
+    // Connection failure rate (numerator/denominator), which is when reached, triggers server throttling.
     int m_IOFailureThresholdNumerator;
-    int m_IOFailureThresholdDenominator;
+    int m_IOFailureThresholdDenominator; // Cannot be greater than CONNECTION_ERROR_HISTORY_MAX
+
+    // How many seconds the API should wait before attempting to
+    // connect to a misbehaving server again.
     int m_ServerThrottlePeriod;
     int m_MaxConnectionTime;
+
+    // Whether to check with LBSMD before re-enabling the server.
     bool m_ThrottleUntilDiscoverable;
 
     bool m_UseOldStyleAuth;

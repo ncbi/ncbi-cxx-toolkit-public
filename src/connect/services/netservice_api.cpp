@@ -655,6 +655,43 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
             NcbiMsToTimeout(&m_FirstServerTimeout,
                     FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
 
+        m_MaxConnectionTime = static_cast<int>(s_SecondsToMilliseconds(config->GetString(section,
+            "max_connection_time", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
+                MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond));
+
+        max_requests = config->GetInt(section, "rebalance_requests",
+                CConfig::eErr_NoThrow, max_requests);
+
+        max_seconds = config->GetDouble(section, "rebalance_time",
+                CConfig::eErr_NoThrow, max_seconds);
+    } else {
+        NcbiMsToTimeout(&m_ConnTimeout,
+            CONNECTION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
+        m_CommTimeout = s_GetDefaultCommTimeout();
+
+        NcbiMsToTimeout(&m_FirstServerTimeout,
+            FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
+
+        m_MaxConnectionTime = MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond;
+    }
+
+    InitThrottle(config, section);
+
+    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
+
+    m_Listener = listener;
+}
+
+void SNetServerPoolImpl::InitThrottle(CConfig* config, const string& section)
+{
+    const auto THROTTLE_RELAXATION_PERIOD_DEFAULT = 0;
+    const auto THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT = 0;
+    const auto THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR = 0;
+    const auto THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR = 0;
+    const auto THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT = false;
+
+    if (config != NULL) {
         m_ServerThrottlePeriod = config->GetInt(section,
             "throttle_relaxation_period", CConfig::eErr_NoThrow,
                 THROTTLE_RELAXATION_PERIOD_DEFAULT);
@@ -709,25 +746,7 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                 "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
                     THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
         }
-
-        m_MaxConnectionTime = static_cast<int>(s_SecondsToMilliseconds(config->GetString(section,
-            "max_connection_time", CConfig::eErr_NoThrow,
-                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
-                MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond));
-
-        max_requests = config->GetInt(section, "rebalance_requests",
-                CConfig::eErr_NoThrow, max_requests);
-
-        max_seconds = config->GetDouble(section, "rebalance_time",
-                CConfig::eErr_NoThrow, max_seconds);
     } else {
-        NcbiMsToTimeout(&m_ConnTimeout,
-            CONNECTION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
-        m_CommTimeout = s_GetDefaultCommTimeout();
-
-        NcbiMsToTimeout(&m_FirstServerTimeout,
-            FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
-
         // Throttling parameters.
         m_ServerThrottlePeriod = THROTTLE_RELAXATION_PERIOD_DEFAULT;
         m_IOFailureThresholdNumerator =
@@ -737,13 +756,7 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         m_MaxConsecutiveIOFailures =
             THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT;
         m_ThrottleUntilDiscoverable = THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT;
-
-        m_MaxConnectionTime = MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond;
     }
-
-    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
-
-    m_Listener = listener;
 }
 
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
