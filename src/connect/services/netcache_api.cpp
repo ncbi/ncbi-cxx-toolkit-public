@@ -116,8 +116,12 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
+    nc_impl->Init(config, config_section);
+}
 
-    if (nc_impl->m_Service->GetClientName().length() < 3) {
+void SNetCacheAPIImpl::Init(CConfig* config, const string& config_section)
+{
+    if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }
@@ -132,35 +136,35 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
             temp_dir = config->GetString(config_section,
                 "tmp_path", CConfig::eErr_NoThrow, default_temp_dir);
 
-        nc_impl->m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
+        m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
 
-        nc_impl->m_CacheInput = config->GetBool(config_section,
+        m_CacheInput = config->GetBool(config_section,
             "cache_input", CConfig::eErr_NoThrow, false);
 
-        nc_impl->m_CacheOutput = config->GetBool(config_section,
+        m_CacheOutput = config->GetBool(config_section,
             "cache_output", CConfig::eErr_NoThrow, false);
 
-        nc_impl->m_DefaultParameters.SetMirroringMode(
+        m_DefaultParameters.SetMirroringMode(
             config->GetString(config_section, "enable_mirroring",
                 CConfig::eErr_NoThrow, kEmptyStr));
 
-        nc_impl->m_DefaultParameters.SetServerCheck(
+        m_DefaultParameters.SetServerCheck(
             config->GetString(config_section,
                 "server_check", CConfig::eErr_NoThrow, kEmptyStr));
 
-        nc_impl->m_DefaultParameters.SetServerCheckHint(
+        m_DefaultParameters.SetServerCheckHint(
             config->GetString(config_section,
                 "server_check_hint", CConfig::eErr_NoThrow, kEmptyStr));
 
         if (config->GetBool(config_section,
                 "use_compound_id", CConfig::eErr_NoThrow, false))
-            nc_impl->m_DefaultParameters.SetUseCompoundID(true);
+            m_DefaultParameters.SetUseCompoundID(true);
 
         const auto allowed_services = config->GetString(config_section,
                 "allowed_services", CConfig::eErr_NoThrow, kEmptyStr);
 
         if (!allowed_services.empty()) {
-            nc_impl->m_ServiceMap.Restrict();
+            m_ServiceMap.Restrict();
 
             vector<string> services;
             NStr::Split(allowed_services, ", ", services,
@@ -169,18 +173,18 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
             for (auto& service : services) {
                 // Do not add configured service, it is always allowed
                 if (NStr::CompareNocase(service,
-                            nc_impl->m_Service.GetServiceName())) {
-                    nc_impl->m_ServiceMap.AddToAllowed(service);
+                            m_Service.GetServiceName())) {
+                    m_ServiceMap.AddToAllowed(service);
                 }
             }
         }
 
-        nc_impl->m_ProlongBlobLifetimeOnWrite = config->GetBool(config_section,
+        m_ProlongBlobLifetimeOnWrite = config->GetBool(config_section,
                 "prolong_blob_lifetime_on_write", CConfig::eErr_NoThrow, true);
     } else {
-        nc_impl->m_TempDir = default_temp_dir;
-        nc_impl->m_CacheInput = false;
-        nc_impl->m_CacheOutput = false;
+        m_TempDir = default_temp_dir;
+        m_CacheInput = false;
+        m_CacheOutput = false;
     }
 }
 

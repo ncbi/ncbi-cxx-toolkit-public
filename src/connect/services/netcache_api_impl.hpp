@@ -119,6 +119,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
             SNetServiceImpl::eRethrowServerErrors,
         INetServerConnectionListener* conn_listener = NULL);
 
+    void Init(CConfig* config, const string& config_section);
+
     CNetService m_Service;
 
     SNetServiceMap m_ServiceMap;
