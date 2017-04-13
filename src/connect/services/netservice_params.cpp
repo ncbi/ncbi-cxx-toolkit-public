@@ -114,6 +114,7 @@ CConfigRegistry::CConfigRegistry(CConfig* config, EOwnership ownership) :
 void CConfigRegistry::Reset(CConfig* config, EOwnership ownership)
 {
     m_Config = s_MakeShared(config, ownership);
+    m_SubConfigs.clear();
 }
 
 bool CConfigRegistry::x_Empty(TFlags flags) const
@@ -122,12 +123,31 @@ bool CConfigRegistry::x_Empty(TFlags flags) const
     return false; // Not reached
 }
 
+const unique_ptr<CConfig>& CConfigRegistry::GetSubConfig(const string& section) const
+{
+    auto it = m_SubConfigs.find(section);
+
+    if (it != m_SubConfigs.end()) return it->second;
+
+    unique_ptr<CConfig> sub_config;
+
+    if (const CConfig::TParamTree* tree = m_Config->GetTree()) {
+        if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
+            sub_config.reset(new CConfig(sub_tree));
+        }
+    }
+
+    auto result = m_SubConfigs.emplace(section, move(sub_config));
+    return result.first->second;
+}
+
 const string& CConfigRegistry::x_Get(const string& section, const string& name, TFlags) const
 {
     _ASSERT(m_Config);
 
     try {
-        return m_Config->GetString(section, name, CConfig::eErr_Throw);
+        const auto& found = GetSubConfig(section);
+        return found ? found->GetString(section, name, CConfig::eErr_Throw) : kEmptyStr;
     }
     catch (CConfigException& ex) {
         if (ex.GetErrCode() == CConfigException::eParameterMissing) return kEmptyStr;
@@ -141,7 +161,9 @@ bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFla
     _ASSERT(m_Config);
 
     try {
-        m_Config->GetString(section, name, CConfig::eErr_Throw);
+        const auto& found = GetSubConfig(section);
+        if (!found) return false;
+        found->GetString(section, name, CConfig::eErr_Throw);
     }
     catch (CConfigException& ex) {
         if (ex.GetErrCode() == CConfigException::eParameterMissing) return false;

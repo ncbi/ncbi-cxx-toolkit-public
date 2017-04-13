@@ -120,7 +120,10 @@ private:
     const string& x_GetComment(const string& section, const string& name, TFlags flags) const override;
     void x_Enumerate(const string& section, list<string>& entries, TFlags flags) const override;
 
+    const unique_ptr<CConfig>& GetSubConfig(const string& section) const;
+
     shared_ptr<CConfig> m_Config;
+    mutable map<string, unique_ptr<CConfig>> m_SubConfigs;
 };
 
 struct SRegSynonyms : vector<string>

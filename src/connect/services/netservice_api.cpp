@@ -499,19 +499,10 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfi
 {
     m_ServiceName = service_name;
 
-    if (config) {
-        if (const CConfig::TParamTree* tree = config->GetTree()) {
-            for (auto& section : sections) {
-                if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
-                    CConfig sub_config(sub_tree);
-                    CConfigRegistry config_registry(&sub_config);
-                    return Init(api_impl, &config_registry, sections);
-                }
-            }
-        }
-    }
+    if (!config) return Init(api_impl, nullptr, sections);
 
-    return Init(api_impl, nullptr, sections);
+    CConfigRegistry config_registry(config);
+    return Init(api_impl, &config_registry, sections);
 }
 
 void SNetServiceImpl::Init(CObject* api_impl, IRegistry* top_registry, SRegSynonyms sections)
