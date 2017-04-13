@@ -59,10 +59,6 @@
 // of the connection failure rate.
 #define CONNECTION_ERROR_HISTORY_MAX 128
 
-// Maximum cumulative query time in seconds.
-// The parameter is ignored if it's zero.
-#define MAX_CONNECTION_TIME_DEFAULT 0.0
-
 #define FIRST_SERVER_TIMEOUT_DEFAULT 0.3
 
 #define COMMIT_JOB_INTERVAL_DEFAULT 2

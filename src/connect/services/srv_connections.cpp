@@ -703,9 +703,8 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
 {
     CNetServer::SExecResult exec_result;
 
-    CTime max_connection_time(GetFastLocalTime());
-    max_connection_time.AddNanoSecond(
-        m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime * 1000000);
+    const CTimeout& max_total_time = m_Impl->m_ServerInPool->m_ServerPool->m_MaxTotalTime;
+    CDeadline deadline(max_total_time);
 
     unsigned attempt = 0;
     auto& service = m_Impl->m_Service;
@@ -729,12 +728,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
-            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
-                    max_connection_time <= GetFastLocalTime()) {
+            if (deadline.IsExpired()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
-                    "); cmd=" << cmd <<
-                    "; exception=" << e.GetMsg());
+                    max_total_time.GetAsMilliSeconds() << "); cmd=" << cmd << "; exception=" << e.GetMsg());
                 throw;
             }
 
@@ -745,12 +741,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
                     e.GetErrCode() != CNetScheduleException::eTryAgain)
                 throw;
 
-            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
-                    max_connection_time <= GetFastLocalTime()) {
+            if (deadline.IsExpired()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
-                    "); cmd=" << cmd <<
-                    "; exception=" << e.GetMsg());
+                    max_total_time.GetAsMilliSeconds() << "); cmd=" << cmd << "; exception=" << e.GetMsg());
                 throw;
             }
 

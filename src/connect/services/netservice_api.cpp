@@ -315,6 +315,7 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
         bool old_style_auth) :
     m_Listener(listener),
     m_EnforcedServer(0, 0),
+    m_MaxTotalTime(CTimeout::eInfinite),
     m_UseOldStyleAuth(old_style_auth)
 {
 }
@@ -655,10 +656,8 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
             NcbiMsToTimeout(&m_FirstServerTimeout,
                     FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
 
-        m_MaxConnectionTime = static_cast<int>(s_SecondsToMilliseconds(config->GetString(section,
-            "max_connection_time", CConfig::eErr_NoThrow,
-                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
-                MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond));
+        double max_total_time = config->Get(section, "max_connection_time", CConfig::eErr_NoThrow, 0.0);
+        if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
 
         max_requests = config->GetInt(section, "rebalance_requests",
                 CConfig::eErr_NoThrow, max_requests);
@@ -672,8 +671,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
 
         NcbiMsToTimeout(&m_FirstServerTimeout,
             FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
-
-        m_MaxConnectionTime = MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond;
     }
 
     m_ThrottleParams.Init(config, section);
@@ -1150,8 +1147,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     const unsigned long retry_delay = m_ConnectionRetryDelay;
 
-    CDeadline max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
-         (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
+    const CTimeout& max_total_time = m_ServerPool->m_MaxTotalTime;
+    CDeadline deadline(max_total_time);
 
     enum EIterationMode {
         eInitialIteration,
@@ -1251,13 +1248,10 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 server = NULL;
         }
 
-        if (m_ServerPool->m_MaxConnectionTime > 0 &&
-                max_connection_time.GetRemainingTime().GetAsMilliSeconds() <=
-                        (server ? 0 : retry_delay)) {
-            NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
-                    "Exceeded max_connection_time=" <<
-                    m_ServerPool->m_MaxConnectionTime <<
-                    "; cmd=[" << cmd << "]");
+        if (!deadline.IsInfinite() &&
+                deadline.GetRemainingTime().GetAsMilliSeconds() <= (server ? 0 : retry_delay)) {
+            NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout, "Exceeded max_connection_time=" <<
+                    max_total_time.GetAsMilliSeconds() << "; cmd=[" << cmd << "]");
         }
 
         if (!server) {
