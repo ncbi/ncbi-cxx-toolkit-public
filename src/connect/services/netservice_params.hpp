@@ -271,10 +271,7 @@ public:
 
 protected:
     template <typename TType>
-    TType TGet(const string& section, const char* name, TType default_value)
-    {
-        return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
-    }
+    TType TGet(const string& section, const char* name, TType default_value);
 
     template <typename TType>
     TType TGet(const string& section, initializer_list<string> names, TType default_value);
@@ -320,6 +317,10 @@ private:
 
 using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
 
+extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(const string& section, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(const string& section, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(const string& section, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::TGet(const string& section, const char* name, double default_value);
 extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, string default_value);
 extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, bool default_value);
 extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, int default_value);

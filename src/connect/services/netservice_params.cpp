@@ -32,6 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include "netservice_params.hpp"
 
@@ -141,7 +142,14 @@ bool CConfigRegistry::x_Empty(TFlags flags) const
 
 const string& CConfigRegistry::x_Get(const string& section, const string& name, TFlags) const
 {
-    return m_Config->GetString(section, name, CConfig::eErr_NoThrow);
+    try {
+        return m_Config->GetString(section, name, CConfig::eErr_Throw);
+    }
+    catch (CConfigException& ex) {
+        if (ex.GetErrCode() == CConfigException::eParameterMissing) return kEmptyStr;
+
+        NCBI_RETHROW2(ex, CRegistryException, eErr, ex.GetMsg(), 0);
+    }
 }
 
 bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags flags) const
@@ -151,7 +159,8 @@ bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFla
     }
     catch (CConfigException& ex) {
         if (ex.GetErrCode() == CConfigException::eParameterMissing) return false;
-        throw;
+
+        NCBI_RETHROW2(ex, CRegistryException, eErr, ex.GetMsg(), 0);
     }
 
     return true;
@@ -189,6 +198,22 @@ TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
         auto value = func(element, empty_value);
 
         if (value != empty_value) return value;
+    }
+
+    return default_value;
+}
+
+template <typename TType>
+TType CSynRegistryImpl::TGet(const string& section, const char* name, TType default_value)
+{
+    try {
+        return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
+    }
+    catch (CStringException& ex) {
+        LOG_POST(Warning << ex.what());
+    }
+    catch (CRegistryException& ex) {
+        LOG_POST(Warning << ex.what());
     }
 
     return default_value;
@@ -274,6 +299,10 @@ bool ISynRegistry::Has(initializer_list<string> sections, initializer_list<strin
     return s_Iterate(sections, false, outer_f);
 }
 
+template string CSynRegistryImpl::TGet(const string& section, const char* name, string default_value);
+template bool   CSynRegistryImpl::TGet(const string& section, const char* name, bool default_value);
+template int    CSynRegistryImpl::TGet(const string& section, const char* name, int default_value);
+template double CSynRegistryImpl::TGet(const string& section, const char* name, double default_value);
 template string CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, string default_value);
 template bool   CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, bool default_value);
 template int    CSynRegistryImpl::TGet(const string& section, initializer_list<string> names, int default_value);
