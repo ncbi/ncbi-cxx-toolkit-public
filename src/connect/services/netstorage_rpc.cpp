@@ -435,7 +435,7 @@ public:
 
     CRef<INetServerProperties> AllocServerProperties() override;
 
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -794,8 +794,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode));
 
-    m_Service->Init(this, m_Config.service,
-            NULL, kEmptyStr, s_NetStorageConfigSections);
+    m_Service->Init(this, m_Config.service, nullptr, "", s_NetStorageConfigSections);
 }
 
 SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,

@@ -519,8 +519,7 @@ CConfig* FindSection(const char* const* sections, const CConfig::TParamTree* tre
 }
 
 void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
-    CConfig* config, const string& config_section,
-    const char* const* default_config_sections)
+    CConfig* config, string section, const char* const* default_sections)
 {
     _ASSERT(m_Listener);
 
@@ -534,8 +533,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         } conn_initer;
         conn_initer.NoOp();
     }
-
-    string section = config_section;
 
     CMemoryRegistry empty_registry;
     CConfig empty_config(empty_registry);
@@ -551,12 +548,12 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             if (const CNcbiRegistry* reg = &app->GetConfig()) {
                 param_tree.reset(CConfig::ConvertRegToTree(*reg));
 
-                if (CConfig *alt = FindSection(default_config_sections, param_tree.get(), &section)) {
+                if (CConfig *alt = FindSection(default_sections, param_tree.get(), &section)) {
                     config_registry.Reset(config = alt, eTakeOwnership);
                 }
             }
         }
-    } else if (CConfig *alt = FindSection(default_config_sections, config->GetTree(), &section)) {
+    } else if (CConfig *alt = FindSection(default_sections, config->GetTree(), &section)) {
         config_registry.Reset(config = alt, eTakeOwnership);
     }
 
@@ -1502,9 +1499,9 @@ CNetService g_DiscoverService(const string& service_name,
 
     CNetService service(new SNetServiceImpl("Discovery", client_name, new SNoOpConnectionListener));
 
-    static const char* const config_section[] = {"discovery", NULL};
+    static const char* const sections[] = {"discovery", nullptr};
 
-    service->Init(NULL, service_name, NULL, kEmptyStr, config_section);
+    service->Init(nullptr, service_name, nullptr, "", sections);
 
     return service;
 }

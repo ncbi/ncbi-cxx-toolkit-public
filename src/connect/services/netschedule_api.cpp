@@ -590,7 +590,7 @@ void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registr
     ns_impl->Init(registry, section);
 }
 
-void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string module)
+void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string section)
 {
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
@@ -601,7 +601,7 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string module)
         GetDiagContext().GetHost();
 
     CNetScheduleOwnConfigLoader loader;
-    auto sections = { module, loader.GetSection() };
+    auto sections = { section, loader.GetSection() };
 
     bool affinities_initialized = false;
 
@@ -637,7 +637,7 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string module)
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
-            if (CConfig* alt = loader.Get(this, registry, module)) {
+            if (CConfig* alt = loader.Get(this, registry, section)) {
                 unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
                 registry.Reset(new_config_registry.release(), eTakeOwnership);
                 continue;
@@ -766,7 +766,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const strin
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible))),
     m_Queue(queue_name)
 {
-    m_Service->Init(this, service_name, nullptr, kEmptyStr, s_NetScheduleConfigSections);
+    m_Service->Init(this, service_name, nullptr, "", s_NetScheduleConfigSections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(

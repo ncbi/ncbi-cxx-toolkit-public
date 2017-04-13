@@ -65,7 +65,7 @@ BEGIN_NCBI_SCOPE
 class CNetICacheServerListener : public CNetCacheServerListener
 {
 protected:
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
 };
 
 const char* const kNetICacheDriverName = "netcache";
@@ -144,8 +144,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
-        m_Service->Init(this, service_name,
-            config, section, s_NetICacheConfigSections);
+        m_Service->Init(this, service_name, config, section, s_NetICacheConfigSections);
     }
 
     SNetICacheClientImpl(const IRegistry& reg,
@@ -159,8 +158,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     {
         m_DefaultParameters.SetCacheName(cache_name);
         CConfig config(reg);
-        m_Service->Init(this, service_name,
-            &config, section, s_NetICacheConfigSections);
+        m_Service->Init(this, service_name, &config, section, s_NetICacheConfigSections);
     }
 
     CNetServer::SExecResult ChooseServerAndExec(const string& cmd,
@@ -193,33 +191,33 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
-    void Init(ISynRegistry& registry, const string& config_section);
+    void Init(ISynRegistry& registry, const string& section);
 
     ICache::TFlags m_CacheFlags;
 };
 
-void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
+void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
 {
-    CNetCacheServerListener::OnInit(api_impl, registry, config_section);
+    CNetCacheServerListener::OnInit(api_impl, registry, section);
 
     SNetICacheClientImpl* icache_impl =
         static_cast<SNetICacheClientImpl*>(api_impl);
 
-    icache_impl->Init(registry, config_section);
+    icache_impl->Init(registry, section);
 }
 
-void SNetICacheClientImpl::Init(ISynRegistry& registry, const string& config_section)
+void SNetICacheClientImpl::Init(ISynRegistry& registry, const string& section)
 {
     auto cache_name = m_DefaultParameters.GetCacheName();
 
-    if (cache_name.empty()) cache_name = registry.Get(config_section, { "name", "cache_name" }, "default_cache");
+    if (cache_name.empty()) cache_name = registry.Get(section, { "name", "cache_name" }, "default_cache");
 
     if (cache_name.length() > MAX_ICACHE_CACHE_NAME_LENGTH) {
         NCBI_THROW(CNetCacheException, eAuthenticationError, "NetICache: cache name is too long");
     }
 
     m_DefaultParameters.SetCacheName(cache_name);
-    m_DefaultParameters.SetTryAllServers(registry.Get(config_section, "try_all_servers", false));
+    m_DefaultParameters.SetTryAllServers(registry.Get(section, "try_all_servers", false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
@@ -872,8 +870,8 @@ public:
     }
 
     CRef<INetServerProperties> AllocServerProperties() override;
-    void OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name) override;
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
+    void OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -889,14 +887,14 @@ CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
     return m_DelegateListener->AllocServerProperties();
 }
 
-void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name)
+void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name)
 {
-    m_DelegateListener->OnPreInit(api_impl, registry, config_section, client_name);
+    m_DelegateListener->OnPreInit(api_impl, registry, section, client_name);
 }
 
-void CSetValidWarningSuppressor::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
+void CSetValidWarningSuppressor::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
 {
-    m_DelegateListener->OnInit(api_impl, registry, config_section);
+    m_DelegateListener->OnInit(api_impl, registry, section);
 }
 
 void CSetValidWarningSuppressor::OnConnected(CNetServerConnection& connection)

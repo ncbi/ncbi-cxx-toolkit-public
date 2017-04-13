@@ -87,12 +87,12 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
-void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name)
+void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     _ASSERT(nc_impl);
-    _ASSERT(config_section);
+    _ASSERT(section);
 
     if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
         // Use client name from NetSchedule if it's not provided for NetCache
@@ -102,40 +102,40 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registr
 
         CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
 
-        if (CConfig* alt = loader.Get(api, registry, *config_section)) {
+        if (CConfig* alt = loader.Get(api, registry, *section)) {
             unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
             registry.Reset(new_config_registry.release(), eTakeOwnership);
         }
     }
 }
 
-void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
+void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
 
-    nc_impl->Init(registry, config_section);
+    nc_impl->Init(registry, section);
 }
 
-void SNetCacheAPIImpl::Init(ISynRegistry& registry, const string& config_section)
+void SNetCacheAPIImpl::Init(ISynRegistry& registry, const string& section)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    m_TempDir =                            registry.Get(config_section, { "tmp_dir", "tmp_path" }, ".");
-    m_CacheInput =                         registry.Get(config_section, "cache_input", false);
-    m_CacheOutput =                        registry.Get(config_section, "cache_output", false);
-    m_ProlongBlobLifetimeOnWrite =         registry.Get(config_section, "prolong_blob_lifetime_on_write", true);
+    m_TempDir =                            registry.Get(section, { "tmp_dir", "tmp_path" }, ".");
+    m_CacheInput =                         registry.Get(section, "cache_input", false);
+    m_CacheOutput =                        registry.Get(section, "cache_output", false);
+    m_ProlongBlobLifetimeOnWrite =         registry.Get(section, "prolong_blob_lifetime_on_write", true);
 
-    m_DefaultParameters.SetMirroringMode(  registry.Get(config_section, "enable_mirroring", kEmptyStr));
-    m_DefaultParameters.SetServerCheck(    registry.Get(config_section, "server_check", kEmptyStr));
-    m_DefaultParameters.SetServerCheckHint(registry.Get(config_section, "server_check_hint", kEmptyStr));
-    m_DefaultParameters.SetUseCompoundID(  registry.Get(config_section, "use_compound_id", false));
+    m_DefaultParameters.SetMirroringMode(  registry.Get(section, "enable_mirroring", kEmptyStr));
+    m_DefaultParameters.SetServerCheck(    registry.Get(section, "server_check", kEmptyStr));
+    m_DefaultParameters.SetServerCheckHint(registry.Get(section, "server_check_hint", kEmptyStr));
+    m_DefaultParameters.SetUseCompoundID(  registry.Get(section, "use_compound_id", false));
 
-    const auto allowed_services =          registry.Get(config_section, "allowed_services", kEmptyStr);
+    const auto allowed_services =          registry.Get(section, "allowed_services", kEmptyStr);
 
     if (allowed_services.empty()) return;
 
