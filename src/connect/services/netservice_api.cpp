@@ -585,13 +585,14 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     InitXSite(registry, section);
 
-    m_UseSmartRetries = registry.Get(section, "smart_service_retries", m_UseSmartRetries);
+    m_UseSmartRetries = registry.Get(section, "smart_service_retries", true);
 
     int max_retries = registry.Get({ section, "netservice_api" }, "connection_max_retries", CONNECTION_MAX_RETRIES);
-    if (max_retries >= 0) m_ConnectionMaxRetries = max_retries;
+    m_ConnectionMaxRetries = max_retries >= 0 ? max_retries : CONNECTION_MAX_RETRIES;
 
     double retry_delay = registry.Get({ section, "netservice_api" }, "retry_delay", RETRY_DELAY_DEFAULT);
-    if (retry_delay >= 0) m_ConnectionRetryDelay = retry_delay * kMilliSecondsPerSecond;
+    if (retry_delay < 0) retry_delay = RETRY_DELAY_DEFAULT;
+    m_ConnectionRetryDelay = static_cast<unsigned long>(retry_delay * kMilliSecondsPerSecond);
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {

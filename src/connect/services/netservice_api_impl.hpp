@@ -299,10 +299,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
         m_APIName(api_name),
-        m_ClientName(client_name),
-        m_UseSmartRetries(true),
-        m_ConnectionMaxRetries(CONNECTION_MAX_RETRIES),
-        m_ConnectionRetryDelay(RETRY_DELAY_DEFAULT * kMilliSecondsPerSecond)
+        m_ClientName(client_name)
     {
     }
 
