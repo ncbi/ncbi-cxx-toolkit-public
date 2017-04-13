@@ -164,14 +164,19 @@ class NCBI_XNCBI_EXPORT CSynonymsRegistry
 public:
     CSynonymsRegistry(IRegistry& registry) : m_Registry(registry) {}
 
+    // XXX:
+    // Microsoft VS 2013 has a bug (violates 13.3.3.2/3.1.1 of the standard).
+    // So, to avoid overload 'issues' it would report (string vs initializer_list<string>),
+    // parameter 'name' has type of 'const char*' (instead of 'const string&').
+
     template <typename TType>
-    typename TR<TType>::T Get(const string& section, const string& name, TType default_value);
+    typename TR<TType>::T Get(const string& section, const char* name, TType default_value);
 
     template <typename TType>
     typename TR<TType>::T Get(const string& section, initializer_list<string> names, TType default_value);
 
     template <typename TType>
-    typename TR<TType>::T Get(initializer_list<string> sections, const string& name, TType default_value);
+    typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value);
 
 private:
     IRegistry& m_Registry;
@@ -181,7 +186,7 @@ template <typename TType> struct CSynonymsRegistry::TR              { using T = 
 template <>               struct CSynonymsRegistry::TR<const char*> { using T = string; };
 
 template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, const string& name, TType default_value)
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, const char* name, TType default_value)
 {
     return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
 }
@@ -194,7 +199,7 @@ typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& se
     const typename TR<TType>::T empty_value{};
 
     for (const auto& name : names) {
-        auto value = Get(section, name, empty_value);
+        auto value = Get(section, name.c_str(), empty_value);
 
         if (value != empty_value) return value;
     }
@@ -203,7 +208,7 @@ typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& se
 }
 
 template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(initializer_list<string> sections, const string& name, TType default_value)
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(initializer_list<string> sections, const char* name, TType default_value)
 {
     _ASSERT(sections.size());
 
