@@ -41,6 +41,9 @@
 
 #include <memory>
 
+// The number of connection attemps
+#define CONNECTION_MAX_RETRIES 4
+
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
@@ -235,6 +238,7 @@ protected:
 
 template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
 template <>               struct ISynRegistry::TR<const char*> { using T = string; };
+template <>               struct ISynRegistry::TR<unsigned>    { using T = int;    };
 
 template <class TImpl>
 class TSynRegistry : public TImpl

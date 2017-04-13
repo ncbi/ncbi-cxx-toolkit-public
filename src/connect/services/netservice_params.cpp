@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_PARAM_DEF(bool, netservice_api, use_linger2, false);
-NCBI_PARAM_DEF(unsigned int, netservice_api, connection_max_retries, 4);
+NCBI_PARAM_DEF(unsigned int, netservice_api, connection_max_retries, CONNECTION_MAX_RETRIES);
 NCBI_PARAM_DEF(string, netservice_api, retry_delay,
     NCBI_AS_STRING(RETRY_DELAY_DEFAULT));
 NCBI_PARAM_DEF(string, netservice_api, communication_timeout,

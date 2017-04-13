@@ -271,6 +271,8 @@ private:
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
+    class CTry;
+
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& client_name,
             INetServerConnectionListener* listener, bool old_style_auth = false) :
@@ -279,7 +281,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         m_APIName(api_name),
         m_ClientName(client_name),
         m_UseSmartRetries(true),
-        m_ConnectionMaxRetries(-1),
+        m_ConnectionMaxRetries(CONNECTION_MAX_RETRIES),
         m_ConnectionRetryDelay(-1)
     {
     }
@@ -352,6 +354,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         return old_handler;
     }
 
+    unsigned GetConnectionMaxRetries() const { return m_ConnectionMaxRetries; }
+    shared_ptr<CTry> GetTryGuard();
+
     virtual ~SNetServiceImpl();
 
     // Connection event listening. This listener implements
@@ -374,7 +379,7 @@ private:
 
     // connection parameters from config
     bool m_UseSmartRetries;
-    int m_ConnectionMaxRetries;
+    unsigned m_ConnectionMaxRetries;
     int m_ConnectionRetryDelay;
 
     shared_ptr<SConnNetInfo> m_NetInfo;

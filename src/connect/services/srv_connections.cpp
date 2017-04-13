@@ -712,6 +712,8 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
     if (conn_listener == NULL)
         conn_listener = m_Impl->m_Service->m_Listener;
 
+    const auto max_retries = m_Impl->m_Service->GetConnectionMaxRetries();
+
     for (;;) {
         string warning;
 
@@ -721,7 +723,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
             return exec_result;
         }
         catch (CNetSrvConnException& e) {
-            if (++attempt > TServConn_ConnMaxRetries::GetDefault() ||
+            if (++attempt > max_retries ||
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
@@ -737,7 +739,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
             warning = e.GetMsg();
         }
         catch (CNetScheduleException& e) {
-            if (++attempt > TServConn_ConnMaxRetries::GetDefault() ||
+            if (++attempt > max_retries ||
                     e.GetErrCode() != CNetScheduleException::eTryAgain)
                 throw;
 
@@ -756,8 +758,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
         warning += ", reconnecting: attempt ";
         warning += NStr::NumericToString(attempt);
         warning += " of ";
-        warning += NStr::NumericToString(
-                TServConn_ConnMaxRetries::GetDefault());
+        warning += NStr::NumericToString(max_retries);
 
         conn_listener->OnWarning(warning, *this);
 

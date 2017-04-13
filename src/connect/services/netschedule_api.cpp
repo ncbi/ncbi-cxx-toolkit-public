@@ -372,53 +372,6 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
-// The purpose of this class is to suppress possible errors
-// when config loading is not enabled explicitly.
-//
-// Errors would happen when we try to load config from servers that either
-// do not support "GETP2" command (introduced in 4.16.9)
-// or, do not support "QINF2 service=name" command (introduced in 4.17.0)
-// or, do not have "service to queue" mapping set
-// or, are not actually NetSchedule servers but worker nodes
-// or, are currently not reachable (behind some firewall)
-// and need cross connectivity which is usually enabled later
-//
-// This class is turned off (becomes noop, by providing NULL as api_impl)
-// when config loading is enabled explicitly
-class CNetScheduleConfigLoader::CErrorSuppressor
-{
-private:
-    typedef CRef<INetEventHandler> THandlerRef;
-
-    struct SHandler : public INetEventHandler
-    {
-        bool OnError(CException::TErrCode) { return true; }
-    };
-public:
-    CErrorSuppressor(SNetScheduleAPIImpl* api_impl) :
-        m_ApiImpl(api_impl)
-    {
-        if (m_ApiImpl) {
-            m_OriginalHandler = m_ApiImpl->m_Service->SetEventHandler(new SHandler);
-            m_MaxRetries = TServConn_ConnMaxRetries::GetDefault();
-            TServConn_ConnMaxRetries::SetDefault(0);
-        }
-    }
-
-    ~CErrorSuppressor()
-    {
-        if (m_ApiImpl) {
-            m_ApiImpl->m_Service->SetEventHandler(m_OriginalHandler);
-            TServConn_ConnMaxRetries::SetDefault(m_MaxRetries);
-        }
-    }
-
-private:
-    SNetScheduleAPIImpl* m_ApiImpl;
-    THandlerRef m_OriginalHandler;
-    unsigned m_MaxRetries;
-};
-
 CNetScheduleConfigLoader::CNetScheduleConfigLoader(
         const CTempString& prefix, const CTempString& section) :
     m_Prefix(prefix), m_Section(section)
@@ -467,8 +420,18 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& 
         set_explicitly = true;
     }
 
-    // Disable error suppressor if config loading is set explicitly
-    CErrorSuppressor suppressor(set_explicitly ? NULL : impl);
+    // Errors could happen when we try to load config from servers that either
+    // do not support "GETP2" command (introduced in 4.16.9)
+    // or, do not support "QINF2 service=name" command (introduced in 4.17.0)
+    // or, do not have "service to queue" mapping set
+    // or, are not actually NetSchedule servers but worker nodes
+    // or, are currently not reachable (behind some firewall)
+    // and need cross connectivity which is usually enabled later
+    //
+    // This guard is set to suppress errors and avoid retries if config loading is not enabled explicitly
+    shared_ptr<void> try_guard;
+    if (!set_explicitly) try_guard = impl->m_Service->GetTryGuard();
+
     TParams queue_params;
 
     try {

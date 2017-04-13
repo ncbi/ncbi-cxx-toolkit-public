@@ -58,6 +58,39 @@
 
 BEGIN_NCBI_SCOPE
 
+// The purpose of this class is to execute commands suppressing possible errors and avoiding retries
+class SNetServiceImpl::CTry
+{
+    struct SHandler : public INetEventHandler
+    {
+        bool OnError(CException::TErrCode) { return true; }
+    };
+
+public:
+    CTry(SNetServiceImpl* service) :
+        m_Service(service)
+    {
+        _ASSERT(m_Service);
+        Swap(new SHandler);
+    }
+
+    ~CTry()
+    {
+        Swap(m_OriginalHandler);
+    }
+
+private:
+    void Swap(INetEventHandler* handler)
+    {
+        m_OriginalHandler = m_Service->SetEventHandler(handler);
+        swap(m_MaxRetries, m_Service->m_ConnectionMaxRetries);
+    }
+
+    CNetRef<SNetServiceImpl> m_Service;
+    CRef<INetEventHandler> m_OriginalHandler;
+    unsigned m_MaxRetries = 0;
+};
+
 void SDiscoveredServers::DeleteThis()
 {
     CNetService service(m_Service);
@@ -560,16 +593,15 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     m_UseSmartRetries = registry.Get(section, "smart_service_retries", m_UseSmartRetries);
 
+    int max_retries = registry.Get({ section, "netservice_api" }, "connection_max_retries", CONNECTION_MAX_RETRIES);
+    if (max_retries >= 0) m_ConnectionMaxRetries = max_retries;
+
     if (config) {
-        m_ConnectionMaxRetries = registry.Get(section, "connection_max_retries", m_ConnectionMaxRetries);
         double retry_delay = registry.Get(section, "retry_delay", (double)m_ConnectionRetryDelay);
         m_ConnectionRetryDelay = retry_delay < 0? -1:
             (int)SECONDS_DOUBLE_TO_MS_UL(retry_delay);
     }
 
-    if ( m_ConnectionMaxRetries < 0 ) {
-        m_ConnectionMaxRetries = (int)TServConn_ConnMaxRetries::GetDefault();
-    }
     if ( m_ConnectionRetryDelay < 0 ) {
         m_ConnectionRetryDelay = (int)s_GetRetryDelay();
     }
@@ -1271,6 +1303,11 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
         timeout = NULL;
     }
+}
+
+shared_ptr<SNetServiceImpl::CTry> SNetServiceImpl::GetTryGuard()
+{
+    return make_shared<CTry>(this);
 }
 
 void SNetServerPoolImpl::ResetServerConnections()
