@@ -549,38 +549,25 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     }
 
     if (config != NULL) {
-        if (m_ServiceName.empty()) {
-            m_ServiceName = config->GetString(section, "service",
-                    CConfig::eErr_NoThrow, kEmptyStr);
-            if (m_ServiceName.empty())
-                m_ServiceName = config->GetString(section, "service_name",
-                        CConfig::eErr_NoThrow, kEmptyStr);
-            if (m_ServiceName.empty()) {
-                string host(config->GetString(section, "server",
-                        CConfig::eErr_NoThrow, kEmptyStr));
-                if (host.empty())
-                    host = config->GetString(section, "host",
-                            CConfig::eErr_NoThrow, kEmptyStr);
-                string port = config->GetString(section,
-                    "port", CConfig::eErr_NoThrow, kEmptyStr);
-                if (!host.empty() && !port.empty()) {
-                    m_ServiceName = host + ":";
-                    m_ServiceName += port;
-                }
-            }
-        }
-
         CConfigRegistry config_registry(config);
         CSynonymsRegistry registry(config_registry);
 
+        if (m_ServiceName.empty()) {
+            m_ServiceName = registry.Get(section, { "service", "service_name" }, kEmptyStr);
+
+            if (m_ServiceName.empty()) {
+                string host = registry.Get(section, { "server", "host" }, kEmptyStr);
+                string port = registry.Get(section, "port", kEmptyStr);
+
+                if (!host.empty() && !port.empty()) m_ServiceName = host + ":" + port;
+            }
+        }
+
         InitXSite(registry, section);
 
-        m_UseSmartRetries = config->GetBool(section,
-                "smart_service_retries", CConfig::eErr_NoThrow, true);
-        m_ConnectionMaxRetries = config->GetInt(section,
-                "connection_max_retries", CConfig::eErr_NoThrow, -1);
-        double retry_delay = config->GetDouble(section,
-                "retry_delay", CConfig::eErr_NoThrow, -1);
+        m_UseSmartRetries = registry.Get(section, "smart_service_retries", true);
+        m_ConnectionMaxRetries = registry.Get(section, "connection_max_retries", -1);
+        double retry_delay = registry.Get(section, "retry_delay", -1.0);
         m_ConnectionRetryDelay = retry_delay < 0? -1:
             (int)SECONDS_DOUBLE_TO_MS_UL(retry_delay);
     }

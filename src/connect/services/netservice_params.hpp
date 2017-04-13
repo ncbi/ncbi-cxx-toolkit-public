@@ -164,43 +164,41 @@ public:
     CSynonymsRegistry(IRegistry& registry) : m_Registry(registry) {}
 
     template <typename TType>
-    TType Get(string section, string name, TType default_value)
+    TType Get(const string& section, const string& name, TType default_value)
     {
         return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
     }
 
     template <typename TType>
-    TType Get(string section, vector<string> names, TType default_value)
+    TType Get(const string& section, initializer_list<string> names, TType default_value)
     {
-        return Get(vector<string>({section}), names, default_value);
-    }
-
-    template <typename TType>
-    TType Get(vector<string> sections, string name, TType default_value)
-    {
-        return Get(sections, vector<string>({name}), default_value);
-    }
-
-    template <typename TType>
-    TType Get(vector<string> sections, vector<string> names, TType default_value)
-    {
-        _ASSERT(!sections.empty());
-        _ASSERT(!names.empty());
+        _ASSERT(names.size());
 
         const TType empty_value{};
 
-        auto section = sections.begin();
-        auto name = names.begin();
-
-        for (;;) {
-            auto value = Get(*section, *name, empty_value);
+        for (const auto& name : names) {
+            auto value = Get(section, name, empty_value);
 
             if (value != empty_value) return value;
-            if (++name != names.end()) continue;
-            if (++section == sections.end()) return default_value;
-
-            name = names.begin();
         }
+
+        return default_value;
+    }
+
+    template <typename TType>
+    TType Get(initializer_list<string> sections, const string& name, TType default_value)
+    {
+        _ASSERT(sections.size());
+
+        const TType empty_value{};
+
+        for (const auto& section : sections) {
+            auto value = Get(section, name, empty_value);
+
+            if (value != empty_value) return value;
+        }
+
+        return default_value;
     }
 
 private:
