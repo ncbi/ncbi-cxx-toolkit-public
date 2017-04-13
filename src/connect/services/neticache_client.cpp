@@ -194,6 +194,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
+    void Init(CConfig* config, const string& config_section);
+
     ICache::TFlags m_CacheFlags;
 };
 
@@ -205,18 +207,23 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     SNetICacheClientImpl* icache_impl =
         static_cast<SNetICacheClientImpl*>(api_impl);
 
-    if (icache_impl->m_DefaultParameters.GetCacheName().empty()) {
+    icache_impl->Init(config, config_section);
+}
+
+void SNetICacheClientImpl::Init(CConfig* config, const string& config_section)
+{
+    if (m_DefaultParameters.GetCacheName().empty()) {
         if (config == NULL) {
             NCBI_THROW(CNetCacheException,
                 eAuthenticationError, "ICache database name is not defined");
         } else {
             try {
-                icache_impl->m_DefaultParameters.SetCacheName(
+                m_DefaultParameters.SetCacheName(
                         config->GetString(config_section,
                                 "name", CConfig::eErr_Throw, kEmptyStr));
             }
             catch (exception&) {
-                icache_impl->m_DefaultParameters.SetCacheName(
+                m_DefaultParameters.SetCacheName(
                         config->GetString(config_section,
                                 "cache_name", CConfig::eErr_Throw,
                                         "default_cache"));
@@ -224,14 +231,14 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
         }
     }
 
-    if (icache_impl->m_DefaultParameters.GetCacheName().length() >
+    if (m_DefaultParameters.GetCacheName().length() >
             MAX_ICACHE_CACHE_NAME_LENGTH) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "NetICache: cache name is too long");
     }
 
     if (config != NULL)
-        icache_impl->m_DefaultParameters.SetTryAllServers(
+        m_DefaultParameters.SetTryAllServers(
                 config->GetBool(config_section,
                         "try_all_servers", CConfig::eErr_NoThrow, false));
 }
