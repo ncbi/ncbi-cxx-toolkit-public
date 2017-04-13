@@ -235,7 +235,7 @@ public:
     {
     }
 
-    void SetAuthString(SNetScheduleAPIImpl* impl);
+    void SetAuthString(const string& auth) { m_Auth = auth; }
 
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
@@ -251,8 +251,10 @@ public:
     virtual void OnError(const string& err_msg, CNetServer& server);
     virtual void OnWarning(const string& warn_msg, CNetServer& server);
 
+private:
     string m_Auth;
 
+public:
     CFastMutex m_ServerByNodeMutex;
     typedef map<string, SNetServerInPool*> TServerByNode;
     TServerByNode m_ServerByNode;
@@ -428,6 +430,7 @@ public:
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
     void InitAffinities(CConfig* config, const string& section);
+    string MakeAuthString();
 
 // TODO: Make private after initialization is moved to this class
 // private:

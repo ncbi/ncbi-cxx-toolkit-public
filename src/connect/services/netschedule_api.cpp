@@ -521,17 +521,17 @@ bool CNetScheduleOwnConfigLoader::Transform(const CTempString& prefix,
     return CNetScheduleConfigLoader::Transform(prefix, name);
 }
 
-void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
+string SNetScheduleAPIImpl::MakeAuthString()
 {
-    string auth(impl->m_Service->MakeAuthString());
+    string auth(m_Service->MakeAuthString());
 
-    if (!impl->m_ProgramVersion.empty()) {
+    if (!m_ProgramVersion.empty()) {
         auth += " prog=\"";
-        auth += impl->m_ProgramVersion;
+        auth += m_ProgramVersion;
         auth += '\"';
     }
 
-    switch (impl->m_ClientType) {
+    switch (m_ClientType) {
     case CNetScheduleAPI::eCT_Admin:
         auth += " client_type=\"admin\"";
         break;
@@ -551,15 +551,15 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         break;
     }
 
-    if (!impl->m_ClientNode.empty()) {
+    if (!m_ClientNode.empty()) {
         auth += " client_node=\"";
-        auth += impl->m_ClientNode;
+        auth += m_ClientNode;
         auth += '\"';
     }
 
-    if (!impl->m_ClientSession.empty()) {
+    if (!m_ClientSession.empty()) {
         auth += " client_session=\"";
-        auth += impl->m_ClientSession;
+        auth += m_ClientSession;
         auth += '\"';
     }
 
@@ -573,32 +573,32 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         }
     }}
 
-    ITERATE(SNetScheduleAPIImpl::TAuthParams, it, impl->m_AuthParams) {
+    ITERATE(SNetScheduleAPIImpl::TAuthParams, it, m_AuthParams) {
         auth += it->second;
     }
 
     auth += " ns_compat_ver=\"" COMPATIBLE_NETSCHEDULE_VERSION "\""
         "\r\n";
 
-    auth += impl->m_Queue;
+    auth += m_Queue;
 
     // Make the auth token look like a command to be able to
     // check for potential authentication/initialization errors
     // like the "queue not found" error.
-    if (impl->m_Mode & impl->fNonWnCompatible) {
+    if (m_Mode & fNonWnCompatible) {
         auth += "\r\nVERSION";
 
         if (!g_AppendClientIPAndSessionID(auth) &&
-                !impl->m_ClientSession.empty()) {
+                !m_ClientSession.empty()) {
             auth += " sid=\"";
-            auth += NStr::PrintableString(impl->m_ClientSession);
+            auth += NStr::PrintableString(m_ClientSession);
             auth += '"';
         }
 
         g_AppendHitID(auth);
     }
 
-    m_Auth = auth;
+    return auth;
 }
 
 bool CNetScheduleServerListener::NeedToSubmitAffinities(
@@ -753,7 +753,7 @@ void CNetScheduleServerListener::OnInit(
                 GetDiagContext().GetStringUID();
         }
 
-        SetAuthString(ns_impl);
+        SetAuthString(ns_impl->MakeAuthString());
 
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
@@ -1353,7 +1353,7 @@ void SNetScheduleAPIImpl::UpdateAuthString()
 {
     m_Service->m_ServerPool->ResetServerConnections();
 
-    GetListener()->SetAuthString(this);
+    GetListener()->SetAuthString(MakeAuthString());
 }
 
 void CNetScheduleAPI::SetClientType(CNetScheduleAPI::EClientType client_type)
