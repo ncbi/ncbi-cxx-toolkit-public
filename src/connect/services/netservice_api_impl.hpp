@@ -136,8 +136,12 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     TNetServerByAddress m_Servers;
     CFastMutex m_ServerMutex;
 
+    // Connection timeout, which is used as the eIO_Open timeout in CSocket::Connect.
     STimeout m_ConnTimeout;
+
+    // Communication timeout, upon reaching which the connection is closed on the client side.
     STimeout m_CommTimeout;
+
     STimeout m_FirstServerTimeout;
 
     CTimeout m_MaxTotalTime;

@@ -43,8 +43,6 @@ NCBI_PARAM_DEF(bool, netservice_api, use_linger2, false);
 NCBI_PARAM_DEF(unsigned int, netservice_api, connection_max_retries, CONNECTION_MAX_RETRIES);
 NCBI_PARAM_DEF(string, netservice_api, retry_delay,
     NCBI_AS_STRING(RETRY_DELAY_DEFAULT));
-NCBI_PARAM_DEF(string, netservice_api, communication_timeout,
-    NCBI_AS_STRING(COMMUNICATION_TIMEOUT_DEFAULT));
 NCBI_PARAM_DEF(int, netservice_api, max_find_lbname_retries, 3);
 NCBI_PARAM_DEF(string, netcache_api, fallback_server, "");
 NCBI_PARAM_DEF(int, netservice_api, max_connection_pool_size, 0); // unlimited
@@ -53,9 +51,6 @@ NCBI_PARAM_DEF(unsigned, server, max_wait_for_servers, 24 * 60 * 60);
 NCBI_PARAM_DEF(bool, server, stop_on_job_errors, true);
 NCBI_PARAM_DEF(bool, server, allow_implicit_job_return, false);
 
-
-static bool s_DefaultCommTimeout_Initialized = false;
-static STimeout s_DefaultCommTimeout;
 
 unsigned long s_SecondsToMilliseconds(
     const string& seconds, unsigned long default_value)
@@ -86,17 +81,6 @@ unsigned long s_SecondsToMilliseconds(
     }
 
     return *ch == '\0' ? result * powers_of_ten[exponent] : default_value;
-}
-
-STimeout s_GetDefaultCommTimeout()
-{
-    if (s_DefaultCommTimeout_Initialized)
-        return s_DefaultCommTimeout;
-    NcbiMsToTimeout(&s_DefaultCommTimeout,
-        s_SecondsToMilliseconds(TServConn_CommTimeout::GetDefault(),
-            COMMUNICATION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond));
-    s_DefaultCommTimeout_Initialized = true;
-    return s_DefaultCommTimeout;
 }
 
 unsigned long s_GetRetryDelay()

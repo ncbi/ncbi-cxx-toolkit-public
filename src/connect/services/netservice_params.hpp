@@ -47,27 +47,13 @@
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
-// Connection timeout, which is used as the eIO_Open timeout
-// in CSocket::Connect.
-#define CONNECTION_TIMEOUT_DEFAULT 2.0
-
-// Communication timeout, upon reaching which the connection
-// is closed on the client side.
-#define COMMUNICATION_TIMEOUT_DEFAULT 12.0
-
 // The size of an internal array, which is used for calculation
 // of the connection failure rate.
 #define CONNECTION_ERROR_HISTORY_MAX 128
 
-#define FIRST_SERVER_TIMEOUT_DEFAULT 0.3
-
 #define COMMIT_JOB_INTERVAL_DEFAULT 2
 
 BEGIN_NCBI_SCOPE
-
-NCBI_PARAM_DECL(string, netservice_api, communication_timeout);
-typedef NCBI_PARAM_TYPE(netservice_api, communication_timeout)
-    TServConn_CommTimeout;
 
 NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_max_retries)
@@ -118,7 +104,6 @@ typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
 
 NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
     const string& seconds, unsigned long default_value);
-NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 
 

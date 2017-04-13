@@ -622,6 +622,14 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
 
+    const auto CONNECTION_TIMEOUT_DEFAULT = 2.0;
+    const auto COMMUNICATION_TIMEOUT_DEFAULT = 12.0;
+    const auto FIRST_SERVER_TIMEOUT_DEFAULT = 0.3;
+
+    g_CTimeoutToSTimeout(CTimeout(CONNECTION_TIMEOUT_DEFAULT), m_ConnTimeout);
+    g_CTimeoutToSTimeout(CTimeout(COMMUNICATION_TIMEOUT_DEFAULT), m_CommTimeout);
+    g_CTimeoutToSTimeout(CTimeout(FIRST_SERVER_TIMEOUT_DEFAULT), m_FirstServerTimeout);
+   
     if (config != NULL) {
         m_LBSMAffinity.first = config->GetString(section, "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
@@ -630,31 +638,25 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
             m_LBSMAffinity.second = LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinity.first.c_str());
         }
 
-        unsigned long conn_timeout = s_SecondsToMilliseconds(config->GetString(
-            section, "connection_timeout", CConfig::eErr_NoThrow, "0"), 0);
+        double conn_timeout = config->Get(section, "connection_timeout",
+                CConfig::eErr_NoThrow, CONNECTION_TIMEOUT_DEFAULT);
 
-        NcbiMsToTimeout(&m_ConnTimeout, conn_timeout > 0 ? conn_timeout :
-            CONNECTION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
+        if (conn_timeout > 0) 
+            g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
 
-        unsigned long comm_timeout = s_SecondsToMilliseconds(config->GetString(
-            section, "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
+        double comm_timeout = config->Get(section, "communication_timeout",
+                CConfig::eErr_NoThrow, COMMUNICATION_TIMEOUT_DEFAULT);
 
         if (comm_timeout > 0)
-            NcbiMsToTimeout(&m_CommTimeout, comm_timeout);
-        else
-            m_CommTimeout = s_GetDefaultCommTimeout();
+            g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
 
-        unsigned long first_srv_timeout = s_SecondsToMilliseconds(
-                config->GetString(section, "first_server_timeout",
-                CConfig::eErr_NoThrow, "0"), 0);
+        double first_srv_timeout = config->Get(section, "first_server_timeout",
+                CConfig::eErr_NoThrow, FIRST_SERVER_TIMEOUT_DEFAULT);
 
         if (first_srv_timeout > 0)
-            NcbiMsToTimeout(&m_FirstServerTimeout, first_srv_timeout);
+            g_CTimeoutToSTimeout(CTimeout(first_srv_timeout), m_FirstServerTimeout);
         else if (comm_timeout > 0)
             m_FirstServerTimeout = m_CommTimeout;
-        else
-            NcbiMsToTimeout(&m_FirstServerTimeout,
-                    FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
 
         double max_total_time = config->Get(section, "max_connection_time", CConfig::eErr_NoThrow, 0.0);
         if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
@@ -664,13 +666,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
 
         max_seconds = config->GetDouble(section, "rebalance_time",
                 CConfig::eErr_NoThrow, max_seconds);
-    } else {
-        NcbiMsToTimeout(&m_ConnTimeout,
-            CONNECTION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
-        m_CommTimeout = s_GetDefaultCommTimeout();
-
-        NcbiMsToTimeout(&m_FirstServerTimeout,
-            FIRST_SERVER_TIMEOUT_DEFAULT * kMilliSecondsPerSecond);
     }
 
     m_ThrottleParams.Init(config, section);
