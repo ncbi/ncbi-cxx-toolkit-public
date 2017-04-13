@@ -482,7 +482,7 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry&, const string&)
+void SNetServiceXSiteAPI::InitXSite(ISynRegistry&, SRegSynonyms&)
 {
 }
 

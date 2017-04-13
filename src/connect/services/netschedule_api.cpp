@@ -396,7 +396,7 @@ bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& regi
     bool set_explicitly = false;
 
     if (registry.Has(sections, "load_config_from_ns")) {
-        if (!registry.Get(sections, "load_config_from_ns", true)) return nullptr;
+        if (!registry.Get(sections, "load_config_from_ns", true)) return false;
         set_explicitly = true;
     }
 
