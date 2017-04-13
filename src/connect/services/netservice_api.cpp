@@ -676,14 +676,14 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         m_MaxConnectionTime = MAX_CONNECTION_TIME_DEFAULT * kMilliSecondsPerSecond;
     }
 
-    InitThrottle(config, section);
+    m_ThrottleParams.Init(config, section);
 
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 
     m_Listener = listener;
 }
 
-void SNetServerPoolImpl::InitThrottle(CConfig* config, const string& section)
+void SNetServerPoolImpl::SThrottleParams::Init(CConfig* config, const string& section)
 {
     const auto THROTTLE_RELAXATION_PERIOD_DEFAULT = 0;
     const auto THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT = 0;
