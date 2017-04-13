@@ -261,8 +261,6 @@ public:
     // preferred affinities from two threads.
     CFastMutex m_AffinitySubmissionMutex;
 
-    CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
-
 private:
     const bool m_NonWn;
     string m_Scope;
@@ -431,7 +429,12 @@ public:
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
     void InitAffinities(CConfig* config, const string& section);
 
+// TODO: Make private after initialization is moved to this class
+// private:
     const TMode m_Mode;
+    CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
+
+public:
     CNetService m_Service;
 
     string m_Queue;

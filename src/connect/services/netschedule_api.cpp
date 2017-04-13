@@ -531,7 +531,7 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         auth += '\"';
     }
 
-    switch (m_ClientType) {
+    switch (impl->m_ClientType) {
     case CNetScheduleAPI::eCT_Admin:
         auth += " client_type=\"admin\"";
         break;
@@ -1358,7 +1358,7 @@ void SNetScheduleAPIImpl::UpdateAuthString()
 
 void CNetScheduleAPI::SetClientType(CNetScheduleAPI::EClientType client_type)
 {
-    m_Impl->GetListener()->m_ClientType = client_type;
+    m_Impl->m_ClientType = client_type;
 
     m_Impl->UpdateAuthString();
 }
