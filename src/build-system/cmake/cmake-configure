@@ -456,4 +456,10 @@ mkdir -p $ROOT/build
 ROOT_SOURCE_PATH=`pwd`
 cd $ROOT/build
 
+#we need to do this because CMake caches configuration parameters, and if you run ./cmake-configure for existing build directory
+#but with another parameters, CMake will use old values for paramers you omit (not default ones)
+if [ -e CMakeCache.txt ]; then
+   rm CMakeCache.txt
+fi
+
 eval "${CMAKE_CMD}" "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}

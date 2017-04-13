@@ -42,7 +42,7 @@ elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
 endif()
 
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_definitions(-D_DEBUG -gdwarf-3)
 ELSE()
     add_definitions(-DNDEBUG)

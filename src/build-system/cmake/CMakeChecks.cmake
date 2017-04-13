@@ -222,20 +222,8 @@ set(ODBC_INCLUDE  ${includedir}/dbapi/driver/odbc/unix_odbc
                   ${includedir0}/dbapi/driver/odbc/unix_odbc)
 set(ODBC_LIBS)
 
-############################################################################
-#
-# PYTHON: headers and libs (default + specific versions)
-# FIXME: replace with native CMake check
-#
-set(PYTHON_INCLUDE  /opt/python-2.7env/include/python2.7)
-set(PYTHON_LIBS -L/opt/python-2.7/lib/ -Wl,-rpath,/opt/python-2.7/lib/ -lpython2.7)
-#set(PYTHON_LIBS     -L/opt/python-2.5/lib -L/opt/python-2.5/lib/python2.5/config -Wl,-rpath,/opt/python-2.5/lib:/opt/python-2.5/lib/python2.5/config -lpython2.5 -lpthread -ldl  -lutil -lm)
-set(PYTHON23_INCLUDE)
-set(PYTHON23_LIBS)
-set(PYTHON24_INCLUDE)
-set(PYTHON24_LIBS)
-set(PYTHON25_INCLUDE  /opt/python-2.5/include/python2.5)
-set(PYTHON25_LIBS     -L/opt/python-2.5/lib -L/opt/python-2.5/lib/python2.5/config -Wl,-rpath,/opt/python-2.5/lib:/opt/python-2.5/lib/python2.5/config -lpython2.5 -lpthread -ldl  -lutil -lm)
+# Python
+find_external_library(Python INCLUDES Python.h LIBS python2.7 INCLUDE_HINTS "/opt/python-2.7env/include/python2.7/" LIBS_HINTS "/opt/python-2.7env/lib/")
 
 ############################################################################
 #
@@ -265,14 +253,18 @@ endif ()
 # these as appropriate.)
 
 find_external_library(OpenGL INCLUDES GL/gl.h LIBS GLU HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS -lGL -lXmu -lXt -lXext  -lSM -lICE -lX11)
-#set(OPENGL_STATIC_LIBS "-L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -lGLU-static -lGL-static -lXmu -lXt -lXext -lSM -lICE -lX11")
-if (NOT OPENGL_FOUND)
+#set(OPENGL_STATIC_LIBS "-L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -lGLU-static -lGL-static -lXmu -lXt -lXext -lSM -lICE -lX11" DO_NOT_UPDATE_MESSAGE))
+if (NOT ${OPENGL_FOUND} AND NOT ${OPENGL_DISABLED} AND ${OPENGL} STREQUAL "")
   #not sure that it works
   find_package(OpenGL)
-  set(OPENGL_LIBS "${OPENGL_LIBRARIES}")
+  if (${OPENGL_FOUND})
+    set(OPENGL_INCLUDE "${OPENGL_INCLUDE_DIR}")
+    set(OPENGL_LIBS "${OPENGL_LIBRARIES}")
+  endif()
 endif()
+update_final_message("OpenGL")
 
-if (OPENGL_FOUND)
+if (${OPENGL_FOUND})
   find_external_library(OSMESA INCLUDES GL/osmesa.h LIBS OSMesa HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS ${OPENGL_LIBS})
   #set(OSMESA_STATIC_LIBS  "-L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -lOSMesa-static -lGLU-static -lGL-static -lXmu -lXt -lXext -lSM -lICE -lX11")
 else()
@@ -323,20 +315,18 @@ find_external_library(ICU INCLUDES unicode/ucnv.h LIBS icui18n HINTS "${NCBI_TOO
 #set(ICU_CONFIG      ${NCBI_TOOLS_ROOT}/icu-49.1.1/GCC442-DebugMT/bin/icu-config)
 #set(ICU_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/icu-49.1.1/GCC442-DebugMT/lib  -lsicui18n -lsicuuc -lsicudata )
 
-# XML/XSL support:
-set(EXPAT_INCLUDE       )
-set(EXPAT_LIBS         -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
-set(EXPAT_STATIC_LIBS  -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
-set(SABLOT_INCLUDE      ${NCBI_TOOLS_ROOT}/Sablot-1.0.2/include)
-set(SABLOT_LIBS        -L${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -Wl,-rpath,/opt/ncbi/64/Sablot-1.0.2/lib64:${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -lsablot -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
-set(SABLOT_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -Wl,-rpath,/opt/ncbi/64/Sablot-1.0.2/lib64:${NCBI_TOOLS_ROOT}/Sablot-1.0.2/lib64 -lsablot -L${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -Wl,-rpath,/opt/ncbi/64/expat-1.95.8/lib64:${NCBI_TOOLS_ROOT}/expat-1.95.8/lib64 -lexpat )
-
 find_external_library(libxml INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
 set(LIBXML_INCLUDE     ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
 
 #if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
 #  set(LIBXML_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxml2-static)
 #endif(EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
+
+find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBXML_LIBS})
+set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
+
+find_external_library(libxslt INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
+set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
 
 find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBXML_LIBS})
 set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
@@ -369,7 +359,6 @@ find_external_library(hdf5 INCLUDES hdf5.h LIBS hdf5 HINTS "${NCBI_TOOLS_ROOT}/h
 # Various image-format libraries
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.sqlite3.cmake)
 
-
 ############################################################################
 #
 # Various image-format libraries
@@ -388,12 +377,6 @@ find_external_library(mimetic INCLUDES mimetic/mimetic.h LIBS mimetic HINTS "${N
 find_external_library(gsoap INCLUDES stdsoap2.h LIBS gsoapssl++ INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/" EXTRAFLAGS -lssl -lcrypto -lz)
 set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/soapcpp2)
 set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/wsdl2h)
-
-# MongoDB
-set(MONGODB_INCLUDE     ${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1/include/boost-1_53 -Wno-unused-local-typedefs 
-                        ${NCBI_TOOLS_ROOT}/mongodb-2.4.6/include)
-set(MONGODB_LIBS        -L${NCBI_TOOLS_ROOT}/mongodb-2.4.6/lib -Wl,-rpath,/opt/ncbi/64/mongodb-2.4.6/lib:${NCBI_TOOLS_ROOT}/mongodb-2.4.6/lib -lmongoclient -L${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1/lib -Wl,-rpath,/opt/ncbi/64/boost-1.53.0-ncbi1/lib:${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1/lib -lboost_filesystem-gcc48-mt-d-1_53-64 -lboost_thread-gcc48-mt-d-1_53-64 -lboost_system-gcc48-mt-d-1_53-64)
-set(MONGODB_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/mongodb-2.4.6/lib -Wl,-rpath,/opt/ncbi/64/mongodb-2.4.6/lib:${NCBI_TOOLS_ROOT}/mongodb-2.4.6/lib -lmongodb -L${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1/lib -Wl,-rpath,/opt/ncbi/64/boost-1.53.0-ncbi1/lib:${NCBI_TOOLS_ROOT}/boost-1.53.0-ncbi1/lib -lboost_filesystem-gcc48-mt-d-1_53-64-static -lboost_thread-gcc48-mt-d-1_53-64-static -lboost_system-gcc48-mt-d-1_53-64-static)
 
 # Compress
 set(COMPRESS_LDEP ${CMPRS_LIB})
@@ -459,6 +442,7 @@ set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout einfo
 
 #GLPK
 find_external_library(GLPK INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
+
 find_external_library(samtools INCLUDES bam.h LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
 #LAPACK
