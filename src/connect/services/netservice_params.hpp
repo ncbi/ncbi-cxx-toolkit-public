@@ -170,21 +170,43 @@ public:
     // parameter 'name' has type of 'const char*' (instead of 'const string&').
 
     template <typename TType>
-    typename TR<TType>::T Get(const string& section, const char* name, TType default_value);
+    typename TR<TType>::T Get(const string& section, const char* name, TType default_value)
+    {
+        return GetImpl<typename TR<TType>::T>(section, name, default_value);
+    }
 
     template <typename TType>
-    typename TR<TType>::T Get(const string& section, initializer_list<string> names, TType default_value);
+    typename TR<TType>::T Get(const string& section, initializer_list<string> names, TType default_value)
+    {
+        return GetImpl<typename TR<TType>::T>(section, names, default_value);
+    }
 
     template <typename TType>
-    typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value);
+    typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value)
+    {
+        return GetImpl<typename TR<TType>::T>(sections, name, default_value);
+    }
 
-    bool Has(const string& section, const char* name);
+    bool Has(const string& section, const char* name)
+    {
+        return m_Registry->HasEntry(section, name);
+    }
+
     bool Has(const string& section, initializer_list<string> names);
     bool Has(initializer_list<string> sections, const char* name);
 
 private:
-    template <typename TType, class TFunc, typename TReturn>
-    static TReturn Iterate(initializer_list<string> list, TType default_value, TFunc func);
+    template <typename TType>
+    TType GetImpl(const string& section, const char* name, TType default_value)
+    {
+        return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
+    }
+
+    template <typename TType>
+    TType GetImpl(const string& section, initializer_list<string> names, TType default_value);
+
+    template <typename TType>
+    TType GetImpl(initializer_list<string> sections, const char* name, TType default_value);
 
     shared_ptr<IRegistry> m_Registry;
 };
@@ -192,54 +214,14 @@ private:
 template <typename TType> struct CSynonymsRegistry::TR              { using T = TType;  };
 template <>               struct CSynonymsRegistry::TR<const char*> { using T = string; };
 
-template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, const char* name, TType default_value)
-{
-    return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
-}
-
-template <typename TType, class TFunc, typename TReturn>
-TReturn CSynonymsRegistry::Iterate(initializer_list<string> list, TType default_value, TFunc func)
-{
-    _ASSERT(list.size());
-
-    const TReturn empty_value{};
-
-    for (const auto& element : list) {
-        auto value = func(element, empty_value);
-
-        if (value != empty_value) return value;
-    }
-
-    return default_value;
-}
-
-template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, initializer_list<string> names, TType default_value)
-{
-    auto f = [&](const string& name, typename TR<TType>::T value)
-    {
-        return Get(section, name.c_str(), value);
-    };
-
-    return Iterate<TType, decltype(f), typename TR<TType>::T>(names, default_value, f);
-}
-
-template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(initializer_list<string> sections, const char* name, TType default_value)
-{
-    auto f = [&](const string& section, typename TR<TType>::T value)
-    {
-        return Get(section, name, value);
-    };
-
-    return Iterate<TType, decltype(f), typename TR<TType>::T>(sections, default_value, f);
-}
-
-inline bool CSynonymsRegistry::Has(const string& section, const char* name)
-{
-    return m_Registry->HasEntry(section, name);
-}
+extern template NCBI_XNCBI_EXPORT string CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
 END_NCBI_SCOPE
 
