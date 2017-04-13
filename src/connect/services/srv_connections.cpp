@@ -708,11 +708,13 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
         m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime * 1000000);
 
     unsigned attempt = 0;
+    auto& service = m_Impl->m_Service;
 
     if (conn_listener == NULL)
-        conn_listener = m_Impl->m_Service->m_Listener;
+        conn_listener = service->m_Listener;
 
-    const auto max_retries = m_Impl->m_Service->GetConnectionMaxRetries();
+    const auto max_retries = service->GetConnectionMaxRetries();
+    const auto retry_delay = service->GetConnectionRetryDelay();
 
     for (;;) {
         string warning;
@@ -762,7 +764,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
 
         conn_listener->OnWarning(warning, *this);
 
-        SleepMilliSec(s_GetRetryDelay());
+        SleepMilliSec(retry_delay);
     }
 }
 

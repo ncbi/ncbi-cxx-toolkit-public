@@ -282,7 +282,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         m_ClientName(client_name),
         m_UseSmartRetries(true),
         m_ConnectionMaxRetries(CONNECTION_MAX_RETRIES),
-        m_ConnectionRetryDelay(-1)
+        m_ConnectionRetryDelay(RETRY_DELAY_DEFAULT * kMilliSecondsPerSecond)
     {
     }
 
@@ -355,6 +355,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     }
 
     unsigned GetConnectionMaxRetries() const { return m_ConnectionMaxRetries; }
+    unsigned long GetConnectionRetryDelay() const { return m_ConnectionRetryDelay; }
     shared_ptr<CTry> GetTryGuard();
 
     virtual ~SNetServiceImpl();
@@ -380,7 +381,7 @@ private:
     // connection parameters from config
     bool m_UseSmartRetries;
     unsigned m_ConnectionMaxRetries;
-    int m_ConnectionRetryDelay;
+    unsigned long m_ConnectionRetryDelay;
 
     shared_ptr<SConnNetInfo> m_NetInfo;
 };

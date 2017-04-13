@@ -596,15 +596,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     int max_retries = registry.Get({ section, "netservice_api" }, "connection_max_retries", CONNECTION_MAX_RETRIES);
     if (max_retries >= 0) m_ConnectionMaxRetries = max_retries;
 
-    if (config) {
-        double retry_delay = registry.Get(section, "retry_delay", (double)m_ConnectionRetryDelay);
-        m_ConnectionRetryDelay = retry_delay < 0? -1:
-            (int)SECONDS_DOUBLE_TO_MS_UL(retry_delay);
-    }
-
-    if ( m_ConnectionRetryDelay < 0 ) {
-        m_ConnectionRetryDelay = (int)s_GetRetryDelay();
-    }
+    double retry_delay = registry.Get({ section, "netservice_api" }, "retry_delay", RETRY_DELAY_DEFAULT);
+    if (retry_delay >= 0) m_ConnectionRetryDelay = retry_delay * kMilliSecondsPerSecond;
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
@@ -1047,7 +1040,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                 ERR_POST_X(4, "Could not find LB service name '" <<
                     m_ServiceName <<
                         "', will retry after delay");
-                SleepMilliSec(s_GetRetryDelay());
+                SleepMilliSec(m_ConnectionRetryDelay);
             }
 
             SDiscoveredServers* server_group = m_DiscoveredServers;
