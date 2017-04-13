@@ -102,9 +102,17 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
             client_name = api.GetExecutor().GetClientName();
         }
 
-        CNetScheduleConfigLoader loader(
-                "nc.",  "netcache_conf_from_netschedule");
-        return loader.Get(api, config, *config_section);
+        CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
+
+        if (config) {
+            CConfigRegistry config_registry(config);
+            CSynRegistry registry(&config_registry);
+            return loader.Get(api, registry, *config_section);
+        } else {
+            CMemoryRegistry empty_registry;
+            CSynRegistry registry(&empty_registry);
+            return loader.Get(api, registry, *config_section);
+        }
     }
 
     return NULL;

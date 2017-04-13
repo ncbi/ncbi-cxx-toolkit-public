@@ -456,25 +456,15 @@ CConfig* CNetScheduleConfigLoader::Parse(const TParams& params,
     return result.get() ? new CConfig(result.release()) : NULL;
 }
 
-CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
-        CConfig* config, string& section)
+CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section)
 {
     _ASSERT(impl);
 
     bool set_explicitly = false;
 
-    try {
-        if (config) {
-            // If it is disabled explicitly
-            if (!config->GetBool(section, "load_config_from_ns",
-                        CConfig::eErr_Throw, true)) {
-                return NULL;
-            }
-
-            set_explicitly = true;
-        }
-    }
-    catch (CConfigException&) {
+    if (registry.Has(section, "load_config_from_ns")) {
+        if (!registry.Get(section, "load_config_from_ns", true)) return nullptr;
+        set_explicitly = true;
     }
 
     // Disable error suppressor if config loading is set explicitly
@@ -688,7 +678,7 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
-            if (CConfig* alt = loader.Get(this, config, module)) {
+            if (CConfig* alt = loader.Get(this, registry, module)) {
                 unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
                 registry.Reset(new_config_registry.release(), eTakeOwnership);
                 continue;

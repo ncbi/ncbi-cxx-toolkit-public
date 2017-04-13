@@ -205,7 +205,7 @@ public:
             const CTempString& prefix,
             const CTempString& section);
 
-    CConfig* Get(SNetScheduleAPIImpl* impl, CConfig* config, string& section);
+    CConfig* Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section);
 
     string GetSection() const { return m_Section; }
 
