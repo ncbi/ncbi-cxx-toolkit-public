@@ -234,4 +234,157 @@ template bool   ISynRegistry::GetImpl(initializer_list<string> sections, const c
 template int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
 template double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
+class CCachedSynRegistryImpl::CCache
+{
+public:
+    struct SValue
+    {
+        struct SValueHolder
+        {
+            template <typename TType>
+            operator TType() const
+            {
+                _ASSERT(typeid(TType).hash_code() == m_TypeHash);
+                return *static_cast<TType*>(m_Value.get());
+            }
+
+            template <typename TType>
+            SValueHolder& operator=(TType value)
+            {
+                _ASSERT(m_TypeHash = typeid(TType).hash_code());
+                m_Value = make_shared<TType>(value);
+                return *this;
+            }
+
+        private:
+            size_t m_TypeHash = 0;
+            shared_ptr<void> m_Value;
+        };
+
+        enum { New, Default, Read } type = New;
+        SValueHolder value;
+    };
+
+    using TValuePtr = shared_ptr<SValue>;
+    using TValues = map<string, map<string, TValuePtr>>;
+
+    TValuePtr Get(const string& section, const char* name);
+    TValuePtr Get(const string& section, initializer_list<string> names);
+    TValuePtr Get(initializer_list<string> sections, const char* name);
+
+private:
+    TValues m_Values;
+};
+
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const string& section, const char* name)
+{
+    auto& section_values = m_Values[section];
+    auto found = section_values.find(name);
+
+    if (found != section_values.end()) return section_values[name];
+
+    TValuePtr value(new SValue);
+    section_values.insert(make_pair(name, value));
+    return value;
+}
+
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const string& section, initializer_list<string> names)
+{
+    _ASSERT(names.size());
+
+    auto name = *names.begin();
+    auto& section_values = m_Values[section];
+    auto found = section_values.find(name);
+
+    if (found != section_values.end()) return section_values[name];
+
+    TValuePtr value(new SValue);
+
+    for (auto& n : names) {
+        auto result = section_values.insert(make_pair(n, value));
+
+        // If failed, corresponding parameter has already been read with a different set of synonyms
+        _ASSERT(result.second);
+    }
+
+    return value;
+}
+
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(initializer_list<string> sections, const char* name)
+{
+    _ASSERT(sections.size());
+
+    auto section = *sections.begin();
+    auto& section_values = m_Values[section];
+    auto found = section_values.find(name);
+
+    if (found != section_values.end()) return section_values[name];
+
+    TValuePtr value(new SValue);
+
+    for (auto& s : sections) {
+        auto& sv = m_Values[s];
+        auto result = sv.insert(make_pair(name, value));
+
+        // If failed, corresponding parameter has already been read with a different set of synonyms
+        _ASSERT(result.second);
+    }
+
+    return value;
+}
+
+CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership) :
+    m_Registry(s_MakeShared(registry, ownership)),
+    m_Cache(new CCache)
+{
+}
+
+CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
+{
+}
+
+template <typename TSections, typename TNames, typename TType>
+TType CCachedSynRegistryImpl::GetImpl(TSections sections, TNames names, TType default_value)
+{
+    auto cached = m_Cache->Get(sections, names);
+    auto& cached_type = cached->type;
+    auto& cached_value = cached->value;
+
+    // Has a non-default cached value
+    if (cached_type == CCache::SValue::Read) return cached_value;
+
+    // Has a non-default value
+    if (m_Registry->Has(sections, names)) {
+        cached_type = CCache::SValue::Read;
+        cached_value = m_Registry->Get(sections, names, default_value);
+
+    // Has no (default) value cached
+    } else if (cached_type == CCache::SValue::New) {
+        cached_type = CCache::SValue::Default;
+        cached_value = default_value;
+    }
+
+    return cached_value;
+}
+
+bool CCachedSynRegistryImpl::HasImpl(const string& section, const char* name)
+{
+    auto cached = m_Cache->Get(section, name);
+
+    return (cached->type == CCache::SValue::Read) || m_Registry->Has(section, name);
+}
+
+template string CCachedSynRegistryImpl::GetImpl(string section, const char* name, string default_value);
+template bool   CCachedSynRegistryImpl::GetImpl(string section, const char* name, bool default_value);
+template int    CCachedSynRegistryImpl::GetImpl(string section, const char* name, int default_value);
+template double CCachedSynRegistryImpl::GetImpl(string section, const char* name, double default_value);
+template string CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, string default_value);
+template bool   CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, bool default_value);
+template int    CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, int default_value);
+template double CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, double default_value);
+template string CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+template bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+template int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+template double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+
 END_NCBI_SCOPE

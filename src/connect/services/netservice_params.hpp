@@ -39,6 +39,8 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_config.hpp>
 
+#include <memory>
+
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
@@ -277,6 +279,40 @@ private:
 };
 
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
+
+class NCBI_XNCBI_EXPORT CCachedSynRegistryImpl : public ISynRegistry
+{
+    class CCache;
+
+public:
+    CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership = eNoOwnership);
+    ~CCachedSynRegistryImpl();
+
+protected:
+    template <typename TSections, typename TNames, typename TType>
+    TType GetImpl(TSections sections, TNames names, TType default_value);
+
+    bool HasImpl(const string& section, const char* name) final;
+
+private:
+    shared_ptr<ISynRegistry> m_Registry;
+    unique_ptr<CCache> m_Cache;
+};
+
+using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
+
+extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(string section, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(string section, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::GetImpl(string section, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::GetImpl(string section, const char* name, double default_value);
+extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::GetImpl(string section, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
 template <typename TImpl>
 string TSynRegistry<TImpl>::GetValue(const string& section, const char* name, string default_value)
