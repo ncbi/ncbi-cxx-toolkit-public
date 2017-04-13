@@ -315,8 +315,6 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
         bool old_style_auth) :
     m_Listener(listener),
     m_EnforcedServer(0, 0),
-    m_LBSMAffinityName(kEmptyStr),
-    m_LBSMAffinityValue(NULL),
     m_UseOldStyleAuth(old_style_auth)
 {
 }
@@ -624,9 +622,12 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
 
     if (config != NULL) {
-        if (m_LBSMAffinityName.empty())
-            m_LBSMAffinityName = config->GetString(section,
-                "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
+        m_LBSMAffinity.first = config->GetString(section, "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
+
+        // Get affinity value from the local LBSM configuration file.
+        if (!m_LBSMAffinity.first.empty()) {
+            m_LBSMAffinity.second = LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinity.first.c_str());
+        }
 
         unsigned long conn_timeout = s_SecondsToMilliseconds(config->GetString(
             section, "connection_timeout", CConfig::eErr_NoThrow, "0"), 0);
@@ -741,11 +742,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
     }
 
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
-
-    // Get affinity value from the local LBSM configuration file.
-    if (!m_LBSMAffinityName.empty())
-        m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
-            m_LBSMAffinityName.c_str());
 
     m_Listener = listener;
 }
@@ -1030,8 +1026,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                         fSERV_IncludeReserved |
                         fSERV_IncludeSuppressed,
                     SERV_LOCALHOST, 0, 0.0, m_NetInfo.get(), NULL, 0, 0 /*false*/,
-                    m_ServerPool->m_LBSMAffinityName.c_str(),
-                    m_ServerPool->m_LBSMAffinityValue);
+                    m_ServerPool->m_LBSMAffinity.first.c_str(),
+                    m_ServerPool->m_LBSMAffinity.second);
 
                 if (srv_it != 0 || --try_count < 0)
                     break;
@@ -1318,8 +1314,7 @@ SNetServerPoolImpl::~SNetServerPoolImpl()
         delete it->second;
     }
 
-    if (m_LBSMAffinityValue != NULL)
-        free((void*) m_LBSMAffinityValue);
+    if (m_LBSMAffinity.second) free(const_cast<char*>(m_LBSMAffinity.second));
 }
 
 SNetServiceImpl::~SNetServiceImpl()

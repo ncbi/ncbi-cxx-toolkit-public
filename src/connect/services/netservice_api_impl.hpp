@@ -110,8 +110,8 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
-    string m_LBSMAffinityName;
-    const char* m_LBSMAffinityValue;
+    // LBSM affinity name and value
+    pair<string, const char*> m_LBSMAffinity;
 
     TNetServerByAddress m_Servers;
     CFastMutex m_ServerMutex;
