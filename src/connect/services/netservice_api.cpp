@@ -573,9 +573,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     // Do not override explicitly set client name
     if (m_ClientName.empty()) m_ClientName = registry.Get(section, { "client_name", "client" }, "");
 
-    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section, m_ClientName)) {
-        config_registry.Reset(config = alt, eTakeOwnership);
-    }
+    m_Listener->OnPreInit(api_impl, registry, &section, m_ClientName);
 
     if (m_ServiceName.empty()) {
         m_ServiceName = registry.Get(section, { "service", "service_name" }, "");

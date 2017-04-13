@@ -87,13 +87,11 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
-CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section, string& client_name)
+void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     _ASSERT(nc_impl);
-    _ASSERT(nc_impl->m_Service);
     _ASSERT(config_section);
 
     if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
@@ -104,18 +102,11 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
 
         CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
 
-        if (config) {
-            CConfigRegistry config_registry(config);
-            CSynRegistry registry(&config_registry);
-            return loader.Get(api, registry, *config_section);
-        } else {
-            CMemoryRegistry empty_registry;
-            CSynRegistry registry(&empty_registry);
-            return loader.Get(api, registry, *config_section);
+        if (CConfig* alt = loader.Get(api, registry, *config_section)) {
+            unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
+            registry.Reset(new_config_registry.release(), eTakeOwnership);
         }
     }
-
-    return NULL;
 }
 
 void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)

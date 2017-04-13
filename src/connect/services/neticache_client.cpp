@@ -872,7 +872,7 @@ public:
     }
 
     CRef<INetServerProperties> AllocServerProperties() override;
-    CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name) override;
+    void OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name) override;
     void OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
@@ -889,11 +889,9 @@ CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
     return m_DelegateListener->AllocServerProperties();
 }
 
-CConfig* CSetValidWarningSuppressor::OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section, string& client_name)
+void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* config_section, string& client_name)
 {
-    return m_DelegateListener->OnPreInit(api_impl, config, config_section,
-            client_name);
+    m_DelegateListener->OnPreInit(api_impl, registry, config_section, client_name);
 }
 
 void CSetValidWarningSuppressor::OnInit(CObject* api_impl, ISynRegistry& registry, const string& config_section)
