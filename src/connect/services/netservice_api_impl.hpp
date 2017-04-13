@@ -106,7 +106,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
         // Whether to check with LBSMD before re-enabling the server.
         bool m_ThrottleUntilDiscoverable;
 
-        void Init(CConfig* config, const string& section);
+        void Init(ISynRegistry& registry, const string& section);
     };
 
     // Construct a new object.

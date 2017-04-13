@@ -668,87 +668,60 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                 CConfig::eErr_NoThrow, max_seconds);
     }
 
-    m_ThrottleParams.Init(config, section);
+    CMemoryRegistry empty_registry;
+    CConfig empty_config(empty_registry);
+    CConfigRegistry config_registry(config ? config : &empty_config);
+    CSynRegistry syn_registry(&config_registry);
+    CCachedSynRegistry registry(&syn_registry);
+
+    m_ThrottleParams.Init(registry, section);
 
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 
     m_Listener = listener;
 }
 
-void SNetServerPoolImpl::SThrottleParams::Init(CConfig* config, const string& section)
+void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, const string& section)
 {
-    const auto THROTTLE_RELAXATION_PERIOD_DEFAULT = 0;
-    const auto THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT = 0;
-    const auto THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR = 0;
-    const auto THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR = 0;
-    const auto THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT = false;
+    m_ServerThrottlePeriod = registry.Get(section, "throttle_relaxation_period", 0);
 
-    if (config != NULL) {
-        m_ServerThrottlePeriod = config->GetInt(section,
-            "throttle_relaxation_period", CConfig::eErr_NoThrow,
-                THROTTLE_RELAXATION_PERIOD_DEFAULT);
+    if (m_ServerThrottlePeriod <= 0) return;
 
-        if (m_ServerThrottlePeriod > 0) {
-            int numerator = THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR;
-            int denominator = THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
+    m_MaxConsecutiveIOFailures = registry.Get(section,
+            { "throttle_by_consecutive_connection_failures", "throttle_by_subsequent_connection_failures" }, 0);
 
-            const string error_rate(config->GetString(section,
-                "throttle_by_connection_error_rate", CConfig::eErr_NoThrow));
+    m_ThrottleUntilDiscoverable = registry.Get(section, "throttle_hold_until_active_in_lb", false);
 
-            if (!error_rate.empty()) {
-                string numerator_str, denominator_str;
+    // These values must correspond to each other
+    const auto default_error_rate = "0/1";
+    m_IOFailureThresholdNumerator = 0;
+    m_IOFailureThresholdDenominator = 1;
 
-                NStr::SplitInTwo(error_rate, "/", numerator_str, denominator_str);
+    const string error_rate = registry.Get(section, "throttle_by_connection_error_rate", default_error_rate);
 
-                numerator = NStr::StringToInt(numerator_str,
-                    NStr::fConvErr_NoThrow |
-                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-                denominator = NStr::StringToInt(denominator_str,
-                    NStr::fConvErr_NoThrow |
-                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-            }
+    if (error_rate == default_error_rate || error_rate.empty()) return;
 
-            if (denominator < 1)
-                denominator = 1;
-            else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
-                numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) /
-                    denominator;
-                denominator = CONNECTION_ERROR_HISTORY_MAX;
-            }
+    string numerator_str, denominator_str;
 
-            if (numerator < 0)
-                numerator = 0;
+    if (!NStr::SplitInTwo(error_rate, "/", numerator_str, denominator_str)) return;
 
-            m_IOFailureThresholdNumerator = numerator;
-            m_IOFailureThresholdDenominator = denominator;
+    const auto flags = NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces;
 
-            try {
-                m_MaxConsecutiveIOFailures = config->GetInt(section,
-                        "throttle_by_consecutive_connection_failures",
-                        CConfig::eErr_NoThrow, 0);
-            }
-            catch (exception&) {
-                m_MaxConsecutiveIOFailures = config->GetInt(section,
-                        "throttle_by_subsequent_connection_failures",
-                        CConfig::eErr_NoThrow,
-                        THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
-            }
+    int numerator = NStr::StringToInt(numerator_str, flags);
+    int denominator = NStr::StringToInt(denominator_str, flags);
 
-            m_ThrottleUntilDiscoverable = config->GetBool(section,
-                "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
-                    THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
-        }
-    } else {
-        // Throttling parameters.
-        m_ServerThrottlePeriod = THROTTLE_RELAXATION_PERIOD_DEFAULT;
-        m_IOFailureThresholdNumerator =
-            THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR;
-        m_IOFailureThresholdDenominator =
-            THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
-        m_MaxConsecutiveIOFailures =
-            THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT;
-        m_ThrottleUntilDiscoverable = THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT;
+    if (numerator < 0) numerator = 0;
+
+    if (denominator < 1) {
+        denominator = 1;
+
+    } else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
+        numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) / denominator;
+        denominator = CONNECTION_ERROR_HISTORY_MAX;
     }
+
+    m_IOFailureThresholdNumerator = numerator;
+    m_IOFailureThresholdDenominator = denominator;
 }
 
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
