@@ -139,7 +139,6 @@ typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
 NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
     const string& seconds, unsigned long default_value);
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
-NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);
 NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 
 

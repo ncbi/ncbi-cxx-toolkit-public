@@ -98,12 +98,6 @@ STimeout s_GetDefaultCommTimeout()
     return s_DefaultCommTimeout;
 }
 
-void s_SetDefaultCommTimeout(const STimeout& tm)
-{
-    s_DefaultCommTimeout = tm;
-    s_DefaultCommTimeout_Initialized = true;
-}
-
 unsigned long s_GetRetryDelay()
 {
     static unsigned long retry_delay;
