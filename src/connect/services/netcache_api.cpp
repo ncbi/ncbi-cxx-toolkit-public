@@ -116,75 +116,51 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
-    nc_impl->Init(config, config_section);
+
+    if (config) {
+        CConfigRegistry config_registry(config);
+        CSynonymsRegistry registry(config_registry);
+        nc_impl->Init(registry, config_section);
+    } else {
+        CMemoryRegistry empty_registry;
+        CSynonymsRegistry registry(empty_registry);
+        nc_impl->Init(registry, config_section);
+    }
 }
 
-void SNetCacheAPIImpl::Init(CConfig* config, const string& config_section)
+void SNetCacheAPIImpl::Init(CSynonymsRegistry& registry, const string& config_section)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    const string default_temp_dir(".");
+    m_TempDir =                            registry.Get(config_section, { "tmp_dir", "tmp_path" }, string("."));
+    m_CacheInput =                         registry.Get(config_section, "cache_input", false);
+    m_CacheOutput =                        registry.Get(config_section, "cache_output", false);
+    m_ProlongBlobLifetimeOnWrite =         registry.Get(config_section, "prolong_blob_lifetime_on_write", true);
 
-    if (config != NULL) {
-        string temp_dir = config->GetString(config_section,
-            "tmp_dir", CConfig::eErr_NoThrow, kEmptyStr);
+    m_DefaultParameters.SetMirroringMode(  registry.Get(config_section, "enable_mirroring", kEmptyStr));
+    m_DefaultParameters.SetServerCheck(    registry.Get(config_section, "server_check", kEmptyStr));
+    m_DefaultParameters.SetServerCheckHint(registry.Get(config_section, "server_check_hint", kEmptyStr));
+    m_DefaultParameters.SetUseCompoundID(  registry.Get(config_section, "use_compound_id", false));
 
-        if (temp_dir.empty())
-            temp_dir = config->GetString(config_section,
-                "tmp_path", CConfig::eErr_NoThrow, default_temp_dir);
+    const auto allowed_services =          registry.Get(config_section, "allowed_services", kEmptyStr);
 
-        m_TempDir = temp_dir.empty() ? default_temp_dir : temp_dir;
+    if (allowed_services.empty()) return;
 
-        m_CacheInput = config->GetBool(config_section,
-            "cache_input", CConfig::eErr_NoThrow, false);
+    m_ServiceMap.Restrict();
 
-        m_CacheOutput = config->GetBool(config_section,
-            "cache_output", CConfig::eErr_NoThrow, false);
+    vector<string> services;
+    NStr::Split(allowed_services, ", ", services,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
-        m_DefaultParameters.SetMirroringMode(
-            config->GetString(config_section, "enable_mirroring",
-                CConfig::eErr_NoThrow, kEmptyStr));
-
-        m_DefaultParameters.SetServerCheck(
-            config->GetString(config_section,
-                "server_check", CConfig::eErr_NoThrow, kEmptyStr));
-
-        m_DefaultParameters.SetServerCheckHint(
-            config->GetString(config_section,
-                "server_check_hint", CConfig::eErr_NoThrow, kEmptyStr));
-
-        if (config->GetBool(config_section,
-                "use_compound_id", CConfig::eErr_NoThrow, false))
-            m_DefaultParameters.SetUseCompoundID(true);
-
-        const auto allowed_services = config->GetString(config_section,
-                "allowed_services", CConfig::eErr_NoThrow, kEmptyStr);
-
-        if (!allowed_services.empty()) {
-            m_ServiceMap.Restrict();
-
-            vector<string> services;
-            NStr::Split(allowed_services, ", ", services,
-                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
-            for (auto& service : services) {
-                // Do not add configured service, it is always allowed
-                if (NStr::CompareNocase(service,
-                            m_Service.GetServiceName())) {
-                    m_ServiceMap.AddToAllowed(service);
-                }
-            }
+    for (auto& service : services) {
+        // Do not add configured service, it is always allowed
+        if (NStr::CompareNocase(service,
+                    m_Service.GetServiceName())) {
+            m_ServiceMap.AddToAllowed(service);
         }
-
-        m_ProlongBlobLifetimeOnWrite = config->GetBool(config_section,
-                "prolong_blob_lifetime_on_write", CConfig::eErr_NoThrow, true);
-    } else {
-        m_TempDir = default_temp_dir;
-        m_CacheInput = false;
-        m_CacheOutput = false;
     }
 }
 
