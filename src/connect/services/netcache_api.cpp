@@ -102,10 +102,7 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registr
 
         CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
 
-        if (CConfig* alt = loader.Get(api, registry, *section)) {
-            unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
-            registry.Reset(new_config_registry.release(), eTakeOwnership);
-        }
+        loader.Get(api, registry, *section);
     }
 }
 

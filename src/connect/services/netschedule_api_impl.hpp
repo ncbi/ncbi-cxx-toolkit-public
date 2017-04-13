@@ -205,7 +205,7 @@ public:
             const CTempString& prefix,
             const CTempString& section);
 
-    CConfig* Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section);
+    bool Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section);
 
     string GetSection() const { return m_Section; }
 
@@ -213,9 +213,6 @@ protected:
     virtual bool Transform(const CTempString& prefix, string& name);
 
 private:
-    typedef CNetScheduleAPI::TQueueParams TParams;
-    CConfig* Parse(const TParams& params, const CTempString& prefix);
-
     const CTempString m_Prefix;
     const CTempString m_Section;
 };

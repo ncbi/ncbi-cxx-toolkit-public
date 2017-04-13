@@ -389,27 +389,7 @@ bool CNetScheduleConfigLoader::Transform(const CTempString& prefix, string& name
     return false;
 }
 
-CConfig* CNetScheduleConfigLoader::Parse(const TParams& params,
-        const CTempString& prefix)
-{
-    auto_ptr<CConfig::TParamTree> result;
-
-    ITERATE(TParams, it, params) {
-        string param = it->first;
-
-        if (Transform(prefix, param)) {
-            if (!result.get()) {
-                result.reset(new CConfig::TParamTree);
-            }
-
-            result->AddNode(CConfig::TParamValue(param, it->second));
-        }
-    }
-
-    return result.get() ? new CConfig(result.release()) : NULL;
-}
-
-CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section)
+bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section)
 {
     _ASSERT(impl);
 
@@ -432,22 +412,31 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& 
     shared_ptr<void> try_guard;
     if (!set_explicitly) try_guard = impl->m_Service->GetTryGuard();
 
-    TParams queue_params;
+    CNetScheduleAPI::TQueueParams queue_params;
 
     try {
         impl->GetQueueParams(kEmptyStr, queue_params);
     }
     catch (...) {
         if (set_explicitly) throw;
-        return NULL;
+        return false;
     }
 
-    if (CConfig* result = Parse(queue_params, m_Prefix)) {
-        section = m_Section;
-        return result;
+    unique_ptr<CMemoryRegistry> mem_registry(new CMemoryRegistry);
+
+    for (auto& param : queue_params) {
+        auto name = param.first;
+
+        if (Transform(m_Prefix, name)) {
+            mem_registry->Set(m_Section, name, param.second);
+        }
     }
 
-    return NULL;
+    if (mem_registry->Empty()) return false;
+
+    registry.Reset(mem_registry.release(), eTakeOwnership);
+    section = m_Section;
+    return true;
 }
 
 CNetScheduleOwnConfigLoader::CNetScheduleOwnConfigLoader() :
@@ -637,9 +626,7 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string section)
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
-            if (CConfig* alt = loader.Get(this, registry, section)) {
-                unique_ptr<CConfigRegistry> new_config_registry(new CConfigRegistry(alt, eTakeOwnership));
-                registry.Reset(new_config_registry.release(), eTakeOwnership);
+            if (loader.Get(this, registry, section)) {
                 continue;
             }
         }
