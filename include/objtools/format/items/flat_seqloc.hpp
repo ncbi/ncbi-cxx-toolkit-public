@@ -79,7 +79,7 @@ public:
     typedef EType     TType;
 
     CFlatSeqLoc(const CSeq_loc& loc, CBioseqContext& ctx, 
-        TType type = eType_location);
+        TType type = eType_location, bool show_all_accns = false);
 
     const string&     GetString(void)    const { return m_String;    }
     
@@ -101,15 +101,20 @@ private:
     };
 
     bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
-        CBioseqContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp,
+        bool show_all_accns = false);
     bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
-        CBioseqContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp,
+        bool show_all_accns = false);
     bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
-        CBioseqContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp,
+        bool show_all_accns = false);
     bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-        EHTML html, EForce force = eForce_None, ESource source = eSource_Other );
+        EHTML html, EForce force = eForce_None, ESource source = eSource_Other,
+        bool show_all_accns = false);
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
-        CBioseqContext& ctx, TType type);
+        CBioseqContext& ctx, TType type,
+        bool show_all_accns = false);
 
     bool x_IsAccessionVersion( CSeq_id_Handle id );
 
