@@ -125,11 +125,10 @@ public:
 
     CShortReadFastaInputSource(CNcbiIstream& infile,
                                EInputFormat format = eFasta,
-                               bool paired = false, bool validate = true);
+                               bool paired = false);
 
     CShortReadFastaInputSource(CNcbiIstream& infile1, CNcbiIstream& infile2,
-                               EInputFormat format = eFasta,
-                               bool validate = true);
+                               EInputFormat format = eFasta);
 
     virtual ~CShortReadFastaInputSource() {}
 
@@ -138,15 +137,12 @@ public:
 
     virtual bool End(void) {return m_LineReader->AtEOF();}
 
-    /// Get number of rejected queries
-    Int4 GetNumRejected(void) const {return m_NumRejected;}
 
 private:
     CShortReadFastaInputSource(const CShortReadFastaInputSource&);
     CShortReadFastaInputSource& operator=(const CShortReadFastaInputSource&);
 
     CTempString x_ParseDefline(CTempString& line);
-    bool x_ValidateSequence(const char* sequence, int length);
 
     /// Read sequences in FASTA or FASTQ format
     void x_ReadFastaOrFastq(CBioseq_set& bioseq_set, TSeqPos batch_size);
@@ -176,10 +172,6 @@ private:
     CTempString m_Line;
     /// Are paired sequences in the input
     bool m_IsPaired;
-    /// Validate quereis and reject those that do not pass
-    bool m_Validate;
-    /// Number of queries that did not pass validation and were rejected
-    Int4 m_NumRejected;
     /// Input format: FASTA, FASTQ, FASTC
     EInputFormat m_Format;
 };

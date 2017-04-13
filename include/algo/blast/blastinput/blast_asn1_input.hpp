@@ -52,20 +52,16 @@ public:
     /// @param is_bin Is input in binary ASN.1 format [in]
     /// @param is_paired Are queries paired [in]
     /// @param validate Should sequence validation be applied to each read
-    /// sequence; if true sequences that do not pass validation will be
-    /// rejected [in]
     CASN1InputSourceOMF(CNcbiIstream& infile, bool is_bin = false,
-                        bool is_paired = false, bool validate = true);
+                        bool is_paired = false);
 
     /// Constructor for reading sequences from two files for paired short reads
     /// @param infile1 Input stream for query sequences [in]
     /// @param infile2 Input stream for query mates [in]
     /// @param is_bin Is input in binary ASN.1 format [in]
     /// @param validate Should sequence validation be applied to each read
-    /// sequence; if true sequences that do not pass validation will be
-    /// rejected [in]
     CASN1InputSourceOMF(CNcbiIstream& infile1, CNcbiIstream& infile2,
-                        bool is_bin = false, bool validate = true);
+                        bool is_bin = false);
 
     virtual ~CASN1InputSourceOMF() {}
 
@@ -78,10 +74,6 @@ public:
 private:
     CASN1InputSourceOMF(const CASN1InputSourceOMF&);
     CASN1InputSourceOMF& operator=(const CASN1InputSourceOMF&);
-
-    bool x_ValidateSequence(const CSeq_data& seq_data, int length);
-    /// Compute dimer entropy for sequence in Ncbi2NA format
-    int x_FindDimerEntropy2NA(const vector<char>& sequence, int length);
 
     /// Read one sequence from
     CRef<CSeq_entry> x_ReadOneSeq(CNcbiIstream& instream);
@@ -99,8 +91,6 @@ private:
     CNcbiIstream* m_SecondInputStream;
     /// Are queries paired
     bool m_IsPaired;
-    /// Validate quereis and reject those that do not pass
-    bool m_Validate;
     /// Is input binary ASN1
     bool m_IsBinary;
 };

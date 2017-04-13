@@ -2808,26 +2808,27 @@ static int s_GetSegmentFlags(const CBioseq& bioseq)
     return retval;
 }
 
-BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFasta) {
+
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromFasta) {
 
     CNcbiIfstream istr("data/paired_reads.fa");
     BOOST_REQUIRE(istr);
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
     CShortReadFastaInputSource input_source(istr,
                                          CShortReadFastaInputSource::eFasta,
-                                         true, true);
+                                         true);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -2845,7 +2846,7 @@ BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFasta) {
     BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
 }
 
-BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastaFiles) {
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastaFiles) {
 
     CNcbiIfstream istr1("data/paired_reads_1.fa");
     CNcbiIfstream istr2("data/paired_reads_2.fa");
@@ -2854,19 +2855,18 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastaFiles) {
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
     CShortReadFastaInputSource input_source(istr1, istr2,
-                                         CShortReadFastaInputSource::eFasta,
-                                         true);
+                                         CShortReadFastaInputSource::eFasta);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -2884,18 +2884,16 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastaFiles) {
     BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
 }
 
-BOOST_AUTO_TEST_CASE(TestPairedFlagsForSingleReadsFromFasta) {
+BOOST_AUTO_TEST_CASE(TestSingleReadsFromFasta) {
 
     CNcbiIfstream istr("data/paired_reads.fa");
     CShortReadFastaInputSource input_source(istr,
                                          CShortReadFastaInputSource::eFasta,
-                                         false, true);
+                                         false);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -2914,29 +2912,29 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForSingleReadsFromFasta) {
         count++;
     }
 
-    BOOST_REQUIRE_EQUAL(4u, count);
+    BOOST_REQUIRE_EQUAL(6u, count);
 }
 
-BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFastQ) {
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromFastQ) {
 
     CNcbiIfstream istr("data/paired_reads.fastq");
     BOOST_REQUIRE(istr);
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
     CShortReadFastaInputSource input_source(istr,
                                          CShortReadFastaInputSource::eFastq,
-                                         true, true);
+                                         true);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -2954,7 +2952,7 @@ BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFastQ) {
     BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
 }
 
-BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastQFiles) {
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastQFiles) {
 
     CNcbiIfstream istr1("data/paired_reads_1.fastq");
     CNcbiIfstream istr2("data/paired_reads_2.fastq");
@@ -2963,19 +2961,18 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastQFiles) {
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
     CShortReadFastaInputSource input_source(istr1, istr2,
-                                         CShortReadFastaInputSource::eFastq,
-                                         true);
+                                         CShortReadFastaInputSource::eFastq);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -2994,26 +2991,24 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastQFiles) {
 }
 
 
-
-
-BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromASN1) {
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromASN1) {
 
     CNcbiIfstream istr("data/paired_reads.asn");
     BOOST_REQUIRE(istr);
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CASN1InputSourceOMF input_source(istr, false, true, true);
+    CASN1InputSourceOMF input_source(istr, false, true);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
-    // input file contains six sequences, but two should have been rejected
-    // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
@@ -3031,7 +3026,7 @@ BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromASN1) {
     BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
 }
 
-BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoASN1Files) {
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoASN1Files) {
 
     CNcbiIfstream istr1("data/paired_reads_1.asn");
     CNcbiIfstream istr2("data/paired_reads_2.asn");
@@ -3040,17 +3035,19 @@ BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoASN1Files) {
     unordered_map<string, int> ref_flags = {
         {"lcl|pair1", eFirstSegment},
         {"lcl|pair2", eLastSegment},
-        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
-        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+        {"lcl|incomplete1.1", eFirstSegment},
+        {"lcl|incomplete1.2", eLastSegment},
+        {"lcl|incomplete2.1", eFirstSegment},
+        {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CASN1InputSourceOMF input_source(istr1, istr2, false, true);
+    CASN1InputSourceOMF input_source(istr1, istr2, false);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 1000);
     // input file contains six sequences, but two should have been rejected
     // in screening
-    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {

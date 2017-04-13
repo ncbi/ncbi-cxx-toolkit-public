@@ -31,6 +31,7 @@
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_seg.h>
+#include "jumper.h"
 
 /****************************************************************************/
 /* Constants */
@@ -1157,6 +1158,12 @@ BlastSetUp_Filter(EBlastProgramType program_number,
 		SegParametersFree(sparamsp);
 		sparamsp = NULL;
 	}
+
+    if (program_number == eBlastTypeMapping) {
+        status = FilterQueriesForMapping(sequence, length, offset,
+                                         seqloc_retval);
+    }
+
 
 	return status;
 }

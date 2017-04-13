@@ -1365,15 +1365,13 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
             retval.Reset(new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
                     *query_opts->GetMateInputStream(),
-                    s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()),
-                    query_opts->DoQualityFilter()));
+                    s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat())));
         }
         else {
             retval.Reset(new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
                     s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()),
-                    query_opts->IsPaired(),
-                    query_opts->DoQualityFilter()));
+                    query_opts->IsPaired()));
         }
         break;
 
@@ -1384,22 +1382,19 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
             retval.Reset(new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
                                     *query_opts->GetMateInputStream(),
-                                    infmt == CMapperQueryOptionsArgs::eASN1bin,
-                                    query_opts->DoQualityFilter()));
+                                    infmt == CMapperQueryOptionsArgs::eASN1bin));
         }
         else {
             retval.Reset(new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
                                     infmt == CMapperQueryOptionsArgs::eASN1bin,
-                                    query_opts->IsPaired(),
-                                    query_opts->DoQualityFilter()));
+                                    query_opts->IsPaired()));
         }
         break;
 
     case CMapperQueryOptionsArgs::eSra:
         retval.Reset(new CSraInputSource(query_opts->GetSraAccessions(),
-                                         query_opts->IsPaired(),
-                                         query_opts->DoQualityFilter()));
+                                         query_opts->IsPaired()));
         break;
         
 

@@ -428,36 +428,6 @@ CheckForEmptySequences(CRef<CBioseq_set> sequences, string& warnings)
     }
 }
 
-// compute enrtopy of 2-mers in a IUPACNA sequence
-int FindDimerEntropy(const char* sequence, int length)
-{
-    const int kNumDimers = 1 << 4;
-    int counts[kNumDimers];
-    memset(counts, 0, kNumDimers * sizeof(int));
-    int num = 0;
-    // count dimers
-    for (int i=0;i < length - 1;i++) {
-        Uint1 base_1 = IUPACNA_TO_BLASTNA[toupper((int)sequence[i])];
-        Uint1 base_2 = IUPACNA_TO_BLASTNA[toupper((int)sequence[i + 1])];
-        if ((base_1 & 0xfc) == 0 && (base_2 & 0xfc) == 0) {
-            int dimer = (base_1 << 2) | base_2;
-            counts[dimer]++;
-            num++;
-        }
-    }
-
-    // compute amount of information in the sequence
-    double sum = 0.0;
-    for (int i=0;i < kNumDimers;i++) {
-        if (counts[i]) {
-            sum += (double)counts[i] * log((double)counts[i] / num);
-        }
-    }
-
-    return -sum * (1.0 /(log(16.0))) + 0.5;
-}
-
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

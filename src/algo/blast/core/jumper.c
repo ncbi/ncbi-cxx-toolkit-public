@@ -4443,3 +4443,83 @@ Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
 }
 
 
+/* Compute enrtopy of 2-mers in a BLASTNA sequence */
+static Int4 s_FindDimerEntropy(Uint1* sequence, Int4 length)
+{
+    const Int4 kNumDimers = 1 << 4;
+    Int4 counts[kNumDimers];
+    Int4 num = 0;
+    Int4 i;
+    double sum = 0.0;
+
+    memset(counts, 0, kNumDimers * sizeof(Int4));
+    // count dimers
+    for (i=0;i < length - 1;i++) {
+        Uint1 base_1 = sequence[i];
+        Uint1 base_2 = sequence[i + 1];
+
+        if ((base_1 & 0xfc) == 0 && (base_2 & 0xfc) == 0) {
+            Int4 dimer = (base_1 << 2) | base_2;
+            counts[dimer]++;
+            num++;
+        }
+    }
+
+    // compute amount of information in the sequence
+    for (i=0;i < kNumDimers;i++) {
+        if (counts[i]) {
+            sum += (double)counts[i] * log((double)counts[i] / num);
+        }
+    }
+
+    return -sum * (1.0 /(log(16.0))) + 0.5;
+}
+
+
+static Int2 s_MaskSequence(Int4 offset, Int4 length, BlastSeqLoc** seq_locs)
+{
+    BlastSeqLoc* loc = calloc(1, sizeof(BlastSeqLoc));
+    if (!loc) {
+        return BLASTERR_MEMORY;
+    }
+    loc->ssr = calloc(1, sizeof(SSeqRange));
+    if (!loc->ssr) {
+        free(loc);
+        return BLASTERR_MEMORY;
+    }
+    loc->ssr->left = offset;
+    loc->ssr->right = offset + length - 1;
+    *seq_locs = loc;
+
+    return 0;
+}
+
+Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
+                             BlastSeqLoc** seq_loc)
+{
+    const double kMaxFractionOfAmbiguousBases = 0.5;
+    Int4 i;
+    Int4 num = 0;
+    Int4 entropy;
+    Int2 status = 0;
+
+    for (i = 0;i < length;i++) {
+        if (sequence[i] & 0xfc) {
+            num++;
+        }
+    }
+
+    if ((double)num / length > kMaxFractionOfAmbiguousBases) {
+        status =  s_MaskSequence(offset, length, seq_loc);
+        return status;
+    }
+
+    entropy = s_FindDimerEntropy(sequence, length);
+    if (entropy <= 16) {
+        status = s_MaskSequence(offset, length, seq_loc);
+    }
+
+    return status;
+}
+
+

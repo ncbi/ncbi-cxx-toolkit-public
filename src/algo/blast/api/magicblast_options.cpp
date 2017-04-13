@@ -150,7 +150,10 @@ void
 CMagicBlastOptionsHandle::SetQueryOptionDefaults()
 {
     m_Opts->SetDustFiltering(false);
-    m_Opts->SetMaskAtHash(false);
+    // Masking is used for filtering out poor quality reads which are masked
+    // for the full length. Setting mask at hash to true prevents additional
+    // memory allocation for unmasked queries.
+    m_Opts->SetMaskAtHash(true);
     m_Opts->SetStrandOption(objects::eNa_strand_both);
     SetLookupDbFilter(true);
     SetPaired(false);

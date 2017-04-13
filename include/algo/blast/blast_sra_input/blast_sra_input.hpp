@@ -50,11 +50,8 @@ public:
     /// @param accessions SRA accessions or files [in]
     /// @param check_for_pairs If true, determine if reads are paired based on
     /// information in SRA [in]
-    /// sequence; if true sequences that do not pass validation will be
-    /// rejected [in]
     CSraInputSource(const vector<string>& accessions,
-                    bool check_for_paires = true,
-                    bool validate = true);
+                    bool check_for_paires = true);
 
     virtual ~CSraInputSource() {}
 
@@ -74,9 +71,6 @@ private:
     /// Read one batch of sequences and mark pairs
     void x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size);
 
-    /// Validate sequence base distribution
-    bool x_ValidateSequence(const char* sequence, int length);
-
     /// Advance to the next SRA accession
     void x_NextAccession(void);
 
@@ -91,8 +85,6 @@ private:
 
     /// Are queries paired
     bool m_IsPaired;
-    /// Validate quereis and reject those that do not pass
-    bool m_Validate;
 };
 
 

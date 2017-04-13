@@ -49,11 +49,9 @@ USING_SCOPE(objects);
 
 
 CSraInputSource::CSraInputSource(const vector<string>& accessions,
-                                 bool check_for_paires,
-                                 bool validate)
+                                 bool check_for_paires)
     : m_Accessions(accessions),
-      m_IsPaired(check_for_paires),
-      m_Validate(validate)
+      m_IsPaired(check_for_paires)
 {
     m_ItAcc = m_Accessions.begin();
 
@@ -97,22 +95,18 @@ CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
         return NULL;
     }
     CTempString sequence = m_It->GetReadData();
-    if (!m_Validate || x_ValidateSequence(sequence.data(), sequence.length())) {
-        CRef<CSeq_entry> seq_entry(new CSeq_entry);
-        seq_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
-        seq_entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    seq_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+    seq_entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
 
-        CBioseq& bioseq = seq_entry->SetSeq();
-        bioseq.SetId().push_back(m_It->GetShortSeq_id());
-        bioseq.SetInst().SetLength(sequence.length());
-        bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna((string)sequence));
-        bioseq_set.SetSeq_set().push_back(seq_entry);
+    CBioseq& bioseq = seq_entry->SetSeq();
+    bioseq.SetId().push_back(m_It->GetShortSeq_id());
+    bioseq.SetInst().SetLength(sequence.length());
+    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna((string)sequence));
+    bioseq_set.SetSeq_set().push_back(seq_entry);
 
-        m_BasesAdded += sequence.length();
-        return bioseq_set.SetSeq_set().back().GetNonNullPointer();
-    }
-
-    return NULL;
+    m_BasesAdded += sequence.length();
+    return bioseq_set.SetSeq_set().back().GetNonNullPointer();
 }
 
 
@@ -126,16 +120,6 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size)
     CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
-
-    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
-    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_first_partial->SetUser().AddField("has_pair",
-                                              fFirstSegmentFlag | fPartialFlag);
-
-    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
-    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_last_partial->SetUser().AddField("has_pair",
-                                             fLastSegmentFlag | fPartialFlag);
 
     m_BasesAdded = 0;
     while (m_BasesAdded < batch_size && m_ItAcc != m_Accessions.end()) {
@@ -163,17 +147,6 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size)
                     first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
                     second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
                 }
-                else {
-                    if (first) {
-                        first->SetSeq().SetDescr().Set().push_back(
-                                                       seqdesc_first_partial);
-                    }
-
-                    if (second) {
-                        second->SetSeq().SetDescr().Set().push_back(
-                                                       seqdesc_last_partial);
-                    }
-                }
                 ++(*m_It);
             }
         }
@@ -185,25 +158,6 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size)
     }
 }
 
-
-bool CSraInputSource::x_ValidateSequence(const char* sequence, int length)
-{
-    const char* s = sequence;
-    const int kNBase = (int)'N';
-    const double kMaxFractionAmbiguousBases = 0.5;
-    int num = 0;
-    for (int i=0;i < length;i++) {
-        num += (toupper((int)s[i]) == kNBase);
-    }
-
-    if ((double)num / length > kMaxFractionAmbiguousBases) {
-        return false;
-    }
-
-    int entropy = FindDimerEntropy(sequence, length);
-    return entropy > 16;
-
-}
 
 void CSraInputSource::x_NextAccession(void)
 {

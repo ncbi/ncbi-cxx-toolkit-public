@@ -477,13 +477,10 @@ CBlastFastaInputSource::GetNextSequence(CScope& scope)
 
 CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile,
                                CShortReadFastaInputSource::EInputFormat format,
-                               bool paired,
-                               bool validate)
+                               bool paired)
     : m_SeqBuffLen(550),
       m_LineReader(new CStreamLineReader(infile)),
       m_IsPaired(paired),
-      m_Validate(validate),
-      m_NumRejected(0),
       m_Format(format)
 {
     // allocate sequence buffer
@@ -505,14 +502,11 @@ CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile,
 
 CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile1,
                                CNcbiIstream& infile2,
-                               CShortReadFastaInputSource::EInputFormat format,
-                               bool validate)
+                               CShortReadFastaInputSource::EInputFormat format)
     : m_SeqBuffLen(550),
       m_LineReader(new CStreamLineReader(infile1)),
       m_SecondLineReader(new CStreamLineReader(infile2)),
       m_IsPaired(true),
-      m_Validate(validate),
-      m_NumRejected(0),
       m_Format(format)
 {
     if (m_Format == eFastc) {
@@ -599,16 +593,6 @@ CShortReadFastaInputSource::x_ReadFastaOrFastq(CBioseq_set& bioseq_set,
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
-    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_first_partial->SetUser().AddField("has_pair",
-                                              fFirstSegmentFlag | fPartialFlag);
-
-    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
-    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_last_partial->SetUser().AddField("has_pair",
-                                             fLastSegmentFlag | fPartialFlag);
-
     m_BasesAdded = 0;
     while (m_BasesAdded < batch_size && !m_LineReader->AtEOF()) {
 
@@ -629,7 +613,7 @@ CShortReadFastaInputSource::x_ReadFastaOrFastq(CBioseq_set& bioseq_set,
         }
 
 
-        // if paired rest the next sequence and mark a pair
+        // if paired read the next sequence and mark a pair
         if (m_IsPaired) {
             switch (m_Format) {
             case eFasta:
@@ -650,20 +634,12 @@ CShortReadFastaInputSource::x_ReadFastaOrFastq(CBioseq_set& bioseq_set,
                 if (second.NotEmpty()) {
                     first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
                 }
-                else {
-                    first->SetSeq().SetDescr().Set().push_back(
-                                                      seqdesc_first_partial);
-                }
                 bioseq_set.SetSeq_set().push_back(first);
             }
 
             if (second.NotEmpty()) {
                 if (first.NotEmpty()) {
                     second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
-                }
-                else {
-                    second->SetSeq().SetDescr().Set().push_back(
-                                                       seqdesc_last_partial);
                 }
                 bioseq_set.SetSeq_set().push_back(second);
             }
@@ -733,52 +709,44 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set,
             size_t first_len = p;
             size_t second_len = m_Line.length() - p - 2;
 
-            // FIXME: Both reads are rejected if only one fails validation
-            if (x_ValidateSequence(first, first_len) &&
-                x_ValidateSequence(second, second_len)) {
+            {{
+                CRef<CSeq_id> seqid(new CSeq_id);
+                seqid->Set(CSeq_id::e_Local, id + ".1");
 
-                {{
-                    CRef<CSeq_id> seqid(new CSeq_id);
-                    seqid->Set(CSeq_id::e_Local, id + ".1");
+                CRef<CSeq_entry> seq_entry(new CSeq_entry);
+                CBioseq& bioseq = seq_entry->SetSeq();
+                bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
+                bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
+                bioseq.SetId().clear();
+                bioseq.SetId().push_back(seqid);
+                bioseq.SetInst().SetLength(first_len);
+                first[first_len] = 0;
+                bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
+                bioseq.SetDescr().Set().push_back(seqdesc_first);
 
-                    CRef<CSeq_entry> seq_entry(new CSeq_entry);
-                    CBioseq& bioseq = seq_entry->SetSeq();
-                    bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
-                    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-                    bioseq.SetId().clear();
-                    bioseq.SetId().push_back(seqid);
-                    bioseq.SetInst().SetLength(first_len);
-                    first[first_len] = 0;
-                    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
-                    bioseq.SetDescr().Set().push_back(seqdesc_first);
+                // add a sequence to the batch
+                bioseq_set.SetSeq_set().push_back(seq_entry);
+            }}
 
-                    // add a sequence to the batch
-                    bioseq_set.SetSeq_set().push_back(seq_entry);
-                }}
+            {{
+                CRef<CSeq_id> seqid(new CSeq_id);
+                seqid->Set(CSeq_id::e_Local, id + ".2");
 
-                {{
-                    CRef<CSeq_id> seqid(new CSeq_id);
-                    seqid->Set(CSeq_id::e_Local, id + ".2");
+                CRef<CSeq_entry> seq_entry(new CSeq_entry);
+                CBioseq& bioseq = seq_entry->SetSeq();
+                bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
+                bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
+                bioseq.SetId().clear();
+                bioseq.SetId().push_back(seqid);
+                bioseq.SetInst().SetLength(second_len);
+                second[second_len] = 0;
+                bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
+                bioseq.SetDescr().Set().push_back(seqdesc_last);
 
-                    CRef<CSeq_entry> seq_entry(new CSeq_entry);
-                    CBioseq& bioseq = seq_entry->SetSeq();
-                    bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
-                    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-                    bioseq.SetId().clear();
-                    bioseq.SetId().push_back(seqid);
-                    bioseq.SetInst().SetLength(second_len);
-                    second[second_len] = 0;
-                    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
-                    bioseq.SetDescr().Set().push_back(seqdesc_last);
-
-                    // add a sequence to the batch
-                    bioseq_set.SetSeq_set().push_back(seq_entry);
-                }}
-                m_BasesAdded += first_len + second_len;
-            }
-            else {
-                m_NumRejected++;
-            }
+                // add a sequence to the batch
+                bioseq_set.SetSeq_set().push_back(seq_entry);
+            }}
+            m_BasesAdded += first_len + second_len;
             id.clear();
         }
     }
@@ -826,8 +794,7 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
     }
 
     // set up sequence
-    if (!m_Validate || x_ValidateSequence(m_Sequence.data(), start)) {
-
+    if (start > 0) {
         CRef<CSeq_entry> seq_entry(new CSeq_entry);
         CBioseq& bioseq = seq_entry->SetSeq();
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
@@ -884,8 +851,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     }
 
     // set up sequence
-    if (!m_Validate || x_ValidateSequence(line.data(), line.length())) {
-
+    if (line.length() > 0) {
         CRef<CSeq_entry> seq_entry(new CSeq_entry);
         CBioseq& bioseq = seq_entry->SetSeq();
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
@@ -947,16 +913,6 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
-    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_first_partial->SetUser().AddField("has_pair",
-                                              fFirstSegmentFlag | fPartialFlag);
-
-    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
-    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
-    seqdesc_last_partial->SetUser().AddField("has_pair",
-                                             fLastSegmentFlag | fPartialFlag);
-
     m_BasesAdded = 0;
     while (m_BasesAdded < batch_size && !m_LineReader->AtEOF() &&
            !m_SecondLineReader->AtEOF()) {
@@ -977,20 +933,12 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
             if (second.NotEmpty()) {
                 first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
             }
-            else {
-                first->SetSeq().SetDescr().Set().push_back(
-                                                      seqdesc_first_partial);
-            }
             bioseq_set.SetSeq_set().push_back(first);
         }
 
         if (second.NotEmpty()) {
             if (first.NotEmpty()) {
                 second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
-            }
-            else {
-                second->SetSeq().SetDescr().Set().push_back(
-                                                       seqdesc_last_partial);
             }
             bioseq_set.SetSeq_set().push_back(second);
         }
@@ -1010,25 +958,6 @@ CTempString CShortReadFastaInputSource::x_ParseDefline(CTempString& line)
     return id;
 }
 
-
-bool CShortReadFastaInputSource::x_ValidateSequence(const char* sequence,
-                                                    int length)
-{
-    const char* s = sequence;
-    const int kNBase = (int)'N';
-    const double kMaxFractionAmbiguousBases = 0.5;
-    int num = 0;
-    for (int i=0;i < length;i++) {
-        num += (toupper((int)s[i]) == kNBase);
-    }
-
-    if ((double)num / length > kMaxFractionAmbiguousBases) {
-        return false;
-    }
-
-    int entropy = FindDimerEntropy(sequence, length);
-    return entropy > 16;
-}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

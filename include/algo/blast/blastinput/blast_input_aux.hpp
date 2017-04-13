@@ -330,13 +330,6 @@ CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
 NCBI_BLASTINPUT_EXPORT void
 CheckForEmptySequences(CRef<objects::CBioseq_set> sequences, string& warnings);
 
-/// Compute entropy of 2-mers in a nucleotide IUPACNA sequence
-/// @param sequence Nucleotide sequence [in]
-/// @param length Sequence length [in]
-/// @return Entropy of 2-base words
-NCBI_BLASTINPUT_EXPORT int
-FindDimerEntropy(const char* sequence, int length);
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

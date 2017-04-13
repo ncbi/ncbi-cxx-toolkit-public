@@ -300,6 +300,10 @@ Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
                       BlastHSPStream* hsp_stream);
 
 
+Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
+                             BlastSeqLoc** seq_loc);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -83,9 +83,8 @@ static int s_GetSegmentFlags(const CBioseq& bioseq)
 BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
 {
     const bool kCheckForPairs = true;
-    const bool kFilter = true;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, kCheckForPairs, kFilter);
+    CSraInputSource input_source(accessions, kCheckForPairs);
 
     unordered_map<string, int> ref_flags = {
         {"gnl|SRA|SRR4423739.1.1", eFirstSegment},
@@ -117,9 +116,8 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
 BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
 {
     const bool kCheckForPairs = false;
-    const bool kFilter = true;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, kCheckForPairs, kFilter);
+    CSraInputSource input_source(accessions, kCheckForPairs);
 
     CRef<CBioseq_set> queries(new CBioseq_set);
     input_source.GetNextSequenceBatch(*queries, 300);
