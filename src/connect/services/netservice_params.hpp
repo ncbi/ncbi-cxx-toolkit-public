@@ -166,7 +166,7 @@ public:
 
     bool Has(const SRegSynonyms& sections, SRegSynonyms names);
 
-    virtual void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) = 0;
+    virtual void Add(IRegistry* registry, EOwnership ownership = eNoOwnership) = 0;
 
 protected:
     virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
@@ -200,7 +200,7 @@ class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
 public:
     CSynRegistryImpl(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
 
-    void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) override;
+    void Add(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
 
 protected:
     template <typename TType>
@@ -208,12 +208,13 @@ protected:
 
     bool HasImpl(const string& section, const string& name) final
     {
-        _ASSERT(m_Registry);
-        return m_Registry->HasEntry(section, name);
+        _ASSERT(m_SubRegistries.size());
+        return m_Registry.HasEntry(section, name);
     }
 
 private:
-    shared_ptr<IRegistry> m_Registry;
+    CCompoundRegistry m_Registry;
+    vector<shared_ptr<IRegistry>> m_SubRegistries;
 };
 
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
@@ -226,7 +227,7 @@ public:
     CCachedSynRegistryImpl(ISynRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
     ~CCachedSynRegistryImpl();
 
-    void Reset(IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership) override;
+    void Add(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
 
 protected:
     template <typename TType>

@@ -163,20 +163,26 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
 
-CSynRegistryImpl::CSynRegistryImpl(IRegistry* registry, EOwnership ownership) :
-    m_Registry(s_MakeShared(registry, ownership))
+CSynRegistryImpl::CSynRegistryImpl(IRegistry* registry, EOwnership ownership)
 {
+    if (registry) Add(registry, ownership);
 }
 
-void CSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
+void CSynRegistryImpl::Add(IRegistry* registry, EOwnership ownership)
 {
-    m_Registry = s_MakeShared(registry, ownership);
+    _ASSERT(registry);
+
+    m_SubRegistries.push_back(s_MakeShared(registry, ownership));
+
+    // Always add a registry as new top priority
+    const auto priority = static_cast<int>(m_SubRegistries.size());
+    m_Registry.Add(*m_SubRegistries.back(), priority);
 }
 
 template <typename TType>
 TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
-    _ASSERT(m_Registry);
+    _ASSERT(m_SubRegistries.size());
     _ASSERT(sections.size());
     _ASSERT(names.size());
 
@@ -185,7 +191,7 @@ TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, T
             if (!HasImpl(section, name)) continue;
 
             try {
-                return m_Registry->GetValue(section, name.c_str(), default_value, IRegistry::eThrow);
+                return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
             }
             catch (CStringException& ex) {
                 LOG_POST(Warning << ex.what());
@@ -295,9 +301,9 @@ CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 {
 }
 
-void CCachedSynRegistryImpl::Reset(IRegistry* registry, EOwnership ownership)
+void CCachedSynRegistryImpl::Add(IRegistry* registry, EOwnership ownership)
 {
-    m_Registry->Reset(registry, ownership);
+    m_Registry->Add(registry, ownership);
 }
 
 template <typename TType>

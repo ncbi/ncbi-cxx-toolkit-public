@@ -434,7 +434,7 @@ bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& regi
 
     if (mem_registry->Empty()) return false;
 
-    registry.Reset(mem_registry.release(), eTakeOwnership);
+    registry.Add(mem_registry.release(), eTakeOwnership);
     sections.insert(sections.begin(), m_Section);
     return true;
 }

@@ -48,6 +48,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_message.hpp>
+#include <corelib/env_reg.hpp>
 
 #include <util/random_gen.hpp>
 #include <util/checksum.hpp>
@@ -494,18 +495,26 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-CConfig* FindSection(SRegSynonyms& sections, const CConfig::TParamTree* tree)
+void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections)
 {
-    for (auto& section : sections) {
-        if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
-            return new CConfig(sub_tree);
+    m_ServiceName = service_name;
+
+    if (config) {
+        if (const CConfig::TParamTree* tree = config->GetTree()) {
+            for (auto& section : sections) {
+                if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
+                    CConfig sub_config(sub_tree);
+                    CConfigRegistry config_registry(&sub_config);
+                    return Init(api_impl, &config_registry, sections);
+                }
+            }
         }
     }
 
-    return NULL;
+    return Init(api_impl, nullptr, sections);
 }
 
-void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, IRegistry* top_registry, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
 
@@ -520,31 +529,20 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfi
         conn_initer.NoOp();
     }
 
-    CMemoryRegistry empty_registry;
-    CConfig empty_config(empty_registry);
-    CConfigRegistry config_registry(&empty_config);
+    CSynRegistry syn_registry;
+    CCachedSynRegistry registry(&syn_registry);
 
-    auto_ptr<CConfig::TParamTree> param_tree;
-
-    if (config == NULL) {
+    {
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
 
         if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-
-            if (const CNcbiRegistry* reg = &app->GetConfig()) {
-                param_tree.reset(CConfig::ConvertRegToTree(*reg));
-
-                if (CConfig *alt = FindSection(sections, param_tree.get())) {
-                    config_registry.Reset(config = alt, eTakeOwnership);
-                }
-            }
+            syn_registry.Add(&app->GetConfig());
+        } else {
+            syn_registry.Add(new CEnvironmentRegistry, eTakeOwnership);
         }
-    } else if (CConfig *alt = FindSection(sections, config->GetTree())) {
-        config_registry.Reset(config = alt, eTakeOwnership);
     }
 
-    CSynRegistry syn_registry(&config_registry);
-    CCachedSynRegistry registry(&syn_registry);
+    if (top_registry) syn_registry.Add(top_registry);
 
     // Remove empty sections
     for (auto it = sections.begin(); it != sections.end(); ) {
@@ -559,7 +557,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfi
         NCBI_THROW_FMT(CArgException, eNoValue, "Configuration section was not provided");
     }
 
-    m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
     // TODO:
