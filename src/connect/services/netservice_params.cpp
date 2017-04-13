@@ -94,7 +94,7 @@ STimeout s_GetDefaultCommTimeout()
         return s_DefaultCommTimeout;
     NcbiMsToTimeout(&s_DefaultCommTimeout,
         s_SecondsToMilliseconds(TServConn_CommTimeout::GetDefault(),
-            SECONDS_DOUBLE_TO_MS_UL(COMMUNICATION_TIMEOUT_DEFAULT)));
+            COMMUNICATION_TIMEOUT_DEFAULT * kMilliSecondsPerSecond));
     s_DefaultCommTimeout_Initialized = true;
     return s_DefaultCommTimeout;
 }
@@ -107,7 +107,7 @@ unsigned long s_GetRetryDelay()
     if (!retry_delay_is_set) {
         retry_delay =
             s_SecondsToMilliseconds(TServConn_RetryDelay::GetDefault(),
-                SECONDS_DOUBLE_TO_MS_UL(RETRY_DELAY_DEFAULT));
+                RETRY_DELAY_DEFAULT * kMilliSecondsPerSecond);
 
         retry_delay_is_set = true;
     }

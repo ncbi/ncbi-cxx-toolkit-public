@@ -139,8 +139,6 @@ NCBI_PARAM_DECL(bool, server, allow_implicit_job_return);
 typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
     TWorkerNode_AllowImplicitJobReturn;
 
-#define SECONDS_DOUBLE_TO_MS_UL(seconds) ((unsigned long) (seconds * 1000.0))
-
 NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
     const string& seconds, unsigned long default_value);
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
