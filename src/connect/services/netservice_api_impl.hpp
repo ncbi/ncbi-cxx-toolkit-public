@@ -106,14 +106,14 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
         // Whether to check with LBSMD before re-enabling the server.
         bool m_ThrottleUntilDiscoverable;
 
-        void Init(ISynRegistry& registry, const string& section);
+        void Init(ISynRegistry& registry, SRegSynonyms& sections);
     };
 
     // Construct a new object.
     SNetServerPoolImpl(INetServerConnectionListener* listener,
             bool old_style_auth);
 
-    void Init(ISynRegistry& registry, const string& section, INetServerConnectionListener* listener);
+    void Init(ISynRegistry& registry, SRegSynonyms& sections, INetServerConnectionListener* listener);
 
     SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
@@ -270,7 +270,7 @@ public:
 
 struct SNetServiceXSiteAPI : public CObject
 {
-    static void InitXSite(ISynRegistry& registry, const string& section);
+    static void InitXSite(ISynRegistry& registry, SRegSynonyms& sections);
     static void ConnectXSite(CSocket&, SNetServerImpl::SConnectDeadline&,
             const SServerAddress&);
 
@@ -334,8 +334,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     void Construct(SNetServerInPool* server);
     void Construct();
 
-    void Init(CObject* api_impl, const string& service_name,
-        CConfig* config, string section, const char* const* default_sections);
+    void Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections);
 
     string MakeAuthString();
 

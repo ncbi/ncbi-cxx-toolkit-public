@@ -87,12 +87,11 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
-void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name)
+void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     _ASSERT(nc_impl);
-    _ASSERT(section);
 
     if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
         // Use client name from NetSchedule if it's not provided for NetCache
@@ -102,37 +101,37 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registr
 
         CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
 
-        loader.Get(api, registry, *section);
+        loader.Get(api, registry, sections);
     }
 }
 
-void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
+void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
 
-    nc_impl->Init(registry, section);
+    nc_impl->Init(registry, sections);
 }
 
-void SNetCacheAPIImpl::Init(ISynRegistry& registry, const string& section)
+void SNetCacheAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    m_TempDir =                            registry.Get(section, { "tmp_dir", "tmp_path" }, ".");
-    m_CacheInput =                         registry.Get(section, "cache_input", false);
-    m_CacheOutput =                        registry.Get(section, "cache_output", false);
-    m_ProlongBlobLifetimeOnWrite =         registry.Get(section, "prolong_blob_lifetime_on_write", true);
+    m_TempDir =                            registry.Get(sections, { "tmp_dir", "tmp_path" }, ".");
+    m_CacheInput =                         registry.Get(sections, "cache_input", false);
+    m_CacheOutput =                        registry.Get(sections, "cache_output", false);
+    m_ProlongBlobLifetimeOnWrite =         registry.Get(sections, "prolong_blob_lifetime_on_write", true);
 
-    m_DefaultParameters.SetMirroringMode(  registry.Get(section, "enable_mirroring", kEmptyStr));
-    m_DefaultParameters.SetServerCheck(    registry.Get(section, "server_check", kEmptyStr));
-    m_DefaultParameters.SetServerCheckHint(registry.Get(section, "server_check_hint", kEmptyStr));
-    m_DefaultParameters.SetUseCompoundID(  registry.Get(section, "use_compound_id", false));
+    m_DefaultParameters.SetMirroringMode(  registry.Get(sections, "enable_mirroring", kEmptyStr));
+    m_DefaultParameters.SetServerCheck(    registry.Get(sections, "server_check", kEmptyStr));
+    m_DefaultParameters.SetServerCheckHint(registry.Get(sections, "server_check_hint", kEmptyStr));
+    m_DefaultParameters.SetUseCompoundID(  registry.Get(sections, "use_compound_id", false));
 
-    const auto allowed_services =          registry.Get(section, "allowed_services", kEmptyStr);
+    const auto allowed_services =          registry.Get(sections, "allowed_services", kEmptyStr);
 
     if (allowed_services.empty()) return;
 
@@ -229,13 +228,6 @@ CRef<SNetCacheServerProperties> CNetCacheServerListener::x_GetServerProperties(
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
 
-static const char* const s_NetCacheConfigSections[] = {
-    kNetCacheAPIDriverName,
-    "netcache_client",
-    "netcache",
-    NULL
-};
-
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name,
         CNetScheduleAPI::TInstance ns_api) :
@@ -244,7 +236,7 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
     m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
-    m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
+    m_Service->Init(this, service, config, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
 }
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name,

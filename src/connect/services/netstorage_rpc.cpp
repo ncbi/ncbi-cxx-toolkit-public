@@ -435,7 +435,7 @@ public:
 
     CRef<INetServerProperties> AllocServerProperties() override;
 
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -450,7 +450,7 @@ CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new INetServerProperties);
 }
 
-void CNetStorageServerListener::OnInit(CObject*, ISynRegistry&, const string&)
+void CNetStorageServerListener::OnInit(CObject*, ISynRegistry&, SRegSynonyms&)
 {
 }
 
@@ -653,11 +653,6 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageObjectImpl& fsm, SNetStora
 {
 }
 
-static const char* const s_NetStorageConfigSections[] = {
-    "netstorage_api",
-    NULL
-};
-
 SNetStorage::SConfig::EDefaultStorage
 SNetStorage::SConfig::GetDefaultStorage(const string& value)
 {
@@ -794,7 +789,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode));
 
-    m_Service->Init(this, m_Config.service, nullptr, "", s_NetStorageConfigSections);
+    m_Service->Init(this, m_Config.service, nullptr, "netstorage_api");
 }
 
 SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,

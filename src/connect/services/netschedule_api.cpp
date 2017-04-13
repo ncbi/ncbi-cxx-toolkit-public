@@ -389,14 +389,14 @@ bool CNetScheduleConfigLoader::Transform(const CTempString& prefix, string& name
     return false;
 }
 
-bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section)
+bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, SRegSynonyms& sections)
 {
     _ASSERT(impl);
 
     bool set_explicitly = false;
 
-    if (registry.Has(section, "load_config_from_ns")) {
-        if (!registry.Get(section, "load_config_from_ns", true)) return nullptr;
+    if (registry.Has(sections, "load_config_from_ns")) {
+        if (!registry.Get(sections, "load_config_from_ns", true)) return nullptr;
         set_explicitly = true;
     }
 
@@ -435,7 +435,7 @@ bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& regi
     if (mem_registry->Empty()) return false;
 
     registry.Reset(mem_registry.release(), eTakeOwnership);
-    section = m_Section;
+    sections.push_front(m_Section);
     return true;
 }
 
@@ -570,16 +570,16 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
-void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, const string& section)
+void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
     _ASSERT(ns_impl);
 
     SetDiagUserAndHost();
-    ns_impl->Init(registry, section);
+    ns_impl->Init(registry, sections);
 }
 
-void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string section)
+void SNetScheduleAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
 {
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
@@ -590,7 +590,6 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string section)
         GetDiagContext().GetHost();
 
     CNetScheduleOwnConfigLoader loader;
-    auto sections = { section, loader.GetSection() };
 
     bool affinities_initialized = false;
 
@@ -626,7 +625,7 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, string section)
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
-            if (loader.Get(this, registry, section)) {
+            if (loader.Get(this, registry, sections)) {
                 continue;
             }
         }
@@ -733,17 +732,12 @@ void CNetScheduleServerListener::OnWarning(const string& warn_msg,
 
 const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
-static const char* const s_NetScheduleConfigSections[] = {
-    kNetScheduleAPIDriverName,
-    NULL
-};
-
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(CConfig* config, const string& section) :
     m_Mode(GetMode(false, true)),
     m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr,
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible)))
 {
-    m_Service->Init(this, kEmptyStr, config, section, s_NetScheduleConfigSections);
+    m_Service->Init(this, kEmptyStr, config, { section, kNetScheduleAPIDriverName });
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,
@@ -753,7 +747,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const strin
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible))),
     m_Queue(queue_name)
 {
-    m_Service->Init(this, service_name, nullptr, "", s_NetScheduleConfigSections);
+    m_Service->Init(this, service_name, nullptr, kNetScheduleAPIDriverName);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -1251,7 +1245,7 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, initializer_list<string> sections)
+void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, SRegSynonyms& sections)
 {
     const bool claim_new_affinities = registry.Get(sections, "claim_new_affinities", false);
     const bool process_any_job =      registry.Get(sections, "process_any_job", false);

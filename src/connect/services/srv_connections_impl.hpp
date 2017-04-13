@@ -76,8 +76,8 @@ struct INetServerConnectionListener : CObject
     virtual CRef<INetServerProperties> AllocServerProperties() = 0;
 
     // Event handlers.
-    virtual void OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name);
-    virtual void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) = 0;
+    virtual void OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name);
+    virtual void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) = 0;
     virtual void OnConnected(CNetServerConnection& connection) = 0;
     virtual void OnError(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;

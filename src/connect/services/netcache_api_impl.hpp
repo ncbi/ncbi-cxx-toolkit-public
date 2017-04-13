@@ -56,8 +56,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheServerListener : public INetServerConnection
 public:
     CRef<INetServerProperties> AllocServerProperties() override;
 
-    void OnPreInit(CObject* api_impl, ISynRegistry& registry, string* section, string& client_name) override;
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
+    void OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -114,7 +114,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
             SNetServiceImpl::eRethrowServerErrors,
         INetServerConnectionListener* conn_listener = NULL);
 
-    void Init(ISynRegistry& registry, const string& section);
+    void Init(ISynRegistry& registry, SRegSynonyms& sections);
 
     CNetService m_Service;
 

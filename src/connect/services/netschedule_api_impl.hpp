@@ -205,9 +205,7 @@ public:
             const CTempString& prefix,
             const CTempString& section);
 
-    bool Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, string& section);
-
-    string GetSection() const { return m_Section; }
+    bool Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, SRegSynonyms& sections);
 
 protected:
     virtual bool Transform(const CTempString& prefix, string& name);
@@ -241,7 +239,7 @@ public:
 
     CRef<INetServerProperties> AllocServerProperties() override;
 
-    void OnInit(CObject* api_impl, ISynRegistry& registry, const string& section) override;
+    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -423,8 +421,8 @@ public:
     void UseOldStyleAuth();
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
-    void Init(ISynRegistry& registry, string section);
-    void InitAffinities(ISynRegistry& registry, initializer_list<string> sections);
+    void Init(ISynRegistry& registry, SRegSynonyms& sections);
+    void InitAffinities(ISynRegistry& registry, SRegSynonyms& sections);
     string MakeAuthString();
 
 private:

@@ -387,9 +387,9 @@ bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
     return m_AllowXSiteConnections.load();
 }
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry& registry, const string& section)
+void SNetServiceXSiteAPI::InitXSite(ISynRegistry& registry, SRegSynonyms& sections)
 {
-    if (registry.Get({ "netservice_api", section }, "allow_xsite_conn", false)) {
+    if (registry.Get({ "netservice_api", sections }, "allow_xsite_conn", false)) {
         AllowXSiteConnections();
     }
 }
@@ -494,32 +494,18 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-CConfig* FindSection(const char* const* sections, const CConfig::TParamTree* tree,
-        string* section)
+CConfig* FindSection(SRegSynonyms& sections, const CConfig::TParamTree* tree)
 {
-    _ASSERT(section);
-
-    if (section->empty()) {
-        *section = *sections++;
-    }
-
-    for (;;) {
-        if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(*section)) {
+    for (auto& section : sections) {
+        if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
             return new CConfig(sub_tree);
         }
-
-        if (!*sections) {
-            break;
-        }
-
-        *section = *sections++;
     }
 
     return NULL;
 }
 
-void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
-    CConfig* config, string section, const char* const* default_sections)
+void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
 
@@ -548,17 +534,30 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             if (const CNcbiRegistry* reg = &app->GetConfig()) {
                 param_tree.reset(CConfig::ConvertRegToTree(*reg));
 
-                if (CConfig *alt = FindSection(default_sections, param_tree.get(), &section)) {
+                if (CConfig *alt = FindSection(sections, param_tree.get())) {
                     config_registry.Reset(config = alt, eTakeOwnership);
                 }
             }
         }
-    } else if (CConfig *alt = FindSection(default_sections, config->GetTree(), &section)) {
+    } else if (CConfig *alt = FindSection(sections, config->GetTree())) {
         config_registry.Reset(config = alt, eTakeOwnership);
     }
 
     CSynRegistry syn_registry(&config_registry);
     CCachedSynRegistry registry(&syn_registry);
+
+    // Remove empty sections
+    for (auto it = sections.begin(); it != sections.end(); ) {
+        if (it->empty()) {
+            it = sections.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if (sections.empty()) {
+        NCBI_THROW_FMT(CArgException, eNoValue, "Configuration section was not provided");
+    }
 
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
@@ -568,29 +567,29 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     // after values provided in ctors get into an underlying memory registry.
 
     // Do not override explicitly set client name
-    if (m_ClientName.empty()) m_ClientName = registry.Get(section, { "client_name", "client" }, "");
+    if (m_ClientName.empty()) m_ClientName = registry.Get(sections, { "client_name", "client" }, "");
 
-    m_Listener->OnPreInit(api_impl, registry, &section, m_ClientName);
+    m_Listener->OnPreInit(api_impl, registry, sections, m_ClientName);
 
     if (m_ServiceName.empty()) {
-        m_ServiceName = registry.Get(section, { "service", "service_name" }, "");
+        m_ServiceName = registry.Get(sections, { "service", "service_name" }, "");
 
         if (m_ServiceName.empty()) {
-            string host = registry.Get(section, { "server", "host" }, "");
-            string port = registry.Get(section, "port", "");
+            string host = registry.Get(sections, { "server", "host" }, "");
+            string port = registry.Get(sections, "port", "");
 
             if (!host.empty() && !port.empty()) m_ServiceName = host + ":" + port;
         }
     }
 
-    InitXSite(registry, section);
+    InitXSite(registry, sections);
 
-    m_UseSmartRetries = registry.Get(section, "smart_service_retries", true);
+    m_UseSmartRetries = registry.Get(sections, "smart_service_retries", true);
 
-    int max_retries = registry.Get({ section, "netservice_api" }, "connection_max_retries", CONNECTION_MAX_RETRIES);
+    int max_retries = registry.Get({ sections, "netservice_api" }, "connection_max_retries", CONNECTION_MAX_RETRIES);
     m_ConnectionMaxRetries = max_retries >= 0 ? max_retries : CONNECTION_MAX_RETRIES;
 
-    double retry_delay = registry.Get({ section, "netservice_api" }, "retry_delay", RETRY_DELAY_DEFAULT);
+    double retry_delay = registry.Get({ sections, "netservice_api" }, "retry_delay", RETRY_DELAY_DEFAULT);
     if (retry_delay < 0) retry_delay = RETRY_DELAY_DEFAULT;
     m_ConnectionRetryDelay = static_cast<unsigned long>(retry_delay * kMilliSecondsPerSecond);
 
@@ -605,14 +604,14 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         m_ClientName = app->GetProgramDisplayName();
     }
 
-    m_ServerPool->Init(registry, section, m_Listener.GetPointerOrNull());
+    m_ServerPool->Init(registry, sections, m_Listener.GetPointerOrNull());
 
     Construct();
 
-    m_Listener->OnInit(api_impl, registry, section);
+    m_Listener->OnInit(api_impl, registry, sections);
 }
 
-void SNetServerPoolImpl::Init(ISynRegistry& registry, const string& section, INetServerConnectionListener* listener)
+void SNetServerPoolImpl::Init(ISynRegistry& registry, SRegSynonyms& sections, INetServerConnectionListener* listener)
 {
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
@@ -625,20 +624,20 @@ void SNetServerPoolImpl::Init(ISynRegistry& registry, const string& section, INe
     g_CTimeoutToSTimeout(CTimeout(kCommTimeoutDefault), m_CommTimeout);
     g_CTimeoutToSTimeout(CTimeout(kFirstServerTimeoutDefault), m_FirstServerTimeout);
    
-    m_LBSMAffinity.first = registry.Get(section, "use_lbsm_affinity", "");
+    m_LBSMAffinity.first = registry.Get(sections, "use_lbsm_affinity", "");
 
     // Get affinity value from the local LBSM configuration file.
     if (!m_LBSMAffinity.first.empty()) {
         m_LBSMAffinity.second = LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinity.first.c_str());
     }
 
-    double conn_timeout = registry.Get(section, "connection_timeout", kConnTimeoutDefault);
+    double conn_timeout = registry.Get(sections, "connection_timeout", kConnTimeoutDefault);
     if (conn_timeout > 0) g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
 
-    double comm_timeout = registry.Get({ section, "netservice_api" }, "communication_timeout", kCommTimeoutDefault);
+    double comm_timeout = registry.Get({ sections, "netservice_api" }, "communication_timeout", kCommTimeoutDefault);
     if (comm_timeout > 0) g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
 
-    double first_srv_timeout = registry.Get(section, "first_server_timeout", kFirstServerTimeoutDefault);
+    double first_srv_timeout = registry.Get(sections, "first_server_timeout", kFirstServerTimeoutDefault);
 
     if (first_srv_timeout > 0) {
         g_CTimeoutToSTimeout(CTimeout(first_srv_timeout), m_FirstServerTimeout);
@@ -646,36 +645,36 @@ void SNetServerPoolImpl::Init(ISynRegistry& registry, const string& section, INe
         m_FirstServerTimeout = m_CommTimeout;
     }
 
-    double max_total_time = registry.Get(section, "max_connection_time", 0.0);
+    double max_total_time = registry.Get(sections, "max_connection_time", 0.0);
     if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
 
-    max_requests = registry.Get(section, "rebalance_requests", max_requests);
-    max_seconds = registry.Get(section, "rebalance_time", max_seconds);
+    max_requests = registry.Get(sections, "rebalance_requests", max_requests);
+    max_seconds = registry.Get(sections, "rebalance_time", max_seconds);
 
-    m_ThrottleParams.Init(registry, section);
+    m_ThrottleParams.Init(registry, sections);
 
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 
     m_Listener = listener;
 }
 
-void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, const string& section)
+void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, SRegSynonyms& sections)
 {
-    m_ServerThrottlePeriod = registry.Get(section, "throttle_relaxation_period", 0);
+    m_ServerThrottlePeriod = registry.Get(sections, "throttle_relaxation_period", 0);
 
     if (m_ServerThrottlePeriod <= 0) return;
 
-    m_MaxConsecutiveIOFailures = registry.Get(section,
+    m_MaxConsecutiveIOFailures = registry.Get(sections,
             { "throttle_by_consecutive_connection_failures", "throttle_by_subsequent_connection_failures" }, 0);
 
-    m_ThrottleUntilDiscoverable = registry.Get(section, "throttle_hold_until_active_in_lb", false);
+    m_ThrottleUntilDiscoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
 
     // These values must correspond to each other
     const auto default_error_rate = "0/1";
     m_IOFailureThresholdNumerator = 0;
     m_IOFailureThresholdDenominator = 1;
 
-    const string error_rate = registry.Get(section, "throttle_by_connection_error_rate", default_error_rate);
+    const string error_rate = registry.Get(sections, "throttle_by_connection_error_rate", default_error_rate);
 
     if (error_rate == default_error_rate || error_rate.empty()) return;
 
@@ -1492,7 +1491,7 @@ CNetService g_DiscoverService(const string& service_name,
             return CRef<INetServerProperties>(new INetServerProperties);
         }
 
-        void OnInit(CObject*, ISynRegistry&, const string&) override {}
+        void OnInit(CObject*, ISynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}
         void OnError(const string&, CNetServer&) override {}
         void OnWarning(const string&, CNetServer&) override {}
@@ -1500,9 +1499,7 @@ CNetService g_DiscoverService(const string& service_name,
 
     CNetService service(new SNetServiceImpl("Discovery", client_name, new SNoOpConnectionListener));
 
-    static const char* const sections[] = {"discovery", nullptr};
-
-    service->Init(nullptr, service_name, nullptr, "", sections);
+    service->Init(nullptr, service_name, nullptr, "discovery");
 
     return service;
 }
