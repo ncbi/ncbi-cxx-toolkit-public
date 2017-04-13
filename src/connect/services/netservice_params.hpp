@@ -189,6 +189,12 @@ public:
         return GetValue(sections, name, static_cast<typename TR<TType>::T>(default_value));
     }
 
+    template <typename TType>
+    typename TR<TType>::T Get(initializer_list<string> sections, initializer_list<string> names, TType default_value)
+    {
+        return GetValue(sections, names, static_cast<typename TR<TType>::T>(default_value));
+    }
+
     bool Has(const string& section, const char* name)
     {
         return HasImpl(section, name);
@@ -196,6 +202,7 @@ public:
 
     bool Has(const string& section, initializer_list<string> names);
     bool Has(initializer_list<string> sections, const char* name);
+    bool Has(initializer_list<string> sections, initializer_list<string> names);
 
 protected:
     template <typename TType>
@@ -203,6 +210,9 @@ protected:
 
     template <typename TType>
     TType GetImpl(initializer_list<string> sections, const char* name, TType default_value);
+
+    template <typename TType>
+    TType GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value);
 
 private:
     virtual string GetValue(const string& section, const char* name, string default_value) = 0;
@@ -217,6 +227,10 @@ private:
     virtual bool   GetValue(initializer_list<string> sections, const char* name, bool default_value) = 0;
     virtual int    GetValue(initializer_list<string> sections, const char* name, int default_value) = 0;
     virtual double GetValue(initializer_list<string> sections, const char* name, double default_value) = 0;
+    virtual string GetValue(initializer_list<string> sections, initializer_list<string> names, string default_value) = 0;
+    virtual bool   GetValue(initializer_list<string> sections, initializer_list<string> names, bool default_value) = 0;
+    virtual int    GetValue(initializer_list<string> sections, initializer_list<string> names, int default_value) = 0;
+    virtual double GetValue(initializer_list<string> sections, initializer_list<string> names, double default_value) = 0;
 
     virtual bool   HasImpl(const string& section, const char* name) = 0;
 };
@@ -232,6 +246,10 @@ extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(initializer_list<
 extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
 extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
 extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 template <class TImpl>
 class TSynRegistry : public TImpl
@@ -253,6 +271,10 @@ private:
     bool   GetValue(initializer_list<string> sections, const char* name, bool default_value) final;
     int    GetValue(initializer_list<string> sections, const char* name, int default_value) final;
     double GetValue(initializer_list<string> sections, const char* name, double default_value) final;
+    string GetValue(initializer_list<string> sections, initializer_list<string> names, string default_value) final;
+    bool   GetValue(initializer_list<string> sections, initializer_list<string> names, bool default_value) final;
+    int    GetValue(initializer_list<string> sections, initializer_list<string> names, int default_value) final;
+    double GetValue(initializer_list<string> sections, initializer_list<string> names, double default_value) final;
 };
 
 class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
@@ -313,6 +335,10 @@ extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(initial
 extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
 extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
 extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 template <typename TImpl>
 string TSynRegistry<TImpl>::GetValue(const string& section, const char* name, string default_value)
@@ -384,6 +410,30 @@ template <typename TImpl>
 double TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, const char* name, double default_value)
 {
     return TImpl::GetImpl(sections, name, default_value);
+}
+
+template <typename TImpl>
+string TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, initializer_list<string> names, string default_value)
+{
+    return TImpl::GetImpl(sections, names, default_value);
+}
+
+template <typename TImpl>
+bool TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, initializer_list<string> names, bool default_value)
+{
+    return TImpl::GetImpl(sections, names, default_value);
+}
+
+template <typename TImpl>
+int TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, initializer_list<string> names, int default_value)
+{
+    return TImpl::GetImpl(sections, names, default_value);
+}
+
+template <typename TImpl>
+double TSynRegistry<TImpl>::GetValue(initializer_list<string> sections, initializer_list<string> names, double default_value)
+{
+    return TImpl::GetImpl(sections, names, default_value);
 }
 
 END_NCBI_SCOPE

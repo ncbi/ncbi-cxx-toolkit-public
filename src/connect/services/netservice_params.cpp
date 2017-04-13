@@ -205,6 +205,25 @@ TType ISynRegistry::GetImpl(initializer_list<string> sections, const char* name,
     return s_Iterate(sections, default_value, f);
 }
 
+template <typename TType>
+TType ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value)
+{
+    auto outer_f = [&](const string& section, TType value)
+    {
+        auto inner_f = [&](const string& name, TType inner_value)
+        {
+            // XXX:
+            // GCC-4.9.3 has a bug (62272).
+            // So, to avoid internal compiler error, 'this' has to be used.
+            return this->GetValue(section, name.c_str(), inner_value);
+        };
+
+        return s_Iterate(names, value, inner_f);
+    };
+
+    return s_Iterate(sections, default_value, outer_f);
+}
+
 bool ISynRegistry::Has(const string& section, initializer_list<string> names)
 {
     auto f = [&](const string& name, bool)
@@ -225,6 +244,25 @@ bool ISynRegistry::Has(initializer_list<string> sections, const char* name)
     return s_Iterate(sections, false, f);
 }
 
+bool ISynRegistry::Has(initializer_list<string> sections, initializer_list<string> names)
+{
+    auto outer_f = [&](const string& section, bool)
+    {
+        auto inner_f = [&](const string& name, bool)
+        {
+            // XXX:
+            // GCC-4.9.3 has a bug (62272).
+            // So, to avoid internal compiler error, 'this' has to be used
+            // (it was not failing in this particular case, added 'this' just in case).
+            return this->Has(section, name.c_str());
+        };
+
+        return s_Iterate(names, false, inner_f);
+    };
+
+    return s_Iterate(sections, false, outer_f);
+}
+
 template string ISynRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
 template bool   ISynRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
 template int    ISynRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
@@ -233,6 +271,10 @@ template string ISynRegistry::GetImpl(initializer_list<string> sections, const c
 template bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
 template int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
 template double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+template string ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+template bool   ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+template int    ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+template double ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 class CCachedSynRegistryImpl::CCache
 {
@@ -271,6 +313,7 @@ public:
     TValuePtr Get(const string& section, const char* name);
     TValuePtr Get(const string& section, initializer_list<string> names);
     TValuePtr Get(initializer_list<string> sections, const char* name);
+    TValuePtr Get(initializer_list<string> sections, initializer_list<string> names);
 
 private:
     TValues m_Values;
@@ -333,6 +376,33 @@ CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(in
     return value;
 }
 
+CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(initializer_list<string> sections, initializer_list<string> names)
+{
+    _ASSERT(sections.size());
+    _ASSERT(names.size());
+
+    auto section = *sections.begin();
+    auto name = *names.begin();
+    auto& section_values = m_Values[section];
+    auto found = section_values.find(name);
+
+    if (found != section_values.end()) return section_values[name];
+
+    TValuePtr value(new SValue);
+
+    for (auto& s : sections) {
+        for (auto& n : names) {
+            auto& sv = m_Values[s];
+            auto result = sv.insert(make_pair(n, value));
+
+            // If failed, corresponding parameter has already been read with a different set of synonyms
+            _ASSERT(result.second);
+        }
+    }
+
+    return value;
+}
+
 CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership) :
     m_Registry(s_MakeShared(registry, ownership)),
     m_Cache(new CCache)
@@ -386,5 +456,9 @@ template string CCachedSynRegistryImpl::GetImpl(initializer_list<string> section
 template bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
 template int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
 template double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+template string CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+template bool   CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+template int    CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+template double CCachedSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 END_NCBI_SCOPE
