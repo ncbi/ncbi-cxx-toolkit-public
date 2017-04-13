@@ -240,6 +240,45 @@ public:
                      TFlags        flags = 0,
                      EErrAction    err_action = eThrow) const;
 
+    /// Overloading of getters for generic programming
+    /// @{
+    string GetValue(const string& section,
+                    const string& name,
+                    const string& default_value,
+                    EErrAction    = eReturn,
+                    TFlags        flags = 0) const
+    {
+        return GetString(section, name, default_value, flags);
+    }
+
+    int GetValue(const string& section,
+                 const string& name,
+                 int           default_value,
+                 EErrAction    err_action = eErrPost,
+                 TFlags        flags = 0) const
+    {
+        return GetInt(section, name, default_value, flags, err_action);
+    }
+
+    bool GetValue(const string& section,
+                  const string& name,
+                  bool          default_value,
+                  EErrAction    err_action = eErrPost,
+                  TFlags        flags = 0) const
+    {
+        return GetBool(section, name, default_value, flags, err_action);
+    }
+
+    double GetValue(const string& section,
+                    const string& name,
+                    double        default_value,
+                    EErrAction    err_action = eErrPost,
+                    TFlags        flags = 0) const
+    {
+        return GetDouble(section, name, default_value, flags, err_action);
+    }
+    /// @}
+
     /// Get comment of the registry entry "section:name".
     ///
     /// @param section
@@ -424,6 +463,45 @@ public:
              const string& value,
              TFlags        flags   = 0,
              const string& comment = kEmptyStr);
+
+    /// Overloading of setters for generic programming
+    /// @{
+    bool SetValue(const string& section,
+                  const string& name,
+                  const string& value,
+                  TFlags        flags   = 0,
+                  const string& comment = kEmptyStr)
+    {
+        return Set(section, name, value, flags, comment);
+    }
+
+    bool SetValue(const string& section,
+                  const string& name,
+                  int           value,
+                  TFlags        flags   = 0,
+                  const string& comment = kEmptyStr)
+    {
+        return Set(section, name, NStr::IntToString(value), flags, comment);
+    }
+
+    bool SetValue(const string& section,
+                  const string& name,
+                  bool          value,
+                  TFlags        flags   = 0,
+                  const string& comment = kEmptyStr)
+    {
+        return Set(section, name, NStr::BoolToString(value), flags, comment);
+    }
+
+    bool SetValue(const string& section,
+                  const string& name,
+                  double        value,
+                  TFlags        flags   = 0,
+                  const string& comment = kEmptyStr)
+    {
+        return Set(section, name, to_string(value), flags, comment);
+    }
+    /// @}
 
     /// Fully unset the configuration parameter value, so that
     /// HasEntry returns false.
