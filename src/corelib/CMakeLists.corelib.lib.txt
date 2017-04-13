@@ -9,7 +9,7 @@ endif(${UNIX})
 add_library(xncbi
     ${ncbicntr} blob_storage ddumpable env_reg metareg ncbi_config
     ncbi_param ncbi_process ncbi_safe_static ncbi_signal ncbi_stack
-    ncbi_system ncbiapp ncbiargs ncbiatomic ncbicfg ncbidbg ncbidiag
+    ncbi_system ncbiapp ncbiargs ncbiatomic ${CMAKE_CURRENT_BINARY_DIR}/ncbicfg ncbidbg ncbidiag
     ncbidiag_p ncbidll ncbienv ncbiexec ncbiexpt ncbifile ncbimempool
     ncbimtx ncbiobj ncbireg ncbistr ncbistre ncbithr ncbitime obj_store
     plugin_manager plugin_manager_store rwstreambuf stream_utils syslog

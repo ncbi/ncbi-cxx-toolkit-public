@@ -46,6 +46,9 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
 
+#this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
+
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH false)
@@ -170,9 +173,7 @@ set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
 ############################################################################
 #
 # Sybase stuff
-# FIXME: replace with native CMake check
-#
-find_package(Sybase)
+find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybblk_r64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
 
 ############################################################################
 #
@@ -441,7 +442,7 @@ set(ENTREZ_LIBS entrez2cli entrez2)
 set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout einfo uilist ehistory)
 
 #GLPK
-find_external_library(GLPK INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
+find_external_library(glpk INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
 
 find_external_library(samtools INCLUDES bam.h LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
@@ -487,7 +488,11 @@ endif (APPLE AND NOT UNIX)
 #  - SYBASE_LCL_PATH
 #  - SYBASE_PATH
 #  - FEATURES
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c)
+set(c_ncbi_runpath "\$ORIGIN/../lib")
+set(SYBASE_LCL_PATH ${SYBASE_LIBRARIES})
+set(SYBASE_PATH "")
+set(FEATURES "")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
 
 ENABLE_TESTING()
 #include_directories(${CPP_INCLUDE_DIR} ${build_root}/inc)

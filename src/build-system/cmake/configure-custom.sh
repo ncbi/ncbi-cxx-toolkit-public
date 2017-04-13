@@ -3,7 +3,7 @@
 WITH_VARS="libsxslt|DIR gnutls|DIR boost|DIR libxlsxwriter|DIR z|DIR bz2|dir lzo|DIR samtools|DIR glpk|DIR curl|dir sge|DIR
 Python|DIR
 opengl|DIR mesa|DIR glew|DIR odbc|DIR
-mimetic|DIR gsoap|DIR"
+mimetic|DIR gsoap|DIR Sybase|DIR"
 
 WITH_LIBXSLT_DOC="use libexslt installation in DIR"
 WITH_GNUTLS_DOC="use GNUTLS installation in DIR" #-
