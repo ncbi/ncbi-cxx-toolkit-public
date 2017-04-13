@@ -1389,7 +1389,7 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(CSynonymsRegistry& registry, const string& section)
+void SNetScheduleAPIImpl::InitAffinities(ISynonymsRegistry& registry, const string& section)
 {
     const bool claim_new_affinities = registry.Get(section, "claim_new_affinities", false);
     const bool process_any_job =      registry.Get(section, "process_any_job", false);

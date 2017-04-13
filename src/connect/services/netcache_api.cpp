@@ -128,7 +128,7 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
     }
 }
 
-void SNetCacheAPIImpl::Init(CSynonymsRegistry& registry, const string& config_section)
+void SNetCacheAPIImpl::Init(ISynonymsRegistry& registry, const string& config_section)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,

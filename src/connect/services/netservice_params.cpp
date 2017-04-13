@@ -162,7 +162,7 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
 
-CSynonymsRegistry::CSynonymsRegistry(IRegistry* registry, EOwnership ownership) :
+CSynonymsRegistryImpl::CSynonymsRegistryImpl(IRegistry* registry, EOwnership ownership) :
     m_Registry(s_MakeShared(registry, ownership))
 {
 }
@@ -184,28 +184,28 @@ TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
 }
 
 template <typename TType>
-TType CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, TType default_value)
+TType ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, TType default_value)
 {
     auto f = [&](const string& name, TType value)
     {
-        return GetImpl(section, name.c_str(), value);
+        return GetValue(section, name.c_str(), value);
     };
 
     return s_Iterate(names, default_value, f);
 }
 
 template <typename TType>
-TType CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
+TType ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
 {
     auto f = [&](const string& section, TType value)
     {
-        return GetImpl(section, name, value);
+        return GetValue(section, name, value);
     };
 
     return s_Iterate(sections, default_value, f);
 }
 
-bool CSynonymsRegistry::Has(const string& section, initializer_list<string> names)
+bool ISynonymsRegistry::Has(const string& section, initializer_list<string> names)
 {
     auto f = [&](const string& name, bool)
     {
@@ -215,7 +215,7 @@ bool CSynonymsRegistry::Has(const string& section, initializer_list<string> name
     return s_Iterate(names, false, f);
 }
 
-bool CSynonymsRegistry::Has(initializer_list<string> sections, const char* name)
+bool ISynonymsRegistry::Has(initializer_list<string> sections, const char* name)
 {
     auto f = [&](const string& section, bool)
     {
@@ -225,13 +225,13 @@ bool CSynonymsRegistry::Has(initializer_list<string> sections, const char* name)
     return s_Iterate(sections, false, f);
 }
 
-template string CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
-template bool   CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
-template int    CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
-template double CSynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
-template string CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
-template bool   CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
-template int    CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
-template double CSynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+template string ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
+template bool   ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+template int    ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
+template double ISynonymsRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
+template string ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+template bool   ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+template int    ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+template double ISynonymsRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
 
 END_NCBI_SCOPE

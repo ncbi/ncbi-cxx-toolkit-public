@@ -119,7 +119,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
             SNetServiceImpl::eRethrowServerErrors,
         INetServerConnectionListener* conn_listener = NULL);
 
-    void Init(CSynonymsRegistry& registry, const string& config_section);
+    void Init(ISynonymsRegistry& registry, const string& config_section);
 
     CNetService m_Service;
 

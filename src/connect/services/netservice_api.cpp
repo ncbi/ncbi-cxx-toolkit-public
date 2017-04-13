@@ -355,7 +355,7 @@ bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
     return m_AllowXSiteConnections.load();
 }
 
-void SNetServiceXSiteAPI::InitXSite(CSynonymsRegistry& registry, const string& section)
+void SNetServiceXSiteAPI::InitXSite(ISynonymsRegistry& registry, const string& section)
 {
     if (registry.Get({ "netservice_api", section }, "allow_xsite_conn", false)) {
         AllowXSiteConnections();
@@ -449,7 +449,7 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
-void SNetServiceXSiteAPI::InitXSite(CSynonymsRegistry&, const string&)
+void SNetServiceXSiteAPI::InitXSite(ISynonymsRegistry&, const string&)
 {
 }
 
