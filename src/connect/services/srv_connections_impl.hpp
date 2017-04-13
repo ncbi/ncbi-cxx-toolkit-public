@@ -71,24 +71,13 @@ class INetServerProperties : public CObject
 {
 };
 
-class INetServerConnectionListener : public CObject
+struct INetServerConnectionListener : CObject
 {
-public:
     virtual CRef<INetServerProperties> AllocServerProperties() = 0;
 
-// Event handlers.
-public:
-    virtual CConfig* OnPreInit(
-            CObject* /*api_impl*/,
-            CConfig* /*config*/,
-            string*  /*config_section*/,
-            string&  /*client_name*/)
-    {
-        return NULL;
-    }
-
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section) = 0;
+    // Event handlers.
+    virtual CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name);
+    virtual void OnInit(CObject* api_impl, CConfig* config, const string& config_section) = 0;
     virtual void OnConnected(CNetServerConnection& connection) = 0;
     virtual void OnError(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;

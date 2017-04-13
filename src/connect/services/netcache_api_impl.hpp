@@ -51,23 +51,18 @@ struct SNetCacheServerProperties : public INetServerProperties
     bool mirrored;
 };
 
-class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
-    public INetServerConnectionListener
+class NCBI_XCONNECT_EXPORT CNetCacheServerListener : public INetServerConnectionListener
 {
 public:
-    virtual CRef<INetServerProperties> AllocServerProperties();
+    CRef<INetServerProperties> AllocServerProperties() override;
 
-public:
-    virtual CConfig* OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section, string& client_name);
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection& connection);
-    virtual void OnError(const string& err_msg, CNetServer& server);
-    virtual void OnWarning(const string& warn_msg, CNetServer& server);
+    CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name) override;
+    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnConnected(CNetServerConnection& connection) override;
+    void OnError(const string& err_msg, CNetServer& server) override;
+    void OnWarning(const string& warn_msg, CNetServer& server) override;
 
-    static CRef<SNetCacheServerProperties> x_GetServerProperties(
-            SNetServerImpl* server_impl);
+    static CRef<SNetCacheServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
 
     string m_Auth;
 };

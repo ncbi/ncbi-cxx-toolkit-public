@@ -232,10 +232,7 @@ protected:
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
-    CNetScheduleServerListener(bool non_wn) :
-        m_NonWn(non_wn)
-    {
-    }
+    CNetScheduleServerListener(bool non_wn) : m_NonWn(non_wn) {}
 
     void SetAuthString(const string& auth) { m_Auth = auth; }
     string& Scope() { return m_Scope; }
@@ -243,16 +240,14 @@ public:
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
 
-    static CRef<SNetScheduleServerProperties> x_GetServerProperties(
-            SNetServerImpl* server_impl);
+    static CRef<SNetScheduleServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
 
-    virtual CRef<INetServerProperties> AllocServerProperties();
+    CRef<INetServerProperties> AllocServerProperties() override;
 
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection& connection);
-    virtual void OnError(const string& err_msg, CNetServer& server);
-    virtual void OnWarning(const string& warn_msg, CNetServer& server);
+    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnConnected(CNetServerConnection& connection) override;
+    void OnError(const string& err_msg, CNetServer& server) override;
+    void OnWarning(const string& warn_msg, CNetServer& server) override;
 
 private:
     string m_Auth;

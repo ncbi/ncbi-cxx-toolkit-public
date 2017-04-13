@@ -91,6 +91,11 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
     }
 }
 
+CConfig* INetServerConnectionListener::OnPreInit(CObject*, CConfig*, string*, string&)
+{
+    return nullptr;
+}
+
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
         SNetServerImpl* server) :
     m_Server(server),

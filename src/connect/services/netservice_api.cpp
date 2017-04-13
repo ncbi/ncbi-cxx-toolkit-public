@@ -1509,36 +1509,23 @@ CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
     return result;
 }
 
-namespace {
-    class CDummyServerConnectionListener : public INetServerConnectionListener
-    {
-    public:
-        virtual CRef<INetServerProperties> AllocServerProperties()
-        {
-            return CRef<INetServerProperties>(new INetServerProperties);
-        }
-        virtual void OnInit(CObject* /*api_impl*/,
-                CConfig* /*config*/, const string& /*config_section*/)
-        {
-        }
-        virtual void OnConnected(CNetServerConnection& /*connection*/)
-        {
-        }
-        virtual void OnError(const string& /*err_msg*/, CNetServer& /*server*/)
-        {
-        }
-        virtual void OnWarning(const string& /*warn_msg*/,
-                CNetServer& /*server*/)
-        {
-        }
-    };
-}
-
 CNetService g_DiscoverService(const string& service_name,
         const string& client_name)
 {
-    CNetService service(new SNetServiceImpl("Discovery", client_name,
-            new CDummyServerConnectionListener));
+    struct SNoOpConnectionListener : public INetServerConnectionListener
+    {
+        CRef<INetServerProperties> AllocServerProperties() override
+        {
+            return CRef<INetServerProperties>(new INetServerProperties);
+        }
+
+        void OnInit(CObject*, CConfig*, const string&) override {}
+        void OnConnected(CNetServerConnection&) override {}
+        void OnError(const string&, CNetServer&) override {}
+        void OnWarning(const string&, CNetServer&) override {}
+    };
+
+    CNetService service(new SNetServiceImpl("Discovery", client_name, new SNoOpConnectionListener));
 
     static const char* const config_section[] = {"discovery", NULL};
 

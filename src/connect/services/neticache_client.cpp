@@ -65,8 +65,7 @@ BEGIN_NCBI_SCOPE
 class CNetICacheServerListener : public CNetCacheServerListener
 {
 protected:
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section);
+    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
 };
 
 const char* const kNetICacheDriverName = "netcache";
@@ -881,14 +880,12 @@ public:
     {
     }
 
-    virtual CRef<INetServerProperties> AllocServerProperties();
-    virtual CConfig* OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section, string& client_name);
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection& connection);
-    virtual void OnError(const string& err_msg, CNetServer& server);
-    virtual void OnWarning(const string& warn_msg, CNetServer& server);
+    CRef<INetServerProperties> AllocServerProperties() override;
+    CConfig* OnPreInit(CObject* api_impl, CConfig* config, string* config_section, string& client_name) override;
+    void OnInit(CObject* api_impl, CConfig* config, const string& config_section) override;
+    void OnConnected(CNetServerConnection& connection) override;
+    void OnError(const string& err_msg, CNetServer& server) override;
+    void OnWarning(const string& warn_msg, CNetServer& server) override;
 
     CRef<INetServerConnectionListener> m_DelegateListener;
     string m_Key;
