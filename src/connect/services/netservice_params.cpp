@@ -195,7 +195,7 @@ TType s_Iterate(initializer_list<string> list, TType default_value, TFunc func)
 }
 
 template <typename TType>
-TType ISynRegistry::GetImpl(const string& section, initializer_list<string> names, TType default_value)
+TType CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, TType default_value)
 {
     auto f = [&](const string& name, TType value)
     {
@@ -206,7 +206,7 @@ TType ISynRegistry::GetImpl(const string& section, initializer_list<string> name
 }
 
 template <typename TType>
-TType ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
+TType CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, TType default_value)
 {
     auto f = [&](const string& section, TType value)
     {
@@ -217,7 +217,7 @@ TType ISynRegistry::GetImpl(initializer_list<string> sections, const char* name,
 }
 
 template <typename TType>
-TType ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value)
+TType CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value)
 {
     auto outer_f = [&](const string& section, TType value)
     {
@@ -274,18 +274,18 @@ bool ISynRegistry::Has(initializer_list<string> sections, initializer_list<strin
     return s_Iterate(sections, false, outer_f);
 }
 
-template string ISynRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
-template bool   ISynRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
-template int    ISynRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
-template double ISynRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
-template string ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
-template bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
-template int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
-template double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
-template string ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
-template bool   ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-template int    ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
-template double ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
+template string CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, string default_value);
+template bool   CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+template int    CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, int default_value);
+template double CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, double default_value);
+template string CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+template bool   CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+template int    CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+template double CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+template string CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+template bool   CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+template int    CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+template double CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 class CCachedSynRegistryImpl::CCache
 {

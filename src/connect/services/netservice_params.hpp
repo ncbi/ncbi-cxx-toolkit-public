@@ -208,16 +208,6 @@ public:
     virtual void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) = 0;
 
 protected:
-    template <typename TType>
-    TType GetImpl(const string& section, initializer_list<string> names, TType default_value);
-
-    template <typename TType>
-    TType GetImpl(initializer_list<string> sections, const char* name, TType default_value);
-
-    template <typename TType>
-    TType GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value);
-
-private:
     virtual string GetValue(const string& section, const char* name, string default_value) = 0;
     virtual bool   GetValue(const string& section, const char* name, bool default_value) = 0;
     virtual int    GetValue(const string& section, const char* name, int default_value) = 0;
@@ -241,19 +231,6 @@ private:
 template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
 template <>               struct ISynRegistry::TR<const char*> { using T = string; };
 
-extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(const string& section, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(const string& section, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(const string& section, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(const string& section, initializer_list<string> names, double default_value);
-extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, int default_value);
-extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(initializer_list<string> sections, const char* name, double default_value);
-extern template NCBI_XNCBI_EXPORT string ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
-extern template NCBI_XNCBI_EXPORT bool   ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
-extern template NCBI_XNCBI_EXPORT int    ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
-extern template NCBI_XNCBI_EXPORT double ISynRegistry::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
-
 template <class TImpl>
 class TSynRegistry : public TImpl
 {
@@ -261,7 +238,7 @@ public:
     template <class... TArgs>
     TSynRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
 
-private:
+protected:
     string GetValue(const string& section, const char* name, string default_value) final;
     bool   GetValue(const string& section, const char* name, bool default_value) final;
     int    GetValue(const string& section, const char* name, int default_value) final;
@@ -288,13 +265,21 @@ public:
     void Reset(IRegistry* registry, EOwnership ownership = eNoOwnership) override;
 
 protected:
-    using ISynRegistry::GetImpl;
-
     template <typename TType>
     TType GetImpl(const string& section, const char* name, TType default_value)
     {
         return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
     }
+
+    template <typename TType>
+    TType GetImpl(const string& section, initializer_list<string> names, TType default_value);
+
+    template <typename TType>
+    TType GetImpl(initializer_list<string> sections, const char* name, TType default_value);
+
+    template <typename TType>
+    TType GetImpl(initializer_list<string> sections, initializer_list<string> names, TType default_value);
+
 
     bool HasImpl(const string& section, const char* name) final
     {
@@ -329,6 +314,19 @@ private:
 };
 
 using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
+
+extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::GetImpl(const string& section, initializer_list<string> names, double default_value);
+extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::GetImpl(initializer_list<string> sections, const char* name, double default_value);
+extern template NCBI_XNCBI_EXPORT string CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, string default_value);
+extern template NCBI_XNCBI_EXPORT bool   CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, bool default_value);
+extern template NCBI_XNCBI_EXPORT int    CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, int default_value);
+extern template NCBI_XNCBI_EXPORT double CSynRegistryImpl::GetImpl(initializer_list<string> sections, initializer_list<string> names, double default_value);
 
 extern template NCBI_XNCBI_EXPORT string CCachedSynRegistryImpl::GetImpl(string section, const char* name, string default_value);
 extern template NCBI_XNCBI_EXPORT bool   CCachedSynRegistryImpl::GetImpl(string section, const char* name, bool default_value);
