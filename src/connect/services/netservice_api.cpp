@@ -635,7 +635,7 @@ void SNetServerPoolImpl::Init(ISynRegistry& registry, const string& section, INe
     double conn_timeout = registry.Get(section, "connection_timeout", kConnTimeoutDefault);
     if (conn_timeout > 0) g_CTimeoutToSTimeout(CTimeout(conn_timeout), m_ConnTimeout);
 
-    double comm_timeout = registry.Get(section, "communication_timeout", kCommTimeoutDefault);
+    double comm_timeout = registry.Get({ section, "netservice_api" }, "communication_timeout", kCommTimeoutDefault);
     if (comm_timeout > 0) g_CTimeoutToSTimeout(CTimeout(comm_timeout), m_CommTimeout);
 
     double first_srv_timeout = registry.Get(section, "first_server_timeout", kFirstServerTimeoutDefault);
