@@ -430,7 +430,7 @@ public:
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
     void Init(CConfig* config, string module);
-    void InitAffinities(CConfig* config, const string& section);
+    void InitAffinities(CSynonymsRegistry& registry, const string& section);
     string MakeAuthString();
 
 private:

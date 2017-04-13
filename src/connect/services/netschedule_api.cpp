@@ -739,7 +739,9 @@ void SNetScheduleAPIImpl::Init(CConfig* config, string module)
             embedded.ReadOnce();
 
             if (use_affinities.ReadOnce() && use_affinities_value) {
-                InitAffinities(config, module);
+                CConfigRegistry config_registry(config);
+                CSynonymsRegistry registry(config_registry);
+                InitAffinities(registry, module);
             }
 
             job_group.ReadOnce();
@@ -1387,19 +1389,12 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(CConfig* config, const string& section)
+void SNetScheduleAPIImpl::InitAffinities(CSynonymsRegistry& registry, const string& section)
 {
-    const bool claim_new_affinities = config->GetBool(section,
-            "claim_new_affinities", CConfig::eErr_NoThrow, false);
-
-    const bool process_any_job = config->GetBool(section,
-            "process_any_job", CConfig::eErr_NoThrow, false);
-
-    const string affinity_list = config->GetString(section,
-            "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
-
-    const string affinity_ladder = config->GetString(section,
-            "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
+    const bool claim_new_affinities = registry.Get(section, "claim_new_affinities", false);
+    const bool process_any_job =      registry.Get(section, "process_any_job", false);
+    const string affinity_list =      registry.Get(section, "affinity_list", kEmptyStr);
+    const string affinity_ladder =    registry.Get(section, "affinity_ladder", kEmptyStr);
 
     if (affinity_ladder.empty()) {
 
