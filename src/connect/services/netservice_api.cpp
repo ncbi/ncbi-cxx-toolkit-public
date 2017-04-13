@@ -504,73 +504,69 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     }
 
     string section = config_section;
-        
-    auto_ptr<CConfig> app_reg_config;
+
+    CMemoryRegistry empty_registry;
+    CConfig empty_config(empty_registry);
+    CConfigRegistry config_registry(&empty_config);
+
     auto_ptr<CConfig::TParamTree> param_tree;
 
     if (config == NULL) {
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        const CNcbiRegistry* reg;
-        if (app != NULL && (reg = &app->GetConfig()) != NULL) {
-            param_tree.reset(CConfig::ConvertRegToTree(*reg));
 
-            app_reg_config.reset(FindSection(default_config_sections,
-                        param_tree.get(), &section));
-            config = app_reg_config.get();
-        }
-    } else {
-        app_reg_config.reset(FindSection(default_config_sections,
-                    config->GetTree(), &section));
+        if (CNcbiApplication* app = CNcbiApplication::Instance()) {
 
-        if (app_reg_config.get()) {
-            config = app_reg_config.get();
+            if (const CNcbiRegistry* reg = &app->GetConfig()) {
+                param_tree.reset(CConfig::ConvertRegToTree(*reg));
+
+                if (CConfig *alt = FindSection(default_config_sections, param_tree.get(), &section)) {
+                    config_registry.Reset(config = alt, eTakeOwnership);
+                }
+            }
         }
+    } else if (CConfig *alt = FindSection(default_config_sections, config->GetTree(), &section)) {
+        config_registry.Reset(config = alt, eTakeOwnership);
     }
+
+    CSynRegistry syn_registry(&config_registry);
+    CCachedSynRegistry registry(&syn_registry);
 
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
+    // TODO:
+    // Do not check for emptiness and always read values (client, service, etc) from registry
+    // after values provided in ctors get into an underlying memory registry.
+
     // Do not override explicitly set client name
-    if (config && m_ClientName.empty()) {
-        m_ClientName = config->GetString(section, "client_name",
-                CConfig::eErr_NoThrow);
+    if (m_ClientName.empty()) m_ClientName = registry.Get(section, { "client_name", "client" }, "");
 
-        if (m_ClientName.empty()) {
-            m_ClientName = config->GetString(section, "client",
-                    CConfig::eErr_NoThrow);
-        }
+    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section, m_ClientName)) {
+        config_registry.Reset(config = alt, eTakeOwnership);
     }
 
-    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section,
-                m_ClientName)) {
-        app_reg_config.reset(alt);
-        config = alt;
-    }
-
-    if (config != NULL) {
-        CConfigRegistry config_registry(config);
-        CSynRegistry registry(&config_registry);
+    if (m_ServiceName.empty()) {
+        m_ServiceName = registry.Get(section, { "service", "service_name" }, "");
 
         if (m_ServiceName.empty()) {
-            m_ServiceName = registry.Get(section, { "service", "service_name" }, kEmptyStr);
+            string host = registry.Get(section, { "server", "host" }, "");
+            string port = registry.Get(section, "port", "");
 
-            if (m_ServiceName.empty()) {
-                string host = registry.Get(section, { "server", "host" }, kEmptyStr);
-                string port = registry.Get(section, "port", kEmptyStr);
-
-                if (!host.empty() && !port.empty()) m_ServiceName = host + ":" + port;
-            }
+            if (!host.empty() && !port.empty()) m_ServiceName = host + ":" + port;
         }
+    }
 
-        InitXSite(registry, section);
+    InitXSite(registry, section);
 
-        m_UseSmartRetries = registry.Get(section, "smart_service_retries", true);
-        m_ConnectionMaxRetries = registry.Get(section, "connection_max_retries", -1);
-        double retry_delay = registry.Get(section, "retry_delay", -1.0);
+    m_UseSmartRetries = registry.Get(section, "smart_service_retries", m_UseSmartRetries);
+
+    if (config) {
+        m_ConnectionMaxRetries = registry.Get(section, "connection_max_retries", m_ConnectionMaxRetries);
+        double retry_delay = registry.Get(section, "retry_delay", (double)m_ConnectionRetryDelay);
         m_ConnectionRetryDelay = retry_delay < 0? -1:
             (int)SECONDS_DOUBLE_TO_MS_UL(retry_delay);
     }
+
     if ( m_ConnectionMaxRetries < 0 ) {
         m_ConnectionMaxRetries = (int)TServConn_ConnMaxRetries::GetDefault();
     }
@@ -593,16 +589,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     Construct();
 
-    IRegistry* config_registry = nullptr;
-
-    if (config) {
-        config_registry = new CConfigRegistry(config);
-    } else {
-        config_registry = new CMemoryRegistry;
-    }
-
-    CSynRegistry syn_registry(config_registry, eTakeOwnership);
-    CCachedSynRegistry registry(&syn_registry);
     m_Listener->OnInit(api_impl, registry, section);
 }
 
