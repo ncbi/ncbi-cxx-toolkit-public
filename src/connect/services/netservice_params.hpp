@@ -162,6 +162,54 @@ private:
     CConfig* m_Config;
 };
 
+class NCBI_XNCBI_EXPORT CSynonymsRegistry
+{
+public:
+    CSynonymsRegistry(IRegistry& registry) : m_Registry(registry) {}
+
+    template <typename TType>
+    TType Get(string section, string name, TType default_value)
+    {
+        return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
+    }
+
+    template <typename TType>
+    TType Get(string section, vector<string> names, TType default_value)
+    {
+        return Get(vector<string>({section}), names, default_value);
+    }
+
+    template <typename TType>
+    TType Get(vector<string> sections, string name, TType default_value)
+    {
+        return Get(sections, vector<string>({name}), default_value);
+    }
+
+    template <typename TType>
+    TType Get(vector<string> sections, vector<string> names, TType default_value)
+    {
+        _ASSERT(!sections.empty());
+        _ASSERT(!names.empty());
+
+        const TType empty_value{};
+
+        auto section = sections.begin();
+        auto name = names.begin();
+
+        for (;;) {
+            auto value = Get(*section, *name, empty_value);
+
+            if (value != empty_value) return value;
+            if (++name != names.end()) continue;
+            if (++section == sections.end()) return default_value;
+
+            name = names.begin();
+        }
+    }
+
+private:
+    IRegistry& m_Registry;
+};
 
 END_NCBI_SCOPE
 
