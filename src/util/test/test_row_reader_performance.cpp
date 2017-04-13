@@ -116,6 +116,9 @@ int CRowReaderPerfTest::Run(void)
             if (row[fno].Get<int>() != static_cast<int>(fno))
                 NcbiCerr << "Error reading integer field number " << fno
                          << " Read value: " << row[fno].Get<int>() << NcbiEndl;
+            if (row[fno].Get<CTempString>().length() > 1000000)
+                NcbiCerr << "Error reading field number " << fno
+                         << " as CTempString." << NcbiEndl;
         }
     }
 

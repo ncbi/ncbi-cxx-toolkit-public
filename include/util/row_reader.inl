@@ -379,6 +379,12 @@ public:
         converted = NStr::StringToBool(str_value);
     }
 
+    static void GetFieldValueConverted(const CTempString& str_value,
+                                       CTempString& converted)
+    {
+        converted = str_value;
+    }
+
     // Conversion implementation respecting overflow
     // and covering all the arithmetic types
     template<typename T,
