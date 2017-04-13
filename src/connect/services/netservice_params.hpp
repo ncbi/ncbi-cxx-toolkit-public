@@ -159,50 +159,64 @@ private:
 
 class NCBI_XNCBI_EXPORT CSynonymsRegistry
 {
+    template <typename TType> struct TR;
+
 public:
     CSynonymsRegistry(IRegistry& registry) : m_Registry(registry) {}
 
     template <typename TType>
-    TType Get(const string& section, const string& name, TType default_value)
-    {
-        return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
-    }
+    typename TR<TType>::T Get(const string& section, const string& name, TType default_value);
 
     template <typename TType>
-    TType Get(const string& section, initializer_list<string> names, TType default_value)
-    {
-        _ASSERT(names.size());
-
-        const TType empty_value{};
-
-        for (const auto& name : names) {
-            auto value = Get(section, name, empty_value);
-
-            if (value != empty_value) return value;
-        }
-
-        return default_value;
-    }
+    typename TR<TType>::T Get(const string& section, initializer_list<string> names, TType default_value);
 
     template <typename TType>
-    TType Get(initializer_list<string> sections, const string& name, TType default_value)
-    {
-        _ASSERT(sections.size());
-
-        const TType empty_value{};
-
-        for (const auto& section : sections) {
-            auto value = Get(section, name, empty_value);
-
-            if (value != empty_value) return value;
-        }
-
-        return default_value;
-    }
+    typename TR<TType>::T Get(initializer_list<string> sections, const string& name, TType default_value);
 
 private:
     IRegistry& m_Registry;
 };
+
+template <typename TType> struct CSynonymsRegistry::TR              { using T = TType;  };
+template <>               struct CSynonymsRegistry::TR<const char*> { using T = string; };
+
+template <typename TType>
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, const string& name, TType default_value)
+{
+    return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
+}
+
+template <typename TType>
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, initializer_list<string> names, TType default_value)
+{
+    _ASSERT(names.size());
+
+    const typename TR<TType>::T empty_value{};
+
+    for (const auto& name : names) {
+        auto value = Get(section, name, empty_value);
+
+        if (value != empty_value) return value;
+    }
+
+    return default_value;
+}
+
+template <typename TType>
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(initializer_list<string> sections, const string& name, TType default_value)
+{
+    _ASSERT(sections.size());
+
+    const typename TR<TType>::T empty_value{};
+
+    for (const auto& section : sections) {
+        auto value = Get(section, name, empty_value);
+
+        if (value != empty_value) return value;
+    }
+
+    return default_value;
+}
 
 END_NCBI_SCOPE
 

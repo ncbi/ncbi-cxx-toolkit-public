@@ -135,7 +135,7 @@ void SNetCacheAPIImpl::Init(CSynonymsRegistry& registry, const string& config_se
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    m_TempDir =                            registry.Get(config_section, { "tmp_dir", "tmp_path" }, string("."));
+    m_TempDir =                            registry.Get(config_section, { "tmp_dir", "tmp_path" }, ".");
     m_CacheInput =                         registry.Get(config_section, "cache_input", false);
     m_CacheOutput =                        registry.Get(config_section, "cache_output", false);
     m_ProlongBlobLifetimeOnWrite =         registry.Get(config_section, "prolong_blob_lifetime_on_write", true);
