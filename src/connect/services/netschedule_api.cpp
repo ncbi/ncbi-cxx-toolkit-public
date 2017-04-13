@@ -585,7 +585,7 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     // Make the auth token look like a command to be able to
     // check for potential authentication/initialization errors
     // like the "queue not found" error.
-    if (m_Mode & fNonWnCompatible) {
+    if (impl->m_Mode & impl->fNonWnCompatible) {
         auth += "\r\nVERSION";
 
         if (!g_AppendClientIPAndSessionID(auth) &&
@@ -757,7 +757,7 @@ void CNetScheduleServerListener::OnInit(
 
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
-        if (!phase && (m_Mode & fConfigLoading)) {
+        if (!phase && (ns_impl->m_Mode & ns_impl->fConfigLoading)) {
             if (CConfig* alt = loader.Get(ns_impl, config, module)) {
                 config_holder.reset(alt);
                 config = alt;
@@ -771,7 +771,7 @@ void CNetScheduleServerListener::OnInit(
 
 void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 {
-    if (m_Mode & fNonWnCompatible) {
+    if (m_NonWn) {
         string version_info(connection.Exec(m_Auth, false));
 
         CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
@@ -873,16 +873,18 @@ static const char* const s_NetScheduleConfigSections[] = {
 };
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(CConfig* config, const string& section) :
+    m_Mode(GetMode(false, true)),
     m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr,
-                new CNetScheduleServerListener(false, true)))
+                new CNetScheduleServerListener(m_Mode & fNonWnCompatible)))
 {
     m_Service->Init(this, kEmptyStr, config, section, s_NetScheduleConfigSections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn, bool try_config) :
+    m_Mode(GetMode(wn, try_config)),
     m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
-                new CNetScheduleServerListener(wn, try_config))),
+                new CNetScheduleServerListener(m_Mode & fNonWnCompatible))),
     m_Queue(queue_name)
 {
     m_Service->Init(this, service_name, nullptr, kEmptyStr, s_NetScheduleConfigSections);
@@ -890,6 +892,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const strin
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         SNetServerInPool* server, SNetScheduleAPIImpl* parent) :
+    m_Mode(parent->m_Mode),
     m_Service(new SNetServiceImpl(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),

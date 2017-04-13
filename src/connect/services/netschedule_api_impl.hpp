@@ -229,26 +229,9 @@ protected:
 
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
-private:
-    enum EMode {
-        fWnCompatible       = (0 << 0),
-        fNonWnCompatible    = (1 << 0),
-        fConfigLoading      = (1 << 1),
-        fWorkerNode         = fWnCompatible,
-        fNetSchedule        = fNonWnCompatible,
-    };
-    typedef int TMode;
-
-    static TMode GetMode(bool wn, bool try_config)
-    {
-        if (wn) return fWorkerNode;
-        if (try_config) return fNetSchedule | fConfigLoading;
-                        return fNetSchedule;
-    }
-
 public:
-    CNetScheduleServerListener(bool wn, bool try_config) :
-        m_Mode(GetMode(wn, try_config))
+    CNetScheduleServerListener(bool non_wn) :
+        m_NonWn(non_wn)
     {
     }
 
@@ -281,7 +264,7 @@ public:
     CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
 
 private:
-    const TMode m_Mode;
+    const bool m_NonWn;
     string m_Scope;
 };
 
@@ -364,6 +347,25 @@ struct SNetScheduleNotificationThread : public CThread
 
 struct SNetScheduleAPIImpl : public CObject
 {
+// TODO: Make private after initialization is moved to this class
+// private:
+    enum EMode {
+        fWnCompatible       = (0 << 0),
+        fNonWnCompatible    = (1 << 0),
+        fConfigLoading      = (1 << 1),
+        fWorkerNode         = fWnCompatible,
+        fNetSchedule        = fNonWnCompatible,
+    };
+    typedef int TMode;
+
+    static TMode GetMode(bool wn, bool try_config)
+    {
+        if (wn) return fWorkerNode;
+        if (try_config) return fNetSchedule | fConfigLoading;
+                        return fNetSchedule;
+    }
+
+public:
     SNetScheduleAPIImpl(CConfig* config, const string& section);
 
     SNetScheduleAPIImpl(const string& service_name, const string& client_name,
@@ -429,6 +431,7 @@ struct SNetScheduleAPIImpl : public CObject
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
     void InitAffinities(CConfig* config, const string& section);
 
+    const TMode m_Mode;
     CNetService m_Service;
 
     string m_Queue;
