@@ -121,4 +121,38 @@ unsigned long s_GetRetryDelay()
     return retry_delay;
 }
 
+CConfigRegistry::CConfigRegistry(CConfig* config) :
+    m_Config(config)
+{
+    _ASSERT(config);
+}
+
+bool CConfigRegistry::x_Empty(TFlags flags) const
+{
+    NCBI_ALWAYS_TROUBLE("Not implemented");
+    return false; // Not reached
+}
+
+const string& CConfigRegistry::x_Get(const string& section, const string& name, TFlags) const
+{
+    return m_Config->GetString(section, name, CConfig::eErr_NoThrow);
+}
+
+bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags flags) const
+{
+    NCBI_ALWAYS_TROUBLE("Not implemented");
+    return false; // Not reached
+}
+
+const string& CConfigRegistry::x_GetComment(const string& section, const string& name, TFlags flags) const
+{
+    NCBI_ALWAYS_TROUBLE("Not implemented");
+    return kEmptyStr; // Not reached
+}
+
+void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, TFlags flags) const
+{
+    NCBI_ALWAYS_TROUBLE("Not implemented");
+}
+
 END_NCBI_SCOPE

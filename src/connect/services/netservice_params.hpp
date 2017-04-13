@@ -37,6 +37,7 @@
 #include <connect/ncbi_types.h>
 
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_config.hpp>
 
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
@@ -144,6 +145,22 @@ NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);
 NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
+
+
+class NCBI_XNCBI_EXPORT CConfigRegistry : public IRegistry
+{
+public:
+    CConfigRegistry(CConfig* config);
+
+private:
+    bool x_Empty(TFlags flags) const override;
+    const string& x_Get(const string& section, const string& name, TFlags flags) const override;
+    bool x_HasEntry(const string& section, const string& name, TFlags flags) const override;
+    const string& x_GetComment(const string& section, const string& name, TFlags flags) const override;
+    void x_Enumerate(const string& section, list<string>& entries, TFlags flags) const override;
+
+    CConfig* m_Config;
+};
 
 
 END_NCBI_SCOPE
