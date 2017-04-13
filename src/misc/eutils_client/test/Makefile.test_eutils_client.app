@@ -14,4 +14,4 @@ REQUIRES = LIBXML LIBXSLT
 
 CHECK_CMD = test_eutils_client -db pubmed -count dog  /CHECK_NAME=EUtilsCli_Dog
 
-WATCHERS = perkovan smithrg grichenk
+WATCHERS = perkovan grichenk
