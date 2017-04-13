@@ -684,19 +684,21 @@ void CNetScheduleServerListener::OnInit(
     _ASSERT(ns_impl);
 
     SetDiagUserAndHost();
+    ns_impl->Init(config, section);
+}
 
+void SNetScheduleAPIImpl::Init(CConfig* config, string module)
+{
     const string& user(GetDiagContext().GetUsername());
-    ns_impl->m_ClientNode =
-        ns_impl->m_Service->GetClientName() + "::" +
+    m_ClientNode =
+        m_Service->GetClientName() + "::" +
         (user.empty() ? kEmptyStr : user + '@') +
         GetDiagContext().GetHost();
 
     auto_ptr<CConfig> config_holder;
     CNetScheduleOwnConfigLoader loader;
 
-    string module = section;
-
-    string& queue_ref = ns_impl->m_Queue;
+    string& queue_ref = m_Queue;
 
     if (!queue_ref.empty()) {
         limits::Check<limits::SQueueName>(queue_ref);
@@ -708,22 +710,22 @@ void CNetScheduleServerListener::OnInit(
     SCfgReader<string> queue(queue_ref,
             config, module, "queue_name", kEmptyStr, 0, !queue_ref.empty());
 
-    SCfgReader<bool> embedded(ns_impl->m_UseEmbeddedStorage,
+    SCfgReader<bool> embedded(m_UseEmbeddedStorage,
             config, module, "use_embedded_storage", true, &embedded_synonyms);
 
     SCfgReader<bool> use_affinities(use_affinities_value,
             config, module, "use_affinities");
 
-    SCfgReader<string> job_group(ns_impl->m_JobGroup,
+    SCfgReader<string> job_group(m_JobGroup,
             config, module, "job_group");
 
-    SCfgReader<unsigned, int> job_ttl(ns_impl->m_JobTtl,
+    SCfgReader<unsigned, int> job_ttl(m_JobTtl,
             config, module, "job_ttl");
 
-    SCfgReader<string> client_node(ns_impl->m_ClientNode,
-            config, module, "client_node", ns_impl->m_ClientNode);
+    SCfgReader<string> client_node(m_ClientNode,
+            config, module, "client_node", m_ClientNode);
 
-    SCfgReader<string> scope(Scope(), config, module, "scope");
+    SCfgReader<string> scope(GetListener()->Scope(), config, module, "scope");
 
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
@@ -737,7 +739,7 @@ void CNetScheduleServerListener::OnInit(
             embedded.ReadOnce();
 
             if (use_affinities.ReadOnce() && use_affinities_value) {
-                ns_impl->InitAffinities(config, module);
+                InitAffinities(config, module);
             }
 
             job_group.ReadOnce();
@@ -746,19 +748,19 @@ void CNetScheduleServerListener::OnInit(
             scope.ReadOnce();
         }
 
-        if (!ns_impl->m_ClientNode.empty()) {
-            ns_impl->m_ClientSession =
+        if (!m_ClientNode.empty()) {
+            m_ClientSession =
                 NStr::NumericToString(CDiagContext::GetPID()) + '@' +
                 NStr::NumericToString(GetFastLocalTime().GetTimeT()) + ':' +
                 GetDiagContext().GetStringUID();
         }
 
-        SetAuthString(ns_impl->MakeAuthString());
+        GetListener()->SetAuthString(MakeAuthString());
 
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
-        if (!phase && (ns_impl->m_Mode & ns_impl->fConfigLoading)) {
-            if (CConfig* alt = loader.Get(ns_impl, config, module)) {
+        if (!phase && (m_Mode & fConfigLoading)) {
+            if (CConfig* alt = loader.Get(this, config, module)) {
                 config_holder.reset(alt);
                 config = alt;
                 continue;

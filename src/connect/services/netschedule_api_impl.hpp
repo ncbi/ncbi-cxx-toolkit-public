@@ -348,8 +348,7 @@ struct SNetScheduleNotificationThread : public CThread
 
 struct SNetScheduleAPIImpl : public CObject
 {
-// TODO: Make private after initialization is moved to this class
-// private:
+private:
     enum EMode {
         fWnCompatible       = (0 << 0),
         fNonWnCompatible    = (1 << 0),
@@ -430,15 +429,15 @@ public:
     void UseOldStyleAuth();
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
+    void Init(CConfig* config, string module);
     void InitAffinities(CConfig* config, const string& section);
     string MakeAuthString();
 
-// TODO: Make private after initialization is moved to this class
-// private:
+private:
     const TMode m_Mode;
-    CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
 
 public:
+    CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
     CNetService m_Service;
 
     string m_Queue;
