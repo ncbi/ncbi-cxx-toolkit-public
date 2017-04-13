@@ -140,8 +140,15 @@ const string& CConfigRegistry::x_Get(const string& section, const string& name, 
 
 bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags flags) const
 {
-    NCBI_ALWAYS_TROUBLE("Not implemented");
-    return false; // Not reached
+    try {
+        m_Config->GetString(section, name, CConfig::eErr_Throw);
+    }
+    catch (CConfigException& ex) {
+        if (ex.GetErrCode() == CConfigException::eParameterMissing) return false;
+        throw;
+    }
+
+    return true;
 }
 
 const string& CConfigRegistry::x_GetComment(const string& section, const string& name, TFlags flags) const
@@ -158,6 +165,26 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
 CSynonymsRegistry::CSynonymsRegistry(IRegistry* registry, EOwnership ownership) :
     m_Registry(s_MakeShared(registry, ownership))
 {
+}
+
+bool CSynonymsRegistry::Has(const string& section, initializer_list<string> names)
+{
+    auto f = [&](const string& name, bool)
+    {
+        return Has(section, name.c_str());
+    };
+
+    return Iterate<bool, decltype(f), bool>(names, false, f);
+}
+
+bool CSynonymsRegistry::Has(initializer_list<string> sections, const char* name)
+{
+    auto f = [&](const string& section, bool)
+    {
+        return Has(section, name);
+    };
+
+    return Iterate<bool, decltype(f), bool>(sections, false, f);
 }
 
 END_NCBI_SCOPE

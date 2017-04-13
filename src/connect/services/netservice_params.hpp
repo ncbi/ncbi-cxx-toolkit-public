@@ -178,7 +178,14 @@ public:
     template <typename TType>
     typename TR<TType>::T Get(initializer_list<string> sections, const char* name, TType default_value);
 
+    bool Has(const string& section, const char* name);
+    bool Has(const string& section, initializer_list<string> names);
+    bool Has(initializer_list<string> sections, const char* name);
+
 private:
+    template <typename TType, class TFunc, typename TReturn>
+    static TReturn Iterate(initializer_list<string> list, TType default_value, TFunc func);
+
     shared_ptr<IRegistry> m_Registry;
 };
 
@@ -191,15 +198,15 @@ typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& se
     return m_Registry->GetValue(section, name, default_value, IRegistry::eThrow);
 }
 
-template <typename TType>
-typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, initializer_list<string> names, TType default_value)
+template <typename TType, class TFunc, typename TReturn>
+TReturn CSynonymsRegistry::Iterate(initializer_list<string> list, TType default_value, TFunc func)
 {
-    _ASSERT(names.size());
+    _ASSERT(list.size());
 
-    const typename TR<TType>::T empty_value{};
+    const TReturn empty_value{};
 
-    for (const auto& name : names) {
-        auto value = Get(section, name.c_str(), empty_value);
+    for (const auto& element : list) {
+        auto value = func(element, empty_value);
 
         if (value != empty_value) return value;
     }
@@ -208,19 +215,30 @@ typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& se
 }
 
 template <typename TType>
+typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(const string& section, initializer_list<string> names, TType default_value)
+{
+    auto f = [&](const string& name, typename TR<TType>::T value)
+    {
+        return Get(section, name.c_str(), value);
+    };
+
+    return Iterate<TType, decltype(f), typename TR<TType>::T>(names, default_value, f);
+}
+
+template <typename TType>
 typename CSynonymsRegistry::TR<TType>::T CSynonymsRegistry::Get(initializer_list<string> sections, const char* name, TType default_value)
 {
-    _ASSERT(sections.size());
+    auto f = [&](const string& section, typename TR<TType>::T value)
+    {
+        return Get(section, name, value);
+    };
 
-    const typename TR<TType>::T empty_value{};
+    return Iterate<TType, decltype(f), typename TR<TType>::T>(sections, default_value, f);
+}
 
-    for (const auto& section : sections) {
-        auto value = Get(section, name, empty_value);
-
-        if (value != empty_value) return value;
-    }
-
-    return default_value;
+inline bool CSynonymsRegistry::Has(const string& section, const char* name)
+{
+    return m_Registry->HasEntry(section, name);
 }
 
 END_NCBI_SCOPE
