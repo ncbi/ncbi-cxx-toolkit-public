@@ -108,7 +108,7 @@ function(find_external_library)
     if (${${ARG_LIBNAME}_FOUND})
         message(STATUS "Found ${ARG_LIBNAME_ORIG}: ${FINAL_LIBS}")
     else()
-        message(WARNING "Could NOT find ${ARG_LIBNAME_ORIG}")
+        message(STATUS "Could NOT find ${ARG_LIBNAME_ORIG}")
     endif()
 
 endfunction()
