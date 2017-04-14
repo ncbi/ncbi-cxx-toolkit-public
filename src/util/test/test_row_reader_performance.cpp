@@ -47,6 +47,7 @@ class CRowReaderPerfTest : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+    void Read(const string& fname);
 };
 
 
@@ -100,7 +101,14 @@ int CRowReaderPerfTest::Run(void)
     }
     fclose(f);
 
-    // Loop over data
+    Read(fname);
+
+    remove(fname.c_str());
+    return 0;
+}
+
+void CRowReaderPerfTest::Read(const string& fname)
+{
     Int8    read_row_count = 0;
     Int8    read_field_count = 0;
     typedef CRowReader<TRowReaderStream_SingleSpaceDelimited>
@@ -124,9 +132,6 @@ int CRowReaderPerfTest::Run(void)
 
     NcbiCout << "Number of rows read: " << read_row_count << NcbiEndl
              << "Number of fields read: " << read_field_count << NcbiEndl;
-
-    remove(fname.c_str());
-    return 0;
 }
 
 
