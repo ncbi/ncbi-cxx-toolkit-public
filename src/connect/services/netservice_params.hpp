@@ -137,16 +137,22 @@ struct SRegSynonyms : vector<string>
     SRegSynonyms(initializer_list<T> l)
     {
         for (auto& s : l) {
-            emplace_back(s);
+            if (NotFound(s)) emplace_back(s);
         }
     }
 
     SRegSynonyms(initializer_list<SRegSynonyms> src)
     {
+        auto i = back_inserter(*this);
+        auto f = [&](const string& s) { return NotFound(s); };
+
         for (auto& s : src) {
-            insert(end(), s.begin(), s.end());
+            copy_if(s.begin(), s.end(), i, f);
         }
     }
+
+private:
+    bool NotFound(string s) const { return find(begin(), end(), s) == end(); }
 };
 
 class NCBI_XNCBI_EXPORT ISynRegistry
