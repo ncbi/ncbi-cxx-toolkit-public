@@ -173,7 +173,8 @@ set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
 ############################################################################
 #
 # Sybase stuff
-find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybblk_r64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
+find_package(Sybase)
+#find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybblk_r64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
 
 ############################################################################
 #
