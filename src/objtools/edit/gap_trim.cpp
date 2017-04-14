@@ -44,7 +44,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Rna_ref.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
