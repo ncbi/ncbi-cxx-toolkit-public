@@ -107,12 +107,14 @@ void JSDParser::ParseMemberDefinition(DTDElement* owner)
     DTDElement& item = m_MapElement[node_id];
     item.SetName(key);
     item.SetNamed();
+    if (owner) {
+        item.SetEmbedded();
+    }
     TToken tok = GetNextToken();
     if (tok == K_BEGIN_OBJECT) {
         ParseNode(item);
     }
     if (owner) {
-        item.SetEmbedded();
 	    AddElementContent(*owner,node_id);
     }
     m_URI.pop_back();
@@ -133,7 +135,6 @@ void JSDParser::ParseNode(DTDElement& node)
     string key;
     TToken tok;
     node.SetSourceLine( Lexer().CurrentLine());
-    node.SetNillable(true);
     for (tok = GetNextToken(); tok != K_END_OBJECT; tok = GetNextToken()) {
         if (tok == K_KEY) {
             key = Value();
@@ -156,10 +157,8 @@ void JSDParser::ParseNode(DTDElement& node)
                     } else if (Value() == "null") {
                         node.SetType(DTDElement::eEmpty);
                     } else if (Value() == "object") {
-                        node.SetNillable(false);
-                        node.SetType(DTDElement::eSet);
+                        node.SetType(DTDElement::eSequence);
                     } else if (Value() == "array") {
-                        node.SetNillable(false);
                         node.SetType(DTDElement::eSequence);
                     }
                 } else if (key == "default") {

@@ -962,8 +962,11 @@ CDataType* DTDParser::x_Type(
                 DTDElement::EOccurrence ref_occ = refNode.GetOccurrence();
                 DTDElement::EOccurrence new_occ =
                     (fromInside || ref_occ == DTDElement::eOne) ? occ : ref_occ;
+                if (m_SrcType == eJson) {
+                    new_occ = ref_occ;
+                }
                 type = x_Type(refNode, new_occ, fromInside);
-                if (node.IsEmbedded()) {
+                if (node.IsEmbedded() && m_SrcType != eJson) {
                     DTDElement& emb = const_cast<DTDElement&>(node);
                     emb.SetName(refNode.GetName());
                 }
