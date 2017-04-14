@@ -70,6 +70,9 @@ typedef struct SServiceConnectorTag {
 } SServiceConnector;
 
 
+static const char kHttpHostTag[] = "Host: ";
+
+
 /***********************************************************************
  *  INTERNAL -- "s_VT_*" functions for the "virt. table" of connector methods
  ***********************************************************************/
@@ -521,9 +524,17 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
     const char* vhost = SERV_HostOfInfo(info);
 
     if (vhost) {
-        assert(info->vhost  &&  info->vhost < sizeof(net_info->host));
-        strncpy0(net_info->host, vhost, info->vhost);
-    } else if (info->host == SOCK_HostToNetLong(-1L)) {
+        char* tag;
+        if (!(tag = (char*) malloc(sizeof(kHttpHostTag) + info->vhost)))
+            return 0/*failure*/;
+        sprintf(tag, "%s%.*s", kHttpHostTag, (int) info->vhost, vhost);
+        if (!ConnNetInfo_OverrideUserHeader(net_info, tag)) {
+            free(tag);
+            return 0/*failure*/;
+        }
+        free(tag);
+    }
+    if (info->host == SOCK_HostToNetLong(-1L)) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
         char* end = NcbiAddrToString(net_info->host         +   ipv6,
                                      sizeof(net_info->host) - 2*ipv6,
@@ -649,6 +660,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
         uuu->user_header = 0;
 
     if (info->type != fSERV_Ncbid  &&  !(info->type & fSERV_Http)) {
+        ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
         strcpy(net_info->host, uuu->net_info->host);
         net_info->port = uuu->net_info->port;
     } else if (!x_SetHostPort(net_info, info))
@@ -684,6 +696,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     EReqMethod  req_method;
 
     assert(net_info->firewall  ||  info);
+    ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
     if ((!net_info->firewall  &&  info->type != fSERV_Firewall)
         || (info  &&  ((info->type  & fSERV_Http)  ||
                        (info->type == fSERV_Ncbid  &&  net_info->stateless)))){
@@ -916,7 +929,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0,
                                         uuu->secure ? fSOCK_Secure : 0);
     }
-    ConnNetInfo_DeleteUserHeader(net_info, "Host:");
     if (info  &&  (info->mode & fSERV_Secure))
         net_info->scheme = eURL_Https;
     else if (!net_info->scheme)
