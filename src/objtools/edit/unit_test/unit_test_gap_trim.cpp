@@ -63,6 +63,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/edit/gap_trim.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
@@ -212,10 +213,45 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMisc)
     TestRemoveMisc(12, 21, true);
 }
 
+void CheckTags(CSeq_entry_Handle seh, const string& orig_tag, size_t num_updates)
+{
+    CFeat_CI f(seh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    size_t offset = 1;
+    while (f) {
+        const string& tag = f->GetProduct().GetWhole().GetGeneral().GetTag().GetStr();
+        if (num_updates == 1) {
+            BOOST_CHECK_EQUAL(tag, orig_tag);
+        } else {
+            BOOST_CHECK_EQUAL(tag, orig_tag + "_" + NStr::NumericToString(offset));
+        }
+        ++f;
+        ++offset;
+    }
+    BOOST_CHECK_EQUAL(offset - 1, num_updates);
+
+    CBioseq_CI prot_i(seh, CSeq_inst::eMol_aa);
+    offset = 1;
+    while (prot_i) {
+        const string& tag = prot_i->GetId().front().GetSeqId()->GetGeneral().GetTag().GetStr();
+        if (num_updates == 1) {
+            BOOST_CHECK_EQUAL(tag, orig_tag);
+        } else {
+            BOOST_CHECK_EQUAL(tag, orig_tag + "_" + NStr::NumericToString(offset));
+        }
+        ++prot_i;
+        ++offset;
+    }
+    BOOST_CHECK_EQUAL(offset - 1, num_updates);
+}
+
 
 edit::TGappedFeatList TryOneCDSCase(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFrame frame_one)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetGeneral().SetDb("foo");
+    prot_id->SetGeneral().SetTag().SetStr("bar");
+    unit_test_util::ChangeNucProtSetProteinId(entry, prot_id);
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetData().SetCdregion().SetFrame(frame_one);
@@ -238,6 +274,15 @@ edit::TGappedFeatList TryOneCDSCase(TSeqPos start, TSeqPos stop, TSeqPos gap_len
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
+    scope->RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    if (prot->GetSeq().GetLength() > 3) {
+        CRef<CSeq_feat> mat_peptide = unit_test_util::AddMiscFeature(prot);
+        mat_peptide->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+        mat_peptide->SetLocation().SetInt().SetFrom(1);
+        mat_peptide->SetLocation().SetInt().SetTo(prot->GetSeq().GetInst().GetLength() - 2);
+    }
+    seh = scope->AddTopLevelSeqEntry(*entry);
 
     CFeat_CI f(seh);
     edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
@@ -259,6 +304,19 @@ void CheckQual(const CSeq_feat& feat, const string& qual, const string& val)
     if (!found) {
         BOOST_CHECK_EQUAL(val, "");
     }
+}
+
+
+void TestUpdateCDS(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> > adjusted_feats)
+{
+    CScope& scope = cds.GetScope();
+    CSeq_entry_Handle seh = scope.GetBioseqHandle(cds.GetLocation()).GetTopLevelEntry();
+    string orig_tag = cds.GetProduct().GetWhole().GetGeneral().GetTag().GetStr();
+
+    ProcessForTrimAndSplitUpdates(cds, adjusted_feats);
+
+    CheckTags(seh, orig_tag, adjusted_feats.size());
+
 }
 
 
@@ -289,6 +347,8 @@ void TestSplitCDS(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFram
     BOOST_CHECK_EQUAL(adjusted_feats.back()->GetData().GetCdregion().GetFrame(), frame_two);
     CheckQual(*(adjusted_feats.back()), "orig_protein_id", "x_2");
     CheckQual(*(adjusted_feats.back()), "orig_transcript_id", "y_2");
+
+    TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
 }
 
 
@@ -322,6 +382,8 @@ void TestTrimCDS(TSeqPos start, TSeqPos stop, CCdregion::TFrame frame_before, CC
     }
     CheckQual(*(adjusted_feats.front()), "orig_protein_id", "x");
     CheckQual(*(adjusted_feats.front()), "orig_transcript_id", "y");
+
+    TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
 }
 
 
@@ -345,6 +407,24 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDS)
     TestTrimCDS(18, 33, CCdregion::eFrame_one, CCdregion::eFrame_two);
     // trim right
     TestTrimCDS(0, 15, CCdregion::eFrame_one, CCdregion::eFrame_one);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestRemoveCDS)
+{
+    edit::TGappedFeatList gapped_list = TryOneCDSCase(12, 21, 10, CCdregion::eFrame_one);
+
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 0);
+
+    TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
 }
 
 
@@ -511,10 +591,130 @@ BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
 
+}
 
 
+void AddCodeBreak(CSeq_feat_Handle cds, TSeqPos anticodon_start)
+{
+    CSeq_annot_Handle p = cds.GetAnnot();
+    CSeq_annot_EditHandle pe(p);
+    CSeq_feat_EditHandle ce(cds);
+    CRef<CSeq_feat> cpy(new CSeq_feat());
+    cpy->Assign(*(cds.GetSeq_feat()));
+    CRef<CCode_break> cb(new CCode_break());
+    cb->SetLoc().SetInt().SetId().Assign(*(cpy->GetLocation().GetId()));
+    cb->SetLoc().SetInt().SetFrom(anticodon_start);
+    cb->SetLoc().SetInt().SetTo(anticodon_start + 2);
+    cpy->SetData().SetCdregion().SetCode_break().push_back(cb);
+    ce.Replace(*cpy);
+}
+
+
+CRef<CFeatGapInfo> MakeCDSWithCodeBreak(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start)
+{
+    edit::TGappedFeatList gapped_list = TryOneCDSCase(start, stop, 10, CCdregion::eFrame_one);
+
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    CSeq_feat_Handle cds = gapped_list[0]->GetFeature();
+    AddCodeBreak(cds, anticodon_start);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    return gapped_list.front();
+}
+
+
+void TestCodeBreakSplit(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bool first_cb, bool second_cb)
+{
+    CRef<CFeatGapInfo> cds = MakeCDSWithCodeBreak(start, stop, anticodon_start);
+    cds->CalculateRelevantIntervals(false, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
+    BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetCdregion().IsSetCode_break(), first_cb);
+    BOOST_CHECK_EQUAL(adjusted_feats[1]->GetData().GetCdregion().IsSetCode_break(), second_cb);
+}
+
+
+void TestCodeBreakTrim(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bool expect_code_break)
+{
+    CRef<CFeatGapInfo> cds = MakeCDSWithCodeBreak(start, stop, anticodon_start);
+    cds->CalculateRelevantIntervals(false, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = cds->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
+    BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetCdregion().IsSetCode_break(), expect_code_break);
 
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_CodeBreak)
+{
+    TestCodeBreakSplit(0, 32, 9, true, false);
+    TestCodeBreakSplit(0, 32, 10, true, false);
+    TestCodeBreakSplit(0, 32, 11, true, false);
+    TestCodeBreakSplit(0, 32, 12, false, false);
+    TestCodeBreakSplit(0, 32, 22, false, true);
 
+    TestCodeBreakTrim(0, 17, 3, true);
+    TestCodeBreakTrim(0, 17, 12, false);
+    TestCodeBreakTrim(15, 32, 18, false);
+    TestCodeBreakTrim(15, 32, 22, true);
+}
+
+
+CRef<CFeatGapInfo> MakeTrnaWithAnticodon(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+
+    CRef<CSeq_feat> trna = AddMiscFeature(entry);
+
+    trna->SetLocation().SetInt().SetFrom(start);
+    trna->SetLocation().SetInt().SetTo(stop);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetId().Assign(*(trna->GetLocation().GetId()));
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(anticodon_start);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(anticodon_start + 2);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CFeat_CI f(seh);
+
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    return gapped_list.front();
+}
+
+
+void TestAnticodonSplit(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bool first, bool second)
+{
+    CRef<CFeatGapInfo> trna = MakeTrnaWithAnticodon(start, stop, anticodon_start);
+    trna->CalculateRelevantIntervals(false, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
+    BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), first);
+    BOOST_CHECK_EQUAL(adjusted_feats[1]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), second);
+}
+
+
+void TestAnticodonTrim(TSeqPos start, TSeqPos stop, TSeqPos anticodon_start, bool expect_anticodon)
+{
+    CRef<CFeatGapInfo> trna = MakeTrnaWithAnticodon(start, stop, anticodon_start);
+    trna->CalculateRelevantIntervals(false, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = trna->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
+    BOOST_CHECK_EQUAL(adjusted_feats[0]->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), expect_anticodon);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Anticodon)
+{
+    TestAnticodonSplit(0, 32, 9, true, false);
+    TestAnticodonSplit(0, 32, 10, true, false);
+    TestAnticodonSplit(0, 32, 11, true, false);
+    TestAnticodonSplit(0, 32, 12, false, false);
+    TestAnticodonSplit(0, 32, 22, false, true);
+
+    TestAnticodonTrim(0, 17, 3, true);
+    TestAnticodonTrim(0, 17, 12, false);
+    TestAnticodonTrim(15, 32, 18, false);
+    TestAnticodonTrim(15, 32, 22, true);
+}

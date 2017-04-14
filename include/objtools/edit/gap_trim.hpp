@@ -84,6 +84,7 @@ public:
     vector<CRef<CSeq_feat> > AdjustForRelevantGapIntervals(bool make_partial, bool trim, bool split, bool in_intron);
     CSeq_feat_Handle GetFeature() const { return m_Feature; };
 
+    static CRef<CBioseq> AdjustProteinSeq(const CBioseq& seq, const CSeq_feat& feat, const CSeq_feat& orig_cds, CScope& scope);
 
 protected:
     typedef enum {
@@ -111,13 +112,21 @@ protected:
     CSeq_feat_Handle m_Feature;
 
     void x_AdjustOrigLabel(CSeq_feat& feat, size_t& id_offset, string& id_label, const string& qual);
+    CRef<CSeq_id> x_AdjustProtId(const CDbtag& orig_gen, size_t& id_offset);
+    CRef<CSeq_id> x_AdjustProtId(const CSeq_id& orig, size_t& id_offset);
     static void x_AdjustFrame(CCdregion& cdregion, TSeqPos frame_adjust);
+    void x_AdjustCodebreaks(CSeq_feat& feat);
+    void x_AdjustAnticodons(CSeq_feat& feat);
     bool x_UsableInterval(const TGapInterval& interval, bool unknown_length, bool known_length, bool ns);
 };
 
 typedef vector<CRef<CFeatGapInfo> > TGappedFeatList;
 NCBI_XOBJEDIT_EXPORT 
 TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope);
+
+NCBI_XOBJEDIT_EXPORT
+void ProcessForTrimAndSplitUpdates(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> > updates);
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

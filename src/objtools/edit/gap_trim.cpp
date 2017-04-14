@@ -34,6 +34,8 @@
 #include <corelib/ncbistd.hpp>
 #include <objtools/edit/gap_trim.hpp>
 #include <objtools/edit/loc_edit.hpp>
+#include <objtools/edit/cds_fix.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -41,6 +43,13 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Rna_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -308,6 +317,188 @@ void CFeatGapInfo::x_AdjustOrigLabel(CSeq_feat& feat, size_t& id_offset, string&
 }
 
 
+CRef<CSeq_id> CFeatGapInfo::x_AdjustProtId(const CDbtag& orig_gen, size_t& id_offset)
+{
+    string id_base;
+    if (!orig_gen.IsSetTag()) {
+        id_base = kEmptyStr;
+    } else if (orig_gen.GetTag().IsId())
+    {
+        id_base = NStr::NumericToString(orig_gen.GetTag().GetId());
+    } else {
+        id_base = orig_gen.GetTag().GetStr();
+    }
+
+    CRef<CSeq_id> new_id(new CSeq_id());
+    new_id->SetGeneral().Assign(orig_gen);
+    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(id_offset));
+    return new_id;
+}
+
+
+CRef<CSeq_id> CFeatGapInfo::x_AdjustProtId(const CSeq_id& orig, size_t& id_offset)
+{
+    if (orig.IsGeneral()) {
+        return x_AdjustProtId(orig.GetGeneral(), id_offset);
+    } else {
+        string id_base;
+        orig.GetLabel(&id_base, NULL, CSeq_id::eContent);
+        CRef<CSeq_id> new_id(new CSeq_id());
+        new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(id_offset));
+        return new_id;
+    }
+}
+
+
+CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat& feat, const CSeq_feat& orig_cds, CScope& scope)
+{
+    if (!feat.IsSetProduct() || !feat.GetProduct().IsWhole() || !seq.IsAa()) {
+        return CRef<CBioseq>(NULL);
+    }
+
+    TSeqPos orig_len = seq.GetInst().GetLength();
+
+    string prot;
+    CSeqTranslator::Translate(feat, scope, prot);
+    if (prot.empty()) {
+        return CRef<CBioseq>(NULL);
+    }
+
+    CRef<CBioseq> prot_seq(new CBioseq);
+    prot_seq->Assign(seq);
+    prot_seq->SetInst().ResetExt();
+    prot_seq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    prot_seq->SetInst().SetSeq_data().SetIupacaa().Set(prot);
+    prot_seq->SetInst().SetLength(TSeqPos(prot.length()));
+    prot_seq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    bool replaced = false;
+    // fix sequence ID
+    const CSeq_id& feat_prod = feat.GetProduct().GetWhole();
+    if (!feat_prod.Equals(orig_cds.GetProduct().GetWhole())) {
+        NON_CONST_ITERATE(CBioseq::TId, id, prot_seq->SetId()) {
+            if ((*id)->Which() == feat_prod.Which()) {
+                bool do_replace = false;
+                if ((*id)->IsGeneral()) {
+                    if ((*id)->GetGeneral().IsSetDb()) {
+                        if (feat_prod.GetGeneral().IsSetDb() &&
+                            NStr::Equal(feat_prod.GetGeneral().GetDb(), (*id)->GetGeneral().GetDb())) {
+                            do_replace = true;
+                        }
+                    } else if (!feat_prod.GetGeneral().IsSetDb()) {
+                        do_replace = true;
+                    }
+                } else {
+                    do_replace = true;
+                }
+                if (do_replace) {
+                    (*id)->Assign(feat.GetProduct().GetWhole());
+                }
+            }
+        }
+    }
+    // fix molinfo
+    if (prot_seq->IsSetDescr()) {
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, mi, prot_seq->SetDescr().Set()) {
+            if ((*mi)->IsMolinfo()) {
+                feature::AdjustProteinMolInfoToMatchCDS((*mi)->SetMolinfo(), feat);
+            }
+        }
+    }
+
+    // also fix protein feature locations
+    if (prot_seq->IsSetAnnot()) {
+        
+        CRef<CSeq_loc_Mapper> nuc2prot_mapper(
+            new CSeq_loc_Mapper(orig_cds, CSeq_loc_Mapper::eLocationToProduct, &scope));
+        CRef<CSeq_loc> prot_shadow = nuc2prot_mapper->Map(feat.GetLocation());
+        TSeqPos start = prot_shadow->GetStart(eExtreme_Positional);
+        TSeqPos stop = prot_shadow->GetStop(eExtreme_Positional);
+        NON_CONST_ITERATE(CBioseq::TAnnot, ait, prot_seq->SetAnnot()) {
+            if ((*ait)->IsFtable()) {
+                CSeq_annot::TData::TFtable::iterator fit = (*ait)->SetData().SetFtable().begin();
+                while (fit != (*ait)->SetData().SetFtable().end()) {
+                    CRef<CSeq_loc> new_prot_loc(new CSeq_loc());
+                    new_prot_loc->Assign((*fit)->GetLocation());
+                    bool complete_cut = false;
+                    bool adjusted = false;
+                    TSeqPos removed = 0;
+                    if (start > 0) {
+                        SeqLocAdjustForTrim(*new_prot_loc, 0, start - 1, orig_cds.GetProduct().GetId(), complete_cut, removed, adjusted);
+                    }
+                    if (!complete_cut && stop < orig_len - 1) {
+                        SeqLocAdjustForTrim(*new_prot_loc, stop + 1, orig_len - 1, orig_cds.GetProduct().GetId(), complete_cut, removed, adjusted);
+                    }
+                    if (complete_cut) {
+                        // out of range, drop this one
+                        fit = (*ait)->SetData().SetFtable().erase(fit);
+                    } else {
+                        new_prot_loc->SetId(feat_prod);
+                        AdjustProteinFeaturePartialsToMatchCDS(**fit, feat);
+                        if (!feat_prod.Equals(orig_cds.GetProduct().GetWhole())) {
+                            // fix sequence ID
+                            (*fit)->SetLocation().Assign(*new_prot_loc);
+                        }
+                    }
+                    ++fit;
+                }
+            }
+        }
+    }
+
+    return prot_seq;
+}
+
+
+void CFeatGapInfo::x_AdjustCodebreaks(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
+        !feat.GetData().GetCdregion().IsSetCode_break()) {
+        return;
+    }
+    CCdregion& cdr = feat.SetData().SetCdregion();
+    CCdregion::TCode_break::iterator cit = cdr.SetCode_break().begin();
+    while (cit != cdr.SetCode_break().end()) {
+        bool do_remove = false;
+        if ((*cit)->IsSetLoc()) {
+            CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect((*cit)->GetLoc(), 0, NULL);
+            if (new_loc && !new_loc->IsEmpty() && !new_loc->IsNull()) {
+                (*cit)->SetLoc().Assign(*new_loc);
+            } else {
+                do_remove = true;
+            }
+        }
+        if (do_remove) {
+            cit = cdr.SetCode_break().erase(cit);
+        } else {
+            ++cit;
+        }
+    }
+    if (cdr.GetCode_break().empty()) {
+        cdr.ResetCode_break();
+    }
+}
+
+
+void CFeatGapInfo::x_AdjustAnticodons(CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna() ||
+        !feat.GetData().GetRna().IsSetExt() ||
+        !feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return;
+    }
+    CTrna_ext& trna = feat.SetData().SetRna().SetExt().SetTRNA();
+    if (!trna.IsSetAnticodon()) {
+        return;
+    }
+    CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect(trna.GetAnticodon(), 0, NULL);
+    if (new_loc && !new_loc->IsEmpty() && !new_loc->IsNull()) {
+        trna.SetAnticodon().Assign(*new_loc);
+    } else {
+        trna.ResetAnticodon();
+    }
+}
+
+
 // returns a list of features to replace the original
 // if list is empty, feature should be removed
 // list should only contain one element if split is not specified
@@ -329,6 +520,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
         Trim(new_feat->SetLocation(), make_partial, m_Feature.GetScope());
         new_feat->SetPartial(new_feat->GetLocation().IsPartialStart(objects::eExtreme_Positional) || new_feat->GetLocation().IsPartialStop(objects::eExtreme_Positional));
         if (new_feat->GetData().IsCdregion()) {
+            // adjust frame
             TSeqPos frame_adjust = sequence::LocationOffset(m_Feature.GetLocation(), new_feat->GetLocation(),
                 sequence::eOffset_FromStart, &(m_Feature.GetScope()));
             x_AdjustFrame(new_feat->SetData().SetCdregion(), frame_adjust);
@@ -356,6 +548,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
             string transcript_id_label = kEmptyStr;
             size_t protein_id_offset = 1;
             string protein_id_label = kEmptyStr;
+            size_t protein_seqid_offset = 1;
 
             ITERATE(vector<CRef<CSeq_loc> >, lit, locs) {
                 CRef<CSeq_feat> split_feat(new CSeq_feat());
@@ -367,11 +560,23 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                 //adjust transcript id
                 x_AdjustOrigLabel(*split_feat, transcript_id_offset, transcript_id_label, "orig_transcript_id");
                 x_AdjustOrigLabel(*split_feat, protein_id_offset, protein_id_label, "orig_protein_id");
-                // adjust frame
                 if (split_feat->GetData().IsCdregion()) {
+                    // adjust frame
                     TSeqPos frame_adjust = sequence::LocationOffset(new_feat->GetLocation(), split_feat->GetLocation(),
                         sequence::eOffset_FromStart, &(m_Feature.GetScope()));
                     x_AdjustFrame(split_feat->SetData().SetCdregion(), frame_adjust);
+                    // adjust product ID
+                    if (split_feat->IsSetProduct() && split_feat->GetProduct().IsWhole()) {
+                        CRef<CSeq_id> new_id = x_AdjustProtId(split_feat->GetProduct().GetWhole(), protein_seqid_offset);
+                        protein_seqid_offset++;
+                        CBioseq_Handle bsh = m_Feature.GetScope().GetBioseqHandle(*new_id);
+                        while (bsh) {                            
+                            new_id = x_AdjustProtId(split_feat->GetProduct().GetWhole(), protein_seqid_offset);
+                            protein_seqid_offset++;
+                            bsh = m_Feature.GetScope().GetBioseqHandle(*new_id);
+                        }
+                        split_feat->SetProduct().SetWhole().Assign(*new_id);
+                    }
                 }
 
                 rval.push_back(split_feat);
@@ -382,6 +587,10 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
         }
     } else {
         rval.push_back(new_feat);
+    }
+    NON_CONST_ITERATE(vector<CRef<CSeq_feat> >, it, rval) {
+        x_AdjustCodebreaks(**it);
+        x_AdjustAnticodons(**it);
     }
     return rval;
 }
@@ -432,6 +641,36 @@ TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope)
         ++feat_it;
     }
     return gapped_feats;
+}
+
+
+void ProcessForTrimAndSplitUpdates(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> > updates)
+{
+    CBioseq_Handle orig_prot_handle = cds.GetScope().GetBioseqHandle(cds.GetProduct());
+    CConstRef<CBioseq> orig_prot = orig_prot_handle.GetCompleteBioseq();
+    CBioseq_set_Handle nph = orig_prot_handle.GetParentBioseq_set();
+    CBioseq_set_EditHandle npeh(nph);
+    // need to remove original first if not changing sequence IDs
+    CBioseq_EditHandle beh(orig_prot_handle);
+    beh.Remove();
+    ITERATE(vector<CRef<CSeq_feat> >, it, updates) {
+        CRef<CBioseq> new_prot = CFeatGapInfo::AdjustProteinSeq(*orig_prot, **it, *(cds.GetSeq_feat()), cds.GetScope());
+        if (new_prot) {
+            npeh.AttachBioseq(*new_prot);
+        }
+    }
+
+    CSeq_annot_Handle sah = cds.GetAnnot();
+    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
+    CSeq_feat_EditHandle feh(cds);
+    if (updates.size() == 0) {
+        feh.Remove();
+    } else {
+        feh.Replace(*(updates[0]));
+        for (size_t i = 1; i < updates.size(); i++) {
+            saeh.AddFeat(*(updates[i]));
+        }
+    }
 }
 
 
