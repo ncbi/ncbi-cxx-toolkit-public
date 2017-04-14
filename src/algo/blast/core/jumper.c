@@ -4442,17 +4442,17 @@ Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
     return 0;
 }
 
+#define NUM_DIMERS (1 << 4)
 
 /* Compute enrtopy of 2-mers in a BLASTNA sequence */
 static Int4 s_FindDimerEntropy(Uint1* sequence, Int4 length)
 {
-    const Int4 kNumDimers = 1 << 4;
-    Int4 counts[kNumDimers];
+    Int4 counts[NUM_DIMERS];
     Int4 num = 0;
     Int4 i;
     double sum = 0.0;
 
-    memset(counts, 0, kNumDimers * sizeof(Int4));
+    memset(counts, 0, NUM_DIMERS * sizeof(Int4));
     // count dimers
     for (i=0;i < length - 1;i++) {
         Uint1 base_1 = sequence[i];
@@ -4466,7 +4466,7 @@ static Int4 s_FindDimerEntropy(Uint1* sequence, Int4 length)
     }
 
     // compute amount of information in the sequence
-    for (i=0;i < kNumDimers;i++) {
+    for (i=0;i < NUM_DIMERS;i++) {
         if (counts[i]) {
             sum += (double)counts[i] * log((double)counts[i] / num);
         }
