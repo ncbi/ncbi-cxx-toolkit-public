@@ -594,9 +594,8 @@ extern SSERV_Info* SERV_CopyInfo(const SSERV_Info* orig)
 
 const char* SERV_NameOfInfo(const SSERV_Info* info)
 {
-    if (!info)
-        return 0;
-    return info->type != fSERV_Dns  ||  info->u.dns.name
+    return !info ? 0
+        : info->type != fSERV_Dns  ||  info->u.dns.name
         ? (const char*) info + SERV_SizeOfInfo(info) : "";
 }
 
