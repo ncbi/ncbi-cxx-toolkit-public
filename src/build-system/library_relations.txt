@@ -140,8 +140,7 @@ blast needs tables
 blast_app_util needs $(BLAST_INPUT_LIBS)
 blast_app_util needs $(BLAST_LIBS)
 blast_services needs xnetblastcli
-blast_sra_input needs $(BLAST_INPUT_LIBS)
-blast_sra_input needs $(BLAST_LIBS)
+blast_sra_input needs $(SOBJMGR_LIBS)
 blast_sra_input needs $(SRAREAD_LIBS)
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
