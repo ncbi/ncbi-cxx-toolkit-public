@@ -499,6 +499,15 @@ void CFeatGapInfo::x_AdjustAnticodons(CSeq_feat& feat)
 }
 
 
+void s_FixPartial(CSeq_feat& feat)
+{
+    if (feat.GetLocation().IsPartialStart(eExtreme_Biological) ||
+        feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        feat.SetPartial(true);
+    }
+}
+
+
 // returns a list of features to replace the original
 // if list is empty, feature should be removed
 // list should only contain one element if split is not specified
@@ -578,7 +587,6 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                         split_feat->SetProduct().SetWhole().Assign(*new_id);
                     }
                 }
-
                 rval.push_back(split_feat);
             }
 
@@ -591,6 +599,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
     NON_CONST_ITERATE(vector<CRef<CSeq_feat> >, it, rval) {
         x_AdjustCodebreaks(**it);
         x_AdjustAnticodons(**it);
+        s_FixPartial(**it);
     }
     return rval;
 }
