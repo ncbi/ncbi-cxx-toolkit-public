@@ -569,7 +569,7 @@ public:
 
     /// Convert string to number of bytes. 
     ///
-    /// String can contain "software" qualifiers: MB(megabyte), KB (kilobyte)..
+    /// String can contain "software" qualifiers: MB(megabyte), KB (kilobyte).
     /// Example: 100MB, 1024KB
     /// Note the qualifiers are power-of-2 based, aka kibi-, mebi- etc, so that
     /// 1KB = 1024B (not 1000B), 1MB = 1024KB = 1048576B, etc.
@@ -2489,14 +2489,16 @@ public:
                                 const CTempString    delim,
                                 list<CTempString>&   arr,
                                 TSplitFlags          flags, // required
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     static vector<CTempString>& Split(
                                 const CTempString    str,
                                 const CTempString    delim,
                                 vector<CTempString>& arr,
                                 TSplitFlags          flags = 0,
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     static list<CTempStringEx>& Split(
                                 const CTempString    str,
@@ -2572,7 +2574,8 @@ public:
                            const CTempString  delim,
                            CTempString&       str1,
                            CTempString&       str2,
-                           TSplitFlags        flags = 0);
+                           TSplitFlags        flags = 0,
+                           CTempString_Storage* storage = NULL);
 
     static bool SplitInTwo(const CTempString  str, 
                            const CTempString  delim,
@@ -2619,28 +2622,32 @@ public:
                                 const CTempString    delim,
                                 list<CTempString>&   arr,
                                 TSplitFlags          flags = 0,
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     static vector<CTempString>& SplitByPattern(
                                 const CTempString    str,
                                 const CTempString    delim,
                                 vector<CTempString>& arr,
                                 TSplitFlags          flags = 0,
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     static list<CTempStringEx>& SplitByPattern(
                                 const CTempString    str,
                                 const CTempString    delim,
                                 list<CTempStringEx>& arr,
                                 TSplitFlags          flags = 0,
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     static vector<CTempStringEx>& SplitByPattern(
                                 const CTempString    str,
                                 const CTempString    delim,
                                 vector<CTempStringEx>& arr,
                                 TSplitFlags          flags = 0,
-                                vector<SIZE_TYPE>*   token_pos = NULL);
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
     /// Tokenize a string using the specified set of char delimiters.
     ///
@@ -2777,8 +2784,7 @@ public:
     /// @sa
     ///   ParseEscapes, CEncode, CParse, Sanitize
     static string PrintableString(const CTempString str,
-                                  TPrintableMode    mode =
-                                  fNewLine_Quote | fNonAscii_Passthru);
+                                  TPrintableMode    mode = fNewLine_Quote | fNonAscii_Passthru);
 
     /// Flags for Sanitize().
     enum ESS_Flags {
