@@ -137,6 +137,7 @@ void CBlastOptionsLocal::x_Copy_CQuerySetUpOptions(
         SSegOptions*            segOptionsNew = NULL;
         SRepeatFilterOptions*   repeatFilterOptionsNew = NULL;
         SWindowMaskerOptions*   windowMaskerOptionsNew = NULL;
+        SReadQualityOptions*    readQualityOptionsNew = NULL;
 
         if (queryOptsSrc->filtering_options->dustOptions)
         {
@@ -178,11 +179,18 @@ void CBlastOptionsLocal::x_Copy_CQuerySetUpOptions(
                            windowMaskerOptions->database);
             }
         }
+        if (queryOptsSrc->filtering_options->readQualityOptions) {
+            readQualityOptionsNew =
+                (SReadQualityOptions*)BlastMemDup(
+                    queryOptsSrc->filtering_options->readQualityOptions,
+                    sizeof(SReadQualityOptions));
+        }
 
         blastFilterOptionsNew->dustOptions = dustOptionsNew;
         blastFilterOptionsNew->segOptions = segOptionsNew;
         blastFilterOptionsNew->repeatFilterOptions = repeatFilterOptionsNew;
         blastFilterOptionsNew->windowMaskerOptions = windowMaskerOptionsNew;
+        blastFilterOptionsNew->readQualityOptions = readQualityOptionsNew;
 
         querySetUpOptionsNew->filtering_options = blastFilterOptionsNew;
     }

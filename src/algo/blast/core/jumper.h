@@ -301,6 +301,7 @@ Int2 DoAnchoredSearch(BLAST_SequenceBlk* query,
 
 
 Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
+                             const SReadQualityOptions* options,
                              BlastSeqLoc** seq_loc);
 
 

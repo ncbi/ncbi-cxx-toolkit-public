@@ -151,6 +151,15 @@ public:
     int GetQueryGeneticCode() const;
     void SetQueryGeneticCode(int gc);
 
+    bool GetReadQualityFiltering(void) const;
+    void SetReadQualityFiltering(bool val = true);
+
+    double GetReadMaxFractionAmbiguous(void) const;
+    void SetReadMaxFractionAmbiguous(double val);
+
+    int GetReadMinDimerEntropy(void) const;
+    void SetReadMinDimerEntropy(int val);
+
     /******************* Initial word options ***********************/
     int GetWindowSize() const;
     void SetWindowSize(int w);
@@ -983,6 +992,73 @@ CBlastOptionsLocal::SetQueryGeneticCode(int gc)
 {
     m_QueryOpts->genetic_code = gc;
 }
+
+inline bool
+CBlastOptionsLocal::GetReadQualityFiltering(void) const
+{
+    if (m_QueryOpts->filtering_options->readQualityOptions) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+inline void
+CBlastOptionsLocal::SetReadQualityFiltering(bool val /* = true */)
+{
+    m_QueryOpts->filtering_options->readQualityOptions =
+        SReadQualityOptionsFree(
+                         m_QueryOpts->filtering_options->readQualityOptions);
+
+    if (val) {
+        SReadQualityOptionsNew(
+                       &m_QueryOpts->filtering_options->readQualityOptions);
+    }
+}
+
+inline double
+CBlastOptionsLocal::GetReadMaxFractionAmbiguous(void) const
+{
+    if (m_QueryOpts->filtering_options->readQualityOptions == NULL) {
+        return -1.0;
+    }
+
+    return m_QueryOpts->filtering_options->readQualityOptions->frac_ambig;
+}
+
+inline void
+CBlastOptionsLocal::SetReadMaxFractionAmbiguous(double val)
+{
+    if (m_QueryOpts->filtering_options->readQualityOptions == NULL) {
+        SReadQualityOptionsNew(
+                       &m_QueryOpts->filtering_options->readQualityOptions);
+    }
+
+    m_QueryOpts->filtering_options->readQualityOptions->frac_ambig = val;
+}
+
+inline int
+CBlastOptionsLocal::GetReadMinDimerEntropy(void) const
+{
+    if (m_QueryOpts->filtering_options->readQualityOptions == NULL) {
+        return -1;
+    }
+
+    return m_QueryOpts->filtering_options->readQualityOptions->entropy;
+}
+
+inline void
+CBlastOptionsLocal::SetReadMinDimerEntropy(int val)
+{
+    if (m_QueryOpts->filtering_options->readQualityOptions == NULL) {
+        SReadQualityOptionsNew(
+                       &m_QueryOpts->filtering_options->readQualityOptions);
+    }
+    
+    m_QueryOpts->filtering_options->readQualityOptions->entropy = val;
+}
+
 
 /******************* Initial word options ***********************/
 inline int

@@ -98,6 +98,28 @@ public:
 
     /******************* Query setup options ************************/
 
+    /// Return true if query quality filtering is on
+    bool GetReadQualityFiltering() const
+    { return m_Opts->GetReadQualityFiltering(); }
+
+    /// Turn on/off query quaility filtering with default parameters
+    void SetReadQualityFiltering(bool val = true)
+    { m_Opts->SetReadQualityFiltering(val); }
+
+    /// Get maximum fraction of ambiguous bases for query quality filtering
+    double GetMaxFractionAmbiguous() const
+    { return m_Opts->GetReadMaxFractionAmbiguous(); }
+
+    /// Get maximum fraction of ambiguous bases for query quality filtering
+    void SetMaxFractionAmbiguous(double val)
+    { m_Opts->SetReadMaxFractionAmbiguous(val); }
+
+    /// Get mininum dimer entropy for query quality filtering
+    int GetMinDimerEntropy() const { return m_Opts->GetReadMinDimerEntropy(); }
+
+    /// Set minimum dimer entropy for query quality filtering
+    void SetMinDimerEntropy(int val) { m_Opts->SetReadMinDimerEntropy(val); }
+
     
     /******************* Initial word options ***********************/
 

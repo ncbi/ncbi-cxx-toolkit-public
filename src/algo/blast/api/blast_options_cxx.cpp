@@ -1358,6 +1358,66 @@ CBlastOptions::SetWindowMaskerDatabase(const char * value)
     }
 }
 
+bool
+CBlastOptions::GetReadQualityFiltering() const
+{
+    if (!m_Local) {
+        x_Throwx("Error: GetReadQualityFiltering() not available.");
+    }
+
+    return m_Local->GetReadQualityFiltering();
+}
+
+void
+CBlastOptions::SetReadQualityFiltering(bool val /* = true */)
+{
+    if (!m_Local) {
+        x_Throwx("Error: SetReadQualityFiltering() not available.");
+    }
+
+    m_Local->SetReadQualityFiltering(val);
+}
+
+double
+CBlastOptions::GetReadMaxFractionAmbiguous() const
+{
+    if (!m_Local) {
+        x_Throwx("Error: GetReadMaxFractionAmbiguous() not available.");
+    }
+
+    return m_Local->GetReadMaxFractionAmbiguous();
+}
+
+void
+CBlastOptions::SetReadMaxFractionAmbiguous(double val)
+{
+    if (!m_Local) {
+        x_Throwx("Error: SetReadMaxFractionAmbiguous() not available.");
+    }
+
+    m_Local->SetReadMaxFractionAmbiguous(val);
+}
+
+int
+CBlastOptions::GetReadMinDimerEntropy() const
+{
+    if (!m_Local) {
+        x_Throwx("Error: GetReadMinDimerEntropy() not available.");
+    }
+
+    return m_Local->GetReadMinDimerEntropy();
+}
+
+void
+CBlastOptions::SetReadMinDimerEntropy(int val)
+{
+    if (!m_Local) {
+        x_Throwx("Error: SetReadMinDimerEntropy() not available.");
+    }
+
+    m_Local->SetReadMinDimerEntropy(val);
+}
+
 objects::ENa_strand 
 CBlastOptions::GetStrandOption() const
 {

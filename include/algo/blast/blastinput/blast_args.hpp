@@ -807,7 +807,6 @@ public:
         : CQueryOptionsArgs(false),
           m_IsPaired(false),
           m_InputFormat(eFasta),
-          m_QualityFilter(false),
           m_MateInputStream(NULL)
     {}
 
@@ -823,9 +822,6 @@ public:
     EInputFormat GetInputFormat(void) const
     {return m_InputFormat;}
 
-    /// Should low quality sequences be rejected
-    bool DoQualityFilter(void) const {return m_QualityFilter;}
-
     /// Does the mate input stream exits
     bool HasMateInputStream(void) const {return m_MateInputStream;}
 
@@ -839,7 +835,6 @@ public:
 private:
     bool m_IsPaired;
     EInputFormat m_InputFormat;
-    bool m_QualityFilter;
     vector<string> m_SraAccessions;
 
     CNcbiIstream* m_MateInputStream;

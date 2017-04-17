@@ -1931,7 +1931,7 @@ CMapperQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args.Exist(kArgQualityFilter) && args[kArgQualityFilter]) {
-        m_QualityFilter = args[kArgQualityFilter].AsBoolean();
+        opt.SetReadQualityFiltering(args[kArgQualityFilter].AsBoolean());
     }
 
     if (args.Exist(kArgQueryMate) && args[kArgQueryMate]) {

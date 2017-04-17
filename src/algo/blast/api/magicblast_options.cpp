@@ -149,6 +149,7 @@ CMagicBlastOptionsHandle::SetLookupTableDefaults()
 void
 CMagicBlastOptionsHandle::SetQueryOptionDefaults()
 {
+    SetReadQualityFiltering(true);
     m_Opts->SetDustFiltering(false);
     // Masking is used for filtering out poor quality reads which are masked
     // for the full length. Setting mask at hash to true prevents additional

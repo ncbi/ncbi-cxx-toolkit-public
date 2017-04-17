@@ -1159,8 +1159,9 @@ BlastSetUp_Filter(EBlastProgramType program_number,
 		sparamsp = NULL;
 	}
 
-    if (program_number == eBlastTypeMapping) {
+    if (filter_options->readQualityOptions) {
         status = FilterQueriesForMapping(sequence, length, offset,
+                                         filter_options->readQualityOptions,
                                          seqloc_retval);
     }
 

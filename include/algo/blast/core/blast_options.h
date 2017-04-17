@@ -245,6 +245,12 @@ typedef struct SWindowMaskerOptions {
     const char * database; /**< Use winmasker database at this location. */
 } SWindowMaskerOptions;
 
+/** Filtering options for mapping next-generation sequences */
+typedef struct SReadQualityOptions {
+    double frac_ambig;   /**< Fraction of ambiguous bases */
+    int entropy;         /**< Dimer entropy */
+} SReadQualityOptions;
+
 /** All filtering options */
 typedef struct SBlastFilterOptions {
     Boolean mask_at_hash;         /**< mask query only for lookup table creation */
@@ -253,6 +259,8 @@ typedef struct SBlastFilterOptions {
             (includes translated nucleotides). */
     SRepeatFilterOptions* repeatFilterOptions;  /**< for organism specific repeat filtering. */
     SWindowMaskerOptions* windowMaskerOptions;  /**< organism specific filtering with window masker. */
+
+    SReadQualityOptions* readQualityOptions;    /**< quality filtering for mapping next-generation sequences */
 } SBlastFilterOptions;
 
 
@@ -602,6 +610,19 @@ Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions ** repeat_options);
  */
 NCBI_XBLAST_EXPORT
 Int2 SWindowMaskerOptionsNew(SWindowMaskerOptions ** winmask_options);
+
+/** Allocates memory for SReadQualityOptions, fills in defaults.
+ * @param read_quality_ptions options that are being returned [in|out]
+ * @return zero on sucess
+ */
+NCBI_XBLAST_EXPORT
+Int2 SReadQualityOptionsNew(SReadQualityOptions ** read_quality_options);
+
+/** Frees memory for SReadQualityOptions */
+NCBI_XBLAST_EXPORT
+SReadQualityOptions* SReadQualityOptionsFree(
+                                 SReadQualityOptions * read_quality_options);
+
 
 /** Frees SBlastFilterOptions and all subservient structures.
  * @param filter_options object to free

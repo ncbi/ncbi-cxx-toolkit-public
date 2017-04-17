@@ -239,6 +239,27 @@ public:
     /// silently
     void SetWindowMaskerDatabase(const char* db);
 
+    /// Returns true if next-generation read quality filtering is turned on
+    bool GetReadQualityFiltering() const;
+
+    /// Turn on/off next-generation read quality filtering with deafult
+    /// parameters
+    void SetReadQualityFiltering(bool val = true);
+
+    /// Get maximum fraction of ambiguous bases for next-generation read
+    /// quality filtering
+    double GetReadMaxFractionAmbiguous() const;
+
+    /// Set maximum fraction of ambiguous bases for next-generation read
+    /// quality filtering
+    void SetReadMaxFractionAmbiguous(double val);
+
+    /// Get minimum dimer entropy for next-generation read quality filtering
+    int GetReadMinDimerEntropy() const;
+
+    /// Set minimum dimer entropy for next-generation read quality filtering
+    void SetReadMinDimerEntropy(int val);
+
 #ifndef SKIP_DOXYGEN_PROCESSING
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);

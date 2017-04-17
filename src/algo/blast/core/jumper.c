@@ -4495,9 +4495,10 @@ static Int2 s_MaskSequence(Int4 offset, Int4 length, BlastSeqLoc** seq_locs)
 }
 
 Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
+                             const SReadQualityOptions* options,
                              BlastSeqLoc** seq_loc)
 {
-    const double kMaxFractionOfAmbiguousBases = 0.5;
+    const double kMaxFractionOfAmbiguousBases = options->frac_ambig;
     Int4 i;
     Int4 num = 0;
     Int4 entropy;
@@ -4515,7 +4516,7 @@ Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
     }
 
     entropy = s_FindDimerEntropy(sequence, length);
-    if (entropy <= 16) {
+    if (entropy <= options->entropy) {
         status = s_MaskSequence(offset, length, seq_loc);
     }
 

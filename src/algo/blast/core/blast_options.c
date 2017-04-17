@@ -174,6 +174,33 @@ Int2 SWindowMaskerOptionsResetDB(SWindowMaskerOptions ** winmask_options, const 
     return status;
 }
 
+SReadQualityOptions* SReadQualityOptionsFree(
+                                    SReadQualityOptions* read_quality_options)
+{
+    if (read_quality_options) {
+        free(read_quality_options);
+    }
+
+    return NULL;
+}
+
+Int2 SReadQualityOptionsNew(SReadQualityOptions** read_quality_options)
+{
+    if (!read_quality_options) {
+        return 1;
+    }
+
+    *read_quality_options = calloc(1, sizeof(SReadQualityOptions));
+    if (!*read_quality_options) {
+        return 1;
+    }
+
+    (*read_quality_options)->frac_ambig = 0.5;
+    (*read_quality_options)->entropy = 16;
+
+    return 0;
+}
+
 SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options)
 {
     if (filter_options)
@@ -186,6 +213,8 @@ SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options
             SRepeatFilterOptionsFree(filter_options->repeatFilterOptions);
         filter_options->windowMaskerOptions =
             SWindowMaskerOptionsFree(filter_options->windowMaskerOptions);
+        filter_options->readQualityOptions =
+            SReadQualityOptionsFree(filter_options->readQualityOptions);
         sfree(filter_options);
     }
 
