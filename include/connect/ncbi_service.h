@@ -104,19 +104,20 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  Preferred host to use the service at, nbo.
  * @param net_info
  *  Connection information (NULL prevents use of the network dispatching via
- *  DISPD, still allowing use of LBOS).
- * @note If "net_info" is NULL, only LOCAL/LBSMD/LBOS mappers will be
- *       consulted. If "net_info" is not NULL, LOCAL/LBSMD/LBOS are consulted
- *       first, and then DISPD is consulted last (using the connection
- *       information provided) but only if mapping with LOCAL/LBSMD/LBOS (if
- *       any occurred) has failed.
+ *  DISPD, still allowing use of LBOS/NAMERD).
+ * @note If "net_info" is NULL, only LOCAL/LBSMD/LBOS/NAMERD mappers will be
+ *       consulted. If "net_info" is not NULL, LOCAL/LBSMD/LBOS/NAMERD are
+ *       consulted first, and then DISPD is consulted last (using the connection
+ *       information provided) but only if mapping with LOCAL/LBSMD/LBOS/NAMERD
+ *       (if any occurred) has failed.
  * @note The registry section [CONN], keys LOCAL_DISABLE, LBSMD_DISABLE,
- *       LBOS_DISABLE, and DISPD_DISABLE (which can be overridden by the
- *       environment variables CONN_LOCAL_DISABLE, CONN_LBSMD_DISABLE,
- *       CONN_LBOS_DISABLE, and CONN_DISPD_DISABLE, respectively) can
+ *       LBOS_DISABLE, NAMERD_DISABLE, and DISPD_DISABLE (which can be
+ *       overridden by the environment variables CONN_LOCAL_DISABLE,
+ *       CONN_LBSMD_DISABLE, CONN_LBOS_DISABLE, CONN_NAMERD_DISABLE, and
+ *       CONN_DISPD_DISABLE, respectively) can
  *       be used to skip the corresponding service mappers. This scheme
  *       permits to use any combination of the service mappers
- *       (local/lbsmd/lbos/network-based).
+ *       (local/lbsmd/lbos/namerd/network-based).
  * @note If "net_info" is not NULL then a non-zero value of
  *       "net_info->stateless" forces "types" to get the "fSERV_StatelessOnly"
  *       bit set implicitly.
@@ -243,7 +244,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
  *  Preferred host to use the service at, nbo.
  * @param net_info
  *  Connection information (NULL disables network dispatching via
- *  DISPD, still allowing use of LBOS).
+ *  DISPD, still allowing use of LBOS/NAMERD).
  * @param skip[]
  *  An array of servers NOT to select, see SERV_OpenEx() for notes.
  * @param n_skip

@@ -43,5 +43,7 @@ include(CMakeLists.test_threaded_client.app.txt)
 include(CMakeLists.test_ncbi_conn_stream_mt.app.txt)
 include(CMakeLists.test_ncbi_lbos.app.txt)
 include(CMakeLists.test_ncbi_lbos_mt.app.txt)
+include(CMakeLists.test_ncbi_namerd.app.txt)
+include(CMakeLists.test_ncbi_namerd_mt.app.txt)
 include(CMakeLists.test_ncbi_http_upload.app.txt)
 

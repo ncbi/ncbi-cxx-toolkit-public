@@ -35,6 +35,7 @@
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
+#  include "ncbi_namerd.h"
 #  include "ncbi_lbosp.h"
 #endif
 #include "ncbi_priv.h"
@@ -202,6 +203,7 @@ static SERV_ITER x_Open(const char*         service,
     int/*bool*/
         do_lbsmd = -1/*unassigned*/,
 #ifdef NCBI_CXX_TOOLKIT
+        do_namerd = -1/*unassigned*/,
         do_lbos  = -1/*unassigned*/,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd = -1/*unassigned*/;
@@ -300,12 +302,20 @@ static SERV_ITER x_Open(const char*         service,
                                    (service, REG_CONN_DISPD_DISABLE)))
 #ifdef NCBI_CXX_TOOLKIT
                                 &&
+                                !(do_namerd = s_IsMapperConfigured
+                                  (service, REG_CONN_NAMERD_ENABLE))
+                                &&
                                 !(do_lbos = s_IsMapperConfigured
                                   (service, REG_CONN_LBOS_ENABLE))
 #endif /*NCBI_CXX_TOOLKIT*/
                                 )))
 
 #ifdef NCBI_CXX_TOOLKIT
+        &&
+        (!do_namerd                                                          ||
+         (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured
+                               (service, REG_CONN_NAMERD_ENABLE)))           ||
+         !(op = SERV_NAMERD_Open(iter, net_info, info)))
         &&
         (!do_lbos                                                            ||
          (do_lbos < 0  &&  !(do_lbos = s_IsMapperConfigured
@@ -318,7 +328,7 @@ static SERV_ITER x_Open(const char*         service,
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
                               (service, REG_CONN_DISPD_DISABLE)))            ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
-        if (!do_lbsmd  &&  !do_dispd) {
+        if (!do_namerd  &&  !do_lbsmd  &&  !do_dispd) {
             CORE_LOGF_X(1, eLOG_Error,
                         ("[%s]  No service mappers available", service));
         }

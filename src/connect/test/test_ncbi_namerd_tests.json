@@ -1,0 +1,618 @@
+{
+    "svn_id":   "$Id$",
+    "common":   {
+        "env_set":      [
+            {"CONN_LBSMD_DISABLE":  "1"},
+            {"CONN_DISPD_DISABLE":  "1"},
+            {"CONN_NAMERD_ENABLE":  "1"}
+        ]
+    },
+    "tests":   [
+        {
+            "alias":            "bounce",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "bounce",
+            "expect_hits":      [
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.128",
+                    "port": 54321,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "NCBID",
+                    "host": "130.14.22.49",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "NCBID",
+                    "host": "130.14.18.113",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.19.201",
+                    "port": 80,
+                    "xtra": "/Service/bounce.cgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "NCBID",
+                    "host": "130.14.22.119",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.22.119",
+                    "port": 80,
+                    "xtra": "/Service/bounce.cgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.22.49",
+                    "port": 80,
+                    "xtra": "/Service/bounce.cgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.18.113",
+                    "port": 80,
+                    "xtra": "/Service/bounce.cgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "NCBID",
+                    "host": "130.14.19.201",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.10",
+                    "port": 54321,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.128\",\"port\":54321,\"meta\":{\"mock\":\"true\",\"rate\":17.87,\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.22.119\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":14.56,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.49\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.74,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:27_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.49\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.74,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:28_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.22.10\",\"port\":54321,\"meta\":{\"mock\":\"true\",\"rate\":7.1,\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:29_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.18.113\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.08,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:30_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.19.201\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":13.47,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:31_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.18.113\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.08,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:32_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.119\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":14.56,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:33_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.19.201\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":13.47,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:34_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "account",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.11.30",
+                    "port": 13555,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "demo-project",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "demo-project",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "solr-fls_meta",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "solr-fls_meta",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "130.14.25.46",
+                    "port": 8389,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.25.46\",\"port\":8389,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"solr-fls_meta.service.bethesda-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "bounce via valid env dtab",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "bounce",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.215\",\"port\":11164,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-357.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "demo-project via unrelated env dtab",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "demo-project",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "bounce via valid user header",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "bounce",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.215\",\"port\":11164,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-357.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "demo-project via unrelated user header",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "demo-project",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "demo-project via unrelated user header and env dtab",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "demo-project",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "bounce via conflicting user header and env dtab (env takes precedence)",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "bounce",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/demo-project",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "invalid service name",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "invalid service name",
+            "expect_error":     "yes",
+            "expect_hits":      [],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "invalid service name - leading slash",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "/service/bounce",
+            "expect_error":     "yes",
+            "expect_hits":      [],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "invalid url",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "invalid url",
+            "expect_error":     "yes",
+            "expect_hits":      [],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "FWD - mode \"H\"",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "FWD",
+            "expect_hits":      [
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.113",
+                    "port": 5867,
+                    "loc":  "yes",
+                    "priv": "yes",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.19.201",
+                    "port": 5870,
+                    "loc":  "yes",
+                    "priv": "yes",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.49",
+                    "port": 5861,
+                    "loc":  "yes",
+                    "priv": "yes",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.119",
+                    "port": 5868,
+                    "loc":  "yes",
+                    "priv": "yes",
+                    "stfl": "yes"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.113\",\"port\":5867,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.19.201\",\"port\":5870,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.22.49\",\"port\":5861,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.22.119\",\"port\":5868,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"H\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "service type HTTP - e.g. Accn2Gi - with SERV_ITER repopulation and reset",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "Accn2Gi",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "130.14.18.15",
+                    "port": 80,
+                    "xtra": "/sviewer/viewer.fcgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.18.75",
+                    "port": 80,
+                    "xtra": "/sviewer/viewer.fcgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.22.86",
+                    "port": 80,
+                    "xtra": "/sviewer/viewer.fcgi",
+                    "loc":  "no",
+                    "priv": "no"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.22.13",
+                    "port": 80,
+                    "xtra": "/sviewer/viewer.fcgi",
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "iter-repop":       "yes",
+            "iter-reset":       "yes",
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.22.13\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":24.65,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:28_\",\"stateful\":false,\"extra\":\"/sviewer/viewer.fcgi?save=idf&view=gi&maxplex=0\"}},{\"ip\":\"130.14.18.15\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":22.61,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:23_\",\"stateful\":false,\"extra\":\"/sviewer/viewer.fcgi?save=idf&view=gi&maxplex=0\"}},{\"ip\":\"130.14.18.75\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":22.5,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:24_\",\"stateful\":false,\"extra\":\"/sviewer/viewer.fcgi?save=idf&view=gi&maxplex=0\"}},{\"ip\":\"130.14.22.86\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":20.73,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:27_\",\"stateful\":false,\"extra\":\"/sviewer/viewer.fcgi?save=idf&view=gi&maxplex=0\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "service type DNS - e.g. alndbasn_lb",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "alndbasn_lb",
+            "expect_hits":      [
+                {
+                    "type": "DNS",
+                    "host": "130.14.23.180",
+                    "port": 80,
+                    "loc":  "yes"
+                },
+                {
+                    "type": "DNS",
+                    "host": "130.14.23.35",
+                    "port": 80,
+                    "loc":  "yes"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.23.180\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":364.82,\"serviceType\":\"DNS\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.23.35\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":263.86,\"serviceType\":\"DNS\",\"expires\":\"__________+00:00:22_\",\"stateful\":false,\"mode\":\"L\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "service type STANDALONE - e.g. aligndb_dbldd",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "aligndb_dbldd",
+            "expect_hits":      [
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.23.121",
+                    "port": 11001,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.23.148",
+                    "port": 11001,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.23.243",
+                    "port": 11001,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.23.121\",\"port\":11001,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:24_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.23.148\",\"port\":11001,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.23.243\",\"port\":11001,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"mode\":\"L\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "service type HTTP_POST - e.g. TaxService3Test",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "TaxService3Test",
+            "expect_hits":      [
+                {
+                    "type": "HTTP_POST",
+                    "host": "130.14.24.204",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.24.204\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":19.25,\"serviceType\":\"HTTP_POST\",\"expires\":\"__________+00:00:27_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-asn-binary\",\"mode\":\"L\",\"extra\":\"/Taxonomy/Service/taxservice3.cgi\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "service type NCBID - e.g. MMDevLinux",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "MMDevLinux",
+            "expect_hits":      [
+                {
+                    "type": "NCBID",
+                    "host": "130.14.24.231",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "Special Case: \"External\" services (NAMERD wip, Toolkit wip)",
+            "disabled":         1,
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=59016673",
+            "notes":            "The confluence page for this special case suggests required behavior that doesn't happen.  However, it is a test configuration, so it may not need to be supported generally.",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "TEST_EXTERNAL",
+            "expect_hits":      [
+                {
+                    "type": "unknown",
+                    "host": "unknown",
+                    "port": 0
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "Special Case: \"STANDBY\" mode (NAMERD wip, Toolkit wip)",
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=59016746",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "NC_SV_ObjCache",
+            "expect_hits":      [
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.93",
+                    "port": 9103,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stnd": "Static",
+                    "stfl": "yes"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "Special Case: type-specific metadata (NAMERD done, Toolkit done)",
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=59016772",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "GC_GetAssembly_v3s",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "130.14.18.143",
+                    "port": 80,
+                    "xtra": "/projects/r_gencoll/access/gc_get_assembly_v3.cgi" ,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stnd": "Static"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.22.95",
+                    "port": 80,
+                    "xtra": "/projects/r_gencoll/access/gc_get_assembly_v3.cgi" ,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stnd": "Static"
+                },
+                {
+                    "type": "HTTP",
+                    "host": "130.14.29.110",
+                    "port": 443,
+                    "xtra": "/projects/r_gencoll/access/gc_get_assembly_v3.cgi" ,
+                    "loc":  "no",
+                    "priv": "no",
+                    "stnd": "Foreign"
+                }
+            ],
+            "sock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}",
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.143\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":10000.0,\"standing\":\"Static\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:25_\",\"stateful\":false,\"mode\":\"L\",\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}},{\"ip\":\"130.14.22.95\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":10000.0,\"standing\":\"Static\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"mode\":\"L\",\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}},{\"ip\":\"130.14.29.110\",\"port\":443,\"meta\":{\"mock\":\"true\",\"rate\":100.0,\"standing\":\"Foreign\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:27Z\",\"stateful\":false,\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "Special Case: \"reserved\" servers (NAMERD wip, Toolkit wip)",
+            "disabled":         1,
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=59016775",
+            "notes":            "The confluence page for this special case suggests required behavior that doesn't happen.  However, it is a test configuration, so it may not need to be supported generally.",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "TEST_RESERVED",
+            "expect_hits":      [
+                {
+                    "type": "NCBID",
+                    "host": "130.14.24.204",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "Special Case: DB affinities (NAMERD done, Toolkit wip )",
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=59018312",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "PMQuerySrv/pubmed",
+            "expect_hits":      [
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.152",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.18",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.20",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.18.46",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.12",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.131",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.16",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                },
+                {
+                    "type": "STANDALONE",
+                    "host": "130.14.22.28",
+                    "port": 7011,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "yes"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.46\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:23_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.20\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:24_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.18\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.12\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.16\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.131\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:28_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.28\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:29_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.152\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:30_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
+        },
+        {
+            "alias":            "Special Case: \"Weights\" (NAMERD wip, Toolkit wip)",
+            "disabled":         1,
+            "url":              "https://confluence.ncbi.nlm.nih.gov/pages/viewpage.action?pageId=62723330",
+            "notes":            "Testing this should probably involve hitting a service many times to determine that namerd is returning endpoints weighted according to their rates.",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "TEST_EXTERNAL",
+            "expect_hits":      [
+                {
+                    "type": "NCBID",
+                    "host": "130.14.24.204",
+                    "port": 80,
+                    "loc":  "yes",
+                    "priv": "no",
+                    "stfl": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        }
+    ]
+}

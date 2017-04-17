@@ -277,6 +277,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_LOCAL_ENABLE     "LOCAL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE    "LBSMD_DISABLE"
 #define REG_CONN_LBOS_ENABLE      "LBOS_ENABLE"
+#define REG_CONN_NAMERD_ENABLE    "NAMERD_ENABLE"
 #define REG_CONN_DISPD_DISABLE    "DISPD_DISABLE"
 
 /* Local service dispatcher */
