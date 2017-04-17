@@ -35,9 +35,9 @@
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
-#  include "ncbi_namerd.h"
 #  include "ncbi_lbosp.h"
 #endif
+#include "ncbi_namerd.h"
 #include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>

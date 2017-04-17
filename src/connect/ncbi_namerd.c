@@ -33,8 +33,8 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
-#include "ncbi_namerd.h"
 #include "ncbi_lb.h"
+#include "ncbi_namerd.h"
 #include "ncbi_priv.h"
 #include "parson.h"
 
@@ -1354,9 +1354,9 @@ static void s_Close(SERV_ITER iter)
  *  EXTERNAL
  ***********************************************************************/
 
-const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER iter,
-                                     const SConnNetInfo* net_info,
-                                     SSERV_Info** info)
+extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
+                                            const SConnNetInfo* net_info,
+                                            SSERV_Info**        info)
 {
     struct SNAMERD_Data*    data;
     char                    namerd_env[32];

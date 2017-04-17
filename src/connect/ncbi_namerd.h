@@ -41,11 +41,11 @@
 extern "C" {
 #endif
 
-int SERV_NAMERD_SetConnectorSource(const char* mock_body);
+extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
+                                            const SConnNetInfo* net_info,
+                                            SSERV_Info**        info);
 
-const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
-                                     const SConnNetInfo* net_info,
-                                     SSERV_Info**        info);
+extern int SERV_NAMERD_SetConnectorSource(const char* mock_body);
 
 
 #ifdef __cplusplus
