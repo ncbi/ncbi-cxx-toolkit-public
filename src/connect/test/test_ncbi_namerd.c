@@ -436,8 +436,9 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
     /* Search for matches unless this is a standalone run. */
     if (check_for_match) {
         /* Search for perfect matches first (order is unknown). */
-        for (int it_got=0; it_got < s_n_hits_got; ++it_got) {
-            for (int it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
+        int it_exp, it_got;
+        for (it_got=0; it_got < s_n_hits_got; ++it_got) {
+            for (it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
                 if (s_hits_exp[it_exp].match) continue;
 
                 /*if (check_match(fMatch_Default, it_exp, it_got)) {*/
@@ -453,9 +454,9 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
             }
         }
         /* If not all found, search again but exclude host:port from match. */
-        for (int it_got=0; it_got < s_n_hits_got; ++it_got) {
+        for (it_got=0; it_got < s_n_hits_got; ++it_got) {
             if (s_hits_got[it_got].match) continue;
-            for (int it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
+            for (it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
                 if (s_hits_exp[it_exp].match) continue;
 
                 if (check_match(fMatch_NoHostPort, it_exp, it_got)) {
@@ -471,13 +472,13 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
             }
         }
         /* List any non-matching servers. */
-        for (int it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
+        for (it_exp=0; it_exp < s_n_hits_exp; ++it_exp) {
             if ( ! s_hits_exp[it_exp].match)
                 CORE_LOGF(eLOG_Note, (
                     "    Expected server %d didn't match any found servers.",
                     it_exp));
         }
-        for (int it_got=0; it_got < s_n_hits_got; ++it_got) {
+        for (it_got=0; it_got < s_n_hits_got; ++it_got) {
             if ( ! s_hits_got[it_got].match)
                 CORE_LOGF(eLOG_Note, (
                     "    Found server %d didn't match any expected servers.",
@@ -538,7 +539,8 @@ static int run_tests(int live, const char *test_nums)
     test_arr = x_json_object_get_array(root_obj, "tests");
     n_tests = x_json_array_get_count(test_arr);
     assert(n_tests == x_json_array_get_count(test_arr));
-    for (size_t it = 0; it < n_tests; ++it) {
+    size_t it;
+    for (it = 0; it < n_tests; ++it) {
         x_JSON_Object   *test_obj;
         x_JSON_Array    *hit_arr;
         const char      *svc, *hdr;
@@ -705,7 +707,8 @@ static int run_tests(int live, const char *test_nums)
         s_n_hits_exp = (int)x_json_array_get_count(hit_arr);
         assert(s_n_hits_exp < MAX_HITS);
         CORE_LOGF(eLOG_Note, ("    Expected hits: %d", s_n_hits_exp));
-        for (int it2 = 0; it2 < s_n_hits_exp; ++it2) {
+        int it2;
+        for (it2 = 0; it2 < s_n_hits_exp; ++it2) {
             x_JSON_Object   *hit_obj = x_json_array_get_object(hit_arr, it2);
             const char      *type = "HTTP", *loc = "no", *priv = "no";
             const char      *xtra = "", *stfl = "no";
@@ -813,7 +816,7 @@ static int run_tests(int live, const char *test_nums)
         "Test  Source  Result  Description");
     CORE_LOG (eLOG_Note,
         "----  ------  ------  ----------------------------------------------");
-    for (size_t it = 0; it < n_tests; ++it) {
+    for (it = 0; it < n_tests; ++it) {
         if ( ! s_results[it].result  ||  ! *s_results[it].result  ||
               *s_results[it].result == '-')
         {
@@ -867,7 +870,8 @@ int main(int argc, const char *argv[])
     int         retval = 1;
     int         live = 0;
 
-    for (int i=1; i < argc; ++i) {
+    int i;
+    for (i=1; i < argc; ++i) {
         if (strcmp(argv[i], "-f") == 0  &&  i < argc-1) {
             ++i;
             s_json_file = argv[i];

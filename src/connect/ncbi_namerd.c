@@ -496,8 +496,7 @@ static void s_RemoveStandby(struct SNAMERD_Data* data)
 
 static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
 {
-    SConnNetInfo*   net_info = data->net_info;
-    const char*     name = SERV_NameOfInfo(info);
+    const char* name = SERV_NameOfInfo(info);
     size_t i;
 
     /* First check that the new server info updates an existing one */
