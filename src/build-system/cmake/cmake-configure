@@ -41,6 +41,7 @@ if [ -z "$CXX" ]; then
     CXX=`which g++`
 fi
 BUILD_TYPE="Debug"
+BUILD_SHARED_LIBS=ON
 PREFIX=/usr/local
 LIBDIR=
 CMAKE_ARGS=
@@ -228,7 +229,7 @@ EOF
 #Gpipe specific function
 add_gpipe_warnings() {
     export CFLAGS="${CFLAGS:-}${CFLAGS:+ }-Wmissing-prototypes"
-    export CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }${CPPFLAGS:-}${CPPFLAGS:+ }-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute"
+    export CXXFLAGS="${CXXFLAGS:-}${CXXFLAGSf:+ }-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute"
 }
 
 #MAIN
@@ -386,6 +387,17 @@ while [ $# != 0 ]; do
             shift
             ;;
 
+        "--docdir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "${1#*=}")";;
+        "--docdir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "$2")"; shift;;
+
+        "--with-experimental="*)
+            EXPERIMENTAL="${1#*=}";;
+
+        "--with-experimental")
+            EXPERIMENTAL="${2}"; shift;;
+
         "--pass-thru")
             shift;
             while [ $# != 0 ]; do
@@ -447,9 +459,31 @@ if [ ! -z "$MAX_DEBUG" ]; then
     CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }-D_GLIBCXX_DEBUG"
 fi
 
+if [ ! -z "$EXPERIMENTAL" ]; then
+    for x in `echo $EXPERIMENTAL | tr , ' '`; do
+        case "$x" in
+            ChaosMonkey )
+                CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+                ;;
+            Int8GI )
+                CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
+                NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
+                ;;
+            StrictGI )
+                CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+                NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
+                ;;
+            * )
+                echo "cmake-configure: error: unrecognized experimental feature \"$x\"." >&2
+                exit 1;;
+        esac
+    done
+fi
+
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(quote "$CXX")"
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(quote "$CC")"
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(quote "$CFLAGS")"
+CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }${CPPFLAGS:-}${CPPFLAGS:+ }"
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_FLAGS=$(quote "$CXXFLAGS")"
 
 mkdir -p $ROOT/build
