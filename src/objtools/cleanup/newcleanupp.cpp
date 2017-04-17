@@ -6944,6 +6944,9 @@ void CNewCleanup_imp::x_FixUpEllipsis( string &str )
 
 void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
 {
+    if (val.empty()) {
+        return;
+    }
     // holds the first and last pos that we will keep
     // (have to use "ints" since might be negative)
     int first_pos = 0;
