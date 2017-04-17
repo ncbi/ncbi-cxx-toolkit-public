@@ -224,6 +224,12 @@ public:
 /// @return Boolean return value indicates whether the feature was extended
     static bool ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh, bool check_for_stop = true);
 
+/// Checks whether it is possible to extend the original location up to improved one. It is possible only if
+/// the original location is less than improved
+/// @param orig Seq-loc to check
+/// @param improved Seq-loc original location may be extended to
+/// @return Boolean return value indicates whether the extention is possible
+    static bool LocationMayBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc& improved);
 
 /// Extends a feature up to limit nt to a stop codon, or to the end of the sequence
 /// if limit == 0 (partial will be set if location extends to end of sequence but

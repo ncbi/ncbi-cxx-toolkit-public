@@ -853,19 +853,6 @@ bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
 }
 
 
-bool s_LocationShouldBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc& improved)
-{
-    if ((orig.GetStrand() == eNa_strand_minus &&
-        orig.GetStop(eExtreme_Biological) > improved.GetStop(eExtreme_Biological)) ||
-        (orig.GetStrand() != eNa_strand_minus &&
-        orig.GetStop(eExtreme_Biological) < improved.GetStop(eExtreme_Biological))) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name)
 {
     bool any_changes = false;
@@ -886,7 +873,7 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
             if ((options & eFixCDS_ExtendToStop) &&
                 x_BatchExtendCDS(*sf, *bi)) {
                 CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*orig, seh.GetScope());
-                if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf->GetLocation())) {
+                if (mrna && CCleanup::LocationMayBeExtendedToMatch(mrna->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_mrna(new CSeq_feat());
                     new_mrna->Assign(*mrna);
                     if (CCleanup::ExtendStopPosition(*new_mrna, sf)) {
@@ -895,7 +882,7 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
                     }
                 }
                 CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*orig, seh.GetScope());
-                if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf->GetLocation())) {
+                if (gene && CCleanup::LocationMayBeExtendedToMatch(gene->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat());
                     new_gene->Assign(*gene);
                     if (CCleanup::ExtendStopPosition(*new_gene, sf)) {

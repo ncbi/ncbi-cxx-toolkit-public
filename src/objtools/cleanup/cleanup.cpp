@@ -1248,6 +1248,18 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
 }
 
 
+bool CCleanup::LocationMayBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc& improved)
+{
+    if ((orig.GetStrand() == eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) > improved.GetStop(eExtreme_Biological)) ||
+        (orig.GetStrand() != eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) < improved.GetStop(eExtreme_Biological))) {
+        return true;
+    }
+
+    return false;
+}
+
 void CCleanup::SetProteinName(CProt_ref& prot_ref, const string& protein_name, bool append)
 {
     if (append && prot_ref.IsSetName() &&

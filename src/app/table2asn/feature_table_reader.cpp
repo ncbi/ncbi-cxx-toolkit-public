@@ -722,9 +722,9 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
         if (was_extended)
         {
-            if (!mrna.Empty())
+            if (!mrna.Empty() && mrna->IsSetLocation() && CCleanup::LocationMayBeExtendedToMatch(mrna->GetLocation(), cd_feature.GetLocation()))
                 CCleanup::ExtendStopPosition((CSeq_feat&)*mrna, &cd_feature);
-            if (!gene.Empty())
+            if (!gene.Empty() && gene->IsSetLocation() && CCleanup::LocationMayBeExtendedToMatch(gene->GetLocation(), cd_feature.GetLocation()))
                 CCleanup::ExtendStopPosition((CSeq_feat&)*gene, &cd_feature);
         }
     }
