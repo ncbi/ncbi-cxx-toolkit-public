@@ -272,6 +272,11 @@ protected:
         CRef<CSeq_feat>,
         ILineErrorListener*);
 
+    void xAssignVariantSource(
+        CVcfData&,
+        CRef<CSeq_feat>,
+        ILineErrorListener*);
+
     virtual bool
     xProcessScore(
         CVcfData&,
