@@ -1361,6 +1361,39 @@ CVcfReader::xAssignVariantProps(
         infos.erase(it);
     }
 
+    it = infos.find("SOURCE");
+    if (infos.end() != it) {
+        vector<string> sources = it->second;
+        if (sources.size() >= 0 &&
+            NStr::Equal(sources.front(),"dbsnp")) 
+        {
+            bool valid_id=false;
+            for (const string& id : data.m_Ids) {
+                if (NStr::StartsWith(id, "rs") ||
+                    NStr::StartsWith(id, "ss") ) 
+                {
+                    CRef<CDbtag> pDbtag(new CDbtag());
+                    pDbtag->SetDb("dbsnp");
+                    pDbtag->SetTag().SetStr(id);
+                    pFeat->SetDbxref().push_back(pDbtag);
+                    valid_id = true;
+                    break;
+                }
+                if (!valid_id) {
+                    AutoPtr<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
+                            eDiag_Warning,
+                            0,
+                            "CVcfReader::xAssignVariantProps: No valid dbSNP identifier",
+                            ILineError::eProblem_GeneralParsingError) );
+                            ProcessWarning(*pErr, pEC);
+                }
+            }
+            infos.erase(it);
+        }
+    }
+
+
     //superbyte F2
     it = infos.find("R5");
     if (infos.end() != it) {
