@@ -554,6 +554,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
 
             entry->Parentize();
             x_ExtractAndIndex(*entry, timestamp, chunk_id, offset, size);
+            ostr_seqids << bs->GetFirstId()->AsFastaString() << '\n';
 
             // extract canonical IDs
             // note that we do this without the object manager, for performance
@@ -564,7 +565,6 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
             }
         }
 
-        ostr_seqids << acc << '\n';
     }
 
     LOG_POST(Error << "done, dumped " << count << " items");
