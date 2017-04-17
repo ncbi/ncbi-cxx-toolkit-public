@@ -2343,6 +2343,12 @@ D;OM;OTHERKG;REF;RSPOS=6512061;SAO=1;SSR=0;VC=SNV;VP=050060000a05000002110100;
 dbSNPBuildID=132"
           }
         }
+      },
+      dbxref {
+        {
+          db "dbsnp",
+          tag str "rs121908135"
+        }
       }
     }
   }
