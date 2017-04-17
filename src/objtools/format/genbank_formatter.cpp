@@ -1446,8 +1446,10 @@ bool s_GetLinkFeatureKey(
 		strLink += NStr::IntToString(iTo);
 	}
 	else if (strRawKey != "Precursor") {
-		// TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
-		strLink += "?itemid=TBD";
+		strLink += "?itemid=";
+        string tbd = CFlatSeqLoc(item.GetFeat().GetLocation(), *item.GetContext(),
+            CFlatSeqLoc::eType_assembly, true).GetString();
+		strLink += tbd;
 	}
 
 	strLink += "\">";
