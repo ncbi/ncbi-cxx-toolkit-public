@@ -610,19 +610,19 @@ void CFeatGapInfo::x_AdjustFrame(CCdregion& cdregion, TSeqPos frame_adjust)
     
     if (frame_adjust == 1) {
         if (orig_frame == CCdregion::eFrame_one) {
-            cdregion.SetFrame(CCdregion::eFrame_two);
+            cdregion.SetFrame(CCdregion::eFrame_three); //
         } else if (orig_frame == CCdregion::eFrame_two) {
-            cdregion.SetFrame(CCdregion::eFrame_three);
+            cdregion.SetFrame(CCdregion::eFrame_one); //
         } else if (orig_frame == CCdregion::eFrame_three) {
-            cdregion.SetFrame(CCdregion::eFrame_one);
+            cdregion.SetFrame(CCdregion::eFrame_two);
         }
     } else if (frame_adjust == 2) {
         if (orig_frame == CCdregion::eFrame_one) {
-            cdregion.SetFrame(CCdregion::eFrame_three);
-        } else if (orig_frame == CCdregion::eFrame_two) {
-            cdregion.SetFrame(CCdregion::eFrame_one);
-        } else if (orig_frame == CCdregion::eFrame_three) {
             cdregion.SetFrame(CCdregion::eFrame_two);
+        } else if (orig_frame == CCdregion::eFrame_two) {
+            cdregion.SetFrame(CCdregion::eFrame_three);
+        } else if (orig_frame == CCdregion::eFrame_three) {
+            cdregion.SetFrame(CCdregion::eFrame_one); //
         }
     }
 }

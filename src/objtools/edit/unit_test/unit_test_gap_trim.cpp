@@ -316,7 +316,6 @@ void TestUpdateCDS(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> > adjusted_feats
     ProcessForTrimAndSplitUpdates(cds, adjusted_feats);
 
     CheckTags(seh, orig_tag, adjusted_feats.size());
-
 }
 
 
@@ -349,6 +348,138 @@ void TestSplitCDS(TSeqPos start, TSeqPos stop, TSeqPos gap_len, CCdregion::TFram
     CheckQual(*(adjusted_feats.back()), "orig_transcript_id", "y_2");
 
     TestUpdateCDS(gapped_list[0]->GetFeature(), adjusted_feats);
+}
+
+
+// total length is 36
+// if gap is longer than 12, take difference out of second piece
+void SetUpDelta(CBioseq& seq, TSeqPos gap_len)
+{
+    seq.SetInst().ResetSeq_data();
+    seq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    string nuc_before = "ATGATGATGCCC";
+    string nuc_after =  "CCCAAATTTTAA";
+    seq.SetInst().SetExt().SetDelta().AddLiteral(nuc_before, objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(gap_len);
+    seq.SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    seq.SetInst().SetExt().SetDelta().AddLiteral(nuc_after.substr(gap_len - 12), objects::CSeq_inst::eMol_dna);
+    seq.SetInst().SetLength(36);
+}
+
+
+void TestTrimForFrame(TSeqPos gap_len, CCdregion::EFrame frame)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetGeneral().SetDb("foo");
+    prot_id->SetGeneral().SetTag().SetStr("bar");
+    unit_test_util::ChangeNucProtSetProteinId(entry, prot_id);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetData().SetCdregion().SetFrame(frame);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("orig_protein_id", "x")));
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("orig_transcript_id", "y")));
+
+    SetUpDelta(nuc->SetSeq(), gap_len);
+
+    switch (frame) {
+        case CCdregion::eFrame_one:
+        case CCdregion::eFrame_not_set:
+            cds->SetLocation().SetInt().SetFrom(0);
+            break;
+        case CCdregion::eFrame_two:
+            cds->SetLocation().SetInt().SetFrom(2);
+            break;
+        case CCdregion::eFrame_three:
+            cds->SetLocation().SetInt().SetFrom(1);
+            break;
+    }
+    cds->SetLocation().SetInt().SetTo(35);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    unit_test_util::RetranslateCdsForNucProtSet(entry, *scope);
+    scope->RemoveTopLevelSeqEntry(seh);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+
+    string orig_protstr;
+    CSeqTranslator::Translate(*cds, *scope, orig_protstr);
+    switch (frame) {
+    case CCdregion::eFrame_one:
+    case CCdregion::eFrame_not_set:
+        if (gap_len > 12) {
+            BOOST_CHECK_EQUAL(orig_protstr, "MMMPXXXXXKF*");
+        } else {
+            BOOST_CHECK_EQUAL(orig_protstr, "MMMPXXXXPKF*");
+        }
+        break;
+    case CCdregion::eFrame_two:
+    case CCdregion::eFrame_three:
+        if (gap_len > 12) {
+            BOOST_CHECK_EQUAL(orig_protstr, "MMPXXXXXKF*");
+        } else {
+            BOOST_CHECK_EQUAL(orig_protstr, "MMPXXXXPKF*");
+        }
+        break;
+    }
+
+    CFeat_CI f(seh);
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    gapped_list.front()->CalculateRelevantIntervals(true, true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    
+    string before_protstr;
+    CSeqTranslator::Translate(*(adjusted_feats[0]), *scope, before_protstr);
+
+    switch (frame) {
+    case CCdregion::eFrame_one:
+    case CCdregion::eFrame_not_set:
+        BOOST_CHECK_EQUAL(before_protstr, orig_protstr.substr(0, 4));
+        break;
+    case CCdregion::eFrame_two:
+    case CCdregion::eFrame_three:
+        BOOST_CHECK_EQUAL(before_protstr, orig_protstr.substr(0, 3));
+        break;
+    }
+
+
+    string after_protstr;
+    CSeqTranslator::Translate(*(adjusted_feats[1]), *scope, after_protstr);
+    switch (frame) {
+    case CCdregion::eFrame_one:
+    case CCdregion::eFrame_not_set:
+        if (gap_len > 12) {
+            BOOST_CHECK_EQUAL(after_protstr, orig_protstr.substr(9));
+        } else {
+            BOOST_CHECK_EQUAL(after_protstr, orig_protstr.substr(8));
+        }
+        break;
+    case CCdregion::eFrame_two:
+    case CCdregion::eFrame_three:
+        if (gap_len > 12) {
+            BOOST_CHECK_EQUAL(after_protstr, orig_protstr.substr(8));
+        } else {
+            BOOST_CHECK_EQUAL(after_protstr, orig_protstr.substr(7));
+        }
+        break;
+    }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FrameForSplit)
+{
+    TestTrimForFrame(13, CCdregion::eFrame_one);
+    TestTrimForFrame(13, CCdregion::eFrame_two);
+    TestTrimForFrame(13, CCdregion::eFrame_three);
+    TestTrimForFrame(14, CCdregion::eFrame_one);
+    TestTrimForFrame(14, CCdregion::eFrame_two);
+    TestTrimForFrame(14, CCdregion::eFrame_three);
+    TestTrimForFrame(12, CCdregion::eFrame_one);
+    TestTrimForFrame(12, CCdregion::eFrame_two);
+    TestTrimForFrame(12, CCdregion::eFrame_three);
 }
 
 
@@ -390,21 +521,21 @@ void TestTrimCDS(TSeqPos start, TSeqPos stop, CCdregion::TFrame frame_before, CC
 BOOST_AUTO_TEST_CASE(Test_FeatGapInfoCDS)
 {
     TestSplitCDS(0, 32, 9, CCdregion::eFrame_one, CCdregion::eFrame_one);
-    TestSplitCDS(0, 32, 10, CCdregion::eFrame_one, CCdregion::eFrame_two);
-    TestSplitCDS(0, 32, 11, CCdregion::eFrame_one, CCdregion::eFrame_three);
+    TestSplitCDS(0, 32, 10, CCdregion::eFrame_one, CCdregion::eFrame_three);
+    TestSplitCDS(0, 32, 11, CCdregion::eFrame_one, CCdregion::eFrame_two);
 
     TestSplitCDS(0, 32, 9, CCdregion::eFrame_two, CCdregion::eFrame_two);
-    TestSplitCDS(0, 32, 10, CCdregion::eFrame_two, CCdregion::eFrame_three);
-    TestSplitCDS(0, 32, 11, CCdregion::eFrame_two, CCdregion::eFrame_one);
+    TestSplitCDS(0, 32, 10, CCdregion::eFrame_two, CCdregion::eFrame_one);
+    TestSplitCDS(0, 32, 11, CCdregion::eFrame_two, CCdregion::eFrame_three);
 
     TestSplitCDS(0, 32, 9, CCdregion::eFrame_three, CCdregion::eFrame_three);
-    TestSplitCDS(0, 32, 10, CCdregion::eFrame_three, CCdregion::eFrame_one);
-    TestSplitCDS(0, 32, 11, CCdregion::eFrame_three, CCdregion::eFrame_two);
+    TestSplitCDS(0, 32, 10, CCdregion::eFrame_three, CCdregion::eFrame_two);
+    TestSplitCDS(0, 32, 11, CCdregion::eFrame_three, CCdregion::eFrame_one);
 
     // trim left
     TestTrimCDS(16, 33, CCdregion::eFrame_one, CCdregion::eFrame_one);
-    TestTrimCDS(17, 33, CCdregion::eFrame_one, CCdregion::eFrame_three);
-    TestTrimCDS(18, 33, CCdregion::eFrame_one, CCdregion::eFrame_two);
+    TestTrimCDS(17, 33, CCdregion::eFrame_one, CCdregion::eFrame_two);
+    TestTrimCDS(18, 33, CCdregion::eFrame_one, CCdregion::eFrame_three);
     // trim right
     TestTrimCDS(0, 15, CCdregion::eFrame_one, CCdregion::eFrame_one);
 }
