@@ -2425,6 +2425,12 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
             }
         }
     }
+    if (obj.IsSetOrg() && obj.GetOrg().CanGetTaxname()) {
+        const string& s = obj.GetOrg().GetTaxname();
+        if (!s.empty()) {
+            Map[s].push_back("organism");
+        }
+    }
     bool bad = false;
     for (map<string, vector<string> >::const_iterator it = Map.begin(); it != Map.end(); it++) {
         if (it->second.size() > 1) {
