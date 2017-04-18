@@ -195,7 +195,7 @@ public:
     ///
     /// @return boolean, true if there are more streams
     ///
-    operator bool();
+    operator bool() const;
 
     /// Resets the iterator to the first stream in the class
     ///

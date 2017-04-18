@@ -385,7 +385,7 @@ size_t CInputStreamSource::GetCurrentStreamIndex(size_t* count) const
     return m_CurrIndex;
 }
 
-CInputStreamSource::operator bool()
+CInputStreamSource::operator bool() const
 {
     // The stream contains data if it references a stream (given on input)
     // owns a stream (extracted from a manifest), or still has a non-empty
