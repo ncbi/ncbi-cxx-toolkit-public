@@ -3335,19 +3335,23 @@ struct SCompareDirEntries
 {
     /// Sorting mode
     enum ESort {
-        ePath = 0,   ///< Sort by full path (default)
-        eDir,        ///< Directory name
-        eName,       ///< Full file name
-        eBase,       ///< Base file name
-        eExt,        ///< File extension
-        eUndefined = kMax_Int
+        ePath,   ///< Sort by full path (default)
+        eDir,    ///< Directory name
+        eName,   ///< Full file name
+        eBase,   ///< Base file name
+        eExt     ///< File extension
     };
-    /// You can sort up to 3 path components. If first components
-    /// of both paths are equal, next one will be used for comparison, and etc.
-    SCompareDirEntries(ESort s1 = ePath, ESort s2 = eUndefined, ESort s3 = eUndefined);
+    /// You can sort by up to 3 path components.
+    /// If first components of both paths are equal, next one
+    /// will be used for comparison, and etc.
+    SCompareDirEntries(ESort s1 = ePath);
+    SCompareDirEntries(ESort s1, ESort s2);
+    SCompareDirEntries(ESort s1, ESort s2, ESort s3);
+
     /// Comparison operators
     bool operator()(const CDir::TEntry& e1, const CDir::TEntry& e2);
     bool operator()(const string& e1, const string& e2);
+
 private:
     ESort m_Sort[3];
 };

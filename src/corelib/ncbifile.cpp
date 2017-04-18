@@ -6169,7 +6169,20 @@ void FindFiles(const string& pattern,
 }
 
 
+#define UNDEFINED_SORT_MODE (ESort)kMax_Int
 
+SCompareDirEntries::SCompareDirEntries(ESort s1)
+{
+    m_Sort[0] = s1;
+    m_Sort[1] = UNDEFINED_SORT_MODE;
+    m_Sort[2] = UNDEFINED_SORT_MODE;
+}
+SCompareDirEntries::SCompareDirEntries(ESort s1, ESort s2)
+{
+    m_Sort[0] = s1;
+    m_Sort[1] = s2;
+    m_Sort[2] = UNDEFINED_SORT_MODE;
+}
 SCompareDirEntries::SCompareDirEntries(ESort s1, ESort s2, ESort s3)
 {
     m_Sort[0] = s1;
@@ -6191,7 +6204,7 @@ bool SCompareDirEntries::operator()(const string& p1, const string& p2)
     int nc = 0;
 
     for (int i = 0; i < 3; i++) {
-        if (m_Sort[i] == eUndefined) {
+        if (m_Sort[i] == UNDEFINED_SORT_MODE) {
             break;
         }
         switch (m_Sort[i]) {
@@ -6210,7 +6223,7 @@ bool SCompareDirEntries::operator()(const string& p1, const string& p2)
         case eExt:
             nc = NStr::CompareCase(e1, e2);
             break;
-        case eUndefined:
+        case UNDEFINED_SORT_MODE:
             break;
         default:
             NCBI_THROW(CCoreException, eInvalidArg, "Unknown sorting mode");
