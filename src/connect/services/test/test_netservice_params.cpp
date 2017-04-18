@@ -87,7 +87,7 @@ string SStringGenerator::GetString(size_t length)
 
     string result;
     generate_n(back_inserter(result), length, get_char);
-    return move(result);
+    return result;
 }
 
 // Is used to generate random values
@@ -267,7 +267,7 @@ set<pair<string, string>> SRandomParam::GetCartesianProduct() const
         }
     }
 
-    return move(result);
+    return result;
 }
 
 void SRandomParam::SetValue(IRWRegistry& registry) const
