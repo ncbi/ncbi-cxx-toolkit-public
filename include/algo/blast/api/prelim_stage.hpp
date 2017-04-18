@@ -129,6 +129,10 @@ public:
     //
     bool Run( vector<list<CRef<CStd_seg> > >  & results );
 
+    /// Return query masks
+    const TSeqLocInfoVector& GetQueryMasks(void) const
+    {return m_MasksForAllQueries;}
+
 private:
     /// Prohibit copy constructor
     CBlastPrelimSearch(const CBlastPrelimSearch& rhs);

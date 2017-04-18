@@ -39,6 +39,7 @@
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/blast_results.hpp>
 #include <algo/blast/api/magicblast_options.hpp>
+#include <algo/blast/api/prelim_stage.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -115,6 +116,9 @@ private:
     /// Options to configure the search
     CRef<CBlastOptions> m_Options;
 
+    /// Object that runs BLAST search
+    CRef<CBlastPrelimSearch> m_PrelimSearch;
+
     /// Internal data strctures
     CRef<SInternalData> m_InternalData;
 
@@ -127,13 +131,32 @@ private:
 class NCBI_XBLAST_EXPORT CMagicBlastResults : public CObject
 {
 public:
+
+    /// Information flags about mapping results
+    typedef enum {
+        /// Read is unaligned
+        fUnaligned = 1,
+
+        /// Read did not pass quality filtering
+        fFiltered = 1 << 1
+    } EResultsInfo;
+
+    typedef int TResultsInfo;
+
     /// Constructor for a pair
     CMagicBlastResults(CConstRef<CSeq_id> query_id, CConstRef<CSeq_id> mate_id,
-                       CRef<CSeq_align_set> aligns);
+                       CRef<CSeq_align_set> aligns,
+                       const TMaskedQueryRegions* query_mask = NULL,
+                       const TMaskedQueryRegions* mate_mask = NULL,
+                       int query_length = 0,
+                       int mate_length = 0);
+
 
     /// Constructor for a single read
     CMagicBlastResults(CConstRef<CSeq_id> query_id,
-                       CRef<CSeq_align_set> aligns);
+                       CRef<CSeq_align_set> aligns,
+                       const TMaskedQueryRegions* query_mask = NULL,
+                       int query_length = 0);
 
     /// Get alignments
     CConstRef<CSeq_align_set> GetSeqAlign(void) const {return m_Aligns;}
@@ -144,11 +167,11 @@ public:
     /// Are alignments computed for paired reads
     bool IsPaired(void) const {return m_Paired;}
 
-    /// Is the first segment of a paired read aligned
-    bool FirstAligned(void) const {return m_FirstAligned;}
+    /// Get alignment flags for the query
+    TResultsInfo GetFirstInfo(void) const {return m_FirstInfo;}
 
-    /// Is the last segmenet of a paired read aligned
-    bool LastAligned(void) const {return m_LastAligned;}
+    /// Get alignment flags for the mate
+    TResultsInfo GetLastInfo(void) const {return m_LastInfo;}
 
     /// Get query sequence id
     const CSeq_id& GetQueryId(void) const {return *m_QueryId;}
@@ -159,8 +182,17 @@ public:
     /// Get sequence id of the last sequence of a paired read
     const CSeq_id& GetLastId(void) const {return *m_MateId;}
 
+    /// Is the query aligned
+    bool FirstAligned(void) const {return (m_FirstInfo & fUnaligned) != 0;}
+
+    /// Is the mate aligned
+    bool LastAligned(void) const {return (m_LastInfo & fUnaligned) != 0;}
+
 private:
-    void x_SetIsAligned(void);
+    void x_SetInfo(int first_length,
+                   const TMaskedQueryRegions* first_masks,
+                   int last_length = 0,
+                   const TMaskedQueryRegions* last_masks = NULL);
 
 
 private:
@@ -176,11 +208,11 @@ private:
     /// True if results are for paired reads
     bool m_Paired;
 
-    /// Is the first of segment of paired read aligned
-    bool m_FirstAligned;
+    /// Alignment flags for the query
+    TResultsInfo m_FirstInfo;
 
-    /// Is the last segment of paired read aligned
-    bool m_LastAligned;
+    /// Alignment flags for the mate
+    TResultsInfo m_LastInfo;
 };
 
 

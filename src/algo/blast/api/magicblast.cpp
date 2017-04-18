@@ -98,12 +98,12 @@ CRef<CMagicBlastResultSet> CMagicBlast::RunEx(void)
 
 int CMagicBlast::x_Run(void)
 {
-    CRef<CBlastPrelimSearch> prelim_search(new CBlastPrelimSearch(m_Queries,
-                                                            m_Options,
-                                                            m_LocalDbAdapter,
-                                                            GetNumberOfThreads()));
+    m_PrelimSearch.Reset(new CBlastPrelimSearch(m_Queries,
+                                                m_Options,
+                                                m_LocalDbAdapter,
+                                                GetNumberOfThreads()));
 
-    int status = prelim_search->CheckInternalData();
+    int status = m_PrelimSearch->CheckInternalData();
     if (status != 0)
     {
          // Search was not run, but we send back an empty CSearchResultSet.
@@ -155,15 +155,15 @@ int CMagicBlast::x_Run(void)
            	      ancill_vec.push_back(tmp_ancillary_data);
               }
          }
-         msg_vec.Combine(prelim_search->GetSearchMessages());
+         msg_vec.Combine(m_PrelimSearch->GetSearchMessages());
 
          // FIXME: Report search messages
     }
 
     try {
-        prelim_search->SetNumberOfThreads(GetNumberOfThreads());
+        m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
         // do mapping
-        m_InternalData = prelim_search->Run();
+        m_InternalData = m_PrelimSearch->Run();
 
 	}
     catch( CIndexedDbException & ) {
@@ -408,6 +408,8 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
     BlastQueryInfo* query_info = m_InternalData->m_QueryInfo;
     _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
 
+    const TSeqLocInfoVector& query_masks = m_PrelimSearch->GetQueryMasks();
+
     CRef<CMagicBlastResultSet> retval(new CMagicBlastResultSet);
     retval->reserve(results->num_queries);
 
@@ -417,13 +419,21 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
         CRef<CSeq_align_set> aligns(x_CreateSeqAlignSet(chains, query_data,
                                                         seqinfo_src));
 
+        int query_length =
+            query_info->contexts[index * NUM_STRANDS].query_length;
         CRef<CMagicBlastResults> res;
 
         if (query_info->contexts[index * NUM_STRANDS].segment_flags ==
             eFirstSegment) {
 
+            _ASSERT(query_info->contexts[(index + 1) * NUM_STRANDS]
+                    .segment_flags == eLastSegment);
+
             CConstRef<CSeq_id> mate_id(
                                  query_data->GetSeq_loc(index + 1)->GetId());
+
+            int mate_length =
+                query_info->contexts[(index + 1) * NUM_STRANDS].query_length;
 
             chains = results->chain_array[index + 1];
             CRef<CSeq_align_set> mate_aligns(x_CreateSeqAlignSet(chains,
@@ -433,12 +443,18 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
                 aligns->Set().push_back(it);
             }
 
-            index++;
 
-            res.Reset(new CMagicBlastResults(query_id, mate_id, aligns));
+            res.Reset(new CMagicBlastResults(query_id, mate_id, aligns,
+                                             &query_masks[index],
+                                             &query_masks[index + 1],
+                                             query_length,
+                                             mate_length));
+            index++;
         }
         else {
-            res.Reset(new CMagicBlastResults(query_id, aligns));
+            res.Reset(new CMagicBlastResults(query_id, aligns,
+                                             &query_masks[index],
+                                             query_length));
         }
 
         retval->push_back(res);
@@ -449,48 +465,83 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
 
 
 CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
-                                       CConstRef<CSeq_id> mate_id,
-                                       CRef<CSeq_align_set> aligns)
+                           CConstRef<CSeq_id> mate_id,
+                           CRef<CSeq_align_set> aligns,
+                           const TMaskedQueryRegions* query_mask /* = NULL */,
+                           const TMaskedQueryRegions* mate_mask /* = NULL */,
+                           int query_length /* = 0 */,
+                           int mate_length /* = 0 */)
     : m_QueryId(query_id),
       m_MateId(mate_id),
       m_Aligns(aligns),
       m_Paired(true)
 {
-    x_SetIsAligned();
+    x_SetInfo(query_length, query_mask, mate_length, mate_mask);
 }
 
 
 CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
-                                       CRef<CSeq_align_set> aligns)
+                            CRef<CSeq_align_set> aligns,
+                            const TMaskedQueryRegions* query_mask /* = NULL */,
+                            int query_length /* = 0 */)
     : m_QueryId(query_id),
       m_Aligns(aligns),
       m_Paired(false)
 {
-    x_SetIsAligned();
+    x_SetInfo(query_length, query_mask);
 }
 
 
-void CMagicBlastResults::x_SetIsAligned(void)
+void CMagicBlastResults::x_SetInfo(int first_length,
+                             const TMaskedQueryRegions* first_mask,
+                             int last_length /* = 0 */,
+                             const TMaskedQueryRegions* last_mask /* = NULL */)
 {
-    m_FirstAligned = false;
-    m_LastAligned = false;
+    m_FirstInfo = 0;
+    m_LastInfo = 0;
+
+    bool first_aligned = false;
+    bool last_aligned = false;
 
     if (!m_Paired) {
-        m_FirstAligned = !m_Aligns->Get().empty();
-        return;
+        first_aligned = !m_Aligns->Get().empty();
+    }
+    else {
+
+        for (auto it: m_Aligns->Get()) {
+            if (it->GetSegs().IsDisc()) {
+                first_aligned = true;
+                last_aligned = true;
+                break;
+            }
+            else if (it->GetSeq_id(0).Match(*m_QueryId)) {
+                first_aligned = true;
+            }
+            else if (it->GetSeq_id(0).Match(*m_MateId)) {
+                last_aligned = true;
+            }
+        }
     }
 
-    for (auto it: m_Aligns->Get()) {
-        if (it->GetSegs().IsDisc()) {
-            m_FirstAligned = true;
-            m_LastAligned = true;
-            break;
+    if (!first_aligned) {
+        m_FirstInfo |= fUnaligned;
+    }
+
+    if (!last_aligned) {
+        m_LastInfo |= fUnaligned;
+    }
+
+    if (first_mask && !first_mask->empty()) {
+        TSeqRange first_range(*first_mask->front());
+        if (first_range.GetLength() + 1 >= (TSeqPos)first_length) {
+            m_FirstInfo |= fFiltered;
         }
-        else if (it->GetSeq_id(0).Match(*m_QueryId)) {
-            m_FirstAligned = true;
-        }
-        else if (it->GetSeq_id(0).Match(*m_MateId)) {
-            m_LastAligned = true;
+    }
+
+    if (last_mask && !last_mask->empty()) {
+        TSeqRange last_range(*last_mask->front());
+        if (last_range.GetLength() + 1 >= (TSeqPos)last_length) {
+            m_LastInfo |= fFiltered;
         }
     }
 }

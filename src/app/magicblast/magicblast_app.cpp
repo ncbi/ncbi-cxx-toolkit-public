@@ -531,13 +531,21 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 }
 
 CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
+                                    const CMagicBlastResults& results,
                                     const TQueryMap& queries,
-                                    const CSeq_id& seqid)
+                                    bool first_seg)
 {
     string sep = "\t";
+    CSeq_id id;
+    if (!results.IsPaired() || first_seg) {
+        id.Set(results.GetQueryId().AsFastaString());
+    }
+    else {
+        id.Set(results.GetLastId().AsFastaString());
+    }
 
     // query
-    ostr << s_GetBareId(seqid) << sep;
+    ostr << s_GetBareId(id) << sep;
 
     // subject
     ostr << "-" << sep;
@@ -565,7 +573,7 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
 
     // query length
     int query_len = 0;
-    TQueryMap::const_iterator it = queries.find(seqid.GetSeqIdString());
+    TQueryMap::const_iterator it = queries.find(id.GetSeqIdString());
     _ASSERT(it != queries.end());
     if (it != queries.end()) {
         query_len = it->second->GetSeq().GetInst().GetLength();
@@ -582,7 +590,14 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
     ostr << "-" << sep;
 
     // compartment
-    ostr << "-" << sep;
+    string compart = "-";
+    // if a read did not pass filtering
+    CMagicBlastResults::TResultsInfo info =
+        first_seg ? results.GetFirstInfo() : results.GetLastInfo();
+    if ((info & CMagicBlastResults::fFiltered) != 0) {
+        compart = "F";
+    }
+    ostr << compart << sep;
 
     // left overhang
     ostr << "-" << sep;
@@ -613,13 +628,15 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
         ostr << endl;
     }
 
-    if (!results.FirstAligned()) {
-        PrintTabularUnaligned(ostr, queries, results.GetFirstId());
+    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
+        PrintTabularUnaligned(ostr, results, queries, true);
         ostr << endl;
     }
 
-    if (results.IsPaired() && !results.LastAligned()) {
-        PrintTabularUnaligned(ostr, queries, results.GetLastId());
+    if (results.IsPaired() &&
+        (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
+
+        PrintTabularUnaligned(ostr, results, queries, false);
         ostr << endl;
     }
 
@@ -1260,7 +1277,10 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     ostr << "*" << sep;
 
     // mate postition
-    ostr << "*" << sep;
+    ostr << "0" << sep;
+
+    // template length
+    ostr << "0" << sep;
 
     // sequence
     string sequence;
@@ -1275,7 +1295,14 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     }
 
     // quality string
-    ostr << "*";
+    ostr << "*" << sep;
+
+    // read did not pass filtering
+    CMagicBlastResults::TResultsInfo info =
+        first_seg ? results.GetFirstInfo() : results.GetLastInfo();
+    if ((info & CMagicBlastResults::fFiltered) != 0) {
+        ostr << "YF:Z:F";
+    }
 
     return ostr;
 }
@@ -1291,12 +1318,13 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
         ostr << endl;
     }
 
-    if (!results.FirstAligned()) {
+    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
         PrintSAMUnaligned(ostr, results, queries, true, trim_read_id);
         ostr << endl;
     }
 
-    if (results.IsPaired() && !results.LastAligned()) {
+    if (results.IsPaired() &&
+        (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
         PrintSAMUnaligned(ostr, results, queries, false, trim_read_id);
         ostr << endl;
     }
