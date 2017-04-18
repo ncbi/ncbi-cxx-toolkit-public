@@ -155,10 +155,12 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
 
-        /// add GPipe accessions as extra
-        ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
-            if ((*it)->IsGpipe()) {
-                m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
+        /// add GPipe accessions as extra if no RefSeq accession
+        if (! id.IsOther() && ! id.IsGpipe()) {
+            ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
+                if ((*it)->IsGpipe()) {
+                    m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
+                }
             }
         }
 
