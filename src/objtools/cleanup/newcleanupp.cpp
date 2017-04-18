@@ -61,6 +61,7 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objects/valid/Comment_set.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 
 #include <util/ncbi_cache.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -4720,7 +4721,16 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             ! NStr::EqualNocase ("RNA", str) &&
             ! NStr::EqualNocase ("product", str) ) 
         {
-            justt = false;
+            if (str.size() == 3) {
+                CRef<CTrna_ext> tr2(new CTrna_ext);
+                if (CTrna_ext::ParseDegenerateCodon(*tr2, str)) {
+                    // drop the codon but don't complain about non-matching text
+                } else {
+                    justt = false;
+                }
+            } else {
+                justt = false;
+            }
         }
     }
     if( is_ambig ) {
@@ -4771,9 +4781,6 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             const bool is_iMet = (NStr::Find(name, "iMet") != NPOS);
             CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
             trp.SetAa().SetNcbieaa(aa);
-            if (justTrnaText) {
-                copy(codon.begin(), codon.end(), back_inserter(trp.SetCodon()));
-            }
             if (aa == 'M') {
                 if (is_fMet) {
                     x_AddToComment(feat, "fMet");
@@ -4795,10 +4802,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             CRNA_ref_Base::C_Ext::TTRNA& trna = rna.SetExt().SetTRNA();
             trna.SetAa().SetNcbieaa(aa);
 
-            if (justTrnaText) {
-                copy(codon.begin(), codon.end(), back_inserter(trna.SetCodon()));
-            }
-            else {
+            if (!justTrnaText) {
                 x_AddToComment(feat, product);
             }
 
@@ -8895,7 +8899,7 @@ void CNewCleanup_imp::RnaFeatBC (
             CRef<CTrna_ext> tRNA( new CTrna_ext );
             tRNA->SetAa().SetNcbieaa( aa );
             if (justTrnaText) {
-                copy( codon.begin(), codon.end(), back_inserter(tRNA->SetCodon()) );
+                CTrna_ext::ParseDegenerateCodon(*tRNA, codon);
             }
             rna.SetExt().SetTRNA( *tRNA );
             ChangeMade(CCleanupChange::eChange_tRna);
