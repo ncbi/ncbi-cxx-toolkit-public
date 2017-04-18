@@ -433,6 +433,10 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                             break;
                     }
                 }
+                if (len) {
+                    ret.First = false;
+                    ret.EndsWithGap = false;
+                }
             }
             return;
         case CSeq_data::e_Ncbi4na:
@@ -450,6 +454,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                         shift = 4;
                         ++it;
                     }
+                    ret.EndsWithGap = false;
                     switch (c) {
                         case 1:
                             ret.A++;
@@ -463,11 +468,20 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                         case 8:
                             ret.T++;
                             break;
+                        case 15:
+                            ret.N++;
+                            ret.Other++;
+                            if (ret.First) {
+                                ret.StartsWithGap = true;
+                            }
+                            ret.EndsWithGap = true;
+                            break;
                         default:
                             ret.Other++;
                             break;
                     }
                 }
+                ret.First = false;
             }
             return;
         case CSeq_data::e_Iupacna:
@@ -475,6 +489,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
             {
                 const string& s = seq_data.GetIupacna().Get();
                 for (size_t n = 0; n < len; n++) {
+                    ret.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
                             ret.A++;
@@ -491,11 +506,16 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                         case 'N':
                             ret.N++;
                             ret.Other++;
+                            if (ret.First) {
+                                ret.StartsWithGap = true;
+                            }
+                            ret.EndsWithGap = true;
                             break;
                         default:
                             ret.Other++;
                             break;
                     }
+                    ret.First = false;
                 }
             }
             return;
@@ -509,6 +529,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                 }
                 const string& s = iupacna.GetIupacna().Get();
                 for (size_t n = 0; n < len; n++) {
+                    ret.EndsWithGap = false;
                     switch (s[n]) {
                         case 'A':
                             ret.A++;
@@ -525,11 +546,16 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                         case 'N':
                             ret.N++;
                             ret.Other++;
+                            if (ret.First) {
+                                ret.StartsWithGap = true;
+                            }
+                            ret.EndsWithGap = true;
                             break;
                         default:
                             ret.Other++;
                             break;
                     }
+                    ret.First = false;
                 }
             }
             return;
@@ -552,16 +578,24 @@ const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
 
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(bs);
     SSeqMapSelector sel;
-    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap);
-    CSeqMap_CI seq_iter(seq_map, &GetScope(), sel);
-    for (; seq_iter; ++seq_iter) {
+    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
+    for (CSeqMap_CI seq_iter(seq_map, &GetScope(), sel); seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
                 CountNucleotides(seq_iter.GetData(), seq_iter.GetLength(), GetSeqSummary_ret);
                 break;
             case CSeqMap::eSeqGap:
+                if (GetSeqSummary_ret.First) {
+                    GetSeqSummary_ret.StartsWithGap = true;
+                    GetSeqSummary_ret.First = false;
+                }
                 GetSeqSummary_ret.Gaps += seq_iter.GetLength();
+                GetSeqSummary_ret.EndsWithGap = true;
                 break;
+            case CSeqMap::eSeqRef:
+                GetSeqSummary_ret.First = false;
+                GetSeqSummary_ret.EndsWithGap = false;
+                GetSeqSummary_ret.HasRef = true;
             default:
                 break;
         }

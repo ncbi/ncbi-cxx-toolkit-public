@@ -157,33 +157,8 @@ DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end
     if (!seq || seq->IsAa()) {
         return;
     }
-
-    bool has_terminal_n_or_gap = false;
-
-    CRef<CSeq_loc> start(new CSeq_loc());
-    start->SetInt().SetId().Assign(*(seq->GetId().front()));
-    start->SetInt().SetFrom(0);
-    start->SetInt().SetTo(0);
-
-    CSeqVector start_vec(*start, context.GetScope(), CBioseq_Handle::eCoding_Iupac);
-    CSeqVector::const_iterator vi_start = start_vec.begin();
-
-    if (*vi_start == 'N' || vi_start.IsInGap()) {
-        has_terminal_n_or_gap = true;
-    } else {
-        CRef<CSeq_loc> stop(new CSeq_loc());
-        stop->SetInt().SetId().Assign(*(seq->GetId().front()));
-        stop->SetInt().SetFrom(seq->GetLength() - 1);
-        stop->SetInt().SetTo(seq->GetLength() - 1);
-
-        CSeqVector stop_vec(*stop, context.GetScope(), CBioseq_Handle::eCoding_Iupac);
-        CSeqVector::const_iterator vi_stop = stop_vec.begin();
-        if (*vi_stop == 'N' || vi_stop.IsInGap()) {
-            has_terminal_n_or_gap = true;
-        }
-    }
-
-    if (has_terminal_n_or_gap) {
+    const CSeqSummary& sum = context.GetSeqSummary();
+    if (sum.StartsWithGap || sum.EndsWithGap) {
         m_Objs[kTerminalNs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false).Fatal();
     }
 }
@@ -459,6 +434,35 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
 
 
 DISCREPANCY_SUMMARIZE(N_RUNS_14)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// EXTERNAL_REFERENCE
+
+const string kExternalRef = "[n] sequence[s] [has] external references";
+
+DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Greater than 10 percent Ns")
+{
+    bool found = false;
+    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
+    //sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
+    try {
+        CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel, 0);
+    }
+    catch (...) {
+        found = true;
+    }
+    if (found) {
+        m_Objs[kExternalRef].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(EXTERNAL_REFERENCE)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

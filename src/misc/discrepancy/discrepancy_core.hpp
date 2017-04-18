@@ -300,7 +300,7 @@ class COverlappingFeatures : public CBioseq {};
 struct CSeqSummary
 {
     CSeqSummary() : Len(0), A(0), C(0), G(0), T(0), N(0), Other(0), Gaps(0) {}
-    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; Other = 0; Gaps = 0; Str.clear(); }
+    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; Other = 0; Gaps = 0; First = true; StartsWithGap = false; EndsWithGap = false; HasRef = false; Str.clear(); }
     size_t Len;
     size_t A;
     size_t C;
@@ -309,6 +309,10 @@ struct CSeqSummary
     size_t N;
     size_t Other;
     size_t Gaps;
+    bool First;
+    bool StartsWithGap;
+    bool EndsWithGap;
+    bool HasRef;
     // add more counters if needed
     mutable string Str;
     string GetStr() const;
