@@ -41,6 +41,168 @@ USING_SCOPE(objects);
 
 #define GT( a, b ) CFeatListItem( CSeqFeatData::a, CSeqFeatData::b, "", "" )
 
+CSofaMap::TYPEMAP CSofaMap::mMapSofaTypeToId;
+
+CSofaMap::TYPEMAP CSofaMap::mMapSofaIdToType = {
+    {"SO:0000001", "region"},
+    {"SO:0000002", "sequece_secondary_structure"},
+    {"SO:0000005", "satellite_DNA"},
+    {"SO:0000013", "scRNA"},
+    {"SO:0000035", "riboswitch"},
+    {"SO:0000036", "matrix_attachment_site"},
+    {"SO:0000037", "locus_control_region"},
+    {"SO:0000104", "polypeptide"},
+    {"SO:0000110", "sequence_feature"},
+    {"SO:0000139", "ribosome_entry_site"},
+    {"SO:0000140", "attenuator"},
+    {"SO:0000141", "terminator"},
+    {"SO:0000147", "exon"},
+    {"SO:0000165", "enhancer"},
+    {"SO:0000167", "promoter"},
+    {"SO:0000172", "CAAT_signal"},
+    {"SO:0000173", "GC_rich_promoter_region"},
+    {"SO:0000174", "TATA_box"},
+    {"SO:0000175", "minus_10_signal"},
+    {"SO:0000176", "minus_35_signal"},
+    {"SO:0000178", "operon"},
+    {"SO:0000185", "primary_transcript"},
+    {"SO:0000188", "intron"},
+    {"SO:0000204", "five_prime_UTR"},
+    {"SO:0000205", "three_prime_UTR"},
+    {"SO:0000234", "mRNA"},
+    {"SO:0000252", "rRNA"},
+    {"SO:0000253", "tRNA"},
+    {"SO:0000274", "snRNA"},
+    {"SO:0000275", "snoRNA"},
+    {"SO:0000276", "miRNA"},
+    {"SO:0000286", "long_terminal_repeat"},
+    {"SO:0000289", "microsatellite"},
+    {"SO:0000294", "inverted_repeat"},
+    {"SO:0000296", "origin_of_replication"},
+    {"SO:0000297", "D_loop"},
+    {"SO:0000298", "recombination_feature"},
+    {"SO:0000305", "modified_DNA_base"},
+    {"SO:0000313", "stem_loop"},
+    {"SO:0000314", "direct_repeat"},
+    {"SO:0000315", "TSS"},
+    {"SO:0000316", "CDS"},
+    {"SO:0000330", "conserved_region"},
+    {"SO:0000331", "STS"},
+    {"SO:0000336", "pseudogene"},
+    {"SO:0000374", "ribozyme"},
+    {"SO:0000380", "hammerhead_ribozyme"},
+    {"SO:0000385", "RNase_MRP_RNA"},
+    {"SO:0000386", "RNase_P_RNA"},
+    {"SO:0000404", "vault_RNA"},
+    {"SO:0000405", "Y_RNA"},
+    {"SO:0000409", "binding_site"},
+    {"SO:0000410", "protein_binding_site"},
+    {"SO:0000413", "sequence_difference"},
+    {"SO:0000418", "signal_peptide"},
+    {"SO:0000419", "mature_protein_region"},
+    {"SO:0000433", "non_LTR_retrotransposon_polymeric_tract"},
+    {"SO:0000454", "rasiRNA"},
+    {"SO:0000458", "D_gene_segment"},
+    {"SO:0000466", "V_gene_segment"},
+    {"SO:0000470", "J_gene_segment"},
+    {"SO:0000478", "C_gene_segment"},
+    {"SO:0000516", "pseudogenic_transcript"},
+    {"SO:0000551", "polyA_signal_sequence"},
+    {"SO:0000553", "polyA_site"},
+    {"SO:0000577", "centromere"},
+    {"SO:0000584", "tmRNA"},
+    {"SO:0000588", "autocatalytically_spliced_intron"},
+    {"SO:0000590", "SRP_RNA"},
+    {"SO:0000602", "guide_RNA"},
+    {"SO:0000624", "telomere"},
+    {"SO:0000625", "silencer"},
+    {"SO:0000627", "insulator"},
+    {"SO:0000644", "antisense_RNA"},
+    {"SO:0000646", "siRNA"},
+    {"SO:0000655", "ncRNA"},
+    {"SO:0000657", "repeat_region"},
+    {"SO:0000658", "dispersed_repeat"},
+    {"SO:0000673", "transcript"},
+    {"SO:0000685", "DNAsel_hypersensitive_site"},
+    {"SO:0000704", "gene"},
+    {"SO:0000705", "tandem_repeat"},
+    {"SO:0000714", "nucleotide_motif"},
+    {"SO:0000723", "iDNA"},
+    {"SO:0000724", "oriT"},
+    {"SO:0000725", "transit_peptide"},
+    {"SO:0000730", "gap"},
+    {"SO:0000777", "pseudogenic_rRNA"},
+    {"SO:0000778", "pseudogenic_tRNA"},
+    {"SO:0001021", "chromosome_preakpoint"},
+    {"SO:0001035", "piRNA"},
+    {"SO:0001037", "mobile_genetic_element"},
+    {"SO:0001055", "transcriptional_cis_regulatory_region"},
+    {"SO:0001059", "sequence_alteration"},
+    {"SO:0001062", "propeptide"},
+    {"SO:0001086", "sequence_uncertainty"},
+    {"SO:0001087", "cross_link"},
+    {"SO:0001088", "disulfide_bond"},
+    {"SO:0001268", "recoding_stimulatory_region"},
+    {"SO:0001411", "biological_region"},
+    {"SO:0001484", "X_element_combinatorical_repeat"},
+    {"SO:0001485", "Y_prime_element"},
+    {"SO:0001496", "telomeric_repeat"},
+    {"SO:0001649", "nested_repeat"},
+    {"SO:0001682", "replication_regulatory_region"},
+    {"SO:0001797", "centromeric_repeat"},
+    {"SO:0001833", "V_region"},
+    {"SO:0001835", "N_region"},
+    {"SO:0001836", "S_region"},
+    {"SO:0001877", "lnc_RNA"},
+    {"SO:0001917", "CAGE_cluster"},
+    {"SO:0002020", "boundary_element"},
+    {"SO:0002072", "sequence_comparison"},
+    {"SO:0002087", "pseudogenic_CDS"},
+    {"SO:0002094", "non_allelic_homologous_recombination_region"},
+    {"SO:0002154", "mitotic_recombination_region"},
+    {"SO:0002155", "meiotic_recombination_region"},
+    {"SO:0005836", "regulatory_region"},
+    {"SO:0005850", "primary_binding_site"},
+
+    {"SO:0000000", ""},
+    //{"SO:UNKNOWN", "replication_start_site"},
+    //{"SO:UNKNOWN", "nucleotide_site"},
+    //{"SO:UNKNOWN", "nucleotide_cleavage_site"},
+    //{"SO:UNKNOWN", "repeat_instability_region"},
+};
+
+//  ----------------------------------------------------------------------------
+string CSofaMap::SofaIdToType(
+    const string& sofa_id)
+//  ----------------------------------------------------------------------------
+{
+    TYPEENTRY type_it = CSofaMap::mMapSofaIdToType.find(sofa_id);
+    if (type_it == CSofaMap::mMapSofaIdToType.end()) {
+        return "";
+    }
+    return type_it->second;
+}
+
+//  ----------------------------------------------------------------------------
+string CSofaMap::SofaTypeToId(
+    const string& sofa_type)
+//  ----------------------------------------------------------------------------
+{
+    if (CSofaMap::mMapSofaTypeToId.empty()) {
+        for (TYPEENTRY  cit = CSofaMap::mMapSofaIdToType.begin();
+                cit != CSofaMap::mMapSofaIdToType.end();
+                ++cit) {
+            CSofaMap::mMapSofaTypeToId[cit->second] = cit->first;
+        }
+    }
+    TYPEENTRY id_it = mMapSofaTypeToId.find(sofa_type);
+    if (id_it == CSofaMap::mMapSofaTypeToId.end()) {
+        return "";
+    }
+    return id_it->second;
+} 
+
+
 void CSofaMap::x_Init() 
 {
     m_default = SofaType( 1, "region" );

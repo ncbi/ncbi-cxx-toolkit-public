@@ -32,6 +32,7 @@
 #ifndef OBJECTS___SOFAMAP__HPP
 #define OBJECTS___SOFAMAP__HPP
 
+#include <objects/seq/sofa_type.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
@@ -72,11 +73,19 @@ public:
         return m_Map;
     }
 
+    static std::string SofaTypeToId(const std::string&);
+    static std::string SofaIdToType(const std::string&);
+
 protected:
     void x_Init();
 
     map< CFeatListItem, SofaType > m_Map;
     SofaType m_default;
+
+    using TYPEMAP = map<string, string>;
+    using TYPEENTRY = TYPEMAP::const_iterator;
+    static TYPEMAP mMapSofaTypeToId;
+    static TYPEMAP mMapSofaIdToType;
 };
 
 END_objects_SCOPE
