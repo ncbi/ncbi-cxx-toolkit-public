@@ -821,14 +821,20 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi,
                 seq.m_IsWGS = true;
                 seq.m_ValidWGS = true;
                 seq.m_WGSDb = wgs_db;
+                seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
+                seq.m_RowId = gi_it.GetRowId();
                 if ( gi_it.GetSeqType() == gi_it.eProt ) {
                     seq.SetProtein();
+                    if ( !GetProteinIterator(seq) ) {
+                        return SWGSSeqInfo();
+                    }
                 }
                 else {
                     seq.SetContig();
+                    if ( !GetContigIterator(seq) ) {
+                        return SWGSSeqInfo();
+                    }
                 }
-                seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
-                seq.m_RowId = gi_it.GetRowId();
                 return seq;
             }
         }
