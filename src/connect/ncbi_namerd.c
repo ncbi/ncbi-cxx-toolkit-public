@@ -42,7 +42,6 @@
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_memory_connector.h>
-#include <corelib/ncbiatomic.h>
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -272,8 +271,8 @@ static void s_Init(void)
         s_initialized = 1;
         CORE_UNLOCK;
     } else {
-        static void* once = 0;
-        if ( ! NCBI_SwapPointers(&once, (void*) 1)) {
+        static int once = 0;
+        if ( ! once++) {
             CORE_LOG_X(eNSub_Libc, eLOG_Error,
                        "Error registering atexit function.");
         }
@@ -934,8 +933,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 if ( ! timeval)
                     goto out;
             } else {
-                static void* once = 0;
-                if ( ! NCBI_SwapPointers(&once, (void*) 1/*true*/)) {
+                static int once = 0;
+                if ( ! once++) {
                     CORE_LOGF_X(eNSub_Json, eLOG_Warning,
                         ("Missing JSON {\"addrs[i].meta.expires\"} - "
                          "using current time (" FMT_TIME_T
