@@ -659,11 +659,14 @@ int CNCBITestApp::Run(void)
         }
     }
 
-    // Initialize all connection parameters for FTP and log them out
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    // Initialize all connection parameters for FTP
+    SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
-    net_info->http_referer = 0;
+    if (net_info->http_referer) {
+        free((void*) net_info->http_referer);
+        net_info->http_referer = 0;
+    }
     ConnNetInfo_SetUserHeader(net_info, 0);
 
     if (!ConnNetInfo_ParseURL(net_info, url)) {
@@ -810,7 +813,7 @@ int CNCBITestApp::Run(void)
     size_t files = processor->Run();
 
     // These should not matter, and can be issued in any order
-    // ...so do the "wrong" order on purpose to prove it works!
+    // ...so do the "wrong" order on purpose for the proof of concept!
     _VERIFY(ftp.Close() == eIO_Success);
     delete processor;
 

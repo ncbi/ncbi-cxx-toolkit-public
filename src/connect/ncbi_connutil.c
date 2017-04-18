@@ -1645,15 +1645,6 @@ extern EIO_Status URL_ConnectEx
     s = *sock;
     *sock = 0;
 
-    CORE_TRACEF((
-        "URL_ConnectEx() -- http%s://%s:%hu%s?%s -- usr_hdr: %s",
-        flags & fSOCK_Secure ? "s" : "",
-        host ? host : "(no host)",
-        port,
-        path ? path : "(no path)",
-        args ? args : "(no args)",
-        user_hdr ? user_hdr : "(no user_hdr)"));
-
     /*FIXME: the check to be removed*/
     if (cred  &&  cred < (NCBI_CRED) 4096) {
         if (port)
