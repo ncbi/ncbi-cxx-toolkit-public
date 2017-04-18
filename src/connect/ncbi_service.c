@@ -328,7 +328,11 @@ static SERV_ITER x_Open(const char*         service,
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
                               (service, REG_CONN_DISPD_DISABLE)))            ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+#ifdef NCBI_CXX_TOOLKIT
         if (!do_namerd  &&  !do_lbsmd  &&  !do_dispd) {
+#else
+        if (!do_lbsmd  &&  !do_dispd) {
+#endif /*NCBI_CXX_TOOLKIT*/
             CORE_LOGF_X(1, eLOG_Error,
                         ("[%s]  No service mappers available", service));
         }
