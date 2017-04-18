@@ -32,9 +32,6 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#ifdef NCBI_CXX_TOOLKIT
-#  include <corelib/ncbiatomic.h>
-#endif /*NCBI_CXX_TOOLKIT*/
 #include <stdlib.h>
 
 #ifdef NCBI_OS_UNIX
@@ -74,7 +71,6 @@ extern const char* IO_StatusStr(EIO_Status status)
 }
 
 
-
 /******************************************************************************
  *  MT locking
  */
@@ -102,26 +98,6 @@ struct MT_LOCK_tag {
 #    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 #  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
 
-#  if defined(NCBI_POSIX_THREADS)  &&  !defined(NCBI_RECURSIVE_MUTEX_INIT)
-#    ifdef __GNUC__
-inline
-#    endif /*__GNUC__*/
-static int/*bool*/ x_Once(void** once)
-{
-#    ifndef NCBI_CXX_TOOLKIT
-    /* poor man solution */
-    if (!*once) {
-        *once = (void*) 1;
-        return 1/*true*/;
-    } else
-        return 0/*false*/;
-#    else
-    return !NCBI_SwapPointers(once, (void*) 1);
-#    endif /*NCBI_CXX_TOOLKIT*/
-}
-#  endif /*NCBI_POSIX_THREADS && !NCBI_RECURSIVE_MUTEX_INIT*/
-
-
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
@@ -139,7 +115,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
     /* NB: Without a static initializer there is a
            RACE CONDITION in sx_Mutex's INIT/USE! */
     static void* /*bool*/ s_Once = 0/*false*/;
-    if (x_Once(&s_Once)) {
+    if (g_CORE_Once(&s_Once)) {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -191,7 +167,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
     if (g_CORE_Log) {
         static void* /*bool*/ s_Once = 0/*false*/;
-        if (x_Once(&s_Once))
+        if (g_CORE_Once(&s_Once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     }
     return -1/*not implemented*/;

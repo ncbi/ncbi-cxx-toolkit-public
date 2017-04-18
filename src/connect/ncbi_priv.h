@@ -52,6 +52,7 @@
  *    private globals: g_CORE_GetAppName
  *                     g_CORE_GetRequestID
  *                     g_CORE_GetRequestDtab
+ * One time setter:    g_CORE_Once
  *
  */
 
@@ -380,6 +381,13 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
 #  define likely(x)    (x)
 #  define unlikely(x)  (x)
 #endif /*__GNUC__*/
+
+
+/* Return non-zero (true) if "*once" had a value of NULL, set the value to
+ * non-NULL atomically.  Return 0 (false) otherwise.
+ */
+extern int/*bool*/ g_CORE_Once(void** once);
+
 
 
 /******************************************************************************

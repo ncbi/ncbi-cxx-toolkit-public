@@ -31,6 +31,9 @@
  */
 
 #include "ncbi_priv.h"
+#ifdef NCBI_CXX_TOOLKIT
+#  include <corelib/ncbiatomic.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 #if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #elif defined(NCBI_OS_MSWIN)
@@ -41,6 +44,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 /* GLOBALS */
 TCORE_Set           g_CORE_Set               = 0;
@@ -150,4 +154,19 @@ extern int/*bool*/ g_CORE_RegistrySET
                      section, name, value, storage);
     CORE_UNLOCK;
     return retval;
+}
+
+
+extern int/*bool*/ g_CORE_Once(void** once)
+{
+#ifndef NCBI_CXX_TOOLKIT
+    /* poor man's solution */
+    if (!*once) {
+        *once = (void*) 1;
+        return 1/*true*/;
+    } else
+        return 0/*false*/;
+#else
+    return !NCBI_SwapPointers(once, (void*) 1);
+#endif /*NCBI_CXX_TOOLKIT*/
 }
