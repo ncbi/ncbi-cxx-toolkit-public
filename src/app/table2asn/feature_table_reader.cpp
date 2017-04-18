@@ -525,6 +525,9 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 {
     CScope& scope = top_entry_h.GetScope();
 
+    if (sequence::IsPseudo(cd_feature, scope))
+        return CRef<CSeq_entry>();
+
     CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
 
     CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
