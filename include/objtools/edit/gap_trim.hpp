@@ -39,6 +39,7 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 
 
@@ -86,6 +87,8 @@ public:
 
     static CRef<CBioseq> AdjustProteinSeq(const CBioseq& seq, const CSeq_feat& feat, const CSeq_feat& orig_cds, CScope& scope);
 
+    bool IsRelatedByCrossRef(const CFeatGapInfo& other) const;
+
 protected:
     typedef enum {
         eGapIntervalType_unknown = 0,
@@ -126,6 +129,24 @@ TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope);
 
 NCBI_XOBJEDIT_EXPORT
 void ProcessForTrimAndSplitUpdates(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> > updates);
+
+// for adjusting feature IDs after splitting
+
+// for fixing a list of features from a split: pass in entire list, feature IDs will be changed
+// for features after the first starting with the value of next_id, which will be increased
+// after each use
+NCBI_XOBJEDIT_EXPORT
+void FixFeatureIdsForUpdates(vector<CRef<CSeq_feat> > updates, objects::CObject_id::TId& next_id);
+
+// adjust feature ID for a single feature (will increase next_id if feature had an ID to be adjusted)
+NCBI_XOBJEDIT_EXPORT
+void FixFeatureIdsForUpdates(CSeq_feat& feat, CObject_id::TId& next_id);
+
+// adjust two lists of features, that are the result of splitting two features that had cross-references
+// to each other. Both features must have been split into the same number of pieces.
+// The new cross-references pair the elements of the list in order.
+NCBI_XOBJEDIT_EXPORT
+void FixFeatureIdsForUpdatePair(vector<CRef<CSeq_feat> >& updates1, vector<CRef<CSeq_feat> >& updates2);
 
 
 END_SCOPE(edit)

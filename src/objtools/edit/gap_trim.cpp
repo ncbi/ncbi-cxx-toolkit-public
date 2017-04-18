@@ -44,6 +44,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -679,6 +680,118 @@ void ProcessForTrimAndSplitUpdates(CSeq_feat_Handle cds, vector<CRef<CSeq_feat> 
         for (size_t i = 1; i < updates.size(); i++) {
             saeh.AddFeat(*(updates[i]));
         }
+    }
+}
+
+
+
+// for fixing feature IDs and feature ID xrefs
+void FixFeatureIdsForUpdates(CSeq_feat& feat, CObject_id::TId& next_id)
+{
+    if (feat.IsSetId() && feat.GetId().IsLocal() &&
+        feat.GetId().GetLocal().IsId()) {
+        feat.SetId().SetLocal().SetId(next_id);
+        ++next_id;
+    }
+
+}
+
+
+void FixFeatureIdsForUpdates(vector<CRef<CSeq_feat> > updates, CObject_id::TId& next_id)
+{
+    for (size_t i = 1; i < updates.size(); i++) {
+        FixFeatureIdsForUpdates(*(updates[i]), next_id);
+    }
+}
+
+
+bool s_IsRelated(const CSeq_feat& f1, CObject_id::TId search)
+{
+    if (!f1.IsSetXref()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TXref, xit, f1.GetXref()) {
+        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal() &&
+            (*xit)->GetId().GetLocal().IsId() &&
+            (*xit)->GetId().GetLocal().GetId() == search) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool s_IsRelated(const CSeq_feat& f1, const CSeq_feat& f2)
+{
+    if (f1.IsSetId() && f1.GetId().IsLocal() && f1.GetId().GetLocal().IsId() &&
+        s_IsRelated(f2, f1.GetId().GetLocal().GetId())) {
+        return true;
+    } else if (f2.IsSetId() && f2.GetId().IsLocal() && f2.GetId().GetLocal().IsId() &&
+        s_IsRelated(f1, f2.GetId().GetLocal().GetId())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CFeatGapInfo::IsRelatedByCrossRef(const CFeatGapInfo& other) const
+{
+    return s_IsRelated(*(GetFeature().GetSeq_feat()), *(other.GetFeature().GetSeq_feat()));
+}
+
+
+
+void s_ReplaceFeatureIdXref(CSeq_feat& f, CObject_id::TId orig_id, CObject_id::TId new_id)
+{
+    if (orig_id > 0 && new_id > 0 && f.IsSetXref()) {
+        NON_CONST_ITERATE(CSeq_feat::TXref, xit, f.SetXref()) {
+            if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal() &&
+                (*xit)->GetId().GetLocal().IsId() &&
+                (*xit)->GetId().GetLocal().GetId() == orig_id) {
+                (*xit)->SetId().SetLocal().SetId(new_id);
+            }
+        }
+    }
+}
+
+
+void FixFeatureIdsForUpdatePair(vector<CRef<CSeq_feat> >& updates1, vector<CRef<CSeq_feat> >& updates2)
+{
+    if (updates1.size() != updates2.size()) {
+        // can't fix if lists are different lengths
+        return;
+    }
+    if (updates1.size() < 2) {
+        // nothing to fix if there's only one object
+    }
+    vector<CRef<CSeq_feat> >::iterator u1 = updates1.begin();
+    vector<CRef<CSeq_feat> >::iterator u2 = updates2.begin();
+
+    CObject_id::TId orig_id_1 = 0;
+    if ((*u1)->IsSetId() && (*u1)->GetId().IsLocal() && (*u1)->GetId().GetLocal().IsId()) {
+        orig_id_1 = (*u1)->GetId().GetLocal().GetId();
+    }
+    CObject_id::TId orig_id_2 = 0;
+    if ((*u2)->IsSetId() && (*u2)->GetId().IsLocal() && (*u2)->GetId().GetLocal().IsId()) {
+        orig_id_2 = (*u2)->GetId().GetLocal().GetId();
+    }
+    u1++;
+    u2++;
+
+    while (u1 != updates1.end() && u2 != updates2.end()) {
+        CObject_id::TId new_id_1 = 0;
+        if ((*u1)->IsSetId() && (*u1)->GetId().IsLocal() && (*u1)->GetId().GetLocal().IsId()) {
+            new_id_1 = (*u1)->GetId().GetLocal().GetId();
+        }
+        CObject_id::TId new_id_2 = 0;
+        if ((*u2)->IsSetId() && (*u2)->GetId().IsLocal() && (*u2)->GetId().GetLocal().IsId()) {
+            new_id_2 = (*u2)->GetId().GetLocal().GetId();
+        }
+        s_ReplaceFeatureIdXref(**u1, orig_id_2, new_id_2);
+        s_ReplaceFeatureIdXref(**u2, orig_id_1, new_id_1);
+        ++u1;
+        ++u2;
     }
 }
 
