@@ -137,10 +137,10 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     for (auto mod: unused_mods)
     {
         if (NStr::CompareNocase(mod.key, "bioproject") == 0)
-            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod.value);
+            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod.value);
         else
         if (NStr::CompareNocase(mod.key, "biosample") == 0)
-            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(_ParentDescr(bioseq), "DBLink"), mod.value);
+            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod.value);
         else
         if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
         {
