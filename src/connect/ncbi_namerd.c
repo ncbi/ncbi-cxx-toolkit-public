@@ -467,7 +467,7 @@ static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
 static void s_RemoveStandby(struct SNAMERD_Data* data)
 {
     double  max_rate = 0.0;
-    int     all_standby = 1;
+    int     all_standby = 1, i;
 
     /*  basic logic:
         if any endpoints have rate >= LBSM_STANDBY_THRESHOLD
@@ -476,7 +476,7 @@ static void s_RemoveStandby(struct SNAMERD_Data* data)
             discard all endpoints with rate < highest rate
     */
 
-    for (int i = 0;  i < (int)data->n_cand;  ++i) {
+    for (i = 0;  i < (int)data->n_cand;  ++i) {
 
         if (max_rate < data->cand[i].info->rate)
             max_rate = data->cand[i].info->rate;
@@ -485,7 +485,7 @@ static void s_RemoveStandby(struct SNAMERD_Data* data)
             all_standby = 0;
     }
 
-    for (int i = (int)data->n_cand - 1;  i >= 0;  --i) {
+    for (i = (int)data->n_cand - 1;  i >= 0;  --i) {
         if (data->cand[i].info->rate <
                 (all_standby ? max_rate : LBSM_STANDBY_THRESHOLD))
             s_RemoveCand(data, (size_t)i, 1);
@@ -716,6 +716,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         x_JSON_Object *root_obj;
         x_JSON_Array  *address_arr;
         const char    *success_type;
+        size_t         it;
 
         /* root object */
         root_value = x_json_parse_string(response);
@@ -768,7 +769,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* Note: top-level {"meta" : {}} not currently used */
 
         /* Iterate through addresses, adding to "candidates". */
-        for (size_t it = 0;  it < x_json_array_get_count(address_arr);  ++it) {
+        for (it = 0;  it < x_json_array_get_count(address_arr);  ++it) {
             x_JSON_Object   *address;
             const char      *host, *extra, *svc_type, *mode;
             const char      *cpfx, *ctype;
@@ -1232,9 +1233,9 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
             *   there are no candidates; or
             *   any candidates are expired.
         */
-    int any_expired = 0;
+    int any_expired = 0, i;
 
-    for (int i = (int)data->n_cand - 1;  i >= 0;  --i) {
+    for (i = (int)data->n_cand - 1;  i >= 0;  --i) {
         const SSERV_Info* info = data->cand[i].info;
         if (info->time < now) {
             TNCBI_Time  tnow = (TNCBI_Time)time(0);
