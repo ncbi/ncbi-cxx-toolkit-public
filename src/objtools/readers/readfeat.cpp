@@ -96,17 +96,11 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
-#define FTBL_PROGRESS(listener, _sSeqid, _uLineNum)                        \
-    do {                                                                   \
-        const Uint8 uLineNum = (_uLineNum);                                \
-        CNcbiOstrstream err_strm;                                          \
-        err_strm << "Seq-id " << (_sSeqid) << ", line " << uLineNum;       \
-        listener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
-    } while(false)
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
 
 namespace {
     static const char * const kCdsFeatName = "CDS";
@@ -306,6 +300,9 @@ public:
         string & out_seqid,
         string & out_annotname );
 
+    static void PutProgress(const string& seq_id,
+        const unsigned int line_number,
+        ILineErrorListener* pListener);
 private:
 
     // Prohibit copy constructor and assignment operator
@@ -2726,6 +2723,11 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     const std::string & strQualifierValue,
     const ILineError::TVecOfLines & vecOfOtherLines )
 {
+
+    if (!m_pMessageListener) {
+        return;
+    }
+
     AutoPtr<CObjReaderLineException> pErr ( 
         CObjReaderLineException::Create(
         eSeverity, line_num, "", eProblem, m_real_seqid, strFeatureName,
@@ -2733,13 +2735,24 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
         pErr->AddOtherLine(*line_it);
     }
-    if (m_pMessageListener == 0) {
-        pErr->Throw();
-    }
 
     if (!m_pMessageListener->PutError(*pErr)) {
         pErr->Throw();
     }
+}
+
+
+void CFeature_table_reader_imp::PutProgress(
+    const string& seq_id,
+    const unsigned int line_number,
+    ILineErrorListener* pListener) 
+{
+    if (!pListener) {
+        return;
+    }
+
+    string msg = "Seq-id " + seq_id + ", line " + NStr::IntToString(line_number);
+    pListener->PutProgress(msg); 
 }
 
 
@@ -2877,7 +2890,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
         if( m_reader->GetLineNumber() % 10000 == 0 &&
             m_reader->GetLineNumber() > 0 )
         {
-            FTBL_PROGRESS(m_pMessageListener, m_real_seqid, m_reader->GetLineNumber());
+            PutProgress(m_real_seqid, m_reader->GetLineNumber(), m_pMessageListener);
         }
 
         // skip empty lines.
@@ -3278,7 +3291,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
         CTempString line = *++reader;
 
         if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            FTBL_PROGRESS(pMessageListener, seqid, reader.GetLineNumber());
+            CFeature_table_reader_imp::PutProgress(seqid, reader.GetLineNumber(), pMessageListener);
         }
     }
 
