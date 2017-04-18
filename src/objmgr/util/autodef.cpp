@@ -1246,6 +1246,29 @@ CConstRef<CUser_object> s_GetOptionsForSet(CBioseq_set_Handle set)
 }
 
 
+string CAutoDef::RegenerateDefLine(CBioseq_Handle bh)
+{
+    string defline = kEmptyStr;
+    if (bh.IsAa()) {
+        return kEmptyStr;
+    }
+    CSeqdesc_CI desc(bh, CSeqdesc::e_User);
+    while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
+        ++desc;
+    }
+    if (desc) {
+        CAutoDef autodef;
+        autodef.SetOptionsObject(desc->GetUser());
+        CAutoDefModifierCombo mod_combo;
+        CAutoDefOptions options;
+        options.InitFromUserObject(desc->GetUser());
+        mod_combo.SetOptions(options);
+        defline = autodef.GetOneDefLine(&mod_combo, bh);
+    }
+    return defline;
+}
+
+
 bool CAutoDef::RegenerateSequenceDefLines(CSeq_entry_Handle se)
 {
     bool any = false;
@@ -1259,13 +1282,7 @@ bool CAutoDef::RegenerateSequenceDefLines(CSeq_entry_Handle se)
             ++desc;
         }
         if (desc) {
-            CAutoDef autodef;
-            autodef.SetOptionsObject(desc->GetUser());
-            CAutoDefModifierCombo mod_combo;
-            CAutoDefOptions options;
-            options.InitFromUserObject(desc->GetUser());
-            mod_combo.SetOptions(options);
-            string defline = autodef.GetOneDefLine(&mod_combo, *b_iter);
+            string defline = RegenerateDefLine(*b_iter);
 
             bool found_existing = false;
             CBioseq_EditHandle beh(*b_iter);

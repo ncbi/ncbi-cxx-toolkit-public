@@ -119,6 +119,7 @@ public:
     static string GetKeywordPrefix(CBioseq_Handle bh);
 
     static bool RegenerateSequenceDefLines(CSeq_entry_Handle se);
+    static string RegenerateDefLine(CBioseq_Handle bh);
     
 private:
     typedef vector<unsigned int> TModifierIndexVector;
