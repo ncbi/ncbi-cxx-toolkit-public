@@ -185,12 +185,12 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
 
-CSynRegistryImpl::CSynRegistryImpl(IRegistry* registry, EOwnership ownership)
+CSynRegistryImpl::CSynRegistryImpl(const IRegistry* registry, EOwnership ownership)
 {
     if (registry) Add(registry, ownership);
 }
 
-void CSynRegistryImpl::Add(IRegistry* registry, EOwnership ownership)
+void CSynRegistryImpl::Add(const IRegistry* registry, EOwnership ownership)
 {
     _ASSERT(registry);
 
@@ -336,7 +336,7 @@ CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 {
 }
 
-void CCachedSynRegistryImpl::Add(IRegistry* registry, EOwnership ownership)
+void CCachedSynRegistryImpl::Add(const IRegistry* registry, EOwnership ownership)
 {
     m_Registry->Add(registry, ownership);
 }
