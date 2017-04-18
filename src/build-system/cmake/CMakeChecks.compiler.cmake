@@ -10,6 +10,60 @@
 option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
 option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    add_definitions(-D_DEBUG -gdwarf-3)
+ELSE()
+    add_definitions(-DNDEBUG)
+ENDIF()
+
+if (APPLE)
+  add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
+else (APPLE)
+  add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
+endif (APPLE)
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    add_definitions(-Wall -Wno-format-y2k )
+endif()
+
+include(CheckCXXCompilerFlag)
+include(CheckCCompilerFlag)
+
+macro(set_cxx_compiler_flag_optional)
+    foreach (var ${ARGN})
+        CHECK_CXX_COMPILER_FLAG("${var}" _COMPILER_SUPPORTS_FLAG)
+        if (_COMPILER_SUPPORTS_FLAG)
+            message(STATUS "The compiler ${CMAKE_CXX_COMPILER} supports ${var}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${var}")
+            break()
+        endif()
+    endforeach()
+    if (_COMPILER_SUPPORTS_FLAG)
+    else()
+        message(WARNING "The compiler ${CMAKE_CXX_COMPILER} has no support for any of ${ARGN}")
+    endif()
+endmacro()
+
+macro(set_c_compiler_flag_optional)
+    foreach (var ${ARGN})
+        CHECK_C_COMPILER_FLAG(${var} _COMPILER_SUPPORTS_FLAG)
+        if (_COMPILER_SUPPORTS_FLAG)
+            message(STATUS "The compiler ${CMAKE_C_COMPILER} supports ${var}")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${var}")
+            break()
+        endif()
+    endforeach()
+    if (_COMPILER_SUPPORTS_FLAG)
+    else()
+        message(WARNING "The compiler ${CMAKE_C_COMPILER} has no support for any of ${ARGN}")
+    endif()
+endmacro()
+
+# Check for appropriate C++11 flags
+set_cxx_compiler_flag_optional("-std=gnu++11" "-std=c++11" "-std=c++0x")
+set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
+
+
 find_program(CCACHE_EXECUTABLE ccache
              PATHS /usr/local/ccache/3.2.5/bin/)
 find_program(DISTCC_EXECUTABLE distcc)
@@ -42,32 +96,7 @@ elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
 endif()
 
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions(-D_DEBUG -gdwarf-3)
-ELSE()
-    add_definitions(-DNDEBUG)
-ENDIF()
 
-if (APPLE)
-  add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
-else (APPLE)
-  add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
-endif (APPLE)
-
-if (CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(-Wall -Wno-format-y2k )
-endif()
-
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support.")
-endif()
 
 #
 # NOTE:
