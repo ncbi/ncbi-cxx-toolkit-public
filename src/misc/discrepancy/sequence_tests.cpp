@@ -159,7 +159,7 @@ DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end
     }
     const CSeqSummary& sum = context.GetSeqSummary();
     if (sum.StartsWithGap || sum.EndsWithGap) {
-        m_Objs[kTerminalNs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false).Fatal();
+        m_Objs[kTerminalNs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary())).Fatal();
     }
 }
 
@@ -445,19 +445,13 @@ const string kExternalRef = "[n] sequence[s] [has] external references";
 
 DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Greater than 10 percent Ns")
 {
-    bool found = false;
-    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
-    SSeqMapSelector sel;
-    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
-    //sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
-    try {
-        CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel, 0);
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq || seq->IsAa()) {
+        return;
     }
-    catch (...) {
-        found = true;
-    }
-    if (found) {
-        m_Objs[kExternalRef].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    const CSeqSummary& sum = context.GetSeqSummary();
+    if (sum.HasRef) {
+        m_Objs[kExternalRef].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
     }
 }
 
