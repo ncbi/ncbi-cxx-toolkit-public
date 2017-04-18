@@ -358,7 +358,7 @@ private:
     }
 
 public:
-    SNetScheduleAPIImpl(CConfig* config, const string& section);
+    SNetScheduleAPIImpl(SConfigOrRegistry conf_or_reg, const string& section);
 
     SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn = false, bool try_config = true);

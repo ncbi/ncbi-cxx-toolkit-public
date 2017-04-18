@@ -786,10 +786,10 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
     if (!m_Config.ticket.empty()) hello.SetString("Ticket", m_Config.ticket);
 
-    m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
+    m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.service, m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode));
 
-    m_Service->Init(this, m_Config.service, nullptr, "netstorage_api");
+    m_Service->Init(this, nullptr, "netstorage_api");
 }
 
 SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,

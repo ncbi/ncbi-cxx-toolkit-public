@@ -228,20 +228,20 @@ CRef<SNetCacheServerProperties> CNetCacheServerListener::x_GetServerProperties(
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
 
-SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
+SNetCacheAPIImpl::SNetCacheAPIImpl(SConfigOrRegistry conf_or_reg, const string& section,
         const string& service, const string& client_name,
         CNetScheduleAPI::TInstance ns_api) :
-    m_Service(new SNetServiceImpl("NetCacheAPI", client_name,
+    m_Service(new SNetServiceImpl("NetCacheAPI", service, client_name,
         new CNetCacheServerListener)),
     m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
-    m_Service->Init(this, service, config, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
+    m_Service->Init(this, conf_or_reg, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
 }
 
-SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name,
+SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name, const string& service,
         const string& client_name, INetServerConnectionListener* listener) :
-    m_Service(new SNetServiceImpl(api_name, client_name, listener)),
+    m_Service(new SNetServiceImpl(api_name, service, client_name, listener)),
     m_DefaultParameters(eVoid)
 {
 }
@@ -470,11 +470,10 @@ CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
 }
 
 CNetCacheAPI::CNetCacheAPI(const IRegistry& reg, const string& conf_section,
-        CNetScheduleAPI::TInstance ns_api)
+        CNetScheduleAPI::TInstance ns_api) :
+    m_Impl(new SNetCacheAPIImpl(reg, conf_section,
+            kEmptyStr, kEmptyStr, ns_api))
 {
-    CConfig conf(reg);
-    m_Impl = new SNetCacheAPIImpl(&conf, conf_section,
-            kEmptyStr, kEmptyStr, ns_api);
 }
 
 CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section,

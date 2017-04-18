@@ -495,17 +495,7 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections)
-{
-    m_ServiceName = service_name;
-
-    if (!config) return Init(api_impl, nullptr, sections);
-
-    CConfigRegistry config_registry(config);
-    return Init(api_impl, &config_registry, sections);
-}
-
-void SNetServiceImpl::Init(CObject* api_impl, IRegistry* top_registry, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
 
@@ -1485,9 +1475,9 @@ CNetService g_DiscoverService(const string& service_name,
         void OnWarning(const string&, CNetServer&) override {}
     };
 
-    CNetService service(new SNetServiceImpl("Discovery", client_name, new SNoOpConnectionListener));
+    CNetService service(new SNetServiceImpl("Discovery", service_name, client_name, new SNoOpConnectionListener));
 
-    service->Init(nullptr, service_name, nullptr, "discovery");
+    service->Init(nullptr, nullptr, "discovery");
 
     return service;
 }

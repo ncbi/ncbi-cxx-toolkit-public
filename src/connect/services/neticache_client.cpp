@@ -127,32 +127,17 @@ static const char s_NetICacheAPIName[] = "NetICacheClient";
 
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
-    SNetICacheClientImpl(CConfig* config,
+    SNetICacheClientImpl(SConfigOrRegistry conf_or_reg,
             const string& section,
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
+        SNetCacheAPIImpl(s_NetICacheAPIName, service_name, client_name,
                 new CNetICacheServerListener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
-        m_Service->Init(this, service_name, config,
-                { section, "netcache_api", "netcache_client", kNetICacheDriverName });
-    }
-
-    SNetICacheClientImpl(const IRegistry& reg,
-            const string& section,
-            const string& service_name,
-            const string& client_name,
-            const string& cache_name) :
-        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
-                new CNetICacheServerListener),
-        m_CacheFlags(ICache::fBestPerformance)
-    {
-        m_DefaultParameters.SetCacheName(cache_name);
-        CConfig config(reg);
-        m_Service->Init(this, service_name, &config,
+        m_Service->Init(this, conf_or_reg,
                 { section, "netcache_api", "netcache_client", kNetICacheDriverName });
     }
 

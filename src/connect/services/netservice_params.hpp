@@ -126,6 +126,26 @@ private:
     mutable map<string, unique_ptr<CConfig>> m_SubConfigs;
 };
 
+// Convenience wrapper to support for both CConfig and IRegistry automatically
+struct SConfigOrRegistry
+{
+    SConfigOrRegistry() : m_Registry(nullptr) {}
+
+    SConfigOrRegistry(const IRegistry& registry) : m_Registry(&registry) {}
+
+    SConfigOrRegistry(CConfig* config) :
+        m_ConfigRegistry(config ? new CConfigRegistry(config) : nullptr),
+        m_Registry(config ? m_ConfigRegistry.get() : nullptr)
+    {
+    }
+
+    operator const IRegistry*() const { return m_Registry; }
+
+private:
+    shared_ptr<CConfigRegistry> m_ConfigRegistry;
+    const IRegistry* m_Registry;
+};
+
 struct SRegSynonyms : vector<string>
 {
     using TBase = vector<string>;

@@ -69,12 +69,12 @@ public:
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 {
-    SNetCacheAPIImpl(CConfig* config, const string& section,
+    SNetCacheAPIImpl(SConfigOrRegistry conf_or_reg, const string& section,
             const string& service, const string& client_name,
             CNetScheduleAPI::TInstance ns_api);
 
     // For use by SNetICacheClientImpl
-    SNetCacheAPIImpl(const string& api_name, const string& client_name,
+    SNetCacheAPIImpl(const string& api_name, const string& service, const string& client_name,
             INetServerConnectionListener* listener);
 
     // Special constructor for CNetCacheAPI::GetServer().

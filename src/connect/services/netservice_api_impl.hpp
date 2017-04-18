@@ -294,10 +294,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     class CTry;
 
     // Construct a new object.
-    SNetServiceImpl(const string& api_name, const string& client_name,
+    SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
             INetServerConnectionListener* listener, bool old_style_auth = false) :
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
+        m_ServiceName(service_name),
         m_APIName(api_name),
         m_ClientName(client_name)
     {
@@ -334,8 +335,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     void Construct(SNetServerInPool* server);
     void Construct();
 
-    void Init(CObject* api_impl, const string& service_name, CConfig* config, SRegSynonyms sections);
-    void Init(CObject* api_impl, IRegistry* top_registry, SRegSynonyms sections);
+    void Init(CObject* api_impl, const IRegistry* top_registry, SRegSynonyms sections);
 
     string MakeAuthString();
 

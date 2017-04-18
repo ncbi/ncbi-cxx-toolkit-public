@@ -732,22 +732,22 @@ void CNetScheduleServerListener::OnWarning(const string& warn_msg,
 
 const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
-SNetScheduleAPIImpl::SNetScheduleAPIImpl(CConfig* config, const string& section) :
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(SConfigOrRegistry conf_or_reg, const string& section) :
     m_Mode(GetMode(false, true)),
-    m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr,
+    m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr, kEmptyStr,
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible)))
 {
-    m_Service->Init(this, kEmptyStr, config, { section, kNetScheduleAPIDriverName });
+    m_Service->Init(this, conf_or_reg, { section, kNetScheduleAPIDriverName });
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn, bool try_config) :
     m_Mode(GetMode(wn, try_config)),
-    m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
+    m_Service(new SNetServiceImpl("NetScheduleAPI", service_name, client_name,
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible))),
     m_Queue(queue_name)
 {
-    m_Service->Init(this, service_name, nullptr, kNetScheduleAPIDriverName);
+    m_Service->Init(this, nullptr, kNetScheduleAPIDriverName);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -770,10 +770,9 @@ CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
 }
 
 CNetScheduleAPI::CNetScheduleAPI(const IRegistry& reg,
-        const string& conf_section)
+        const string& conf_section) :
+    m_Impl(new SNetScheduleAPIImpl(reg, conf_section))
 {
-    CConfig conf(reg);
-    m_Impl = new SNetScheduleAPIImpl(&conf, conf_section);
 }
 
 CNetScheduleAPI::CNetScheduleAPI(CConfig* conf, const string& conf_section) :
