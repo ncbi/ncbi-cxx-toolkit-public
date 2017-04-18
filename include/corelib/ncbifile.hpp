@@ -2320,7 +2320,7 @@ public:
 
     /// Default constructor.
     ///
-    /// Automaticaly generate temporary file name.
+    /// Automatically generate temporary file name.
     CTmpFile(ERemoveMode remove_file = eRemove);
 
     /// Constructor.
@@ -3334,16 +3334,22 @@ void NCBI_XNCBI_EXPORT FindFiles(const string& pattern,
 struct SCompareDirEntries
 {
     /// Sorting mode
-    enum EMode {
+    enum ESort {
         ePath = 0,   ///< Sort by full path (default)
-        eName,       ///< Sort by name (dir->name->ext)
-        eExtension,  ///< Sort by extension (dir->ext->name)
+        eDir,        ///< Directory name
+        eName,       ///< Full file name
+        eBase,       ///< Base file name
+        eExt,        ///< File extension
+        eUndefined = kMax_Int
     };
-    SCompareDirEntries(EMode mode = ePath) : m_Mode(mode) {};
+    /// You can sort up to 3 path components. If first components
+    /// of both paths are equal, next one will be used for comparison, and etc.
+    SCompareDirEntries(ESort s1 = ePath, ESort s2 = eUndefined, ESort s3 = eUndefined);
+    /// Comparison operators
     bool operator()(const CDir::TEntry& e1, const CDir::TEntry& e2);
     bool operator()(const string& e1, const string& e2);
 private:
-    EMode m_Mode;
+    ESort m_Sort[3];
 };
 
 

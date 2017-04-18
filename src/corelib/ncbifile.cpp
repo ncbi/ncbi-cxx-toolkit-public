@@ -6170,57 +6170,55 @@ void FindFiles(const string& pattern,
 
 
 
-bool SCompareDirEntries::operator ()(const string& p1, const string& p2)
+SCompareDirEntries::SCompareDirEntries(ESort s1, ESort s2, ESort s3)
 {
-    if (m_Mode == ePath) {
+    m_Sort[0] = s1;
+    m_Sort[1] = s2;
+    m_Sort[2] = s3;
+}
+
+bool SCompareDirEntries::operator()(const string& p1, const string& p2)
+{
+    // Default case
+    if (m_Sort[0] == ePath) {
         return (p1 < p2);
     }
-
     string d1, n1, e1;
     string d2, n2, e2;
-
     CDirEntry::SplitPath(p1, &d1, &n1, &e1);
     CDirEntry::SplitPath(p2, &d2, &n2, &e2);
 
-    int dc = NStr::CompareCase(d1, d2);
+    int nc = 0;
 
-    if (m_Mode == eName) {
-        // dir -> name-> ext
-        if (dc == 0) {
-            int nc = NStr::CompareCase(n1, n2);
-            if (nc == 0) {
-                return e1 < e2;
-            }
-            else {
-                return nc < 0;
-            }
+    for (int i = 0; i < 3; i++) {
+        if (m_Sort[i] == eUndefined) {
+            break;
         }
-        else {
-            return dc < 0;
+        switch (m_Sort[i]) {
+        case ePath:
+            // usually we shouldn't get here, so just compare and exit
+            return (p1 < p2);
+        case eDir:
+            nc = NStr::CompareCase(d1, d2);
+            break;
+        case eName:
+            nc = NStr::CompareCase(n1 + e1, n2 + e2);
+            break;
+        case eBase:
+            nc = NStr::CompareCase(n1, n2);
+            break;
+        case eExt:
+            nc = NStr::CompareCase(e1, e2);
+            break;
+        case eUndefined:
+            break;
+        default:
+            NCBI_THROW(CCoreException, eInvalidArg, "Unknown sorting mode");
         }
-
+        if (nc != 0)
+            break;
     }
-    else {
-        if (m_Mode == eExtension) {
-            // dir -> ext -> name
-            if (dc == 0) {
-                int ec = NStr::CompareCase(e1, e2);
-                if (ec == 0) {
-                    return n1 < n2;
-                }
-                else {
-                    return ec < 0;
-                }
-            }
-            else {
-                return dc < 0;
-            }
-        }
-    }
-
-    NCBI_THROW(CCoreException, eInvalidArg, "Unknown sorting mode");
-    // Unreachable
-    return false;
+    return nc < 0;
 }
 
 
