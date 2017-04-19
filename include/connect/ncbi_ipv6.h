@@ -43,28 +43,51 @@ extern "C" {
 
 
 typedef struct {
-    unsigned char octet[16];  /* no alignment assumed */
+    unsigned char octet[16];  /* assume no alignment */
 } TNCBI_IPv6Addr;
 
 
-/** Return non-zero if the address is empty (either as IPv6 or IPv4); return
+/** Return non-zero if the address is empty (either as IPv6 or IPv4);  return
  *  zero otherwise.
+ * @sa
+ *  NcbiIsIPv4
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr);
 
 
 /** Return non-zero if the address is either IPv4 compatible or a mapped IPv4
- *  address; return zero otherwise.
+ *  address;  return zero otherwise.
+ * @sa
+ *  NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
 
+/** Extract and return an IPv4 embedded address from an IPv6 address, using the
+ *  specified prefix length (RFC6052).  Return INADDR_NONE (-1,255.255.255.255)
+ *  when the specified prefix length is not valid.  As a special case (and the
+ *  most anticipated common use-case) is to use prefix length 0, which checks
+ *  that the passed IPv6 address is actually a mapped IPv4 address, then
+ *  extracts it using the prefix length 96.  Return 0 if the extraction cannot
+ *  be made (not an IPv4 mapped address).
+ * @sa
+ *  NcbiIsIPv4, NcbiIPv4ToIPv6
+ */
 extern NCBI_XCONNECT_EXPORT
 unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen);
 
 
+/** Embed a passed IPv4 address into an IPv6 address using the specified prefix
+ *  length (RFC6052).  Return zero when the specified prefix length is not
+ *  valid, non-zero otherwise.  Special case (and the most anticipated common
+ *  use-case) is to use prefix length 0, which first clears the passed IPv6
+ *  address, then embeds the IPv4 address as a mapped address using the prefix
+ *  length 96.
+ * @sa
+ *  NcbiIsIPv4, NcbiIPv6ToIPv4
+ */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                             unsigned int ipv4, size_t pfxlen);
@@ -74,6 +97,9 @@ int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
  *  string pointer to the first non-converted character (which is neither a
  *  digit nor a dot); return 0 if conversion failed and no IPv4 address had
  *  been found.
+ * @sa
+ *  NcbiIPToAddr, NcbiIPv4ToIPv6, NcbiStringToAddr,
+ *  SOCK_StringToHostPort, SOCK_gethostbyname
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv4(unsigned int* addr,
@@ -85,6 +111,8 @@ const char*  NcbiStringToIPv4(unsigned int* addr,
  *  full-quad trailing IPv4); return a non-zero string pointer to the first
  *  non-converted character (which is neither a hex-digit, nor a colon, nor a
  *  dot); return 0 if conversion failed and no IPv6 address had been found.
+ * @sa
+ *  NcbiIPToAddr, NcbiStringToAddr
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
@@ -96,6 +124,8 @@ const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
  *  colon-separated IPv6; return a non-zero string pointer to the first
  *  non-converted character (which is neither a [hex-]digit, nor a colon, nor a
  *  dot); return 0 if  no conversion can be made.
+ * @sa
+ *  NcbiStringToIPv4, NcbiStringToIPv6, NcbiStingToAddr, NcbiAddrToString
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
@@ -108,6 +138,8 @@ const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
  *  names; return a non-zero string pointer to the first non-converted
  *  character (which is neither a [hex-]digit, nor a colon, nor a dot); return
  *  0 if no conversion can be made.
+ * @sa
+ *  NcbiAddrToString, NcbiAddrToDNS
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
@@ -118,6 +150,8 @@ const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
  *  result in the "buf" of size "bufsize".  Return non-zero string address
  *  past the stored result, or 0 when the conversion failed for buffer being
  *  too small.
+ * @sa
+ *  NcbiStringToIPv4, SOCK_ntoa, SOCK_HostPortToString
  */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiIPv4ToString(char* buf, size_t bufsize,
@@ -128,6 +162,8 @@ char*        NcbiIPv4ToString(char* buf, size_t bufsize,
  *  result in the "buf" of size "bufsize".  Return non-zero string address
  *  past the stored result, or 0 when the conversion failed for buffer being
  *  too small.
+ * @sa
+ *  NcbiStringToIPv6, NcbiStringToAddr, NcbiAddrToString
  */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiIPv6ToString(char* buf, size_t bufsize,
@@ -139,6 +175,8 @@ char*        NcbiIPv6ToString(char* buf, size_t bufsize,
  *  the result in the "buf" of size "bufsize".  Return non-zero string address
  *  past the stored result, or 0 when the conversion failed for buffer being
  *  too small.
+ * @sa
+ *  NcbiStringToAddr, NcbiAddrToDNS, SOCK_ntoa, SOCK_HostPortToString
  */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiAddrToString(char* buf, size_t bufsize,
@@ -149,6 +187,8 @@ char*        NcbiAddrToString(char* buf, size_t bufsize,
  *  IPv6 addresses) or .ip6.arpa domain (for all other) and store the result in
  *  the "buf" of size "bufsize".  Return non-zero string address past the
  *  stored result, or 0 when the conversion failed for buffer being too small.
+ * @sa
+ *  NcbiAddrToString
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
