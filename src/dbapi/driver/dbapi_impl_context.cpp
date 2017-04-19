@@ -433,6 +433,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             return dbcon;
                         }
                         else {
+                            t_con->m_Reusable = false;
                             delete dbcon;
                         }
                     }
@@ -464,6 +465,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             return dbcon;
                         }
                         else {
+                            t_con->m_Reusable = false;
                             delete dbcon;
                         }
                     }

@@ -343,7 +343,7 @@ private:
     CTime          m_CleanupTime;
     CRef<CObject>  m_UserData;
     unsigned int   m_ReuseCount;
-    const bool     m_Reusable;
+    bool           m_Reusable;
     bool           m_OpenFinished;
     bool           m_Valid;
     const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
