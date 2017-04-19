@@ -12,7 +12,9 @@ add_library(gencoll_client ${MODULE}__ ${MODULE}___ genomic_collections_cli geno
 
 RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
+SET_SOURCE_FILES_PROPERTIES(genomic_collections_cli_ PROPERTIES GENERATED 1)
 SET_TARGET_PROPERTIES(gencoll_client PROPERTIES LINKER_LANGUAGE CXX)
+
 
 target_link_libraries(${MODULE}
     genome_collection xcompress
