@@ -28,8 +28,8 @@
  *
  * Author:  Denis Vakatov
  *
- * @file
  * File Description:
+ * @file ncbi_core.h
  *   Types and code shared by all "ncbi_*.[ch]" modules.
  *
  * I/O status and direction:

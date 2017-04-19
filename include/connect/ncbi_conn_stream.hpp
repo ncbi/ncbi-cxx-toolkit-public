@@ -28,8 +28,8 @@
  *
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
- * @file
  * File Description:
+ * @file ncbi_conn_stream.hpp
  *   CONN-based C++ streams
  *
  * Classes:

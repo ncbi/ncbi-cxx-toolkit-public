@@ -29,6 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
+ * @file ncbi_ipv6.h
  *   IPv6 addressing support
  *
  */

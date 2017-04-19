@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- * @file
+ * @file ncbi_sendmail.h
  *   Send mail (in accordance with RFC821 [protocol] and RFC822 [headers])
  *
  */

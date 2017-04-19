@@ -35,8 +35,8 @@
 /// Implement CONNECTOR for a named pipe interprocess communication
 /// (based on the NCBI CNamedPipe).
 ///
-/// See in "connectr.h" for the detailed specification of the underlying
-/// connector("CONNECTOR", "SConnectorTag") methods and structures.
+/// See in "ncbi_connector.h" for the detailed specification of the underlying
+/// connector(CONNECTOR, SConnectorTag) methods and structures.
  
 
 #include <connect/ncbi_namedpipe.hpp>

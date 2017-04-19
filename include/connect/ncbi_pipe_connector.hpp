@@ -35,8 +35,8 @@
 /// Implement CONNECTOR for a pipe interprocess communication
 /// (based on the NCBI CPipe).
 ///
-/// See in "connectr.h" for the detailed specification of the underlying
-/// connector("CONNECTOR", "SConnectorTag") methods and structures.
+/// See in "ncbi_connector.h" for the detailed specification of the underlying
+/// connector(CONNECTOR, SConnectorTag) methods and structures.
 
 
 #include <connect/ncbi_pipe.hpp>

@@ -28,8 +28,8 @@
  *
  * Author:  Anton Lavrentiev
  *
- * @file
  * File Description:
+///@file ncbi_conn_test.hpp
  *   NCBI connectivity test suite.
  *
  */

@@ -29,6 +29,7 @@
  * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
+ * @file ncbi_server_info.h
  *   NCBI server meta-address info
  *
  *   Note that all server meta-addresses are allocated as single contiguous

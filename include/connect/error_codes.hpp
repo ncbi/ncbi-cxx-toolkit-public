@@ -33,7 +33,6 @@
 /// @file error_codes.hpp
 /// Definition of all error codes used in connect library
 /// (xconnect.lib, xconnext.lib etc).
-///
 
 #include <corelib/ncbidiag.hpp>
 

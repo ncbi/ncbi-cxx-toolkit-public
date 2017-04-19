@@ -28,9 +28,9 @@
  *
  * Author:  Anton Lavrentiev
  *
- * @file
  * File Description:
- *   Special types for core library.
+ * @file ncbi_types.h
+ *   Special types for connect core library.
  *
  * Timeout:
  *    struct STimeout

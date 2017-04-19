@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- * @file
+ * @file ncbi_host_info.h
  *   NCBI host info getters
  *
  *   Host information handle becomes available from SERV_Get[Next]InfoEx()

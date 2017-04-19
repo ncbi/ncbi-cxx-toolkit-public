@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File description:
- * @file
+ * @file ncbi_core_cxx.hpp
  *   C++->C conversion functions for basic CORE connect stuff:
  *   - Registry,
  *   - Logging,

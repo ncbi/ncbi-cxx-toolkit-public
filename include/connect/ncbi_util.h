@@ -28,8 +28,8 @@
  *
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
- * @file
  * File Description:
+ * @file ncbi_util.h
  *   Auxiliaries (mostly optional core to back and complement "ncbi_core.[ch]")
  * @sa
  *  ncbi_core.h

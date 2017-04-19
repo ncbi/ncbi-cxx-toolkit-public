@@ -29,7 +29,7 @@
  * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- * @file
+ * @file ncbi_service.h
  *   Top-level API to resolve NCBI service names into server meta-addresses.
  *
  */
