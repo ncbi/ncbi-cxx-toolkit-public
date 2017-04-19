@@ -3547,8 +3547,7 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
 
 bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       CTempStringEx& str1, CTempStringEx& str2,
-                      TSplitFlags flags,
-                      CTempString_Storage* storage)
+                      TSplitFlags flags, CTempString_Storage* storage)
 {
     if ((flags & (fSplit_CanEscape | fSplit_CanQuote)) && !storage) {
         NCBI_THROW2(CStringException, eBadArgs,
@@ -7461,9 +7460,9 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_d
 
     // Each chunk covers the half-open interval [part_start, delim_pos).
 
-    while ( !done
-           &&  ((delim_pos = m_Str.find_first_of(m_InternalDelim, pos))
-                != NPOS)) {
+    while ( !done  &&
+            ((delim_pos = m_Str.find_first_of(m_InternalDelim, pos)) != NPOS)) {
+
         SIZE_TYPE next_start = pos = delim_pos + 1;
         bool      handled    = false;
         char      c          = m_Str[delim_pos];
@@ -7471,10 +7470,10 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_d
         if ((m_Flags & NStr::fSplit_CanEscape) != 0  &&  c == '\\') {
             // treat the following character literally
             if (++pos > m_Str.size()) {
-                NCBI_THROW2(CStringException, eFormat, "Unescaped trailing \\",
-                            delim_pos);
+                NCBI_THROW2(CStringException, eFormat, "Unescaped trailing \\", delim_pos);
             }
             handled = true;
+
         } else if ((m_Flags & NStr::fSplit_CanQuote) != 0) {
             if (active_quote != '\0') {
                 if (c == active_quote) {
@@ -7525,9 +7524,7 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_d
     }
 
     if (active_quote != '\0') {
-        NCBI_THROW2(CStringException, eFormat,
-                    string("Unbalanced ") + active_quote,
-                    quote_pos);
+        NCBI_THROW2(CStringException, eFormat, string("Unbalanced ") + active_quote, quote_pos);
     }
 
     if (delim_pos == NPOS) {

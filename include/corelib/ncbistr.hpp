@@ -2412,6 +2412,9 @@ public:
     ///   its special meaning, as does escaping it if that's enabled too;
     ///   unescaped trailing backslashes and unbalanced quotes result in
     ///   exceptions.
+    /// @note
+    ///   All escape symbols, single or double quotes became removed
+    ///   if a corresponding fSplit_Can* flag is used.
     enum ESplitFlags {
         fSplit_MergeDelimiters = 1 << 0,  ///< Merge adjacent delimiters
         fSplit_Truncate_Begin  = 1 << 1,  ///< Truncate leading delimiters
