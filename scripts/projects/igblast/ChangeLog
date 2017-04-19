@@ -1,3 +1,9 @@
+April 19, 2017
+*Making vdj nucleotide junction overlapping an option. Default to no overlap allowed.
+*Use alignment length instead of percent identity as tiebreaker for hits with identical blast scores.
+*Allow custom J gene mismatch penalty.
+*Add CDR3 start and stop to sub-region table
+	
 Oct 26, 2016
 * Release 1.6.1
 * Added clonotype report
