@@ -5429,7 +5429,7 @@ static bool ContainsLetters(const string& prod_name)
 
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Suspect Product Name")
 {
-    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot || context.IsPseudo(*context.GetCurrentSeq_feat())) {
         return;
     }
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
