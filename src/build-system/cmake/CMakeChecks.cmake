@@ -3,6 +3,10 @@
 # Basic Setup
 #
 
+# We require at least cmake-3.0
+cmake_minimum_required(VERSION 3.0)
+
+
 set(top_src_dir     ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(abs_top_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(build_root      ${CMAKE_BINARY_DIR})
