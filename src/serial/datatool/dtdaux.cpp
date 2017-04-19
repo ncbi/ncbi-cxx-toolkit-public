@@ -293,6 +293,11 @@ DTDElement::DTDElement(void)
 
 DTDElement::DTDElement(const DTDElement& other)
 {
+    *this = other;
+}
+
+DTDElement& DTDElement::operator=(const DTDElement& other)
+{
     m_SourceLine = other.m_SourceLine;
     m_Name     = other.m_Name;
     m_TypeName = other.m_TypeName;
@@ -310,6 +315,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_Nillable = other.m_Nillable;
     m_Comments = other.m_Comments;
     m_AttribComments = other.m_AttribComments;
+    return *this;
 }
 
 DTDElement::~DTDElement(void)

@@ -62,6 +62,7 @@ protected:
     void AdjustMinOccurence(DTDElement& node, int occ);
     void ParseRequired(DTDElement& node);
     void ParseEnumeration(DTDElement& node);
+    void ParseOneOf(DTDElement& node);
 
     void SkipUnknown(TToken tokend);
 

@@ -213,6 +213,7 @@ class DTDElement
 public:
     DTDElement(void);
     DTDElement(const DTDElement& other);
+    DTDElement& operator=(const DTDElement& other);
     virtual ~DTDElement(void);
 
     enum EType {

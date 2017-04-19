@@ -199,6 +199,8 @@ void JSDParser::ParseNode(DTDElement& node)
                     ParseRequired(node);
                 } else if (key == "enum") {
                     ParseEnumeration(node);
+                } else if (key == "oneOf") {
+                    ParseOneOf(node);
                 } else if (key == "type") {
                     ParseError("type arrays not supported", "string");
                 } else if (key == "items") {
@@ -207,6 +209,8 @@ void JSDParser::ParseNode(DTDElement& node)
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_ARRAY);
                 }
+            } else {
+                ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
             }
         }
     }
@@ -272,6 +276,62 @@ void JSDParser::ParseEnumeration(DTDElement& node)
             }
         }
     }
+}
+
+void JSDParser::ParseOneOf(DTDElement& node)
+{
+    string node_id_base = NStr::Join(m_URI,"/");
+    DTDElement::EType type = node.GetType();
+    vector<DTDElement> contents;
+    TToken tok;
+    for (tok = GetNextToken(); tok != K_END_ARRAY; tok = GetNextToken()) {
+        if (tok == K_BEGIN_OBJECT) {
+            contents.push_back(DTDElement());
+            DTDElement& item = contents.back();
+            item.SetType(type);
+            item.SetEmbedded();
+            ParseNode(item);
+        }
+    }
+    // now merge
+    bool hasnil = false;
+    bool hasnamed = false;
+    DTDElement::EType nexttype = DTDElement::eUnknown;
+    for(const DTDElement& c : contents) {
+        if (c.IsNamed()) {
+            hasnamed = true;
+        }
+        if (c.GetType() == DTDElement::eEmpty && !c.IsNamed()) {
+            hasnil = true;
+        }
+        if (c.GetType() != DTDElement::eEmpty && type == DTDElement::eUnknown) {
+            if (nexttype == DTDElement::eUnknown) {
+                nexttype = c.GetType();
+            } else {
+                nexttype = DTDElement::eChoice;
+            }
+        }
+    }
+    if (nexttype == DTDElement::eUnknown) {
+        nexttype = DTDElement::eChoice;
+    }
+    if (type == DTDElement::eUnknown) {
+        node.SetType(nexttype);
+    } else if (type == DTDElement::eSequence) {
+        node.ResetType(DTDElement::eUnknown);
+        node.SetType(nexttype);
+        int i = 0;
+        for(DTDElement& c : contents) {
+            string item_id = node_id_base + "/" + NStr::NumericToString(i++);
+            if (!c.IsNamed()) {
+                c.SetName(item_id);
+            }
+            m_MapElement[item_id] = c;
+    	    AddElementContent(node,item_id);
+        }
+        FixEmbeddedNames(node);
+    }
+    node.SetNillable(hasnil);
 }
 
 void JSDParser::SkipUnknown(TToken tokend)
