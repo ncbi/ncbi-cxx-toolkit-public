@@ -264,11 +264,7 @@ esac
 
 : ${SGE_PATH=/netopt/uge}
 
-case "$ncbi_platform" in
-    FreeBSD64  ) : ${SQLITE3_PATH=$NCBI/sqlite-3.7.13-ncbi1}   ;;
-    Linux64    ) : ${SQLITE3_PATH=$NCBI/sqlite-3.7.13-ncbi1}   ;;
-    *          ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1} ;;
-esac
+: ${SQLITE3_PATH=$NCBI/sqlite-3.8.10.1-ncbi1}
 
 : ${SYBASE_PATH=/opt/sybase/clients/15.7-64bit}
 net_sybase_root="/netopt/Sybase/clients"
