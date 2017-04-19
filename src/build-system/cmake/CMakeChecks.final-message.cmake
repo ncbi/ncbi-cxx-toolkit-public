@@ -13,6 +13,8 @@ STRING(SUBSTRING "${EXTERNAL_LIBRARIES_COMMENT}" 1 -1 EXTERNAL_LIBRARIES_COMMENT
 function(ShowMainBoilerplate)
     message("")
     message("------------------------------------------------------------------------------")
+    message("CMake exe:      ${CMAKE_COMMAND}")
+    message("CMake version:  ${CMAKE_VERSION}")
     message("Build Target:   ${CMAKE_BUILD_TYPE}")
     message("Shared Libs:    ${BUILD_SHARED_LIBS}")
     message("Top Source Dir: ${top_src_dir}")
