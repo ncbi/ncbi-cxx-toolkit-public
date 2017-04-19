@@ -913,13 +913,15 @@ BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
     BOOST_CHECK_EQUAL(trna->IsSetQual(), true);
     BOOST_CHECK_EQUAL(trna->GetQual().front()->GetQual(), "product");
 
+    trna->ResetComment();
+    trna->ResetQual();
     trna->SetData().SetRna().SetExt().SetTRNA().ResetAa();
     trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "tRNA-Asn-GTT")));
     changes = cleanup.BasicCleanup(*trna);
     BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
     BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAa(), true);
     BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetCodon(), false);
-
+    BOOST_CHECK_EQUAL(trna->GetComment(), "tRNA-Asn-GTT");
 
 }
 

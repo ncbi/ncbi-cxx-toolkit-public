@@ -4724,7 +4724,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             if (str.size() == 3) {
                 CRef<CTrna_ext> tr2(new CTrna_ext);
                 if (CTrna_ext::ParseDegenerateCodon(*tr2, str)) {
-                    // drop the codon but don't complain about non-matching text
+                    tRNA_codon = str;
                 } else {
                     justt = false;
                 }
@@ -4802,7 +4802,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             CRNA_ref_Base::C_Ext::TTRNA& trna = rna.SetExt().SetTRNA();
             trna.SetAa().SetNcbieaa(aa);
 
-            if (!justTrnaText) {
+            if (!justTrnaText || !NStr::IsBlank(codon)) {
                 x_AddToComment(feat, product);
             }
 
