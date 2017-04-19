@@ -5409,7 +5409,7 @@ static string s_GetSpecimenVoucherText(
     string id;
     {
         string coll;
-        if( ! COrgMod::ParseStructuredVoucher(strRawName, inst, coll, id) ) {
+        if( ! COrgMod::ParseStructuredVoucher(strRawName, inst, coll, id) || NStr::IsBlank(inst)) {
             return strRawName;
         }
         if( ! coll.empty() ) {

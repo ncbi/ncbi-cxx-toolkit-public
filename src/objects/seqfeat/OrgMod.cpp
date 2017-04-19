@@ -158,13 +158,16 @@ bool COrgMod::HoldsInstitutionCode(const TSubtype stype)
 
 bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id)
 {
-	if (NStr::IsBlank(str) || str.length() < 3) {
-		return false;
-	}
-
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+    inst = kEmptyStr;
+    coll = kEmptyStr;
+    id = kEmptyStr;
 	size_t pos = NStr::Find(str, ":");
 	if (pos == string::npos) {
-		return false;
+        id = str;
+        return true;
 	}
 	inst = str.substr(0, pos);
 	id = str.substr(pos + 1);
@@ -174,11 +177,7 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 		coll = id.substr(0, pos);
 		id = id.substr(pos + 1);
 	}
-	if (NStr::IsBlank(inst) || NStr::IsBlank(id)) {
-		return false;
-	} else {
-		return true;
-	}
+    return true;
 }
 
 
@@ -409,14 +408,15 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
     string inst_coll;
     string id;
 
-    if (!ParseStructuredVoucher(val, inst_code, coll_code, id)) {
-        string rval = kEmptyStr;
-        if (NStr::IsBlank(inst_code)) {
-            rval = kMissingInst;
-        }
-        if (NStr::IsBlank(id)) {
-            rval = NStr::IsBlank(rval) ? kMissingId : rval + "\n" + kMissingId;
-        }
+    ParseStructuredVoucher(val, inst_code, coll_code, id);
+    string rval = kEmptyStr;
+    if (NStr::IsBlank(inst_code)) {
+        rval = kMissingInst;
+    }
+    if (NStr::IsBlank(id)) {
+        rval = NStr::IsBlank(rval) ? kMissingId : rval + "\n" + kMissingId;
+    }
+    if (!NStr::IsBlank(rval)) {
         return rval;
     }
 
@@ -609,8 +609,8 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
     string coll_code;
     string id;
 
-    if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
-        || NStr::IsBlank(inst_code)) {
+    ParseStructuredVoucher(val, inst_code, coll_code, id);
+    if (NStr::IsBlank(inst_code)) {
         if (AddStructureToVoucher(val, v_type)) {
             return true;
         } else {
@@ -681,13 +681,15 @@ string COrgMod::CheckMultipleVouchers(const vector<string>& vouchers)
 {
     ITERATE(vector<string>, it, vouchers) {
         string inst1, coll1, id1;
-        if (!COrgMod::ParseStructuredVoucher(*it, inst1, coll1, id1)) continue;
+        COrgMod::ParseStructuredVoucher(*it, inst1, coll1, id1);
+        if (NStr::IsBlank(inst1)) continue;
         if (NStr::EqualNocase(inst1, "personal") || NStr::EqualCase(coll1, "DNA")) continue;
 
         vector<string>::const_iterator it_next = it;
         for (++it_next; it_next != vouchers.end(); ++it_next) {
             string inst2, coll2, id2;
-            if (!COrgMod::ParseStructuredVoucher(*it_next, inst2, coll2, id2)) continue;
+            COrgMod::ParseStructuredVoucher(*it_next, inst2, coll2, id2);
+            if (NStr::IsBlank(inst2)) continue;
             if (NStr::EqualNocase(inst2, "personal") || NStr::EqualCase(coll2, "DNA")) continue;
             if (!NStr::EqualNocase (inst1, inst2) || NStr::IsBlank(inst1)) continue;
             return NStr::EqualNocase(coll1, coll2) && !NStr::IsBlank(coll1) ? "Multiple vouchers with same institution:collection" : "Multiple vouchers with same institution";
