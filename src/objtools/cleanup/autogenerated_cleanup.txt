@@ -328,6 +328,11 @@ use m_NewCleanup.x_ClearEmptyDescr {
     POST Bioseq
 }
 
+#remove single-strandedness from non-viral nucleotide sequences
+use m_NewCleanup.x_RemoveSingleStrand {
+    Bioseq
+}
+
 # Call LeavingEntry as late as possible, so keep this as close 
 # as possible to end of file.
 # (Its partner function is EnteringEntry.  See above.)

@@ -253,7 +253,7 @@ void CNewCleanup_imp::BasicCleanupSeqAnnot (
     x_PostProcessing();
 }
 
-void CNewCleanup_imp::BasicCleanupBioseq (
+void CNewCleanup_imp::BasicCleanupBioseq(
     CBioseq& bs
 )
 
@@ -9765,6 +9765,26 @@ void CNewCleanup_imp::x_ClearEmptyDescr( CBioseq& bioseq )
     }
 }
 
+static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
+{
+    bool ret = false;
+    if (bio_src && bio_src->IsSetLineage() && NStr::FindNoCase(bio_src->GetLineage(), "virus", 0) == NPOS) {
+        ret = inst.IsSetStrand() && inst.GetStrand() == CSeq_inst::eStrand_ss &&
+            inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna;
+    }
+
+    return ret;
+}
+
+void CNewCleanup_imp::x_RemoveSingleStrand(CBioseq& bioseq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+
+    if (bioseq.IsSetInst() && IsBadSeqInstStrand(bioseq.GetInst(), sequence::GetBioSource(bsh))) {
+        bioseq.SetInst().ResetStrand();
+        ChangeMade(CCleanupChange::eChangeBioseqInst);
+    }
+}
 
 void CNewCleanup_imp::x_NotePubdescOrAnnotPubs( 
     const CPub_equiv &pub_equiv )
