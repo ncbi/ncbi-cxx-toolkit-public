@@ -33,8 +33,4 @@ if test ! -r "$test_file"; then
     exit 1
 fi
 
-if test -n "$CHECK_EXEC"; then
-    $CHECK_EXEC test_ncbi_namerd -f $test_file
-else
-    ./test_ncbi_namerd -f $test_file
-fi
+$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_namerd -f $test_file

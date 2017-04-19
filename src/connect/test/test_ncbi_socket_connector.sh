@@ -35,7 +35,7 @@ t=0
 while true; do
   if [ -s "$port" ]; then
     sleep 1
-    $CHECK_EXEC test_ncbi_socket_connector localhost "`cat $port`" >>$client_log 2>&1  ||  exit_code=1
+    $CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_socket_connector localhost "`cat $port`" >>$client_log 2>&1  ||  exit_code=1
     break
   fi
   t="`expr $t + 1`"

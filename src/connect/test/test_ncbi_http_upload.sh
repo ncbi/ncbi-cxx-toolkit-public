@@ -13,4 +13,4 @@ fi
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC test_ncbi_http_upload $@
+$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_http_upload $@

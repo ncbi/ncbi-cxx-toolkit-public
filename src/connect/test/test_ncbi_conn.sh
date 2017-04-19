@@ -54,7 +54,7 @@ elif [ -n "$proxy" ]; then
   fi
 fi
 
-$CHECK_EXEC test_ncbi_conn -nopause 2>&1
+$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_conn -nopause 2>&1
 exit_code=$?
 
 test "$exit_code" = "0"  ||  outlog "$log"

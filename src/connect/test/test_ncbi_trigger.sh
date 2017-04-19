@@ -34,7 +34,7 @@ t=0
 while true; do
   if [ -s "$port" ]; then
     sleep 1
-    $CHECK_EXEC test_ncbi_trigger -port "`cat $port`" client >$client_log 2>&1 &
+    $CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_trigger -port "`cat $port`" client >$client_log 2>&1 &
     cpid=$!
     trap 'kill -9 $spid 2>/dev/null; kill -9 $cpid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
     break
