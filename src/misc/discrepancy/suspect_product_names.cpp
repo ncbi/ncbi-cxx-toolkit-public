@@ -5587,7 +5587,7 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 
 DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
 {
-    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
+    if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot || context.IsPseudo(*context.GetCurrentSeq_feat())) {
         return;
     }
     CBioSource::TGenome genome = context.GetCurrentGenome();
