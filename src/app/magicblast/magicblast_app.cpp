@@ -816,11 +816,13 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
 #define SAM_FLAG_NEXT_REVCOMP   0x20
 #define SAM_FLAG_FIRST_SEGMENT  0x40
 #define SAM_FLAG_LAST_SEGMENT   0x80
+#define SAM_FLAG_SECONDARY      0x100
 
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info,
-                       int batch_number, bool trim_read_ids,
+                       int batch_number, bool& first_secondary, 
+                       bool& last_secondary, bool trim_read_ids,
                        const CSeq_align* mate = NULL)
 {
     string sep = "\t";
@@ -844,10 +846,12 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         _ASSERT(second != disc.Get().end());
 
         PrintSAM(ostr, **first, queries, query_info, batch_number,
+                 first_secondary, last_secondary,
                  trim_read_ids, second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, batch_number,
+                 first_secondary, last_secondary,
                  trim_read_ids, first->GetNonNullPointer());
 
         return ostr;
@@ -933,8 +937,22 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         }
     }
 
-    if ((sam_flags & SAM_FLAG_MULTI_SEGMENTS) != 0 && !mate) {
-        sam_flags |= SAM_FLAG_NEXT_SEG_UNMAPPED;
+    // set secondary alignment bit
+    if ((sam_flags & SAM_FLAG_FIRST_SEGMENT) != 0) {
+        if (first_secondary) {
+            sam_flags |= SAM_FLAG_SECONDARY;
+        }
+        else {
+            first_secondary = true;
+        }
+    }
+    else {
+        if (last_secondary) {
+            sam_flags |= SAM_FLAG_SECONDARY;
+        }
+        else {
+            last_secondary = true;
+        }
     }
 
     // read id
@@ -1313,8 +1331,12 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        const BlastQueryInfo* query_info, int batch_number,
                        bool trim_read_id)
 {
+    bool first_secondary = false;
+    bool last_secondary = false;
+
     for (auto it: results.GetSeqAlign()->Get()) {
-        PrintSAM(ostr, *it, queries, query_info, batch_number, trim_read_id);
+        PrintSAM(ostr, *it, queries, query_info, batch_number, first_secondary,
+                 last_secondary, trim_read_id);
         ostr << endl;
     }
 

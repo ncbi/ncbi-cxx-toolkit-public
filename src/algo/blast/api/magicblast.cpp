@@ -395,6 +395,13 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
     return retval;
 }
 
+// paired alignments go first
+struct seq_align_pairs_first {
+    bool operator()(const CRef<CSeq_align>& a, const CRef<CSeq_align>& b) {
+        return a->GetSegs().IsDisc() && !b->GetSegs().IsDisc();
+    }
+};
+
 
 CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
                                            const BlastMappingResults* results)
@@ -443,6 +450,8 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
                 aligns->Set().push_back(it);
             }
 
+            // sort results so that pairs go first
+            aligns->Set().sort(seq_align_pairs_first());
 
             res.Reset(new CMagicBlastResults(query_id, mate_id, aligns,
                                              &query_masks[index],
