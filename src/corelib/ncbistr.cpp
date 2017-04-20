@@ -3350,6 +3350,15 @@ TContainer& s_Split(const TString& str, const TString& delim,
     return arr;
 }
 
+#define CHECK_SPLIT_TEMPSTRING_FLAGS(where) \
+    { \
+        if ((flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) && !storage) { \
+            NCBI_THROW2(CStringException, eBadArgs, \
+                "NStr::" #where "(): the selected flags require non-NULL storage", 0); \
+    } \
+}
+
+
 list<string>& NStr::Split(const CTempString str, const CTempString delim,
                           list<string>& arr, TSplitFlags flags,
                           vector<SIZE_TYPE>* token_pos)
@@ -3368,6 +3377,7 @@ list<CTempString>& NStr::Split(const CTempString str, const CTempString delim,
                                list<CTempString>& arr, TSplitFlags flags,
                                vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(Split);
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
@@ -3375,6 +3385,7 @@ vector<CTempString>& NStr::Split(const CTempString str, const CTempString delim,
                                  vector<CTempString>& arr, TSplitFlags flags,
                                  vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(Split);
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
@@ -3382,6 +3393,7 @@ list<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
                                  list<CTempStringEx>& arr, TSplitFlags flags,
                                  vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(Split);
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
@@ -3389,6 +3401,7 @@ vector<CTempStringEx>& NStr::Split(const CTempString str, const CTempString deli
                                    vector<CTempStringEx>& arr, TSplitFlags flags,
                                    vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(Split);
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
@@ -3410,6 +3423,7 @@ list<CTempString>& NStr::SplitByPattern(const CTempString str, const CTempString
                                         list<CTempString>& arr, TSplitFlags flags,
                                         vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(SplitByPattern);
     return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos, storage);
 }
 
@@ -3417,6 +3431,7 @@ vector<CTempString>& NStr::SplitByPattern(const CTempString str, const CTempStri
                                           vector<CTempString>& arr, TSplitFlags flags,
                                           vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(SplitByPattern);
     return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos, storage);
 }
 
@@ -3424,6 +3439,7 @@ list<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempStri
                                         list<CTempStringEx>& arr, TSplitFlags flags,
                                         vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(SplitByPattern);
     return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos, storage);
 }
 
@@ -3431,6 +3447,7 @@ vector<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempSt
                                           vector<CTempStringEx>& arr, TSplitFlags flags,
                                           vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
+    CHECK_SPLIT_TEMPSTRING_FLAGS(SplitByPattern);
     return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos, storage);
 }
 
@@ -3549,10 +3566,7 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       CTempStringEx& str1, CTempStringEx& str2,
                       TSplitFlags flags, CTempString_Storage* storage)
 {
-    if ((flags & (fSplit_CanEscape | fSplit_CanQuote)) && !storage) {
-        NCBI_THROW2(CStringException, eBadArgs,
-            "NStr::SplitInTwo(): the selected flags require non-NULL storage", 0);
-    }
+    CHECK_SPLIT_TEMPSTRING_FLAGS(SplitInTwo);
     typedef CStrTokenize<CTempString, int, CStrDummyTokenPos,
                          CStrDummyTokenCount,
                          CStrDummyTargetReserve<int, int> > TSplitter;

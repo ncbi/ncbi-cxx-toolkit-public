@@ -187,10 +187,6 @@ CStrTokenizeBase::CStrTokenizeBase(const CTempString& str,
                                    CTempString_Storage* storage)
     : m_Str(str), m_Pos(0), m_Flags(flags), m_Storage(storage)
 {
-    if ((flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) && !storage) {
-        NCBI_THROW2(CStringException, eBadArgs,
-            "NStr::CStrTokenizeBase(): the selected flags require non-NULL storage", 0);
-    }
     SetDelim(delim);
 }
 
