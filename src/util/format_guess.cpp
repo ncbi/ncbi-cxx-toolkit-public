@@ -1210,6 +1210,31 @@ CFormatGuess::TestFormatAlignment(
         return false;
     }
 
+
+    if (TestFormatCLUSTAL()) {
+        return true;
+    }
+/*
+    CNcbiIstrstream TestBuffer(
+        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strLine;
+
+    while ( !TestBuffer.fail() ) {
+        vector<string> Fields;
+        NcbiGetlineEOL(TestBuffer, strLine);
+
+        if (TestBuffer.fail()) {
+            break;
+        }
+        if (NStr::IsBlank(strLine)) {
+            cout << "Empty" << endl;
+        } else {
+            cout << strLine << "\n";
+        }
+    }
+*/
+
+
     // Alignment files come in all different shapes and broken formats,
     // and some of them are hard to recognize as such, in particular
     // if they have been hacked up in a text editor.
@@ -1230,6 +1255,135 @@ CFormatGuess::TestFormatAlignment(
     }
     return false;
 }
+
+//  -----------------------------------------------------------------------------
+bool CFormatGuess::x_LooksLikeCLUSTALConservedInfo(const string& line) const
+{
+
+    for (auto c : line) {
+        if ( isspace(c)) {
+            continue;
+        }
+
+        if (c != ':' &&
+            c != '*' &&
+            c != '.') {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, unsigned int& num_residues) const
+{
+    vector<string> toks;
+    NStr::Split(line, " \t", toks, NStr::eMergeDelims);
+    const size_t num_toks = toks.size();
+
+    if (num_toks != 2 &&
+        num_toks != 3) {
+        return false;
+    }
+
+    const string& seqdata = toks[1];
+    if (num_toks == 3 &&
+        NStr::StringToUInt(toks[2], NStr::fConvErr_NoThrow) < seqdata.size()) {
+        return false;
+    }
+
+    // Check sequence data
+    ESequenceType seqtype = 
+        SequenceType(seqdata.c_str(), seqdata.size(), eST_Strict);
+
+    if (seqtype == eUndefined) {
+        return false;
+    }
+
+    id = toks[0];
+    num_residues = seqdata.size();
+    return true;
+} 
+
+//  -----------------------------------------------------------------------------
+bool 
+CFormatGuess::TestFormatCLUSTAL()
+{
+
+    if (!EnsureTestBuffer()) {
+        return false;
+    }
+
+    CNcbiIstrstream TestBuffer(
+        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strLine;
+
+    bool in_block = false;
+    unsigned int block_size = 0;
+    bool has_valid_block = false;
+    string seq_id;
+    unsigned int num_residues = 0;
+    unsigned int num_residues_prev = 0;
+    set<string> block_ids;
+
+    while ( !TestBuffer.fail() ) {
+        NcbiGetlineEOL(TestBuffer, strLine);
+
+        if (TestBuffer.fail()) {
+            break;
+        }
+
+        if (NStr::StartsWith(strLine, "CLUSTAL")) {
+            continue;    
+        }
+
+        if (NStr::IsBlank(strLine)) {
+            if (in_block) {
+                if (block_size < 2) {
+                    return false;
+                }
+                in_block = false;
+                block_size = 0;
+                block_ids.clear();
+            }
+            continue;
+        }
+
+        if (x_LooksLikeCLUSTALConservedInfo(strLine)) {
+            if (!in_block || block_size<2) {
+                return false;
+            } 
+            in_block = false;
+            block_size = 0;
+            block_ids.clear();
+            continue;
+        }
+
+        if (x_TryProcessCLUSTALSeqData(strLine, seq_id, num_residues)) {
+            if (num_residues > 60) {
+                return false;
+            }
+            if (in_block) {
+                if(num_residues != num_residues_prev) {
+                    return false;
+                }
+                has_valid_block = true;
+            }
+
+            if (block_ids.find(seq_id) != block_ids.end()) {
+                return false;
+            }
+            block_ids.insert(seq_id);
+
+            num_residues_prev = num_residues;
+            in_block = true;
+            ++block_size;
+        }
+    }
+
+    return has_valid_block;
+}
+
 
 //  -----------------------------------------------------------------------------
  bool 
