@@ -171,7 +171,6 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 	}
 	inst = str.substr(0, pos);
 	id = str.substr(pos + 1);
-	coll.clear();
 	pos = NStr::Find(id, ":");
 	if (pos != string::npos) {
 		coll = id.substr(0, pos);
