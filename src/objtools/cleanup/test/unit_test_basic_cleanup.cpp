@@ -892,6 +892,35 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3994)
 }
 
 
+void TestMoveTrnaProductQualToNote(const string& qual, bool keep)
+{
+    CRef<CSeq_feat> trna(new CSeq_feat());
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA();
+    trna->SetLocation().SetInt().SetFrom(7572);
+    trna->SetLocation().SetInt().SetTo(7644);
+    trna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    trna->SetLocation().SetInt().SetId().SetEmbl().SetAccession("LN913684");
+    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", qual)));
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*trna);
+
+    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAa(), true);
+    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetCodon(), false);
+    if (keep) {
+        BOOST_CHECK_EQUAL(trna->IsSetComment(), false);
+        BOOST_CHECK_EQUAL(trna->GetQual().size(), 1);
+    } else {
+        BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
+        BOOST_CHECK_EQUAL(trna->GetComment(), qual);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
 {
     CRef<CSeq_feat> trna(new CSeq_feat());
@@ -913,16 +942,9 @@ BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
     BOOST_CHECK_EQUAL(trna->IsSetQual(), true);
     BOOST_CHECK_EQUAL(trna->GetQual().front()->GetQual(), "product");
 
-    trna->ResetComment();
-    trna->ResetQual();
-    trna->SetData().SetRna().SetExt().SetTRNA().ResetAa();
-    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "tRNA-Asn-GTT")));
-    changes = cleanup.BasicCleanup(*trna);
-    BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
-    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAa(), true);
-    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetCodon(), false);
-    BOOST_CHECK_EQUAL(trna->GetComment(), "tRNA-Asn-GTT");
-
+    TestMoveTrnaProductQualToNote("tRNA-Asn-GTT", false);
+    TestMoveTrnaProductQualToNote("transfer RNA-Leu (CAA)", false);
+    TestMoveTrnaProductQualToNote("tRNA-fMet", true);
 }
 
 

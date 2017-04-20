@@ -4831,11 +4831,15 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
         CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
         if (trp.IsSetAa() && trp.GetAa().IsNcbieaa()) {
             string ignored = kEmptyStr;
-            if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
-                NStr::IsBlank(ignored)) {
+            if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false)) {
+                if (NStr::IsBlank(ignored)) {
+                    return eAction_Erase;
+                } else {
+                    x_AddToComment(feat, product);
+                }
             } else {
+                // don't remove product qual because it conflicts with existing aa value
                 return eAction_Nothing;
-//                x_AddToComment(feat, product);
             }
             if (NStr::CompareNocase (product, "tRNA-fMet") == 0 || NStr::CompareNocase (product, "iRNA-fMet") == 0) {
                 return eAction_Nothing;
