@@ -128,7 +128,9 @@ typedef Uint4 TNCCmdFlags;
 enum ENCUserFlags {
     fNoUserFlags = 0,
     /// Command does not update blob expiration time
-    fNoProlong    = 1 <<  0
+    fNoProlong    = 1 <<  0,
+    /// Command does not create blob if it does not exist
+    fNoCreate     = 1 <<  1
 };
 typedef Uint4 TNCUserFlags;
 

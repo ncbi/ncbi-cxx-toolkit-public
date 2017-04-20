@@ -2427,7 +2427,7 @@ CNCMessageHandler::x_StartCommand(void)
 
     x_LogCmdEvent("RequestMetaInfo");
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(
-                                    m_ParsedCmd.command->extra.blob_access,
+                                    x_IsUserFlagSet(fNoCreate) ? eNCNone : m_ParsedCmd.command->extra.blob_access,
                                     m_NCBlobKey.PackedKey(), m_BlobPass, m_TimeBucket);
     m_BlobAccess->RequestMetaInfo(this);
     return &CNCMessageHandler::x_WaitForBlobAccess;
@@ -3021,7 +3021,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         Uint8 cur_time = cur_srv_time.AsUSec();
         int cur_secs = int(cur_srv_time.Sec());
         m_BlobAccess->SetBlobCreateTime(cur_time);
-        if (x_IsUserFlagSet(fNoProlong) && m_BlobAccess->IsBlobExists()) {
+        if (x_IsUserFlagSet(fNoProlong) && m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired()) {
             m_BlobAccess->SetNewBlobExpire(m_BlobAccess->GetCurBlobExpire());
             m_BlobAccess->SetNewVerExpire(m_BlobAccess->GetCurVerExpire());
         } else {
@@ -4079,6 +4079,9 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Put(void)
 {
     LOG_CURRENT_FUNCTION
+    if (x_IsUserFlagSet(fNoCreate) && !(m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired())) {
+        return &CNCMessageHandler::x_ReportBlobNotFound;
+    }
     if (!m_BlobAccess->IsBlobExists()) {
         EHTTPStatus sts = eStatus_Created;
         if (x_IsHttpMode()) {
@@ -4320,6 +4323,9 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_IC_Store(void)
 {
     LOG_CURRENT_FUNCTION
+    if (x_IsUserFlagSet(fNoCreate) && !(m_BlobAccess->IsBlobExists() && !m_BlobAccess->IsCurBlobExpired())) {
+        return &CNCMessageHandler::x_ReportBlobNotFound;
+    }
     if (!m_BlobAccess->IsBlobExists()) {
         if (CNCBlobStorage::IsDraining()) {
             x_ReportError(eStatus_ShuttingDown);
