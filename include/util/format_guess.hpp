@@ -244,6 +244,7 @@ protected:
         EMode );
     bool TestFormatAlignment(
         EMode );
+    bool TestFormatCLUSTAL(void);
     bool TestFormatBinaryAsn(
         EMode );
     bool TestFormatDistanceMatrix(
@@ -366,6 +367,14 @@ private:
 
     // data:
     static const char* const sm_FormatNames[eFormat_max];
+
+
+    bool x_TryProcessCLUSTALSeqData(const string& line, 
+        string& id,
+        unsigned int& num_residues) const;
+
+    bool x_LooksLikeCLUSTALConservedInfo(const string& line) const;
+
 protected:
     static int s_CheckOrder[];
     
