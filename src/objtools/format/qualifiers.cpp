@@ -1048,6 +1048,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const CTempString& name,
     if ( m_Value->IsGi() ) {
         if ( m_GiPrefix ) {
             id_str = "GI:";
+            if (ctx.Config().HideGI() && name == "db_xref") return;
         }
         m_Value->GetLabel(&id_str, CSeq_id::eContent);
     } else {
