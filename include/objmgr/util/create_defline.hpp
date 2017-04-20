@@ -83,14 +83,15 @@ public:
 
     /// User-settable flags for tuning behavior
     enum EUserFlags {
-        fIgnoreExisting    = 0x1, ///< Generate fresh titles unconditionally.
-        fAllProteinNames   = 0x2, ///< List all relevant proteins, not just one.
-        fLocalAnnotsOnly   = 0x4, ///< Never use related sequences' annotations.
+        fIgnoreExisting    = 1 << 0, ///< Generate fresh titles unconditionally.
+        fAllProteinNames   = 1 << 1, ///< List all relevant proteins, not just one.
+        fLocalAnnotsOnly   = 1 << 2, ///< Never use related sequences' annotations.
         /// Refrain from anything that could add substantial overhead.
         fNoExpensiveOps    = fLocalAnnotsOnly,
-        fGpipeMode         = 0x8, ///< Use GPipe defaults.
-        fOmitTaxonomicName = 0x10, ///< Do not add organism suffix to proteins.
-        fDevMode           = 0x20 ///< Development mode for testing new features.
+        fGpipeMode         = 1 << 3, ///< Use GPipe defaults.
+        fOmitTaxonomicName = 1 << 4, ///< Do not add organism suffix to proteins.
+        fDevMode           = 1 << 5, ///< Development mode for testing new features.
+        fShowModifiers     = 1 << 8  ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -107,7 +108,7 @@ public:
         TUserFlags flags = 0
     );
 
-    string x_GetModifiers(const CBioseq_Handle & handle, TUserFlags flags);
+    string x_GetModifiers(const CBioseq_Handle & handle);
 private:
     // Prohibit copy constructor & assignment operator
     CDeflineGenerator (const CDeflineGenerator&);

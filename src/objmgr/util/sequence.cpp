@@ -112,7 +112,7 @@ static string s_GetFastaTitle(const CBioseq& bs)
             return "";
         }
         if ( sd->Which() == CSeqdesc::e_Title ) {
-            if ( title == "" ) {
+            if ( title.empty() ) {
                 title = sd->GetTitle();
             }
         }
@@ -2843,6 +2843,9 @@ CFastaOstream::x_GetTitleFlags(void) const
     if ((m_Flags & fNoExpensiveOps) != 0) {
         title_flags |= sequence::CDeflineGenerator::fNoExpensiveOps;
     }
+    if ((m_Flags & fShowModifiers) != 0) {
+        title_flags |= sequence::CDeflineGenerator::fShowModifiers;
+    }
     return title_flags;
 }
 
@@ -2852,8 +2855,6 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq_Handle & bioseq_handle,
     string safe_title;
     if (!custom_title.empty()) {
         safe_title = custom_title;
-    } else if (m_Flags & fShowModifiers) {
-        safe_title = m_Gen->x_GetModifiers(bioseq_handle, x_GetTitleFlags());
     } else {
         const CBioseq& bioseq = *bioseq_handle.GetBioseqCore();
         safe_title = sequence::s_GetFastaTitle(bioseq);

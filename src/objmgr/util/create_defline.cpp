@@ -2567,12 +2567,10 @@ static const char* s_tpaPrefixList [] = {
   "TSA:",
   "UNVERIFIED:"
 };
-
-string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh, TUserFlags flags)
+string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
 {
     CDefLineJoiner joiner(true);
 
-    x_SetFlags (bsh, flags);
     x_SetBioSrc (bsh);
 
     joiner.Add("location", m_Organelle);
@@ -2706,6 +2704,10 @@ string CDeflineGenerator::GenerateDefline (
     // set flags from record components
     x_SetFlags (bsh, flags);
 
+    if (flags | fShowModifiers) {
+        return x_GetModifiers(bsh);
+    }
+
     if (! m_Reconstruct) {
         // x_SetFlags set m_MainTitle from a suitable descriptor, if any;
         // now strip trailing periods, commas, semicolons, and spaces.
@@ -2752,17 +2754,17 @@ string CDeflineGenerator::GenerateDefline (
             } else if (m_IsMap) {
                 x_SetTitleFromMap ();
             }
-        }
 
-        if (m_MainTitle.empty() && m_GpipeMode) {
-            x_SetTitleFromGPipe ();
-        }
+            if (m_MainTitle.empty() && m_GpipeMode) {
+                x_SetTitleFromGPipe();
+            }
 
-        if (m_MainTitle.empty()) {
-            // default title using source fields
-            x_SetTitleFromBioSrc ();
-            if (m_MICompleteness == NCBI_COMPLETENESS(complete) && ! m_MainTitle.empty()) {
-                appendComplete = true;
+            if (m_MainTitle.empty()) {
+                // default title using source fields
+                x_SetTitleFromBioSrc();
+                if (m_MICompleteness == NCBI_COMPLETENESS(complete) && !m_MainTitle.empty()) {
+                    appendComplete = true;
+                }
             }
         }
 
