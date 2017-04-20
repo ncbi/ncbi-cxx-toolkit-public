@@ -379,6 +379,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
     m_In = OpenFile(fname);
     if (m_In.get() == 0) {
+        PrintValidError(ReportReadFailure(), args);
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
     } else {
         try {
