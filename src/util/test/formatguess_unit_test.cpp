@@ -363,6 +363,38 @@ static const char* kData_NotJSON2 =
     R"(        "test open string )";
 
 
+// CLUSTAL
+static const char* kData_CLUSTAL1 =
+R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
+gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
+gi|108762389|ref|YP_634888.1|       MPKAKYVLALDQGTTGTHVSILDTKLQVVGRSYKEFTQHFPKPSWVEHDL
+                                        . ::.:* ***. :. :   . .:       :. :    . .*.: 
+                                                                                      
+gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNTGQAIYN
+gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
+gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
+
+static const char* kData_CLUSTAL2 =
+R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
+gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
+gi|108762389|ref|YP_634888.1|       MPKAKYVLALDQGTTGTHVSILDTKLQVVGRSYKEFTQHFPKPSWVEHDL
+                                                                                      
+gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNTGQAIYN
+gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
+gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
+
+
+static const char* kData_NotCLUSTAL1 =
+R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
+gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
+gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
+                                                                                      
+gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNTGQAIYN
+gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
+gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
+
+
+
 static const char* kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
     "\x7f\x5a\x09\x00\x00\x00\x09\x00\x00\x00\x0c\x00\x15\x00\x7a\x69"
@@ -534,6 +566,31 @@ BOOST_AUTO_TEST_CASE(TestAlignment)
         CNcbiIstrstream str(kData_Alignment2);
         CFormatGuess guess(str);
         BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eAlignment);
+    }}
+}
+
+BOOST_AUTO_TEST_CASE(TestCLUSTAL)
+{
+    {{
+        CNcbiIstrstream str(kData_CLUSTAL1);
+        CFormatGuess guess(str);
+        BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eAlignment);
+    }}
+
+
+    {{
+        CNcbiIstrstream str(kData_CLUSTAL2);
+        CFormatGuess guess(str);
+        BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eAlignment);
+    }}
+}
+
+BOOST_AUTO_TEST_CASE(TestNotCLUSTAL)
+{
+    {{
+        CNcbiIstrstream str(kData_NotCLUSTAL1);
+        CFormatGuess guess(str);
+        BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
     }}
 }
 
