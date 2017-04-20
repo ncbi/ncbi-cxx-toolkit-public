@@ -1556,7 +1556,7 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
     auto it = infos.find("SOURCE");
     if (infos.end() != it) {
         vector<string> sources = it->second;
-        if (sources.size() >= 0 &&
+        if (sources.size() > 0 &&
             NStr::Equal(sources.front(),"dbsnp")) 
         {
             bool valid_id=false;
