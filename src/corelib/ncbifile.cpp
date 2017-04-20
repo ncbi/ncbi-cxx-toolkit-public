@@ -6223,8 +6223,6 @@ bool SCompareDirEntries::operator()(const string& p1, const string& p2)
         case eExt:
             nc = NStr::CompareCase(e1, e2);
             break;
-        case UNDEFINED_SORT_MODE:
-            break;
         default:
             NCBI_THROW(CCoreException, eInvalidArg, "Unknown sorting mode");
         }
