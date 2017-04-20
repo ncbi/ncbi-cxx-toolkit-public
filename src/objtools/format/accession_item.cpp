@@ -88,37 +88,28 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         m_IsSetRegion = true;
     }
 
+    bool okay = true;
     // if no accession, do not show local or general in ACCESSION
     if ((id.IsGeneral()  ||  id.IsLocal())  &&
         (ctx.Config().IsModeEntrez()  ||  ctx.Config().IsModeGBench())) {
-            return;
+            okay = false;
     }
-    m_Accession = id.GetSeqIdString();
 
-    if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() && ctx.GetTech() == CMolInfo::eTech_wgs ) {
-        size_t acclen = m_Accession.length();
-        m_WGSAccession = m_Accession;
-        if (acclen >= 12) {
-            size_t stem_len = (acclen >= 15) ? 7 : 6, tail_len = acclen - stem_len;
-            if (m_Accession.find_first_not_of("0", stem_len) != NPOS) {
-                m_WGSAccession.replace(stem_len, tail_len, tail_len, '0');
-            } else {
-                m_WGSAccession.erase();
+    if (okay) {
+        m_Accession = id.GetSeqIdString();
+
+        if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() && ctx.GetTech() == CMolInfo::eTech_wgs ) {
+            size_t acclen = m_Accession.length();
+            m_WGSAccession = m_Accession;
+            if (acclen >= 12) {
+                size_t stem_len = (acclen >= 15) ? 7 : 6, tail_len = acclen - stem_len;
+                if (m_Accession.find_first_not_of("0", stem_len) != NPOS) {
+                    m_WGSAccession.replace(stem_len, tail_len, tail_len, '0');
+                } else {
+                    m_WGSAccession.erase();
+                }
             }
         }
-        /*
-        if (acclen == 12 && ! NStr::EndsWith(m_WGSAccession, "000000")) {
-            m_WGSAccession.replace(6, acclen - 6, acclen - 6, '0');
-        } else if (acclen == 13 && ! NStr::EndsWith(m_WGSAccession, "0000000")) {
-            m_WGSAccession.replace(6, acclen - 7, acclen - 7, '0');
-        } else if (acclen == 14 && ! NStr::EndsWith(m_WGSAccession, "00000000")) {
-            m_WGSAccession.replace(6, acclen - 8, acclen - 8, '0');
-        } else if (acclen == 15 && ! NStr::EndsWith(m_WGSAccession, "00000000")) {
-            m_WGSAccession.replace(6, acclen - 8, acclen - 8, '0');
-        } else {
-            m_WGSAccession.erase();
-        }
-        */
     }
 
     // extra accessions not done if we're taking a slice 
@@ -156,7 +147,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         }
 
         /// add GPipe accessions as extra if no RefSeq accession
-        if (! id.IsOther() && ! id.IsGpipe()) {
+        if (okay && ! id.IsOther() && ! id.IsGpipe()) {
             ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
                 if ((*it)->IsGpipe()) {
                     m_ExtraAccessions.push_back((*it)->GetGpipe().GetAccession());
