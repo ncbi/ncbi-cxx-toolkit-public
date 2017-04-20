@@ -31,7 +31,7 @@ t=0
 while true; do
   if [ -s $server_log ]; then
     sleep 2
-    $CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_namedpipe -suffix $$ client >$client_log 2>&1  ||  exit_code=1
+    $CHECK_EXEC test_ncbi_namedpipe -suffix $$ client >$client_log 2>&1  ||  exit_code=1
     break
   fi
   t="`expr $t + 1`"

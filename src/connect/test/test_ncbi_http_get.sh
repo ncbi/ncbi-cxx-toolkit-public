@@ -38,4 +38,4 @@ fi
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_http_get "$url"
+$CHECK_EXEC test_ncbi_http_get "$url"

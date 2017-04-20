@@ -46,7 +46,7 @@ esac
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_ftp_download $file 2>&1
+$CHECK_EXEC test_ncbi_ftp_download $file 2>&1
 exit_code=$?
 
 test "$exit_code" = "0"  ||  outlog "$log"

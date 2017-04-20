@@ -31,4 +31,4 @@ nthreads="`expr $$ % 10 + 2`"
 # Pick some arbitrary text for testing.
 test_text="param1%3Dval1%26param2%3D%22line+1%0Aline+2%0A%22"
 
-$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_namerd_mt -threads $nthreads -svc $svc -post "$test_text" -exp "$test_text"
+$CHECK_EXEC test_ncbi_namerd_mt -threads $nthreads -svc $svc -post "$test_text" -exp "$test_text"

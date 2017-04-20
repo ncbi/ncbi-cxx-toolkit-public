@@ -48,4 +48,4 @@ esac
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC ${CHECK_EXEC:-./}test_ncbi_conn_stream_mt -threads "`expr $$ % 10 + 2`" "$url"
+$CHECK_EXEC test_ncbi_conn_stream_mt -threads "`expr $$ % 10 + 2`" "$url"
