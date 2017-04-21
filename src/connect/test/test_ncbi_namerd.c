@@ -331,7 +331,7 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
                       const char *hdr, int check_for_match, int exp_err,
                       const char *mock_body_in, int repop, int reset)
 {
-    const SSERV_Info    *info;
+    const SSERV_Info    *info = NULL;
     SConnNetInfo        *net_info;
     SERV_ITER           iter;
     const char          *mock_body = NULL;
@@ -754,7 +754,7 @@ static int run_tests(int live, const char *test_nums)
             assert(x_json_object_has_value_of_type(hit_obj, "port",
                 JSONNumber));
             port = (unsigned short)x_json_object_get_number(hit_obj, "port");
-            assert(port > 0  &&  port < 65536);
+            assert(port > 0);
             s_hits_exp[it2].port  = port;
 
             s_hits_exp[it2].match = 0;
