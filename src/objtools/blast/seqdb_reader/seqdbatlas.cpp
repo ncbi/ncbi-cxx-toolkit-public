@@ -213,8 +213,8 @@ CSeqDBAtlas::~CSeqDBAtlas()
             delete it->second;
             count++;                       
     }
-    //openedFilesCount = GetOpenedFilseCount();
-    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount " maxOpenedFilesCount="<< maxOpenedFilesCount << endl;                
+    //int openedFilesCount = GetOpenedFilseCount();
+    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount << " maxOpenedFilesCount="<< m_MaxOpenedFilesCount << endl;                
     x_GarbageCollect(0);
 
     // Clear mapped file regions

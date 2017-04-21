@@ -2108,7 +2108,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     if (ids.GetNumGis()) {
         if (!m_GiFileOpened) x_OpenGiFile();
         if (m_IsamGi.NotEmpty()) {
-            m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids);
+            m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids);            
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2137,6 +2137,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                        "SI list specified but no ISAM file found for SI in " + m_VolName);
         }
     }
+    x_UnLeaseIsam();
 }
 
 void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
@@ -2176,6 +2177,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
                        "SI list specified but no ISAM file found for SI in " + m_VolName);
         }
     }
+    x_UnLeaseIsam();
 }
 
 bool CSeqDBVol::GetGi(int                    oid,
@@ -2310,6 +2312,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
     if (vcheck) {
         x_CheckVersions(acc, oids);
     }
+    x_UnLeaseIsam();    
 }
 
 void CSeqDBVol::x_CheckVersions(const string         & acc,
@@ -2394,6 +2397,28 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
 
     x_StringToOids(seqid.AsFastaString(), id_type, ident, str_id, simpler, oids);
 
+}
+
+void CSeqDBVol::x_UnLeaseIsam(void) const
+{
+    if(m_Atlas.GetOpenedFilseCount() > CSeqDBAtlas::e_MaxFileDescritors) {
+        if (m_IsamPig.NotEmpty()) {
+            m_PigFileOpened = false;
+            m_IsamPig->UnLease();
+        }
+        if (m_IsamGi.NotEmpty()) {
+            m_GiFileOpened = false;
+            m_IsamGi->UnLease();
+        }
+        if (m_IsamStr.NotEmpty()) {
+            m_StrFileOpened = false;
+            m_IsamStr->UnLease();
+        }    
+        if (m_IsamTi.NotEmpty()) {
+            m_TiFileOpened = false;
+            m_IsamTi->UnLease();
+        }
+    }
 }
 
 void CSeqDBVol::UnLease()
