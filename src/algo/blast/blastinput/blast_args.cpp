@@ -1376,10 +1376,8 @@ CKBlastpArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 			CArgDescriptions::eDouble, kDfltArgJDistance);
    arg_desc.AddDefaultKey(kArgMinHits, "minhits", "minimal number of LSH matches", 
 			CArgDescriptions::eInteger, kDfltArgMinHits);
-   arg_desc.AddDefaultKey(kArgKIndex, "dbk", "index of kmers", 
-			CArgDescriptions::eString, kDfltArgKIndex);
-   arg_desc.AddDefaultKey(kArgTargetSeqs, "targetseqs", "Number of target sequences to process with BLAST", 
-			CArgDescriptions::eInteger, kDfltArgTargetSeqs);
+   arg_desc.AddDefaultKey(kArgCandidateSeqs, "candidates", "Number of candidate sequences to process with BLAST", 
+			CArgDescriptions::eInteger, kDfltArgCandidateSeqs);
 }
 
 void 
@@ -1390,10 +1388,8 @@ CKBlastpArgs::ExtractAlgorithmOptions(const CArgs& args,
 		m_JDistance = args[kArgJDistance].AsDouble();
 	if (args.Exist(kArgMinHits))
 		m_MinHits = args[kArgMinHits].AsInteger();
-	if (args.Exist(kArgKIndex))
-		m_DbIndex = args[kArgKIndex].AsString();
-	if (args.Exist(kArgTargetSeqs))
-		m_TargetSeqs = args[kArgTargetSeqs].AsInteger();
+	if (args.Exist(kArgCandidateSeqs))
+		m_CandidateSeqs = args[kArgCandidateSeqs].AsInteger();
 }
 
 
@@ -1970,12 +1966,14 @@ CMapperQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */,
                                        bool is_igblast  /* = false */,
-                                       bool is_mapper   /* = false */)
+                                       bool is_mapper   /* = false */,
+                                       bool is_kblast   /* = false */)
     : m_RequestMoleculeType(request_mol_type), 
       m_IsRpsBlast(is_rpsblast),
       m_IsIgBlast(is_igblast),
       m_IsProtein(true), 
       m_IsMapper(is_mapper),
+      m_IsKBlast(is_kblast),
       m_SupportsDatabaseMasking(false)
 {}
 
@@ -2105,7 +2103,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 #endif
 
     // There is no RPS-BLAST 2 sequences
-    if ( !m_IsRpsBlast ) {
+    if ( !m_IsRpsBlast && !m_IsKBlast) {
         arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
         // subject sequence input (for bl2seq)
         arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",

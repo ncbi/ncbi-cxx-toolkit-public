@@ -361,18 +361,15 @@ NCBI_BLASTINPUT_EXPORT extern const string kDfltArgRpsDb;
 /// KBLASTP arguments
 /// Specifies Jaccard distance (threshold)
 NCBI_BLASTINPUT_EXPORT extern const string kArgJDistance;
-/// Default value
+/// Jaccard default value
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgJDistance;
 /// Specifies minimal number of LSH matches
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinHits;
-/// Default value
+/// LSH matches default value.
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgMinHits;
-/// KMER index
-NCBI_BLASTINPUT_EXPORT extern const string kArgKIndex;
-NCBI_BLASTINPUT_EXPORT extern const string kDfltArgKIndex;
 /// Number of sequences to attempt BLAST on.
-NCBI_BLASTINPUT_EXPORT extern const string kArgTargetSeqs;
-NCBI_BLASTINPUT_EXPORT extern const string kDfltArgTargetSeqs;
+NCBI_BLASTINPUT_EXPORT extern const string kArgCandidateSeqs;
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgCandidateSeqs;
 
 
 /// Argument to specify inclusion e-value threshold for conserved domains

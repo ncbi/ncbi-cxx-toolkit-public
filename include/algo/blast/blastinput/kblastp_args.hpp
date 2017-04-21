@@ -46,13 +46,14 @@ public:
     /// Constructor
     CKBlastpAppArgs();
 
+     /// Obtain Jaccard distance
      double GetJaccardDistance() { return m_KBlastpArgs->GetJaccardDistance(); }
 
+     /// Number of matches in LSH phase
      int GetMinHits() { return m_KBlastpArgs->GetMinHits(); }
 
-     string GetDatabase() {return m_KBlastpArgs->GetDatabase(); }
-
-     int GetTargetSeqs() {return m_KBlastpArgs->GetTargetSeqs(); }
+     /// Number of sequences to attempt BLASTP on.
+     int GetCandidateSeqs() {return m_KBlastpArgs->GetCandidateSeqs(); }
 
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;

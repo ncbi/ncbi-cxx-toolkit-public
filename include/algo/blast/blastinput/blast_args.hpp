@@ -637,7 +637,7 @@ class NCBI_BLASTINPUT_EXPORT CKBlastpArgs : public IBlastCmdLineArgs
 public:
 
     /// Constructor
-    CKBlastpArgs(void) : m_JDistance(0.05), m_MinHits(0), m_TargetSeqs(5000) {}
+    CKBlastpArgs(void) : m_JDistance(0.10), m_MinHits(0), m_CandidateSeqs(1000) {}
 
     /// Our virtual destructor
     virtual ~CKBlastpArgs() {}
@@ -658,8 +658,8 @@ public:
     /// The database
     string GetDatabase(void) {return m_DbIndex;}
 
-    /// Number of target sequences.
-    int GetTargetSeqs(void) {return m_TargetSeqs;}
+    /// Number of candidate sequences to attempt with BLASTP
+    int GetCandidateSeqs(void) {return m_CandidateSeqs;}
 
 private:
     /// Prohibit copy constructor
@@ -670,14 +670,14 @@ private:
     /// Jaccard distance
     double m_JDistance;
 
-    /// Minimum number of hits
+    /// Minimum number of hits in LSH phase
     int m_MinHits;
 
     /// Database/index
     string m_DbIndex;
 
-    /// Number of target sequences to try BLAST on.
-    int m_TargetSeqs;
+    /// Number of candidate sequences to try BLAST on.
+    int m_CandidateSeqs;
 };
 
 /// Argument class to collect options specific to DELTA-BLAST
@@ -867,7 +867,8 @@ public:
     CBlastDatabaseArgs(bool request_mol_type = false, 
                        bool is_rpsblast = false,
                        bool is_igblast = false,
-                       bool is_mapper = false);
+                       bool is_mapper = false,
+                       bool is_kblast = false);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -933,6 +934,7 @@ protected:
 
     bool m_IsProtein;               /**< Is the database/subject(s) protein? */
     bool m_IsMapper;                /**< true for short read mapper */
+    bool m_IsKBlast;                /**< true for Kblastp */
     CRef<IQueryFactory> m_Subjects; /**< The subject sequences */
     CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
                                       sequences read are kept */

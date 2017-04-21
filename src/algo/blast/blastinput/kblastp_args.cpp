@@ -47,19 +47,36 @@ CKBlastpAppArgs::CKBlastpAppArgs()
     static const string kProgram("kblastp");
     arg.Reset(new CProgramDescriptionArgs(kProgram, "Protein-Protein BLAST"));
     const bool kQueryIsProtein = true;
+    bool const kFilterByDefault = false;
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    // m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
-    // m_BlastDbArgs->SetDatabaseMaskingSupport(false);
-    // arg.Reset(m_BlastDbArgs);
-    // m_Args.push_back(arg);
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, false, false, false, true));
+    m_BlastDbArgs->SetDatabaseMaskingSupport(false);
+    arg.Reset(m_BlastDbArgs);
+    m_Args.push_back(arg);
+
+    m_KBlastpArgs.Reset(new CKBlastpArgs);
+    arg.Reset(m_KBlastpArgs);
+    m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
+    m_Args.push_back(arg);
+
+    arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
+    m_Args.push_back(arg);
+
+    arg.Reset(new CMatrixNameArg);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CWordThresholdArg);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
@@ -74,8 +91,7 @@ CKBlastpAppArgs::CKBlastpAppArgs()
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 
-    m_KBlastpArgs.Reset(new CKBlastpArgs);
-    arg.Reset(m_KBlastpArgs);
+    arg.Reset(new CCompositionBasedStatsArgs);
     m_Args.push_back(arg);
 
     m_DebugArgs.Reset(new CDebugArgs);
