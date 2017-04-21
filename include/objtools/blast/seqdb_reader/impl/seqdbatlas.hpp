@@ -830,6 +830,8 @@ public:
     /// The type used for file offsets.
     typedef CRegionMap::TIndx TIndx;
 
+    enum {e_MaxFileDescritors = 1000};
+
     /// Constructor
     ///
     /// Initializes the atlas object.
@@ -1579,11 +1581,12 @@ public:
                     //int threadID = CThread::GetSelf();            
                     //cerr << "********Map             CMemoryFile:" << m_Filename << " openedFilesCount=" << openedFilesCount << " threadID=" << threadID << endl;
                 }
-                catch(...) {                    
+                catch(...) {
                      int openedFilesCount = m_Atlas.GetOpenedFilseCount();
+		     cerr << "Cannot memory map " << m_Filename << ". Number of files opened: " <<  NStr::IntToString(openedFilesCount) << endl;
                      NCBI_THROW(CSeqDBException,
                                 eFileErr,
-                                "Error memory mapping: " + m_Filename + ". Number of files opened: " + NStr::IntToString(openedFilesCount));                    
+                                "Cannot memory map " + m_Filename + ". Number of files opened: " + NStr::IntToString(openedFilesCount));                    
                 }
             }
             m_DataPtr = (char *) (m_MappedFile->GetPtr());            

@@ -469,6 +469,7 @@ public:
     /// reacquired (but not, for example, the index file data).
     void UnLease();
 
+
     /// Find the OID given a PIG.
     ///
     /// A lookup is done for the PIG, and if found, the corresponding
@@ -1346,6 +1347,7 @@ private:
     void x_OpenTiFile(void) const;
     void x_OpenHashFile(void) const;
     void x_OpenOidFile(void) const;
+    void x_UnLeaseIsam(void) const;
 
     /// The memory management layer.
     CSeqDBAtlas & m_Atlas;
