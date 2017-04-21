@@ -167,8 +167,8 @@ struct SNAMERD_Data {
 
 
 /* Extra-verbose tracing to make following nested functions easier. */
-#define EXTRA_VERBOSE_CALL_TRACING 1
-#ifdef EXTRA_VERBOSE_CALL_TRACING
+#define EXTRA_VERBOSE_DBG 1
+#if defined(EXTRA_VERBOSE_DBG)  &&  defined(_DEBUG)  &&  ! defined(NDEBUG)
 
 static int s_nest = 0; /* trace nest level */
 
@@ -195,7 +195,7 @@ static int s_nest = 0; /* trace nest level */
 #define TOUT( fmt            )
 #define TOUT1(fmt, arg       )
 
-#endif /* EXTRA_VERBOSE_CALL_TRACING */
+#endif /* EXTRA_VERBOSE_DBG */
 
 
 /* Some static variables needed only to support testing with mock data.
@@ -1238,6 +1238,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
     for (i = (int)data->n_cand - 1;  i >= 0;  --i) {
         const SSERV_Info* info = data->cand[i].info;
         if (info->time < now) {
+#if defined(_DEBUG)  &&  ! defined(NDEBUG)
             TNCBI_Time  tnow = (TNCBI_Time)time(0);
             CORE_TRACE("Endpoint expired:");
             CORE_TRACEF((
@@ -1246,6 +1247,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
             CORE_TRACEF((
                 "    iter->time - info->time (%d)     now - iter->time (%d)",
                 now - info->time, tnow - now));
+#endif
             any_expired = 1;
             if ((size_t)i < --data->n_cand)
                 s_RemoveCand(data, (size_t)i, 1);
