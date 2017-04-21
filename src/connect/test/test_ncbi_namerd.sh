@@ -8,11 +8,13 @@ if test -r ./ncbi_test_data; then
 fi
 
 # Factor out OS- and invocation-specific stuff.
+bases=". $base_std"
 if test "$OSTYPE" = "cygwin"; then
-  bases=". $base_std //snowman/toolkit_test_data/connect"
+  bases="$bases //snowman/toolkit_test_data/connect"
 else
-  bases=". $base_std /net/snowman/vol/projects/toolkit_test_data/connect"
+  bases="$bases /net/snowman/vol/projects/toolkit_test_data/connect"
 fi
+bases="$bases /am/coremake_builds/test_data/connect"
 
 # Find a directory containing the test file.
 test_file_name="test_ncbi_namerd_tests.json"
