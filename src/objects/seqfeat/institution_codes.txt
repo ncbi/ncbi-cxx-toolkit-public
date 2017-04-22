@@ -674,7 +674,7 @@ BSMP	s	Department of Agriculture, Bureau of Science
 BSN	s	Boston University, Biology Department		
 BSNH	s	Boston Society of Natural History		
 BSNS	s	Buffalo Society of Natural Sciences		
-BSPG	s	Bayerische Staatssammlung fur Palaontologie und  Geologie		
+BSPG	s	Bayerische Staatssammlung fur Palaontologie und  Geologie	BS,BSP
 BSRA	s	University of Basrah, Biology Department		
 BSRM	s	Biological Station Reference Museum at Porto Novo		
 BST	s	Belfast Naturalists' Field Club		
@@ -812,6 +812,7 @@ CAYM	s	National Trust for the Cayman Islands
 CB<AUST>	c	The CB Rhizobium Collection		
 CB<CZE>	s	Jihoceske Muzeum		
 CBAS	c	Bacteria Collection of Environmemt and Health (Colecao de Bacterias do Ambiente e Saude)		
+CBC	s	Centre for Biodiversity Conservation		
 CBD<ITA>	s	Collezione Ittiologica Balma-Delmastro		
 CBD<USA>	c	USF Center for Biological Defense		
 CBF	s	Coleccion Boliviana de Fauna	CBFC
