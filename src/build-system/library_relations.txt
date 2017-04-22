@@ -78,6 +78,7 @@ an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_fileutils
 an_core needs gpipe_kmer
+an_core needs gpipe_xmlutil
 an_core needs pathogen_connection
 an_core needs reftrack_access
 an_euk_pipeline needs $(GPIPE_GENCOLL_LIBS)
