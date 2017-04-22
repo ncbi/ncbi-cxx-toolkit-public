@@ -2816,8 +2816,77 @@ bool CValidError_bioseq::IsAllNs(CBioseq_Handle bsh)
     return (rval && at_least_one);
 }
 
+
+static int CountNs(const CSeq_data& seq_data, TSeqPos len)
+{
+    int total = 0;
+    switch (seq_data.Which()) {
+        case CSeq_data::e_Ncbi4na:
+            {
+                vector<char>::const_iterator it = seq_data.GetNcbi4na().Get().begin();
+                unsigned char mask = 0xf0;
+                unsigned char shift = 4;
+                for (size_t n = 0; n < len; n++) {
+                    unsigned char c = ((*it) & mask) >> shift;
+                    mask >>= 4;
+                    shift -= 4;
+                    if (!mask) {
+                        mask = 0xf0;
+                        shift = 4;
+                        ++it;
+                    }
+                    if (c == 15) {
+                        total++;
+                    }
+                }
+            }
+            return total;
+        case CSeq_data::e_Iupacna:
+            {
+                const string& s = seq_data.GetIupacna().Get();
+                for (size_t n = 0; n < len; n++) {
+                    if (s[n] == 'N') {
+                        total++;
+                    }
+                }
+            }
+            return total;
+        case CSeq_data::e_Ncbi8na:
+        case CSeq_data::e_Ncbipna:
+            {
+                CSeq_data iupacna;
+                if (!CSeqportUtil::Convert(seq_data, &iupacna, CSeq_data::e_Iupacna)) {
+                    return total;
+                }
+                const string& s = iupacna.GetIupacna().Get();
+                for (size_t n = 0; n < len; n++) {
+                    if (s[n] == 'N') {
+                        total++;
+                    }
+                }
+            }
+            return total;
+        default:
+            return total;    
+    }
+}
+
+
 int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
 {
+    int count = 0;
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
+    for (CSeqMap_CI seq_iter(bsh, sel); seq_iter; ++seq_iter) {
+        switch (seq_iter.GetType()) {
+            case CSeqMap::eSeqData:
+                count += CountNs(seq_iter.GetData(), seq_iter.GetLength());
+                break;
+            default:
+                break;
+        }
+    }
+/*
     int pct_n = 0;
     try {
         CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -2835,7 +2904,8 @@ int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
     } catch (CException& e) {
         pct_n = 100;
     }
-    return pct_n;
+*/
+    return bsh.GetBioseqLength() ? count * 100 / bsh.GetBioseqLength() : 100;
 }
 
 
