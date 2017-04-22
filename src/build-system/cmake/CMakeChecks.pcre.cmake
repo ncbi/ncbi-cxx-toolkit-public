@@ -14,6 +14,7 @@ endif()
 if (HAVE_LIBPCRE AND NOT USE_LOCAL_PCRE)
     set(PCRE_LIBS -lpcre)
 else(HAVE_LIBPCRE AND NOT USE_LOCAL_PCRE)
-    set(USE_LOCAL_PCRE 1 CACHE INTERNAL "Using local PCRE due to system library absence")
+    set(USE_LOCAL_PCRE TRUE CACHE INTERNAL "Using local PCRE due to system library absence")
+    set(PCRE_LIBS regexp)
 endif(HAVE_LIBPCRE AND NOT USE_LOCAL_PCRE)
 

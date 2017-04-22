@@ -354,6 +354,7 @@ while [ $# != 0 ]; do
 
         #Gpipe specific configuration flags
         "--gpipe-prod")
+            EXPERIMENTAL=Int8GI
             BUILD_TYPE="Release"
             BUILD_SHARED_LIBS=ON
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
@@ -361,6 +362,7 @@ while [ $# != 0 ]; do
             ;;
 
         "--gpipe-dev")
+            EXPERIMENTAL=StrictGI
             BUILD_TYPE="Debug"
             BUILD_SHARED_LIBS=ON
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
@@ -368,6 +370,7 @@ while [ $# != 0 ]; do
             ;;
 
         "--gpipe-cgi")
+            EXPERIMENTAL=Int8GI
             BUILD_TYPE="Release"
             BUILD_SHARED_LIBS=OFF
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
