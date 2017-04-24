@@ -57,10 +57,11 @@
 #include <objects/seq/Seq_descr.hpp>
 
 #include <sstream>
+#include <numeric>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
+using namespace ncbi;
+using namespace ncbi::objects;
+using namespace std;
 
 class CGenollService : public CGenomicCollectionsService
 {
