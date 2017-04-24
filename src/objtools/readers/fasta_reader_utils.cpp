@@ -301,11 +301,6 @@ bool CFastaDeflineReader::ParseIDs(
             }
         }
         if ( x_ExceedsMaxLength(s, info.maxIdLength) ) {
-    
-            if (x_ExcessiveSeqDataInTitle(s, info.fFastaFlags)) {
-                return false;
-            }
-
             const string errMessage =
                 "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
                 + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
@@ -318,6 +313,10 @@ bool CFastaDeflineReader::ParseIDs(
                     info.lineNumber,
                     errMessage,
                     CObjReaderParseException::eIDTooLong);
+            }
+
+            if (x_ExcessiveSeqDataInTitle(s, info.fFastaFlags)) {
+                return false;
             }
         }
     }
