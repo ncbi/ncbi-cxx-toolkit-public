@@ -137,9 +137,10 @@ private:
     EIO_Status  x_PrepareWriteBuffer(const string &  msg,
                                      size_t          msg_size,
                                      size_t          required_size);
-    void  x_HandleSocketErrorOnResponse(const string &  msg,
-                                        EIO_Status      write_result,
-                                        size_t          written_bytes);
+    void  x_HandleSocketErrorOnResponse(const string &          msg,
+                                        EIO_Status              write_result,
+                                        size_t                  written_bytes,
+                                        const CNSPreciseTime &  timing);
 
 public:
 

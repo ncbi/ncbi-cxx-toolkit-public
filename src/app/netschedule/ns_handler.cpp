@@ -954,7 +954,8 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(const string &  msg)
     }
 
     // Write to the socket as a single transaction
-    size_t     written;
+    size_t              written;
+    CNSPreciseTime      write_start = CNSPreciseTime::Current();
     EIO_Status result = GetSocket().Write(msg_buf, required_size, &written);
     if (result == eIO_Success) {
         #if defined(_DEBUG) && !defined(NDEBUG)
@@ -970,16 +971,18 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(const string &  msg)
         }
         #endif
     } else {
-        x_HandleSocketErrorOnResponse(msg_buf, result, written);
+        CNSPreciseTime  write_timing = CNSPreciseTime::Current() - write_start;
+        x_HandleSocketErrorOnResponse(msg_buf, result, written, write_timing);
     }
     return result;
 }
 
 
 void  CNetScheduleHandler::x_HandleSocketErrorOnResponse(
-                                                const string &  msg,
-                                                EIO_Status      write_result,
-                                                size_t          written_bytes)
+                                        const string &          msg,
+                                        EIO_Status              write_result,
+                                        size_t                  written_bytes,
+                                        const CNSPreciseTime &  timing)
 {
     // There was an error of writing into a socket, so rollback the action if
     // necessary and close the connection
@@ -1002,6 +1005,7 @@ void  CNetScheduleHandler::x_HandleSocketErrorOnResponse(
             if (m_CmdContext->GetRequestStatus() == eStatus_OK)
                 m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
         }
+        GetDiagContext().Extra().Print("socket_write_timing", double(timing));
     }
 
     try {
