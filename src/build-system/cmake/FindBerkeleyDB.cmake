@@ -4,18 +4,20 @@ if (APPLE)
     set(BUILD_PREFIX "Clang320-")
 endif (APPLE)
 
+set(BerkeleyDB_FOUND NO)
+
 FIND_PATH( BERKELEYDB_INCLUDE db.h 
     PATHS ${NCBI_TOOLS_ROOT}/BerkeleyDB/include/
-    NO_DEFAULT_PATH )
+    )
 
 IF (BERKELEYDB_INCLUDE)
     FIND_LIBRARY( BERKELEYDB_LIBRARY NAMES db
         PATHS ${CMAKE_PREFIX_PATH} "${NCBI_TOOLS_ROOT}/BerkeleyDB/${BUILD_PREFIX}${CMAKE_BUILD_TYPE}/"
-        NO_DEFAULT_PATH )
+        )
 
     IF (BERKELEYDB_LIBRARY)
         get_filename_component(BERKELEYDB_LIBDIR ${BERKELEYDB_LIBRARY} DIRECTORY)
-        set(BERKELEYDB_FOUND true)
+        set(BerkeleyDB_FOUND Yes)
         set(BERKELEYDB_LIBS -L${BERKELEYDB_LIBDIR} -ldb -Wl,-rpath,${BERKELEYDB_LIBDIR})
     ELSE (BERKELEYDB_LIBRARY)
         MESSAGE(WARNING "Include ${BERKELEYDB_INCLUDE}/db_cxx.h found, but no library in ${NCBI_TOOLS_ROOT}/BerkeleyDB/${BUILD_PREFIX}${CMAKE_BUILD_TYPE}/ ")

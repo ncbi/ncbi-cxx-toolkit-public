@@ -13,7 +13,10 @@ add_subdirectory(ftds-default)
 add_subdirectory(ftds64)
 add_subdirectory(ftds95)
 add_subdirectory(dblib)
-add_subdirectory(mysql)
+
+if (MySQL_FOUND)
+    add_subdirectory(mysql)
+endif()
 
 if (${ODBC_FOUND})
 add_subdirectory(odbc)
