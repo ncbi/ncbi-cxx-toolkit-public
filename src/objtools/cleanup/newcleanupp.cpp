@@ -6794,13 +6794,49 @@ bool s_BarcodeCompare(
     return idx1 < idx2;
 }
 
-void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
+
+void CNewCleanup_imp::x_RemoveEmptyFields(CUser_object& user_object)
 {
-    if( ! FIELD_IS_SET_AND_IS(user_object, Type, Str) ||
-        user_object.GetType().GetStr() != "StructuredComment" ) 
-    {
+    if (user_object.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
         return;
     }
+    if (!user_object.IsSetData()) {
+        return;
+    }
+
+    CUser_object::TData::iterator it = user_object.SetData().begin();
+    while (it != user_object.SetData().end()) {
+        bool is_blank = false;
+        if ((*it)->IsSetData()) {
+            if ((*it)->GetData().IsStr()) {
+                const string& val = (*it)->GetData().GetStr();
+                if (NStr::IsBlank(val)) {
+                    is_blank = true;
+                }
+            } else if ((*it)->GetData().Which() == CUser_field::TData::e_not_set) {
+                is_blank = true;
+            }            
+        } else {
+            is_blank = true;
+        }
+
+        if (is_blank) {
+            it = user_object.SetData().erase(it);
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
+{
+    if (user_object.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
+        return;
+    }
+
+    x_RemoveEmptyFields(user_object);
 
     bool genome_assembly_data = false;
     bool ibol_data = false;

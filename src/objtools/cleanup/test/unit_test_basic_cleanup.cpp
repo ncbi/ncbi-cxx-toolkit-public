@@ -1037,3 +1037,40 @@ BOOST_AUTO_TEST_CASE(Test_pseudogene_qual)
     BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
     BOOST_CHECK_EQUAL(test_val, "unprocessed");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveEmptyStructuredCommentField)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CUser_object> user(new CUser_object());
+    user->SetObjectType(CUser_object::eObjectType_StructuredComment);
+    CRef<CUser_field> field1(new CUser_field());
+    field1->SetLabel().SetStr("I have a value");
+    field1->SetData().SetStr("A value");
+    user->SetData().push_back(field1);
+    CRef<CUser_field> field2(new CUser_field());
+    field2->SetLabel().SetStr("I am blank");
+    field2->SetData().SetStr(" ");
+    user->SetData().push_back(field2);
+    CRef<CUser_field> field3(new CUser_field());
+    field3->SetLabel().SetStr("I am empty");
+    user->SetData().push_back(field3);
+
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().Assign(*user);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetLabel().GetStr(), "I have a value");
+}
