@@ -463,6 +463,7 @@ find_external_library(libxlsxwriter INCLUDES xlsxwriter.h LIBS xlsxwriter HINTS 
 # FIXME: these should be tested not hard-coded
 set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
 
+include(${top_src_dir}/src/build-system/cmake/CMakeChecks.mongodb.cmake)
 
 
 #
