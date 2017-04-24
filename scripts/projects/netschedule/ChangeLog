@@ -1,3 +1,8 @@
+Release 4.28.3 cloned from 4.28.2 (2017-04-24)
+
+Improvements:
+    * Printing socket timing in case of socket write errors (JIRA: CXX-9209)
+
 Release 4.28.2 cloned from 4.28.1 (2016-10-31)
 
 Improvements:
