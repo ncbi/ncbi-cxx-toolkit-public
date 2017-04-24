@@ -92,7 +92,9 @@ typedef int TTraitsFlags;  ///< Bit-wise OR of ERR_TraitsFlags
 /// CRowReader passes such events to the Traits via OnEvent() callback
 enum ERR_Event {
     eRR_Event_SourceEOF,   ///< Data source has hit EOF
-    eRR_Event_SourceError  ///< Data source has hit an error on read
+    eRR_Event_SourceError, ///< Data source has hit an error on read
+    eRR_Event_SourceSwitch ///< Data source has been switched
+                           ///< (no reads yet though).
 };
 
 

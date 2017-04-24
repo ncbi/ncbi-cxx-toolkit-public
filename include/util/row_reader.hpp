@@ -1312,6 +1312,17 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
             x_Reset();
             m_CurrentRowPos = NcbiStreamposToInt8(
                                         m_DataSource.m_Stream->tellg());
+
+            switch ( m_Traits.OnEvent(eRR_Event_SourceSwitch) ) {
+                case eRR_EventAction_Stop:
+                    // This will lead to the 'soft' end iterator
+                    m_RawDataAvailable = false;
+                    return false;
+                case eRR_EventAction_Continue:
+                case eRR_EventAction_Default:
+                default:
+                    ;
+            }
         }
 
         m_RawDataAvailable = false;

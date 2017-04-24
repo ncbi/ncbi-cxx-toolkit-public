@@ -862,6 +862,8 @@ public:
             case eRR_Event_SourceEOF:
                 ++m_EndReachedCount;
                 break;
+            case eRR_Event_SourceSwitch:
+                return eRR_EventAction_Continue;
             case eRR_Event_SourceError:
             default:
                 break;
