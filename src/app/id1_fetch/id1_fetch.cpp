@@ -230,8 +230,6 @@ void CId1FetchApp::Init(void)
          "Generate GI list by Entrez query in given file",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
-    arg_desc->AddFlag("allow_dead", "Allow to fetch dead seq-entries", true);
-
     // Program description
     string prog_description =
         "Fetch SeqEntry from ID server by its GI ID, possibly obtained from\n"
@@ -280,9 +278,7 @@ int CId1FetchApp::Run(void)
     SetDiagPostFlag(eDPF_All);
 #endif
 
-    if ( args["allow_dead"] ) {
-        m_ID1Client.SetAllowDeadEntries(true);
-    }
+    m_ID1Client.SetAllowDeadEntries(true);
 
     if ( args["timeout"] ) {
         int timeout = args["timeout"].AsInteger();
