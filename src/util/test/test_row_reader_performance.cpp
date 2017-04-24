@@ -96,7 +96,7 @@ int CRowReaderPerfTest::Run(void)
         for (Int8 item = 0; item < item_count; ++item) {
             if (item != 0)
                 fputc(' ', f);
-            fprintf(f, "%ld", item);
+            fprintf(f, "%ld", (long)(item));
         }
     }
     fclose(f);
