@@ -101,29 +101,6 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 
-static string s_GetFastaTitle(const CBioseq& bs)
-{
-    string title;
-
-    const CSeq_descr::Tdata& descr = bs.GetDescr().Get();
-    for ( CSeq_descr::Tdata::const_iterator it = descr.begin(); it != descr.end(); ++it ) {
-        const CSeqdesc* sd = *it;
-        if ( sd->Which() == CSeqdesc::e_Molinfo ) {
-            return "";
-        }
-        if ( sd->Which() == CSeqdesc::e_Title ) {
-            if ( title.empty() ) {
-                title = sd->GetTitle();
-            }
-        }
-    }
-    
-    while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
-        title.erase(title.end() - 1);
-    }
-    return title;
-}
-
 const CBioSource* GetBioSource(const CBioseq& bioseq)
 {
     ITERATE(CBioseq::TDescr::Tdata, it, bioseq.GetDescr().Get())
@@ -2852,22 +2829,17 @@ CFastaOstream::x_GetTitleFlags(void) const
 void CFastaOstream::x_WriteSeqTitle(const CBioseq_Handle & bioseq_handle,
                                     const string& custom_title)
 {
-    string safe_title;
-    if (!custom_title.empty()) {
-        safe_title = custom_title;
-    } else {
-        const CBioseq& bioseq = *bioseq_handle.GetBioseqCore();
-        safe_title = sequence::s_GetFastaTitle(bioseq);
-        if (safe_title.empty()) {
-            safe_title = m_Gen->GenerateDefline(bioseq_handle, x_GetTitleFlags());
-        }
-    }
+    string safe_title = (!custom_title.empty()) ? custom_title
+        : m_Gen->GenerateDefline(bioseq_handle, x_GetTitleFlags());
 
     if ( !safe_title.empty() ) {
         if ( !(m_Flags & fKeepGTSigns) ) {
             NStr::ReplaceInPlace(safe_title, ">", "_");
         }
-        m_Out << ' ' << safe_title;
+        if (safe_title[0] != ' ') {
+            m_Out << ' ';
+        }
+        m_Out << safe_title;
     }
     m_Out << '\n';
 }

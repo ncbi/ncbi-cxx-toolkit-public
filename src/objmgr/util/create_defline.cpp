@@ -2682,7 +2682,9 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
             }
         }
     }
-    joiner.Join(&m_MainTitle);
+    string modifiers;
+    joiner.Join(&modifiers);
+    m_MainTitle = (m_MainTitle.empty()) ? modifiers : modifiers + " " + m_MainTitle;
     return m_MainTitle;
 }
 
