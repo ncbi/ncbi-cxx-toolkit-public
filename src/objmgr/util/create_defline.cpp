@@ -2704,7 +2704,7 @@ string CDeflineGenerator::GenerateDefline (
     // set flags from record components
     x_SetFlags (bsh, flags);
 
-    if (flags | fShowModifiers) {
+    if (flags & fShowModifiers) {
         return x_GetModifiers(bsh);
     }
 
