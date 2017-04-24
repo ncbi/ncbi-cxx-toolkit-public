@@ -911,11 +911,40 @@ string COrgMod::FixHostCapitalization(const string& value)
 }
 
 
+typedef map<string, string, PNocase> THostFixMap;
+
+const static THostFixMap s_hostFixupMap = {
+    { "-", "missing" },
+    { "No", "missing" },
+    { "no", "missing" },
+    { "None", "missing" },
+    { "none", "missing" },
+    { "NA", "not available" },
+    { "N/A", "not available" },
+    { "n/a", "not available" },
+    { "free-living", "natural / free-living" },
+    { "natural", "natural / free-living" },
+    { "not available", "not available" },
+    { "not collected", "not collected" },
+    { "not applicable", "not applicable" },
+    { "NR", "not applicable" },
+    { "not known", "unknown" },
+    { "other", "missing" },
+    { "misc", "missing" },
+    { "not determined", "unknown" },
+    { "unknown", "unknown" },
+    { "not available: to be reported later", "not available" },
+    { "obscured", "obscured" },
+    { "human", "Homo sapiens" }
+};
+
 string COrgMod::FixHost(const string& value)
 {
     string fix = value;
-    if (NStr::EqualNocase(fix, "human")) {
-        fix = "Homo sapiens";
+
+    auto possible_fix = s_hostFixupMap.find(value);
+    if (possible_fix != s_hostFixupMap.end()) {
+        fix = possible_fix->second;
     }
 
     return fix;
