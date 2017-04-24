@@ -1214,26 +1214,6 @@ CFormatGuess::TestFormatAlignment(
     if (TestFormatCLUSTAL()) {
         return true;
     }
-/*
-    CNcbiIstrstream TestBuffer(
-        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
-    string strLine;
-
-    while ( !TestBuffer.fail() ) {
-        vector<string> Fields;
-        NcbiGetlineEOL(TestBuffer, strLine);
-
-        if (TestBuffer.fail()) {
-            break;
-        }
-        if (NStr::IsBlank(strLine)) {
-            cout << "Empty" << endl;
-        } else {
-            cout << strLine << "\n";
-        }
-    }
-*/
-
 
     // Alignment files come in all different shapes and broken formats,
     // and some of them are hard to recognize as such, in particular
@@ -1247,9 +1227,6 @@ CFormatGuess::TestFormatAlignment(
 
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NPOS != it->find( "#NEXUS" ) ) {
-            return true;
-        }
-        if ( NPOS != it->find( "CLUSTAL" ) ) {
             return true;
         }
     }
@@ -1287,8 +1264,9 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, un
     }
 
     const string& seqdata = toks[1];
+
     if (num_toks == 3 &&
-        NStr::StringToUInt(toks[2], NStr::fConvErr_NoThrow) < seqdata.size()) {
+        NStr::StringToUInt(toks[2], NStr::fConvErr_NoThrow) == 0) {
         return false;
     }
 
@@ -1359,26 +1337,28 @@ CFormatGuess::TestFormatCLUSTAL()
             continue;
         }
 
-        if (x_TryProcessCLUSTALSeqData(strLine, seq_id, num_residues)) {
-            if (num_residues > 60) {
-                return false;
-            }
-            if (in_block) {
-                if(num_residues != num_residues_prev) {
-                    return false;
-                }
-                has_valid_block = true;
-            }
-
-            if (block_ids.find(seq_id) != block_ids.end()) {
-                return false;
-            }
-            block_ids.insert(seq_id);
-
-            num_residues_prev = num_residues;
-            in_block = true;
-            ++block_size;
+        if (!x_TryProcessCLUSTALSeqData(strLine, seq_id, num_residues)) {
+            return false;
         }
+
+        if (num_residues > 60) {
+            return false;
+        }
+        if (in_block) {
+            if(num_residues != num_residues_prev) {
+                return false;
+            }
+            has_valid_block = true;
+        }
+
+        if (block_ids.find(seq_id) != block_ids.end()) {
+            return false;
+        }
+        block_ids.insert(seq_id);
+
+        num_residues_prev = num_residues;
+        in_block = true;
+        ++block_size;
     }
 
     return has_valid_block;

@@ -383,7 +383,6 @@ gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNT
 gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
 gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
 
-
 static const char* kData_NotCLUSTAL1 =
 R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
 gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
@@ -393,7 +392,17 @@ gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNT
 gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
 gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
 
+static const char* kData_NotCLUSTAL2 =
+R"(CLUSTAL W (1.83) multiple sequence alignment
+"aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
+"ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN abc
+"pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGYNETT 59)";
 
+static const char* kData_NotCLUSTAL3 =
+R"(CLUSTAL W (1.83) multiple sequence alignment
+"aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
+"ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 45
+"pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGNETT 59)";
 
 static const char* kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
@@ -589,6 +598,18 @@ BOOST_AUTO_TEST_CASE(TestNotCLUSTAL)
 {
     {{
         CNcbiIstrstream str(kData_NotCLUSTAL1);
+        CFormatGuess guess(str);
+        BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
+    }}
+
+    {{
+        CNcbiIstrstream str(kData_NotCLUSTAL2);
+        CFormatGuess guess(str);
+        BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
+    }}
+
+    {{
+        CNcbiIstrstream str(kData_NotCLUSTAL3);
         CFormatGuess guess(str);
         BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
     }}
