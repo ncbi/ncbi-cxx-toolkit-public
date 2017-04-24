@@ -584,6 +584,8 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
         m_RejectedTag.erase();
     } else if (!StackIsEmpty() && TopFrame().HasMemberId()) {
         obj.SetName( TopFrame().GetMemberId().GetName());
+    } else {
+        obj.SetName( ReadKey());
     }
 
     if (PeekChar(true) == '{') {
@@ -731,13 +733,24 @@ void CObjectIStreamJson::SkipClassSequential(const CClassTypeInfo* classType)
 #endif
 
 // container
-void CObjectIStreamJson::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+void CObjectIStreamJson::BeginContainer(const CContainerTypeInfo* containerType)
 {
+    CObjectTypeInfo type(GetRealTypeInfo(containerType->GetElementType()));
+    if (type.GetTypeFamily() == eTypeFamilyPrimitive && type.GetPrimitiveValueType() == ePrimitiveValueAny) {
+        TopFrame().SetNotag();
+        m_BlockStart = true;
+        m_ExpectValue = false;
+        return;
+    }
     StartBlock('[');
 }
 
 void CObjectIStreamJson::EndContainer(void)
 {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        return;
+    }
     EndBlock(']');
 }
 
@@ -844,6 +857,12 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
 
     bool deep = false;
     TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
+    if (ind == kInvalidMember) {
+        if (classType->GetMembers().GetItemInfo(last)->GetId().HasAnyContent()) {
+            UndoClassMember();
+            return last;
+        }
+    }
 /*
     skipping unknown members is not present here
     this method has to do with random order of members, for example in XML attribute list

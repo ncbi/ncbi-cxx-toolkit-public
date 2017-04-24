@@ -158,6 +158,11 @@ public:
     const TFrame& FetchFrameFromBottom(size_t index) const;
     TTypeInfo GetRecentTypeInfo(void) const;
 
+    static TTypeInfo GetRealTypeInfo(TTypeInfo typeInfo);
+    static ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
+    static TTypeInfo GetContainerElementTypeInfo(TTypeInfo typeInfo);
+    static ETypeFamily GetContainerElementTypeFamily(TTypeInfo typeInfo);
+
     virtual void UnendedFrame(void);
     const string& GetStackPath(void) const;
 

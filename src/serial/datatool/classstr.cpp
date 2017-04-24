@@ -96,7 +96,11 @@ bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
 
 bool CClassTypeStrings::x_IsAnyContentType(TMembers::const_iterator i) const
 {
-    return (dynamic_cast<CAnyContentTypeStrings*>(i->type.get()) != 0);
+    if (x_IsUniSeq(i)) {
+        const CUniSequenceDataType* seq = dynamic_cast<const CUniSequenceDataType*>(i->dataType);
+        return dynamic_cast<const CAnyContentDataType*>(seq->GetElementType()) != nullptr;
+    }
+    return (dynamic_cast<const CAnyContentTypeStrings*>(i->type.get()) != 0);
 }
 
 bool CClassTypeStrings::x_IsUniSeq(TMembers::const_iterator i) const

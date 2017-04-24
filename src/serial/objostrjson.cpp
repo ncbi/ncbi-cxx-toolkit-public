@@ -305,7 +305,6 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
             ThrowError(fInvalidData, "AnyContent object must have name");
         }
     }
-    NextElement();
     WriteKey(obj_name);
     const vector<CSerialAttribInfoItem>& attlist = obj.GetAttributes();
     if (attlist.empty()) {
@@ -438,13 +437,24 @@ void CObjectOStreamJson::EndNamedType(void)
 }
 
 
-void CObjectOStreamJson::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+void CObjectOStreamJson::BeginContainer(const CContainerTypeInfo* containerType)
 {
+    CObjectTypeInfo type(GetRealTypeInfo(containerType->GetElementType()));
+    if (type.GetTypeFamily() == eTypeFamilyPrimitive && type.GetPrimitiveValueType() == ePrimitiveValueAny) {
+        TopFrame().SetNotag();
+        m_BlockStart = true;
+        m_ExpectValue = false;
+        return;
+    }
     BeginArray();
 }
 
 void CObjectOStreamJson::EndContainer(void)
 {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        return;
+    }
     EndArray();
 }
 
@@ -481,8 +491,20 @@ void CObjectOStreamJson::BeginClassMember(const CMemberId& id)
         return;
     }
     if (id.HasNotag() || id.IsAttlist()) {
-        m_SkippedMemberId = id.GetName();
         TopFrame().SetNotag();
+        if (id.HasAnyContent()) {
+#if 1
+            if ( m_BlockStart ) {
+                m_BlockStart = false;
+            } else {
+                m_Output.PutChar(',');
+            }
+#else
+            NextElement();
+#endif
+        } else {
+            m_SkippedMemberId = id.GetName();
+        }
         return;
     }
     if (id.HasAnyContent()) {

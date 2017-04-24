@@ -1988,42 +1988,6 @@ void CObjectIStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
 }
 
-TTypeInfo CObjectIStreamXml::GetRealTypeInfo(TTypeInfo typeInfo)
-{
-    if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
-        const CPointerTypeInfo* ptr =
-            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
-        if (ptr) {
-            typeInfo = ptr->GetPointedType();
-        }
-    }
-    return typeInfo;
-}
-
-ETypeFamily CObjectIStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
-{
-    return GetRealTypeInfo( typeInfo )->GetTypeFamily();
-}
-
-TTypeInfo CObjectIStreamXml::GetContainerElementTypeInfo(TTypeInfo typeInfo)
-{
-    typeInfo = GetRealTypeInfo( typeInfo );
-    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
-    const CContainerTypeInfo* ptr =
-        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
-    return GetRealTypeInfo(ptr->GetElementType());
-}
-
-ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
-{
-    typeInfo = GetRealTypeInfo( typeInfo );
-    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
-    const CContainerTypeInfo* ptr =
-        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
-    return GetRealTypeFamily(ptr->GetElementType());
-}
-
-
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     if (m_SkipNextTag) {

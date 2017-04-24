@@ -134,6 +134,8 @@ void JSDParser::ParseNode(DTDElement& node)
 {
     string key;
     TToken tok;
+    bool is_object = false;
+    bool has_additional_prop = false;//true;
     node.SetSourceLine( Lexer().CurrentLine());
     for (tok = GetNextToken(); tok != K_END_OBJECT; tok = GetNextToken()) {
         if (tok == K_KEY) {
@@ -180,6 +182,7 @@ void JSDParser::ParseNode(DTDElement& node)
                 }
             } else if (tok == K_BEGIN_OBJECT) {
                 if (key == "properties") {
+                    is_object = true;
                     ParseObjectContent(&node);
                     node.SetDefaultRefsOccurence(DTDElement::eZeroOrOne);
                 } else if (key == "items") {
@@ -209,10 +212,27 @@ void JSDParser::ParseNode(DTDElement& node)
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_ARRAY);
                 }
+#if 0
+            } else if (tok == K_TRUE || tok == K_FALSE) {
+                if (key == "additionalProperties") {
+                    has_additional_prop = tok == K_TRUE;
+                } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
+                }
+#endif
             } else {
                 ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
             }
         }
+    }
+    if (is_object && has_additional_prop) {
+        string item_id = NStr::Join(m_URI,"/") + "*";
+        DTDElement& item = m_MapElement[item_id];
+        item.SetType(DTDElement::eAny);
+        item.SetOccurrence(DTDElement::eZeroOrMore);
+        item.SetEmbedded();
+        item.SetName(CreateEmbeddedName(item,0));
+        AddElementContent(node, item_id);
     }
 }
 

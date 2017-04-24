@@ -279,11 +279,17 @@ void CObjectOStreamAsn::WriteNull(void)
     m_Output.PutString("NULL");
 }
 
-void CObjectOStreamAsn::WriteAnyContentObject(const CAnyContentObject& )
+void CObjectOStreamAsn::WriteAnyContentObject(const CAnyContentObject& obj)
 {
+#if 0
     ThrowError(fNotImplemented,
         "CObjectOStreamAsn::WriteAnyContentObject: "
         "unable to write AnyContent object in ASN");
+#else
+    m_Output.PutString(obj.GetName());
+    m_Output.PutChar(' ');
+    m_Output.PutString(obj.GetValue());
+#endif
 }
 
 void CObjectOStreamAsn::CopyAnyContentObject(CObjectIStream& )

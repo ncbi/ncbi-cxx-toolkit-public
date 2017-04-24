@@ -522,6 +522,7 @@ void CObjectIStreamAsn::ReadAnyContent(string& value)
 
 void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
 {
+    obj.SetName(ReadMemberId(SkipWhiteSpace()));
     string value;
     ReadAnyContent(value);
     obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));

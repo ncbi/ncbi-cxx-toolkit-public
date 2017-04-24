@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/impl/objstack.hpp>
+#include <serial/impl/ptrinfo.hpp>
+#include <serial/impl/continfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -292,6 +294,41 @@ void CObjectStack::PopErrorFrame(void)
         throw;
     }
     PopFrame();
+}
+
+TTypeInfo CObjectStack::GetRealTypeInfo(TTypeInfo typeInfo)
+{
+    if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* ptr =
+            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
+        if (ptr) {
+            typeInfo = ptr->GetPointedType();
+        }
+    }
+    return typeInfo;
+}
+
+ETypeFamily CObjectStack::GetRealTypeFamily(TTypeInfo typeInfo)
+{
+    return GetRealTypeInfo( typeInfo )->GetTypeFamily();
+}
+
+TTypeInfo CObjectStack::GetContainerElementTypeInfo(TTypeInfo typeInfo)
+{
+    typeInfo = GetRealTypeInfo( typeInfo );
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    return GetRealTypeInfo(ptr->GetElementType());
+}
+
+ETypeFamily CObjectStack::GetContainerElementTypeFamily(TTypeInfo typeInfo)
+{
+    typeInfo = GetRealTypeInfo( typeInfo );
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    return GetRealTypeFamily(ptr->GetElementType());
 }
 
 const char* CObjectStackFrame::GetFrameTypeName(void) const
