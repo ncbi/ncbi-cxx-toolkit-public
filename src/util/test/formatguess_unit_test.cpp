@@ -404,6 +404,12 @@ R"(CLUSTAL W (1.83) multiple sequence alignment
 "ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 45
 "pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGNETT 59)";
 
+static const char* kData_NotCLUSTAL4 =
+R"(CLUSTAL W (1.83) multiple sequence alignment
+"aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
+"ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 44
+"pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGYNETT 59)";
+
 static const char* kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
     "\x7f\x5a\x09\x00\x00\x00\x09\x00\x00\x00\x0c\x00\x15\x00\x7a\x69"
@@ -610,6 +616,12 @@ BOOST_AUTO_TEST_CASE(TestNotCLUSTAL)
 
     {{
         CNcbiIstrstream str(kData_NotCLUSTAL3);
+        CFormatGuess guess(str);
+        BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
+    }}
+
+    {{
+        CNcbiIstrstream str(kData_NotCLUSTAL4);
         CFormatGuess guess(str);
         BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eAlignment);
     }}
