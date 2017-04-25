@@ -50,7 +50,8 @@ struct SDbAccessInfo
 class CNetStorageGCDatabase
 {
 public:
-    CNetStorageGCDatabase(const CNcbiRegistry &  reg, bool  verbose);
+    CNetStorageGCDatabase(const CNcbiRegistry &  reg, bool  verbose,
+                          unsigned int  timeout);
     ~CNetStorageGCDatabase(void);
 
     vector<string>  GetGCCandidates(void);
@@ -69,6 +70,7 @@ private:
     bool                    m_Verbose;
     SDbAccessInfo           m_DbAccessInfo;
     CDatabase *             m_Db;
+    CTimeout                m_Timeout;
 
     CNetStorageGCDatabase(const CNetStorageGCDatabase &);
     CNetStorageGCDatabase & operator= (const CNetStorageGCDatabase &);

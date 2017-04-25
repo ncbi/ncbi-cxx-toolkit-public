@@ -43,6 +43,9 @@
 USING_NCBI_SCOPE;
 
 
+const unsigned int  kDefaultDBTimeout = 20;
+
+
 CNetStorageGCApp::CNetStorageGCApp(void) :
     CNcbiApplication(),
     m_DeleteCount(0), m_TotalCount(0), m_RemoteErrors(0)
@@ -75,6 +78,10 @@ void CNetStorageGCApp::Init(void)
                               "and backend storages");
     arg_desc->AddFlag("verbose", "Be verbose (messages on stdout)");
     arg_desc->AddFlag("dry", "Dry run, no real cleanup is done");
+    arg_desc->AddDefaultKey("t", "timeout",
+                            "DB operations timeout in seconds",
+                            CArgDescriptions::eInteger,
+                            NStr::NumericToString(kDefaultDBTimeout));
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -96,7 +103,16 @@ int CNetStorageGCApp::Run(void)
 
     bool                    verbose = args["verbose"];
     bool                    dryrun = args["dry"];
-    CNetStorageGCDatabase   db(reg, verbose);
+    int                     timeout = args["t"].AsInteger();
+
+    if (timeout <= 0) {
+        ERR_POST("DB timeout expected to be > 0. Received: " << timeout <<
+                 ". Using default timeout " << kDefaultDBTimeout <<
+                 " seconds instead.");
+        timeout = kDefaultDBTimeout;
+    }
+
+    CNetStorageGCDatabase   db(reg, verbose, (unsigned int)(timeout));
 
     // Check the DB structure version
     int                     db_ver = db.GetDBStructureVersion();

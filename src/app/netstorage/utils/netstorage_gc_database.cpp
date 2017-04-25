@@ -43,8 +43,9 @@ BEGIN_NCBI_SCOPE
 
 
 CNetStorageGCDatabase::CNetStorageGCDatabase(const CNcbiRegistry &  reg,
-                                             bool  verbose)
-    : m_Verbose(verbose), m_Db(NULL)
+                                             bool  verbose,
+                                             unsigned int  timeout)
+    : m_Verbose(verbose), m_Db(NULL), m_Timeout(timeout, 0)
 {
     x_CreateDatabase(reg);
     try {
@@ -97,7 +98,7 @@ void  CNetStorageGCDatabase::GetAppLock(void)
         query.SetParameter("@LockOwner", "Session");
         query.SetParameter("@LockTimeout", 0);
 
-        query.ExecuteSP("sp_getapplock");
+        query.ExecuteSP("sp_getapplock", m_Timeout);
         int     status = query.GetStatus();
 
         // status >= 0 => success
@@ -130,7 +131,7 @@ void  CNetStorageGCDatabase::ReleaseAppLock(void)
         query.SetParameter("@Resource", "GarbageCollectorLock");
         query.SetParameter("@LockOwner", "Session");
 
-        query.ExecuteSP("sp_releaseapplock");
+        query.ExecuteSP("sp_releaseapplock", m_Timeout);
         if (query.GetStatus() != 0)
             NCBI_THROW(CNetStorageGCException, eApplicationLockError,
                        "Error releasing the application lock");
@@ -211,7 +212,7 @@ CNetStorageGCDatabase::GetGCCandidates(void)
 
     try {
         CQuery              query = m_Db->NewQuery(stmt);
-        query.Execute();
+        query.Execute(m_Timeout);
 
         ITERATE(CQuery, row, query.SingleSet()) {
             candidates.push_back(row["object_loc"].AsString());
@@ -242,7 +243,7 @@ CNetStorageGCDatabase::GetDBStructureVersion(void)
 
     try {
         CQuery              query = m_Db->NewQuery(stmt);
-        query.Execute();
+        query.Execute(m_Timeout);
 
         ITERATE(CQuery, row, query.SingleSet()) {
             if (db_ver != -1) {
@@ -301,7 +302,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
                         .Print("locator", locator);
 
         if (!dryrun)
-            query.Execute();
+            query.Execute(m_Timeout);
 
         ctx->SetRequestStatus(200);
         GetDiagContext().PrintRequestStop();
@@ -359,7 +360,7 @@ CNetStorageGCDatabase::RemoveObject(const string &  locator, bool  dryrun,
                         .Print("locator", locator);
 
         if (!dryrun)
-            query.Execute();
+            query.Execute(m_Timeout);
 
         ctx->SetRequestStatus(200);
         GetDiagContext().PrintRequestStop();
