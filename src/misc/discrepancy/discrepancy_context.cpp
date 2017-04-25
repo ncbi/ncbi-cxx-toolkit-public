@@ -480,8 +480,8 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
                             ret.Other++;
                             break;
                     }
+                    ret.First = false;
                 }
-                ret.First = false;
             }
             return;
         case CSeq_data::e_Iupacna:
