@@ -147,7 +147,7 @@ ALTA	s	University of Alberta, Biological Sciences Department
 ALTB	s	University of Barnaul, Altai State University		
 ALU	s	Alabama Museum of Natural History		
 ALUH	s	Alzahra University		
-AM	sb	Australian Museum		
+AM	sb	Australian Museum	AMS
 AM:Arachnology	s	Australian Museum, Invertebrate Collections: Arachnology
 AM:EBU	sb	Australian Museum, Evolutionary Biology Unit Tissue Collection
 AM:Entomology	s	Australian Museum, Invertebrate Collections: Entomology
@@ -185,7 +185,7 @@ AMNZ	s	Auckland Institute and Museum
 AMO	s	Herbario AMO		
 AMP<AUS>	c	Australian Mycological Panel		
 AMP<GBR>	s	Ampleforth College		
-AMS	s	Australian Museum		
+AMS	s	Australian Museum	AM
 AMSA	s	Albany Museum		
 AMUZ	s	Aligarh Muslim University		
 ANA	s	Orange County Department of Agriculture		
@@ -2637,7 +2637,7 @@ IAUM	h	Islamic Azad University of Mashhad
 IAUNT	h	Islamica Azad University, North Tehran Branch		
 IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale		
 IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt		
-IB	s	Universitaet Innsbruck		
+IB	s	Universitat Innsbruck		
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal		
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics		
 IBAR	h	Ibaraki University		
@@ -2998,6 +2998,7 @@ ITAL	c	Banco de Fermentos Lacticos
 ITALSL	c	Secao de Leite e Derivados		
 ITALSM	c	Secao de Microbiologia		
 ITBCC	c	Institute of Technology Bandung Culture Collection		
+ITBCZ	s	Institute of Tropical Biology Collection of Zoology		
 ITBZC	s	Institute of Tropical Biology, Zoology Collection		
 ITC	b	International Transit Centre		
 ITCC<IND>	c	Indian Type Culture Collection		
@@ -3891,7 +3892,7 @@ MECG	s	Medical Entomology Collection Gallery
 MECN	s	Museo Ecuadoriano de Ciencias Naturales		
 MEDEL	s	Universidad Nacional de Colombia - Sede de Medellin, Departamento de Biologia		
 MEFLG	s	Museo Entomologico Francisco Luis Gallego		
-MEL	s	Royal Botanic Gardens Melbourne		
+MEL	s	Royal Botanic Gardens Victoria		
 MELG	s	Geology Department, University of Melbourne		
 MELIT	h	Bogdan Khmel'nysckyi State Pedagogical University of Melitopol'		
 MELU	s	University of Melbourne		
@@ -4747,7 +4748,7 @@ NMS	s	National Museums of Scotland	NMSZ,NSMZ,RSM<GBR>,RSME
 NMS-G	s	National Museums of Scotland - Geology & Zoology		
 NMSA	s	Natal Museum		
 NMSL	s	National Museum of Sri Lanka		
-NMSR	s	Naturhistorisches Museum im Thueringer Landes museum Heidecksburg zu Rudolstadt		
+NMSR	s	Naturhistorisches Museum im Thuringer Landes museum Heidecksburg zu Rudolstadt		
 NMSU<USA-MO>	s	Northwest Missouri State University, Biology Department		
 NMSU<USA-NM>	s	New Mexico State University		
 NMTC	s	Inner Mongolia Normal University, Biology Department		
@@ -5162,7 +5163,7 @@ PHBL	c	Philip Harris Biological Ltd.
 PHEL	s	Plant Health and Environment Laboratory		
 PHEO	h	Karadag Natural Reserve		
 PHG	s	Peper Harow		
-PHH	h	University of Science,Ho Chi Minh City Vietnam National University		
+PHH	s	University of Science, Ho Chi Minh City Vietnam National University		
 PHIL	s	University of the Sciences in Philadelphia, Biological Sciences Department		
 PI<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie		
 PI<ITA>	s	Universita di Pisa, Dipartimento di Scienze Botaniche		
@@ -5398,6 +5399,7 @@ QPLS	s	Biblioteca Ecuatoriana Aurelio Espinosa Polit
 QPNRA	s	Programa Nacional de Regionalizacion, Ministerio de Agricultura y Ganaderia, Departamento de Ecologia		
 QRS	s	Australian National Herbarium, Division of Plant Industry, CSIRO		
 QSA	s	Institut de technologie agroalimentaire		
+QSMI	s	Queen Saovabha Memorial Institute		
 QTC	s	Qiqihar Teachers College, Biology Department		
 QUA	s	Qinghai University, Agriculture Department		
 QUC	s	Universite Laval, Departement de biologie		
@@ -5964,8 +5966,8 @@ SMU<KOR>	s	Sangmiung University
 SMU<USA-TX>	s	Shuler Museum of Paleontology, Southern Methodist University	SMP
 SMVM	s	National Archives and Museum		
 SMW<GBR>	s	School of Medicine for Women		
-SMW<NAM>	s	State Museum		
-SMWN	s	State Museum		
+SMW<NAM>	s	State Museum	SMWN
+SMWN	s	State Museum	SMW
 SMWU	s	Sang Miung Women's University		
 SN	s	South China Normal University, Biology Department		
 SNC	s	Saint Norbert College		
@@ -6369,7 +6371,7 @@ TNP	s	Museum of Tatra National Park
 TNS	s	National Science Museum, Department of Botany		
 TNSC<BEL>	s	Thierry Neef de Sainval		
 TNSC<USA-NJ>	s	Trailside Nature and Science Center		
-TNSM	s	Thailand Natural History Museum		
+TNSM	s	Thailand Natural History Museum	THNHM
 TNU	s	National Taiwan Normal University, Herbarium		
 TNZ	s	Tianjin Nat. Hist. Mus.		
 TO	s	Universita degli Studi di Torino, Dipartimento di Biologia Vegetale		
@@ -6815,6 +6817,7 @@ UNM	s	University of New Mexico, Department of Biology
 UNMC	s	University of New Mexico		
 UNMDP	s	Universidad Nacional de Mar del Plata, Mar del Plata, Argentina		
 UNN	s	University of Nigeria, Botany Department		
+UNNEC	s	Universidad Nacional del Nordeste, Facultad de Ciencias Exactas y Naturales y Agrimensura		
 UNNF	s	Universite de Nancy		
 UNO	s	University of Nebraska at Omaha		
 UNOAL	s	University of Northern Alabama		
@@ -7219,6 +7222,7 @@ WHIT	s	Whittier College, Biology Department
 WHM	s	West Highland Museum		
 WHN	s	Whitehaven Museum		
 WHOI	s	Woods Hole Oceanographic Institution		
+WHT	s	Wildlife Heritage Trust		
 WHY	s	Whitby Museum		
 WHYNC	s	Whytby Naturalists' Club		
 WI	s	Vilnius University, Botany and Genetics Department		
@@ -7550,6 +7554,7 @@ ZPAL	s	Zoological Institute of Paleobiology, Polish Academy of Sciences
 ZPB	s	Institute of Conservation and Natural History of the Soutpansberg		
 ZRC	s	Zoological Reference Collection, National University of Singapore		
 ZSBS	s	Zoologische Sammlung des Bayerischen Staates		
+ZSI	s	 Zoological Survey of India		
 ZSI-CRS	s	Zoological Survey of India, Central Regional Station		
 ZSI-E	s	Zoological Survey of India		
 ZSI-M	s	Zoological Survey of India		
@@ -7558,11 +7563,11 @@ ZSI-SRS	s	Zoological Survey of India, Southern Regional Station
 ZSI-WRS	s	Zoological Survey of India		
 ZSIC	s	Zoological Survey of India		
 ZSLC	s	Zoological Society of London		
-ZSM	sb	Zoologisches Staatssammlung Munchen		
+ZSM	sb	Zoologische Staatssammlung Munchen	ZSMH
 ZSM/CMK	s	Zoologische Museum Staatssammlung		
 ZSM/LIPI	s	Zoologische Museum Staatssammlung		
-ZSM:Lep	s	Zoologisches Staatssammlung Munchen, Lepidoptera
-ZSM:Mol	s	Zoologisches Staatssammlung Munchen, Mollusca
+ZSM:Lep	s	Zoologische Staatssammlung Munchen, Lepidoptera
+ZSM:Mol	s	Zoologische Staatssammlung Munchen, Mollusca
 ZSMC	s	Zoologische Staatssammlung		
 ZSP<PAK>	s	Zoological Survey of Pakistan		
 ZSP<USA-PA>	s	Zoological Society of Philadelphia		
