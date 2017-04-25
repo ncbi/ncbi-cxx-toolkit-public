@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
                 while (rs->Next()) {
                     BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
-                    BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+                    BOOST_CHECK(rs->GetVariant(2).GetInt8() > 0);
                     BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
                     ++num;
                 }
