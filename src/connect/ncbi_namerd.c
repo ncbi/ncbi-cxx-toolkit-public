@@ -49,8 +49,10 @@
 
 
 #ifdef _MSC_VER
+#define FMT_SIZE_T      "%llu"
 #define FMT_TIME_T      "%llu"
 #else
+#define FMT_SIZE_T      "%zu"
 #define FMT_TIME_T      "%lu"
 #endif
 
@@ -623,14 +625,16 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
 static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
     SConnNetInfo* net_info)
 {
-    static size_t   buf_len_steps[] = {10100, 300100, 10100100};
-                    /* just try a limited number of realloc sizes */
+                    /* just try a limited number of buffer sizes, in a
+                        roughly geometric sequence */
+    static size_t   buf_len_steps[] = {3100, 100100, 3100100};
     int             max_steps = sizeof(buf_len_steps)/sizeof(buf_len_steps[0]);
     size_t          waste_threshold = 50100;
-    size_t          total_read = 0;
-    size_t          buf_len, current_size, current_read;
+    size_t          total_got = 0;
+    size_t          buf_len, step_max, step_got;
     char*           new_buf;
     int             num_steps;
+    EIO_Status      status = eIO_Unknown;
 
     TIN("s_ReadFullResponse()");
 
@@ -655,41 +659,61 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
         *bufp = new_buf;
 
         /* Read the next block of data. */
-        current_size = buf_len - total_read - 1/* zero-terminate */;
-        EIO_Status status = CONN_Read(conn, *bufp + total_read, current_size,
-                                      &current_read, eIO_ReadPlain);
-        total_read += current_read;
-        (*bufp)[total_read] = NIL; /* zero-terminate */
+        step_max = buf_len - total_got - 1/* zero-terminate */;
+        step_got = 0;
+        do {
+            size_t  read_max, read_got;
+            read_max = step_max - step_got;
+            status = CONN_Read(conn, *bufp + total_got + step_got,
+                               read_max, &read_got, eIO_ReadPlain);
+            step_got += read_got;
+            CORE_TRACEF((
+                "CONN_Read(step_max,step_got,read_max,read_got,status)=("
+                FMT_SIZE_T "," FMT_SIZE_T "," FMT_SIZE_T "," FMT_SIZE_T ",%s)",
+                step_max, step_got, read_max, read_got, IO_StatusStr(status)));
+        } while (step_got < step_max  &&  status == eIO_Success);
+        total_got += step_got;
+
+        /* Need to increase buffer size? */
+        if (step_got == step_max  &&  status == eIO_Success) {
+            continue;
+        }
 
         /* Handle problems. */
-        if (status != eIO_Success) {
-            if (status == eIO_Closed) {
-                CORE_LOG_X(eNSub_HttpRead, eLOG_Error,
-                    "Connection unexpectedly closed.");
-            } else {
-                CORE_LOGF_X(eNSub_HttpRead, eLOG_Error,
-                    ("Read error: %s", IO_StatusStr(status)));
-            }
+        if (status != eIO_Closed) {
+            CORE_LOGF_X(eNSub_HttpRead, eLOG_Error,
+                ("Read error: %s", IO_StatusStr(status)));
             free(*bufp);
             *bufp = NULL;
-            TOUT("s_ReadFullResponse() -- wait");
+            TOUT("s_ReadFullResponse() -- read problem");
             return status;
         }
 
-        /* We've successfully fetched all data. */
-        if (current_read < current_size) {
-            break;
-        }
-
-        /* If (status == eIO_Success  &&  current_read == current_size)
-           Then no problem, but we can't tell if we've gotten all the data
-            (in the rare case that it exactly matches the bufsize), or if we
-            need to fetch more data.  Therefore, just iterate again. */
+        /* All data has been fetched. */
+        CORE_TRACEF((
+            "All data fetched, (num_steps,buf_len,total_got,step_max,"
+            "step_got)=(%d," FMT_SIZE_T "," FMT_SIZE_T "," FMT_SIZE_T
+            "," FMT_SIZE_T ")", num_steps, buf_len, total_got, step_max,
+            step_got));
+        break;
     }
 
+    /* See if the max buffer size was insufficient (this is extremely unlikely
+        and would suggest reviewing the design of this function). */
+    if (step_got == step_max  &&  status == eIO_Success) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+            ("Insufficient buffer size.", IO_StatusStr(status)));
+        free(*bufp);
+        *bufp = NULL;
+        TOUT("s_ReadFullResponse() -- read problem");
+        return status;
+    }
+
+    (*bufp)[total_got] = NIL; /* zero-terminate */
+
     /* Reduce the buffer size if there's a lot of wasted space. */
-    if (buf_len - total_read > waste_threshold) {
-        new_buf = (char*)realloc(*bufp, total_read + 1/* zero-terminate */);
+    if (buf_len - total_got > waste_threshold) {
+        new_buf = (char*)realloc(*bufp, total_got + 1/* zero-terminate */);
         if (new_buf) {
             *bufp = new_buf;
         }
