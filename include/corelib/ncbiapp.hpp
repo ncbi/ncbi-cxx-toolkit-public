@@ -264,12 +264,20 @@ public:
     /// Check if the config file has been loaded
     bool HasLoadedConfig(void) const;
 
-    /// Check if the application has finished loading confing file
+    /// Check if the application has finished loading config file
     /// (successfully or not).
     bool FinishedLoadingConfig(void) const;
 
-    /// Get the application's cached configuration parameters.
+    /// Get the application's cached configuration parameters (read-only).
+    ///
+    /// Application also can use protected GetRWConfig() to get read-write
+    //  access to the configuration parameters.
+    /// @sa 
+    ///   GetRWConfig
     const CNcbiRegistry& GetConfig(void) const;
+    
+    /// @deprecated Please use const version of GetConfig() or protected GetRWConfig()
+    //NCBI_DEPRECATED 
     CNcbiRegistry& GetConfig(void);
 
     /// Get the full path to the configuration file (if any) we ended
@@ -507,6 +515,12 @@ protected:
     /// LoadConfig(reg, conf, IRegistry::fWithNcbirc).
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
+    /// Get the application's cached configuration parameters, 
+    /// accessible to read-write for an application only.
+    /// @sa 
+    ///   GetConfig
+    CNcbiRegistry& GetRWConfig(void);
+
     /// Set program's display name.
     ///
     /// Set up application name suitable for display or as a basename for
@@ -676,7 +690,13 @@ inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const
     return *m_Config;
 }
 
+/// @deprecated
 inline CNcbiRegistry& CNcbiApplication::GetConfig(void)
+{
+    return *m_Config;
+}
+
+inline CNcbiRegistry& CNcbiApplication::GetRWConfig(void)
 {
     return *m_Config;
 }
@@ -696,11 +716,9 @@ inline bool CNcbiApplication::FinishedLoadingConfig(void) const
     return m_ConfigLoaded;
 }
 
-inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags,
-                                           IRegistry::TFlags reg_flags)
+inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags, IRegistry::TFlags reg_flags)
 {
-    return CMetaRegistry::Reload(GetConfigPath(), GetConfig(), flags,
-                                 reg_flags);
+    return CMetaRegistry::Reload(GetConfigPath(), GetRWConfig(), flags, reg_flags);
 }
 
 inline const string& CNcbiApplication::GetProgramDisplayName(void) const
