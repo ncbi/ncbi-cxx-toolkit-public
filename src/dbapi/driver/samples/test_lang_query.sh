@@ -12,13 +12,13 @@ unset LANG LC_ALL LC_CTYPE
 driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-    server_list="MSDEV1 DBAPI_DEV3"
+    server_list="MSDEV1 DBAPI_DEV3 DBAPI_DEV16"
     server_mssql="MSDEV1"
 
     # server_mssql2008="MS2008DEV1"
 else
     # server_list="MS_DEV2"
-    server_list="DBAPI_MS2014_TEST DBAPI_SYB155_TEST"
+    server_list="DBAPI_MS2014_TEST DBAPI_SYB155_TEST DBAPI_SYB160_TEST"
     # server_mssql="MS_DEV2"
     server_mssql="DBAPI_MS2014_TEST"
 

@@ -38,5 +38,9 @@ CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
+CHECK_CMD = dbapi_unit_test -dr ctlib      -S DBAPI_SYB160_TEST
+CHECK_CMD = dbapi_unit_test -dr dblib      -S DBAPI_SYB160_TEST
+CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_SYB160_TEST
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_SYB160_TEST
 
 WATCHERS = ucko

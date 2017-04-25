@@ -11,6 +11,8 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 REQUIRES = Sybase
 
 CHECK_REQUIRES = in-house-resources
-CHECK_CMD = run_sybase_app.sh ctl_sp_databases /CHECK_NAME=ctl_sp_databases
+# CHECK_CMD = run_sybase_app.sh ctl_sp_databases /CHECK_NAME=ctl_sp_databases
+CHECK_CMD = run_sybase_app.sh ctl_sp_databases -S DBAPI_SYB155_TEST /CHECK_NAME=ctl_sp_databases-SYB155
+CHECK_CMD = run_sybase_app.sh ctl_sp_databases -S DBAPI_SYB160_TEST /CHECK_NAME=ctl_sp_databases-SYB160
 
 WATCHERS = ucko
