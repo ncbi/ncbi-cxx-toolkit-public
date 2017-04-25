@@ -89,7 +89,7 @@ public:
 protected:
     friend class CInitGuard;
 
-    bool AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex);
+    bool AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex, bool force = false);
     void ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex);
 
 private:
@@ -242,6 +242,12 @@ public:
             if ( m_Mutex ) {
                 x_Release();
             }
+        }
+
+    void ForceGuard(CInitMutex_Base& init, CInitMutexPool& pool)
+        {
+            pool.AcquireMutex(init, m_Mutex, true);
+            m_Guard.Guard(m_Mutex->GetMutex());
         }
 
     // true means that this thread should perform initialization

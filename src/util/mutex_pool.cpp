@@ -50,13 +50,13 @@ CInitMutexPool::~CInitMutexPool(void)
 }
 
 
-bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
+bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex, bool force)
 {
     _ASSERT(!mutex);
     CRef<TMutex> local(init.m_Mutex);
     if ( !local ) {
         CFastMutexGuard guard(m_Pool_Mtx);
-        if ( init )
+        if ( !force && init )
             return false;
         local = init.m_Mutex;
         if ( !local ) {
