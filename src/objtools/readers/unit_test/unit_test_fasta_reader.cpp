@@ -1621,7 +1621,7 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
 
 BOOST_AUTO_TEST_CASE(TestModFilter)
 {
-    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io]\n"
+    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io] [taxid=123]\n"
         "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
 
     // a filter that filters out org mods only.
@@ -1629,7 +1629,7 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
     {
     public:
         virtual bool operator()( const CTempString & mod_name ) {
-            return ( mod_name != "org" );
+            return ( mod_name != "org" && mod_name != "taxid" );
         }
     };
     CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
@@ -1639,6 +1639,7 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
         set<string> expected_unused_mods;
         if( bUseFilter ) {
             expected_unused_mods.insert( "org" );
+            expected_unused_mods.insert( "taxid" );
         }
 
         CRef<CBioseq> pBioseq = 
