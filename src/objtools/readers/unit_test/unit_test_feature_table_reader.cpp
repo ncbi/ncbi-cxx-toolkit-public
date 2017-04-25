@@ -658,6 +658,34 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
 }
 
 
+static const char * sc_TableTrnaWithCodon = "\
+>Feature ref|NC_019571.1|\n\
+1\t10\ttRNA\n\
+\t\t\tproduct\ttRNA-Asn-GTT\n\
+12\t20\ttRNA\n\
+\t\t\tproduct\ttRNA-Met (ATT)\n\
+";
+
+///
+/// Test a simple table
+///
+BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAsWithCodons)
+{
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString(sc_TableTrnaWithCodon);
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 2);
+    ITERATE(CSeq_annot::TData::TFtable, feat, ftable) {
+        BOOST_REQUIRE((*feat)->GetData().IsRna());
+        const CRNA_ref& rna = (*feat)->GetData().GetRna();
+        BOOST_REQUIRE(rna.IsSetExt());
+        BOOST_CHECK_EQUAL(rna.GetType(), CRNA_ref::eType_tRNA);
+        BOOST_REQUIRE(rna.GetExt().IsTRNA());
+        BOOST_REQUIRE(rna.GetExt().GetTRNA().IsSetAa());
+        BOOST_REQUIRE(!(*feat)->IsSetQual());
+    }
+}
+
+
 static const char * sc_Table5 = "\
 >Feature gb|CP003382.1|\n\
 1982606\t1982707\tgene\n\

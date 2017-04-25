@@ -1274,6 +1274,7 @@ s_LocationJoinToOrder( const CSeq_loc & loc )
     }
 }
 
+
 int CFeature_table_reader_imp::x_ParseTrnaString (
     const string& val
 )
@@ -1284,9 +1285,9 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
     if (NStr::StartsWith(value, "tRNA-")) {
         value.assign(value, strlen("tRNA-"), CTempString::npos);
     }
-    CTempString::size_type pos = value.find('(');
-    if (pos != CTempString::npos)
-    {
+    
+    CTempString::size_type pos = value.find_first_of("-,;:()=\'_~");
+    if (pos != CTempString::npos) {
         value.erase(pos);
         NStr::TruncateSpacesInPlace(value);
     }
