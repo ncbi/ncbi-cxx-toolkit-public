@@ -271,6 +271,8 @@ public:
     virtual void ConnectSucceeds(TConn conn);
     virtual void ConnectFailed(TConn conn);
     virtual void SetNewConnectionDelayMicroSec(unsigned long micro_sec);
+    
+    virtual void SetIncludeHUP(bool include_hup = true);
 
     class NCBI_XREADER_EXPORT CDebugPrinter : public CNcbiOstrstream
     {

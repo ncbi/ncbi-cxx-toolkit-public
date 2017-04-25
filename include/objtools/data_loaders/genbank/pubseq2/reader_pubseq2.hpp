@@ -80,6 +80,8 @@ protected:
     CObjectIStream& x_GetCurrentResult(TConn conn);
     void x_SetCurrentResult(TConn conn, AutoPtr<CObjectIStream> result);
 
+    virtual void SetIncludeHUP(bool include_hup = true) override;
+
 private:
     string                    m_Server;
     string                    m_User;

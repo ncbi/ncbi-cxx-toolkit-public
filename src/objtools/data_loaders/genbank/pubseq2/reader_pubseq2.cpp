@@ -623,6 +623,12 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
 }
 
 
+void CPubseq2Reader::SetIncludeHUP(bool include_hup)
+{
+    m_SetCubbyUser = include_hup;
+}
+
+
 END_SCOPE(objects)
 
 void GenBankReaders_Register_Pubseq2(void)

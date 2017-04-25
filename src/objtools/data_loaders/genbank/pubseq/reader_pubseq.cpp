@@ -1303,6 +1303,13 @@ void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
     result.SetAndSaveBlobVersion(blob_id, ret.blob_version);
 }
 
+
+void CPubseqReader::SetIncludeHUP(bool include_hup)
+{
+    m_SetCubbyUser = include_hup;
+}
+
+
 END_SCOPE(objects)
 
 void GenBankReaders_Register_Pubseq(void)

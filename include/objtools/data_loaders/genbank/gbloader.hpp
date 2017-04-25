@@ -165,12 +165,21 @@ public:
         {
             return m_Preopen;
         }
+    void SetHUPIncluded(bool include_hup = true)
+        {
+            m_HasHUPIncluded = include_hup;
+        }
+    bool HasHUPIncluded(void) const
+        {
+            return m_HasHUPIncluded;
+        }
 
 private:
     string m_ReaderName;
     CRef<CReader> m_ReaderPtr;
     const TParamTree* m_ParamTree;
     EPreopenConnection m_Preopen;
+    bool m_HasHUPIncluded;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
@@ -245,6 +254,11 @@ public:
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CReader* reader = 0);
 
+    // enum to include HUP data
+    enum EIncludeHUP {
+        eIncludeHUP
+    };
+    
     // Select reader by name. If failed, select default reader.
     // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
     // Several names may be separated with ":". Empty name or "*"
@@ -256,6 +270,29 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const string& reader_name);
+
+    // GBLoader with HUP data included.
+    // The reader will be chosed from default configuration,
+    // either pubseqos or pubseqos2.
+    // The default loader priority will be slightly lower than for main data.
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        EIncludeHUP     include_hup,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
+
+    // GBLoader with HUP data included.
+    // The reader can be either pubseqos or pubseqos2.
+    // The default loader priority will be slightly lower than for main data.
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const string&   reader_name, // pubseqos or pubseqos2
+        EIncludeHUP     include_hup,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
+                                        EIncludeHUP     include_hup);
 
     // Setup loader using param tree. If tree is null or failed to find params,
     // use environment or select default reader.
@@ -377,6 +414,13 @@ public:
             m_AddWGSMasterDescr = flag;
         }
 
+    bool HasHUPIncluded(void) const
+        {
+            return m_HasHUPIncluded;
+        }
+
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
+    
 protected:
     friend class CGBReaderRequestResult;
 
@@ -412,6 +456,7 @@ private:
     bool                    m_AlwaysLoadExternal;
     bool                    m_AlwaysLoadNamedAcc;
     bool                    m_AddWGSMasterDescr;
+    bool                    m_HasHUPIncluded;
 
     //
     // private code
@@ -419,8 +464,7 @@ private:
 
     void x_CreateDriver(const CGBLoaderParams& params);
 
-    string GetReaderName(const TParamTree* params) const;
-    string GetWriterName(const TParamTree* params) const;
+    pair<string, string> GetReaderWriterName(const TParamTree* params) const;
     bool x_CreateReaders(const string& str,
                          const TParamTree* params,
                          CGBLoaderParams::EPreopenConnection preopen);

@@ -125,7 +125,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
                          "gi", "acc", "label", "taxid", "hash",
-                         "length", "type", "state"));
+                         "length", "type", "state", "general"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
     args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
@@ -239,6 +239,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     }
     else if ( args["type"].AsString() == "state" ) {
         m_Type = IBulkTester::eBulk_state;
+    }
+    else if ( args["type"].AsString() == "general" ) {
+        m_Type = IBulkTester::eBulk_general;
     }
     m_GetFlags = 0;
     if ( !args["no-force"] ) {

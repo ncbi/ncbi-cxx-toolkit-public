@@ -1305,6 +1305,13 @@ void CReader::ResetCache(void)
 }
 
 
+void CReader::SetIncludeHUP(bool include_hup)
+{
+    NCBI_THROW(CObjMgrException, eRegisterError,
+               "HUP is supported only by pubseqos or pubseqos2 readers");
+}
+
+
 CReaderCacheManager::CReaderCacheManager(void)
 {
 }

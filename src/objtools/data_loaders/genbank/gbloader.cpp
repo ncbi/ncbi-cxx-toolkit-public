@@ -86,6 +86,16 @@ NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, kEmptyStr,
                   eParam_NoThread, GENBANK_LOADER_METHOD);
 typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
+NCBI_PARAM_DECL(string, GENBANK, READER_NAME);
+NCBI_PARAM_DEF_EX(string, GENBANK, READER_NAME, kEmptyStr,
+                  eParam_NoThread, GENBANK_READER_NAME);
+typedef NCBI_PARAM_TYPE(GENBANK, READER_NAME) TGenbankReaderName;
+
+NCBI_PARAM_DECL(string, GENBANK, WRITER_NAME);
+NCBI_PARAM_DEF_EX(string, GENBANK, WRITER_NAME, kEmptyStr,
+                  eParam_NoThread, GENBANK_WRITER_NAME);
+typedef NCBI_PARAM_TYPE(GENBANK, WRITER_NAME) TGenbankWriterName;
+
 #if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "ID2:PUBSEQOS:ID1";
 #else
@@ -93,6 +103,7 @@ static const char* const DEFAULT_DRV_ORDER = "ID2:ID1";
 #endif
 
 #define GBLOADER_NAME "GBLOADER"
+#define GBLOADER_HUP_NAME "GBLOADER-HUP"
 
 #define DEFAULT_ID_GC_SIZE 10000
 #define DEFAULT_ID_EXPIRATION_TIMEOUT 2*3600 // 2 hours
@@ -137,7 +148,8 @@ CGBLoaderParams::CGBLoaderParams(void)
     : m_ReaderName(),
       m_ReaderPtr(0),
       m_ParamTree(0),
-      m_Preopen(ePreopenByConfig)
+      m_Preopen(ePreopenByConfig),
+      m_HasHUPIncluded(false)
 {
 }
 
@@ -146,7 +158,8 @@ CGBLoaderParams::CGBLoaderParams(const string& reader_name)
     : m_ReaderName(reader_name),
       m_ReaderPtr(0),
       m_ParamTree(0),
-      m_Preopen(ePreopenByConfig)
+      m_Preopen(ePreopenByConfig),
+      m_HasHUPIncluded(false)
 {
 }
 
@@ -155,7 +168,8 @@ CGBLoaderParams::CGBLoaderParams(CReader* reader_ptr)
     : m_ReaderName(),
       m_ReaderPtr(reader_ptr),
       m_ParamTree(0),
-      m_Preopen(ePreopenByConfig)
+      m_Preopen(ePreopenByConfig),
+      m_HasHUPIncluded(false)
 {
 }
 
@@ -164,7 +178,8 @@ CGBLoaderParams::CGBLoaderParams(const TParamTree* param_tree)
     : m_ReaderName(),
       m_ReaderPtr(0),
       m_ParamTree(param_tree),
-      m_Preopen(ePreopenByConfig)
+      m_Preopen(ePreopenByConfig),
+      m_HasHUPIncluded(false)
 {
 }
 
@@ -173,7 +188,8 @@ CGBLoaderParams::CGBLoaderParams(EPreopenConnection preopen)
     : m_ReaderName(),
       m_ReaderPtr(0),
       m_ParamTree(0),
-      m_Preopen(preopen)
+      m_Preopen(preopen),
+      m_HasHUPIncluded(false)
 {
 }
 
@@ -187,7 +203,8 @@ CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams& params)
     : m_ReaderName(params.m_ReaderName),
       m_ReaderPtr(params.m_ReaderPtr),
       m_ParamTree(params.m_ParamTree),
-      m_Preopen(params.m_Preopen)
+      m_Preopen(params.m_Preopen),
+      m_HasHUPIncluded(params.m_HasHUPIncluded)
 {
 }
 
@@ -199,6 +216,7 @@ CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams& params)
         m_ReaderPtr = params.m_ReaderPtr;
         m_ParamTree = params.m_ParamTree;
         m_Preopen = params.m_Preopen;
+        m_HasHUPIncluded = params.m_HasHUPIncluded;
     }
     return *this;
 }
@@ -262,6 +280,48 @@ string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
+    EIncludeHUP     /*include_hup*/,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
+    params.SetHUPIncluded();
+    TGBMaker maker(params);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP /*include_hup*/)
+{
+    return GBLOADER_HUP_NAME;
+}
+
+
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string&   reader_name,
+    EIncludeHUP     /*include_hup*/,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    CGBLoaderParams params(reader_name);
+    params.SetHUPIncluded();
+    TGBMaker maker(params);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/,
+                                            EIncludeHUP /*include_hup*/)
+{
+    return GBLOADER_HUP_NAME;
+}
+
+
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
     const TParamTree& param_tree,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
@@ -291,15 +351,16 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& /*params*/)
+string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
 {
-    return GBLOADER_NAME;
+    return params.HasHUPIncluded()? GBLOADER_HUP_NAME: GBLOADER_NAME;
 }
 
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,
                              const CGBLoaderParams& params)
-  : CDataLoader(loader_name)
+    : CDataLoader(loader_name),
+      m_HasHUPIncluded(params.HasHUPIncluded())
 {
     GBLOG_POST_X(1, "CGBDataLoader");
     x_CreateDriver(params);
@@ -310,6 +371,17 @@ CGBDataLoader::~CGBDataLoader(void)
 {
     GBLOG_POST_X(2, "~CGBDataLoader");
     CloseCache();
+}
+
+
+CObjectManager::TPriority CGBDataLoader::GetDefaultPriority(void) const
+{
+    CObjectManager::TPriority priority = CDataLoader::GetDefaultPriority();
+    if ( HasHUPIncluded() ) {
+        // HUP data loader has lower priority by default
+        priority += 1;
+    }
+    return priority;
 }
 
 
@@ -580,51 +652,47 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
         }
     }
     else {
-        if ( x_CreateReaders(GetReaderName(gb_params), gb_params, preopen) ) {
-            x_CreateWriters(GetWriterName(gb_params), gb_params);
+        pair<string, string> rw_name = GetReaderWriterName(gb_params);
+        if ( x_CreateReaders(rw_name.first, gb_params, preopen) ) {
+            x_CreateWriters(rw_name.second, gb_params);
         }
     }
 }
 
 
-string CGBDataLoader::GetReaderName(const TParamTree* params) const
+pair<string, string>
+CGBDataLoader::GetReaderWriterName(const TParamTree* params) const
 {
-    string str;
-    if ( str.empty() ) {
-        str = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
+    pair<string, string> ret;
+    ret.first = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
+    if ( ret.first.empty() ) {
+        ret.first = TGenbankReaderName::GetDefault();
     }
-    if ( str.empty() ) {
-        str = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+    ret.second = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
+    if ( ret.first.empty() ) {
+        ret.first = TGenbankWriterName::GetDefault();
     }
-    if ( str.empty() ) {
-        // try config first
-        str = TGenbankLoaderMethod::GetDefault();
-    }
-    if ( str.empty() ) {
-        // fall back default reader list
-        str = DEFAULT_DRV_ORDER;
-    }
-    NStr::ToLower(str);
-    return str;
-}
-
-
-string CGBDataLoader::GetWriterName(const TParamTree* params) const
-{
-    string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
-    if ( str.empty() ) {
-        // try config first
-        string env_reader = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
-        if ( env_reader.empty() ) {
-            env_reader = TGenbankLoaderMethod::GetDefault();
+    if ( ret.first.empty() || ret.second.empty() ) {
+        string method = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+        if ( method.empty() ) {
+            // try config first
+            method = TGenbankLoaderMethod::GetDefault();
         }
-        NStr::ToLower(env_reader);
-        if ( NStr::StartsWith(env_reader, "cache;") ) {
-            str = "cache";
+        if ( method.empty() ) {
+            // fall back default reader list
+            method = DEFAULT_DRV_ORDER;
+        }
+        NStr::ToLower(method);
+        if ( ret.first.empty() ) {
+            ret.first = method;
+        }
+        if ( ret.second.empty() && NStr::StartsWith(method, "cache;") ) {
+            ret.second = "cache";
         }
     }
-    NStr::ToLower(str);
-    return str;
+    NStr::ToLower(ret.first);
+    NStr::ToLower(ret.second);
+    return ret;
 }
 
 
@@ -638,6 +706,9 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
         if( reader ) {
+            if ( HasHUPIncluded() ) {
+                reader->SetIncludeHUP();
+            }
             if ( preopen != CGBLoaderParams::ePreopenNever ) {
                 reader->OpenInitialConnection(preopen == CGBLoaderParams::ePreopenAlways);
             }
@@ -659,6 +730,10 @@ void CGBDataLoader::x_CreateWriters(const string& str,
     vector<string> str_list;
     NStr::Split(str, ";", str_list);
     for ( size_t i = 0; i < str_list.size(); ++i ) {
+        if ( HasHUPIncluded() ) {
+            NCBI_THROW(CObjMgrException, eRegisterError,
+                       "HUP GBLoader cannot have cache");
+        }
         CRef<CWriter> writer(x_CreateWriter(str_list[i], params));
         if( writer ) {
             m_Dispatcher->InsertWriter(i, writer);

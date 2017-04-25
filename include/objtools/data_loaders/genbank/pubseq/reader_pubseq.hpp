@@ -89,6 +89,8 @@ public:
                  const TBlobId& blob_id,
                  TChunkId chunk_id);
 
+    virtual void SetIncludeHUP(bool include_hup = true) override;
+
 protected:
     void x_AddConnectionSlot(TConn conn);
     void x_RemoveConnectionSlot(TConn conn);
