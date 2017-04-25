@@ -371,7 +371,7 @@ private:
 
     bool x_TryProcessCLUSTALSeqData(const string& line, 
         string& id,
-        unsigned int& num_residues) const;
+        size_t& seg_length) const;
 
     bool x_LooksLikeCLUSTALConservedInfo(const string& line) const;
 

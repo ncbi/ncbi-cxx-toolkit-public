@@ -1252,7 +1252,7 @@ bool CFormatGuess::x_LooksLikeCLUSTALConservedInfo(const string& line) const
 }
 
 //  -----------------------------------------------------------------------------
-bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, unsigned int& num_residues) const
+bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, size_t& seg_length) const
 {
     vector<string> toks;
     NStr::Split(line, " \t", toks, NStr::eMergeDelims);
@@ -1265,9 +1265,13 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, un
 
     const string& seqdata = toks[1];
 
-    if (num_toks == 3 &&
-        NStr::StringToUInt(toks[2], NStr::fConvErr_NoThrow) == 0) {
-        return false;
+
+    unsigned int cumulated_res = 0;
+    if (num_toks == 3) {
+        cumulated_res = NStr::StringToUInt(toks[2], NStr::fConvErr_NoThrow);
+        if (cumulated_res == 0) {
+            return false;
+        }
     }
 
     // Check sequence data
@@ -1277,11 +1281,43 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, un
     if (seqtype == eUndefined) {
         return false;
     }
+    
+    if (num_toks == 3) {
+        size_t num_gaps = count(seqdata.begin(), seqdata.end(), '-');
+        if (((seqdata.size() - num_gaps) > cumulated_res)) {
+            return false;
+        }
+    }
+
 
     id = toks[0];
-    num_residues = seqdata.size();
+    seg_length = seqdata.size();
+
     return true;
 } 
+
+
+//  -----------------------------------------------------------------------------
+
+namespace { // anonymous namespace
+
+struct SClustalBlockInfo
+{
+    bool m_InBlock;
+    unsigned int m_Size;
+    set<string> m_Ids;
+
+
+    void Reset(void) {
+        m_InBlock = false;
+        m_Size = 0;
+        m_Ids.clear();
+    }
+
+    SClustalBlockInfo() { Reset(); }
+};
+
+}
 
 //  -----------------------------------------------------------------------------
 bool 
@@ -1296,16 +1332,22 @@ CFormatGuess::TestFormatCLUSTAL()
         reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
     string strLine;
 
-    bool in_block = false;
-    unsigned int block_size = 0;
-    bool has_valid_block = false;
-    string seq_id;
-    unsigned int num_residues = 0;
-    unsigned int num_residues_prev = 0;
-    set<string> block_ids;
+    SClustalBlockInfo block_info;
 
-    while ( !TestBuffer.fail() ) {
+    bool has_valid_block = false;
+    size_t seg_length = 0;
+    size_t seg_length_prev = 0;
+
+
+    const bool buffer_full = m_iTestDataSize == m_iTestBufferSize;
+
+    while ( !TestBuffer.eof() ) {
         NcbiGetlineEOL(TestBuffer, strLine);
+
+        if (buffer_full && 
+            TestBuffer.eof()) { // Skip last line if buffer is full 
+            break;              // to avoid misidentification due to line truncation
+        }
 
         if (TestBuffer.fail()) {
             break;
@@ -1316,49 +1358,46 @@ CFormatGuess::TestFormatCLUSTAL()
         }
 
         if (NStr::IsBlank(strLine)) {
-            if (in_block) {
-                if (block_size < 2) {
+            if (block_info.m_InBlock) {
+                if (block_info.m_Size < 2) {
                     return false;
                 }
-                in_block = false;
-                block_size = 0;
-                block_ids.clear();
+                block_info.Reset();
             }
             continue;
         }
 
         if (x_LooksLikeCLUSTALConservedInfo(strLine)) {
-            if (!in_block || block_size<2) {
+            if (! block_info.m_InBlock || block_info.m_Size<2) {
                 return false;
-            } 
-            in_block = false;
-            block_size = 0;
-            block_ids.clear();
+            }
+            block_info.Reset();
             continue;
         }
 
-        if (!x_TryProcessCLUSTALSeqData(strLine, seq_id, num_residues)) {
+        string seq_id;
+        if (!x_TryProcessCLUSTALSeqData(strLine, seq_id, seg_length)) {
             return false;
         }
 
-        if (num_residues > 60) {
+        if (seg_length > 60) {
             return false;
         }
-        if (in_block) {
-            if(num_residues != num_residues_prev) {
+        if (block_info.m_InBlock) {
+            if(seg_length != seg_length_prev) {
                 return false;
             }
             has_valid_block = true;
         }
 
-        if (block_ids.find(seq_id) != block_ids.end()) {
+        if (block_info.m_Ids.find(seq_id) != block_info.m_Ids.end()) {
             return false;
         }
-        block_ids.insert(seq_id);
+        block_info.m_Ids.insert(seq_id);
 
-        num_residues_prev = num_residues;
-        in_block = true;
-        ++block_size;
+        seg_length_prev = seg_length;
+        block_info.m_InBlock = true;
+        ++(block_info.m_Size);
     }
 
     return has_valid_block;
