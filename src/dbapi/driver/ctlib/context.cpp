@@ -1460,6 +1460,12 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         if (ctl_conn) {
             message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetLastParams();
+            if (ctl_conn->IsCancelInProgress()
+                &&  (msg->msgnumber == 3618 /* Transaction has been aborted */
+                     || msg->msgnumber == 4224 /* An interruption occurred */))
+            {
+                return CS_SUCCEED;
+            }
         }
 
         if (msg->msgnumber == 1205 /*DEADLOCK*/) {

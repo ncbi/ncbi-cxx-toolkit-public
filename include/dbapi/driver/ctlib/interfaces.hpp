@@ -477,6 +477,7 @@ protected:
 
     size_t PrepareToCancel(void);
     void CancelFinished(size_t was_timeout);
+    bool IsCancelInProgress(void) const { return m_CancelInProgress; }
 
     virtual TSockHandle GetLowLevelHandle(void) const;
 
@@ -507,6 +508,7 @@ private:
     ctlib::Connection   m_Handle;
     int                 m_TDSVersion; // as CS_TDS_nn
     bool                m_TextPtrProcsLoaded;
+    bool                m_CancelInProgress;
 
 #ifdef FTDS_IN_USE
     class CAsyncCancelGuard

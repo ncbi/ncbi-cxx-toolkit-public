@@ -109,6 +109,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_Handle(cntx, *this)
 , m_TDSVersion(0)
 , m_TextPtrProcsLoaded(false)
+, m_CancelInProgress(false)
 #ifdef FTDS_IN_USE
 #  if NCBI_FTDS_VERSION >= 95
 , m_OrigIntHandler(NULL)
@@ -506,6 +507,7 @@ CTL_Connection::GetCancelTimeout(void) const
 size_t
 CTL_Connection::PrepareToCancel(void)
 {
+    m_CancelInProgress = true;
 #ifdef FTDS_IN_USE
     size_t was_timeout = x_GetSybaseConn()->tds_socket->query_timeout;
     x_GetSybaseConn()->tds_socket->query_timeout = GetCTLibContext().GetCancelTimeout();
@@ -519,6 +521,7 @@ CTL_Connection::PrepareToCancel(void)
 void
 CTL_Connection::CancelFinished(size_t was_timeout)
 {
+    m_CancelInProgress = false;
 #ifdef FTDS_IN_USE
     x_GetSybaseConn()->tds_socket->query_timeout = was_timeout;
 #endif
