@@ -9,6 +9,7 @@ util/math$ update-only
 connect$
 connect/ext$
 connect/services
+connect/mbedtls
 db$
 db/bdb$
 app$
