@@ -61,7 +61,6 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objects/valid/Comment_set.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
 
 #include <util/ncbi_cache.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -4721,16 +4720,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             ! NStr::EqualNocase ("RNA", str) &&
             ! NStr::EqualNocase ("product", str) ) 
         {
-            if (str.size() == 3) {
-                CRef<CTrna_ext> tr2(new CTrna_ext);
-                if (CTrna_ext::ParseDegenerateCodon(*tr2, str)) {
-                    tRNA_codon = str;
-                } else {
-                    justt = false;
-                }
-            } else {
-                justt = false;
-            }
+            justt = false;
         }
     }
     if( is_ambig ) {
@@ -4831,12 +4821,8 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
         CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
         if (trp.IsSetAa() && trp.GetAa().IsNcbieaa()) {
             string ignored = kEmptyStr;
-            if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false)) {
-                if (NStr::IsBlank(ignored)) {
-                    return eAction_Erase;
-                } else {
-                    x_AddToComment(feat, product);
-                }
+            if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
+                NStr::IsBlank(ignored)) {
             } else {
                 // don't remove product qual because it conflicts with existing aa value
                 return eAction_Nothing;
@@ -8938,9 +8924,6 @@ void CNewCleanup_imp::RnaFeatBC (
         if( aa != '\0' ) {
             CRef<CTrna_ext> tRNA( new CTrna_ext );
             tRNA->SetAa().SetNcbieaa( aa );
-            if (justTrnaText) {
-                CTrna_ext::ParseDegenerateCodon(*tRNA, codon);
-            }
             rna.SetExt().SetTRNA( *tRNA );
             ChangeMade(CCleanupChange::eChange_tRna);
             if (justTrnaText) {
