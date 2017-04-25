@@ -78,10 +78,10 @@ public:
             if (value.find_first_of("\"=") != string::npos) {
                 // rarer case: bad characters in value name, so
                 // we need surrounding double-quotes and we need to change
-
-                // commented out (CTempString is immutable):
-                //string fixed = NStr::Replace(value, "\"", "'"); //double-quotes to single-quotes.
-                m_Joiner.Add(" [").Add(name).Add("=\"").Add(value).Add("\"]");
+                // double-quotes to single-quotes.
+                m_Joiner.Add(" [").Add(name).Add("=\"");
+                ReplaceAndAdd(value, "\"", "'");
+                m_Joiner.Add("\"]");
             } else {
                 m_Joiner.Add(" [").Add(name).Add("=").Add(value).Add("]");
             }
@@ -101,6 +101,18 @@ public:
         m_Joiner.Join(result);
     }
 private:
+    void ReplaceAndAdd(const CTempString &value, 
+        const CTempString &replace_what, const CTempString &replace_with)
+    {
+        // commented out: CTempString is immutable
+        //string fixed = NStr::Replace(value, "\"", "'");
+        CTempString::size_type p1 = 0, p2 = value.length();
+        for (; (p2 = value.find(replace_what, p1)) != string::npos; 
+            p1 = p2 + 1, p2 = value.length()) {
+            m_Joiner.Add(value.substr(p1, p2 - p1)).Add(replace_with);
+        }
+        m_Joiner.Add(value.substr(p1, p2 - p1));
+    }
     bool m_ShowMods;
     CTextJoiner<64, CTempString> m_Joiner;
 };
