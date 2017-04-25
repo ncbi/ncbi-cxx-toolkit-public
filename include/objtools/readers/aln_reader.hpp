@@ -143,7 +143,7 @@ public:
                                                                  SetAllGap(".-"); };
 
     // destructor
-    ~CAlnReader(void);
+    virtual ~CAlnReader(void);
 
 
 
