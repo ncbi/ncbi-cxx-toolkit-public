@@ -479,19 +479,20 @@ bool CDBL_Connection::x_SendData(I_BlobDescriptor& descr_in,
 I_BlobDescriptor*
 CDBL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
-    string q= "set rowcount 1\nupdate ";
-    q+= descr_in.TableName();
-    q+= " set ";
-    q+= descr_in.ColumnName();
-    q+= "=NULL where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nselect ";
-    q+= descr_in.ColumnName();
-    q+= " from ";
-    q+= descr_in.TableName();
-    q+= " where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nset rowcount 0";
+    string q, tpsql = "TEXTPTR(" + descr_in.ColumnName() + ')';
+    
+    q  = "update " + descr_in.TableName() + " set " + descr_in.ColumnName();
+    q += " = NULL where ";
+    q += '(' + descr_in.SearchConditions() + ')';
+    q += " and (" + tpsql + " is null";
+    q += " or RIGHT(" + tpsql + ", 8) = 0x0000000000000000)\n";
+    q += "select top 1 ";
+    q += descr_in.ColumnName();
+    q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
+    q += " from ";
+    q += descr_in.TableName();
+    q += " where ";
+    q += descr_in.SearchConditions();
 
     CDB_LangCmd* lcmd= LangCmd(q);
     if(!lcmd->Send()) {

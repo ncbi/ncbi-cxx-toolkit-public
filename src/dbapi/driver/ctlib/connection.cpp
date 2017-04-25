@@ -1187,7 +1187,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
 I_BlobDescriptor*
 CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
-    string q;
+    string q, tpsql = "TEXTPTR(" + descr_in.ColumnName() + ')';
     auto_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
@@ -1198,10 +1198,11 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     q += " = NULL where ";
 #endif
     q += '(' + descr_in.SearchConditions() + ')';
-    q += " and TEXTPTR(" + descr_in.ColumnName() + ") is null\n";
+    q += " and (" + tpsql + " is null";
+    q += " or RIGHT(" + tpsql + ", 8) = 0x0000000000000000)\n";
     q += "select top 1 ";
     q += descr_in.ColumnName();
-    q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
+    q += ", " + tpsql;
     q += " from ";
     q += descr_in.TableName();
     q += " where ";
