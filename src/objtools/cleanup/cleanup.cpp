@@ -1226,6 +1226,10 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
         return false;
     }
+    CConstRef<CSeq_feat> mrna = sequence::GetOverlappingmRNA(f.GetLocation(), bsh.GetScope());
+    if (mrna && mrna->GetLocation().GetStop(eExtreme_Biological) != f.GetLocation().GetStop(eExtreme_Biological)){
+        return false;
+    }
 
     if (check_for_stop) {
         string translation;
