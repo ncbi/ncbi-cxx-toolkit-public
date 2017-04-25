@@ -332,12 +332,15 @@ DISCREPANCY_SUMMARIZE(GAPS)
 }
 
 
-// ONCALLER_BIOPROJECT_ID
+// BIOPROJECT_ID
 
 const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[S] BioProject IDs";
 
 DISCREPANCY_CASE(BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
 {
+    if (!obj.IsNa()) {
+        return;
+    }
     CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
     CSeqdesc_CI user_desc_it(bioseq, CSeqdesc::E_Choice::e_User);
     for (; user_desc_it; ++user_desc_it) {
