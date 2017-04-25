@@ -1288,6 +1288,7 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
     if (pos != CTempString::npos)
     {
         value.erase(pos);
+        NStr::TruncateSpacesInPlace(value);
     }
 
     TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find(string(value).c_str());
