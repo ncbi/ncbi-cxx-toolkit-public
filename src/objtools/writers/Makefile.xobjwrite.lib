@@ -16,7 +16,8 @@ SRC = agp_write \
       vcf_writer \
       ucsc_writer \
       src_writer \
-      fasta_writer 
+      fasta_writer \
+      aln_writer
 
 DLL_LIB = variation_utils $(XFORMAT_LIBS) $(OBJEDIT_LIBS)
 
