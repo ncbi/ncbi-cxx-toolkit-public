@@ -152,7 +152,6 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
         size_t rem = size;
         {
             bool trace = s_GetDebug() >= 1;
-            CFastMutexGuard guard(m_Mutex);
             CStopWatch sw;
             if (trace) {
                 sw.Start();
@@ -163,6 +162,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
                 dst += cnt;
             }
             else {
+                CFastMutexGuard guard(m_Mutex);
                 m_File.SetFilePos(file_pos);
                 while (rem) {
                     size_t cnt = m_File.Read(dst, rem);
