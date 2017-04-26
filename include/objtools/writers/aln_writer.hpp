@@ -37,21 +37,35 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CDense_seg;
+class CScope;
 
 class NCBI_XOBJWRITE_EXPORT CAlnWriter:
     public CWriterBase
 {
 
 public:
+    CAlnWriter(
+        CScope& scope,
+        CNcbiOstream& ostr,
+        unsigned int uFlags);
+
+    CAlnWriter(
+        CNcbiOstream& ostr,
+        unsigned int uFlags);
+
     virtual ~CAlnWriter() = default;
 
     virtual bool WriteAlign(
-        const CSeq_align&,
+        const CSeq_align& align,
         const string& name="",
         const string& descr="");
+
+private:
+    bool xWriteAlignDenseg(const CDense_seg& denseg);
+
+    CRef<CScope> m_pScope;
     
-
-
 };
 
 END_objects_SCOPE

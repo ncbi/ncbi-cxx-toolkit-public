@@ -33,15 +33,44 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/aln_writer.hpp>
 
+//#include <util/sequtil/sequtil.hpp>
+#include <util/sequtil/sequtil_manip.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+//  ----------------------------------------------------------------------------
+CAlnWriter::CAlnWriter(
+    CScope& scope,
+    CNcbiOstream& ostr,
+    unsigned int uFlags) :
+    CWriterBase(ostr, uFlags) 
+{
+    m_pScope.Reset(&scope);
+};
+
+
+//  ----------------------------------------------------------------------------
+
+CAlnWriter::CAlnWriter(
+    CNcbiOstream& ostr,
+    unsigned int uFlags) :
+    CWriterBase(ostr, uFlags)
+{
+    m_pScope.Reset(new CScope(*CObjectManager::GetInstance()));
+};
+
+
 
 //  ----------------------------------------------------------------------------
 bool CAlnWriter::WriteAlign(
@@ -49,8 +78,83 @@ bool CAlnWriter::WriteAlign(
     const string& name,
     const string& descr) 
 {
-    return true;
+
+    if (align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg) {
+        return xWriteAlignDenseg(align.GetSegs().GetDenseg());
+    }
+
+    return false;
 }
 //  ----------------------------------------------------------------------------
+
+
+bool CAlnWriter::xWriteAlignDenseg(
+    const CDense_seg& denseg)
+{
+    if (!denseg.CanGetDim() ||
+        !denseg.CanGetNumseg() ||
+        !denseg.CanGetIds() ||
+        !denseg.CanGetStarts() ||
+        !denseg.CanGetLens()) 
+    {
+        return false;
+    }
+
+    const auto num_rows = denseg.GetDim();
+    const auto num_segs = denseg.GetNumseg();
+
+    for (int row=0; row<num_rows; ++row) 
+    {
+        const CSeq_id& id = denseg.GetSeq_id(row);
+        CBioseq_Handle bsh = m_pScope->GetBioseqHandle(id);
+
+        if (!bsh) {
+            continue;
+        }
+        auto length = bsh.GetBioseqLength();
+        CSeqVector vec_plus = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+        string seq_plus;
+        vec_plus.GetSeqData(0, length, seq_plus);
+
+        string seqdata = "";
+        for (int seg=0; seg<num_segs; ++seg)
+        {
+            const auto start = denseg.GetStarts()[seg*num_rows + row];
+            const auto len   = denseg.GetLens()[seg];
+            const ENa_strand strand = (denseg.IsSetStrands()) ?
+                denseg.GetStrands()[seg*num_rows + row] :
+                eNa_strand_plus;
+
+            if (start >= 0) {
+                if (start >= seq_plus.size()) {
+                    // Throw an exception
+                }
+                if (strand == eNa_strand_plus) {
+                    seqdata += seq_plus.substr(start, len);
+                }
+                else 
+                {
+                    CSeqUtil::ECoding coding = 
+                        (bsh.IsNucleotide()) ?
+                        CSeqUtil::e_Iupacna :
+                        CSeqUtil::e_Iupacaa;
+                    string seq_minus;
+                    CSeqManip::ReverseComplement(seq_plus, coding, start, len, seq_minus);
+                
+                    seqdata += seq_minus;        
+                }
+            }   
+            {
+                seqdata += string(len, '-');
+            }
+        }
+        m_Os << id.AsFastaString() << "\n";
+        m_Os << seqdata << "\n";
+    }
+
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
