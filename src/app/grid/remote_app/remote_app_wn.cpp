@@ -268,10 +268,10 @@ public:
 
 void CRemoteAppListener::OnInit(CNcbiApplication* app)
 {
-    CNcbiRegistry& reg = app->GetConfig();
-
-    if (!reg.HasEntry("log", "merge_lines"))
-        reg.Set("log", "merge_lines", "true");
+    if (!app->GetConfig().HasEntry("log", "merge_lines")) {
+        SetDiagPostFlag(eDPF_PreMergeLines);
+        SetDiagPostFlag(eDPF_MergeLines);
+    }
 }
 
 
