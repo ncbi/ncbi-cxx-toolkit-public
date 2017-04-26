@@ -355,14 +355,12 @@ void CGridWorkerNode::Init()
 {
     m_Impl->m_Listener->OnInit(&m_Impl->m_App);
 
-    IRWRegistry& reg = m_Impl->m_App.GetConfig();
+    const IRegistry& reg = m_Impl->m_App.GetConfig();
 
     if (reg.GetBool("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
-
-    reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
     m_Impl->m_NetScheduleAPI = CNetScheduleAPI(reg);
     m_Impl->m_NetCacheAPI = CNetCacheAPI(reg,
