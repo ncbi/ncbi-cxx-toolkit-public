@@ -388,7 +388,7 @@ bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
     return m_AllowXSiteConnections.load();
 }
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry& registry, SRegSynonyms& sections)
+void SNetServiceXSiteAPI::InitXSite(ISynRegistry& registry, const SRegSynonyms& sections)
 {
     if (registry.Get({ "netservice_api", sections }, "allow_xsite_conn", false)) {
         AllowXSiteConnections();
@@ -482,7 +482,7 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry&, SRegSynonyms&)
+void SNetServiceXSiteAPI::InitXSite(ISynRegistry&, const SRegSynonyms&)
 {
 }
 
@@ -589,7 +589,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRe
     m_Listener->OnInit(api_impl, registry, sections);
 }
 
-void SNetServerPoolImpl::Init(ISynRegistry& registry, SRegSynonyms& sections, INetServerConnectionListener* listener)
+void SNetServerPoolImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener)
 {
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
@@ -636,7 +636,7 @@ void SNetServerPoolImpl::Init(ISynRegistry& registry, SRegSynonyms& sections, IN
     m_Listener = listener;
 }
 
-void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, SRegSynonyms& sections)
+void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, const SRegSynonyms& sections)
 {
     m_ServerThrottlePeriod = registry.Get(sections, "throttle_relaxation_period", 0);
 

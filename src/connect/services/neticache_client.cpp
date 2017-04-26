@@ -171,7 +171,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
-    void Init(ISynRegistry& registry, SRegSynonyms& sections);
+    void Init(ISynRegistry& registry, const SRegSynonyms& sections);
 
     ICache::TFlags m_CacheFlags;
 };
@@ -186,7 +186,7 @@ void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry,
     icache_impl->Init(registry, sections);
 }
 
-void SNetICacheClientImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
+void SNetICacheClientImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections)
 {
     auto cache_name = m_DefaultParameters.GetCacheName();
 
