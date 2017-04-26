@@ -280,7 +280,7 @@ case "$ncbi_platform" in
             # with_vdb=$local_vdb_base/cxx_toolkit/2
             with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$local_vdb_base/2.8.1}
+            : ${VDB_PATH=$local_vdb_base/2.8.2}
         fi
         : ${with_downloaded_vdb=no}
         ;;
@@ -288,7 +288,7 @@ case "$ncbi_platform" in
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$net_vdb_base/2.8.1}
+            : ${VDB_PATH=$net_vdb_base/2.8.2}
         fi
         : ${with_downloaded_vdb=no}
         ;;
