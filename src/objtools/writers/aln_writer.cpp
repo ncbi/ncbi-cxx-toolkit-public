@@ -111,6 +111,7 @@ bool CAlnWriter::xWriteAlignDenseg(
         if (!bsh) {
             continue;
         }
+
         auto length = bsh.GetBioseqLength();
         CSeqVector vec_plus = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
         string seq_plus;
@@ -143,12 +144,13 @@ bool CAlnWriter::xWriteAlignDenseg(
                 
                     seqdata += seq_minus;        
                 }
-            }   
+            }  
+            else  
             {
                 seqdata += string(len, '-');
             }
         }
-        m_Os << id.AsFastaString() << "\n";
+        m_Os << ">" + id.AsFastaString() << "\n";
         m_Os << seqdata << "\n";
     }
 
