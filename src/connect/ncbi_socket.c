@@ -75,6 +75,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
+#include "ncbi_once.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket_unix.h>
 
@@ -809,7 +810,7 @@ static EIO_Status s_Init(void)
 #ifndef NCBI_OS_MSWIN
     {{
         static void* /*bool*/ s_AtExitSet = 0/*false*/;
-        if (g_CORE_Once(&s_AtExitSet))
+        if (CORE_Once(&s_AtExitSet))
             atexit((void (*)(void)) SOCK_ShutdownAPI);
     }}
 #endif /*NCBI_OS_MSWIN*/
@@ -864,7 +865,7 @@ static EIO_Status s_InitAPI_(int secure)
         CORE_UNLOCK;
     } else {
         static void* /*bool*/ s_Once = 0/*false*/;
-        if (g_CORE_Once(&s_Once)) {
+        if (CORE_Once(&s_Once)) {
             CORE_LOG(eLOG_Critical, "Secure socket layer (SSL) has not"
                      " been properly initialized in the NCBI Toolkit. "
                      " Have you forgotten to call SOCK_SetupSSL()?");
@@ -1200,7 +1201,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
         s_LocalHostAddress = s_gethostbyname_(0, log);
     if (s_LocalHostAddress)
         return s_LocalHostAddress;
-    if (!s_Once  &&  reget != eOff  &&  g_CORE_Once(&s_Once)) {
+    if (!s_Once  &&  reget != eOff  &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(9, reget == eDefault ? eLOG_Warning : eLOG_Error,
                     ("[SOCK::GetLocalHostAddress] "
                      " Cannot obtain local host address%s",
@@ -1224,7 +1225,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             s_ErrorCallback(&info);
         }
     } else if (!s_Once  &&  !hostname
-               &&  SOCK_IsLoopbackAddress(retval)  &&  g_CORE_Once(&s_Once)) {
+               &&  SOCK_IsLoopbackAddress(retval)  &&  CORE_Once(&s_Once)) {
         char addr[40 + 1];
         *addr = " "[SOCK_ntoa(retval, addr + 1, sizeof(addr) - 1) ? 1 : 0];
         CORE_LOGF_X(155, eLOG_Warning,
@@ -1391,7 +1392,7 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
               &&  strncasecmp(retval, "localhost", 9) != 0)  ||
              (!host
               &&  strncasecmp(retval, "localhost", 9) == 0))
-        &&  g_CORE_Once(&s_Once)) {
+        &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr] "
                      " Got \"%.*s\" for %s address", MAXHOSTNAMELEN,
@@ -5876,7 +5877,7 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 
 #  if   defined(NCBI_OS_UNIX)
 
-    if (g_CORE_Once((void**) &trigger->isset.ptr)) {
+    if (CORE_Once((void**) &trigger->isset.ptr)) {
         if (write(trigger->out, "", 1) < 0  &&  errno != EAGAIN)
             return eIO_Unknown;
     }

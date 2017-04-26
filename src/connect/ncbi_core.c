@@ -31,6 +31,7 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_once.h"
 #include "ncbi_priv.h"
 #include <stdlib.h>
 
@@ -115,7 +116,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
     /* NB: Without a static initializer there is a
            RACE CONDITION in sx_Mutex's INIT/USE! */
     static void* /*bool*/ s_Once = 0/*false*/;
-    if (g_CORE_Once(&s_Once)) {
+    if (CORE_Once(&s_Once)) {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -167,7 +168,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
     if (g_CORE_Log) {
         static void* /*bool*/ s_Once = 0/*false*/;
-        if (g_CORE_Once(&s_Once))
+        if (CORE_Once(&s_Once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     }
     return -1/*not implemented*/;
