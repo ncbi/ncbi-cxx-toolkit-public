@@ -10,6 +10,6 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_ncbi_namerd_mt.sh
 CHECK_COPY = test_ncbi_namerd_mt.sh test_ncbi_namerd_mt.ini
-CHECK_TIMEOUT = 60
+CHECK_TIMEOUT = 600
 
 WATCHERS = lavr mcelhany
