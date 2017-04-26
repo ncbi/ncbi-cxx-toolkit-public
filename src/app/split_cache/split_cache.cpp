@@ -399,8 +399,8 @@ void CSplitCacheApp::SetupCache(void)
             readers = "id1";
         }
         else {
-            GetConfig().Set("genbank/cache/id_cache/bdb", "path", cache_dir);
-            GetConfig().Set("genbank/cache/blob_cache/bdb", "path", cache_dir);
+            GetRWConfig().Set("genbank/cache/id_cache/bdb", "path", cache_dir);
+            GetRWConfig().Set("genbank/cache/blob_cache/bdb", "path", cache_dir);
             readers = "cache;id1";
         }
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(

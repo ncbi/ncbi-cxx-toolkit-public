@@ -38,8 +38,7 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetCache()
 {
     if (IsOptionSet(eEnableMirroring)) {
-        CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
-        reg.Set("netcache_api", "enable_mirroring", "true");
+        GetRWConfig().Set("netcache_api", "enable_mirroring", "true");
     }
 }
 

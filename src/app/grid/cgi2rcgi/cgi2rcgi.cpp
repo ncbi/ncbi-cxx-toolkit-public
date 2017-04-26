@@ -356,7 +356,7 @@ void CCgi2RCgiApp::Init()
     CCgiApplicationCached::Init();
 
     // Grid client initialization
-    CNcbiRegistry& config(GetConfig());
+    CNcbiRegistry& config = GetRWConfig();
     string grid_cgi_section("grid_cgi");
 
     // Must correspond to TEnableVersionRequest

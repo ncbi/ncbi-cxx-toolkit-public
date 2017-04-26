@@ -180,7 +180,7 @@ int CNSRemoteJobControlApp::Run(void)
 {
 
     const CArgs& args = GetArgs();
-    IRWRegistry& reg = GetConfig();
+    IRWRegistry& reg = GetRWConfig();
 
     if (args["q"]) {
         string queue = args["q"].AsString();

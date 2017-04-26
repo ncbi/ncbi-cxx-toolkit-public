@@ -81,7 +81,7 @@ void CTestSubRegApp::Init()
 int CTestSubRegApp::Run()
 {
     const CArgs& args = GetArgs();
-    CNcbiRegistry& reg = GetConfig();
+    CNcbiRegistry& reg = GetRWConfig();
     
     // At the first run we read from all the different sources. At the second
     // run we only read the file that was this test's output at the first run

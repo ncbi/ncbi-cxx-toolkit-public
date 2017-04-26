@@ -104,8 +104,8 @@ private:
 void CTestNetScheduleCrash::Init(void)
 {
     // Avoid sockets to stay in TIME_WAIT state
-    GetConfig().Set("netservice_api", "use_linger2", "true",
-                    IRegistry::fNoOverride);
+    GetRWConfig().Set("netservice_api", "use_linger2", "true",
+                      IRegistry::fNoOverride);
 
     //
     CONNECT_Init();

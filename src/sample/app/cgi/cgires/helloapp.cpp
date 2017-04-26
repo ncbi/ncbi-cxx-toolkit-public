@@ -65,7 +65,7 @@ BEGIN_NCBI_SCOPE
 
 CNcbiResource* CHelloApp::LoadResource(void)
 { 
-    auto_ptr<CHelloResource> resource(new CHelloResource( GetConfig() ));  
+    auto_ptr<CHelloResource> resource(new CHelloResource( GetRWConfig() ));  
 
     // add commands to the resource class
     resource->AddCommand( new CHelloBasicCommand(*resource) );

@@ -781,7 +781,7 @@ int CAsnCacheApplication::Run(void)
          CDiagContext_Extra extra = GetDiagContext().PrintRequestStart();
      }}
 
-    GetConfig().Set("OBJMGR", "BLOB_CACHE", "500");
+    GetRWConfig().Set("OBJMGR", "BLOB_CACHE", "500");
 
     s_TrimLargeNucprots = args["trim-large-nucprots"];
     s_RemoveAnnot = args["remove-annotation"];

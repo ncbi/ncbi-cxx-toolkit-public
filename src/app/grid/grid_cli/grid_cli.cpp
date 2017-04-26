@@ -1263,7 +1263,7 @@ COutputFileHelper::~COutputFileHelper()
 int CGridCommandLineInterfaceApp::Run()
 {
     // Override connection defaults.
-    CNcbiRegistry& reg = GetConfig();
+    CNcbiRegistry& reg = GetRWConfig();
     const string netservice_api_section("netservice_api");
     const string max_find_lbname_retries("max_find_lbname_retries");
     if (!reg.HasEntry(netservice_api_section, max_find_lbname_retries))

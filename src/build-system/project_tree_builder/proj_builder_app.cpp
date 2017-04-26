@@ -1874,7 +1874,7 @@ void CProjBulderApp::ParseArguments(void)
             if (!CDirEntry::IsAbsolutePath(v)) {
                 v = CDirEntry::ConcatPath(m_Root,v);
             }
-            LoadConfig(GetConfig(),&v);
+            LoadConfig(GetRWConfig(),&v);
         }
         string subtree;
         m_CustomConfiguration.GetPathValue("__arg_subtree", subtree);

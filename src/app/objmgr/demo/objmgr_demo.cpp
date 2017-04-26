@@ -975,9 +975,9 @@ int CDemoApp::Run(void)
     }
     if ( args["csra"] ) {
         string old_param = GetConfig().Get("CSRA", "ACCESSIONS");
-        GetConfig().Set("CSRA", "ACCESSIONS", args["csra"].AsString());
+        GetRWConfig().Set("CSRA", "ACCESSIONS", args["csra"].AsString());
         other_loaders.push_back(pOm->RegisterDataLoader(0, "csra")->GetName());
-        GetConfig().Set("CSRA", "ACCESSIONS", old_param);
+        GetRWConfig().Set("CSRA", "ACCESSIONS", old_param);
     }
     if ( args["other_loaders"] ) {
         vector<string> names;

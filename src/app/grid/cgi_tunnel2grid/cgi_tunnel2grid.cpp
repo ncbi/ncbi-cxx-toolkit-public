@@ -261,7 +261,7 @@ int CCgiTunnel2Grid::ProcessRequest(CCgiContext& ctx)
     }
     string x_conf = project + "/" + project + ".ini";
     try {
-        LoadConfig(GetConfig(), &x_conf);
+        LoadConfig(GetRWConfig(), &x_conf);
     }
     catch (exception& ex) {
         OnJobFailed(ex.what(), grid_ctx);

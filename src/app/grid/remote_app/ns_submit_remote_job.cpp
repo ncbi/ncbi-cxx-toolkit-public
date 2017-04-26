@@ -170,7 +170,7 @@ int CNSSubmitRemoteJobApp::Run(void)
 {
 
     const CArgs& args = GetArgs();
-    IRWRegistry& reg = GetConfig();
+    IRWRegistry& reg = GetRWConfig();
 
     if (args["q"]) {
         reg.Set(kNetScheduleAPIDriverName, "queue_name", args["q"].AsString());
