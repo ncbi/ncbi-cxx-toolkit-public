@@ -249,7 +249,7 @@ void CSysLog::x_Connect(void)
 #endif
 }
 
-void CSysLog::HonorRegistrySettings(IRegistry* reg)
+void CSysLog::HonorRegistrySettings(const IRegistry* reg)
 {
     if (reg == NULL  &&  CNcbiApplication::Instance()) {
         reg = &CNcbiApplication::Instance()->GetConfig();

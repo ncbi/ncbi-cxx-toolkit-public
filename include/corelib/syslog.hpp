@@ -106,7 +106,7 @@ public:
               EFacility facility = eDefaultFacility);
     void Post(const string& message, EPriority priority, int facility);
 
-    void HonorRegistrySettings(IRegistry* reg = 0);
+    void HonorRegistrySettings(const IRegistry* reg = 0);
 
     static const char* kLogName_Syslog;
     string GetLogName(void) { return kLogName_Syslog; }
