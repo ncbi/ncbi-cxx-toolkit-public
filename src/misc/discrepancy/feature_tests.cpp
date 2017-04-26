@@ -2168,10 +2168,9 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
 
 // MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS
 
-static const string kNoLackOfmRnaData = "[n] mRNA[s] [does] not have both protein_id and transcript_id";
-
 static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
 {
+cout << "*";
     bool protein_id = false,
          transcript_id = false;
 
@@ -2203,8 +2202,8 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSu
         if (bio_src) {
             CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(obj, context.GetScope());
             if (mRNA.NotEmpty()) {
-                if (mRNA->IsSetQual() && !IsmRnaQualsPresent(mRNA->GetQual())) {
-                    m_Objs[kNoLackOfmRnaData].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
+                if (!mRNA->IsSetQual() || !IsmRnaQualsPresent(mRNA->GetQual())) {
+                    m_Objs.Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj))).Fatal();
                 }
             }
         }
@@ -2214,7 +2213,11 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSu
 
 DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 {
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    if (!m_Objs.empty()) {
+        CReportNode out;
+        out["no protein_id and transcript_id present"];
+        m_ReportItems = out.Export(*this)->GetSubitems();
+    }
 }
 
 
