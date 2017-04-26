@@ -136,7 +136,7 @@ void CRemoteCgiApp::Init(void)
                               "Worker Node");
     SetupArgDescriptions(arg_desc.release());
 
-    IRWRegistry& reg = GetConfig();
+    IRWRegistry& reg = GetRWConfig();
     reg.Set("netcache_client", "cache_output", "true");
 
     m_AppImpl->Init();
