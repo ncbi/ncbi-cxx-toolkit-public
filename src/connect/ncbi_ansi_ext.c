@@ -38,6 +38,15 @@
 #include <stdlib.h>
 
 
+#ifndef HAVE_STRNLEN
+size_t strnlen(const char* str, size_t maxlen)
+{
+    const char* end = (const char*) memchr(str, '\0', maxlen);
+    return end ? (size_t)(end - str) : maxlen;
+}
+#endif /*HAVE_STRNLEN*/
+
+
 #ifndef HAVE_STRDUP
 char* strdup(const char* str)
 {
@@ -53,7 +62,7 @@ char* strdup(const char* str)
 #ifndef HAVE_STRNDUP
 char* strndup(const char* str, size_t n)
 {
-    const char* end = n   ? memchr(str, '\0', n) : 0;
+    const char* end = n   ? (const char*) memchr(str, '\0', n) : 0;
     size_t     size = end ? (size_t)(end - str)  : n;
     char*       res = (char*) malloc(size + 1);
     if (res) {

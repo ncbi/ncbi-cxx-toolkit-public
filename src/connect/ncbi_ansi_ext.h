@@ -29,7 +29,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Non-ANSI, yet widely used functions
+///@file ncbi_ansi_ext.h
+ *   Non-ANSI, yet widely used string/memory functions
  *
  */
 
@@ -44,22 +45,39 @@ extern "C" {
 #endif
 
 
+#ifndef HAVE_STRNLEN
+
+#  ifdef   strnlen
+#    undef strnlen
+#  endif
+#  define  strnlen     NCBI_strnlen
+
+/** Return the number of characters in the string pointed to by "str" (not
+ * including the '\0' character but no more than "maxlen" (if the '\0'
+ * character hasn't been found within the first "maxlen" characters).
+ */
+NCBI_XCONNECT_EXPORT
+size_t     strnlen(const char* str, size_t maxlen);
+
+#endif /*HAVE_STRNLEN*/ 
+
+
 #ifndef HAVE_STRDUP
 
 #  ifdef   strdup
 #    undef strdup
 #  endif
-#  define  strdup      NCBI_strdup
+#  define  strdup       NCBI_strdup
 
-/* Create a copy of string "str".
- * Return an identical malloc'ed string, which must be explicitly freed 
- * by free() when no longer needed.
+/** Create a copy of string "str".
+ *  Return an identical malloc'ed string, which must be explicitly freed by
+ *  free() when no longer needed.
  */
 NCBI_XCONNECT_EXPORT
-char* strdup(const char* str);
+char*      strdup(const char* str);
 
 #elif defined(NCBI_COMPILER_MSVC)
-#  define  strdup      _strdup
+#  define  strdup       _strdup
 #endif /*HAVE_STRDUP*/
 
 
@@ -68,14 +86,14 @@ char* strdup(const char* str);
 #  ifdef   strndup
 #    undef strndup
 #  endif
-#  define  strndup     NCBI_strndup
+#  define  strndup      NCBI_strndup
 
-/* Create a copy of up to "n" first characters of string "str".
- * Return a malloc'ed and '\0'-terminated string, which must be
- * explicitly freed by free() when no longer needed.
+/** Create a copy of up to "n" first characters of string "str".
+ *  Return a malloc'ed and '\0'-terminated string, which must be explicitly
+ *  freed by free() when no longer needed.
  */
 NCBI_XCONNECT_EXPORT
-char* strndup(const char* str, size_t n);
+char*      strndup(const char* str, size_t n);
 
 #endif /*HAVE_STRNDUP*/
 
@@ -86,22 +104,22 @@ char* strndup(const char* str, size_t n);
 #    undef strcasecmp
 #    undef strncasecmp
 #  endif
-#  define  strcasecmp  NCBI_strcasecmp
-#  define  strncasecmp NCBI_strncasecmp
+#  define  strcasecmp   NCBI_strcasecmp
+#  define  strncasecmp  NCBI_strncasecmp
 
-/* Compare "s1" and "s2", ignoring case.
- * Return less than, equal to or greater than zero if
- * "s1" is lexicographically less than, equal to or greater than "s2".
+/** Compare "s1" and "s2", ignoring case.
+ *  Return less than, equal to or greater than zero if
+ *  "s1" is lexicographically less than, equal to or greater than "s2".
  */
 NCBI_XCONNECT_EXPORT
-int strcasecmp(const char* s1, const char* s2);
+int        strcasecmp(const char* s1, const char* s2);
 
-/* Compare not more than "n" characters of "s1" and "s2", ignoring case.
- * Return less than, equal to or greater than zero if
- * "s1" is lexicographically less than, equal to or greater than "s2".
+/** Compare not more than "n" characters of "s1" and "s2", ignoring case.
+ *  Return less than, equal to or greater than zero if
+ *  "s1" is lexicographically less than, equal to or greater than "s2".
  */
 NCBI_XCONNECT_EXPORT
-int strncasecmp(const char* s1, const char* s2, size_t n);
+int        strncasecmp(const char* s1, const char* s2, size_t n);
 
 #endif /*HAVE_STRCASECMP*/
 
@@ -110,27 +128,27 @@ int strncasecmp(const char* s1, const char* s2, size_t n);
 #  undef strupr
 #  undef strlwr
 #endif
-#define  strupr        NCBI_strupr
-#define  strlwr        NCBI_strlwr
+#define  strupr         NCBI_strupr
+#define  strlwr         NCBI_strlwr
 
-/* Convert a string to uppercase, then return pointer to
- * the altered string. Because the conversion is made in place, the
- * returned pointer is the same as the passed one.
+/** Convert a string to uppercase, then return pointer to
+ *  the altered string. Because the conversion is made in place, the
+ *  returned pointer is the same as the passed one.
  */
-char* strupr(char* s);
+char*    strupr(char* s);
 
-/* Convert a string to lowercase, then return pointer to
- * the altered string. Because the conversion is made in place, the
- * returned pointer is the same as the passed one.
+/** Convert a string to lowercase, then return pointer to
+ *  the altered string. Because the conversion is made in place, the
+ *  returned pointer is the same as the passed one.
  */
-char* strlwr(char* s);
+char*    strlwr(char* s);
 
 
-/* Copy not more than "n" characters from string "s2" into "s1"
- * and return the result, which is always null-terminated.
- * NOTE: The difference of this function from standard strncpy() is in
- * that the result is always null-terminated and that the function does not
- * pad "s1" with null bytes should "s2" be shorter than "n" characters.
+/** Copy not more than "n" characters from string "s2" into "s1"
+ *  and return the result, which is always null-terminated.
+ *  NOTE:  The difference of this function from standard strncpy() is in
+ *  that the result is always null-terminated and that the function does not
+ *  pad "s1" with null bytes should "s2" be shorter than "n" characters.
  */
 NCBI_XCONNECT_EXPORT
 char* strncpy0(char* s1, const char* s2, size_t n);
@@ -141,12 +159,13 @@ char* strncpy0(char* s1, const char* s2, size_t n);
 #ifdef   memcchr
 #  undef memcchr
 #endif
-#define  memcchr       NCBI_memcchr
+#define  memcchr        NCBI_memcchr
 
-/* Find address of the first occurrence of a byte that is NOT char "c" within
- * "n" bytes of memory at the address "s".  Return NULL if all bytes are "c".
+/** Find the address of the first occurrence of a byte that is NOT char "c"
+ *  within the "n" bytes of memory at the address "s".  Return NULL if all
+ *  bytes are "c".
  */
-void* memcchr(const void* s, int c, size_t n);
+void*    memcchr(const void* s, int c, size_t n);
 
 #endif /*!HAVE_MEMCCHR*/
 
@@ -156,35 +175,36 @@ void* memcchr(const void* s, int c, size_t n);
 #ifdef   memrchr
 #  undef memrchr
 #endif
-#define  memrchr       NCBI_memrchr
+#define  memrchr        NCBI_memrchr
 
-/* Find address of the last occurrence of char "c" within "n" bytes of a memory
- * block beginning at the address "s".  Return NULL if no such byte is found.
+/** Find the address of the last occurrence of char "c" within "n" bytes of a
+ *  memory block of size "n" beginning at the address "s".  Return NULL if no
+ *  such byte is found.
  */
-void* memrchr(const void* s, int c, size_t n);
+void*    memrchr(const void* s, int c, size_t n);
 
 #endif /*!HAVE_MEMRCHR*/
 
 
-/* Locale-independent double-to-ASCII conversion of value "f" into a character
- * buffer pointed to by "s", with a specified precision (mantissa digits) "p".
- * There is an internal limit on precision (so larger values of "p" will be
- * silently truncated).  The maximal representable whole part corresponds to
- * the maximal signed long integer.  Otherwise, the behavior is undefined.
- * Return the pointer past the output string (points to the terminating '\0').
+/** Locale-independent double-to-ASCII conversion of value "f" into a character
+ *  buffer pointed to by "s", with a specified precision (mantissa digits) "p".
+ *  There is an internal limit on precision (so larger values of "p" will be
+ *  silently truncated).  The maximal representable whole part corresponds to
+ *  the maximal signed long integer.  Otherwise, the behavior is undefined.
+ *  Return the pointer past the output string (points to the terminating '\0').
  */
 NCBI_XCONNECT_EXPORT
 char*  NCBI_simple_ftoa(char* s, double f, int p);
 
 
-/* Locale-independent ASCII-to-double conversion of string "s".  Does not work
- * for scientific notation (values including exponent).  Sets "e" to point to
- * the character that stopped conversion.  Clears "errno" but sets it non-zero
- * in case of conversion errors.  Maximal value for the whole part may not
- * exceed the maximal signed long integer, and for mantissa -- unsigned long
- * integer.
- * Returns the result of conversion (on error sets errno, returns 0.0).
- * @note e == s upon return if no valid input was found and consumed.
+/** Locale-independent ASCII-to-double conversion of string "s".  Does not work
+ *  for scientific notation (values including exponent).  Sets "e" to point to
+ *  the character that stopped conversion.  Clears "errno" but sets it non-zero
+ *  in case of conversion errors.  Maximal value for the whole part may not
+ *  exceed the maximal signed long integer, and for mantissa -- unsigned long
+ *  integer.
+ *  Returns result of the conversion (on error sets errno, returns 0.0).
+ *  @note e == s upon return if no valid input was found and consumed.
  */
 NCBI_XCONNECT_EXPORT
 double NCBI_simple_atof(const char* s, char** e);
