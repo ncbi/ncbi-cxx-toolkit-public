@@ -204,6 +204,10 @@ void JSDParser::ParseNode(DTDElement& node)
                     ParseEnumeration(node);
                 } else if (key == "oneOf") {
                     ParseOneOf(node);
+                } else if (key == "anyOf") {
+                    ParseAnyOf(node);
+                } else if (key == "allOf") {
+                    ParseAllOf(node);
                 } else if (key == "type") {
                     ParseError("type arrays not supported", "string");
                 } else if (key == "items") {
@@ -276,12 +280,15 @@ void JSDParser::ParseRequired(DTDElement& node)
 
 void JSDParser::ParseEnumeration(DTDElement& node)
 {
+    bool isknown = true;
     if (node.GetType() == DTDElement::eInteger) {
         node.ResetType(DTDElement::eUnknown);
         node.SetType(DTDElement::eIntEnum);
     } else if (node.GetType() == DTDElement::eString) {
         node.ResetType(DTDElement::eUnknown);
         node.SetType(DTDElement::eEnum);
+    } else if (node.GetType() == DTDElement::eUnknown) {
+        isknown = false;
     } else {
         ParseError("enum restriction not supported", "string or integer type");
     }
@@ -289,6 +296,16 @@ void JSDParser::ParseEnumeration(DTDElement& node)
     TToken tok;
     for (tok = GetNextToken(); tok != K_END_ARRAY; tok = GetNextToken()) {
         if (tok != T_SYMBOL) {
+            if (!isknown) {
+                isknown = true;
+                if (tok == T_NUMBER) {
+                    node.SetType(DTDElement::eIntEnum);
+                    isint = true;
+                } else if (tok == K_VALUE) {
+                    node.SetType(DTDElement::eEnum);
+                    isint = false;
+                }
+            }
             if ((isint && tok == T_NUMBER) || (!isint && tok == K_VALUE)) {
                 node.AddContent(Value());
             } else {
@@ -318,15 +335,16 @@ void JSDParser::ParseOneOf(DTDElement& node)
     bool hasnamed = false;
     DTDElement::EType nexttype = DTDElement::eUnknown;
     for(const DTDElement& c : contents) {
-        if (c.IsNamed()) {
+        const DTDElement& e = (c.GetType() == DTDElement::eAlias) ? m_MapElement[c.GetTypeName()] : c;
+        if (e.IsNamed()) {
             hasnamed = true;
         }
-        if (c.GetType() == DTDElement::eEmpty && !c.IsNamed()) {
+        if (e.GetType() == DTDElement::eEmpty && !e.IsNamed()) {
             hasnil = true;
         }
-        if (c.GetType() != DTDElement::eEmpty && type == DTDElement::eUnknown) {
+        if (e.GetType() != DTDElement::eEmpty && type == DTDElement::eUnknown) {
             if (nexttype == DTDElement::eUnknown) {
-                nexttype = c.GetType();
+                nexttype = e.GetType();
             } else {
                 nexttype = DTDElement::eChoice;
             }
@@ -340,13 +358,20 @@ void JSDParser::ParseOneOf(DTDElement& node)
     } else if (type == DTDElement::eSequence) {
         node.ResetType(DTDElement::eUnknown);
         node.SetType(nexttype);
+    }
+    type = node.GetType();
+    if (type == DTDElement::eSequence || type == DTDElement::eChoice) {
         int i = 0;
         for(DTDElement& c : contents) {
             string item_id = node_id_base + "/" + NStr::NumericToString(i++);
-            if (!c.IsNamed()) {
-                c.SetName(item_id);
+            if (c.GetType() == DTDElement::eAlias) {
+                item_id = c.GetTypeName();
+            } else {
+                if (!c.IsNamed()) {
+                    c.SetName(item_id);
+                }
+                m_MapElement[item_id] = c;
             }
-            m_MapElement[item_id] = c;
     	    AddElementContent(node,item_id);
         }
         FixEmbeddedNames(node);
@@ -354,6 +379,42 @@ void JSDParser::ParseOneOf(DTDElement& node)
     node.SetNillable(hasnil);
 }
 
+void JSDParser::ParseAnyOf(DTDElement& node)
+{
+    ParseOneOf(node);
+//    node.SetOccurrence(DTDElement::eZeroOrMore);
+}
+
+void JSDParser::ParseAllOf(DTDElement& node)
+{
+    string node_id_base = NStr::Join(m_URI,"/");
+    DTDElement::EType type = node.GetType();
+    vector<DTDElement> contents;
+    TToken tok;
+    for (tok = GetNextToken(); tok != K_END_ARRAY; tok = GetNextToken()) {
+        if (tok == K_BEGIN_OBJECT) {
+            contents.push_back(DTDElement());
+            DTDElement& item = contents.back();
+            item.SetType(type);
+            item.SetEmbedded();
+            ParseNode(item);
+        }
+    }
+    for(const DTDElement& c : contents) {
+        const DTDElement& e = (c.GetType() == DTDElement::eAlias) ? m_MapElement[c.GetTypeName()] : c;
+        node.SetType(e.GetType());
+        string item_id;
+        if (c.GetType() != DTDElement::eAlias && e.IsNamed()) {
+    	    item_id = e.GetName();
+            AddElementContent(node,item_id);
+        } else {
+            for(const string& ref : e.GetContent()) {
+                item_id = ref;
+    	        AddElementContent(node,item_id);
+            }
+        }
+    }
+}
 void JSDParser::SkipUnknown(TToken tokend)
 {
     TToken tok;

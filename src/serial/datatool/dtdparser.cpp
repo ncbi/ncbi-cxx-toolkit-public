@@ -1633,6 +1633,10 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eChoice:   cout << "choice";  break;
     case DTDElement::eSet:      cout << "set";     break;
 
+    case DTDElement::eAlias:        cout << "Alias";     break;
+    case DTDElement::eEnum:         cout << "Enum";     break;
+    case DTDElement::eIntEnum:      cout << "IntEnum";     break;
+
     case DTDElement::eBoolean:      cout << "boolean";   break;
     case DTDElement::eInteger:      cout << "integer";   break;
     case DTDElement::eBigInt:       cout << "BigInt";    break;

@@ -63,6 +63,8 @@ protected:
     void ParseRequired(DTDElement& node);
     void ParseEnumeration(DTDElement& node);
     void ParseOneOf(DTDElement& node);
+    void ParseAnyOf(DTDElement& node);
+    void ParseAllOf(DTDElement& node);
 
     void SkipUnknown(TToken tokend);
 
