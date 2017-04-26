@@ -82,7 +82,7 @@ typedef struct {
     const char*      mx_host;       /**< Host to contact an MTA at           */
     short            mx_port;       /**< Port to contact an MTA at           */
     TSendMailOptions mx_options;    /**< See ESendMailOption                 */
-    unsigned int     magic_cookie;  /**< RO, filled in by SendMailInfo_Init  */
+    unsigned int     magic;         /**< RO, filled in by SendMailInfo_Init  */
 } SSendMailInfo;
 
 

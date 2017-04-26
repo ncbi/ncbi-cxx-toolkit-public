@@ -41,15 +41,15 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_SMTP
 
-#define MX_MAGIC_COOKIE  0xBA8ADEDA
-#define MX_CRLF          "\r\n"
+#define MX_SENDMAIL_MAGIC  0xBA8ADEDA
+#define MX_CRLF            "\r\n"
 
-#define SMTP_READERR     -1      /* Read error from socket               */
-#define SMTP_READTMO     -2      /* Read timed out                       */
-#define SMTP_RESPERR     -3      /* Cannot read response prefix          */
-#define SMTP_NOCODE      -4      /* No response code detected (letters?) */
-#define SMTP_BADCODE     -5      /* Response code doesn't match in lines */
-#define SMTP_BADRESP     -6      /* Malformed response                   */
+#define SMTP_READERR       -1  /* Read error from socket               */
+#define SMTP_READTMO       -2  /* Read timed out                       */
+#define SMTP_RESPERR       -3  /* Cannot read response prefix          */
+#define SMTP_NOCODE        -4  /* No response code detected (letters?) */
+#define SMTP_BADCODE       -5  /* Response code doesn't match in lines */
+#define SMTP_BADRESP       -6  /* Malformed response                   */
 
 
 /* Read SMTP response from the socket.
@@ -62,7 +62,7 @@
 static int s_SockRead(SOCK sock, char* response, size_t max_response_len,
                       int/*bool*/ savecode)
 {
-    int/*bool*/ done = 0;
+    int/*bool*/ done = 0/*false*/;
     size_t n = 0;
     int code = 0;
 
@@ -112,7 +112,7 @@ static int s_SockRead(SOCK sock, char* response, size_t max_response_len,
                 if (status == eIO_Closed) {
                     if (n < max_response_len)
                         response[n++] = '\n';
-                    done = 1;
+                    done = 1/*true*/;
                     break;
                 }
                 if (!m)
@@ -130,7 +130,6 @@ static int s_SockRead(SOCK sock, char* response, size_t max_response_len,
                 response[n] = ' ';
         } else {
             *response = '\0';
-            assert(done);
             break;
         }
     } while (!done);
@@ -322,7 +321,7 @@ extern SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
         info->mx_host      = s_MxHost;
         info->mx_port      = s_MxPort;
         info->mx_options   = 0;
-        info->magic_cookie = MX_MAGIC_COOKIE;
+        info->magic        = MX_SENDMAIL_MAGIC;
     }
     return info;
 }
@@ -484,8 +483,8 @@ extern const char* CORE_SendMailEx(const char*          to,
     SOCK sock = 0;
 
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
-    if (info->magic_cookie != MX_MAGIC_COOKIE)
-        SENDMAIL_RETURN(6, "Invalid magic cookie");
+    if (info->magic != MX_SENDMAIL_MAGIC)
+        SENDMAIL_RETURN(6, "SSendMailInfo inited improperly: invalid magic");
 
     if ((!to         ||  !*to)        &&
         (!info->cc   ||  !*info->cc)  &&
