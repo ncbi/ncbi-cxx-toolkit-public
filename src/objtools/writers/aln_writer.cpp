@@ -151,7 +151,12 @@ bool CAlnWriter::xWriteAlignDenseg(
             }
         }
         m_Os << ">" + id.AsFastaString() << "\n";
-        m_Os << seqdata << "\n";
+        size_t pos=0;
+        size_t width = 60;
+        while (pos < seqdata.size()) {
+            m_Os << seqdata.substr(pos, width) << "\n";
+            pos += width;
+        }
     }
 
     return true;
