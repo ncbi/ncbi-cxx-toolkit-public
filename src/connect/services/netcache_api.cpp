@@ -99,9 +99,9 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registr
             client_name = api.GetExecutor().GetClientName();
         }
 
-        CNetScheduleConfigLoader loader("nc.",  "netcache_conf_from_netschedule");
+        CNetScheduleConfigLoader loader(registry, sections, false);
 
-        loader.Get(api, registry, sections);
+        loader(api);
     }
 }
 

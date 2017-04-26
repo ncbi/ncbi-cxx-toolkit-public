@@ -198,30 +198,18 @@ struct SNetScheduleServerProperties : public INetServerProperties
 
 class CNetScheduleConfigLoader
 {
-    class CErrorSuppressor;
-
 public:
-    CNetScheduleConfigLoader(
-            const CTempString& prefix,
-            const CTempString& section);
+    CNetScheduleConfigLoader(ISynRegistry& registry, SRegSynonyms& sections, bool ns_conf = true);
 
-    bool Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, SRegSynonyms& sections);
-
-protected:
-    virtual bool Transform(const CTempString& prefix, string& name);
+    bool operator()(SNetScheduleAPIImpl* impl);
 
 private:
-    const CTempString m_Prefix;
-    const CTempString m_Section;
-};
+    bool Transform(const string& prefix, string& name) const;
 
-class CNetScheduleOwnConfigLoader : public CNetScheduleConfigLoader
-{
-public:
-    CNetScheduleOwnConfigLoader();
-
-protected:
-    bool Transform(const CTempString& prefix, string& name);
+    ISynRegistry& m_Registry;
+    const SRegSynonyms& m_Sections;
+    const bool m_NsConf;
+    enum { eOff, eImplicit, eExplicit } m_Mode;
 };
 
 class CNetScheduleServerListener : public INetServerConnectionListener

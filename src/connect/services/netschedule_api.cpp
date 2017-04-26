@@ -372,14 +372,37 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
-CNetScheduleConfigLoader::CNetScheduleConfigLoader(
-        const CTempString& prefix, const CTempString& section) :
-    m_Prefix(prefix), m_Section(section)
+string s_GetSection(bool ns_conf)
 {
+    return ns_conf ? "netschedule_conf_from_netschedule" : "netcache_conf_from_netschedule";
 }
 
-bool CNetScheduleConfigLoader::Transform(const CTempString& prefix, string& name)
+CNetScheduleConfigLoader::CNetScheduleConfigLoader(ISynRegistry& registry, SRegSynonyms& sections, bool ns_conf) :
+    m_Registry(registry), m_Sections(sections), m_NsConf(ns_conf), m_Mode(eImplicit)
 {
+    sections.insert(sections.begin(), s_GetSection(m_NsConf));
+
+    const auto param = "load_config_from_ns";
+
+    if (m_Registry.Has(m_Sections, param)) {
+        m_Mode = m_Registry.Get(m_Sections, param, true) ? eExplicit : eOff;
+    }
+}
+
+bool CNetScheduleConfigLoader::Transform(const string& prefix, string& name) const
+{
+    if (m_NsConf) {
+        // If it's "service to queue" special case (we do not know queue name)
+        if (name == "queue_name") return true;
+
+        // Queue parameter "timeout" determines the initial TTL of a submitted job.
+        // Since "timeout" is too generic, replaced it with "job_ttl" on client side.
+        if (name == "timeout") {
+            name = "job_ttl";
+            return true;
+        }
+    }
+
     // Only params starting with provided prefix are used
     if (NStr::StartsWith(name, prefix)) {
         name.erase(0, prefix.size());
@@ -389,16 +412,15 @@ bool CNetScheduleConfigLoader::Transform(const CTempString& prefix, string& name
     return false;
 }
 
-bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& registry, SRegSynonyms& sections)
+bool CNetScheduleConfigLoader::operator()(SNetScheduleAPIImpl* impl)
 {
     _ASSERT(impl);
 
-    bool set_explicitly = false;
+    if (m_Mode == eOff) return false;
 
-    if (registry.Has(sections, "load_config_from_ns")) {
-        if (!registry.Get(sections, "load_config_from_ns", true)) return false;
-        set_explicitly = true;
-    }
+    // Turn off any subsequent attempts
+    const auto mode = m_Mode;
+    m_Mode = eOff;
 
     // Errors could happen when we try to load config from servers that either
     // do not support "GETP2" command (introduced in 4.16.9)
@@ -410,7 +432,7 @@ bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& regi
     //
     // This guard is set to suppress errors and avoid retries if config loading is not enabled explicitly
     shared_ptr<void> try_guard;
-    if (!set_explicitly) try_guard = impl->m_Service->GetTryGuard();
+    if (mode == eImplicit) try_guard = impl->m_Service->GetTryGuard();
 
     CNetScheduleAPI::TQueueParams queue_params;
 
@@ -418,49 +440,26 @@ bool CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl, ISynRegistry& regi
         impl->GetQueueParams(kEmptyStr, queue_params);
     }
     catch (...) {
-        if (set_explicitly) throw;
+        if (mode == eExplicit) throw;
         return false;
     }
 
     unique_ptr<CMemoryRegistry> mem_registry(new CMemoryRegistry);
+    const string prefix = m_NsConf ? "ns." : "nc.";
+    const string section = s_GetSection(m_NsConf);
 
     for (auto& param : queue_params) {
         auto name = param.first;
 
-        if (Transform(m_Prefix, name)) {
-            mem_registry->Set(m_Section, name, param.second);
+        if (Transform(prefix, name)) {
+            mem_registry->Set(section, name, param.second);
         }
     }
 
     if (mem_registry->Empty()) return false;
 
-    registry.Add(mem_registry.release(), eTakeOwnership);
-    sections.insert(sections.begin(), m_Section);
+    m_Registry.Add(mem_registry.release(), eTakeOwnership);
     return true;
-}
-
-CNetScheduleOwnConfigLoader::CNetScheduleOwnConfigLoader() :
-    CNetScheduleConfigLoader(
-            "ns.",  "netschedule_conf_from_netschedule")
-{
-}
-
-bool CNetScheduleOwnConfigLoader::Transform(const CTempString& prefix,
-        string& name)
-{
-    // If it's "service to queue" special case (we do not know queue name)
-    if (name == "queue_name") {
-        return true;
-    }
-
-    // Queue parameter "timeout" determines the initial TTL of a submitted job.
-    // Since "timeout" is too generic, replaced it with "job_ttl" on client side.
-    if (name == "timeout") {
-        name = "job_ttl";
-        return true;
-    }
-
-    return CNetScheduleConfigLoader::Transform(prefix, name);
 }
 
 string SNetScheduleAPIImpl::MakeAuthString()
@@ -589,14 +588,14 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
         (user.empty() ? kEmptyStr : user + '@') +
         GetDiagContext().GetHost();
 
-    CNetScheduleOwnConfigLoader loader;
+    CNetScheduleConfigLoader loader(registry, sections);
 
     bool affinities_initialized = false;
 
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
     // 2) Setup everything using received config from server
-    for (int phase = 0; phase < 2; ++phase) {
+    do {
         if (m_Queue.empty()) {
             m_Queue = registry.Get(sections, "queue_name", "");
             if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
@@ -622,16 +621,9 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
 
         GetListener()->SetAuthString(MakeAuthString());
 
-        // If we should load config from NetSchedule server
-        // and have not done it already and not working in WN compatible mode
-        if (!phase && (m_Mode & fConfigLoading)) {
-            if (loader.Get(this, registry, sections)) {
-                continue;
-            }
-        }
-
-        break;
-    }
+        // If not working in WN compatible mode
+        if (!(m_Mode & fConfigLoading)) break;
+    } while (loader(this));
 }
 
 void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
