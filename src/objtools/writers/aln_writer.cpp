@@ -34,6 +34,7 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -87,6 +88,45 @@ bool CAlnWriter::WriteAlign(
 }
 //  ----------------------------------------------------------------------------
 
+bool s_TryFindRange(const CObject_id& local_id, 
+        CSeq_id& seq_id,
+        CRange<TSeqPos>& range)
+{
+    // INCOMPLETE!!
+
+    if (local_id.IsStr()) {
+        string id_string = local_id.GetStr();
+        string true_id;
+        string range_string;
+        if (!NStr::SplitInTwo(id_string, ":", true_id, range_string)) {
+            return false;
+        }
+
+        string start_pos, end_pos;
+        if (!NStr::SplitInTwo(range_string, "_", start_pos, end_pos)) {
+            return false;
+        }
+
+        try {
+            TSeqPos start_index = NStr::StringToNumeric<TSeqPos>(start_pos);
+            TSeqPos end_index = NStr::StringToNumeric<TSeqPos>(end_pos);
+
+            list<CRef<CSeq_id>> id_list;
+            CSeq_id::ParseIDs(id_list, true_id);
+
+            range.SetFrom(start_index);
+            range.SetTo(end_index);
+
+        }
+        catch (...) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+// -----------------------------------------------------------------------------
 
 bool CAlnWriter::xWriteAlignDenseg(
     const CDense_seg& denseg)
@@ -106,6 +146,7 @@ bool CAlnWriter::xWriteAlignDenseg(
     for (int row=0; row<num_rows; ++row) 
     {
         const CSeq_id& id = denseg.GetSeq_id(row);
+
         CBioseq_Handle bsh = m_pScope->GetBioseqHandle(id);
 
         if (!bsh) {
