@@ -4834,6 +4834,23 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                 return eAction_Nothing;
             }
             return eAction_Erase;
+        } else if (!trp.IsSetAa()) {
+            string ignored = kEmptyStr; 
+            bool justTrnaText = false;
+            char aa = s_ParseSeqFeatTRnaString(product, &justTrnaText, ignored, false);
+            if (aa != '\0') {
+                trp.SetAa().SetNcbieaa(aa);
+                if (!justTrnaText || !NStr::IsBlank(ignored)) {
+                    x_AddToComment(feat, product);
+                }
+                if (NStr::CompareNocase(product, "tRNA-fMet") == 0 ||
+                    NStr::CompareNocase(product, "iRNA-fMet") == 0 ||
+                    NStr::CompareNocase(product, "tRNA-iMet") == 0 ||
+                    NStr::CompareNocase(product, "iRNA-iMet") == 0) {
+                    return eAction_Nothing;
+                }
+                return eAction_Erase;
+            }
         }
     }
 
