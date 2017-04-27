@@ -422,10 +422,12 @@ void DTDElement::AddContent( const string& ref_name)
     m_Refs.push_back( ref_name);
 }
 
-void DTDElement::RemoveContent( const string& ref_name)
+bool DTDElement::RemoveContent( const string& ref_name)
 {
     string t(ref_name);
+    size_t prev = m_Refs.size();
     m_Refs.remove(t);
+    return prev != m_Refs.size();
 }
 
 void DTDElement::RemoveContent( void)

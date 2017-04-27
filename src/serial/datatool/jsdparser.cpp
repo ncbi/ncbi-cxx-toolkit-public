@@ -193,6 +193,8 @@ void JSDParser::ParseNode(DTDElement& node)
                     m_URI.push_back(key);
                     ParseObjectContent(nullptr);
                     m_URI.pop_back();
+                } else if (key == "dependencies") {
+                    ParseDependencies(node);
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_OBJECT);
@@ -278,6 +280,62 @@ void JSDParser::ParseRequired(DTDElement& node)
     }
 }
 
+void JSDParser::ParseDependencies(DTDElement& node)
+{
+    string key, node_id;
+    TToken tok;
+    int i=0;
+    for (tok = GetNextToken(); tok != K_END_OBJECT; tok = GetNextToken()) {
+        if (tok == K_KEY) {
+            key = Value();
+            m_URI.push_back(Value());
+            node_id = NStr::Join(m_URI,"/");
+            m_URI.pop_back();
+            if (node.RemoveContent(node_id)) {
+                DTDElement::EOccurrence occ = node.GetOccurrence(node_id);
+                string seq_id = NStr::Join(m_URI,"/") + "/" + NStr::NumericToString(i++);
+                DTDElement& seq = m_MapElement[seq_id];
+                seq.SetType(DTDElement::eSequence);
+                seq.SetName(seq_id);
+                seq.SetEmbedded();
+                seq.SetOccurrence(occ);
+                seq.SetOccurrence(node_id, occ);
+                AddElementContent(seq, node_id);
+                AddElementContent(node, seq_id);
+                tok = GetNextToken();
+                if (tok == K_BEGIN_OBJECT) {
+                    ParseNode(seq);
+                } else {
+                    for (tok = GetNextToken(); tok != K_END_ARRAY; tok = GetNextToken()) {
+                        if (tok == K_VALUE) {
+                            key = Value();
+                            m_URI.push_back(Value());
+                            node_id = NStr::Join(m_URI,"/");
+                            m_URI.pop_back();
+                            node.RemoveContent(node_id);
+                            DTDElement::EOccurrence occ = node.GetOccurrence(node_id);
+                            seq.SetOccurrence(node_id, occ);
+                            AddElementContent(seq, node_id);
+                        }
+                    }
+                }
+            } else {
+                tok = GetNextToken();
+                if (tok == K_BEGIN_OBJECT) {
+                    SkipUnknown(K_END_OBJECT);
+                } else if (tok == K_BEGIN_ARRAY) {
+                    SkipUnknown(K_END_ARRAY);
+                } else {
+                    ParseError("Invalid schema", "{ or [");
+                }
+            }
+        } else if (tok != T_SYMBOL) {
+            ParseError("Invalid schema", "element name");
+        }
+    }
+    FixEmbeddedNames(node);
+}
+
 void JSDParser::ParseEnumeration(DTDElement& node)
 {
     bool isknown = true;
@@ -332,13 +390,9 @@ void JSDParser::ParseOneOf(DTDElement& node)
     }
     // now merge
     bool hasnil = false;
-    bool hasnamed = false;
     DTDElement::EType nexttype = DTDElement::eUnknown;
     for(const DTDElement& c : contents) {
         const DTDElement& e = (c.GetType() == DTDElement::eAlias) ? m_MapElement[c.GetTypeName()] : c;
-        if (e.IsNamed()) {
-            hasnamed = true;
-        }
         if (e.GetType() == DTDElement::eEmpty && !e.IsNamed()) {
             hasnil = true;
         }

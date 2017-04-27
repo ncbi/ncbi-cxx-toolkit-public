@@ -280,7 +280,7 @@ public:
 
     // i.e. element contains other elements
     void AddContent( const string& ref_name);
-    void RemoveContent( const string& ref_name);
+    bool RemoveContent( const string& ref_name);
     void RemoveContent( void);
     const list<string>& GetContent(void) const;
 
