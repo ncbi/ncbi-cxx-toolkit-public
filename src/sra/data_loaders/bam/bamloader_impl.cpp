@@ -58,6 +58,7 @@
 #include <util/sequtil/sequtil_manip.hpp>
 
 #include <algorithm>
+#include <numeric>
 #include <cmath>
 
 BEGIN_NCBI_SCOPE
