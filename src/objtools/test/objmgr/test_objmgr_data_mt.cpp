@@ -263,6 +263,7 @@ CRef<CScope> CTestOM::CreateScope(void)
 bool CTestOM::Thread_Run(int idx)
 {
     // initialize scope
+    idx = CThread::GetSelf();
     CRef<CScope> scope_ref = m_single_scope;
     if ( !scope_ref ) {
         scope_ref = CreateScope();
@@ -352,6 +353,8 @@ bool CTestOM::Thread_Run(int idx)
                 }
 
                 if ( !handle ) {
+                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                             "id = " <<sih<<": INVALID HANDLE");
                     if ( preload_ids ) {
                         int mask =
                             handle.fState_confidential|
@@ -359,11 +362,11 @@ bool CTestOM::Thread_Run(int idx)
                         bool restricted =
                             (handle.GetState() & mask) != 0;
                         if ( !restricted ) {
+                            LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                                     "id = " <<sih<<": state: "<<handle.GetState());
                             _ASSERT(ids1.empty());
                         }
                     }
-                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
-                             "id = " <<sih<<": INVALID HANDLE");
                     SetValue(m_DescMap, key, -1);
                     continue;
                 }
@@ -511,12 +514,27 @@ bool CTestOM::Thread_Run(int idx)
                     LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                 }
                 LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
-                         "id = "<<sih<<": EXCEPTION = "<<e.what());
+                         "id = "<<sih<<": EXCEPTION = "<<e);
                 ok = false;
                 if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                     break;
                 }
                 if ( ++error_count > m_max_errors ) {
+                    break;
+                }
+            }
+            catch (CException& e) {
+                if ( m_verbose ) {
+                    string msg = CNcbiOstrstreamToString(out);
+                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
+                }
+                LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                         "id = "<<sih<<": EXCEPTION = "<<e<<" at "<<e.GetStackTrace());
+                if ( m_lds_db.empty() ) {
+                    ok = false;
+                }
+                if ( ++error_count > m_max_errors ) {
+                    ok = false;
                     break;
                 }
             }
@@ -527,7 +545,9 @@ bool CTestOM::Thread_Run(int idx)
                 }
                 LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
                          "id = "<<sih<<": EXCEPTION = "<<e.what());
-                if ( m_lds_db.empty() ) ok = false;
+                if ( m_lds_db.empty() ) {
+                    ok = false;
+                }
                 if ( ++error_count > m_max_errors ) {
                     ok = false;
                     break;
@@ -692,6 +712,7 @@ bool CTestOM::TestApp_Init(void)
 bool CTestOM::TestApp_Exit(void)
 {
     NcbiCout << "Closing" << NcbiEndl;
+    m_single_scope = null;
     CObjectManager::GetInstance()->RevokeDataLoader("GBLOADER");
     if ( failed ) {
         NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
