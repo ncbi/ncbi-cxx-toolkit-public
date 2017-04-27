@@ -521,6 +521,10 @@ public:
     /// Check if there were any timeouted tests
     bool HasTestTimeouts(void);
 
+    /// Get the application's cached configuration parameters, accessible to read-write.
+    /// @sa GetConfig, GetRWConfig
+    CNcbiRegistry& GetTestRWConfig(void);
+
 private:
     typedef list<TNcbiTestUserFunction> TUserFuncsList;
 
@@ -1851,6 +1855,12 @@ CNcbiTestApplication::HasTestTimeouts(void)
     return m_HasTestTimeouts;
 }
 
+inline CNcbiRegistry&
+CNcbiTestApplication::GetTestRWConfig(void)
+{
+    return GetRWConfig();
+}
+
 void
 CNcbiTestsCollector::visit(but::test_case const& test)
 {
@@ -2155,6 +2165,16 @@ void
 NcbiTestSetGlobalSkipped(void)
 {
     s_GetTestApp().SetGloballySkipped();
+}
+
+CNcbiApplication* NcbiTestGetAppInstance(void)
+{
+    return &s_GetTestApp();
+}
+
+CNcbiRegistry& NcbiTestGetRWConfig(void)
+{
+    return s_GetTestApp().GetTestRWConfig();
 }
 
 CExprParser*

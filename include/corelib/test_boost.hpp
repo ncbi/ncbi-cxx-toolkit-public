@@ -635,6 +635,19 @@ void NcbiTestSetGlobalDisabled(void);
 void NcbiTestSetGlobalSkipped(void);
 
 
+/// Return current application instance. Similar to CNcbiApplication::Instance().
+///
+CNcbiApplication* NcbiTestGetAppInstance(void);
+
+
+/// Wrapper to get the application's configuration parameters, accessible to read-write.
+/// We cannot use CNcbiApplication::GetConfig(), because it return read-only registry,
+/// and protected CNcbiApplication::GetRWConfig() is not accessible for unit tests directly.
+///
+CNcbiRegistry& NcbiTestGetRWConfig(void);
+
+
+
 //////////////////////////////////////////////////////////////////////////
 // All API from this line below is for internal use only and is not
 // intended for use by any users. All this stuff is used by end-user
@@ -904,6 +917,7 @@ NcbiTestGenTestCases(void (*test_func)(ParamType),
     return CNcbiTestParamTestCaseGenerator<param_value_type, ParamIter>(
                                         test_func, name, par_begin, par_end);
 }
+
 
 
 END_NCBI_SCOPE
