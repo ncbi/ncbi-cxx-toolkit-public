@@ -51,6 +51,7 @@
 
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <sra/readers/bam/bamgraph.hpp>
 #include <sra/data_loaders/bam/bamloader.hpp>
 #include <sra/data_loaders/bam/impl/bamloader_impl.hpp>
 
@@ -495,6 +496,7 @@ public:
         if ( iter->IsSetStrand() && IsReverse(iter->GetStrand()) ) {
             CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, TSeqPos(seq.size()));
         }
+        CFastMutexGuard guard(m_Mutex);
         SShortSeqInfo& info = m_ShortSeqs[short_id];
         if ( info.spot1.empty() ) {
             info.spot1 = seq;
@@ -518,13 +520,15 @@ public:
     }
 
 private:
+    CFastMutex m_Mutex;
+    
     struct SShortSeqInfo {
         string spot1, spot2;
     };
     map<string, SShortSeqInfo> m_ShortSeqs;
 };
 
-CBamRefSeqInfo::CBamRefSeqInfo(const CBamFileInfo* bam_file,
+CBamRefSeqInfo::CBamRefSeqInfo(CBamFileInfo* bam_file,
                                const string& refseqid,
                                const CSeq_id_Handle& seq_id)
     : m_File(bam_file),
@@ -832,6 +836,73 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
                    "failed to load cov file: "<<m_CovFileName<<": "<<exc);
         return false;
     }
+}
+
+
+bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
+{
+    static const TSeqPos kZeroBlocks = 8;
+    static const TSeqPos kChunkCoverage = 50000;
+    
+    if ( !m_File->GetBamDb().UsesRawIndex() ) {
+        return false;
+    }
+    CBam2Seq_graph cvt;
+    cvt.SetRefLabel(GetRefSeqId());
+    vector<Uint8> cov = cvt.CollectEstimatedCoverage(m_File->GetBamDb());
+    LOG_POST("Total cov: "<<accumulate(cov.begin(), cov.end(), 0ull));
+
+    TSeqPos last_pos = 0;
+    TSeqPos zero_count = 0;
+    Uint8 cur_cov = 0;
+    for ( TSeqPos i = 0; i < cov.size(); ++i ) {
+        if ( !cov[i] ) {
+            ++zero_count;
+            continue;
+        }
+        TSeqPos pos = i*cvt.kEstimatedGraphBinSize;
+        if ( zero_count >= kZeroBlocks ) {
+            if ( cur_cov ) {
+                TSeqPos non_zero_end = pos - zero_count*cvt.kEstimatedGraphBinSize;
+                // add chunk from last_pos to non_zero_end;
+                
+                last_pos = non_zero_end;
+                cur_cov = 0;
+            }
+            // add zero chunk from last_pos to pos
+            
+            last_pos = pos;
+            zero_count = 0;
+        }
+        cur_cov += cov.size();
+        if ( cur_cov >= kChunkCoverage ) {
+            // add chunk from last_pos to pos
+            
+            last_pos = pos;
+            cur_cov = 0;
+        }
+    }
+    TSeqPos pos = cov.size()*cvt.kEstimatedGraphBinSize;
+    if ( zero_count >= kZeroBlocks ) {
+        if ( cur_cov ) {
+            TSeqPos non_zero_end = pos - zero_count*cvt.kEstimatedGraphBinSize;
+            // add chunk from last_pos to non_zero_end;
+            
+            last_pos = non_zero_end;
+            cur_cov = 0;
+        }
+        // add zero chunk from last_pos to pos
+        
+        last_pos = pos;
+        zero_count = 0;
+    }
+    if ( cur_cov ) {
+        // add chunk from last_pos to pos
+        
+        last_pos = pos;
+        cur_cov = 0;
+    }
+    return false;
 }
 
 

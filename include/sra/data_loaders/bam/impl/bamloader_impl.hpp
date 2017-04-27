@@ -101,7 +101,7 @@ protected:
 class CBamRefSeqInfo : public CObject
 {
 public:
-    CBamRefSeqInfo(const CBamFileInfo* bam_file,
+    CBamRefSeqInfo(CBamFileInfo* bam_file,
                    const string& refseqid,
                    const CSeq_id_Handle& seq_id);
 
@@ -141,8 +141,9 @@ protected:
     void x_LoadRangesScan(void);
     void x_LoadRangesStat(void);
     bool x_LoadRangesCov(void);
+    bool x_LoadRangesEstimated(void);
 
-    const CBamFileInfo* m_File;
+    CBamFileInfo* m_File;
     string m_RefSeqId;
     CSeq_id_Handle m_RefSeq_id;
     string m_CovFileName;
@@ -191,9 +192,13 @@ public:
             return m_BamMutex;
         }
 
-    operator const CBamDb&(void) const
+    CBamDb& GetBamDb(void)
         {
             return m_BamDb;
+        }
+    operator CBamDb&(void)
+        {
+            return GetBamDb();
         }
 
     void AddRefSeq(const string& refseq_label,
