@@ -104,7 +104,11 @@ static bool sx_KeepExternalAnnotsForEdit(void)
 
 
 CScope_Impl::CScope_Impl(CObjectManager& objmgr)
-    : m_HeapScope(0), m_ObjMgr(0), m_Transaction(NULL)
+    : m_HeapScope(0),
+      m_ObjMgr(0),
+      m_Transaction(NULL),
+      m_BioseqChangeCounter(0),
+      m_AnnotChangeCounter(0)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     x_AttachToOM(objmgr);
@@ -958,8 +962,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                     CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
                     if ( !binfo.HasBioseq() ) {
                         // try to resolve again
-                        binfo.m_SynCache.Reset(); // break circular link
-                        it2->second.m_Bioseq_Info.Reset();
+                        binfo.m_UnresolvedTimestamp = m_BioseqChangeCounter-1;
                     }
                     conflict_id = &*it1;
                 }
@@ -976,8 +979,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                     CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
                     if ( !binfo.HasBioseq() ) {
                         // try to resolve again
-                        binfo.m_SynCache.Reset(); // break circular link
-                        it2->second.m_Bioseq_Info.Reset();
+                        binfo.m_UnresolvedTimestamp = m_BioseqChangeCounter-1;
                     }
                     conflict_id = &*it1;
                 }
@@ -994,8 +996,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                         CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
                         if ( !binfo.HasBioseq() ) {
                             // try to resolve again
-                            binfo.m_SynCache.Reset(); // break circular link
-                            it2->second.m_Bioseq_Info.Reset();
+                            binfo.m_UnresolvedTimestamp = m_BioseqChangeCounter-1;
                         }
                         conflict_id = &*it1;
                     }
@@ -1030,8 +1031,8 @@ void CScope_Impl::x_ClearCacheOnEdit(const CTSE_ScopeInfo& replaced_tse)
                 binfo.m_BioseqAnnotRef_Info.Reset();
             }
             else {
-                binfo.m_SynCache.Reset(); // break circular link
-                it->second.m_Bioseq_Info.Reset(); // try to resolve again
+                // try to resolve again
+                binfo.m_UnresolvedTimestamp = m_BioseqChangeCounter-1;
             }
         }
         it->second.m_AllAnnotRef_Info.Reset();
@@ -1042,6 +1043,9 @@ void CScope_Impl::x_ClearCacheOnEdit(const CTSE_ScopeInfo& replaced_tse)
 
 void CScope_Impl::x_ClearAnnotCache(void)
 {
+    ++m_AnnotChangeCounter;
+    return;
+    
     // Clear annot cache
     NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
         if ( it->second.m_Bioseq_Info ) {
@@ -1062,27 +1066,15 @@ void CScope_Impl::x_ClearCacheOnNewAnnot(const CTSE_Info& /*new_tse*/)
 
 void CScope_Impl::x_ClearCacheOnNewDS(void)
 {
-    if ( 1 ) return;
+    //if ( 1 ) return;
     // Clear unresolved bioseq handles
     // Clear annot cache
     if ( !m_Seq_idMap.empty() ) {
         x_ReportNewDataConflict();
     }
-    for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
-          it != m_Seq_idMap.end(); ) {
-        if ( it->second.m_Bioseq_Info ) {
-            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            if ( binfo.HasBioseq() ) {
-                binfo.m_BioseqAnnotRef_Info.Reset();
-            }
-            else {
-                binfo.m_SynCache.Reset(); // break circular link
-                it->second.m_Bioseq_Info.Reset(); // try to resolve again
-            }
-        }
-        it->second.m_AllAnnotRef_Info.Reset();
-        ++it;
-    }
+    ++m_BioseqChangeCounter;
+    ++m_AnnotChangeCounter;
+    return;
 }
 
 
@@ -1712,17 +1704,28 @@ CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
                                int get_flag,
                                SSeqMatch_Scope& match)
 {
-    if (get_flag != CScope::eGetBioseq_Resolved) {
+    if ( get_flag != CScope::eGetBioseq_Resolved ) {
         // Resolve only if the flag allows
         CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool);
         if ( init ) {
+            // first time
             x_ResolveSeq_id(info, get_flag, match);
         }
+        else {
+            // check if it was unresolved and there is new data
+            if ( info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                // update unresolved
+                init.ForceGuard(info.second.m_Bioseq_Info, m_MutexPool);
+                if ( info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                    x_ResolveSeq_id(info, get_flag, match);
+                }
+            }
+        }
     }
-    if ( get_flag == CScope::eGetBioseq_All ) {
-        _ASSERT(info.second.m_Bioseq_Info);
-        _ASSERT(!info.second.m_Bioseq_Info->HasBioseq() ||
-                &info.second.m_Bioseq_Info->x_GetScopeImpl() == this);
+    else if ( info.second.m_Bioseq_Info &&
+              info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+        // outdated
+        return null;
     }
     return info.second.m_Bioseq_Info;
 }
@@ -2145,20 +2148,34 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info,
     match = x_FindBioseqInfo(m_setDataSrc, id_info.first, get_flag);
     if ( !match ) {
         // Map unresoved ids only if loading was requested
-        _ASSERT(!id_info.second.m_Bioseq_Info);
         if (get_flag == CScope::eGetBioseq_All) {
-            id_info.second.m_Bioseq_Info.Reset
-                (new CBioseq_ScopeInfo(match.m_BlobState |
-                                       CBioseq_Handle::fState_no_data));
+            if ( !id_info.second.m_Bioseq_Info ) {
+                // first time
+                id_info.second.m_Bioseq_Info.Reset
+                    (new CBioseq_ScopeInfo(match.m_BlobState, m_BioseqChangeCounter));
+            }
+            else {
+                // update unresolved state
+                _ASSERT(!id_info.second.m_Bioseq_Info->HasBioseq());
+                id_info.second.m_Bioseq_Info->SetUnresolved(match.m_BlobState, m_BioseqChangeCounter);
+            }
+            _ASSERT(!id_info.second.m_Bioseq_Info->HasBioseq());
         }
     }
     else {
         CTSE_ScopeInfo& tse_info = *match.m_TSE_Lock;
         _ASSERT(&tse_info.GetScopeImpl() == this);
-        CRef<CBioseq_ScopeInfo> bioseq = tse_info.GetBioseqInfo(match);
-        _ASSERT(!id_info.second.m_Bioseq_Info);
-        _ASSERT(&bioseq->x_GetScopeImpl() == this);
-        id_info.second.m_Bioseq_Info = bioseq;
+        if ( !id_info.second.m_Bioseq_Info ) {
+            // resolved first time
+            CRef<CBioseq_ScopeInfo> bioseq = tse_info.GetBioseqInfo(match);
+            _ASSERT(&bioseq->x_GetScopeImpl() == this);
+            id_info.second.m_Bioseq_Info = bioseq;
+        }
+        else {
+            // resolved on a second attempt
+            id_info.second.m_Bioseq_Info->SetResolved(tse_info, match.m_Bioseq->GetId());
+        }
+        _ASSERT(id_info.second.m_Bioseq_Info->HasBioseq());
     }
 }
 
@@ -2240,20 +2257,30 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
 
     CInitGuard init(binfo.m_BioseqAnnotRef_Info, m_MutexPool);
     if ( init ) {
-        CRef<CBioseq_ScopeInfo::TTSE_MatchSetObject> match
-            (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
-        x_GetTSESetWithAnnots(lock, &match->GetData(), binfo);
-        binfo.m_BioseqAnnotRef_Info = match;
+        // first time
+        CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache(new CBioseq_ScopeInfo::SAnnotSetCache);
+        x_GetTSESetWithAnnots(lock, &cache->match, binfo);
+        cache->m_SearchTimestamp = m_AnnotChangeCounter;
+        binfo.m_BioseqAnnotRef_Info = cache;
+        return;
     }
-    else {
-        x_LockMatchSet(lock, *binfo.m_BioseqAnnotRef_Info);
-#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
-        if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
-            x_GetTSESetWithBioseqAnnots(lock, binfo, 0);
+    if ( binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+        // update
+        init.ForceGuard(binfo.m_BioseqAnnotRef_Info, m_MutexPool);
+        if ( binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            x_GetTSESetWithAnnots(lock, &binfo.m_BioseqAnnotRef_Info->match, binfo);
+            binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp = m_AnnotChangeCounter;
             return;
         }
-#endif
     }
+    // use cached set
+    x_LockMatchSet(lock, binfo.m_BioseqAnnotRef_Info->match);
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+    if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
+        x_GetTSESetWithBioseqAnnots(lock, binfo, 0);
+        return;
+    }
+#endif
 }
 
 
@@ -2262,14 +2289,24 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
 {
     CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
     if ( init ) {
-        CRef<CBioseq_ScopeInfo::TTSE_MatchSetObject> match
-            (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
-        x_GetTSESetWithAnnots(lock, &match->GetData(), info);
-        info.second.m_AllAnnotRef_Info = match;
+        // first time
+        CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache(new CBioseq_ScopeInfo::SAnnotSetCache);
+        x_GetTSESetWithAnnots(lock, &cache->match, info);
+        cache->m_SearchTimestamp = m_AnnotChangeCounter;
+        info.second.m_AllAnnotRef_Info = cache;
+        return;
     }
-    else {
-        x_LockMatchSet(lock, *info.second.m_AllAnnotRef_Info);
+    if ( info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+        // update
+        init.ForceGuard(info.second.m_AllAnnotRef_Info, m_MutexPool);
+        if ( info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            x_GetTSESetWithAnnots(lock, &info.second.m_AllAnnotRef_Info->match, info);
+            info.second.m_AllAnnotRef_Info->m_SearchTimestamp = m_AnnotChangeCounter;
+            return;
+        }
     }
+    // use cached set
+    x_LockMatchSet(lock, info.second.m_AllAnnotRef_Info->match);
 }
 
 
@@ -3128,9 +3165,14 @@ void CScope_Impl::x_GetBioseqHandlesSorted(const TIds&     ids,
             CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool);
             if ( init ) {
                 _ASSERT(!id_info.second.m_Bioseq_Info);
-                id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(
-                    CBioseq_Handle::fState_no_data |
-                    CBioseq_Handle::fState_not_found));
+                id_info.second.m_Bioseq_Info.Reset
+                    (new CBioseq_ScopeInfo(CBioseq_Handle::fState_not_found, m_BioseqChangeCounter));
+            }
+            else if ( id_info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                init.ForceGuard(id_info.second.m_Bioseq_Info, m_MutexPool);
+                if ( id_info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                    id_info.second.m_Bioseq_Info->SetUnresolved(CBioseq_Handle::fState_not_found, m_BioseqChangeCounter);
+                }
             }
             CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
             ret[i].m_Handle_Seq_id = ids[i];

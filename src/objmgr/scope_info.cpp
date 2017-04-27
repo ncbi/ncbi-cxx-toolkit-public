@@ -1761,16 +1761,17 @@ SSeqMatch_Scope CTSE_ScopeInfo::Resolve(const CSeq_id_Handle& id)
 # define BIOSEQ_TRACE(x)
 #endif
 
-
-CBioseq_ScopeInfo::CBioseq_ScopeInfo(TBlobStateFlags flags)
-    : m_BlobState(flags)
+CBioseq_ScopeInfo::CBioseq_ScopeInfo(TBlobStateFlags flags, int timestamp)
+    : m_BlobState(flags | CBioseq_Handle::fState_no_data),
+      m_UnresolvedTimestamp(timestamp)
 {
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
 }
 
 
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(CTSE_ScopeInfo& tse)
-    : m_BlobState(CBioseq_Handle::fState_none)
+    : m_BlobState(CBioseq_Handle::fState_none),
+      m_UnresolvedTimestamp(0)
 {
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
     x_AttachTSE(&tse);
@@ -1780,7 +1781,8 @@ CBioseq_ScopeInfo::CBioseq_ScopeInfo(CTSE_ScopeInfo& tse)
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(CTSE_ScopeInfo& tse,
                                      const TIds& ids)
     : m_Ids(ids),
-      m_BlobState(CBioseq_Handle::fState_none)
+      m_BlobState(CBioseq_Handle::fState_none),
+      m_UnresolvedTimestamp(0)
 {
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this);
     x_AttachTSE(&tse);
@@ -1797,6 +1799,25 @@ CBioseq_ScopeInfo::~CBioseq_ScopeInfo(void)
         BIOSEQ_TRACE("~CBioseq_ScopeInfo: "<<this);
     }
     _ASSERT(!IsAttached());
+}
+
+
+void CBioseq_ScopeInfo::SetUnresolved(TBlobStateFlags flags, int timestamp)
+{
+    _ASSERT(!HasBioseq());
+    m_BlobState = flags | CBioseq_Handle::fState_no_data;
+    m_UnresolvedTimestamp = timestamp;
+}
+
+
+void CBioseq_ScopeInfo::SetResolved(CTSE_ScopeInfo& tse,
+                                    const TIds& ids)
+{
+    _ASSERT(!HasBioseq());
+    m_Ids = ids;
+    m_BlobState = CBioseq_Handle::fState_none;
+    m_UnresolvedTimestamp = 0;
+    x_AttachTSE(&tse);
 }
 
 

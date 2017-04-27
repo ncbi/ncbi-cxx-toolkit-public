@@ -503,17 +503,24 @@ public:
     typedef CRef<CTSE_ScopeInfo>                        TTSE_ScopeInfo;
     typedef set<CSeq_id_Handle>                         TSeq_idSet;
     typedef vector< pair<TTSE_ScopeInfo, CSeq_id_Handle> > TTSE_MatchSet;
-    typedef CObjectFor<TTSE_MatchSet>                   TTSE_MatchSetObject;
-    typedef CInitMutex<TTSE_MatchSetObject>             TAnnotRefInfo;
+    struct SAnnotSetCache : public CObject {
+        volatile int m_SearchTimestamp;
+        TTSE_MatchSet match;
+    };
+    typedef CInitMutex<SAnnotSetCache>                  TAnnotRefInfo;
     typedef TIndexIds                                   TIds;
     typedef int                                         TBlobStateFlags;
     typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
 
-    explicit CBioseq_ScopeInfo(TBlobStateFlags flag); // no sequence
+    CBioseq_ScopeInfo(TBlobStateFlags flag, int timestamp); // no sequence
     explicit CBioseq_ScopeInfo(CTSE_ScopeInfo& tse); // unnamed
     CBioseq_ScopeInfo(CTSE_ScopeInfo& tse, const TIds& ids);
     ~CBioseq_ScopeInfo(void);
-
+    
+    // update state
+    void SetUnresolved(TBlobStateFlags flag, int timestamp);
+    void SetResolved(CTSE_ScopeInfo& tse, const TIds& ids);
+    
     const CBioseq_Info& GetObjectInfo(void) const
         {
             return reinterpret_cast<const CBioseq_Info&>(GetObjectInfo_Base());
@@ -530,6 +537,10 @@ public:
     const TIndexIds* GetIndexIds(void) const;
 
     bool HasBioseq(void) const;
+    bool NeedsReResolve(int timestamp) const
+       {
+           return !HasBioseq() && m_UnresolvedTimestamp != timestamp;
+       }
 
     string IdString(void) const;
 
@@ -563,11 +574,12 @@ private: // members
     TBlobStateFlags                 m_BlobState;
 
     // Cached information.
+    volatile int m_UnresolvedTimestamp;
     // Cache synonyms of bioseq if any.
     // All synonyms share the same CBioseq_ScopeInfo object.
     CInitMutex<CSynonymsSet>        m_SynCache;
     // Cache TSEs with external annotations on this Bioseq.
-    CInitMutex<TTSE_MatchSetObject> m_BioseqAnnotRef_Info;
+    CInitMutex<SAnnotSetCache>      m_BioseqAnnotRef_Info;
 
 private: // to prevent copying
     CBioseq_ScopeInfo(const CBioseq_ScopeInfo& info);
@@ -580,13 +592,22 @@ struct SSeq_id_ScopeInfo
     SSeq_id_ScopeInfo(void);
     ~SSeq_id_ScopeInfo(void);
 
-    typedef CBioseq_ScopeInfo::TTSE_MatchSetObject TTSE_MatchSetObject;
-
     // Resolved Bioseq information.
+    // 1. initially:
+    //   m_Bioseq_Info = null
+    // 2. resolve failed:
+    //   m_Bioseq_Info = !HasBioseq() (state & no_data) != 0
+    // 3. resolved:
+    //   m_Bioseq_Info = HasBioseq() (state & no_data) == 0
+    // State transitions:
+    //   1 -> 2 (sequence not found)
+    //   1 -> 3 (sequence found)
+    //   2 -> 3 (sequence found on next attempt)
+    //   3 -> 1 (sequence removed)
     CInitMutex<CBioseq_ScopeInfo>   m_Bioseq_Info;
 
     // Caches other (not main) TSEs with annotations on this Seq-id.
-    CInitMutex<TTSE_MatchSetObject> m_AllAnnotRef_Info;
+    CInitMutex<CBioseq_ScopeInfo::SAnnotSetCache> m_AllAnnotRef_Info;
 };
 
 

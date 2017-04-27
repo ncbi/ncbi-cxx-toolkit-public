@@ -621,6 +621,9 @@ private:
 
     IScopeTransaction_Impl* m_Transaction;
 
+    int m_BioseqChangeCounter;
+    int m_AnnotChangeCounter;
+
     friend class CScope;
     friend class CHeapScope;
     friend class CObjectManager;
