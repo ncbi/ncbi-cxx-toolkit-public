@@ -173,9 +173,11 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
         fatal |= it->second->m_Fatal;
         CRef<CReportItem> sub = it->second->Export(test, unique);
         subs.push_back(sub);
-        TReportObjectList details = sub->GetDetails();
-        NON_CONST_ITERATE (TReportObjectList, ob, details) {
-            Add(objs, hash, **ob, unique);
+        if (!m_NoRec) {
+            TReportObjectList details = sub->GetDetails();
+            NON_CONST_ITERATE (TReportObjectList, ob, details) {
+                Add(objs, hash, **ob, unique);
+            }
         }
     }
     NON_CONST_ITERATE (TReportObjectList, ob, objs) {

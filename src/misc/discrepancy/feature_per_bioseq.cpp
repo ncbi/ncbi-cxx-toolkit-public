@@ -170,7 +170,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count tRNAs")
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         Summarize(context);
-        m_Objs[kEmptyStr].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+        m_Objs["*"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 
     string aa = context.GetAminoacidName(obj);
@@ -190,15 +190,15 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         }
     }
 
-    CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
+    CRef<CReportObj> bioseq = m_Objs["*"].GetObjects()[0];
     string short_name = bioseq->GetShort();
-    m_Objs[kEmptyStr].clearObjs();
+    m_Objs["*"].clearObjs();
 
     size_t total = 0;
     // count tRNAs
     CReportNode::TNodeMap& map = m_Objs.GetMap();
     NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first)) {
+        if (!NStr::IsBlank(it->first) && it->first != "*") {
             total += it->second->GetObjects().size();
         }
     }
@@ -206,11 +206,11 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     CNcbiOstrstream ss;
     ss << " [n] sequence[s] [has] " << total << " tRNA feature" << (total == 1 ? kEmptyStr : "s");
     string subitem = CNcbiOstrstreamToString(ss);
-    m_Objs[kEmptyStr][subitem].Add(*bioseq);
+    m_Objs[kEmptyStr][subitem].NoRec().Add(*bioseq);
 
     string trna_on_bioseq = "[n] tRNA feature[s] found on " + short_name;
     NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
-        if (!NStr::IsBlank(it->first)) {
+        if (!NStr::IsBlank(it->first) && it->first != "*") {
             m_Objs[kEmptyStr][subitem][trna_on_bioseq].Ext().Add(it->second->GetObjects());
         }
     }
@@ -227,7 +227,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
     }
     NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
-        if (NStr::IsBlank(it->first) || DesiredCount->find(it->first.c_str()) != DesiredCount->end()) {
+        if (NStr::IsBlank(it->first) || it->first == "*" || DesiredCount->find(it->first.c_str()) != DesiredCount->end()) {
             continue;
         }
         CNcbiOstrstream ss;

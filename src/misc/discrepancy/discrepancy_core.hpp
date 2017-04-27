@@ -220,13 +220,14 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Summ(0), m_Count(0) {}
+    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Summ(false), m_NoRec(false), m_Count(0) {}
 
     CReportNode& operator[](const string& name);
 
     CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
     CReportNode& Summ(bool b = true) { m_Summ = b; return *this; }
+    CReportNode& NoRec(bool b = true) { m_NoRec = b; return *this; }
     CReportNode& Incr() { m_Count++; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
@@ -255,6 +256,7 @@ protected:
     bool m_Autofix;
     bool m_Ext;
     bool m_Summ;
+    bool m_NoRec;   // don't collect objects recursively
     size_t m_Count;
 };
 
