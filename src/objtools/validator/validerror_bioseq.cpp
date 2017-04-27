@@ -2562,7 +2562,8 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         bool has_gap = false;
         if ( seq.GetInst().IsSetExt()  &&  seq.GetInst().GetExt().IsDelta() ) {
             ITERATE(CDelta_ext::Tdata, iter, seq.GetInst().GetExt().GetDelta().Get()) {
-                if ( ((*iter)->IsLiteral() && (*iter)->GetLiteral().IsSetFuzz())) {
+                if ( (*iter)->IsLiteral() && 
+                    (!(*iter)->GetLiteral().IsSetSeq_data() || (*iter)->GetLiteral().GetSeq_data().IsGap())) {
                     has_gap = true;
                     break;
                 }
