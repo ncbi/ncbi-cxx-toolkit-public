@@ -8340,6 +8340,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
+      except TRUE,
       product whole local str "PROT_36",
       location int {
         from 118806,
@@ -8348,7 +8349,8 @@ Seq-annot ::= {
         id gi 291482369,
         fuzz-from lim lt,
         fuzz-to lim gt
-      }
+      },
+      except-text "unclassified translation discrepancy"
     }
   }
 }
@@ -8681,6 +8683,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
+      except TRUE,
       product whole local str "PROT_37",
       location packed-int {
         {
@@ -8697,7 +8700,8 @@ Seq-annot ::= {
           id gi 346722692,
           fuzz-from lim lt
         }
-      }
+      },
+      except-text "unclassified translation discrepancy"
     }
   }
 }
