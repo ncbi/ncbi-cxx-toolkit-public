@@ -56,6 +56,7 @@ class CSeq_entry;
 static const int kDefaultOutlierMax_Byte = 50;
 static const int kDefaultOutlierMax_Int = 1000000;
 static const Uint8 kDefaultMinMapQuality = 4;
+#define DEFAULT_BAI_SUFFIX ".bai"
 
 CBam2Seq_graph::CBam2Seq_graph(void)
     : m_MinMapQuality(-1),
@@ -470,7 +471,7 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const string& bam_file,
     CBamHeader header(bam_file);
     size_t ref_index = header.GetRefIndex(GetRefLabel());
     TSeqPos length = header.GetRefLength(ref_index);
-    CBamIndex bam_index(bam_ind.empty()? bam_file+".bai": bam_ind);
+    CBamIndex bam_index(bam_ind.empty()? bam_file+DEFAULT_BAI_SUFFIX: bam_ind);
     vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
     if ( length == 0 || length == kInvalidSeqPos ) {
         length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
@@ -716,7 +717,7 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamRawDb& db,
 CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamMgr& mgr,
                                                const string& bam_file)
 {
-    return MakeSeq_annot(mgr, bam_file, bam_file+".bai");
+    return MakeSeq_annot(mgr, bam_file, bam_file+DEFAULT_BAI_SUFFIX);
 }
 
 
