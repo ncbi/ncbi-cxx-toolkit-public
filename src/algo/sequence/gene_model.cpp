@@ -3259,7 +3259,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         } else {
 	    string xlate_trimmed;
             ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
-                if (range_it->GetFrom() + range_it->GetLength() <= whole.size()) {
+                if (range_it->GetTo() <= whole.size()) {
                     actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
                 } else {
                     // product sequence is shorter than aligned ranges
