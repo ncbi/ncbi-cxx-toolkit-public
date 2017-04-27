@@ -41,6 +41,14 @@ BEGIN_objects_SCOPE
 class CSeq_feat;
 
 //  ============================================================================
+class CompareNoCase
+//  ============================================================================
+{
+public:
+    bool operator()(const string& x, const string& y) const;
+};
+    
+//  ============================================================================
 class NCBI_SEQ_EXPORT CSoMap
 //  ============================================================================
 {
@@ -57,7 +65,12 @@ public:
         const CSeq_feat&,
         string&);
 
+    static bool GetSupportedSoTerms(
+        vector<string>&);
+
 protected:
+    static bool xCompareNoCase(const string&, const string&);
+
     static bool xFeatureMakeGene(const string&, CSeq_feat&);
     static bool xFeatureMakeCds(const string&, CSeq_feat&);
     static bool xFeatureMakeRna(const string&, CSeq_feat&);
@@ -71,17 +84,33 @@ protected:
     static bool xFeatureMakeRegulatory(const string&, CSeq_feat&);
     static bool xFeatureMakeRepeatRegion(const string&, CSeq_feat&);
 
-    static bool xSubtypeToSoType(const CSeq_feat&, string&);
+    static bool xMapGeneric(const CSeq_feat&, string&);
+    static bool xMapGene(const CSeq_feat&, string&);
+    static bool xMapCds(const CSeq_feat&, string&);
+    static bool xMapMiscFeature(const CSeq_feat&, string&);
+    static bool xMapMiscRecomb(const CSeq_feat&, string&);
+    static bool xMapRna(const CSeq_feat&, string&);
+    static bool xMapNcRna(const CSeq_feat&, string&);
+    static bool xMapRegion(const CSeq_feat&, string&);
+    static bool xMapRegulatory(const CSeq_feat&, string&);
+    static bool xMapRepeatRegion(const CSeq_feat&, string&);
+    static bool xMapBond(const CSeq_feat&, string&);
 
-    using TYPEMAP = map<string, string>;
+
+    using TYPEMAP = map<string, string, CompareNoCase>;
     using TYPEENTRY = TYPEMAP::const_iterator;
     static TYPEMAP mMapSoTypeToId;
     static TYPEMAP mMapSoIdToType;
 
     using FEATFUNC = bool(*)(const string&, CSeq_feat&);
-    using FEATFUNCMAP = map<string, FEATFUNC>;
+    using FEATFUNCMAP = map<string, FEATFUNC, CompareNoCase>;
     using FEATFUNCENTRY = FEATFUNCMAP::const_iterator;
     static FEATFUNCMAP mMapFeatFunc;
+
+    using TYPEFUNC = bool(*)(const CSeq_feat&, string&);
+    using TYPEFUNCMAP = map<CSeqFeatData::ESubtype, TYPEFUNC>;
+    using TYPEFUNCENTRY = TYPEFUNCMAP::const_iterator;
+    static TYPEFUNCMAP mMapTypeFunc;
 };
 
 END_objects_SCOPE

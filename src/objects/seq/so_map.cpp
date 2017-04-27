@@ -42,9 +42,35 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CSoMap::TYPEMAP CSoMap::mMapSoTypeToId;
+//  ----------------------------------------------------------------------------
+bool CompareNoCase::operator()(
+    const string& lhs,
+    const string& rhs) const
+//  ----------------------------------------------------------------------------
+{
+    string::const_iterator pLhs = lhs.begin();
+    string::const_iterator pRhs = rhs.begin();
+    while (pLhs != lhs.end()  &&  pRhs != rhs.end()  &&  
+            tolower(*pLhs) ==  tolower(*pRhs)) {
+        ++pLhs;
+        ++pRhs;
+    }
+    if (pLhs == lhs.end()) {
+        return (pRhs != rhs.end());
+    }
+    if (pRhs == rhs.end()) {
+        return false;
+    }
+    return (tolower(*pLhs) < tolower(*pRhs)); 
+};
 
+//  ----------------------------------------------------------------------------
+CSoMap::TYPEMAP CSoMap::mMapSoTypeToId;
+//  ----------------------------------------------------------------------------
+
+//  ----------------------------------------------------------------------------
 CSoMap::TYPEMAP CSoMap::mMapSoIdToType = {
+//  ----------------------------------------------------------------------------
     {"SO:0000001", "region"},
     {"SO:0000002", "sequece_secondary_structure"},
     {"SO:0000005", "satellite_DNA"},
@@ -172,7 +198,9 @@ CSoMap::TYPEMAP CSoMap::mMapSoIdToType = {
     //{"SO:UNKNOWN", "repeat_instability_region"},
 };
 
+//  ----------------------------------------------------------------------------
 CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
+//  ----------------------------------------------------------------------------
     {"CAGE_cluster",            CSoMap::xFeatureMakeMiscFeature},
     {"CAAT_signal",             CSoMap::xFeatureMakeRegulatory},
     {"CDS",                     CSoMap::xFeatureMakeCds},
@@ -197,7 +225,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"attenuator",              CSoMap::xFeatureMakeRegulatory},
     {"autocatalytically_spliced_intron", CSoMap::xFeatureMakeNcRna},
     {"binding_site",            CSoMap::xFeatureMakeImp},
-    {"biological_region",       CSoMap::xFeatureMakeMiscFeature},
+    {"biological_region",       CSoMap::xFeatureMakeRegion},
     {"boundary_element",        CSoMap::xFeatureMakeRegulatory},
     {"centromere",              CSoMap::xFeatureMakeImp},
     {"centromeric_repeat",      CSoMap::xFeatureMakeRepeatRegion},
@@ -221,7 +249,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"long_terminal_repeat",    CSoMap::xFeatureMakeRepeatRegion},
     {"mRNA",                    CSoMap::xFeatureMakeRna},
     {"matrix_attachment_region", CSoMap::xFeatureMakeRegulatory},
-    {"mature_protein_region",   CSoMap::xFeatureMakeProt},
+    {"mature_protein_region",   CSoMap::xFeatureMakeImp},
     {"meiotic_recombination_region", CSoMap::xFeatureMakeMiscRecomb},
     {"miRNA",                   CSoMap::xFeatureMakeNcRna},
     {"microsatellite",          CSoMap::xFeatureMakeRepeatRegion},
@@ -291,9 +319,24 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"transcript",              CSoMap::xFeatureMakeMiscRna},
     {"transcriptional_cis_regulatory_region", CSoMap::xFeatureMakeRegulatory},
     {"transcription_start_site", CSoMap::xFeatureMakeMiscFeature},
+    {"transit_peptide",         CSoMap::xFeatureMakeImp},
     {"three_prime_UTR",         CSoMap::xFeatureMakeImp},
     {"vault_RNA",               CSoMap::xFeatureMakeNcRna},
 };
+
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::GetSupportedSoTerms(
+    vector<string>& supported_terms)
+//  ----------------------------------------------------------------------------
+{
+    supported_terms.clear();
+    for (auto term: CSoMap::mMapFeatFunc) {
+        supported_terms.push_back(term.first);
+    }
+    std::sort(supported_terms.begin(), supported_terms.end());
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 string CSoMap::SoIdToType(
@@ -364,7 +407,7 @@ bool CSoMap::xFeatureMakeRna(
         {"pseudogenic_tRNA", CRNA_ref::eType_tRNA},
         {"tmRNA", CRNA_ref::eType_tmRNA},
     };
-    map<string, CRNA_ref::EType>::const_iterator it = mTypeToRna.find(so_type);
+    auto it = mTypeToRna.find(so_type);
     feature.SetData().SetRna().SetType(it->second);
     feature.SetPseudo(NStr::StartsWith(so_type, "pseudogenic_"));
     return true;
@@ -380,7 +423,7 @@ bool CSoMap::xFeatureMakeNcRna(
         {"ncRNA", "other"},
     };
     feature.SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
-    map<string, string>::const_iterator it = mTypeToClass.find(so_type);
+    auto it = mTypeToClass.find(so_type);
     if (it == mTypeToClass.end()) {
         feature.SetData().SetRna().SetExt().SetGen().SetClass(so_type);
     }
@@ -411,8 +454,7 @@ bool CSoMap::xFeatureMakeProt(
         {"mature_protein_region", CProt_ref::eProcessed_mature},
         {"propeptide", CProt_ref::eProcessed_propeptide},
     };
-    map<string, CProt_ref::EProcessed>::const_iterator cit = 
-        mTypeToProcessed.find(so_type);
+    auto cit = mTypeToProcessed.find(so_type);
     if (cit == mTypeToProcessed.end()) {
         return false;
     }
@@ -435,7 +477,7 @@ bool CSoMap::xFeatureMakeMiscFeature(
     }
     CRef<CGb_qual> feat_class(new CGb_qual);
     feat_class->SetQual("feat_class");
-    map<string, string>::const_iterator cit = mapTypeToQual.find(so_type);
+    auto cit = mapTypeToQual.find(so_type);
     if (cit == mapTypeToQual.end()) {
         feat_class->SetVal(so_type);
     }
@@ -461,7 +503,7 @@ bool CSoMap::xFeatureMakeMiscRecomb(
     feature.SetData().SetImp().SetKey("misc_recomb");
     CRef<CGb_qual> recombination_class(new CGb_qual);
     recombination_class->SetQual("recombination_class");
-    map<string, string>::const_iterator cit = mapTypeToQual.find(so_type);
+    auto cit = mapTypeToQual.find(so_type);
     if (cit == mapTypeToQual.end()) {
         recombination_class->SetVal(so_type);
     }
@@ -498,6 +540,7 @@ bool CSoMap::xFeatureMakeImp(
         {"binding_site", "misc_binding"},
         {"five_prime_utr", "5\'UTR"},
         {"long_terminal_repeat", "LTR"},
+        {"mat_protein_region", "mat_peptide"},
         {"mobile_genetic_element", "mobile_element"},
         {"modified_DNA_base", "modified_base"},
         {"origin_of_replication", "rep_origin"},
@@ -512,7 +555,7 @@ bool CSoMap::xFeatureMakeImp(
         {"signal_peptide", "sig_peptide"},
         {"three_prime_utr", "3\'UTR"},
     };
-    map<string, string>::const_iterator cit = mapTypeToKey.find(so_type);
+    auto cit = mapTypeToKey.find(so_type);
     if (cit == mapTypeToKey.end()) {
         feature.SetData().SetImp().SetKey(so_type);
     }
@@ -550,7 +593,7 @@ bool CSoMap::xFeatureMakeRegulatory(
     feature.SetData().SetImp().SetKey("regulatory");
     CRef<CGb_qual> regulatory_class(new CGb_qual);
     regulatory_class->SetQual("regulatory_class");
-    map<string, string>::const_iterator cit = mapTypeToQual.find(so_type);
+    auto cit = mapTypeToQual.find(so_type);
     if (cit == mapTypeToQual.end()) {
         regulatory_class->SetVal(so_type);
     }
@@ -567,7 +610,12 @@ bool CSoMap::xFeatureMakeRepeatRegion(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToQual = {
+    static const map<string, string> mapTypeToSatellite = {
+        {"microsatellite", "microsatellite"},
+        {"minisatellite", "minisatellite"},
+        {"satellite_DNA", "satellite"},
+    };
+    static const map<string, string> mapTypeToRptType = {
         {"tandem_repeat", "tandem"},
         {"inverted_repeat", "inverted"},
         {"direct_repeat", "direct"},
@@ -576,43 +624,439 @@ bool CSoMap::xFeatureMakeRepeatRegion(
         {"X_element_combinatorial_repeat", "x_element_combinatorial_repeat"},
         {"Y_prime_element", "y_prime_element"},
         {"repeat_region", "other"},
-        {"satellite_DNA", "satellite"},
     };
     feature.SetData().SetImp().SetKey("repeat_region");
-    CRef<CGb_qual> rpt_type(new CGb_qual);
-    rpt_type->SetQual("rpt_type");
-    map<string, string>::const_iterator cit = mapTypeToQual.find(so_type);
-    if (cit == mapTypeToQual.end()) {
-        rpt_type->SetVal(so_type);
+
+    CRef<CGb_qual> qual(new CGb_qual);
+    auto cit = mapTypeToSatellite.find(so_type);
+    if (cit != mapTypeToSatellite.end()) {
+        qual->SetQual("satellite");
+        qual->SetVal(cit->second);
     }
     else {
-        rpt_type->SetVal(cit->second);
+        qual->SetQual("rpt_type");
+        cit = mapTypeToRptType.find(so_type);
+        if (cit == mapTypeToRptType.end()) {
+            qual->SetVal(so_type);
+        }
+        else {
+            qual->SetVal(cit->second);
+        }
     }
-    feature.SetQual().push_back(rpt_type);   
+    feature.SetQual().push_back(qual);   
     return true;
 }
         
+
+//  ----------------------------------------------------------------------------
+CSoMap::TYPEFUNCMAP CSoMap::mMapTypeFunc = {
+//  ----------------------------------------------------------------------------
+    {CSeqFeatData::eSubtype_3UTR, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_5UTR, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_assembly_gap, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_C_region, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_cdregion, CSoMap::xMapCds},
+    {CSeqFeatData::eSubtype_centromere, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_D_loop, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_D_segment, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_exon, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_gap, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_10_signal, CSoMap::xMapGene},
+    {CSeqFeatData::eSubtype_iDNA, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_intron, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_J_segment, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_LTR, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_mat_peptide, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_misc_binding, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_misc_difference, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_misc_feature, CSoMap::xMapMiscFeature}, 
+    {CSeqFeatData::eSubtype_misc_recomb, CSoMap::xMapMiscRecomb},
+    {CSeqFeatData::eSubtype_misc_RNA, CSoMap::xMapRna},
+    {CSeqFeatData::eSubtype_misc_structure, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_mobile_element, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_modified_base, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_mRNA, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_N_region, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_ncRNA, CSoMap::xMapNcRna},
+    {CSeqFeatData::eSubtype_operon, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_oriT, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_polyA_site, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_precursor_RNA, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_prim_transcript, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_primer_bind, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_propeptide, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_protein_bind, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_region, CSoMap::xMapRegion},
+    {CSeqFeatData::eSubtype_regulatory, CSoMap::xMapRegulatory},
+    {CSeqFeatData::eSubtype_rep_origin, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_repeat_region, CSoMap::xMapRepeatRegion},
+    {CSeqFeatData::eSubtype_rRNA, CSoMap::xMapRna},
+    {CSeqFeatData::eSubtype_S_region, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_sig_peptide, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_source, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_stem_loop, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_STS, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_telomere, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_tmRNA, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_transit_peptide, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_tRNA, CSoMap::xMapRna},
+    {CSeqFeatData::eSubtype_unsure, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_V_region, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_V_segment, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_variation, CSoMap::xMapGeneric},
+    //{CSeqFeatData::eSubtype_attenuator, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_bond, CSoMap::xMapBond},
+};
+
 //  ----------------------------------------------------------------------------
 bool CSoMap::FeatureToSoType(
     const CSeq_feat& feature,
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    if (xSubtypeToSoType(feature, so_type)) {
+    auto subtype = feature.GetData().GetSubtype();
+    TYPEFUNCENTRY cit = mMapTypeFunc.find(subtype);
+    if (cit == mMapTypeFunc.end()) {
+        return false;
+    }
+    return (cit->second)(feature, so_type);
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapGeneric(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    static const map<CSeqFeatData::ESubtype, string> mapSubtypeToSoType = {
+        {CSeqFeatData::eSubtype_3UTR, "three_prime_utr"},
+        {CSeqFeatData::eSubtype_5UTR, "five_prime_utr"},
+        {CSeqFeatData::eSubtype_assembly_gap, "assemply_gap"},
+        {CSeqFeatData::eSubtype_C_region, "C_gene_segment"},
+        {CSeqFeatData::eSubtype_centromere, "centromere"},
+        {CSeqFeatData::eSubtype_D_loop, "D_loop"},
+        {CSeqFeatData::eSubtype_D_segment, "D_gene_segment"},
+        {CSeqFeatData::eSubtype_exon, "exon"},
+        {CSeqFeatData::eSubtype_gap, "gap"},
+        {CSeqFeatData::eSubtype_iDNA, "iDNA"},
+        {CSeqFeatData::eSubtype_intron, "intron"},
+        {CSeqFeatData::eSubtype_J_segment, "J_gene_segment"},
+        {CSeqFeatData::eSubtype_LTR, "long_terminal_repeat"},
+        {CSeqFeatData::eSubtype_mat_peptide, "mature_protein_region"},
+        {CSeqFeatData::eSubtype_misc_binding, "binding_site"},
+        {CSeqFeatData::eSubtype_misc_difference, "sequence_difference"},
+        {CSeqFeatData::eSubtype_misc_structure, "sequence_secondary_structure"},
+        {CSeqFeatData::eSubtype_mobile_element, "mobile_genetic_element"},
+        {CSeqFeatData::eSubtype_modified_base, "modified_DNA_base"},
+        {CSeqFeatData::eSubtype_mRNA, "mRNA"},
+        {CSeqFeatData::eSubtype_N_region, "N_region"}, 
+        {CSeqFeatData::eSubtype_operon, "operon"}, 
+        {CSeqFeatData::eSubtype_oriT, "oriT"}, 
+        {CSeqFeatData::eSubtype_polyA_site, "polyA_site"}, 
+        {CSeqFeatData::eSubtype_precursor_RNA, "primary_transcript"}, 
+        {CSeqFeatData::eSubtype_prim_transcript, "primary_transcript"}, 
+        {CSeqFeatData::eSubtype_primer_bind, "primer_binding_site"}, 
+        {CSeqFeatData::eSubtype_propeptide, "propeptide"}, 
+        {CSeqFeatData::eSubtype_protein_bind, "protein_binding_site"},
+        {CSeqFeatData::eSubtype_rep_origin, "origin_of_replication"},
+        {CSeqFeatData::eSubtype_S_region, "S_region"},
+        {CSeqFeatData::eSubtype_sig_peptide, "signal_peptide"},
+        {CSeqFeatData::eSubtype_source, "region"},
+        {CSeqFeatData::eSubtype_stem_loop, "stem_loop"},
+        {CSeqFeatData::eSubtype_STS, "STS"},
+        {CSeqFeatData::eSubtype_telomere, "telomere"},
+        {CSeqFeatData::eSubtype_tmRNA, "tmRNA"},
+        {CSeqFeatData::eSubtype_transit_peptide, "transit_peptide"},
+        {CSeqFeatData::eSubtype_unsure, "sequence_uncertainty"},
+        {CSeqFeatData::eSubtype_V_region, "V_region"},
+        {CSeqFeatData::eSubtype_V_segment, "V_gene_segment"},
+        {CSeqFeatData::eSubtype_variation, "sequence_alteration"},
+        //{CSeqFeatData::eSubtype_attenuator, "attenuator"},
+    };
+    auto subtype = feature.GetData().GetSubtype();
+    auto cit = mapSubtypeToSoType.find(subtype);
+    if (cit != mapSubtypeToSoType.end()) {
+        so_type = cit->second;
         return true;
     }
     return false;
 }
 
 //  ----------------------------------------------------------------------------
-bool CSoMap::xSubtypeToSoType(
+bool CSoMap::xMapRegion(
     const CSeq_feat& feature,
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<CSeqFeatData::ESubtype, string> mapSubtypeToSoType = {
+    so_type = "biological_region";
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapCds(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    if (feature.IsSetPseudo()  &&  feature.GetPseudo()) {
+        so_type = "pseudogenic_CDS";
+        return true;
+    }
+    for (auto qual: feature.GetQual()) {
+        if (qual->GetQual() == "pseudo"  ||  qual->GetQual() == "pseudogene") {
+            so_type = "pseudogenic_CDS";
+            return true;
+        }
+    }
+    so_type = "CDS";
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapGene(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    if (feature.IsSetPseudo()  &&  feature.GetPseudo()) {
+        so_type = "pseudogene";
+        return true;
+    }
+    for (auto qual: feature.GetQual()) {
+        if (qual->GetQual() == "pseudo"  ||  qual->GetQual() == "pseudogene") {
+            so_type = "pseudogene";
+            return true;
+        }
+    }
+    so_type = "gene";
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapRna(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    static const map<CSeqFeatData::ESubtype, string> mapSubtypeStraight = {
+        {CSeqFeatData::eSubtype_misc_RNA, "transcript"},
+        {CSeqFeatData::eSubtype_rRNA, "rRNA"},
+        {CSeqFeatData::eSubtype_tRNA, "tRNA"},
     };
-    return false;
+    static const map<CSeqFeatData::ESubtype, string> mapSubtypePseudo = {
+        {CSeqFeatData::eSubtype_misc_RNA, "pseudogenic_transcript"},
+        {CSeqFeatData::eSubtype_rRNA, "pseudogenic_rRNA"},
+        {CSeqFeatData::eSubtype_tRNA, "pseudogenic_tRNA"},
+    };
+
+    auto subtype = feature.GetData().GetSubtype();
+    if (feature.IsSetPseudo()  &&  feature.GetPseudo()) {
+        auto cit = mapSubtypePseudo.find(subtype);
+        if (cit == mapSubtypePseudo.end()) {
+            return false;
+        }
+        so_type = cit->second;
+        return true;
+    }
+    if (feature.IsSetPseudo()  &&  !feature.GetPseudo()) {
+        auto cit = mapSubtypeStraight.find(subtype);
+        if (cit == mapSubtypeStraight.end()) {
+            return false;
+        }
+        so_type = cit->second;
+        return true;
+    }
+
+    for (auto qual: feature.GetQual()) {
+        if (qual->GetQual() == "pseudo"  ||  qual->GetQual() == "pseudogene") {
+            auto cit = mapSubtypePseudo.find(subtype);
+            if (cit == mapSubtypePseudo.end()) {
+                return false;
+            }
+            so_type = cit->second;
+            return true;
+        }
+    }
+    auto cit = mapSubtypeStraight.find(subtype);
+    if (cit == mapSubtypeStraight.end()) {
+        return false;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapMiscFeature(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapFeatClassToSoType = {
+        {"transcription_start_site", "TSS"},
+        {"other", "sequence_feature"},
+    };
+    string feat_class = feature.GetNamedQual("feat_class");
+    if (feat_class.empty()) {
+        so_type = "sequence_feature";
+        return true;
+    }
+    auto cit = mapFeatClassToSoType.find(feat_class);
+    if (cit == mapFeatClassToSoType.end()) {
+        so_type = feat_class;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapMiscRecomb(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapRecombClassToSoType = {
+        {"meiotic", "meiotic_recombination_region"},
+        {"mitotic", "mitotic_recombination_region"},
+        {"non_allelic_homologous", "non_allelic_homologous_recombination_region"},
+        {"meiotic_recombination", "meiotic_recombination_region"},
+        {"mitotic_recombination", "mitotic_recombination_region"},
+        {"non_allelic_homologous_recombination", "non_allelic_homologous_recombination_region"},
+        {"other", "recombination_region"},
+    };
+    string recomb_class = feature.GetNamedQual("recombination_class");
+    if (recomb_class.empty()) {
+        return false;
+    }
+    auto cit = mapRecombClassToSoType.find(recomb_class);
+    if (cit == mapRecombClassToSoType.end()) {
+        so_type = recomb_class;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapNcRna(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapNcRnaClassToSoType = {
+        {"lncRNA", "lnc_RNA"},
+        {"other", "ncRNA"},
+    };
+    string ncrna_class = feature.GetNamedQual("ncRNA_class");
+    if (ncrna_class.empty()) {
+        return false;
+    }
+    auto cit = mapNcRnaClassToSoType.find(ncrna_class);
+    if (cit == mapNcRnaClassToSoType.end()) {
+        so_type = ncrna_class;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapRegulatory(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapRegulatoryClassToSoType = {
+        {"DNase_I_hypersensitive_site", "DNaseI_hypersensitive_site"},
+        {"GC_signal", "GC_rich_promoter_region"},
+        {"enhancer_blocking_element", "term_requested_issue_379"},
+        {"imprinting_control_region", "term_requested_issue_379"},
+        {"matrix_attachment_region", "matrix_attachment_site"},
+        {"other", "regulatory_region"},
+        {"response_element", "term_requested_issue_379"},
+        {"ribosome_binding_site", "ribosome_entry_site"},
+    };
+    string regulatory_class = feature.GetNamedQual("regulatory_class");
+    if (regulatory_class.empty()) {
+        return false;
+    }
+    auto cit = mapRegulatoryClassToSoType.find(regulatory_class);
+    if (cit == mapRegulatoryClassToSoType.end()) {
+        so_type = regulatory_class;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapBond(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapBondTypeToSoType = {
+        {"disulfide", "disulfide_bond"},
+        {"xlink", "cross_link"},
+    };
+    string bond_type = feature.GetNamedQual("bond_type");
+    if (bond_type.empty()) {
+        return false;
+    }
+    auto cit = mapBondTypeToSoType.find(bond_type);
+    if (cit == mapBondTypeToSoType.end()) {
+        so_type = bond_type;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSoMap::xMapRepeatRegion(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    map<string, string> mapSatelliteToSoType = {
+        {"satellite", "satellite_DNA"},
+        {"microsatellite", "microsatellite"},
+        {"minisatellite", "minisatellite"},
+    };
+    string satellite = feature.GetNamedQual("satellite");
+    if (!satellite.empty()) {
+        auto cit = mapSatelliteToSoType.find(satellite);
+        if (cit == mapSatelliteToSoType.end()) {
+            return false;
+        }
+        so_type = cit->second;
+        return true;
+    }
+
+    map<string, string> mapRptTypeToSoType = {
+        {"tandem", "tandem_repeat"},
+        {"inverted", "inverted_repeat"},
+        {"flanking", "repeat_region"},
+        {"terminal", "repeat_region"},
+        {"direct", "direct_repeat"},
+        {"dispersed", "dispersed_repeat"},
+        {"nested", "nested_repeat"},
+        {"non_ltr_retrotransposon_polymeric_tract", "non_LTR_retrotransposon_polymeric_tract"},
+        {"x_element_combinatorical_repeat", "X_element_combinatorical_repeat"},
+        {"y_prime_element", "Y_prime_element"},
+        {"other", "repeat_region"},
+    };
+    string rpt_type = feature.GetNamedQual("rpt_type");
+    if (rpt_type.empty()) {
+        return false;
+    }
+    auto cit = mapRptTypeToSoType.find(rpt_type);
+    if (cit == mapRptTypeToSoType.end()) {
+        so_type = rpt_type;
+        return true;
+    }
+    so_type = cit->second;
+    return true;
 }
 
 END_NCBI_SCOPE
