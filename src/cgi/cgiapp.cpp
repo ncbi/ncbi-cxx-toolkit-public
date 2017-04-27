@@ -694,7 +694,7 @@ void CCgiApplication::ProcessHttpReferer(void)
         if ( !args.empty() ) {
             ref += "?" + args;
         }
-        GetConfig().Set("CONN", "HTTP_REFERER", ref);
+        GetRWConfig().Set("CONN", "HTTP_REFERER", ref);
     }
 }
 
