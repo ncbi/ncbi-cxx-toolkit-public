@@ -44,6 +44,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/expr.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiapp.hpp>
 
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
