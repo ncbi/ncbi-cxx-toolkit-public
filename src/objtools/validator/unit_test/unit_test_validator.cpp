@@ -7403,7 +7403,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("NU");
     ambig.push_back("NCSC");
     ambig.push_back("MHNN");
-    ambig.push_back("SMW");
     ambig.push_back("NCC");
     ambig.push_back("MSM");
     ambig.push_back("NMBA");
