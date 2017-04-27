@@ -34,6 +34,7 @@
 #define ALGO_BLAST_BLASTINPUT_UNITTEST__BLAST_INPUT_UNIT_TEST_AUX__HPP
 
 #include <corelib/metareg.hpp>
+#include <corelib/test_boost.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 
 /** @addtogroup AlgoBlast
@@ -47,6 +48,8 @@ USING_NCBI_SCOPE;
 /// directory for the purpose of testing the CBlastScopeSource configuration
 /// class via this file (and override any other installed NCBI configuration
 /// files)
+/// @note Works with unit tests only (via corelib/test_boost).
+///
 class CAutoNcbiConfigFile {
 public:
     static const char* kSection;
@@ -57,11 +60,11 @@ public:
     typedef blast::SDataLoaderConfig::EConfigOpts EConfigOpts;
 
     CAutoNcbiConfigFile(EConfigOpts opts = blast::SDataLoaderConfig::eDefault)
-        : m_App(CNcbiApplication::Instance()), m_Registry(0)
+        : m_App(NcbiTestGetAppInstance()), m_Registry(0)
     {
         _ASSERT(m_App);
         m_App->ReloadConfig(CMetaRegistry::fAlwaysReload);
-        m_Registry = &m_App->GetConfig();
+        m_Registry = &NcbiTestGetRWConfig();
         _ASSERT(m_Registry);
 
         string value;

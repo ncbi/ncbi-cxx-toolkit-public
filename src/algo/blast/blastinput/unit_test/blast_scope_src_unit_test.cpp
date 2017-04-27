@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc)
     for (size_t i = 0; i < sv.size(); i++) {
         BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
     }
-    app->GetConfig().IncludeNcbircIfAllowed();
+    NcbiTestGetRWConfig().IncludeNcbircIfAllowed();
 }
 
 // Motivated by JIRA WB-235

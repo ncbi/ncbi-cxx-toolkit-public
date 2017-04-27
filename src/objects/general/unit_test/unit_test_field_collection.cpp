@@ -60,10 +60,9 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 NCBITEST_AUTO_INIT()
 {
     // force use of built-in accession guide
-    CNcbiApplication::Instance()->GetConfig().Set("NCBI", "Data", kEmptyStr,
-                                                  IRegistry::fPersistent);
+    NcbiTestGetRWConfig().Set("NCBI", "Data", kEmptyStr, IRegistry::fPersistent);
 
-    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    const CArgs& args = NcbiTestGetAppInstance()->GetArgs();
     CNcbiIstream& istr = args["data-in"].AsInputFile();
     istr >> MSerial_AsnText >> s_Data;
 }
