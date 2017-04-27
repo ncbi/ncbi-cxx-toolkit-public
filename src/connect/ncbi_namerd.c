@@ -701,8 +701,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
     /* See if the max buffer size was insufficient (this is extremely unlikely
         and would suggest reviewing the design of this function). */
     if (step_got == step_max  &&  status == eIO_Success) {
-        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-            ("Insufficient buffer size.", IO_StatusStr(status)));
+        CORE_LOG_X(eNSub_TooLong, eLOG_Error, "Insufficient buffer size.");
         free(*bufp);
         *bufp = NULL;
         TOUT("s_ReadFullResponse() -- read problem");
