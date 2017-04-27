@@ -1620,6 +1620,25 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    CFileAPI::SetLogging(eOn);
+    CDirEntry entry("some_path/tmp");
+//    bool res = entry.Rename("some_path/9606", CDirEntry::fRF_Overwrite);
+//    bool res = entry.MoveToDir("some_new_path");
+
+
+    Int1  v1 = NStr::StringToNumeric<Int1>("1");
+    Uint1 v2 = NStr::StringToNumeric<Uint1>("1");
+
+    cout << (int)v1 << endl;
+    cout << (int)v2 << endl;
+
+    cout << NStr::NumericToString(v1) << endl;;
+    cout << NStr::NumericToString(v2) << endl;;
+
+
+//    cout << res << endl;
+    return 0;
+
     // Process command line
     const CArgs& args = GetArgs();
 
@@ -1651,7 +1670,35 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    list<string> files;
+    list<string> paths;
+    paths.push_back("S:\\cxx\\src\\html\\");
+    paths.push_back("S:\\cxx\\include\\common\\");
+    //    paths.push_back("S:\\cxx\\src\\cgi\\");
+
+    vector<string> masks;
+    masks.push_back("*");
+
+    FindFiles(files, paths.begin(), paths.end(),
+        masks.begin(), masks.end(),
+        fFF_File | fFF_Dir | fFF_Recursive);
+
+    //    files.sort(SCompareDirEntries(SCompareDirEntries::ePath));
+
+    //    files.sort(SCompareDirEntries(SCompareDirEntries::eDir, SCompareDirEntries::eName, SCompareDirEntries::eExt));
+    //    files.sort(SCompareDirEntries(SCompareDirEntries::eName, SCompareDirEntries::eExt));
+    files.sort(SCompareDirEntries(SCompareDirEntries::eExt, SCompareDirEntries::eDir));
+
+    ITERATE(list<string>, fit, files)
+    {
+        cout << *fit << endl;
+    }
+
+    return 0;
+
+
+
     // Enable FileAPI logging, if necessary
-    // CFileAPI::SetLogging(eOn);
+    CFileAPI::SetLogging(eOn);
     return CTest().AppMain(argc, argv);
 }
