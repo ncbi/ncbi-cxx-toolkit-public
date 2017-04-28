@@ -143,6 +143,7 @@ Options:
    --with-ccache           use ccache if available
    --with-distcc           use distcc if available
    --with-xcode            generate XCode project
+   --trace           print CMake trace to stdout
 
   -h, --help              display this help and exit
   --pass-thru             pass remaining arguments through to CMake
@@ -390,11 +391,6 @@ while [ $# != 0 ]; do
             shift
             ;;
 
-        "--docdir="*)
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "${1#*=}")";;
-        "--docdir")
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "$2")"; shift;;
-
         "--with-experimental="*)
             EXPERIMENTAL="${1#*=}";;
 
@@ -407,6 +403,9 @@ while [ $# != 0 ]; do
                 CMAKE_ARGS="$CMAKE_ARGS $(quote "${1}")";
                 shift;
             done;;
+
+        "--trace")
+            TRACE_CMAKE="--trace";;
 
         "--enable-"*)
             set_config_var "$1"
@@ -499,4 +498,4 @@ if [ -e CMakeCache.txt ]; then
    rm CMakeCache.txt
 fi
 
-eval "${CMAKE_CMD}" "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}
+eval "${CMAKE_CMD}" ${TRACE_CMAKE} "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}

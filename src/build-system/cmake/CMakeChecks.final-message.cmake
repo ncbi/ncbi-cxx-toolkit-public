@@ -8,7 +8,7 @@ foreach (d ${Defs} )
     set(DefsStr "${DefsStr} -D${d}")
 endforeach()
 
-STRING(SUBSTRING "${EXTERNAL_LIBRARIES_COMMENT}" 1 -1 EXTERNAL_LIBRARIES_COMMENT)
+#STRING(SUBSTRING "${EXTERNAL_LIBRARIES_COMMENT}" 1 -1 EXTERNAL_LIBRARIES_COMMENT)
 
 function(ShowMainBoilerplate)
     message("")

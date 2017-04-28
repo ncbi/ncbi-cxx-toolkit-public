@@ -101,6 +101,7 @@ set(ICONV_LIBS    )
 find_library(UUID_LIBS      uuid)
 find_library(CRYPT_LIBS     crypt)
 find_library(MATH_LIBS      m)
+find_library(GCRYPT         gcrypt)
 
 if (APPLE)
   find_library(NETWORK_LIBS c)
@@ -159,8 +160,7 @@ set(DBAPI_ODBC                     )
 ############################################################################
 #
 # OS-specific settings
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.openssl.cmake)
-
+find_external_library(GnuTLS INCLUDES gnutls/gnutls.h LIBS gnutls HINTS "${NCBI_TOOLS_ROOT}/gnutls-3.4.0/" EXTRAFLAGS "-lz -lidn -lrt -L/netopt/ncbi_tools64/nettle-3.1.1/lib64 -lhogweed -lnettle -L/netopt/ncbi_tools64/gmp-6.0.0a/lib64/ -lgmp")
 
 ############################################################################
 #
@@ -174,8 +174,11 @@ set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
 ############################################################################
 #
 # Sybase stuff
-find_package(Sybase)
-#find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybblk_r64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
+#find_package(Sybase)
+find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybdb64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
+#XXX rewrite this - should be one search that honnors --with-sybase=<PATH>
+#find_external_library(SybaseDB INCLUDES sybdb.h LIBS sybdb64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybunic64")
+set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 
 ############################################################################
 #
@@ -236,11 +239,23 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.boost.cmake)
 ############################################################################
 #
 # NCBI C Toolkit:  headers and libs
-# FIXME: use a CMake check for this instead
-if (EXISTS "${NCBI_TOOLS_ROOT}/include64" AND EXISTS "${NCBI_TOOLS_ROOT}/lib64") 
-    set(NCBI_C_INCLUDE  ${NCBI_TOOLS_ROOT}/include64)
-    set(NCBI_C_LIBPATH  "-L${NCBI_TOOLS_ROOT}/lib64")
-    set(NCBI_C_ncbi     ${NCBI_C_LIBPATH} -lncbi)
+string(REGEX MATCH "DNCBI_INT8_GI|NCBI_STRICT_GI" INT8GI_FOUND "${CMAKE_CXX_FLAGS}")
+if (NOT "${INT8GI_FOUND}" STREQUAL "")
+    if (EXISTS "${NCBI_TOOLS_ROOT}/ncbi/ncbi.gi64/")
+        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/ncbi.gi64/")
+    elseif (EXISTS "${NCBI_TOOLS_ROOT}/ncbi.gi64")
+        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi.gi64/")
+    else ()
+        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/")
+    endif ()
+else ()
+    set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/")
+endif ()
+
+if (EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
+    set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
+    set(NCBI_C_LIBPATH  "-L${NCBI_CTOOLKIT_PATH}/lib64")
+    set(NCBI_C_ncbi     "${NCBI_C_LIBPATH} -lncbi")
     if (APPLE)
         set(NCBI_C_ncbi ${NCBI_C_ncbi} -Wl,-framework,ApplicationServices)
     endif ()
@@ -256,16 +271,6 @@ endif ()
 # these as appropriate.)
 
 find_external_library(OpenGL INCLUDES GL/gl.h LIBS GLU HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS -lGL -lXmu -lXt -lXext  -lSM -lICE -lX11)
-#set(OPENGL_STATIC_LIBS "-L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -lGLU-static -lGL-static -lXmu -lXt -lXext -lSM -lICE -lX11" DO_NOT_UPDATE_MESSAGE))
-if (NOT ${OPENGL_FOUND} AND NOT ${OPENGL_DISABLED} AND ${OPENGL} STREQUAL "")
-  #not sure that it works
-  find_package(OpenGL)
-  if (${OPENGL_FOUND})
-    set(OPENGL_INCLUDE "${OPENGL_INCLUDE_DIR}")
-    set(OPENGL_LIBS "${OPENGL_LIBRARIES}")
-  endif()
-endif()
-update_final_message("OpenGL")
 
 if (${OPENGL_FOUND})
   find_external_library(OSMESA INCLUDES GL/osmesa.h LIBS OSMesa HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS ${OPENGL_LIBS})
@@ -275,8 +280,6 @@ else()
 endif()
 
 find_external_library(GLEW INCLUDES GL/glew.h LIBS GLEW HINTS "${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64")
-#set(GLEW_STATIC_LIBS   ${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/lib/libGLEW-static.a)
-
 
 ############################################################################
 #
@@ -287,8 +290,13 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.wxwidgets.cmake)
 if (APPLE)
   find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0")
 else ()
-  find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRAFLAGS -lnsl)
+  if ("${BUILD_SHARED_LIBS}" STREQUAL "OFF")
+    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/lib" EXTRAFLAGS -lnsl)
+  else ()
+    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRAFLAGS -lnsl)
+  endif()
 endif()
+
 # Fast-CGI lib:  (module to add to the "xcgi" library)
 set(FASTCGI_OBJS    fcgibuf)
 
@@ -315,27 +323,20 @@ set(LIBIMR          )
 
 # IBM's International Components for Unicode
 find_external_library(ICU INCLUDES unicode/ucnv.h LIBS icui18n HINTS "${NCBI_TOOLS_ROOT}/icu-49.1.1" EXTRAFLAGS -licuuc -licudata)
-#set(ICU_CONFIG      ${NCBI_TOOLS_ROOT}/icu-49.1.1/GCC442-DebugMT/bin/icu-config)
-#set(ICU_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/icu-49.1.1/GCC442-DebugMT/lib  -lsicui18n -lsicuuc -lsicudata )
 
-find_external_library(libxml INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
-set(LIBXML_INCLUDE     ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
+find_external_library(libxml DYNAMIC_ONLY INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
+set(LIBXML_INCLUDE ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
 
-#if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
-#  set(LIBXML_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib -lxml2-static)
-#endif(EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxml2-static.a)
+find_external_library(libexslt DYNAMIC_ONLY INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS "${LIBXML_LIBS} -lgcrypt")
+if (${LIBEXSLT_FOUND})
+   set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
+endif ()
 
-find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBXML_LIBS})
-set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
-
-find_external_library(libxslt INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
-set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
-
-find_external_library(libexslt INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBXML_LIBS})
-set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
-
-find_external_library(libxslt INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
-set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
+find_external_library(libxslt DYNAMIC_ONLY INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
+if (${LIBXSLT_FOUND})
+  set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
+  set(LIBXSLT_LIBS ${LIBEXSLT_LIBS} ${LIBXSLT_LIBS})
+endif ()
 
 if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxslt-static.a)
   set(LIBXSLT_STATIC_LIBS ${LIBEXSLT_STATIC_LIBS} ${LIBXSLT_MAIN_STATIC_LIBS})
@@ -345,7 +346,6 @@ find_external_library(xerces INCLUDES xercesc/dom/DOM.hpp LIBS xerces-c HINTS "$
 #set(XERCES_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64/lib -lxerces-c-static -lcurl )
 
 find_external_library(xalan INCLUDES xalanc/XalanTransformer/XalanTransformer.hpp LIBS xalan-c HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64" EXTRAFLAGS -lxalanMsg)
-#set(XALAN_STATIC_LIBS  -L${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64/lib -Wl,-rpath,/opt/ncbi/64/xalan-1.11~r1302529/GCC442-DebugMT64/lib:${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64/lib -lxalan-c -lxalanMsg)
 
 # Sun Grid Engine (libdrmaa):
 # libpath - /netmnt/uge/lib/lx-amd64/
@@ -504,3 +504,4 @@ include_directories(${incdir} ${includedir0} ${incinternal})
 #
 # Dump our final diagnostics
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.final-message.cmake)
+
