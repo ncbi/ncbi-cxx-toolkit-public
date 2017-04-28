@@ -1590,6 +1590,8 @@ CMappedFeat GetParentFeature(const CMappedFeat& feat)
 
 
 namespace {
+    typedef map<CSeq_id_Handle, CSeq_id_Handle> TCanonicalIdsMap;
+    
     struct SBestInfo {
         typedef CFeatTree::CFeatInfo CFeatInfo;
         SBestInfo(void)
@@ -1630,8 +1632,28 @@ namespace {
 
         // results
         SBestInfo* m_Best;
-        
-        SFeatRangeInfo(CFeatInfo& info, SBestInfo* best,
+
+        void x_CanonizeId(TCanonicalIdsMap& ids_map)
+            {
+                if ( m_Id ) {
+                    auto iter = ids_map.find(m_Id);
+                    if ( iter != ids_map.end() ) {
+                        m_Id = iter->second;
+                    }
+                    else {
+                        CSeq_id_Handle new_id = sequence::GetId(m_Id,
+                                                                m_Info->m_Feat.GetScope(),
+                                                                eGetId_Seq_id_BestRank);
+                        if ( !new_id ) {
+                            new_id = m_Id;
+                        }
+                        ids_map[m_Id] = new_id;
+                        m_Id = new_id;
+                    }
+                }
+            }
+        SFeatRangeInfo(TCanonicalIdsMap& ids_map,
+                       CFeatInfo& info, SBestInfo* best,
                        bool by_product = false)
             : m_Info(&info),
               m_Best(best)
@@ -1648,14 +1670,19 @@ namespace {
                         m_Range = info.m_Feat.GetLocationTotalRange();
                     }
                 }
+                // id may be non-canonical
+                x_CanonizeId(ids_map);
             }
-        SFeatRangeInfo(CFeatInfo& info, SBestInfo* best,
+        SFeatRangeInfo(TCanonicalIdsMap& ids_map,
+                       CFeatInfo& info, SBestInfo* best,
                        CHandleRangeMap::const_iterator it)
             : m_Id(it->first),
               m_Range(it->second.GetOverlappingRange()),
               m_Info(&info),
               m_Best(best)
             {
+                // id may be non-canonical
+                x_CanonizeId(ids_map);
             }
     };
     struct PLessByStart {
@@ -1678,7 +1705,8 @@ namespace {
             }
     };
 
-    void s_AddRanges(vector<SFeatRangeInfo>& rr,
+    void s_AddRanges(TCanonicalIdsMap& ids_map,
+                     vector<SFeatRangeInfo>& rr,
                      CFeatTree::CFeatInfo& info,
                      SBestInfo* best,
                      const CSeq_loc& loc)
@@ -1687,7 +1715,7 @@ namespace {
         CHandleRangeMap hrmap;
         hrmap.AddLocation(loc);
         ITERATE ( CHandleRangeMap, it, hrmap ) {
-            SFeatRangeInfo range_info(info, best, it);
+            SFeatRangeInfo range_info(ids_map, info, best, it);
             rr.push_back(range_info);
         }
     }
@@ -1717,7 +1745,8 @@ namespace {
             {
             }
 
-        TRangeArray& GetIndex(const TInfoArray& feats) {
+        TRangeArray& GetIndex(TCanonicalIdsMap& ids_map,
+                              const TInfoArray& feats) {
             if ( m_IndexedParents == feats.size() ) {
                 return m_Index;
             }
@@ -1728,12 +1757,13 @@ namespace {
                      (m_ByProduct && !feat_info.m_Feat.IsSetProduct()) ) {
                     continue;
                 }
-                SFeatRangeInfo range_info(feat_info, 0, m_ByProduct);
+                SFeatRangeInfo range_info(ids_map, feat_info, 0, m_ByProduct);
                 if ( range_info.m_Id ) {
                     m_Index.push_back(range_info);
                 }
                 else {
-                    s_AddRanges(m_Index, feat_info, 0,
+                    s_AddRanges(ids_map,
+                                m_Index, feat_info, 0,
                                 m_ByProduct?
                                 feat_info.m_Feat.GetProduct():
                                 feat_info.m_Feat.GetLocation());
@@ -1767,7 +1797,7 @@ public:
         if ( !index ) {
             index = new CFeatTreeParentTypeIndex(type, by_product);
         }
-        return index->GetIndex(feats);
+        return index->GetIndex(m_CanonicalIds, feats);
     }
 
     TRangeArray& GetIndex(const STypeLink& link, const TInfoArray& feats) {
@@ -1775,7 +1805,10 @@ public:
     }
 
 private:
+    friend class CFeatTree;
+    
     TIndex m_Index;
+    TCanonicalIdsMap m_CanonicalIds;
 };
 
 
@@ -2085,7 +2118,8 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
                                   TRangeArray& pp,
-                                  CFeatTree* tree)
+                                  CFeatTree* tree,
+                                  TCanonicalIdsMap& ids_map)
 {
     _ASSERT(!features.empty());
     _ASSERT(!pp.empty());
@@ -2106,12 +2140,12 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
     for ( size_t i = 0; i < cnt; ++i ) {
         CFeatTree::CFeatInfo& feat_info = *features[i];
         SBestInfo* best = &bests[i];
-        SFeatRangeInfo range_info(feat_info, best);
+        SFeatRangeInfo range_info(ids_map, feat_info, best);
         if ( range_info.m_Id ) {
             cc.push_back(range_info);
         }
         else {
-            s_AddRanges(cc, feat_info, best, feat_info.m_Feat.GetLocation());
+            s_AddRanges(ids_map, cc, feat_info, best, feat_info.m_Feat.GetLocation());
         }
     }
     sort(cc.begin(), cc.end(), PLessByStart());
@@ -2311,7 +2345,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                 continue;
             }
             TBestArray bests1;
-            s_CollectBestOverlaps(features, bests1, link, parents, this);
+            s_CollectBestOverlaps(features, bests1, link, parents, this, m_Index->m_CanonicalIds);
             if ( bests.empty() ) {
                 swap(bests, bests1);
             }
@@ -2330,7 +2364,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
         if ( parents.empty() ) {
             return;
         }
-        s_CollectBestOverlaps(features, bests, link, parents, this);
+        s_CollectBestOverlaps(features, bests, link, parents, this, m_Index->m_CanonicalIds);
     }
     size_t cnt = features.size();
     _ASSERT(bests.size() == cnt);
@@ -2369,7 +2403,7 @@ void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features)
         return;
     }
     TBestArray bests;
-    s_CollectBestOverlaps(features, bests, STypeLink(), genes, this);
+    s_CollectBestOverlaps(features, bests, STypeLink(), genes, this, m_Index->m_CanonicalIds);
     size_t cnt = features.size();
     _ASSERT(bests.size() == cnt);
 
