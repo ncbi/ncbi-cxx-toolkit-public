@@ -361,22 +361,30 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     bool close_error_stream = false;
 
     try {
-    if (!m_ValidErrorStream) {
-        string path = fname;
-        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
-        if (pos != string::npos) {
-            path = path.substr(0, pos);
+        if (!m_ValidErrorStream) {
+            string path;
+            if (fname.empty())  {
+                path = "stdin.val";
+            } else {
+                size_t pos = NStr::Find(fname, ".", 0, string::npos, NStr::eLast);
+                if (pos != string::npos)
+                    path = fname.substr(0, pos);
+                else
+                    path = fname;
+
+                path.append(".val");
+            }
+
+            local_stream.reset(new CNcbiOfstream(path.c_str()));
+            m_ValidErrorStream = local_stream.get();
+
+            ConstructOutputStreams();
+            close_error_stream = true;
         }
-        path = path + ".val";
-
-        local_stream.reset(new CNcbiOfstream(path.c_str()));
-        m_ValidErrorStream = local_stream.get();
-
-        ConstructOutputStreams();
-        close_error_stream = true;
     }
-    } catch (CException) {
+    catch (CException) {
     }
+
     m_In = OpenFile(fname);
     if (m_In.get() == 0) {
         PrintValidError(ReportReadFailure(), args);
@@ -506,9 +514,9 @@ int CAsnvalApp::Run(void)
         if ( args["p"] ) {
             ValidateOneDirectory (args["p"].AsString(), args["u"]);
         } else if (args["i"]) {
-            ValidateOneFile (args["i"].AsString());           
+            ValidateOneFile (args["i"].AsString());
         } else {
-            ValidateOneDirectory(".", args["u"]);
+            ValidateOneFile("");
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
@@ -734,7 +742,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(new CSeq_entry);
 
     try {
-        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
+            m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
@@ -787,7 +795,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
     CConstRef<CValidError> eval = validator.Validate(se, scope, m_Options);
     m_NumRecords++;
     return eval;
-}
+    }
 
 
 CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
@@ -876,7 +884,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
-        ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
+        NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
             scope->AddTopLevelSeqEntry(**se);
         }
     }
@@ -942,22 +950,30 @@ auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const CArgs& args)
 
 auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 {
-    auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    ENcbiOwnership own = fname.empty() ? eNoOwnership :eTakeOwnership;
+
+    auto_ptr<CNcbiIstream> hold_stream(
+         fname.empty()? 0: new CNcbiIfstream (fname.c_str(), ios::binary));
+
+    CNcbiIstream* InputStream = fname.empty() ? &cin : hold_stream.get();
+
     CCompressStream::EMethod method;
     
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
     switch (format)
     {
-    case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
-    case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
-    case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
-    default:                   method = CCompressStream::eNone;      break;
+        case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
+        case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
+        case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
+        default:                   method = CCompressStream::eNone;      break;
     }
     if (method != CCompressStream::eNone)
     {
-        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, eTakeOwnership));
-        InputStream.release();
-        InputStream.reset(decompress);
+        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, own));
+        hold_stream.release();
+        hold_stream.reset(decompress);
+        InputStream = hold_stream.get();
+        own = eTakeOwnership;
         format = CFormatGuess::Format(*InputStream);
     }
 
@@ -966,8 +982,8 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     {
         case CFormatGuess::eBinaryASN:
         case CFormatGuess::eTextASN:
-            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, eTakeOwnership));
-            InputStream.release();
+            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, own));
+            hold_stream.release();
             break;
         default:
             break;
