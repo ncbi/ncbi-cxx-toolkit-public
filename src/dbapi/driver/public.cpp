@@ -527,6 +527,11 @@ bool CDB_Connection::Abort()
 bool CDB_Connection::Close(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    if (m_ConnImpl->IsReusable()  &&  x_IsAlive()) {
+        unique_ptr<CDB_LangCmd> lcmd(LangCmd("IF @@TRANCOUNT > 0 ROLLBACK"));
+        lcmd->Send();
+        lcmd->DumpResults();
+    }
     m_ConnImpl->Release();
     m_ConnImpl = NULL;
     return true;
