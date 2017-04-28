@@ -419,7 +419,7 @@ public:
             return m_HasHUPIncluded;
         }
 
-    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
     
 protected:
     friend class CGBReaderRequestResult;
