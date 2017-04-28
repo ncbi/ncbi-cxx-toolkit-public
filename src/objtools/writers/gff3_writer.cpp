@@ -1173,6 +1173,17 @@ bool CGff3Writer::xWriteSequenceHeader(
 }
 
 //  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+string GetStringId(
+    const CSeq_loc& loc)
+//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+    if (loc.GetId()) {
+        return loc.GetId()->AsFastaString();
+    }
+    return "";
+}
+
+//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 bool CompareLocations(
     const CMappedFeat& lhs,
     const CMappedFeat& rhs)
@@ -1182,8 +1193,15 @@ bool CompareLocations(
     const CSeq_loc& rhl = rhs.GetLocation();
 
     //test1: id, alphabetical
-    string lhs_id = lhl.GetId()->AsFastaString();
-    string rhs_id = rhl.GetId()->AsFastaString();
+    if (!lhs  ||  !rhs) {
+        cout << "";
+    }
+    if (!lhl.GetId()  || !rhl.GetId()) {
+        const CSeq_feat& bad_feat = rhs.GetOriginalFeature();
+        cout << "";
+    }
+    string lhs_id = GetStringId(lhl);
+    string rhs_id = GetStringId(rhl);
     if (lhs_id != rhs_id) {
         return (lhs_id < rhs_id);
     }
