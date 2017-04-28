@@ -218,7 +218,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"TATA_box",                CSoMap::xFeatureMakeRegulatory},
     {"V_gene_segment",          CSoMap::xFeatureMakeImp},
     {"V_region",                CSoMap::xFeatureMakeImp},
-    {"X_element_combinatorial_repeat", CSoMap::xFeatureMakeRepeatRegion},
+    {"X_element_combinatorical_repeat", CSoMap::xFeatureMakeRepeatRegion},
     {"Y_RNA",                   CSoMap::xFeatureMakeNcRna},
     {"Y_prime_element",         CSoMap::xFeatureMakeRepeatRegion},
     {"antisense_RNA",           CSoMap::xFeatureMakeNcRna},
@@ -275,7 +275,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"primary_transcript",      CSoMap::xFeatureMakeImp},
     {"primer_binding_site",     CSoMap::xFeatureMakeImp},
     {"promoter",                CSoMap::xFeatureMakeRegulatory},
-    {"propeptide",              CSoMap::xFeatureMakeProt},
+    //{"propeptide",              CSoMap::xFeatureMakeImp},
     {"protein_binding_site",    CSoMap::xFeatureMakeImp},
     {"pseudogene",              CSoMap::xFeatureMakeGene},
     {"pseudogenic_CDS",         CSoMap::xFeatureMakeCds},
@@ -423,13 +423,16 @@ bool CSoMap::xFeatureMakeNcRna(
         {"ncRNA", "other"},
     };
     feature.SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+    CRef<CGb_qual> qual(new CGb_qual);
+    qual->SetQual("ncRNA_class");
     auto it = mTypeToClass.find(so_type);
     if (it == mTypeToClass.end()) {
-        feature.SetData().SetRna().SetExt().SetGen().SetClass(so_type);
+        qual->SetVal(so_type);
     }
     else {
-        feature.SetData().SetRna().SetExt().SetGen().SetClass(it->second);
+        qual->SetVal(it->second);
     }
+    feature.SetQual().push_back(qual);
     return true;
 }
 
@@ -534,13 +537,13 @@ bool CSoMap::xFeatureMakeImp(
     static const map<string, string> mapTypeToKey = {
         {"C_gene_segment", "C_region"},
         {"D_gene_segment", "D_segment"},
-        {"D_loop", "D_loop"},
+        {"D_loop", "D-loop"},
         {"J_gene_segment", "J_segment"},
         {"V_gene_segment", "V_segment"},
         {"binding_site", "misc_binding"},
-        {"five_prime_utr", "5\'UTR"},
+        {"five_prime_UTR", "5\'UTR"},
         {"long_terminal_repeat", "LTR"},
-        {"mat_protein_region", "mat_peptide"},
+        {"mature_protein_region", "mat_peptide"},
         {"mobile_genetic_element", "mobile_element"},
         {"modified_DNA_base", "modified_base"},
         {"origin_of_replication", "rep_origin"},
@@ -553,7 +556,7 @@ bool CSoMap::xFeatureMakeImp(
         {"sequence_secondary_structure", "misc_structure"},
         {"sequence_uncertainty", "unsure"},
         {"signal_peptide", "sig_peptide"},
-        {"three_prime_utr", "3\'UTR"},
+        {"three_prime_UTR", "3\'UTR"},
     };
     auto cit = mapTypeToKey.find(so_type);
     if (cit == mapTypeToKey.end()) {
@@ -661,6 +664,7 @@ CSoMap::TYPEFUNCMAP CSoMap::mMapTypeFunc = {
     {CSeqFeatData::eSubtype_D_segment, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_exon, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_gap, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_gene, CSoMap::xMapGene},
     {CSeqFeatData::eSubtype_10_signal, CSoMap::xMapGene},
     {CSeqFeatData::eSubtype_iDNA, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_intron, CSoMap::xMapGeneric},
@@ -729,8 +733,8 @@ bool CSoMap::xMapGeneric(
 //  ----------------------------------------------------------------------------
 {
     static const map<CSeqFeatData::ESubtype, string> mapSubtypeToSoType = {
-        {CSeqFeatData::eSubtype_3UTR, "three_prime_utr"},
-        {CSeqFeatData::eSubtype_5UTR, "five_prime_utr"},
+        {CSeqFeatData::eSubtype_3UTR, "three_prime_UTR"},
+        {CSeqFeatData::eSubtype_5UTR, "five_prime_UTR"},
         {CSeqFeatData::eSubtype_assembly_gap, "assemply_gap"},
         {CSeqFeatData::eSubtype_C_region, "C_gene_segment"},
         {CSeqFeatData::eSubtype_centromere, "centromere"},
