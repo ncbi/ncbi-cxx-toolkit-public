@@ -98,10 +98,10 @@ set(RPCSVC_LIBS   )
 set(DEMANGLE_LIBS )
 set(ICONV_LIBS    )
 
-find_library(UUID_LIBS      uuid)
-find_library(CRYPT_LIBS     crypt)
-find_library(MATH_LIBS      m)
-find_library(GCRYPT         gcrypt)
+find_library(UUID_LIBS NAMES uuid)
+find_library(CRYPT_LIB NAMES crypt)
+find_library(MATH_LIBS NAMES m)
+find_library(GCRYPT_LIB NAMES gcrypt)
 
 if (APPLE)
   find_library(NETWORK_LIBS c)
@@ -160,7 +160,12 @@ set(DBAPI_ODBC                     )
 ############################################################################
 #
 # OS-specific settings
-find_external_library(GnuTLS INCLUDES gnutls/gnutls.h LIBS gnutls HINTS "${NCBI_TOOLS_ROOT}/gnutls-3.4.0/" EXTRAFLAGS "-lz -lidn -lrt -L/netopt/ncbi_tools64/nettle-3.1.1/lib64 -lhogweed -lnettle -L/netopt/ncbi_tools64/gmp-6.0.0a/lib64/ -lgmp")
+find_library(GMP_LIB LIBS gmp HINTS "/netopt/ncbi_tools64/gmp-6.0.0a/lib64/")
+find_library(IDN_LIB LIBS idn HINTS "/lib64")
+find_library(NETTLE_LIB LIBS nettle HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
+find_library(HOGWEED_LIB LIBS hogweed HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
+find_external_library(GnuTLS INCLUDES gnutls/gnutls.h LIBS gnutls HINTS "${NCBI_TOOLS_ROOT}/gnutls-3.4.0/" EXTRALIBS ${Z_LIBS} ${IDN_LIB} ${RT_LIBS} ${HOGWEED_LIB} ${NETTLE_LIB} ${GMP_LIB})
+#message(FATAL_ERROR "RES: " ${GNUTLS_LIBS})
 
 ############################################################################
 #
@@ -175,9 +180,7 @@ set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
 #
 # Sybase stuff
 #find_package(Sybase)
-find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybdb64 -lsybct_r64 -lsybcs_r64 -lsybtcl_r64 -lsybcomn_r64 -lsybintl_r64 -lsybunic64")
-#XXX rewrite this - should be one search that honnors --with-sybase=<PATH>
-#find_external_library(SybaseDB INCLUDES sybdb.h LIBS sybdb64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/" EXTRAFLAGS "-lsybunic64")
+find_external_library(Sybase DYNAMIC_ONLY INCLUDES sybdb.h LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
 set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 
 ############################################################################
@@ -270,10 +273,10 @@ endif ()
 # not using other toolkits.  (The wxWidgets variables already include
 # these as appropriate.)
 
-find_external_library(OpenGL INCLUDES GL/gl.h LIBS GLU HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS -lGL -lXmu -lXt -lXext  -lSM -lICE -lX11)
+find_external_library(OpenGL INCLUDES GL/gl.h LIBS GLU GL Xmu Xt Xext SM ICE X11 HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2")
 
 if (${OPENGL_FOUND})
-  find_external_library(OSMESA INCLUDES GL/osmesa.h LIBS OSMesa HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRAFLAGS ${OPENGL_LIBS})
+  find_external_library(OSMESA INCLUDES GL/osmesa.h LIBS OSMesa HINTS "${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2" EXTRALIBS ${OPENGL_LIBS})
   #set(OSMESA_STATIC_LIBS  "-L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -lOSMesa-static -lGLU-static -lGL-static -lXmu -lXt -lXext -lSM -lICE -lX11")
 else()
   set(OSMESA_FOUND false)
@@ -291,9 +294,9 @@ if (APPLE)
   find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0")
 else ()
   if ("${BUILD_SHARED_LIBS}" STREQUAL "OFF")
-    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/lib" EXTRAFLAGS -lnsl)
+    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/lib" EXTRALIBS ${NETWORK_LIBS})
   else ()
-    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRAFLAGS -lnsl)
+    find_external_library(FastCGI INCLUDES fastcgi.h LIBS fcgi INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib" EXTRALIBS ${NETWORK_LIBS})
   endif()
 endif()
 
@@ -322,17 +325,17 @@ set(LIBOB           )
 set(LIBIMR          )
 
 # IBM's International Components for Unicode
-find_external_library(ICU INCLUDES unicode/ucnv.h LIBS icui18n HINTS "${NCBI_TOOLS_ROOT}/icu-49.1.1" EXTRAFLAGS -licuuc -licudata)
+find_external_library(ICU INCLUDES unicode/ucnv.h LIBS icui18n icuuc icudata HINTS "${NCBI_TOOLS_ROOT}/icu-49.1.1")
 
 find_external_library(libxml DYNAMIC_ONLY INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
 set(LIBXML_INCLUDE ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
 
-find_external_library(libexslt DYNAMIC_ONLY INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS "${LIBXML_LIBS} -lgcrypt")
+find_external_library(libexslt DYNAMIC_ONLY INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRALIBS ${LIBXML_LIBS} ${GCRYPT_LIB})
 if (${LIBEXSLT_FOUND})
    set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
 endif ()
 
-find_external_library(libxslt DYNAMIC_ONLY INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRAFLAGS ${LIBEXSLT_LIBS})
+find_external_library(libxslt DYNAMIC_ONLY INCLUDES libxslt/xslt.h LIBS xslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRALIBS ${LIBEXSLT_LIBS})
 if (${LIBXSLT_FOUND})
   set(LIBXSLT_INCLUDE ${LIBXSLT_INCLUDES} "${LIBXSLT_INCLUDES}/../")
   set(LIBXSLT_LIBS ${LIBEXSLT_LIBS} ${LIBXSLT_LIBS})
@@ -345,7 +348,7 @@ endif (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxslt-static.a)
 find_external_library(xerces INCLUDES xercesc/dom/DOM.hpp LIBS xerces-c HINTS "${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64")
 #set(XERCES_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64/lib -lxerces-c-static -lcurl )
 
-find_external_library(xalan INCLUDES xalanc/XalanTransformer/XalanTransformer.hpp LIBS xalan-c HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64" EXTRAFLAGS -lxalanMsg)
+find_external_library(xalan INCLUDES xalanc/XalanTransformer/XalanTransformer.hpp LIBS xalan-c xalanMsg HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64")
 
 # Sun Grid Engine (libdrmaa):
 # libpath - /netmnt/uge/lib/lx-amd64/
@@ -377,7 +380,9 @@ find_library(CURL_LIBS curl)
 find_external_library(mimetic INCLUDES mimetic/mimetic.h LIBS mimetic HINTS "${NCBI_TOOLS_ROOT}/mimetic-0.9.7-ncbi1/")
 
 # libgSOAP++
-find_external_library(gsoap INCLUDES stdsoap2.h LIBS gsoapssl++ INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/" EXTRAFLAGS -lssl -lcrypto -lz)
+find_external_library(gsoap INCLUDES stdsoap2.h LIBS gsoapssl++ INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/" EXTRALIBS ${Z_LIBS})
+#EXTRAFLAGS -lssl -lcrypto -lz)
+
 set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/soapcpp2)
 set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/wsdl2h)
 
@@ -445,6 +450,7 @@ set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout einfo
 
 #GLPK
 find_external_library(glpk INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
+#message(FATAL_ERROR "exit")
 
 find_external_library(samtools INCLUDES bam.h LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
@@ -455,14 +461,13 @@ set(LAPACK_LIBS "-llapack -lblas")
 set(LMDB_INCLUDE "/netopt/ncbi_tools64/lmdb-0.9.18/include")
 set(LMDB_LIBS -L/netopt/ncbi_tools64/lmdb-0.9.18/lib64 -llmdb)
 
-find_external_library(libxlsxwriter INCLUDES xlsxwriter.h LIBS xlsxwriter HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9" EXTRAFLAGS "-lz")
+find_external_library(libxlsxwriter INCLUDES xlsxwriter.h LIBS xlsxwriter HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9" EXTRALIBS ${Z_LIBS})
 
 ##############################################################################
 #
 # NCBI-isms
 # FIXME: these should be tested not hard-coded
 set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
-
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.mongodb.cmake)
 
 
