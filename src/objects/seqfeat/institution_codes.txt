@@ -459,6 +459,7 @@ BFBI	s	Biologisches Forschunsstation Burgenland
 BFD	s	Bedfordshire Natural History Society		
 BFDL	s	Forest Products Laboratory		
 BFIC	s	Museum National d'Histoire Naturelle		
+BFRIRS	s	Bangladesh Fisheries Research Institute		
 BFRS	s	Blodgett Forest Research Station		
 BFT	s	Queen's University, Botany Department		
 BFUS	s	University of Sofia, Biology Faculty		
@@ -807,6 +808,7 @@ CAUP<COL>	s	Universidad del Cauca
 CAUP<CZH>	c	Collection of Algae of Charles University, Prague		
 CAUSC	s	Universidade Federal de Santa Catarina Centro de Agrarias		
 CAVA	s	University of California at Berkeley		
+CAWC	s	Conservation Commission of the Northern Territory	NTM
 CAY	s	Institut de Recherche pour le Developpement (IRD)		
 CAYM	s	National Trust for the Cayman Islands		
 CB<AUST>	c	The CB Rhizobium Collection		
