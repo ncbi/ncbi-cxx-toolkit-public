@@ -32,14 +32,11 @@
 
 #include <ncbi_pch.hpp>
 
-#include <cstdio>
-
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/test_mt.hpp>
 
-#include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_http_session.hpp>
 
 #include "test_assert.h"  // This header must go last
@@ -61,14 +58,14 @@ private:
     static string       sm_Service;
     static string       sm_ToPost;
     static string       sm_Expected;
-    static STimeout     sm_Timeout;
+    static CTimeout     sm_Timeout;
 };
 
 
 string      CTestApp::sm_Service;
 string      CTestApp::sm_ToPost;
 string      CTestApp::sm_Expected;
-STimeout    CTestApp::sm_Timeout;
+CTimeout    CTestApp::sm_Timeout;
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
@@ -83,7 +80,7 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
                        CArgDescriptions::eString, "");
 
     args.AddDefaultKey("t", "Timeout", "Timeout",
-                       CArgDescriptions::eInteger, "10");
+                       CArgDescriptions::eDouble, "60.0");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(), "NAMERD MT test");
 
@@ -102,9 +99,8 @@ bool CTestApp::TestApp_Init(void)
     sm_Expected = GetArgs()["exp"].AsString();
     ERR_POST(Info << "Expected: '" << sm_Expected << "'");
 
-    sm_Timeout.sec = GetArgs()["t"].AsInteger();
-    sm_Timeout.usec = 0;
-    ERR_POST(Info << "Timeout:  " << sm_Timeout.sec);
+    sm_Timeout.Set(GetArgs()["t"].AsDouble());
+    ERR_POST(Info << "Timeout:  " << sm_Timeout.GetAsDouble());
 
     return ! sm_Service.empty()  &&  ! sm_Expected.empty();
 }
@@ -121,6 +117,7 @@ bool CTestApp::Thread_Run(int idx)
     CHttpSession    session;
     CHttpRequest    request(session.NewRequest(CUrl(sm_Service),
                                                CHttpSession::ePost));
+    request.SetTimeout(sm_Timeout);
 
     // Send
     if ( ! sm_ToPost.empty()) {
