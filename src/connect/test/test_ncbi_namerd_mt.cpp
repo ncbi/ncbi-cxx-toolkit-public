@@ -55,17 +55,19 @@ protected:
     virtual bool TestApp_Init(void);
 
 private:
-    static string       sm_Service;
-    static string       sm_ToPost;
-    static string       sm_Expected;
-    static CTimeout     sm_Timeout;
+    static string           sm_Service;
+    static string           sm_ToPost;
+    static string           sm_Expected;
+    static CTimeout         sm_Timeout;
+    static unsigned short   sm_Retries;
 };
 
 
-string      CTestApp::sm_Service;
-string      CTestApp::sm_ToPost;
-string      CTestApp::sm_Expected;
-CTimeout    CTestApp::sm_Timeout;
+string          CTestApp::sm_Service;
+string          CTestApp::sm_ToPost;
+string          CTestApp::sm_Expected;
+CTimeout        CTestApp::sm_Timeout;
+unsigned short  CTestApp::sm_Retries;
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
@@ -81,6 +83,9 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
     args.AddDefaultKey("t", "Timeout", "Timeout",
                        CArgDescriptions::eDouble, "60.0");
+
+    args.AddDefaultKey("r", "Retries", "Max HTTP retries",
+                       CArgDescriptions::eInteger, "0");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(), "NAMERD MT test");
 
@@ -102,6 +107,9 @@ bool CTestApp::TestApp_Init(void)
     sm_Timeout.Set(GetArgs()["t"].AsDouble());
     ERR_POST(Info << "Timeout:  " << sm_Timeout.GetAsDouble());
 
+    sm_Retries = static_cast<unsigned short>(GetArgs()["r"].AsInteger());
+    ERR_POST(Info << "Retries:  " << sm_Retries);
+
     return ! sm_Service.empty()  &&  ! sm_Expected.empty();
 }
 
@@ -118,6 +126,7 @@ bool CTestApp::Thread_Run(int idx)
     CHttpRequest    request(session.NewRequest(CUrl(sm_Service),
                                                CHttpSession::ePost));
     request.SetTimeout(sm_Timeout);
+    request.SetRetries(sm_Retries);
 
     // Send
     if ( ! sm_ToPost.empty()) {
