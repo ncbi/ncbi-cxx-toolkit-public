@@ -1347,8 +1347,21 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
 
         m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
 
-        *phys_lines_read = m_Traits.ReadRowData(*m_DataSource.m_Stream,
-                                                &m_CurrentRow.m_RawData);
+        try {
+            *phys_lines_read = m_Traits.ReadRowData(*m_DataSource.m_Stream,
+                                                    &m_CurrentRow.m_RawData);
+        } catch (const CException& exc) {
+            NCBI_RETHROW2(exc, CRowReaderException, eRowDataReading,
+                          "Reading row data error",
+                          m_Traits.GetContext(GetBasicContext()).Clone());
+        } catch (const exception& exc) {
+            NCBI_THROW2(CRowReaderException, eRowDataReading, exc.what(),
+                        m_Traits.GetContext(GetBasicContext()).Clone());
+        } catch (...) {
+            NCBI_THROW2(CRowReaderException, eRowDataReading,
+                        "Unknown reading row data error",
+                        m_Traits.GetContext(GetBasicContext()).Clone());
+        }
 
         m_RawDataAvailable = true;
         return bool(*m_DataSource.m_Stream);

@@ -217,7 +217,8 @@ public:
         eNullField,
         eValidating,
         eNonEndIteratorCompare,
-        eIteratorWhileValidating
+        eIteratorWhileValidating,
+        eRowDataReading
     };
 
     CRowReaderException(
@@ -270,6 +271,8 @@ public:
                 return "eNonEndIteratorCompare";
             case eIteratorWhileValidating:
                 return "eIteratorWhileValidating";
+            case eRowDataReading:
+                return "eRowDataReading";
             default:
                 return CException::GetErrCodeString();
         }
