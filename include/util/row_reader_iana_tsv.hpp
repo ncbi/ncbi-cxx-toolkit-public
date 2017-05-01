@@ -41,11 +41,12 @@
 BEGIN_NCBI_SCOPE
 
 
-// Note: IANA TSV requires to have the same number of fields in each row.
-//       So an exception will be generated if a mismatch is detected in both
-//       cases:
-//        - validation of the source
-//        - iterating over the source
+// Note 1: IANA TSV requires to have the same number of fields in each row.
+//         So an exception will be generated if a mismatch is detected in both
+//         cases:
+//          - validation of the source
+//          - iterating over the source
+// Note 2: The row with names does not appear in the iteration loop
 
 
 /// Exception specific to IANA TSV sources
