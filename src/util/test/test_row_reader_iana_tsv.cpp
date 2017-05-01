@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_ITERATE_FAILURE)
     try {
         for (auto &  row : src_stream) {
             // This is to suppress a compiler warning
-            BOOST_CHECK(row.GetNumberOfFields() >= 0);
+            BOOST_CHECK(row.GetNumberOfFields() < 1000000);
         }
 
         BOOST_FAIL("Expected a validation exception");
