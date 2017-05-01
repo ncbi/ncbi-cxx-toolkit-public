@@ -142,7 +142,7 @@ NCBITEST_AUTO_FINI()
 BOOST_AUTO_TEST_CASE(so_supported_terms)
 {
     bool success = CSoMap::GetSupportedSoTerms(vec_so_supported_terms);
-    BOOST_TEST(success);
+    BOOST_CHECK(success);
 }
 
 BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
         ostr << term << ":\n";
         ostr << string(80, '-') << "\n";
         bool success = CSoMap::SoTypeToFeature(term, *pFeature);
-        BOOST_TEST(success, "CSoMap::SoTypeToFeature failure");
+        BOOST_CHECK_MESSAGE(success, "CSoMap::SoTypeToFeature failure");
         if (!success) {
             ostr << "ERROR!\n\n";
             continue;
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
     ostr.close();
 
     if (!regenerate) {
-        BOOST_TEST(
+        BOOST_CHECK_MESSAGE(
             PostProcessFile(golden_feats, temp_out, output_feats, keep_diffs), 
             "Post processing diffs.");
     }
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(map_seqfeat_to_so_term)
         ostr << MSerial_Format_AsnText() << feature;
         ostr << string(80, '-') << "\n";
         bool success = CSoMap::FeatureToSoType(feature, so_type);
-        BOOST_TEST(success, "CSoMap::FeatureToSoType failure");
+        BOOST_CHECK_MESSAGE(success, "CSoMap::FeatureToSoType failure");
         if (!success) {
             ostr << "ERROR!\n\n";
             continue;
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(map_seqfeat_to_so_term)
     ostr.close();
 
     if (!regenerate) {
-        BOOST_TEST(
+        BOOST_CHECK_MESSAGE(
             PostProcessFile(golden_so, temp_out, output_so, keep_diffs), 
             "Post processing diffs.");
     }
