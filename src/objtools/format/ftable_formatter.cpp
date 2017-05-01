@@ -117,7 +117,8 @@ void CFtableFormatter::x_FormatLocation
     for (CSeq_loc_CI it(loc); it; ++it) {
         const CSeq_loc& curr = it.GetEmbeddingSeq_loc();
         bool is_between = s_IsBetween(curr);
-      
+     
+        const bool minus_strand  = it.GetStrand() == eNa_strand_minus;
         CSeq_loc_CI::TRange range = it.GetRange();
         TSeqPos start, stop;
         if ( range.IsWhole() ) {
@@ -132,20 +133,20 @@ void CFtableFormatter::x_FormatLocation
         }
         string left, right;
        
-        if ( curr.IsPartialStart(eExtreme_Biological) ) {
-            left = '<';
+        if ( curr.IsPartialStart(eExtreme_Positional) ) {
+            left = minus_strand ? '>' : '<';
         }
         left += NStr::IntToString(start);
         if ( is_between ) {
             left += '^';
         }
-        if ( curr.IsPartialStop(eExtreme_Biological) ) {
-            right = '>';
+        if ( curr.IsPartialStop(eExtreme_Positional) ) {
+            right = minus_strand ? '<' : '>';
         }
         right += NStr::IntToString(stop);
 
         string line;
-        if ( it.GetStrand() == eNa_strand_minus ) {
+        if ( minus_strand ) {
             line = right + '\t' + left;
         } else {
             line = left + '\t' + right;
