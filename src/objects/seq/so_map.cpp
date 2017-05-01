@@ -684,7 +684,9 @@ CSoMap::TYPEFUNCMAP CSoMap::mMapTypeFunc = {
     {CSeqFeatData::eSubtype_ncRNA, CSoMap::xMapNcRna},
     {CSeqFeatData::eSubtype_operon, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_oriT, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_otherRNA, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_polyA_site, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_preRNA, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_precursor_RNA, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_prim_transcript, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_primer_bind, CSoMap::xMapGeneric},
@@ -708,7 +710,12 @@ CSoMap::TYPEFUNCMAP CSoMap::mMapTypeFunc = {
     {CSeqFeatData::eSubtype_V_region, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_V_segment, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_variation, CSoMap::xMapGeneric},
-    //{CSeqFeatData::eSubtype_attenuator, CSoMap::xMapGeneric},
+
+    {CSeqFeatData::eSubtype_attenuator, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_enhancer, xMapGeneric},
+    {CSeqFeatData::eSubtype_promoter, xMapGeneric},
+    {CSeqFeatData::eSubtype_terminator, CSoMap::xMapGeneric},
+
     {CSeqFeatData::eSubtype_bond, CSoMap::xMapBond},
 };
 
@@ -741,6 +748,7 @@ bool CSoMap::xMapGeneric(
         {CSeqFeatData::eSubtype_D_loop, "D_loop"},
         {CSeqFeatData::eSubtype_D_segment, "D_gene_segment"},
         {CSeqFeatData::eSubtype_exon, "exon"},
+        {CSeqFeatData::eSubtype_enhancer, "enhancer"},
         {CSeqFeatData::eSubtype_gap, "gap"},
         {CSeqFeatData::eSubtype_iDNA, "iDNA"},
         {CSeqFeatData::eSubtype_intron, "intron"},
@@ -756,10 +764,13 @@ bool CSoMap::xMapGeneric(
         {CSeqFeatData::eSubtype_N_region, "N_region"}, 
         {CSeqFeatData::eSubtype_operon, "operon"}, 
         {CSeqFeatData::eSubtype_oriT, "oriT"}, 
+        {CSeqFeatData::eSubtype_otherRNA, "transcript"},
         {CSeqFeatData::eSubtype_polyA_site, "polyA_site"}, 
         {CSeqFeatData::eSubtype_precursor_RNA, "primary_transcript"}, 
+        {CSeqFeatData::eSubtype_preRNA, "primary_transcript"},
         {CSeqFeatData::eSubtype_prim_transcript, "primary_transcript"}, 
         {CSeqFeatData::eSubtype_primer_bind, "primer_binding_site"}, 
+        {CSeqFeatData::eSubtype_promoter, "promoter"}, 
         {CSeqFeatData::eSubtype_propeptide, "propeptide"}, 
         {CSeqFeatData::eSubtype_protein_bind, "protein_binding_site"},
         {CSeqFeatData::eSubtype_rep_origin, "origin_of_replication"},
@@ -769,6 +780,7 @@ bool CSoMap::xMapGeneric(
         {CSeqFeatData::eSubtype_stem_loop, "stem_loop"},
         {CSeqFeatData::eSubtype_STS, "STS"},
         {CSeqFeatData::eSubtype_telomere, "telomere"},
+        {CSeqFeatData::eSubtype_terminator, "terminator"},
         {CSeqFeatData::eSubtype_tmRNA, "tmRNA"},
         {CSeqFeatData::eSubtype_transit_peptide, "transit_peptide"},
         {CSeqFeatData::eSubtype_unsure, "sequence_uncertainty"},
@@ -942,6 +954,16 @@ bool CSoMap::xMapMiscRecomb(
 }
 
 //  ----------------------------------------------------------------------------
+bool CSoMap::xMapOtherRna(
+    const CSeq_feat& feature,
+    string& so_type)
+//  ----------------------------------------------------------------------------
+{
+    so_type = "transcript";
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CSoMap::xMapNcRna(
     const CSeq_feat& feature,
     string& so_type)
@@ -952,6 +974,18 @@ bool CSoMap::xMapNcRna(
         {"other", "ncRNA"},
     };
     string ncrna_class = feature.GetNamedQual("ncRNA_class");
+    if (ncrna_class.empty()) {
+        if (feature.IsSetData()  &&
+                feature.GetData().IsRna()  &&
+                feature.GetData().GetRna().IsSetExt()  &&
+                feature.GetData().GetRna().GetExt().IsGen()  &&
+                feature.GetData().GetRna().GetExt().GetGen().IsSetClass()) {
+            ncrna_class = feature.GetData().GetRna().GetExt().GetGen().GetClass();
+            if (ncrna_class == "classRNA") {
+                ncrna_class = "ncRNA";
+            }
+        }
+    }
     if (ncrna_class.empty()) {
         return false;
     }
@@ -973,11 +1007,11 @@ bool CSoMap::xMapRegulatory(
     map<string, string> mapRegulatoryClassToSoType = {
         {"DNase_I_hypersensitive_site", "DNaseI_hypersensitive_site"},
         {"GC_signal", "GC_rich_promoter_region"},
-        {"enhancer_blocking_element", "term_requested_issue_379"},
-        {"imprinting_control_region", "term_requested_issue_379"},
+        {"enhancer_blocking_element", "regulatory_region"},
+        {"imprinting_control_region", "regulatory_region"},
         {"matrix_attachment_region", "matrix_attachment_site"},
         {"other", "regulatory_region"},
-        {"response_element", "term_requested_issue_379"},
+        {"response_element", "regulatory_region"},
         {"ribosome_binding_site", "ribosome_entry_site"},
     };
     string regulatory_class = feature.GetNamedQual("regulatory_class");

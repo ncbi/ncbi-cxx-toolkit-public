@@ -34,6 +34,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/so_map.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -1545,73 +1546,15 @@ bool CGff3Writer::xAssignFeatureType(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    //rw-341: if mf has "SO_type" qualifier, use that, unconditionally:
-    string so_type = mf.GetNamedQual("SO_type");
-    if (!so_type.empty()) {
+    //rw-340: attempt to use so_map API:
+    const CSeq_feat& feature = mf.GetOriginalFeature();
+    string so_type;
+    if (CSoMap::FeatureToSoType(feature, so_type)) {
         record.SetType(so_type);
         return true;
     }
-    //rw-341: if mf is a misc_feature *and* it has a "feat_type qualifier,
-    // use that, unconditionally:
-    if (mf.GetData().IsImp()  &&  mf.GetData().GetImp().CanGetKey())
-    {
-        string key = mf.GetData().GetImp().GetKey();
-        if (key == "misc_feature") {
-            string feat_type = mf.GetNamedQual("feat_type");
-            if (!feat_type.empty()) {
-                record.SetType(feat_type);
-                return true;
-            }
-        }
-    }
-
-    static const char* const ncrnaClasses_[] = {
-        "antisense_RNA",
-        "autocatalytically_spliced_intron",
-        "guide_RNA"
-        "hammerhead_ribozyme",
-        "lncRNA",
-        "miRNA",
-        "piRNA",
-        "rasiRNA",
-        "ribozyme",
-        "RNase_MRP_RNA",
-        "RNase_P_RNA",
-        "scRNA"
-        "siRNA",
-        "snoRNA",
-        "snRNA",
-        "SRP_RNA",
-        "telomerase_RNA",
-        "vault_RNA",
-        "Y_RNA"
-    };
-    typedef CStaticArraySet<string, PNocase> TNcrnaClasses;
-    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNcrnaClasses, ncrnaClasses, ncrnaClasses_);
-    static CSafeStatic<CSofaMap> SOFAMAP;
-
-    if (!mf.IsSetData()) {
-        record.SetType(SOFAMAP->DefaultName());
-        return true;
-    }
-    string recordType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
-    if (recordType == "ncRNA") {
-        const CRNA_ref& rnaRef = mf.GetData().GetRna();
-        if (rnaRef.IsSetExt()  ||  rnaRef.GetExt().IsGen()  ||  
-                rnaRef.GetExt().GetGen().IsSetClass()) {
-            string ncrnaClass = mf.GetData().GetRna().GetExt().GetGen().GetClass();
-            if (ncrnaClass == "lncRNA") {
-                recordType = "lnc_RNA";
-            }
-            else {
-                TNcrnaClasses::const_iterator cit = ncrnaClasses.find(ncrnaClass);
-                if (cit != ncrnaClasses.end()) {
-                    recordType = ncrnaClass;
-                }
-            }
-        }
-    }
-    record.SetType(recordType);
+    //fallback
+    record.SetType("region");
     return true;
 }
 

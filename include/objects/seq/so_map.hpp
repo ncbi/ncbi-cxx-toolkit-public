@@ -91,6 +91,7 @@ protected:
     static bool xMapMiscRecomb(const CSeq_feat&, string&);
     static bool xMapRna(const CSeq_feat&, string&);
     static bool xMapNcRna(const CSeq_feat&, string&);
+    static bool xMapOtherRna(const CSeq_feat&, string&);
     static bool xMapRegion(const CSeq_feat&, string&);
     static bool xMapRegulatory(const CSeq_feat&, string&);
     static bool xMapRepeatRegion(const CSeq_feat&, string&);
