@@ -937,7 +937,7 @@ bool CObjectIStreamXml::ReadBool(void)
         }
     }
     if (!haveattr) {
-        ReadTagData(sValue);
+        ReadWord(sValue);
     }
     NStr::TruncateSpacesInPlace(sValue);
 
@@ -1011,7 +1011,7 @@ double CObjectIStreamXml::ReadDouble(void)
         return x_UseMemberDefault<double>();
     }
     string s;
-    ReadTagData(s);
+    ReadWord(s);
     char* endptr;
     double result = NStr::StringToDoublePosix(s.c_str(), &endptr, NStr::fDecimalPosixFinite);
     while (IsWhiteSpace(*endptr)) {
@@ -1225,7 +1225,11 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
     if (EndOpeningTagSelfClosed()) {
         return;
     }
-    ReadTagData(str, type);
+    if (TopFrame().GetNotag()) {
+        ReadWord(str, type);
+    } else {
+        ReadTagData(str, type);
+    }
 }
 
 char* CObjectIStreamXml::ReadCString(void)
@@ -1308,6 +1312,24 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
             if ( str.size() > 128  &&  (double)str.capacity()/((double)str.size()+1.0) < 1.1 ) {
                 str.reserve(str.size()*2);
             }
+        }
+    } catch (CEofException&) {
+    }
+    str.reserve(str.size());
+}
+
+void CObjectIStreamXml::ReadWord(string& str, EStringType type)
+{
+    BeginData();
+    bool encoded = false;
+    SkipWS();
+    try {
+        for ( ;; ) {
+            int c = ReadEncodedChar('<', type, encoded);
+            if ( c < 0  || IsWhiteSpace((char)c)) {
+                break;
+            }
+            str += (char)c;
         }
     } catch (CEofException&) {
     }
@@ -1726,8 +1748,8 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
             } else {
                 tagName = ReadName(BeginOpeningTag());
                 UndoClassMember();
-                bool res = (tagName == m_LastPrimitive ||
-                    tagName == type->GetName() ||
+                bool res = (m_LastPrimitive.empty() ||
+                    tagName == m_LastPrimitive || tagName == type->GetName() ||
                     CObjectTypeInfo(type).GetPrimitiveValueType() == ePrimitiveValueAny);
                 if (!res) {
                     m_LastPrimitive.erase();

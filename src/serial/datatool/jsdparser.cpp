@@ -85,7 +85,7 @@ void JSDParser::ParseRoot(void)
 {
     string node_id(m_URI.front());
     DTDElement& node = m_MapElement[node_id];
-    node.SetName("JsonObject");
+    node.SetName("JsonValue");
     ParseNode(node);
 }
 

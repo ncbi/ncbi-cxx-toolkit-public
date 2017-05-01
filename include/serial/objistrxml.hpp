@@ -261,6 +261,7 @@ private:
     TUnicodeSymbol ReadUtf8Char(char ch);
     bool ReadCDSection(string& s);
     void ReadTagData(string& s, EStringType type = eStringTypeVisible);
+    void ReadWord(string& s, EStringType type = eStringTypeVisible);
 
     CTempString ReadName(char c);
     CTempString RejectedName(void);
