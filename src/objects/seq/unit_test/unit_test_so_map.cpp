@@ -48,15 +48,17 @@ USING_SCOPE(objects);
 //  -----------------------------------------------------------------------------
 
 bool PostProcessFile(
-    const string& golden,
-    const string& output,
+    const string& golden_name,
+    const string& out_name,
+    const string& keep_name,
     bool keep_diffs)
 {
-    CFile golden_file(golden);
-    bool success = golden_file.CompareTextContents(output, CFile::eIgnoreWs);
-    if (success  ||  !keep_diffs) {
-        CDirEntry(output).Remove();
+    CFile golden_file(golden_name);
+    bool success = golden_file.CompareTextContents(out_name, CFile::eIgnoreWs);
+    if (!success  &&  keep_diffs) {
+        CFile(out_name).Copy(keep_name);
     }
+    CDirEntry(out_name).Remove();
     return success;
 }
 
@@ -146,11 +148,12 @@ BOOST_AUTO_TEST_CASE(so_supported_terms)
 BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
 {
     std::ofstream ostr;
+    string temp_out = CDirEntry::GetTmpName();
     if (regenerate) {
         ostr.open(golden_feats);
     }
     else {
-        ostr.open(output_feats);
+        ostr.open(temp_out);
     }
 
     CRef<CSeq_id> pId(new CSeq_id("1000"));
@@ -174,7 +177,7 @@ BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
 
     if (!regenerate) {
         BOOST_TEST(
-            PostProcessFile(golden_feats, output_feats, keep_diffs), 
+            PostProcessFile(golden_feats, temp_out, output_feats, keep_diffs), 
             "Post processing diffs.");
     }
 }
@@ -182,11 +185,12 @@ BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
 BOOST_AUTO_TEST_CASE(map_seqfeat_to_so_term)
 {
     std::ofstream ostr;
+    string temp_out = CDirEntry::GetTmpName();
     if (regenerate) {
         ostr.open(golden_so);
     }
     else {
-        ostr.open(output_so);
+        ostr.open(temp_out);
     }
 
     for (auto pFeature: vec_generated_seqfeats) {
@@ -207,7 +211,7 @@ BOOST_AUTO_TEST_CASE(map_seqfeat_to_so_term)
 
     if (!regenerate) {
         BOOST_TEST(
-            PostProcessFile(golden_so, output_so, keep_diffs), 
+            PostProcessFile(golden_so, temp_out, output_so, keep_diffs), 
             "Post processing diffs.");
     }
 }
