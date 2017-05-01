@@ -1,0 +1,7 @@
+add_library(cdd_access
+    cdd_access__ cdd_access___ cdd_client
+)
+
+target_link_libraries(cdd_access
+    seq_loc seq id2 xconnect
+)

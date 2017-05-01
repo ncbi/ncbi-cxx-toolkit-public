@@ -1,0 +1,2 @@
+MODULE_PATH = objtools/data_loaders/cdd/cdd_access
+MODULE_IMPORT = objects/seqloc/seqloc objects/seq/seq objects/id2/id2

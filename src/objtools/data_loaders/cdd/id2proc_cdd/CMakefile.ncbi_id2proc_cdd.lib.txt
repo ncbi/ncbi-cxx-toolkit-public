@@ -1,0 +1,11 @@
+add_library(ncbi_id2proc_cdd
+    id2cdd id2cdd_impl
+)
+
+add_dependencies(ncbi_id2proc_cdd
+    id2 cdd_access seq 
+)
+
+target_link_libraries(ncbi_id2proc_cdd
+    id2 seq cdd_access
+)

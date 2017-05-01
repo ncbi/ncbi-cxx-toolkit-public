@@ -1,0 +1,23 @@
+# $Id$
+
+# Build library "ncbi_id2proc_cdd"
+###############################
+
+LIB = ncbi_id2proc_cdd
+SRC = id2cdd id2cdd_impl
+
+REQUIRES = objects
+
+ASN_DEP = id2 cdd_access seq
+
+LIB_OR_DLL = both
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_ID2PROC_CDD_EXPORTS
+
+DLL_LIB = cdd_access $(SOBJMGR_LIBS) $(CMPRS_LIB)
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    id2 seq cdd_access

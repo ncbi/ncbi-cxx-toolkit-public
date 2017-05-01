@@ -1,0 +1,13 @@
+LIB = cdd_access
+SRC = cdd_access__ cdd_access___ cdd_client
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_CDD_ACCESS_EXPORTS
+
+LIB_OR_DLL = both
+
+DLL_LIB = $(SOBJMGR_LIBS)
+
+WATCHERS = grichenk
+
+USES_LIBRARIES =  \
+    seqloc seq id2 xconnect

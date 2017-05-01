@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (ncbi_xloader_cdd)
+##################################
+
+LIB_PROJ = id2cdd
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

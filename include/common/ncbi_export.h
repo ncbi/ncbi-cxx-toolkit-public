@@ -1463,6 +1463,24 @@
 #endif
 
 
+/* Export specifier for library cdd_access
+ */
+#ifdef NCBI_CDD_ACCESS_EXPORTS
+#  define NCBI_CDD_ACCESS_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_CDD_ACCESS_EXPORT NCBI_DLL_IMPORT
+#endif
+
+
+/* Export specifier for library ncbi_id2proc_cdd
+ */
+#ifdef NCBI_ID2PROC_CDD_EXPORTS
+#  define NCBI_ID2PROC_CDD_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_ID2PROC_CDD_EXPORT NCBI_DLL_IMPORT
+#endif
+
+
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 
