@@ -413,7 +413,19 @@ set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout
 
 #
 # SRA/VDB stuff
-find_package(VDB)
+find_external_library(VDB INCLUDES sra/sradb.h LIBS ncbi-vdb INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces" LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib")
+if (${VDB_FOUND})
+    set(VDB_INCLUDE "${VDB_INCLUDE}" "${VDB_INCLUDE}/os/linux" "${VDB_INCLUDE}/os/unix" "${VDB_INCLUDE}/cc/gcc/x86_64" "${VDB_INCLUDE}/cc/gcc")
+    set(SRA_INCLUDE ${VDB_INCLUDE})
+    set(SRA_SDK_SYSLIBS ${VDB_LIBS})
+    set(SRA_SDK_LIBS ${VDB_LIBS})
+    set(SRAXF_LIBS ${SRA_SDK_LIBS})
+    set(SRA_LIBS ${SRA_SDK_LIBS})
+    set(BAM_LIBS ${SRA_SDK_LIBS})
+    set(SRAREAD_LDEP ${SRA_SDK_LIBS})
+    set(SRAREAD_LIBS sraread ${SRA_SDK_LIBS})
+    set(HAVE_NCBI_VDB 1)
+endif ()
 
 # Makefile.blast_macros.mk
 set(BLAST_DB_DATA_LOADER_LIBS ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt)
