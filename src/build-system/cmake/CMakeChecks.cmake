@@ -41,9 +41,8 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compiler.cmake)
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
-# when building, don't use the install RPATH already
-# (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+# when building, use the install RPATH already
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
 
@@ -52,8 +51,7 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH false)
-
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
 
 ############################################################################
 #
@@ -381,7 +379,6 @@ find_external_library(mimetic INCLUDES mimetic/mimetic.h LIBS mimetic HINTS "${N
 
 # libgSOAP++
 find_external_library(gsoap INCLUDES stdsoap2.h LIBS gsoapssl++ INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/include" LIBS_HINTS "${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/lib/" EXTRALIBS ${Z_LIBS})
-#EXTRAFLAGS -lssl -lcrypto -lz)
 
 set(GSOAP_SOAPCPP2 ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/soapcpp2)
 set(GSOAP_WSDL2H   ${NCBI_TOOLS_ROOT}/gsoap-2.8.15/GCC442-DebugMT64/bin/wsdl2h)
