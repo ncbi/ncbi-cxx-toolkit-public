@@ -1730,6 +1730,8 @@ for x_arg in "$@" ; do
       | --silent | --cache-file=* | -C | --config-cache | -n | --no-create \
       | --no-recursion | --prefix=* | --exec-prefix=* | --bindir=* \
       | --libdir=* | --includedir=* | --build=* | --host=* | --target=* \
+      | --mandir=* | --infodir=* | --docdir=* | --htmldir=* \
+      | --datadir=* | --sysconfdir=* | --localstatedir=* \
       | --with-runpath=* | --with-relative-runpath=* \
       | --with-experimental=* | --with-extra-action=* | --with-build-root=* \
       | --with-fake-root=* | --with-build-root-sfx=* | --with-check=* \
