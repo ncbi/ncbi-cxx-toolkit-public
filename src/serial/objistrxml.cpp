@@ -1225,11 +1225,15 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
     if (EndOpeningTagSelfClosed()) {
         return;
     }
+#if 0
     if (TopFrame().GetNotag()) {
         ReadWord(str, type);
     } else {
         ReadTagData(str, type);
     }
+#else
+    ReadTagData(str, type);
+#endif
 }
 
 char* CObjectIStreamXml::ReadCString(void)
