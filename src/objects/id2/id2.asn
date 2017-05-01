@@ -16,7 +16,7 @@
 NCBI-ID2Access DEFINITIONS ::=
 BEGIN
 
-EXPORTS ID2-Blob-State;
+EXPORTS ID2-Blob-State, ID2-Blob-Id;
 
 IMPORTS Seq-id, Seq-loc                                 FROM NCBI-Seqloc
         ID2S-Chunk-Id, ID2S-Seq-annot-Info              FROM NCBI-Seq-split;
