@@ -1,7 +1,12 @@
-add_library(cdd_access
-    cdd_access__ cdd_access___ cdd_client
-)
+set(MODULE cdd_access)
+#set(MODULE_IMPORT objects/id2)
+set(MODULE_PATH objtools/data_loaders/cdd/cdd_access)
+
+set(MODULE_EXT "asn")
+add_library(cdd_access cdd_client ${MODULE}__ ${MODULE}___)
+
+RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
 target_link_libraries(cdd_access
-    seq_loc seq id2 xconnect
+    id2 xconnect
 )

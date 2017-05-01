@@ -3,9 +3,9 @@ add_library(ncbi_id2proc_cdd
 )
 
 add_dependencies(ncbi_id2proc_cdd
-    id2 cdd_access seq 
+    seq
 )
 
 target_link_libraries(ncbi_id2proc_cdd
-    id2 seq cdd_access
+    id2 cdd_access ${COMPRESS_LIBS}
 )
