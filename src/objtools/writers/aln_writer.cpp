@@ -72,7 +72,6 @@ CAlnWriter::CAlnWriter(
 };
 
 
-
 //  ----------------------------------------------------------------------------
 bool CAlnWriter::WriteAlign(
     const CSeq_align& align,
@@ -89,12 +88,11 @@ bool CAlnWriter::WriteAlign(
 //  ----------------------------------------------------------------------------
 
 bool s_TryFindRange(const CObject_id& local_id, 
-        CSeq_id& seq_id,
+        CRef<CSeq_id>& seq_id,
         CRange<TSeqPos>& range)
 {
-    // INCOMPLETE!!
-
     if (local_id.IsStr()) {
+
         string id_string = local_id.GetStr();
         string true_id;
         string range_string;
@@ -103,9 +101,10 @@ bool s_TryFindRange(const CObject_id& local_id,
         }
 
         string start_pos, end_pos;
-        if (!NStr::SplitInTwo(range_string, "_", start_pos, end_pos)) {
+        if (!NStr::SplitInTwo(range_string, "-", start_pos, end_pos)) {
             return false;
         }
+
 
         try {
             TSeqPos start_index = NStr::StringToNumeric<TSeqPos>(start_pos);
@@ -114,9 +113,9 @@ bool s_TryFindRange(const CObject_id& local_id,
             list<CRef<CSeq_id>> id_list;
             CSeq_id::ParseIDs(id_list, true_id);
 
+            seq_id = id_list.front();
             range.SetFrom(start_index);
             range.SetTo(end_index);
-
         }
         catch (...) {
             return false;
@@ -146,8 +145,22 @@ bool CAlnWriter::xWriteAlignDenseg(
     for (int row=0; row<num_rows; ++row) 
     {
         const CSeq_id& id = denseg.GetSeq_id(row);
+        CBioseq_Handle bsh;
 
-        CBioseq_Handle bsh = m_pScope->GetBioseqHandle(id);
+        CRange<TSeqPos> range;
+        if (id.IsLocal()) {
+            CRef<CSeq_id> pAccession;
+            if (s_TryFindRange(id.GetLocal(), pAccession, range)) {
+                bsh = m_pScope->GetBioseqHandle(*pAccession);
+            }
+        }
+        else 
+        {
+            bsh = m_pScope->GetBioseqHandle(id);
+            auto length = bsh.GetBioseqLength();
+            range.SetFrom(CRange<TSeqPos>::GetPositionMin());
+            range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
+        }
 
         if (!bsh) {
             continue;
@@ -156,7 +169,12 @@ bool CAlnWriter::xWriteAlignDenseg(
         auto length = bsh.GetBioseqLength();
         CSeqVector vec_plus = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
         string seq_plus;
-        vec_plus.GetSeqData(0, length, seq_plus);
+        if (range.IsWhole()) {
+            vec_plus.GetSeqData(0, length, seq_plus); 
+        } 
+        else {
+            vec_plus.GetSeqData(range.GetFrom(), range.GetTo(), seq_plus);
+        }
 
         string seqdata = "";
         for (int seg=0; seg<num_segs; ++seg)
