@@ -54,48 +54,48 @@ public:
     CPubseqReader(const TPluginManagerParamTree* params,
                   const string& driver_name);
 
-    ~CPubseqReader();
+    virtual ~CPubseqReader() override;
 
-    int GetMaximumConnectionsLimit(void) const;
+    virtual int GetMaximumConnectionsLimit(void) const override;
 
-    bool LoadSeq_idGi(CReaderRequestResult& result,
-                      const CSeq_id_Handle& seq_id);
-    bool LoadSeq_idAccVer(CReaderRequestResult& result,
-                          const CSeq_id_Handle& seq_id);
+    virtual bool LoadSeq_idGi(CReaderRequestResult& result,
+                              const CSeq_id_Handle& seq_id) override;
+    virtual bool LoadSeq_idAccVer(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id) override;
 
-    bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
-                           const CSeq_id_Handle& seq_id);
+    virtual bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id) override;
     bool LoadGiSeq_ids(CReaderRequestResult& result,
                        const CSeq_id_Handle& seq_id);
-    bool LoadSequenceHash(CReaderRequestResult& result,
-                          const CSeq_id_Handle& seq_id);
+    virtual bool LoadSequenceHash(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id) override;
     bool LoadGiHash(CReaderRequestResult& result,
                     const CSeq_id_Handle& seq_id);
 
-    bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                            const CSeq_id_Handle& seq_id,
-                            const SAnnotSelector* sel);
+    virtual bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel) override;
 
     bool LoadSeq_idInfo(CReaderRequestResult& result,
                         const CSeq_id_Handle& seq_id,
                         const SAnnotSelector* with_named_accs);
 
-    void GetBlobState(CReaderRequestResult& result,
-                      const CBlob_id& blob_id);
-    void GetBlobVersion(CReaderRequestResult& result,
-                        const CBlob_id& blob_id);
+    virtual void GetBlobState(CReaderRequestResult& result,
+                              const CBlob_id& blob_id) override;
+    virtual void GetBlobVersion(CReaderRequestResult& result,
+                                const CBlob_id& blob_id) override;
 
-    void GetBlob(CReaderRequestResult& result,
-                 const TBlobId& blob_id,
-                 TChunkId chunk_id);
+    virtual void GetBlob(CReaderRequestResult& result,
+                         const TBlobId& blob_id,
+                         TChunkId chunk_id) override;
 
     virtual void SetIncludeHUP(bool include_hup = true) override;
 
 protected:
-    void x_AddConnectionSlot(TConn conn);
-    void x_RemoveConnectionSlot(TConn conn);
-    void x_DisconnectAtSlot(TConn conn, bool failed);
-    void x_ConnectAtSlot(TConn conn);
+    virtual void x_AddConnectionSlot(TConn conn) override;
+    virtual void x_RemoveConnectionSlot(TConn conn) override;
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed) override;
+    virtual void x_ConnectAtSlot(TConn conn) override;
 
     CDB_Connection* x_GetConnection(TConn conn);
 

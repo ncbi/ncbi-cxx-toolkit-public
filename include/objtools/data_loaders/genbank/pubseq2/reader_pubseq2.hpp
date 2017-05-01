@@ -55,22 +55,24 @@ public:
     CPubseq2Reader(const TPluginManagerParamTree* params,
                    const string& driver_name);
 
-    ~CPubseq2Reader();
+    virtual ~CPubseq2Reader() override;
 
-    int GetMaximumConnectionsLimit(void) const;
+    virtual int GetMaximumConnectionsLimit(void) const override;
 
     void x_InitConnection(CDB_Connection& db_conn, TConn conn);
 
-protected:
-    virtual void x_AddConnectionSlot(TConn conn);
-    virtual void x_RemoveConnectionSlot(TConn conn);
-    virtual void x_DisconnectAtSlot(TConn conn, bool failed);
-    virtual void x_ConnectAtSlot(TConn conn);
-    virtual string x_ConnDescription(TConn conn) const;
+    virtual void SetIncludeHUP(bool include_hup = true) override;
 
-    virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet);
-    virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply);
-    virtual void x_EndOfPacket(TConn conn);
+protected:
+    virtual void x_AddConnectionSlot(TConn conn) override;
+    virtual void x_RemoveConnectionSlot(TConn conn) override;
+    virtual void x_DisconnectAtSlot(TConn conn, bool failed) override;
+    virtual void x_ConnectAtSlot(TConn conn) override;
+    virtual string x_ConnDescription(TConn conn) const override;
+
+    virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet) override;
+    virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply) override;
+    virtual void x_EndOfPacket(TConn conn) override;
 
     CDB_Connection& x_GetConnection(TConn conn);
     AutoPtr<CObjectIStream> x_SendPacket(CDB_Connection& db_conn,
@@ -79,8 +81,6 @@ protected:
 
     CObjectIStream& x_GetCurrentResult(TConn conn);
     void x_SetCurrentResult(TConn conn, AutoPtr<CObjectIStream> result);
-
-    virtual void SetIncludeHUP(bool include_hup = true) override;
 
 private:
     string                    m_Server;
