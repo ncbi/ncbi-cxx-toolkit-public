@@ -7,5 +7,5 @@ add_library(ncbi_xdbapi_dblib
 include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(ncbi_xdbapi_dblib
-    dbapi_driver sybdb_ftds95 ${SYBASE_DBLIBS} ${SYBASE_DLLS}
+    dbapi_driver ${SYBASE_DBLIBS} ${SYBASE_DLLS}
 )
