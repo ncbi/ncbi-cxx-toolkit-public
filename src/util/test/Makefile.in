@@ -42,7 +42,8 @@ APP_PROJ = example_value_convert \
            test_metaphone \
            test_row_reader \
            test_row_reader_performance \
-           test_row_reader_iana_tsv
+           test_row_reader_iana_tsv \
+           test_row_reader_iana_csv
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map
