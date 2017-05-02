@@ -143,7 +143,8 @@ Options:
    --with-ccache           use ccache if available
    --with-distcc           use distcc if available
    --with-xcode            generate XCode project
-   --trace           print CMake trace to stdout
+   --with-ninja            use ninja instead of make
+   --trace                 print CMake trace to stdout
 
   -h, --help              display this help and exit
   --pass-thru             pass remaining arguments through to CMake
@@ -322,6 +323,10 @@ while [ $# != 0 ]; do
         "-h")
             print_help;;
 
+        --with-ninja)
+            NINJA_FLAGS="-GNinja"
+            ;;
+
         #NCBI C++ Toolkit specific configuration flags
         "--with-static"|"--without-dll")
             BUILD_SHARED_LIBS=OFF
@@ -498,4 +503,4 @@ if [ -e CMakeCache.txt ]; then
    rm CMakeCache.txt
 fi
 
-eval "${CMAKE_CMD}" ${TRACE_CMAKE} "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}
+eval "${CMAKE_CMD}" ${TRACE_CMAKE} ${NINJA_FLAGS} "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}
