@@ -1818,7 +1818,8 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
                                                TReplies& replies,
                                                CID2_Request& main_request,
                                                CID2ProcessorResolver* resolver,
-                                               CID2_Request_Get_Blob_Info& request)
+                                               CID2_Request_Get_Blob_Info& request,
+                                               CID2WGSProcessorPacketContext* packet_context)
 {
     START_TRACE();
     TRACE_X(9, eDebug_request, "GetBlobInfo: "<<MSerial_AsnText<<main_request);
@@ -1836,7 +1837,8 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
         return seq.m_IsWGS;
     }
 
-    if ( request.IsSetGet_data() && !ExcludedBlob(seq, request) ) {
+    if ( request.IsSetGet_data() && !ExcludedBlob(seq, request) &&
+         packet_context->m_LoadedBlobs.insert(ConstRef(&GetBlobId(seq))).second ) {
         CRef<CID2_Reply> main_reply(new CID2_Reply);
         if ( main_request.IsSetSerial_number() ) {
             main_reply->SetSerial_number(main_request.GetSerial_number());
@@ -1936,7 +1938,7 @@ bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
             break;
         case CID2_Request::TRequest::e_Get_blob_info:
             done = ProcessGetBlobInfo(context, replies, request, resolver,
-                                      request.SetRequest().SetGet_blob_info());
+                                      request.SetRequest().SetGet_blob_info(), packet_context);
             break;
         case CID2_Request::TRequest::e_Get_chunks:
             done = ProcessGetChunks(context, replies, request, resolver,

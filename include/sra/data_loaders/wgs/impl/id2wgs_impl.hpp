@@ -73,6 +73,25 @@ class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessorPacketContext : public CID2Process
 {
 public:
     map<int, vector< CRef<CID2_Reply> > > m_NARequests;
+    struct PBlobIdLess {
+        bool operator()(const CConstRef<CID2_Blob_Id>& ref1,
+                        const CConstRef<CID2_Blob_Id>& ref2) const
+            {
+                const CID2_Blob_Id& id1 = *ref1;
+                const CID2_Blob_Id& id2 = *ref2;
+                if ( id1.GetSat() != id2.GetSat() ) {
+                    return id1.GetSat() < id2.GetSat();
+                }
+                if ( id1.GetSub_sat() != id2.GetSub_sat() ) {
+                    return id1.GetSub_sat() < id2.GetSub_sat();
+                }
+                if ( id1.GetSat_key() != id2.GetSat_key() ) {
+                    return id1.GetSat_key() < id2.GetSat_key();
+                }
+                return false;
+            }
+    };
+    set<CConstRef<CID2_Blob_Id>, PBlobIdLess> m_LoadedBlobs;
 };
 
 
@@ -189,7 +208,8 @@ public:
                             TReplies& replies,
                             CID2_Request& main_request,
                             CID2ProcessorResolver* resolver,
-                            CID2_Request_Get_Blob_Info& request);
+                            CID2_Request_Get_Blob_Info& request,
+                            CID2WGSProcessorPacketContext* packet_context);
     bool ProcessGetChunks(CID2WGSContext& context,
                           TReplies& replies,
                           CID2_Request& main_request,
