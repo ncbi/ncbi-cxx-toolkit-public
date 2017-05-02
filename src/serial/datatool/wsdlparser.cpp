@@ -546,7 +546,7 @@ void WSDLParser::ParsePart(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("element")) {
-        string name( m_Value + m_PrefixToNamespace[m_ValuePrefix]);
+        string name( m_Value + NStr::Replace(m_PrefixToNamespace[m_ValuePrefix], ":", "/"));
         AddElementContent(node,name);
     } else {
         bool ok = false;
