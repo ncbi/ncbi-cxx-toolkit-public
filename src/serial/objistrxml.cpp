@@ -1329,7 +1329,7 @@ void CObjectIStreamXml::ReadWord(string& str, EStringType type)
     SkipWS();
     try {
         for ( ;; ) {
-            int c = ReadEncodedChar('<', type, encoded);
+            int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, encoded);
             if ( c < 0  || IsWhiteSpace((char)c)) {
                 break;
             }
