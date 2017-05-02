@@ -2127,7 +2127,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
             return kEmptyStr;
         }
-    } else if (NStr::EqualNocase (country, "Palestine") || NStr::EqualNocase (country, "State of Palestine")) {
+    } else if (NStr::EqualNocase (country, "State of Palestine")) {
     } else {
         // report unrecognized country
         return kEmptyStr;
@@ -2145,8 +2145,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     if (NStr::EqualNocase (country, "USA") && NStr::EqualNocase (cguess, "Puerto Rico")) {
         return kEmptyStr;
     }
-    if ((NStr::EqualNocase (country, "Palestine") ||
-         NStr::EqualNocase (country, "State of Palestine")) &&
+    if (NStr::EqualNocase (country, "State of Palestine") &&
         (NStr::EqualNocase (cguess, "Gaza Strip") ||
          NStr::EqualNocase (cguess, "West Bank"))) {
         return kEmptyStr;
@@ -2885,7 +2884,6 @@ static const char* const s_Countries[] = {
     "Pacific Ocean",
     "Pakistan",
     "Palau",
-    "Palestine",
     "Palmyra Atoll",
     "Panama",
     "Papua New Guinea",
