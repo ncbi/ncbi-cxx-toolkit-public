@@ -86,6 +86,7 @@
 #include <objtools/writers/bedgraph_writer.hpp>
 #include <objtools/writers/vcf_writer.hpp>
 #include <objtools/writers/gvf_writer.hpp>
+#include <objtools/writers/aln_writer.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -203,7 +204,8 @@ void CAnnotWriterApp::Init()
             "wig", "wiggle",
             "bed",
             "bedgraph",
-            "vcf" ) );
+            "vcf",
+            "aln" ) );
     }}
 
     // parameters
@@ -787,6 +789,9 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
     if (strFormat == "vcf") {
         return new CVcfWriter(*m_pScope, *pOs);
+    }
+    if (strFormat == "aln") {
+        return new CAlnWriter(*m_pScope, *pOs, 0);
     }
     NCBI_THROW(CObjWriterException, eArgErr, 
         "xInitWriter: No suitable writer for format \"" + strFormat + "\"");
