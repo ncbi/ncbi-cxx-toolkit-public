@@ -1,3 +1,4 @@
+ DZSJRP	s	Departmento de Zoologia e Botanica, Universidade Estadual Paulista		
 A	s	Arnold Arboretum, Harvard University		
 AA	s	Ministry of Science, Academy of Sciences		
 AAC	c	Arignar Anna College		
@@ -1323,6 +1324,7 @@ CSH	s	Shanghai Chenshan Botanical Garden
 CSIR	c	Council for Scientific and Industrial Research		
 CSIRO	s	Commonwealth Science & Industrial Research Organization		
 CSIRO:Ichthyology	s	Commonwealth Science & Industrial Research Organization, Australian National Fish Collection
+CSJ	s	Colegio de San Jose, Museo de Historia Natural, Medellin		
 CSLA	s	California State University, Department of Biological Sciences		
 CSLB	s	California State University at Long Beach		
 CSMA	c	Centro di Studio dei Microorganismi Autotrofi - CNR		
@@ -1351,6 +1353,7 @@ CTESN	s	Universidad Nacional del Nordeste
 CTM<TUN>	c	Centre de Biotechnologie de Sfax culture collection		
 CTN	s	Free Library and Museum		
 CTNRC	s	Thai National Reference Collections		
+CTR	s	Charles T. Ramsden historical collection		
 CTS	s	Chongqing Teachers College		
 CTY	s	Canterbury Literary and Philosophical Institution		
 CU	sb	Cornell University		
@@ -1403,8 +1406,10 @@ CWU	s	V. N. Karasin National University
 CY	c	Centre des Yersinia		
 CYN	s	Chipstead Valley Primary School		
 CYP	s	Ministry of Agriculture, Natural Resources and Environment, Forestry Department		
+CZ-IICT	s	Centro de Zoologia, Instituto de Investigacao Cientifica Tropical		
 CZAA	s	Catedra de Zoologia Agricola		
 CZACC	s	Coleccion Zoologia, Academia de Ciencias de Cuba		
+CZCEN	s	Coleccion Zoologica de la Facultad de Ciencias Exactas y Naturales		
 CZH	h	Hanshan Normal University		
 CZIP	s	Universidad de Magallanes, Instituto de la Patagonia (Chile)		
 CZL	s	Centro de Zoologia		
@@ -2018,6 +2023,7 @@ FUK	h	Fukui Botanical Garden
 FULD	s	Verein fuer Naturkunde in Osthessen		
 FUMH	s	Ferdowsi University		
 FUMT	s	University of Tokyo		
+FUNED	s	Fundacao Ezequiel Dias, Belo Horizonte		
 FURB	h	Universidade Regional de Blumenau		
 FUS	s	Fudan University, Biology Department		
 FUSC	c	Flinders University Smut Collection		
@@ -2474,6 +2480,7 @@ HNTS	s	Vlastivedne muzeum
 HNU<CHN>	s	Hunan Normal University		
 HNU<VNM>	s	Vietnam National University, Department of Botany		
 HNUB	s	Northeastern University, Biology Department		
+HNUE	s	Hanoi National University of Education		
 HNUL	h	Northwestern University Inc.		
 HNWP	s	Northwest Plateau Institute of Biology, Chinese Academy of Sciences		
 HNWU	s	Nebraska Wesleyan University, Biology Department		
@@ -2860,6 +2867,7 @@ INER	s	Istituto Nazionale di Entomologia
 INFYB	s	Instituto Nacional de Farmacologia y Bromatologia, Farmacobotanica		
 INGU	h	Ingush State University		
 INH	s	Institut National d'Horticulture, Departement de Sciences Biologiques		
+INH<ECU>	s	Instituto Nacional de Higiene		
 INHM	s	Iraq Natural History Museum		
 INHS	s	Illinois Natural History Survey		
 INIA	s	Instituto Nacional de Investigaciones Forestales y Agropecurias		
@@ -3891,7 +3899,7 @@ MDUG	s	Universidad Guanajuato, Museo Alfredo Duges
 MDZAU	s	Museum Deptartment of Zoology		
 MECB	s	Universidade Federal de Pelotas, Museu Entomologico Ceslau Biezanko		
 MECG	s	Medical Entomology Collection Gallery		
-MECN	s	Museo Ecuadoriano de Ciencias Naturales		
+MECN	s	Museo Ecuadoriano de Ciencias Naturales	DHMECN
 MEDEL	s	Universidad Nacional de Colombia - Sede de Medellin, Departamento de Biologia		
 MEFLG	s	Museo Entomologico Francisco Luis Gallego		
 MEL	s	Royal Botanic Gardens Victoria		
@@ -4416,7 +4424,7 @@ MZRO	s	Museo Civico di Storia Naturale "P. Zangheri"
 MZS	s	Universite de Strasbourg, Musee de Zoologie		
 MZSF	s	Universite de Strasbourg, Museum Zoologique		
 MZSP	s	Sao Paulo, Museu de Zoologia da Universidade de Sao Paulo		
-MZTG	s	Museum Zoologia		
+MZTG	s	Museum Zoologia	IHN
 MZUABCS	s	Museo de Zoologia de la Universidad Automica de Baja California Sur		
 MZUB	s	Museo di Zoologia		
 MZUC<CHL>	s	Museo de Zoologia, Universidad de Concepcion		
