@@ -3,4 +3,6 @@
 #
 
 # Include projects from this directory
-add_subdirectory(python)
+if (Python_FOUND)
+    add_subdirectory(python)
+endif()
