@@ -7,5 +7,5 @@ add_library(xregexp
 include_directories(SYSTEM ${PCRE_INCLUDE})
 
 target_link_libraries(xregexp
-    regexp xncbi
+    ${PCRE_LIBS} xncbi
 )

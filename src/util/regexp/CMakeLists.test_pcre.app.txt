@@ -8,6 +8,6 @@ add_executable(test_pcre-app
 set_target_properties(test_pcre-app PROPERTIES OUTPUT_NAME test_pcre)
 
 target_link_libraries(test_pcre-app
-    regexp
+    ${PCRE_LIBS}
 )
 
