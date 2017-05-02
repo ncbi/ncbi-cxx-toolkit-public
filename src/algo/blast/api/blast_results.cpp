@@ -466,7 +466,7 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
 }
 
 CSearchResultSet::CSearchResultSet(EResultType res_type /* = eDatabaseSearch*/)
-: m_ResultType(res_type)
+: m_ResultType(res_type), m_NumQueries(0), m_IsPhiBlast(false)
 {}
 
 CSearchResultSet::CSearchResultSet(
