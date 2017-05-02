@@ -32,15 +32,37 @@ set(SRC_TLS ncbi_gnutls ncbi_mbedtls ncbi_tls
     mbedtls/debug mbedtls/net_sockets mbedtls/ssl_cache
     mbedtls/ssl_ciphersuites mbedtls/ssl_cli mbedtls/ssl_cookie
     mbedtls/ssl_srv mbedtls/ssl_ticket mbedtls/ssl_tls
+
+    ncbi_gnutls ncbi_mbedtls ncbi_tls
+    mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse
+    mbedtls/asn1write mbedtls/base64 mbedtls/bignum mbedtls/blowfish
+    mbedtls/camellia mbedtls/ccm mbedtls/cipher mbedtls/cipher_wrap
+    mbedtls/cmac mbedtls/ctr_drbg mbedtls/des mbedtls/dhm mbedtls/ecdh
+    mbedtls/ecdsa mbedtls/ecjpake mbedtls/ecp mbedtls/ecp_curves
+    mbedtls/entropy mbedtls/entropy_poll mbedtls/error mbedtls/gcm
+    mbedtls/havege mbedtls/hmac_drbg mbedtls/md mbedtls/md2
+    mbedtls/md4 mbedtls/mbedtls_md5 mbedtls/md_wrap
+    mbedtls/memory_buffer_alloc mbedtls/oid mbedtls/padlock
+    mbedtls/pem mbedtls/pk mbedtls/pk_wrap mbedtls/pkcs12
+    mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite mbedtls/platform
+    mbedtls/ripemd160 mbedtls/rsa mbedtls/sha1 mbedtls/sha256
+    mbedtls/sha512 mbedtls/threading mbedtls/timing
+    mbedtls/mbedtls_version mbedtls/version_features mbedtls/xtea
+    mbedtls/certs mbedtls/pkcs11 mbedtls/x509 mbedtls/x509_create
+    mbedtls/x509_crl mbedtls/x509_crt mbedtls/x509_csr
+    mbedtls/x509write_crt mbedtls/x509write_csr
+    mbedtls/debug mbedtls/net_sockets mbedtls/ssl_cache
+    mbedtls/ssl_ciphersuites mbedtls/ssl_cli mbedtls/ssl_cookie
+    mbedtls/ssl_srv mbedtls/ssl_ticket mbedtls/ssl_tls
     )
 
 set(SRC_C
     ncbi_ansi_ext ncbi_buffer ncbi_types ncbi_priv ncbi_core ncbi_util
-    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector
-    ncbi_socket_connector ncbi_file_connector ncbi_http_connector
-    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service
-    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail
-    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version
+    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector          
+    ncbi_socket_connector ncbi_file_connector ncbi_http_connector     
+    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service  
+    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail    
+    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version    
     ncbi_lbos ncbi_namerd parson ncbi_ipv6
     ${os_src}
     )
