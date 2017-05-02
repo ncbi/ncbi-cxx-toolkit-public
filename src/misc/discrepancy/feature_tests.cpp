@@ -1747,18 +1747,18 @@ bool StopAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
     try {
         CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
         TSeqPos stop = loc.GetStop(eExtreme_Biological);
-        if (stop < 2 || stop > bsh.GetBioseqLength() - 3) {
+        if (stop < 1 || stop > bsh.GetBioseqLength() - 2) {
             return false;
         }
         CRef<CSeq_loc> search(new CSeq_loc());
         search->SetInt().SetId().Assign(*(loc.GetId()));
         if (strand == eNa_strand_minus) {
             search->SetInt().SetFrom(stop - 1);
-            search->SetInt().SetTo(stop - 2);
+            search->SetInt().SetTo(stop - 1);
             search->SetInt().SetStrand(eNa_strand_minus);
         } else {
             search->SetInt().SetFrom(stop + 1);
-            search->SetInt().SetTo(stop + 2);
+            search->SetInt().SetTo(stop + 1);
         }
         CSeqVector vec(*search, scope);
         if (vec.size() && vec.IsInGap(0)) {
@@ -1776,18 +1776,18 @@ bool StartAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
     try {
         CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
         TSeqPos start = loc.GetStart(eExtreme_Biological);
-        if (start < 2 || start > bsh.GetBioseqLength() - 3) {
+        if (start < 1 || start > bsh.GetBioseqLength() - 2) {
             return false;
         }
         CRef<CSeq_loc> search(new CSeq_loc());
         search->SetInt().SetId().Assign(*(loc.GetId()));
         if (strand == eNa_strand_minus) {
             search->SetInt().SetFrom(start + 1);
-            search->SetInt().SetTo(start + 2);
+            search->SetInt().SetTo(start + 1);
             search->SetInt().SetStrand(eNa_strand_minus);
         } else {
             search->SetInt().SetFrom(start - 1);
-            search->SetInt().SetTo(start - 2);
+            search->SetInt().SetTo(start - 1);
         }
         CSeqVector vec(*search, scope);
         if (vec.IsInGap(0)) {
