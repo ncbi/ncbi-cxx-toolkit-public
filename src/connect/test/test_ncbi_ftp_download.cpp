@@ -378,7 +378,7 @@ size_t CUntarProcessor::Run(void)
         return 0;
     }
 
-    auto_ptr<CTar::TEntries> filelist;
+    unique_ptr<CTar::TEntries> filelist;
     try {  // NB: CTar *loves* exceptions, for some weird reason :-/
         filelist = m_Tar->List();  // NB: can be tar.Extract() as well
     } NCBI_CATCH_ALL("TAR Error");
