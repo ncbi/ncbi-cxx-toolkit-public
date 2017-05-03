@@ -3,10 +3,10 @@
 
 . ./ncbi_test_data
 
-TEST_NCBI_HTTP_UPLOAD="$NCBI_TEST_DATA/http/test_ncbi_http_upload"
-export TEST_NCBI_HTTP_UPLOAD
+TEST_NCBI_HTTP_UPLOAD_TOKEN="$NCBI_TEST_DATA/http/test_ncbi_http_upload_token"
+export TEST_NCBI_HTTP_UPLOAD_TOKEN
 
-if [ ! -f "$TEST_NCBI_HTTP_UPLOAD" ]; then
+if [ ! -f "$TEST_NCBI_HTTP_UPLOAD_TOKEN" ]; then
   echo "NCBI_UNITTEST_SKIPPED"
   exit 0
 fi

@@ -51,14 +51,11 @@
 BEGIN_NCBI_SCOPE
 
 
-static const char kSubId[] = " SubmissionPortalSID=";
-
-
-static string s_GetHttpCred(void)
+static string s_GetHttpToken(void)
 {
-    const char* credfile = getenv("TEST_NCBI_HTTP_UPLOAD");
+    const char* credfile = getenv("TEST_NCBI_HTTP_UPLOAD_TOKEN");
     if (!credfile)
-        credfile = "/am/ncbiapdata/test_data/http/test_ncbi_http_upload";
+        credfile = "/am/ncbiapdata/test_data/http/test_ncbi_http_upload_token";
     ifstream ifs(credfile);
     if (!ifs)
         return kEmptyStr;
@@ -70,28 +67,8 @@ static string s_GetHttpCred(void)
 
 extern "C" {
 
-static EHTTP_HeaderParse x_ParseKeyHeader(const char* header,
-                                          void* data, int server_error)
-{
-    string* subid = reinterpret_cast<string*>(data);
-    _ASSERT(subid  &&  subid->empty());
-    if (!server_error) {
-        SIZE_TYPE keypos = NStr::FindNoCase(header, kSubId);
-        if (keypos == NPOS)
-            return eHTTP_HeaderError;
-        keypos += sizeof(kSubId) - 1;
-        CTempString tmp(NStr::GetField_Unsafe(header + keypos, 0, "; \t\r\n"));
-        if (tmp.empty())
-            return eHTTP_HeaderError;
-        NStr::TruncateSpacesInPlace(tmp);
-        *subid = tmp;
-    }
-    return eHTTP_HeaderSuccess;
-}
-
-
-static EHTTP_HeaderParse x_ParseSubHeader(const char* header,
-                                          void* unused, int server_error)
+static EHTTP_HeaderParse x_ParseHttpHeader(const char* header,
+                                           void* unused, int server_error)
 {
     if (!server_error) {
         int code;
@@ -176,15 +153,13 @@ void CNCBITestApp::Init(void)
 
 int CNCBITestApp::Run(void)
 {
-    static const char kAuthUrl[]
-        = "https://dsubmit.ncbi.nlm.nih.gov/accounts/api_login";
     static const char kHttpUrl[]
         = "https://dsubmit.ncbi.nlm.nih.gov/api/2.0/uploads/binary/";
     static const char kDownUrl[]
         = "https://dsubmit.ncbi.nlm.nih.gov/ft/byid/";
 
-    string key = s_GetHttpCred();
-    if (key.empty())
+    string token = s_GetHttpToken();
+    if (token.empty())
         ERR_POST(Fatal << "Empty credentials");
 
     const CArgs& args = GetArgs();
@@ -197,31 +172,24 @@ int CNCBITestApp::Run(void)
              + NStr::NumericToString(g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
-    string subid;
-    CConn_HttpStream auth(kAuthUrl + string("?key=") + key, 0/*net_info*/,
-                          kEmptyStr/*user_header*/, x_ParseKeyHeader, &subid,
-                          0/*adjust*/, 0/*cleanup*/,
-                          fHTTP_Flushable);
-    auth.Close();
-    if (subid.empty())
-        ERR_POST(Fatal << "Cannot initiate new submission ID");
-
-    // cout << "Got SubID = " << subid << endl;
-
     CTime  now(CTime::eCurrent, CTime::eLocal);
 
     size_t n = rand() % MAX_FILE_SIZE;
     if (n == 0)
-        n = MAX_FILE_SIZE;
+        n  = MAX_FILE_SIZE;
+
+    string hostname = CSocketAPI::gethostname();
+    (void) hostname.c_str(); // make sure there's a '\0'-terminator
+    (void) UTIL_NcbiLocalHostName(&hostname[0]);
 
     string file = "test_ncbi_http_upload_"
-        + CSocketAPI::gethostname()
+        + string(hostname.data())
         + "_" + NStr::NumericToString(CProcess::GetCurrentPid())
         + "_" + now.AsString("YMD_hms_S")
         + "_" + NStr::NumericToString(n);
 
-    string user_header = string("Content-Type: application/octet-stream\r\n"
-                                "Cookie:") + kSubId + subid + "\r\n"
+    string user_header = "Content-Type: application/octet-stream\r\n"
+        "Authorization: Token " + token + "\r\n"
         "File-Editable: false\r\n"
         "File-ID: " + file + "\r\n"
         "File-Expires: "
@@ -234,7 +202,7 @@ int CNCBITestApp::Run(void)
     CConn_HttpStream http(kHttpUrl,
                           net_info,
                           user_header,
-                          x_ParseSubHeader, 0, 0, 0,
+                          x_ParseHttpHeader, 0, 0, 0,
                           fHTTP_NoAutoRetry | fHTTP_WriteThru);
 
     char* buf = new char[MAX_REC_SIZE];
