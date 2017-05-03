@@ -3060,8 +3060,23 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     if (align != NULL) {
         CBioseq bioseq;
         x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), true, true, &has_gap, &has_indel);
+
         CSeqVector seq(bioseq, m_scope.GetPointer(),
                        CBioseq_Handle::eCoding_Iupac);
+
+        if (feat.GetProduct().GetId()->IsLocal()) {
+            /// For locally generated product, product is generated from
+            /// translation so we know it will fit the translation perfectly;
+            /// only need exceptions if there are frameshifts
+            if (has_indel) {
+                string except_text = "unclassified translation discrepancy";
+                x_SetExceptText(feat, except_text);
+            }
+            if (clean_match_count) {
+                *clean_match_count = seq.size();
+            }
+            return;
+        }
 
         CRef<CSeq_loc_Mapper> genomic_to_mrna(
             new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
@@ -3259,14 +3274,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         } else {
 	    string xlate_trimmed;
             ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
-                if (range_it->GetFrom() + range_it->GetLength() <= whole.size()) {
-                    actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
-                } else {
-                    // product sequence is shorter than aligned ranges
-                    // most probably product is partial with 5' and/or 3' ends trimmed
-                    // assume it corresponds to aligned portion
-                    actual = whole;
-                }
+                actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
                 xlate_trimmed += xlate.substr(range_it->GetFrom(), range_it->GetLength());
             }
             xlate = xlate_trimmed;
