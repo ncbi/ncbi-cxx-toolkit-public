@@ -31,22 +31,6 @@
  */
 
 
-/* ---------------------------------------------------------------------------
-    Stub out the whole program for Windows DLL configurations.
-    The problem is that the program uses PARSON, which does not have the
-    dllexport/dllimport specifiers, resulting in link errors when built
-    with DLL on Windows.
-    */
-#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
-#include <stdio.h>
-int main(int argc, const char *argv[])
-{
-    printf("NCBI_UNITTEST_DISABLED - This program is disabled for WinDLL.\n");
-    return 1;
-}
-#else
-
-
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_namerd.h"
 #include "../ncbi_servicep.h"
@@ -60,6 +44,20 @@ int main(int argc, const char *argv[])
 #include <string.h>
 #include <time.h>
 
+
+/* ---------------------------------------------------------------------------
+    Stub out the whole program for Windows DLL configurations.
+    The problem is that the program uses PARSON, which does not have the
+    dllexport/dllimport specifiers, resulting in link errors when built
+    with DLL on Windows.
+    */
+#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
+int main(int argc, const char *argv[])
+{
+    printf("NCBI_UNITTEST_DISABLED - This program is disabled for WinDLL.\n");
+    return 1;
+}
+#else
 
 #ifdef _MSC_VER
 #define unsetenv(n)     _putenv_s(n,"")
