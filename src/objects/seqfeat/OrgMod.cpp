@@ -1041,12 +1041,7 @@ bool COrgMod::RemoveAbbreviation()
     if (IsSetSubtype() && IsSetSubname()) {
         string& val = SetSubname();
         switch (GetSubtype()) {
-            case eSubtype_strain:
             case eSubtype_serovar:
-                if (NStr::StartsWith(val, "subsp. ")) {
-                    val = val.substr(7);
-                    any_change = true;
-                }
                 if (NStr::StartsWith(val, "serovar ")) {
                     val = val.substr(8);
                     any_change = true;

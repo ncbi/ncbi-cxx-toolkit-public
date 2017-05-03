@@ -1074,3 +1074,56 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyStructuredCommentField)
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetLabel().GetStr(), "I have a value");
 }
+
+
+void TestFindThisNotStrain(COrgMod::ESubtype subtype, const string& prefix)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, prefix + " XYZ");
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    ITERATE(objects::CSeq_descr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
+        if ((*it)->IsSource()) {
+            if ((*it)->GetSource().IsSetOrg() &&
+                (*it)->GetSource().GetOrg().IsSetOrgname() &&
+                (*it)->GetSource().GetOrg().GetOrgname().IsSetMod()) {
+                bool found_strain = false;
+                bool found_subtype = false;
+                ITERATE(COrgName::TMod, m, (*it)->GetSource().GetOrg().GetOrgname().GetMod()) {
+                    if ((*m)->IsSetSubtype()) {
+                        if ((*m)->GetSubtype() == COrgMod::eSubtype_strain) {
+                            found_strain = true;
+                        } else if ((*m)->GetSubtype() == subtype) {
+                            found_subtype = true;
+                            BOOST_CHECK_EQUAL((*m)->GetSubname(), "XYZ");
+                        }
+                    }
+                }
+                if (found_strain) {
+                    BOOST_CHECK_EQUAL("Error", "Strain should not be present");
+                }
+                if (!found_subtype) {
+                    BOOST_CHECK_EQUAL("Error", COrgMod::GetSubtypeName(subtype) + " is missing");
+                }
+            } else {
+                BOOST_CHECK_EQUAL("Error", "No orgmods!");
+            }
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MoveNamedQualInStrain)
+{
+    TestFindThisNotStrain(COrgMod::eSubtype_sub_species, "subsp.");
+    TestFindThisNotStrain(COrgMod::eSubtype_serovar, "serovar");
+
+}

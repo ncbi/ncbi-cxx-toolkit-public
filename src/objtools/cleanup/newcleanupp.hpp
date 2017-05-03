@@ -248,6 +248,8 @@ private:
     void BiosourceBC (CBioSource& bsc);
     void OrgrefModBC (string& str);
     void OrgrefBC (COrg_ref& org);
+    void x_MovedNamedValuesInStrain(COrgName& orgname);
+    void x_MovedNamedValuesInStrain(COrgName& orgname, COrgMod::ESubtype stype, const string& prefix);
     void OrgnameBC (COrgName& onm, COrg_ref &org_ref);
     void OrgmodBC (COrgMod& omd);
 

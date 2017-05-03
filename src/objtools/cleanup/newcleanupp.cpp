@@ -6352,6 +6352,82 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
     }
 }
 
+
+// As requested in SQD-4021:
+// * if strain begins with "serovar " move remaining text to a serovar 
+// qualifier, unless a serovar qualifier is already present, in which case add
+// to note
+// * if strain begins with "subsp. " move remaining text to a subspecies
+// qualifier, unless a subspecies qualifier is already present, in which case
+// add to note
+void CNewCleanup_imp::x_MovedNamedValuesInStrain(COrgName& orgname)
+{
+    if (!orgname.IsSetMod()) {
+        return;
+    }
+    COrgName::TMod::iterator m = orgname.SetMod().begin();
+    while (m != orgname.SetMod().end()) {
+        if ((*m)->IsSetSubtype() && (*m)->IsSetSubname()) {
+            bool do_erase = false;
+            switch ((*m)->GetSubtype()) {
+                case COrgMod::eSubtype_serovar:
+                    if (NStr::StartsWith((*m)->GetSubname(), "subsp. ")) {
+                        string val = (*m)->GetSubname().substr(7);
+                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
+                        do_erase = true;
+                    }
+                    break;
+                case COrgMod::eSubtype_strain:
+                    if (NStr::StartsWith((*m)->GetSubname(), "subsp. ")) {
+                        string val = (*m)->GetSubname().substr(7);
+                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
+                        do_erase = true;
+                    } else if (NStr::StartsWith((*m)->GetSubname(), "serovar ")) {
+                        string val = (*m)->GetSubname().substr(8);
+                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_serovar, val);
+                        do_erase = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (do_erase) {
+                m = orgname.SetMod().erase(m);
+                ChangeMade(CCleanupChange::eRemoveOrgmod);
+            } else {
+                ++m;
+            }
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_MovedNamedValuesInStrain(COrgName& orgname, COrgMod::ESubtype stype, const string& value)
+{
+    bool add_val = true;
+    bool add_note = false;
+    ITERATE(COrgName::TMod, m, orgname.GetMod()) {
+        if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == stype) {
+            if ((*m)->IsSetSubname() && NStr::Equal((*m)->GetSubname(), value)) {
+                // already there, can just remove it
+                add_note = false;
+                add_val = false;
+                break;
+            } else {
+                add_note = true;
+            }
+        }
+    }
+    if (add_val) {
+        orgname.SetMod().push_back(CRef<COrgMod>(new COrgMod(stype, value)));
+        ChangeMade(CCleanupChange::eAddOrgMod);
+    } else if (add_note) {
+        orgname.SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_other, value)));
+        ChangeMade(CCleanupChange::eAddOrgMod);
+    }
+}
+
+
 void
 CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common )
 {
@@ -6405,6 +6481,8 @@ CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common
             prev = &**orgmod_iter;
         }
     }
+
+    x_MovedNamedValuesInStrain(orgname);
 
     COrgMod *omp_anamorph = NULL;
     COrgMod *omp_gb_anamorph = NULL;
