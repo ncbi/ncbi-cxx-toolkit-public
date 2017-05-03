@@ -97,9 +97,10 @@ set(DEMANGLE_LIBS )
 set(ICONV_LIBS    )
 
 find_library(UUID_LIBS NAMES uuid)
-find_library(CRYPT_LIB NAMES crypt)
+find_library(CRYPT_LIBS NAMES crypt)
 find_library(MATH_LIBS NAMES m)
-find_library(GCRYPT_LIB NAMES gcrypt)
+find_library(GCRYPT_LIBS NAMES gcrypt)
+find_library(PTHREAD_LIBS NAMES pthread)
 
 if (APPLE)
   find_library(NETWORK_LIBS c)
@@ -133,52 +134,31 @@ set(LIBS ${LIBS} ${DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 # NOTE:
 # these should be eliminated or simplified; they're not needed
 #
-
-
 set(LOCAL_LBSM ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd)
-set(NCBI_CRYPT ncbi_crypt)
-
-
-# non-public (X)CONNECT extensions
-set(CONNEXT connext)
-set(XCONNEXT xconnext)
-
-# NCBI C++ API for BerkeleyDB
-set(BDB_LIB bdb)
-set(BDB_CACHE_LIB ncbi_xcache_bdb)
-
-# Possibly absent DBAPI drivers (depending on whether the relevant
-# 3rd-party libraries are present, and whether DBAPI was disabled altogether)
-set(DBAPI_DRIVER  dbapi_driver)
-set(DBAPI_CTLIB   ncbi_xdbapi_ctlib)
-set(DBAPI_DBLIB   ncbi_xdbapi_dblib)
-set(DBAPI_MYSQL   ncbi_xdbapi_mysql)
-set(DBAPI_ODBC                     )
 
 ############################################################################
 #
 # OS-specific settings
-find_library(GMP_LIB LIBS gmp HINTS "/netopt/ncbi_tools64/gmp-6.0.0a/lib64/")
-find_library(IDN_LIB LIBS idn HINTS "/lib64")
-find_library(NETTLE_LIB LIBS nettle HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
-find_library(HOGWEED_LIB LIBS hogweed HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
-find_external_library(GnuTLS INCLUDES gnutls/gnutls.h LIBS gnutls HINTS "${NCBI_TOOLS_ROOT}/gnutls-3.4.0/" EXTRALIBS ${Z_LIBS} ${IDN_LIB} ${RT_LIBS} ${HOGWEED_LIB} ${NETTLE_LIB} ${GMP_LIB})
-#message(FATAL_ERROR "RES: " ${GNUTLS_LIBS})
+find_library(GMP_LIBS LIBS gmp HINTS "/netopt/ncbi_tools64/gmp-6.0.0a/lib64/")
+find_library(IDN_LIBS LIBS idn HINTS "/lib64")
+find_library(NETTLE_LIBS LIBS nettle HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
+find_library(HOGWEED_LIBS LIBS hogweed HINTS "/netopt/ncbi_tools64/nettle-3.1.1/lib64")
+find_external_library(GnuTLS INCLUDES gnutls/gnutls.h LIBS gnutls HINTS "${NCBI_TOOLS_ROOT}/gnutls-3.4.0/" EXTRALIBS ${Z_LIBS} ${IDN_LIBS} ${RT_LIBS} ${HOGWEED_LIBS} ${NETTLE_LIBS} ${GMP_LIBS})
 
 ############################################################################
 #
 # Kerberos 5 (via GSSAPI)
 # FIXME: replace with native CMake check
 #
-set(KRB5_INCLUDE)
-set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
+find_external_library(KRB5 INCLUDES gssapi/gssapi_krb5.h LIBS gssapi_krb5 krb5 k5crypto com_err)
 
 
 ############################################################################
 #
 # Sybase stuff
-#find_package(Sybase)
-find_external_library(Sybase DYNAMIC_ONLY INCLUDES sybdb.h LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64 HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
+find_external_library(Sybase INCLUDES sybdb.h LIBS sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybcobct_r64 sybdb64 sybunic64
+    HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/"
+    EXTRALIBS ${PTHREAD_LIBS})
 set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 
 ############################################################################
@@ -187,11 +167,7 @@ set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 # FIXME: do we need these anymore?
 #
 set(ftds64   ftds64)
-set(FTDS64_CTLIB_LIBS  ${ICONV_LIBS} ${KRB5_LIBS})
-set(FTDS64_CTLIB_LIB   ct_ftds64 tds_ftds64)
 set(FTDS64_CTLIB_INCLUDE ${includedir}/dbapi/driver/ftds64/freetds)
-set(FTDS64_LIBS        ${FTDS64_CTLIB_LIBS})
-set(FTDS64_LIB        ${FTDS64_CTLIB_LIB})
 set(FTDS64_INCLUDE    ${FTDS64_CTLIB_INCLUDE})
 
 set(ftds95   ftds95)
@@ -206,16 +182,11 @@ set(FTDS_LIBS     ${FTDS64_LIBS})
 set(FTDS_LIB      ${FTDS64_LIB})
 set(FTDS_INCLUDE  ${FTDS64_INCLUDE})
 
+#OpenSSL
+find_external_library(OpenSSL INCLUDES openssl/opensslv.h LIBS ssl crypto EXTRALIBS ${Z_LIBS} ${DL_LIBS})
 
-############################################################################
-#
-# MySQL: headers and libs
-# FIXME: replace with native CMake check
-#
-find_package(Mysql)
-set(MYSQL_INCLUDE ${MYSQL_INCLUDE_DIR})
-set(MYSQL_LIBS ${MYSQL_LIBRARIES})
-
+#EXTRALIBS were taken from mysql_config --libs
+find_external_library(Mysql INCLUDES mysql/mysql.h LIBS mysqlclient EXTRALIBS ${Z_LIBS} ${CRYPT_LIBS} ${NETWORK_LIBS} ${MATH_LIBS} ${OPENSSL_LIBS})
 
 ############################################################################
 #
@@ -328,7 +299,7 @@ find_external_library(ICU INCLUDES unicode/ucnv.h LIBS icui18n icuuc icudata HIN
 find_external_library(libxml DYNAMIC_ONLY INCLUDES libxml/xmlwriter.h LIBS xml2 INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/include/libxml2/" LIBS_HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib")
 set(LIBXML_INCLUDE ${LIBXML_INCLUDE} "${LIBXML_INCLUDE}/../")
 
-find_external_library(libexslt DYNAMIC_ONLY INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRALIBS ${LIBXML_LIBS} ${GCRYPT_LIB})
+find_external_library(libexslt DYNAMIC_ONLY INCLUDES libexslt/exslt.h LIBS exslt HINTS "${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/" EXTRALIBS ${LIBXML_LIBS} ${GCRYPT_LIBS})
 if (${LIBEXSLT_FOUND})
    set(LIBEXSLT_INCLUDE ${LIBEXSLT_INCLUDE} "${LIBEXSLT_INCLUDE}/../")
 endif ()
@@ -344,7 +315,6 @@ if (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxslt-static.a)
 endif (EXISTS ${NCBI_TOOLS_ROOT}/libxml-2.7.8/${buildconf}/lib/libxslt-static.a)
 
 find_external_library(xerces INCLUDES xercesc/dom/DOM.hpp LIBS xerces-c HINTS "${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64")
-#set(XERCES_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/xerces-3.1.1/GCC442-DebugMT64/lib -lxerces-c-static -lcurl )
 
 find_external_library(xalan INCLUDES xalanc/XalanTransformer/XalanTransformer.hpp LIBS xalan-c xalanMsg HINTS "${NCBI_TOOLS_ROOT}/xalan-1.11~r1302529/GCC442-DebugMT64")
 
@@ -459,16 +429,24 @@ set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout einfo
 
 #GLPK
 find_external_library(glpk INCLUDES glpk.h LIBS glpk HINTS "/usr/local/glpk/4.45")
-#message(FATAL_ERROR "exit")
 
 find_external_library(samtools INCLUDES bam.h LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
 #LAPACK
-set(LAPACK_LIBS "-llapack -lblas")
+check_include_file(lapacke.h HAVE_LAPACKE_H)
+check_include_file(lapacke/lapacke.h HAVE_LAPACKE_LAPACKE_H)
+check_include_file(Accelerate/Accelerate.h HAVE_ACCELERATE_ACCELERATE_H)
+#find_external_library(LAPACK LIBS lapack blas)
+find_package(LAPACK)
+if (LAPACK_FOUND)
+    set(LAPACK_INCLUDE ${LAPACK_INCLUDE_DIRS})
+    set(LAPACK_LIBS ${LAPACK_LIBRARIES})
+else ()
+    find_library(LAPACK_LIBS lapack blas)
+endif ()
 
 #LMBD
-set(LMDB_INCLUDE "/netopt/ncbi_tools64/lmdb-0.9.18/include")
-set(LMDB_LIBS -L/netopt/ncbi_tools64/lmdb-0.9.18/lib64 -llmdb)
+find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18")
 
 find_external_library(libxlsxwriter INCLUDES xlsxwriter.h LIBS xlsxwriter HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9" EXTRALIBS ${Z_LIBS})
 
@@ -477,8 +455,14 @@ find_external_library(libxlsxwriter INCLUDES xlsxwriter.h LIBS xlsxwriter HINTS 
 # NCBI-isms
 # FIXME: these should be tested not hard-coded
 set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.mongodb.cmake)
 
+find_library(SASL2_LIBS sasl2)
+
+find_external_library(MONGOCXX
+    INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
+    LIBS mongocxx bsoncxx
+    HINTS "${NCBI_TOOLS_ROOT}/mongodb-3.0.2/"
+    EXTRALIBS ${OPENSSL_LIBS} ${SASL2_LIBS})
 
 #
 # Final tasks

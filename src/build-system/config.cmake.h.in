@@ -4,6 +4,9 @@
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 #cmakedefine BSD_COMP 1
 
+/* Define to 1 if you have the <Accelerate/Accelerate.h> header file. */
+#cmakedefine HAVE_ACCELERATE_ACCELERATE_H 1
+
 /* Define to 1 if you have the `alarm' function. */
 #cmakedefine HAVE_ALARM 1
 
@@ -194,6 +197,12 @@
 
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #define HAVE_IOS_REGISTER_CALLBACK 1
+
+/* Define to 1 if you have the <lapacke.h> header file. */
+#cmakedefine HAVE_LAPACKE_H 1
+
+/* Define to 1 if you have the <lapacke/lapacke.h> header file. */
+#cmakedefine HAVE_LAPACKE_LAPACKE_H 1
 
 /* Define to 1 if you have the `lchown' function. */
 #cmakedefine HAVE_LCHOWN 1
