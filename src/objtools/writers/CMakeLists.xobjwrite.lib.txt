@@ -16,6 +16,7 @@ add_library(xobjwrite
     ucsc_writer
     src_writer
     fasta_writer 
+    aln_writer
 )
 add_dependencies(xobjwrite
     seqset
