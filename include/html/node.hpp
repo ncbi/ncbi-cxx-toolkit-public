@@ -63,7 +63,7 @@ public:
 #if NCBI_LIGHTWEIGHT_LIST
     typedef TChildren TChildrenMember;
 #else
-    typedef auto_ptr<TChildren> TChildrenMember;
+    typedef unique_ptr<TChildren> TChildrenMember;
 #endif
     struct SAttributeValue
     {
@@ -269,7 +269,7 @@ protected:
     bool            m_RepeatTag; 
 
     // Attributes, e.g. href="link.html"
-    auto_ptr<TAttributes> m_Attributes;     
+    unique_ptr<TAttributes> m_Attributes;     
 
 private:
     // To prevent copy constructor.

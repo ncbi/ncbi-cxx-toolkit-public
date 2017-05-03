@@ -350,7 +350,7 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 
     // Print and return node
     {{
-        auto_ptr<CHTMLText> node(new CHTMLText(*pstr));
+        unique_ptr<CHTMLText> node(new CHTMLText(*pstr));
         if ( out ) {
             node->Print(*out, mode);
         }
@@ -421,7 +421,7 @@ CNCBINode* CHTMLPage::x_PrintTemplate(CNcbiIstream& is, CNcbiOstream* out,
 
     string str;
     char   buf[kBufferSize];
-    auto_ptr<CNCBINode> node(new CNCBINode);
+    unique_ptr<CNCBINode> node(new CNCBINode);
 
     while (is) {
         is.read(buf, sizeof(buf));

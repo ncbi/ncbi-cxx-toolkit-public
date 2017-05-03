@@ -816,7 +816,7 @@ public:
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
-    mutable auto_ptr<CHTML_table_Cache> m_Cache;
+    mutable unique_ptr<CHTML_table_Cache> m_Cache;
     CHTML_table_Cache& GetCache(void) const;
     friend class CHTML_table_Cache;
     friend class CHTML_tr;
