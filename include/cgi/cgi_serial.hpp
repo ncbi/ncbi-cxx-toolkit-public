@@ -111,7 +111,7 @@ public:
     void flush(bool write_empty_data = false) 
     {
         if (m_str.get() != NULL) {
-            auto_ptr<CNcbiOstrstream> strm(m_str.release());
+            unique_ptr<CNcbiOstrstream> strm(m_str.release());
             string s = CNcbiOstrstreamToString(*strm);
             // Historically counted, but did not output, a final \0.
             m_Ostream << (s.size() + 1) << ' ' << s;
@@ -127,7 +127,7 @@ private:
         return *m_str;
     }
     CNcbiOstream& m_Ostream;
-    auto_ptr<CNcbiOstrstream> m_str;
+    unique_ptr<CNcbiOstrstream> m_str;
     
 }; 
 

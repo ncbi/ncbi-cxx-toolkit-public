@@ -53,7 +53,7 @@ void CTestMultipartCgiApplication::Init()
 
     SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test of multipart CGI response implementation");
         

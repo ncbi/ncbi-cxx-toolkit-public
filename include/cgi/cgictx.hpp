@@ -251,17 +251,17 @@ private:
         eSecure_On
     };
 
-    CCgiApplication&      m_App;
-    auto_ptr<CCgiRequest> m_Request;  // CGI request  information
-    CCgiResponse          m_Response; // CGI response information
-    auto_ptr<CCgiSession> m_Session;  // CGI session
+    CCgiApplication&        m_App;
+    unique_ptr<CCgiRequest> m_Request;  // CGI request  information
+    CCgiResponse            m_Response; // CGI response information
+    unique_ptr<CCgiSession> m_Session;  // CGI session
 
     // message buffer
     typedef list< AutoPtr<CCtxMsg> > TMessages;
     TMessages m_Messages;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
-    auto_ptr<CCgiServerContext> m_ServerContext; // application defined context
+    unique_ptr<CCgiServerContext> m_ServerContext; // application defined context
 
     mutable string m_SelfURL;
     mutable string m_TrackingId; // cached tracking id

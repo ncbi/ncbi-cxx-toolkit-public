@@ -497,12 +497,12 @@ int CCgiApplication::Run(void)
     bool is_stat_log = GetConfig().GetBool("CGI", "StatLog", false,
                                            0, CNcbiRegistry::eReturn);
     bool skip_stat_log = false;
-    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
+    unique_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     CNcbiOstream* orig_stream = NULL;
     //int orig_fd = -1;
     CNcbiStrstream result_copy;
-    auto_ptr<CNcbiOstream> new_stream;
+    unique_ptr<CNcbiOstream> new_stream;
 
     try {
         _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
@@ -574,7 +574,7 @@ int CCgiApplication::Run(void)
                             if(caching_needed)
                                 SaveResultToCache(m_Context->GetRequest(), result_copy);
                             else {
-                                auto_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
+                                unique_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
                                 if (request.get()) 
                                     SaveResultToCache(*request, result_copy);
                             }
@@ -1429,7 +1429,7 @@ bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstrea
 
     try {
         CCacheHashedContent helper(*m_Cache);
-        auto_ptr<IReader> reader( helper.GetHashedContent(checksum, content));
+        unique_ptr<IReader> reader( helper.GetHashedContent(checksum, content));
         if (reader.get()) {
             //cout << "(Read) " << checksum << " --- " << content << endl;
             CRStream cache_reader(reader.get());
@@ -1449,7 +1449,7 @@ void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream
         return;
     try {
         CCacheHashedContent helper(*m_Cache);
-        auto_ptr<IWriter> writer( helper.StoreHashedContent(checksum, content) );
+        unique_ptr<IWriter> writer( helper.StoreHashedContent(checksum, content) );
         if (writer.get()) {
             //        cout << "(Write) : " << checksum << " --- " << content << endl;
             CWStream cache_writer(writer.get());
@@ -1466,7 +1466,7 @@ void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
     if (rid.empty())
         return;
     try {
-        auto_ptr<IWriter> writer( m_Cache->GetWriteStream(rid, 0, "NS_JID") );
+        unique_ptr<IWriter> writer( m_Cache->GetWriteStream(rid, 0, "NS_JID") );
         if (writer.get()) {
             CWStream cache_stream(writer.get());            
             request.Serialize(cache_stream);
@@ -1482,10 +1482,10 @@ CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
     if (rid.empty())
         return NULL;
     try {
-        auto_ptr<IReader> reader(m_Cache->GetReadStream(rid, 0, "NS_JID"));
+        unique_ptr<IReader> reader(m_Cache->GetReadStream(rid, 0, "NS_JID"));
         if (reader.get()) {
             CRStream cache_stream(reader.get());
-            auto_ptr<CCgiRequest> request(new CCgiRequest);
+            unique_ptr<CCgiRequest> request(new CCgiRequest);
             request->Deserialize(cache_stream, 0);
             return request.release();
         }

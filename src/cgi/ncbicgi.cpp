@@ -1316,7 +1316,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
              NStr::StartsWith(content_type,
                               "multipart/form-data"))) {
             // Automagically retrieve and parse content into entries
-            auto_ptr<string> temp_str;
+            unique_ptr<string> temp_str;
             string* pstr = 0;
             // Check if the content must be saved
             if (flags & fSaveRequestContent) {

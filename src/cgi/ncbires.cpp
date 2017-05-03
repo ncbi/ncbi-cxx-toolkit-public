@@ -92,7 +92,7 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 	    TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
 										 PRequested<CNcbiCommand>( ctx ) );
     
-		auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
+		unique_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
 									? ( defCom = true, GetDefaultCommand() )
 									: (*it)->Clone() );
 		cmd->Execute( ctx );
@@ -104,7 +104,7 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 	    _TRACE( e.what() );
 		ctx.PutMsg( string("Error handling request: ") + e.what() );
 		if( !defCom ) {
-		  auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
+		  unique_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
 		  cmd->Execute( ctx );
 		}
     }

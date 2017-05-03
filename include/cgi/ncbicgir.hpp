@@ -290,9 +290,9 @@ private:
 
     static bool x_ClientSupportsChunkedTransfer(const CNcbiEnvironment& env);
 
-    const CCgiSession*   m_Session;
-    auto_ptr<CCgiCookie> m_TrackingCookie;
-    bool                 m_DisableTrackingCookie;
+    const CCgiSession*     m_Session;
+    unique_ptr<CCgiCookie> m_TrackingCookie;
+    bool                   m_DisableTrackingCookie;
 
     NCBI_PARAM_DECL(bool, CGI, ThrowOnBadOutput);
     typedef NCBI_PARAM_TYPE(CGI, ThrowOnBadOutput) TCGI_ThrowOnBadOutput;
@@ -304,7 +304,7 @@ private:
 
     const CCgiRequest* m_Request;
     bool m_ChunkedTransfer;
-    mutable auto_ptr<bool> m_TrailerEnabled;
+    mutable unique_ptr<bool> m_TrailerEnabled;
 
     friend class CCgiContext; // to set m_JQuery_Callback
     friend class CCgiApplication; // need x_ClientSupportsChunkedTransfer()
