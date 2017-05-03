@@ -97,8 +97,11 @@ public:
      * When remapping between transcript/genomic coordiane systems, this method should be used
      * instead of the mapper-based, as if the location is intronic, the method
      * will use the spliced-alignment to create or resolve offset-placement as appropriate.
+
+     RSNP-2558 - Sometimes we don't need to check the validity of resulting placements, so this costly step can
+                 be skipped
      */
-    CRef<CVariantPlacement> Remap(const CVariantPlacement& p, const CSeq_align& aln);
+    CRef<CVariantPlacement> Remap(const CVariantPlacement& p, const CSeq_align& aln, bool check_placements = true);
 
     // Remap a placement with a specified mapper. If a cdna->genomic or genomic->cdna mapping
     // is attempted, this will throw.
@@ -168,7 +171,7 @@ public:
     bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = kMaxAttachSeqLen);
 
     //Call AttachSeq on every placement; Try to find asserted-type subvariation.
-    //If the asserted sequence is different from the attached reference, add 
+    //If the asserted sequence is different from the attached reference, add
     //corresponding exception object to the placement. Return true iff there were no exceptions added
     bool AttachSeq(CVariation& v, TSeqPos max_len = kMaxAttachSeqLen);
 
@@ -186,10 +189,10 @@ public:
         ePass,
         eNotApplicable,
     };
-    ETestStatus CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln); 
+    ETestStatus CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln);
 
     // Similar to above, except verify exon boundary using exon annotation on refseq transcripts, if exists
-    ETestStatus CheckExonBoundary(const CVariantPlacement& p); 
+    ETestStatus CheckExonBoundary(const CVariantPlacement& p);
 
     /// if placement is invalid SeqLocCheck fails, or offsets out of order, attach VariationException and return true
     /// otherwise return false;
@@ -198,7 +201,7 @@ public:
     /// if variation.data contains a seq-literal with non-ACGT residues, attach VariationException to the first placement
     /// (if exists) and return true. otherwise return false;
     bool CheckAmbiguitiesInLiterals(CVariation& v);
-    
+
     /// Calculate upstream (first) and downstream(second) flanks for loc
     struct SFlankLocs
     {
@@ -264,7 +267,7 @@ public:
                                          CConstRef<CSeq_loc> cds_loc,
                                          const CSeq_loc& query_loc,
                                          TSOTerms& terms);
-                                    
+
 
     static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
 
