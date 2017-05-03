@@ -133,7 +133,7 @@ void CCompressionStream::Create(CNcbiIos&                    stream,
     m_Ownership = ownership;
     
     // Create a new stream buffer
-    auto_ptr<CCompressionStreambuf> sb(
+    unique_ptr<CCompressionStreambuf> sb(
         new CCompressionStreambuf(&stream, read_sp, write_sp));
     init(sb.get());
     m_StreamBuf = sb.release();

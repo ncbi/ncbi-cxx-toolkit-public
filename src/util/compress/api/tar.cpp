@@ -1565,10 +1565,10 @@ void CTar::x_Open(EAction action)
 }
 
 
-auto_ptr<CTar::TEntries> CTar::Extract(void)
+unique_ptr<CTar::TEntries> CTar::Extract(void)
 {
     x_Open(eExtract);
-    auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
+    unique_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
 
     // Restore attributes of "postponed" directory entries
     if (m_Flags & fPreserveAll) {
@@ -1594,7 +1594,7 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
     } else {
         x_Open(eInternal);
     }
-    auto_ptr<TEntries> temp = x_ReadAndProcess(eInternal);
+    unique_ptr<TEntries> temp = x_ReadAndProcess(eInternal);
     _ASSERT(temp.get()  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
@@ -2748,9 +2748,9 @@ static bool s_MatchPattern(const list<CTempString>& elems,
 }
 
 
-auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
+unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 {
-    auto_ptr<TEntries> done(new TEntries);
+    unique_ptr<TEntries> done(new TEntries);
     _ASSERT(!OFFSET_OF(m_StreamPos));
     Uint8 pos = m_StreamPos;
     CTarEntryInfo xinfo;
@@ -2988,13 +2988,13 @@ bool CTar::x_ProcessEntry(bool extract, Uint8 size,
 
     if (extract) {
         // Destination for extraction
-        auto_ptr<CDirEntry> dst
+        unique_ptr<CDirEntry> dst
             (CDirEntry::CreateObject(CDirEntry::EType(type),
                                      CDirEntry::NormalizePath
                                      (CDirEntry::ConcatPath
                                       (m_BaseDir, m_Current.GetName()))));
         // Source for extraction
-        auto_ptr<CDirEntry> src;
+        unique_ptr<CDirEntry> src;
         // Direntry pending removal
         AutoPtr<CDirEntry, CTmpDirEntryDeleter> pending;
 
@@ -3159,7 +3159,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                           const CDirEntry* dst, const CDirEntry* src)
 {
     CTarEntryInfo::EType type = m_Current.GetType();
-    auto_ptr<CDirEntry> src_ptr;  // deleter
+    unique_ptr<CDirEntry> src_ptr;  // deleter
     bool result = true;  // assume best
 
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
@@ -3386,7 +3386,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
                           const CDirEntry*     path,
                           TTarMode             perm) const
 {
-    auto_ptr<CDirEntry> path_ptr;  // deleter
+    unique_ptr<CDirEntry> path_ptr;  // deleter
     if (!path) {
         path_ptr.reset(CDirEntry::CreateObject
                        (CDirEntry::EType(info.GetType()),
@@ -3556,11 +3556,11 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
 }
 
 
-auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
+unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                         const TEntries* toc)
 {
-    auto_ptr<TEntries>       entries(new TEntries);
-    auto_ptr<CDir::TEntries> dir;
+    unique_ptr<TEntries>       entries(new TEntries);
+    unique_ptr<CDir::TEntries> dir;
 
     const EFollowLinks follow_links = (m_Flags & fFollowLinks ?
                                        eFollowLinks : eIgnoreLinks);
@@ -3720,7 +3720,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         }
         // Append/update all files from that directory
         ITERATE(CDir::TEntries, e, *dir) {
-            auto_ptr<TEntries> add = x_Append((*e)->GetPath(), toc);
+            unique_ptr<TEntries> add = x_Append((*e)->GetPath(), toc);
             entries->splice(entries->end(), *add);
         }
         break;
@@ -3757,10 +3757,10 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 }
 
 
-auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
+unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                         CNcbiIstream& is)
 {
-    auto_ptr<TEntries> entries(new TEntries);
+    unique_ptr<TEntries> entries(new TEntries);
 
     // Create a temp entry info first
     m_Current = CTarEntryInfo(m_StreamPos);
@@ -4096,16 +4096,16 @@ ERW_Result CTarReader::PendingCount(size_t* count)
 IReader* CTar::Extract(CNcbiIstream& is,
                        const string& name, CTar::TFlags flags)
 {
-    auto_ptr<CTar> tar(new CTar(is, 1/*blocking factor*/));
+    unique_ptr<CTar> tar(new CTar(is, 1/*blocking factor*/));
     tar->SetFlags(flags & ~fStreamPipeThrough);
 
-    auto_ptr<CMaskFileName> mask(new CMaskFileName);
+    unique_ptr<CMaskFileName> mask(new CMaskFileName);
     mask->Add(name);
     tar->SetMask(mask.get(), eTakeOwnership);
     mask.release();
 
     tar->x_Open(eInternal);
-    auto_ptr<TEntries> temp = tar->x_ReadAndProcess(eInternal);
+    unique_ptr<TEntries> temp = tar->x_ReadAndProcess(eInternal);
     _ASSERT(temp.get()  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;

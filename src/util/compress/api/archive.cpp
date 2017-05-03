@@ -314,7 +314,7 @@ void CArchive::Create(void)
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::List(void)
+unique_ptr<CArchive::TEntries> CArchive::List(void)
 {
     ARCHIVE_CHECK;
     x_Open(eList);
@@ -322,7 +322,7 @@ auto_ptr<CArchive::TEntries> CArchive::List(void)
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::Test(void)
+unique_ptr<CArchive::TEntries> CArchive::Test(void)
 {
     ARCHIVE_CHECK;
     x_Open(eTest);
@@ -330,11 +330,11 @@ auto_ptr<CArchive::TEntries> CArchive::Test(void)
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::Extract(void)
+unique_ptr<CArchive::TEntries> CArchive::Extract(void)
 {
     ARCHIVE_CHECK;
     x_Open(eExtract);
-    auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
+    unique_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
     // Restore attributes of "postponed" directory entries
     if (F_ISSET(fPreserveAll)) {
         ITERATE(TEntries, e, *entries) {
@@ -439,7 +439,7 @@ void CArchive::ExtractFileToCallback(const CArchiveEntryInfo& info,
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::Append(const string& path, ELevel level,
+unique_ptr<CArchive::TEntries> CArchive::Append(const string& path, ELevel level,
                                               const string& comment)
 {
     ARCHIVE_CHECK;
@@ -448,7 +448,7 @@ auto_ptr<CArchive::TEntries> CArchive::Append(const string& path, ELevel level,
 }
 
 
-auto_ptr<CArchive::TEntries>
+unique_ptr<CArchive::TEntries>
 CArchive::AppendFileFromMemory(const string& name_in_archive, void* buf, size_t buf_size,
                                ELevel level, const string& comment)
 {
@@ -457,7 +457,7 @@ CArchive::AppendFileFromMemory(const string& name_in_archive, void* buf, size_t 
         NCBI_THROW(CCoreException, eInvalidArg, "Bad memory buffer");
     }
     x_Open(eAppend);
-    auto_ptr<TEntries> entries(new TEntries);
+    unique_ptr<TEntries> entries(new TEntries);
 
     // Clear the entry info
     m_Current = CArchiveEntryInfo();
@@ -587,10 +587,10 @@ void CArchive::x_Open(EAction action)
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::x_ReadAndProcess(EAction action)
+unique_ptr<CArchive::TEntries> CArchive::x_ReadAndProcess(EAction action)
 {
     _ASSERT(action);
-    auto_ptr<TEntries> entries(new TEntries);
+    unique_ptr<TEntries> entries(new TEntries);
 
     // Get number of files in archive
     size_t n = ARCHIVE->GetNumEntries();
@@ -672,7 +672,7 @@ void CArchive::x_ExtractEntry(const TEntries* prev_entries)
     CDirEntry::EType type = m_Current.GetType();
 
     // Destination for extraction
-    auto_ptr<CDirEntry> dst(
+    unique_ptr<CDirEntry> dst(
         CDirEntry::CreateObject(type,
             CDirEntry::NormalizePath(CDirEntry::ConcatPath(m_BaseDir, m_Current.GetName()))));
     // Dereference link if requested
@@ -790,7 +790,7 @@ void CArchive::x_ExtractEntry(const TEntries* prev_entries)
 void CArchive::x_RestoreAttrs(const CArchiveEntryInfo& info,
                               const CDirEntry*         dst) const
 {
-    auto_ptr<CDirEntry> path_ptr;  // deleter
+    unique_ptr<CDirEntry> path_ptr;  // deleter
     if (!dst) {
         path_ptr.reset(CDirEntry::CreateObject(CDirEntry::EType(info.GetType()),
                        CDirEntry::NormalizePath(CDirEntry::ConcatPath(m_BaseDir, info.GetName()))));
@@ -878,12 +878,12 @@ void CArchive::x_RestoreAttrs(const CArchiveEntryInfo& info,
 }
 
 
-auto_ptr<CArchive::TEntries> CArchive::x_Append(const string&   src_path,
+unique_ptr<CArchive::TEntries> CArchive::x_Append(const string&   src_path,
                                                 ELevel          level,
                                                 const string&   comment,
                                                 const TEntries* toc)
 {
-    auto_ptr<TEntries> entries(new TEntries);
+    unique_ptr<TEntries> entries(new TEntries);
 
     const EFollowLinks follow_links = (m_Flags & fFollowLinks) ? eFollowLinks : eIgnoreLinks;
     bool update = true;
@@ -1070,7 +1070,7 @@ auto_ptr<CArchive::TEntries> CArchive::x_Append(const string&   src_path,
             // Append/update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*", CDir::eIgnoreRecursive);
             ITERATE(CDir::TEntries, e, dir) {
-                auto_ptr<TEntries> add = x_Append((*e)->GetPath(), level, kEmptyStr, toc);
+                unique_ptr<TEntries> add = x_Append((*e)->GetPath(), level, kEmptyStr, toc);
                 entries->splice(entries->end(), *add);
             }
         }
