@@ -36,6 +36,7 @@
 
 #include <stack>
 
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -90,7 +91,6 @@ class CName_std;
 class CBioSource;
 class COrg_ref;
 class COrgName;
-class COrgMod;
 class CSubSource;
 class CMolInfo;
 class CCdregion;
