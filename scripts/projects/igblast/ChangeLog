@@ -1,5 +1,5 @@
 April 19, 2017
-*Making vdj nucleotide junction overlapping an option. Default to no overlap allowed.
+*Make nucleotide overlaps at VDJ junctions an option (-allow_vdj_overlap) and default is set to no overlap allowed.  Previous versions were hard-coded to allow nucleotide overlaps at VDJ junctions.
 *Use alignment length instead of percent identity as tiebreaker for hits with identical blast scores.
 *Allow custom J gene mismatch penalty.
 *Add CDR3 start and stop to sub-region table
