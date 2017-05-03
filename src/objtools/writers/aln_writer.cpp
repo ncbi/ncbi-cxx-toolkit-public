@@ -34,6 +34,7 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Sparse_align.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/scope.hpp>
@@ -44,7 +45,6 @@
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/aln_writer.hpp>
 
-//#include <util/sequtil/sequtil.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -79,9 +79,16 @@ bool CAlnWriter::WriteAlign(
     const string& descr) 
 {
 
-    if (align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg) {
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::C_Segs::e_Denseg:
         return xWriteAlignDenseg(align.GetSegs().GetDenseg());
+    case CSeq_align::C_Segs::e_Spliced:
+    case CSeq_align::C_Segs::e_Sparse:
+    case CSeq_align::C_Segs::e_Std:
+        break;
     }
+
+
 
     return false;
 }
@@ -124,6 +131,48 @@ bool s_TryFindRange(const CObject_id& local_id,
     return true;
 }
 
+// -----------------------------------------------------------------------------
+
+void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range) 
+{   
+    if (m_pScope) {
+        if (id.IsLocal()) {
+            CRef<CSeq_id> pTrueId;
+            if (s_TryFindRange(id.GetLocal(), pTrueId, range)) {
+                bsh = m_pScope->GetBioseqHandle(*pTrueId);
+            }
+        }
+        else 
+        {
+            bsh = m_pScope->GetBioseqHandle(id);
+            range.SetFrom(CRange<TSeqPos>::GetPositionMin());
+            range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
+        }
+    }
+}
+
+
+// -----------------------------------------------------------------------------
+
+bool CAlnWriter::xGetSeqString(CBioseq_Handle bsh, 
+    const CRange<TSeqPos>& range,
+    ENa_strand strand, 
+    string& seq)
+{
+    if (!bsh) {
+        return false;
+    }
+    const auto length = bsh.GetBioseqLength();
+    CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
+    if (range.IsWhole()) {
+        seq_vec.GetSeqData(0, length, seq);
+    }
+    else {
+        seq_vec.GetSeqData(range.GetFrom(), range.GetTo(), seq);
+    }
+
+    return true;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -142,39 +191,27 @@ bool CAlnWriter::xWriteAlignDenseg(
     const auto num_rows = denseg.GetDim();
     const auto num_segs = denseg.GetNumseg();
 
+
     for (int row=0; row<num_rows; ++row) 
     {
         const CSeq_id& id = denseg.GetSeq_id(row);
-        CBioseq_Handle bsh;
-
         CRange<TSeqPos> range;
-        if (id.IsLocal()) {
-            CRef<CSeq_id> pAccession;
-            if (s_TryFindRange(id.GetLocal(), pAccession, range)) {
-                bsh = m_pScope->GetBioseqHandle(*pAccession);
-            }
-        }
-        else 
-        {
-            bsh = m_pScope->GetBioseqHandle(id);
-            auto length = bsh.GetBioseqLength();
-            range.SetFrom(CRange<TSeqPos>::GetPositionMin());
-            range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
-        }
 
+        CBioseq_Handle bsh;
+        xProcessSeqId(id, bsh, range);
         if (!bsh) {
             continue;
         }
 
-        auto length = bsh.GetBioseqLength();
-        CSeqVector vec_plus = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
         string seq_plus;
-        if (range.IsWhole()) {
-            vec_plus.GetSeqData(0, length, seq_plus); 
-        } 
-        else {
-            vec_plus.GetSeqData(range.GetFrom(), range.GetTo(), seq_plus);
+        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
+            // Throw an exception
         }
+
+        const CSeqUtil::ECoding coding = 
+            (bsh.IsNucleotide()) ?
+            CSeqUtil::e_Iupacna :
+            CSeqUtil::e_Iupacaa;
 
         string seqdata = "";
         for (int seg=0; seg<num_segs; ++seg)
@@ -184,30 +221,7 @@ bool CAlnWriter::xWriteAlignDenseg(
             const ENa_strand strand = (denseg.IsSetStrands()) ?
                 denseg.GetStrands()[seg*num_rows + row] :
                 eNa_strand_plus;
-
-            if (start >= 0) {
-                if (start >= seq_plus.size()) {
-                    // Throw an exception
-                }
-                if (strand == eNa_strand_plus) {
-                    seqdata += seq_plus.substr(start, len);
-                }
-                else 
-                {
-                    CSeqUtil::ECoding coding = 
-                        (bsh.IsNucleotide()) ?
-                        CSeqUtil::e_Iupacna :
-                        CSeqUtil::e_Iupacaa;
-                    string seq_minus;
-                    CSeqManip::ReverseComplement(seq_plus, coding, start, len, seq_minus);
-                
-                    seqdata += seq_minus;        
-                }
-            }  
-            else  
-            {
-                seqdata += string(len, '-');
-            }
+            seqdata += xGetSegString(seq_plus, coding, strand, start, len);
         }
         m_Os << ">" + id.AsFastaString() << "\n";
         size_t pos=0;
@@ -221,6 +235,96 @@ bool CAlnWriter::xWriteAlignDenseg(
     return true;
 }
 
+// -----------------------------------------------------------------------------
+
+string CAlnWriter::xGetSegString(const string& seq_plus, 
+    CSeqUtil::ECoding coding,
+    const ENa_strand strand,
+    const int start,
+    const size_t len)
+{
+    if (start >= 0) {
+        if (start >= seq_plus.size()) {
+            // Throw an exception
+        }
+        if (strand == eNa_strand_plus) {
+            return seq_plus.substr(start, len);
+        }
+        // else
+        string seq_minus;
+        CSeqManip::ReverseComplement(seq_plus, coding, start, len, seq_minus);
+        return seq_minus;
+    }
+
+    return string(len, '-');
+}
+
+
+// -----------------------------------------------------------------------------
+
+bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
+{
+    const auto num_segs = sparse_align.GetNumseg();
+    
+
+    { // First row
+        const CSeq_id& first_id  = sparse_align.GetFirst_id();
+        CBioseq_Handle bsh;
+        CRange<TSeqPos> range;
+        xProcessSeqId(first_id, bsh, range);
+        if (!bsh) {
+            // Throw an exception
+        }
+        const CSeqUtil::ECoding coding = 
+            (bsh.IsNucleotide())?
+            CSeqUtil::e_Iupacna :
+            CSeqUtil::e_Iupacaa;
+
+        string seq_plus;
+        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
+            // Throw an exception
+        }
+    
+        string seqdata = "";
+        for (int seg=0; seg<num_segs; ++seg) {
+            const auto start = sparse_align.GetFirst_starts()[seg];
+            const auto len = sparse_align.GetLens()[seg];
+            seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
+        }
+    }
+
+    { // Second row
+        const CSeq_id& second_id  = sparse_align.GetSecond_id();
+        CBioseq_Handle bsh;
+        CRange<TSeqPos> range;
+        xProcessSeqId(second_id, bsh, range);
+        if (!bsh) {
+            // Throw an exception
+        }
+        const CSeqUtil::ECoding coding = 
+            (bsh.IsNucleotide())?
+            CSeqUtil::e_Iupacna :
+            CSeqUtil::e_Iupacaa;
+
+        string seq_plus;
+        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
+            // Throw an exception
+        }
+
+        string seqdata = "";
+        const vector<ENa_strand>& strands = sparse_align.IsSetSecond_strands() ?
+            sparse_align.GetSecond_strands() : vector<ENa_strand>(num_segs, eNa_strand_plus);
+        for (int seg=0; seg<num_segs; ++seg) {
+            const auto start = sparse_align.GetFirst_starts()[seg];
+            const auto len = sparse_align.GetLens()[seg];
+            seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
+        }
+    }
+
+
+
+    return true;
+}
 
 END_NCBI_SCOPE
 

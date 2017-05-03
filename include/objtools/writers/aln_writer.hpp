@@ -33,12 +33,14 @@
 #define OBJTOOLS_WRITERS_ALN_WRITER_HPP
 
 #include <objtools/writers/writer.hpp>
+#include <util/sequtil/sequtil.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 class CDense_seg;
 class CScope;
+class CSparse_align;
 
 class NCBI_XOBJWRITE_EXPORT CAlnWriter:
     public CWriterBase
@@ -63,6 +65,21 @@ public:
 
 private:
     bool xWriteAlignDenseg(const CDense_seg& denseg);
+
+    bool xWriteSparseAlign(const CSparse_align& sparse_aln);
+
+    void xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
+   
+    bool xGetSeqString(CBioseq_Handle bsh,
+        const CRange<TSeqPos>& range,
+        ENa_strand strand,
+        string& seq);
+
+    string xGetSegString(const string& seq_plus,
+        CSeqUtil::ECoding coding,
+        ENa_strand strand,
+        int start,
+        size_t len);
 
     CRef<CScope> m_pScope;
     
