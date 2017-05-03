@@ -31,6 +31,22 @@
  */
 
 
+/* ---------------------------------------------------------------------------
+    Stub out the whole program for Windows DLL configurations.
+    The problem is that the program uses PARSON, which does not have the
+    dllexport/dllimport specifiers, resulting in link errors when built
+    with DLL on Windows.
+    */
+#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
+#include <stdio.h>
+int main(int argc, const char *argv[])
+{
+    printf("NCBI_UNITTEST_DISABLED - This program is disabled for WinDLL.\n");
+    return 1;
+}
+#else
+
+
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_namerd.h"
 #include "../ncbi_servicep.h"
@@ -924,3 +940,9 @@ out:
     CORE_SetLOG(0);
     return retval;
 }
+
+
+/* END -----------------------------------------------------------------------
+    Stub out the program for Windows DLL configurations.
+    */
+#endif

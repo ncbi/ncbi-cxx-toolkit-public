@@ -1,6 +1,12 @@
 #! /bin/sh
 # $Id$
 
+# Disable Windows DLL configurations.
+if echo "$FEATURES" | grep "MSWin" > /dev/null  &&  echo "$FEATURES" | grep "DLL" > /dev/null; then
+    echo "NCBI_UNITTEST_DISABLED"
+    exit 0
+fi
+
 # Use standard location, if operating from inside automated build.
 if test -r ./ncbi_test_data; then
     . ./ncbi_test_data
@@ -10,9 +16,9 @@ fi
 # Factor out OS- and invocation-specific stuff.
 bases=". $base_std"
 if test "$OSTYPE" = "cygwin"; then
-  bases="$bases //snowman/toolkit_test_data/connect"
+    bases="$bases //snowman/toolkit_test_data/connect"
 else
-  bases="$bases /net/snowman/vol/projects/toolkit_test_data/connect"
+    bases="$bases /net/snowman/vol/projects/toolkit_test_data/connect"
 fi
 bases="$bases /am/coremake_builds/test_data/connect"
 

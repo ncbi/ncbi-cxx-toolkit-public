@@ -1,7 +1,5 @@
 # $Id$
 
-REQUIRES = -MSWin
-
 APP = test_ncbi_namerd_mt
 SRC = test_ncbi_namerd_mt
 
