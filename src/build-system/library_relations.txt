@@ -179,6 +179,8 @@ bz2 needs3party $(ORIG_LIBS)
 cache_g needs generic_db_utils
 cdd needs cn3d
 cdd needs scoremat
+cdd_access needs id2
+cdd_access needs xconnect
 clog needs3party $(ORIG_LIBS)
 cluster_assignment needs xser
 cluster_utils needs gpipe_objutil
@@ -588,6 +590,8 @@ id2_split needs $(SOBJMGR_LIBS)
 id2cli needs id2
 id2cli needs xconnect
 ideo needs xmvdatacache
+ideo_gridcli needs ideo
+ideo_gridcli needs trackmgrgridcli
 ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
@@ -700,6 +704,8 @@ ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
+ncbi_id2proc_cdd needs $(COMPRESS_LIBS)
+ncbi_id2proc_cdd needs cdd_access
 ncbi_id2proc_snp needs $(COMPRESS_LIBS)
 ncbi_id2proc_snp needs $(SOBJMGR_LIBS)
 ncbi_id2proc_snp needs $(SRAREAD_LIBS)
@@ -1192,6 +1198,10 @@ w_wx needs gui_print
 w_wx needs3party $(WXWIDGETS_GL_LIBS)
 w_wx needs3party $(WXWIDGETS_LIBS)
 we_cpp needs xser
+wgmlst_genome_pairwise_distance needs $(COMPRESS_LIBS)
+wgmlst_genome_pairwise_distance needs wgmlst_store
+wgmlst_store needs $(SEQ_LIBS)
+wgmlst_store needs pub
 writedb needs $(OBJREAD_LIBS)
 writedb needs seqdb
 wx_base-3.0 needs $(Z_LIB)
