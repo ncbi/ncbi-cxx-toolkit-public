@@ -1008,20 +1008,12 @@ private:
         fTrackReaders = 0x40000000
     };
 
-    TFlags                     m_Flags; ///< Configuration flags
-
-    auto_ptr<CInternalRWLock>  m_RW;    ///< Platform-dependent RW-lock data
-
-    volatile TThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
-
-    volatile long              m_Count; ///< Number of readers (if >0) or
-                                        ///< writers (if <0)
-
-    volatile unsigned int      m_WaitingWriters; ///< Number of writers waiting;
-                                                 ///< zero if not keeping track
-
-    vector<TThreadSystemID>    m_Readers;   ///< List of all readers or writers
-                                            ///< for debugging
+    TFlags                      m_Flags;   ///< Configuration flags
+    unique_ptr<CInternalRWLock> m_RW;      ///< Platform-dependent RW-lock data
+    volatile TThreadSystemID    m_Owner;   ///< Writer ID, one of the readers ID
+    volatile long               m_Count;   ///< Number of readers (if >0) or writers (if <0)
+    volatile unsigned int       m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
+    vector<TThreadSystemID>     m_Readers; ///< List of all readers or writers for debugging
 
     bool x_MayAcquireForReading(TThreadSystemID self_id);
 

@@ -657,7 +657,7 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
         break;
     case fArgs_Merge:
     {
-        auto_ptr<CUrlArgs> args(m_ArgsList.release());
+        unique_ptr<CUrlArgs> args(m_ArgsList.release());
         m_ArgsList.reset(new CUrlArgs());
         if ( args.get() ) {
             // Copy existing arguments, if any, removing duplicate entries.

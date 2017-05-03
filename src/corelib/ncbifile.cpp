@@ -2563,11 +2563,9 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         }
         // Note that rename() fails in the case of cross-device renaming.
         // So, try to make a copy and remove the original later.
-        auto_ptr<CDirEntry>
-            e(CDirEntry::CreateObject(src_type, src.GetPath()));
+        unique_ptr<CDirEntry> e(CDirEntry::CreateObject(src_type, src.GetPath()));
         if ( !e->Copy(dst.GetPath(), fCF_Recursive | fCF_PreserveAll ) ) {
-            auto_ptr<CDirEntry> 
-                tmp(CDirEntry::CreateObject(src_type, dst.GetPath()));
+            unique_ptr<CDirEntry> tmp(CDirEntry::CreateObject(src_type, dst.GetPath()));
             tmp->Remove(eRecursive);
             return false;
         }
@@ -3810,7 +3808,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const string& mask,
 CDir::TEntries CDir::GetEntries(const vector<string>& masks,
                                 TGetEntriesFlags flags) const
 {
-    auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
+    unique_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
     return contents.get() ? *contents.get() : TEntries();
 }
 
@@ -3894,7 +3892,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
 CDir::TEntries CDir::GetEntries(const CMask& masks,
                                 TGetEntriesFlags flags) const
 {
-    auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
+    unique_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
     return contents.get() ? *contents.get() : TEntries();
 }
 
@@ -4203,7 +4201,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     }
 
     // Read all entries in source directory
-    auto_ptr<TEntries> contents(src.GetEntriesPtr(kEmptyStr, fIgnoreRecursive));
+    unique_ptr<TEntries> contents(src.GetEntriesPtr(kEmptyStr, fIgnoreRecursive));
     if ( !contents.get() ) {
         LOG_ERROR_AND_RETURN(68, "CDir::Copy(): Cannot get content of " + src.GetPath());
     }
@@ -4278,7 +4276,7 @@ bool CDir::Remove(TRemoveFlags flags) const
 #endif
 
     // Read all entries in directory
-    auto_ptr<TEntries> contents(GetEntriesPtr());
+    unique_ptr<TEntries> contents(GetEntriesPtr());
     if (!contents.get()) {
         LOG_ERROR_AND_RETURN_ERRNO(72, "CDir::Remove(): Cannot get content of " + GetPath());
     }
@@ -4346,7 +4344,7 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
     }
     
     // Read all entries in directory
-    auto_ptr<TEntries> contents(GetEntriesPtr());
+    unique_ptr<TEntries> contents(GetEntriesPtr());
     if (!contents.get()) {
         LOG_ERROR_AND_RETURN_ERRNO(74, "CDir::SetMode(): Cannot get content of " + GetPath());
     }

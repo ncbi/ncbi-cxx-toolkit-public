@@ -244,7 +244,7 @@ static void s_TEST_CountNodes()
     //        - 24
     //        - 25
 
-    std::auto_ptr<TTree>    root( new TTree(0) );
+    std::unique_ptr<TTree> root( new TTree(0) );
 
     TTree* node10 = root->AddNode(10);
     node10->AddNode(20);

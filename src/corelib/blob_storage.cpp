@@ -77,7 +77,7 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
     typedef CPluginManagerGetter<IBlobStorage> TCacheManagerStore;
 
     CRef<TCacheManager> cache_manager( TCacheManagerStore::Get() );
-    //auto_ptr<TPluginManagerParamTree> params( MakeParamTree() );
+    //unique_ptr<TPluginManagerParamTree> params( MakeParamTree() );
     IBlobStorage* drv = NULL;
 
     _ASSERT( cache_manager );

@@ -121,7 +121,7 @@ void s_ParseSubNodes(const string& sub_nodes,
     set<string> sub_set;
     s_List2Set(sub_list, &sub_set);
     ITERATE(set<string>, sub_it, sub_set) {
-        auto_ptr<TParamTree> sub_node(new TParamTree);
+        unique_ptr<TParamTree> sub_node(new TParamTree);
         size_t pos = sub_it->rfind('/');
         if (pos == string::npos) {
             sub_node->GetKey() = *sub_it;
@@ -234,7 +234,7 @@ ETreeTraverseCode SNodeNameUpdater::operator()(TParamTree& node,
 
 CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 {
-    auto_ptr<TParamTree> tree_root(new TParamTree);
+    unique_ptr<TParamTree> tree_root(new TParamTree);
 
     list<string> sections;
     reg.EnumerateSections(&sections);
@@ -253,7 +253,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         const string& section_name = *name_it;
         TParamTree* node_ptr;
         if (section_name.find('/') == string::npos) {
-            auto_ptr<TParamTree> node(new TParamTree);
+            unique_ptr<TParamTree> node(new TParamTree);
             node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
         } else {
@@ -344,7 +344,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 
         TParamTree* node_ptr;
         if (section_name.find('/') == string::npos) {
-            auto_ptr<TParamTree> node(new TParamTree);
+            unique_ptr<TParamTree> node(new TParamTree);
             node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
         } else {

@@ -2120,7 +2120,7 @@ void CDiagContext_Extra::Flush(void)
         }
     }
 
-    auto_ptr<CNcbiOstrstream> ostr;
+    unique_ptr<CNcbiOstrstream> ostr;
     string s;
     if (m_EventType == SDiagMessage::eEvent_PerfLog) {
         ostr.reset(new CNcbiOstrstream);
@@ -2662,15 +2662,15 @@ inline string s_ReadString(const char* filename)
 }
 
 
-static CSafeStatic< auto_ptr<string> > s_HostRole;
-static CSafeStatic< auto_ptr<string> > s_HostLocation;
+static CSafeStatic< unique_ptr<string> > s_HostRole;
+static CSafeStatic< unique_ptr<string> > s_HostLocation;
 
 const string& CDiagContext::GetHostRole(void)
 {
     if ( !s_HostRole->get() ) {
         CDiagLock lock(CDiagLock::eWrite);
         if ( !s_HostRole->get() ) {
-            auto_ptr<string> role(new string);
+            unique_ptr<string> role(new string);
             *role = s_ReadString("/etc/ncbi/role");
             s_HostRole->reset(role.release());
         }
@@ -2684,7 +2684,7 @@ const string& CDiagContext::GetHostLocation(void)
     if ( !s_HostLocation->get() ) {
         CDiagLock lock(CDiagLock::eWrite);
         if ( !s_HostLocation->get() ) {
-            auto_ptr<string> loc(new string);
+            unique_ptr<string> loc(new string);
             *loc = s_ReadString("/etc/ncbi/location");
             s_HostLocation->reset(loc.release());
         }
@@ -2961,7 +2961,7 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
         // Tee over STDERR - flushing will create duplicate messages
         return;
     }
-    auto_ptr<TMessages> tmp(m_Messages.release());
+    unique_ptr<TMessages> tmp(m_Messages.release());
     //ERR_POST_X(1, Note << "***** BEGIN COLLECTED MESSAGES *****");
     NON_CONST_ITERATE(TMessages, it, *tmp.get()) {
         it->m_NoTee = true; // Do not tee duplicate messages to console.
@@ -4617,8 +4617,8 @@ void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
 {
     string msg_str, line, last_msg_str;
     bool res = false;
-    auto_ptr<SDiagMessage> msg;
-    auto_ptr<SDiagMessage> last_msg;
+    unique_ptr<SDiagMessage> msg;
+    unique_ptr<SDiagMessage> last_msg;
     while ( in.good() ) {
         getline(in, line);
         // Dirty check for PID/TID/RID
@@ -6155,7 +6155,7 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 
 static bool
 s_CreateHandler(const string& fname,
-                auto_ptr<CStreamDiagHandler_Base>& handler)
+                unique_ptr<CStreamDiagHandler_Base>& handler)
 {
     if ( fname.empty()  ||  fname == "/dev/null") {
         handler.reset();
@@ -6165,7 +6165,7 @@ s_CreateHandler(const string& fname,
         handler.reset(new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr));
         return true;
     }
-    auto_ptr<CFileHandleDiagHandler> fh(new CFileHandleDiagHandler(fname));
+    unique_ptr<CFileHandleDiagHandler> fh(new CFileHandleDiagHandler(fname));
     if ( !fh->Valid() ) {
         ERR_POST_X(7, Info << "Failed to open log file: " << fname);
         return false;
@@ -6180,8 +6180,8 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   bool          /*quick_flush*/)
 {
     bool special = s_IsSpecialLogName(file_name);
-    auto_ptr<CStreamDiagHandler_Base> err_handler, log_handler,
-                                      trace_handler, perf_handler;
+    unique_ptr<CStreamDiagHandler_Base> err_handler, log_handler,
+                                        trace_handler, perf_handler;
     switch ( file_type ) {
     case eDiagFile_All:
         {
@@ -6857,7 +6857,7 @@ extern bool SetLogFile(const string& file_name,
         }
         else {
             // output to file
-            auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
+            unique_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
             if ( !fhandler->SetLogFile(file_name, eDiagFile_All, quick_flush) ) {
                 ERR_POST_X(9, Info << "Failed to initialize log: " << file_name);
                 return false;
@@ -6876,7 +6876,7 @@ extern bool SetLogFile(const string& file_name,
                 old_ownership = false;
             }
             // Install new handler, try to re-use the old one
-            auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
+            unique_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
             if ( sub_handler  &&  file_type != eDiagFile_All) {
                 // If we are going to set all handlers, no need to save the old one.
                 if ( old_ownership ) {

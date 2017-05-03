@@ -57,12 +57,9 @@ public:
 
 void CResInfoTest::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     string prog_description = "Test for CNcbiResourceInfo\n";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-        prog_description, false);
-
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), prog_description, false);
     SetupArgDescriptions(arg_desc.release());
 }
 

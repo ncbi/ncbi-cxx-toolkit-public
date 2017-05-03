@@ -1429,7 +1429,7 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
                    "greater than max_count");
 
     m_Sem = new SSemaphore;
-    auto_ptr<SSemaphore> auto_sem(m_Sem);
+    unique_ptr<SSemaphore> auto_sem(m_Sem);
 
 #if defined(NCBI_POSIX_THREADS)
     m_Sem->max_count = max_count;

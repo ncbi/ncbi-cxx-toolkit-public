@@ -536,8 +536,8 @@ public:
 private:
     string  m_Path;  //< File path to store PID.
     TPid    m_PID;   //< Sored PID.
-    auto_ptr<CInterProcessLock> m_MTGuard;  //< MT-Safe protection guard.
-    auto_ptr<CInterProcessLock> m_PIDGuard; //< Guard to help with "PID reuse" problem.
+    unique_ptr<CInterProcessLock> m_MTGuard;  //< MT-Safe protection guard.
+    unique_ptr<CInterProcessLock> m_PIDGuard; //< Guard to help with "PID reuse" problem.
 };
 
 

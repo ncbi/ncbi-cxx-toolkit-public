@@ -303,7 +303,7 @@ void CDiagParserApp::x_CheckMessage(void)
 
     CDiagCompileInfo info;
     string result;
-    auto_ptr<SDiagMessage> msg;
+    unique_ptr<SDiagMessage> msg;
     CTime post_time(CTime::eCurrent);
     char buffer[4096] = "";
     ostrstream str(buffer, 4096, ios::out);

@@ -328,10 +328,7 @@ void CTestApplication::Init(void)
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    
-    // Specify USAGE context
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Test inter-process locks");
     
     // Specific to multi-process configuration test
@@ -339,8 +336,6 @@ void CTestApplication::Init(void)
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("lock", "name", "parent's lock (internal use only)",
                             CArgDescriptions::eString, kEmptyStr);
-    
-    // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 

@@ -112,9 +112,8 @@ private:
     // Convert internal stack trace data (collected addresses)
     // to the list of SStackFrameInfo.
     void x_ExpandStackTrace(void) const;
-
-    mutable auto_ptr<CStackTraceImpl> m_Impl;
-
+ 
+    mutable unique_ptr<CStackTraceImpl> m_Impl;
     mutable TStack m_Stack;
     mutable string m_Prefix;
 };

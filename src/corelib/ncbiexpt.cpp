@@ -653,7 +653,7 @@ void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
         return;
 
     const CException* cex = dynamic_cast<const CException*>(&ex);
-    auto_ptr<CException> wrapper;
+    unique_ptr<CException> wrapper;
     if ( !cex ) {
         wrapper.reset(new CExceptionWrapper(info, ex));
         cex = wrapper.get();

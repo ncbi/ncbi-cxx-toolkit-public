@@ -474,7 +474,7 @@ private:
     string  m_Path;
     string  m_Fragment;
     string  m_OrigArgs;
-    auto_ptr<CUrlArgs> m_ArgsList;
+    unique_ptr<CUrlArgs> m_ArgsList;
 };
 
 

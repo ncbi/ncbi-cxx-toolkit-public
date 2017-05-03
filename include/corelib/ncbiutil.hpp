@@ -192,7 +192,7 @@ inline void DeleteElements(multimap<Key, Element*>& m)
 template<class Result, class Source, class ToKey>
 inline
 Result&
-AutoMap(auto_ptr<Result>& cache, const Source& source, const ToKey& toKey)
+AutoMap(unique_ptr<Result>& cache, const Source& source, const ToKey& toKey)
 {
     Result* ret = cache.get();
     if ( !ret ) {

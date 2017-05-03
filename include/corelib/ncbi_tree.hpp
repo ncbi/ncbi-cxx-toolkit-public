@@ -857,7 +857,7 @@ CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
         } // for it
 
         if (!sub_level_found) {
-            auto_ptr<TTreeType> node( new CTreeNode<TValue, TKeyGetter> );
+            unique_ptr<TTreeType> node( new CTreeNode<TValue, TKeyGetter> );
             node->GetKey() = key;
             tr->AddNode( node.get() );
             tr = node.release();

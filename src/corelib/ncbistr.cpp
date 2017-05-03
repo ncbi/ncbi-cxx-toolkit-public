@@ -3687,7 +3687,7 @@ string NStr::Join(const set<CTempString>& arr, const CTempString delim)
 
 string NStr::Sanitize(CTempString str, TSS_Flags flags)
 {
-    auto_ptr<CNcbiOstrstream> out;
+    unique_ptr<CNcbiOstrstream> out;
     SIZE_TYPE i;
     SIZE_TYPE pos      = 0;  // start position of the substring
     SIZE_TYPE n_good   = 0;  // length of substring (good symbols)
@@ -3826,7 +3826,7 @@ static string s_PrintableString(const CTempString    str,
                                 NStr::TPrintableMode mode,
                                 ELanguage            lang)
 {
-    auto_ptr<CNcbiOstrstream> out;
+    unique_ptr<CNcbiOstrstream> out;
     SIZE_TYPE i, j = 0;
 
     for (i = 0;  i < str.size();  i++) {

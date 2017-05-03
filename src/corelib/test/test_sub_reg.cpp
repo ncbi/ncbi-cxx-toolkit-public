@@ -52,7 +52,7 @@ class CTestSubRegApp : public CNcbiApplication
 
 void CTestSubRegApp::Init()
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "test of proper subregistry handling");
 

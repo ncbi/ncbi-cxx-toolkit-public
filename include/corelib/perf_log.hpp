@@ -159,11 +159,11 @@ private:
     friend class CPerfLogGuard;
 
 private:
-    auto_ptr<CStopWatch> m_StopWatchGuard; // Internal timer if auto-created.
-    CStopWatch*          m_StopWatch;      // Timer (internal or provided by user)
-    CStopWatch::EStart   m_TimerState;     // Internal timer state to save cycles
-    bool                 m_IsDiscarded;    // TRUE if Post() or Discard() is already called
-    double               m_Adjustment;     // Accumulated elapsed time adjustment
+    unique_ptr<CStopWatch> m_StopWatchGuard; // Internal timer if auto-created.
+    CStopWatch*            m_StopWatch;      // Timer (internal or provided by user)
+    CStopWatch::EStart     m_TimerState;     // Internal timer state to save cycles
+    bool                   m_IsDiscarded;    // TRUE if Post() or Discard() is already called
+    double                 m_Adjustment;     // Accumulated elapsed time adjustment
 };
 
 

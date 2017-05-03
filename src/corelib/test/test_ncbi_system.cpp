@@ -178,19 +178,16 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test some system-specific functions");
 
     // Describe the expected command-line arguments
-    arg_desc->AddPositional
-        ("feature",
-         "Platform-specific feature to test",
-         CArgDescriptions::eString);
-    arg_desc->SetConstraint
-        ("feature", &(*new CArgAllow_Strings, "general", "mem", "cpu"));
+    arg_desc->AddPositional("feature", "Platform-specific feature to test",
+                            CArgDescriptions::eString);
+    arg_desc->SetConstraint("feature", &(*new CArgAllow_Strings, "general", "mem", "cpu"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());

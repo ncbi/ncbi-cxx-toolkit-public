@@ -201,8 +201,8 @@ public:
     ~CNcbiToolkit(void);
 
 private:
-    auto_ptr<CNcbiApplication>              m_App;
-    auto_ptr<CNcbiToolkitImpl_DiagHandler>  m_DiagHandler;
+    unique_ptr<CNcbiApplication>              m_App;
+    unique_ptr<CNcbiToolkitImpl_DiagHandler>  m_DiagHandler;
 };
 
 

@@ -655,7 +655,7 @@ void CArgTestApplication::Init(void)
         assert(m_TestNo <= max_test);
     }
     // Create cmd-line argument descriptions class
-    auto_ptr<CCommandArgDescriptions> cmd_desc(
+    unique_ptr<CCommandArgDescriptions> cmd_desc(
         new CCommandArgDescriptions(true,0, CCommandArgDescriptions::eCommandOptional |
                 CCommandArgDescriptions::eNoSortCommands));
 
@@ -679,7 +679,7 @@ void CArgTestApplication::Init(void)
     // - create command for each test except default (0);
     for (size_t i=1; i<=max_test; ++i) {
         string test = NStr::NumericToString(i);
-        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
+        unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
         string ctx = "Testing CCommandArgDescriptions: RunTest" + test;
         string detailed = ctx + "\nthis will run specified test";
         arg_desc->SetUsageContext("", ctx, true);

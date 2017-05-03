@@ -89,9 +89,7 @@ void CTestStackTrace::Func5(const char* char_ptr)
 
 void CTestStackTrace::Init(void)
 {
-    // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     SetupArgDescriptions(arg_desc.release());
 }
 

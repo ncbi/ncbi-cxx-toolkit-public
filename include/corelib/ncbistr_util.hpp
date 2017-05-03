@@ -107,8 +107,8 @@ private:
         SNode() { }
         SNode(const CTempString& s) : str(s) { }
 
-        CTempString     str;
-        auto_ptr<SNode> next;
+        CTempString       str;
+        unique_ptr<SNode> next;
     };
 
     SNode  m_FirstNode;

@@ -324,7 +324,7 @@ void CNcbiApplication::x_TryInit(EAppDiagStream diag,
 
     // If the app still has no arg description - provide default one
     if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
-        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+        unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext
             (GetArguments().GetProgramBasename(),
              "This program has no mandatory arguments");

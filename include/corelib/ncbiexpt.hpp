@@ -953,7 +953,7 @@ private:
     mutable bool m_MainText;         ///< Exception has main text
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
-    auto_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
+    unique_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
 
     TFlags       m_Flags;            ///< Flags, hints, attributes
 

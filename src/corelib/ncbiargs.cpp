@@ -2229,7 +2229,7 @@ void CArgDescriptions::AddKey
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_Key> arg(new CArgDesc_Key(name,
+    unique_ptr<CArgDesc_Key> arg(new CArgDesc_Key(name,
         comment, type, flags, synopsis));
 
     x_AddDesc(*arg);
@@ -2244,7 +2244,7 @@ void CArgDescriptions::AddOptionalKey
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_KeyOpt> arg(new CArgDesc_KeyOpt(name,
+    unique_ptr<CArgDesc_KeyOpt> arg(new CArgDesc_KeyOpt(name,
         comment, type, flags, synopsis));
 
     x_AddDesc(*arg);
@@ -2262,7 +2262,7 @@ void CArgDescriptions::AddDefaultKey
  const string& env_var,
  const char*   display_value)
 {
-    auto_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
+    unique_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
         comment, type, flags, synopsis, default_value, env_var, display_value));
 
     x_AddDesc(*arg);
@@ -2275,7 +2275,7 @@ void CArgDescriptions::AddFlag(
     const string& comment,
     CBoolEnum<EFlagValue> set_value)
 {
-    auto_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet));
+    unique_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet));
     x_AddDesc(*arg);
     arg.release();
 }
@@ -2287,7 +2287,7 @@ void CArgDescriptions::AddPositional(
     EType         type,
     TFlags        flags)
 {
-    auto_ptr<CArgDesc_Pos> arg(new CArgDesc_Pos(name, comment, type, flags));
+    unique_ptr<CArgDesc_Pos> arg(new CArgDesc_Pos(name, comment, type, flags));
 
     x_AddDesc(*arg);
     arg.release();
@@ -2300,7 +2300,7 @@ void CArgDescriptions::AddOpening(
     EType         type,
     TFlags        flags)
 {
-    auto_ptr<CArgDesc_Opening> arg(new CArgDesc_Opening(name, comment, type, flags));
+    unique_ptr<CArgDesc_Opening> arg(new CArgDesc_Opening(name, comment, type, flags));
 
     x_AddDesc(*arg);
     arg.release();
@@ -2313,7 +2313,7 @@ void CArgDescriptions::AddOptionalPositional(
     EType         type,
     TFlags        flags)
 {
-    auto_ptr<CArgDesc_PosOpt> arg
+    unique_ptr<CArgDesc_PosOpt> arg
         (new CArgDesc_PosOpt(name, comment, type, flags));
 
     x_AddDesc(*arg);
@@ -2330,7 +2330,7 @@ void CArgDescriptions::AddDefaultPositional(
      const string& env_var,
      const char*   display_value)
 {
-    auto_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
+    unique_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
         comment, type, flags, default_value, env_var, display_value));
 
     x_AddDesc(*arg);
@@ -2357,7 +2357,7 @@ void CArgDescriptions::AddExtra(
     m_nExtra    = n_mandatory;
     m_nExtraOpt = n_optional;
 
-    auto_ptr<CArgDesc_Pos> arg
+    unique_ptr<CArgDesc_Pos> arg
         (m_nExtra ?
          new CArgDesc_Pos   (kEmptyStr, comment, type, flags) :
          new CArgDesc_PosOpt(kEmptyStr, comment, type, flags));
@@ -2370,7 +2370,7 @@ void CArgDescriptions::AddExtra(
 void CArgDescriptions::AddAlias(const string& alias,
                                 const string& arg_name)
 {
-    auto_ptr<CArgDesc_Alias>arg
+    unique_ptr<CArgDesc_Alias>arg
         (new CArgDesc_Alias(alias, arg_name, kEmptyStr));
 
     x_AddDesc(*arg);
@@ -2389,7 +2389,7 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
             "Attempt to negate a non-flag argument: " + arg_name);
     }
 
-    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name, comment));
+    unique_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name, comment));
     arg->SetNegativeFlag(true);
 
     x_AddDesc(*arg);

@@ -1227,7 +1227,7 @@ public:
         x_PreCheck();
 
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
-        auto_ptr<CArgs> args(new CArgs());
+        unique_ptr<CArgs> args(new CArgs());
 
         // Special case for CGI -- a lone positional argument
         if (GetArgsType() == eCgiArgs  &&  argc == 2) {

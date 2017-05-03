@@ -113,7 +113,7 @@ static bool s_FillModuleListTH32(TModules& modules, DWORD pid)
         };
 
         const char* libname = dllname[0];
-        auto_ptr<CDll> dll;
+        unique_ptr<CDll> dll;
         while (libname) {
             dll.reset(new CDll(libname, CDll::eLoadNow, CDll::eAutoUnload));
 

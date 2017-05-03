@@ -288,7 +288,7 @@ void CTestApp::Init(void)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_All);
     
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_strdbl",
                        "test string <-> double conversion");
     d->AddFlag("speed",
