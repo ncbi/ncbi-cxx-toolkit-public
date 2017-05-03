@@ -34,7 +34,7 @@
     #define CURRENT_TEST_NAME   boost::unit_test_framework::framework::current_test_case().p_name
 #endif
 
-#include "teamcity_messages.h"
+#include <corelib/teamcity_messages.h>
 
 namespace jetbrains { namespace teamcity {
 const std::string ASSERT_CTX = "Assertion occurred in a following context:";

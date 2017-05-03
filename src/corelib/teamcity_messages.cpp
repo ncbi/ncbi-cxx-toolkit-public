@@ -17,7 +17,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "teamcity_messages.h"
+#include <corelib/teamcity_messages.h>
 
 #include <cstdlib>
 #include <sstream>
