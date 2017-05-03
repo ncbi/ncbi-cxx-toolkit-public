@@ -10,7 +10,7 @@ set_target_properties(odbc_lang-app PROPERTIES OUTPUT_NAME odbc_lang)
 include_directories(SYSTEM ${ODBC_INCLUDE})
 
 target_link_libraries(odbc_lang-app
-    ncbi_xdbapi_odbc dbapi_driver ${XCONNEXT} xconnect ${ODBC_LIBS}
+    ncbi_xdbapi_odbc dbapi_driver xconnext xconnect ${ODBC_LIBS}
      
 )
 
