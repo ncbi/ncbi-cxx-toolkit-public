@@ -67,9 +67,9 @@ public:
     void         Join(TOut* result) const;
 
 private:
-    TIn                    m_MainStorage[num_prealloc];
-    auto_ptr<vector<TIn> > m_ExtraStorage;
-    size_t                 m_MainStorageUsage;
+    TIn                      m_MainStorage[num_prealloc];
+    unique_ptr<vector<TIn> > m_ExtraStorage;
+    size_t                   m_MainStorageUsage;
 };
 
 

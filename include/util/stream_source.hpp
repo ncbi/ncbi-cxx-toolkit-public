@@ -218,7 +218,7 @@ protected:
     string m_Prefix;
 
     CNcbiIstream* m_Istr;
-    auto_ptr<CNcbiIstream> m_IstrOwned;
+    unique_ptr<CNcbiIstream> m_IstrOwned;
 
     vector<string> m_Files;
     size_t m_CurrIndex;

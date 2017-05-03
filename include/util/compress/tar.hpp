@@ -401,15 +401,14 @@ public:
     ///   A list of entries appended.
     /// @sa
     ///   Create, Update, SetBaseDir
-    auto_ptr<TEntries> Append(const string& name);
+    unique_ptr<TEntries> Append(const string& name);
 
     /// Append an entry from a stream (exactly entry.GetSize() bytes).
     /// @return
     ///   A list (containing one entry) with full acrhive info filled in
     /// @sa
     ///   Append
-    auto_ptr<TEntries> Append(const CTarUserEntryInfo& entry,
-                              CNcbiIstream& is);
+    unique_ptr<TEntries> Append(const CTarUserEntryInfo& entry, CNcbiIstream& is);
 
     /// Look whether more recent copies of archive members are available in
     /// the file system, and if so, append them to the archive:
@@ -432,7 +431,7 @@ public:
     ///   A list of entries that have been updated.
     /// @sa
     ///   Append, SetBaseDir, SetFlags
-    auto_ptr<TEntries> Update(const string& name);
+    unique_ptr<TEntries> Update(const string& name);
 
     /// Extract the entire archive (into either current directory or
     /// a directory otherwise specified by SetBaseDir()).
@@ -442,7 +441,7 @@ public:
     ///   A list of entries that have been actually extracted.
     /// @sa
     ///   SetMask, SetBaseDir
-    auto_ptr<TEntries> Extract(void);
+    unique_ptr<TEntries> Extract(void);
 
     /// Get information about all matching archive entries.
     ///
@@ -451,7 +450,7 @@ public:
     ///   names match the pre-set mask.
     /// @sa
     ///   SetMask
-    auto_ptr<TEntries> List(void);
+    unique_ptr<TEntries> List(void);
 
     /// Verify archive integrity.
     ///
@@ -658,7 +657,7 @@ private:
     void x_WriteEntryInfo(const string& name);
 
     // Read the archive and do the requested "action" on current entry.
-    auto_ptr<TEntries> x_ReadAndProcess(EAction action);
+    unique_ptr<TEntries> x_ReadAndProcess(EAction action);
 
     // Process current entry from the archive (the actual size passed in).
     // If "extract" is FALSE, then just skip the entry without any processing.
@@ -683,11 +682,10 @@ private:
     void        x_WriteArchive(size_t  n, const char* buffer = 0);
 
     // Append an entry from the file system to the archive.
-    auto_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
+    unique_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
     // Append an entry from an istream to the archive.
-    auto_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry,
-                                CNcbiIstream& is);
+    unique_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry, CNcbiIstream& is);
 
     // Append data from an istream to the archive.
     void x_AppendStream(const string& name, CNcbiIstream& is);
@@ -740,29 +738,28 @@ void CTar::Close(void)
 }
 
 inline
-auto_ptr<CTar::TEntries> CTar::Append(const string& name)
+unique_ptr<CTar::TEntries> CTar::Append(const string& name)
 {
     x_Open(eAppend);
     return x_Append(name);
 }
 
 inline
-auto_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry,
-                                      CNcbiIstream& is)
+unique_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry, CNcbiIstream& is)
 {
     x_Open(eAppend);
     return x_Append(entry, is);
 }
 
 inline
-auto_ptr<CTar::TEntries> CTar::Update(const string& name)
+unique_ptr<CTar::TEntries> CTar::Update(const string& name)
 {
     x_Open(eUpdate);
     return x_Append(name, x_ReadAndProcess(eUpdate).get());
 }
 
 inline
-auto_ptr<CTar::TEntries> CTar::List(void)
+unique_ptr<CTar::TEntries> CTar::List(void)
 {
     x_Open(eList);
     return x_ReadAndProcess(eList);

@@ -77,8 +77,8 @@ private:
     CQueryEval_BV_Value(const CQueryEval_BV_Value&);
     CQueryEval_BV_Value& operator=(const CQueryEval_BV_Value&);
 private:
-    auto_ptr<TBuffer>   m_BV_Buffer; ///< serialized bitvector
-    auto_ptr<BV>        m_BV;        ///< bitvector
+    unique_ptr<TBuffer>  m_BV_Buffer; ///< serialized bitvector
+    unique_ptr<BV>       m_BV;        ///< bitvector
 };
 
 
@@ -300,7 +300,7 @@ public:
             
             // make a temp fake mini tree for EQ operation
             //
-            auto_ptr<CQueryParseTree::TNode> eq_node;
+            unique_ptr<CQueryParseTree::TNode> eq_node;
             try {
                 eq_node.reset(
                     this->GetQueryTree().CreateNode(CQueryParseNode::eEQ, 

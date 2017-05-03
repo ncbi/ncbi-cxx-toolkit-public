@@ -600,7 +600,7 @@ void CTestStaticMap::Init(void)
     TParamStaticArrayCopyWarning::SetDefault(true);
     TParamStaticArrayUnsafeTypeWarning::SetDefault(true);
 
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("test_staticmap",
                        "test CStaticArraySet and CStaticArrayMap classes");

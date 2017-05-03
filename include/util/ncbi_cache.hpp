@@ -296,7 +296,7 @@ private:
     TCacheSet    m_CacheSet;
     TCacheMap    m_CacheMap;
     TOrder       m_Counter;
-    auto_ptr<THandlerType> m_Handler;
+    unique_ptr<THandlerType> m_Handler;
 };
 
 

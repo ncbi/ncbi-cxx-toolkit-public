@@ -345,10 +345,10 @@ protected:
                               size_t* processed /* out */);
 
 protected:
-    size_t                      m_BlockSize;  ///< Block size for (de)compression.
+    size_t                        m_BlockSize;  ///< Block size for (de)compression.
     // Compression parameters
-    AutoArray<char>             m_WorkMem;    ///< Working memory for compressor.
-    auto_ptr<SCompressionParam> m_Param;      ///< Compression parameters.
+    AutoArray<char>               m_WorkMem;    ///< Working memory for compressor.
+    unique_ptr<SCompressionParam> m_Param;      ///< Compression parameters.
 
 private:
     /// Private copy constructor to prohibit copy.

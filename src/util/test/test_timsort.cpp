@@ -204,7 +204,7 @@ void CTestTimSort::Init(void)
 {
     SetDiagPostLevel(eDiag_Info);
 
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("test_timsort",
                        "test TimSort implementation");

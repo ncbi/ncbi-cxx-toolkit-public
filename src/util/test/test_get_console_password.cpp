@@ -62,7 +62,7 @@ void CGetPasswordApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
 
-    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "g_GetPasswordFromConsole(...) function test");
     SetupArgDescriptions(args.release());

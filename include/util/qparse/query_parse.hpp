@@ -355,7 +355,7 @@ private:
     CQueryParseTree(const CQueryParseTree&);
     CQueryParseTree& operator=(const CQueryParseTree&); 
 private:
-    auto_ptr<TNode> m_Tree;
+    unique_ptr<TNode> m_Tree;
 };
 
 /// Query parser exceptions

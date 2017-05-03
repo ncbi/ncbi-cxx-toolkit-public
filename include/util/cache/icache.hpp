@@ -344,11 +344,11 @@ public:
         {
         }
 
-        auto_ptr<IReader>  reader;
-        char*              buf;
-        size_t             buf_size;
-        size_t             blob_size;
-        bool               blob_found;
+        unique_ptr<IReader> reader;
+        char*               buf;
+        size_t              buf_size;
+        size_t              blob_size;
+        bool                blob_found;
 
         /// Set to a non-zero value to return a version not older
         /// than the specified value.

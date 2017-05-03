@@ -1330,7 +1330,7 @@ void CSyncQueue<Type, Container, Traits>::x_LockAndWait(
     const
 {
    // TODO: change to use CTimeout instead
-    auto_ptr<CTimeSpan> real_timeout;
+    unique_ptr<CTimeSpan> real_timeout;
 
     if (full_tmo) {
         real_timeout.reset(new CTimeSpan(*full_tmo));

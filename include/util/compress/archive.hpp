@@ -157,7 +157,7 @@ public:
     ///   names match the preset mask if any, or all entries otherwise.
     /// @sa
     ///   SetMask
-    virtual auto_ptr<TEntries> List(void);
+    virtual unique_ptr<TEntries> List(void);
 
     /// Verify archive integrity.
     ///
@@ -168,7 +168,7 @@ public:
     ///   names match the preset mask if any, or all entries otherwise.
     /// @sa
     ///   SetMask
-    virtual auto_ptr<TEntries> Test(void);
+    virtual unique_ptr<TEntries> Test(void);
 
     /// Extract the entire archive.
     ///
@@ -179,7 +179,7 @@ public:
     ///   A list of entries that have been actually extracted.
     /// @sa
     ///   SetMask, SetBaseDir
-    virtual auto_ptr<TEntries> Extract(void);
+    virtual unique_ptr<TEntries> Extract(void);
 
     /// Extract single file entry to a memory buffer.
     /// 
@@ -250,9 +250,9 @@ public:
     ///   created archive only, modifying existed archive is not allowed. 
     /// @sa
     ///   Create, AppendFileFromMemory, SetBaseDir, HaveSupport, Update
-    virtual auto_ptr<TEntries> Append(const string& path,
-                                      ELevel level = CCompression::eLevel_Default,
-                                      const string& comment = kEmptyStr);
+    virtual unique_ptr<TEntries> Append(const string& path,
+                                        ELevel level = CCompression::eLevel_Default,
+                                        const string& comment = kEmptyStr);
 
     /// Append a single file entry to the created archive using data from memory buffer.
     /// 
@@ -277,7 +277,7 @@ public:
     ///   created archive only, modification existing archive is not allowed.
     /// @sa
     ///   Create, Append
-    virtual auto_ptr<CArchive::TEntries>
+    virtual unique_ptr<CArchive::TEntries>
         AppendFileFromMemory(const string& name_in_archive,
                              void* buf, size_t buf_size,
                              ELevel level = CCompression::eLevel_Default,
@@ -447,13 +447,13 @@ protected:
     void x_Open(EAction action);
 
     // Read the archive and do the requested "action" on current entry.
-    auto_ptr<TEntries> x_ReadAndProcess(EAction action);
+    unique_ptr<TEntries> x_ReadAndProcess(EAction action);
 
     // Append an entry from the file system to the archive.
-    auto_ptr<TEntries> x_Append(const string&   path,
-                                ELevel          level,
-                                const string&   comment,
-                                const TEntries* toc = NULL);
+    unique_ptr<TEntries> x_Append(const string&   path,
+                                  ELevel          level,
+                                  const string&   comment,
+                                  const TEntries* toc = NULL);
     // Append a single entry from the file system to the archive.
     // Wrapper around AppendEntry(). 
     // Return FALSE if entry should be skipped (via user Checkpoint()).
@@ -472,7 +472,7 @@ protected:
                         const CDirEntry*         dst = NULL) const;
 
 protected:
-    auto_ptr<IArchive>    m_Archive;       ///< Pointer to interface to EFormat-specific archive support
+    unique_ptr<IArchive>  m_Archive;       ///< Pointer to interface to EFormat-specific archive support
     EFormat               m_Format;        ///< Archive format
     IArchive::ELocation   m_Location;      ///< Archive location (file/memory)
     TFlags                m_Flags;         ///< Bitwise OR of flags

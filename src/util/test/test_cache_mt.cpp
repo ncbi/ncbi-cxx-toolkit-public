@@ -93,10 +93,10 @@ private:
     Uint8 m_ElementDataSize;
     Uint8 m_CacheSize;
 
-    auto_ptr<TUCharCache> m_UCharCache;
-    auto_ptr<TUIntCache>  m_UIntCache;
-    auto_ptr<TUInt8Cache> m_UInt8Cache;
-    auto_ptr<TIntCache>   m_IntCache;
+    unique_ptr<TUCharCache> m_UCharCache;
+    unique_ptr<TUIntCache>  m_UIntCache;
+    unique_ptr<TUInt8Cache> m_UInt8Cache;
+    unique_ptr<TIntCache>   m_IntCache;
 };
 
 

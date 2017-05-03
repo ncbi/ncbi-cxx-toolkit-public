@@ -120,7 +120,7 @@ protected:
     virtual void Init(void);
     virtual int  Run(void);
 
-    auto_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
+    unique_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
 
     string x_Pos(const CTarEntryInfo& info);
 
@@ -164,7 +164,7 @@ void CTarTest::Init(void)
 #  endif // NCBI_OS
 #endif // TEST_CONN_TAR
 
-    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
     if (args->Exist ("h")) {
         args->Delete("h");
@@ -326,15 +326,15 @@ static string x_OSReason(int x_errno)
 }
 
 
-auto_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
+unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
 {
     CDirEntry entry(name);
     CDirEntry::EType type = entry.GetType(eFollowLinks);
     if (type == CDirEntry::eDir) {
-        auto_ptr<CTar::TEntries> entries(new CTar::TEntries);
+        unique_ptr<CTar::TEntries> entries(new CTar::TEntries);
         CDir::TEntries dir = CDir(name).GetEntries("*",CDir::eIgnoreRecursive);
         ITERATE(CDir::TEntries, e, dir) {
-            auto_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath());
+            unique_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath());
             entries->splice(entries->end(), *add);
         }
         return entries;
@@ -418,8 +418,8 @@ int CTarTest::Run(void)
 #endif /*_DEBUG && !NDEBUG*/
     }
 
-    auto_ptr<CTar>     tar;
-    auto_ptr<CNcbiIos> zs;
+    unique_ptr<CTar>     tar;
+    unique_ptr<CNcbiIos> zs;
     CNcbiIstream* in = 0;
     CNcbiIfstream ifs;
     CNcbiOfstream ofs;
@@ -427,7 +427,7 @@ int CTarTest::Run(void)
 
 #ifdef TEST_CONN_TAR
     CCanceled canceled;
-    auto_ptr<CConn_IOStream> conn;
+    unique_ptr<CConn_IOStream> conn;
     if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
         SOCK_SetInterruptOnSignalAPI(eOn);
         if (action == eList  ||  action == eExtract  ||  action == eTest
@@ -581,7 +581,7 @@ int CTarTest::Run(void)
     if (pipethru) {
         m_Flags |=  CTar::fStreamPipeThrough;
     }
-    auto_ptr<CMask> exclude;
+    unique_ptr<CMask> exclude;
     if (args["X"].HasValue()) {
         exclude.reset(new CMaskFileName);
         const CArgValue::TStringArray& values = args["X"].GetStringList();
@@ -645,7 +645,7 @@ int CTarTest::Run(void)
             CTar::TEntries entries;
             for (size_t i = 1;  i <= n;  ++i) {
                 string name = args[i].AsString();
-                auto_ptr<CTar::TEntries> add;
+                unique_ptr<CTar::TEntries> add;
                 NcbiCerr << what << name << NcbiEndl;
                 if (action == eUpdate) {
                     _ASSERT(n  &&  !io);
@@ -676,7 +676,7 @@ int CTarTest::Run(void)
             tar->Close();  // finalize TAR file before streams close (below)
         } else if (action == eList  ||  action == eExtract) {
             if (n) {
-                auto_ptr<CMaskFileName> mask(new CMaskFileName);
+                unique_ptr<CMaskFileName> mask(new CMaskFileName);
                 for (size_t i = 1;  i <= n;  ++i) {
                     mask->Add(args[i].AsString());
                 }
@@ -689,7 +689,7 @@ int CTarTest::Run(void)
                         NcbiCerr << *info << x_Pos(*info) << NcbiEndl;
                     }
                 } else {
-                    auto_ptr<CTar::TEntries> entries = tar->List();
+                    unique_ptr<CTar::TEntries> entries = tar->List();
                     ITERATE(CTar::TEntries, it, *entries.get()) {
                         NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
                     }
@@ -728,7 +728,7 @@ int CTarTest::Run(void)
                     }
                 }
             } else {
-                auto_ptr<CTar::TEntries> entries = tar->Extract();
+                unique_ptr<CTar::TEntries> entries = tar->Extract();
                 if (m_Flags & fVerbose) {
                     ITERATE(CTar::TEntries, it, *entries.get()) {
                         NcbiCerr << "x " << it->GetName() + x_Pos(*it)

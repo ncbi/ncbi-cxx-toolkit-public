@@ -55,7 +55,7 @@ USING_NCBI_SCOPE;
 
 
 // defined here so SIGHUP can kick it
-static auto_ptr<CRotatingLogStream> s_LogStream;
+static unique_ptr<CRotatingLogStream> s_LogStream;
 
 #ifdef NCBI_OS_UNIX
 static volatile int s_Signal = 0;
@@ -79,7 +79,7 @@ class CTestLogrotateApplication : public CNcbiApplication
 
 void CTestLogrotateApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test of log rotation");
 

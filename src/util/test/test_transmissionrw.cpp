@@ -146,7 +146,7 @@ public:
 void CTestTransmission::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_transmissionrw",
                        "test transmission reader/writer");
     SetupArgDescriptions(d.release());
@@ -220,7 +220,7 @@ int CTestTransmission::Run(void)
 #if defined(NCBI_XCODE_BUILD)  &&  defined(__OPTIMIZE__)  &&  NCBI_COMPILER_VERSION == 421
     // Our Xcode builds use gcc-4.2 -Os, which passes in a
     // CTestMemWriter(!) object without this workaround. :-/
-    auto_ptr<CTestMemReader> rdr(new CTestMemReader(buf, sz));
+    unique_ptr<CTestMemReader> rdr(new CTestMemReader(buf, sz));
     s_ReadCheck1(rdr.get(), buf, buf2, sz * 2, sz);
 #else
     CTestMemReader rdr(buf, sz);

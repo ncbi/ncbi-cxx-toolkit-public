@@ -236,7 +236,7 @@ protected:
     typedef vector<CQueryFunctionBase*> TFuncReg;
 protected:
     TFuncReg                       m_FuncReg;
-    auto_ptr<CQueryFunctionBase>   m_ImplicitSearchFunc;
+    unique_ptr<CQueryFunctionBase> m_ImplicitSearchFunc;
     CQueryParseTree*               m_QTree;
 
     int                            m_ExceptionCount;

@@ -78,14 +78,14 @@ void CTest::Init(void)
     DisableArgDescriptions(fDisableStdArgs);
     
     // Create command-line arguments
-    auto_ptr<CCommandArgDescriptions> cmd(new 
+    unique_ptr<CCommandArgDescriptions> cmd(new 
         CCommandArgDescriptions(true, 0, CCommandArgDescriptions::eCommandMandatory | 
                                          CCommandArgDescriptions::eNoSortCommands));
     cmd->SetUsageContext(GetArguments().GetProgramBasename(),
         "Test compression library (CArchive class)");
     // test
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Run standard internal test.", false, kUsageWidth);
         arg->AddDefaultPositional("fmt", "Compression format to test", CArgDescriptions::eString, "all");
         arg->SetConstraint("fmt", &(*new CArgAllow_Strings, "all", "zip"));
@@ -214,7 +214,7 @@ void s_TestFileArchive(CArchive::EFormat format,
     // Extract to specified directory (all files by default)
     a.SetBaseDir(dst_dir.GetPath());
     a.SetFlags(CArchive::fOverwrite | CArchive::fPreserveAll);
-    auto_ptr<CArchive::TEntries> entries = a.Extract();
+    unique_ptr<CArchive::TEntries> entries = a.Extract();
     assert(entries->size() == 14);
 
     // Check extracted entries
@@ -275,8 +275,8 @@ void CTest::RunInternalTestFormat(CArchive::EFormat format)
 
     CFileIO fio;
     CArchiveEntryInfo info;
-    auto_ptr<CArchive::TEntries> entries;
-    auto_ptr<CArchive::TEntries> add;
+    unique_ptr<CArchive::TEntries> entries;
+    unique_ptr<CArchive::TEntries> add;
 
     //----------------------------------------------------------------------
     // File-based archive

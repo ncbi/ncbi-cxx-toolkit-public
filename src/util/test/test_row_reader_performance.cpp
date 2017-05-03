@@ -55,7 +55,7 @@ void CRowReaderPerfTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Error);
 
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->AddDefaultKey("f", "file",
                      "file to generate test data into",

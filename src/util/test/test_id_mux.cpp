@@ -70,7 +70,7 @@ void CTestIdMux::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
 
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("test_id_mux",
                        "test id mux-demux");

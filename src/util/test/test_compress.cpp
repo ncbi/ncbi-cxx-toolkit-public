@@ -151,7 +151,7 @@ void CTest::Init(void)
     //SetDiagPostLevel(eDiag_Trace);
 
     // Create command-line argument descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test compression library");
     arg_desc->AddDefaultPositional
@@ -304,9 +304,9 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
         _TRACE("Test # " << i+1);
 
         CNcbiIstrstream is_str("");
-        auto_ptr<CCompression>                compression;
-        auto_ptr<CCompressionStreamProcessor> stream_compressor;
-        auto_ptr<CCompressionStreamProcessor> stream_decompressor;
+        unique_ptr<CCompression>                compression;
+        unique_ptr<CCompressionStreamProcessor> stream_compressor;
+        unique_ptr<CCompressionStreamProcessor> stream_decompressor;
 
         if (method == CCompressStream::eBZip2) {
             compression.reset(new CBZip2Compression());

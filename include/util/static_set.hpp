@@ -226,7 +226,7 @@ public:
                  ECopyWarn warn);
     
 private:
-    auto_ptr<IObjectConverter> m_Converter;
+    unique_ptr<IObjectConverter> m_Converter;
     void* m_ArrayPtr;
     size_t m_ElementCount;
     
@@ -398,10 +398,10 @@ public:
     }
     void Convert(void* dst_ptr, const void* src_ptr) const
     {
-        auto_ptr<IObjectConverter> conv1
+        unique_ptr<IObjectConverter> conv1
             (MakeConverter(static_cast<typename DstType::first_type*>(0),
                            static_cast<typename SrcType::first_type*>(0)));
-        auto_ptr<IObjectConverter> conv2
+        unique_ptr<IObjectConverter> conv2
             (MakeConverter(static_cast<typename DstType::second_type*>(0),
                            static_cast<typename SrcType::second_type*>(0)));
         DstType& dst = *static_cast<DstType*>(dst_ptr);

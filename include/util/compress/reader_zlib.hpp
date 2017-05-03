@@ -66,9 +66,9 @@ private:
     CNlmZipBtRdr(const CNlmZipBtRdr&);
     const CNlmZipBtRdr& operator=(const CNlmZipBtRdr&);
 
-    CRef<CByteSourceReader>  m_Src;
-    EType                    m_Type;
-    auto_ptr<CResultZBtSrcX> m_Decompressor;
+    CRef<CByteSourceReader>    m_Src;
+    EType                      m_Type;
+    unique_ptr<CResultZBtSrcX> m_Decompressor;
 };
 
 
@@ -145,14 +145,14 @@ private:
     CNlmZipReader(const CNlmZipReader&);
     const CNlmZipReader& operator=(const CNlmZipReader&);
 
-    IReader*                 m_Reader;
-    TOwnership               m_Own;
-    EHeader                  m_Header;
-    CDynamicCharArray        m_Buffer;
-    size_t                   m_BufferPos;
-    size_t                   m_BufferEnd;
-    auto_ptr<CZipCompression>m_Decompressor;
-    CDynamicCharArray        m_Compressed;
+    IReader*                    m_Reader;
+    TOwnership                  m_Own;
+    EHeader                     m_Header;
+    CDynamicCharArray           m_Buffer;
+    size_t                      m_BufferPos;
+    size_t                      m_BufferEnd;
+    unique_ptr<CZipCompression> m_Decompressor;
+    CDynamicCharArray           m_Compressed;
 };
 
 
