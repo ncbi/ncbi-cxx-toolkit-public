@@ -2916,6 +2916,7 @@ IPB<BRA>	s	Instituto Paranaense de Botanica
 IPB<DEU>	s	Institut fuer Palaeontologie		
 IPBIR	b	Integrated Primate Biomaterials and Information Resource		
 IPCN	s	Instituto Patagonico de Ciencias Naturales		
+IPE	s	Instituto Pirenaico de Ecologia		
 IPEE RAS	s	A.N. Severtzov Institute of Ecology and Evolution, Russian Academy of Sciences		
 IPEF	s	Institut fuer Pflanzenschutzforschung		
 IPFUB	s	Institute for Paleontology of the Freie Universitat		
@@ -2944,6 +2945,7 @@ IQW	h	Senckenberg Forschungsinstitut und Naturmuseen
 IRAG	s	Institut National de la Recherche Agronomique de Antilles et Guyane		
 IRAI	h	Parque da Ciencia Newton Freire Maia		
 IRAN	sc	Iranian Research Institute of Plant Protection, Department of Botany		
+IRAQ	s	Iraq Natural History Museum		
 IRBR	s	Universidad de Oriente, Departamento de Biologia		
 IRCW	s	Madison, University of Wisconsin		
 IRD	s	Institut de Recherche pour le Developpement		
@@ -3025,6 +3027,7 @@ ITIC	s	Universidad de El Salvador, Escuela de Biologia
 ITLJ	s	National Institute of Agro-environmental Sciences		
 ITMH	h	Muhimbili University of Health and Allied Sciences		
 ITMM	s	Instituto Tecnologico de Monterrey		
+ITT	s	Instituto Technologico de Ciudad Victoria		
 IU	s	Indiana University		
 IUI	s	Inha University, Biology Department		
 IUIC	s	Indiana University		
@@ -3674,7 +3677,7 @@ LWL<DEU>:DNA	b	LWL-Museum fuer Naturkunde, LWL-DNA- und Gewebearchiv
 LWS	s	Museum of Natural History, Lviv		
 LWSM	s	Lewes Museum, Ann of Cleves House		
 LWU	s	University of Lucknow, Botany Department		
-LY	c	Laboratoire de Mycologie associe au CNRS		
+LY	sc	Universite Claude Bernard		
 LYAC	s	Laiyang Agricultural College, Department of Basic Courses		
 LYCC	c	Lallemand Yeast Culture Collection		
 LycoCC	c	The Lycoming College Culture Collection		
@@ -3792,6 +3795,7 @@ MBH	s	Marlborough College
 MBIC	c	Marine Biotechnology Institute Culture Collection		
 MBK	s	Kochi Prefectural Makino Botanical Garden, Botany Department		
 MBL	s	Museu Nacional de Historia Natural		
+MBLUZ	s	Museo de Biologia de la Universidad del Zulia		
 MBM<BRA>	s	Museu Botanico Municipal		
 MBM<USA-CA>	s	San Jose State University, Museum of Birds and Mammals		
 MBM<USA-NV>	s	Marjorie Barrick Museum		
@@ -3982,10 +3986,11 @@ MHNES	s	Museo de Historia Natural de El Salvador
 MHNG	s	Natural History Museum of Geneva		
 MHNG:Herp	s	Natural History Museum of Geneva, Herpetology collection
 MHNG:Invertebrate	s	Natural History Museum of Geneva, Invertebrate collection
+MHNH	s	Museo Nacional de Historia Natural de Cuba	MNHNCU
 MHNI	s	Museu Hist. Naturales Universidade Federal Minas Gerais		
 MHNJP	s	Universidad Nacional Mayor de San Marcos		
 MHNL	s	Musee Guimet d'Histoire Naturelle de Lyon		
-MHNLR	s	Museum d'Histoire Naturelle		
+MHNLR	s	Museum d'Histoire Naturelle	MHNR
 MHNLS	s	Coleccion de Mastozoologia, Museo de Historia Natural de La Salle		
 MHNM	s	Museo Nacional de Historia Natural y Antropologia		
 MHNN<CHE>	s	Neuchatel Musee d'Histoire Naturel		
@@ -4052,6 +4057,7 @@ MLRU	c	Microbiology Laboratory, Department of Biology, Faculty of Science
 MLS<AUS>	s	Marine Laboratory Sydney		
 MLS<COL>	s	Museo del Instituto de La Salle		
 MLS<GBR>	s	Lathallan Preparatory School		
+MLSU	s	St. Petersburg State University, Zoology Museum		
 MLUH	s	Martin Luther Universitat	MLU
 MLY	s	Arboretum Mlynany		
 MLZ	s	Moore Laboratory of Zoology, Occidental College		
@@ -4135,6 +4141,7 @@ MNHS	s	Manchester Natural History Society
 MNK	s	Museo de Historia Natural "Noel Kempff Mercado"		
 MNK:A	s	Museo de Historia Natural "Noel Kempff Mercado", Amphibian Collection
 MNK:R	s	Museo de Historia Natural "Noel Kempff Mercado", Reptile Collection
+MNKNU	s	Museum of Nature, V.N. Karazin Kharkiv National University		
 MNKS	s	Milton Keynes Development Corporation		
 MNMB	s	Magyar Nenzeti Museum		
 MNMS	s	Museo Nacional de Ciencias Naturales		
@@ -4433,6 +4440,7 @@ MZUCR	s	Universidad de Costa Rica, Museo de Zoologia
 MZUEL	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL
 MZUESC<BRA>	s	Museu de Zoologia da Universidade Estadual de Santa Cruz		
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze		
+MZUFBA	s	Museu de Zoologia, Universidade Federal da Bahia, Salvador		
 MZUN	s	Museo Zoologico di Universita degli Studi		
 MZUNAP	s	Museo de Zoologia de la Universidad Nacional de la Amazonia Peruana		
 MZUP<ITA-Padova>	s	Museo Zoologia		
@@ -4444,6 +4452,7 @@ MZUSP	s	Museu de Zoologia da Universidade de Sao Paulo
 MZUT<ITA-Torino>	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino		
 MZUT<ITA-Turin>	s	Museo e Instituto DI Zoologia Sistematica dell' UniversitaDI Torino		
 MZUTH	s	Museum of Zoology, University of Thessaloniki		
+MZUTI	s	Museo de Zoologia, Universidad Tecnologica Indoamerica		
 MZUVN	s	Musee Zool. Univ. et Ville de Nancy		
 MZV<POL>	s	Muzeum i Instytut Zoologii		
 MZV<RUS>	s	Zoological Museum Varsovite		
@@ -4512,6 +4521,7 @@ NCCP<PAK>	c	National Culture Collection of Pakistan
 NCCPF	c	National Culture Collection of Pathogenic Fungi		
 NCDC	c	National Collection of Dairy Cultures		
 NCE	s	University of Newcastle upon Tyne, School of Biological Sciences		
+NCF	s	Department of Forest Insects, Northwest College of Forestry		
 NCFB	c	National Collection of Food Bacteria		
 NCH	s	Norwich Botanical Society		
 NCHU	s	National Chung Hsing University		
@@ -4796,7 +4806,7 @@ NMV<AUS>:T	s	Museum Victoria, Entomlogy Type Collection
 NMV<AUS>:TRI	s	Museum Victoria, Trichoptera
 NMV<AUS>:Z	s	Museum Victoria, Tissue Collection
 NMV<JPN>	s	Nakagawa Museum at Nakagawa-cho		
-NMW<AUT>	s	Naturhistorisches Museum, Wien		
+NMW<AUT>	s	Naturhistorisches Museum, Wien	NHMV
 NMW<GBR>	s	National Museums & Galleries of Wales, Department of Biodiversity and Systematic Biology		
 NMWC	s	National Museum of Wales		
 NMWZ	s	National Museum of Wales		
@@ -5453,7 +5463,7 @@ RCHP	s	Rochdale Equitable Pioneers' Memorial Museum
 RCMC	s	Rockford College		
 RCN	s	Richmond Naturalists' Field Club		
 RCR	s	Rochester Public Museum		
-RCS	s	Royal College of Surgeons		
+RCS	s	Royal College of Surgeon's Museum	RCSM
 RCSL	s	Royal College of Surgeons		
 RCVC	h	Universidad Nacional de Rio Cuarto		
 RDAF	s	Research Department South East Asian Fisheries Development Centre		
@@ -5586,7 +5596,7 @@ RSCS	c	Medical Culture Collection
 RSDR	s	Desert Institute, Turkmenistan Academy of Sciences		
 RSKK	c	Refik Saydam National Type Culture Collection-RSKK		
 RSM<CAN>	s	Royal Saskatchewan Museum	SMNH<CAN>
-RSM<GBR>	s	Royal Scottish Museum		
+RSM<GBR>	s	Royal Scottish Museum	NMSZ,RSME
 RSU	h	Ryazan State University		
 RSY	s	Buteshire Natural History Society, The Museum		
 RTE	s	Holmesdale Natural History Club Museum		
@@ -5740,6 +5750,7 @@ SCTCC	c	Sichuan Type Culture Collection
 SCU	s	Shandong Christian University		
 SCUF	s	Universidade Federal de Santa Catarina		
 SCUI	h	Suez Canal University		
+SCUM	s	Sichuan University Museum		
 SCV	b	State Collection of Viruses		
 SCZ	s	Smithsonian Tropical Research Institute		
 SD	s	Herbarium, San Diego Natural History Museum		
@@ -6605,7 +6616,7 @@ UCNZ	s	University of Canterbury
 UCOB	s	Universidad Centroccidental Lisandro Alvarado, Departamento de Ciencias Biologicas		
 UCOCV	s	University of Central Oklahoma, Collection of Vertebrates		
 UCONN	s	University of Connecticut		
-UCP	s	Universidad del Cauca		
+UCP	s	Universidad del Cauca	MHNUC 
 UCPC	s	Universidad del Cauca		
 UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia		
 UCR<USA-CA>	s	University of California, Riverside		
@@ -7390,6 +7401,7 @@ YAR	s	Yaroslavl State University, Department of Biology and Ecology
 YBDC	s	Yibin Institute for Drug Control		
 YBI	s	Institut National pour l'Etude et la Recherche Agronomique, Departement de Botanique		
 YBLF	c	Yamanouchi Pharmaceutical Co., Ltd.		
+YBU	s	Yibin University, College of Life Science and Food Engineering		
 YCE	s	Yunnan College of Education, Biology Department		
 YCH	s	Yavapai College, Biology Department		
 YCM	s	Yokosuka City Museum		
@@ -7471,7 +7483,7 @@ ZIK	s	Ukrainian Academy of Sciences, Zoological Institute
 ZIKU	s	Zoological Institute, Kochi University		
 ZIL	s	Academy of Sciences, Zoological Institute		
 ZIM	c	ZIM Culture Collection of Industrial Microorganisms		
-ZIN	s	Zoological Institute of the Russian Academy of Sciences		
+ZIN	s	Zoological Institute of the Russian Academy of Sciences	ZIAS
 ZIS	s	Universitaet Saarbruecken		
 ZISB	s	Institute of Zoology		
 ZISP	s	Zoological Institute, Russian Academy of Sciences	IN
