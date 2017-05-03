@@ -13,6 +13,7 @@ April 25, 2016
 * Added CDR3 annotation 
 * Added option for extending at 5' side
 * Default to IMGT region (was Kabat previously)
+* Enabled multi-threading option num_threads
 	
 July 17, 2014
 * Release 1.4.0
