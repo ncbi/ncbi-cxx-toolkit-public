@@ -805,6 +805,8 @@ bool CFeature_table_reader_imp::x_TryToParseOffset(
         // "=" not found
         return false;
     }
+
+
     
     // check key
     NStr::TruncateSpacesInPlace(sKey);
@@ -829,9 +831,9 @@ bool CFeature_table_reader_imp::x_TryToParseOffset(
     // is it a number?
     try {
         Int4 new_offset = NStr::StringToInt(sValue);
-        if( new_offset < 0 ) {
-            return false;
-        }
+    //    if( new_offset < 0 ) {
+    //        return false;
+    //    }
         out_offset = new_offset;
         return true;
     } catch ( CStringException & ) {

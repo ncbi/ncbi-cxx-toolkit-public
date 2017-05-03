@@ -1730,7 +1730,7 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
 {
     TErrList expected_errors;
     fill_n( back_inserter(expected_errors),
-        3, ILineError::eProblem_UnrecognizedSquareBracketCommand);
+        2, ILineError::eProblem_UnrecognizedSquareBracketCommand);
 
     TAnnotRefListPtr pAnnotRefList =
         s_ReadMultipleTablesFromString(
@@ -1755,9 +1755,9 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
         {1, 20},
         {30, 40},
         {40, 50},
-        {40, 50},
-        {55, 45}, // Note: complement
-        {55, 65}
+        {10, 20},
+        {25, 15}, // Note: complement
+        {25, 35}
     };
     BOOST_REQUIRE_EQUAL( 
         ArraySize(gene_extremes_arr), merged_ftables.size() );
