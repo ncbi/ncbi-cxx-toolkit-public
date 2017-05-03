@@ -827,15 +827,18 @@ int CAsnCacheApplication::Run(void)
     LOG_POST(Error << "update existing = "
              << (update_existing ? "true" : "false"));
 
-    bool skip_retrieval_failures = args["skip-retrieval-failures"];
     unsigned max_retrieval_failures =
-         args["max-retrieval-failures"]
-             ? args["max-retrieval-failures"].AsInteger() : UINT_MAX;
+        args["skip-retrieval-failures"] ? UINT_MAX : 0;
+    if (args["max-retrieval-failures"]) {
+        max_retrieval_failures = args["max-retrieval-failures"].AsInteger();
+    }
 
     bool skip_withdrawn = args["skip-withdrawn"];
     unsigned max_withdrawn =
-         args["max-withdrawn"]
-             ? args["max-withdrawn"].AsInteger() : UINT_MAX;
+        args["skip-withdrawn"] ? UINT_MAX : 0;
+    if (args["max-withdrawn"]) {
+        max_withdrawn = args["max-withdrawn"].AsInteger();
+    }
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CDataLoadersUtil::SetupObjectManager(args, *om);
@@ -900,13 +903,12 @@ int CAsnCacheApplication::Run(void)
     if (fetch_missing) {
         LOG_POST(Error << "total record retrieval failures: " << m_RecordsNotFound);
         LOG_POST(Error << "total records withdrawn:         " << m_RecordsWithdrawn);
-        if (skip_retrieval_failures  &&
-            m_RecordsNotFound > max_retrieval_failures) {
-            return 3;
-        } else if (skip_withdrawn  &&
-                   m_RecordsWithdrawn > max_withdrawn) {
-            return 4;
-        }
+    }
+
+    if (m_RecordsNotFound > max_retrieval_failures) {
+        return 3;
+    } else if (m_RecordsWithdrawn > max_withdrawn) {
+        return 4;
     }
     
     if(args["oseqids"]) { 
