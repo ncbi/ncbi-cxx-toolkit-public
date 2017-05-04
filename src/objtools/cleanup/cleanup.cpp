@@ -801,7 +801,8 @@ bool CCleanup::RepairXrefs(const CSeq_feat& src, CSeq_feat_Handle& dst, const CT
         // only create reciprocal xrefs if permitted
         return false;
     }
-    // don't create xref if already have xref to feature of same type as src
+    // don't create xref if already have xref or if dst not gene and already has
+    // xref to feature of same type as src
     bool has_xref = false;
     if (dst.IsSetXref()) {
         ITERATE(CSeq_feat::TXref, xit, dst.GetXref()) {
@@ -810,7 +811,7 @@ bool CCleanup::RepairXrefs(const CSeq_feat& src, CSeq_feat_Handle& dst, const CT
                     // already have xref
                     has_xref = true;
                     break;
-                } else {
+                } else if (!dst.GetData().IsGene()) {
                     const CTSE_Handle::TFeatureId& feat_id = (*xit)->GetId().GetLocal();
                     CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE(CTSE_Handle::TSeq_feat_Handles, fit, far_feats) {
