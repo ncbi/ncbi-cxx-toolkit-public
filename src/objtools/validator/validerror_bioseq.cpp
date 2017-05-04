@@ -243,6 +243,10 @@ void CValidError_bioseq::ValidateBioseq (
                 }
             }
         }
+        if (IsWGSMaster(seq, m_CurrentHandle.GetScope())) {
+            ValidateWGSMaster(m_CurrentHandle);
+        }
+
     } catch ( const exception& e ) {
         m_Imp.PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
             string("Exception while validating bioseq. EXCEPTION: ") +
@@ -2684,6 +2688,79 @@ void CValidError_bioseq::ReportBadGenomeGap(const CBioseq& seq)
     if (HasBadWGSGap(seq)) {
         PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
             "Genome submission includes wrong gap type. Gaps for genomes should be Assembly Gaps with linkage evidence.", seq);
+    }
+}
+
+
+bool s_FieldHasLabel(const CUser_field& field, const string& label)
+{
+    if (field.IsSetLabel() && field.GetLabel().IsStr() &&
+        NStr::EqualNocase(field.GetLabel().GetStr(), label)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_FieldHasNonBlankValue(const CUser_field& field)
+{
+    if (!field.IsSetData()) {
+        return false;
+    }
+    bool rval = false;
+    if (field.GetData().IsStr()) {
+        if (!NStr::IsBlank(field.GetData().GetStr())) {
+            rval = true;
+        }
+    } else if (field.GetData().IsStrs()) {
+        ITERATE(CUser_field::TData::TStrs, s, field.GetData().GetStrs()) {
+            if (!NStr::IsBlank(*s)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
+void CValidError_bioseq::ValidateWGSMaster(CBioseq_Handle bsh)
+{
+    bool has_biosample = false;
+    bool has_bioproject = false;
+
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d) {
+        if (d->GetUser().GetObjectType() == CUser_object::eObjectType_DBLink && d->GetUser().IsSetData()) {
+            ITERATE(CUser_object::TData, it, d->GetUser().GetData()) {
+                if (s_FieldHasLabel(**it, "BioSample")) {
+                    if (s_FieldHasNonBlankValue(**it)) {
+                        has_biosample = true;
+                    }
+                } else if (s_FieldHasLabel(**it, "BioProject")) {
+                    if (s_FieldHasNonBlankValue(**it)) {
+                        has_bioproject = true;
+                    }
+                }
+            }
+        }
+        ++d;
+    }
+    if (!has_biosample && !has_bioproject) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem, 
+                "WGS master lacks both BioSample and BioProject", 
+                *(bsh.GetCompleteBioseq()));
+    } else if (!has_biosample) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "WGS master lacks BioSample",
+            *(bsh.GetCompleteBioseq()));
+    } else if (!has_bioproject) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "WGS master lacks BioProject",
+            *(bsh.GetCompleteBioseq()));
+    }
+    if (!has_biosample || !has_bioproject) {
     }
 }
 
