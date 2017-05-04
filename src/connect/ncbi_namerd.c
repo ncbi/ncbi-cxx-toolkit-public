@@ -111,7 +111,7 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_PROXY_PORT_DEF   4140
 
 #define REG_NAMERD_API_HOST_KEY     "API_HOST"
-#define REG_NAMERD_API_HOST_DEF     "api.namerd.linkerd.ncbi.nlm.nih.gov"
+#define REG_NAMERD_API_HOST_DEF     "namerd-api.linkerd.ncbi.nlm.nih.gov"
 
 #define REG_NAMERD_API_PATH_KEY     "API_PATH"
 #define REG_NAMERD_API_PATH_DEF     "/api/1/resolve"
