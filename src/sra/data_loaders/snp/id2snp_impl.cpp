@@ -1012,6 +1012,9 @@ CID2SNPProcessor_Impl::ProcessPacket(CID2SNPProcessorContext* context,
             InitContext(context->m_Context, **it);
             continue;
         }
+        if ( !context->m_Context.m_AllowVDB ) {
+            continue;
+        }
         if ( !(*it)->IsSetSerial_number() ) {
             // cannot process requests with no serial number
             continue;
