@@ -1515,9 +1515,14 @@ BOOST_AUTO_TEST_CASE(Test_RemoveNullTerms)
 
 BOOST_AUTO_TEST_CASE(Test_RemoveAbbreviation)
 {
-    CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_strain, "subsp. x"));
+    CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_serovar, "serovar x"));
     BOOST_CHECK_EQUAL(om->RemoveAbbreviation(), true);
     BOOST_CHECK_EQUAL(om->GetSubname(), "x");
+
+    CRef<COrgMod> om2(new COrgMod(COrgMod::eSubtype_sub_species, "subsp. y"));
+    BOOST_CHECK_EQUAL(om2->RemoveAbbreviation(), true);
+    BOOST_CHECK_EQUAL(om2->GetSubname(), "y");
+
 }
 
 
