@@ -51,14 +51,24 @@ class CDataLoader;
 class NCBI_SRAREAD_EXPORT CWGSResolver_VDB : public CWGSResolver
 {
 public:
-    explicit CWGSResolver_VDB(const CVDBMgr& mgr);
-    CWGSResolver_VDB(const CVDBMgr& mgr, const string& path);
+    enum EIndexType {
+        eMainIndex,
+        eSmallIndex
+    };
+    explicit CWGSResolver_VDB(const CVDBMgr& mgr,
+                              EIndexType index_type = eMainIndex,
+                              CWGSResolver_VDB* next_resolver = 0);
+    CWGSResolver_VDB(const CVDBMgr& mgr,
+                     const string& path,
+                     CWGSResolver_VDB* next_resolver = 0);
     ~CWGSResolver_VDB(void);
 
     static CRef<CWGSResolver> CreateResolver(const CVDBMgr& mgr);
-    
-    static string GetDefaultWGSIndexPath(void);
 
+    // default path to main index
+    static string GetDefaultWGSIndexPath(EIndexType index_type = eMainIndex);
+    static string GetDefaultWGSIndexAcc(EIndexType index_type = eMainIndex);
+    
     void Open(const CVDBMgr& mgr, const string& path);
     void Reopen(void);
     void Close(void);
@@ -103,6 +113,8 @@ protected:
     // return table accessor object for reuse
     void Put(CRef<SGiIdxTableCursor>& curs, TIntId gi = 0);
     void Put(CRef<SAccIdxTableCursor>& curs);
+
+    bool x_Update();
     
 private:
     CVDBMgr m_Mgr;
@@ -115,6 +127,7 @@ private:
     CVDBTable m_AccIdxTable;
     CVDBObjectCache<SGiIdxTableCursor> m_GiIdx;
     CVDBObjectCache<SAccIdxTableCursor> m_AccIdx;
+    CRef<CWGSResolver_VDB> m_NextResolver;
 };
 
 
