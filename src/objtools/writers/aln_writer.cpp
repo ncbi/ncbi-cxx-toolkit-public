@@ -162,10 +162,9 @@ bool CAlnWriter::xGetSeqString(CBioseq_Handle bsh,
     if (!bsh) {
         return false;
     }
-    const auto length = bsh.GetBioseqLength();
     CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
     if (range.IsWhole()) {
-        seq_vec.GetSeqData(0, length, seq);
+        seq_vec.GetSeqData(0, bsh.GetBioseqLength(), seq);
     }
     else {
         seq_vec.GetSeqData(range.GetFrom(), range.GetTo(), seq);
@@ -322,9 +321,14 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
     }
 
 
-
     return true;
 }
+
+// -----------------------------------------------------------------------------
+
+//string CAlnWriter::xGetSparseExonString(const CSeq_id& product_id,
+//        const CSeq_id& genomic_id 
+
 
 END_NCBI_SCOPE
 
