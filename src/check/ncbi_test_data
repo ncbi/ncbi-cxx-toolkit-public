@@ -1,4 +1,12 @@
 # Do not make executable -- source it instead!
 
-# Used to set default test data location
+# Used to set default test data location (Unix only)
+# in the test scripts if it runs outside of "make check".
+#
+# Makefile.<testname>.app:
+#     CHECK_COPY = <testname>.sh ../../check/ncbi_test_data
+#
+# <testname>.sh:
+#.     ./ncbi_test_data
+
 : ${NCBI_TEST_DATA:=/am/ncbiapdata/test_data}
