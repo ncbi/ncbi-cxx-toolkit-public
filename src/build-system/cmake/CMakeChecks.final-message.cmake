@@ -8,6 +8,10 @@ foreach (d ${Defs} )
     set(DefsStr "${DefsStr} -D${d}")
 endforeach()
 
+foreach (mod ${NCBI_MODULES_FOUND})
+    set(MOD_STR "${MOD_STR} ${mod}")
+endforeach()
+
 #STRING(SUBSTRING "${EXTERNAL_LIBRARIES_COMMENT}" 1 -1 EXTERNAL_LIBRARIES_COMMENT)
 
 function(ShowMainBoilerplate)
@@ -38,6 +42,7 @@ function(ShowMainBoilerplate)
     message("Compile Flags: ${DefsStr}")
     message("")
     message("Modules Found: ${TOOLKIT_MODULES_FOUND}")
+    message("Modules Found: ${MOD_STR}")
 
     message("------------------------------------------------------------------------------")
     message("")

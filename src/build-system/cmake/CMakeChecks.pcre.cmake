@@ -3,7 +3,6 @@
 # PCRE additions
 #
 # Perl-Compatible Regular Expressions (PCRE)
-include(FindPCRE)
 find_package(PCRE)
 set(PCRE_INCLUDE ${PCRE_INCLUDE_DIR})
 set(PCRE_LIBS ${PCRE_LIBRARIES})

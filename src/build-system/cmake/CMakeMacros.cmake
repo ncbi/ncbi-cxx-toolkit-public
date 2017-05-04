@@ -1,3 +1,60 @@
+##############################################################################
+##
+## General wrapper for find_package()
+## This wrapper implements some overrides to search for NCBI-specific package
+## overrides.  We maintain a directory of configs that indicate the specific
+## layout of libraries for development at NCBI.
+##
+
+macro(find_package arg_mod)
+    # uncomment this for extensive logging
+    #set(_NCBI_MODULE_DEBUG True)
+    set(_MOD_CONF1 "NCBI-${arg_mod}Config.cmake")
+    string(TOLOWER "NCBI-${arg_mod}-config.cmake" _MOD_CONF2)
+    if (EXISTS "${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF1}"
+            OR EXISTS "${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF2}")
+        _find_package(${arg_mod} ${ARGN}
+            NAMES NCBI-${arg_mod}
+            )
+        if (${${arg_mod}_FOUND})
+            message(STATUS "Found ${arg_mod} (NCBI config): ${${arg_mod}_LIBRARIES} (found version \"${${arg_mod}_VERSION_STRING}\")")
+        endif()
+    else()
+        _find_package(${arg_mod} ${ARGN})
+    endif()
+
+    if (${${arg_mod}_FOUND})
+        list(APPEND NCBI_MODULES_FOUND ${arg_mod})
+    endif()
+endmacro()
+
+
+##############################################################################
+##
+## Recurse a directory, but only if the directory actually exists
+## This is useful for marking optional elements that may or may not be present
+## in meta-trees
+##
+
+macro( add_subdirectory_optional SUBDIR)
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt )
+        add_subdirectory(${SUBDIR})
+    endif()
+endmacro(add_subdirectory_optional)
+
+
+
+
+##############################################################################
+##
+## Macros for woring with 'datatool'
+##
+
+##############################################################################
+##
+## Parse the module spec file, whcih includes definitions of how to build
+## datatool-derived code
+##
 macro( ReadModuleSpec MODULE_DEFS_FILE )
     if (EXISTS "${MODULE_DEFS_FILE}")
         #message("Processing module file: ${MODULE_DEFS_FILE}")
@@ -26,6 +83,11 @@ macro( ReadModuleSpec MODULE_DEFS_FILE )
 endmacro( ReadModuleSpec )
 
 
+##############################################################################
+##
+## Test whether a file is maintained under version control
+## Note: This is not currently used
+##
 function( CheckVersionControl generated)
     set(local_generated)
     foreach (f IN LISTS ARGV)
@@ -46,6 +108,13 @@ function( CheckVersionControl generated)
 endfunction(CheckVersionControl)
 
 
+
+##############################################################################
+##
+## Extract the name of the client (file names for the client code) for
+## datatool-generated RPC clients
+## The client name is a field in the definitions
+##
 macro( GetClientName MODULE )
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.def")
 
@@ -71,14 +140,10 @@ macro( GetClientName MODULE )
     endif()
 endmacro( GetClientName )
 
-
-macro( add_subdirectory_optional SUBDIR)
-    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/CMakeLists.txt )
-        add_subdirectory(${SUBDIR})
-    endif()
-endmacro(add_subdirectory_optional)
-
-
+##############################################################################
+##
+## The main driver for executing datatool
+##
 
 macro( RunDatatool MODULE MODULE_SEARCH )
     if ("${MODULE_EXT}" STREQUAL "")

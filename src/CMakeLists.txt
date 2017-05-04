@@ -7,9 +7,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(CPP)
 
-#include(build-system/cmake/CMakeLists.defaults.cmake)
-include(build-system/cmake/CMakeChecks.cmake)
 include(build-system/cmake/CMakeMacros.cmake)
+include(build-system/cmake/CMakeChecks.cmake)
 # Include projects from this directory
 
 # Recurse subdirectories

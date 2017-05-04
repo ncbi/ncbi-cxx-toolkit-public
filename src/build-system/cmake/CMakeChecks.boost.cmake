@@ -10,11 +10,11 @@ else()
 endif()
 set(Boost_USE_MULTITHREADED     ON)
 
-#Hinst for FindBoost
-set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
+#Hints for FindBoost
+if (EXISTS "${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1")
+    set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
+endif()
 
-include(FindBoost)
-#set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
              COMPONENTS filesystem regex system)
 if (NOT Boost_FOUND)
