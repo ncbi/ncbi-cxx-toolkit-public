@@ -124,7 +124,8 @@ void SNetCacheAPIImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections
     m_TempDir =                            registry.Get(sections, { "tmp_dir", "tmp_path" }, ".");
     m_CacheInput =                         registry.Get(sections, "cache_input", false);
     m_CacheOutput =                        registry.Get(sections, "cache_output", false);
-    m_ProlongBlobLifetimeOnWrite =         registry.Get(sections, "prolong_blob_lifetime_on_write", true);
+    const bool prolong_on_write =          registry.Get(sections, "prolong_blob_lifetime_on_write", true);
+    const bool create_on_write =           registry.Get(sections, "create_blob_on_write", true);
 
     m_DefaultParameters.SetMirroringMode(  registry.Get(sections, "enable_mirroring", kEmptyStr));
     m_DefaultParameters.SetServerCheck(    registry.Get(sections, "server_check", kEmptyStr));
@@ -132,6 +133,8 @@ void SNetCacheAPIImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections
     m_DefaultParameters.SetUseCompoundID(  registry.Get(sections, "use_compound_id", false));
 
     const auto allowed_services =          registry.Get(sections, "allowed_services", kEmptyStr);
+
+    m_FlagsOnWrite = (prolong_on_write ? 0 : 1) | (create_on_write ? 0 : 2);
 
     if (allowed_services.empty()) return;
 
@@ -529,7 +532,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
 
     m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
-    if (!m_ProlongBlobLifetimeOnWrite) cmd.append(" flags=1");
+    if (m_FlagsOnWrite) cmd.append(" flags=").append(to_string(m_FlagsOnWrite));
 
     CNetServer::SExecResult exec_result;
 
