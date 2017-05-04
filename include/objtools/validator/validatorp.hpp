@@ -1441,6 +1441,7 @@ private:
     void ReportBadWGSGap(const CBioseq& seq);
     void ReportBadTSAGap(const CBioseq& seq);
     void ReportBadGenomeGap(const CBioseq& seq);
+    void ValidateWGSMaster(CBioseq_Handle bsh);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
