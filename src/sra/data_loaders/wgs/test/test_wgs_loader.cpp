@@ -2142,6 +2142,29 @@ BOOST_AUTO_TEST_CASE(FetchMinorVer2)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchIndex2)
+{
+    if ( !sx_HasNewWGSRepository() ) {
+        return;
+    }
+
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(1174167502));
+    BOOST_CHECK(bh);
+    BOOST_CHECK(bh && sx_Equal(bh, sx_LoadFromGB(bh)));
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("SMB81856"));
+    BOOST_CHECK(bh);
+    BOOST_CHECK(bh && sx_Equal(bh, sx_LoadFromGB(bh)));
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
