@@ -41,7 +41,7 @@
 
 /// Get the directory where test data is stored at NCBI.
 /// The location is hard coded, but can be changed using
-/// environment variable NCBI_TEST_DATA_PATH.
+/// environment variables NCBI_TEST_DATA_PATH or NCBI_TEST_DATA.
 ///
 /// @return
 ///   Pointer to internal zero-terminated string buffer.
