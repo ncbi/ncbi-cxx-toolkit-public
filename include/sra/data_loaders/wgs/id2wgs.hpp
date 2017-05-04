@@ -72,7 +72,7 @@ public:
     CID2WGSProcessor(void);
     CID2WGSProcessor(const CConfig::TParamTree* params,
                      const string& driver_name);
-    virtual ~CID2WGSProcessor(void);
+    virtual ~CID2WGSProcessor(void) override;
 
     // old interface
     CID2WGSContext GetInitialContext(void) const;
