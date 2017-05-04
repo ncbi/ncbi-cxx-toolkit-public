@@ -1,4 +1,6 @@
 corelib$
+db$
+db/sqlite
 serial$
 serial/impl$
 serial/datatool
