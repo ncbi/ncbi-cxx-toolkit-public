@@ -1669,18 +1669,25 @@ void CFeatureItem::x_AddQuals(
         } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
 
-            CMappedFeat mapped_gene = ctx.GetFeatTree().GetBestGene(m_Feat);
-            if (mapped_gene) {
-                gene_feat = mapped_gene.GetOriginalSeq_feat();
-                gene_ref = &gene_feat->GetData().GetGene();
-            } else {
-                // e.g., check sig_peptide for gene overlapping parent CDS
-                CSeq_feat_Handle parent_feat_handle;
-                if( parentFeatureItem ) {
-                    parent_feat_handle = parentFeatureItem->GetFeat();
-                    CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
-                        gene_feat, parent_feat_handle );
+            bool is_mapped = false;
+            try {
+                CMappedFeat mapped_gene = ctx.GetFeatTree().GetBestGene(m_Feat);
+                if (mapped_gene) {
+                    gene_feat = mapped_gene.GetOriginalSeq_feat();
+                    gene_ref = &gene_feat->GetData().GetGene();
+                    is_mapped = true;
                 }
+            } catch (CException&) {}
+            if (! is_mapped) {
+                try {
+                    // e.g., check sig_peptide for gene overlapping parent CDS
+                    CSeq_feat_Handle parent_feat_handle;
+                    if( parentFeatureItem ) {
+                        parent_feat_handle = parentFeatureItem->GetFeat();
+                        CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref,
+                            gene_feat, parent_feat_handle );
+                    }
+                } catch (CException&) {}
             }
         }
     }
