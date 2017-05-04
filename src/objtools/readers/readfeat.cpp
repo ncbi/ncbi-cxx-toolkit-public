@@ -868,6 +868,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     string         start, stop, feat, qual, val, stnd;
     vector<string> tkns;
 
+
     if (line.empty ()) return false;
 
     /* offset and other instructions encoded in brackets */
@@ -900,6 +901,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
         stnd = NStr::TruncateSpaces(tkns[5]);
     }
 
+    bool has_start = false;
     if (! start.empty ()) {
         if (start [0] == '<') {
             partial5 = true;
@@ -912,8 +914,10 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
         }
         startv = x_StringToLongNoThrow(start, feat, qual,
             ILineError::eProblem_BadFeatureInterval);
+        has_start = true;
     }
 
+    bool has_stop = false;
     if (! stop.empty ()) {
         if (stop [0] == '>') {
             partial3 = true;
@@ -921,8 +925,9 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
         }
         stopv = x_StringToLongNoThrow (stop, feat, qual,
             ILineError::eProblem_BadFeatureInterval);
+        has_stop = true;
     }
-
+    
     if ( startv <= 0 || stopv <= 0 ) {
         startv = -1;
         stopv = -1;
@@ -941,8 +946,24 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
         }
     }
 
-    *startP = ( startv < 0 ? -1 : startv + offset );
-    *stopP = ( stopv < 0 ? -1 : stopv + offset );
+    if (startv >= 0) {
+        startv += offset;
+    }
+    if (stopv >= 0) {
+        stopv += offset;
+    }
+    
+    if ((has_start && startv < 0) || (has_stop && stopv < 0)) {
+        x_ProcessMsg( 
+            ILineError::eProblem_FeatureBadStartAndOrStop,
+            eDiag_Error,
+            feat);
+    }
+
+    *startP = ( startv < 0 ? -1 : startv);
+    *stopP = ( stopv < 0 ? -1 : stopv);
+    
+    
     *partial5P = partial5;
     *partial3P = partial3;
     *ispointP = ispoint;
