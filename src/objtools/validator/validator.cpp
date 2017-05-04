@@ -487,7 +487,6 @@ bool x_IsCorrectlyOrdered
 
 bool CValidator::IsSeqLocCorrectlyOrdered(const CSeq_loc& loc, CScope& scope)
 {
-    bool circular = false;
     CBioseq_Handle seq;
     try {
         CBioseq_Handle seq = scope.GetBioseqHandle(loc);
