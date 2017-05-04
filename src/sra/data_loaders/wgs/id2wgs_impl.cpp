@@ -192,12 +192,18 @@ public:
     CIndexUpdateThread(unsigned update_delay,
                        CRef<CWGSResolver> resolver)
         : CThreadNonStop(update_delay),
+          m_FirstRun(true),
           m_Resolver(resolver)
         {
         }
 
 protected:
     virtual void DoJob(void) {
+        if ( m_FirstRun ) {
+            // CThreadNonStop runs first iteration immediately, ignore it
+            m_FirstRun = false;
+            return;
+        }
         try {
             if ( m_Resolver->Update() ) {
                 if ( s_DebugEnabled(eDebug_open) ) {
@@ -220,6 +226,7 @@ protected:
     }
 
 private:
+    bool m_FirstRun;
     CRef<CWGSResolver> m_Resolver;
 };
 
