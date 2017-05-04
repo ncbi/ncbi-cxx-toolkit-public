@@ -63,9 +63,9 @@ static const char* NCBI_GetTestDataPath(void)
 //#elif defined(NCBI_OS_MSWIN)
 
 #if defined(NCBI_OS_MSWIN)
-        "\\\\snowman\\toolkit_test_data\\"
+        "\\\\snowman\\win-coremake\\Scripts\\test_data\\"
 #else
-        "/net/snowman/vol/projects/toolkit_test_data/"
+        "/am/ncbiapdata/test_data/"
 #endif
         ;
     return s_NcbiTestDataPath;
