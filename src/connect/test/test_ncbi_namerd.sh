@@ -12,15 +12,8 @@ if test -r ./ncbi_test_data; then
     . ./ncbi_test_data
     base_std=$NCBI_TEST_DATA/connect
 fi
-
-# Factor out OS- and invocation-specific stuff.
+# Use pwd for direct invocations.
 bases=". $base_std"
-if test "$OSTYPE" = "cygwin"; then
-    bases="$bases //snowman/toolkit_test_data/connect"
-else
-    bases="$bases /net/snowman/vol/projects/toolkit_test_data/connect"
-fi
-bases="$bases /am/coremake_builds/test_data/connect"
 
 # Find a directory containing the test file.
 test_file_name="test_ncbi_namerd_tests.json"
