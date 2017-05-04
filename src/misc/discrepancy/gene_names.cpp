@@ -83,14 +83,20 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_NAME)
 }
 
 
-static void MoveLocusToNote(const CSeq_feat* sf, CScope& scope)
+static bool MoveLocusToNote(const CSeq_feat* sf, CScope& scope)
 {
-    CRef<CSeq_feat> new_feat(new CSeq_feat());
-    new_feat->Assign(*sf);
-    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
-    new_feat->SetData().SetGene().ResetLocus();
-    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-    feh.Replace(*new_feat);
+    try {
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*sf);
+        AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+        new_feat->SetData().SetGene().ResetLocus();
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+        feh.Replace(*new_feat);
+    }
+    catch (...) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -100,8 +106,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            MoveLocusToNote(sf, scope);
+        if (sf && MoveLocusToNote(sf, scope)) {
             n++;
         }
     }
@@ -137,8 +142,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            MoveLocusToNote(sf, scope);
+        if (sf && MoveLocusToNote(sf, scope)) {
             n++;
         }
     }
@@ -235,8 +239,7 @@ DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetMoreInfo().GetPointer());
-        if (sf) {
-            MoveLocusToNote(sf, scope);
+        if (sf && MoveLocusToNote(sf, scope)) {
             n++;
         }
     }
