@@ -266,7 +266,7 @@ void s_AppendCommonExtras(const string &  qname,
                           const string &  variation,
                           CDiagContext_Extra &  extra)
 {
-    extra.Print("qname", qname)
+    extra.Print("_queue", qname)
          .Print("job_key", job_key)
          .Print("agent", agent);
 
@@ -299,10 +299,9 @@ void g_DoPerfLogging(const CQueue &  queue,
         CDiagContext_Extra  extra = perf_logger.Post(
                 CRequestStatus::e200_Ok,
                 CNetScheduleAPI::StatusToString(statuses[k]));
-        extra.Print("qname", queue.GetQueueName());
+        extra.Print("_queue", queue.GetQueueName());
     }
 }
 
 
 END_NCBI_SCOPE
-
