@@ -463,6 +463,8 @@ find_external_library(MONGOCXX
     LIBS mongocxx bsoncxx
     HINTS "${NCBI_TOOLS_ROOT}/mongodb-3.0.2/"
     EXTRALIBS ${OPENSSL_LIBS} ${SASL2_LIBS})
+set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE} "${MONGOCXX_INCLUDE}/mongocxx/v_noabi" "${MONGOCXX_INCLUDE}/bsoncxx/v_noabi")
+set(MONGOCXX_LIB ${MONGOCXX_LIBS})
 
 #
 # Final tasks
