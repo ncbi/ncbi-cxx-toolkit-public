@@ -4688,6 +4688,7 @@ NLUH	s	University of the Philippines College Baguio
 NM	s	Northern Michigan University, Biology Department		
 NMAC	s	Inner Mongolia Agricultural University, Department of Pratacultural Science		
 NMAG	s	Naturhistorisches Museum, Augsburg		
+NMB	c	Ningbo Marine Biotechnology		
 NMB<CHE>	s	Naturhistorishes Museum		
 NMB<ZAF>	s	National Museum, Bloemfontein		
 NMB<ZAF>:P	s	National Museum, Bloemfontein, The Protozoan collection of the National Museum

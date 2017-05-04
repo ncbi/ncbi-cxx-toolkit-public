@@ -4721,6 +4721,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NM\ts\tNorthern Michigan University, Biology Department\t\t",
 "NMAC\ts\tInner Mongolia Agricultural University, Department of Pratacultural Science\t\t",
 "NMAG\ts\tNaturhistorisches Museum, Augsburg\t\t",
+"NMB\tc\tNingbo Marine Biotechnology\t\t",
 "NMB<CHE>\ts\tNaturhistorishes Museum\t\t",
 "NMB<ZAF>\ts\tNational Museum, Bloemfontein\t\t",
 "NMB<ZAF>:P\ts\tNational Museum, Bloemfontein, The Protozoan collection of the National Museum",
