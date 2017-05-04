@@ -45,7 +45,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/streamiter.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
 #include <objtools/edit/protein_match/generate_match_table.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
