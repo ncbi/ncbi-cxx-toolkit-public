@@ -49,13 +49,18 @@ static const char* NCBI_GetTestDataPath(void)
 {
     static const char* s_NcbiTestDataPath = NULL;
 
-    if ( s_NcbiTestDataPath )
+    if (s_NcbiTestDataPath) {
         return s_NcbiTestDataPath;
-
+    }
     s_NcbiTestDataPath = getenv("NCBI_TEST_DATA_PATH");
-    if ( s_NcbiTestDataPath )
+    if (s_NcbiTestDataPath) {
         return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
-    
+    }
+    s_NcbiTestDataPath = getenv("NCBI_TEST_DATA");
+    if (s_NcbiTestDataPath) {
+        return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
+    }
+
     s_NcbiTestDataPath =
 
 //#ifdef NCBI_OS_DARWIN
