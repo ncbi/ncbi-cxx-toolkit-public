@@ -2165,16 +2165,10 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info,
     else {
         CTSE_ScopeInfo& tse_info = *match.m_TSE_Lock;
         _ASSERT(&tse_info.GetScopeImpl() == this);
-        if ( !id_info.second.m_Bioseq_Info ) {
-            // resolved first time
-            CRef<CBioseq_ScopeInfo> bioseq = tse_info.GetBioseqInfo(match);
-            _ASSERT(&bioseq->x_GetScopeImpl() == this);
-            id_info.second.m_Bioseq_Info = bioseq;
-        }
-        else {
-            // resolved on a second attempt
-            id_info.second.m_Bioseq_Info->SetResolved(tse_info, match.m_Bioseq->GetId());
-        }
+        // resolved
+        CRef<CBioseq_ScopeInfo> bioseq = tse_info.GetBioseqInfo(match);
+        _ASSERT(&bioseq->x_GetScopeImpl() == this);
+        id_info.second.m_Bioseq_Info = bioseq;
         _ASSERT(id_info.second.m_Bioseq_Info->HasBioseq());
     }
 }
