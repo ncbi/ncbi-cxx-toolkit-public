@@ -48,8 +48,10 @@
 #include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
 
-#include <thread>
-#include <future>
+#ifdef NCBI_THREADS
+# include <thread>
+# include <future>
+#endif // NCBI_THREADS
 
 #include <corelib/test_boost.hpp>
 
@@ -122,6 +124,7 @@ BOOST_AUTO_TEST_CASE(TestReResolve3)
 }
 
 
+#ifdef NCBI_THREADS
 static vector<size_t> s_GetBioseqParallel(size_t THREADS,
                                           CScope& scope,
                                           const vector< CRef<CSeq_id> >& ids)
@@ -247,3 +250,4 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
+#endif // NCBI_THREADS
