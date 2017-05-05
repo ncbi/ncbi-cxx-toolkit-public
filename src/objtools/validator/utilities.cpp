@@ -1947,7 +1947,7 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
         if (reply.GetError().IsSetMessage()) {
             err_str = reply.GetError().GetMessage();
         }
-        if(NStr::Find(err_str, "ambiguous") != string::npos) {
+        if(NStr::FindNoCase(err_str, "ambiguous") != string::npos) {
             err_str = "Specific host value is ambiguous: " + 
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         } else {
