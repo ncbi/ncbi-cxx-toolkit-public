@@ -2,11 +2,7 @@
 # $Id$
 #
 
-if test "$OSTYPE" = "cygwin"; then
-  bases="./testdata //snowman/toolkit_test_data/objects/datatool"
-else
-  bases="./testdata /net/snowman/vol/projects/toolkit_test_data/objects/datatool"
-fi
+bases="./testdata ${NCBI_TEST_DATA}/objects/datatool"
 if test -z "$CHECK_EXEC"; then
   tool="./datatool"
 else
