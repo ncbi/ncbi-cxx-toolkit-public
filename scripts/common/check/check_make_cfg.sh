@@ -477,6 +477,13 @@ RunTest() {
                  echo "Command line: \$x_run"
                  echo 
               fi
+              if test -n "\$NCBI_CHECK_ENV_SETTINGS"; then
+                 echo "NCBI_CHECK_ENV_SETTINGS:"
+                 for env in \$NCBI_CHECK_ENV_SETTINGS; do
+                     echo "    \$env = \`eval echo '$'\$env\`"
+                 done
+                 echo
+              fi
            ) > \$x_test_out 2>&1
 
 
