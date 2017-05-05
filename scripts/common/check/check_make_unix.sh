@@ -322,6 +322,12 @@ if test -z "\$NCBI_TEST_DATA"; then
     fi
     export NCBI_TEST_DATA
 fi
+# Add synonym for it, see: include/common/test_data_path.h (CXX-9239)
+if test -z "\$NCBI_TEST_DATA_PATH"; then
+    NCBI_TEST_DATA_PATH=\$NCBI_TEST_DATA
+    export NCBI_TEST_DATA_PATH
+fi
+
 
 # Valgrind configuration
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"

@@ -324,6 +324,12 @@ if test -z "\$NCBI_TEST_DATA"; then
     esac
     export NCBI_TEST_DATA
 fi
+# Add synonym for it, see: include/common/test_data_path.h (CXX-9239)
+if test -z "\$NCBI_TEST_DATA_PATH"; then
+    NCBI_TEST_DATA_PATH=\$NCBI_TEST_DATA
+    export NCBI_TEST_DATA_PATH
+fi
+
 
 count_ok=0
 count_err=0
