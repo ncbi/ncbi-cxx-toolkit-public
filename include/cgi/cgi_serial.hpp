@@ -96,7 +96,7 @@ public:
 class COStreamHelper
 {
 public:
-    COStreamHelper(CNcbiOstream& os) : m_Ostream(os) { m_str.reset(NULL); }
+    COStreamHelper(CNcbiOstream& os) : m_Ostream(os), m_str(nullptr) {}
     ~COStreamHelper() {  try { flush(); } catch (...) {}   }
 
     operator CNcbiOstream&() { return x_GetStrm(); }
