@@ -64,14 +64,4 @@
 #define NCBI_SRZ_REP_PATH NCBI_TRACES04_PATH ":" NCBI_TRACES01_PATH
 #define NCBI_SRZ_VOL_PATH "sra8:srz0"
 
-#ifdef NCBI_OS_DARWIN
-# define NCBI_TEST_TRACES_PATH(num) "/netopt/toolkit_test_data/traces" num ":/net/snowman/vol/projects/toolkit_test_data/traces" num
-#elif defined(NCBI_OS_MSWIN)
-# define NCBI_TEST_TRACES_PATH(num) "//snowman/toolkit_test_data/traces" num
-#else
-# define NCBI_TEST_TRACES_PATH(num) "/net/snowman/vol/projects/toolkit_test_data/traces" num
-#endif
-
-#define NCBI_TEST_BAM_FILE_PATH NCBI_TEST_TRACES_PATH("02") ":" NCBI_TEST_TRACES_PATH("04")
-
 #endif // SRA__READER__NCBI_TRACES_PATH__HPP
