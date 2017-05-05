@@ -2170,7 +2170,6 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
 
 static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
 {
-cout << "*";
     bool protein_id = false,
          transcript_id = false;
 
