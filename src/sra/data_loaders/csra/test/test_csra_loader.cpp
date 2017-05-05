@@ -48,6 +48,7 @@
 
 #include <corelib/test_boost.hpp>
 
+#include <common/test_data_path.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -98,9 +99,9 @@ void sx_CheckNames(CScope& scope, const CSeq_loc& loc,
 string sx_GetPath(const string& dir)
 {
     vector<string> reps;
-    NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+    NStr::Split("traces02:traces04", ":", reps);
     ITERATE ( vector<string>, it, reps ) {
-        string path = CFile::MakePath(*it, dir);
+        string path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
         if ( CDirEntry(path).Exists() ) {
             return path;
         }

@@ -45,6 +45,7 @@
 #include <thread>
 
 #include <corelib/test_boost.hpp>
+#include <common/test_data_path.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -93,12 +94,12 @@ void sx_CheckNames(CScope& scope, const CSeq_loc& loc,
     }
 }
 
-string sx_GetPath(const string& dir, const string& path = NCBI_TEST_BAM_FILE_PATH)
+string sx_GetPath(const string& dir, const string& path = "traces02:traces04")
 {
     vector<string> reps;
     NStr::Split(path, ":", reps);
     ITERATE ( vector<string>, it, reps ) {
-        string path = CFile::MakePath(*it, dir);
+        string path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
         if ( CDirEntry(path).Exists() ) {
             return path;
         }
@@ -203,8 +204,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     TSeqPos from, to, align_count;
 
     {
-        params.m_DirPath =
-            sx_GetPath("/srz0/SRZ/000000/SRZ000200/provisional", NCBI_TEST_TRACES_PATH("01"));
+        params.m_DirPath = sx_GetPath("/srz0/SRZ/000000/SRZ000200/provisional", "traces01");
         bam_name = "GSM409307_UCSD.H3K4me1.chr1.bam";
         CNcbiIfstream mapfile("mapfile");
         BOOST_REQUIRE(mapfile);

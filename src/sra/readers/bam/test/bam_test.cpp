@@ -56,6 +56,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
 
+#include <common/test_data_path.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -487,7 +488,8 @@ int CBAMTestApp::Run(void)
     }
     else {
         vector<string> reps;
-        NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+        reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
+        reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
         ITERATE ( vector<string>, it, reps ) {
             dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
             dirs.push_back(CFile::MakePath(*it, BAM_DIR2));

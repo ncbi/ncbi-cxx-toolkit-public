@@ -45,6 +45,8 @@
 #include <objects/seq/seq__.hpp>
 #include <objects/seqset/seqset__.hpp>
 
+#include <common/test_data_path.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -180,9 +182,9 @@ void CBam2GraphApp::ProcessFile(const string& file)
         }
         else {
             vector<string> reps;
-            NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+            NStr::Split("traces02:traces04", ":", reps);
             ITERATE ( vector<string>, it, reps ) {
-                string path = CFile::MakePath(*it, BAM_DIR);
+                string path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
                 if ( !CDirEntry(dir).Exists() ) {
                     dir = path;
                     break;
