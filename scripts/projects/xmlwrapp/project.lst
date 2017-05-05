@@ -28,3 +28,4 @@ util/bitset$
 serial$
 serial/datatool$
 connect$
+connect/mbedtls
