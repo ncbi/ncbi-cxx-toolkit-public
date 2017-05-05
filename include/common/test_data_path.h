@@ -52,11 +52,11 @@ static const char* NCBI_GetTestDataPath(void)
     if (s_NcbiTestDataPath) {
         return s_NcbiTestDataPath;
     }
-    s_NcbiTestDataPath = getenv("NCBI_TEST_DATA_PATH");
+    s_NcbiTestDataPath = getenv("NCBI_TEST_DATA");
     if (s_NcbiTestDataPath) {
         return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
     }
-    s_NcbiTestDataPath = getenv("NCBI_TEST_DATA");
+    s_NcbiTestDataPath = getenv("NCBI_TEST_DATA_PATH");
     if (s_NcbiTestDataPath) {
         return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
     }
