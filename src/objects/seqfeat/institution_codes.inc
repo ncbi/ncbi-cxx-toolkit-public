@@ -2454,6 +2454,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HKU\ts\tUniversity of Hong Kong, Ecology and Biodiversity Department\t\t",
 "HKUCC\tc\tThe University of Hong Kong Culture Collection\t\t",
 "HL\ts\tHoughton Lake Wildlife Research Station, Natural Resources Department\t\t",
+"HL<NLD>\tsb\tHortus Botanicus Leiden\t\t",
 "HLA\ts\tHarold L. Lyon Arboretum\t\t",
 "HLCM\ts\tHeilongjiang College of Traditional Chinese Medicine, Department of Chinese Materia Medica\t\t",
 "HLD\ts\tHessisches Landesmuseum\t\t",
