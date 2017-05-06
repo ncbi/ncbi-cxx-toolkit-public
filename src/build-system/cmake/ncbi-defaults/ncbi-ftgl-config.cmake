@@ -30,10 +30,6 @@ set(FTGL_LIBRARIES
     ${FTGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
     )
 
-get_filename_component(LIBXML2_VERSION_STRING
-    "${LibXml2_CMAKE_DIR}" NAME)
-string(SUBSTRING "${LIBXML2_VERSION_STRING}" 5 20 LIBXML2_VERSION_STRING)
-
 #############################################################################
 ##
 ## Logging
