@@ -9,6 +9,11 @@ find_package(Freetype)
 if (Freetype_FOUND)
     message(STATUS "Found Freetype: ${FREETYPE_LIBRARIES}")
     find_package(FTGL)
+    if (FTGL_FOUND)
+        message(STATUS "Found FTGL: ${FTGL_LIBRARIES}")
+    else()
+        message(STATUS "Cannot find FTGL")
+    endif()
 endif()
 
 #
