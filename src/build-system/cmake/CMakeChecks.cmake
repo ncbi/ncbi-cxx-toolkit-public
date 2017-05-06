@@ -274,6 +274,13 @@ find_package(OpenGL)
 find_package(GLEW)
 find_package(OSMesa)
 
+set(OPENGL_INCLUDE ${OPENGL_INCLUDE_DIRS})
+set(OPENGL_LIBS ${OPENGL_LIBRARIES})
+set(GLEW_INCLUDE ${GLEW_INCLUDE_DIRS})
+set(GLEW_LIBS ${GLEW_LIBRARIES})
+set(OSMESA_INCLUDE ${OSMesa_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
+set(OSMESA_LIBS ${OSMesa_LIBRARIES} ${OPENGL_LIBRARIES})
+
 
 ############################################################################
 #

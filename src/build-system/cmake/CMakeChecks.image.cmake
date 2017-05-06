@@ -7,6 +7,7 @@ find_package(TIFF)
 find_package(GIF)
 find_package(Freetype)
 if (Freetype_FOUND)
+    message(STATUS "Found Freetype: ${FREETYPE_LIBRARIES}")
     find_package(FTGL)
 endif()
 
@@ -26,8 +27,8 @@ set(IMAGE_LIBS
 
 
 # FreeType, FTGL
-set(FREETYPE_INCLUDE ${FREETYPE_INCLUDE_DIR})
+set(FREETYPE_INCLUDE ${FREETYPE_INCLUDE_DIRS})
 set(FREETYPE_LIBS    ${FREETYPE_LIBRARIES})
-set(FTGL_INCLUDE     ${FTGL_INCLUDE_DIR})
+set(FTGL_INCLUDE     ${FTGL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS})
 set(FTGL_LIBS        ${FTGL_LIBRARIES} ${FREETYPE_LIBRARIES})
 

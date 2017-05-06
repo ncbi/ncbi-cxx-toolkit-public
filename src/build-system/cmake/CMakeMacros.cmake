@@ -11,6 +11,8 @@ macro(find_package arg_mod)
     #set(_NCBI_MODULE_DEBUG True)
     set(_MOD_CONF1 "NCBI-${arg_mod}Config.cmake")
     string(TOLOWER "NCBI-${arg_mod}-config.cmake" _MOD_CONF2)
+    #message(STATUS "Checking for config: ${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF1}")
+    #message(STATUS "Checking for config: ${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF2}")
     if (EXISTS "${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF1}"
             OR EXISTS "${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}/${_MOD_CONF2}")
         _find_package(${arg_mod} ${ARGN}
