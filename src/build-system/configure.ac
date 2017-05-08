@@ -3446,8 +3446,8 @@ AC_CHECK_FUNCS(alarm asprintf atoll basename euidaccess fseeko fstat \
                getgrouplist getopt getpagesize getpass getpassphrase \
                getpwuid getrusage gettimeofday getuid lchown lutimes memrchr \
                putenv readpassphrase readv select setenv statfs statvfs \
-               strcasecmp strdup strlcat strlcpy strndup strsep strtok_r \
-               sysmp timegm usleep utimes vasprintf vsnprintf writev)
+               strcasecmp strdup strlcat strlcpy strndup strnlen strsep \
+               strtok_r sysmp timegm usleep utimes vasprintf vsnprintf writev)
 AC_LANG_POP(C)
 
 AC_TYPE_SIGNAL

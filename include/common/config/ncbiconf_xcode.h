@@ -534,6 +534,9 @@
 /* Define to 1 if you have the `strndup' function. */
 /* #undef HAVE_STRNDUP */
 
+/* Define to 1 if you have the `strnlen' function. */
+#define HAVE_STRNLEN 1
+
 /* Define to 1 if you have the `strsep' function. */
 #undef HAVE_STRSEP
 
