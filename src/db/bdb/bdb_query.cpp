@@ -165,7 +165,7 @@ CBDB_Query::NewOperatorNode(CBDB_QueryNode::EOperatorType otype,
                             const string&                 arg1,
                             const string&                 arg2)
 {
-    auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
+    unique_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
 
     tr->AddNode(new TQueryClause(CBDB_QueryNode(arg1)));
     tr->AddNode(new TQueryClause(CBDB_QueryNode(arg2)));
@@ -178,7 +178,7 @@ CBDB_Query::NewOperatorNode(CBDB_QueryNode::EOperatorType otype,
                             TQueryClause*  arg1,
                             TQueryClause*  arg2)
 {
-    auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
+    unique_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(otype)));
     if (arg1)
         tr->AddNode(arg1);
     if (arg2)
@@ -192,7 +192,7 @@ CBDB_Query::NewLogicalNode(CBDB_QueryNode::ELogicalType ltype,
                            TQueryClause*  arg1,
                            TQueryClause*  arg2)
 {
-    auto_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(ltype)));
+    unique_ptr<TQueryClause> tr(new TQueryClause(CBDB_QueryNode(ltype)));
     if (arg1)
         tr->AddNode(arg1);
     if (arg2)

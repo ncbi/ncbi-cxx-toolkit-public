@@ -236,7 +236,7 @@ static const char* kEnvParam_memp_trickle_percent = "memp_trickle_percent";
 CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg,
                         const string& section_name)
 {
-    auto_ptr<CBDB_Env> env;
+    unique_ptr<CBDB_Env> env;
 
     CBDB_Env::EEnvType e_type = CBDB_Env::eEnvTransactional;
 

@@ -615,17 +615,17 @@ protected:
     vector<unsigned>        m_PageSizes;
     unsigned                m_VolumeCacheSize;
     CBDB_Env*               m_Env;
-    auto_ptr<TDeMuxStore>   m_DictFile;     ///< Split dictionary(id demux file)
+    unique_ptr<TDeMuxStore> m_DictFile;     ///< Split dictionary(id demux file)
     mutable TLock           m_DictFileLock; ///< id demux file locker
 
-    auto_ptr<TIdDeMux>      m_IdDeMux;   ///< Id to coordinates mapper
+    unique_ptr<TIdDeMux>    m_IdDeMux;      ///< Id to coordinates mapper
     mutable CRWLock         m_IdDeMuxLock;
 
-    auto_ptr<TObjDeMux>     m_ObjDeMux;  ///< Obj to coordinates mapper
+    unique_ptr<TObjDeMux>   m_ObjDeMux;     ///< Obj to coordinates mapper
     TLock                   m_ObjDeMuxLock;
 
-    TVolumeVect             m_Volumes;     ///< Volumes
-    mutable TLock           m_VolumesLock; ///< Volumes locker
+    TVolumeVect             m_Volumes;      ///< Volumes
+    mutable TLock           m_VolumesLock;  ///< Volumes locker
 
     string                  m_StorageName;
     CBDB_RawFile::EOpenMode m_OpenMode;
@@ -1329,7 +1329,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux,
         unsigned dim = dict_file.dim;
         unsigned dim_idx = dict_file.dim_idx;
 
-        auto_ptr<TBitVector>  bv(new TBitVector(bm::BM_GAP));
+        unique_ptr<TBitVector> bv(new TBitVector(bm::BM_GAP));
         dict_file.Deserialize(bv.get(), &buf[0]);
 
         de_mux.SetProjection(dim, dim_idx, bv.release());
@@ -1468,7 +1468,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
     {  // lock protected open
         TLockGuard lg(m_VolumesLock);
         while (m_Volumes.size() < (vol+1)) {
-            auto_ptr<SVolume> v(new SVolume);
+            unique_ptr<SVolume> v(new SVolume);
             v->db_vect.resize(slice+1);
             for (size_t i = 0; i < v->db_vect.size(); ++i) {
                 if ( !v->db_vect[i] ) {

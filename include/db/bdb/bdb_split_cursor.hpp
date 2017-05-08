@@ -91,9 +91,9 @@ private:
     string m_StoreName;
     size_t m_BufferSize;
 
-    vector<string>            m_Files;
-    auto_ptr<TVolume>         m_Volume;
-    auto_ptr<CBDB_FileCursor> m_Cursor;
+    vector<string>              m_Files;
+    unique_ptr<TVolume>         m_Volume;
+    unique_ptr<CBDB_FileCursor> m_Cursor;
 
     CStopWatch m_SW;
 

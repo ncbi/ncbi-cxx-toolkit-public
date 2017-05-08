@@ -85,8 +85,7 @@ void CBDB_MergeTest::Init(void)
     SetDiagPostFlag(eDPF_Line);
     SetDiagPostFlag(eDPF_Trace);
 
-
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_bdb_vmerge",
                        "test BDB vmerge");
     SetupArgDescriptions(d.release());

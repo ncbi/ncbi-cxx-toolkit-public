@@ -82,7 +82,7 @@ public:
 
 protected:
     AutoPtr<TBlobFile>          m_BlobFile;
-    auto_ptr<CBDB_FileCursor>   m_Cursor;
+    unique_ptr<CBDB_FileCursor> m_Cursor;
     size_t                      m_FetchBufferSize;
     bool                        m_Eof;
     const void*                 m_Data;
@@ -173,7 +173,7 @@ protected:
 protected:
     mutable CFastMutex          m_Lock;
     AutoPtr<TBlobFile>          m_BlobFile;
-    auto_ptr<CBDB_FileCursor>   m_Cursor;
+    unique_ptr<CBDB_FileCursor> m_Cursor;
     size_t                      m_FetchBufferSize;
     bool                        m_Eof;
     bool                        m_Good;

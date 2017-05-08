@@ -213,8 +213,7 @@ void CBDB_SplitTest::Init(void)
     SetDiagPostFlag(eDPF_Line);
     SetDiagPostFlag(eDPF_Trace);
 
-
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_bdb_split",
                        "test BDB split storage");
     SetupArgDescriptions(d.release());

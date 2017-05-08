@@ -265,7 +265,7 @@ void CBDB_PhoneBookDemo3::Init(void)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("bdb demo3",
                        "Demo3 application for BDB library");
     SetupArgDescriptions(d.release());

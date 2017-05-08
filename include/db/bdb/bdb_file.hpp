@@ -664,8 +664,8 @@ private:
                              size_t* locp);
 
 private:
-    auto_ptr<CBDB_BufferManager>   m_KeyBuf;
-    auto_ptr<CBDB_BufferManager>   m_DataBuf;
+    unique_ptr<CBDB_BufferManager> m_KeyBuf;
+    unique_ptr<CBDB_BufferManager> m_DataBuf;
     bool                           m_BufsAttached;
     bool                           m_BufsCreated;
     bool                           m_DataBufDisabled;

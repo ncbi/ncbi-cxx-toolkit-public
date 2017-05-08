@@ -249,7 +249,7 @@ void CBDB_FileDumperApp::Init(void)
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -310,9 +310,9 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
 
     CBDB_FieldFactory ffact;
 
-    auto_ptr<CBDB_File>      db_file;
-    auto_ptr<CBDB_BLobFile>  db_blob_file;
-    auto_ptr<CBDB_File>      db_out_file;
+    unique_ptr<CBDB_File>      db_file;
+    unique_ptr<CBDB_BLobFile>  db_blob_file;
+    unique_ptr<CBDB_File>      db_out_file;
 
     CBDB_File* dump_file;
 

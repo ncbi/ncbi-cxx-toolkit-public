@@ -618,7 +618,7 @@ CSQLITE_Connection::CreateInMemoryDatabase(CTempString file_name, bool shared)
     CFastMutexGuard guard(s_FileAccessMutex);
     string dbname = shared ? "file::memory:?cache=shared" : ":memory:";
     CSQLITE_Connection fdb(file_name, fReadOnly);
-    auto_ptr<CSQLITE_Connection> mdb(new CSQLITE_Connection(dbname,
+    unique_ptr<CSQLITE_Connection> mdb(new CSQLITE_Connection(dbname,
         fExternalMT | fVacuumOff | fJournalOff | fSyncOff | fTempToMemory));
 
     sqlite3* fh = fdb.LockHandle();

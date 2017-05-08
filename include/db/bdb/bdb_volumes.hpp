@@ -207,8 +207,8 @@ private:
     CBDB_Volumes& operator=(const CBDB_Volumes&);
     friend class CBDB_VolumesTransaction;
 private:
-    auto_ptr<CBDB_Env>      m_Env;
-    auto_ptr<SVolumesDB>    m_VolumesDB;
+    unique_ptr<CBDB_Env>    m_Env;
+    unique_ptr<SVolumesDB>  m_VolumesDB;
     string                  m_Path;
 };
 

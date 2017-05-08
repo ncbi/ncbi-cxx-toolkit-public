@@ -186,8 +186,7 @@ void CBDB_TestThreads::Init(void)
     SetDiagPostFlag(eDPF_Line);
     SetDiagPostFlag(eDPF_Trace);
 
-
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext("test_bdb_threads",
                               "test BDB library with threads");
 

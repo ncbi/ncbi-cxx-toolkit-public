@@ -94,7 +94,7 @@ CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
 
 void CBDB_FileDumper::SetQuery(const string& query_str)
 {
-    auto_ptr<CBDB_Query>  q(new CBDB_Query);
+    unique_ptr<CBDB_Query>  q(new CBDB_Query);
     BDB_ParseQuery(query_str.c_str(), q.get());
     m_QueryStr = query_str;
     m_Query = q.release();
@@ -194,7 +194,7 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
             out << m_ColumnSeparator;
             if (size) {
 
-                auto_ptr<CBDB_BLobStream> blob_stream(
+                unique_ptr<CBDB_BLobStream> blob_stream(
                         blob_db->CreateStream());
 
                 if ((m_BlobFormat & eBlobAll) == 0) { // BLOB summary

@@ -781,7 +781,7 @@ void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mg
         const CBDB_Field& src_fld = buf_mgr.GetField(i);
 
         // "0" value selects the same buffer size as in src_fld
-        auto_ptr<CBDB_Field> dst_fld(src_fld.Construct(0));
+        unique_ptr<CBDB_Field> dst_fld(src_fld.Construct(0));
 
         dst_fld->SetName(src_fld.GetName().c_str());
         Bind(dst_fld.get());

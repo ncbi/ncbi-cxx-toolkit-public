@@ -2464,9 +2464,8 @@ bool CBDB_Cache::Read(const string& key,
         string path;
         s_MakeOverflowFileName(path, m_Path, GetName(),key, version, subkey);
 
-        auto_ptr<CNcbiIfstream>
-            overflow_file(new CNcbiIfstream(path.c_str(),
-                                            IOS_BASE::in | IOS_BASE::binary));
+        unique_ptr<CNcbiIfstream>
+            overflow_file(new CNcbiIfstream(path.c_str(), IOS_BASE::in | IOS_BASE::binary));
         if (!overflow_file->is_open()) {
             // TODO: Kill the registration record
             return false;
@@ -2541,7 +2540,7 @@ bool CBDB_Cache::Read(const string& key,
             string path;
             s_MakeOverflowFileName(path, m_Path, GetName(),key, version, subkey);
 
-            auto_ptr<CNcbiIfstream>
+            unique_ptr<CNcbiIfstream>
                 overflow_file(new CNcbiIfstream(path.c_str(),
                                                 IOS_BASE::in | IOS_BASE::binary));
             if (!overflow_file->is_open()) {
@@ -2613,7 +2612,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(const string&  key,
 {
     string path;
     s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
-    auto_ptr<CNcbiIfstream>
+    unique_ptr<CNcbiIfstream>
         overflow_file(new CNcbiIfstream(path.c_str(),
                                         IOS_BASE::in | IOS_BASE::binary));
     if (!overflow_file->is_open()) {
@@ -2703,7 +2702,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     if (overflow) {
         size_t bsize;
-        auto_ptr<IReader> rd;
+        unique_ptr<IReader> rd;
         rd.reset(
             x_CreateOverflowReader(key, version, subkey, bsize, blob_lock));
         return rd.release();
@@ -2730,7 +2729,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     m_BLOB_SplitStore->SetTransaction(0);
 
-    auto_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(8 * 1024));
+    unique_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(8 * 1024));
     ret = m_BLOB_SplitStore->ReadRealloc(blob_id, coords, *buffer);
     if (ret != eBDB_Ok) {
         return 0;
@@ -2778,7 +2777,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     // Check if it's an overflow BLOB (external file)
     {{
         size_t bsize;
-        auto_ptr<IReader> rd;
+        unique_ptr<IReader> rd;
         rd.reset(x_CreateOverflowReader(overflow, key, version, subkey, bsize));
         if (rd.get()) {
             if ( m_TimeStampFlag & fTimeStampOnRead ) {
@@ -2817,7 +2816,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     m_BLOB_SplitStore->SetTransaction(0);
 
-    auto_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(4096));
+    unique_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(4096));
     ret = m_BLOB_SplitStore->ReadRealloc(blob_id, coords, *buffer);
     if (ret != eBDB_Ok) {
         return 0;
@@ -2993,7 +2992,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     //
     // TODO: Add more realistic estimation of the BLOB size based on split
     //
-    auto_ptr<CBDB_RawFile::TBuffer> buffer(
+    unique_ptr<CBDB_RawFile::TBuffer> buffer(
                         new CBDB_RawFile::TBuffer(8 * 1024));
     ret = m_BLOB_SplitStore->ReadRealloc(blob_id, coords, *buffer);
     if (ret != eBDB_Ok) {
@@ -3119,7 +3118,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     //
     // TODO: Add more realistic estimation of the BLOB size based on split
     //
-    auto_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(4096));
+    unique_ptr<CBDB_RawFile::TBuffer> buffer(new CBDB_RawFile::TBuffer(4096));
     ret = m_BLOB_SplitStore->ReadRealloc(blob_id, coords, *buffer);
     if (ret != eBDB_Ok) {
         blob_descr->blob_found = false;
@@ -5205,7 +5204,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
            CVersionInfo                   version,
            const TPluginManagerParamTree* params) const
 {
-    auto_ptr<CBDB_Cache> drv;
+    unique_ptr<CBDB_Cache> drv;
     if (driver.empty() || driver == m_DriverName) {
         if (version.Match(NCBI_INTERFACE_VERSION(ICache))
                             != CVersionInfo::eNonCompatible) {
