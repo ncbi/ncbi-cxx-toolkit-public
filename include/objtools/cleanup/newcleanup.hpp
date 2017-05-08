@@ -36,6 +36,7 @@
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objtools/seqfeat/OrgMod.hpp>
 
 #include <objtools/cleanup/cleanup_change.hpp>
 
