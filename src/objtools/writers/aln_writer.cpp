@@ -34,7 +34,11 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Sparse_align.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/scope.hpp>
@@ -81,10 +85,14 @@ bool CAlnWriter::WriteAlign(
 
     switch (align.GetSegs().Which()) {
     case CSeq_align::C_Segs::e_Denseg:
-        return xWriteAlignDenseg(align.GetSegs().GetDenseg());
+        return xWriteAlignDenseSeg(align.GetSegs().GetDenseg());
     case CSeq_align::C_Segs::e_Spliced:
+        return xWriteAlignSplicedSeg(align.GetSegs().GetSpliced());
     case CSeq_align::C_Segs::e_Sparse:
+        break;
     case CSeq_align::C_Segs::e_Std:
+        break;
+    default:
         break;
     }
 
@@ -175,7 +183,7 @@ bool CAlnWriter::xGetSeqString(CBioseq_Handle bsh,
 
 // -----------------------------------------------------------------------------
 
-bool CAlnWriter::xWriteAlignDenseg(
+bool CAlnWriter::xWriteAlignDenseSeg(
     const CDense_seg& denseg)
 {
     if (!denseg.CanGetDim() ||
@@ -233,6 +241,104 @@ bool CAlnWriter::xWriteAlignDenseg(
 
     return true;
 }
+
+// -----------------------------------------------------------------------------
+
+bool CAlnWriter::xWriteAlignSplicedSeg(
+    const CSpliced_seg& spliced_seg)
+{
+    if (!spliced_seg.IsSetExons()) {
+        return false;
+    }
+    
+    string genomic_id;
+    if (spliced_seg.IsSetGenomic_id()) {
+        genomic_id = spliced_seg.GetGenomic_id().AsFastaString();
+    }
+
+
+    string product_id;
+    if (spliced_seg.IsSetGenomic_id()) {
+        product_id = spliced_seg.GetProduct_id().AsFastaString();
+    }
+
+
+    ENa_strand genomic_strand = 
+        spliced_seg.IsSetGenomic_strand() ?
+        spliced_seg.GetGenomic_strand() :
+        eNa_strand_plus;
+
+
+    ENa_strand product_strand = 
+        spliced_seg.IsSetProduct_strand() ?
+        spliced_seg.GetProduct_strand() :
+        eNa_strand_plus;
+
+
+    
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,   
+    CSpliced_seg::TProduct_type product_type,
+    CRef<CSeq_id> default_genomic_id,
+    ENa_strand default_genomic_strand,
+    CRef<CSeq_id> default_product_id,
+    ENa_strand default_product_strand) 
+{
+
+    string prev_genomic_id;
+    string prev_product_id;
+    for (const CRef<CSpliced_exon>& exon : exons) {
+        
+        const CSeq_id& genomic_id = 
+            exon->IsSetGenomic_id() ? 
+            exon->GetGenomic_id() :
+            *default_genomic_id;
+
+        const CSeq_id& product_id = 
+            exon->IsSetProduct_id() ?
+            exon->GetProduct_id() :
+            *default_product_id;
+
+        // Should check to see that the ids are not empty
+   
+        const ENa_strand genomic_strand = 
+            exon->IsSetGenomic_strand() ?
+            exon->GetGenomic_strand() :
+            default_genomic_strand;
+
+        const ENa_strand product_strand = 
+            exon->IsSetProduct_strand() ?
+            exon->GetProduct_strand() :
+            default_product_strand;
+
+        const auto genomic_start = exon->GetGenomic_start();
+        const auto genomic_end = exon->GetGenomic_end();
+
+        if (genomic_end < genomic_start) {
+            // Throw an exception
+        }
+        const int genomic_length = genomic_end - genomic_start;
+
+        const CProduct_pos& product_start = exon->GetProduct_start();
+        const CProduct_pos& product_end = exon->GetProduct_end();
+/*
+        if (product_end < product_start) {
+            // Throw an exception
+        }
+        const int product_length = product_end - product_start;
+*/
+        // if genomic_length/tgtwidth != product_length, we need to look at 
+        // parts. These appear in biological order.
+        //
+    }
+
+    return false;
+}
+
+
 
 // -----------------------------------------------------------------------------
 

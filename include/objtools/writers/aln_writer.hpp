@@ -41,6 +41,7 @@ BEGIN_objects_SCOPE
 class CDense_seg;
 class CScope;
 class CSparse_align;
+class CSpliced_seg;
 
 class NCBI_XOBJWRITE_EXPORT CAlnWriter:
     public CWriterBase
@@ -64,9 +65,18 @@ public:
         const string& descr="");
 
 private:
-    bool xWriteAlignDenseg(const CDense_seg& denseg);
+    bool xWriteAlignDenseSeg(const CDense_seg& denseg);
+
+    bool xWriteAlignSplicedSeg(const CSpliced_seg& spliced_seg);
 
     bool xWriteSparseAlign(const CSparse_align& sparse_aln);
+
+    bool xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
+        CSpliced_seg::TProduct_type product_type,
+        CRef<CSeq_id> default_genomic_id,
+        ENa_strand default_genomic_strand,
+        CRef<CSeq_id> default_product_id,
+        ENa_strand default_product_strand);
 
     void xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
    
