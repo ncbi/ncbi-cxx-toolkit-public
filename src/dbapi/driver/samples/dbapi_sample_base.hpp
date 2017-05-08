@@ -178,8 +178,8 @@ private:
     virtual void Exit();
 
 private:
-    auto_ptr<I_DriverContext> m_DriverContext;
-    auto_ptr<CDB_Connection> m_Connection;
+    unique_ptr<I_DriverContext> m_DriverContext;
+    unique_ptr<CDB_Connection> m_Connection;
     string m_TableUID;
     EUseSampleDatabase m_UseSampleDatabase;
 

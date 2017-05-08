@@ -57,7 +57,7 @@ public:
     }
 
 private:
-    auto_ptr<CDB_MultiEx> m_ex;
+    unique_ptr<CDB_MultiEx> m_ex;
 };
 
 END_NCBI_SCOPE

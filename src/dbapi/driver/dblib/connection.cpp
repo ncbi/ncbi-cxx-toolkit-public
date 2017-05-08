@@ -287,7 +287,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
     }
 
 
-    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
+    unique_ptr<I_BlobDescriptor> d_guard(p_desc);
 
     CDBL_BlobDescriptor& desc
         = p_desc ? dynamic_cast<CDBL_BlobDescriptor&>(*p_desc) :
@@ -422,7 +422,7 @@ bool CDBL_Connection::x_SendData(I_BlobDescriptor& descr_in,
     }
 
 
-    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
+    unique_ptr<I_BlobDescriptor> d_guard(p_desc);
 
     CDBL_BlobDescriptor& desc
         = p_desc ? dynamic_cast<CDBL_BlobDescriptor&>(*p_desc) :
@@ -503,7 +503,7 @@ CDBL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     bool i;
 
     while(lcmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> res( lcmd->Result() );
+        unique_ptr<CDB_Result> res( lcmd->Result() );
         if(res.get() == 0) continue;
         if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
             EDB_Type tt= res->ItemDataType(0);
@@ -528,9 +528,9 @@ CDBL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 
 RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
 {
-    unsigned int            x_Status = 0x1;
-    auto_ptr<CDB_Result>    dbres;
-    auto_ptr<impl::CResult> res;
+    unsigned int              x_Status = 0x1;
+    unique_ptr<CDB_Result>    dbres;
+    unique_ptr<impl::CResult> res;
 
     while ((x_Status & 0x1) != 0) {
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec

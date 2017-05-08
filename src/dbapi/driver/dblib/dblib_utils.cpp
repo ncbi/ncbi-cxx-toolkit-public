@@ -44,7 +44,7 @@ impl::CDBExceptionStorage& GetDBLExceptionStorage(void)
 
     impl::CDBExceptionStorage* result = instance.GetValue();
     if (!result) {
-		auto_ptr<impl::CDBExceptionStorage> tmp_value(new impl::CDBExceptionStorage);
+		unique_ptr<impl::CDBExceptionStorage> tmp_value(new impl::CDBExceptionStorage);
         instance.SetValue(tmp_value.get(), s_DelExceptionStorage);
 		result = tmp_value.release();
     }

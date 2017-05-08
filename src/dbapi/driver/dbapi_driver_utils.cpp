@@ -247,7 +247,7 @@ CDBParams& CDBBindedParams::Set(
 
 CDBParams* CDBBindedParams::SemiShallowClone(void) const
 {
-    auto_ptr<impl::CDB_Params> p(m_Bindings->SemiShallowClone());
+    unique_ptr<impl::CDB_Params> p(m_Bindings->SemiShallowClone());
     return new CDBBindedParams(*p.release(), eTakeOwnership);
 }
 
@@ -452,7 +452,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 			string db_name;
 			string db_owner;
 			string sp_name;
-			auto_ptr<CDB_LangCmd> cmd;
+			unique_ptr<CDB_LangCmd> cmd;
 
 			{
 				vector<string> arr_param;
@@ -499,7 +499,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                     cmd->Send();
 
                     while (cmd->HasMoreResults()) {
-                        auto_ptr<CDB_Result> res(cmd->Result());
+                        unique_ptr<CDB_Result> res(cmd->Result());
 
                         if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
                             CDB_VarChar db_name_value;
@@ -528,7 +528,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 				}
 			}
 
-			// auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
+			// unique_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
 			// We cannot use CDB_RPCCmd here because of recursion ...
 			sql = "exec " + db_name + "." + db_owner + ".sp_sproc_columns @procedure_name";
 			cmd.reset(conn.LangCmd(sql));
@@ -539,7 +539,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                 cmd->Send();
 
                 while (cmd->HasMoreResults()) {
-                    auto_ptr<CDB_Result> res(cmd->Result());
+                    unique_ptr<CDB_Result> res(cmd->Result());
 
                     if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
                         CDB_VarChar column_name;

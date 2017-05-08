@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
         // 2) Retrive only one record.
         // 3) Select another recordset with just one record
         try {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 
         // Same as before but uses two differenr connections ...
         if (false) try {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             BOOST_CHECK( !rs->Next() );
 
             // 3) Select another recordset with just one record
-            auto_ptr<IStatement> auto_stmt2( GetConnection().CreateStatement() );
+            unique_ptr<IStatement> auto_stmt2( GetConnection().CreateStatement() );
             rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
             BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
@@ -87,14 +87,14 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 
         // Check column name ...
         try {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             IResultSet* rs(
                 auto_stmt->ExecuteQuery( "select @@version as oops" )
                 );
             BOOST_REQUIRE( rs != NULL );
             BOOST_CHECK( rs->Next() );
-            auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
+            unique_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
             BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
         } catch (boost::execution_aborted) {
         }
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             string sql = "select user_id(), convert(varchar(64), user_name()), "
                 "convert(nvarchar(64), user_name())";
 
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // 1) Select recordset with just one record
             IResultSet* rs( auto_stmt->ExecuteQuery( sql ) );
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
         // Check sequent call of ExecuteQuery ...
         if (true) {
             IResultSet* rs = NULL;
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Run first time ...
             rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
@@ -153,8 +153,8 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 
         // Select NULL values and empty strings ...
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
-            auto_ptr<IResultSet> rs;
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IResultSet> rs;
 
             rs.reset(
                 auto_stmt->ExecuteQuery( "SELECT '', NULL, NULL, NULL" )
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
     string table_name("#select_stmt2");
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Running parametrized statement ...
         {
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
             auto_stmt->SendSql(sql);
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     while( rs->Next() ) {
                         ;
                     }
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmtXML)
         // SQL + XML
         {
             string sql;
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmtXML)
 BOOST_AUTO_TEST_CASE(Test_Recordset)
 {
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
 
         // First test ...
@@ -1326,7 +1326,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 {
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
         const IResultSetMetaData* md = NULL;
 
@@ -1841,11 +1841,11 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 BOOST_AUTO_TEST_CASE(Test_StmtMetaData)
 {
     try {
-        auto_ptr<ICallableStatement> auto_stmt;
+        unique_ptr<ICallableStatement> auto_stmt;
         unsigned int col_num = 0;
 
         if (false) {
-            auto_ptr<IStatement> auto_stmt01(GetConnection().GetStatement());
+            unique_ptr<IStatement> auto_stmt01(GetConnection().GetStatement());
             auto_stmt01->ExecuteUpdate("USE DBAPI_Sample");
         }
 
@@ -2024,7 +2024,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
     try {
         // Initialize data (strings are NOT empty) ...
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             {
                 // Drop all records ...
@@ -2093,7 +2093,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
         // Check ...
         if (true) {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             {
                 sql = "SELECT int_field, vc1000_field FROM " + table_name +
@@ -2102,7 +2102,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -2134,7 +2134,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -2165,7 +2165,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 #endif
         {
             {
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_server_info")
                     );
 
@@ -2193,7 +2193,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
         // Special case: empty strings and strings with spaces.
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Initialize data (strings are EMPTY) ...
             {
@@ -2235,7 +2235,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -2325,7 +2325,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -2381,7 +2381,7 @@ s_CheckGetRowCount(
     // Insert row_count records into the table ...
     for ( int i = 0; i < row_count; ++i ) {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2397,7 +2397,7 @@ s_CheckGetRowCount(
     // Check a SELECT statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2416,7 +2416,7 @@ s_CheckGetRowCount(
     // Check an UPDATE statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2435,7 +2435,7 @@ s_CheckGetRowCount(
     // Check a SELECT statement again
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2454,7 +2454,7 @@ s_CheckGetRowCount(
     // Check a DELETE statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2473,7 +2473,7 @@ s_CheckGetRowCount(
     // Check a SELECT statement again and again ...
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2501,7 +2501,7 @@ s_CheckGetRowCount2(
 {
     // Transaction ...
     CTestTransaction transaction(GetConnection(), tb);
-    // auto_ptr<IStatement> stmt( GetConnection().CreateStatement() );
+    // unique_ptr<IStatement> stmt( GetConnection().CreateStatement() );
     // _ASSERT(curr_stmt->get());
     string sql;
     sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( @value ) \n";
@@ -2509,7 +2509,7 @@ s_CheckGetRowCount2(
     // Insert row_count records into the table ...
     for ( Int4 i = 0; i < row_count; ++i ) {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2530,7 +2530,7 @@ s_CheckGetRowCount2(
     // Workaround for the CTLIB driver ...
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2544,7 +2544,7 @@ s_CheckGetRowCount2(
     // Check a SELECT statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2566,7 +2566,7 @@ s_CheckGetRowCount2(
     // Check an UPDATE statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2587,7 +2587,7 @@ s_CheckGetRowCount2(
     // Check a SELECT statement again
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2609,7 +2609,7 @@ s_CheckGetRowCount2(
     // Check a DELETE statement
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2630,7 +2630,7 @@ s_CheckGetRowCount2(
     // Check a DELETE statement again
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2651,7 +2651,7 @@ s_CheckGetRowCount2(
     // Check a SELECT statement again and again ...
     {
         IStatement* curr_stmt = NULL;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
             auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
@@ -2676,7 +2676,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRowCount)
 {
     try {
         {
-            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
 
             stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
         }
@@ -2685,7 +2685,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRowCount)
         for ( int i = 0; i < repeat_num; ++i ) {
             // Shared/Reusable statement
             {
-                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+                unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
 
                 s_CheckGetRowCount( i, eNoTrans, stmt.get() );
                 s_CheckGetRowCount( i, eTransCommit, stmt.get() );
@@ -2702,7 +2702,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRowCount)
         for ( int i = 0; i < repeat_num; ++i ) {
             // Shared/Reusable statement
             {
-                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+                unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
 
                 s_CheckGetRowCount2( i, eNoTrans, stmt.get() );
                 s_CheckGetRowCount2( i, eTransCommit, stmt.get() );
@@ -2725,7 +2725,7 @@ BOOST_AUTO_TEST_CASE(Test_GetRowCount)
 BOOST_AUTO_TEST_CASE(Test_HasMoreResults)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
     // First test ...
     // This test shouldn't throw.
@@ -2738,12 +2738,12 @@ BOOST_AUTO_TEST_CASE(Test_HasMoreResults)
 
         BOOST_CHECK( auto_stmt->HasMoreResults() );
         BOOST_CHECK( auto_stmt->HasRows() );
-        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+        unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
         BOOST_CHECK( rs.get() != NULL );
 
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             }
         }
     }
@@ -2761,12 +2761,12 @@ BOOST_AUTO_TEST_CASE(Test_HasMoreResults)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             while (auto_stmt->HasMoreResults()) {
                 if (auto_stmt->HasRows()) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 }
             }
         }
@@ -2782,7 +2782,7 @@ BOOST_AUTO_TEST_CASE(Test_GetTotalColumns)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -2829,7 +2829,7 @@ BOOST_AUTO_TEST_CASE(Test_GetTotalColumns)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     int col_num = -2;
 
     //                 switch ( rs->GetResultType() ) {
@@ -2861,7 +2861,7 @@ BOOST_AUTO_TEST_CASE(Test_GetTotalColumns)
 
 ///////////////////////////////////////////////////////////////////////////////
 Int8
-GetIdentity(const auto_ptr<IStatement>& auto_stmt)
+GetIdentity(const unique_ptr<IStatement>& auto_stmt)
 {
     Int8 identity = 0;
 
@@ -2871,7 +2871,7 @@ GetIdentity(const auto_ptr<IStatement>& auto_stmt)
     auto_stmt->SendSql( "select CONVERT(NUMERIC(18, 0), @@identity)");
     while (auto_stmt->HasMoreResults()) {
         if (auto_stmt->HasRows()) {
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             if (rs.get() != NULL) {
                 while (rs->Next()) {
                     identity = rs->GetVariant(1).GetInt8();
@@ -2893,7 +2893,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
     const IResultSetMetaData* md = NULL;
 
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         // Clean table ...
         auto_stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
@@ -2913,7 +2913,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
 
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
 
@@ -2936,7 +2936,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
 
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
             const CVariant& id_value = rs->GetVariant(1);
@@ -2955,7 +2955,7 @@ BOOST_AUTO_TEST_CASE(Test_Identity)
 
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
 
@@ -2988,7 +2988,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
             const string table_name(GetTableName());
 //             const string table_name("DBAPI_Sample..tmp_table_01");
             string sql;
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             if (false) {
                 sql  = " CREATE TABLE " + table_name + "( \n";
@@ -3035,7 +3035,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
                 auto_stmt->SendSql( "SELECT COUNT(*) FROM " + table_name );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 BOOST_CHECK( rs->Next() );
                 BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 2 );
                 DumpResults(auto_stmt.get());
@@ -3053,7 +3053,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
                                     " WHERE int_field = @value");
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 BOOST_CHECK( rs->Next() );
                 BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 );
                 DumpResults(auto_stmt.get());
@@ -3071,7 +3071,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
                                     " WHERE int_field = @value");
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 BOOST_CHECK( rs->Next() );
                 BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 );
                 DumpResults(auto_stmt.get());
@@ -3090,7 +3090,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
 
         // Use NULL with parameters ...
         if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             auto_stmt->SetParam( CVariant(eDB_VarChar), "@printfmt_par" );
             auto_stmt->SendSql( " SELECT name FROM syscolumns"
@@ -3098,7 +3098,7 @@ BOOST_AUTO_TEST_CASE(Test_StatementParameters)
                                 " WHERE printfmt = @printfmt_par");
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs->Next() );
             DumpResults(auto_stmt.get());
         } else {
@@ -3120,7 +3120,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
         {
             // IStatement
             {
-                auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+                unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
                 // 1
                 auto_stmt->SendSql("SELECT name FROM sysobjects");
@@ -3132,7 +3132,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
                 {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
                 }
                 auto_stmt->Cancel();
@@ -3143,7 +3143,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
                 {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
                     BOOST_CHECK( rs->Next() );
                 }
@@ -3156,7 +3156,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK(auto_stmt->HasRows());
                 {
                     int i = 0;
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
                     while (rs->Next()) {
                         ++i;
@@ -3170,7 +3170,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
 
             // IColableStatement
             {
-                auto_ptr<ICallableStatement> auto_stmt;
+                unique_ptr<ICallableStatement> auto_stmt;
 
                 const char *proc_name =
                     GetArgs().GetServerType() == CDBConnParams::eMSSqlServer ?
@@ -3206,7 +3206,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
                 {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK(rs.get() != NULL);
                 }
                 auto_stmt->Cancel();
@@ -3218,7 +3218,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
                 {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK(rs.get() != NULL);
                     BOOST_CHECK(rs->Next());
                 }
@@ -3232,7 +3232,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 BOOST_CHECK(auto_stmt->HasRows());
                 {
                     int i = 0;
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
                     while (rs->Next()) {
                         ++i;
@@ -3253,7 +3253,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
         {
             // IStatement
             {
-                auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+                unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
                 // 1
                 try {
@@ -3276,7 +3276,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     auto_stmt->SendSql(sql);
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
                     rs->Next();
                 } catch(const CDB_Exception& _DEBUG_ARG(ex))
@@ -3296,7 +3296,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     auto_stmt->SendSql("SELECT name FROM sysobjects");
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
                     while (rs->Next()) {
                         ++i;
@@ -3318,7 +3318,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
 
             // IColableStatement
             {
-                auto_ptr<ICallableStatement> auto_stmt;
+                unique_ptr<ICallableStatement> auto_stmt;
 
                 // 1
                 try {
@@ -3355,7 +3355,7 @@ BOOST_AUTO_TEST_CASE(Test_BindByPos)
 
     // Initialize data (strings are full of spaces) ...
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {
@@ -3401,7 +3401,7 @@ BOOST_AUTO_TEST_CASE(Test_BindByPos)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -3434,7 +3434,7 @@ BOOST_AUTO_TEST_CASE(Test_ClearParamList)
 
     // Initialize data (strings are full of spaces) ...
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {
@@ -3480,7 +3480,7 @@ BOOST_AUTO_TEST_CASE(Test_ClearParamList)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -3526,19 +3526,19 @@ BOOST_AUTO_TEST_CASE(Test_Create_Destroy)
 
         // Destroy a statement before a connection get destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            unique_ptr<IStatement> stmt(local_conn->CreateStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
         }
 
         // Do not destroy statement, let it be destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
@@ -3554,19 +3554,19 @@ BOOST_AUTO_TEST_CASE(Test_Create_Destroy)
 
         // Destroy a statement before a connection get destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            unique_ptr<IStatement> stmt(local_conn->GetStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
         }
 
         // Do not destroy statement, let it be destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());

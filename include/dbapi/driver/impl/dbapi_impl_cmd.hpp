@@ -323,7 +323,7 @@ private:
     unsigned int    m_RowsSent;
     unsigned int    m_BatchesSent;
 
-    auto_ptr<CDBParams> m_LastInParams;
+    unique_ptr<CDBParams> m_LastInParams;
 };
 
 

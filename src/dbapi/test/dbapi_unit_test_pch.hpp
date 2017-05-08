@@ -217,10 +217,10 @@ CDriverManager& GetDM(void)
 }
 
 void DumpResults(IStatement* const stmt);
-size_t GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+size_t GetNumOfRecords(const unique_ptr<IStatement>& auto_stmt,
                        const string& table_name);
-size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
-Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
+size_t GetNumOfRecords(const unique_ptr<ICallableStatement>& auto_stmt);
+Int8 GetIdentity(const unique_ptr<IStatement>& auto_stmt);
 
 
 bool CommonInit(void);

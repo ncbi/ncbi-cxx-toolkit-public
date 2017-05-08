@@ -1163,7 +1163,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     TAllArgs all_args;
     all_args.push_back(&m_Url.GetArgs());
     
-    auto_ptr<CUrlArgs> conf_args;
+    unique_ptr<CUrlArgs> conf_args;
     {{
         TParamMap::const_iterator it = m_ParamMap.find(eArgsString);
         if (it != m_ParamMap.end()) {
@@ -1963,7 +1963,7 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
         break;
     }
 
-    auto_ptr<I_BlobDescriptor> desc
+    unique_ptr<I_BlobDescriptor> desc
         (new CDB_BlobDescriptor(table_name, column_name, search_conditions,
                                 desc_type));
                                                        

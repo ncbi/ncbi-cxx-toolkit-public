@@ -57,16 +57,16 @@ CDemoApp::Run(void)
 
         CDBLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV3",
-                                                        "DBAPI_test",
-                                                        "allowed",
-                                                        0));
+        unique_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV3",
+                                                          "DBAPI_test",
+                                                          "allowed",
+                                                          0));
 
-        auto_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who"));
+        unique_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who"));
         rcmd->Send();
 
         while (rcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(rcmd->Result());
+            unique_ptr<CDB_Result> r(rcmd->Result());
             if (!r.get())
                 continue;
 

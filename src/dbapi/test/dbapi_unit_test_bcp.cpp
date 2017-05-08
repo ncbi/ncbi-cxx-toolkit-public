@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
     string table_name("#test_bcp_datetime");
     // string table_name("DBAPI_Sample..test_bcp_datetime");
     string sql;
-    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     CVariant value(eDB_DateTime);
     CTime t;
     CVariant null_date(t, eLong);
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name);
 
-                auto_ptr<IBulkInsert> bi(
+                unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                 BOOST_CHECK( rs.get() != NULL );
                 BOOST_CHECK( rs->Next() );
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
 
-                auto_ptr<IBulkInsert> bi(
+                unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                 BOOST_CHECK( rs.get() != NULL );
                 BOOST_CHECK( rs->Next() );
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
     string table_name = "#dbapi_bcp_table2";
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
+                unique_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
+                unique_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
             sql += "    dataText TEXT NULL \n";
             sql += " )";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
         {
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -331,13 +331,13 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
                 sql = "SELECT dataText, dataImage FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -412,13 +412,13 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -495,13 +495,13 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
                 sql = "SELECT dataText FROM "+ table_name + " ORDER BY geneId";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -585,13 +585,13 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -677,13 +677,13 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
             sql += "    dataImg image NULL  \n";
             sql += " )";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
         // Insert data ...
         if (true) {
 
-            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+            unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
             // Declare data-holders ...
             CDB_Int vkeyVal;
@@ -843,7 +843,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
         {
             sql = "DELETE FROM " + table_name;
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -852,7 +852,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
         // Insert data again ...
         if (true) {
 
-            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+            unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
             // Declare data-holders ...
             CDB_Int vkeyVal;
@@ -931,7 +931,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
         {
             sql = "DELETE FROM " + table_name;
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -976,7 +976,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
 
             // case 1: text data is null;
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -1002,7 +1002,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
 
             // case 2: text data is not null
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -1033,7 +1033,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
 
             // case 3: text data is null but img is not null
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
+                unique_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -1074,12 +1074,12 @@ BOOST_AUTO_TEST_CASE(Test_BCP_Cancel)
     string sql;
 
     try {
-        auto_ptr<IConnection> conn(
+        unique_ptr<IConnection> conn(
                 GetDS().CreateConnection(CONN_OWNERSHIP)
                 );
         conn->Connect(GetArgs().GetConnParams());
 
-        auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+        unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
         // Initialize ...
         // Block 1 ...
@@ -1095,7 +1095,7 @@ BOOST_AUTO_TEST_CASE(Test_BCP_Cancel)
         // Insert data ...
         // Block 2 ...
         {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 conn->GetBulkInsert("#test_bcp_cancel")
                 );
 
@@ -1132,7 +1132,7 @@ BOOST_AUTO_TEST_CASE(Test_BCP_Cancel)
         // Insert data ...
         // Block 5 ...
         if (true) {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 conn->GetBulkInsert("#test_bcp_cancel")
                 );
 
@@ -1170,7 +1170,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
     enum {column_size = 32, data_size = 64};
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialize ...
         {
@@ -1187,7 +1187,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
         // Insert data ...
         {
             bool exception_catched = false;
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().GetBulkInsert("#test_bulk_overflow")
                 );
 
@@ -1230,7 +1230,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
             auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
             BOOST_CHECK( rs.get() );
             BOOST_CHECK( rs->Next() );
@@ -1260,7 +1260,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
         // Insert data ...
         {
             bool exception_catched = false;
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().GetBulkInsert("#test_bulk_overflow")
                 );
 
@@ -1303,7 +1303,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 ///////////////////////////////////////////////////////////////////////////////
 static
 void
-BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
+BulkAddRow(const unique_ptr<IBulkInsert>& bi, const CVariant& col)
 {
     string msg(8000, 'A');
     CVariant col2(col);
@@ -1326,7 +1326,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
     // string table_name = "DBAPI_Sample..bin_bulk_insert_table";
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         if (table_name[0] == '#') {
             // Table for bulk insert ...
@@ -1366,7 +1366,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(
+                unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -1396,7 +1396,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Some drivers limit size of text/binary to 255 bytes ...
             if ( GetArgs().GetDriverName() != dblib_driver
                 ) {
-                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+                unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
                 sql  = " SELECT id, vb8000_field FROM " + table_name;
                 sql += " ORDER BY id";
@@ -1405,7 +1405,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 BOOST_CHECK( rs.get() != NULL );
 
                 for(int i = 0; i < num_of_tests; ++i ) {
@@ -1440,7 +1440,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 // Insert data ...
                 {
-                    auto_ptr<IBulkInsert> bi(
+                    unique_ptr<IBulkInsert> bi(
                         GetConnection().GetBulkInsert(table_name)
                         );
 
@@ -1468,7 +1468,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
 
                     for(int i = 0; i < num_of_tests; ++i ) {
@@ -1494,7 +1494,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 // Insert data ...
                 {
-                    auto_ptr<IBulkInsert> bi(
+                    unique_ptr<IBulkInsert> bi(
                         GetConnection().GetBulkInsert(table_name)
                         );
 
@@ -1526,7 +1526,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
 
                     for(int i = 0; i < num_of_tests; ++i ) {
@@ -1549,7 +1549,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
         // Sybase doesn't have BIGINT data type ...
         if (GetArgs().GetServerType() != CDBConnParams::eSybaseSQLServer)
         {
-            auto_ptr<IStatement> stmt( GetConnection().CreateStatement() );
+            unique_ptr<IStatement> stmt( GetConnection().CreateStatement() );
 
             // Create table ...
             {
@@ -1562,7 +1562,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
             // First test ...
             {
-                auto_ptr<IBulkInsert> blki(
+                unique_ptr<IBulkInsert> blki(
                     GetConnection().CreateBulkInsert("#__blki_test")
                     );
 
@@ -1596,7 +1596,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Overflow test.
             // !!! Current behavior is not defined properly and not consistent between drivers.
     //         {
-    //             auto_ptr<IBulkInsert> blki( GetConnection().CreateBulkInsert("#__blki_test") );
+    //             unique_ptr<IBulkInsert> blki( GetConnection().CreateBulkInsert("#__blki_test") );
     //
     //             CVariant col1(eDB_Char,64);
     //             CVariant col2(eDB_BigInt);
@@ -1630,7 +1630,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(
+                unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -1678,7 +1678,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                 auto_stmt->SendSql( sql );
                 while( auto_stmt->HasMoreResults() ) {
                     if( auto_stmt->HasRows() ) {
-                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                         // Retrieve results, if any
                         while( rs->Next() ) {
@@ -1744,7 +1744,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
     const string table_name("#SbSubs");
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -1765,7 +1765,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -1793,7 +1793,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             BOOST_CHECK( rs->Next() );
@@ -1814,7 +1814,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
             sql = "DELETE FROM " + table_name;
             auto_stmt->ExecuteUpdate(sql);
 
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -1854,7 +1854,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
 
                     BOOST_CHECK( rs->Next() );
@@ -1903,11 +1903,11 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing3)
     const int test_num = 10;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Side-effect ...
         // Tmp table ...
-        auto_ptr<IBulkInsert> bi_tmp(
+        unique_ptr<IBulkInsert> bi_tmp(
             GetConnection().GetBulkInsert(table_name2)
             );
 
@@ -1928,7 +1928,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing3)
 
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().GetBulkInsert(table_name)
                 );
 
@@ -1966,7 +1966,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
     const int test_num = 10;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
         const string test_data("Test, test, tEST.");
 
         // Create table ...
@@ -1991,7 +1991,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
         // Insert data ...
         {
             //
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().CreateBulkInsert(table_name)
                 );
 
@@ -2084,14 +2084,14 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing5)
                 ") \n"
                 ;
 
-            auto_ptr<CDB_LangCmd> cmd(conn->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> cmd(conn->LangCmd(sql));
             cmd->Send();
             cmd->DumpResults();
         }
 
         // Insert data ...
         {
-            auto_ptr<CDB_BCPInCmd> vBcp(conn->BCPIn(table_name));
+            unique_ptr<CDB_BCPInCmd> vBcp(conn->BCPIn(table_name));
 
             CDB_VarChar     s_file_name;
             CDB_Int         n_line_num;
@@ -2178,7 +2178,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing6)
     const string& str_value("Oops ...");
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
         const string test_data("Test, test, tEST.");
 
         // Create table ...
@@ -2206,7 +2206,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing6)
         // Insert data ...
         {
             //
-            auto_ptr<IBulkInsert> stmt(
+            unique_ptr<IBulkInsert> stmt(
                 GetConnection().GetBulkInsert(table_name)
                 );
 
@@ -2291,7 +2291,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
         };
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -2327,7 +2327,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
         // Insert data ...
         {
             //
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().CreateBulkInsert(table_name)
                 );
 
@@ -2422,7 +2422,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
     bool exception_thrown = false;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -2438,7 +2438,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
 
         // Check that data cannot be binded after rows sending
         {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                 GetConnection().CreateBulkInsert(table_name)
                 );
 
@@ -2474,7 +2474,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing8)
     const string table_name("#blk_table8");
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -2490,7 +2490,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing8)
 
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                     GetConnection().GetBulkInsert(table_name)
                     );
 
@@ -2515,7 +2515,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing8)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             BOOST_CHECK( rs->Next() );

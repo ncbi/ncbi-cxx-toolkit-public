@@ -55,12 +55,12 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
 
         // Destroy a statement before a connection get destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            unique_ptr<IStatement> stmt(local_conn->CreateStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
 
@@ -75,12 +75,12 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
         }
 
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            unique_ptr<IStatement> stmt(local_conn->CreateStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
 
         // Do not destroy a statement, let it be destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
         }
 
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
@@ -141,12 +141,12 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
 
         // Destroy a statement before a connection get destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            unique_ptr<IStatement> stmt(local_conn->GetStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
 
@@ -161,12 +161,12 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
         }
 
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            unique_ptr<IStatement> stmt(local_conn->GetStatement());
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt.get());
 
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
 
         // Do not destroy a statement, let it be destroyed ...
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
         }
 
         {
-            auto_ptr<IConnection> local_conn(
+            unique_ptr<IConnection> local_conn(
                 GetDS().CreateConnection(eTakeOwnership)
                 );
             local_conn->Connect(GetArgs().GetConnParams());
@@ -253,13 +253,13 @@ BOOST_AUTO_TEST_CASE(Test_DropConnection)
             {
                 bool conn_killed = false;
 
-                auto_ptr<CDB_Connection> auto_conn;
+                unique_ptr<CDB_Connection> auto_conn;
 
                 auto_conn.reset(GetDS().GetDriverContext()->MakeConnection(params));
 
                 // kill connection ...
                 try {
-                    auto_ptr<CDB_LangCmd> auto_stmt(auto_conn->LangCmd(sql));
+                    unique_ptr<CDB_LangCmd> auto_stmt(auto_conn->LangCmd(sql));
                     auto_stmt->Send();
                     auto_stmt->DumpResults();
                 } catch (const CDB_Exception& _DEBUG_ARG(ex)) {
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(Test_DropConnection)
                 }
 
                 try {
-                    auto_ptr<CDB_RPCCmd> auto_stmt(auto_conn->RPC("sp_who"));
+                    unique_ptr<CDB_RPCCmd> auto_stmt(auto_conn->RPC("sp_who"));
                     auto_stmt->Send();
                     auto_stmt->DumpResults();
                 } catch (const CDB_Exception& _DEBUG_ARG(ex)) {
@@ -298,18 +298,18 @@ BOOST_AUTO_TEST_CASE(Test_N_Connections)
             eN = 5
         };
 
-        auto_ptr<IConnection> auto_conns[eN + 1];
+        unique_ptr<IConnection> auto_conns[eN + 1];
 
         // There is already 1 connections - so +1
         CDriverManager::GetInstance().SetMaxConnect(eN + 1);
         for (int i = 0; i < eN; ++i) {
-            auto_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
+            unique_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
             auto_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
             auto_stmt->ExecuteUpdate("SELECT @@version");
 
-            auto_conns[i] = auto_conn;
+            auto_conns[i] = std::move(auto_conn);
         }
 
         try {
@@ -330,18 +330,18 @@ BOOST_AUTO_TEST_CASE(Test_N_Connections)
             eN = 50
         };
 
-        auto_ptr<IConnection> auto_conns[eN];
+        unique_ptr<IConnection> auto_conns[eN];
 
         // There are already 2 connections - so +2
         CDriverManager::GetInstance().SetMaxConnect(eN + 2);
         for (int i = 0; i < eN; ++i) {
-            auto_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
+            unique_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
             auto_conn->Connect(GetArgs().GetConnParams());
 
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
             auto_stmt->ExecuteUpdate("SELECT @@version");
 
-            auto_conns[i] = auto_conn;
+            auto_conns[i] = std::move(auto_conn);
         }
     }
     else {
@@ -358,7 +358,7 @@ MakeCDBUDPriorityMapper01(const IRegistry* registry)
     TSvrRef server02(new CDBServer("MSDEV2"));
     const string service_name("TEST_SERVICE_01");
 
-    auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper(registry));
+    unique_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper(registry));
 
     mapper->Add(service_name, server01);
     mapper->Add(service_name, server02);
@@ -383,7 +383,7 @@ s_Check_Validator(TDBConnectionFactoryFactory factory,
 {
     TSvrRef server01(new CDBServer("MSDEV2"));
     const string service_name("TEST_SERVICE_01");
-    auto_ptr<IConnection> conn;
+    unique_ptr<IConnection> conn;
 
     // Install new mapper ...
     ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(
@@ -469,7 +469,7 @@ public:
         }
 
         if (GetAttr() & eCheckSysobjects) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+            unique_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
             set_cmd->Send();
             set_cmd->DumpResults();
         }
@@ -522,7 +522,7 @@ public:
         }
 
         if (GetAttr() & eCheckSysobjects) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+            unique_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
             set_cmd->Send();
             set_cmd->DumpResults();
         }
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
         // Check CDBUDPriorityMapper ...
         {
             const string service_name("TEST_SERVICE_01");
-            auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper());
+            unique_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper());
 
             mapper->Add(service_name, server01);
             mapper->Add(service_name, server02);
@@ -621,7 +621,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
         // DBUDRandomMapper is currently brocken ...
         if (false) {
             const string service_name("TEST_SERVICE_02");
-            auto_ptr<CDBUDRandomMapper> mapper(new CDBUDRandomMapper());
+            unique_ptr<CDBUDRandomMapper> mapper(new CDBUDRandomMapper());
 
             mapper->Add(service_name, server01);
             mapper->Add(service_name, server02);
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnPool)
     try {
         // Create pooled connection ...
         {
-            auto_ptr<CDB_Connection> auto_conn(
+            unique_ptr<CDB_Connection> auto_conn(
                 GetDS().GetDriverContext()->Connect(
                     GetArgs().GetServerName(),
                     GetArgs().GetUserName(),
@@ -695,7 +695,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnPool)
 
             sql  = "select @@version";
 
-            auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+            unique_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
             BOOST_CHECK( auto_stmt.get() != NULL );
 
             bool rc = auto_stmt->Send();
@@ -705,7 +705,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnPool)
 
         // Get pooled connection ...
         {
-            auto_ptr<CDB_Connection> auto_conn(
+            unique_ptr<CDB_Connection> auto_conn(
                 GetDS().GetDriverContext()->Connect(
                     "",
                     "",
@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnPool)
 
             sql  = "select @@version";
 
-            auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+            unique_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
             BOOST_CHECK( auto_stmt.get() != NULL );
 
             bool rc = auto_stmt->Send();
@@ -818,9 +818,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -835,9 +835,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -852,9 +852,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -873,9 +873,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -890,9 +890,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -907,9 +907,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                         );
 
                 IDataSource* ds = GetDM().MakeDs(params);
-                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
-                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
                 // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
@@ -930,9 +930,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
         env.Set("DBAPI_PASSWORD", GetArgs().GetUserPassword());
 
         IDataSource* ds = GetDM().MakeDs(params);
-        auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+        unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
         conn->Connect(params);
-        auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+        unique_ptr<IStatement> auto_stmt(conn->GetStatement());
         auto_stmt->ExecuteUpdate("SELECT @@version");
 
         env.Reset();
@@ -950,9 +950,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
         CDBInterfacesFileConnParams params(uri_params);
 
         IDataSource* ds = GetDM().MakeDs(params);
-        auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+        unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
         conn->Connect(params);
-        auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+        unique_ptr<IStatement> auto_stmt(conn->GetStatement());
         auto_stmt->ExecuteUpdate("SELECT @@version");
     }
 
@@ -966,14 +966,14 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
 
         // Check method Connect() ...
         try {
-            auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
+            unique_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
             conn->Connect(
                 GetArgs().GetConnParams().GetUserName(),
                 GetArgs().GetConnParams().GetPassword(),
                 GetArgs().GetConnParams().GetServerName(),
                 target_db_name);
 
-            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
             BOOST_REQUIRE( rs != NULL );
@@ -985,7 +985,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
 
         // Check method ConnectValidated() ...
         {
-            auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
+            unique_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
             CTrivialConnValidator validator(target_db_name);
             conn->ConnectValidated(
                 validator,
@@ -994,7 +994,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
                 GetArgs().GetConnParams().GetServerName(),
                 target_db_name);
 
-            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
             BOOST_REQUIRE( rs != NULL );
@@ -1015,7 +1015,7 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         const string target_db_name("DBAPI_Sample");
 
         // Create new connection ...
-        auto_ptr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
+        unique_ptr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
         conn->Connect(
             GetArgs().GetConnParams().GetUserName(),
             GetArgs().GetConnParams().GetPassword(),
@@ -1023,8 +1023,8 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
             target_db_name);
 
         // Clone connection ...
-        auto_ptr<IConnection> new_conn(conn->CloneConnection(eTakeOwnership));
-        auto_ptr<IStatement> auto_stmt( new_conn->GetStatement() );
+        unique_ptr<IConnection> new_conn(conn->CloneConnection(eTakeOwnership));
+        unique_ptr<IStatement> auto_stmt( new_conn->GetStatement() );
 
         // Check that database was set correctly with the new connection ...
         {
@@ -1178,9 +1178,9 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
             params.SetDriverName(GetArgs().GetDriverName());
 
             IDataSource* ds = GetDM().MakeDs(params);
-            auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+            unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
             conn->Connect(params);
-            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+            unique_ptr<IStatement> auto_stmt(conn->GetStatement());
             auto_stmt->ExecuteUpdate("SELECT @@version");
 
             BOOST_CHECK_EQUAL(conn->GetDatabase(), "");
@@ -1203,9 +1203,9 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
             params.SetDriverName(GetArgs().GetDriverName());
 
             IDataSource* ds = GetDM().MakeDs(params);
-            auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+            unique_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
             conn->Connect(params);
-            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+            unique_ptr<IStatement> auto_stmt(conn->GetStatement());
             auto_stmt->ExecuteUpdate("SELECT @@version");
 
             BOOST_CHECK_EQUAL(conn->GetDatabase(), "");

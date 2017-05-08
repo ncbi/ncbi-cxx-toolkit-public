@@ -70,7 +70,7 @@ private:
     CResultSet* m_rs;
     CDB_SendDataCmd* m_cmd;
     //int m_column;
-    auto_ptr<CAutoTrans> m_AutoTrans;
+    unique_ptr<CAutoTrans> m_AutoTrans;
 };
 
 END_NCBI_SCOPE

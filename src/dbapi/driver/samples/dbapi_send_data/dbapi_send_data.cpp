@@ -71,7 +71,7 @@ int
 CDbapiSendDataApp::RunSample(void)
 {
     try {
-        auto_ptr<CDB_LangCmd> set_cmd;
+        unique_ptr<CDB_LangCmd> set_cmd;
 
         GetDriverContext().SetMaxBlobSize(1000000);
 

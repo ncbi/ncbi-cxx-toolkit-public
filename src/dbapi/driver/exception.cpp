@@ -913,7 +913,7 @@ void CDB_UserHandler_Deferred::Flush(EDiagSev max_severity)
 {
     CFastMutexGuard LOCK(m_Mutex);
     ERASE_ITERATE (TExceptions, it, m_SavedExceptions) {
-        auto_ptr<CDB_Exception> ex(*it);
+        unique_ptr<CDB_Exception> ex(*it);
         VECTOR_ERASE(it, m_SavedExceptions);
         if (ex->GetSeverity() > max_severity) {
             ex->SetSeverity(max_severity);

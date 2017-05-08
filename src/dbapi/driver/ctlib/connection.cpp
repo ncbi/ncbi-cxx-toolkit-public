@@ -327,7 +327,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (!params.GetDatabaseName().empty()) {
         const string sql = "use " + params.GetDatabaseName();
 
-        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        unique_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
         auto_stmt->Send();
         auto_stmt->DumpResults();
     }
@@ -588,7 +588,7 @@ void CTL_Connection::CompleteBlobDescriptor(I_BlobDescriptor& desc,
     CDB_VarChar          cursor_id(cursor_name);
     CDB_Int              column_param(item_num);
     CDB_VarBinary        textptr(ctl_desc.m_Desc.textptr, CS_TP_SIZE);
-    auto_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptr"));
+    unique_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptr"));
     CDBParams&           params = cmd->GetBindParams();
 
     params.Bind("@cursor_id", &cursor_id);
@@ -599,7 +599,7 @@ void CTL_Connection::CompleteBlobDescriptor(I_BlobDescriptor& desc,
                        "Cannot call #dbapi_get_cursor_textptr", 130012);
     // cmd->DumpResults();
     while (cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(cmd->Result());
+        unique_ptr<CDB_Result> result(cmd->Result());
         if (result.get() != NULL) {
             while (result->Fetch()) {
                 if (result->ResultType() == eDB_ParamResult) {
@@ -628,7 +628,7 @@ void CTL_Connection::CompleteBlobDescriptors(vector<I_BlobDescriptor*>& descs,
     CDB_VarChar          cursor_id(cursor_name);
     CDB_Int              position;
     CDB_VarBinary        textptr;
-    auto_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptrs"));
+    unique_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptrs"));
     CDBParams&           params = cmd->GetBindParams();
 
     params.Bind("@cursor_id", &cursor_id);
@@ -636,7 +636,7 @@ void CTL_Connection::CompleteBlobDescriptors(vector<I_BlobDescriptor*>& descs,
     CHECK_DRIVER_ERROR(!cmd->Send(),
                        "Cannot call #dbapi_get_cursor_textptrs.", 130014);
     while (cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(cmd->Result());
+        unique_ptr<CDB_Result> result(cmd->Result());
         if (result.get() == NULL) {
             continue; // break?
         }
@@ -859,7 +859,7 @@ CTL_Connection::xLangCmd(const string& lang_query)
 //             return false;
 //     }
 //
-//     auto_ptr<I_BlobDescriptor> d_guard(p_desc);
+//     unique_ptr<I_BlobDescriptor> d_guard(p_desc);
 //     ctlib::Command cmd(*this);
 //
 //     cmd.Open(CS_SEND_DATA_CMD, CS_COLUMN_DATA);
@@ -978,7 +978,7 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
     }
 
 
-    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
+    unique_ptr<I_BlobDescriptor> d_guard(p_desc);
     CS_COMMAND* cmd;
 
     CTL_BlobDescriptor& desc = p_desc ?
@@ -1101,12 +1101,12 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
                        110040);
 #ifdef FTDS_IN_USE // Only ever needed with MS SQL Server
     // Always start with an empty column for simplicity.
-    auto_ptr<CDB_LangCmd> lcmd(LangCmd("UPDATE " + desc.TableName() + " SET "
+    unique_ptr<CDB_LangCmd> lcmd(LangCmd("UPDATE " + desc.TableName() + " SET "
                                        + desc.ColumnName() + " = 0x WHERE "
                                        + desc.SearchConditions()));
     CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110041);
     while (lcmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(lcmd->Result());
+        unique_ptr<CDB_Result> result(lcmd->Result());
     }
     CHECK_DRIVER_ERROR(lcmd->HasFailed(),
                        "Failed to prepare " + desc.TableName()
@@ -1161,7 +1161,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
             }
         }
 
-        auto_ptr<CDB_Object> chunk;
+        unique_ptr<CDB_Object> chunk;
         if (desc.GetColumnType() == CDB_BlobDescriptor::eBinary) {
             chunk.reset(new CDB_VarBinary(buff, len));
         } else {
@@ -1176,7 +1176,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
         lcmd->BindParam("@chunk", chunk.get());
         CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110041);
         while (lcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> result(lcmd->Result());
+            unique_ptr<CDB_Result> result(lcmd->Result());
         }
         CHECK_DRIVER_ERROR(lcmd->HasFailed(), "Failed to send chunk", 110043);
     }
@@ -1191,7 +1191,7 @@ I_BlobDescriptor*
 CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
     string q, tpsql = "TEXTPTR(" + descr_in.ColumnName() + ')';
-    auto_ptr<CDB_LangCmd> lcmd;
+    unique_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
     q  = "update " + descr_in.TableName() + " set " + descr_in.ColumnName();
@@ -1326,7 +1326,7 @@ bool
 CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 {
     if(GetResultProcessor()) {
-        auto_ptr<impl::CResult> res;
+        unique_ptr<impl::CResult> res;
         switch (res_type) {
         case CS_ROW_RESULT:
             res.reset(new CTL_RowResult(cmd, *this));
@@ -1343,7 +1343,7 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
         }
 
         if(res.get()) {
-            auto_ptr<CDB_Result> dbres(Create_Result(*res));
+            unique_ptr<CDB_Result> dbres(Create_Result(*res));
             GetResultProcessor()->ProcessResult(*dbres);
             return true;
         }
@@ -1498,13 +1498,13 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
                            110094);
 
         // Always start with an empty column for simplicity.
-        auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd
+        unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd
                                    ("UPDATE " + desc.TableName() + " SET "
                                     + desc.ColumnName() + " = 0x WHERE "
                                     + desc.SearchConditions()));
         CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110095);
         while (lcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> result(lcmd->Result());
+            unique_ptr<CDB_Result> result(lcmd->Result());
         }
         CHECK_DRIVER_ERROR(lcmd->HasFailed(),
                            "Failed to prepare " + desc.TableName()
@@ -1518,7 +1518,7 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 #endif
     }
 
-    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
+    unique_ptr<I_BlobDescriptor> d_guard(p_desc);
 
     CTL_BlobDescriptor& desc
         = p_desc ? dynamic_cast<CTL_BlobDescriptor&>(*p_desc) :
@@ -1615,7 +1615,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                 n = l;
             }
         }
-        auto_ptr<CDB_Object> chunk;
+        unique_ptr<CDB_Object> chunk;
         if (m_DescrType == CDB_BlobDescriptor::eBinary) {
             chunk.reset(new CDB_VarBinary(buff, n));
         } else {

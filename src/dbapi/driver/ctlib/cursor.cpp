@@ -318,7 +318,7 @@ I_BlobDescriptor* CTL_CursorCmd::x_GetBlobDescriptor(unsigned int item_num)
         if(!GetResult().SkipItem()) return 0;
     }
 
-    auto_ptr<I_BlobDescriptor> desc(GetResult().GetBlobDescriptor(item_num));
+    unique_ptr<I_BlobDescriptor> desc(GetResult().GetBlobDescriptor(item_num));
     if (desc.get() != NULL) {
         try {
             GetConnection().CompleteBlobDescriptor(*desc, GetCmdName(),
@@ -342,7 +342,7 @@ bool CTL_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
                                bool log_it)
 {
     I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     return (desc) ? x_SendData(*desc, data, log_it) : false;
 }
@@ -352,7 +352,7 @@ CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                                             bool dump_results)
 {
     I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     return (desc) ? ConnSendDataCmd(*desc, size, log_it, dump_results) : 0;
 }
@@ -534,11 +534,10 @@ CTL_CursorCmdExpl::CTL_CursorCmdExpl(CTL_Connection& conn,
                                      const string& query,
                                      unsigned int fetch_size)
     : CTL_Cmd(conn, cursor_name, query),
-      m_LCmd(NULL),
-      m_Res(NULL)
+      m_LCmd(nullptr),
+      m_Res(nullptr)
 {
-    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
-        query + "\"";
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \"" + query + "\"";
     SetExecCntxInfo(extra_msg);
 }
 
@@ -595,7 +594,7 @@ CDB_Result* CTL_CursorCmdExpl::OpenCursor()
     }
 
     try {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
         cmd->Send();
         cmd->DumpResults();
@@ -609,7 +608,7 @@ CDB_Result* CTL_CursorCmdExpl::OpenCursor()
     buff = "open " + GetCmdName();
 
     try {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
         cmd->Send();
         cmd->DumpResults();
@@ -634,11 +633,11 @@ bool CTL_CursorCmdExpl::Update(const string&, const string& upd_query)
 
     try {
         while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            unique_ptr<CDB_Result> r(m_LCmd->Result());
         }
 
         string buff = upd_query + " where current of " + GetCmdName();
-        const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        const unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -668,7 +667,7 @@ I_BlobDescriptor* CTL_CursorCmdExpl::x_GetBlobDescriptor(unsigned int item_num)
         if(!m_Res->SkipItem()) return 0;
     }
 
-    auto_ptr<I_BlobDescriptor> desc(m_Res->GetBlobDescriptor(item_num));
+    unique_ptr<I_BlobDescriptor> desc(m_Res->GetBlobDescriptor(item_num));
     // if (desc.get() != NULL) {
     //     GetConnection().CompleteBlobDescriptor(*desc, GetCmdName(), item_num);
     // }
@@ -690,7 +689,7 @@ bool CTL_CursorCmdExpl::UpdateBlob(unsigned int item_num, CDB_Stream& data,
                                    bool log_it)
 {
     I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         while(m_LCmd->HasMoreResults()) {
@@ -708,7 +707,7 @@ CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t si
                                                 bool dump_results)
 {
     I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         m_LCmd->DumpResults();

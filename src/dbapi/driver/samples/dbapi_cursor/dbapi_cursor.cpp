@@ -76,11 +76,11 @@ CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
     sql += table_name + "' AND type = 'U') begin ";
     sql += " DROP TABLE " + table_name + " end ";
 
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
     lcmd->Send();
 
     while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
     }
 
     // Create a new table.
@@ -97,7 +97,7 @@ CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
     lcmd->Send();
 
     while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
     }
 
     lcmd.reset();
@@ -113,7 +113,7 @@ CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
     }
     pTxt.Append("This is a test string.");
 
-    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name));
+    unique_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name));
 
     // Bind data from a program variables
     bcp->Bind(0, &int_val);
@@ -177,12 +177,12 @@ CDbapiCursorApp::RunOneSample(const string& blob_type)
         // Example : update text field in the table CursorSample where int_val = 2,
         // by using cursor
 
-        auto_ptr<CDB_CursorCmd> upd(GetConnection().Cursor("upd",
+        unique_ptr<CDB_CursorCmd> upd(GetConnection().Cursor("upd",
            "select int_val, txt_val from " + GetTableName() +
            " for update of txt_val", 0));
 
         //Open cursor
-        auto_ptr<CDB_Result> crres(upd->Open());
+        unique_ptr<CDB_Result> crres(upd->Open());
         //fetch row
         while ( crres->Fetch() ) {
             CDB_Int v;

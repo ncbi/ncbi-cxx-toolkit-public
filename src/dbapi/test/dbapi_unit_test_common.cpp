@@ -262,7 +262,7 @@ static void s_ResetConnection(void)
     //s_Conn->ConnectValidated(validator, GetArgs().GetUserName(), GetArgs().GetUserPassword(), GetArgs().GetServerName());
     //cout << s_Conn->GetCDB_Connection()->ServerName() << endl;
 
-    auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+    unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
     // Create a test table ...
     string sql;

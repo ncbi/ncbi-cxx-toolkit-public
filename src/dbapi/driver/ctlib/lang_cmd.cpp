@@ -618,7 +618,7 @@ CTL_LRCmd::MakeResultInternal(void)
     }
 
 #ifdef FTDS_IN_USE
-    auto_ptr<CTL_Connection::CAsyncCancelGuard> GUARD
+    unique_ptr<CTL_Connection::CAsyncCancelGuard> GUARD
         (new CTL_Connection::CAsyncCancelGuard(GetConnection()));
 #endif
 

@@ -609,7 +609,7 @@ CDBConnectionFactory::MakeValidConnection(
         ctx.tried.push_back(params.GetServerName());
     }
 
-    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx.driver_ctx, params));
+    unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx.driver_ctx, params));
 
     if (conn.get())
     {
@@ -1105,10 +1105,10 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 
     // Get current database name ...
     {
-        auto_ptr<CDB_LangCmd> auto_stmt(conn.LangCmd("select db_name()"));
+        unique_ptr<CDB_LangCmd> auto_stmt(conn.LangCmd("select db_name()"));
         auto_stmt->Send();
         while (auto_stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+            unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1131,7 +1131,7 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
     }
 
     if (GetAttr() & eCheckSysobjects) {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+        unique_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
         set_cmd->Send();
         set_cmd->DumpResults();
     }
@@ -1154,7 +1154,7 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
     conn.SetDatabaseName(GetDBName());
 
     if (GetAttr() & eCheckSysobjects) {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+        unique_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
         set_cmd->Send();
         set_cmd->DumpResults();
     }

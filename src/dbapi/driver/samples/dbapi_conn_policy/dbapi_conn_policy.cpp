@@ -66,7 +66,7 @@ CConnectPolicyApp::RunSample(void)
         conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("DBAPI_Sample")));
 
         for (int i = 0; i < 20; ++i) {
-            auto_ptr<CDB_Connection> conn(CreateConnection(&conn_validator));
+            unique_ptr<CDB_Connection> conn(CreateConnection(&conn_validator));
         }
 
     }

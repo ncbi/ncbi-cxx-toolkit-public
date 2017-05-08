@@ -539,7 +539,7 @@ private:
     bool              m_HasMoreResults;
     impl::CResult*    m_Res;
 
-    auto_ptr<CDBParams> m_InParams;
+    unique_ptr<CDBParams> m_InParams;
 };
 
 
@@ -566,7 +566,7 @@ protected:
     CODBC_LangCmd           m_CursCmd;
 
     unsigned int            m_FetchSize;
-    auto_ptr<impl::CResult> m_Res;
+    unique_ptr<impl::CResult> m_Res;
 };
 
 
@@ -625,7 +625,7 @@ protected:
     CDB_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
 protected:
-    auto_ptr<CODBC_LangCmd> m_LCmd;
+    unique_ptr<CODBC_LangCmd> m_LCmd;
 };
 
 

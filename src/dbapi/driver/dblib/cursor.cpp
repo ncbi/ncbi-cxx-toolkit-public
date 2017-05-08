@@ -123,7 +123,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
     }
 
     try {
-        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        unique_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
 
         cmd->Send();
         cmd->DumpResults();
@@ -138,7 +138,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
     buff = "open " + GetCmdName();
 
     try {
-        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        unique_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
 
         cmd->Send();
         cmd->DumpResults();
@@ -166,7 +166,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 
     try {
         while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            unique_ptr<CDB_Result> r(m_LCmd->Result());
 //             if (r.get()) {
 //                 while (r->Fetch())
 //                     continue;
@@ -174,12 +174,12 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
         }
 
         string buff = upd_query + " where current of " + GetCmdName();
-        const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        const unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
         while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            unique_ptr<CDB_Result> r(m_LCmd->Result());
             if (r.get()) {
                 while (r->Fetch())
                     continue;
@@ -211,7 +211,7 @@ bool CDBL_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
                                 bool log_it)
 {
     I_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         return GetConnection().x_SendData(*desc, data, log_it);
@@ -224,7 +224,7 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                                              bool /*dump_results*/)
 {
     I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
-    auto_ptr<I_BlobDescriptor> d_guard(desc);
+    unique_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         m_LCmd->DumpResults();
@@ -247,7 +247,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
 
     try {
         while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            unique_ptr<CDB_Result> r(m_LCmd->Result());
 //             if (r.get()) {
 //
 //                 while (r->Fetch())
@@ -256,12 +256,12 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
         }
 
         string buff = "delete " + table_name + " where current of " + GetCmdName();
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
         while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
+            unique_ptr<CDB_Result> r(m_LCmd->Result());
             if (r.get()) {
                 while (r->Fetch())
                     continue;
@@ -297,13 +297,13 @@ bool CDBL_CursorCmd::CloseCursor()
     if (CursorIsOpen()) {
         string buff = "close " + GetCmdName();
         try {
-            auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+            unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
             cmd->Send();
             cmd->DumpResults();
 #if 0
             while(m_LCmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> r(m_LCmd->Result());
+                unique_ptr<CDB_Result> r(m_LCmd->Result());
                 if (r.get()) {
                     while (r->Fetch())
                         continue;
@@ -329,13 +329,13 @@ bool CDBL_CursorCmd::CloseCursor()
         }
 
         try {
-            auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+            unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
             cmd->Send();
             cmd->DumpResults();
 #if 0
             while(m_LCmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> r(m_LCmd->Result());
+                unique_ptr<CDB_Result> r(m_LCmd->Result());
                 if (r.get()) {
                     while (r->Fetch())
                         continue;

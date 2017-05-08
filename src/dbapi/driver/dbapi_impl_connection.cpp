@@ -171,11 +171,11 @@ CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
         CMsgHandlerGuard guard(*this);
 
         try {
-            auto_ptr<CDB_LangCmd> cmd(LangCmd("SELECT @@version"));
+            unique_ptr<CDB_LangCmd> cmd(LangCmd("SELECT @@version"));
             cmd->Send();
 
             while (cmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> res(cmd->Result());
+                unique_ptr<CDB_Result> res(cmd->Result());
 
                 if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
                     CDB_VarChar version;
@@ -373,7 +373,7 @@ CConnection::SetDatabaseName(const string& name)
     if (!name.empty()) {
         const string sql = "use " + name;
 
-        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        unique_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
         auto_stmt->Send();
         auto_stmt->DumpResults();
 

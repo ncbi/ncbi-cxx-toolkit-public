@@ -47,8 +47,8 @@ private:
 
 int CDriverTest::Run()
 {
-	auto_ptr<IConnection> conSyb;
-	auto_ptr<IConnection> conMS;
+	unique_ptr<IConnection> conSyb;
+	unique_ptr<IConnection> conMS;
 
 	{
 		DBAPI_RegisterDriver_CTLIB();

@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
     CDB_Text txt;
 
     try {
-        auto_ptr<IConnection> auto_conn(
+        unique_ptr<IConnection> auto_conn(
             GetDS().CreateConnection(CONN_OWNERSHIP)
             );
         auto_conn->Connect(
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
                 "MSSQL67"
                 );
         CDB_Connection* conn = auto_conn->GetCDB_Connection();
-        auto_ptr<CDB_LangCmd> auto_stmt;
+        unique_ptr<CDB_LangCmd> auto_stmt;
 
         /* DBAPI_Sample..blobRepl is replicated from MSSQL67 to MSSQL8 */
         sql = "SELECT blob, TEXTPTR(blob) FROM DBAPI_Sample..blobRepl";
@@ -68,10 +68,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 
             txt.Append(NStr::Int8ToString(CTime(CTime::eCurrent).GetTimeT()));
 
-            auto_ptr<I_BlobDescriptor> descr[2];
+            unique_ptr<I_BlobDescriptor> descr[2];
             int i = 0;
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL) {
                     continue;
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -128,10 +128,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             sql  = " SELECT text_field FROM " + GetTableName();
             // sql += " FOR UPDATE OF text_field";
 
-            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
+            unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
             // blobRs should be destroyed before auto_cursor ...
-            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            unique_ptr<IResultSet> blobRs(auto_cursor->Open());
             while(blobRs->Next()) {
                 ostream& out = auto_cursor->GetBlobOStream(1,
                                                            clob_value.size(),
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
     //         auto_stmt->SendSql( sql );
     //         while( auto_stmt->HasMoreResults() ) {
     //             if( auto_stmt->HasRows() ) {
-    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //                 unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
     //                 while ( rs->Next() ) {
     //                     ostream& out = rs->GetBlobOStream(clob_value.size(),
     //                                                       kBOSFlags);
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -215,13 +215,13 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
 
             sql = "SELECT text_field FROM "+ GetTableName();
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL) {
                     continue;
@@ -279,11 +279,11 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                         sql += " WHERE int_field = @int_field ";
 
                         if (ind % 2 == 0) {
-                            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
+                            unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
                             auto_cursor->SetParam(CVariant(Int4(ind)), "@int_field");
 
                             // blobRs should be destroyed before auto_cursor ...
-                            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                            unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                             while(blobRs->Next()) {
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
@@ -297,10 +297,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                         sql += " WHERE int_field = " + NStr::NumericToString(ind);
 
                         if (ind % 2 == 0) {
-                            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
+                            unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
                             // blobRs should be destroyed before auto_cursor ...
-                            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                            unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                             while(blobRs->Next()) {
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 auto_stmt->SendSql( sql );
                 while( auto_stmt->HasMoreResults() ) {
                     if( auto_stmt->HasRows() ) {
-                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                         for (long ind = 0; ind < rec_num; ++ind) {
                             BOOST_CHECK(rs->Next());
@@ -358,13 +358,13 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
 
                 sql = "SELECT text_field FROM "+ GetTableName();
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while(auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL) {
                         continue;
@@ -407,14 +407,14 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
         if (false) {
             const string sql("select blob from Request where ri = 31960321 order by oid");
 
-            auto_ptr<IConnection> conn(
+            unique_ptr<IConnection> conn(
                 GetDS().CreateConnection(CONN_OWNERSHIP)
                 );
 
             conn->Connect("*****","******","mssql31", "BlastQNew");
-            auto_ptr<ICursor> auto_cursor(conn->GetCursor("test05", sql));
+            unique_ptr<ICursor> auto_cursor(conn->GetCursor("test05", sql));
 
-            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            unique_ptr<IResultSet> blobRs(auto_cursor->Open());
             while(blobRs->Next()) {
                 char buff[8192];
 
@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
     enum {num_of_records = 10};
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -486,10 +486,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                 sql  = " SELECT text_field FROM " + GetTableName();
                 // sql += " FOR UPDATE OF text_field";
 
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
                 // blobRs should be destroyed before auto_cursor ...
-                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                 while(blobRs->Next()) {
                     ostream& out =
                         auto_cursor->GetBlobOStream(1,
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -547,7 +547,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
     enum {num_of_records = 10};
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -578,7 +578,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if ( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         const CVariant& text_value = rs->GetVariant(1);
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if ( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -673,7 +673,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
     // enum {num_of_records = 10};
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -713,9 +713,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 // With next line MS SQL returns incorrect blob descriptors in select
                 //sql += " ORDER BY id";
 
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test_lob_multiple", sql));
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test_lob_multiple", sql));
 
-                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                 while(blobRs->Next()) {
                     for (int pos = 1; pos <= 4; ++pos) {
                         ostream& out =
@@ -739,7 +739,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while ( rs->Next() ) {
                         for (int pos = 1; pos <= 4; ++pos) {
@@ -773,7 +773,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
     try {
         bool rc = false;
-        auto_ptr<CDB_LangCmd> auto_stmt;
+        unique_ptr<CDB_LangCmd> auto_stmt;
         CDB_Connection* conn = GetConnection().GetCDB_Connection();
         BOOST_REQUIRE(conn != NULL);
 
@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
         }
 
         // Retrieve descriptor ...
-        auto_ptr<I_BlobDescriptor> descr;
+        unique_ptr<I_BlobDescriptor> descr;
         {
             sql = "SELECT text_field FROM " + GetTableName();
             auto_stmt.reset(conn->LangCmd(sql));
@@ -805,7 +805,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
             // Retrieve descriptor ...
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL) {
                     continue;
@@ -887,7 +887,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
             // Retrieve descriptor ...
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL) {
                     continue;
@@ -922,7 +922,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
 
     try {
         bool rc = false;
-        auto_ptr<CDB_LangCmd> auto_stmt;
+        unique_ptr<CDB_LangCmd> auto_stmt;
         CDB_Connection* conn = GetConnection().GetCDB_Connection();
         BOOST_REQUIRE(conn != NULL);
 
@@ -970,16 +970,16 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                 // With next line MS SQL returns incorrect blob descriptors in select
                 //sql += " ORDER BY id";
 
-                auto_ptr<CDB_CursorCmd> auto_cursor;
+                unique_ptr<CDB_CursorCmd> auto_cursor;
                 auto_cursor.reset(conn->Cursor("test_lob_multiple_ll", sql));
 
-                auto_ptr<CDB_Result> rs(auto_cursor->Open());
+                unique_ptr<CDB_Result> rs(auto_cursor->Open());
                 BOOST_CHECK (rs.get() != NULL);
 
-                auto_ptr<I_BlobDescriptor> text01;
-                auto_ptr<I_BlobDescriptor> text02;
-                auto_ptr<I_BlobDescriptor> image01;
-                auto_ptr<I_BlobDescriptor> image02;
+                unique_ptr<I_BlobDescriptor> text01;
+                unique_ptr<I_BlobDescriptor> text02;
+                unique_ptr<I_BlobDescriptor> image01;
+                unique_ptr<I_BlobDescriptor> image02;
 
                 while (rs->Fetch()) {
                     // ReadItem must not be called here
@@ -1031,7 +1031,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
 
             // Retrieve descriptor ...
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL) {
                     continue;
@@ -1095,7 +1095,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
     long write_data_len = 0;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -1118,10 +1118,10 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
 
             sql  = " SELECT text_field FROM " + GetTableName();
 
-            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
+            unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
             // blobRs should be destroyed before auto_cursor ...
-            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            unique_ptr<IResultSet> blobRs(auto_cursor->Open());
             while (blobRs->Next()) {
                 ostream& ostrm = auto_cursor->GetBlobOStream(1,
                                                              data_len,
@@ -1144,7 +1144,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
 
             while (auto_stmt->HasMoreResults()) {
                 if (auto_stmt->HasRows()) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
                     BOOST_CHECK( rs->Next() );
                     write_data_len = rs->GetVariant(1).GetInt4();
@@ -1163,7 +1163,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             auto_stmt->SendSql( sql );
             while ( auto_stmt->HasMoreResults() ) {
                 if ( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     try {
                         while (rs->Next()) {
@@ -1205,7 +1205,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
     string table_name = "#TestBlobStore";
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create a table ...
         {
@@ -1268,7 +1268,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
 
             // Write blob to the row ...
             {
-                auto_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
+                unique_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
                 BOOST_CHECK(pStream.get() != NULL);
 
                 for(int i = 0; i < 10000; ++i) {
@@ -1282,7 +1282,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
 
             // Read blob ...
             {
-                auto_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
+                unique_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
                 BOOST_CHECK(pStream.get() != NULL);
 
                 string line;
@@ -1316,7 +1316,7 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
             GetArgs().GetConnParams()
             );
 
-        auto_ptr<CDB_Connection> auto_conn(
+        unique_ptr<CDB_Connection> auto_conn(
             GetDS().GetDriverContext()->MakeConnection(params)
         );
 
@@ -1324,16 +1324,16 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
 
         sql  = "get_iodesc_for_link pubmed_pubmed";
 
-        auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+        unique_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
         BOOST_CHECK( auto_stmt.get() != NULL );
 
         bool rc = auto_stmt->Send();
         BOOST_CHECK( rc );
 
-        auto_ptr<I_BlobDescriptor> descr;
+        unique_ptr<I_BlobDescriptor> descr;
 
         while(auto_stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+            unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1368,7 +1368,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Blob)
     const int                kTypesCount = sizeof(kTypes) / sizeof(*kTypes);
 
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         for (int k = 0;  k < kTypesCount;  ++k) {
             auto_stmt->ExecuteUpdate("CREATE TABLE " + kTableName
@@ -1379,7 +1379,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Blob)
                                        " i2 " + kTypes[k][0] + ","
                                        " t2 " + kTypes[k][1] + ")");
 
-            auto_ptr<IBulkInsert> bi
+            unique_ptr<IBulkInsert> bi
                 (GetConnection().GetBulkInsert(kTableName));
             for (int i = 0;  i < kValueCount;  ++i) {
                 for (int j = 0;  j < kValueCount;  ++j) {
@@ -1411,7 +1411,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Blob)
             auto_stmt->SendSql("SELECT * FROM " + kTableName);
             while (auto_stmt->HasMoreResults()) {
                 if (auto_stmt->HasRows()) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     rs->BindBlobToVariant(true);
                     while (rs->Next()) {
                         size_t i = rs->GetVariant(3).GetInt4();

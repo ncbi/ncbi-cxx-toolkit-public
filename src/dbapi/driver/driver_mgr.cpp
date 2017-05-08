@@ -67,7 +67,7 @@ MakePluginManagerParamTree(const string& driver_name, const map<string, string>*
 TPluginManagerParamTree*
 MakePluginManagerParamTree(const CDBConnParams& params)
 {
-    auto_ptr<TPluginManagerParamTree> tr(new TPluginManagerParamTree);
+    unique_ptr<TPluginManagerParamTree> tr(new TPluginManagerParamTree);
 
     tr->GetKey() = params.GetDriverName();
 
@@ -279,7 +279,7 @@ C_xDriverMgr::GetDriverContext(
     const string& driver_name,
     const map<string, string>* attr)
 {
-    auto_ptr<TPluginManagerParamTree> pt;
+    unique_ptr<TPluginManagerParamTree> pt;
     const TPluginManagerParamTree* nd = NULL;
 
     if ( attr != NULL ) {
@@ -372,7 +372,7 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
     _ASSERT(ReaderManager);
 
     try {
-        auto_ptr<TPluginManagerParamTree> pt;
+        unique_ptr<TPluginManagerParamTree> pt;
 
         if ( attr != NULL ) {
              pt.reset( MakePluginManagerParamTree(driver_name, attr) );
@@ -412,7 +412,7 @@ I_DriverContext* MakeDriverContext(const CDBConnParams& params)
     _ASSERT(ReaderManager);
 
     try {
-        auto_ptr<TPluginManagerParamTree> pt;
+        unique_ptr<TPluginManagerParamTree> pt;
 
 	pt.reset(MakePluginManagerParamTree(params));
 	_ASSERT( pt.get() );

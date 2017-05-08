@@ -132,7 +132,7 @@ int CMySQL_LangCmd::RowCount() const
 
 string CMySQL_LangCmd::EscapeString(const char* str, unsigned long len)
 {
-    std::auto_ptr<char> buff( new char[len*2 + 1]);
+    std::unique_ptr<char> buff( new char[len*2 + 1]);
     mysql_real_escape_string(&this->m_Connect->m_MySQL, buff.get(), str, len);
     return buff.get();
 }

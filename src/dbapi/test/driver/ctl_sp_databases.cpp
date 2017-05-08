@@ -82,20 +82,20 @@ CDemoApp::RunSample(void)
 #endif
 
 
-        auto_ptr<IConnection> conn(data_source->CreateConnection());
+        unique_ptr<IConnection> conn(data_source->CreateConnection());
         conn->Connect(GetUserName(),
                       GetPassword(),
                       GetServerName()
                       );
 
-        auto_ptr<ICallableStatement> auto_stmt(conn->GetCallableStatement("sp_databases"));
-        // auto_ptr<ICallableStatement> auto_stmt(conn->GetCallableStatement("sp_who"));
+        unique_ptr<ICallableStatement> auto_stmt(conn->GetCallableStatement("sp_databases"));
+        // unique_ptr<ICallableStatement> auto_stmt(conn->GetCallableStatement("sp_who"));
         auto_stmt->Execute();
 
         while(auto_stmt->HasMoreResults()) {
             if(auto_stmt->HasRows()) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                auto_ptr<const IResultSetMetaData> md(rs->GetMetaData());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<const IResultSetMetaData> md(rs->GetMetaData());
 
                 switch(rs->GetResultType()) {
                 case eDB_RowResult:

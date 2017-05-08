@@ -58,7 +58,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 static void s_WaitForDelay(IConnection& conn)
 {
-    auto_ptr<IStatement> auto_stmt;
+    unique_ptr<IStatement> auto_stmt;
     bool timeout_was_reported = false;
 
     auto_stmt.reset(conn.GetStatement());
@@ -77,7 +77,7 @@ static void s_WaitForDelay(IConnection& conn)
     auto_stmt->SendSql("SELECT name FROM sysobjects");
     BOOST_CHECK( auto_stmt->HasMoreResults() );
     BOOST_CHECK( auto_stmt->HasRows() );
-    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
     BOOST_CHECK( rs.get() != NULL );
 
     BOOST_CHECK(timeout_was_reported);
@@ -93,7 +93,7 @@ static void s_HugeTableSelect(IConnection& conn)
     const char* str_value = "Oops ...";
     size_t rec_num = 800000;
     string sql;
-    auto_ptr<IStatement> auto_stmt;
+    unique_ptr<IStatement> auto_stmt;
 
     auto_stmt.reset(conn.GetStatement());
 
@@ -124,7 +124,7 @@ static void s_HugeTableSelect(IConnection& conn)
             CVariant col1(eDB_Int);
             CVariant col2(eDB_VarChar);
 
-            auto_ptr<IBulkInsert> bi(
+            unique_ptr<IBulkInsert> bi(
                     conn.GetBulkInsert(table_name)
                     );
 
@@ -175,7 +175,7 @@ static void s_HugeTableSelect(IConnection& conn)
     {
         size_t num = 0;
 
-        auto_ptr<IStatement> auto_stmt(conn.GetStatement());
+        unique_ptr<IStatement> auto_stmt(conn.GetStatement());
 
         CStopWatch timer(CStopWatch::eStart);
 
@@ -188,7 +188,7 @@ static void s_HugeTableSelect(IConnection& conn)
 
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                 BOOST_CHECK( rs.get() != NULL );
 
                 while (rs->Next()) {
@@ -203,7 +203,7 @@ static void s_HugeTableSelect(IConnection& conn)
     }
 
     {
-        auto_ptr<IStatement> auto_stmt(conn.GetStatement());
+        unique_ptr<IStatement> auto_stmt(conn.GetStatement());
         auto_stmt->ExecuteUpdate("drop table " + table_name);
     }
 }
@@ -212,8 +212,8 @@ static void s_HugeTableSelect(IConnection& conn)
 BOOST_AUTO_TEST_CASE(Test_Timeout)
 {
     try {
-        auto_ptr<IConnection> conn;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IConnection> conn;
+        unique_ptr<IStatement> auto_stmt;
 
         // Alter DriverContext ...
         {
@@ -248,8 +248,8 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
 BOOST_AUTO_TEST_CASE(Test_Timeout2)
 {
     try {
-        auto_ptr<IConnection> conn;
-        auto_ptr<IStatement> auto_stmt;
+        unique_ptr<IConnection> conn;
+        unique_ptr<IStatement> auto_stmt;
 
         // Alter connection ...
         {
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
 BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 {
     try {
-        auto_ptr<IConnection> conn;
+        unique_ptr<IConnection> conn;
 
         CTimeoutGuard GUARD(*GetDS().GetDriverContext(), 2);
 
@@ -298,14 +298,14 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
                 "txt_field text"
                 ")";
 
-            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
             auto_stmt->ExecuteUpdate( sql );
         }
 
         // Heavy insert with parameters
         {
-            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
-            auto_ptr<IStatement> auto_stmt2( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt2( conn->GetStatement() );
 
             string sql = "INSERT INTO " + table_name +
                 " VALUES(@int_field, @flt_field, @date_field, "
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 
         // Heavy select
         {
-            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            unique_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             string sql = "select * from " + table_name;
 
@@ -390,13 +390,13 @@ BOOST_AUTO_TEST_CASE(Test_High_FDs)
     try {
         // canary_bufN should surround the other local variables, so
         // whichever winds up at a lower address will take any hits.
-        char                    canary_buf1[NUM_CANARIES];
-        CTempString             canary1(canary_buf1, NUM_CANARIES), canary2;
-        int                     i, j;
-        auto_ptr<CSocket>       socks[NUM_CANARY_BITS];
-        auto_ptr<CTimeoutGuard> GUARD;
-        auto_ptr<IConnection>   conn;
-        char                    canary_buf2[NUM_CANARIES];
+        char                      canary_buf1[NUM_CANARIES];
+        CTempString               canary1(canary_buf1, NUM_CANARIES), canary2;
+        int                       i, j;
+        unique_ptr<CSocket>       socks[NUM_CANARY_BITS];
+        unique_ptr<CTimeoutGuard> GUARD;
+        unique_ptr<IConnection>   conn;
+        char                      canary_buf2[NUM_CANARIES];
 
         canary2.assign(canary_buf2, NUM_CANARIES);
         for (i = 0;  i < NUM_CANARIES * 8;  ++i) {

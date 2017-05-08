@@ -517,7 +517,7 @@ CDbapiOdbcCFBase::CreateInstance(
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
 {
-    auto_ptr<TImplementation> drv;
+    unique_ptr<TImplementation> drv;
 
     if ( !driver.empty()  &&  driver != m_DriverName ) {
         return 0;

@@ -168,7 +168,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
 
 CDB_Params* CDB_Params::SemiShallowClone(void) const
 {
-    auto_ptr<CDB_Params> result(new CDB_Params);
+    unique_ptr<CDB_Params> result(new CDB_Params);
     SParam empty_param;
     ITERATE (deque<SParam>, it, m_Params) {
         result->m_Params.push_back(empty_param);

@@ -54,7 +54,7 @@ MakeParamTree(void)
     drv_name = "ftds";
 #endif
         
-    auto_ptr<TParamTree> parent_node( new TParamTree( TParamTree::TValueType("dbapi", kEmptyStr) ) );
+    unique_ptr<TParamTree> parent_node( new TParamTree( TParamTree::TValueType("dbapi", kEmptyStr) ) );
     
     parent_node->AddNode( TParamTree::TValueType("driver", drv_name) );
     parent_node->AddNode( TParamTree::TValueType("server", "MSSQL10") );
@@ -73,7 +73,7 @@ MakeICache(void)
     typedef CPluginManagerGetter<ICache> TCacheManagerStore;
 
     CRef<TCacheManager> cache_manager( TCacheManagerStore::Get() );
-    auto_ptr<TPluginManagerParamTree> params( MakeParamTree() );
+    unique_ptr<TPluginManagerParamTree> params( MakeParamTree() );
     ICache* drv = NULL;
 
     _ASSERT( cache_manager );
@@ -104,7 +104,7 @@ void CDBAPI_CacheTest::Init(void)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_bdb", "test BDB library");
     SetupArgDescriptions(d.release());
 }
@@ -115,7 +115,7 @@ int CDBAPI_CacheTest::Run(void)
     cout << "Run CDBAPI_CacheTest test" << endl << endl;
 
     try {
-        auto_ptr<ICache> blob_cache( MakeICache() );
+        unique_ptr<ICache> blob_cache( MakeICache() );
         
         if ( blob_cache.get() == NULL ) {
             return 1;
@@ -153,7 +153,7 @@ int CDBAPI_CacheTest::Run(void)
         assert(cmp == 0);
 
         {
-        auto_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_3", 1, "sk1"));
+        unique_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_3", 1, "sk1"));
         size_t bytes_written;
         size_t s = strlen(szTest);
         wrt->Write(szTest, s, &bytes_written);
@@ -163,7 +163,7 @@ int CDBAPI_CacheTest::Run(void)
         {
         char str[1024] = {0,};
         char* sp = str;
-        auto_ptr<IReader> rdr(blob_cache->GetReadStream("key_3", 1, "sk1"));
+        unique_ptr<IReader> rdr(blob_cache->GetReadStream("key_3", 1, "sk1"));
         char buf[1024];
         ERW_Result r;
         size_t rd;
@@ -188,7 +188,7 @@ int CDBAPI_CacheTest::Run(void)
             }
 
             {
-            auto_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_big", 1, ""));
+            unique_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_big", 1, ""));
             unsigned written = 0;
             int* p = big_blob;
             while (written < bsize) {
@@ -203,7 +203,7 @@ int CDBAPI_CacheTest::Run(void)
             wrt->Flush();
             }
     
-            auto_ptr<IReader> rdr(blob_cache->GetReadStream("key_big", 1, ""));
+            unique_ptr<IReader> rdr(blob_cache->GetReadStream("key_big", 1, ""));
             
             ERW_Result r;
             size_t rd;

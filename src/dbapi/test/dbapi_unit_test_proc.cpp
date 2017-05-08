@@ -42,13 +42,13 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
         // Test a regular IStatement with "exec"
         // Parameters are not allowed with this construction.
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Execute it first time ...
             auto_stmt->SendSql( "exec sp_databases" );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch ( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             auto_stmt->SendSql( "exec sp_databases" );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch ( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -111,13 +111,13 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
         // No parameters at this time.
         {
             // Execute it first time ...
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 GetConnection().GetCallableStatement("sp_databases")
                 );
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
         // Temporary test ...
         // !!! This is a bug ...
         if (false) {
-            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
+            unique_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -186,14 +186,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 ""
                 );
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 conn->GetCallableStatement("id_seqid4gi")
                 );
             auto_stmt->SetParam( CVariant(1), "@gi" );
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
         if (false) {
             const string query("[db_alias] is not null");
 
-            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
+            unique_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 "AlignDb_Info"
                 );
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 conn->PrepareCall("[dbo].[FindAttributesEx]")
                 );
             auto_stmt->SetParam( CVariant(1), "@userid" );
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             if (GetArgs().GetServerType() != CDBConnParams::eMSSqlServer) {
                 int num = 0;
                 // Execute it first time ...
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_databases")
                     );
 
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             {
                 int num = 0;
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_server_info")
                     );
 
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
         // With parameters.
         {
             {
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_server_info")
                     );
 
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             // NULL value with CVariant ...
             {
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_statistics")
                     );
 
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             // Doesn't work for some reason ...
             if (false) {
                 // Execute it first time ...
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_statistics")
                     );
 
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 {
                     BOOST_CHECK(auto_stmt->HasMoreResults());
                     BOOST_CHECK(auto_stmt->HasRows());
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
 
                     BOOST_CHECK(rs->Next());
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 {
                     BOOST_CHECK(auto_stmt->HasMoreResults());
                     BOOST_CHECK(auto_stmt->HasRows());
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
 
                     BOOST_CHECK(rs->Next());
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             }
 
             if (false) {
-                auto_ptr<ICallableStatement> auto_stmt(
+                unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("DBAPI_Sample..TestBigIntProc")
                     );
 
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             drv_context->PushDefConnMsgHandler(handler);
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 GetConnection().GetCallableStatement("DBAPI_Sample..SampleProc3")
                 );
             auto_stmt->SetParam(CVariant(1), "@id");
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
              while(auto_stmt->HasMoreResults()) {
                  if( auto_stmt->HasRows() ) {
-                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                     unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                      switch( rs->GetResultType() ) {
                      case eDB_RowResult:
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
     //         BOOST_CHECK(auto_stmt->HasMoreResults());
     //         BOOST_CHECK(auto_stmt->HasRows());
-    //         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //         unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
     //         BOOST_CHECK(rs.get() != NULL);
     //
     //         while (rs->Next()) {
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
         // Temporary test ...
         if (false) {
-            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
+            unique_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -482,7 +482,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 "GenomeHits"
                 );
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 conn->GetCallableStatement("NewSub")
                 );
             auto_stmt->SetParam(CVariant("tsub2"), "@name");
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
         // Temporary test ...
         if (false && GetArgs().GetServerType() != CDBConnParams::eSybaseSQLServer) {
-            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
+            unique_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 "PMC3QA"
                 );
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 conn->PrepareCall("id_new_id")
                 );
             auto_stmt->SetParam(CVariant("tsub2"), "@IdName");
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -574,7 +574,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
 {
     try {
         {
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_server_info")
                     );
 
@@ -582,7 +582,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
 
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
 
         // Mismatched types of INT parameters ...
         {
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_server_info")
                     );
 
@@ -624,7 +624,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
     try {
         // Reading multiple result-sets from a stored procedure ...
         {
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_helpdb")
                     );
 
@@ -635,7 +635,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
 
             while (auto_stmt->HasMoreResults()) {
                 if ( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while (rs->Next()) {
                         ;
@@ -654,14 +654,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
 
         // The same as above, but using IStatement ...
         {
-            auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+            unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
             int result_num = 0;
 
             auto_stmt->SendSql("exec sp_helpdb 'master'");
             while (auto_stmt->HasMoreResults()) {
                 if ( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while (rs->Next()) {
                         ;
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
         // Multiple results plus column names with spaces.
         if (GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) {
 
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                     GetConnection().GetCallableStatement("sp_spaceused")
                     );
 
@@ -692,7 +692,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
             string unallocSpace;
 
             if ( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                 while (rs->Next()) {
                     unallocSpace = rs->GetVariant("unallocated space").GetString();

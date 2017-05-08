@@ -107,7 +107,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
            CVersionInfo                   version,
            const TPluginManagerParamTree* params) const
 {
-    auto_ptr<CDBAPI_Cache> drv;
+    unique_ptr<CDBAPI_Cache> drv;
     if (driver.empty() || driver == m_DriverName) {
         if (version.Match(NCBI_INTERFACE_VERSION(ICache))
                             != CVersionInfo::eNonCompatible) {

@@ -50,12 +50,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
         {
             // No errors ...
             {
-                auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                 BOOST_CHECK(auto_conn.get() != NULL);
 
                 auto_conn->Connect(GetArgs().GetConnParams());
 
-                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                 auto_stmt->SendSql("SELECT name FROM sysobjects");
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 DumpResults(auto_stmt.get());
@@ -65,12 +65,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 
             // Force errors ...
             {
-                auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                 BOOST_CHECK(auto_conn.get() != NULL);
 
                 auto_conn->Connect(GetArgs().GetConnParams());
 
-                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                 try {
                     auto_stmt->SendSql("SELECT oops FROM sysobjects");
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -109,12 +109,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
             {
                 // No errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                    unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     auto_conn->Connect(GetArgs().GetConnParams());
 
-                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                    unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                     auto_stmt->SendSql("SELECT name FROM sysobjects");
                     BOOST_CHECK(auto_stmt->HasMoreResults());
                     DumpResults(auto_stmt.get());
@@ -124,12 +124,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 
                 // Force errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                    unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     auto_conn->Connect(GetArgs().GetConnParams());
 
-                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                    unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                     try {
                         auto_stmt->SendSql("SELECT oops FROM sysobjects");
                         BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -151,12 +151,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
             {
                 // No errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                    unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     auto_conn->Connect(GetArgs().GetConnParams());
 
-                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                    unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                     auto_stmt->SendSql("SELECT name FROM sysobjects");
                     BOOST_CHECK(auto_stmt->HasMoreResults());
                     DumpResults(auto_stmt.get());
@@ -166,12 +166,12 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 
                 // Force errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
+                    unique_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     auto_conn->Connect(GetArgs().GetConnParams());
 
-                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                    unique_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                     try {
                         auto_stmt->SendSql("SELECT oops FROM sysobjects");
                         BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 BOOST_AUTO_TEST_CASE(Test_SetMaxBlobSize)
 {
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
         const IResultSetMetaData* md = NULL;
         const int expected_max_text_size = 234567;

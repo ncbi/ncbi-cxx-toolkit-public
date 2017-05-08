@@ -80,17 +80,17 @@ CDemoApp::RunSample(void)
         CTLibContext my_context(true, GetTDSVersion());
 #endif
 
-        auto_ptr<CDB_Connection> con(my_context.Connect(GetServerName(),
+        unique_ptr<CDB_Connection> con(my_context.Connect(GetServerName(),
                                                         GetUserName(),
                                                         GetPassword(),
                                                         0));
 
-        auto_ptr<CDB_LangCmd> lcmd
+        unique_ptr<CDB_LangCmd> lcmd
             (con->LangCmd("select name, crdate from sysdatabases"));
         lcmd->Send();
 
         while (lcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(lcmd->Result());
+            unique_ptr<CDB_Result> r(lcmd->Result());
             if (!r.get())
                 continue;
 

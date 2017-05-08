@@ -153,7 +153,7 @@ private:
     const unsigned int  m_ColumsNum;
 
     TRecordSet  m_RecordSet;
-    auto_ptr<const IResultSetMetaData> m_MetaData;
+    unique_ptr<const IResultSetMetaData> m_MetaData;
     size_t      m_CurRowNum;
 };
 
@@ -250,7 +250,7 @@ public:
     virtual const IResultSetMetaData& GetMetaData(void) const;
 
 private:
-    // Lifetime of m_RS shouldn't be managed by auto_ptr
+    // Lifetime of m_RS shouldn't be managed by auto_ptr or any other smart pointer
     IResultSet* m_RS;
 };
 
@@ -310,7 +310,7 @@ public:
 
 private:
     ICallableStatement* m_Stmt;
-    auto_ptr<CVariantSet> m_VariantSet;
+    unique_ptr<CVariantSet> m_VariantSet;
     bool m_HasRS;
 };
 
@@ -404,7 +404,7 @@ CVariantSetProxy::CVariantSetProxy(ICallableStatement& stmt)
 {
     while (stmt.HasMoreResults()) {
         if (stmt.HasRows()) {
-            auto_ptr<IResultSet> rs(stmt.GetResultSet());
+            unique_ptr<IResultSet> rs(stmt.GetResultSet());
             m_CachedSet.push_back(CRef<CVariantSet>(new CCachedResultSet(*rs)));
         }
     }
@@ -1773,7 +1773,7 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
 //////////////////////////////////////////////////////////////////////////////
 CStmtHelper::CStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
-, m_RS(NULL)
+, m_RS(nullptr)
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )

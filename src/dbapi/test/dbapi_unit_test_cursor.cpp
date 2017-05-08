@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialize a test table ...
         {
@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -83,8 +83,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Open a cursor for the second time ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -102,8 +102,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -198,8 +198,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Just read data ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
@@ -209,8 +209,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Update something ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 // Make 2 different updates
@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Check that update was successful
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 int check_val = 123;
@@ -240,14 +240,14 @@ BOOST_AUTO_TEST_CASE(Test_Cursor)
 
             // Delete something
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 BOOST_CHECK(rs->Next());
                 auto_cursor->Delete("#Objects");
 
-                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+                unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
                 BOOST_CHECK_EQUAL(size_t(1), GetNumOfRecords(auto_stmt, "#Objects"));
             }
         } else {
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
     try {
         // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -296,11 +296,11 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
             const char* clob = "abc";
 
             sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
+            unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
 
             {
                 // blobRs should be destroyed before auto_cursor ...
-                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                unique_ptr<IResultSet> blobRs(auto_cursor->Open());
 
                 if (blobRs->Next()) {
                     ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob),
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
 
             // Check record number ...
             {
-                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+                unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
                 BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
             }
 
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
             auto_cursor.reset(GetConnection().GetCursor("test02", sql));
             {
                 // blobRs should be destroyed before auto_cursor ...
-                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                 if ( !blobRs->Next() ) {
                     BOOST_FAIL( msg_record_expected );
                 }
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor_Param)
     try {
          // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -379,12 +379,12 @@ BOOST_AUTO_TEST_CASE(Test_Cursor_Param)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
 
                 auto_cursor->SetParam(CVariant(Int4(0)), "@int_value" );
 
                 // First Open ...
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 BOOST_CHECK(rs->Next());
@@ -408,11 +408,11 @@ BOOST_AUTO_TEST_CASE(Test_Cursor_Param)
 
             // Open a cursor for the second time ...
             {
-                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
+                unique_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
 
                 auto_cursor->SetParam(CVariant(Int4(1)), "@int_value" );
 
-                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                unique_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 BOOST_CHECK(rs->Next());
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor_Multiple)
     try {
          // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -460,15 +460,15 @@ BOOST_AUTO_TEST_CASE(Test_Cursor_Multiple)
         {
             sql = "select int_field from " + GetTableName() + " WHERE int_field = @int_value";
 
-            auto_ptr<ICursor> auto_cursor1(GetConnection().GetCursor("test10", sql));
-            auto_ptr<ICursor> auto_cursor2(GetConnection().GetCursor("test11", sql));
+            unique_ptr<ICursor> auto_cursor1(GetConnection().GetCursor("test10", sql));
+            unique_ptr<ICursor> auto_cursor2(GetConnection().GetCursor("test11", sql));
 
             auto_cursor1->SetParam(CVariant(Int4(0)), "@int_value" );
             auto_cursor2->SetParam(CVariant(Int4(0)), "@int_value" );
 
-            auto_ptr<IResultSet> rs1(auto_cursor1->Open());
+            unique_ptr<IResultSet> rs1(auto_cursor1->Open());
             BOOST_CHECK(rs1.get() != NULL);
-            auto_ptr<IResultSet> rs2(auto_cursor2->Open());
+            unique_ptr<IResultSet> rs2(auto_cursor2->Open());
             BOOST_CHECK(rs2.get() != NULL);
 
             BOOST_CHECK(rs1->Next());

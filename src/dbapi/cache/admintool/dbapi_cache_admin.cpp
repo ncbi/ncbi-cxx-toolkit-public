@@ -61,7 +61,7 @@ protected:
     unsigned GetTimeout(const CArgs& args);
 
 private:
-    auto_ptr<IConnection>   m_Conn;
+    unique_ptr<IConnection> m_Conn;
     CDBAPI_Cache            m_Cache;
 };
 
@@ -71,7 +71,7 @@ void CDBAPI_CacheAdmin::Init(void)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "DBAPI cache admin library");
 

@@ -71,7 +71,7 @@ CDefaultConnectPolicy::MakeDBConnection(
     I_DriverContext& ctx,
     const CDBConnParams& params)
 {
-    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
+    unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get()) {
         CTrivialConnValidator use_db_validator(

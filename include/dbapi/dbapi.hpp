@@ -398,8 +398,8 @@ public:
     ///   SQL statement to execute.
     /// @return
     ///   Pointer to result set. Ownership of IResultSet* belongs to IStatement.
-    ///   It is not allowed to use auto_ptr<> to manage life-time of
-    ///   IResultSet*.
+    ///   It is not allowed to use auto_ptr<> or other smart pointers to manage
+    ///   life-time of IResultSet*.
     virtual IResultSet* ExecuteQuery(const string& sql) = 0;
 
     /// Executes the last command (with changed parameters, if any).

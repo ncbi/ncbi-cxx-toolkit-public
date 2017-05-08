@@ -57,8 +57,8 @@ public:
     void Check(void);
 
 private:
-    auto_ptr<I_DriverContext>   m_DC;
-    auto_ptr<CDB_Connection>    m_Conn;
+    unique_ptr<I_DriverContext>   m_DC;
+    unique_ptr<CDB_Connection>    m_Conn;
 };
 
 CTestLOB::CTestLOB(void)
@@ -69,7 +69,7 @@ CTestLOB::CTestLOB(void)
         ("DBAPI_DEV3", "DBAPI_test", "allowed");
     const CCPPToolkitConnParams params(def_params);
 
-    auto_ptr<I_DriverContext> dc(MakeDriverContext(params));
+    unique_ptr<I_DriverContext> dc(MakeDriverContext(params));
     m_Conn.reset(dc->MakeConnection(params));
 }
 
@@ -85,7 +85,7 @@ void CTestLOB::CallSendData(void)
     m_Desc.namelen = 4;
     m_Desc.timestamplen = CS_TS_SIZE;
 
-    auto_ptr<CDB_SendDataCmd> s_cmd(m_Conn->SendDataCmd (*this, sizeof(data) - 1));
+    unique_ptr<CDB_SendDataCmd> s_cmd(m_Conn->SendDataCmd (*this, sizeof(data) - 1));
 }
 
 void CTestLOB::Check(void)

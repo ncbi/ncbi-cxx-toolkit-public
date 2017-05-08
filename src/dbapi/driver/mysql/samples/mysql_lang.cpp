@@ -55,7 +55,7 @@ void
 CDemoApp::Init()
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -100,7 +100,7 @@ CDemoApp::Run(void)
         DBLB_INSTALL_DEFAULT();
 
         CMySQLContext my_context;
-        auto_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
+        unique_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
 
         // changing database
         con->SetDatabaseName(Database);
@@ -108,7 +108,7 @@ CDemoApp::Run(void)
 
         // creating table
         {
-            auto_ptr<CDB_LangCmd>
+            unique_ptr<CDB_LangCmd>
                 lcmd(con->LangCmd("create temporary table tmp_t1("
                                   "a int,"
                                   "b datetime,"
@@ -122,7 +122,7 @@ CDemoApp::Run(void)
         }
 
         int nBlobSize = 0xffff;
-        auto_ptr<char> buff( new char[nBlobSize]);
+        unique_ptr<char> buff( new char[nBlobSize]);
 
         // inserting data
         {
@@ -130,24 +130,24 @@ CDemoApp::Run(void)
             for( int i = 0; i < nBlobSize; i++)
                 *(p++) = i;
 
-            auto_ptr<CDB_LangCmd> tmp_cmd(con->LangCmd("tmp"));
+            unique_ptr<CDB_LangCmd> tmp_cmd(con->LangCmd("tmp"));
 
             string sql = "insert into tmp_t1 values";
             sql += "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '";
             sql += reinterpret_cast<CMySQL_LangCmd*>(tmp_cmd.get())->EscapeString( buff.get(), nBlobSize);
             sql += ")";
 
-            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
             lcmd->Send();
             cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
         }
 
         // selecting data
         {
-            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
+            unique_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
             lcmd->Send();
             while (lcmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> r(lcmd->Result());
+                unique_ptr<CDB_Result> r(lcmd->Result());
                 while (r->Fetch()) {
                     CDB_Int a;
                     CDB_DateTime b;
@@ -163,7 +163,7 @@ CDemoApp::Run(void)
                     r->GetItem(&e);
                     r->GetItem(&blob);
 
-                    auto_ptr<char> buff2( new char[blob.Size()]);
+                    unique_ptr<char> buff2( new char[blob.Size()]);
                     blob.Read( buff2.get(), blob.Size());
                     int correct = memcmp( buff2.get(), buff.get(), nBlobSize);
 
@@ -181,10 +181,10 @@ CDemoApp::Run(void)
 
         // selecting data as strings
         {
-            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
+            unique_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
             lcmd->Send();
             while (lcmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> r(lcmd->Result());
+                unique_ptr<CDB_Result> r(lcmd->Result());
                 for(unsigned i = 0; i < r->NofItems(); ++i)
                     cout << "[" << r->ItemName(i) << "]";
                 cout << endl;

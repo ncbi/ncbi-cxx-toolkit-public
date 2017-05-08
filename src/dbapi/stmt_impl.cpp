@@ -364,7 +364,7 @@ void CStatement::PurgeResults()
     while (HasMoreResults())
     {
         if (HasRows()) {
-            auto_ptr<IResultSet> rs( GetResultSet() );
+            unique_ptr<IResultSet> rs( GetResultSet() );
             if (rs.get()) {
                 // Is it necessary???
                 while (rs->Next()) {

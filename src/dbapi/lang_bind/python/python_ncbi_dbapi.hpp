@@ -235,8 +235,8 @@ private:
 
 private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
-    auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    auto_ptr<IResultSet>    m_RS;
+    unique_ptr<IStatement>  m_Stmt;     //< DBAPI SQL statement interface
+    unique_ptr<IResultSet>  m_RS;
     CStmtStr                m_StmtStr;
     bool                    m_Executed;
     int                     m_ResultStatus;
@@ -295,8 +295,8 @@ private:
 
 private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
-    auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    auto_ptr<CResultSetProxy>       m_RSProxy;
+    unique_ptr<ICallableStatement>  m_Stmt;     //< DBAPI SQL statement interface
+    unique_ptr<CResultSetProxy>     m_RSProxy;
     CStmtStr                        m_StmtStr;
     bool                            m_Executed;
     int                             m_ResultStatus;
@@ -573,9 +573,9 @@ private:
 
 private:
     CTransaction*           m_Transaction;
-    auto_ptr<IConnection>   m_DMLConnection;  //< Transaction has only one DML connection
+    unique_ptr<IConnection> m_DMLConnection;  //< Transaction has only one DML connection
     size_t                  m_NumOfActive;
-    auto_ptr<IStatement>    m_LocalStmt;      //< DBAPI SQL statement interface
+    unique_ptr<IStatement>  m_LocalStmt;      //< DBAPI SQL statement interface
     bool                    m_Started;
     const ETransType        m_TransType;
 };

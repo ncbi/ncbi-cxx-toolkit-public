@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
 {
     try {
-        auto_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+        unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
 
         query->SetSql("select 1");
         // called too soon (before Execute)
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
 BOOST_AUTO_TEST_CASE(Test_FieldCopying)
 {
     try {
-        auto_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+        unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
         query->SetSql("DELETE FROM " + GetTableName());
         query->Execute();
         query->RequireRowCount(0);

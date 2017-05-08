@@ -90,7 +90,7 @@ private:
     CDB_SendDataCmd *m_dataCmd;
 	bool m_destroy;
 	CDB_Connection *m_cdbConn;
-    auto_ptr<CAutoTrans> m_AutoTrans;
+    unique_ptr<CAutoTrans> m_AutoTrans;
     size_t m_BytesNeeded;
 };
 

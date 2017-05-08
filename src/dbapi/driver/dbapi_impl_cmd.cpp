@@ -155,7 +155,7 @@ CBaseCmd::DumpResults(void)
 {
     // Experimental ...
     while(HasMoreResults()) {
-        auto_ptr<CDB_Result> dbres(Result());
+        unique_ptr<CDB_Result> dbres(Result());
 
         if( dbres.get() ) {
             CDB_ResultProcessor* res_proc = GetConnImpl().GetResultProcessor();
@@ -341,7 +341,7 @@ CSendDataCmd::DumpResults(void)
 {
     // Experimental ...
     while(HasMoreResults()) {
-        auto_ptr<CDB_Result> dbres(Result());
+        unique_ptr<CDB_Result> dbres(Result());
 
         if( dbres.get() ) {
             CDB_ResultProcessor* res_proc = GetConnImpl().GetResultProcessor();

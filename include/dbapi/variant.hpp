@@ -237,7 +237,7 @@ private:
     void x_Inapplicable_Method(const char* method) const;
 
     class CDB_Object* m_data;
-    mutable auto_ptr<I_BlobDescriptor> m_descr;
+    mutable unique_ptr<I_BlobDescriptor> m_descr;
 };
 
 bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);

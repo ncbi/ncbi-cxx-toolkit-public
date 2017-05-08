@@ -366,7 +366,7 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
     m_rs->ReadItem(0, 0);
 
 
-    auto_ptr<I_BlobDescriptor> desc(m_rs->GetBlobDescriptor());
+    unique_ptr<I_BlobDescriptor> desc(m_rs->GetBlobDescriptor());
     if(desc.get() == NULL) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;

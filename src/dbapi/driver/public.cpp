@@ -1260,7 +1260,7 @@ CAutoTrans::CAutoTrans(const CSubject& subject)
     if (m_TranCount > 1) {
         m_SavepointName = "ncbi_dbapi_txn_"
             + NStr::NumericToString(reinterpret_cast<intptr_t>(this), 0, 16);
-        auto_ptr<CDB_LangCmd> auto_stmt
+        unique_ptr<CDB_LangCmd> auto_stmt
             (m_Conn.LangCmd("SAVE TRANSACTION " + m_SavepointName));
         auto_stmt->Send();
         auto_stmt->DumpResults();
@@ -1300,7 +1300,7 @@ void
 CAutoTrans::BeginTransaction(void)
 {
     m_Conn.m_HasTransaction = true;
-    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("BEGIN TRANSACTION"));
+    unique_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("BEGIN TRANSACTION"));
     auto_stmt->Send();
     auto_stmt->DumpResults();
 }
@@ -1309,7 +1309,7 @@ CAutoTrans::BeginTransaction(void)
 void
 CAutoTrans::Commit(void)
 {
-    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("COMMIT"));
+    unique_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("COMMIT"));
     auto_stmt->Send();
     auto_stmt->DumpResults();
 }
@@ -1318,7 +1318,7 @@ CAutoTrans::Commit(void)
 void
 CAutoTrans::Rollback(void)
 {
-    auto_ptr<CDB_LangCmd> auto_stmt
+    unique_ptr<CDB_LangCmd> auto_stmt
         (m_Conn.LangCmd("ROLLBACK TRANSACTION " + m_SavepointName));
     auto_stmt->Send();
     auto_stmt->DumpResults();
@@ -1336,11 +1336,11 @@ int
 CAutoTrans::GetTranCount(void)
 {
     int result = 0;
-    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("SELECT @@trancount as tc"));
+    unique_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("SELECT @@trancount as tc"));
 
     if (auto_stmt->Send()) {
         while(auto_stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+            unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;

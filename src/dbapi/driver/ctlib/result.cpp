@@ -837,7 +837,7 @@ I_BlobDescriptor* CTL_RowResult::GetBlobDescriptor(int item_num)
     if (is_null)
         m_NullValue[item_num] = eIsNull;
 
-    auto_ptr<CTL_BlobDescriptor> desc(new CTL_BlobDescriptor);
+    unique_ptr<CTL_BlobDescriptor> desc(new CTL_BlobDescriptor);
     desc->m_Desc.textptrlen = 0;
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
@@ -1153,7 +1153,7 @@ bool CTL_CursorResultExpl::Fetch()
 
         // Looks like DumpResult() to me ...
         while (GetCmd().HasMoreResults()) {
-            auto_ptr<CDB_Result> res( GetCmd().Result() );
+            unique_ptr<CDB_Result> res( GetCmd().Result() );
             if (res.get()) {
                 while (res->Fetch())
                     continue;

@@ -57,17 +57,17 @@ CDemoeApp::Run(void)
 
         CODBCContext my_context(SQL_OV_ODBC3, false);
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("msdev1",
-                                                        "DBAPI_test",
-                                                        "allowed",
-                                                        0));
+        unique_ptr<CDB_Connection> con(my_context.Connect("msdev1",
+                                                          "DBAPI_test",
+                                                          "allowed",
+                                                          0));
 
-        auto_ptr<CDB_LangCmd> lcmd
+        unique_ptr<CDB_LangCmd> lcmd
             (con->LangCmd("select name, crdate from sysobjects"));
         lcmd->Send();
 
         while (lcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(lcmd->Result());
+            unique_ptr<CDB_Result> r(lcmd->Result());
             if (!r.get())
                 continue;
 

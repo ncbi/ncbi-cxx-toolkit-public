@@ -64,7 +64,7 @@ CTestTransaction::CTestTransaction(
     , m_TransBehavior( tb )
 {
     if ( m_TransBehavior != eNoTrans ) {
-        auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
         stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
     }
 }
@@ -73,10 +73,10 @@ CTestTransaction::~CTestTransaction(void)
 {
     try {
         if ( m_TransBehavior == eTransCommit ) {
-            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
             stmt->ExecuteUpdate( "COMMIT TRANSACTION" );
         } else if ( m_TransBehavior == eTransRollback ) {
-            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> stmt( GetConnection().GetStatement() );
             stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
         }
     }
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
     string str_value;
 
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
         char buff[128];
         size_t read_bytes = 0;
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
     // string table_name("DBAPI_Sample..test_unicode_table");
     const bool isValueInUTF8 = true;
 
-    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     string str_ger("Au\xdf" "erdem k\xf6nnen Sie einzelne Eintr\xe4ge aus "
                    "Ihrem Suchprotokoll entfernen");
 
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             // Read ...
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 
 ///////////////////////////////////////////////////////////////////////////////
 size_t
-GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+GetNumOfRecords(const unique_ptr<IStatement>& auto_stmt,
                 const string& table_name)
 {
     size_t cur_rec_num = 0;
@@ -301,7 +301,7 @@ GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     auto_stmt->SendSql( "select count(*) FROM " + table_name );
     while (auto_stmt->HasMoreResults()) {
         if (auto_stmt->HasRows()) {
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             if (rs.get() != NULL) {
                 while (rs->Next()) {
                     cur_rec_num = rs->GetVariant(1).GetInt4();
@@ -314,13 +314,13 @@ GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
 }
 
 size_t
-GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
+GetNumOfRecords(const unique_ptr<ICallableStatement>& auto_stmt)
 {
     size_t rec_num = 0;
 
     BOOST_CHECK(auto_stmt->HasMoreResults());
     BOOST_CHECK(auto_stmt->HasRows());
-    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
     if (rs.get() != NULL) {
 
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
     // string table_name("DBAPI_Sample..test_unicode_table");
 
     string sql;
-    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     string str_ger("Au\xdf" "erdem k\xf6nnen Sie einzelne Eintr\xe4ge aus "
                    "Ihrem Suchprotokoll entfernen");
 
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             // Read utf8_str_utf8 ...
@@ -461,7 +461,7 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
     string sql;
     const string small_msg("%");
     const string test_msg(300, 'A');
-    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
     try {
         // Clean table ...
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
         // Retrieve data ...
         {
             enum { num_of_tests = 2 };
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
             sql += " ORDER BY int_field";
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
 
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
 
             for(int i = 0; i < num_of_tests; ++i) {
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
     CVariant value(eDB_VarBinary, 16);
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialization ...
         {
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     while ( rs->Next() ) {
                         value = rs->GetVariant(2);
                         string str_value = value.GetString();
@@ -598,7 +598,7 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
             auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     while ( rs->Next() ) {
                         const CVariant& cur_value = rs->GetVariant(2);
 
@@ -619,7 +619,7 @@ DumpResults(IStatement* const stmt)
 {
     while ( stmt->HasMoreResults() ) {
         if ( stmt->HasRows() ) {
-            auto_ptr<IResultSet> rs( stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( stmt->GetResultSet() );
         }
     }
 }
@@ -658,7 +658,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(server_name, auto_ex->GetServerName());
             BOOST_CHECK_EQUAL(user_name, auto_ex->GetUserName());
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eDS, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
@@ -713,7 +713,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(proc_line, ex.ProcLine());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
@@ -743,7 +743,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(batch_line, ex.BatchLine());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
@@ -762,7 +762,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
             BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
@@ -782,7 +782,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eClient, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
@@ -824,7 +824,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
 
             //
-            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            unique_ptr<CDB_Exception> auto_ex(ex.Clone());
 
             BOOST_CHECK_EQUAL(0, auto_ex->GetDBErrCode());
             BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
@@ -993,7 +993,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
             CDB_Int       db_uid;
             CDB_Int       db_score;
 
-            auto_ptr<CDB_RPCCmd> pRpc( NULL );
+            unique_ptr<CDB_RPCCmd> pRpc( nullptr );
 
     //         pRpc.reset( m_Connect->RPC("FindAccount",20) );
             pRpc.reset( m_Connect->RPC("FindAccountMatchAll") );
@@ -1028,7 +1028,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
                 if( pRpc->Send() ) {
                     // Save results
                     while ( !bFetchErr && pRpc->HasMoreResults() ) {
-                        auto_ptr<CDB_Result> pRes( pRpc->Result() );
+                        unique_ptr<CDB_Result> pRes( pRpc->Result() );
                         if( !pRes.get() ) {
                             continue;
                         }
@@ -1067,7 +1067,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
             BOOST_CHECK_EQUAL( bFetchErr, false );
         }
 
-        auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
+        unique_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
         BOOST_CHECK( auto_conn.get() != NULL );
 
         auto_conn->Connect(
@@ -1082,9 +1082,9 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
     //         int sid = 0;
     //
     //         {
-    //             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+    //             unique_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
     //
-    //             auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
+    //             unique_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
     //             BOOST_CHECK( rs.get() != NULL );
     //             BOOST_CHECK( rs->Next() );
     //             sid = rs->GetVariant(1).GetInt4();
@@ -1093,7 +1093,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
     //
     //         {
     //             int num = 0;
-    //             auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
+    //             unique_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
     //
     //             auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
     //             auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
@@ -1104,7 +1104,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
     //             BOOST_CHECK(auto_stmt->HasMoreResults());
     //             BOOST_CHECK(auto_stmt->HasMoreResults());
     //             BOOST_CHECK(auto_stmt->HasRows());
-    //             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //             unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
     //             BOOST_CHECK(rs.get() != NULL);
     //
     //             while (rs->Next()) {
@@ -1124,7 +1124,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
 
         //
         {
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 auto_conn->GetCallableStatement("FindAccount")
                 );
 
@@ -1160,7 +1160,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
 
         //
         {
-            auto_ptr<ICallableStatement> auto_stmt(
+            unique_ptr<ICallableStatement> auto_stmt(
                 auto_conn->GetCallableStatement("FindAccountMatchAll")
                 );
 
@@ -1213,7 +1213,7 @@ BOOST_AUTO_TEST_CASE(Test_Truncation)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+        unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // There should be no problems with TDS version 7, 8, and 12.5
         {
@@ -1222,7 +1222,7 @@ BOOST_AUTO_TEST_CASE(Test_Truncation)
             auto_stmt->SendSql( sql );
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
             const CVariant& str_field = rs->GetVariant(1);
@@ -1546,13 +1546,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(bit, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1569,13 +1569,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(tinyint, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1592,13 +1592,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(smallint, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1615,13 +1615,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(int, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1641,13 +1641,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
             {
                 sql = "select Convert(numeric(38, 0), 1)";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
                 BOOST_CHECK( auto_stmt.get() != NULL );
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while (auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                         continue;
@@ -1664,13 +1664,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
             {
                 sql = "select Convert(numeric(18, 2), 2843113322)";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
                 BOOST_CHECK( auto_stmt.get() != NULL );
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while (auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                         continue;
@@ -1689,13 +1689,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(decimal(38, 0), 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1712,13 +1712,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(float(4), 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1735,13 +1735,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(double precision, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1758,13 +1758,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(real, 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1782,13 +1782,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(smalldatetime, 'January 1, 1900')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1805,13 +1805,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(datetime, 'January 1, 1753')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1829,13 +1829,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(char(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1852,13 +1852,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(varchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1875,13 +1875,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(nchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1898,13 +1898,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(nvarchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1921,13 +1921,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(binary(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1944,13 +1944,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(varbinary(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1967,13 +1967,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(text, '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -1990,13 +1990,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select Convert(image, '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2016,13 +2016,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select 1, 2.0, '3'";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2040,13 +2040,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select 1, 2.0, '3'";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2066,13 +2066,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         {
             sql = "select 1, 2.0, '3'";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2095,13 +2095,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 template <typename T>
 void DoTest_CDBResultConvertSafe(const string& sql, const T& v)
 {
-    auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+    unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
     BOOST_CHECK( auto_stmt.get() != NULL );
     bool rc = auto_stmt->Send();
     BOOST_CHECK( rc );
 
     while (auto_stmt->HasMoreResults()) {
-        auto_ptr<CDB_Result> rs(auto_stmt->Result());
+        unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
         if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
             continue;
@@ -2136,13 +2136,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
             {
                 sql = "select Convert(numeric(38, 0), 1)";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
                 BOOST_CHECK( auto_stmt.get() != NULL );
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while (auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                         continue;
@@ -2159,13 +2159,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
             {
                 sql = "select Convert(numeric(18, 2), 2843113322)";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
                 BOOST_CHECK( auto_stmt.get() != NULL );
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
 
                 while (auto_stmt->HasMoreResults()) {
-                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                    unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                     if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                         continue;
@@ -2183,13 +2183,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(decimal(38, 0), 1)";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2208,13 +2208,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(smalldatetime, 'January 1, 1900')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2231,13 +2231,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(datetime, 'January 1, 1753')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2255,13 +2255,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(char(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2278,13 +2278,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(varchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2301,13 +2301,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(nchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2324,13 +2324,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(nvarchar(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2348,13 +2348,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(binary(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2377,13 +2377,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(varbinary(32), '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2401,13 +2401,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(text, '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2424,13 +2424,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select Convert(image, '12345')";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2451,13 +2451,13 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         {
             sql = "select 1, 2.0, '3'";
 
-            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            unique_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
             BOOST_CHECK( auto_stmt.get() != NULL );
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
 
             while (auto_stmt->HasMoreResults()) {
-                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+                unique_ptr<CDB_Result> rs(auto_stmt->Result());
 
                 if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
                     continue;
@@ -2487,7 +2487,7 @@ void DoTest_CDBCmdConvertSafe(const string& sql, const T& v)
 
     // By reference ...
     {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
         T value = ConvertSafe(*cmd);
         BOOST_CHECK_EQUAL(value, v);
@@ -2963,7 +2963,7 @@ void DoTest_CDBCmdConvert(const string& sql, const T& v)
 
     // By reference ...
     {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
         T value = Convert(*cmd);
         BOOST_CHECK_EQUAL(value, v);
@@ -3083,7 +3083,7 @@ void DoTest_DbapiConvertSafe(const string& sql, const T& v)
 
     // By reference ...
     {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
         T value = ConvertSafe(*cmd);
         BOOST_CHECK_EQUAL(value, v);

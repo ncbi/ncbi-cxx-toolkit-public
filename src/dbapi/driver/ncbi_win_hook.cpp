@@ -113,7 +113,7 @@ namespace NWinHook
         }
 
     protected:
-        auto_ptr<CExeModuleInstance> m_pProcess;
+        unique_ptr<CExeModuleInstance> m_pProcess;
     };
 
     ////////////////////////////////////////////////////////////////////////////

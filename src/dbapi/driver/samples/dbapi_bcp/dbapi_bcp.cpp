@@ -87,7 +87,7 @@ CDbapiBcpApp::RunSample(void)
     int count=0;
 
     try {
-        auto_ptr<CDB_LangCmd> set_cmd;
+        unique_ptr<CDB_LangCmd> set_cmd;
 
         // Create table in database for the test
 
@@ -98,11 +98,11 @@ CDbapiBcpApp::RunSample(void)
         set_cmd->Send();
 
         while(set_cmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(set_cmd->Result());
+            unique_ptr<CDB_Result> r(set_cmd->Result());
         }
 
         //"Bulk copy in" command
-        auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(GetTableName()));
+        unique_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(GetTableName()));
 
         CDB_Int int_val;
         CDB_Float fl_val;

@@ -425,7 +425,7 @@ private:
     impl::CResult*   m_Res;
     unsigned int     m_Status;
 
-    auto_ptr<CDBParams> m_InParams;
+    unique_ptr<CDBParams> m_InParams;
 };
 
 

@@ -269,15 +269,15 @@ CDbapiTestSpeedApp::RunSample(void)
     }
 
     try {
-        auto_ptr<CDB_LangCmd> set_cmd;
-        auto_ptr<CDB_LangCmd> ins_cmd;
-        auto_ptr<CDB_BCPInCmd> bcp;
+        unique_ptr<CDB_LangCmd> set_cmd;
+        unique_ptr<CDB_LangCmd> ins_cmd;
+        unique_ptr<CDB_BCPInCmd> bcp;
 
         string cmd_str("set textsize 1024000");
         set_cmd.reset(GetConnection().LangCmd(cmd_str));
         set_cmd->Send();
         while ( set_cmd->HasMoreResults() ) {
-            auto_ptr<CDB_Result> r(set_cmd->Result());
+            unique_ptr<CDB_Result> r(set_cmd->Result());
         }
 
         // Create table, insert data
@@ -402,7 +402,7 @@ CDbapiTestSpeedApp::RunSample(void)
                 } else {
                     ins_cmd->Send();
                     while ( ins_cmd->HasMoreResults() ) {
-                        auto_ptr<CDB_Result> r(ins_cmd->Result());
+                        unique_ptr<CDB_Result> r(ins_cmd->Result());
                     }
                 }
             }
@@ -451,12 +451,12 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
 
     string query = "select date_val,str_val,txt_val from ";
     query += table_name;
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
     lcmd->Send();
 
     //CTime fileTime;
     while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if ( !r.get() ) continue;
 
         if ( r->ResultType() == eDB_RowResult ) {
@@ -530,11 +530,11 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
     string query = "select int_val,fl_val,date_val,str_val,txt_val from ";
     query += table_name;
 
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
     lcmd->Send();
 
     while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if ( !r.get() ) continue;
 
         if ( r->ResultType() == eDB_RowResult ) {

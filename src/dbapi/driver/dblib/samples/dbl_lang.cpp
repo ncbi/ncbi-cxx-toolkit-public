@@ -57,17 +57,17 @@ CDemoApp::Run(void)
 
         CDBLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV3",
-                                                        "DBAPI_test",
-                                                        "allowed",
-                                                        0));
+        unique_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV3",
+                                                          "DBAPI_test",
+                                                          "allowed",
+                                                          0));
 
-        auto_ptr<CDB_LangCmd> lcmd
+        unique_ptr<CDB_LangCmd> lcmd
             (con->LangCmd("select name, crdate from sysdatabases"));
         lcmd->Send();
 
         while (lcmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(lcmd->Result());
+            unique_ptr<CDB_Result> r(lcmd->Result());
             if (!r.get())
                 continue;
 

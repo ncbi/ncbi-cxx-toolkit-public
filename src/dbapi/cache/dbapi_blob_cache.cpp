@@ -284,7 +284,7 @@ public:
     }
 
 private:
-    auto_ptr<fstream>     m_TmpFile;
+    unique_ptr<fstream>   m_TmpFile;
     string                m_TempDir;
     string                m_TempPrefix;
 
@@ -311,7 +311,7 @@ public:
                       const string&            subkey,
                       size_t                   buffer_size = kWriterBufferSize)
     : m_Cache(cache),
-      m_TmpFile(0),
+      m_TmpFile(nullptr),
       m_GoodStateFlag(true),
       m_Flushed(false),
       m_Conn(cache->GetConnection()),
@@ -527,7 +527,7 @@ private:
 
 private:
     CDBAPI_Cache*         m_Cache;
-    auto_ptr<fstream>     m_TmpFile;
+    unique_ptr<fstream>   m_TmpFile;
     string                m_TempDir;
     string                m_TempPrefix;
     bool                  m_GoodStateFlag; //!< Stream is in the good state
@@ -619,7 +619,7 @@ void CDBAPI_Cache::Open(const string& driver,
 {
     CDriverManager &db_drv_man = CDriverManager::GetInstance();
     IDataSource* ds = db_drv_man.CreateDs(driver);
-    auto_ptr<IConnection> conn(ds->CreateConnection());  // TODO: Add ownership flag
+    unique_ptr<IConnection> conn(ds->CreateConnection());  // TODO: Add ownership flag
     if (conn.get() == 0) {
         NCBI_THROW(CDBAPI_ICacheException, eConnectionError,
                 "Cannot create connection");
@@ -845,7 +845,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
         }
     }
 
-    auto_ptr<CDBAPI_CacheIReader> rdr;
+    unique_ptr<CDBAPI_CacheIReader> rdr;
     try {
         rdr.reset(new CDBAPI_CacheIReader(m_Conn,
                                           key, version, subkey,
@@ -906,7 +906,7 @@ IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
-    auto_ptr<CDBAPI_CacheIWriter> wrt(
+    unique_ptr<CDBAPI_CacheIWriter> wrt(
         new CDBAPI_CacheIWriter(this, key, version, subkey, GetMemBufferSize()));
     wrt->SetTemps(m_TempDir, m_TempPrefix);
 

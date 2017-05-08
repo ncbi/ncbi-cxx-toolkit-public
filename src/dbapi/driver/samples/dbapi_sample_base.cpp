@@ -77,7 +77,7 @@ const char*  file_name[] = {
 
 CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     : CNcbiApplication(),
-      m_DriverContext(0),
+      m_DriverContext(nullptr),
       m_UseSampleDatabase(sd),
       m_UseSvcMapper(false)
 {
@@ -145,7 +145,7 @@ void
 CDbapiSampleApp::Init()
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -300,7 +300,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
                                   bool                             reusable,
                                   const string&                    pool_name)
 {
-    auto_ptr<CDB_Connection> conn;
+    unique_ptr<CDB_Connection> conn;
     I_DriverContext& dc(GetDriverContext());
 
     if (validator) {
@@ -328,11 +328,11 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
     // Print database name
     string sql("select @@servername");
 
-    auto_ptr<CDB_LangCmd> stmt(conn->LangCmd(sql));
+    unique_ptr<CDB_LangCmd> stmt(conn->LangCmd(sql));
     stmt->Send();
 
     while ( stmt->HasMoreResults() ) {
-        auto_ptr<CDB_Result> result(stmt->Result());
+        unique_ptr<CDB_Result> result(stmt->Result());
         if ( !result.get() )
             continue;
 
@@ -361,7 +361,7 @@ CDbapiSampleApp::DeleteTable(const string& table_name)
 
         // Drop the table.
         sql = "DROP TABLE " + table_name;
-        auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
+        unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
         lcmd->Send();
         lcmd->DumpResults();
     } catch ( const CDB_Exception& ) {
@@ -377,12 +377,12 @@ CDbapiSampleApp::DeleteLostTables(void)
     table_name_list_t table_name_list;
     table_name_list_t::const_iterator citer;
 
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
     lcmd->Send();
 
     while ( lcmd->HasMoreResults() ) {
 
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if ( !r.get() ) continue;
         if ( r->ResultType() == eDB_RowResult ) {
 
@@ -425,11 +425,11 @@ CDbapiSampleApp::DeleteLostTables(void)
 void
 CDbapiSampleApp::ShowResults (const string& query)
 {
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
     lcmd->Send();
 
     while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if ( !r.get() )
             continue;
 
@@ -524,7 +524,7 @@ CDbapiSampleApp::CreateTable (const string& table_name)
     sql += table_name + "' AND type = 'U') begin ";
     sql += " DROP TABLE " + table_name + " end ";
 
-    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
+    unique_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
     lcmd->Send();
     lcmd->DumpResults();
 

@@ -162,12 +162,12 @@ bool CTestErrHandler::HandleAll(const TExceptions& exceptions)
 static void
 s_ES_01_Internal(IConnection& conn)
 {
-    auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
+    unique_ptr<IStatement> auto_stmt( conn.GetStatement() );
 
     auto_stmt->SendSql( "select name from wrong table" );
     while( auto_stmt->HasMoreResults() ) {
         if( auto_stmt->HasRows() ) {
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
             while( rs->Next() ) {
                 // int col1 = rs->GetVariant(1).GetInt4();
@@ -190,9 +190,9 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
         // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
         // to any particular connection) error messages.
         {
-            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+            unique_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
-            auto_ptr<IConnection> local_conn( GetDS().CreateConnection() );
+            unique_ptr<IConnection> local_conn( GetDS().CreateConnection() );
             local_conn->Connect(GetArgs().GetConnParams());
 
             drv_context->PushCntxMsgHandler( drv_err_handler.get() );
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // Connection process should be affected ...
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
+                unique_ptr<IConnection> conn( GetDS().CreateConnection() );
 
                 try {
                     conn->Connect(
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // New connection should not be affected ...
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
+                unique_ptr<IConnection> conn( GetDS().CreateConnection() );
                 conn->Connect(GetArgs().GetConnParams());
 
                 // Reinit the errot handler because it can be affected during connection.
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
 
             // Push a message handler into a connection ...
             {
-                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                unique_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // after pushing a message handler into another connection
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
+                unique_ptr<IConnection> conn( GetDS().CreateConnection() );
                 conn->Connect(GetArgs().GetConnParams());
 
                 // Reinit the errot handler because it can be affected during connection.
@@ -303,10 +303,10 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
         // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
         // handlers which are inherited by all newly created connections.
         {
-            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+            unique_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
 
-            auto_ptr<IConnection> local_conn( GetDS().CreateConnection() );
+            unique_ptr<IConnection> local_conn( GetDS().CreateConnection() );
             local_conn->Connect(GetArgs().GetConnParams());
 
             drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // Push a message handler into a connection ...
             // This is supposed to be okay.
             {
-                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                unique_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
 
             ////////////////////////////////////////////////////////////////////////
             // Create a new connection.
-            auto_ptr<IConnection> new_conn( GetDS().CreateConnection() );
+            unique_ptr<IConnection> new_conn( GetDS().CreateConnection() );
             new_conn->Connect(GetArgs().GetConnParams());
 
             // New connection should be affected ...
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // Push a message handler into a connection ...
             // This is supposed to be okay.
             {
-                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                unique_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
 
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
             // after pushing a message handler into another connection
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
+                unique_ptr<IConnection> conn( GetDS().CreateConnection() );
                 conn->Connect(GetArgs().GetConnParams());
 
                 try {
@@ -452,10 +452,10 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
     // Context. eNoOwnership ...
     {
-        // auto_ptr
+        // unique_ptr
         // Use it once ...
         {
-            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+            unique_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
             // Add handler ...
             drv_context->PushCntxMsgHandler(drv_err_handler.get());
@@ -463,10 +463,10 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
             drv_context->PopCntxMsgHandler(drv_err_handler.get());
         }
 
-        // auto_ptr
+        // unique_ptr
         // Use it twice ...
         {
-            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+            unique_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
             // Add handler ...
             drv_context->PushCntxMsgHandler(drv_err_handler.get());
@@ -503,15 +503,15 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
     // Connection. eNoOwnership ...
     {
-        // auto_ptr
+        // unique_ptr
         {
-            auto_ptr<CTestErrHandler> auto_msg_handler(new CTestErrHandler());
+            unique_ptr<CTestErrHandler> auto_msg_handler(new CTestErrHandler());
 
             // One connection ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
-                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                unique_ptr<IConnection> new_conn(GetDS().CreateConnection());
+                unique_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn->Connect(GetArgs().GetConnParams());
 
@@ -524,9 +524,9 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
             // Two connections ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
-                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                unique_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn2(GetDS().CreateConnection());
+                unique_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn1->Connect(GetArgs().GetConnParams());
                 new_conn2->Connect(GetArgs().GetConnParams());
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // One connection ...
             {
-                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn1(GetDS().CreateConnection());
 
                 conn1->Connect(GetArgs().GetConnParams());
 
@@ -553,8 +553,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn2(GetDS().CreateConnection());
 
                 conn1->Connect(GetArgs().GetConnParams());
                 conn2->Connect(GetArgs().GetConnParams());
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
             // One connection ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn->Connect(GetArgs().GetConnParams());
@@ -589,8 +589,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
             // Two connections ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn1->Connect(GetArgs().GetConnParams());
@@ -606,7 +606,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // One connection ...
             {
-                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn1(GetDS().CreateConnection());
 
                 conn1->Connect(GetArgs().GetConnParams());
 
@@ -618,8 +618,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> conn2(GetDS().CreateConnection());
 
                 conn1->Connect(GetArgs().GetConnParams());
                 conn2->Connect(GetArgs().GetConnParams());
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
         {
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CTestErrHandler* msg_handler = new CTestErrHandler();
 
                 new_conn->Connect(GetArgs().GetConnParams());
@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
             // Raw pointer ...
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CTestErrHandler* msg_handler = new CTestErrHandler();
 
                 new_conn1->Connect(GetArgs().GetConnParams());
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
         {
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn->Connect(GetArgs().GetConnParams());
@@ -692,8 +692,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 new_conn1->Connect(GetArgs().GetConnParams());
@@ -710,7 +710,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn(GetDS().CreateConnection());
 
                 new_conn->Connect(GetArgs().GetConnParams());
 
@@ -723,8 +723,8 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
-                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                unique_ptr<IConnection> new_conn2(GetDS().CreateConnection());
 
                 new_conn1->Connect(GetArgs().GetConnParams());
                 new_conn2->Connect(GetArgs().GetConnParams());
@@ -787,7 +787,7 @@ BOOST_AUTO_TEST_CASE(Test_Exception_Safety)
     // Second test ...
     // Restore after invalid statement ...
     try {
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        unique_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         if (table_name[0] == '#') {
             sql  = " CREATE TABLE " + table_name + "( \n";
@@ -824,7 +824,7 @@ BOOST_AUTO_TEST_CASE(Test_Exception_Safety)
             auto_stmt->SendSql("SELECT max(id) FROM " + table_name);
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
                     switch( rs->GetResultType() ) {
                     case eDB_RowResult:
@@ -859,7 +859,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
         int msg_num = 0;
         CDB_Exception* dbex = NULL;
 
-        auto_ptr<IConnection> local_conn(
+        unique_ptr<IConnection> local_conn(
             GetDS().CreateConnection( CONN_OWNERSHIP )
             );
         local_conn->Connect(GetArgs().GetConnParams());
@@ -946,7 +946,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
 
     // Second test ...
     {
-        auto_ptr<IConnection> local_conn(
+        unique_ptr<IConnection> local_conn(
             GetDS().CreateConnection( CONN_OWNERSHIP )
             );
         local_conn->Connect(GetArgs().GetConnParams());
@@ -1008,13 +1008,13 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx2)
     drv_context->PushCntxMsgHandler(handler);
     drv_context->PushDefConnMsgHandler(handler);
 
-    auto_ptr<IConnection> conn(GetDS().CreateConnection());
+    unique_ptr<IConnection> conn(GetDS().CreateConnection());
     conn->Connect("anyone","allowed", "REFTRACK_DEV", "x_locus");
 
     // conn->MsgToEx(true);
     conn->MsgToEx(false);
 
-    auto_ptr<IStatement> stmt(conn->GetStatement());
+    unique_ptr<IStatement> stmt(conn->GetStatement());
 
     try {
         // string sql = " EXEC locusXref..undelete_locus_id @locus_id = 135896, @login='guba'";

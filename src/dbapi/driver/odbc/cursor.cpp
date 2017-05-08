@@ -137,7 +137,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
     try {
         string buff = upd_query + " where current of " + GetCmdName();
 
-        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        unique_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
@@ -164,7 +164,7 @@ bool CODBC_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
 {
     CDB_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
     if(desc == 0) return false;
-    auto_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
+    unique_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
 
     return GetConnection().SendData(*desc, data, log_it);
 }
@@ -175,7 +175,7 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
 {
     CDB_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
     if(desc == 0) return 0;
-    auto_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
+    unique_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
 
     return GetConnection().SendDataCmd((I_BlobDescriptor&)*desc, size, log_it,
                                        dump_results);
@@ -189,7 +189,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
     try {
         string buff = "delete " + table_name + " where current of " + GetCmdName();
 
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
@@ -275,7 +275,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
     SetCursorDeclared();
 
     try {
-        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + GetCmdName()));
+        unique_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + GetCmdName()));
 
         stmt->Send();
         stmt->DumpResults();
@@ -304,7 +304,7 @@ bool CODBC_CursorCmdExpl::Update(const string&, const string& upd_query)
 
         string buff = upd_query + " where current of " + GetCmdName();
 
-        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        unique_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
@@ -332,7 +332,7 @@ bool CODBC_CursorCmdExpl::UpdateBlob(unsigned int item_num, CDB_Stream& data,
 {
     CDB_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
     if(desc == 0) return false;
-    auto_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
+    unique_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
 
     m_LCmd->Cancel();
 
@@ -345,7 +345,7 @@ CDB_SendDataCmd* CODBC_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t 
 {
     CDB_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
     if(desc == 0) return 0;
-    auto_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
+    unique_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
 
     m_LCmd->Cancel();
 
@@ -363,7 +363,7 @@ bool CODBC_CursorCmdExpl::Delete(const string& table_name)
 
         string buff = "delete " + table_name + " where current of " + GetCmdName();
 
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        unique_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
@@ -386,7 +386,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
     if (CursorIsOpen()) {
         string buff = "close " + GetCmdName();
         try {
-            auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
+            unique_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
 
             cmd->Send();
             cmd->DumpResults();
@@ -402,7 +402,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
         string buff = "deallocate " + GetCmdName();
 
         try {
-            auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
+            unique_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
 
             cmd->Send();
             cmd->DumpResults();

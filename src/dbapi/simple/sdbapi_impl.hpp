@@ -376,8 +376,8 @@ private:
     const CDB_Exception::SContext& x_GetContext(void) const;
 
     CRef<CDatabaseImpl> m_DBImpl;
-    auto_ptr<I_BlobDescriptor> m_Descr;
-    auto_ptr<CWStream> m_OStream;
+    unique_ptr<I_BlobDescriptor> m_Descr;
+    unique_ptr<CWStream> m_OStream;
 };
 
 END_NCBI_SCOPE

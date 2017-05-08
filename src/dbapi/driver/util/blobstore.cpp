@@ -210,9 +210,9 @@ CBlobRetriever::CBlobRetriever(I_DriverContext* pCntxt,
 bool CBlobRetriever::Dump(ostream& s, ECompressMethod cm)
 {
     if(m_IsGood) {
-        auto_ptr<CBlobReader> bReader(new CBlobReader(m_Res));
-        auto_ptr<CRStream> iStream(new CRStream(bReader.get()));
-        auto_ptr<CCompressionStreamProcessor> zProc;
+        unique_ptr<CBlobReader> bReader(new CBlobReader(m_Res));
+        unique_ptr<CRStream> iStream(new CRStream(bReader.get()));
+        unique_ptr<CCompressionStreamProcessor> zProc;
 
         switch(cm) {
         case eZLib:
@@ -228,7 +228,7 @@ bool CBlobRetriever::Dump(ostream& s, ECompressMethod cm)
         }
 
         if(zProc.get()) {
-            auto_ptr<CCompressionIStream> zStream(new CCompressionIStream(*iStream, zProc.get()));
+            unique_ptr<CCompressionIStream> zStream(new CCompressionIStream(*iStream, zProc.get()));
             s << zStream->rdbuf();
         }
         else {
@@ -273,9 +273,9 @@ CBlobLoader::CBlobLoader(I_DriverContext* pCntxt,
 bool CBlobLoader::Load(istream& s, ECompressMethod cm, size_t image_limit, bool log_it)
 {
     if(m_IsGood && m_dMaker->Init(m_Conn)) {
-        auto_ptr<CBlobWriter> bWriter(new CBlobWriter(m_Conn, m_dMaker, image_limit, log_it));
-        auto_ptr<CWStream> oStream(new CWStream(bWriter.get()));
-        auto_ptr<CCompressionStreamProcessor> zProc;
+        unique_ptr<CBlobWriter> bWriter(new CBlobWriter(m_Conn, m_dMaker, image_limit, log_it));
+        unique_ptr<CWStream> oStream(new CWStream(bWriter.get()));
+        unique_ptr<CCompressionStreamProcessor> zProc;
 
         switch(cm) {
         case eZLib:
@@ -291,7 +291,7 @@ bool CBlobLoader::Load(istream& s, ECompressMethod cm, size_t image_limit, bool 
         }
 
         if(zProc.get()) {
-            auto_ptr<CCompressionOStream> zStream(new CCompressionOStream(*oStream, zProc.get()));
+            unique_ptr<CCompressionOStream> zStream(new CCompressionOStream(*oStream, zProc.get()));
             *zStream << s.rdbuf();
         }
         else {
@@ -462,7 +462,7 @@ CBlobStoreBase::ReadTableDescr()
 
     /* derive information regarding the table */
     string sql = "SELECT * FROM " + m_Table + " WHERE 1=0";
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
+    unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         ReleaseConn(con);
         DATABASE_DRIVER_ERROR("Failed to send a command to the server: " + sql,
@@ -562,7 +562,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 {
     string s("set TEXTSIZE ");
     s += NStr::NumericToString(textSize);
-    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s));
+    unique_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s));
 
     if(!lcmd->Send())
     {
@@ -572,7 +572,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 
     while(lcmd->HasMoreResults())
     {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if(!r.get()) continue;
         if(r->ResultType() == eDB_StatusResult)
         {
@@ -617,7 +617,7 @@ bool CBlobStoreBase::Exists(const string& blob_id)
     /* check the key */
     string sql = ("IF EXISTS(SELECT * FROM " + m_Table + " WHERE "
                   + m_KeyColName + "='" + blob_id + "') SELECT 1");
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
+    unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         lcmd.reset();
         ReleaseConn(con);
@@ -628,7 +628,7 @@ bool CBlobStoreBase::Exists(const string& blob_id)
     bool re = false;
 
     while(lcmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
         if(!r.get()) continue;
         if(r->ResultType() == eDB_RowResult) {
             while(r->Fetch())
@@ -649,7 +649,7 @@ void CBlobStoreBase::Delete(const string& blob_id)
     /* check the key */
     string sql = ("DELETE " + m_Table + " WHERE " + m_KeyColName + "='"
                   + blob_id + "'");
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
+    unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         lcmd.reset();
         ReleaseConn(con);
@@ -671,7 +671,7 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
         GenReadQuery();
     }
 
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery));
+    unique_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery));
     CDB_VarChar blob_key(blob_id);
     lcmd->BindParam("@blob_id", &blob_key);
 
@@ -684,7 +684,7 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
     }
 
     while(lcmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
+        unique_ptr<CDB_Result> r(lcmd->Result());
 
         if(!r.get()) {
             continue;
@@ -697,8 +697,8 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
         if(r->Fetch()) {
             // creating a stream
             CBlobReader* bReader = new CBlobReader(r.release(), lcmd.release(), ReleaseConn(0) ? con : 0);
-            auto_ptr<CRStream> iStream(new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader));
-            auto_ptr<CCompressionStreamProcessor> zProc;
+            unique_ptr<CRStream> iStream(new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader));
+            unique_ptr<CCompressionStreamProcessor> zProc;
 
             switch(m_Cm) {
             case eZLib:
@@ -741,8 +741,8 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
                                                CBlobWriter::fOwnDescr |
                                                (m_LogIt? CBlobWriter::fLogBlobs : 0) |
                                               ( ReleaseConn(0) ? CBlobWriter::fOwnCon : 0));
-        auto_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
-        auto_ptr<CCompressionStreamProcessor> zProc;
+        unique_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
+        unique_ptr<CCompressionStreamProcessor> zProc;
 
         switch(m_Cm) {
         case eZLib:
