@@ -5016,9 +5016,9 @@ vector<string> CValidError_feat::GetAccessionsFromInferenceString (string infere
         || NStr::Equal(prefix, "similar to RNA sequence, mRNA")
         || NStr::Equal(prefix, "similar to RNA sequence, EST")
         || NStr::Equal(prefix, "similar to RNA sequence, other RNA")) {
-        NStr::Tokenize(remainder, ",", accessions);
+        NStr::Split(remainder, ",", accessions, 0);
     } else if (NStr::Equal(prefix, "alignment")) {
-        NStr::Tokenize(remainder, ",", accessions);
+        NStr::Split(remainder, ",", accessions, 0);
     }
     return accessions;
 }
@@ -6275,7 +6275,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
     bool redundant_with_comment = false;
     bool refseq_except = false;
     vector<string> exceptions;
-    NStr::Tokenize(text, ",", exceptions);
+    NStr::Split(text, ",", exceptions, 0);
     ITERATE(vector<string>, it, exceptions) {
         found = false;
         str = NStr::TruncateSpaces( *it );

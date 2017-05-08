@@ -152,7 +152,7 @@ DISCREPANCY_CASE(_SPELL_CHECK, CSeqFeatData, 0, "Spell check")
     string str = *prot.GetName().begin();
 
     vector<string> words;
-    NStr::Tokenize(str, " ", words);
+    NStr::Split(str, " ", words, 0);
     for (size_t i = 0; i < words.size(); i++) {
         string s = NStr::ToUpper(words[i]);
         if (Dictionary->find(s) != Dictionary->end()) {
