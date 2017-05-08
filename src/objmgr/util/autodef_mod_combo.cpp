@@ -797,7 +797,7 @@ bool CAutoDefModifierCombo::x_AddMinicircle(string& source_description, const st
 {
     bool any_change = false;
     vector<CTempString> tokens;
-    NStr::Tokenize(note_text, ";", tokens);
+    NStr::Split(note_text, ";", tokens, NStr::fSplit_Tokenize);
     ITERATE(vector<CTempString>, t, tokens) {
         if (NStr::Find(*t, "maxicircle") != string::npos ||
             NStr::Find(*t, "minicircle") != string::npos) {
