@@ -112,8 +112,7 @@ set(ICONV_LIBS    )
 find_library(UUID_LIBS NAMES uuid)
 find_library(CRYPT_LIBS NAMES crypt)
 find_library(MATH_LIBS NAMES m)
-find_library(GCRYPT_LIBS NAMES gcrypt)
-find_library(PTHREAD_LIBS NAMES pthread)
+find_library(GCRYPT_LIBS NAMES gcrypt HINTS "$ENV{NCBI}/libgcrypt/${CMAKE_BUILD_TYPE}/lib")
 
 if (APPLE)
   find_library(NETWORK_LIBS c)
@@ -207,6 +206,7 @@ set(FTDS_INCLUDE  ${FTDS64_INCLUDE})
 find_package(OpenSSL)
 if (OpenSSL_FOUND)
     set(OpenSSL_LIBRARIES ${OpenSSL_LIBRARIES} ${Z_LIBS} ${DL_LIBS})
+    set(OPENSSL_LIBS ${OpenSSL_LIBRARIES})
 endif()
 
 #EXTRALIBS were taken from mysql_config --libs
@@ -354,9 +354,9 @@ endif()
 find_package(LibXslt)
 if (LIBXSLT_FOUND)
     set(LIBXSLT_INCLUDE  ${LIBXSLT_INCLUDE_DIR})
-    set(LIBXSLT_LIBS     ${LIBXSLT_EXSLT_LIBRARIES} ${LIBXSLT_LIBRARIES})
+    set(LIBXSLT_LIBS     ${LIBXSLT_EXSLT_LIBRARIES} ${LIBXSLT_LIBRARIES} ${LIBXML_LIBS} ${GCRYPT_LIBS})
     set(LIBEXSLT_INCLUDE ${LIBXSLT_INCLUDE_DIR})
-    set(LIBEXSLT_LIBS    ${LIBXSLT_EXSLT_LIBRARIES})
+    set(LIBEXSLT_LIBS    ${LIBXSLT_EXSLT_LIBRARIES} ${GCRYPT_LIBS})
 endif()
 
 
@@ -393,13 +393,31 @@ find_external_library(hdf5
 
 ############################################################################
 #
-# Various image-format libraries
+# SQLite3
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.sqlite3.cmake)
 
 ############################################################################
 #
 # Various image-format libraries
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.image.cmake)
+
+#############################################################################
+## MongoDB
+
+find_library(SASL2_LIBS sasl2)
+
+find_package(MongoCXX)
+set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
+set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES} ${OPENSSL_LIBS} ${SASL2_LIBS})
+
+## find_external_library(MONGOCXX
+##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
+##     LIBS mongocxx bsoncxx
+##     HINTS "${NCBI_TOOLS_ROOT}/mongodb-3.0.2/"
+##     EXTRALIBS ${OPENSSL_LIBS} ${SASL2_LIBS})
+## set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE} "${MONGOCXX_INCLUDE}/mongocxx/v_noabi" "${MONGOCXX_INCLUDE}/bsoncxx/v_noabi")
+## set(MONGOCXX_LIB ${MONGOCXX_LIBS})
+
 
 # libmagic (file-format identification)
 find_library(MAGIC_LIBS magic)
@@ -542,23 +560,6 @@ find_external_library(libxlsxwriter
 # FIXME: these should be tested not hard-coded
 set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
 
-find_library(SASL2_LIBS sasl2)
-
-
-#############################################################################
-## MongoDB
-
-find_package(MongoCXX)
-set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
-set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES})
-
-## find_external_library(MONGOCXX
-##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
-##     LIBS mongocxx bsoncxx
-##     HINTS "${NCBI_TOOLS_ROOT}/mongodb-3.0.2/"
-##     EXTRALIBS ${OPENSSL_LIBS} ${SASL2_LIBS})
-## set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE} "${MONGOCXX_INCLUDE}/mongocxx/v_noabi" "${MONGOCXX_INCLUDE}/bsoncxx/v_noabi")
-## set(MONGOCXX_LIB ${MONGOCXX_LIBS})
 
 #
 # Final tasks
