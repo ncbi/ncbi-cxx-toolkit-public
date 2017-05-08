@@ -550,7 +550,7 @@ find_library(SASL2_LIBS sasl2)
 
 find_package(MongoCXX)
 set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
-set(MONGOCXX_LIB ${MONGOCXX_LDFLAGS})
+set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES})
 
 ## find_external_library(MONGOCXX
 ##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
