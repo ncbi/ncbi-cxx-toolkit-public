@@ -229,3 +229,7 @@ April 11, 2017
 version 6.13.0 (CXX-9179)
 Modified reporting to add EXE path and command line.
 Corrected re-initialization of periodic synchronization after disk space problems.
+
+May 08, 2017
+version 6.14.0 (CXX-9253)
+Added noCreate flag, modified handling of noProlong one.
