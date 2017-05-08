@@ -323,7 +323,7 @@ size_t COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
             SIZE_TYPE l = NStr::FindNoCase(id, "chromosome");
             if (l != NPOS) {
                 vector<string> tok;
-                NStr::TokenizePattern(id.substr(l), " ", tok, NStr::eMergeDelims);
+                NStr::SplitByPattern(id.substr(l), " ", tok, NStr::fSplit_Tokenize);
                 if (tok.size() > 1) {
                     name = tok[1];
                     if ((l = NStr::Find(name, ",")) != NPOS)
