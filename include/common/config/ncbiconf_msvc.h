@@ -32,9 +32,6 @@
 #define HAVE_STRDUP                1
 #define HAVE_STRICMP               1
 #define NCBI_USE_THROW_SPEC        1
-#if _MSC_VER < 1400
-#  define HAVE_NO_AUTO_PTR           1
-#endif
 #define STACK_GROWS_DOWN           1
 #define HAVE_IOS_REGISTER_CALLBACK 1
 #define HAVE_IOS_XALLOC            1

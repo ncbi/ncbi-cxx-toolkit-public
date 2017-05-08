@@ -408,13 +408,8 @@ private:
 class NCBI_XUTIL_EXPORT CFileSourceCollector : public CSubSourceCollector
 {
 public:
-#ifdef HAVE_NO_IOS_BASE
-    typedef streampos TFilePos;
-    typedef streamoff TFileOff;
-#else
     typedef CNcbiIstream::pos_type TFilePos;
     typedef CNcbiIstream::off_type TFileOff;
-#endif
 
     CFileSourceCollector(CConstRef<CFileByteSource> source,
                          TFilePos                   start,

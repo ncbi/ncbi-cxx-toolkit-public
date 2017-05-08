@@ -84,16 +84,8 @@
 #    include <strstream>
 #  endif
 #  include <iomanip>
-#  if defined(HAVE_NO_STD)
-#    define IO_PREFIX
-#  else
-#    define IO_PREFIX   NCBI_NS_STD
-#  endif
-#  if defined HAVE_NO_IOS_BASE
-#    define IOS_BASE    IO_PREFIX::ios
-#  else
-#    define IOS_BASE    IO_PREFIX::ios_base
-#  endif
+#  define IO_PREFIX     NCBI_NS_STD
+#  define IOS_BASE      IO_PREFIX::ios_base
 #  define IOS_PREFIX    IO_PREFIX::ios
 
 #  ifdef NO_PUBSYNC
@@ -564,30 +556,6 @@ extern bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
                                   ECompareTextMode mode, size_t buf_size = 0);
 
 
-// "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
-#if defined(HAVE_NO_CHAR_TRAITS)
-#  define CT_INT_TYPE      int
-#  define CT_CHAR_TYPE     char
-#  define CT_POS_TYPE      CNcbiStreampos
-#  define CT_OFF_TYPE      CNcbiStreamoff
-#  define CT_EOF           EOF
-inline CT_INT_TYPE  ct_not_eof(CT_INT_TYPE i) {
-    return i == CT_EOF ? 0 : i;
-}
-#  define CT_NOT_EOF       ct_not_eof
-inline CT_INT_TYPE  ct_to_int_type(CT_CHAR_TYPE c) {
-    return (unsigned char)c;
-}
-#  define CT_TO_INT_TYPE   ct_to_int_type
-inline CT_CHAR_TYPE ct_to_char_type(CT_INT_TYPE i) {
-    return (unsigned char)i;
-}
-#  define CT_TO_CHAR_TYPE  ct_to_char_type
-inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
-    return i1 == i2;
-}
-#  define CT_EQ_INT_TYPE   ct_eq_int_type
-#else  /* HAVE_NO_CHAR_TRAITS */
 #  define CT_INT_TYPE      NCBI_NS_STD::char_traits<char>::int_type
 #  define CT_CHAR_TYPE     NCBI_NS_STD::char_traits<char>::char_type
 #  define CT_POS_TYPE      NCBI_NS_STD::char_traits<char>::pos_type
@@ -597,7 +565,6 @@ inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
 #  define CT_TO_INT_TYPE   NCBI_NS_STD::char_traits<char>::to_int_type
 #  define CT_TO_CHAR_TYPE  NCBI_NS_STD::char_traits<char>::to_char_type
 #  define CT_EQ_INT_TYPE   NCBI_NS_STD::char_traits<char>::eq_int_type
-#endif /* HAVE_NO_CHAR_TRAITS */
 
 
 #ifdef NCBI_COMPILER_MIPSPRO

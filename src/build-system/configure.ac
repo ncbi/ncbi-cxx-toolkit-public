@@ -3584,62 +3584,6 @@ if test "$ncbi_cv_cxx_throw_spec" = yes; then
 fi
 
 
-AC_CACHE_CHECK([for obsolete string::compare() syntax],
-   ncbi_cv_func_string_compare_obsolete,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <string>]],
-       [[std::string s;  int i = 0;  i = s.compare("aaa", 0, 2);]])],
-       [ncbi_cv_func_string_compare_obsolete=yes],
-       [ncbi_cv_func_string_compare_obsolete=no])])
-if test "$ncbi_cv_func_string_compare_obsolete" = yes; then
-   AC_DEFINE(NCBI_OBSOLETE_STR_COMPARE, 1,
-             [Define to 1 if `string::compare()' is non-standard.])
-fi
-
-
-AC_CACHE_CHECK([whether the auto_ptr template class works],
-   ncbi_cv_type_auto_ptr_works,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <memory>]],
-       [[int *ip = 0; std::auto_ptr<int> ap(ip); *ip = *ap; ap.reset(ip);]])],
-       [ncbi_cv_type_auto_ptr_works=yes], [ncbi_cv_type_auto_ptr_works=no])])
-if test "$ncbi_cv_cxx_auto_ptr_works" = no; then
-   AC_DEFINE(HAVE_NO_AUTO_PTR, 1,
-             [Define to 1 if `auto_ptr<T>' is missing or broken.])
-fi
-
-
-AC_CACHE_CHECK([for min/max templates], ncbi_cv_func_min_max,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[
-        #include <algorithm>
-        #ifdef min
-        #undef min
-        #endif
-        #ifdef max
-        #undef max
-        #endif
-       ]],
-       [[int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b);]])],
-       [ncbi_cv_func_min_max=yes], [ncbi_cv_func_min_max=no])])
-if test "$ncbi_cv_func_min_max" = no; then
-   AC_DEFINE(HAVE_NO_MINMAX_TEMPLATE, 1,
-             [Define to 1 if `min'/`max' templates are not implemented.])
-fi
-
-
-AC_CACHE_CHECK([whether new C++ streams have ios_base::],
-   ncbi_cv_type_ios_base,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>]],
-       [[(void)(std::ios_base::out != std::ios_base::beg);]])],
-       [ncbi_cv_type_ios_base=yes], [ncbi_cv_type_ios_base=no])])
-if test "$ncbi_cv_type_ios_base" = no; then
-   AC_DEFINE(HAVE_NO_IOS_BASE, 1,
-             [Define to 1 if new C++ streams lack `ios_base::'.])
-fi
-
-
 AC_CACHE_CHECK([for ios(_base)::register_callback],
    ncbi_cv_func_ios_register_callback,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
@@ -3651,24 +3595,6 @@ if test "$ncbi_cv_func_ios_register_callback" = yes; then
    AC_DEFINE(HAVE_IOS_REGISTER_CALLBACK, 1,
              [Define to 1 if you have `ios(_base)::register_callback'.])
 fi
-
-
-AC_CACHE_CHECK([for std::char_traits::], ncbi_cv_type_char_traits,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>]],
-       [[using namespace std;
-       char_traits<char>::int_type  i = char_traits<char>::eof();
-       i = char_traits<char>::not_eof(i);
-       char_traits<char>::char_type c = '\0';
-       char_traits<char>::pos_type  p = 0;
-       char_traits<char>::off_type  o = 1;
-       ]])],
-       [ncbi_cv_type_char_traits=yes], [ncbi_cv_type_char_traits=no])])
-if test "$ncbi_cv_type_char_traits" = no; then
-   AC_DEFINE(HAVE_NO_CHAR_TRAITS, 1,
-             [Define to 1 if `std::char_traits' is missing.])
-fi
-
 
 
 AC_CACHE_CHECK([for SysV semaphores], ncbi_cv_sys_semaphores,

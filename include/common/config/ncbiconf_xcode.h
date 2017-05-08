@@ -418,18 +418,6 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #define HAVE_NETINET_TCP_H 1
 
-/* Define to 1 if `auto_ptr<T>' is missing or broken. */
-/* #undef HAVE_NO_AUTO_PTR */
-
-/* Define to 1 if `std::char_traits' is missing. */
-/* #undef HAVE_NO_CHAR_TRAITS */
-
-/* Define to 1 if new C++ streams lack `ios_base::'. */
-/* #undef HAVE_NO_IOS_BASE */
-
-/* Define to 1 if `min'/`max' templates are not implemented. */
-/* #undef HAVE_NO_MINMAX_TEMPLATE */
-
 /* Define to 1 if the ORBacus CORBA package is available. */
 /* #undef HAVE_ORBACUS */
 
@@ -697,9 +685,6 @@
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions that never return. */
 #define NCBI_NORETURN __attribute__((__noreturn__))
-
-/* Define to 1 if `string::compare()' is non-standard. */
-/* #undef NCBI_OBSOLETE_STR_COMPARE */
 
 /* Define to whatever syntax, if any, your compiler supports for marking types
    as packed to save memory. */

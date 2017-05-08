@@ -318,105 +318,6 @@ private:
 
 
 
-#ifdef HAVE_NO_AUTO_PTR
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// auto_ptr --
-///
-/// Define auto_ptr if needed.
-///
-/// Replacement of STL's std::auto_ptr for compilers with poor "auto_ptr"
-/// implementation.
-/// 
-/// See C++ Toolkit documentation for limitations and use of auto_ptr.
-
-template <class X>
-class auto_ptr
-{
-    // temporary class for auto_ptr copying
-    template<class Y>
-    struct auto_ptr_ref
-    {
-        auto_ptr_ref(auto_ptr<Y>& ptr)
-            : m_AutoPtr(ptr)
-            {
-            }
-        auto_ptr<Y>& m_AutoPtr;
-    };
-public:
-    typedef X element_type;         ///< Define element_type
-
-    /// Explicit conversion to auto_ptr.
-    explicit auto_ptr(X* p = 0) : m_Ptr(p) {}
-
-    /// Copy constructor with implicit conversion.
-    ///
-    /// Note that the copy constructor parameter is not a const
-    /// because it is modified -- ownership is transferred.
-    auto_ptr(auto_ptr<X>& a) : m_Ptr(a.release()) {}
-
-    /// Assignment operator.
-    auto_ptr<X>& operator=(auto_ptr<X>& a) {
-        if (this != &a) {
-            if (m_Ptr  &&  m_Ptr != a.m_Ptr) {
-                delete m_Ptr;
-            }
-            m_Ptr = a.release();
-        }
-        return *this;
-    }
-
-    auto_ptr(auto_ptr_ref<X> ref)
-        : m_Ptr(ref.m_AutoPtr.release())
-    {
-    }
-    template <typename Y>
-    operator auto_ptr_ref<Y>()
-    {
-        return auto_ptr_ref<Y>(*this);
-    }
-
-    /// Destructor.
-    ~auto_ptr(void) {
-        if ( m_Ptr )
-            delete m_Ptr;
-    }
-
-    /// Deference operator.
-    X&  operator*(void) const { return *m_Ptr; }
-
-    /// Reference operator.
-    X*  operator->(void) const { return m_Ptr; }
-
-    /// Equality operator.
-    int operator==(const X* p) const { return (m_Ptr == p); }
-
-    /// Get pointer value.
-    X*  get(void) const { return m_Ptr; }
-
-    /// Release pointer.
-    X* release(void) {
-        X* x_Ptr = m_Ptr;  m_Ptr = 0;  return x_Ptr;
-    }
-
-    /// Reset pointer.
-    void reset(X* p = 0) {
-        if (m_Ptr != p) {
-            delete m_Ptr;
-            m_Ptr = p;
-        }
-    }
-
-private:
-    X* m_Ptr;               ///< Internal pointer implementation.
-};
-
-#endif /* HAVE_NO_AUTO_PTR */
-
-
-
 /// Functor template for allocating object.
 template<class X>
 struct Creater
@@ -819,24 +720,6 @@ private:
 #ifdef max
 #  undef max
 #endif
-
-#if defined(HAVE_NO_MINMAX_TEMPLATE)
-#  define NOMINMAX
-
-/// Min function template.
-template <class T>
-inline
-const T& min(const T& a, const T& b) {
-    return b < a ? b : a;
-}
-
-/// Max function template.
-template <class T>
-inline
-const T& max(const T& a, const T& b) {
-    return  a < b ? b : a;
-}
-#endif /* HAVE_NO_MINMAX_TEMPLATE */
 
 
 
