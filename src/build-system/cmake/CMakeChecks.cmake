@@ -112,7 +112,6 @@ set(ICONV_LIBS    )
 find_library(UUID_LIBS NAMES uuid)
 find_library(CRYPT_LIBS NAMES crypt)
 find_library(MATH_LIBS NAMES m)
-find_library(GCRYPT_LIBS NAMES gcrypt HINTS "$ENV{NCBI}/libgcrypt/${CMAKE_BUILD_TYPE}/lib")
 
 if (APPLE)
   find_library(NETWORK_LIBS c)
@@ -345,6 +344,12 @@ find_external_library(ICU
 ##############################################################################
 ## LibXml2 / LibXsl
 ##
+find_library(GCRYPT_LIBS NAMES gcrypt HINTS "$ENV{NCBI}/libgcrypt/${CMAKE_BUILD_TYPE}/lib")
+find_library(GPG_ERROR_LIBS NAMES gpg-error HINTS "$ENV{NCBI}/libgpg-error/${CMAKE_BUILD_TYPE}/lib")
+message(STATUS "GCrypt = ${GCRYPT_LIBS}")
+message(STATUS "GPG error = ${GPG_ERROR_LIBS}")
+set(GCRYPT_LIBS ${GCRYPT_LIBS} ${GPG_ERROR_LIBS})
+
 find_package(LibXml2)
 if (LIBXML2_FOUND)
     set(LIBXML_INCLUDE ${LIBXML2_INCLUDE_DIR})
