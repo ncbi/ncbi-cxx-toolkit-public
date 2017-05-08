@@ -446,7 +446,7 @@ CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title,
     if (title.length() > kWarnNumNucCharsAtEnd) {
         TSeqPos numNucChars = 0;
         for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
-            if (!s_ASCII_IsUnAmbigNuc(*rit)) {
+            if (!s_ASCII_IsUnAmbigNuc(*rit) && (*rit != 'N')) {
                 break;
             }
             ++numNucChars;
