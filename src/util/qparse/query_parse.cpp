@@ -263,7 +263,7 @@ CQueryParseTree::CreateNode(CQueryParseNode::EType     op,
                             CQueryParseTree::TNode*    arg2,
                             const string&              orig_text)
 {
-   auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
+   unique_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg1) {
         node->AddNode(arg1);
    }

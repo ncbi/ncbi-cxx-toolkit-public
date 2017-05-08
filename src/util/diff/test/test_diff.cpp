@@ -57,7 +57,7 @@ private:
 void CTestApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test program for CDiff");
@@ -114,7 +114,7 @@ void s_Internal_DiffHalfMatch(void)
                 timeout.Set(timeout_sec, 0);
             }
             d.SetTimeout(timeout);
-            auto_ptr<CDeadline> real_deadline(new CDeadline(timeout));
+            unique_ptr<CDeadline> real_deadline(new CDeadline(timeout));
             d.m_Deadline = real_deadline.get();
             // Find half match
             CDiff::TDiffHalfMatchList hm(5);

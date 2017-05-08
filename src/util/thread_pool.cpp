@@ -1662,7 +1662,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     }
 
     CThreadPool_Guard guard(this, false);
-    auto_ptr<CTimeSpan> adjusted_timeout;
+    unique_ptr<CTimeSpan> adjusted_timeout;
 
     if (!m_IsQueueAllowed) {
         guard.Guard();

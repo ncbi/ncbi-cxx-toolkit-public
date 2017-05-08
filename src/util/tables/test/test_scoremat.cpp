@@ -51,7 +51,7 @@ private:
 
 void CSMTestApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "score matrix test program");
 
@@ -142,10 +142,10 @@ static void s_Dump(const SNCBIPackedScoreMatrix& psm,
 
 int CSMTestApplication::Run(void)
 {
-    const CArgs&                   args = GetArgs();
-    string                         sm   = args["sm"].AsString();
-    const SNCBIPackedScoreMatrix*  psm;
-    auto_ptr<SNCBIFullScoreMatrix> fsm(new SNCBIFullScoreMatrix);
+    const CArgs&                     args = GetArgs();
+    string                           sm   = args["sm"].AsString();
+    const SNCBIPackedScoreMatrix*    psm;
+    unique_ptr<SNCBIFullScoreMatrix> fsm(new SNCBIFullScoreMatrix);
 
     if        (sm == "blosum45") {
         psm = &NCBISM_Blosum45;

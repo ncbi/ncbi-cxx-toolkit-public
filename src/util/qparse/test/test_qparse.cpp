@@ -226,9 +226,6 @@ private:
 
 
 
-
-
-
 /// @internal
 class CTestQParse : public CNcbiApplication
 {
@@ -240,13 +237,9 @@ public:
 
 void CTestQParse::Init(void)
 {
-
     SetDiagPostLevel(eDiag_Warning);
-
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-
-    d->SetUsageContext("test_qparse",
-                       "test query parse");
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
+    d->SetUsageContext("test_qparse", "test query parse");
     SetupArgDescriptions(d.release());
 }
 
@@ -452,9 +445,6 @@ return 0;
     StaticEvaluate("1 <= 2 && 1 == 1", 1);
     StaticEvaluate("1 > 2 || 1 != 1", 0);
    
-   
-    
-    
     CQueryExec qexec;
     qexec.AddFunc(CQueryParseNode::eAnd,
             new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_AND));

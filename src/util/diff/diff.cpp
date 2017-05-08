@@ -366,7 +366,7 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
     Reset();
 
     // Set deadline time if timeout is specified
-    auto_ptr<CDeadline> real_deadline;
+    unique_ptr<CDeadline> real_deadline;
     if (!m_Timeout.IsInfinite()) {
         real_deadline.reset(new CDeadline(m_Timeout));
         m_Deadline = real_deadline.get();
@@ -772,7 +772,7 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
     Reset();
 
     // Set deadline time if timeout is specified
-    auto_ptr<CDeadline> real_deadline;
+    unique_ptr<CDeadline> real_deadline;
     if (!m_Timeout.IsInfinite()) {
         real_deadline.reset(new CDeadline(m_Timeout));
         m_Deadline = real_deadline.get();
