@@ -4915,6 +4915,41 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSubSource)
     CLEAR_ERRORS
 }
 
+void ShowOrgRef(const COrg_ref& org)
+{
+    ESerialDataFormat outFormat = eSerial_AsnText;
+    auto_ptr<CObjectOStream> os;
+    os.reset(CObjectOStream::Open(outFormat, cout));
+    *os << org;    
+}
+
+
+void ShowOrgRef(const CSeq_entry& entry)
+{
+    if (entry.IsSeq()) {
+        if (entry.GetSeq().IsSetDescr()) {
+            ITERATE(objects::CSeq_descr::Tdata, it, entry.GetSeq().GetDescr().Get()) {
+                if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
+                    ShowOrgRef((*it)->GetSource().GetOrg());
+                }
+            }
+        }
+    } else if (entry.IsSet()) {
+        if (entry.GetSet().IsSetDescr()) {
+            ITERATE(objects::CSeq_descr::Tdata, it, entry.GetSet().GetDescr().Get()) {
+                if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
+                    ShowOrgRef((*it)->GetSource().GetOrg());
+                }
+            }
+        }
+        if (entry.GetSet().IsSetSeq_set()) {
+            ITERATE(objects::CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set()) {
+                ShowOrgRef(**it);
+            }
+        }
+    }
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
 {
@@ -4929,6 +4964,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     unit_test_util::SetCommon (entry, "some common name");
     unit_test_util::SetOrgMod (entry, COrgMod::eSubtype_common, "some common name");
     unit_test_util::SetOrgMod (entry, COrgMod::eSubtype_type_material, "invalid type material name");
+//    ShowOrgRef(*entry);
 
     STANDARD_SETUP
 
@@ -20095,31 +20131,80 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
 }
 
 
-void AddSpecificHost(COrg_ref& org, const string& val)
+void AddOrgmod(COrg_ref& org, const string& val, COrgMod::ESubtype subtype)
 {
-    CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, val));
+    CRef<COrgMod> om(new COrgMod(subtype, val));
     org.SetOrgname().SetMod().push_back(om);
 }
 
 
-void AddSpecificHostDescriptor(CRef<CSeq_entry> entry, const string& val)
+void AddOrgmodDescriptor(CRef<CSeq_entry> entry, const string& val, COrgMod::ESubtype subtype)
 {
     CRef<CSeqdesc> src_desc(new CSeqdesc());
     // should look up
     src_desc->SetSource().SetOrg().SetTaxname("Influenza A virus");
-    AddSpecificHost(src_desc->SetSource().SetOrg(), val);
+    AddOrgmod(src_desc->SetSource().SetOrg(), val, subtype);
     entry->SetDescr().Set().push_back(src_desc);
 }
 
-void AddSpecificHostFeat(CRef<CSeq_entry> entry, const string& val)
+void AddOrgmodFeat(CRef<CSeq_entry> entry, const string& val, COrgMod::ESubtype subtype)
 {
     CRef<CSeq_feat> src_feat = unit_test_util::AddMiscFeature(entry);
-    // should not look up
     src_feat->SetData().SetBiosrc().SetOrg().SetTaxname("Influenza virus A");
-    AddSpecificHost(src_feat->SetData().SetBiosrc().SetOrg(), val);
+    AddOrgmod(src_feat->SetData().SetBiosrc().SetOrg(), val, subtype);
 }
 
 typedef vector< pair<string, string> > THostStringsVector;
+
+
+void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    vector<CRef<COrg_ref> > original;
+    vector<CRef<COrg_ref> > to_adjust;
+
+    ITERATE(THostStringsVector, it, test_values) {
+        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname("foo");
+        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it->first));
+        org->SetOrgname().SetMod().push_back(om);
+        to_adjust.push_back(org);
+        CRef<COrg_ref> cpy(new COrg_ref());
+        cpy->Assign(*org);
+        original.push_back(cpy);
+    }
+    string error_message;
+
+    CTaxValidationAndCleanup tval;
+    tval.Init(*entry);
+    vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
+
+    objects::CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+    BOOST_CHECK_EQUAL(reply->GetReply().size(), org_rq_list.size());
+
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
+
+    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
+    vector<CRef<COrg_ref> >::iterator cpy = original.begin();
+    while (org != to_adjust.cend()) {
+        const string& before = (*cpy)->GetOrgname().GetMod().front()->GetSubname();
+        const string& after = (*org)->GetOrgname().GetMod().front()->GetSubname();
+        THostStringsVector::const_iterator tvit = test_values.cbegin();
+        while (tvit != test_values.cend() && !NStr::Equal(tvit->first, before)) {
+            ++tvit;
+        }
+
+        BOOST_CHECK_EQUAL(after, tvit->second);
+        ++org;
+        ++cpy;
+        ++tvit;
+    }
+}
 
 BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
 {
@@ -20128,66 +20213,91 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     THostStringsVector test_values;
     test_values.push_back(pair<string, string>("Homo supiens", "Homo supiens")); // non-fixable spelling problem
     test_values.push_back(pair<string, string>("HUMAN", "Homo sapiens"));
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Homo sapiens", "Homo sapiens"));
-    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Gallus Gallus", "Gallus gallus"));
+    TestBulkSpecificHostFixList(test_values);
+    test_values.push_back(pair<string, string>("Conservemos nuestros", "Conservemos nuestros")); // non-fixable spelling problem
+    TestBulkSpecificHostFixList(test_values);
+    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Eschericia coli", "Escherichia coli")); // fixable spelling problem
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Avian", "Avian"));
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Bovine", "Bovine"));
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Pig", "Pig"));
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>(" Chicken", "Chicken")); // truncate space
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
+    TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
 
     vector<CRef<COrg_ref> > to_adjust;
+    vector<CRef<COrg_ref> > original;
 
     ITERATE(THostStringsVector, it, test_values) {
-        AddSpecificHostDescriptor(entry, it->first);
-        AddSpecificHostFeat(entry, it->first);
+        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname("foo");
-        AddSpecificHost(*org, it->first);
+        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it->first));
+        org->SetOrgname().SetMod().push_back(om);
         to_adjust.push_back(org);
+        CRef<COrg_ref> cpy(new COrg_ref());
+        cpy->Assign(*org);
+        original.push_back(cpy);
     }
     string error_message;
 
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
-    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 2); // three homo sapiens are combined
+    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 3); // three homo sapiens are combined
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
 
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
 
     vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
-    THostStringsVector::iterator tvit = test_values.begin();
-    while (org != to_adjust.end()) {
-        BOOST_CHECK_EQUAL((*org)->GetOrgname().GetMod().front()->GetSubname(), tvit->second);
+    vector<CRef<COrg_ref> >::iterator cpy = original.begin();
+    while (org != to_adjust.cend()) {
+        const string& before = (*cpy)->GetOrgname().GetMod().front()->GetSubname();
+        const string& after = (*org)->GetOrgname().GetMod().front()->GetSubname();
+        THostStringsVector::const_iterator tvit = test_values.cbegin();
+        while (tvit != test_values.cend() && !NStr::Equal(tvit->first, before)) {
+            ++tvit;
+        }
+
+        BOOST_CHECK_EQUAL(after, tvit->second);
         ++org;
+        ++cpy;
         ++tvit;
     }
 
     CRef<COrg_ref> test_src(new COrg_ref());
-    AddSpecificHost(*test_src, "Homo supiens"); // don't change because bad
-    AddSpecificHost(*test_src, "Pinus sp."); // don't change because ambivalent
-    AddSpecificHost(*test_src, "Eschericia coli"); // change because spelling
+    AddOrgmod(*test_src, "Conservemos nuestros", COrgMod::eSubtype_nat_host); // don't change because bad
+    AddOrgmod(*test_src, "Pinus sp.", COrgMod::eSubtype_nat_host); // don't change because ambivalent
+    AddOrgmod(*test_src, "Eschericia coli", COrgMod::eSubtype_nat_host); // change because spelling
 
     to_adjust.clear();
     to_adjust.push_back(test_src);
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
     COrgName::TMod::const_iterator m = test_src->GetOrgname().GetMod().begin();
-    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Homo supiens");
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Conservemos nuestros");
     ++m;
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Pinus sp.");
     ++m;
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Escherichia coli");
     // already fixed all problems, don't fix again
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), false);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), false);
     m = test_src->GetOrgname().GetMod().begin();
-    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Homo supiens");
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Conservemos nuestros");
     ++m;
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Pinus sp.");
     ++m;
@@ -20202,9 +20312,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), false);
     vector< CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
     CRef<CTaxon3_reply> spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*spec_host_reply, edited_orgs, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs, error_message), true);
     // second time should produce no additional changes
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*spec_host_reply, edited_orgs, error_message), false);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs, error_message), false);
 
     size_t num_descs = tval.NumDescs();
     size_t num_updated_descs = 0;
@@ -20257,11 +20367,11 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     vector<CRef<COrg_ref> > to_adjust;
 
     ITERATE(THostStringsVector, it, test_values) {
-        AddSpecificHostDescriptor(entry, it->first);
-        AddSpecificHostFeat(entry, it->first);
+        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname("foo");
-        AddSpecificHost(*org, it->first);
+        AddOrgmod(*org, it->first, COrgMod::eSubtype_nat_host);
         to_adjust.push_back(org);
     }
     string error_message;
@@ -20269,7 +20379,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
-    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 2); // three homo sapiens are combined
+    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 3); // two homo sapiens are combined
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
@@ -20299,6 +20409,91 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
 }
 
 
+void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage)
+{
+    CRef<CSeqdesc> src_desc(new CSeqdesc());
+    // should look up
+    src_desc->SetSource().SetOrg().SetTaxname(taxname);
+    AddOrgmod(src_desc->SetSource().SetOrg(), strain, COrgMod::eSubtype_strain);
+    src_desc->SetSource().SetOrg().SetOrgname().SetLineage(lineage);
+    entry.SetDescr().Set().push_back(src_desc);
+}
+
+
+void TestOneStrain(const string& taxname, const string& strain, const string& lineage, bool expect_err)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CBioseq::TDescr::Tdata::iterator it = entry->SetSeq().SetDescr().Set().begin();
+    while (it != entry->SetSeq().SetDescr().Set().end()) {
+        if ((*it)->IsSource()) {
+            it = entry->SetSeq().SetDescr().Set().erase(it);
+        } else {
+            ++it;
+        }
+    }
+    AddStrainDescriptor(*entry, taxname, strain, lineage); // expect no report
+    STANDARD_SETUP
+        
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
+    if (expect_err) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InvalidQualifierValue",
+            "Strain '" + strain + "' contains taxonomic name information"));
+    }
+    if (NStr::Equal(taxname, "Bacillus sp.")) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "OrganismIsUndefinedSpecies",
+            "Organism 'Bacillus sp.' is undefined species and does not have a specific identifier."));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz"); // expect no report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz"); // expect a report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz"); // expect a report
+    AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz");
+    AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz"); // no error - giraffe looks up but is not in taxname
+
+    string error_message;
+
+    CTaxValidationAndCleanup tval;
+    tval.Init(*entry);
+
+    vector<CRef<COrg_ref> > strain_rq = tval.GetStrainLookupRequest();
+    BOOST_CHECK_EQUAL(strain_rq.size(), 9);
+
+    objects::CTaxon3 taxon3;
+    taxon3.Init();
+
+    size_t chunk_size = 3;
+    size_t i = 0;
+    while (i < strain_rq.size()) {
+        size_t len = min(chunk_size, strain_rq.size() - i);
+        vector< CRef<COrg_ref> >  tmp_rq(strain_rq.begin() + i, strain_rq.begin() + i + len);
+        CRef<CTaxon3_reply> tmp_strain_reply = taxon3.SendOrgRefList(tmp_rq);
+        BOOST_CHECK_EQUAL(tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_strain_reply), kEmptyStr);
+        i += chunk_size;
+    }
+
+    BOOST_CHECK_EQUAL(tval.IsStrainMapUpdateComplete(), true);
+
+    TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", false); // no error - giraffe looks up but is not in taxname
+    TestOneStrain("Gorilla gorilla", "abc", "xyz", false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", true); 
+    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", true); 
+    TestOneStrain("Bacillus sp.", "cereus", "xyz", true);
+
+    TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", false);
+
+}
 
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
 {

@@ -53,6 +53,7 @@
 #include <objects/valid/Comment_rule.hpp>
 
 #include <objtools/validator/validator.hpp>
+#include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/feature_match.hpp>
 
@@ -296,95 +297,6 @@ class CValidError_desc;
 class CValidError_descr;
 
 
-// For Taxonomy Lookups and Fixups
-
-class CSpecificHostRequest
-{
-public:
-    CSpecificHostRequest();
-    ~CSpecificHostRequest() {};
-
-    void Init(const string& host);
-    void AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
-    void AddParent(CConstRef<CSeq_feat> feat);
-
-    enum EHostResponseFlags{
-        eNormal = 0,
-        eAmbiguous = 1 << 0,
-        eUnrecognized = 1 << 1
-    };
-    typedef int TResponseFlags;
-
-    size_t NumRemainingReplies() const { return m_ValuesToTry.size() - m_RepliesProcessed; }
-    void AddRequests(vector<CRef<COrg_ref> >& request_list) const;
-    void AddReply(const CT3Reply& reply);
-
-    void PostErrors(CValidError_imp& imp);
-    const string& SuggestFix() const;
-
-    bool MatchTryValue(const string& val) const;
-
-private:
-    string m_Host;
-    vector<string> m_ValuesToTry;
-    typedef pair<CConstRef<CSeqdesc>, CConstRef<CSeq_entry> > TDescPair;
-    vector<TDescPair> m_Descs;
-    vector<CConstRef<CSeq_feat> > m_Feats;
-    TResponseFlags m_Response;
-    string m_SuggestedFix;
-    string m_Error;
-    size_t m_RepliesProcessed;
-};
-
-
-typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
-
-class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
-{
-public:
-    CTaxValidationAndCleanup();
-    ~CTaxValidationAndCleanup() {};
-
-    void Init(const CSeq_entry& se);
-    vector< CRef<COrg_ref> > GetTaxonomyLookupRequest() const;
-    void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
-    bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
-                                         vector<CRef<COrg_ref> > org_refs, 
-                                         string& error_message) const;
-    vector<CRef<COrg_ref> > GetSpecificHostLookupRequest(bool for_fix);
-    string IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
-    bool IsSpecificHostMapUpdateComplete() const;
-    void ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp);
-    void ReportSpecificHostErrors(CValidError_imp& imp);
-    bool AdjustOrgRefsWithSpecificHostReply(const CTaxon3_reply& reply, 
-                                            vector<CRef<COrg_ref> > org_refs, 
-                                            string& error_message);
-    bool AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs);
-
-    CConstRef<CSeq_entry> GetTopReportObject() const;
-
-    size_t NumDescs() const { return m_SrcDescs.size(); }
-    size_t NumFeats() const { return m_SrcFeats.size(); }
-
-    CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; };
-    CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
-
-protected:
-    void x_GatherSources(const CSeq_entry& se);
-    void x_CreateSpecificHostMap(bool for_fix);
-    void x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message);
-    bool x_ApplySpecificHostMap(COrg_ref& org_ref) const;
-    static void x_DefaultSpecificHostAdjustments(string& host_val);
-    TSpecificHostRequests::iterator x_FindHostFixRequest(const string& val);
-
-    vector<CConstRef<CSeqdesc> > m_SrcDescs;
-    vector<CConstRef<CSeq_entry> > m_DescCtxs;
-    vector<CConstRef<CSeq_feat> > m_SrcFeats;
-    TSpecificHostRequests m_SpecificHostRequests;
-    bool m_SpecificHostRequestsBuilt;
-    bool m_SpecificHostRequestsUpdated;
-};
-
 class CBioSourceKind
 {
 public:
@@ -582,6 +494,7 @@ public:
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
     void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
+    void ValidateStrain(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
