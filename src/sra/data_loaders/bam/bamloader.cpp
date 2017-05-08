@@ -157,7 +157,7 @@ string CBAMDataLoader::GetLoaderNameFromArgs(void)
 string CBAMDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
     CNcbiOstrstream str;
-    str << "CCSRADataLoader:" << params.m_DirPath;
+    str << "CBAMDataLoader:" << params.m_DirPath;
     if ( !params.m_BamFiles.empty() ) {
         str << "/files=";
         ITERATE ( vector<SBamFileName>, it, params.m_BamFiles ) {
