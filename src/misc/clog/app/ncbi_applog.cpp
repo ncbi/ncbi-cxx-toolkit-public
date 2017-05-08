@@ -266,14 +266,14 @@ void CNcbiApplogApp::Init(void)
     
     // Create command-line arguments
 
-    auto_ptr<CCommandArgDescriptions> cmd(new 
+    unique_ptr<CCommandArgDescriptions> cmd(new 
         CCommandArgDescriptions(true, 0, CCommandArgDescriptions::eCommandMandatory | 
                                          CCommandArgDescriptions::eNoSortCommands));
     cmd->SetUsageContext(GetArguments().GetProgramBasename(), "Command-line utility to log to AppLog");
 
     // start_app
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Start application. Return token.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Starting logging. You should specify a name of application for that you log and its PID at least. "
@@ -317,7 +317,7 @@ void CNcbiApplogApp::Init(void)
 
     // stop_app
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Stop application.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Stop logging and invalidate passed token. This command should be last in the logging session."
@@ -340,7 +340,7 @@ void CNcbiApplogApp::Init(void)
 
     // start_request
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Start request. Return token.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Starting logging request. "
@@ -373,7 +373,7 @@ void CNcbiApplogApp::Init(void)
 
     // stop_request
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Stop request.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Stop logging request. "
@@ -402,7 +402,7 @@ void CNcbiApplogApp::Init(void)
 
     // post
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post a message.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Post a message to the log with specified severity."
@@ -432,7 +432,7 @@ void CNcbiApplogApp::Init(void)
 
     // extra
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post an extra information.", false, kUsageWidth);
 //        arg->SetDetailedDescription();
         arg->AddOpening
@@ -453,7 +453,7 @@ void CNcbiApplogApp::Init(void)
 
     // perf
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post performance information.", false, kUsageWidth);
 //        arg->SetDetailedDescription();
         arg->AddOpening
@@ -479,7 +479,7 @@ void CNcbiApplogApp::Init(void)
     // parse_token
     // If more than one flag specified, each field will be printed on separate line.
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Parse token information and print requested field to stdout.", false, kUsageWidth);
 //        arg->SetDetailedDescription();
         arg->AddOpening
@@ -503,7 +503,7 @@ void CNcbiApplogApp::Init(void)
 
     // url
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Generate an Applog query URL.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Generate an Applog query URL on a base of token information and print it to stdout. "
@@ -540,7 +540,7 @@ void CNcbiApplogApp::Init(void)
 
     // raw
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post already prepared log in applog format.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Copy already existing data in applog format to the log. You can specify a file name with data "
@@ -588,7 +588,7 @@ void CNcbiApplogApp::Init(void)
 
     // generate
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Generate and return IDs.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "This operation doesn't affect current logging (if any). All flags will be "
@@ -606,7 +606,7 @@ void CNcbiApplogApp::Init(void)
 
     // health
     {{
-        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        unique_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Health checks.", false, kUsageWidth);
         arg->SetDetailedDescription(
             "Check local and CGI logging capabilities, print short report to stdout "
