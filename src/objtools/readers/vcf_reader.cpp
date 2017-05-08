@@ -1565,21 +1565,27 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
                     NStr::StartsWith(id, "ss") ) 
                 {
                     CRef<CDbtag> pDbtag(new CDbtag());
-                    pDbtag->SetDb("dbsnp");
-                    pDbtag->SetTag().SetStr(id);
+                    pDbtag->SetDb("dbSNP");
+                    try { 
+                        const int idval = NStr::StringToInt(id.substr(2));
+                        pDbtag->SetTag().SetId(idval);
+                   }
+                    catch (...) { 
+                        continue;
+                    }
                     pFeat->SetDbxref().push_back(pDbtag);
                     valid_id = true;
                     break;
                 }
-                if (!valid_id) {
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
-                            eDiag_Warning,
-                            0,
-                            "CVcfReader::xAssignVariantProps: No valid dbSNP identifier",
-                            ILineError::eProblem_GeneralParsingError) );
-                            ProcessWarning(*pErr, pEC);
-                }
+            }
+            if (!valid_id) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                        eDiag_Warning,
+                        0,
+                        "CVcfReader::xAssignVariantProps: No valid dbSNP identifier",
+                        ILineError::eProblem_GeneralParsingError) );
+                        ProcessWarning(*pErr, pEC);
             }
             infos.erase(it);
         }

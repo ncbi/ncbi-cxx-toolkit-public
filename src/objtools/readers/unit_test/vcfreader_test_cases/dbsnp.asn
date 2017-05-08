@@ -2346,8 +2346,8 @@ dbSNPBuildID=132"
       },
       dbxref {
         {
-          db "dbsnp",
-          tag str "rs121908135"
+          db "dbSNP",
+          tag id 121908135
         }
       }
     }
