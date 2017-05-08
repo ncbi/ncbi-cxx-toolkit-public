@@ -34,6 +34,7 @@
 
 #include <objtools/writers/writer.hpp>
 #include <util/sequtil/sequtil.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -41,7 +42,6 @@ BEGIN_objects_SCOPE
 class CDense_seg;
 class CScope;
 class CSparse_align;
-class CSpliced_seg;
 
 class NCBI_XOBJWRITE_EXPORT CAlnWriter:
     public CWriterBase
