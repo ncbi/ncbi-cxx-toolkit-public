@@ -1738,9 +1738,21 @@ bool CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
     {{
         CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool);
         if ( init ) {
+            // first time
             _ASSERT(!info.second.m_Bioseq_Info);
             info.second.m_Bioseq_Info.Reset(&bioseq_info);
             return true;
+        }
+        else {
+            // check if it was unresolved and there is new data
+            if ( info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                // update unresolved
+                init.ForceGuard(info.second.m_Bioseq_Info, m_MutexPool);
+                if ( info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+                    info.second.m_Bioseq_Info.Reset(&bioseq_info);
+                    return true;
+                }
+            }
         }
     }}
     return info.second.m_Bioseq_Info.GetPointerOrNull() == &bioseq_info;

@@ -41,6 +41,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/impl/synonyms.hpp>
 
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -66,11 +67,20 @@ static CRef<CSeq_id> s_GetId(size_t i)
 }
 
 
+static CRef<CSeq_id> s_GetId2(size_t i)
+{
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetId(TIntId(i+1));
+    return id;
+}
+
+
 static CRef<CSeq_entry> s_GetEntry(size_t i)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& seq = entry->SetSeq();
     seq.SetId().push_back(s_GetId(i));
+    seq.SetId().push_back(s_GetId2(i));
     CSeq_inst& inst = seq.SetInst();
     inst.SetRepr(inst.eRepr_raw);
     inst.SetMol(inst.eMol_aa);
@@ -84,10 +94,14 @@ BOOST_AUTO_TEST_CASE(TestReResolve1)
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
     CRef<CSeq_id> id = s_GetId(1);
+    CRef<CSeq_id> id2 = s_GetId2(1);
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     scope.AddTopLevelSeqEntry(*entry);
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
+    BOOST_REQUIRE(scope.GetSynonyms(*id));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
 }
 
 
@@ -96,15 +110,22 @@ BOOST_AUTO_TEST_CASE(TestReResolve2)
     // check re-resolve after adding, removing, and restoring
     CScope scope(*CObjectManager::GetInstance());
     CRef<CSeq_id> id = s_GetId(1);
+    CRef<CSeq_id> id2 = s_GetId2(1);
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     CSeq_entry_EditHandle seh = scope.AddTopLevelSeqEntry(*entry).GetEditHandle();
+    BOOST_REQUIRE(scope.GetSynonyms(*id2));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
     CBioseq_EditHandle bh = seh.SetSeq();
     seh.SelectNone();
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     seh.SelectSeq(bh);
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
+    BOOST_REQUIRE(scope.GetSynonyms(*id2));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
 }
 
 
@@ -113,6 +134,7 @@ BOOST_AUTO_TEST_CASE(TestReResolve3)
     // check re-resolve after adding, removing, and restoring, resolving only at the end
     CScope scope(*CObjectManager::GetInstance());
     CRef<CSeq_id> id = s_GetId(1);
+    CRef<CSeq_id> id2 = s_GetId2(1);
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     CSeq_entry_EditHandle seh = scope.AddTopLevelSeqEntry(*entry).GetEditHandle();
@@ -121,13 +143,17 @@ BOOST_AUTO_TEST_CASE(TestReResolve3)
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     seh.SelectSeq(bh);
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
+    BOOST_REQUIRE(scope.GetSynonyms(*id2));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
+    BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
 }
 
 
 #ifdef NCBI_THREADS
 static vector<size_t> s_GetBioseqParallel(size_t THREADS,
                                           CScope& scope,
-                                          const vector< CRef<CSeq_id> >& ids)
+                                          const vector< CRef<CSeq_id> >& ids,
+                                          const vector< CRef<CSeq_id> >& ids2)
 {
     vector< future<size_t> > ff(THREADS);
     for ( size_t ti = 0; ti < THREADS; ++ti ) {
@@ -136,8 +162,17 @@ static vector<size_t> s_GetBioseqParallel(size_t THREADS,
                   [&]() -> size_t
                   {
                       size_t got_count = 0;
-                      for ( auto& id : ids ) {
-                          got_count += bool(scope.GetBioseqHandle(*id));
+                      for ( size_t i = 0; i < ids.size(); ++i ) {
+                          auto& id = ids[i];
+                          auto& id2 = ids2[i];
+                          bool good = scope.GetBioseqHandle(*id);
+                          if ( good ) {
+                              auto syn = scope.GetSynonyms(*id2);
+                              good = syn &&
+                                  syn->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)) &&
+                                  syn->ContainsSynonym(CSeq_id_Handle::GetHandle(*id));
+                          }
+                          got_count += good;
                       }
                       return got_count;
                   });
@@ -157,19 +192,20 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT1)
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
-    vector< CRef<CSeq_id> > ids;
+    vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
     for ( size_t i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
+        ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     for ( size_t i = 0; i < COUNT; ++i ) {
         scope.AddTopLevelSeqEntry(*entries[i]);
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
@@ -182,20 +218,21 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
-    vector< CRef<CSeq_id> > ids;
+    vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
     for ( size_t i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
+        ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     vector<CSeq_entry_EditHandle> sehs;
     for ( size_t i = 0; i < COUNT; ++i ) {
         sehs.push_back(scope.AddTopLevelSeqEntry(*entries[i]).GetEditHandle());
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
     vector<CBioseq_EditHandle> bhs;
@@ -203,13 +240,13 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
         bhs.push_back(sehs[i].SetSeq());
         sehs[i].SelectNone();
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     for ( size_t i = 0; i < COUNT; ++i ) {
         sehs[i].SelectSeq(bhs[i]);
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
@@ -222,13 +259,14 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
-    vector< CRef<CSeq_id> > ids;
+    vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
     for ( size_t i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
+        ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     vector<CSeq_entry_EditHandle> sehs;
@@ -240,13 +278,13 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
         bhs.push_back(sehs[i].SetSeq());
         sehs[i].SelectNone();
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     for ( size_t i = 0; i < COUNT; ++i ) {
         sehs[i].SelectSeq(bhs[i]);
     }
-    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids) ) {
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
