@@ -366,7 +366,7 @@ CGapStatsApplication::CGapStatsApplication(void) :
 
     m_IncludedGapTypes.insert(GA::eGapType_All);
 
-    SetVersion(CVersionInfo(4,0,build_num));
+    SetVersion(CVersionInfo(4,1,build_num));
 }
 
 /////////////////////////////////////////////////////////////////////////////
