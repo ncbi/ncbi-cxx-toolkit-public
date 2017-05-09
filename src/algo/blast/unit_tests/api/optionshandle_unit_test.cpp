@@ -42,6 +42,7 @@
 #include <algo/blast/api/blastx_options.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
 #include <algo/blast/api/tblastx_options.hpp>
+#include <algo/blast/api/blastp_kmer_options.hpp>
 #include <algo/blast/core/blast_def.h>
 
 #include "test_objmgr.hpp"
@@ -309,6 +310,16 @@ BOOST_AUTO_TEST_CASE(TblastxTest) {
        delete handle;
 }
 
+BOOST_AUTO_TEST_CASE(KBlastpTest) {
+       CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("kblastp"); 
+       CBlastpKmerOptionsHandle* opts =
+             dynamic_cast<CBlastpKmerOptionsHandle*> (handle);
+       BOOST_REQUIRE(opts != NULL);
+       BOOST_REQUIRE_EQUAL(1, opts->GetMinHits());
+       BOOST_REQUIRE_EQUAL(1000, opts->GetCandidateSeqs());
+       BOOST_REQUIRE(!strcmp("BLOSUM62", opts->GetMatrixName()));
+       delete handle;
+}
 
 struct ProteinOptiosHandleFixture {
     ProteinOptiosHandleFixture() {

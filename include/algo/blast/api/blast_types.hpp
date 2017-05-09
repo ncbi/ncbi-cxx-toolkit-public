@@ -71,6 +71,7 @@ enum EProgram {
     eDeltaBlast,        ///< Delta Blast
     eVecScreen,         ///< Vector screening
     eMapper,            ///< Jumper alignment for mapping
+    eKBlastp,            ///< KMER screening and BLASTP
     eBlastProgramMax    ///< Undefined program
 };
 

@@ -45,6 +45,7 @@ msa_pssm_input \
 psiblast_aux_priv \
 blast_aux_priv \
 blast_advprot_options \
+blastp_kmer_options \
 version \
 dust_filter \
 rps_aux \

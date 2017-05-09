@@ -48,6 +48,7 @@
 #include <algo/blast/api/phiblast_prot_options.hpp>
 #include <algo/blast/api/deltablast_options.hpp>
 #include <algo/blast/api/magicblast_options.hpp>
+#include <algo/blast/api/blastp_kmer_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -191,6 +192,10 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         retval = new CMagicBlastOptionsHandle(locality);
         break;
 
+    case eKBlastp:
+        retval = new CBlastpKmerOptionsHandle(locality);
+        break;
+
     case eBlastNotSet:
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "eBlastNotSet may not be used as argument");
@@ -221,6 +226,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("blastp");
         retval.insert("blastp-short");
         retval.insert("blastp-fast");
+        // retval.insert("kblastp");
     }
 
     if (choice == eAll) {
@@ -236,6 +242,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("tblastn-fast");
         retval.insert("psitblastn");
         retval.insert("tblastx");
+        retval.insert("kblastp");
     }
 
     if (choice == eMapping || choice == eAll) {
@@ -318,6 +325,8 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval.assign("Map RNA-seq sequences to an mRNA database");
     } else if (task == "mapg2g") {
         retval.assign("Map genomic reads to a genome");
+    } else if (task == "kblastp") {
+        retval.assign("Kmer screenign followed by BLASTP");
     } else {
         retval.assign("Unknown task");
     }
@@ -464,6 +473,10 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         }
 
         retval = opts;
+    }
+    else if (!NStr::CompareNocase(task, "kblastp"))
+    {
+	retval = CBlastOptionsFactory::Create(eKBlastp, locality);
     }
     else
     {
