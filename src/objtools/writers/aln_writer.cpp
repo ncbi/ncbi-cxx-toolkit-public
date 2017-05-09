@@ -39,6 +39,7 @@
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/scope.hpp>
@@ -279,6 +280,22 @@ bool CAlnWriter::xWriteAlignSplicedSeg(
     return false;
 }
 
+unsigned int s_ProductLength(const CProduct_pos& start, const CProduct_pos& end)
+{   
+    if (start.Which() != end.Which()) {
+        // Throw an exception
+    } 
+
+    if (start.Which() == CProduct_pos::e_not_set) {
+        // Throw an exception
+    }
+
+    const int length = end.AsSeqPos() - start.AsSeqPos();
+
+    return (length >= 0) ? length : -length;
+}
+
+
 // -----------------------------------------------------------------------------
 bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,   
     CSpliced_seg::TProduct_type product_type,
@@ -287,6 +304,10 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
     CRef<CSeq_id> default_product_id,
     ENa_strand default_product_strand) 
 {
+
+    const unsigned int tgtWidth = 
+        (product_type == CSpliced_seg::eProduct_type_transcript) ?
+        1 : 3;
 
     string prev_genomic_id;
     string prev_product_id;
@@ -322,17 +343,86 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         }
         const int genomic_length = genomic_end - genomic_start;
 
-        const CProduct_pos& product_start = exon->GetProduct_start();
-        const CProduct_pos& product_end = exon->GetProduct_end();
-/*
+        const int product_start = exon->GetProduct_start().AsSeqPos();
+        const int product_end = exon->GetProduct_end().AsSeqPos();
+
+       
+
+
         if (product_end < product_start) {
             // Throw an exception
         }
+        // product_length is now given in nucleotide units
         const int product_length = product_end - product_start;
-*/
-        // if genomic_length/tgtwidth != product_length, we need to look at 
-        // parts. These appear in biological order.
-        //
+            
+        
+        CBioseq_Handle bsh;
+        CRange<TSeqPos> genomic_range;
+        xProcessSeqId(genomic_id, bsh, genomic_range);
+        if (!bsh) { // Throw an exception
+            return false;
+        }
+
+        string genomic_seq;
+        if (!xGetSeqString(bsh, genomic_range, genomic_strand, genomic_seq)) {
+            // Throw an exception
+        }
+
+        CRange<TSeqPos> product_range;
+        xProcessSeqId(product_id, bsh, product_range);
+        if (!bsh) { // Throw an exception
+
+        }
+
+        string product_seq;
+        if (!xGetSeqString(bsh, product_range, product_strand, product_seq)) {
+            // Throw an exception
+        }
+
+        if (exon->IsSetParts()) {
+            unsigned int common = 0;
+            unsigned int genomic_ins = 0;
+            unsigned int product_ins = 0;
+            // Check that match + mismatch + diag + genomic_ins = genomic_length
+            for (CRef<CSpliced_exon_chunk> exon_chunk : exon->GetParts()) {
+                switch(exon_chunk->Which()) {
+                case CSpliced_exon_chunk::e_Match:
+                    common += exon_chunk->GetMatch();
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    common += exon_chunk->GetMismatch();
+                    break;
+                case CSpliced_exon_chunk::e_Diag:
+                    common += exon_chunk->GetDiag();
+                    break;
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    genomic_ins += exon_chunk->GetGenomic_ins();
+                    break;
+                case CSpliced_exon_chunk::e_Product_ins:
+                    product_ins += exon_chunk->GetProduct_ins();
+                    break;
+                default:
+                    break;
+                }
+            }   
+        }
+        else 
+        if (product_length == genomic_length) {
+            m_Os << ">" + genomic_id.AsFastaString() << "\n";
+            size_t width = 60;
+            size_t pos=0;
+            while (pos < genomic_seq.size()) {
+                m_Os << genomic_seq.substr(pos, width) << "\n";
+                pos += width;
+            }
+
+            m_Os << ">" + product_id.AsFastaString() << "\n";
+            pos=0;
+            while (pos < product_seq.size()) {
+                m_Os << product_seq.substr(pos, width) << "\n";
+                pos += width;
+            }
+        }
     }
 
     return false;
