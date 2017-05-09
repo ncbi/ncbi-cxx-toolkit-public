@@ -857,16 +857,17 @@ DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-
-        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-        if (obj) {
-            CCit_sub* cit_sub = dynamic_cast<CCit_sub*>(const_cast<CObject*>(obj));
-            if (RemoveAffilDup(cit_sub)) {
-                ++n;
+        if ((*it)->CanAutofix()) {
+            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+            if (obj) {
+                CCit_sub* cit_sub = dynamic_cast<CCit_sub*>(const_cast<CObject*>(obj));
+                if (RemoveAffilDup(cit_sub)) {
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("CITSUB_AFFIL_DUP_TEXT: [n] Cit-sub affiliation street duplication[s] [is] removed", n) : 0);
 }
 
@@ -1052,16 +1053,17 @@ DISCREPANCY_AUTOFIX(USA_STATE)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-
-        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-        if (obj) {
-            CAffil* affil = dynamic_cast<CAffil*>(const_cast<CObject*>(obj));
-            if (ReplaceStateAbbreviation(affil)) {
-                ++n;
+        if ((*it)->CanAutofix()) {
+            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+            if (obj) {
+                CAffil* affil = dynamic_cast<CAffil*>(const_cast<CObject*>(obj));
+                if (ReplaceStateAbbreviation(affil)) {
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("USA_STATE: [n] Cit-sub[s] [is] changed to contain a correct US state abbreviation", n) : 0);
 }
 
@@ -1259,16 +1261,17 @@ DISCREPANCY_AUTOFIX(CHECK_AUTH_CAPS)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-
-        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
-        if (obj) {
-            CAuth_list* auth_list = dynamic_cast<CAuth_list*>(const_cast<CObject*>(obj));
-            if (FixCapitalization(auth_list)) {
-                ++n;
+        if ((*it)->CanAutofix()) {
+            const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+            if (obj) {
+                CAuth_list* auth_list = dynamic_cast<CAuth_list*>(const_cast<CObject*>(obj));
+                if (FixCapitalization(auth_list)) {
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : 0);
 }
 

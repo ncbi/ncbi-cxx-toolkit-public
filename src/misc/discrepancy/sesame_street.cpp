@@ -439,36 +439,43 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     string qual;
     string val;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
-        CRef<CBioSource> bs(&desc->SetSource());
-        fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
-        if (!fix) {
-            continue;
-        }
-        qual = fix->m_Qualifier;
-        val = fix->m_Value;
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
+            CRef<CBioSource> bs(&desc->SetSource());
+            fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
+            if (!fix) {
+                continue;
+            }
+            qual = fix->m_Qualifier;
+            val = fix->m_Value;
 
-        //CAutofixHookRegularArguments arg;
-        //arg.m_User = fix->m_User;
-        //if (m_Hook) {
-        //    m_Hook(&arg);
-        //}
+            //CAutofixHookRegularArguments arg;
+            //arg.m_User = fix->m_User;
+            //if (m_Hook) {
+            //    m_Hook(&arg);
+            //}
         
-        if (qual == "host") {
-            SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
-        }
-        else if (qual == "strain") {
-            SetOrgMod(bs, COrgMod::eSubtype_strain, val, added, changed);
-        }
-        else if (qual == "country") {
-            SetSubsource(bs, CSubSource::eSubtype_country, val, added, changed);
-        }
-        else if (qual == "isolation-source") {
-            SetSubsource(bs, CSubSource::eSubtype_isolation_source, val, added, changed);
-        }
-        else if (qual == "collection-date") {
-            SetSubsource(bs, CSubSource::eSubtype_collection_date, val, added, changed);
+            if (qual == "host") {
+                SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            else if (qual == "strain") {
+                SetOrgMod(bs, COrgMod::eSubtype_strain, val, added, changed);
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            else if (qual == "country") {
+                SetSubsource(bs, CSubSource::eSubtype_country, val, added, changed);
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            else if (qual == "isolation-source") {
+                SetSubsource(bs, CSubSource::eSubtype_isolation_source, val, added, changed);
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            else if (qual == "collection-date") {
+                SetSubsource(bs, CSubSource::eSubtype_collection_date, val, added, changed);
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     if (changed) {

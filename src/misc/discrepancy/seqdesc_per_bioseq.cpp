@@ -75,11 +75,14 @@ DISCREPANCY_AUTOFIX(RETROVIRIDAE_DNA)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (desc) {
-            CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
-            desc_handle->SetSource().SetGenome(CBioSource::eGenome_proviral);
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (desc) {
+                CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
+                desc_handle->SetSource().SetGenome(CBioSource::eGenome_proviral);
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("RETROVIRIDAE_DNA: Genome set to proviral for [n] sequence[s]", n) : 0);
@@ -277,32 +280,32 @@ DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
     CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
 
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer());
+            const CComment_rule* new_rule = dynamic_cast<const CComment_rule*>(dobj->GetMoreInfo().GetPointer());
+            if (desc && new_rule) {
+                CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc);
+                CUser_object& user = desc_handle->SetUser();
 
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer());
-        const CComment_rule* new_rule = dynamic_cast<const CComment_rule*>(dobj->GetMoreInfo().GetPointer());
-        if (desc && new_rule) {
+                static const string prefix_tail = "START##";
+                static const string suffix_tail = "END##";
 
-            CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc);
-            CUser_object& user = desc_handle->SetUser();
+                string prefix = new_rule->GetPrefix();
+                string suffix = prefix.substr(0, prefix.size() - prefix_tail.size()) + suffix_tail;
 
-            static const string prefix_tail = "START##";
-            static const string suffix_tail = "END##";
-
-            string prefix = new_rule->GetPrefix();
-            string suffix = prefix.substr(0, prefix.size() - prefix_tail.size()) + suffix_tail;
-
-            NON_CONST_ITERATE(CUser_object::TData, field, user.SetData()) {
-
-                EPrefixOrSuffixType prefixOrSuffix = GetPrefixOrSuffixType(**field);
-                if (prefixOrSuffix == eType_prefix) {
-
-                    (*field)->SetData().SetStr(prefix);
-                    n++;
-                }
-                else if (prefixOrSuffix == eType_suffix) {
-                    (*field)->SetData().SetStr(suffix);
-                    ++n;
+                NON_CONST_ITERATE(CUser_object::TData, field, user.SetData()) {
+                    EPrefixOrSuffixType prefixOrSuffix = GetPrefixOrSuffixType(**field);
+                    if (prefixOrSuffix == eType_prefix) {
+                        (*field)->SetData().SetStr(prefix);
+                        n++;
+                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                    }
+                    else if (prefixOrSuffix == eType_suffix) {
+                        (*field)->SetData().SetStr(suffix);
+                        ++n;
+                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                    }
                 }
             }
         }
@@ -357,25 +360,23 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-
     string comment;
-
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (desc) {
-
-            if (comment.empty()) {
-                comment = desc->GetComment();
-            }
-            else {
-                CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
-                desc_handle->SetComment(comment);
-
-                n++;
+        if ((*it)->CanAutofix()) {
+            const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (desc) {
+                if (comment.empty()) {
+                    comment = desc->GetComment();
+                }
+                else {
+                    CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
+                    desc_handle->SetComment(comment);
+                    n++;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] coment[s] with " + comment, n) : 0);
 }
 

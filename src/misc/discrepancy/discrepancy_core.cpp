@@ -172,6 +172,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     NON_CONST_ITERATE(TNodeMap, it, m_Map) {
         fatal |= it->second->m_Fatal;
         CRef<CReportItem> sub = it->second->Export(test, unique);
+        autofix |= sub->CanAutofix();
         subs.push_back(sub);
         if (!m_NoRec) {
             TReportObjectList details = sub->GetDetails();
@@ -180,9 +181,12 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
             }
         }
     }
-    NON_CONST_ITERATE (TReportObjectList, ob, objs) {
-        if ((*ob)->CanAutofix()) {
-            autofix = true;
+    if (!autofix) {
+        NON_CONST_ITERATE (TReportObjectList, ob, objs) {
+            if ((*ob)->CanAutofix()) {
+                autofix = true;
+                break;
+            }
         }
     }
 	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, m_Count ? m_Count : objs.size()), m_Name));

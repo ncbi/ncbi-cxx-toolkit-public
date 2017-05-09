@@ -114,35 +114,37 @@ class CDiscrepancyContext;
 class CDiscrepancyObject : public CReportObject
 {
 protected:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
         SetFilename(filename);
     }
-    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
         SetFilename(filename);
     }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
         SetFilename(filename);
     }
-    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
         SetFilename(filename);
     }
-    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
         SetFilename(filename);
     }
     CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
 
 public:
-    bool CanAutofix(void) const { return m_Autofix; }
+    bool CanAutofix(void) const { return m_Autofix && !m_Fixed; }
+    void SetFixed(void) { m_Fixed = true; }
     CConstRef<CObject> GetMoreInfo() { return m_More; }
     CReportObj* Clone(bool autofixable, CConstRef<CObject> data) const;
 
 protected:
     bool m_Autofix;
+    bool m_Fixed;
     CRef<CDiscrepancyCase> m_Case;
     CConstRef<CObject> m_More;
 friend class CDiscrepancyContext;

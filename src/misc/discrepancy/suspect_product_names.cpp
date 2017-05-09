@@ -5524,53 +5524,56 @@ static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& sc
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
-        const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
-        if (!cds || !rule || !rule->CanGetReplace()) {
-            continue;
-        }
-        string newtext;
-        string newnote;
-
-        const CSeq_feat* sf = GetProtFeatForCDS(*cds, scope);
-        if (!sf) {
-            continue;
-        }
-
-        string prot_name = *sf->GetData().GetProt().GetName().begin();
-        const CReplace_rule& rr = rule->GetReplace();
-        const CReplace_func& rf = rr.GetReplace_func();
-        if (rr.GetMove_to_note()) {
-            newnote = prot_name;
-        }
-        if (rf.IsSimple_replace()) {
-            const CSimple_replace& repl = rf.GetSimple_replace();
-            if (repl.GetWhole_string()) {
-                newtext = repl.GetReplace();
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
+            const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+            if (!cds || !rule || !rule->CanGetReplace()) {
+                continue;
             }
-            else {
-                string find = rule->GetFind().GetString_constraint().GetMatch_text();
-                string subst = repl.GetReplace();
-                newtext = ReplaceNoCase(prot_name, find, subst);
+            string newtext;
+            string newnote;
+
+            const CSeq_feat* sf = GetProtFeatForCDS(*cds, scope);
+            if (!sf) {
+                continue;
             }
-        }
-        else if (rf.IsHaem_replace()) {
-            newtext = ReplaceNoCase(prot_name, "haem", "hem");
-        }
 
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*sf);
-        if (!newnote.empty()) {
-            AddComment(*new_feat, newnote);
-        }
-        if (!newtext.empty()) {
-            *new_feat->SetData().SetProt().SetName().begin() = newtext;
-        }
+            string prot_name = *sf->GetData().GetProt().GetName().begin();
+            const CReplace_rule& rr = rule->GetReplace();
+            const CReplace_func& rf = rr.GetReplace_func();
+            if (rr.GetMove_to_note()) {
+                newnote = prot_name;
+            }
+            if (rf.IsSimple_replace()) {
+                const CSimple_replace& repl = rf.GetSimple_replace();
+                if (repl.GetWhole_string()) {
+                    newtext = repl.GetReplace();
+                }
+                else {
+                    string find = rule->GetFind().GetString_constraint().GetMatch_text();
+                    string subst = repl.GetReplace();
+                    newtext = ReplaceNoCase(prot_name, find, subst);
+                }
+            }
+            else if (rf.IsHaem_replace()) {
+                newtext = ReplaceNoCase(prot_name, "haem", "hem");
+            }
 
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-        feh.Replace(*new_feat);
-        n++;
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*sf);
+            if (!newnote.empty()) {
+                AddComment(*new_feat, newnote);
+            }
+            if (!newtext.empty()) {
+                *new_feat->SetData().SetProt().SetName().begin() = newtext;
+            }
+
+            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+            feh.Replace(*new_feat);
+            n++;
+            dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+        }
     }
     return n;
 }

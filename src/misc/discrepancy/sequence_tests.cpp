@@ -814,14 +814,18 @@ static bool FixMoltype(const CBioseq& bioseq, CScope& scope)
     return true;
 }
 
+
 DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (bioseq && FixMoltype(*bioseq, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (bioseq && FixMoltype(*bioseq, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("FEATURE_MOLTYPE_MISMATCH: Moltype was set to genomic for [n] bioseq[s]", n) : 0);
@@ -1713,21 +1717,22 @@ static bool ConvertToReverseComplement(const CBioseq& bioseq, const CMinusStrand
     return true;
 }
 
+
 DISCREPANCY_AUTOFIX(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-
-        CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(disc_obj->GetObject().GetPointer());
-        CConstRef<CObject> data = disc_obj->GetMoreInfo();
-
-        if (bioseq && ConvertToReverseComplement(*bioseq, dynamic_cast<const CMinusStrandData*>(data.GetPointer()), scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CBioseq* bioseq = dynamic_cast<const CBioseq*>(disc_obj->GetObject().GetPointer());
+            CConstRef<CObject> data = disc_obj->GetMoreInfo();
+            if (bioseq && ConvertToReverseComplement(*bioseq, dynamic_cast<const CMinusStrandData*>(data.GetPointer()), scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_SEQUENCE_MINUS_STRAND_FEATURES: [n] sequence[s] [is] converted to reverse complement[s]", n) : 0);
 }
 
@@ -1887,9 +1892,12 @@ DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (bioseq && FixGenome(*bioseq, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (bioseq && FixGenome(*bioseq, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("MITOCHONDRION_REQUIRED: Genome was set to mitochondrion for [n] bioseq[s]", n) : 0);
@@ -1975,9 +1983,12 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (bioseq && RemoveBioseq(*bioseq, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (bioseq && RemoveBioseq(*bioseq, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_CONTIG: [n] short bioseq[s] [is] removed", n) : 0);
@@ -2447,27 +2458,26 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-
-        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(it->GetPointer());
-
-        const CObject* cur_obj_ptr = dobj->GetObject().GetPointer();
-        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(cur_obj_ptr);
-        const CSeqdesc* descr = dynamic_cast<const CSeqdesc*>(cur_obj_ptr);
-
-        size_t misspell_idx = dynamic_cast<const CIdxObject*>(dobj->GetMoreInfo().GetPointer())->GetIdx();
-
-        if (feat) {
-            if (FixTextInObject(const_cast<CSeq_feat*>(feat), misspell_idx)) {
-                ++n;
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(it->GetPointer());
+            const CObject* cur_obj_ptr = dobj->GetObject().GetPointer();
+            const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(cur_obj_ptr);
+            const CSeqdesc* descr = dynamic_cast<const CSeqdesc*>(cur_obj_ptr);
+            size_t misspell_idx = dynamic_cast<const CIdxObject*>(dobj->GetMoreInfo().GetPointer())->GetIdx();
+            if (feat) {
+                if (FixTextInObject(const_cast<CSeq_feat*>(feat), misspell_idx)) {
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
-        }
-        else if (descr) {
-            if (FixTextInObject(const_cast<CSeqdesc*>(descr), misspell_idx)) {
-                ++n;
+            else if (descr) {
+                if (FixTextInObject(const_cast<CSeqdesc*>(descr), misspell_idx)) {
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
-
     return CRef<CAutofixReport>(n ? new CAutofixReport("FLATFILE_FIND: [n] suspect text[s] [is] fixed", n) : 0);
 }
 

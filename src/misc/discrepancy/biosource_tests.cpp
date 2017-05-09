@@ -50,24 +50,28 @@ static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (
 {
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*sf);
-                if (call(new_feat->SetData().SetBiosrc())) {
-                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                    feh.Replace(*new_feat);
-                    n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf) {
+                if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
+                    CRef<CSeq_feat> new_feat(new CSeq_feat());
+                    new_feat->Assign(*sf);
+                    if (call(new_feat->SetData().SetBiosrc())) {
+                        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                        feh.Replace(*new_feat);
+                        n++;
+                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                    }
                 }
             }
-        }
-        else if (csd) {
-            if (csd->IsSource()) {
-                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
-                if (call(sd->SetSource())) {
-                    n++;
+            else if (csd) {
+                if (csd->IsSource()) {
+                    CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
+                    if (call(sd->SetSource())) {
+                        n++;
+                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                    }
                 }
             }
         }

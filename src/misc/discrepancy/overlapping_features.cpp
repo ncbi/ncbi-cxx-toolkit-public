@@ -611,14 +611,19 @@ DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
 
 DISCREPANCY_AUTOFIX(GENE_LOCUS_MISSING)
 {
-    const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
-    CRef<CSeq_feat> new_gene(new CSeq_feat());
-    new_gene->Assign(gene);
-    new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
-    new_gene->SetData().SetGene().ResetDesc();
-    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
-    feh.Replace(*new_gene);
-    return CRef<CAutofixReport>(new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", 1));
+    TReportObjectList list = item->GetDetails();
+    if (list[0]->CanAutofix()) {
+        const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*list[0]->GetObject());
+        CRef<CSeq_feat> new_gene(new CSeq_feat());
+        new_gene->Assign(gene);
+        new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
+        new_gene->SetData().SetGene().ResetDesc();
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
+        feh.Replace(*new_gene);
+        dynamic_cast<CDiscrepancyObject*>(list[0].GetNCPointer())->SetFixed();
+        return CRef<CAutofixReport>(new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", 1));
+    }
+    return CRef<CAutofixReport>();
 }
 
 

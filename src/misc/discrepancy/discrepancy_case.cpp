@@ -459,14 +459,17 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
     unsigned int n = 0;
     TReportObjectList list = item->GetDetails();
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            CRef<CSeq_feat> new_feat(new CSeq_feat());
-            new_feat->Assign(*sf);
-            if (SetOverlapNote(*new_feat)) {
-                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                feh.Replace(*new_feat);
-                ++n;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                if (SetOverlapNote(*new_feat)) {
+                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                    feh.Replace(*new_feat);
+                    ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                }
             }
         }
     }
@@ -708,6 +711,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
             if (sf) {
                 if (ConvertCDSToMiscFeat(*sf, scope)) {
                     ++n;
+                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
                 }
             }
         }
@@ -780,12 +784,15 @@ DISCREPANCY_AUTOFIX(NONWGS_SETS_PRESENT)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (set) {
-            CBioseq_set_Handle set_h = scope.GetBioseq_setHandle(*set);
-            CBioseq_set_EditHandle set_eh(set_h);
-            set_eh.SetClass(CBioseq_set::eClass_genbank);
-            ++n;
+        if ((*it)->CanAutofix()) {
+            const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (set) {
+                CBioseq_set_Handle set_h = scope.GetBioseq_setHandle(*set);
+                CBioseq_set_EditHandle set_eh(set_h);
+                set_eh.SetClass(CBioseq_set::eClass_genbank);
+                ++n;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("NONWGS_SETS_PRESENT: Set class to GenBank for [n] set[s]", n) : 0);
@@ -893,37 +900,37 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
     TReportObjectList list = item->GetDetails();
     size_t num_fixed = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        if (!obj.CanAutofix()) {
-            continue;
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            size_t cut_from_end = dynamic_cast<const CSimpleTypeObject<size_t>*>(obj.GetMoreInfo().GetPointer())->Value;
+            const CBioseq* seq = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
+            _ASSERT(seq);
+            CBioseq_EditHandle besh(scope.GetBioseqEditHandle(*seq));
+            SSeqMapSelector selector;
+            selector.SetFlags(CSeqMap::fFindData); 
+            CSeqMap_I seqmap_i(besh, selector);
+            size_t start = 0;
+            size_t stop = besh.GetInst_Length() - cut_from_end;
+            while (seqmap_i) {
+                TSeqPos len = seqmap_i.GetLength();
+                if (start < stop && start + len > stop) {
+                    string seq_in;
+                    seqmap_i.GetSequence(seq_in, CSeqUtil::e_Iupacna);
+                    string seq_out = seq_in.substr(0, stop - start);
+                    seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, seqmap_i.GetData().Which());
+                    ++seqmap_i;
+                }
+                else if (start >= stop) {
+                    seqmap_i = seqmap_i.Remove(); 
+                }
+                else {
+                    ++seqmap_i;
+                }
+                start += len;
+            }
+            num_fixed++;
+            dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
         }
-        size_t cut_from_end = dynamic_cast<const CSimpleTypeObject<size_t>*>(obj.GetMoreInfo().GetPointer())->Value;
-        const CBioseq* seq = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
-        _ASSERT(seq);
-        CBioseq_EditHandle besh(scope.GetBioseqEditHandle(*seq));
-        SSeqMapSelector selector;
-        selector.SetFlags(CSeqMap::fFindData); 
-        CSeqMap_I seqmap_i(besh, selector);
-        size_t start = 0;
-        size_t stop = besh.GetInst_Length() - cut_from_end;
-        while (seqmap_i) {
-            TSeqPos len = seqmap_i.GetLength();
-            if (start < stop && start + len > stop) {
-                string seq_in;
-                seqmap_i.GetSequence(seq_in, CSeqUtil::e_Iupacna);
-                string seq_out = seq_in.substr(0, stop - start);
-                seqmap_i.SetSequence(seq_out, CSeqUtil::e_Iupacna, seqmap_i.GetData().Which());
-                ++seqmap_i;
-            }
-            else if (start >= stop) {
-                seqmap_i = seqmap_i.Remove(); 
-            }
-            else {
-                ++seqmap_i;
-            }
-            start += len;
-        }
-        num_fixed++;
     }
     return CRef<CAutofixReport>(num_fixed ? new CAutofixReport("POSSIBLE_LINKER: [n] sequence[s] trimmed", num_fixed) : 0);
 }
@@ -958,45 +965,42 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
     TReportObjectList list = item->GetDetails();
     size_t num_fixed = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        CDiscrepancyObject& obj =
-            *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        const CSeq_feat* orig_seq_feat =
-            dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
-        _ASSERT(orig_seq_feat);
-        // no need to check CanAutofix because ordered locations are
-        // always fixable
-        _ASSERT(orig_seq_feat->IsSetLocation());
-        // rebuild new loc but without the NULL parts
-        CSeq_loc_I new_loc_creator(
-            *SerialClone(orig_seq_feat->GetLocation()));
-        while( new_loc_creator ) {
-            if( new_loc_creator.GetEmbeddingSeq_loc().IsNull() ) {
-                new_loc_creator.Delete();
-            } else {
-                ++new_loc_creator;
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CSeq_feat* orig_seq_feat = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+            _ASSERT(orig_seq_feat);
+            // no need to check CanAutofix because ordered locations are
+            // always fixable
+            _ASSERT(orig_seq_feat->IsSetLocation());
+            // rebuild new loc but without the NULL parts
+            CSeq_loc_I new_loc_creator(*SerialClone(orig_seq_feat->GetLocation()));
+            while( new_loc_creator ) {
+                if( new_loc_creator.GetEmbeddingSeq_loc().IsNull() ) {
+                    new_loc_creator.Delete();
+                } else {
+                    ++new_loc_creator;
+                }
+            }
+            if( ! new_loc_creator.HasChanges()) {
+                // inefficient, but I suppose it's possible if something
+                // elsewhere already fixed this
+                continue;
+            }
+
+            // replace the Seq-feat
+            CRef<CSeq_loc> new_seq_feat_loc = new_loc_creator.MakeSeq_loc(CSeq_loc_I::eMake_PreserveType);
+            CRef<CSeq_feat> replacement_seq_feat(SerialClone(*orig_seq_feat));
+            replacement_seq_feat->SetLocation(*new_seq_feat_loc);
+            try {
+                CSeq_feat_EditHandle seq_feat_h(scope.GetSeq_featHandle(*orig_seq_feat));
+                seq_feat_h.Replace(*replacement_seq_feat);
+                ++num_fixed;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            } catch (...) {
+                // feature may have already been removed
             }
         }
-        if( ! new_loc_creator.HasChanges()) {
-            // inefficient, but I suppose it's possible if something
-            // elsewhere already fixed this
-            continue;
-        }
-
-        // replace the Seq-feat
-        CRef<CSeq_loc> new_seq_feat_loc = new_loc_creator.MakeSeq_loc(
-            CSeq_loc_I::eMake_PreserveType);
-        CRef<CSeq_feat> replacement_seq_feat(SerialClone(*orig_seq_feat));
-        replacement_seq_feat->SetLocation(*new_seq_feat_loc);
-        try {
-            CSeq_feat_EditHandle seq_feat_h(scope.GetSeq_featHandle(
-                                                *orig_seq_feat));
-            seq_feat_h.Replace(*replacement_seq_feat);
-            ++num_fixed;
-        } catch (...) {
-            // feature may have already been removed
-        }
     }
-
     return CRef<CAutofixReport>(num_fixed ? new CAutofixReport("ORDERED_LOCATION: [n] features with ordered locations fixed", num_fixed) : 0);
 }
 

@@ -102,9 +102,12 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && SetPseudo(sf, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf && SetPseudo(sf, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("PSEUDO_MISMATCH: Set pseudo for [n] feature[s]", n) : 0);
@@ -513,9 +516,12 @@ DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && AddToException(sf, scope, kNonExtendableException)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf && AddToException(sf, scope, kNonExtendableException)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
@@ -664,9 +670,12 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && ExtendToGapsOrEnds(*sf, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf && ExtendToGapsOrEnds(*sf, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
@@ -1038,29 +1047,30 @@ DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller, "Mi
     }
 }
 
-// ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(MICROSATELLITE_REPEAT_TYPE)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_AUTOFIX(MICROSATELLITE_REPEAT_TYPE)
-    //  ----------------------------------------------------------------------------
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            CRef<CSeq_feat> new_feat(new CSeq_feat());
-            new_feat->Assign(*sf);
-            CRef<CGb_qual> new_qual(new CGb_qual("rpt_type", "tandem"));
-            new_feat->SetQual().push_back(new_qual);
-            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-            feh.Replace(*new_feat);
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                CRef<CGb_qual> new_qual(new CGb_qual("rpt_type", "tandem"));
+                new_feat->SetQual().push_back(new_qual);
+                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                feh.Replace(*new_feat);
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("MICROSATELLITE_REPEAT_TYPE: added repeat type of tandem to [n] microsatellite[s]", n) : 0);
@@ -1465,9 +1475,12 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
     std::list<CConstRef<CSeq_loc>> to_remove;
 
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && AddExceptionsToShortIntron(*sf, scope, to_remove)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf && AddExceptionsToShortIntron(*sf, scope, to_remove)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
 
@@ -2089,9 +2102,12 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && AddmRNAForCDS(*sf, scope)) {
-            n++;
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf && AddmRNAForCDS(*sf, scope)) {
+                n++;
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("CDS_WITHOUT_MRNA: Add mRNA for [n] CDS feature[s]", n) : 0);
