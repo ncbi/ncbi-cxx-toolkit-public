@@ -78,6 +78,12 @@ private:
         CRef<CSeq_id> default_product_id,
         ENa_strand default_product_strand);
 
+    void xAddGaps(
+        CSpliced_seg::TProduct_type product_type,
+        const CSpliced_exon::TParts& exon_chunks,
+        string& genomic_seq,
+        string& product_seq); 
+
     void xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
    
     bool xGetSeqString(CBioseq_Handle bsh,

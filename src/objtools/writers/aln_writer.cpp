@@ -252,15 +252,17 @@ bool CAlnWriter::xWriteAlignSplicedSeg(
         return false;
     }
     
-    string genomic_id;
+    CRef<CSeq_id> genomic_id;
     if (spliced_seg.IsSetGenomic_id()) {
-        genomic_id = spliced_seg.GetGenomic_id().AsFastaString();
+        genomic_id = Ref(new CSeq_id()); 
+        genomic_id->Assign(spliced_seg.GetGenomic_id());
     }
 
 
-    string product_id;
+    CRef<CSeq_id> product_id;
     if (spliced_seg.IsSetGenomic_id()) {
-        product_id = spliced_seg.GetProduct_id().AsFastaString();
+        product_id = Ref(new CSeq_id());
+        product_id->Assign(spliced_seg.GetProduct_id());
     }
 
 
@@ -275,9 +277,13 @@ bool CAlnWriter::xWriteAlignSplicedSeg(
         spliced_seg.GetProduct_strand() :
         eNa_strand_plus;
 
-
+    return xWriteSplicedExons(spliced_seg.GetExons(),
+                              spliced_seg.GetProduct_type(),
+                              genomic_id,
+                              genomic_strand,
+                              product_id,
+                              product_strand);
     
-    return false;
 }
 
 unsigned int s_ProductLength(const CProduct_pos& start, const CProduct_pos& end)
@@ -299,16 +305,11 @@ unsigned int s_ProductLength(const CProduct_pos& start, const CProduct_pos& end)
 // -----------------------------------------------------------------------------
 bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,   
     CSpliced_seg::TProduct_type product_type,
-    CRef<CSeq_id> default_genomic_id,
+    CRef<CSeq_id> default_genomic_id, // May be NULL
     ENa_strand default_genomic_strand,
     CRef<CSeq_id> default_product_id,
     ENa_strand default_product_strand) 
 {
-
-    const unsigned int tgtWidth = 
-        (product_type == CSpliced_seg::eProduct_type_transcript) ?
-        1 : 3;
-
     string prev_genomic_id;
     string prev_product_id;
     for (const CRef<CSpliced_exon>& exon : exons) {
@@ -348,7 +349,6 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
 
        
 
-
         if (product_end < product_start) {
             // Throw an exception
         }
@@ -380,54 +380,96 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         }
 
         if (exon->IsSetParts()) {
-            unsigned int common = 0;
-            unsigned int genomic_ins = 0;
-            unsigned int product_ins = 0;
-            // Check that match + mismatch + diag + genomic_ins = genomic_length
-            for (CRef<CSpliced_exon_chunk> exon_chunk : exon->GetParts()) {
-                switch(exon_chunk->Which()) {
-                case CSpliced_exon_chunk::e_Match:
-                    common += exon_chunk->GetMatch();
-                    break;
-                case CSpliced_exon_chunk::e_Mismatch:
-                    common += exon_chunk->GetMismatch();
-                    break;
-                case CSpliced_exon_chunk::e_Diag:
-                    common += exon_chunk->GetDiag();
-                    break;
-                case CSpliced_exon_chunk::e_Genomic_ins:
-                    genomic_ins += exon_chunk->GetGenomic_ins();
-                    break;
-                case CSpliced_exon_chunk::e_Product_ins:
-                    product_ins += exon_chunk->GetProduct_ins();
-                    break;
-                default:
-                    break;
-                }
-            }   
+            xAddGaps(product_type, exon->GetParts(), genomic_seq, product_seq);   
         }
         else 
-        if (product_length == genomic_length) {
-            m_Os << ">" + genomic_id.AsFastaString() << "\n";
-            size_t width = 60;
-            size_t pos=0;
-            while (pos < genomic_seq.size()) {
-                m_Os << genomic_seq.substr(pos, width) << "\n";
-                pos += width;
-            }
+        if (product_length != genomic_length) {
+            // Throw an exception...maybe
+        }
+        
+        m_Os << ">" + genomic_id.AsFastaString() << "\n";
+        size_t width = 60;
+        size_t pos=0;
+        while (pos < genomic_seq.size()) {
+            m_Os << genomic_seq.substr(pos, width) << "\n";
+            pos += width;
+        }
 
-            m_Os << ">" + product_id.AsFastaString() << "\n";
-            pos=0;
-            while (pos < product_seq.size()) {
-                m_Os << product_seq.substr(pos, width) << "\n";
-                pos += width;
-            }
+        m_Os << ">" + product_id.AsFastaString() << "\n";
+        pos=0;
+        while (pos < product_seq.size()) {
+            m_Os << product_seq.substr(pos, width) << "\n";
+            pos += width;
         }
     }
 
-    return false;
+    return true;
 }
 
+// -----------------------------------------------------------------------------
+
+void CAlnWriter::xAddGaps(
+        CSpliced_seg::TProduct_type product_type,
+        const CSpliced_exon::TParts& exon_chunks, 
+        string& genomic_seq,
+        string& product_seq)
+{
+
+    if (exon_chunks.empty()) {
+        return;
+    }
+
+    string genomic_string = "";
+    string product_string = "";
+    unsigned int common = 0;
+    unsigned int genomic_ins = 0;
+    unsigned int product_ins = 0;
+
+    const unsigned int res_width = 
+        (product_type == CSpliced_seg::eProduct_type_transcript) ?
+        1 : 3;
+
+
+    // Check that match + mismatch + diag + genomic_ins = genomic_length
+    int genomic_pos = 0;
+    int product_pos = 0;
+    unsigned int interval_width = 0;
+    for (CRef<CSpliced_exon_chunk> exon_chunk : exon_chunks) {
+        switch(exon_chunk->Which()) {
+        case CSpliced_exon_chunk::e_Match:
+            interval_width = exon_chunk->GetMatch();
+        case CSpliced_exon_chunk::e_Mismatch:
+            interval_width = exon_chunk->GetMismatch();
+        case CSpliced_exon_chunk::e_Diag:
+            interval_width = exon_chunk->GetDiag();
+
+            genomic_string.append(genomic_seq, genomic_pos, interval_width);
+            product_string.append(product_seq, product_pos, (interval_width + (res_width-1))/res_width);
+            genomic_pos += interval_width;
+            product_pos += interval_width/res_width;
+
+            break;
+
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            interval_width = exon_chunk->GetGenomic_ins();
+            genomic_string.append(genomic_seq, genomic_pos, interval_width);
+            product_string.append(interval_width/res_width, '-');
+            genomic_pos += interval_width;
+            break;
+
+        case CSpliced_exon_chunk::e_Product_ins:
+            interval_width = exon_chunk->GetProduct_ins();
+            genomic_string.append(interval_width, '-');
+            product_string.append(product_seq, product_pos, interval_width/res_width);
+            product_pos += interval_width/res_width; 
+            break;
+        default:
+            break;
+        }
+    } 
+    genomic_seq = genomic_string;
+    product_seq = product_string;
+}
 
 
 // -----------------------------------------------------------------------------
@@ -521,9 +563,6 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
 }
 
 // -----------------------------------------------------------------------------
-
-//string CAlnWriter::xGetSparseExonString(const CSeq_id& product_id,
-//        const CSeq_id& genomic_id 
 
 
 END_NCBI_SCOPE
