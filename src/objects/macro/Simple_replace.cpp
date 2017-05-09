@@ -89,7 +89,7 @@ bool SkipWeasel(string& str)
     }
   
     vector<string> tokens;
-    NStr::Tokenize(str, " ", tokens);
+    NStr::Split(str, " ", tokens, 0);
     bool rval = false;
     
     while (tokens.size() > 0 && s_IsWeaselWord(tokens[0])) {

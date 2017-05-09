@@ -2038,7 +2038,7 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and 
         if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_authority) {
             if (tax1.empty()) {
                 list<CTempString> tmp;
-                NStr::Split(obj.GetOrg().GetTaxname(), " ", tmp, 0);
+                NStr::Split(obj.GetOrg().GetTaxname(), " ", tmp, NStr::fSplit_Tokenize);
                 list<CTempString>::iterator p = tmp.begin();
                 if (p != tmp.end()) {
                     tax1 = *p;
@@ -2050,7 +2050,7 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and 
             }
             string aut1, aut2;
             list<CTempString> tmp;
-            NStr::Split((*it)->GetSubname(), " ", tmp, 0);
+            NStr::Split((*it)->GetSubname(), " ", tmp, NStr::fSplit_Tokenize);
             list<CTempString>::iterator p = tmp.begin();
             if (p != tmp.end()) {
                 aut1 = *p;

@@ -187,7 +187,7 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
   }
   string ret_str;
   vector<string> arr;
-  arr = NStr::Tokenize(str, " ", arr);
+  arr = NStr::Split(str, " ", arr, 0);
 
   bool found = false;
   while (!arr.empty() && x_IsWeasel(arr[0])) {

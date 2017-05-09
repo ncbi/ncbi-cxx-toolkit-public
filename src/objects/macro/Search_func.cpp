@@ -94,7 +94,7 @@ bool CSearch_func :: x_StringMayContainPlural(const string& str) const
       return false;
   }
   vector <string> arr;
-  arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
+  arr = NStr::Split(str, " ,", arr, NStr::fSplit_Tokenize);
   if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
      len = arr[0].size();
      if (len == 1) {
@@ -342,7 +342,7 @@ bool CSearch_func :: x_StringContainsUnderscore(const string& str) const
 
   string strtmp;
   vector <string> arr;
-  arr = NStr::Tokenize(str, "_", arr);
+  arr = NStr::Split(str, "_", arr, 0);
   for (unsigned i=0; i< arr.size() - 1; i++) {
      strtmp = arr[i+1];
      // strtmp was changed in the FollowedByFamily

@@ -1099,7 +1099,7 @@ void CNewCleanup_imp::GBblockBC (
         CGB_block::TKeywords::iterator it = gbk.SetKeywords().begin();
         while (it != gbk.SetKeywords().end()) {
             vector<string> tokens;
-            NStr::Split(*it, ";", tokens, 0);
+            NStr::Split(*it, ";", tokens, NStr::fSplit_Tokenize);
             if (tokens.size() > 1) {
                 it = gbk.SetKeywords().erase(it);
                 gbk.SetKeywords().insert(it, tokens.begin(), tokens.end());
@@ -4207,7 +4207,7 @@ void s_ExpandThisQual(
     //    
     vector< string > newValues;
     string valueList = val.substr(1, val.length() - 2);
-    NStr::Split(valueList, ",", newValues, 0);
+    NStr::Split(valueList, ",", newValues, NStr::fSplit_Tokenize);
     
     qual.SetVal( newValues[0] );
    
@@ -5785,7 +5785,7 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
 
     // split by colon and generate new tags
     vector<string> tags;
-    NStr::Split(dbt.GetTag().GetStr(), ":", tags, 0);
+    NStr::Split(dbt.GetTag().GetStr(), ":", tags, NStr::fSplit_Tokenize);
     _ASSERT( tags.size() >= 2 );
 
     // treat the CDbtag argument as the first of the new CDbtags
@@ -5886,7 +5886,7 @@ void s_ParsePCRComponent(vector<string> &out_list, const string *component)
         component_copy = component_copy.substr( 1, component_copy.length() - 2 );
     }
 
-    NStr::Split(component_copy, string(","), out_list, 0);
+    NStr::Split(component_copy, string(","), out_list, NStr::fSplit_Tokenize);
     EDIT_EACH_STRING_IN_VECTOR( str_iter, out_list ) {
         NStr::TruncateSpacesInPlace( *str_iter );
     }
@@ -6000,7 +6000,7 @@ void s_ParsePCRSet( const CBioSource &biosrc, list<CPCRParsedSet> &out_pcr_set )
 static
 void s_ParsePCRColonString( vector<string> &out_list, const string &str ) 
 {
-    NStr::Split(str, ":", out_list, 0);
+    NStr::Split(str, ":", out_list, NStr::fSplit_Tokenize);
     EDIT_EACH_STRING_IN_VECTOR(str_iter, out_list ) {
         NStr::TruncateSpacesInPlace( *str_iter );
         if( str_iter->empty() ) {
@@ -7211,7 +7211,7 @@ void CNewCleanup_imp::Except_textBC (
     }
 
     vector<string> exceptions;
-    NStr::Split(except_text, ",", exceptions, 0);
+    NStr::Split(except_text, ",", exceptions, NStr::fSplit_Tokenize);
 
     EDIT_EACH_STRING_IN_VECTOR (it, exceptions) {
         string& text = *it;
@@ -7519,7 +7519,7 @@ bool s_SplitGeneSyn( const string &syn, vector<string> &gene_syns_to_add)
 
     // split by comma
     vector<string> pieces_split_by_comma;
-    NStr::Split(syn, ",", pieces_split_by_comma, 0);
+    NStr::Split(syn, ",", pieces_split_by_comma, NStr::fSplit_Tokenize);
 
     // now split each of those pieces by "; "
     vector<string> pieces_split_by_semicolon;

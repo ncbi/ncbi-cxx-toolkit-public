@@ -115,7 +115,7 @@ void CForeignContaminationScreenReportReader::LoadFile(ILineReader& reader)
 
         // Each line except first is a set of values, first collumn is a sequence id
         values.clear();
-        NStr::Split(current, "\t", values, 0);
+        NStr::Split(current, "\t", values, NStr::fSplit_Tokenize);
         if (values.size() == 5)
         {
             TColumns& new_cols = m_data["lcl|" + values[0]];
