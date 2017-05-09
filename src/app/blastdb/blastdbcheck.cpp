@@ -717,7 +717,7 @@ public:
             if (NStr::IsBlank(*line))  continue;  // ignore empty lines
 
             vector <string> tokens;
-            NStr::Tokenize(*line, " \t\n\r", tokens, NStr::eMergeDelims);
+            NStr::Split(*line, " \t\n\r", tokens, NStr::fSplit_Tokenize);
 
             if (tokens.size() <= 1) {
                 Log(name, e_Brief) << "  [ERROR] no value(s) found for keyword " 
@@ -938,7 +938,7 @@ bool CDbTest::Test(CTestActionList & action)
     int tot_faults = 0;
     
     vector<string> dbs;
-    NStr::Tokenize(m_Db, " ", dbs, NStr::eMergeDelims);
+    NStr::Split(m_Db, " ", dbs, NStr::fSplit_Tokenize);
     
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(m_DbType);
 
