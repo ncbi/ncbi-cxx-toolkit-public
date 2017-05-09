@@ -364,6 +364,7 @@ while [ $# != 0 ]; do
             BUILD_TYPE="Release"
             BUILD_SHARED_LIBS=ON
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Release"
             add_gpipe_warnings
             ;;
 
@@ -372,6 +373,7 @@ while [ $# != 0 ]; do
             BUILD_TYPE="Debug"
             BUILD_SHARED_LIBS=ON
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Debug"
             add_gpipe_warnings
             ;;
 
@@ -380,11 +382,13 @@ while [ $# != 0 ]; do
             BUILD_TYPE="Release"
             BUILD_SHARED_LIBS=OFF
             CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Static"
             add_gpipe_warnings
             ;;
 
         "--gpipe-distrib")
             BUILD_TYPE="Release"
+            GPIPEROOT="Distrib"
             add_gpipe_warnings
             ;;
 
@@ -456,9 +460,15 @@ if [ "x${LDFLAGS}" != "x" ]; then
 fi
 
 if [ -z "$ROOT" ]; then
-    ROOT="CMake-$BUILD_TYPE"
-    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-        ROOT="$ROOT"DLL
+    if [ -z "$GPIPEROOT" ]; then
+        ROOT="CMake-$BUILD_TYPE"
+        if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+            ROOT="$ROOT"DLL
+        fi
+    else
+        ROOT=`cd "${TOP_SRCDIR}/../../../" && /bin/pwd` || exit 1
+        ROOT=`/usr/bin/dirname "$ROOT"` || exit 1
+        ROOT=$ROOT/$GPIPEROOT
     fi
 fi
 
