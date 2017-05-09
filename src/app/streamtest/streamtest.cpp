@@ -179,6 +179,7 @@ void CStreamTestApp::Init()
                                         "fasta",
                                         "flatfile",
                                         "gene-overlap",
+                                        "gene-feattree",
                                         "gpipe-defline",
                                         "invert",
                                         "macrotest",
@@ -330,6 +331,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
+    }
+    if ( testcase == "gene-feattree" ) {
+        pProcess = new CGeneFeatTreeProcess;
     }
     if ( testcase == "gpipe-defline" ) {
         pProcess = new CDeflineProcess (true, true);

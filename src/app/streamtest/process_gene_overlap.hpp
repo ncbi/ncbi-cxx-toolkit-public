@@ -81,10 +81,45 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            VISIT_ALL_FEATURES_WITHIN_SEQENTRY (fit, *m_entry) {
-                const CSeq_feat& feat = *fit;
-                TestFeatureGeneOverlap( feat );
-                ++m_objectcount;
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+                const CBioseq& bioseq = *bit;
+                if (bioseq.IsSetInst()) {
+                    const CSeq_inst& inst = bioseq.GetInst();
+                    if (inst.IsSetMol()) {
+                        TSEQ_MOL mol = inst.GetMol();
+                        if (mol == CSeq_inst::eMol_aa) {
+                            continue;
+                        }
+                    }
+                }
+
+                CBioseq_Handle bsh = m_scope->GetBioseqHandle(bioseq);
+                SAnnotSelector sel;
+                sel.SetLimitTSE(bsh.GetTSE_Handle());
+                sel.SetResolveDepth(0);
+
+                for (CFeat_CI feat_it(bsh, sel); feat_it; ++feat_it) {
+                    const CMappedFeat mf = *feat_it;
+                    const CSeq_feat& feat = mf.GetOriginalFeature();
+                    TestFeatureGeneOverlap( feat );
+                    ++m_objectcount;
+                }
+
+                /*
+                FOR_EACH_SEQANNOT_ON_BIOSEQ ( ait, bioseq ) {
+                    const CSeq_annot& annot = **ait;
+                    FOR_EACH_SEQFEAT_ON_SEQANNOT ( fit, annot ) {
+                        const CSeq_feat& feat = **fit;
+                        TestFeatureGeneOverlap( feat );
+                        ++m_objectcount;
+                    }
+                }
+                VISIT_ALL_FEATURES_WITHIN_SEQENTRY (fit, *m_entry) {
+                    const CSeq_feat& feat = *fit;
+                    TestFeatureGeneOverlap( feat );
+                    ++m_objectcount;
+                }
+                */
             }
         }
         catch (CException& e) {
@@ -108,8 +143,14 @@ protected:
         if ( ! ol ) {
             return;
         }
+        const CGene_ref& gene = ol->GetData().GetGene();
+        if (gene.IsSetLocus()) {
+            *m_out << "Gene locus " << gene.GetLocus() << endl;
+        }
+        /*
         *m_out << SeqLocString( locbase ) << " -> " 
                << SeqLocString( ol->GetLocation() ) << endl;
+        */
     }
 
     //  ------------------------------------------------------------------------
@@ -126,6 +167,124 @@ protected:
     //  ------------------------------------------------------------------------
 protected:
     CNcbiOstream* m_out;
+};
+
+//  ============================================================================
+class CGeneFeatTreeProcess
+//  ============================================================================
+    : public CScopedProcess
+{
+public:
+    //  ------------------------------------------------------------------------
+    CGeneFeatTreeProcess()
+    //  ------------------------------------------------------------------------
+        : CScopedProcess()
+        , m_out( 0 )
+    {};
+
+    //  ------------------------------------------------------------------------
+    ~CGeneFeatTreeProcess()
+    //  ------------------------------------------------------------------------
+    {
+    };
+
+    //  ------------------------------------------------------------------------
+    void ProcessInitialize(
+        const CArgs& args )
+    //  ------------------------------------------------------------------------
+    {
+        CScopedProcess::ProcessInitialize( args );
+
+        m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+    };
+
+    //  ------------------------------------------------------------------------
+    void ProcessFinalize()
+    //  ------------------------------------------------------------------------
+    {
+    }
+
+    //  ------------------------------------------------------------------------
+    virtual void SeqEntryInitialize(
+        CRef<CSeq_entry>& se )
+    //  ------------------------------------------------------------------------
+    {
+        CScopedProcess::SeqEntryInitialize( se );
+    };
+
+    //  ------------------------------------------------------------------------
+    void SeqEntryProcess()
+    //  ------------------------------------------------------------------------
+    {
+        try {
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+                const CBioseq& bioseq = *bit;
+                if (bioseq.IsSetInst()) {
+                    const CSeq_inst& inst = bioseq.GetInst();
+                    if (inst.IsSetMol()) {
+                        TSEQ_MOL mol = inst.GetMol();
+                        if (mol == CSeq_inst::eMol_aa) {
+                            continue;
+                        }
+                    }
+                }
+
+                CBioseq_Handle bsh = m_scope->GetBioseqHandle(bioseq);
+                SAnnotSelector sel;
+                sel.SetLimitTSE(bsh.GetTSE_Handle());
+                sel.SetResolveDepth(0);
+
+                for (CFeat_CI feat_it(bsh, sel); feat_it; ++feat_it) {
+                    const CMappedFeat mf = *feat_it;
+                    m_featTree.AddFeature(mf);
+                }
+
+                for (CFeat_CI feat_it(bsh, sel); feat_it; ++feat_it) {
+                    const CMappedFeat mf = *feat_it;
+                    TestFeatureGeneTree( mf );
+                    ++m_objectcount;
+                }
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error processing seqentry: " << e.what());
+        }
+    };
+
+protected:
+    //  ------------------------------------------------------------------------
+    void TestFeatureGeneTree (
+        const CMappedFeat mf )
+    //  ------------------------------------------------------------------------
+    {
+        if ( mf.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene ) {
+            return;
+        }
+        ++m_objectcount;
+        CMappedFeat best = feature::GetBestGeneForFeat(mf, &m_featTree);
+        if (best) {
+            const CGene_ref& gene = best.GetData().GetGene();
+            if (gene.IsSetLocus()) {
+                *m_out << "Gene locus " << gene.GetLocus() << endl;
+            }
+        }
+    }
+
+    //  ------------------------------------------------------------------------
+    string SeqLocString( const CSeq_loc& loc )
+    //  ------------------------------------------------------------------------
+    {
+        string str;
+        loc.GetLabel(&str);
+        return str;
+    }
+
+    //  ------------------------------------------------------------------------
+    //  Data:
+    //  ------------------------------------------------------------------------
+protected:
+    CNcbiOstream* m_out;
+    feature::CFeatTree m_featTree;
 };
 
 #endif
