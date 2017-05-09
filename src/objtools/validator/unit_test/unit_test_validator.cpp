@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
     ITERATE(vector<string>, it, cat_list) {
         vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
+        NStr::Split(*it, "\n", sublist, 0);
         ITERATE(vector<string>, sit, sublist) {
             seen.push_back(*sit);
         }
@@ -596,7 +596,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
     expected.clear();
     seen.clear();
-    NStr::Tokenize(rval, "\n", seen);
+    NStr::Split(rval, "\n", seen, 0);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
     expected.clear();
     seen.clear();
-    NStr::Tokenize(rval, "\n", seen);
+    NStr::Split(rval, "\n", seen, 0);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
@@ -621,7 +621,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
     ITERATE(vector<string>, it, cat_list) {
         vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
+        NStr::Split(*it, "\n", sublist, 0);
         ITERATE(vector<string>, sit, sublist) {
             seen.push_back(*sit);
         }
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_6395)
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
     ITERATE(vector<string>, it, cat_list) {
         vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
+        NStr::Split(*it, "\n", sublist, 0);
         ITERATE(vector<string>, sit, sublist) {
             seen.push_back(*sit);
         }
@@ -19679,6 +19679,53 @@ BOOST_AUTO_TEST_CASE(Test_VR_146)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_711)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> repeat_region = unit_test_util::AddMiscFeature(entry);
+    repeat_region->SetData().SetImp().SetKey("repeat_region");
+    repeat_region->ResetComment();
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->ResetComment();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good",
+        eDiag_Warning,
+        "NeedsNote",
+        "A note or other qualifier is required for a misc_feature"));
+    expected_errors.push_back(new CExpectedError("lcl|good",
+        eDiag_Warning,
+        "NeedsNote",
+        "repeat_region has no qualifiers"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    // bump to error for -U
+    options |= CValidator::eVal_genome_submission;
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[1]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // only warning for EMBL/DDBJ
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> other_acc(new CSeq_id());
+    other_acc->SetEmbl().SetAccession("HE717023");
+    other_acc->SetEmbl().SetVersion(1);
+    entry->SetSeq().SetId().push_back(other_acc);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("emb|HE717023.1|");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[1]->SetAccession("emb|HE717023.1|");
+    expected_errors[1]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 

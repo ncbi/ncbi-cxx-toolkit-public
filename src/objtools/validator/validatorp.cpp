@@ -536,7 +536,6 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_FEAT_GeneXrefStrandProblem,
     eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
     eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
-    eErr_SEQ_FEAT_NeedsNote,
     eErr_SEQ_FEAT_RptUnitRangeProblem,
     eErr_SEQ_FEAT_InconsistentRRNAstrands,
     eErr_SEQ_GRAPH_GraphAbove,
@@ -547,14 +546,26 @@ static const EErrType sc_ValidGenomeRaise[] = {
 
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseArray, sc_ValidGenomeRaise);
 
+static const EErrType sc_ValidGenomeRaiseExceptEmblDdbj[] = {
+    eErr_SEQ_INST_CompleteTitleProblem,
+    eErr_SEQ_FEAT_NeedsNote
+};
+
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseExceptEmblDdbjArray, sc_ValidGenomeRaiseExceptEmblDdbj);
+
+
+
 bool CValidError_imp::RaiseGenomeSeverity(
     EErrType et
 )
 
 {
-    if (et == eErr_SEQ_INST_CompleteTitleProblem && 
-        (IsEmbl() || IsDdbj())) {
-        return false;
+    if (sc_GenomeRaiseExceptEmblDdbjArray.find(et) != sc_GenomeRaiseExceptEmblDdbjArray.end()) {
+        if (IsEmbl() || IsDdbj()) {
+            return false;
+        } else {
+            return true;
+        }
     }
     if (sc_GenomeRaiseArray.find (et) != sc_GenomeRaiseArray.end()) {
         return true;
