@@ -371,19 +371,19 @@ static void s_ProcessOrgRefMapLine(const CTempString& line)
         
         if (!NStr::IsBlank(tokens[2])) {
             try {
-                org->SetOrgname().SetGcode(NStr::StringToNumeric(tokens[2]));
+                org->SetOrgname().SetGcode(NStr::StringToNonNegativeInt(tokens[2]));
             } catch (CException& ex) {
             }
         }
         if (!NStr::IsBlank(tokens[3])) {
             try {
-                org->SetOrgname().SetMgcode(NStr::StringToNumeric(tokens[3]));
+                org->SetOrgname().SetMgcode(NStr::StringToNonNegativeInt(tokens[3]));
             } catch (CException& ex) {
             }
         }
         if (!NStr::IsBlank(tokens[4])) {
             try {
-                org->SetOrgname().SetPgcode(NStr::StringToNumeric(tokens[4]));
+                org->SetOrgname().SetPgcode(NStr::StringToNonNegativeInt(tokens[4]));
             } catch (CException& ex) {
             }
         }
@@ -392,7 +392,7 @@ static void s_ProcessOrgRefMapLine(const CTempString& line)
             try {
                 CRef<CDbtag>taxon(new CDbtag());
                 taxon->SetDb("taxon");
-                taxon->SetTag().SetId(NStr::StringToNumeric(tokens[5]));
+                taxon->SetTag().SetId(NStr::StringToNonNegativeInt(tokens[5]));
                 org->SetDb().push_back(taxon);
             } catch (CException& ex) {
             }

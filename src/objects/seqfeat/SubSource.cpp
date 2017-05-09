@@ -1440,7 +1440,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     }
     if (num_sep == 0 && num_period > 1) {
         list<CTempString> pieces;
-        NStr::Split(token, ".", pieces);
+        NStr::Split(token, ".", pieces, 0);
         num_sep = 0;
         ITERATE(list<CTempString>, it, pieces) {
             if (!s_AddTokenToVal(val, *it, num_sep, prec)) {
