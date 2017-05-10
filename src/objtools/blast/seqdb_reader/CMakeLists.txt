@@ -8,4 +8,3 @@ include(CMakeLists.seqdb.lib.txt)
 # Recurse subdirectories
 add_subdirectory(demo )
 add_subdirectory(test )
-add_subdirectory(seqdb2_info)
