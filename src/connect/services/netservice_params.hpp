@@ -239,7 +239,7 @@ protected:
 
 private:
     CCompoundRegistry m_Registry;
-    size_t m_Priority = 0;
+    int m_Priority = 0;
 };
 
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
