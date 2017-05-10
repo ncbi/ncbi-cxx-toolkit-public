@@ -1,3 +1,10 @@
+Release 4.29.0 cloned from 4.29.0 (2017-05-10)
+
+Improvements:
+    * log timings for socket write errors (JIRA: CXX-9209)
+    * NetSchedule: qname to be replaced with _queue (JIRA: CXX-9241)
+    * NetSchedule -- allow to run in "memory-only" mode (JIRA: CXX-9245)
+
 Release 4.28.3 cloned from 4.28.2 (2017-04-24)
 
 Improvements:
