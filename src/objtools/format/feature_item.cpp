@@ -973,7 +973,7 @@ CFeatureItemBase::CFeatureItemBase
         const CSeq_annot_Handle& ah = feat.GetAnnot();
         CSeq_entry_Handle seh = ah.GetParentEntry();
         if (! seh) {
-        	x_SetExternal();
+            x_SetExternal();
         }
     }
 }
@@ -1678,6 +1678,16 @@ void CFeatureItem::x_AddQuals(
                     is_mapped = true;
                 }
             } catch (CException&) {}
+            if (! is_mapped) {
+                try {
+                    CMappedFeat mapped_gene = m_Feat_Tree->GetBestGene(m_Feat);
+                    if (mapped_gene) {
+                        gene_feat = mapped_gene.GetOriginalSeq_feat();
+                        gene_ref = &gene_feat->GetData().GetGene();
+                        is_mapped = true;
+                    }
+                } catch (CException&) {}
+            }
             if (! is_mapped) {
                 try {
                     // e.g., check sig_peptide for gene overlapping parent CDS
