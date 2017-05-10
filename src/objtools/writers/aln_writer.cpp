@@ -36,6 +36,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
@@ -90,7 +91,7 @@ bool CAlnWriter::WriteAlign(
     case CSeq_align::C_Segs::e_Spliced:
         return xWriteAlignSplicedSeg(align.GetSegs().GetSpliced());
     case CSeq_align::C_Segs::e_Sparse:
-        break;
+        return xWriteAlignSparseSeg(align.GetSegs().GetSparse());
     case CSeq_align::C_Segs::e_Std:
         break;
     default:
@@ -498,6 +499,21 @@ string CAlnWriter::xGetSegString(const string& seq_plus,
 
 
 // -----------------------------------------------------------------------------
+bool CAlnWriter::xWriteAlignSparseSeg(
+    const CSparse_seg& sparse_seg)
+{
+    for (CRef<CSparse_align> align : sparse_seg.GetRows()) 
+    {
+        if (!xWriteSparseAlign(*align)) {
+            return false;
+        }
+    } 
+    return true;
+}
+
+
+
+// -----------------------------------------------------------------------------
 
 bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
 {
@@ -528,6 +544,14 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             const auto len = sparse_align.GetLens()[seg];
             seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
+
+        m_Os << ">" + first_id.AsFastaString() << "\n";
+        size_t pos=0;
+        size_t width = 60;
+        while (pos < seqdata.size()) {
+            m_Os << seqdata.substr(pos, width) << "\n";
+            pos += width;
+        }
     }
 
     { // Second row
@@ -556,8 +580,15 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             const auto len = sparse_align.GetLens()[seg];
             seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
-    }
 
+        m_Os << ">" + second_id.AsFastaString() << "\n";
+        size_t pos=0;
+        size_t width = 60;
+        while (pos < seqdata.size()) {
+            m_Os << seqdata.substr(pos, width) << "\n";
+            pos += width;
+        }
+    }
 
     return true;
 }

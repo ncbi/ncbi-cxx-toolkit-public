@@ -42,6 +42,7 @@ BEGIN_objects_SCOPE
 class CDense_seg;
 class CScope;
 class CSparse_align;
+class CSparse_seg;
 
 class NCBI_XOBJWRITE_EXPORT CAlnWriter:
     public CWriterBase
@@ -68,6 +69,8 @@ private:
     bool xWriteAlignDenseSeg(const CDense_seg& denseg);
 
     bool xWriteAlignSplicedSeg(const CSpliced_seg& spliced_seg);
+
+    bool xWriteAlignSparseSeg(const CSparse_seg& sparse_seg);
 
     bool xWriteSparseAlign(const CSparse_align& sparse_aln);
 
