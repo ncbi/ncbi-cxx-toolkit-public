@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(BerkeleyDB_CMAKE_DIR "$ENV{NCBI}/BerkeleyDB-4.6.21.1" REALPATH)
+set(_BDB_VERSION "BerkeleyDB-4.6.21.1")
+
+get_filename_component(BerkeleyDB_CMAKE_DIR "$ENV{NCBI}/${_BDB_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" BerkeleyDB_VERSION_STRING "${BerkeleyDB_CMAKE_DIR}")
 
 set(BerkeleyDB_FOUND True)
@@ -26,12 +28,26 @@ set(BERKELEYDB_INCLUDE_DIR
     ${BerkeleyDB_CMAKE_DIR}/include
     )
 
-set(BERKELEYDB_LIBRARY
-    ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
-    )
-set(BERKELEYDB_LIBS
-    -Wl,-rpath,/opt/ncbi/64/BerkeleyDB-4.6.21.1/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
-    )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(BERKELEYDB_LIBRARY
+        ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
+        )
+    set(BERKELEYDB_LIBRARIES
+        -Wl,-rpath,${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
+        )
+
+else()
+    # release-mode binaries are in /opt
+
+    set(BERKELEYDB_LIBRARY
+        ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
+        )
+    set(BERKELEYDB_LIBRARIES
+        -Wl,-rpath,/opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
+        )
+endif()
 
 
 #############################################################################
