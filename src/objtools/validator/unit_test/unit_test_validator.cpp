@@ -20546,6 +20546,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 
     BOOST_CHECK_EQUAL(tval.IsStrainMapUpdateComplete(), true);
 
+#if 0
+    // commented out until TM-725 is resolved
     TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", false); // no error - giraffe looks up but is not in taxname
     TestOneStrain("Gorilla gorilla", "abc", "xyz", false);
     TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", true); 
@@ -20554,7 +20556,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 
     TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", false);
     TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", false);
-
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(TEST_VR_477)

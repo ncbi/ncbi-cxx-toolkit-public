@@ -2699,7 +2699,8 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     // Now look at specific-host values
     ValidateSpecificHost(tval);
 
-    ValidateStrain(tval);
+    // Commented out until TM-725 is resolved
+    //ValidateStrain(tval);
 
     ValidateTentativeName(se);
 }
