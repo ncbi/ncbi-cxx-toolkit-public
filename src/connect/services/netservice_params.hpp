@@ -110,8 +110,8 @@ NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 class NCBI_XNCBI_EXPORT CConfigRegistry : public IRegistry
 {
 public:
-    CConfigRegistry(CConfig* config = nullptr, EOwnership ownership = eNoOwnership);
-    void Reset(CConfig* config = nullptr, EOwnership ownership = eNoOwnership);
+    CConfigRegistry(CConfig* config = nullptr);
+    void Reset(CConfig* config = nullptr);
 
 private:
     bool x_Empty(TFlags flags) const override;
@@ -122,7 +122,7 @@ private:
 
     const unique_ptr<CConfig>& GetSubConfig(const string& section) const;
 
-    shared_ptr<CConfig> m_Config;
+    CConfig* m_Config;
     mutable map<string, unique_ptr<CConfig>> m_SubConfigs;
 };
 
@@ -134,16 +134,14 @@ struct SConfigOrRegistry
     SConfigOrRegistry(const IRegistry& registry) : m_Registry(&registry) {}
 
     SConfigOrRegistry(CConfig* config) :
-        m_ConfigRegistry(config ? new CConfigRegistry(config) : nullptr),
-        m_Registry(config ? m_ConfigRegistry.get() : nullptr)
+        m_Registry(config ? new CConfigRegistry(config) : nullptr)
     {
     }
 
-    operator const IRegistry*() const { return m_Registry; }
+    operator const IRegistry*() const { return m_Registry.GetPointer(); }
 
 private:
-    shared_ptr<CConfigRegistry> m_ConfigRegistry;
-    const IRegistry* m_Registry;
+    CRef<const IRegistry> m_Registry;
 };
 
 struct SRegSynonyms : vector<string>
@@ -195,7 +193,7 @@ public:
 
     bool Has(const SRegSynonyms& sections, SRegSynonyms names);
 
-    virtual void Add(const IRegistry* registry, EOwnership ownership = eNoOwnership) = 0;
+    virtual void Add(const IRegistry& registry) = 0;
 
 protected:
     virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
@@ -227,9 +225,7 @@ protected:
 class NCBI_XNCBI_EXPORT CSynRegistryImpl : public ISynRegistry
 {
 public:
-    CSynRegistryImpl(const IRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
-
-    void Add(const IRegistry* registry, EOwnership ownership = eNoOwnership) override;
+    void Add(const IRegistry& registry) override;
 
 protected:
     template <typename TType>
@@ -237,13 +233,13 @@ protected:
 
     bool HasImpl(const string& section, const string& name) final
     {
-        _ASSERT(m_SubRegistries.size());
+        _ASSERT(m_Priority);
         return m_Registry.HasEntry(section, name);
     }
 
 private:
     CCompoundRegistry m_Registry;
-    vector<shared_ptr<const IRegistry>> m_SubRegistries;
+    size_t m_Priority = 0;
 };
 
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
@@ -253,10 +249,10 @@ class NCBI_XNCBI_EXPORT CCachedSynRegistryImpl : public ISynRegistry
     class CCache;
 
 public:
-    CCachedSynRegistryImpl(ISynRegistry* registry = nullptr, EOwnership ownership = eNoOwnership);
+    CCachedSynRegistryImpl(ISynRegistry& registry);
     ~CCachedSynRegistryImpl();
 
-    void Add(const IRegistry* registry, EOwnership ownership = eNoOwnership) override;
+    void Add(const IRegistry& registry) override;
 
 protected:
     template <typename TType>
@@ -265,7 +261,7 @@ protected:
     bool HasImpl(const string& section, const string& name) final;
 
 private:
-    shared_ptr<ISynRegistry> m_Registry;
+    ISynRegistry& m_Registry;
     unique_ptr<CCache> m_Cache;
 };
 

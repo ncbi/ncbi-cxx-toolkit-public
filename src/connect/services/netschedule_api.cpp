@@ -444,7 +444,7 @@ bool CNetScheduleConfigLoader::operator()(SNetScheduleAPIImpl* impl)
         return false;
     }
 
-    unique_ptr<CMemoryRegistry> mem_registry(new CMemoryRegistry);
+    CRef<CMemoryRegistry> mem_registry(new CMemoryRegistry);
     const string prefix = m_NsConf ? "ns." : "nc.";
     const string section = s_GetSection(m_NsConf);
 
@@ -458,7 +458,7 @@ bool CNetScheduleConfigLoader::operator()(SNetScheduleAPIImpl* impl)
 
     if (mem_registry->Empty()) return false;
 
-    m_Registry.Add(mem_registry.release(), eTakeOwnership);
+    m_Registry.Add(mem_registry.GetObject());
     return true;
 }
 

@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(SynRegistry)
     CSynRegistry syn_registry;
 
     for (auto& registry : registries) {
-        syn_registry.Add(&registry);
+        syn_registry.Add(registry);
     }
 
     for (auto& param : random_params) {
@@ -518,10 +518,10 @@ BOOST_AUTO_TEST_CASE(CachedSynRegistry)
     CSynRegistry syn_registry;
 
     for (auto& registry : registries) {
-        syn_registry.Add(&registry);
+        syn_registry.Add(registry);
     }
 
-    CCachedSynRegistry cached_syn_registry(&syn_registry);
+    CCachedSynRegistry cached_syn_registry(syn_registry);
 
     // Check (and cache) values
     for (auto& param : random_params) {

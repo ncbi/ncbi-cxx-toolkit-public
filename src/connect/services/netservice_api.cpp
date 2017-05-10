@@ -511,19 +511,19 @@ void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRe
     }
 
     CSynRegistry syn_registry;
-    CCachedSynRegistry registry(&syn_registry);
+    CCachedSynRegistry registry(syn_registry);
 
     {
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
 
         if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-            syn_registry.Add(&app->GetConfig());
+            syn_registry.Add(app->GetConfig());
         } else {
-            syn_registry.Add(new CEnvironmentRegistry, eTakeOwnership);
+            syn_registry.Add(*new CEnvironmentRegistry);
         }
     }
 
-    if (top_registry) syn_registry.Add(top_registry);
+    if (top_registry) syn_registry.Add(*top_registry);
 
     // Remove empty sections
     for (auto it = sections.begin(); it != sections.end(); ) {

@@ -99,21 +99,14 @@ unsigned long s_GetRetryDelay()
     return retry_delay;
 }
 
-template <class T>
-shared_ptr<T> s_MakeShared(T* ptr, EOwnership ownership)
-{
-    if (ownership == eTakeOwnership) return shared_ptr<T>(ptr);
-    return { shared_ptr<T>(), ptr };
-}
-
-CConfigRegistry::CConfigRegistry(CConfig* config, EOwnership ownership) :
-    m_Config(s_MakeShared(config, ownership))
+CConfigRegistry::CConfigRegistry(CConfig* config) :
+    m_Config(config)
 {
 }
 
-void CConfigRegistry::Reset(CConfig* config, EOwnership ownership)
+void CConfigRegistry::Reset(CConfig* config)
 {
-    m_Config = s_MakeShared(config, ownership);
+    m_Config = config;
     m_SubConfigs.clear();
 }
 
@@ -185,26 +178,16 @@ void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, 
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
 
-CSynRegistryImpl::CSynRegistryImpl(const IRegistry* registry, EOwnership ownership)
+void CSynRegistryImpl::Add(const IRegistry& registry)
 {
-    if (registry) Add(registry, ownership);
-}
-
-void CSynRegistryImpl::Add(const IRegistry* registry, EOwnership ownership)
-{
-    _ASSERT(registry);
-
-    m_SubRegistries.push_back(s_MakeShared(registry, ownership));
-
     // Always add a registry as new top priority
-    const auto priority = static_cast<int>(m_SubRegistries.size());
-    m_Registry.Add(*m_SubRegistries.back(), priority);
+    m_Registry.Add(registry, ++m_Priority);
 }
 
 template <typename TType>
 TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
-    _ASSERT(m_SubRegistries.size());
+    _ASSERT(m_Priority);
     _ASSERT(sections.size());
     _ASSERT(names.size());
 
@@ -326,8 +309,8 @@ CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(co
     return value;
 }
 
-CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry* registry, EOwnership ownership) :
-    m_Registry(s_MakeShared(registry, ownership)),
+CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry& registry) :
+    m_Registry(registry),
     m_Cache(new CCache)
 {
 }
@@ -336,16 +319,14 @@ CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 {
 }
 
-void CCachedSynRegistryImpl::Add(const IRegistry* registry, EOwnership ownership)
+void CCachedSynRegistryImpl::Add(const IRegistry& registry)
 {
-    m_Registry->Add(registry, ownership);
+    m_Registry.Add(registry);
 }
 
 template <typename TType>
 TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
-    _ASSERT(m_Registry);
-
     auto cached = m_Cache->Get(sections, names);
     auto& cached_type = cached->type;
     auto& cached_value = cached->value;
@@ -354,9 +335,9 @@ TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms na
     if (cached_type == CCache::SValue::Read) return cached_value;
 
     // Has a non-default value
-    if (m_Registry->Has(sections, names)) {
+    if (m_Registry.Has(sections, names)) {
         cached_type = CCache::SValue::Read;
-        cached_value = m_Registry->Get(sections, names, default_value);
+        cached_value = m_Registry.Get(sections, names, default_value);
 
     // Has no (default) value cached
     } else if (cached_type == CCache::SValue::New) {
@@ -369,9 +350,7 @@ TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms na
 
 bool CCachedSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
-    _ASSERT(m_Registry);
-
-    return (m_Cache->Has(section, name)) || m_Registry->Has(section, name);
+    return (m_Cache->Has(section, name)) || m_Registry.Has(section, name);
 }
 
 template string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
