@@ -138,7 +138,7 @@ void CIgBlast::x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int lengt
             CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             while (it != align_list.end()) {
-                if((*it)->GetAlignLength() - (*it)->GetTotalGapCount(0) < length){
+                if((int)((*it)->GetAlignLength()) - (int)((*it)->GetTotalGapCount(0)) < length){
                     it = align_list.erase(it);
                 } else {
                     ++it;
