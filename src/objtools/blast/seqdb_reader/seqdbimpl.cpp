@@ -2033,7 +2033,7 @@ static const string* s_CheckUniqueValues(const map<string, string> & m)
     ITERATE(TStringMap, iter, m) {
         string v = iter->second;
         vector<string> items;
-        NStr::Tokenize(v, ":", items);
+        NStr::Split(v, ":", items, NStr::fSplit_NoMergeDelims);
 
         if (items.size() == 4) {
             v = items[2];
@@ -2067,7 +2067,7 @@ void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
 {
     string real_desc = desc;
     vector<string> items;
-    NStr::Tokenize(desc, ":", items);
+    NStr::Split(desc, ":", items, NStr::fSplit_NoMergeDelims);
     if (items.size() == 4) {
         real_desc = items[2];
     }
@@ -2243,8 +2243,7 @@ void s_GetDetails(const string          & desc,
     _ASSERT(enum_type_vals);
 
     vector<string> items;
-    NStr::Tokenize(desc, ":", items);
-
+    NStr::Split(desc, ":", items, NStr::fSplit_NoMergeDelims);
 
     if (items.size() == 2) {
         EBlast_filter_program

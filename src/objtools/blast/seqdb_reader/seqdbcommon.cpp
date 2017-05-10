@@ -353,7 +353,7 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
     //    indices (see comments in CSeqDBAliasSets::FindAliasPath).
 
     vector<string> roads;
-    NStr::Tokenize(blast_paths, s_GetPathSplitter(), roads, NStr::eMergeDelims);
+    NStr::Split(blast_paths, s_GetPathSplitter(), roads, NStr::fSplit_Tokenize);
 
     string result;
     string attempt;
