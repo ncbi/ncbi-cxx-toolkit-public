@@ -1053,6 +1053,52 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
     } ,
     require-order TRUE ,
     allow-unlisted FALSE 
+  },
+  {
+    prefix "##HumanSTR-START##" ,
+    fields {
+      {
+        field-name "STR locus name" ,
+        required TRUE } ,
+      {
+        field-name "STR locus alt. name" ,
+        required FALSE } ,
+      {
+        field-name "Length-based allele" ,
+        required TRUE } ,
+      {
+        field-name "Bracketed repeat" ,
+        required TRUE } ,
+      {
+        field-name "Sequencing technology" ,
+        required FALSE } ,
+      {
+        field-name "Coverage" ,
+        required FALSE } ,
+      {
+        field-name "Length-based tech." ,
+        required FALSE } ,
+      {
+        field-name "Assembly" ,
+        required FALSE } ,
+      {
+        field-name "Chromosome" ,
+        required FALSE } ,
+      {
+        field-name "RefSeq Accession" ,
+        required FALSE } ,
+      {
+        field-name "Chrom. Location" ,
+        required FALSE } ,
+      {
+        field-name "Repeat Location" ,
+        required FALSE } ,
+      {
+        field-name "Cytogenetic Location" ,
+        required FALSE }
+    } ,
+    require-order TRUE ,
+    allow-unlisted FALSE
   }
 }
 
