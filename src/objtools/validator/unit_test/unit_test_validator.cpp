@@ -8421,6 +8421,21 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    prefix_field->SetData().SetStr("##HumanSTR-START##");
+
+    eval = validator.Validate(seh, options);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadStrucCommMissingField",
+        "Required field STR locus name is missing"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadStrucCommMissingField",
+        "Required field Length-based allele is missing"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadStrucCommMissingField",
+        "Required field Bracketed repeat is missing"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 

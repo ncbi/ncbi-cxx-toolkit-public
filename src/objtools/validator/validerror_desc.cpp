@@ -358,6 +358,7 @@ static string s_OfficialPrefixList[] = {
     "GISAID_EpiFlu(TM)Data",
     "HCVDataBaseData",
     "HIVDataBaseData",
+    "HumanSTR",
     "International Barcode of Life (iBOL)Data", 
     "MIENS-Data",
     "MIGS-Data",
