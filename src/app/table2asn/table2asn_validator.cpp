@@ -179,13 +179,11 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope)
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
     tests->AddTests(names);
     tests->SetFile(m_context->m_current_file);
-
 //    Tests->SetSuspectRules(m_SuspectRules);
 //    Tests->SetLineage(m_Lineage);
-
     tests->Parse(obj);
     tests->Summarize();
-    tests->AutofixAll();
+//    tests->AutofixAll();
     if (!m_discrepancy_output.get())
     {
         m_discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
