@@ -1234,15 +1234,6 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
     }
 
 
-    // We may be passed an empty list of ranges, or we might be passed
-    // several ranges whose lists of offsets are themself empty.  No
-    // matter what is passed in, we should not emit empty lists and we
-    // should not emit any bytes at all if there are no elements.
-
-    if (offset_pairs_count == 0) {
-        return;
-    }
-
     // Gi-based masks
     if (m_UseGiMask) {
         ITERATE(CMaskedRangesVector, r1, ranges) {

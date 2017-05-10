@@ -4009,6 +4009,21 @@ BOOST_AUTO_TEST_CASE(CheckColumnFailureCleanup)
     vector<int> lst;
     BOOST_REQUIRE_THROW(db.GetAvailableMaskAlgorithms(lst), CSeqDBException);
 }
+
+BOOST_AUTO_TEST_CASE(EmptyMaskData)
+{
+    CSeqDB db("data/empty-mask-data-db", CSeqDB::eNucleotide);
+
+    vector<int> algos;
+    db.GetAvailableMaskAlgorithms(algos);
+
+    BOOST_REQUIRE_EQUAL(algos.size(), 1U);
+    BOOST_REQUIRE_EQUAL(11, algos.front());
+
+    CSeqDB::TSequenceRanges ranges;
+    db.GetMaskData(0, algos.front(), ranges);
+    BOOST_REQUIRE(ranges.empty());
+}
 #endif
 
 struct SDbSumInfo {
