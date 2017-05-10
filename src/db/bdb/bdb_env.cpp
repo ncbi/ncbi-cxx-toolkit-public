@@ -185,12 +185,17 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 {
     int recover_requested = flags & DB_RECOVER;
 
-    int ret = m_Env->open(m_Env, db_home, flags, 0664);
+    // db_home == NULL lets to have data in memory
+    const char* db_home_param = db_home;
+    if (strlen(db_home) == 0)
+        db_home_param = NULL;
+
+    int ret = m_Env->open(m_Env, db_home_param, flags, 0664);
     if (ret == DB_RUNRECOVERY) {
         if (flags & DB_JOINENV) {  // join do not attempt recovery
             return ret;
         }
-        int recover_flag;
+        int recover_flag = flags;
 
         if (!recover_requested) {
             if (flags & DB_INIT_TXN) { // recovery needs transaction
@@ -202,7 +207,7 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
             goto fatal_recovery;
         }
 
-        ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+        ret = m_Env->open(m_Env, db_home_param, recover_flag, 0664);
 
         if (!recover_requested) {
             fatal_recovery:
@@ -211,7 +216,7 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
                 recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
                 recover_flag &= ~DB_RECOVER;
 
-                ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+                ret = m_Env->open(m_Env, db_home_param, recover_flag, 0664);
                 if (ret) {
                     LOG_POST_X(2, Warning <<
                                "Fatal recovery returned error code=" << ret);

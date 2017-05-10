@@ -695,7 +695,11 @@ void CBDB_RawFile::x_Open(const char* filename,
                           bool        support_dirty_read,
                           unsigned    rec_len)
 {
-    int ret;
+    int         ret;
+    const char* open_filename_param = filename;
+    if (strlen(filename) == 0)
+        open_filename_param = NULL;
+
     if (m_DB == 0) {
         x_CreateDB(rec_len);
     }
@@ -751,7 +755,7 @@ void CBDB_RawFile::x_Open(const char* filename,
 
         ret = m_DB->open(m_DB,
                          txn,
-                         filename,
+                         open_filename_param,
                          database,             // database name
                          db_type,
                          open_flags,
@@ -787,7 +791,7 @@ void CBDB_RawFile::x_Open(const char* filename,
 
                 ret = m_DB->open(m_DB,
                                  txn,
-                                 filename,
+                                 open_filename_param,
                                  database, // database name
                                  db_type,
                                  open_flags,
@@ -906,9 +910,13 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
         _ASSERT(0);
     }
 
+    const char* open_filename_param = filename;
+    if (strlen(filename) == 0)
+        open_filename_param = NULL;
+
     int ret = m_DB->open(m_DB,
                          txn,
-                         filename,
+                         open_filename_param,
                          database,        // database name
                          db_type,
                          open_flags,

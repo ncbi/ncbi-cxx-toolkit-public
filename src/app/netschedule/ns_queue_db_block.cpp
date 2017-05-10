@@ -41,12 +41,22 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////
 // SQueueDbBlock
 
-void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
+void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_,
+                         bool in_ram)
 {
     pos       = pos_;
     allocated = false;
 
-    string      prefix = "jsq_" + NStr::NumericToString(pos);
+    string      job_db_file;
+    string      job_info_db_file;
+    string      job_events_db_file;
+
+    if (!in_ram) {
+        string      prefix = "jsq_" + NStr::NumericToString(pos);
+        job_db_file = prefix + ".db";
+        job_info_db_file = prefix + "_jobinfo.db";
+        job_events_db_file = prefix + "_events.db";
+    }
 
     try {
         job_db.SetEnv(env);
@@ -55,14 +65,13 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         // if eventually is disposed of, it does not make sense to save
         // space here
         job_db.RevSplitOff();
-        job_db.Open(prefix + ".db", "", CBDB_RawFile::eReadWriteCreate);
+        job_db.Open(job_db_file, "", CBDB_RawFile::eReadWriteCreate);
 
         job_info_db.SetEnv(env);
-        job_info_db.Open(prefix + "_jobinfo.db", "",
-                         CBDB_RawFile::eReadWriteCreate);
+        job_info_db.Open(job_info_db_file, "", CBDB_RawFile::eReadWriteCreate);
 
         events_db.SetEnv(env);
-        events_db.Open(prefix + "_events.db", "",
+        events_db.Open(job_events_db_file, "",
                        CBDB_RawFile::eReadWriteCreate);
     } catch (CBDB_ErrnoException&) {
         throw;
@@ -104,13 +113,13 @@ CQueueDbBlockArray::~CQueueDbBlockArray()
 
 
 void CQueueDbBlockArray::Init(CBDB_Env& env, const string& path,
-                             unsigned count)
+                             unsigned count, bool in_ram)
 {
     m_Count = count;
     m_Array = new SQueueDbBlock[m_Count];
 
     for (unsigned n = 0; n < m_Count; ++n) {
-        m_Array[n].Open(env, path, n);
+        m_Array[n].Open(env, path, n, in_ram);
     }
 }
 

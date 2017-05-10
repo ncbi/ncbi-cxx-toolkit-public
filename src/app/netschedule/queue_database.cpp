@@ -59,8 +59,8 @@ BEGIN_NCBI_SCOPE
     (unsigned) bdb_conf.GetInt("netschedule", name, \
                                CConfig::eErr_NoThrow, dflt)
 #define GetSizeNoErr(name, dflt) \
-    (unsigned) bdb_conf.GetDataSize("netschedule", name, \
-                                    CConfig::eErr_NoThrow, dflt)
+    bdb_conf.GetDataSize("netschedule", name, \
+                         CConfig::eErr_NoThrow, dflt)
 #define GetBoolNoErr(name, dflt) \
     bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
 
@@ -101,7 +101,23 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
     sync_transactions = GetBoolNoErr("sync_transactions", false);
     direct_db         = GetBoolNoErr("direct_db", false);
     direct_log        = GetBoolNoErr("direct_log", false);
-    private_env       = GetBoolNoErr("private_env", false);
+    database_in_ram   = GetBoolNoErr("database_in_ram", false);
+
+    // CXX-9245
+    if (database_in_ram) {
+        if (cache_ram_size == 0) {
+            cache_ram_size = kBDBMemSizeInMemDefault;
+            ERR_POST(Warning << "[bdb]/mem_size has been adjusted to 2GB "
+                                "because [bdb]/database_in_ram is true "
+                                "and mem_size is zero.");
+        } else if (cache_ram_size < kBDBMemSizeInMemLowLimit) {
+            cache_ram_size = kBDBMemSizeInMemLowLimit;
+            ERR_POST(Warning << "[bdb]/mem_size has been adjusted to 100 MB "
+                                "because [bdb]/database_in_ram is true "
+                                "and mem_size is less than 100MB.");
+        }
+    }
+
     return true;
 }
 
@@ -205,7 +221,8 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     }
 
     // Allocate SQueueDbBlock's here, open/create corresponding databases
-    m_QueueDbBlockArray.Init(*m_Env, m_DataPath, queues_limit);
+    m_QueueDbBlockArray.Init(*m_Env, m_DataPath, queues_limit,
+                             params.database_in_ram);
 
     try {
         // Here: we can start restoring what was saved. The first step is
@@ -2580,7 +2597,7 @@ CQueueDataBase::x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params)
     }
 
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
-    if (params.private_env)
+    if (params.database_in_ram)
         opt |= CBDB_Env::ePrivate;
 
     if (params.cache_ram_size)
@@ -2599,11 +2616,15 @@ CQueueDataBase::x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params)
                                   CBDB_Transaction::eTransSync :
                                   CBDB_Transaction::eTransASync);
 
-    env->OpenWithTrans(m_DataPath.c_str(), opt);
+    if (params.database_in_ram)
+        env->OpenWithTrans("", opt);
+    else
+        env->OpenWithTrans(m_DataPath, opt);
+
     GetDiagContext().Extra()
         .Print("_type", "startup")
         .Print("info", "opened BDB environment")
-        .Print("private", params.private_env ? "true" : "false")
+        .Print("database_in_ram", params.database_in_ram ? "true" : "false")
         .Print("max_locks", env->GetMaxLocks())
         .Print("transactions",
                env->GetTransactionSync() == CBDB_Transaction::eTransSync ?

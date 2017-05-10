@@ -54,6 +54,10 @@
 
 BEGIN_NCBI_SCOPE
 
+// See CXX-9245
+const Uint8 kBDBMemSizeInMemDefault = 2 * 1000 * 1000 * 1000;   // 2 GB
+const Uint8 kBDBMemSizeInMemLowLimit = 100 * 1000 * 1000;       // 100 MB
+
 class CNetScheduleServer;
 
 
@@ -68,7 +72,7 @@ struct SNSDBEnvironmentParams
     string    db_path;
     string    db_log_path;
     unsigned  max_queues;          // Number of pre-allocated queues
-    unsigned  cache_ram_size;      // Size of database cache
+    Uint8     cache_ram_size;      // Size of database cache
     unsigned  mutex_max;           // Number of mutexes
     unsigned  max_locks;           // Number of locks
     unsigned  max_lockers;         // Number of lockers
@@ -77,14 +81,14 @@ struct SNSDBEnvironmentParams
     //    Size of in-memory LOG (when 0 log is put to disk)
     //    In memory LOG is not durable, put it to memory
     //    only if you need better performance
-    unsigned  log_mem_size;
+    Uint8     log_mem_size;
     unsigned  max_trans;           // Maximum number of active transactions
     unsigned  checkpoint_kb;
     unsigned  checkpoint_min;
     bool      sync_transactions;
     bool      direct_db;
     bool      direct_log;
-    bool      private_env;
+    bool      database_in_ram;
 
     bool Read(const IRegistry& reg, const string& sname);
 };

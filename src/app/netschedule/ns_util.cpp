@@ -35,6 +35,7 @@
 #include "ns_queue.hpp"
 #include "ns_ini_params.hpp"
 #include "ns_queue_parameters.hpp"
+#include "queue_database.hpp"
 #include <util/bitset/bmalgo.h>
 #include <util/checksum.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -49,6 +50,8 @@ static void NS_ValidateServerSection(const IRegistry &  reg,
                                      vector<string> &   warnings,
                                      bool               throw_port_exception,
                                      bool &             decrypting_error);
+static void NS_ValidateBDBSection(const IRegistry &  reg,
+                                  vector<string> &   warnings);
 static void NS_ValidateQueuesAndClasses(const IRegistry &  reg,
                                         list<string> &  queues,
                                         vector<string> &  warnings);
@@ -194,6 +197,7 @@ void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
 
     NS_ValidateServerSection(reg, warnings, throw_port_exception,
                              decrypting_error);
+    NS_ValidateBDBSection(reg, warnings);
     NS_ValidateQueuesAndClasses(reg, queues, warnings);
     NS_ValidateServiceToQueueSection(reg, queues, warnings);
 }
@@ -460,6 +464,43 @@ void NS_ValidateServerSection(const IRegistry &  reg,
     }
 }
 
+
+// Validates the [bdb] section
+void NS_ValidateBDBSection(const IRegistry &  reg,
+                           vector<string> &   warnings)
+{
+    CConfig                         conf(reg);
+    const CConfig::TParamTree*      param_tree = conf.GetTree();
+    const TPluginManagerParamTree*  bdb_tree = param_tree->FindSubNode("bdb");
+
+    if (!bdb_tree)
+        return;
+
+    CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
+    bool    database_in_ram = bdb_conf.GetBool("netschedule",
+                                               "database_in_ram",
+                                               CConfig::eErr_NoThrow, false);
+    if (!database_in_ram)
+        return;
+
+    Uint8   cache_ram_size = bdb_conf.GetDataSize("netschedule",
+                                                  "mem_size",
+                                                  CConfig::eErr_NoThrow, 0);
+    // CXX-9245
+    if (cache_ram_size == 0) {
+        warnings.push_back(
+            g_ValidPrefix + NS_RegValName("bdb", "mem_size") +
+            " needs to be adjusted to 2GB because " +
+            NS_RegValName("bdb", "database_in_ram") +
+            " is true and mem_size is zero.");
+    } else if (cache_ram_size < kBDBMemSizeInMemLowLimit) {
+        warnings.push_back(
+            g_ValidPrefix + NS_RegValName("bdb", "mem_size") +
+            "needs to be adjusted to 100 MB because " +
+            NS_RegValName("bdb", "database_in_ram") +
+            " is true and mem_size is less than 100MB.");
+    }
+}
 
 // Populates the warnings list if there are problems in the config file
 // the queues parameter is filled with what queues will be accepted

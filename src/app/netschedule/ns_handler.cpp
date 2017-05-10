@@ -991,6 +991,7 @@ void  CNetScheduleHandler::x_HandleSocketErrorOnResponse(
         "Peer: " +  GetSocket().GetPeerAddress() + ". "
         "Socket write error status: " + IO_StatusStr(write_result) + ". "
         "Written bytes: " + NStr::NumericToString(written_bytes) + ". "
+        "Socket write timing: " + NStr::NumericToString(double(timing)) + ". "
         "Message begins with: ";
     if (msg.size() > 32)
         report += msg.substr(0, 32) + " (TRUNCATED)";
@@ -1005,7 +1006,6 @@ void  CNetScheduleHandler::x_HandleSocketErrorOnResponse(
             if (m_CmdContext->GetRequestStatus() == eStatus_OK)
                 m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
         }
-        GetDiagContext().Extra().Print("socket_write_timing", double(timing));
     }
 
     try {

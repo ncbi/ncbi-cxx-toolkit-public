@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 // This block represent a set of db files to serve one queue.
 struct SQueueDbBlock
 {
-    void Open(CBDB_Env& env, const std::string& path, int pos);
+    void Open(CBDB_Env& env, const std::string& path, int pos, bool in_ram);
     void Close();
     void Truncate();
 
@@ -66,7 +66,8 @@ public:
     CQueueDbBlockArray();
     ~CQueueDbBlockArray();
 
-    void Init(CBDB_Env &  env, const string &  path, unsigned int  count);
+    void Init(CBDB_Env &  env, const string &  path, unsigned int  count,
+              bool  in_ram);
 
     void Close();
 
