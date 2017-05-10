@@ -86,7 +86,7 @@ public:
                     const string &           queue);
 
     CTestNetScheduleCrash() :
-        m_KeyGenerator(NULL)
+        m_KeyGenerator(NULL), m_ProcessedJobs(0)
     {}
 
     ~CTestNetScheduleCrash()
@@ -94,9 +94,14 @@ public:
         if (m_KeyGenerator)
             delete m_KeyGenerator;
     }
+
+private:
+    int x_Run(void);
+
 private:
     CNetScheduleKeyGenerator *  m_KeyGenerator;
     CCompoundIDPool m_CompoundIDPool;
+    unsigned int m_ProcessedJobs;
 };
 
 
@@ -269,6 +274,7 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
                                                                queue );
         }
 
+        ++m_ProcessedJobs;
 
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
@@ -449,7 +455,7 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
     string                  job_key;
 
     CStopWatch              sw( CStopWatch::eStart );
-    for (unsigned int  k = 0; k < jcount; ++k ) {
+    for (m_ProcessedJobs = 0; m_ProcessedJobs < jcount; ++m_ProcessedJobs ) {
         submitter.SubmitJob( job );
 
         if ( ! executor.GetJob( job ) )
@@ -458,7 +464,7 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
         job.output = "JOB DONE";
         executor.PutResult( job );
 
-        if (k % 1000 == 0) {
+        if (m_ProcessedJobs % 1000 == 0) {
             NcbiCout << "." << flush;
         }
     }
@@ -475,6 +481,21 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
 
 
 int CTestNetScheduleCrash::Run(void)
+{
+    try {
+        return x_Run();
+    } catch (const exception &  exc) {
+        NcbiCerr << "Exception: " << exc.what()
+                 << "\nAfter submitting " << m_ProcessedJobs << " jobs\n";
+    } catch (...) {
+        NcbiCerr << "Unknown exception\n"
+                    "After submitting " << m_ProcessedJobs << " jobs\n";
+    }
+    return 1;
+}
+
+
+int CTestNetScheduleCrash::x_Run(void)
 {
     const CArgs &       args = GetArgs();
     const string &      service  = args["service"].AsString();
@@ -556,6 +577,7 @@ int CTestNetScheduleCrash::Run(void)
         return 0;
     }
 
+    m_ProcessedJobs = 0;
 
     unsigned int    jcount;
     while (total_jobs > 0) {
