@@ -92,7 +92,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     int index = 0;
     ITERATE(vector<string>, l, lines) {
         vector<string> tokens;
-        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        NStr::Split(*l, " \t\n\r", tokens, NStr::fSplit_Tokenize);
         if (!tokens.empty()) {
             m_DomainIndex[tokens[0]] = index;
             for (int i=1; i<11; ++i) {
@@ -116,7 +116,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
     ITERATE(vector<string>, l, lines) {
         vector<string> tokens;
-        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        NStr::Split(*l, " \t\n\r", tokens, NStr::fSplit_Tokenize);
         if (!tokens.empty()) {
             int frame = NStr::StringToInt(tokens[1]);
             if (frame != -1) {
