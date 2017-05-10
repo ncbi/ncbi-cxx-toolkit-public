@@ -220,10 +220,10 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
         }
     }
 
-    m_WorkerNode->m_JobsInProgress.Remove(job_context->m_Job);
-
-    if (recycle_job_context)
+    if (recycle_job_context) {
+        m_WorkerNode->m_JobsInProgress.Remove(job_context->m_Job);
         job_context->x_PrintRequestStop();
+    }
 
     return recycle_job_context;
 }
