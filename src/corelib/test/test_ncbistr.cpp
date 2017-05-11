@@ -2834,7 +2834,7 @@ BOOST_AUTO_TEST_CASE(s_Split)
         NStr::Split(s_SplitStr[i], s_SplitDelim[i], split, NStr::fSplit_MergeDelimiters);
     }
     for (size_t i = 0; i < count; i++) {
-        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split); // default
+        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split, 0); // default
     }
     size_t j = 0;
     ITERATE(list<string>, it, split) {
