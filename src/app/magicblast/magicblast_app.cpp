@@ -1313,13 +1313,13 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     }
 
     // quality string
-    ostr << "*" << sep;
+    ostr << "*";
 
     // read did not pass filtering
     CMagicBlastResults::TResultsInfo info =
         first_seg ? results.GetFirstInfo() : results.GetLastInfo();
     if ((info & CMagicBlastResults::fFiltered) != 0) {
-        ostr << "YF:Z:F";
+        ostr << sep << "YF:Z:F";
     }
 
     return ostr;
