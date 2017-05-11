@@ -766,7 +766,7 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
     I_DriverContext* context = drvMgr.GetDriverContext("ftds", &err, &args);
 
     AutoPtr<CDB_Connection> conn
-        (context->Connect("PUBSEQ_OS_PUBLIC", "anyone", "allowed", 0));
+        (context->Connect("PUBSEQ_OS_PUBLIC_GI64", "anyone", "allowed", 0));
     if ( 1 ) {
         // I'm not sure what this option does...
         AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
