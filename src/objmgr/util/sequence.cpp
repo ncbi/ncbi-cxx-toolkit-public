@@ -4078,6 +4078,8 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
     frames.push_back(CCdregion::eFrame_three);
     size_t best = 0;
     CCdregion::EFrame best_frame = orig_frame;
+    bool is_complete = !tmp_cds->GetLocation().IsPartialStop(eExtreme_Biological);
+    CCdregion::EFrame with_end_stop = CCdregion::eFrame_not_set;
 
     ITERATE(vector<CCdregion::EFrame>, it, frames) {
         tmp_cds->SetData().SetCdregion().SetFrame(*it);
@@ -4098,21 +4100,34 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
         }
         if (pos == string::npos) {
             pos = prot.length();
+        } else if (is_complete) {
+            if (with_end_stop == CCdregion::eFrame_not_set) {
+                with_end_stop = *it;
+                ambiguous = false;
+            } else {
+                ambiguous = true;
+            }
         }
-        if (pos > best) {
-            best = pos;
-            best_frame = *it;
-            ambiguous = false;
-        } else if (pos == best) {
-            if (*it == orig_frame) {
+        if (with_end_stop == CCdregion::eFrame_not_set) {
+            if (pos > best) {
                 best = pos;
                 best_frame = *it;
+                ambiguous = false;
+            } else if (pos == best) {
+                if (*it == orig_frame) {
+                    best = pos;
+                    best_frame = *it;
+                }
+                ambiguous = true;
             }
-            ambiguous = true;
-        }      
+        }
     }
     
-    return best_frame;
+    if (with_end_stop != CCdregion::eFrame_not_set) {
+        return with_end_stop;
+    } else {
+        return best_frame;
+    }
 }
 
 

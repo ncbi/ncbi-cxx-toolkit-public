@@ -1269,6 +1269,38 @@ BOOST_AUTO_TEST_CASE(Test_FindFrame3)
 }
 
 
+const char* sc_PickFrameWithEndStopIf3CompleteEntry = "\
+Seq-entry ::= seq {\
+  id { local str \"nuc1\" } , \
+  inst { repr raw, mol dna, length 60,\
+    seq-data iupacna \"cagtttccctcaaatcactctttggcaacgaccccttgtcacagtaaaaataggaggaca\"\
+  },\
+  annot { { data ftable {\
+    {\
+      data cdregion { frame one, code { id 1 } },\
+      location int { from 0, to 46, id local str \"nuc1\", fuzz-from lim lt }\
+    }\
+  } } }\
+}";
+
+BOOST_AUTO_TEST_CASE(Test_PickFrameWithEndStopIf3Complete)
+{
+    CSeq_entry entry;
+    // only change if new frame has no internal stops
+    {{
+            CNcbiIstrstream istr(sc_PickFrameWithEndStopIf3CompleteEntry);
+            istr >> MSerial_AsnText >> entry;
+        }}
+    CRef<CSeq_feat> cds = entry.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    bool ambiguous = false;
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope, ambiguous), CCdregion::eFrame_three);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+
+}
+
 
 const char * sc_MinusOrigin = "\
 Seq-entry ::= seq {\
