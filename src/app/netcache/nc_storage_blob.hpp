@@ -482,7 +482,7 @@ CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
 {
     x_CreateNewData();
     m_NewData->expire = expire;
-    int d_time = max(dead_time, expire + 10);
+    int d_time = max(dead_time, expire + 40);
     if (dead_time == 0 && m_CurData) {
         d_time = max(m_CurData->dead_time, d_time);
     }
@@ -526,7 +526,7 @@ inline void
 CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
 {
     m_CurData->expire = expire;
-    m_CurData->dead_time = max(expire + 10, max(m_CurData->dead_time, dead_time));
+    m_CurData->dead_time = max(expire + 40, max(m_CurData->dead_time, dead_time));
     m_VerManager->DeadTimeChanged(m_CurData);
 }
 

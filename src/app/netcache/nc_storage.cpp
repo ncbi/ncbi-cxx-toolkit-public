@@ -2142,12 +2142,14 @@ s_SaveChunkMap(SNCBlobVerData* ver_data,
     }
 
     Uint1 cur_level = 0;
-    while (cur_level < kNCMaxBlobMapsDepth
+    Uint2 prev_idx = maps[cur_level]->map_idx;
+    while ((cur_level+1) < kNCMaxBlobMapsDepth
            &&  (maps[cur_level]->map_idx == ver_data->map_size
-                ||  (maps[cur_level]->map_idx > 1  &&  save_all_deps)))
+                ||  (prev_idx > 0  &&  save_all_deps)))
     {
         cnt_downs = maps[cur_level]->map_idx;
         ++cur_level;
+        prev_idx = maps[cur_level]->map_idx;
         if (!s_SaveOneMapImpl(maps[cur_level], maps[cur_level + 1], cnt_downs,
                               ver_data->map_size, cur_level + 1, cache_data))
         {
@@ -2293,18 +2295,17 @@ s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord, 
                      << " has wrong up_coord " << ind_rec->chain_coord
                      << " when should be " << up_coord << ".");
     }
-    if (map_depth == 0) {
-        if (ind_rec->rec_type != eFileRecChunkData) {
-            return;
-        }
+    if (ind_rec->rec_type == eFileRecChunkData) {
         s_CalcChunkAddress(file_info, ind_rec);
         s_MoveRecToGarbage(file_info, ind_rec);
     }
-    else {
-        SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, ind_rec);
+    else if (ind_rec->rec_type == eFileRecChunkMap) {
         Uint2 cnt_downs = s_CalcCntMapDowns(ind_rec->rec_size);
-        for (Uint2 i = 0; i < cnt_downs; ++i) {
-            s_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1, coord, need_lock);
+        if (cnt_downs != 0) {
+            SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, ind_rec);
+            for (Uint2 i = 0; i < cnt_downs; ++i) {
+                s_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1, coord, need_lock);
+            }
         }
         s_MoveRecToGarbage(file_info, ind_rec);
     }
@@ -2862,10 +2863,12 @@ CBlobCacher::x_DeleteIndexes(SNCDataCoord map_coord, Uint1 map_depth)
     SFileIndexRec* map_ind = s_GetIndexRec(file_info, map_coord.rec_num);
     s_DeleteIndexRec(file_info, map_ind);
     if (map_depth != 0) {
-        SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, map_ind);
         Uint2 cnt_downs = s_CalcCntMapDowns(map_ind->rec_size);
-        for (Uint2 i = 0; i < cnt_downs; ++i) {
-            x_DeleteIndexes(map_rec->down_coords[i], map_depth - 1);
+        if (cnt_downs != 0) {
+            SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, map_ind);
+            for (Uint2 i = 0; i < cnt_downs; ++i) {
+                x_DeleteIndexes(map_rec->down_coords[i], map_depth - 1);
+            }
         }
     }
 }
