@@ -3872,18 +3872,19 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
         new_loc = tmp;
     }
 
-    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
+    // fix partials if protein feature starts or ends at beginning or end of protein sequence
+    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological) &&
+        new_loc->GetStart(eExtreme_Biological) == 0) {
         if (new_loc->IsPartialStart(eExtreme_Biological)) {
             new_loc->SetPartialStart(false, eExtreme_Biological);
         }
     }
-    if (!cds.GetLocation().IsPartialStop(eExtreme_Biological)) {
+    if (!cds.GetLocation().IsPartialStop(eExtreme_Biological) &&
+        new_loc->GetStop(eExtreme_Biological) == prot.GetBioseqLength() - 1) {
         if (new_loc->IsPartialStop(eExtreme_Biological)) {
             new_loc->SetPartialStop(false, eExtreme_Biological);
         }
     }
-
-
 
     return new_loc;
 }

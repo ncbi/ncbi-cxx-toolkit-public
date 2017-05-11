@@ -1139,3 +1139,52 @@ BOOST_AUTO_TEST_CASE(Test_ConvertMiscSignalToRegulatory)
     BOOST_CHECK_EQUAL(feat->GetQual().front()->GetQual(), "regulatory_class");
     BOOST_CHECK_EQUAL(feat->GetQual().front()->GetVal(), "other");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_MatPeptidePartial)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    // First mat_peptide is shorter than protein sequence
+    CRef<CSeq_feat> mat = AddMiscFeature(nuc);
+    mat->SetData().SetImp().SetKey("mat_peptide");
+    mat->SetLocation().SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Positional));
+    mat->SetLocation().SetInt().SetTo(cds->GetLocation().GetStart(eExtreme_Positional) + 5);
+    mat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    mat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    // second mat_peptide ends at end of protein sequence
+    CRef<CSeq_feat> mat2 = AddMiscFeature(nuc);
+    mat2->SetData().SetImp().SetKey("mat_peptide");
+    mat2->SetLocation().SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Positional) + 3);
+    mat2->SetLocation().SetInt().SetTo(cds->GetLocation().GetStop(eExtreme_Positional));
+    mat2->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    mat2->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+
+    CCleanup cleanup(scope);
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.ExtendedCleanup(seh);
+
+    CBioseq_CI p(seh, CSeq_inst::eMol_aa);
+    CFeat_CI f(*p, CSeqFeatData::eSubtype_mat_peptide_aa);
+    while (f) {
+        if (f->GetLocation().GetStart(eExtreme_Biological) == 0) {
+            // first mat_peptide
+            BOOST_CHECK_EQUAL(f->GetLocation().IsPartialStart(eExtreme_Biological), false);
+            BOOST_CHECK_EQUAL(f->GetLocation().IsPartialStop(eExtreme_Biological), true);
+        } else {
+            // second mat_peptide
+            BOOST_CHECK_EQUAL(f->GetLocation().IsPartialStart(eExtreme_Biological), true);
+            BOOST_CHECK_EQUAL(f->GetLocation().IsPartialStop(eExtreme_Biological), false);
+        }
+        ++f;
+    }
+}
