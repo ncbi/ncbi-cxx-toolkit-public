@@ -130,6 +130,7 @@ public:
     void* GetUserData(void) const { return m_UserData; }
     void SetFile(const string& s){ m_File = s; }
     void SetLineage(const string& s){ m_Lineage = s; }
+    void SetEucariote(bool b){ m_Eucariote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string&) = 0;
     void SetGui(bool b){ m_Gui = b; }
@@ -143,6 +144,7 @@ protected:
     string m_File;
     string m_Lineage;
     float m_SesameStreetCutoff;
+    bool m_Eucariote;
     bool m_Gui;
     bool m_KeepRef;     // set true to allow autofix
     void* m_UserData;

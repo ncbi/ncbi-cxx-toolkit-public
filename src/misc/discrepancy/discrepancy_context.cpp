@@ -240,8 +240,9 @@ bool CDiscrepancyContext::IsOrganelle()
 
 bool CDiscrepancyContext::IsEukaryotic()
 {
-    //static bool result = false;
-    //static size_t count = 0;
+    if (m_Eucariote) {
+        return true;
+    }
     if (IsEukaryotic_count != m_Count_Bioseq) {
         IsEukaryotic_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();

@@ -24,7 +24,7 @@ public:
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 
-    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope);
+    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope, bool eucariote, const string& lineage);
 
 protected:
     typedef map<int, size_t> TErrorStatMap;

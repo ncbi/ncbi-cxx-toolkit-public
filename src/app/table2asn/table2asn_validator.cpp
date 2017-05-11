@@ -173,17 +173,16 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope)
+void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, bool eucariote, const string& lineage)
 {
     CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
     tests->AddTests(names);
     tests->SetFile(m_context->m_current_file);
-//    Tests->SetSuspectRules(m_SuspectRules);
-//    Tests->SetLineage(m_Lineage);
+    tests->SetLineage(lineage);
     tests->Parse(obj);
     tests->Summarize();
-//    tests->AutofixAll();
+
     if (!m_discrepancy_output.get())
     {
         m_discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));

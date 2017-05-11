@@ -452,6 +452,11 @@ int CTbl2AsnApp::Run(void)
     {
         const string& extra = args["X"].AsString();
         m_context.m_flipped_struc_cmt = extra.find('C') != string::npos;
+        m_context.m_disc_eucariote = extra.find('E') != string::npos;
+    }
+
+    if (args["m"]) {
+        m_context.m_disc_lineage = args["m"].AsString();
     }
 
     if (m_context.m_delay_genprodset)
@@ -959,8 +964,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
         if (!m_context.m_discrepancy_file.empty())
         {
-            m_validator->ReportDiscrepancies(
-                submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope);
+            m_validator->ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }
     }
 }
