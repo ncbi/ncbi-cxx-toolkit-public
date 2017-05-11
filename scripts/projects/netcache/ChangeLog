@@ -233,3 +233,8 @@ Corrected re-initialization of periodic synchronization after disk space problem
 May 08, 2017
 version 6.14.0 (CXX-9253)
 Added noCreate flag, modified handling of noProlong one.
+
+May 11, 2017
+version 6.14.1 (CXX-9271)
+Fixed calculation of blob coordinates.
+
