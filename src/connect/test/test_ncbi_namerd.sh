@@ -2,7 +2,8 @@
 # $Id$
 
 # Disable Windows DLL configurations.
-if echo "$FEATURES" | grep "MSWin" > /dev/null  &&  echo "$FEATURES" | grep "DLL" > /dev/null; then
+if echo "$FEATURES" | grep -E '(^| )MSWin( |$)' > /dev/null  &&  \
+   echo "$FEATURES" | grep -E '(^| )DLL( |$)' > /dev/null; then
     echo "NCBI_UNITTEST_DISABLED"
     exit 0
 fi
