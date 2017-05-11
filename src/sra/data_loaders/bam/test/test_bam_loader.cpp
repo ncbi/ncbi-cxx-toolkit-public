@@ -698,6 +698,80 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeqMT0)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name;
+
+    {
+        params.m_DirPath =
+            sx_GetPath("/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment");
+        bam_name = "NA10851.SLX.maq.SRP000031.2009_08.bam";
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    typedef tuple<string, CRange<TSeqPos>, bool, size_t> TQuery;
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), true, 5));
+    queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), false, 397));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(100000, 200000), true, 10));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(200000, 300000), true, 15));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(0, 400000), false, 1424));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(1000000, 2000000), true, 120));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(2000000, 3000000), true, 120));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(2700000, 2800000), false, 15816));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(11000000, 12000000), true, 120));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(12000000, 13000000), true, 120));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(11500000, 11600000), false, 15841));
+    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(21000000, 22000000), true, 135));
+    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(22000000, 23000000), true, 135));
+    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(21500000, 21600000), false, 14054));
+    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(31000000, 32000000), true, 145));
+    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(42000000, 43000000), true, 145));
+    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(21500000, 21600000), false, 14936));
+    
+    const size_t NQ = queries.size();
+    
+    for ( size_t i = 0; i < NQ; ++i ) {
+        const TQuery& query = queries[i];
+        SAnnotSelector sel;
+        sel.SetSearchUnresolved();
+            
+        CRef<CSeq_id> seqid(new CSeq_id(get<0>(query)));
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetInt().SetId(*seqid);
+        loc->SetInt().SetFrom(get<1>(query).GetFrom());
+        loc->SetInt().SetTo(get<1>(query).GetTo());
+        size_t count = 0;
+        if ( get<2>(query) ) {
+            for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                ++count;
+            }
+        }
+        else {
+            for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                ++count;
+            }
+        }
+        BOOST_CHECK_EQUAL(count, get<3>(query));
+    }
+}
+
+
+#ifdef NCBI_THREADS
 BOOST_AUTO_TEST_CASE(FetchSeqMT1)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(true);
@@ -777,3 +851,4 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT1)
         tt[i].join();
     }
 }
+#endif

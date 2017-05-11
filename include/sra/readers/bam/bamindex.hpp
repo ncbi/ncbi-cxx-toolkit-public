@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
 
 class CSeq_annot;
 class CBGZFStream;
+class CBamString;
 
 struct NCBI_BAMREAD_EXPORT SBamHeaderRefInfo
 {
@@ -134,6 +135,15 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
 {
     void Read(CNcbiIstream& in);
 
+    // return limits of data in file based on linear index
+    // also adjusts argument ref_range to be within reference sequence
+    CBGZFRange GetLimitRange(COpenRange<TSeqPos>& ref_range) const;
+    // add file ranges with alignments from specific index level
+    void AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                            CBGZFRange limit_file_range,
+                            COpenRange<TSeqPos> ref_range,
+                            uint32_t index_level) const;
+    
     vector<SBamIndexBinInfo> m_Bins;
     CBGZFRange m_UnmappedChunk;
     Uint8 m_MappedCount;
@@ -150,6 +160,44 @@ public:
     explicit
     CBamIndex(const string& index_file_name);
     ~CBamIndex();
+
+    // BAM index structure contants
+    static const uint32_t kLevel0BinShift = 14;
+    static const uint32_t kLevelStepBinShift = 3;
+    // number of index levels
+    static const uint32_t kMaxLevel = 5;
+    static const uint32_t kNumLevels = kMaxLevel+1;
+    // size of minimal bin
+    static const uint32_t kMinBinSize = 1 << kLevel0BinShift;
+    // size of maximal bin
+    static const uint32_t kMaxBinSize = kMinBinSize << (kLevelStepBinShift*kMaxLevel);
+    // return bit shift for size of bin on a specific index level
+    constexpr static uint32_t GetLevelBinShift(uint32_t level)
+    {
+        return kLevel0BinShift + kLevelStepBinShift*level;
+    }
+    // return size of bin on a specific index level
+    constexpr static uint32_t GetBinSize(uint32_t level)
+    {
+        return 1 << GetLevelBinShift(level);
+    }
+
+    typedef SBamIndexBinInfo::TBin TBin;
+    // base for bin numbers calculation
+    static const TBin kBinNumberBase = 4681; // == 011111 in octal
+    // base bin number of a specific index level
+    constexpr static TBin GetBinNumberBase(uint32_t level)
+    {
+        return kBinNumberBase >> (kLevelStepBinShift*level);
+    }
+    constexpr static TBin GetBinNumberOffset(uint32_t pos, uint32_t level)
+    {
+        return (pos >> GetLevelBinShift(level));
+    }
+    constexpr static TBin GetBinNumber(uint32_t pos, uint32_t level)
+    {
+        return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
+    }
 
     void Read(const string& index_file_name);
 
@@ -325,10 +373,6 @@ protected:
     typedef SBamIndexBinInfo::TBin TBin;
     
     void AddSortedRanges(const vector<CBGZFRange>& ranges);
-    void AddBinsRanges(vector<CBGZFRange>& ranges,
-                       const CBGZFRange& limit,
-                       const SBamIndexRefIndex& ref,
-                       TBin bin1, TBin bin2);
     
 private:
     TRanges m_Ranges;
@@ -425,6 +469,18 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return SBamUtil::MakeUint2(get_record_ptr()+10);
         }
+    static constexpr const char* kCIGARSymbols = "MIDNSHP=X???????";
+    enum ECIGARType { // matches to kCIGARSymbols
+        kCIGAR_M,  // 0
+        kCIGAR_I,  // 1
+        kCIGAR_D,  // 2
+        kCIGAR_N,  // 3
+        kCIGAR_S,  // 4
+        kCIGAR_H,  // 5
+        kCIGAR_P,  // 6
+        kCIGAR_eq, // 7
+        kCIGAR_X   // 8
+    };
     uint16_t get_cigar_ops_count() const
         {
             return SBamUtil::MakeUint2(get_record_ptr()+12);
@@ -483,6 +539,17 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return SBamUtil::MakeUint4(get_cigar_ptr()+index*4);
         }
+    void get_cigar(vector<uint32_t>& raw_cigar) const
+        {
+            size_t count = get_cigar_ops_count();
+            raw_cigar.resize(count);
+            uint32_t* dst = raw_cigar.data();
+            memcpy(dst, get_cigar_ptr(), count*sizeof(uint32_t));
+            for ( size_t i = 0; i < count; ++i ) {
+                dst[i] = SBamUtil::MakeUint4(reinterpret_cast<const char*>(dst+i));
+            }
+        }
+    void get_cigar(CBamString& dst) const;
     const char* get_read_ptr() const
         {
             return get_cigar_end();
@@ -512,10 +579,13 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return CTempString(get_read_ptr(), (get_read_len()+1)/2);
         }
+    static constexpr const char* kBaseSymbols = "=ACMGRSVTWYHKDBN";
     string get_read() const;
+    void get_read(CBamString& str) const;
     uint32_t get_cigar_pos() const;
     uint32_t get_cigar_ref_size() const;
     uint32_t get_cigar_read_size() const;
+    pair< COpenRange<uint32_t>, COpenRange<uint32_t> > get_cigar_alignment(void) const;
     string get_cigar() const;
 
     const char* get_aux_data(char c1, char c2) const;
@@ -601,6 +671,10 @@ public:
         {
             return m_AlignInfo.get_short_seq_accession_id();
         }
+    TSeqPos GetShortSequenceLength(void) const
+        {
+            return m_AlignInfo.get_read_len();
+        }
     string GetShortSequence() const
         {
             return m_AlignInfo.get_read();
@@ -608,6 +682,10 @@ public:
     CTempString GetShortSequenceRaw() const
         {
             return m_AlignInfo.get_read_raw();
+        }
+    void GetShortSequence(CBamString& str) const
+        {
+            return m_AlignInfo.get_read(str);
         }
 
     Uint2 GetCIGAROpsCount() const
@@ -617,6 +695,14 @@ public:
     Uint4 GetCIGAROp(Uint2 index) const
         {
             return m_AlignInfo.get_cigar_op_data(index);
+        }
+    void GetCIGAR(vector<Uint4>& raw_cigar) const
+        {
+            return m_AlignInfo.get_cigar(raw_cigar);
+        }
+    void GetCIGAR(CBamString& dst) const
+        {
+            m_AlignInfo.get_cigar(dst);
         }
     TSeqPos GetCIGARPos() const
         {
@@ -630,6 +716,11 @@ public:
         {
             return m_AlignInfo.get_cigar_ref_size();
         }
+    pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> > GetCIGARAlignment(void) const
+        {
+            return m_AlignInfo.get_cigar_alignment();
+        }
+    
     string GetCIGAR() const
         {
             return m_AlignInfo.get_cigar();

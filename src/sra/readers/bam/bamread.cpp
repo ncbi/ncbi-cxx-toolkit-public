@@ -190,7 +190,7 @@ void CBamException::ReportError(const char* msg, rc_t rc)
 }
 
 
-void CBamString::reserve(size_t min_capacity)
+void CBamString::x_reserve(size_t min_capacity)
 {
     size_t capacity = m_Capacity;
     if ( capacity == 0 ) {
@@ -739,8 +739,7 @@ bool CBamRefSeqIterator::x_CheckRC(CBamString& buf,
                 ERR_POST("No zero at the end: " << string(buf.data(), size-1));
             }
             _ASSERT(buf[size-1] == '\0');
-            --size;
-            buf.x_resize(size);
+            buf.resize(size-1);
         }
         else {
             buf.clear();
@@ -766,7 +765,7 @@ void CBamRefSeqIterator::x_GetString(CBamString& buf,
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_AADBImpl->m_Iter, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, buf.data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -832,6 +831,8 @@ CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
     : m_RawDB(&db),
       m_Iter(db, ref_label, ref_pos, window)
 {
+    m_ShortSequence.reserve(256);
+    m_CIGAR.reserve(32);
 }
 
 
@@ -1006,8 +1007,7 @@ bool CBamAlignIterator::x_CheckRC(CBamString& buf,
                 ERR_POST("No zero at the end: " << string(buf.data(), size-1));
             }
             _ASSERT(buf[size-1] == '\0');
-            --size;
-            buf.x_resize(size);
+            buf.resize(size-1);
         }
         else {
             buf.clear();
@@ -1033,7 +1033,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf,
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_AADBImpl->m_Iter, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, buf.data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -1047,7 +1047,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf, uint64_t& pos,
     x_CheckValid();
     while ( buf.empty() ) {
         size_t size = 0;
-        rc_t rc = func(m_AADBImpl->m_Iter, &pos, buf.x_data(), buf.capacity(), &size);
+        rc_t rc = func(m_AADBImpl->m_Iter, &pos, buf.data(), buf.capacity(), &size);
         if ( x_CheckRC(buf, rc, size, msg) ) {
             break;
         }
@@ -1119,14 +1119,27 @@ CTempString CBamAlignIterator::GetShortSequence(void) const
 {
     if ( m_RawImpl ) {
         if ( m_RawImpl->m_ShortSequence.empty() ) {
-            m_RawImpl->m_ShortSequence = m_RawImpl->m_Iter.GetShortSequence();
+            m_RawImpl->m_Iter.GetShortSequence(m_RawImpl->m_ShortSequence);
         }
         return m_RawImpl->m_ShortSequence;
     }
     else {
-        x_GetString(m_AADBImpl->m_ShortSequence, "ShortSequence",
-                    AlignAccessAlignmentEnumeratorGetShortSequence);
+        if ( m_AADBImpl->m_ShortSequence.empty() ) {
+            x_GetString(m_AADBImpl->m_ShortSequence, "ShortSequence",
+                        AlignAccessAlignmentEnumeratorGetShortSequence);
+        }
         return m_AADBImpl->m_ShortSequence;
+    }
+}
+
+
+TSeqPos CBamAlignIterator::GetShortSequenceLength(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetShortSequenceLength();
+    }
+    else {
+        return TSeqPos(GetShortSequence().size());
     }
 }
 
@@ -1154,13 +1167,45 @@ CTempString CBamAlignIterator::GetCIGAR(void) const
 {
     if ( m_RawImpl ) {
         if ( m_RawImpl->m_CIGAR.empty() ) {
-            m_RawImpl->m_CIGAR = m_RawImpl->m_Iter.GetCIGAR();
+            m_RawImpl->m_Iter.GetCIGAR(m_RawImpl->m_CIGAR);
         }
         return m_RawImpl->m_CIGAR;
     }
     else {
         x_GetCIGAR();
         return m_AADBImpl->m_CIGAR;
+    }
+}
+
+
+void CBamAlignIterator::GetRawCIGAR(vector<Uint4>& raw_cigar) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetCIGAR(raw_cigar);
+    }
+    else {
+        x_GetCIGAR();
+        raw_cigar.clear();
+        const char* ptr = m_AADBImpl->m_CIGAR.data();
+        const char* end = ptr + m_AADBImpl->m_CIGAR.size();
+        char type;
+        TSeqPos len;
+        while ( ptr != end ) {
+            type = *ptr;
+            for ( len = 0; ++ptr != end; ) {
+                char c = *ptr;
+                if ( c >= '0' && c <= '9' ) {
+                    len = len*10+(c-'0');
+                }
+                else {
+                    break;
+                }
+            }
+            const char* types = "MIDNSHP=X";
+            const char* ptr = strchr(types, type);
+            unsigned op = ptr? ptr-types: 15;
+            raw_cigar.push_back((len<<4)|(op));
+        }
     }
 }
 
@@ -1261,6 +1306,62 @@ TSeqPos CBamAlignIterator::GetCIGARShortSize(void) const
 }
 
 
+pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> >
+CBamAlignIterator::GetCIGARAlignment(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetCIGARAlignment();
+    }
+    else {
+        pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> > ret;
+        ret.first.SetFrom(GetRefSeqPos());
+        x_GetCIGAR();
+        ret.second.SetFrom(TSeqPos(m_AADBImpl->m_CIGARPos));
+        TSeqPos ref_size = 0, short_size = 0;
+        const char* ptr = m_AADBImpl->m_CIGAR.data();
+        const char* end = ptr + m_AADBImpl->m_CIGAR.size();
+        char type;
+        TSeqPos len;
+        while ( ptr != end ) {
+            type = *ptr;
+            for ( len = 0; ++ptr != end; ) {
+                char c = *ptr;
+                if ( c >= '0' && c <= '9' ) {
+                    len = len*10+(c-'0');
+                }
+                else {
+                    break;
+                }
+            }
+            if ( type == 'M' || type == '=' || type == 'X' ) {
+                // match
+                ref_size += len;
+                short_size += len;
+            }
+            else if ( type == 'I' || type == 'S' ) {
+                // insert
+                short_size += len;
+            }
+            else if ( type == 'D' || type == 'N' ) {
+                // delete
+                ref_size += len;
+            }
+            else if ( type != 'P' ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR char: " << type << " in " << m_AADBImpl->m_CIGAR);
+            }
+            if ( len == 0 ) {
+                NCBI_THROW_FMT(CBamException, eBadCIGAR,
+                               "Bad CIGAR length: " << type << "0 in " << m_AADBImpl->m_CIGAR);
+            }
+        }
+        ret.first.SetLength(ref_size);
+        ret.second.SetLength(short_size);
+        return ret;
+    }
+}
+
+
 CRef<CSeq_id> CBamAlignIterator::GetRefSeq_id(void) const
 {
     if ( !m_RefSeq_id ) {
@@ -1272,7 +1373,7 @@ CRef<CSeq_id> CBamAlignIterator::GetRefSeq_id(void) const
 
 CRef<CSeq_id> CBamAlignIterator::GetShortSeq_id(const string& str) const
 {
-    return sx_GetShortSeq_id(str, GetIdMapper(), GetShortSequence().size() == 0);
+    return sx_GetShortSeq_id(str, GetIdMapper(), GetShortSequenceLength() == 0);
 }
 
 
@@ -1464,6 +1565,29 @@ CBamFileAlign::CBamFileAlign(const CBamAlignIterator& iter)
 }
 
 
+Int4 CBamFileAlign::GetRefSeqIndex(void) const
+{
+    int32_t id;
+    if ( rc_t rc = BAMAlignmentGetRefSeqId(*this, &id) ) {
+        NCBI_THROW2(CBamException, eNoData,
+                    "Cannot get BAM RefSeqIndex", rc);
+    }
+    return id;
+}
+
+
+Int4 CBamAlignIterator::GetRefSeqIndex(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetRefSeqIndex();
+    }
+    else {
+        x_CheckValid();
+        return CBamFileAlign(*this).GetRefSeqIndex();
+    }
+}
+
+
 Uint2 CBamFileAlign::GetFlags(void) const
 {
     uint16_t flags;
@@ -1626,7 +1750,7 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
     if ( GetStrand() == eNa_strand_minus ) {
         CDense_seg::TStrands& strands = denseg.SetStrands();
         strands.reserve(2*segcount);
-        TSeqPos end = TSeqPos(GetShortSequence().size());
+        TSeqPos end = GetShortSequenceLength();
         for ( size_t i = 0; i < segcount; ++i ) {
             strands.push_back(eNa_strand_plus);
             strands.push_back(eNa_strand_minus);

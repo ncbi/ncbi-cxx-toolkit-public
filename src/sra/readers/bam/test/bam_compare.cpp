@@ -142,6 +142,7 @@ void CBAMCompareApp::Init(void)
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
     arg_desc->AddFlag("verbose", "Print BAM data");
     arg_desc->AddFlag("short_id_conflicts", "Check for short id conflicts");
+    arg_desc->AddFlag("speed", "Do minimum checks for performance comparison");
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -435,6 +436,7 @@ int CBAMCompareApp::Run(void)
     size_t limit_count = size_t(max(0, args["limit_count"].AsInteger()));
     bool ignore_errors = args["ignore_errors"];
     bool verbose = args["verbose"];
+    bool speed = args["speed"];
     bool make_seq_entry = args["make_seq_entry"];
     bool print_seq_entry = args["print_seq_entry"];
     vector<CRef<CSeq_entry> > entries;
@@ -485,6 +487,7 @@ int CBAMCompareApp::Run(void)
             query_range.SetFrom(from).SetTo(to);
         }
 
+        CStopWatch sw;
         if ( !query_id.empty() ) {
             collect_short = !args["no_short"];
             if ( args["refposs"] ) {
@@ -502,6 +505,7 @@ int CBAMCompareApp::Run(void)
                     }
                 }
             }
+            sw.Restart();
             it = CBamAlignIterator(bam_db, query_id,
                                    query_range.GetFrom(),
                                    query_range.GetLength());
@@ -512,6 +516,7 @@ int CBAMCompareApp::Run(void)
             }
         }
         else {
+            sw.Restart();
             it = CBamAlignIterator(bam_db);
             if ( bam_db2 ) {
                 it2 = CBamAlignIterator(bam_db2);
@@ -574,6 +579,28 @@ int CBAMCompareApp::Run(void)
                     }
                     continue;
                 }
+
+                if ( speed ) {
+                    samtools::SBamAlignment aln;
+                    auto placement = it.GetCIGARAlignment();
+                    aln.ref_range = placement.first;
+                    aln.ref_seq_index = it.GetRefSeqIndex();
+                    aln.short_range = placement.second;
+                    aln.short_seq_id = it.GetShortSeqId();
+                    aln.short_sequence = it.GetShortSequence();
+                    it.GetRawCIGAR(aln.CIGAR);
+                    aln.flags = it.GetFlags();
+                    aln.quality = it.GetMapQuality();
+                    if ( query_range == CRange<TSeqPos>::GetWhole() ||
+                         aln.ref_range.IntersectingWith(query_range) ) {
+                        alns1.push_back(aln);
+                    }
+                    else {
+                        alnsout1.push_back(aln);
+                    }
+                    continue;
+                }
+                
                 TSeqPos ref_size = it.GetCIGARRefSize();
                 Uint8 qual = it.GetMapQuality();
                 string ref_seq_id;
@@ -645,31 +672,7 @@ int CBAMCompareApp::Run(void)
                     aln.short_seq_id = short_seq_id;
                     aln.short_range.SetFrom(short_pos).SetLength(short_size);
                     aln.short_sequence = it.GetShortSequence();
-                    {{
-                        string cigar = it.GetCIGAR();
-                        const char* ptr = cigar.data();
-                        const char* end = ptr + cigar.size();
-                        char type;
-                        TSeqPos len;
-                        while ( ptr != end ) {
-                            type = *ptr;
-                            for ( len = 0; ++ptr != end; ) {
-                                char c = *ptr;
-                                if ( c >= '0' && c <= '9' ) {
-                                    len = len*10+(c-'0');
-                                }
-                                else {
-                                    break;
-                                }
-                            }
-                            const char* types = "MIDNSHP=X";
-                            const char* ptr = strchr(types, type);
-                            if ( !ptr ) {
-                                ERR_POST(Fatal<<"Bad CIGAR char: "<<type);
-                            }
-                            aln.CIGAR.push_back((len<<4)|(ptr-types));
-                        }
-                    }}
+                    it.GetRawCIGAR(aln.CIGAR);
                     aln.flags = flags;
                     aln.quality = qual;
                     if ( query_range == CRange<TSeqPos>::GetWhole() ||
@@ -941,7 +944,8 @@ int CBAMCompareApp::Run(void)
                 }
             }
         }
-        out << "Loaded: " << count << " alignments." << NcbiEndl;
+        out << "Loaded: " << count << " alignments in " << sw.Elapsed() << "s"
+            << NcbiEndl;
         if ( bam_db2 ) {
             if ( bool(it) != bool(it2) ) {
                 ret_code = 1;
@@ -965,7 +969,7 @@ int CBAMCompareApp::Run(void)
             }
             if ( collect_short && !short_ids.empty() ) {
                 sort(short_ids.begin(), short_ids.end());
-                out << "Short: " << short_ids[0].first << "-"
+                out << "Short ids: " << short_ids[0].first << " - "
                     << short_ids.back().first << NcbiEndl;
             }
             out << "Sorted." << NcbiEndl;
@@ -977,6 +981,7 @@ int CBAMCompareApp::Run(void)
                                    args["no_index"]?
                                    samtools::CBamFile::eWithoutIndex:
                                    samtools::CBamFile::eWithIndex);
+            sw.Restart();
             if ( !query_id.empty() ) {
                 bam.Fetch(query_id,
                           query_range.GetFrom(),
@@ -997,6 +1002,8 @@ int CBAMCompareApp::Run(void)
                     alns2.insert(alns2.end(), alns2t.begin(), alns2t.end());
                 }
             }
+            out << "SamTools count: " << alns2.size() << " in " << sw.Elapsed() << "s"
+                << NcbiEndl;
             if ( 1 ) {
                 // remove hard breaks
                 for ( auto& a : alns2 ) {
@@ -1016,8 +1023,41 @@ int CBAMCompareApp::Run(void)
                     }
                 }
             }
-
-            out << "SamTools count: " << alns2.size() << NcbiEndl;
+            
+            if ( alns1 != alns2 ) {
+                vector<samtools::SBamAlignment> alns2tmp;
+                swap(alns2, alns2tmp);
+                for ( auto& a : alns2tmp ) {
+                    if ( query_range != CRange<TSeqPos>::GetWhole() &&
+                         !a.ref_range.IntersectingWith(query_range) ) {
+                        alnsout2.push_back(a);
+                    }
+                    else {
+                        alns2.push_back(a);
+                    }
+                }
+            }
+            if ( alns1 != alns2 ) {
+                size_t size1 = alns1.size(), i1 = 0;
+                size_t size2 = alns2.size(), i2 = 0;
+                out << "SRA SDK and SamTools results differ:" << NcbiEndl;
+                while ( i1 < size1 || i2 < size2 ) {
+                    if ( i1 < size1 &&
+                         (i2 == size2 || alns1[i1] < alns2[i2]) ) {
+                        out << " aln1["<<i1<<"]: "<<alns1[i1]<<NcbiEndl;
+                        ++i1;
+                    }
+                    else if ( i2 < size2 &&
+                              (i1 == size1 || alns2[i2] < alns1[i1]) ) {
+                        out << " aln2["<<i2<<"]: "<<alns2[i2]<<NcbiEndl;
+                        ++i2;
+                    }
+                    else {
+                        ++i1;
+                        ++i2;
+                    }
+                }
+            }
             sort(alns1.begin(), alns1.end());
             sort(alns2.begin(), alns2.end());
             size_t diff_count = 0;
@@ -1049,19 +1089,19 @@ int CBAMCompareApp::Run(void)
                 }
             }
             sort(alnsout1.begin(), alnsout1.end());
+            sort(alnsout2.begin(), alnsout2.end());
+            if ( !alnsout1.empty() && alnsout1 == alnsout2 ) {
+                out << "Both API returned the same "<<alnsout1.size()
+                    << " non-overlapping alignments." << NcbiEndl;
+                alnsout1.clear();
+                alnsout2.clear();
+            }
             diff_count = alnsout1.size() + alnsout2.size();
             if ( !alnsout1.empty() ) {
-                if ( alnsout1 == alnsout2 ) {
-                    out << "Both API returned the same "<<alnsout1.size()
-                        << " non-overlapping alignments." << NcbiEndl;
-                    alnsout2.clear();
-                }
-                else {
-                    out << "SRA SDK returned "<<alnsout1.size()
-                        << " non-overlapping alignments." << NcbiEndl;
-                    ITERATE ( vector<samtools::SBamAlignment>, it, alnsout1 ) {
-                        out << " OUT: " << *it << NcbiEndl;
-                    }
+                out << "SRA SDK returned "<<alnsout1.size()
+                    << " non-overlapping alignments." << NcbiEndl;
+                ITERATE ( vector<samtools::SBamAlignment>, it, alnsout1 ) {
+                    out << " OUT: " << *it << NcbiEndl;
                 }
                 ret_code = 1;
             }

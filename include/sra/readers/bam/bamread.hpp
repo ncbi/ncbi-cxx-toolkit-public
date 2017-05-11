@@ -177,6 +177,10 @@ public:
         {
             return m_RawDB;
         }
+    CBamRawDb& GetRawDb()
+        {
+            return *m_RawDB;
+        }
 
     const string& GetDbName(void) const
         {
@@ -250,7 +254,12 @@ public:
         {
             return m_Capacity;
         }
-    void reserve(size_t min_capacity);
+    void reserve(size_t min_capacity)
+        {
+            if ( capacity() < min_capacity ) {
+                x_reserve(min_capacity);
+            }
+        }
 
     size_t size() const
         {
@@ -277,17 +286,15 @@ public:
             return CTempString(data(), size());
         }
 
-protected:
-    friend class CBamAlignIterator;
-    friend class CBamRefSeqIterator;
-
-    char* x_data()
+    char* data()
         {
             return m_Buffer.get();
         }
-    void x_resize(size_t size)
+    void resize(size_t size)
         {
+            _ASSERT(size+1 <= capacity());
             m_Size = size;
+            data()[size] = '\0';
         }
 
 private:
@@ -295,6 +302,8 @@ private:
     size_t m_Capacity;
     AutoArray<char> m_Buffer;
 
+    void x_reserve(size_t min_capacity);
+    
 private:
     CBamString(const CBamString&);
     void operator=(const CBamString&);
@@ -368,6 +377,8 @@ class NCBI_BAMREAD_EXPORT CBamFileAlign
 public:
     explicit CBamFileAlign(const CBamAlignIterator& iter);
 
+    Int4 GetRefSeqIndex(void) const;
+    
     Uint2 GetFlags(void) const;
     // returns false if BAM flags are not available
     bool TryGetFlags(Uint2& flags) const;
@@ -434,14 +445,17 @@ public:
         {
             return m_RawImpl? &m_RawImpl.GetNCObject().m_Iter: 0;
         }
-    
+
+    Int4 GetRefSeqIndex(void) const;
     CTempString GetRefSeqId(void) const;
     TSeqPos GetRefSeqPos(void) const;
 
     CTempString GetShortSeqId(void) const;
     CTempString GetShortSeqAcc(void) const;
     CTempString GetShortSequence(void) const;
+    TSeqPos GetShortSequenceLength(void) const;
 
+    pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> > GetCIGARAlignment(void) const;
     TSeqPos GetCIGARPos(void) const;
     CTempString GetCIGAR(void) const;
     TSeqPos GetCIGARRefSize(void) const;
@@ -450,6 +464,7 @@ public:
     // raw CIGAR access
     Uint2 GetRawCIGAROpsCount() const;
     Uint4 GetRawCIGAROp(Uint2 index) const;
+    void GetRawCIGAR(vector<Uint4>& raw_cigar) const;
     
     CRef<CSeq_id> GetRefSeq_id(void) const;
     CRef<CSeq_id> GetShortSeq_id(void) const;
@@ -520,8 +535,8 @@ private:
     struct SRawImpl : public CObject {
         CRef< CObjectFor<CBamRawDb> > m_RawDB;
         CBamRawAlignIterator m_Iter;
-        mutable string m_ShortSequence;
-        mutable string m_CIGAR;
+        mutable CBamString m_ShortSequence;
+        mutable CBamString m_CIGAR;
 
         explicit
         SRawImpl(CObjectFor<CBamRawDb>& db);

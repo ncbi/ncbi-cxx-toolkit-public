@@ -77,6 +77,8 @@ static const size_t kChunkSize = 500;
 static const int kChunkIdMul = 4;
 static const int kMainChunkId = -1;
 
+//#define SKIP_TOO_LONG_ALIGNMENTS
+
 enum EChunkIdType {
     eChunk_align,
     eChunk_short_seq,
@@ -1229,7 +1231,9 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     CRef<CSeq_annot> annot;
     CSeq_annot::TData::TAlign* align_list = 0;
     
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
+#endif
     CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
@@ -1245,11 +1249,13 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             ++skipped;
             continue;
         }
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
         TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
         if ( align_end > ref_len ) {
             ++skipped;
             continue;
         }
+#endif
         ++count;
 
         if ( !align_list ) {
@@ -1305,7 +1311,9 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     size_t count = 0, skipped = 0, dups = 0, far_refs = 0;
     set<CSeq_id_Handle> loaded;
     
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
+#endif
     CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
@@ -1322,13 +1330,15 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
             ++skipped;
             continue;
         }
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
         TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
         if ( align_end > ref_len ) {
             ++skipped;
             continue;
         }
-
-        if ( ait.GetShortSequence().size() == 0 ) {
+#endif
+        
+        if ( ait.GetShortSequenceLength() == 0 ) {
             // far reference
             ++far_refs;
             continue;
@@ -1492,7 +1502,9 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 
     SBaseStats ss(chunk_len);
     
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
+#endif
     CBamAlignIterator ait(*m_File, GetRefSeqId(), chunk_pos, chunk_len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
@@ -1513,7 +1525,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                 Uint4 op = rit->GetCIGAROp(i);
                 Uint4 seglen = op >> 4;
                 switch ( op & 0xf ) {
-                case 7: // =
+                case SBamAlignInfo::kCIGAR_eq: // =
                     // match
                     for ( TSeqPos i = 0; i < seglen; ++i ) {
                         ss.add_match(ss_pos);
@@ -1521,8 +1533,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     }
                     read_pos += seglen;
                     break;
-                case 0: // M
-                case 8: // X
+                case SBamAlignInfo::kCIGAR_M: // M
+                case SBamAlignInfo::kCIGAR_X: // X
                     // mismatch ('X') or
                     // unspecified 'alignment match' ('M') that can be a mismatch too
                     for ( TSeqPos i = 0; i < seglen; ++i ) {
@@ -1531,12 +1543,12 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                         ++read_pos;
                     }
                     break;
-                case 1: // I
-                case 4: // S
+                case SBamAlignInfo::kCIGAR_I: // I
+                case SBamAlignInfo::kCIGAR_S: // S
                     read_pos += seglen;
                     break;
-                case 2: // D
-                case 3: // N
+                case SBamAlignInfo::kCIGAR_D: // D
+                case SBamAlignInfo::kCIGAR_N: // N
                     ss.add_gap(ss_pos, seglen);
                     ss_pos += seglen;
                     break;
@@ -1549,11 +1561,13 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     else {
         for( ; ait; ++ait ){
             TSeqPos align_pos = ait.GetRefSeqPos();
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
             TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
             if ( align_end > ref_len ) {
                 ++skipped;
                 continue;
             }
+#endif            
             if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
                 ++skipped;
                 continue;

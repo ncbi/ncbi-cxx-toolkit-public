@@ -59,9 +59,6 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
-static const uint32_t kBlockBits = 14;
-static const uint32_t kBlockSize = 1<<kBlockBits;
-static const uint32_t kBinNumberBase = 4681;
 static const float kEstimatedCompression = 0.25;
 
 static inline
@@ -253,7 +250,58 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
     for ( int32_t i_intv = 0; i_intv < n_intv; ++i_intv ) {
         m_Intervals[i_intv] = s_ReadFilePos(in);
     }
-    m_EstimatedLength = max(m_EstimatedLength, n_intv*kBlockSize);
+    m_EstimatedLength = max(m_EstimatedLength, n_intv*CBamIndex::kMinBinSize);
+}
+
+
+CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range) const
+{
+    CBGZFRange limit;
+    if ( m_EstimatedLength < ref_range.GetToOpen() ) {
+        ref_range.SetToOpen(m_EstimatedLength);
+    }
+    if ( ref_range.Empty() ) {
+        return limit;
+    }
+    _ASSERT(ref_range.GetFrom() < CBamIndex::kMaxBinSize);
+    _ASSERT(ref_range.GetToOpen() <= CBamIndex::kMaxBinSize);
+
+    SBamIndexBinInfo::TBin beg_bin_offset = CBamIndex::GetBinNumberOffset(ref_range.GetFrom(), 0);
+    // start limit is from intervals and beg position
+    if ( beg_bin_offset < m_Intervals.size() ) {
+        limit.first = m_Intervals[beg_bin_offset];
+    }
+    // end limit is from low-level block after end position
+    limit.second = CBGZFPos::GetInvalid();
+    SBamIndexBinInfo::TBin end_bin = CBamIndex::GetBinNumber(ref_range.GetTo(), 0)+1;
+    auto end_it = lower_bound(m_Bins.begin(), m_Bins.end(), end_bin);
+    if ( end_it != m_Bins.end() ) {
+        limit.second = end_it->m_Chunks[0].first;
+    }
+    return limit;
+}
+
+
+void SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                                           CBGZFRange limit_file_range,
+                                           COpenRange<TSeqPos> ref_range,
+                                           uint32_t index_level) const
+{
+    CBamIndex::TBin bin1 = CBamIndex::GetBinNumber(ref_range.GetFrom(), index_level);
+    CBamIndex::TBin bin2 = CBamIndex::GetBinNumber(ref_range.GetTo(), index_level);
+    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin1); it != m_Bins.end() && it->m_Bin <= bin2; ++it ) {
+        for ( auto c : it->m_Chunks ) {
+            if ( c.first < limit_file_range.first ) {
+                c.first = limit_file_range.first;
+            }
+            if ( limit_file_range.second < c.second ) {
+                c.second = limit_file_range.second;
+            }
+            if ( c.first < c.second ) {
+                ranges.push_back(c);
+            }
+        }
+    }
 }
 
 
@@ -432,8 +480,8 @@ CBamIndex::CollectEstimatedCoverage(size_t ref_index) const
     for ( auto& b : GetRef(ref_index).m_Bins ) {
         COpenRange<TSeqPos> range = b.GetSeqRange();
         uint32_t len = range.GetLength();
-        if ( len == kBlockSize ) {
-            size_t index = range.GetFrom()/kBlockSize;
+        if ( len == kMinBinSize ) {
+            size_t index = range.GetFrom()/kMinBinSize;
             if ( index >= vv.size() )
                 vv.resize(index+1);
             uint64_t value = 0;
@@ -457,7 +505,7 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
     if ( vv.empty() ) vv.push_back(0);
     uint32_t count = uint32_t(vv.size());
     if ( length == 0 || length == kInvalidSeqPos ) {
-        length = count*kBlockSize;
+        length = count*kMinBinSize;
     }
     uint64_t max_value = *max_element(vv.begin(), vv.end());
 
@@ -469,7 +517,7 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
     graph->SetLoc().SetInt().SetId().Assign(seq_id);
     graph->SetLoc().SetInt().SetFrom(0);
     graph->SetLoc().SetInt().SetTo(length-1);
-    graph->SetComp(kBlockSize);
+    graph->SetComp(kMinBinSize);
     graph->SetNumval(count);
     CByte_graph& bgraph = graph->SetGraph().SetByte();
     bgraph.SetAxis(0);
@@ -642,68 +690,19 @@ void CBamFileRangeSet::AddSortedRanges(const vector<CBGZFRange>& ranges)
 }
 
 
-inline
-void CBamFileRangeSet::AddBinsRanges(vector<CBGZFRange>& ranges,
-                                     const CBGZFRange& limit,
-                                     const SBamIndexRefIndex& ref,
-                                     TBin bin1, TBin bin2)
-{
-    for ( auto it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), bin1);
-          it != ref.m_Bins.end() && it->m_Bin <= bin2; ++it ) {
-        for ( auto c : it->m_Chunks ) {
-            if ( c.first < limit.first ) {
-                c.first = limit.first;
-            }
-            if ( limit.second < c.second ) {
-                c.second = limit.second;
-            }
-            if ( c.first < c.second ) {
-                ranges.push_back(c);
-            }
-        }
-    }
-}
-
-
 void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  size_t ref_index,
                                  COpenRange<TSeqPos> ref_range)
 {
+    const SBamIndexRefIndex& ref = index.GetRef(ref_index);
+    // set limits
+    CBGZFRange limit = ref.GetLimitRange(ref_range);
     if ( ref_range.Empty() ) {
         return;
     }
-    const SBamIndexRefIndex& ref = index.GetRef(ref_index);
-    TSeqPos beg = ref_range.GetFrom();
-    TSeqPos end = min(ref_range.GetToOpen(), ref.m_EstimatedLength);
-    if ( end <= beg ) {
-        return;
-    }
-    --end;
-    _ASSERT((beg>>29) == 0);
-    _ASSERT((end>>29) == 0);
-
-    // set limits
-    CBGZFRange limit;
-    // start limit is from intervals and beg position
-    if ( (beg>>kBlockBits)<ref.m_Intervals.size() ) {
-        limit.first = ref.m_Intervals[beg>>kBlockBits];
-    }
-    // end limit is from low-level block after end position
-    limit.second = CBGZFPos::GetInvalid();
-    SBamIndexBinInfo::TBin end_bin =
-        SBamIndexBinInfo::TBin(kBinNumberBase + (end >> kBlockBits) + 1);
-    auto end_it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), end_bin);
-    if ( end_it != ref.m_Bins.end() ) {
-        limit.second = end_it->m_Chunks[0].first;
-    }
-
     vector<CBGZFRange> ranges;
-    for ( unsigned k = 0; k <= 5; ++k ) {
-        unsigned shift = kBlockBits+3*k;
-        unsigned base = kBinNumberBase>>(3*k);
-        AddBinsRanges(ranges, limit, ref,
-                      base + (beg>>shift),
-                      base + (end>>shift));
+    for ( uint32_t k = 0; k <= CBamIndex::kMaxLevel; ++k ) {
+        ref.AddLevelFileRanges(ranges, limit, ref_range, k);
     }
     gfx::timsort(ranges.begin(), ranges.end());
     AddSortedRanges(ranges);
@@ -766,39 +765,49 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
 // SBamAlignInfo
 /////////////////////////////////////////////////////////////////////////////
 
-static const char kBaseSymbols[] = "=ACMGRSVTWYHKDBN";
-
-static const char kCIGARSymbols[] = "MIDNSHP=X???????";
-enum ECIGARType { // matches to kCIGARSymbols
-    kCIGAR_M,  // 0
-    kCIGAR_I,  // 1
-    kCIGAR_D,  // 2
-    kCIGAR_N,  // 3
-    kCIGAR_S,  // 4
-    kCIGAR_H,  // 5
-    kCIGAR_P,  // 6
-    kCIGAR_eq, // 7
-    kCIGAR_X   // 8
-};
-
 string SBamAlignInfo::get_read() const
 {
     string ret;
-    const char* ptr = get_read_ptr();
-    for ( uint32_t len = get_read_len(); len; ) {
-        char c = *ptr++;
-        uint32_t b1 = (c >> 4)&0xf;
-        uint32_t b2 = (c     )&0xf;
-        ret += kBaseSymbols[b1];
-        if ( len == 1 ) {
-            len = 0;
-        }
-        else {
-            ret += kBaseSymbols[b2];
+    if ( uint32_t len = get_read_len() ) {
+        ret.resize(len);
+        char* dst = &ret[0];
+        const char* src = get_read_ptr();
+        for ( uint32_t len = get_read_len(); len; ) {
+            char c = *src++;
+            uint32_t b1 = (c >> 4)&0xf;
+            uint32_t b2 = (c     )&0xf;
+            *dst = kBaseSymbols[b1];
+            if ( len == 1 ) {
+                break;
+            }
+            dst[1] = kBaseSymbols[b2];
+            dst += 2;
             len -= 2;
         }
     }
     return ret;
+}
+
+
+void SBamAlignInfo::get_read(CBamString& str) const
+{
+    uint32_t len = get_read_len();
+    str.reserve(len+1);
+    str.resize(len);
+    char* dst = str.data();
+    const char* src = get_read_ptr();
+    for ( uint32_t len = get_read_len(); len; ) {
+        char c = *src++;
+        uint32_t b1 = (c >> 4)&0xf;
+        uint32_t b2 = (c     )&0xf;
+        *dst = kBaseSymbols[b1];
+        if ( len == 1 ) {
+            break;
+        }
+        dst[1] = kBaseSymbols[b2];
+        dst += 2;
+        len -= 2;
+    }
 }
 
 
@@ -875,6 +884,48 @@ uint32_t SBamAlignInfo::get_cigar_read_size() const
 }
 
 
+pair< COpenRange<uint32_t>, COpenRange<uint32_t> > SBamAlignInfo::get_cigar_alignment(void) const
+{
+    // ignore hard and soft breaks, ignore deletions and skips
+    // only match/mismatch and inserts remain
+    uint32_t ref_pos = get_ref_pos(), ref_size = 0, read_pos = 0, read_size = 0;
+    bool first = true;
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(ptr);
+        ptr += 4;
+        uint32_t seglen = op >> 4;
+        switch ( op & 0xf ) {
+        case kCIGAR_M:
+        case kCIGAR_eq:
+        case kCIGAR_X:
+            ref_size += seglen;
+            read_size += seglen;
+            break;
+        case kCIGAR_D:
+        case kCIGAR_N:
+            ref_size += seglen;
+            break;
+        case kCIGAR_I:
+            read_size += seglen;
+            break;
+        case kCIGAR_S:
+            if ( first ) {
+                read_pos = seglen;
+            }
+            break;
+        default:
+            break;
+        }
+        first = false;
+    }
+    pair< COpenRange<uint32_t>, COpenRange<uint32_t> > ret;
+    ret.first.SetFrom(ref_pos).SetLength(ref_size);
+    ret.second.SetFrom(read_pos).SetLength(read_size);
+    return ret;
+}
+
+
 string SBamAlignInfo::get_cigar() const
 {
     // ignore hard and soft breaks
@@ -894,6 +945,46 @@ string SBamAlignInfo::get_cigar() const
         ret << kCIGARSymbols[op & 0xf] << seglen;
     }
     return CNcbiOstrstreamToString(ret);
+}
+
+
+static inline char* s_format(char* dst, uint32_t v)
+{
+    if ( v < 10 ) {
+        *dst = '0'+v;
+        return dst+1;
+    }
+    if ( v >= 100 ) {
+        dst = s_format(dst, v/100);
+    }
+    dst[0] = '0'+(v/10);
+    dst[1] = '0'+(v%10);
+    return dst+2;
+}
+
+
+void SBamAlignInfo::get_cigar(CBamString& str) const
+{
+    // it takes at most 10 symbols per op - op char + 9-symbols number up to 2^28
+    size_t count = get_cigar_ops_count();
+    str.reserve(count*10+1);
+    char* dst = str.data();
+    const char* src = get_cigar_ptr();
+    for ( ; count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(src);
+        src += 4;
+        switch ( op & 0xf ) {
+        case kCIGAR_H:
+        case kCIGAR_S:
+            continue;
+        default:
+            break;
+        }
+        uint32_t seglen = op >> 4;
+        *dst = kCIGARSymbols[op & 0xf];
+        dst = s_format(dst+1, seglen);
+    }
+    str.resize(dst-str.data());
 }
 
 
@@ -1147,27 +1238,27 @@ void CBamRawAlignIterator::GetSegments(vector<int>& starts, vector<TSeqPos>& len
         TSeqPos seglen = op >> 4;
         int refstart, seqstart;
         switch ( op & 0xf ) {
-        case kCIGAR_H:
-        case kCIGAR_P: // ?
+        case SBamAlignInfo::kCIGAR_H:
+        case SBamAlignInfo::kCIGAR_P: // ?
             continue;
-        case kCIGAR_S:
+        case SBamAlignInfo::kCIGAR_S:
             seqpos += seglen;
             continue;
-        case kCIGAR_M:
-        case kCIGAR_eq:
-        case kCIGAR_X:
+        case SBamAlignInfo::kCIGAR_M:
+        case SBamAlignInfo::kCIGAR_eq:
+        case SBamAlignInfo::kCIGAR_X:
             refstart = refpos;
             refpos += seglen;
             seqstart = seqpos;
             seqpos += seglen;
             break;
-        case kCIGAR_I:
+        case SBamAlignInfo::kCIGAR_I:
             refstart = kInvalidSeqPos;
             seqstart = seqpos;
             seqpos += seglen;
             break;
-        case kCIGAR_D:
-        case kCIGAR_N:
+        case SBamAlignInfo::kCIGAR_D:
+        case SBamAlignInfo::kCIGAR_N:
             refstart = refpos;
             refpos += seglen;
             seqstart = kInvalidSeqPos;
