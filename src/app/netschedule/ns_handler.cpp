@@ -4296,7 +4296,24 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
         GetDiagContext().Extra().Print("job_key", job_key);
     }
 
-    if (cmdv2)
+    if (cmdv2) {
+        string      submitter_notif_info;
+        if (job.GetSubmNotifPort() != 0) {
+            string  host = CSocketAPI::ntoa(job.GetSubmAddr());
+            if (host == "127.0.0.1") {
+                unsigned int    my_addr = CSocketAPI::GetLocalHostAddress();
+                host = CSocketAPI::ntoa(my_addr);
+                if (host == "127.0.0.1") {
+                    ERR_POST(Warning <<
+                             "Could not detect the self host address "
+                             "to provide it to a worker node");
+                }
+            }
+            submitter_notif_info =
+                "&sumbitter_notif_host=" + NStr::URLEncode(host) +
+                "&sumbitter_notif_port=" +
+                    NStr::NumericToString(job.GetSubmNotifPort());
+        }
         x_WriteMessage(
                        "OK:job_key=" + job_key +
                        "&input=" + NStr::URLEncode(job.GetInput()) +
@@ -4308,8 +4325,9 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
                        "&mask=" + NStr::NumericToString(job.GetMask()) +
                        "&auth_token=" + job.GetAuthToken() +
+                       submitter_notif_info +
                        kEndOfResponse);
-    else
+    } else {
         x_WriteMessage(
                        "OK:" + job_key +
                        " \"" + NStr::PrintableString(job.GetInput()) + "\""
@@ -4320,6 +4338,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                                NStr::PrintableString(job.GetClientSID()) + "\""
                        " " + NStr::NumericToString(job.GetMask()) +
                        kEndOfResponse);
+    }
 }
 
 
