@@ -56,6 +56,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -66,6 +67,33 @@ class CSeq_id_Handle;
 class CSeq_id_Info;
 class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
+
+#define USE_HASH_MAP
+
+struct PHashNocase {
+    static char get_hash(char c)
+        {
+            // In ids only ASCII characters are allowed, and in ASCII
+            // upper and lower cases differ only by one bit.
+            // So for efficiency it's enough to reset that bit
+            // instead of using more complex tolower().
+            return c&~32;
+            //return tolower(c);
+        }
+    size_t operator()(const string& s) const
+        {
+            size_t h = s.size();
+            for ( auto c : s )
+                h = h*17 + get_hash(c);
+            return h;
+        }
+};
+struct PEqualNocase {
+    bool operator()(const string& s1, const string& s2) const
+        {
+            return NStr::EqualNocase(s1, s2);
+        }
+};
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -652,7 +680,11 @@ private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
 
+#ifdef USE_HASH_MAP
+    typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
+#else
     typedef map<string, CSeq_id_Info*, PNocase> TByStr;
+#endif
     typedef map<TPacked, CSeq_id_Info*>         TById;
 
     TByStr m_ByStr;
@@ -785,7 +817,11 @@ private:
 
     struct STagMap {
     public:
+#ifdef USE_HASH_MAP
+        typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
+#else
         typedef map<string, CSeq_id_Info*, PNocase> TByStr;
+#endif
         typedef map<TPacked, CSeq_id_Info*>         TById;
         TByStr m_ByStr;
         TById  m_ById;

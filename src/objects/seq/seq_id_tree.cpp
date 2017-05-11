@@ -1618,25 +1618,11 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindInfo(const CSeq_id& id) const
 
 CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
 {
-    _ASSERT(id.IsLocal());
     const CObject_id& oid = id.GetLocal();
     TWriteLockGuard guard(m_TreeLock);
-    CSeq_id_Info* info = x_FindInfo(oid);
-
+    CSeq_id_Info*& info = oid.IsStr()? m_ByStr[oid.GetStr()]: m_ById[oid.GetId()];
     if ( !info ) {
         info = CreateInfo(id);
-        if ( oid.IsStr() ) {
-            _VERIFY(m_ByStr.insert(TByStr::value_type(oid.GetStr(),
-                                                      info)).second);
-        }
-        else if ( oid.IsId() ) {
-            _VERIFY(m_ById.insert(TById::value_type(oid.GetId(),
-                                                    info)).second);
-        }
-        else {
-            NCBI_THROW(CSeq_id_MapperException, eEmptyError,
-                       "Can not create index for an empty local seq-id");
-        }
     }
     return CSeq_id_Handle(info);
 }
