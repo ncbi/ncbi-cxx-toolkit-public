@@ -216,7 +216,7 @@ void CGff2Record::TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringE
     columns.reserve(9);
     size_t index;
     // first try to split just using tabs
-    NStr::Tokenize(in_line, "\t", columns, NStr::fSplit_MergeDelims);
+    NStr::Split(in_line, "\t", columns, NStr::fSplit_MergeDelims);
     if (columns.size() == 9)
         return;
     columns.clear();

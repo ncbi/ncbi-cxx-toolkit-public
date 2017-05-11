@@ -143,7 +143,7 @@ int NSnp::GetLength(const CSeq_feat &feat)
                 if (NStr::SplitInTwo(str, "=", s1, s2)) {
                     vector<string> v;
 
-                    NStr::Tokenize(str, ",", v);
+                    NStr::Split(str, ",", v, NStr::fSplit_NoMergeDelims);
                     if (v.size()==4) {
                         int rc = NStr::StringToInt(v[3], NStr::fConvErr_NoThrow);
                         int lc = NStr::StringToInt(v[2], NStr::fConvErr_NoThrow);

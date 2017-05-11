@@ -83,7 +83,7 @@ bool CTabDelimitedValidator::_CheckHeader(const string& discouraged, const vecto
     vector<string> discouraged_cols;
     if (!discouraged.empty())
     {
-        NStr::Tokenize(discouraged, ",", discouraged_cols);
+        NStr::Split(discouraged, ",", discouraged_cols, NStr::fSplit_NoMergeDelims);
     }
 
     ITERATE(std::vector<std::string>, it, m_col_defs)
@@ -103,7 +103,7 @@ bool CTabDelimitedValidator::_CheckHeader(const string& discouraged, const vecto
     {
         set<string>& require_one_cols = m_require_one_cols[it - require_one.begin()];
         vector<string> cols;
-        NStr::Tokenize(*it, ",", cols);
+        NStr::Split(*it, ",", cols, NStr::fSplit_NoMergeDelims);
         int found(0);
         ITERATE(vector<string>, it_col, cols)
         {
@@ -228,7 +228,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
 {
     col_defs.resize(m_col_defs.size(), false); // all values are not required
     vector<CTempStringEx> names;
-    NStr::Tokenize(columns, ",", names);
+    NStr::Split(columns, ",", names, NStr::fSplit_NoMergeDelims);
     bool can_process = true;
     for (size_t i=0; i<names.size(); i++)
     {
@@ -264,7 +264,7 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
     {
         string lower = default_columns;
         NStr::ToLower(lower);
-        NStr::Tokenize(lower, ",", m_col_defs); //using comma separator always
+        NStr::Split(lower, ",", m_col_defs, NStr::fSplit_NoMergeDelims); //using comma separator always
 
         return true;
     }
@@ -279,7 +279,7 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
             string lower = reader.GetCurrentLine();
             if (lower[0] == '#') continue;
             NStr::ToLower(lower);
-            NStr::Tokenize(lower, m_delim, m_col_defs);
+            NStr::Split(lower, m_delim, m_col_defs, NStr::fSplit_NoMergeDelims);
             break;
         }
 
@@ -312,7 +312,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
         {
             if (current[0] == '#') continue; // skip all comment lines
             vector<CTempStringEx> values; values.reserve(m_col_defs.size());
-            NStr::Tokenize(current, m_delim, values);
+            NStr::Split(current, m_delim, values, NStr::fSplit_NoMergeDelims);
 
             if (values.size() > m_col_defs.size())
                 _ReportError(m_col_defs.size(), "To many values", "");

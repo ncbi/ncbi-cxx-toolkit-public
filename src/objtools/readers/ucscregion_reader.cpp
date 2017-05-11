@@ -125,10 +125,10 @@ CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string
             string SubLine = Line.substr(IdSubI );
             //cerr << IdStr << endl;
             //cerr << SubLine << endl;
-            NStr::Tokenize(NStr::TruncateSpaces(SubLine), Delims, Tokens, NStr::eMergeDelims);
+            NStr::Split(NStr::TruncateSpaces(SubLine), Delims, Tokens, NStr::fSplit_Tokenize);
             Tokens.insert(Tokens.begin(), IdStr);
         } else {
-            NStr::Tokenize(NStr::TruncateSpaces(Line), Delims, Tokens, NStr::eMergeDelims);
+            NStr::Split(NStr::TruncateSpaces(Line), Delims, Tokens, NStr::fSplit_Tokenize);
         }
     }}
 
@@ -179,7 +179,7 @@ CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string
 //  ----------------------------------------------------------------------------
 void CUCSCRegionReader::xSmartFieldSplit(vector<string>& fields, CTempString line)
 {
-    NStr::Tokenize(line, " \t.-:", fields, NStr::eMergeDelims);
+    NStr::Split(line, " \t.-:", fields, NStr::fSplit_Tokenize);
     if (line[line.length()-1] == '-')
         fields.push_back("-");
     while (fields.size() > 3)

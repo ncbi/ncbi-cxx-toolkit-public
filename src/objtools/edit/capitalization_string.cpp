@@ -652,7 +652,7 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
             {
                 NStr::ToLower(str);
                 vector<string> words;
-                NStr::Tokenize(str, " \t\r\n", words);
+                NStr::Split(str, " \t\r\n", words, NStr::fSplit_NoMergeDelims);
                 for (vector<string>::iterator word = words.begin(); word != words.end(); ++word) {
                     if (!word->empty() && isalpha(word->at(0))) {
                         word->at(0) = toupper(word->at(0));

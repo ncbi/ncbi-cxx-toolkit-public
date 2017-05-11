@@ -221,7 +221,7 @@ bool CSrcChkApp::xGetDesiredFields(
 
     if (args["f"]) {
         string fieldString = args["f"].AsString();
-        NStr::Tokenize(fieldString, ",", fields);
+        NStr::Split(fieldString, ",", fields, NStr::fSplit_NoMergeDelims);
         return CSrcWriter::ValidateFields(fields, m_pErrors);
     }
     if (args["F"]) {

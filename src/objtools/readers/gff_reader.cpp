@@ -405,7 +405,7 @@ bool CGFFReader::x_ParseStructuredComment(const TStr& line)
         return false;
     }
     TStrVec v;
-    NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
+    NStr::Split(line, "# \t", v, NStr::fSplit_Tokenize);
     if (v.empty()) {
         return true;
     }
@@ -476,10 +476,10 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
     TStrVec v;
     bool    misdelimited = false;
 
-    NStr::Tokenize(line, "\t", v, NStr::eNoMergeDelims);
+    NStr::Split(line, "\t", v, NStr::fSplit_NoMergeDelims);
     if (v.size() < 8) {
         v.clear();
-        NStr::Tokenize(line, " \t", v, NStr::eMergeDelims);
+        NStr::Split(line, " \t", v, NStr::fSplit_Tokenize);
         if (v.size() < 8) {
             x_Error("Skipping line due to insufficient fields",
                    x_GetLineNumber());
@@ -927,7 +927,7 @@ void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
                                      SIZE_TYPE& i)
 {
     vector<string> v2, attr;
-    NStr::Tokenize(v[i], ";", v2, NStr::eMergeDelims);
+    NStr::Split(v[i], ";", v2, NStr::fSplit_Tokenize);
     ITERATE (vector<string>, it, v2) {
         attr.clear();
         string key, values;
@@ -935,7 +935,7 @@ void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
             vector<string> vals;
             attr.resize(2);
             s_URLDecode(key, attr[0]);
-            NStr::Tokenize(values, ",", vals);
+            NStr::Split(values, ",", vals, NStr::fSplit_NoMergeDelims);
             ITERATE (vector<string>, it2, vals) {
                 string value( *it2 );
                 if ( NStr::MatchesMask(value, "\"*\"") ) {

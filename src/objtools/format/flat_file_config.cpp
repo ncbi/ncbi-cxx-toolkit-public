@@ -862,7 +862,7 @@ CFlatFileConfig::TGenbankBlocks x_GetGenbankBlocks(const CArgs& args)
     // turn the blocks into one mask
     CFlatFileConfig::TGenbankBlocks fBlocksGiven = 0;
     vector<string> vecOfBlockNames;
-    NStr::Tokenize(blocks_arg, ",", vecOfBlockNames);
+    NStr::Split(blocks_arg, ",", vecOfBlockNames, NStr::fSplit_NoMergeDelims);
     ITERATE(vector<string>, name_iter, vecOfBlockNames) {
         // Note that StringToGenbankBlock throws an
         // exception if it gets an illegal value.

@@ -707,7 +707,7 @@ int CSplignApp::Run()
             blastdbstr = args["blastdb"].AsString();
         }
         dbs.clear();
-        NStr::Tokenize(blastdbstr, ",", dbs);
+        NStr::Split(blastdbstr, ",", dbs, NStr::fSplit_NoMergeDelims);
         ITERATE(TDbs, i, dbs) {
             string db = NStr::TruncateSpaces(*i);
             if (db.empty()) {
@@ -735,7 +735,7 @@ int CSplignApp::Run()
             ldsdbstr = args["ldsdir"].AsString();
         }
         dbs.clear();
-        NStr::Tokenize(ldsdbstr, ",", dbs);
+        NStr::Split(ldsdbstr, ",", dbs, NStr::fSplit_NoMergeDelims);
         ITERATE(TDbs, i, dbs) {
             const string fasta_dir = *i;
             string db = GetLdsDbDir(fasta_dir);

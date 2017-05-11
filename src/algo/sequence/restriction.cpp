@@ -226,7 +226,7 @@ CREnzyme CRebase::MakeREnzyme(const string& name, const string& sites)
     re.SetName(name);
 
     vector<string> site_vec;
-    NStr::Tokenize(sites, ",", site_vec);
+    NStr::Split(sites, ",", site_vec, NStr::fSplit_NoMergeDelims);
     ITERATE (vector<string>, iter, site_vec) {
         CRSpec spec = CRebase::MakeRSpec(*iter);
         re.SetSpecs().push_back(spec);
@@ -267,7 +267,7 @@ void CRebase::ReadNARFormat(istream& input,
 
     while (getline(input, line)) {
         vector<string> fields;
-        NStr::Tokenize(line, "\t", fields);
+        NStr::Split(line, "\t", fields, NStr::fSplit_NoMergeDelims);
         // the lines we're interested in have more than one field
         if (fields.size() < 2) {
             continue;
