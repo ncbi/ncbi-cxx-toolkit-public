@@ -122,6 +122,12 @@ public:
     static bool IsUnexpectedViralOrgModQualifier(TSubtype subtype);
     bool IsUnexpectedViralOrgModQualifier() const;
 
+    // for type material
+    static bool IsValidTypeMaterial(const string& type_material);
+    // note that the INSDC definition is currently lagging behind what is considered
+    // valid for taxonomy
+    static bool IsINSDCValidTypeMaterial(const string& type_material);
+
     typedef map<string, string, PNocase> TInstitutionCodeMap;
     private:
     // Prohibit copy constructor and assignment operator
@@ -130,6 +136,7 @@ public:
 
     static TInstitutionCodeMap::iterator FindInstitutionCode(const string& inst_coll, TInstitutionCodeMap& code_map,
         bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country);
+
 };
 
 /////////////////// COrgMod inline methods

@@ -1092,6 +1092,102 @@ bool COrgMod::IsUnexpectedViralOrgModQualifier() const
 }
 
 
+static const string sValidTypeMaterialPrefixes[] = {
+    "type material",
+    "type strain",
+    "reference material",
+    "reference strain",
+    "neotype strain",
+    "allotype",
+    "culture from reference material",
+    "culture from type material",
+    "ex-type",
+    "culture from hapantotype",
+    "pathotype strain"
+};
+
+static const int sNumValidTypeMaterialPrefixes = sizeof(sValidTypeMaterialPrefixes) / sizeof(string);
+
+static const string sValidCultureTypeMaterialPrefixes[] = {
+    "paratype",
+    "neotype",
+    "lectotype",
+    "hapantotype"
+    "isosyntype",
+    "isotype",
+    "isoparatype",
+    "isoneotype",
+    "isolectotype",
+    "holotype",
+    "epitype",
+    "syntype",
+    "isoepitype"
+};
+
+static const int sNumValidCultureTypeMaterialPrefixes = sizeof(sValidCultureTypeMaterialPrefixes) / sizeof(string);
+
+bool COrgMod::IsValidTypeMaterial(const string& type_material)
+{
+    for (int i = 0; i < sNumValidTypeMaterialPrefixes; i++) {
+        if (NStr::StartsWith(type_material, sValidTypeMaterialPrefixes[i])) {
+            return true;
+        }
+    }
+
+    for (int i = 0; i < sNumValidCultureTypeMaterialPrefixes; i++) {
+        if (NStr::StartsWith(type_material, sValidCultureTypeMaterialPrefixes[i])) {
+            return true;
+        } else if (NStr::StartsWith(type_material, "culture from " + sValidCultureTypeMaterialPrefixes[i])) {
+            return true;
+        } else if (NStr::StartsWith(type_material, "ex-" + sValidCultureTypeMaterialPrefixes[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static const string sINSDCTypeMaterialPrefixes[] = {
+    "type strain",
+    "neotype strain",
+    "holotype",
+    "paratype",
+    "neotype",
+    "allotype",
+    "hapanotype",
+    "syntype",
+    "lectotype",
+    "paralectotype",
+    "isotype",
+    "epitype",
+    "isosyntype",
+    "ex-type",
+    "reference strain",
+    "type material"
+};
+
+static const int sNumINSDCTypeMaterialPrefixes = sizeof(sINSDCTypeMaterialPrefixes) / sizeof(string);
+
+// note that the INSDC definition is currently lagging behind what is considered
+// valid for taxonomy
+bool COrgMod::IsINSDCValidTypeMaterial(const string& type_material)
+{
+    if (NStr::IsBlank(type_material)) {
+        return false;
+    }
+
+    for (int i = 0; i<sNumINSDCTypeMaterialPrefixes; ++i) {
+        string prefix = sINSDCTypeMaterialPrefixes[i];
+        if (NStr::StartsWith(type_material, prefix)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

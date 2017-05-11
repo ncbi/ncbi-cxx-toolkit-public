@@ -1846,3 +1846,16 @@ BOOST_AUTO_TEST_CASE(Test_FixImportKey)
     BOOST_CHECK_EQUAL(val, "exon");
     BOOST_CHECK_EQUAL(CSeqFeatData::FixImportKey(val), false);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_IsTypeMaterialValid)
+{
+    BOOST_CHECK_EQUAL(COrgMod::IsValidTypeMaterial("holotype X"), true);
+    BOOST_CHECK_EQUAL(COrgMod::IsINSDCValidTypeMaterial("holotype X"), true);
+    BOOST_CHECK_EQUAL(COrgMod::IsValidTypeMaterial("culture from epitype Y"), true);
+    BOOST_CHECK_EQUAL(COrgMod::IsINSDCValidTypeMaterial("culture from epitype Y"), false);
+    BOOST_CHECK_EQUAL(COrgMod::IsValidTypeMaterial("ex-syntype Z"), true);
+    BOOST_CHECK_EQUAL(COrgMod::IsINSDCValidTypeMaterial("ex-syntype Z"), false);
+
+
+}
