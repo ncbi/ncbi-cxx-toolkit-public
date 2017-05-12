@@ -68,8 +68,6 @@ class CSeq_id_Info;
 class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
-#define USE_HASH_MAP
-
 struct PHashNocase {
     static char get_hash(char c)
         {
@@ -680,11 +678,7 @@ private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
 
-#ifdef USE_HASH_MAP
     typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
-#else
-    typedef map<string, CSeq_id_Info*, PNocase> TByStr;
-#endif
     typedef map<TPacked, CSeq_id_Info*>         TById;
 
     TByStr m_ByStr;
@@ -817,11 +811,7 @@ private:
 
     struct STagMap {
     public:
-#ifdef USE_HASH_MAP
         typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
-#else
-        typedef map<string, CSeq_id_Info*, PNocase> TByStr;
-#endif
         typedef map<TPacked, CSeq_id_Info*>         TById;
         TByStr m_ByStr;
         TById  m_ById;
