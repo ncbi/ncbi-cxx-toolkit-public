@@ -1098,6 +1098,8 @@ static const string sValidTypeMaterialPrefixes[] = {
     "reference material",
     "reference strain",
     "neotype strain",
+    "paralectotype",
+    "hapantotype"
     "allotype",
     "culture from reference material",
     "culture from type material",
@@ -1112,7 +1114,6 @@ static const string sValidCultureTypeMaterialPrefixes[] = {
     "paratype",
     "neotype",
     "lectotype",
-    "hapantotype"
     "isosyntype",
     "isotype",
     "isoparatype",
