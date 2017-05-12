@@ -15,7 +15,7 @@ LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwra
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) id2cli \
        xregexp $(PCRE_LIB) $(SRAREAD_LIBS) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(LIBXSLT_STATIC_LIBS) $(BERKELEYDB_STATIC_LIBS) \
+LIBS = $(LIBXSLT_STATIC_LIBS) $(LIBXML_STATIC_LIBS) $(BERKELEYDB_STATIC_LIBS) \
        $(SQLITE3_STATIC_LIBS) $(VDB_STATIC_LIBS) $(FTDS_LIBS) \
        $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
