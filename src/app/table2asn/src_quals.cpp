@@ -84,7 +84,7 @@ bool TSrcQuals::AddQualifiers(objects::CSourceModParser& mod, const string& id)
     if (it != m_lines_map.end())
     {
         vector<CTempString> values;
-        NStr::Split(it->second, "\t", values, NStr::fSplit_Tokenize);
+        NStr::Split(it->second, "\t", values, 0);
 
         x_AddQualifiers(mod, values);
         return true;
@@ -213,7 +213,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
             // parse the header
             if (quals.m_cols.empty())
             {
-                NStr::Split(newline, "\t", quals.m_cols, NStr::fSplit_Tokenize);
+                NStr::Split(newline, "\t", quals.m_cols, 0);
                 if (!opt_map_filename.empty())
                 {
                     ITERATE(vector<CTempString>, it, quals.m_cols)
@@ -326,7 +326,7 @@ void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const strin
 
         if (cols.empty())
         {
-            NStr::Split(current, "\t", cols, NStr::fSplit_Tokenize);
+            NStr::Split(current, "\t", cols, 0);
 #if 0
             if (!opt_map_filename.empty())
             {
@@ -354,7 +354,7 @@ void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const strin
 
         // Each line except first is a set of values, first collumn is a sequence id
         vector<CTempString> values;
-        NStr::Split(current, "\t", values, NStr::fSplit_Tokenize);
+        NStr::Split(current, "\t", values, 0);
 #if 0
         string id;
 
