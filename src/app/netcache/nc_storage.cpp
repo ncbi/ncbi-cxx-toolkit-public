@@ -551,6 +551,11 @@ s_ReadVariableParams(const CNcbiRegistry& reg)
                        kNCStorage_RegSection, kNCStorage_DiskCriticalParam, "1 GB"));
     s_MaxBlobSizeStore = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_MaxBlobSizeStore, "1 GB"));
+    if (s_MaxBlobSizeStore > kNCLargestBlobSize) {
+        SRV_LOG(Error, "Parameter " << kNCStorage_MaxBlobSizeStore << " is too large."
+                       << " Changing it to " << kNCLargestBlobSize);
+        s_MaxBlobSizeStore = kNCLargestBlobSize;
+    }
 
     int warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert", 65);
     if (warn_pct <= 0  ||  warn_pct >= 100) {
@@ -2114,6 +2119,20 @@ CNCAlerts::Register(CNCAlerts::eDebugSaveOneMapImpl1,"s_GetNextWriteCoord failed
     map_rec->map_depth = map_depth;
     size_t coords_size = cnt_downs * sizeof(map_rec->down_coords[0]);
     memcpy(map_rec->down_coords, save_map->coords, coords_size);
+#if 0
+cout << "s_SaveOneMapImpl: "
+     << map_coord.file_id << "[" << map_coord.rec_num << "] ="
+     << " cnt_downs=" << cnt_downs
+     << " map_idx=" << map_rec->map_idx
+     << " map_depth=" << (int)(map_rec->map_depth)
+     << " down_coords=";
+    for (Uint2 c=0; c<cnt_downs; ++c) {
+        cout << " " << map_rec->down_coords[c].file_id
+             << "[" << map_rec->down_coords[c].rec_num
+             << "]";
+    }
+    cout << endl;
+#endif
 
     up_map->coords[save_map->map_idx] = map_coord;
     ++save_map->map_idx;
@@ -2142,8 +2161,28 @@ s_SaveChunkMap(SNCBlobVerData* ver_data,
     }
 
     Uint1 cur_level = 0;
+// changed 11may17
+#if 0
+// prev ver
+    while (cur_level < kNCMaxBlobMapsDepth
+           &&  (maps[cur_level]->map_idx == ver_data->map_size
+                ||  (maps[cur_level]->map_idx > 1  &&  save_all_deps)))
+    {
+        cnt_downs = maps[cur_level]->map_idx;
+        ++cur_level;
+        if (!s_SaveOneMapImpl(maps[cur_level], maps[cur_level + 1], cnt_downs,
+                              ver_data->map_size, cur_level + 1, cache_data))
+        {
+            return false;
+        }
+    }
+#else
+// new ver
+    Uint1 depth = s_CalcMapDepthImpl(ver_data->size,
+                                     ver_data->chunk_size,
+                                     ver_data->map_size);
     Uint2 prev_idx = maps[cur_level]->map_idx;
-    while ((cur_level+1) < kNCMaxBlobMapsDepth
+    while (depth > 1 && (cur_level+1) < kNCMaxBlobMapsDepth
            &&  (maps[cur_level]->map_idx == ver_data->map_size
                 ||  (prev_idx > 0  &&  save_all_deps)))
     {
@@ -2156,6 +2195,7 @@ s_SaveChunkMap(SNCBlobVerData* ver_data,
             return false;
         }
     }
+#endif
 
     return true;
 }
@@ -2215,6 +2255,10 @@ CNCAlerts::Register(CNCAlerts::eDebugWriteBlobInfo2, "WriteBlobInfo: s_GetNextWr
     meta_ind->rec_type = eFileRecMeta;
     meta_ind->cache_data = cache_data;
     meta_ind->chain_coord = down_coord;
+#if 0
+cout << "WriteBlobInfo:" << " coord = " << meta_ind->chain_coord.file_id
+     << "[" << meta_ind->chain_coord.rec_num << "]" << endl;
+#endif
 
     SFileMetaRec* meta_rec = s_CalcMetaAddress(meta_file, meta_ind);
     meta_rec->size = ver_data->size;

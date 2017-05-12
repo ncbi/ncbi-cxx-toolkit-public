@@ -54,6 +54,12 @@ static const size_t kNCMaxBlobChunkSize = 32740;
 #endif
 static const Uint2  kNCMaxChunksInMap = 128;
 
+static const Uint1 kNCMaxBlobMapsDepth = 3;
+
+// 32740 * 128^3 - 32740 = 68'660'723'740
+const Uint8 kNCLargestBlobSize =
+    Uint8(kNCMaxChunksInMap) * Uint8(kNCMaxChunksInMap) * Uint8(kNCMaxChunksInMap) * Uint8(kNCMaxBlobChunkSize) - Uint8(kNCMaxBlobChunkSize);
+
 
 
 class CNCBlobVerManager;
@@ -176,9 +182,6 @@ typedef intr::rbtree<SNCBlobVerData,
                      intr::base_hook<TVerDataMapHook>,
                      intr::constant_time_size<false>,
                      intr::compare<SCompareVerAccessTime> > TVerDataMap;
-
-
-static const Uint1 kNCMaxBlobMapsDepth = 3;
 
 struct SNCChunkMapInfo
 {
