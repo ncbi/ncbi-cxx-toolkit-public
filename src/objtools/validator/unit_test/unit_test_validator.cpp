@@ -20752,4 +20752,22 @@ BOOST_AUTO_TEST_CASE(Test_VR_433)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_708)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "_abc");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_linkage_group, "*123");
 
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "chromosome value should start with letter or number"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "linkage-group value should start with letter or number"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}

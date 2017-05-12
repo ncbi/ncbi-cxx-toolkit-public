@@ -736,6 +736,9 @@ private:
 
     void x_DoBarcodeTests(CSeq_entry_Handle seh);
 
+    bool x_IsRepliconSubSource(CSubSource::TSubtype subtype) const;
+    bool x_IsRepliconSubSourceValid(const string& val) const;
+
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;

@@ -1304,6 +1304,44 @@ const CSeq_entry *ctx)
                     obj, ctx);
             }
         }
+        if (x_IsRepliconSubSource(subsrc.GetSubtype()) &&
+            !x_IsRepliconSubSourceValid(subsrc.GetName())) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
+                obj, ctx);
+        }
+    }
+}
+
+
+bool CValidError_imp::x_IsRepliconSubSource(CSubSource::TSubtype subtype) const
+{
+    bool rval = false;
+    switch (subtype) {
+    case CSubSource::eSubtype_chromosome:
+    case CSubSource::eSubtype_linkage_group:
+    case CSubSource::eSubtype_plasmid_name:
+    case CSubSource::eSubtype_plastid_name:
+    case CSubSource::eSubtype_transposon_name:
+    case CSubSource::eSubtype_insertion_seq_name:
+    case CSubSource::eSubtype_segment:
+    case CSubSource::eSubtype_endogenous_virus_name:
+        rval = true;
+    default:
+        break;
+    }
+    return rval;
+}
+
+
+bool CValidError_imp::x_IsRepliconSubSourceValid(const string& val) const
+{
+    if (NStr::IsBlank(val)) {
+        return true;
+    } else if (isalnum(val.c_str()[0])) {
+        return true;
+    } else {
+        return false;
     }
 }
 
