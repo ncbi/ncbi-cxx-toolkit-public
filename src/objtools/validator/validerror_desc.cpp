@@ -390,6 +390,26 @@ static bool s_IsAllowedPrefix (
 }
 
 
+bool HasBadGenomeAssemblyName(const CUser_object& usr)
+{
+    if (!usr.IsSetData()) {
+        return false;
+    }
+    ITERATE(CUser_object::TData, it, usr.GetData()) {
+        if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*it)->GetLabel().GetStr(), "Assembly Name") &&
+            (*it)->IsSetData() && (*it)->GetData().IsStr()) {
+            const string& val = (*it)->GetData().GetStr();
+            if (NStr::StartsWith(val, "NCBI", NStr::eNocase) ||
+                NStr::StartsWith(val, "GenBank", NStr::eNocase)) {
+                return true;
+            }            
+        }
+    }
+    return false;
+}
+
+
 bool CValidError_desc::ValidateStructuredComment
 (const CUser_object& usr,
  const CSeqdesc& desc,
@@ -468,6 +488,11 @@ bool CValidError_desc::ValidateStructuredComment
             ValidateStructuredCommentGeneric(usr, desc, true);
         }
         is_valid = false;
+    }
+    if (NStr::Equal(prefix, "Genome-Assembly-Data") && HasBadGenomeAssemblyName(usr)) {
+        is_valid = false;
+        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
+            "Assembly Name should not start with 'NCBI' or 'GenBank'", *m_Ctx, desc);
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,

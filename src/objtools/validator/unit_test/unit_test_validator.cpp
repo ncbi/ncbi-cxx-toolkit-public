@@ -8439,6 +8439,45 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 }
 
 
+CRef<CUser_field> MkField(const string& label, const string& val)
+{
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr(label);
+    f->SetData().SetStr(val);
+    return f;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_709)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CUser_object> user(new CUser_object());
+    user->SetType().SetStr("StructuredComment");
+    user->SetData().push_back(MkField("StructuredCommentPrefix", "##Genome-Assembly-Data-START##"));
+    user->SetData().push_back(MkField("Assembly Method", "a v. b"));
+    user->SetData().push_back(MkField("Assembly Name", "NCBI1234"));
+    user->SetData().push_back(MkField("Genome Coverage", "1"));
+    user->SetData().push_back(MkField("Sequencing Technology", "2"));
+
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().Assign(*user);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+            "Assembly Name should not start with 'NCBI' or 'GenBank'"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid"));
+
+    eval = validator.Validate(seh, options);
+
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
 {
     // prepare entry
