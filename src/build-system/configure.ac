@@ -6803,13 +6803,15 @@ VDB_POST_LINK=:
 VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
-   vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
+   vdb_deps="$NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
    # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
    # VDB is always threaded, and may need explicit THREAD_LIBS when
    # used statically.
    if test "$with_mt" = no; then
       vdb_deps="$vdb_deps $THREAD_LIBS"
    fi
+   vdb_static_deps="$LIBXML_STATIC_LIBS $vdb_deps"
+   vdb_deps="$LIBXML_LIBS $vdb_deps"
    if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
       VDB_PATH=$with_vdb
    fi
@@ -6905,9 +6907,9 @@ if test "$with_vdb" != "no" ; then
       if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
          NCBI_PACKAGE(VDB)
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
-            VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
+            VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_static_deps"
             if test "$with_static_vdb" = yes; then
-               VDB_LIBS=$VDB_STATIC_LIBS
+               VDB_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
             fi
          else
             VDB_STATIC_LIBS=$VDB_LIBS
