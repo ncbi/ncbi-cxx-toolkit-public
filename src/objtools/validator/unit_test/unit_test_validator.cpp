@@ -20690,6 +20690,26 @@ BOOST_AUTO_TEST_CASE(Test_VR_433)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
+
+    // suppress error if RefSeq
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_00000001");
+    CRef<CSeqdesc> biosample(new CSeqdesc());
+    biosample->SetUser().SetType().SetStr("DBLink");
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr("BioSample");
+    f->SetData().SetStr("SAME0001");
+    biosample->SetUser().SetData().push_back(f);
+    CRef<CUser_field> f2(new CUser_field());
+    f2->SetLabel().SetStr("BioProject");
+    f2->SetData().SetStrs().push_back("PRJNA12345");
+    biosample->SetUser().SetData().push_back(f2);
+    entry->SetSeq().SetDescr().Set().push_back(biosample);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
 }
 
 

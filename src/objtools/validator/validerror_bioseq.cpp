@@ -3759,7 +3759,7 @@ void CValidError_bioseq::ValidateDeltaLoc
                                  + " (" + NStr::IntToString(seq_len) + ")",
                                 seq);
                     }
-                    if (IsWGS(seq) && HasExcludedAnnotation(loc, bsh)) {
+                    if (!m_Imp.IsRefSeq() && IsWGS(seq) && HasExcludedAnnotation(loc, bsh)) {
                         string id_label = id->AsFastaString();
                         PostErr(eDiag_Error, eErr_SEQ_INST_FarLocationExcludesFeatures,
                                 "Scaffold points to some but not all of " +
