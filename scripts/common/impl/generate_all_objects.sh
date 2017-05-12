@@ -24,6 +24,8 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/algo/gnomon/gnomon.asn src/algo/ms/formats/*/*.??d \
   src/build-system/project_tree_builder/msvc71_project.dtd \
   src/build-system/project_tree_builder/msbuild/msbuild_dataobj.xsd \
+  src/objtools/data_loaders/asn_cache/cache_blob.asn \
+  src/objtools/data_loaders/cdd/cdd_access/cdd_access.asn \
   src/sample/app/asn/sample_asn.asn src/sample/app/soap/soap_dataobj.xsd \
   src/sample/lib/asn_lib/asn_sample_lib.asn \
   src/sample/lib/dtd/dtd_sample_lib.dtd \
@@ -32,7 +34,6 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
   src/internal/geo/cgi/geo*/objects/geo*.asn \
-  src/internal/asn_cache/lib/cache_blob.asn \
   src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/packages/pkg_radar/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
@@ -44,7 +45,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/cppcore/test_stat_ext/loader/BoostTestXML.dtd \
   src/internal/gpipe/objects/*/*.asn src/internal/gpipe/objects/*/*.dtd \
   src/internal/gpipe/objects/*/*.xsd \
-  src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn \
+  src/internal/gpipe/gpinit/src/asn_config/objects/gpinit_obj.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
   src/internal/peptides/objects/unimod/unimod.xsd \
   src/internal/variation/snp/objects/rsm/rsm.asn; do
