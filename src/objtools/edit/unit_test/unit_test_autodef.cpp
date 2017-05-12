@@ -2185,5 +2185,42 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
 }
 
 
+CRef<CUser_field> MkField(const string& label, const string& val)
+{
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr(label);
+    f->SetData().SetStr(val);
+    return f;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_HumanSTR)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("StructuredComment");
+    obj->SetData().push_back(MkField("StructuredCommentPrefix", "##HumanSTR-START##"));
+    obj->SetData().push_back(MkField("STR locus name", "TPOX"));
+    obj->SetData().push_back(MkField("Length-based allele", "7"));
+    obj->SetData().push_back(MkField("Bracketed repeat", "[AATG]7"));
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetUser().Assign(*obj);
+    entry->SetSeq().SetDescr().Set().push_back(d);
+
+    CRef<CSeq_feat> var = unit_test_util::AddMiscFeature(entry);
+    var->SetData().SetImp().SetKey("variation");
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb("dbSNP");
+    dbtag->SetTag().SetStr("rs115644759");
+    var->SetDbxref().push_back(dbtag);
+
+    string defline = "Sebaea microphylla microsatellite TPOX 7 [AATG]7 rs115644759 sequence.";
+    AddTitle(entry, defline);
+
+    CheckDeflineMatches(entry);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

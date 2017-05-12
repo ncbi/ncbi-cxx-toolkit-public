@@ -47,6 +47,7 @@
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -648,6 +649,15 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     if (!NStr::IsBlank(custom)) {
         return custom;
     }
+
+    CSeqdesc_CI d(bh, CSeqdesc::e_User);
+    while (d) {
+        if (x_IsHumanSTR(d->GetUser())) {
+            return x_GetHumanSTRFeatureClauses(bh, d->GetUser());
+        }
+        ++d;
+    }
+
 
     CAutoDefFeatureClause_Base main_clause;
     CAutoDefFeatureClause *new_clause;
@@ -1307,6 +1317,72 @@ bool CAutoDef::RegenerateSequenceDefLines(CSeq_entry_Handle se)
     return any;
 }
 
+
+bool CAutoDef::x_IsHumanSTR(const CUser_object& obj)
+{
+    if (obj.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
+        return false;
+    }
+    if (!obj.IsSetData()) {
+        return false;
+    }
+    ITERATE(CUser_object::TData, f, obj.GetData()) {
+        if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*f)->GetLabel().GetStr(), "StructuredCommentPrefix") &&
+            (*f)->IsSetData() && (*f)->GetData().IsStr()) {
+            if (NStr::EqualNocase((*f)->GetData().GetStr(), "##HumanSTR-START##")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+
+string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment)
+{
+    string locus_name = kEmptyStr;
+    string allele = kEmptyStr;
+    string repeat = kEmptyStr;
+
+    if (comment.IsSetData()) {
+        ITERATE(CUser_object::TData, it, comment.GetData()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsStr() &&
+                (*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {
+                const string& label = (*it)->GetLabel().GetStr();
+                if (NStr::EqualNocase(label, "STR locus name")) {
+                    locus_name = (*it)->GetData().GetStr();
+                } else if (NStr::EqualNocase(label, "Length-based allele")) {
+                    allele = (*it)->GetData().GetStr();
+                } else if (NStr::EqualNocase(label, "Bracketed repeat")) {
+                    repeat = (*it)->GetData().GetStr();
+                }
+            }
+        }
+    }
+
+    string clause = "microsatellite " + locus_name + " " + allele + " " + repeat;
+    CFeat_CI f(bh, CSeqFeatData::eSubtype_variation);
+    while (f) {
+        if (f->IsSetDbxref()) {
+            ITERATE(CSeq_feat::TDbxref, db, f->GetDbxref()) {
+                if ((*db)->IsSetDb() && NStr::Equal((*db)->GetDb(), "dbSNP") &&
+                    (*db)->IsSetTag()) {
+                    if ((*db)->GetTag().IsStr()) {
+                        clause += " " + (*db)->GetTag().GetStr();
+                    } else if ((*db)->GetTag().IsId()) {
+                        clause += " " + NStr::NumericToString((*db)->GetTag().GetId());
+                    }
+                }
+            }             
+        }
+        ++f;
+    }
+    clause += " sequence";
+    return clause;
+}
 
 
 
