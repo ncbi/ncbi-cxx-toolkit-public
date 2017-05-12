@@ -172,12 +172,12 @@ public:
     // size of maximal bin
     static const uint32_t kMaxBinSize = kMinBinSize << (kLevelStepBinShift*kMaxLevel);
     // return bit shift for size of bin on a specific index level
-    constexpr static uint32_t GetLevelBinShift(uint32_t level)
+    static uint32_t GetLevelBinShift(uint32_t level)
     {
         return kLevel0BinShift + kLevelStepBinShift*level;
     }
     // return size of bin on a specific index level
-    constexpr static uint32_t GetBinSize(uint32_t level)
+    static uint32_t GetBinSize(uint32_t level)
     {
         return 1 << GetLevelBinShift(level);
     }
@@ -186,15 +186,15 @@ public:
     // base for bin numbers calculation
     static const TBin kBinNumberBase = 4681; // == 011111 in octal
     // base bin number of a specific index level
-    constexpr static TBin GetBinNumberBase(uint32_t level)
+    static TBin GetBinNumberBase(uint32_t level)
     {
         return kBinNumberBase >> (kLevelStepBinShift*level);
     }
-    constexpr static TBin GetBinNumberOffset(uint32_t pos, uint32_t level)
+    static TBin GetBinNumberOffset(uint32_t pos, uint32_t level)
     {
         return (pos >> GetLevelBinShift(level));
     }
-    constexpr static TBin GetBinNumber(uint32_t pos, uint32_t level)
+    static TBin GetBinNumber(uint32_t pos, uint32_t level)
     {
         return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
     }
@@ -469,7 +469,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return SBamUtil::MakeUint2(get_record_ptr()+10);
         }
-    static constexpr const char* kCIGARSymbols = "MIDNSHP=X???????";
+    static const char kCIGARSymbols[];
     enum ECIGARType { // matches to kCIGARSymbols
         kCIGAR_M,  // 0
         kCIGAR_I,  // 1
@@ -579,7 +579,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return CTempString(get_read_ptr(), (get_read_len()+1)/2);
         }
-    static constexpr const char* kBaseSymbols = "=ACMGRSVTWYHKDBN";
+    static const char kBaseSymbols[];
     string get_read() const;
     void get_read(CBamString& str) const;
     uint32_t get_cigar_pos() const;

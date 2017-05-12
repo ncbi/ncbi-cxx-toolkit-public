@@ -926,6 +926,10 @@ pair< COpenRange<uint32_t>, COpenRange<uint32_t> > SBamAlignInfo::get_cigar_alig
 }
 
 
+const char SBamAlignInfo::kCIGARSymbols[] = "MIDNSHP=X???????";
+const char SBamAlignInfo::kBaseSymbols[] = "=ACMGRSVTWYHKDBN";
+
+
 string SBamAlignInfo::get_cigar() const
 {
     // ignore hard and soft breaks
