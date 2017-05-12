@@ -706,13 +706,13 @@ int CGapStatsApplication::RunNoCatch(void)
             // a thrown SOutMessage indicates we give up on this file_or_accn.
             // (Note that a non-thrown SOutMessage would just be printed
             // but would not halt processing of the file_or_accn)
-            x_PrintOutMessage(out_message, cout);
+            x_PrintOutMessage(out_message, cerr);
             exit_code = 1;
         } catch (const ncbi::CException& ex) {
             SOutMessage out_message(
                 sFileOrAccn, SOutMessage::kFatalStr,
                 ex.GetErrCodeString(), ex.GetMsg());
-            x_PrintOutMessage(out_message, cout);
+            x_PrintOutMessage(out_message, cerr);
             exit_code = 1;
         } catch (...) {
             // Unexpected exceptions make us give up without processing
@@ -724,7 +724,7 @@ int CGapStatsApplication::RunNoCatch(void)
             SOutMessage out_message(
                 sFileOrAccn, SOutMessage::kFatalStr,
                 "INTERNAL_ERROR", "Unexpected exception");
-            x_PrintOutMessage(out_message, cout);
+            x_PrintOutMessage(out_message, cerr);
 
             throw;
         }
@@ -1405,7 +1405,7 @@ void CGapStatsApplication::x_PrintOutMessage(
 {
     if( m_eOutFormat == eOutFormat_XML ) {
         // yes, cout not cerr because everything should go to cout
-        out_message.WriteAsXML(out_strm);
+        out_message.WriteAsXML(cout);
     } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
         // yes, cout not cerr because everything should go to cout
         out_message.WriteAsText(out_strm);
