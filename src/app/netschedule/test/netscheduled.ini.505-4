@@ -22,14 +22,14 @@ file=netscheduled.log
 [bdb]
 path=$DBPATH
 transaction_log_path=./tlog
-mutex_max=100000
-mem_size=15M
-private_env=true
-max_locks=100000
-max_lockers=25000
-max_lockobjects=100000
+;mutex_max=100000
+;max_locks=100000
+;max_lockers=25000
+;max_lockobjects=100000
 direct_db=false
 direct_log=false
+mem_size=8GB
+database_in_ram=true
 max_queues=5
 
 [qclass_class2]
@@ -44,7 +44,3 @@ class=class2
 timeout=3
 max_input_size=77
 max_output_size=444
-
-
-
-
