@@ -595,7 +595,7 @@ ideo_gridcli needs trackmgrgridcli
 ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
-ideocoord needs ideocli
+ideocoord needs ideo_gridcli
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
@@ -625,7 +625,9 @@ lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
 linkos_utils needs xid_utils
 linkout needs xser
+linkoutdb needs $(SQLITE3_WRAPPER)
 linkoutdb needs seqdb
+linkoutdb needs3party $(SQLITE3_LIBS)
 lmdb needs3party $(ORIG_LIBS)
 ls_cli needs $(NCBILS2_LIB)
 ls_cli needs dbloadb
@@ -938,9 +940,7 @@ seqalign_util needs $(SEQ_LIBS)
 seqalign_util needs pub
 seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
-seqdb needs $(SQLITE3_WRAPPER)
 seqdb needs blastdb
-seqdb needs3party $(SQLITE3_LIBS)
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
