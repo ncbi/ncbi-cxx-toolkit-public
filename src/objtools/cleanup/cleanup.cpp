@@ -2024,7 +2024,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
             answer = NPOS;
         }
     } else {
-        answer = NStr::FindNoCase(sTitle, sPattern, 0, NPOS, NStr::eLast);
+        answer = NStr::Find(sTitle, sPattern, NStr::eNocase, NStr::eReverseSearch);
         if (answer < 1 || answer == NPOS) {
             // pattern not found
             answer = NPOS;
@@ -2078,7 +2078,7 @@ static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
                 int len = str.length();
                 if (len < 5) continue;
                 if (str[len - 1] != ']') continue;
-                SIZE_TYPE cp = NStr::Find(str, "[", 0, NPOS, NStr::eLast);
+                SIZE_TYPE cp = NStr::Find(str, "[", NStr::eCase, NStr::eReverseSearch);
                 if (cp == NPOS) continue;
                 string suffix = str.substr(cp + 1);
                 if (NStr::StartsWith(suffix, "NAD")) continue;

@@ -1127,3 +1127,48 @@ BOOST_AUTO_TEST_CASE(Test_MoveNamedQualInStrain)
     TestFindThisNotStrain(COrgMod::eSubtype_serovar, "serovar");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_FixPartialProteinTitle)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeqdesc> title(new CSeqdesc());
+    title->SetTitle("abc, partial [Sebaea microphylla] x");
+    prot->SetDescr().Set().push_back(title);
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    ITERATE(CBioseq::TDescr::Tdata, it, prot->GetSeq().GetDescr().Get()) {
+        if ((*it)->IsTitle()) {
+            BOOST_CHECK_EQUAL((*it)->GetTitle(), "abc [Sebaea microphylla]");
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FixProteinName)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().front() = "abc [bar][Sebaea microphylla ]";
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "abc [bar][Sebaea microphylla ]");
+}
