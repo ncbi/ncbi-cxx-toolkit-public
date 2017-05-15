@@ -28,11 +28,12 @@ std::string getFlowIdFromEnvironment();
 bool underTeamcity();
 
 class TeamcityMessages {
-    std::ostream *m_out;
 
 protected:
-    std::string escape(std::string s);
+    std::ostream *m_out;
 
+public:
+    std::string escape(std::string s);
     void openMsg(const std::string &name);
     void writeProperty(std::string name, std::string value);
     void closeMsg();
