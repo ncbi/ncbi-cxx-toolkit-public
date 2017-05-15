@@ -194,7 +194,7 @@ CBlastKmer::x_SearchMultipleQueries(int firstQuery, int numQuery, const SBlastKm
 			string query_seq; 
 			CRef<CSeq_id> qseqid; 
 			s_GetQuerySequence(m_QueryVector, query_seq, qseqid, i+firstQuery);
-			if (query_seq.length() < kmerParams.kmerNum)
+			if (query_seq.length() < static_cast<string::size_type>(kmerParams.kmerNum))
 				NCBI_THROW(CException, eUnknown, "WARNING: Query shorter than KMER length");
 
 			kmerSearch.qSeqid = qseqid;
@@ -335,8 +335,8 @@ CBlastKmer::Run() {
 	mhfile.GetBadMers(badMers);
 
 	// hash coefficients
-	uint32_t a[num_hashes];
-	uint32_t b[num_hashes];
+	vector<uint32_t> a(num_hashes, 0U);
+	vector<uint32_t> b(num_hashes, 0U);
 	
 	// obtain random coefficients for hashing
 	if (kmerVer == 3)
@@ -372,7 +372,7 @@ CBlastKmer::Run() {
 
 	int numQueries = m_QueryVector.size();
 
-	CRef<CBlastKmerResultsSet> kmerResultsSet = x_SearchMultipleQueries(0, numQueries, kmerParams, a, b, kValues, badMers);
+	CRef<CBlastKmerResultsSet> kmerResultsSet = x_SearchMultipleQueries(0, numQueries, kmerParams, a.data(), b.data(), kValues, badMers);
 	
 	return kmerResultsSet;
 }
