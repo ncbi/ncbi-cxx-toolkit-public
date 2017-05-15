@@ -12,7 +12,7 @@ SRC = weight sequence feature indexer seqtitle create_defline obj_sniff seq_loc_
 
 LIB = xobjutil
 
-DLL_LIB = $(SOBJMGR_LIBS)
+DLL_LIB = submit $(SOBJMGR_LIBS)
 
 WATCHERS = ucko vasilche
 
