@@ -505,7 +505,7 @@ CID2WGSProcessor_Impl::GetContigIterator(SWGSSeqInfo& seq)
 {
     if ( !seq.m_ContigIter ) {
         seq.m_ContigIter = CWGSSeqIterator(GetWGSDb(seq), seq.m_RowId,
-                                           CWGSSeqIterator::eExcludeWithdrawn);
+                                           CWGSSeqIterator::fIncludeAll);
         seq.m_ContigIter.SelectAccVersion(seq.m_Version);
     }
     return seq.m_ContigIter;

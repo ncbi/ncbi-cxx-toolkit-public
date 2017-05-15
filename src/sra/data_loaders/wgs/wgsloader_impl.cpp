@@ -624,7 +624,7 @@ CWGSFileInfo::SAccFileInfo::GetContigIterator(void) const
 {
     _ASSERT(IsContig() && row_id != 0);
     CWGSSeqIterator iter(file->GetDb(), row_id,
-                         CWGSSeqIterator::eIncludeWithdrawn);
+                         CWGSSeqIterator::fIncludeAll);
     iter.SelectAccVersion(version);
     return iter;
 }
@@ -652,7 +652,7 @@ CWGSFileInfo::GetContigIterator(const CWGSBlobId& blob_id) const
     _ASSERT(blob_id.m_SeqType == '\0');
     _ASSERT(blob_id.m_RowId);
     CWGSSeqIterator iter(GetDb(), blob_id.m_RowId,
-                         CWGSSeqIterator::eIncludeWithdrawn);
+                         CWGSSeqIterator::fIncludeAll);
     iter.SelectAccVersion(blob_id.m_Version);
     return iter;
 }

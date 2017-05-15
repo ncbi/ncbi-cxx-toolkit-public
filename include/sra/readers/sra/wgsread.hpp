@@ -702,23 +702,69 @@ public:
         eNoClip,       // force no clipping
         eClipByQuality // force clipping
     };
-
+    enum EIncludeFlags {
+        fIncludeLive       = 1 << NCBI_gb_state_eWGSGenBankLive,
+        fIncludeSuppressed = 1 << NCBI_gb_state_eWGSGenBankSuppressed,
+        fIncludeReplaced   = 1 << NCBI_gb_state_eWGSGenBankReplaced,
+        fIncludeWithdrawn  = 1 << NCBI_gb_state_eWGSGenBankWithdrawn,
+        fIncludeUnverified = 1 << NCBI_gb_state_eWGSGenBankUnverified,
+        fIncludeAll        = 0xff,
+        fIncludeDefault    = fIncludeLive
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EIncludeFlags, TIncludeFlags);
+    
     CWGSSeqIterator(void);
+    // TIncludeFlags versions
     explicit
     CWGSSeqIterator(const CWGSDb& wgs_db,
-                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EIncludeFlags flags = fIncludeDefault,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     TVDBRowId row,
-                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EIncludeFlags flags = fIncludeDefault,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     TVDBRowId first_row, TVDBRowId last_row,
-                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EIncludeFlags flags = fIncludeDefault,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     CTempString acc,
-                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EIncludeFlags flags = fIncludeDefault,
+                    EClipType clip_type = eDefaultClip);
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    TIncludeFlags flags,
+                    EClipType clip_type = eDefaultClip);
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    TVDBRowId row,
+                    TIncludeFlags flags,
+                    EClipType clip_type = eDefaultClip);
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    TVDBRowId first_row, TVDBRowId last_row,
+                    TIncludeFlags flags,
+                    EClipType clip_type = eDefaultClip);
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    CTempString acc,
+                    TIncludeFlags flags,
+                    EClipType clip_type = eDefaultClip);
+    // EWithdrawn versions (deprecated)
+    NCBI_DEPRECATED
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    EWithdrawn withdrawn,
+                    EClipType clip_type = eDefaultClip);
+    NCBI_DEPRECATED
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    TVDBRowId row,
+                    EWithdrawn withdrawn,
+                    EClipType clip_type = eDefaultClip);
+    NCBI_DEPRECATED
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    TVDBRowId first_row, TVDBRowId last_row,
+                    EWithdrawn withdrawn,
+                    EClipType clip_type = eDefaultClip);
+    NCBI_DEPRECATED
+    CWGSSeqIterator(const CWGSDb& wgs_db,
+                    CTempString acc,
+                    EWithdrawn withdrawn,
                     EClipType clip_type = eDefaultClip);
     ~CWGSSeqIterator(void);
 
@@ -958,6 +1004,10 @@ protected:
                 EWithdrawn withdrawn,
                 EClipType clip_type,
                 TVDBRowId get_row);
+    void x_Init(const CWGSDb& wgs_db,
+                TIncludeFlags include_flags,
+                EClipType clip_type,
+                TVDBRowId get_row);
 
     CWGSDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
@@ -1032,10 +1082,11 @@ private:
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
     TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
     SVersionSelector m_AccVersion;
-    EWithdrawn m_Withdrawn;
+    TIncludeFlags m_IncludeFlags;
     bool m_ClipByQuality;
 };
 DECLARE_SAFE_FLAGS(CWGSSeqIterator::EInstSegmentFlags);
+DECLARE_SAFE_FLAGS(CWGSSeqIterator::EIncludeFlags);
 
 
 class NCBI_SRAREAD_EXPORT CWGSScaffoldIterator : public SWGSDb_Defs
@@ -1090,6 +1141,8 @@ public:
 
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
 
+    NCBI_gb_state GetGBState(void) const;
+    
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 

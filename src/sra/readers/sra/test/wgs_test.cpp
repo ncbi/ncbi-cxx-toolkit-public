@@ -97,6 +97,9 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
+    arg_desc->AddFlag("replaced", "Include replaced sequences");
+    arg_desc->AddFlag("suppressed", "Include suppressed sequences");
+    arg_desc->AddFlag("unverified", "Include unverified sequences");
     arg_desc->AddFlag("master", "Include master descriptors if any");
     arg_desc->AddFlag("print-master", "Print master entry");
     arg_desc->AddFlag("master-no-filter", "Do not filter master descriptors");
@@ -886,29 +889,35 @@ int CWGSTestApp::Run(void)
 
     vector< CConstRef<CBioseq> > all_seqs;
     bool keep_seqs = args["keep_sequences"];
-
+    
+    CWGSSeqIterator::TIncludeFlags include_flags = CWGSSeqIterator::fIncludeLive;
+    if ( args["withdrawn"] ) {
+        include_flags |= CWGSSeqIterator::fIncludeWithdrawn;
+    }
+    if ( args["replaced"] ) {
+        include_flags |= CWGSSeqIterator::fIncludeReplaced;
+    }
+    if ( args["suppressed"] ) {
+        include_flags |= CWGSSeqIterator::fIncludeSuppressed;
+    }
+    if ( args["unverified"] ) {
+        include_flags |= CWGSSeqIterator::fIncludeUnverified;
+    }
+    
     if ( 1 ) {
-        CWGSSeqIterator::EWithdrawn withdrawn;
-        if ( args["withdrawn"] ) {
-            withdrawn = CWGSSeqIterator::eIncludeWithdrawn;
-        }
-        else {
-            withdrawn = CWGSSeqIterator::eExcludeWithdrawn;
-        }
-
         CWGSSeqIterator it;
         // try accession
         if ( row ) {
             // print only one accession
             if ( is_component ) {
                 if ( !args["limit_count"] ) {
-                    it = CWGSSeqIterator(wgs_db, row, withdrawn);
+                    it = CWGSSeqIterator(wgs_db, row, include_flags);
                 }
                 else if ( row + limit_count < row ) {
-                    it = CWGSSeqIterator(wgs_db, row, kMax_UI8, withdrawn);
+                    it = CWGSSeqIterator(wgs_db, row, kMax_UI8, include_flags);
                 }
                 else {
-                    it = CWGSSeqIterator(wgs_db, row, row+limit_count-1, withdrawn);
+                    it = CWGSSeqIterator(wgs_db, row, row+limit_count-1, include_flags);
                 }
                 if ( !it ) {
                     out << "No such row: "<<path
@@ -918,7 +927,7 @@ int CWGSTestApp::Run(void)
         }
         else {
             // otherwise scan all sequences
-            it = CWGSSeqIterator(wgs_db, withdrawn);
+            it = CWGSSeqIterator(wgs_db, include_flags);
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             if ( contig_version ) {
@@ -980,7 +989,7 @@ int CWGSTestApp::Run(void)
         for ( CWGSGiIterator it(wgs_db, CWGSGiIterator::eNuc); it; ++it ) {
             nuc_idx[it.GetGi()] = it.GetRowId();
         }
-        for ( CWGSSeqIterator it(wgs_db); it; ++it ) {
+        for ( CWGSSeqIterator it(wgs_db, include_flags); it; ++it ) {
             if ( !it.HasGi() ) {
                 continue;
             }
@@ -1091,7 +1100,7 @@ int CWGSTestApp::Run(void)
         else if ( gi_it.GetSeqType() == gi_it.eNuc ) {
             out << "GI "<<gi<<" Nucleotide row: "<<gi_it.GetRowId()
                 << NcbiEndl;
-            CWGSSeqIterator it(wgs_db, gi_it.GetRowId());
+            CWGSSeqIterator it(wgs_db, gi_it.GetRowId(), include_flags);
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
                 ++error_count;
@@ -1135,7 +1144,7 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            CWGSSeqIterator it(wgs_db, row_id);
+            CWGSSeqIterator it(wgs_db, row_id, include_flags);
             if ( !it ) {
                 out << "CONTIG: No such row: "<< row_id << NcbiEndl;
                 ++error_count;

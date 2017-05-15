@@ -482,6 +482,7 @@ struct CWGSDb_Impl::SScfTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
 };
 
 
@@ -498,7 +499,8 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(CIRCULAR),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
-      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(GB_STATE)
 {
 }
 
@@ -2149,14 +2151,14 @@ struct SWGSCreateInfo : SWGSDb_Defs
 bool CWGSSeqIterator::x_Excluded(void) const
 {
     if ( *this ) {
-        // check special gb states
-        switch ( GetGBState() ) {
-        case NCBI_gb_state_eWGSGenBankWithdrawn: // withdrawn
-            return m_Withdrawn == eExcludeWithdrawn || GetSeqLength() == 0;
-        case NCBI_gb_state_eWGSGenBankMissing: // absent
+        auto state = GetGBState();
+        // skip artificial entries with 'missing' state
+        if ( state ==  NCBI_gb_state_eWGSGenBankMissing ) {
             return true;
-        default:
-            break;
+        }
+        // skip not included entries
+        if ( !(TIncludeFlags::FromInt(1 << state) & m_IncludeFlags) ) {
+            return true;
         }
     }
     return false;
@@ -2196,7 +2198,7 @@ CWGSSeqIterator& CWGSSeqIterator::operator=(const CWGSSeqIterator& iter)
         m_AccVersion = iter.m_AccVersion;
         m_FirstGoodId = iter.m_FirstGoodId;
         m_FirstBadId = iter.m_FirstBadId;
-        m_Withdrawn = iter.m_Withdrawn;
+        m_IncludeFlags = iter.m_IncludeFlags;
         m_ClipByQuality = iter.m_ClipByQuality;
     }
     return *this;
@@ -2208,9 +2210,131 @@ CWGSSeqIterator::CWGSSeqIterator(void)
       m_FirstGoodId(0),
       m_FirstBadId(0),
       m_AccVersion(eLatest),
-      m_Withdrawn(eExcludeWithdrawn),
+      m_IncludeFlags(fIncludeDefault),
       m_ClipByQuality(true)
 {
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 EIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, 0);
+    x_Settle();
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 TVDBRowId row,
+                                 EIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, row);
+    SelectRow(row);
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 TVDBRowId first_row,
+                                 TVDBRowId last_row,
+                                 EIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, first_row);
+    if ( m_FirstBadId == 0 ) {
+        return;
+    }
+    if ( first_row > m_FirstGoodId ) {
+        m_CurrId = m_FirstGoodId = first_row;
+        m_AccVersion = eLatest;
+    }
+    if ( last_row < m_FirstBadId-1 ) {
+        m_FirstBadId = last_row+1;
+    }
+    x_Settle();
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 CTempString acc,
+                                 EIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
+        x_Init(wgs_db, include_flags, clip_type, row);
+        SelectRow(row);
+    }
+    else {
+        // bad format
+        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
+        m_AccVersion = eLatest;
+    }
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 TIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, 0);
+    x_Settle();
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 TVDBRowId row,
+                                 TIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, row);
+    SelectRow(row);
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 TVDBRowId first_row,
+                                 TVDBRowId last_row,
+                                 TIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    x_Init(wgs_db, include_flags, clip_type, first_row);
+    if ( m_FirstBadId == 0 ) {
+        return;
+    }
+    if ( first_row > m_FirstGoodId ) {
+        m_CurrId = m_FirstGoodId = first_row;
+        m_AccVersion = eLatest;
+    }
+    if ( last_row < m_FirstBadId-1 ) {
+        m_FirstBadId = last_row+1;
+    }
+    x_Settle();
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
+                                 CTempString acc,
+                                 TIncludeFlags include_flags,
+                                 EClipType clip_type)
+    : m_AccVersion(eLatest)
+{
+    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
+        x_Init(wgs_db, include_flags, clip_type, row);
+        SelectRow(row);
+    }
+    else {
+        // bad format
+        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
+        m_AccVersion = eLatest;
+    }
 }
 
 
@@ -2282,7 +2406,7 @@ CWGSSeqIterator::~CWGSSeqIterator(void)
 
 
 void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
-                             EWithdrawn withdrawn,
+                             TIncludeFlags include_flags,
                              EClipType clip_type,
                              TVDBRowId get_row)
 {
@@ -2297,7 +2421,7 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
         return;
     }
     m_Db = wgs_db;
-    m_Withdrawn = withdrawn;
+    m_IncludeFlags = include_flags;
     switch ( clip_type ) {
     case eNoClip:
         m_ClipByQuality = false;
@@ -2312,6 +2436,17 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
     TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
+}
+
+
+void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
+                             EWithdrawn withdrawn,
+                             EClipType clip_type,
+                             TVDBRowId get_row)
+{
+    x_Init(wgs_db,
+           (withdrawn == eIncludeWithdrawn? fIncludeLive|fIncludeWithdrawn: fIncludeLive),
+           clip_type, get_row);
 }
 
 
@@ -2896,9 +3031,10 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
     x_CheckValid("CWGSSeqIterator::GetGBState");
 
     if ( m_AccVersion.m_Offset != 0 ) {
+        // not the last version of sequence
         return NCBI_gb_state_eWGSGenBankReplaced;
     }
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): 0;
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
 
@@ -4288,6 +4424,14 @@ int CWGSScaffoldIterator::GetAccVersion(void) const
 }
 
 
+NCBI_gb_state CWGSScaffoldIterator::GetGBState(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::GetGBState");
+
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
+}
+
+
 CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 {
     CRef<CSeq_id> id;
@@ -5043,7 +5187,7 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetGBState");
 
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): 0;
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
 
