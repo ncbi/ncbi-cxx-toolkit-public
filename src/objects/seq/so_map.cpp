@@ -207,6 +207,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     {"C_gene_segment",          CSoMap::xFeatureMakeImp},
     {"DNAsel_hypersensitive_site", CSoMap::xFeatureMakeRegulatory},
     {"D_loop",                  CSoMap::xFeatureMakeImp},
+    {"D_gene_segment",          CSoMap::xFeatureMakeImp},
     {"GC_rich_promoter_region", CSoMap::xFeatureMakeRegulatory},
     {"J_gene_segment",          CSoMap::xFeatureMakeImp},
     {"N_region",                CSoMap::xFeatureMakeImp},
@@ -375,11 +376,12 @@ bool CSoMap::SoTypeToFeature(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    FEATFUNCENTRY it = mMapFeatFunc.find(so_type);
+    string resolved_so_type = ResolveSoAlias(so_type);
+    FEATFUNCENTRY it = mMapFeatFunc.find(resolved_so_type);
     if (it != mMapFeatFunc.end()) {
-        return (it->second)(so_type, feature);
+        return (it->second)(resolved_so_type, feature);
     }
-    return false;
+    return xFeatureMakeRegion(so_type, feature);
 }
 
 //  ----------------------------------------------------------------------------
@@ -389,7 +391,9 @@ bool CSoMap::xFeatureMakeGene(
 //  ----------------------------------------------------------------------------
 {
     feature.SetData().SetGene();
-    feature.SetPseudo(so_type=="pseudogene");
+    if (so_type == "pseudogene") {
+        feature.SetPseudo(true);
+    }
     return true;
 }
 
@@ -399,7 +403,7 @@ bool CSoMap::xFeatureMakeRna(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, CRNA_ref::EType> mTypeToRna = {
+    static const map<string, CRNA_ref::EType, CompareNoCase> mTypeToRna = {
         {"mRNA", CRNA_ref::eType_mRNA},
         {"rRNA", CRNA_ref::eType_rRNA},
         {"pseudogenic_rRNA", CRNA_ref::eType_rRNA},
@@ -409,7 +413,9 @@ bool CSoMap::xFeatureMakeRna(
     };
     auto it = mTypeToRna.find(so_type);
     feature.SetData().SetRna().SetType(it->second);
-    feature.SetPseudo(NStr::StartsWith(so_type, "pseudogenic_"));
+    if(NStr::StartsWith(so_type, "pseudogenic_")) {
+        feature.SetPseudo(true);
+    }
     return true;
 }
 
@@ -419,7 +425,7 @@ bool CSoMap::xFeatureMakeNcRna(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mTypeToClass = {
+    static const map<string, string, CompareNoCase> mTypeToClass = {
         {"ncRNA", "other"},
     };
     feature.SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
@@ -443,7 +449,9 @@ bool CSoMap::xFeatureMakeCds(
 //  ----------------------------------------------------------------------------
 {
     feature.SetData().SetCdregion();
-    feature.SetPseudo(so_type=="pseudogenic_CDS");
+    if (so_type=="pseudogenic_CDS") {
+        feature.SetPseudo(true);
+    }
     return true;
 }
 
@@ -453,7 +461,8 @@ bool CSoMap::xFeatureMakeProt(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, CProt_ref::EProcessed> mTypeToProcessed = {
+    static const map<string, CProt_ref::EProcessed, CompareNoCase> 
+            mTypeToProcessed = {
         {"mature_protein_region", CProt_ref::eProcessed_mature},
         {"propeptide", CProt_ref::eProcessed_propeptide},
     };
@@ -471,7 +480,7 @@ bool CSoMap::xFeatureMakeMiscFeature(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToQual = {
+    static const map<string, string, CompareNoCase> mapTypeToQual = {
         {"TSS", "transcription_start_site"},
     };
     feature.SetData().SetImp().SetKey("misc_feature");
@@ -497,7 +506,7 @@ bool CSoMap::xFeatureMakeMiscRecomb(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToQual = {
+    static const map<string, string, CompareNoCase> mapTypeToQual = {
         {"meiotic_recombination_region", "meiotic"},
         {"mitotic_recombination_region", "mitotic"},
         {"non_allelic_homologous_recombination", "non_allelic_homologous"},
@@ -524,7 +533,9 @@ bool CSoMap::xFeatureMakeMiscRna(
 //  ----------------------------------------------------------------------------
 {
     feature.SetData().SetImp().SetKey("misc_RNA");
-    feature.SetPseudo(so_type=="pseudogenic_transcript");
+    if (so_type=="pseudogenic_transcript") {
+        feature.SetPseudo(true);
+    }
     return true;
 }
 
@@ -534,7 +545,7 @@ bool CSoMap::xFeatureMakeImp(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToKey = {
+    static const map<string, string, CompareNoCase> mapTypeToKey = {
         {"C_gene_segment", "C_region"},
         {"D_gene_segment", "D_segment"},
         {"D_loop", "D-loop"},
@@ -586,7 +597,7 @@ bool CSoMap::xFeatureMakeRegulatory(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToQual = {
+    static const map<string, string, CompareNoCase> mapTypeToQual = {
         {"DNAsel_hypersensitive_site", "DNase_I_hypersensitive_site"}, 
         {"GC_rich_promoter_region", "GC_signal"},
         {"boundary_element", "insulator"},
@@ -613,12 +624,12 @@ bool CSoMap::xFeatureMakeRepeatRegion(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string> mapTypeToSatellite = {
+    static const map<string, string, CompareNoCase> mapTypeToSatellite = {
         {"microsatellite", "microsatellite"},
         {"minisatellite", "minisatellite"},
         {"satellite_DNA", "satellite"},
     };
-    static const map<string, string> mapTypeToRptType = {
+    static const map<string, string, CompareNoCase> mapTypeToRptType = {
         {"tandem_repeat", "tandem"},
         {"inverted_repeat", "inverted"},
         {"direct_repeat", "direct"},
@@ -1086,7 +1097,7 @@ bool CSoMap::xMapRepeatRegion(
     };
     string rpt_type = feature.GetNamedQual("rpt_type");
     if (rpt_type.empty()) {
-        return false;
+        so_type = "repeat_region";
     }
     auto cit = mapRptTypeToSoType.find(rpt_type);
     if (cit == mapRptTypeToSoType.end()) {
@@ -1095,6 +1106,74 @@ bool CSoMap::xMapRepeatRegion(
     }
     so_type = cit->second;
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+CSoMap::SOALIASMAP CSoMap::mMapSoAliases = {
+//  ----------------------------------------------------------------------------
+    {"-10_signal", "minus_10_signal"},
+    {"-35_signal", "minus_35_signal"},
+    {"3'UTR", "three_prime_UTR"},
+    {"3'clip", "three_prime_clip"},
+    {"5'UTR", "five_prime_UTR"},
+    {"5'clip", "five_prime_clip"},
+    {"C_region", "C_gene_segment"},
+    {"D-loop", "D_loop"},
+    {"D_segment", "D_gene_segment"},
+    {"GC_signal", "GC_rich_promoter_region"},
+    {"J_segment", "J_gene_segment"},
+    {"LTR", "long_terminal_repeat"},
+    {"RBS", "ribosome_entry_site"},
+    {"TATA_signal", "TATA_box"},
+    {"V_segment", "V_gene_segment"},
+    {"assembly_gap", "gap"},
+    {"Comment", "remark"},
+    {"conflict", "sequence_conflict"},
+    {"mat_peptide_nt", "mature_protein_region"},
+    {"mat_peptide", "mature_protein_region"},
+    {"misc_binding", "binding_site"},
+    {"misc_difference", "sequence_difference"},
+    {"misc_feature", "sequence_feature"},
+    {"misc_recomb", "recombination_feature"},
+    {"misc_signal", "regulatory_region"},
+    {"misc_structure", "sequence_secondary_structure"},
+    {"mobile_element", "mobile_genetic_element"},
+    {"modified_base", "modified_DNA_base"},
+    {"misc_RNA", "transcript"},
+    {"polyA_signal", "polyA_signal_sequence"},
+    {"pre_RNA", "primary_transcript"},
+    {"precursor_RNA", "primary_transcript"},
+    {"proprotein", "immature_peptide_region"},
+    {"prim_transcript", "primary_transcript"},
+    {"primer_bind", "primer_binding_site"},
+    {"Protein", "polypeptide"},
+    {"protein_bind", "protein_binding_site"},
+    {"SecStr", "sequence_secondary_structure"},
+    {"rep_origin", "origin_of_replication"},
+    {"Rsite", "restriction_enzyme_cut_site"},
+    {"satellite", "satellite_DNA"},
+    {"Shine_Dalgarno_sequence", "ribosome_entry_site"},
+    {"sig_peptide_nt", "signal_peptide"},
+    {"sig_peptide", "signal_peptide"},
+    {"Site", "site"},
+    {"Site-ref", "site"},
+    {"transit_peptide_nt", "transit_peptide"},
+    {"unsure", "sequence_uncertainty"},
+    {"variation", "sequence_alteration"},
+    {"VariationRef", "sequence_alteration"},
+    {"virion", "viral_sequence"},
+};
+
+//  ----------------------------------------------------------------------------
+string CSoMap::ResolveSoAlias(
+    const string& alias)
+//  ----------------------------------------------------------------------------
+{
+    ALIASENTRY cit = mMapSoAliases.find(alias);
+    if (cit == mMapSoAliases.end()) {
+        return alias;
+    }
+    return cit->second;
 }
 
 END_NCBI_SCOPE

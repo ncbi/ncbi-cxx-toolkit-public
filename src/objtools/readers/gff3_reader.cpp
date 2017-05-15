@@ -61,6 +61,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/so_map.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
@@ -85,7 +86,6 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
@@ -298,6 +298,7 @@ bool CGff3Reader::xUpdateAnnotExon(
                 CRef<CSeq_feat> pParent;
                 if (!xGetParentFeature(*pFeature, pParent)  ||  
                         !pParent->GetData().IsGene()) {
+//                if (!xGetParentFeature(*pFeature, pParent)) {
                     AutoPtr<CObjReaderLineException> pErr(
                         CObjReaderLineException::Create(
                         eDiag_Error,
@@ -708,11 +709,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
 {
     typedef CStaticArraySet<string, PNocase> STRINGARRAY;
 
-    string ftype(featureType);
-    NStr::ToLower(ftype);
-    if (SofaTypes().IsStringSofaAlias(ftype)) {
-        ftype = SofaTypes().MapSofaAliasToSofaTerm(ftype);
-    }
+    string ftype(CSoMap::ResolveSoAlias(featureType));
 
     static const char* const ignoredTypesAlways_[] = {
         "protein"
@@ -796,11 +793,6 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         return true;
     }
 
-    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(ftype);
-    if (iGenbankType == CSeqFeatData::eSubtype_bad) {
-        return true;
-    }
-    /*anything else?*/
     return false;
 }
 

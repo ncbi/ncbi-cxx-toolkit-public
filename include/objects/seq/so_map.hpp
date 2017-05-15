@@ -68,6 +68,9 @@ public:
     static bool GetSupportedSoTerms(
         vector<string>&);
 
+    static string ResolveSoAlias(
+        const string&);
+
 protected:
     static bool xCompareNoCase(const string&, const string&);
 
@@ -112,6 +115,10 @@ protected:
     using TYPEFUNCMAP = map<CSeqFeatData::ESubtype, TYPEFUNC>;
     using TYPEFUNCENTRY = TYPEFUNCMAP::const_iterator;
     static TYPEFUNCMAP mMapTypeFunc;
+
+    using SOALIASMAP = map<string, string, CompareNoCase>;
+    using ALIASENTRY = SOALIASMAP::const_iterator;
+    static SOALIASMAP mMapSoAliases;
 };
 
 END_objects_SCOPE

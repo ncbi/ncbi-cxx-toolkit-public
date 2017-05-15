@@ -19,7 +19,8 @@ APP_PROJ = \
     unit_test_ucscreader \
     unit_test_gtfreader \
 	unit_test_alnreader \
-	unit_test_5colftblreader
+	unit_test_5colftblreader \
+    unit_test_somap_import
 
 PROJ_TAG = test
 

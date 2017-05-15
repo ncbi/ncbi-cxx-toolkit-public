@@ -2,6 +2,29 @@ Seq-annot ::= {
   id {
     local str "NC_008836.1"
   },
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 1
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
   data ftable {
     {
       id local id 1,
@@ -114,18 +137,16 @@ Seq-annot ::= {
     },
     {
       id local id 4,
-      data rna {
-        type other
+      data imp {
+        key "misc_RNA"
       },
-      location mix {
-        int {
-          from 978036,
-          to 978405,
-          strand plus,
-          id other {
-            accession "NC_008836",
-            version 1
-          }
+      location int {
+        from 978036,
+        to 978405,
+        strand plus,
+        id other {
+          accession "NC_008836",
+          version 1
         }
       },
       qual {
@@ -153,7 +174,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 6,
       data gene {
         locus-tag "BMA10229_RS25510"
       },
@@ -182,12 +203,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 6
+          id local id 7
         }
       }
     },
     {
-      id local id 6,
+      id local id 7,
       data rna {
         type ncRNA,
         ext gen {
@@ -207,6 +228,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "ncRNA_class",
+          val "RNase_P_RNA"
+        },
+        {
           qual "Parent",
           val "gene1111"
         },
@@ -221,7 +246,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 6
         }
       }
     }

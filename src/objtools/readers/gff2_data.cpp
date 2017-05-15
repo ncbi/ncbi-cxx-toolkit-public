@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seq/so_map.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -56,7 +57,7 @@
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/gff3_sofa.hpp>
+//#include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_data.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
@@ -123,7 +124,7 @@ CRef<CCode_break> s_StringToCodeBreak(
         return pCodeBreak;
     }
 
-    int aacode = 85; //for now
+    int aacode = 'U'; //for now
 
     pCodeBreak.Reset(new CCode_break);
     pCodeBreak->SetLoc().SetInt().SetId(id);
@@ -1247,6 +1248,35 @@ bool CGff2Record::xInitFeatureData(
         }
     }
 
+    if (Type() == "ncRNA") {
+        string qual_type;
+        if(GetAttribute("ncrna_class", qual_type)) {
+            if (qual_type == "other") {
+                qual_type = "ncRNA";
+            }
+            if (CSoMap::SoTypeToFeature(qual_type, *pFeature)) {
+                return true;
+            }
+        }
+    }
+
+    if (!CSoMap::SoTypeToFeature(Type(), *pFeature)) {
+        return false;
+    }
+
+    CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        CCdregion::EFrame frame = Phase();
+        if (frame == CCdregion::eFrame_not_set) {
+            frame = CCdregion::eFrame_one;
+        }
+        pFeature->SetData().SetCdregion().SetFrame(frame);
+        return true;
+    }
+    return true;
+
+    /*
+
     //special cases:
     if (xInitFeatureDataBond(flags, pFeature)) {
         return true;
@@ -1348,6 +1378,7 @@ bool CGff2Record::xInitFeatureData(
             return true;
         }
     }
+    */
 }
 
 //  ----------------------------------------------------------------------------

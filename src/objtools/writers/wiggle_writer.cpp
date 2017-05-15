@@ -247,12 +247,19 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
     }
 
     //  ------------------------------------------------------------------------
-    string strChrom( " chrom=" );
+    string strChrom;
     //  ------------------------------------------------------------------------
     const CSeq_id* pId = graph.GetLoc().GetId();
     switch ( pId->Which() ) {
     default:
-        pId->GetLabel( &strChrom );
+        //pId->GetLabel(&strChrom, CSeq_id::eContent);
+        pId->GetLabel(&strChrom);
+        if (mpScope) {
+            string bestId;
+            CWriteUtil::GetBestId(
+                CSeq_id_Handle::GetHandle(strChrom), *mpScope, bestId);
+            strChrom = bestId;
+        }
         break;
 
     case CSeq_id::e_Local:
@@ -260,15 +267,11 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
             strChrom += pId->GetLocal().GetStr();
             break;
         }
-        pId->GetLabel( &strChrom );
+        //pId->GetLabel(&strChrom, CSeq_id::eContent);
+        pId->GetLabel(&strChrom);
         break;
     }
-    if (mpScope) {
-        string bestId;
-        CWriteUtil::GetBestId(
-            CSeq_id_Handle::GetHandle(strChrom), *mpScope, bestId);
-        strChrom = bestId;
-    }
+    strFixedStep += string(" chrom=");
     strFixedStep += strChrom;
 
     //  ------------------------------------------------------------------------

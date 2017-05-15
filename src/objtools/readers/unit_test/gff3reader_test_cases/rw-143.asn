@@ -2,6 +2,29 @@ Seq-annot ::= {
   id {
     local str "Scaffold7"
   },
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 1
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
   data ftable {
     {
       id local id 1,
@@ -44,15 +67,15 @@ Seq-annot ::= {
           id local id 2
         },
         {
-          id local id 3
+          id local id 4
         }
       },
       pseudo TRUE
     },
     {
       id local id 2,
-      data rna {
-        type mRNA
+      data imp {
+        key "misc_RNA"
       },
       comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
  conserved domain at 5 end of model near gap in scaffold. Premature
@@ -97,7 +120,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local id 4
         },
         {
           id local id 1
@@ -106,7 +129,7 @@ Seq-annot ::= {
       pseudo TRUE
     },
     {
-      id local id 3,
+      id local id 4,
       data cdregion {
         frame one
       },

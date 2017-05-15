@@ -237,6 +237,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "rpt_type",
+          val "other"
+        },
+        {
           qual "ID",
           val "id1"
         }
@@ -325,6 +329,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
         {
           qual "Parent",
           val "gene17"

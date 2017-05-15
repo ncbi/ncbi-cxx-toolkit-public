@@ -5,9 +5,7 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data imp {
-        key "contig"
-      },
+      data region "",
       location int {
         from 0,
         to 2679304,
@@ -15,6 +13,10 @@ Seq-annot ::= {
         id local str "scaffold01"
       },
       qual {
+        {
+          qual "SO_type",
+          val "contig"
+        },
         {
           qual "ID",
           val "scaffold01"

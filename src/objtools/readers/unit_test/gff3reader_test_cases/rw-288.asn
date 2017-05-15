@@ -38,7 +38,7 @@ Seq-annot ::= {
     {
       id local id 2,
       data imp {
-        key "GC_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -50,6 +50,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "regulatory_class",
+          val "GC_signal"
+        },
         {
           qual "ID",
           val "id10"
@@ -59,7 +63,7 @@ Seq-annot ::= {
     {
       id local id 3,
       data imp {
-        key "-10_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -72,6 +76,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "regulatory_class",
+          val "minus_10_signal"
+        },
+        {
           qual "ID",
           val "id1"
         }
@@ -80,7 +88,7 @@ Seq-annot ::= {
     {
       id local id 4,
       data imp {
-        key "-35_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -92,6 +100,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "regulatory_class",
+          val "minus_35_signal"
+        },
         {
           qual "ID",
           val "id2"
@@ -121,9 +133,7 @@ Seq-annot ::= {
     },
     {
       id local id 6,
-      data imp {
-        key "3'clip"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -134,6 +144,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "3'clip"
+        },
         {
           qual "ID",
           val "id4"
@@ -163,9 +177,7 @@ Seq-annot ::= {
     },
     {
       id local id 8,
-      data imp {
-        key "5'clip"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -176,6 +188,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "5'clip"
+        },
         {
           qual "ID",
           val "id6"
@@ -269,7 +285,7 @@ Seq-annot ::= {
     {
       id local id 13,
       data imp {
-        key "LTR"
+        key "repeat_region"
       },
       location int {
         from 25386,
@@ -281,6 +297,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "rpt_type",
+          val "long_terminal_repeat"
+        },
         {
           qual "ID",
           val "id12"
@@ -290,7 +310,7 @@ Seq-annot ::= {
     {
       id local id 14,
       data imp {
-        key "RBS"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -303,6 +323,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "regulatory_class",
+          val "ribosome_binding_site"
+        },
+        {
           qual "ID",
           val "id13"
         }
@@ -311,7 +335,7 @@ Seq-annot ::= {
     {
       id local id 15,
       data imp {
-        key "TATA_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -323,6 +347,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "regulatory_class",
+          val "TATA_box"
+        },
         {
           qual "ID",
           val "id14"
@@ -353,7 +381,7 @@ Seq-annot ::= {
     {
       id local id 17,
       data imp {
-        key "assembly_gap"
+        key "gap"
       },
       location int {
         from 25386,
@@ -373,9 +401,7 @@ Seq-annot ::= {
     },
     {
       id local id 18,
-      data imp {
-        key "Comment"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -387,6 +413,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "SO_type",
+          val "Comment"
+        },
+        {
           qual "ID",
           val "id17"
         }
@@ -394,9 +424,7 @@ Seq-annot ::= {
     },
     {
       id local id 19,
-      data imp {
-        key "conflict"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -407,6 +435,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "conflict"
+        },
         {
           qual "ID",
           val "id18"
@@ -416,7 +448,7 @@ Seq-annot ::= {
     {
       id local id 20,
       data imp {
-        key "mat_peptide_nt"
+        key "mat_peptide"
       },
       location int {
         from 25386,
@@ -534,6 +566,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "recombination_class",
+          val "other"
+        },
+        {
           qual "ID",
           val "id24"
         }
@@ -542,7 +578,7 @@ Seq-annot ::= {
     {
       id local id 26,
       data imp {
-        key "misc_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -554,6 +590,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "regulatory_class",
+          val "other"
+        },
         {
           qual "ID",
           val "id25"
@@ -647,7 +687,7 @@ Seq-annot ::= {
     {
       id local id 31,
       data imp {
-        key "polyA_signal"
+        key "regulatory"
       },
       location int {
         from 25386,
@@ -660,6 +700,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "regulatory_class",
+          val "polyA_signal_sequence"
+        },
+        {
           qual "ID",
           val "id30"
         }
@@ -668,7 +712,7 @@ Seq-annot ::= {
     {
       id local id 32,
       data imp {
-        key "pre_RNA"
+        key "prim_transcript"
       },
       location int {
         from 25386,
@@ -689,7 +733,7 @@ Seq-annot ::= {
     {
       id local id 33,
       data imp {
-        key "precursor_RNA"
+        key "prim_transcript"
       },
       location int {
         from 25386,
@@ -709,9 +753,7 @@ Seq-annot ::= {
     },
     {
       id local id 34,
-      data imp {
-        key "proprotein"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -722,6 +764,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "proprotein"
+        },
         {
           qual "ID",
           val "id33"
@@ -772,9 +818,7 @@ Seq-annot ::= {
     },
     {
       id local id 37,
-      data imp {
-        key "Protein"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -785,6 +829,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "Protein"
+        },
         {
           qual "ID",
           val "id36"
@@ -815,7 +863,7 @@ Seq-annot ::= {
     {
       id local id 39,
       data imp {
-        key "SecStr"
+        key "misc_structure"
       },
       location int {
         from 25386,
@@ -856,9 +904,7 @@ Seq-annot ::= {
     },
     {
       id local id 41,
-      data imp {
-        key "Rsite"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -869,6 +915,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "Rsite"
+        },
         {
           qual "ID",
           val "id40"
@@ -878,7 +928,7 @@ Seq-annot ::= {
     {
       id local id 42,
       data imp {
-        key "satellite"
+        key "repeat_region"
       },
       location int {
         from 25386,
@@ -891,6 +941,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "satellite",
+          val "satellite"
+        },
+        {
           qual "ID",
           val "id41"
         }
@@ -899,7 +953,7 @@ Seq-annot ::= {
     {
       id local id 43,
       data imp {
-        key "sig_peptide_nt"
+        key "sig_peptide"
       },
       location int {
         from 25386,
@@ -940,9 +994,7 @@ Seq-annot ::= {
     },
     {
       id local id 45,
-      data imp {
-        key "Site-ref"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -954,6 +1006,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "SO_type",
+          val "Site"
+        },
+        {
           qual "ID",
           val "id44"
         }
@@ -961,9 +1017,7 @@ Seq-annot ::= {
     },
     {
       id local id 46,
-      data imp {
-        key "Site-ref"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -974,6 +1028,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "Site-ref"
+        },
         {
           qual "ID",
           val "id45"
@@ -983,7 +1041,7 @@ Seq-annot ::= {
     {
       id local id 47,
       data imp {
-        key "transit_peptide_nt"
+        key "transit_peptide"
       },
       location int {
         from 25386,
@@ -1046,7 +1104,7 @@ Seq-annot ::= {
     {
       id local id 50,
       data imp {
-        key "VariationRef"
+        key "variation"
       },
       location int {
         from 25386,
@@ -1066,9 +1124,7 @@ Seq-annot ::= {
     },
     {
       id local id 51,
-      data imp {
-        key "virion"
-      },
+      data region "",
       location int {
         from 25386,
         to 26730,
@@ -1079,6 +1135,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "virion"
+        },
         {
           qual "ID",
           val "id50"

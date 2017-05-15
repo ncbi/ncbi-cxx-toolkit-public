@@ -5,9 +5,7 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data imp {
-        key "chromosome"
-      },
+      data region "",
       location int {
         from 0,
         to 4641651,
@@ -18,6 +16,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "chromosome"
+        },
         {
           qual "Is_circular",
           val "true"
@@ -145,9 +147,7 @@ Seq-annot ::= {
     },
     {
       id local id 4,
-      data imp {
-        key "CAAT-signal"
-      },
+      data region "",
       location int {
         from 310,
         to 319,
@@ -158,6 +158,10 @@ Seq-annot ::= {
         }
       },
       qual {
+        {
+          qual "SO_type",
+          val "CAAT-signal"
+        },
         {
           qual "Parent",
           val "gene0"
@@ -224,7 +228,7 @@ Seq-annot ::= {
       qual {
         {
           qual "regulatory_class",
-          val "enhancer_blocking_element"
+          val "insulator"
         },
         {
           qual "Parent",

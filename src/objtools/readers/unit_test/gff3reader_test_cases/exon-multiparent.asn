@@ -49,9 +49,7 @@ Seq-annot ::= {
     },
     {
       id local id 2,
-      data imp {
-        key "TF_binding_site"
-      },
+      data region "",
       location int {
         from 999,
         to 1011,
@@ -59,6 +57,10 @@ Seq-annot ::= {
         id local str "ctg123"
       },
       qual {
+        {
+          qual "SO_type",
+          val "TF_binding_site"
+        },
         {
           qual "Parent",
           val "gene00001"
