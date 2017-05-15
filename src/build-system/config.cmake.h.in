@@ -443,6 +443,9 @@
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #cmakedefine HAVE_PTHREAD_SETCONCURRENCY 1
 
+/* Define to 1 if libunwind is available. */
+#cmakedefine HAVE_LIBUNWIND 1
+
 /* Define to 1 if the PUBSEQ service is available. */
 #define HAVE_PUBSEQ_OS 1
 

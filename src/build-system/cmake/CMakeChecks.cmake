@@ -560,6 +560,9 @@ find_external_library(libxlsxwriter
     HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9"
     EXTRALIBS ${Z_LIBS})
 
+find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
+set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
+
 ##############################################################################
 #
 # NCBI-isms

@@ -38,7 +38,9 @@
 #  include <sys/ucontext.h> // for additional test below
 #endif
 
-#if defined NCBI_OS_MSWIN
+#if defined HAVE_LIBUNWIND
+#  include "ncbi_stack_libunwind.cpp"
+#elif defined NCBI_OS_MSWIN
 #  if NCBI_PLATFORM_BITS == 64
 #    include "ncbi_stack_win64.cpp"
 #  else

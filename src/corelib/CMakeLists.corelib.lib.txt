@@ -5,7 +5,6 @@ if (${UNIX})
     set(os_src ncbi_os_unix)
 endif(${UNIX})
 
-
 add_library(xncbi
     ${ncbicntr} blob_storage ddumpable env_reg metareg ncbi_config
     ncbi_param ncbi_process ncbi_safe_static ncbi_signal ncbi_stack
@@ -19,6 +18,14 @@ add_library(xncbi
     ${os_src}
 
 )
+
 target_link_libraries(xncbi
     ${DL_LIBS} ${LIBS}
 )
+
+if (${HAVE_LIBUNWIND})
+    include_directories(${LIBUNWIND_INCLUDE})
+    target_link_libraries(xncbi
+        ${LIBUNWIND_LIBS}
+    )
+endif ()
