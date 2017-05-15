@@ -1307,7 +1307,7 @@ public:
                 (*it)->Execute();
             }
             catch (exception& e) {
-                ERR_POST(e);
+                ERR_POST("Error executing action: " << e.what());
             }
         }
         m_Actions.clear(); // prevent multiple executions
