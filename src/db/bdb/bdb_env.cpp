@@ -1050,6 +1050,33 @@ void CBDB_Env::DeadLockDetect()
     BDB_CHECK(ret, "lock_detect");
 }
 
+
+class CBDB_Env_OnAppExit
+{
+public:
+    static void AddOnExitCallback(CBDB_Env& bdb_env)
+    {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            app->AddOnExitAction(CBDB_Env_OnAppExit(bdb_env));
+        }
+    }
+
+    CBDB_Env_OnAppExit(CBDB_Env& bdb_env) : m_Env(bdb_env)
+    {
+    }
+
+    void operator()(void) const
+    {
+        m_Env.StopBackgroundWriterThread();
+    }
+
+private:
+    CBDB_Env& m_Env;
+};
+
+
 void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags,
                                    unsigned thread_delay,
                                    int memp_trickle,
@@ -1057,6 +1084,7 @@ void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags,
 {
 # ifdef NCBI_THREADS
     LOG_POST_X(6, Info << "Starting BDB transaction checkpoint thread.");
+    CBDB_Env_OnAppExit::AddOnExitCallback(*this);
     m_CheckThread.Reset(
         new CBDB_CheckPointThread(*this, memp_trickle, thread_delay, 5));
     m_CheckThread->SetMaxErrors(err_max);
@@ -1087,6 +1115,7 @@ void CBDB_Env::StopBackgroundWriterThread()
         LOG_POST_X(8, Info << "Stopping BDB transaction checkpoint thread...");
         m_CheckThread->RequestStop();
         m_CheckThread->Join();
+        m_CheckThread.Reset();
         LOG_POST_X(9, Info << "BDB transaction checkpoint thread stopped.");
     }
 # endif

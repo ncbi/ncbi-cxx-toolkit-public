@@ -361,6 +361,13 @@ public:
     /// @deprecated
     NCBI_DEPRECATED virtual bool SetupDiag_AppSpecific(void);
 
+    /// Add callback to be executed from CNcbiApplication destructor.
+    /// @sa CNcbiActionGuard
+    template<class TFunc> void AddOnExitAction(TFunc func)
+    {
+        m_OnExitActions.AddAction(func);
+    }
+
 protected:
     /// Result of PreparseArgs()
     enum EPreparseArgs {
@@ -625,6 +632,7 @@ private:
     bool                       m_ConfigLoaded;  ///< Finished loading config
     const char*                m_LogFile;     ///< Logfile if set in the command line
     int                        m_LogOptions; ///<  logging of env, reg, args, path
+    CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
 };
 
 

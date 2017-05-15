@@ -1199,6 +1199,33 @@ void CBDB_Cache::SetOverflowLimit(unsigned limit)
     m_OverflowLimit = limit;
 }
 
+
+class CBDB_Cache_OnAppExit
+{
+public:
+    static void AddOnExitCallback(CBDB_Cache& bdb_cache)
+    {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            app->AddOnExitAction(CBDB_Cache_OnAppExit(bdb_cache));
+        }
+    }
+
+    CBDB_Cache_OnAppExit(CBDB_Cache& bdb_cache) : m_Cache(bdb_cache)
+    {
+    }
+
+    void operator()(void) const
+    {
+        m_Cache.StopPurgeThread();
+    }
+
+private:
+    CBDB_Cache& m_Cache;
+};
+
+
 void CBDB_Cache::Open(const string& cache_path,
                       const string& cache_name,
                       ELockMode     lm,
@@ -1495,6 +1522,7 @@ void CBDB_Cache::Open(const string& cache_path,
     if (m_RunPurgeThread) {
 # ifdef NCBI_THREADS
        LOG_POST_X(7, Info << "Starting cache cleaning thread.");
+       CBDB_Cache_OnAppExit::AddOnExitCallback(*this);
        m_PurgeThread.Reset(
            new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
        m_PurgeThread->Run();
@@ -1524,6 +1552,7 @@ void CBDB_Cache::Open(const string& cache_path,
 
 }
 
+
 void CBDB_Cache::RunPurgeThread(unsigned purge_delay)
 {
     m_RunPurgeThread = true;
@@ -1538,6 +1567,7 @@ void CBDB_Cache::StopPurgeThread()
         StopPurge();
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
+        m_PurgeThread.Reset(); // Prevent duplicate stop/join.
         LOG_POST_X(11, Info << "Stopped.");
     }
 # endif

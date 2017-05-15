@@ -112,7 +112,13 @@ int CSafeStaticGuard::sm_RefCount;
 
 
 // CSafeStaticGuard reference counter
+// On MSWin threads are killed before destruction of static objects in DLLs, so in
+// most cases this check is useless.
+#if defined(NCBI_WIN32_THREADS)
+bool CSafeStaticGuard::sm_ChildThreadsCheck = false;
+#else
 bool CSafeStaticGuard::sm_ChildThreadsCheck = true;
+#endif
 
 
 CSafeStaticGuard::CSafeStaticGuard(void)

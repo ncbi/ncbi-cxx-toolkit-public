@@ -1287,6 +1287,62 @@ ostream& operator<<(ostream& out, const CSafeFlags<E>& v)
 #endif // NCBI_ENABLE_SAFE_FLAGS
 
 
+/// CNcbiActionGuard class
+/// Executes registered callbacks on request or on destruction.
+class CNcbiActionGuard
+{
+public:
+    CNcbiActionGuard(void) {}
+    ~CNcbiActionGuard(void) { ExecuteActions(); }
+
+    template<class TFunc> void AddAction(TFunc func)
+    {
+        m_Actions.push_back(unique_ptr<CAction_Base>(new CAction<TFunc>(func)));
+    }
+
+    void ExecuteActions(void)
+    {
+        ITERATE(TActions, it, m_Actions) {
+            try {
+                (*it)->Execute();
+            }
+            catch (exception& e) {
+                ERR_POST(e);
+            }
+        }
+        m_Actions.clear(); // prevent multiple executions
+    }
+
+private:
+    CNcbiActionGuard(const CNcbiActionGuard&);
+    CNcbiActionGuard& operator=(const CNcbiActionGuard&);
+
+    // Action wrapper
+    class CAction_Base
+    {
+    public:
+        CAction_Base(void) {}
+        virtual void Execute(void) const = 0;
+    private:
+        CAction_Base(const CAction_Base&);
+        CAction_Base& operator=(const CAction_Base&);
+    };
+
+    template<class TFunc> class CAction : public CAction_Base
+    {
+    public:
+        CAction(TFunc func) : m_Func(func) {}
+        ~CAction(void) {}
+        void Execute(void) const override { m_Func(); }
+    private:
+        TFunc m_Func;
+    };
+    typedef list<unique_ptr<CAction_Base> > TActions;
+
+    TActions m_Actions;
+};
+
+
 END_NCBI_NAMESPACE;
 
 BEGIN_STD_NAMESPACE;
