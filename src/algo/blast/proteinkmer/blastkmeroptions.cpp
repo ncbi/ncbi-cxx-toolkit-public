@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
 
 BEGIN_NCBI_SCOPE
 

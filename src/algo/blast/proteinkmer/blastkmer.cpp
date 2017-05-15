@@ -33,8 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerutils.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerutils.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)

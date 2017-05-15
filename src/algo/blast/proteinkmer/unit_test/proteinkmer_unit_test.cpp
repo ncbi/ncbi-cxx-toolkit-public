@@ -52,13 +52,13 @@
 #include <objmgr/scope.hpp>
 
 #include <util/sequtil/sequtil_convert.hpp>
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerutils.hpp>
-#include <blast/proteinkmer/blastkmerresults.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
-#include <blast/proteinkmer/blastkmerindex.hpp>
-#include <blast/proteinkmer/blastkmerindex.hpp>
-#include <blast/proteinkmer/kblastapi.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerutils.hpp>
+#include <algo/blast/proteinkmer/blastkmerresults.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/blastkmerindex.hpp>
+#include <algo/blast/proteinkmer/blastkmerindex.hpp>
+#include <algo/blast/proteinkmer/kblastapi.hpp>
 
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>

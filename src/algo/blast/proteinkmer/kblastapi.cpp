@@ -47,10 +47,10 @@
 
 #include <util/sequtil/sequtil_convert.hpp>
 
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerresults.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
-#include <blast/proteinkmer/kblastapi.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerresults.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/kblastapi.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

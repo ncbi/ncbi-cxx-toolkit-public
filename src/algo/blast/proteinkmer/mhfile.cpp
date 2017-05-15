@@ -32,7 +32,7 @@
 
 
 #include <ncbi_pch.hpp>
-#include <blast/proteinkmer/mhfile.hpp>
+#include <algo/blast/proteinkmer/mhfile.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast);

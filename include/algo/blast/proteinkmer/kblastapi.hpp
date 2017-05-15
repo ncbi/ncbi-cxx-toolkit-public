@@ -36,9 +36,9 @@
 #include <algo/blast/api/blastp_kmer_options.hpp>
 #include <math.h>
 
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerresults.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerresults.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
 
 #ifndef BLAST_KMER_API_HPP
 #define BLAST_KMER_API_HPP

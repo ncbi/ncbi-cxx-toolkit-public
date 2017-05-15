@@ -38,8 +38,8 @@
 #include <algo/blast/core/blast_encoding.h>
 #include <math.h>
 
-#include <blast/proteinkmer/blastkmerutils.hpp>
-#include <blast/proteinkmer/mhfile.hpp>
+#include <algo/blast/proteinkmer/blastkmerutils.hpp>
+#include <algo/blast/proteinkmer/mhfile.hpp>
 
 #include "pearson.hpp"
 
