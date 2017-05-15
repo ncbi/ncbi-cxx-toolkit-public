@@ -96,6 +96,7 @@ void CSeqEntryIndex::Initialize (CBioseq& bioseq)
     x_Init();
 }
 
+/*
 void CSeqEntryIndex::Initialize (CSeq_submit& submit)
 {
     _ASSERT(submit.CanGetData());
@@ -119,6 +120,7 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSubmit_block &sblock)
 
     x_Init();
 }
+*/
 
 void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSeq_descr &descr)
 {

@@ -33,8 +33,8 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/BioSource.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
+// #include <objects/submit/Seq_submit.hpp>
+// #include <objects/submit/Submit_block.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/util/feature.hpp>
@@ -101,11 +101,15 @@ public:
     void Initialize (CSeq_entry& topsep);
     void Initialize (CBioseq_set& seqset);
     void Initialize (CBioseq& bioseq);
+    /*
     void Initialize (CSeq_submit& submit);
+    */
 
     // Specialized initializers for streaming through release files, one component at a time
     // Submit-block obtained from top of Seq-submit release file
+    /*
     void Initialize (CSeq_entry& topsep, CSubmit_block &sblock);
+    */
     // Seq-descr chain obtained from top of Bioseq_set release file
     void Initialize (CSeq_entry& topsep, CSeq_descr &descr);
 
@@ -122,7 +126,9 @@ public:
     CRef<CScope> GetScope (void) const { return m_scope; }
     CSeq_entry_Handle GetTopSEH (void) const { return m_topSEH; }
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_topSEP; }
+    /*
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_sbtBlk; }
+    */
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_topDescr; }
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
@@ -141,7 +147,9 @@ private:
     CSeq_entry_Handle m_topSEH;
 
     CConstRef<CSeq_entry> m_topSEP;
+    /*
     CConstRef<CSubmit_block> m_sbtBlk;
+    */
     CConstRef<CSeq_descr> m_topDescr;
 
     bool m_fetchFailure;
