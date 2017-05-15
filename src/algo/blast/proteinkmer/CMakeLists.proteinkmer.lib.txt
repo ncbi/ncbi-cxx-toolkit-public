@@ -1,0 +1,13 @@
+#
+#
+
+
+add_library(proteinkmer
+    blastkmer blastkmerindex blastkmeroptions blastkmerresults 
+    blastkmerutils mhfile pearson kblastapi
+)
+
+target_link_libraries(proteinkmer
+    blastinput ${BOOST_LIBS}
+)
+
