@@ -6921,20 +6921,16 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     }
 
     const size_t num_unmatched_mrna = mrna_list.size();
-    if (num_unmatched_mrna > 0) {
-        string msg; 
-        if (num_unmatched_mrna == 1){ 
-            msg += "No match for ";
-        } else{
-            msg += "No matches for ";
-        }
-        msg += NStr::NumericToString(num_unmatched_mrna);
-        msg += (num_unmatched_mrna > 1) ? " mRNAs" : " mRNA"; 
+    if (num_unmatched_mrna > 10) {
+        string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
                  msg, *(seq.GetCompleteBioseq()));
+    } else {
+        ITERATE(list<CRef<CMrnaMatchInfo>>, it, mrna_list) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                "No match for 1 mRNA", (*it)->GetSeqfeat());
+        }
     }
-
-
 }
 
 void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
