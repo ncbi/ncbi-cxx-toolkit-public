@@ -4310,8 +4310,8 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                 }
             }
             submitter_notif_info =
-                "&sumbitter_notif_host=" + NStr::URLEncode(host) +
-                "&sumbitter_notif_port=" +
+                "&submitter_notif_host=" + NStr::URLEncode(host) +
+                "&submitter_notif_port=" +
                     NStr::NumericToString(job.GetSubmNotifPort());
         }
         x_WriteMessage(
