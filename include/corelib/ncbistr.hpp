@@ -2446,8 +2446,8 @@ public:
     /// Whether to merge adjacent delimiters.
     /// Used by some methods that don't need full functionality of ESplitFlags.
     enum EMergeDelims {
-        eMergeDelims   = fSplit_MergeDelims,   ///< Merge the delimiters
-        eNoMergeDelims = fSplit_NoMergeDelims  ///< No merge the delimiters
+        eMergeDelims   = fSplit_MergeDelimiters, ///< Merge the delimiters
+        eNoMergeDelims = 0                       ///< No merge the delimiters
     };
 
     /// Split a string using specified delimiters.
@@ -2477,7 +2477,7 @@ public:
     static list<string>& Split( const CTempString    str,
                                 const CTempString    delim,
                                 list<string>&        arr,
-                                TSplitFlags          flags, // required
+                                TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL);
 
     static vector<string>& Split(
@@ -2491,7 +2491,7 @@ public:
                                 const CTempString    str,
                                 const CTempString    delim,
                                 list<CTempString>&   arr,
-                                TSplitFlags          flags, // required
+                                TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL,
                                 CTempString_Storage* storage = NULL);
 
@@ -2507,7 +2507,7 @@ public:
                                 const CTempString    str,
                                 const CTempString    delim,
                                 list<CTempStringEx>& arr,
-                                TSplitFlags          flags, // required
+                                TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL,
                                 CTempString_Storage* storage = NULL);
 
@@ -2518,26 +2518,6 @@ public:
                                 TSplitFlags            flags = 0,
                                 vector<SIZE_TYPE>*     token_pos = NULL,
                                 CTempString_Storage*   storage = NULL);
-
-    /// @deprecated  Use Split() with TSplitFlags instead
-    inline
-    NCBI_DEPRECATED
-    static list<string>& Split( const CTempString  str,
-                                const CTempString  delim,
-                                list<string>&      arr,
-                                EMergeDelims       merge,
-                                vector<SIZE_TYPE>* token_pos = NULL)  {
-        return Split(str, delim, arr, (TSplitFlags)merge, token_pos);
-    }
-
-    /// @deprecated  Use Split() with TSplitFlags instead
-    NCBI_DEPRECATED
-    static list<CTempString>& Split(
-                                const CTempString  str,
-                                const CTempString  delim,
-                                list<CTempString>& arr,
-                                EMergeDelims       merge = eMergeDelims,
-                                vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Split a string into two pieces using the specified delimiters
     ///
@@ -2587,22 +2567,6 @@ public:
                            TSplitFlags        flags = 0,
                            CTempString_Storage* storage = NULL);
 
-    /// @deprecated  Use SplitInTwo() with TSplitFlags instead
-    NCBI_DEPRECATED
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           string&            str1,
-                           string&            str2,
-                           EMergeDelims       merge);
-
-    /// @deprecated  Use SplitInTwo() with TSplitFlags instead
-    NCBI_DEPRECATED
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           CTempString&       str1,
-                           CTempString&       str2,
-                           EMergeDelims       merge);
-
 
     /// Variation of Split() wih fSplit_ByPattern flag applied by default
 
@@ -2651,86 +2615,6 @@ public:
                                 TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL,
                                 CTempString_Storage* storage = NULL);
-
-    /// Tokenize a string using the specified set of char delimiters.
-    ///
-    /// @param str
-    ///   String to be tokenized.
-    /// @param delim
-    ///   Delimiter(s) used to split string "str".  The interpretation of
-    ///   multi-character values depends on flags: by default, any of those
-    ///   characters marks a split point (when unquoted), but with
-    ///   fSplit_ByPattern, the entire string must occur.  (Meanwhile,
-    ///   an empty value disables splitting.)
-    /// @param arr
-    ///   The tokens defined in "str" by using symbols from "delim" are added
-    ///   to the vector "arr" and also returned by the function.
-    /// @param flags
-    ///   Flags directing splitting, characterized under ESplitFlags.
-    /// @param token_pos
-    ///   Optional array for the tokens' positions in "str".
-    /// @attention
-    ///   Modifying source CTempString object or destroying it,
-    ///   will invalidate results.
-    /// @return 
-    ///   The vector "arr" is also returned.
-    /// @sa
-    ///   ESplitFlags, Split, SplitInTwo, SplitByPattern
-
-    /// @deprecated  Use Split() instead
-    NCBI_DEPRECATED
-    static vector<string>& Tokenize(const CTempString  str,
-                                    const CTempString  delim,
-                                    vector<string>&    arr,
-                                    TSplitFlags        flags = 0,
-                                    vector<SIZE_TYPE>* token_pos = NULL);
-
-    /// @deprecated  Use Split() instead
-    NCBI_DEPRECATED
-    static vector<string>& Tokenize(const CTempString  str,
-                                    const CTempString  delim,
-                                    vector<string>&    arr,
-                                    EMergeDelims       merge,
-                                    vector<SIZE_TYPE>* token_pos = NULL);
-
-    /// @deprecated  Use Split() instead
-    NCBI_DEPRECATED
-    static
-    vector<CTempStringEx>& Tokenize(const CTempString      str,
-                                    const CTempString      delim,
-                                    vector<CTempStringEx>& arr,
-                                    TSplitFlags            flags = 0,
-                                    vector<SIZE_TYPE>*     token_pos = NULL,
-                                    CTempString_Storage*   storage = NULL);
-
-    /// @deprecated  Use Split() instead
-    NCBI_DEPRECATED
-    static
-    vector<CTempString>& Tokenize(  const CTempString    str,
-                                    const CTempString    delim,
-                                    vector<CTempString>& arr,
-                                    EMergeDelims         merge = eNoMergeDelims,
-                                    vector<SIZE_TYPE>*   token_pos = NULL);
-
-    /// @deprecated  Use SplitByPattern() instead
-    NCBI_DEPRECATED
-    static
-    vector<string>& TokenizePattern(const CTempString  str,
-                                    const CTempString  delim,
-                                    vector<string>&    arr,
-                                    EMergeDelims       merge = eNoMergeDelims,
-                                    vector<SIZE_TYPE>* token_pos = NULL);
-
-    /// @deprecated  Use SplitByPattern() instead
-    NCBI_DEPRECATED
-    static
-    vector<CTempString>& TokenizePattern(
-                                    const CTempString    str,
-                                    const CTempString    delim,
-                                    vector<CTempString>& arr,
-                                    EMergeDelims         merge = eNoMergeDelims,
-                                    vector<SIZE_TYPE>*   token_pos = NULL);
-
 
     /// Join strings using the specified delimiter.
     ///
@@ -5972,6 +5856,8 @@ CUtf8::TruncateSpaces(const CTempString str, NStr::ETrunc side) {
 
 // deprecated CStringUTF8 is there
 #include <corelib/impl/stringutf8_deprecated.inl>
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  PCase_Generic::

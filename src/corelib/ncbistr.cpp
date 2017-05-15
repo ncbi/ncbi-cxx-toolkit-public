@@ -3452,92 +3452,6 @@ vector<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempSt
 }
 
 
-
-/// @deprecated
-list<CTempString>& NStr::Split(const CTempString  str,
-                               const CTempString  delim,
-                               list<CTempString>& arr, EMergeDelims merge,
-                               vector<SIZE_TYPE>* token_pos)
-{
-    vector<CTempStringEx> arr2;
-    Split(str, delim, arr2, (TSplitFlags)merge, token_pos);
-    ITERATE (vector<CTempStringEx>, it, arr2) {
-        arr.push_back(*it);
-    }
-    return arr;
-}
-
-/// @deprecated
-vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
-                               vector<string>& arr, TSplitFlags flags,
-                               vector<SIZE_TYPE>* token_pos)
-{
-    return s_Split(str, delim, arr, flags, token_pos);
-}
-
-/// @deprecated
-vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
-                               vector<string>& arr, EMergeDelims merge,
-                               vector<SIZE_TYPE>* token_pos)
-{
-    return s_Split(str, delim, arr, (TSplitFlags)merge, token_pos);
-}
-
-/// @deprecated
-vector<CTempStringEx>& NStr::Tokenize(const CTempString  str,
-                                      const CTempString  delim,
-                                      vector<CTempStringEx>& arr,
-                                      TSplitFlags        flags,
-                                      vector<SIZE_TYPE>* token_pos,
-                                      CTempString_Storage* storage)
-{
-    return s_Split(str, delim, arr, flags, token_pos, storage);
-}
-
-/// @deprecated
-vector<CTempString>& NStr::Tokenize(const CTempString  str,
-                                    const CTempString  delim,
-                                    vector<CTempString>& arr,
-                                    EMergeDelims merge,
-                                    vector<SIZE_TYPE>* token_pos)
-{
-    vector<CTempStringEx> arr2;
-    Split(str, delim, arr2, (TSplitFlags)merge, token_pos);
-    arr.reserve(arr.size() + arr2.size());
-    ITERATE (vector<CTempStringEx>, it, arr2) {
-        arr.push_back(*it);
-    }
-    return arr;
-}
-
-
-/// @deprecated
-vector<string>& NStr::TokenizePattern(const CTempString  str,
-                                      const CTempString  delim,
-                                      vector<string>&    arr,
-                                      EMergeDelims       merge,
-                                      vector<SIZE_TYPE>* token_pos)
-{
-    return SplitByPattern(str, delim, arr, (TSplitFlags)merge, token_pos);
-}
-
-/// @deprecated
-vector<CTempString>& NStr::TokenizePattern(const CTempString  str,
-                                           const CTempString  delim,
-                                           vector<CTempString>& arr,
-                                           EMergeDelims       merge,
-                                           vector<SIZE_TYPE>* token_pos)
-{
-    vector<CTempStringEx> arr2;
-    Split(str, delim, arr2, fSplit_ByPattern | (TSplitFlags)merge, token_pos);
-    arr.reserve(arr.size() + arr2.size());
-    ITERATE (vector<CTempStringEx>, it, arr2) {
-        arr.push_back(*it);
-    }
-    return arr;
-}
-
-
 bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       string& str1, string& str2, TSplitFlags flags)
 {
@@ -3586,24 +3500,6 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
     part_collector.Join(&str2);
 
     return delim_pos != NPOS;
-}
-
-/// @deprecated
-bool NStr::SplitInTwo(const CTempString  str, 
-                      const CTempString  delim,
-                      string& str1, string& str2, EMergeDelims merge) {
-    return SplitInTwo(str, delim, str1, str2, (TSplitFlags)merge);
-}
-
-// @deprecated
-bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
-                      CTempString& str1, CTempString& str2, EMergeDelims merge)
-{
-    CTempStringEx tsx1, tsx2;
-    bool result = SplitInTwo(str, delim, tsx1, tsx2, (TSplitFlags)merge);
-    str1 = tsx1;
-    str2 = tsx2;
-    return result;
 }
 
 
