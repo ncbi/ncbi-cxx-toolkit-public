@@ -46,14 +46,13 @@
 #include <algo/blast/format/blast_format.hpp>
 #include <algo/blast/format/blast_async_format.hpp>
 #include <math.h>
-#include <sys/time.h>
 
 #include <objtools/readers/fasta.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerresults.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerresults.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
 
 #include "kblastthr.hpp"
 

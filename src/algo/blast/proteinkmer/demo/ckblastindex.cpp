@@ -37,9 +37,9 @@
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 
-#include <blast/proteinkmer/blastkmer.hpp>
-#include <blast/proteinkmer/blastkmerresults.hpp>
-#include <blast/proteinkmer/blastkmeroptions.hpp>
+#include <algo/blast/proteinkmer/blastkmer.hpp>
+#include <algo/blast/proteinkmer/blastkmerresults.hpp>
+#include <algo/blast/proteinkmer/blastkmeroptions.hpp>
 
 
 

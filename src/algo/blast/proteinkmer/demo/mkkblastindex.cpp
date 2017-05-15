@@ -32,8 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <blast/proteinkmer/blastkmerutils.hpp>
-#include <blast/proteinkmer/blastkmerindex.hpp>
+#include <algo/blast/proteinkmer/blastkmerutils.hpp>
+#include <algo/blast/proteinkmer/blastkmerindex.hpp>
 
 #ifdef _OPENMP
 #include <omp.h>
