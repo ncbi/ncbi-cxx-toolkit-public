@@ -4364,7 +4364,6 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
 
     // Open database for reading.
     CSeqDBAtlas atlas(true);
-    CSeqDBLockHold lock(atlas);
     CRef<CSeqDBIsam> rdb(
             new CSeqDBIsam(
                     atlas,
@@ -4392,7 +4391,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
                     new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi))
             );
             int oid;
-            rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid, lock);
+            rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid);
             BOOST_REQUIRE(oid == oids[i]);
         } catch (...) {
             BOOST_FAIL("CSeq_id constructor threw exception");
