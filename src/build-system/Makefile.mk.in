@@ -732,14 +732,14 @@ GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
 
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
-SOBJMGR_LDEP = genome_collection seqedit seqsplit seqset $(SEQ_LIBS) \
+SOBJMGR_LDEP = genome_collection seqedit seqsplit submit seqset $(SEQ_LIBS) \
     pub medline biblio general xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
-QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 genome_collection seqset \
+QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 genome_collection submit seqset \
     $(SEQ_LIBS) pub medline biblio general xcompress $(CMPRS_LIB)
 QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
@@ -749,10 +749,10 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
               einfo uilist ehistory
 
 # Object readers
-OBJREAD_LIBS = xobjread variation creaders submit
+OBJREAD_LIBS = xobjread variation creaders
 
 # formatting code
-XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid taxon3
+XFORMAT_LIBS = xformat xcleanup gbseq mlacli mla medlars pubmed valid taxon3
 
 # object editing library
 OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3
