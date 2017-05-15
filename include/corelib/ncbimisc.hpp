@@ -1146,14 +1146,14 @@ public:
         : m_Flags(0)
         {
         }
-    CSafeFlags(enum_type flags)
+    explicit
+    CSafeFlags(storage_type flags)
         : m_Flags(flags)
         {
         }
-    static
-    CSafeFlags FromInt(storage_type flags)
+    CSafeFlags(enum_type flags)
+        : m_Flags(flags)
         {
-            return CSafeFlags(flags);
         }
 
     storage_type get() const
@@ -1216,23 +1216,7 @@ public:
             return *this;
         }
     
-    CSafeFlags without(const CSafeFlags& b) const
-        {
-            return CSafeFlags(get()&~b.get());
-        }
-    CSafeFlags& reset(const CSafeFlags& b)
-        {
-            m_Flags &= ~b.get();
-            return *this;
-        }
-
 private:
-    explicit
-    CSafeFlags(storage_type flags)
-        : m_Flags(flags)
-        {
-        }
-
     storage_type m_Flags;
 };
 /// Macro DECLARE_SAFE_FLAGS_TYPE defines a typedef for safe-flags.
