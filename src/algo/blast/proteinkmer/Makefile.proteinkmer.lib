@@ -1,0 +1,14 @@
+LIB = proteinkmer
+SRC = blastkmer blastkmerindex blastkmeroptions blastkmerresults blastkmerutils mhfile pearson kblastapi
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+
+REQUIRES = Boost.Test.Included
+
+ASN_DEP = seqset
+
+WATCHERS = boratyng
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS)
