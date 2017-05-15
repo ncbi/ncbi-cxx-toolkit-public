@@ -560,9 +560,13 @@ public:
     /// Otherwise, do nothing, and return FALSE.
     bool Discard(void);
 
-    /// Get ID of current thread (for main thread it is always zero).
+    /// Get ID of current thread. When not using native threads, but CThread only,
+    /// the main thread is guaranteed to have zero id. With native threads the
+    /// main thread may have a non-zero id and it's more reliable to use IsMain().
     typedef unsigned int TID;
     static TID GetSelf(void);
+
+    static bool IsMain(void);
 
     /// Get current CThread object (or NULL, if main thread)
     static CThread* GetCurrentThread(void);

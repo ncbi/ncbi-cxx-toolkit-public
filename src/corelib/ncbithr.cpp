@@ -149,7 +149,7 @@ CSafeStaticLifeSpan::eLifeSpan_Long);
 
 CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
 {
-    if ( !CThread::GetSelf() )
+    if ( CThread::IsMain() )
     {
         return *s_MainUsedTlsBases;
     }
@@ -418,6 +418,23 @@ static DECLARE_TLS_VAR(CThread*, sx_ThreadPtr);
 static DECLARE_TLS_VAR(CThread::TID, sx_ThreadId);
 static bool sm_MainThreadIdInitialized = false;
 static const CThread::TID kMainThreadId = ~CThread::TID(0);
+static CThread::TID sx_MainThreadId = kMainThreadId;
+
+
+DEFINE_STATIC_FAST_MUTEX(s_MainThreadIdMutex);
+
+CThread::TID sx_GetMainThreadId()
+{
+    CFastMutexGuard guard(s_MainThreadIdMutex);
+    return sx_MainThreadId;
+}
+
+
+void sx_SetMainThreadId(CThread::TID id)
+{
+    CFastMutexGuard guard(s_MainThreadIdMutex);
+    sx_MainThreadId = id;
+}
 
 
 static int sx_GetNextThreadId(void)
@@ -443,11 +460,24 @@ void CThread::InitializeMainThreadId(void)
 {
     // mark main thread
 #if defined(NCBI_THREADS)
-    _ASSERT(!sx_ThreadPtr);
-    _ASSERT(!sx_ThreadId);
+    CFastMutexGuard guard(s_MainThreadIdMutex);
 #endif
+    if ( sm_MainThreadIdInitialized ) {
+        if (sx_ThreadId != sx_MainThreadId) {
+            ERR_POST("Can not change main thread ID");
+        }
+        return;
+    }
+#if defined(NCBI_THREADS)
+    _ASSERT(!sx_ThreadPtr);
+    _ASSERT(sx_MainThreadId == kMainThreadId);
+#endif
+    if ( !sx_ThreadId ) {
+        // Not yet assigned - use the default value.
+        sx_ThreadId = kMainThreadId;
+    }
+    sx_MainThreadId = sx_ThreadId;
     sx_ThreadPtr = 0;
-    sx_ThreadId = kMainThreadId;
     sm_MainThreadIdInitialized = true;
 }
 
@@ -462,13 +492,33 @@ CThread* CThread::GetCurrentThread(void)
 CThread::TID CThread::GetSelf(void)
 {
     TID id = sx_ThreadId;
-    if ( !id && sm_MainThreadIdInitialized ) {
-        // Info has not been set - this is a native thread,
-        // main thread is already assigned so we can assign new thread an ID.
-        sx_ThreadId = id = sx_GetNextThreadId();
+    if ( !id ) {
+        // If main thread has not been set, consider current thread is the main one.
+        // Since sx_ThreadId is still zero, InitializeMainThreadId() will set it to
+        // kMainThreadId, so that the value returned by GetSelf() will be zero.
+        if (!sm_MainThreadIdInitialized) {
+            InitializeMainThreadId();
+            id = sx_ThreadId;
+        }
+        else {
+            sx_ThreadId = id = sx_GetNextThreadId();
+        }
     }
-    // kMainThreadId is marker for main thread
-    return id == kMainThreadId? 0: id;
+    // kMainThreadId is usually marker for main thread, but when using native threads
+    // and InitializeMainThreadId() to set main thread, the main thread id may be
+    // different and it's more reliable to use IsMain() rather than GetSelf() == 0.
+    return id == kMainThreadId ? 0 : id;
+}
+
+
+bool CThread::IsMain(void)
+{
+    TID id = sx_ThreadId;
+    if (!sm_MainThreadIdInitialized) {
+        InitializeMainThreadId();
+        id = sx_ThreadId;
+    }
+    return sx_ThreadId == sx_GetMainThreadId();
 }
 
 
@@ -485,7 +535,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
 
     // Set Toolkit thread ID.
     thread_obj->x_InitializeThreadId();
-    xncbi_Validate(GetSelf() != 0,
+    xncbi_Validate(!IsMain(),
                    "CThread::Wrapper() -- error assigning thread ID");
 
 #if defined NCBI_THREAD_PID_WORKAROUND

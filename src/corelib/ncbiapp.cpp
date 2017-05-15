@@ -107,6 +107,7 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
       m_LogFile(0),
       m_LogOptions(0)
 {
+    CThread::InitializeMainThreadId();
     // Initialize UID and start timer
     GetDiagContext().GetUID();
     GetDiagContext().InitMessages(size_t(-1));

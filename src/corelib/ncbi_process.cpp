@@ -199,7 +199,7 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
     static TPid s_CurrentPid = 0;
     static TPid s_ParentPid = 0;
 
-    if (CThread::GetSelf() == 0) {
+    if (CThread::IsMain()) {
         // For main thread always force caching of PIDs
         CFastMutexGuard guard(s_GetPidMutex);
         s_CurrentPid = getpid();
