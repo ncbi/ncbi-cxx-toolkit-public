@@ -1957,7 +1957,7 @@ bool CValidError_bioseq::IsIdIn(const CSeq_id& id, const CBioseq& seq)
 }
 
 
-TSeqPos CValidError_bioseq::GetDataLen(const CSeq_inst& inst)
+size_t CValidError_bioseq::GetDataLen(const CSeq_inst& inst)
 {
     if (!inst.IsSetSeq_data()) {
         return 0;
@@ -2813,7 +2813,7 @@ void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPo
     CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);                        
 
     TSeqPos this_stretch = 0; 
-    for (size_t i = 0; i < vec.size(); i++) {
+    for (TSeqPos i = 0; i < vec.size(); i++) {
         if (vec[i] == 'N') {
             num_ns++;
             if (vec.IsInGap(i)) {
@@ -2888,7 +2888,7 @@ bool CValidError_bioseq::IsAllNs(CBioseq_Handle bsh)
             }
             at_least_one = true;
         }
-    } catch (CException& e) {
+    } catch (CException& ) {
 
     }
     return (rval && at_least_one);
@@ -3224,8 +3224,8 @@ void CValidError_bioseq::ValidateRawConst(
 
         string s_len = NStr::UIntToString(inst.GetLength());
 
-        TSeqPos data_len = GetDataLen(inst);
-        string data_len_str = NStr::IntToString(data_len * factor);
+        size_t data_len = GetDataLen(inst);
+        string data_len_str = NStr::NumericToString(data_len * factor);
         if (calc_len > data_len) {
             PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
                      "Bioseq.seq_data too short [" + data_len_str +
@@ -4049,10 +4049,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if (mi) {
                     // Count adjacent Ns in Seq-lit
                     int max_ns = s_MaxNsInSeqLitForTech (tech);
-                    int adjacent_ns = x_CountAdjacentNs(lit);
+                    size_t adjacent_ns = x_CountAdjacentNs(lit);
                     if (max_ns > -1 && adjacent_ns > max_ns) {
                         PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
-                                "Run of " + NStr::UIntToString(adjacent_ns) + 
+                                "Run of " + NStr::NumericToString(adjacent_ns) + 
                                 " Ns in delta component " + NStr::UIntToString(seg) +
                                 " that starts at base " + NStr::UIntToString(start_len + 1),
                                 seq);
@@ -4228,7 +4228,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     continue; // Ignore NULLs, reported separately above.
                 }
                 const CDelta_seq& seg = **delta_i;
-                TSeqPos delta_len = s_GetDeltaLen (seg, m_Scope);
+                TSeqPos delta_len = (TSeqPos)s_GetDeltaLen (seg, m_Scope);
                 if (pos > 0) {
                     if (sv.IsInGap (pos)) {
                         CSeqVector::TResidue res = sv [pos - 1];
@@ -7075,7 +7075,6 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                     continue;
                 }
                 const CSeq_feat& feat = it->GetOriginalFeature();
-                const CGene_ref* gref = feat.GetGeneXref();
 
                 gene = m_Imp.GetCachedGene(&feat);
 

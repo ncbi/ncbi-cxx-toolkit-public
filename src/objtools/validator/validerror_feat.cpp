@@ -6683,7 +6683,7 @@ void CValidError_feat::CheckForThreeBaseNonsense (
         if (NStr::Equal(transl_prot, "*")) {
             nonsense_intron = true;
         }
-    } catch (CException& ex) {
+    } catch (CException&) {
     }
 }
 
@@ -7354,7 +7354,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     try {
         transl_prot = TranslateCodingRegionForValidation(feat, *m_Scope, alt_start);
-    } catch (CException& ex) {
+    } catch (CException&) {
         unable_to_translate = true;
     }
 
@@ -7859,10 +7859,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                      SAnnotSelector(CSeqFeatData::e_Gene));
     CFeat_CI prev_gene;
     string label = "?";
-    bool xref_match_same_as_overlap = false;
     size_t num_match_by_locus = 0;
     size_t num_match_by_locus_tag = 0;
-    bool good_loc_bad_strand = false;
 
     for ( ; gene_it; ++gene_it) {
         bool bad_strand = s_LocationStrandsIncompatible(gene_it->GetLocation(), feat.GetLocation(), m_Scope);
@@ -7898,27 +7896,12 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 }
                 equivalent = false;
                 prev_gene = gene_it;
-                if (gene_xref && s_GeneRefsAreEquivalent(*gene_xref, gene_it->GetData().GetGene(), label)) {
-                    xref_match_same_as_overlap = true;
-                } else {
-                    xref_match_same_as_overlap = false;
-                }
-                if (bad_strand) {
-                    good_loc_bad_strand = true;
-                } else {
-                    good_loc_bad_strand = false;
-                }
             } else if (len == max) {
                 equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
                 num_genes++;
                 if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
                     NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
                     num_trans_spliced++;
-                }
-                if (bad_strand) {
-                    good_loc_bad_strand = true;
-                } else {
-                    good_loc_bad_strand = false;
                 }
             }
         }

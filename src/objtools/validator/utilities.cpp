@@ -2253,7 +2253,7 @@ bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptio
     string transl_prot;
     try {
         transl_prot = TranslateCodingRegionForValidation(feat, scope, alt_start);
-    } catch (CException& ex) {
+    } catch (CException& ) {
         return false;
     }
     return HasBadStartCodon(feat.GetLocation(), transl_prot);
@@ -2306,7 +2306,7 @@ bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exception
     string transl_prot;
     try {
         transl_prot = TranslateCodingRegionForValidation(feat, scope, alt_start);
-    } catch (CException& ex) {
+    } catch (CException& ) {
         return false;
     }
 
@@ -2359,7 +2359,7 @@ bool HasBadProteinStart(const CSeq_feat& feat, CScope& scope)
         }
         CConstRef<CSeqVector> sv = MakeSeqVectorForResidueCounting(bsh);
         return HasBadProteinStart(*sv);
-    } catch (CException& ex) {
+    } catch (CException& ) {
         return false;
     }
 }
@@ -2398,7 +2398,7 @@ bool HasStopInProtein(const CSeq_feat& feat, CScope& scope)
         } else {
             return false;
         }
-    } catch (CException& ex) {
+    } catch (CException& ) {
         return false;
     }
 }
@@ -2522,7 +2522,7 @@ bool HasNoStop(const CSeq_feat& feat, CScope* scope)
     bool alt_start;
     try {
         transl_prot = TranslateCodingRegionForValidation(feat, *scope, alt_start);
-    } catch (CException& ex) {
+    } catch (CException& ) {
     }
     if (NStr::EndsWith(transl_prot, "*")) {
         return false;
@@ -2542,7 +2542,7 @@ bool HasNoStop(const CSeq_feat& feat, CScope* scope)
                     show_stop = false;
                 }
             }
-        } catch (CException& ex) {
+        } catch (CException& ) {
         }
     }
 
@@ -2561,7 +2561,7 @@ bool IsSequenceFetchable(const CSeq_id& id)
         if (bsh) {
             fetchable = true;
         }
-    } catch (CException& ex) {
+    } catch (CException& ) {
     } catch (std::exception &) {
     }
     return fetchable;
@@ -2576,7 +2576,7 @@ bool IsSequenceFetchable(const string& seq_id)
         if (id) {
             fetchable = IsSequenceFetchable(*id);
         }
-    } catch (CException& ex) {
+    } catch (CException& ) {
     } catch (std::exception &) {
     }
     return fetchable;

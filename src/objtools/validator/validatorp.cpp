@@ -3755,7 +3755,7 @@ CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope&
             if (mf) {
                 gene = mf.GetSeq_feat();
             }
-        } catch (CException& ex) {
+        } catch (CException&) {
             gene = sequence::GetGeneForFeature(*feat, scope);
         }
         m_FeatGeneMap[feat] = gene;

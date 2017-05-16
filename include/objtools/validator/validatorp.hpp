@@ -1446,7 +1446,7 @@ private:
     void CheckForMolinfoOnBioseq(const CBioseq& seq);
     void CheckTpaHistory(const CBioseq& seq);
 
-    TSeqPos GetDataLen(const CSeq_inst& inst);
+    size_t GetDataLen(const CSeq_inst& inst);
     bool CdError(const CBioseq_Handle& bsh);
     bool IsMrna(const CBioseq_Handle& bsh);
     bool IsPrerna(const CBioseq_Handle& bsh);
