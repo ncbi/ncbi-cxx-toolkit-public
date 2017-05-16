@@ -57,8 +57,10 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -82,12 +84,12 @@ USING_SCOPE(validator);
 #include "process_agpwrite.hpp"
 #include "process_cleanup.hpp"
 #include "process_defline.hpp"
+#include "process_explore.hpp"
 #include "process_eutils.hpp"
 #include "process_fasta.hpp"
 #include "process_flatfile.hpp"
 #include "process_invert.hpp"
 #include "process_gene_overlap.hpp"
-#include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
 #include "process_seqvector.hpp"
 #include "process_title.hpp"        // NCBI_FAKE_WARNING
@@ -176,13 +178,13 @@ void CStreamTestApp::Init()
                                         "defline",
                                         "deprecated-title",
                                         "eutils",
+                                        "explore",
                                         "fasta",
                                         "flatfile",
                                         "gene-overlap",
                                         "gene-feattree",
                                         "gpipe-defline",
                                         "invert",
-                                        "macrotest",
                                         "prosplign",
                                         "seqvector",
                                         "unindexed-defline",
@@ -203,6 +205,25 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag("gbload",
         "Use GenBank data loader");
+
+    arg_desc->AddDefaultKey( "accn",
+        "Accession",
+        "Accession to match",
+        CArgDescriptions::eString,
+        "");
+
+    arg_desc->AddOptionalKey("from",
+        "From",
+        "Begining of shown range",
+        CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("to",
+        "To",
+        "End of shown range",
+        CArgDescriptions::eInteger);
+
+    arg_desc->AddFlag("revcomp",
+        "Reverse complement");
 
 #ifdef HAVE_NCBI_VDB
     arg_desc->AddFlag("wgsload",
@@ -323,6 +344,9 @@ CStreamTestApp::GetProcess(
     if ( testcase == "eutils" ) {
         pProcess = new CEUtilsProcess;
     }
+    if ( testcase == "explore" ) {
+        pProcess = new CExploreProcess;
+    }
     if ( testcase == "fasta" ) {
         pProcess = new CFastaProcess;
     }
@@ -340,9 +364,6 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "invert" ) {
         pProcess = new CInvertProcess;
-    }
-    if ( testcase == "macrotest" ) {
-        pProcess = new CMacroTestProcess;
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
