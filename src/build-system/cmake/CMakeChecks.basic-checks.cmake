@@ -113,6 +113,11 @@ check_function_exists(gethostbyaddr_r HAVE_GETHOSTBYADDR_R)
 check_function_exists(gethostbyname_r HAVE_GETHOSTBYNAME_R)
 check_function_exists(getservbyname_r HAVE_GETSERVBYNAME_R)
 
+check_include_file_cxx(cxxabi.h HAVE_CXXABI_H)
+if (${HAVE_CXXABI_H})
+    include(CheckCXXSymbolExists)
+    check_cxx_symbol_exists(abi::__cxa_demangle cxxabi.h HAVE_CXA_DEMANGLE)
+endif ()
 
 include(CheckLibraryExists)
 check_library_exists(dl dlopen "" HAVE_LIBDL)

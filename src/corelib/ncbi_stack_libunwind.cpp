@@ -30,7 +30,7 @@
 #include <ncbi_pch.hpp>
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 310
+#if defined(HAVE_CXA_DEMANGLE)
 #  include <cxxabi.h>
 #endif
 #include <stdio.h>
@@ -85,7 +85,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         if (unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0 && sym[0]) {
             info.func = sym;
             info.offs = offset;
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 310
+#if defined(HAVE_CXA_DEMANGLE)
             // use abi::__cxa_demangle
             size_t len = 0;
             char* buf = 0;
