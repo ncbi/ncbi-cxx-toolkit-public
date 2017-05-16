@@ -67,9 +67,8 @@ CConstRef<CGC_Assembly>
 GetAssembly(const string& assmacc)
 {
     static CGenomicCollectionsService gcservice;
-    CConstRef<CGC_Assembly> assembly(
-        gcservice.GetAssembly(assmacc, CGCClient_GetAssemblyRequest::eLevel_scaffold)
-    );
+    CConstRef<CGC_Assembly> assembly
+        (gcservice.GetAssembly(assmacc, CGenomicCollectionsService::SAssemblyMode::kScaffolds()));
     return assembly;
 }
 
