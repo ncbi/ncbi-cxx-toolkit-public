@@ -117,46 +117,4 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
     }
 }
 
-    /*
-      char** syms = backtrace_symbols(&m_Stack[0], (int)m_Stack.size());
-    for (size_t i = 0;  i < m_Stack.size();  ++i) {
-        string sym = syms[i];
-
-        CStackTrace::SStackFrameInfo info;
-        info.func = sym.empty() ? "???" : sym;
-        info.file = "???";
-        info.offs = 0;
-        info.line = 0;
-
-        string::size_type pos = sym.find_last_of("[");
-        if (pos != string::npos) {
-            string::size_type epos = sym.find_first_of("]", pos + 1);
-            if (epos != string::npos) {
-                info.addr = NStr::StringToPtr(sym.substr(pos + 1, epos - pos - 1));
-            }
-        }
-        pos = sym.find_first_of("(");
-        if (pos != string::npos) {
-            info.module = sym.substr(0, pos);
-            sym.erase(0, pos + 1);
-        }
-
-        pos = sym.find_first_of(")");
-        if (pos != string::npos) {
-            sym.erase(pos);
-            pos = sym.find_last_of("+");
-            if (pos != string::npos) {
-                string sub = sym.substr(pos + 1, sym.length() - pos);
-                info.func = sym.substr(0, pos);
-                info.offs = NStr::StringToInt(sub, 0, 16);
-            }
-        }
-
-        //
-        // name demangling
-        //
-        if ( !info.func.empty()  &&  info.func[0] == '_') {
-    */
-
-
 END_NCBI_SCOPE
