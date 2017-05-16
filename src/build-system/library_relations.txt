@@ -893,6 +893,8 @@ prok_cluster_data needs gpipe_sqlite
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 protein_match needs xobjutil
+proteinkmer needs $(BLAST_INPUT_LIBS)
+proteinkmer needs $(BLAST_LIBS)
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
