@@ -6814,6 +6814,125 @@ void CValidError_bioseq::x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match)
 }
 
 
+bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
+{
+    if (!NStr::StartsWith(protein_id, "gnl|")) {
+        return false;
+    }
+    size_t pos = NStr::Find(protein_id, "|", 5);
+    if (pos == string::npos) {
+        return false;
+    }
+    CTempString tag = kEmptyStr;
+
+    if (dbtag.IsSetTag()) {
+        if (dbtag.GetTag().IsStr()) {
+            tag = dbtag.GetTag().GetStr();
+        } else if (dbtag.GetTag().IsId()) {
+            tag = NStr::NumericToString(dbtag.GetTag().GetId());
+        }
+    }
+
+    if (NStr::Equal(tag, protein_id.substr(pos + 1))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds)
+{
+    if (!cds.IsSetProduct() || !cds.GetProduct().GetId()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+            "CDS-mRNA pair has mismatching protein_ids (" + protein_id + ")", cds);
+        return;
+    }
+    const CSeq_id& product_id = *(cds.GetProduct().GetId());
+    if (product_id.IsGeneral()) {
+        if (!s_GeneralTagsMatch(protein_id, product_id.GetGeneral())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                "CDS-mRNA pair has mismatching protein_ids (" +
+                product_id.AsFastaString() + ", " + protein_id + ")", cds);
+        }
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(product_id);
+    if (bsh) {
+        ITERATE(CBioseq::TId, id_it, bsh.GetBioseqCore()->GetId()) {
+            if ((*id_it)->IsGeneral()) {
+                if (!s_GeneralTagsMatch(protein_id, (*id_it)->GetGeneral())) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                        "CDS-mRNA pair has mismatching protein_ids (" +
+                        (*id_it)->AsFastaString() + ", " + protein_id + ")", cds);                   
+                }
+                return;
+            }
+        }
+    }
+    // no general tags, try plain match
+    if (bsh) {
+        ITERATE(CBioseq::TId, id_it, bsh.GetBioseqCore()->GetId()) {
+            if (NStr::Equal(protein_id, (*id_it)->AsFastaString())) {
+                return;
+            }
+        }
+    } else if (NStr::Equal(protein_id, product_id.AsFastaString())) {
+        return;
+    }
+
+    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+        "CDS-mRNA pair has mismatching protein_ids (" + protein_id + ")", cds);
+}
+
+
+void CValidError_bioseq::x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo& cds_match)
+{
+    if (!cds_match.HasMatch()) {
+        return;
+    }
+    const auto& mrna_feat = cds_match.GetMatch().GetSeqfeat();
+    const auto& cds_feat = cds_match.GetSeqfeat();
+    string cds_transcript_id = kEmptyStr;
+    string mrna_transcript_id = kEmptyStr;
+    string mrna_protein_id = kEmptyStr;
+    bool must_reconcile = false;
+    if (mrna_feat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, q, mrna_feat.GetQual()) {
+            if ((*q)->IsSetQual() && (*q)->IsSetVal()) {
+                if (NStr::EqualNocase((*q)->GetQual(), "orig_transcript_id")) {
+                    mrna_transcript_id = (*q)->GetVal();
+                    must_reconcile = true;
+                } else if (NStr::EqualNocase((*q)->GetQual(), "orig_protein_id")) {
+                    mrna_protein_id = (*q)->GetVal();
+                    must_reconcile = true;
+                }
+            }
+        }
+    }
+    if (cds_feat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, q, cds_feat.GetQual()) {
+            if ((*q)->IsSetQual() && (*q)->IsSetVal()) {
+                if (NStr::EqualNocase((*q)->GetQual(), "orig_transcript_id")) {
+                    cds_transcript_id = (*q)->GetVal();
+                    must_reconcile = true;
+                }
+            }
+        }
+    }
+
+    if (must_reconcile) {
+        if (!NStr::Equal(mrna_transcript_id, cds_transcript_id)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                "CDS-mRNA pair has mismatching transcript_ids ("
+                + cds_transcript_id + "," + mrna_transcript_id + ")", 
+                cds_feat);
+        }
+        x_TranscriptIDsMatch(mrna_protein_id, cds_feat);
+    }
+
+}
+
+
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, 
                                                 int numgene, 
                                                 int numcds, 
@@ -6883,6 +7002,8 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         // mrna_list now contains only unmatched mrnas
         x_CheckForMultiplemRNAs(*cds, mrna_list);
         x_CheckMrnaProteinLink(*cds);
+        // check for mismatching qualifiers
+        x_CheckOrigProteinAndTranscriptIds(*cds);
 
         if (cds->IsPseudo() ||
             (cds->GetSeqfeat().IsSetExcept() &&

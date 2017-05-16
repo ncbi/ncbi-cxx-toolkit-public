@@ -1393,6 +1393,8 @@ private:
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
     void x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match, const list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
     void x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match);
+    void x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo& cds_match);
+    void x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
