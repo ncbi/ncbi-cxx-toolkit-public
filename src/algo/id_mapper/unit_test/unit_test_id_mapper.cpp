@@ -281,13 +281,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.13", "AllSequences")
     );
 
     // Make a Spec
@@ -323,13 +317,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.13", "AllSequences")
     );
 
     // Make a Spec
@@ -364,13 +352,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_RefSeqAssm)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.13", "AllSequences")
     );
 
     // Make a Spec
@@ -407,13 +389,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GenBankAssm)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCA_000001405.1",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCA_000001405.1", "AllSequences")
     );
 
     // Make a Spec
@@ -450,13 +426,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.13", "AllSequences")
     );
 
     // Make a Spec
@@ -693,13 +663,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_AltsDontUpmap)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001405.25",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.25", "AllSequences")
     );
 
     // Make a Spec
@@ -736,23 +700,11 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GuessTopOverScaffold)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> OldGenColl(
-        GCService.GetAssembly("GCF_000001405.11",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.11", "AllSequences")
     );
  
     CConstRef<CGC_Assembly> NewGenColl(
-        GCService.GetAssembly("GCF_000001405.25",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+        GCService.GetAssembly("GCF_000001405.25", "AllSequences")
     );
 
 
@@ -838,8 +790,8 @@ BOOST_AUTO_TEST_CASE(TestCase_PDBSeqIdFix)
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000001215.2",
-                              CGCClient_GetAssemblyRequest::eLevel_scaffold));
+        GCService.GetAssembly("GCF_000001215.2", "SequenceNames"));
+                              //CGCClient_GetAssemblyRequest::eLevel_scaffold));
 
     // Make a Spec
     CGencollIdMapper::SIdSpec MapSpec;
