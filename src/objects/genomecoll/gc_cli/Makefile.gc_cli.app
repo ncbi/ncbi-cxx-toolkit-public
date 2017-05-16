@@ -27,7 +27,7 @@ LIB = $(LIB_:%=%$(STATIC))
 CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = gc_cli get-assembly-blob -acc GCF_000001405.27 --mode AssemblyOnly /CHECK_NAME=test_gencoll_svc_ASSM
+CHECK_CMD = gc_cli get-assembly -acc GCF_000001405.27 --mode AssemblyOnly /CHECK_NAME=test_gencoll_svc_ASSM
 CHECK_CMD = gc_cli get-assembly-by-sequence -acc NC_002008.4 /CHECK_NAME=test_gencoll_svc_ASSM_BY_SEQ
 CHECK_CMD = gc_cli get-chrtype-valid -type eChromosome -loc eMacronuclear /CHECK_NAME=test_gencoll_svc_TYPELOC
 

@@ -220,29 +220,11 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
     cmds_desc->AddCommand("get-chrtype-valid", arg_desc.release(), "vc");
 
     arg_desc.reset(new CArgDescriptions);
-    arg_desc->SetUsageContext("", "Get assembly (deprecated)");
-    arg_desc->AddOptionalKey("-mode", "AssemblyOnly", "Assembly retrieval mode", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("-level", "level", "level", CArgDescriptions::eInteger);
-    arg_desc->SetConstraint("-level", &(*new CArgAllow_Strings,"0","1","2","3"));
-    arg_desc->AddAlias("l", "-level");
-    arg_desc->AddOptionalKey("-asm_flags", "assembly_flags", "Assembly flags.  If not set use client default (scaffold).", CArgDescriptions::eInteger);
-    arg_desc->AddAlias("af","-asm_flags");
-    arg_desc->AddOptionalKey("-chr_flags", "chromosome_flags", "Chromosome flags", CArgDescriptions::eInteger);
-    arg_desc->AddAlias("chrf","-chr_flags");
-    arg_desc->AddOptionalKey( "-scf_flags", "scaffold_flags", "Scaffold flags", CArgDescriptions::eInteger);
-    arg_desc->AddAlias("sf", "-scf_flags");
-    arg_desc->AddOptionalKey("-comp_flags", "component_flags", "Component flags", CArgDescriptions::eInteger);
-    arg_desc->AddAlias("cmpf","-comp_flags");
-    AddAccRelId(arg_desc.get());
-    AddCommonArgs(arg_desc.get());
-    cmds_desc->AddCommand("get-assembly", arg_desc.release());
-
-    arg_desc.reset(new CArgDescriptions);
     arg_desc->SetUsageContext("", "Get assembly");
-    arg_desc->AddOptionalKey("-mode", "AssemblyOnly", "Assembly retrieval mode", CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("-mode", "AllSequences", "Assembly retrieval mode", CArgDescriptions::eString, "AssemblyOnly");
     AddAccRelId(arg_desc.get());
     AddCommonArgs(arg_desc.get());
-    cmds_desc->AddCommand("get-assembly-blob", arg_desc.release(), "ga");
+    cmds_desc->AddCommand("get-assembly", arg_desc.release(), "ga");
 
     arg_desc.reset(new CArgDescriptions);
     arg_desc->SetUsageContext("", "Get assemblies containing sequence");
@@ -352,37 +334,6 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
         }
         else if(args.GetCommand() == "get-assembly")
         {
-            if(args["-mode"])
-            {
-                const int mode = NStr::StringToInt(args["-mode"].AsString());
-                if (args["acc"] || args["acc_file"])
-                    for (auto acc: GetAccessions(args)) ostr << *RemoveVersions(service.GetAssembly(acc, mode));
-                else if (args["rel_id"])
-                    for (auto rel_id: GetIDs(args["rel_id"].AsString())) ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), mode));
-                else
-                    ERR_POST(Error << "Either accession or release id should be provided");
-            }
-            else
-            {
-                int levelFlag = args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold;
-                int asmFlags = args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none;
-                int chrAttrFlags = args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource; 
-                int scafAttrFlags = args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none; 
-                int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
-
-                if (args["acc"] || args["acc_file"])
-                    for (auto acc: GetAccessions(args)) ostr << *RemoveVersions(service.GetAssembly(acc, levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
-                else if (args["rel_id"])
-                    for (auto rel_id: GetIDs(args["rel_id"].AsString())) ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
-                else
-                    ERR_POST(Error << "Either accession or release id should be provided");
-            }
-        }
-        else if(args.GetCommand() == "get-assembly-blob")
-        {
-            if(!args["-mode"])
-                ERR_POST(Error << "Invalid get-assembly-blob string mode");
-
             if (args["acc"] || args["acc_file"])
                 for (auto acc: GetAccessions(args)) ostr << *RemoveVersions(service.GetAssembly(acc, args["-mode"].AsString()));
             else if (args["rel_id"])
