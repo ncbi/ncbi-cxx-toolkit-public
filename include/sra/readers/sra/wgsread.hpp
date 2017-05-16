@@ -1000,10 +1000,23 @@ public:
     DECLARE_SAFE_FLAGS_TYPE(EInstSegmentFlags, TInstSegmentFlags);
     
 protected:
-    void x_Init(const CWGSDb& wgs_db,
-                EWithdrawn withdrawn,
-                EClipType clip_type,
-                TVDBRowId get_row);
+    void x_Select(const CWGSDb& wgs_db,
+                  TIncludeFlags include_flags,
+                  EClipType clip_type);
+    void x_Select(const CWGSDb& wgs_db,
+                  TIncludeFlags include_flags,
+                  EClipType clip_type,
+                  TVDBRowId get_row);
+    void x_Select(const CWGSDb& wgs_db,
+                  TIncludeFlags include_flags,
+                  EClipType clip_type,
+                  TVDBRowId first_row,
+                  TVDBRowId last_row);
+    void x_Select(const CWGSDb& wgs_db,
+                  TIncludeFlags include_flags,
+                  EClipType clip_type,
+                  CTempString acc);
+
     void x_Init(const CWGSDb& wgs_db,
                 TIncludeFlags include_flags,
                 EClipType clip_type,

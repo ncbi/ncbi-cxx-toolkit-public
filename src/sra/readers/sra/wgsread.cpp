@@ -2221,8 +2221,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, 0);
-    x_Settle();
+    x_Select(wgs_db, include_flags, clip_type);
 }
 
 
@@ -2232,8 +2231,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, row);
-    SelectRow(row);
+    x_Select(wgs_db, include_flags, clip_type, row);
 }
 
 
@@ -2244,18 +2242,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, first_row);
-    if ( m_FirstBadId == 0 ) {
-        return;
-    }
-    if ( first_row > m_FirstGoodId ) {
-        m_CurrId = m_FirstGoodId = first_row;
-        m_AccVersion = eLatest;
-    }
-    if ( last_row < m_FirstBadId-1 ) {
-        m_FirstBadId = last_row+1;
-    }
-    x_Settle();
+    x_Select(wgs_db, include_flags, clip_type, first_row, last_row);
 }
 
 
@@ -2265,15 +2252,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
-        x_Init(wgs_db, include_flags, clip_type, row);
-        SelectRow(row);
-    }
-    else {
-        // bad format
-        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
-        m_AccVersion = eLatest;
-    }
+    x_Select(wgs_db, include_flags, clip_type, acc);
 }
 
 
@@ -2282,8 +2261,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, 0);
-    x_Settle();
+    x_Select(wgs_db, include_flags, clip_type);
 }
 
 
@@ -2293,8 +2271,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, row);
-    SelectRow(row);
+    x_Select(wgs_db, include_flags, clip_type, row);
 }
 
 
@@ -2305,18 +2282,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, include_flags, clip_type, first_row);
-    if ( m_FirstBadId == 0 ) {
-        return;
-    }
-    if ( first_row > m_FirstGoodId ) {
-        m_CurrId = m_FirstGoodId = first_row;
-        m_AccVersion = eLatest;
-    }
-    if ( last_row < m_FirstBadId-1 ) {
-        m_FirstBadId = last_row+1;
-    }
-    x_Settle();
+    x_Select(wgs_db, include_flags, clip_type, first_row, last_row);
 }
 
 
@@ -2326,14 +2292,18 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
-        x_Init(wgs_db, include_flags, clip_type, row);
-        SelectRow(row);
+    x_Select(wgs_db, include_flags, clip_type, acc);
+}
+
+
+static inline
+CWGSSeqIterator::TIncludeFlags s_ToFlags(CWGSSeqIterator::EWithdrawn withdrawn)
+{
+    if ( withdrawn == CWGSSeqIterator::eIncludeWithdrawn ) {
+        return CWGSSeqIterator::fIncludeDefault | CWGSSeqIterator::fIncludeWithdrawn;
     }
     else {
-        // bad format
-        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
-        m_AccVersion = eLatest;
+        return CWGSSeqIterator::fIncludeDefault;
     }
 }
 
@@ -2343,8 +2313,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, withdrawn, clip_type, 0);
-    x_Settle();
+    x_Select(wgs_db, s_ToFlags(withdrawn), clip_type);
 }
 
 
@@ -2354,8 +2323,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, withdrawn, clip_type, row);
-    SelectRow(row);
+    x_Select(wgs_db, s_ToFlags(withdrawn), clip_type, row);
 }
 
 
@@ -2366,18 +2334,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    x_Init(wgs_db, withdrawn, clip_type, first_row);
-    if ( m_FirstBadId == 0 ) {
-        return;
-    }
-    if ( first_row > m_FirstGoodId ) {
-        m_CurrId = m_FirstGoodId = first_row;
-        m_AccVersion = eLatest;
-    }
-    if ( last_row < m_FirstBadId-1 ) {
-        m_FirstBadId = last_row+1;
-    }
-    x_Settle();
+    x_Select(wgs_db, s_ToFlags(withdrawn), clip_type, first_row, last_row);
 }
 
 
@@ -2387,21 +2344,71 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
     : m_AccVersion(eLatest)
 {
-    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
-        x_Init(wgs_db, withdrawn, clip_type, row);
-        SelectRow(row);
-    }
-    else {
-        // bad format
-        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
-        m_AccVersion = eLatest;
-    }
+    x_Select(wgs_db, s_ToFlags(withdrawn), clip_type, acc);
 }
 
 
 CWGSSeqIterator::~CWGSSeqIterator(void)
 {
     Reset();
+}
+
+
+
+void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
+                               TIncludeFlags include_flags,
+                               EClipType clip_type)
+{
+    x_Init(wgs_db, include_flags, clip_type, 0);
+    x_Settle();
+}
+
+
+void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
+                               TIncludeFlags include_flags,
+                               EClipType clip_type,
+                               TVDBRowId row)
+{
+    x_Init(wgs_db, include_flags, clip_type, row);
+    SelectRow(row);
+}
+
+
+void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
+                               TIncludeFlags include_flags,
+                               EClipType clip_type,
+                               TVDBRowId first_row,
+                               TVDBRowId last_row)
+{
+    x_Init(wgs_db, include_flags, clip_type, first_row);
+    if ( m_FirstBadId == 0 ) {
+        return;
+    }
+    if ( first_row > m_FirstGoodId ) {
+        m_CurrId = m_FirstGoodId = first_row;
+        m_AccVersion = eLatest;
+    }
+    if ( last_row < m_FirstBadId-1 ) {
+        m_FirstBadId = last_row+1;
+    }
+    x_Settle();
+}
+
+
+void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
+                               TIncludeFlags include_flags,
+                               EClipType clip_type,
+                               CTempString acc)
+{
+    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
+        x_Init(wgs_db, include_flags, clip_type, row);
+        SelectRow(row);
+    }
+    else {
+        // bad format
+        m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
+        m_AccVersion = eLatest;
+    }
 }
 
 
@@ -2413,6 +2420,7 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
     PROFILE(sw_SeqIterator);
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     m_AccVersion = eLatest;
+    m_ClipByQuality = false;
     if ( !wgs_db ) {
         return;
     }
@@ -2436,17 +2444,6 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
     TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
-}
-
-
-void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
-                             EWithdrawn withdrawn,
-                             EClipType clip_type,
-                             TVDBRowId get_row)
-{
-    x_Init(wgs_db,
-           (withdrawn == eIncludeWithdrawn? fIncludeLive|fIncludeWithdrawn: fIncludeLive),
-           clip_type, get_row);
 }
 
 
