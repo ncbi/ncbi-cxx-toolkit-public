@@ -70,6 +70,8 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <util/random_gen.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -650,16 +652,16 @@ BOOST_AUTO_TEST_CASE(NoMatches)
 
 void s_GetRandomNumbers(uint32_t* a, uint32_t* b, int numHashes)
 {
-        srandom(1);  // Always have the same random numbers.
+        CRandom random(1);  // Always have the same random numbers.
         for(int i=0;i<numHashes;i++)
         {
                 do
                 {
-                        a[i]=random();
+                        a[i]=random.GetRand();
                 }
                 while (a[i] == 0);
 
-                b[i]=random();
+                b[i]=random.GetRand();
         }
 }
 
@@ -690,14 +692,14 @@ BOOST_AUTO_TEST_CASE(CheckQueryHashes)
 
 	BOOST_REQUIRE_EQUAL(seq_hash.size(), 2);
 	BOOST_REQUIRE_EQUAL(seq_hash[0].size(), kNumHashes);
-	BOOST_REQUIRE_EQUAL(seq_hash[0][0], 143715);
-	BOOST_REQUIRE_EQUAL(seq_hash[0][1], 269074);
-	BOOST_REQUIRE_EQUAL(seq_hash[0][63], 279101);
-	BOOST_REQUIRE_EQUAL(seq_hash[0][83], 899090);
+	BOOST_REQUIRE_EQUAL(seq_hash[0][0], 529895);
+	BOOST_REQUIRE_EQUAL(seq_hash[0][1], 798115);
+	BOOST_REQUIRE_EQUAL(seq_hash[0][63], 90979);
+	BOOST_REQUIRE_EQUAL(seq_hash[0][83], 336201);
 	
 	// Expected (correct) values.
 	const int lsh_hash_length = 13;
-	const int lsh_hash_vals[lsh_hash_length] = { 349364, 670870, 709253, 1022068, 1099056, 1305097, 1797704, 2168040, 2857589, 3045787, 3076794, 3212609, 3252739};
+	const int lsh_hash_vals[lsh_hash_length] = { 973119,1097197,1157729,1681152,1913970,1933659,2018075,2123893,2355301,2800673,2940688,2941967,3535701};
 
 	const int kRowsPerBand=2;
 	const int kNumBands = kNumHashes/kRowsPerBand;
@@ -709,7 +711,7 @@ BOOST_AUTO_TEST_CASE(CheckQueryHashes)
 	{
 		for(vector<uint32_t>::iterator iter=lsh_hash_vec[i].begin(); iter != lsh_hash_vec[i].end(); ++iter)
 		{
- 			BOOST_REQUIRE_EQUAL(*iter, lsh_hash_vals[index]);
+  			BOOST_REQUIRE_EQUAL(*iter, lsh_hash_vals[index]);
 			index++;
 			if (index == lsh_hash_length)
 				break;
