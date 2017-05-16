@@ -11,7 +11,7 @@ BLAST_FORMATTER_MINIMAL_LIBS = xblastformat align_format taxon1 blastdb_format \
 # BLAST_FORMATTER_LIBS = $(BLAST_FORMATTER_MINIMAL_LIBS)
 BLAST_FORMATTER_LIBS = $(BLAST_INPUT_LIBS)
 BLAST_DB_DATA_LOADER_LIBS = ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb
-BLAST_INPUT_LIBS = proteinkmer blastinput \
+BLAST_INPUT_LIBS = blastinput \
     $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_FORMATTER_MINIMAL_LIBS)
 
 # Libraries required to link against the internal BLAST SRA library
