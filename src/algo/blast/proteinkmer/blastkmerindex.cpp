@@ -495,9 +495,9 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
     CNcbiOfstream data_file(dataFile.c_str(), IOS_BASE::out | IOS_BASE::binary);
 
 	if (!index_file)
-		 NCBI_THROW(CFileException, CFileException::eNotExists, "Cannot open " + indexFile);
+		 NCBI_THROW(CFileException, eNotExists, "Cannot open " + indexFile);
 	if (!data_file)
-		 NCBI_THROW(CFileException, CFileException::eNotExists, "Cannot open " + dataFile);
+		 NCBI_THROW(CFileException, eNotExists, "Cannot open " + dataFile);
 
 	int num_seqs = 0;
 	if (stop != 0)
