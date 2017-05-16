@@ -182,55 +182,6 @@ void CSeqEntryIndex::x_Init (void)
     BspInSep( *m_topSEP );
 }
 
-// Visit all Bioseqs
-template<typename _Pred>
-int CSeqEntryIndex::IterateBioseqs (_Pred m)
-
-{
-    int count = 0;
-    for (auto& bsx : m_bsxList) {
-        m(*bsx);
-        count++;
-    }
-    return count;
-}
-
-template<typename _Pred>
-bool CSeqEntryIndex::FirstBioseq (_Pred m)
-
-{
-    for (auto& bsx : m_bsxList) {
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-template<typename _Pred>
-bool CSeqEntryIndex::NthBioseq (int n, _Pred m)
-
-{
-    for (auto& bsx : m_bsxList) {
-        n--;
-        if (n > 0) continue;
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-template<typename _Pred>
-bool CSeqEntryIndex::FindBioseq (string& accn, _Pred m)
-
-{
-    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
-    if (it != m_accnIndexMap.end()) {
-        CRef<CBioseqIndex> bsx = it->second;
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
 
 
 
@@ -497,40 +448,6 @@ void CBioseqIndex::InitializeFeatures (int from, int to, bool rev_comp)
     }
 }
 
-template<typename _Pred>
-int CBioseqIndex::IterateDescriptors (_Pred m)
-
-{
-    // Delay descriptor collection until first request
-    if (! m_descsInitialized) {
-        x_InitDescs();
-    }
-
-    int count = 0;
-    for (auto& sdx : m_sdxList) {
-        count++;
-        m(*sdx);
-    }
-    return count;
-}
-
-template<typename _Pred>
-int CBioseqIndex::IterateFeatures (_Pred m)
-
-{
-    // Delay feature collection until first request
-    if (! m_featsInitialized) {
-        x_InitFeats();
-    }
-
-    int count = 0;
-    for (auto& sfx : m_sfxList) {
-        count++;
-        m(*sfx);
-    }
-    return count;
-}
-
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
 
 {
@@ -587,26 +504,6 @@ void CFeatureIndex::x_Init (void)
 
 {
     m_subtype = m_mf.GetData().GetSubtype();
-}
-
-// Find index object for best gene using internal CFeatTree
-template<typename _Pred>
-bool CFeatureIndex::GetBestGene (_Pred m)
-
-{
-    bool ok = false;
-    try {
-        CMappedFeat best;
-        CBioseqIndex& bsx = GetBioseqIndex();
-        best = feature::GetBestGeneForFeat(m_mf, &bsx.m_featTree, 0,
-                                           feature::CFeatTree::eBestGene_AllowOverlapped);
-        if (best) {
-            CRef<CFeatureIndex> sfx = bsx.GetFeatIndex(best);
-            m(*sfx);
-            ok = true;
-        }
-    } catch (CException&) {}
-    return ok;
 }
 
 
