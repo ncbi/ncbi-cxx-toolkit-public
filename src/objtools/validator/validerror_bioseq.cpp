@@ -5368,41 +5368,35 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
           }
         }
         if (!rval && look_for_gene) {
-            TFeatScores genes;
-            GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Gene,
-                CSeqFeatData::eSubtype_gene, eOverlap_Contains, genes, *m_Scope);
-            ITERATE (TFeatScores, s, genes) {
-                const CSeq_loc& gene_loc = s->second->GetLocation();
+            CConstRef<CSeq_feat> gene = m_Imp.GetGeneCache().GetGeneFromCache(feat.GetSeq_feat(), *m_Scope);
+            if (gene) {
+                const CSeq_loc& gene_loc = gene->GetLocation();
                 if (gene_loc.GetStart(eExtreme_Biological) == mrna_start
                     && gene_loc.GetStop(eExtreme_Biological) == mrna_stop
                     && s_MatchPartialType(feat.GetLocation(), gene_loc, partial_type)) {
                     rval = true;
-                    break;
                 }
             }
         }
     } else if (feat.GetData().IsCdregion()) {
         // coding region is ok if same as mRNA AND partial at splice site or gap
-        TFeatScores mRNAs;
-        GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntervals, mRNAs, *m_Scope);
-        ITERATE (TFeatScores, s, mRNAs) {
-            const CSeq_loc& mrna_loc = s->second->GetLocation();
+        CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        CMappedFeat mrna = tr->GetParent(feat, CSeqFeatData::eSubtype_mRNA);
+        if (mrna) {
+            const CSeq_loc& mrna_loc = mrna.GetLocation();
             bool bad_seq = false;
             bool is_gap = false;
             if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)
                 && x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), partial_type, bad_seq, is_gap)) {
                 rval = true;
-                break;
             }
         }
     } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
         // exon is ok if its partialness and endpoint matches the mRNA endpoint
-        TFeatScores mRNAs;
-        GetOverlappingFeatures (feat.GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_mRNA, eOverlap_CheckIntRev, mRNAs, *m_Scope);
-        ITERATE (TFeatScores, s, mRNAs) {
-            const CSeq_loc& mrna_loc = s->second->GetLocation();
+        CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        CMappedFeat mrna = tr->GetParent(feat, CSeqFeatData::eSubtype_mRNA);
+        if (mrna) {
+            const CSeq_loc& mrna_loc = mrna.GetLocation();
             if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)) {
                 if (partial_type == eSeqlocPartial_Nostart
                     && mrna_loc.IsPartialStart(eExtreme_Biological)) {
@@ -5411,7 +5405,6 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
                     && mrna_loc.IsPartialStop(eExtreme_Biological)) {
                     rval = true;
                 }
-                break;
             }
         }
     }
