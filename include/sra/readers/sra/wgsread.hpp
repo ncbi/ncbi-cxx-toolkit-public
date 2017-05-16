@@ -709,7 +709,7 @@ public:
         fIncludeWithdrawn  = 1 << NCBI_gb_state_eWGSGenBankWithdrawn,
         fIncludeUnverified = 1 << NCBI_gb_state_eWGSGenBankUnverified,
         fIncludeAll        = 0xff,
-        fIncludeDefault    = fIncludeLive
+        fIncludeDefault    = fIncludeLive | fIncludeUnverified
     };
     DECLARE_SAFE_FLAGS_TYPE(EIncludeFlags, TIncludeFlags);
     
