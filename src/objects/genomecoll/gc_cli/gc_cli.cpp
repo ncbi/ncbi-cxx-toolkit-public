@@ -201,6 +201,7 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
         arg_desc->SetDependency("acc_file", arg_desc->eExcludes, "acc");
         arg_desc->AddKey("rel_id", "release_id", "Comma-separated list of assembly release id's'", CArgDescriptions::eInteger);
         arg_desc->SetDependency("rel_id", arg_desc->eExcludes, "acc");
+        arg_desc->SetDependency("rel_id", arg_desc->eExcludes, "acc_file");
     };
 
     auto AddFilterSort = [](CArgDescriptions* arg_desc)
