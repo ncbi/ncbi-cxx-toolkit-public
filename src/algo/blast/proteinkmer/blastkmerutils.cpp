@@ -414,8 +414,8 @@ bool minhash_query(const string& query,
 	vector<uint32_t> idx_tmp(num_hashes);
 	vector<uint32_t> hash_tmp(num_hashes);
 	int chunk_iter=0;
-        for(vector<TSeqRange>::iterator iter=range_v.begin(); iter != range_v.end(); ++iter, chunk_iter++)
-        {
+    for(vector<TSeqRange>::iterator iter=range_v.begin(); iter != range_v.end(); ++iter, chunk_iter++)
+    {
 	
 		seq_hash[chunk_iter].resize(num_hashes);
 
@@ -475,8 +475,8 @@ bool minhash_query2(const string& query,
 
 	vector<uint32_t> hash_values;
 	int chunk_iter=0;
-        for(vector<TSeqRange>::iterator iter=range_v.begin(); iter != range_v.end(); ++iter, chunk_iter++)
-        {
+    for(vector<TSeqRange>::iterator iter=range_v.begin(); iter != range_v.end(); ++iter, chunk_iter++)
+    {
 		hash_values.clear();
 		seq_hash[chunk_iter].resize(numHashes);
 
@@ -495,14 +495,14 @@ bool minhash_query2(const string& query,
 				
 		} // end each kmer
 		
-		if (hash_values.size() < numHashes)
-                {
-                        int rem = 1 + numHashes - hash_values.size();
-                        uint32_t hashval = 0xffffffff;  // Fill in empties
-                        for (int i=0; i<rem; i++)
-                                hash_values.push_back(hashval);
-                }
-                std::sort(hash_values.begin(), hash_values.end());
+		if (hash_values.size() < static_cast<size_t>(numHashes))
+        {
+            int rem = 1 + numHashes - hash_values.size();
+            uint32_t hashval = 0xffffffff;  // Fill in empties
+            for (int i=0; i<rem; i++)
+                    hash_values.push_back(hashval);
+        }
+        std::sort(hash_values.begin(), hash_values.end());
 
 		// save the kmers with the minimum hash values
 		for(int h=0;h<numHashes;h++)
@@ -638,7 +638,7 @@ void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
 			vector< vector<int> >& kvector)
 {
 	int max=4*num_k+1;
-	unsigned char key[max];
+	vector<unsigned char> key(max, 0U);
 	int num_chunks=query_hash.size();
 	uint32_t temp_hash=0;
 	int temp_index=0;
@@ -657,7 +657,7 @@ void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
                		        key[3+i*4] = ((temp_hash) >> 24) & 0xff;
 			}
 			key[max-1] = r;
-			uint32_t foo = do_pearson_hash(key, max);
+			uint32_t foo = do_pearson_hash(key.data(), max);
 			lsh_chunk_vec.push_back(foo);
 		}
 		std::sort(lsh_chunk_vec.begin(), lsh_chunk_vec.end());
@@ -688,37 +688,37 @@ void get_LSH_match_from_hash(const vector< vector <uint32_t> >& query_LSH_hash,
 void
 s_HashHashQuery(const vector < vector <uint32_t> > & query_hash, vector < vector <uint32_t> >& query_hash_hash, int compress, int version)
 {
-	int hash_value=0;
-	int num_chunks=query_hash.size();
-	const int kBig=0xffffffff;
-        for (int n=0; n<num_chunks; n++)
+    int hash_value=0;
+    int num_chunks=query_hash.size();
+    const uint32_t kBig=0xffffffff;
+    for (int n=0; n<num_chunks; n++)
+    {
+        vector<uint32_t> tmp_hash;
+        for(vector<uint32_t>::const_iterator i = query_hash[n].begin(); i != query_hash[n].end(); ++i)
         {
-                vector<uint32_t> tmp_hash;
-                for(vector<uint32_t>::const_iterator i = query_hash[n].begin(); i != query_hash[n].end(); ++i)
-                {
-			if (compress == 2)
-                        	hash_value = (int) pearson_hash_int2short(*i);
-			else if (compress == 1)
-                        	hash_value = (int) pearson_hash_int2byte(*i);
-			else
-				hash_value = *i;
+            if (compress == 2)
+                hash_value = (int) pearson_hash_int2short(*i);
+            else if (compress == 1)
+                hash_value = (int) pearson_hash_int2byte(*i);
+            else
+                hash_value = *i;
 
-			if (version == 3 && *i == kBig)
-			{
-				if (compress == 2)
-                        		tmp_hash.push_back(0xffff);
-				else if (compress == 1)
-                        		tmp_hash.push_back(0xff);
-				else
-                        		tmp_hash.push_back(kBig);
-			}
-			else
-                        	tmp_hash.push_back(hash_value);
-                }
-		if (version == 3)  // kBig et al gets sorted to the end anyway.
-                	std::sort(tmp_hash.begin(), tmp_hash.end());
-                query_hash_hash.push_back(tmp_hash);
+            if (version == 3 && *i == kBig)
+            {
+                if (compress == 2)
+                    tmp_hash.push_back(0xffff);
+                else if (compress == 1)
+                    tmp_hash.push_back(0xff);
+                else
+                    tmp_hash.push_back(kBig);
+            }
+            else
+                tmp_hash.push_back(hash_value);
         }
+        if (version == 3)  // kBig et al gets sorted to the end anyway.
+            std::sort(tmp_hash.begin(), tmp_hash.end());
+        query_hash_hash.push_back(tmp_hash);
+    }
 }
 
 
@@ -881,7 +881,7 @@ s_BlastKmerVerifyVolume(CMinHashFile& mhfile, string& error_msg, int volume)
 		error_msg = "Subject OID is less than zero: " + NStr::NumericToString(subjectOid) + " in volume " + NStr::NumericToString(volume); 
 		return 1;
 	}
-	if (hits.size() != num_hashes)
+	if (hits.size() != static_cast<size_t>(num_hashes))
 	{
 		error_msg = "Signature array only has only " + NStr::NumericToString((int) hits.size()) + " entries in volume " + NStr::NumericToString(volume); 
 		return 1;

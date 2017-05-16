@@ -34,6 +34,7 @@
 #include <algo/blast/proteinkmer/blastkmerindex.hpp>
 #include <algo/blast/proteinkmer/blastkmerutils.hpp>
 #include <algo/blast/proteinkmer/mhfile.hpp>
+#include <corelib/ncbifile.hpp>
 
 
 #ifdef _OPENMP
@@ -247,7 +248,7 @@ void s_MinhashSequences2(uint32_t q_oid,
 			hash_values.push_back(hashval);
 	
 		} // end each kmer
-		if (hash_values.size() < num_hashes)
+		if (hash_values.size() < static_cast<size_t>(num_hashes))
 		{
 			int rem = 1 + num_hashes - hash_values.size();
 			uint32_t hashval = 0xffffffff;  // Fill in empties
@@ -326,30 +327,30 @@ static void s_Get_LSH_index_hashes2(vector < vector < vector <uint32_t> > >& seq
 {
 
 	int max=4*num_k+1;
-        unsigned char key[max];
+    vector<unsigned char> key(max, 0U);
 	int num_chunks=seq_hash[q_oid].size();
 	int temp_index=0;
 	int temp_hash=0;
 	for (int n=0; n<num_chunks; n++)
 	{
 		for (int r=0; r<num_l; r++)
-               	{
-                        for (int i=0; i<num_k; i++)
-                        {
-                                temp_index = kvector[r][i];
-                                temp_hash = seq_hash[q_oid][n][temp_index];
-                                key[i*4] = (temp_hash) & 0xff;
-                                key[1+i*4] = ((temp_hash) >> 8) & 0xff;
-                                key[2+i*4] = ((temp_hash) >> 16) & 0xff;
-                                key[3+i*4] = ((temp_hash) >> 24) & 0xff;
-                        }
-                        key[max-1] = r;
-                        uint32_t foo = do_pearson_hash(key, max);
-			uniqueHash[foo] = 1;
-			if (foo != 0)
-				lsh[foo].push_back(total_chunks);
-                }
-		total_chunks++;
+        {
+            for (int i=0; i<num_k; i++)
+            {
+                    temp_index = kvector[r][i];
+                    temp_hash = seq_hash[q_oid][n][temp_index];
+                    key[i*4] = (temp_hash) & 0xff;
+                    key[1+i*4] = ((temp_hash) >> 8) & 0xff;
+                    key[2+i*4] = ((temp_hash) >> 16) & 0xff;
+                    key[3+i*4] = ((temp_hash) >> 24) & 0xff;
+            }
+            key[max-1] = r;
+            uint32_t foo = do_pearson_hash(key.data(), max);
+            uniqueHash[foo] = 1;
+            if (foo != 0)
+                lsh[foo].push_back(total_chunks);
+        }
+        total_chunks++;
 	}
 }
 
@@ -490,8 +491,8 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 	string indexFile = name + ".pki";
 	string dataFile = name + ".pkd";
 	// Output files 
-        CNcbiOfstream index_file(indexFile.c_str(), IOS_BASE::out | IOS_BASE::binary);
-        CNcbiOfstream data_file(dataFile.c_str(), IOS_BASE::out | IOS_BASE::binary);
+    CNcbiOfstream index_file(indexFile.c_str(), IOS_BASE::out | IOS_BASE::binary);
+    CNcbiOfstream data_file(dataFile.c_str(), IOS_BASE::out | IOS_BASE::binary);
 
 	if (!index_file)
 		 NCBI_THROW(CFileException, CFileException::eNotExists, "Cannot open " + indexFile);
@@ -516,10 +517,10 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 	index_file.write((char *) &(StartLSH), 4);
 	index_file.write((char *) &(kSizeLSH), 4);
 	
-        // hash coefficients
-        uint32_t a[m_NumHashFct];
-        uint32_t b[m_NumHashFct];
-        GetRandomNumbers(a, b, m_NumHashFct);
+    // hash coefficients
+    vector<uint32_t> a(m_NumHashFct, 0U);
+    vector<uint32_t> b(m_NumHashFct, 0U);
+    GetRandomNumbers(a.data(), b.data(), m_NumHashFct);
         
 	// sequences that contain no valid kmers
     uint32_t* dead = new uint32_t[3*num_seqs];
@@ -527,7 +528,7 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 	for(int q_oid=0;q_oid<3*num_seqs;q_oid++)
 		dead[q_oid]=0;
 
-        vector<int> badMers = s_BlastKmerLoadBadMers(m_Alphabet);
+    vector<int> badMers = s_BlastKmerLoadBadMers(m_Alphabet);
 	
 	// mapping from a sequence (by oid) to 
 	// chunks of a sequence to the minhashes
@@ -542,8 +543,8 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 					  seq_hash,
 					  dead,
 					  m_NumHashFct,
-					  a,
-					  b,
+					  a.data(),
+					  b.data(),
 					  m_DoSeg,
 					  m_KmerSize,
 					  start,
