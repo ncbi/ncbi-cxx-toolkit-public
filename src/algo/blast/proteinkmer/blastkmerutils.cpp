@@ -41,6 +41,8 @@
 #include <algo/blast/proteinkmer/blastkmerutils.hpp>
 #include <algo/blast/proteinkmer/mhfile.hpp>
 
+#include <util/random_gen.hpp>
+
 #include "pearson.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -596,30 +598,30 @@ void get_LSH_hashes5(vector < vector <uint32_t> >& query_hash,
 void GetRandomNumbers(uint32_t* a, uint32_t* b, int numHashes)
 {
 	CMutexGuard guard(randMutex);
-        srandom(1);  // Always have the same random numbers.
+        CRandom random(1);  // Always have the same random numbers.
         for(int i=0;i<numHashes;i++)
         {
                 do
                 {
-                        a[i]=(random()%PKMER_PRIME);
+                        a[i]=(random.GetRand()%PKMER_PRIME);
                 }
                 while (a[i] == 0);
 
-                b[i]=(random()%PKMER_PRIME);
+                b[i]=(random.GetRand()%PKMER_PRIME);
         }
 }
 
 void GetKValues(vector< vector <int> >& kvector, int k_value, int l_value, int array_size)
 {
 	CMutexGuard guard(randMutex);
-	srandom(10);
+	CRandom random(10);
 	
 	for (int i=0; i<l_value; i++)
 	{
 		vector<int> ktemp;
 		for (int k=0; k<k_value; k++)
 		{
-			Uint1 temp=(Uint1) random()%array_size;
+			Uint1 temp=(Uint1) random.GetRand()%array_size;
 			ktemp.push_back(temp);
 		}
 		kvector.push_back(ktemp);

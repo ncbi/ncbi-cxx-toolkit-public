@@ -807,7 +807,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(162, lsh_counts);
+	BOOST_REQUIRE_EQUAL(166, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndexRepeats)
@@ -834,7 +834,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexRepeats)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
- 	BOOST_REQUIRE_EQUAL(178, lsh_counts);
+ 	BOOST_REQUIRE_EQUAL(168, lsh_counts);
 
 }
 
@@ -883,7 +883,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexWidth4Kmer4)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(167, lsh_counts);
+	BOOST_REQUIRE_EQUAL(159, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndexFewerBands)
@@ -912,7 +912,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexFewerBands)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(329, lsh_counts);
+	BOOST_REQUIRE_EQUAL(312, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndex10letterAlphabet)
@@ -943,7 +943,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex10letterAlphabet)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(146, lsh_counts);
+	BOOST_REQUIRE_EQUAL(155, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion2)
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion2)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(284, lsh_counts);
+	BOOST_REQUIRE_EQUAL(265, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion3)
