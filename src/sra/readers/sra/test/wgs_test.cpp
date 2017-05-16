@@ -846,7 +846,7 @@ int CWGSTestApp::Run(void)
     if ( args["contig_version"] ) {
         contig_version = args["contig_version"].AsInteger();
     }
-    else {
+    else if ( path.size() > 12 ) {
         SIZE_TYPE dot_pos = path.rfind('.');
         if ( dot_pos != NPOS &&
              (contig_version = NStr::StringToNonNegativeInt(path.substr(dot_pos+1))) >= 0 ) {
