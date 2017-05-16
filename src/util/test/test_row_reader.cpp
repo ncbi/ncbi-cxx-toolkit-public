@@ -258,13 +258,13 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_ROW_COPYING)
     for (auto &  row : src_stream) {
         switch (line_no) {
             case 0:
-                row1.Copy(row);
+                row1 = row;
                 break;
             case 1:
-                row2.Copy(row);
+                row2 = row;
                 break;
             case 2:
-                row3.Copy(row);
+                row3 = row;
                 break;
             }
         ++line_no;
@@ -446,14 +446,14 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_METADATA)
                 src_stream.SetFieldName(0, "index1");
                 src_stream.SetFieldName(1, "strval1");
                 src_stream.SetFieldName(2, "intval1");
-                row1.Copy(row);
+                row1 = row;
                 break;
             case 1:
                 src_stream.ClearFieldsInfo();
                 src_stream.SetFieldName(0, "index2");
                 src_stream.SetFieldName(1, "strval2");
                 src_stream.SetFieldName(2, "intval2");
-                row2.Copy(row);
+                row2 = row;
                 break;
             }
         ++line_no;
@@ -656,7 +656,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
                 src_stream.SetFieldName(1, "other_field");
                 src_stream.SetFieldName(1, "other_field");
                 src_stream.SetFieldType(0, eRR_Integer);
-                row1.Copy(row);
+                row1 = row;
                 break;
             case 1:
                 src_stream.SetFieldName(1, "field");
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
                 src_stream.SetFieldName(1, "new_name_str");
                 src_stream.SetFieldName(2, "new_name_float");
                 src_stream.SetFieldTypeEx(1, eRR_String, eRR_String);
-                row2.Copy(row);
+                row2 = row;
                 break;
             case 2:
                 src_stream.ClearFieldsInfo();
@@ -672,7 +672,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
                 src_stream.SetFieldName(1, "name_str");
                 src_stream.SetFieldName(2, "name_float");
                 src_stream.SetFieldTypeEx(2, eRR_Double, eRR_Double);
-                row3.Copy(row);
+                row3 = row;
                 break;
             }
         ++line_no;
@@ -1502,6 +1502,101 @@ BOOST_AUTO_TEST_CASE(RR_THREE_STAR_DATA_STREAM)
 }
 
 
+BOOST_AUTO_TEST_CASE(RR_ROW_COPY_CONSTRUCTOR)
+{
+    string                      data = "1\tone\t111\r\n"
+                                       "2\ttwo\t222";
+    CNcbiIstrstream             data_stream(data.c_str());
+    TTabDelimitedStream         src_stream(&data_stream, "");
+
+    vector<TTabDelimitedStream::CRow>   copies;
+
+    int     line_no = 0;
+    for (const auto &  row : src_stream) {
+        switch (line_no) {
+            case 0:
+                src_stream.SetFieldName(0, "index1");
+                src_stream.SetFieldName(1, "strval1");
+                src_stream.SetFieldName(2, "intval1");
+                copies.push_back(row);
+                break;
+            case 1:
+                src_stream.ClearFieldsInfo();
+                src_stream.SetFieldName(0, "index2");
+                src_stream.SetFieldName(1, "strval2");
+                src_stream.SetFieldName(2, "intval2");
+                copies.push_back(TTabDelimitedStream::CRow(row));
+                break;
+            }
+        ++line_no;
+    }
+
+    TTabDelimitedStream::CRow&  row1 = copies[0];
+    BOOST_CHECK(row1.GetType() == eRR_Data);
+    BOOST_CHECK(row1.GetOriginalData() == string("1\tone\t111"));
+    BOOST_CHECK(row1["index1"].Get<int>() == 1);
+    BOOST_CHECK(row1["index1"].Get<string>() == string("1"));
+    BOOST_CHECK(row1["strval1"].Get<string>() == string("one"));
+    BOOST_CHECK(row1["strval1"].GetOriginalData() == string("one"));
+    BOOST_CHECK(row1["intval1"].Get<int>() == 111);
+    BOOST_CHECK(row1["intval1"].Get<string>() == string("111"));
+    BOOST_CHECK(row1["intval1"].GetOriginalData() == string("111"));
+
+    TTabDelimitedStream::CRow&  row2 = copies[1];
+    BOOST_CHECK(row2.GetType() == eRR_Data);
+    BOOST_CHECK(row2.GetOriginalData() == string("2\ttwo\t222"));
+    BOOST_CHECK(row2["index2"].Get<int>() == 2);
+    BOOST_CHECK(row2["index2"].Get<string>() == string("2"));
+    BOOST_CHECK(row2["strval2"].Get<string>() == string("two"));
+    BOOST_CHECK(row2["strval2"].GetOriginalData() == string("two"));
+    BOOST_CHECK(row2["intval2"].Get<int>() == 222);
+    BOOST_CHECK(row2["intval2"].Get<string>() == string("222"));
+    BOOST_CHECK(row2["intval2"].GetOriginalData() == string("222"));
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_FIELD_COPY_CONSTRUCTOR)
+{
+    string                      data = "1\tone\t111";
+    CNcbiIstrstream             data_stream(data.c_str());
+    TTabDelimitedStream         src_stream(&data_stream, "");
+
+    TTabDelimitedStream::CRow   row1;
+
+    for (const auto &  row : src_stream) {
+        src_stream.SetFieldName(0, "index1");
+        src_stream.SetFieldName(1, "strval1");
+        src_stream.SetFieldName(2, "intval1");
+        row1 = row;
+    }
+
+    BOOST_CHECK(row1.GetType() == eRR_Data);
+    BOOST_CHECK(row1.GetOriginalData() == string("1\tone\t111"));
+    BOOST_CHECK(row1["index1"].Get<int>() == 1);
+    BOOST_CHECK(row1["index1"].Get<string>() == string("1"));
+    BOOST_CHECK(row1["strval1"].Get<string>() == string("one"));
+    BOOST_CHECK(row1["strval1"].GetOriginalData() == string("one"));
+    BOOST_CHECK(row1["intval1"].Get<int>() == 111);
+    BOOST_CHECK(row1["intval1"].Get<string>() == string("111"));
+    BOOST_CHECK(row1["intval1"].GetOriginalData() == string("111"));
+
+    vector<TTabDelimitedStream::CField>     fields;
+    fields.push_back(row1[0]);
+    fields.push_back(row1["strval1"]);
+    fields.push_back(row1[2]);
+
+    TTabDelimitedStream::CField     field1 = fields[0];
+    TTabDelimitedStream::CField     field2 = fields[1];
+    TTabDelimitedStream::CField     field3 = fields[2];
+
+    BOOST_CHECK(field1.Get<int>() == 1);
+    BOOST_CHECK(field1.Get<string>() == string("1"));
+    BOOST_CHECK(field2.Get<string>() == string("one"));
+    BOOST_CHECK(field2.GetOriginalData() == string("one"));
+    BOOST_CHECK(field3.Get<int>() == 111);
+    BOOST_CHECK(field3.Get<string>() == string("111"));
+    BOOST_CHECK(field3.GetOriginalData() == string("111"));
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 END_NCBI_SCOPE

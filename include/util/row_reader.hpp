@@ -138,8 +138,17 @@ public:
     // Construct an empty field
     CRR_Field();
 
+    // Copy constructor of a field
+    CRR_Field(const CRR_Field& field);
+
     // Moving coonstructor of a field
     CRR_Field(const CRR_Field&& other_field);
+
+    // Assignment
+    CRR_Field& operator=(const CRR_Field& other_field);
+
+    // Moving assignment
+    CRR_Field& operator=(const CRR_Field&& other_field);
 
 private:
     CTempString x_GetStringValue(void) const;
@@ -147,6 +156,9 @@ private:
 private:
     friend class CRowReader<TTraits>;
     friend class CRR_Row<TTraits>;
+
+    // Used only when copying is done
+    string              m_OriginalDataCopy;
 
     bool                m_IsNull;
     bool                m_Translated;
@@ -156,10 +168,6 @@ private:
     // Needs to provide a stream context in the exceptions if a row has not
     // been copied yet.
     CRowReader<TTraits>*   m_RowReader;
-
-private:
-    CRR_Field(const CRR_Field& field) = delete;
-    CRR_Field& operator=(const CRR_Field& field) = delete;
 };
 
 
@@ -172,13 +180,17 @@ public:
     /// Construct an empty row
     CRR_Row();
 
+    // Construct a copy
+    CRR_Row(const CRR_Row& other_row);
+
     // Moving constructor of a row
     CRR_Row(const CRR_Row&& other_row);
 
-    /// Create a copy of another row
-    /// @param other_row
-    ///  The row to be copied from
-    void Copy(const CRR_Row& other_row);
+    // Assignment
+    CRR_Row& operator=(const CRR_Row& other_row);
+
+    // Moving assignment
+    CRR_Row& operator=(const CRR_Row&& other_row);
 
     /// Get a row field
     /// @param field
@@ -247,6 +259,7 @@ private:
 
     void x_OnFreshRead(void);
     void x_AdjustFieldsSize(size_t new_size);
+    void x_CopyFields(const CRR_Row& other_row);
     void x_SetFieldName(TFieldNo field, const string& name);
     void x_SetFieldType(TFieldNo field, ERR_FieldType type);
     void x_SetFieldTypeEx(TFieldNo                             field,
@@ -255,19 +268,6 @@ private:
     void x_ClearFieldsInfo(void);
     void x_DetachMetaInfo(void);
     TFieldNo x_GetFieldIndex(CTempString field) const;
-
-private:
-    /// Copy constructor (and operator=) are not for public usage to
-    /// avoid accidential copying of rows. For example:
-    /// for ( auto x: my_stream ) --> x would use copy constructor
-    /// for ( auto &  x: my_stream ) --> x is a reference to CRR_Row
-    /// The difference is a single character so it was decided (to prevent
-    /// a hard-to-notice CRR_Row copying) to disable the copy constructor
-    /// @{
-    CRR_Row(const CRR_Row& other_row) = delete;
-    CRR_Row& operator=(const CRR_Row&) = delete;
-    /// @}
-
 
 private:
     string                          m_RawData;
@@ -727,13 +727,59 @@ CRR_Field<TTraits>::CRR_Field() :
 
 
 template <typename TTraits>
+CRR_Field<TTraits>::CRR_Field(const CRR_Field& other_field) :
+    m_OriginalDataCopy(other_field.m_OriginalData.data(),
+                       other_field.m_OriginalData.size()),
+    m_IsNull(other_field.m_IsNull),
+    m_Translated(other_field.m_Translated),
+    m_OriginalData(m_OriginalDataCopy.data(), m_OriginalDataCopy.size()),
+    m_TranslatedValue(other_field.m_TranslatedValue),
+    m_RowReader(nullptr)
+{}
+
+
+template <typename TTraits>
 CRR_Field<TTraits>::CRR_Field(const CRR_Field&& other_field) :
+    m_OriginalDataCopy(std::move(other_field.m_OriginalDataCopy)),
     m_IsNull(other_field.m_IsNull),
     m_Translated(other_field.m_Translated),
     m_OriginalData(other_field.m_OriginalData),
     m_TranslatedValue(std::move(other_field.m_TranslatedValue)),
     m_RowReader(other_field.m_RowReader)
 {}
+
+
+template <typename TTraits>
+CRR_Field<TTraits>& CRR_Field<TTraits>::operator=(const CRR_Field& other_field)
+{
+    if (this != &other_field) {
+        m_OriginalDataCopy.assign(other_field.m_OriginalData.data(),
+                                  other_field.m_OriginalData.size());
+        m_IsNull = other_field.m_IsNull;
+        m_Translated = other_field.m_Translated;
+        m_OriginalData.assign(m_OriginalDataCopy.data(),
+                              m_OriginalDataCopy.size());
+        m_TranslatedValue = other_field.m_TranslatedValue;
+        m_RowReader = nullptr;
+    }
+    return *this;
+}
+
+
+template <typename TTraits>
+CRR_Field<TTraits>& CRR_Field<TTraits>::operator=(const CRR_Field&& other_field)
+{
+    if (this != &other_field) {
+        m_OriginalDataCopy = std::move(other_field.m_OriginalDataCopy);
+        m_IsNull = other_field.m_IsNull;
+        m_Translated = other_field.m_Translated;
+        m_OriginalData.assign(m_OriginalDataCopy.data(),
+                              m_OriginalDataCopy.size());
+        m_TranslatedValue = std::move(other_field.m_TranslatedValue);
+        m_RowReader = other_field.m_RowReader;
+    }
+    return *this;
+}
 
 
 template <typename TTraits>
@@ -756,43 +802,43 @@ CTempString CRR_Field<TTraits>::x_GetStringValue(void) const
 template <typename TTraits>
 CRR_Row<TTraits>::CRR_Row() :
     m_RowType(eRR_Invalid),
-    m_MetaInfo(new CRR_MetaInfo<TTraits>()), m_Copied(false),
-    m_FieldsSize(0), m_FieldsCapacity(0),
+    m_MetaInfo(new CRR_MetaInfo<TTraits>()),
+    m_Copied(false),
+    m_FieldsSize(0),
+    m_FieldsCapacity(0),
     m_RowReader(nullptr)
 {}
 
 
 template <typename TTraits>
-void CRR_Row<TTraits>::Copy(const CRR_Row& other_row)
+CRR_Row<TTraits>::CRR_Row(const CRR_Row& other_row) :
+    m_RawData(other_row.m_RawData),
+    m_RowType(other_row.m_RowType),
+    m_MetaInfo(other_row.m_MetaInfo),
+    m_Copied(false),
+    m_FieldsSize(0),
+    m_FieldsCapacity(0),
+    m_RowReader(nullptr)
 {
-    m_RawData = other_row.m_RawData;
-    m_RowType = other_row.m_RowType;
-    m_MetaInfo = other_row.m_MetaInfo;
-    m_Copied = false;
-    m_RowReader = nullptr;
+    x_CopyFields(other_row);
     other_row.m_Copied = true;
+}
 
-    // CRR_Field copy constructor is disabled and also CTempString
-    // pointers adjustment is required
-    ptrdiff_t raw_data_delta = m_RawData.data() - other_row.m_RawData.data();
-    x_AdjustFieldsSize(other_row.m_FieldsSize);
-    for (size_t index = 0; index < m_FieldsSize; ++index) {
-        CRR_Field<TTraits>&       to_field = m_Fields[index];
-        const CRR_Field<TTraits>& from_field = other_row.m_Fields[index];
 
-        to_field.m_IsNull = from_field.m_IsNull;
-        to_field.m_Translated = from_field.m_Translated;
-        if (to_field.m_Translated)
-            to_field.m_TranslatedValue = from_field.m_TranslatedValue;
-        else
-            to_field.m_TranslatedValue.clear();
+template <typename TTraits>
+CRR_Row<TTraits>& CRR_Row<TTraits>::operator=(const CRR_Row& other_row)
+{
+    if (this != &other_row) {
+        m_RawData = other_row.m_RawData;
+        m_RowType = other_row.m_RowType;
+        m_MetaInfo = other_row.m_MetaInfo;
+        m_Copied = false;
+        m_RowReader = nullptr;
 
-        to_field.m_OriginalData = CTempString(
-            from_field.m_OriginalData.data() + raw_data_delta,
-            from_field.m_OriginalData.size());
-
-        m_Fields[index].m_RowReader = nullptr;
+        x_CopyFields(other_row);
+        other_row.m_Copied = true;
     }
+    return *this;
 }
 
 
@@ -803,8 +849,24 @@ CRR_Row<TTraits>::CRR_Row(const CRR_Row&& other_row) :
     m_MetaInfo(std::move(other_row.m_MetaInfo)),
     m_Copied(other_row.m_Copied),
     m_Fields(std::move(other_row.m_Fields)),
+    m_FieldsSize(other_row.m_FieldsSize),
+    m_FieldsCapacity(other_row.m_FieldsCapacity),
     m_RowReader(other_row.m_RowReader)
 {}
+
+
+template <typename TTraits>
+CRR_Row<TTraits>& CRR_Row<TTraits>::operator=(const CRR_Row&& other_row)
+{
+    m_RawData = std::move(other_row.m_RawData);
+    m_RowType = other_row.m_RowType;
+    m_MetaInfo = std::move(other_row.m_MetaInfo);
+    m_Copied = other_row.m_Copied;
+    m_Fields = std::move(other_row.m_Fields);
+    m_FieldsSize = other_row.m_FieldsSize;
+    m_FieldsCapacity = other_row.m_FieldsCapacity;
+    m_RowReader = other_row.m_RowReader;
+}
 
 
 template <typename TTraits>
@@ -962,6 +1024,38 @@ void CRR_Row<TTraits>::x_AdjustFieldsSize(size_t new_size)
     while (m_FieldsCapacity < new_size) {
         m_Fields.push_back(CRR_Field<TTraits>());
         ++m_FieldsCapacity;
+    }
+}
+
+
+template <typename TTraits>
+void CRR_Row<TTraits>::x_CopyFields(const CRR_Row& other_row)
+{
+    // This is an optimization.
+    // Technically it would be possible to copy a vector of the fields
+    // however it will lead to creating copies of all strings for each field.
+    // On the other hand it seems that copying of the rows would be a likely
+    // case so the row raw data could be copied once and then the field are
+    // used by a reference. Thus the only temp string pointers need to be
+    // adjusted for each field.
+    ptrdiff_t raw_data_delta = m_RawData.data() - other_row.m_RawData.data();
+    x_AdjustFieldsSize(other_row.m_FieldsSize);
+    for (size_t index = 0; index < m_FieldsSize; ++index) {
+        CRR_Field<TTraits>&       to_field = m_Fields[index];
+        const CRR_Field<TTraits>& from_field = other_row.m_Fields[index];
+
+        to_field.m_IsNull = from_field.m_IsNull;
+        to_field.m_Translated = from_field.m_Translated;
+        if (to_field.m_Translated)
+            to_field.m_TranslatedValue = from_field.m_TranslatedValue;
+        else
+            to_field.m_TranslatedValue.clear();
+
+        to_field.m_OriginalData = CTempString(
+            from_field.m_OriginalData.data() + raw_data_delta,
+            from_field.m_OriginalData.size());
+
+        m_Fields[index].m_RowReader = nullptr;
     }
 }
 
