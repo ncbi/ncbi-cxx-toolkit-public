@@ -248,7 +248,7 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
     else
         status = eIO_Unknown;
 
-    CORE_LOGF(eLOG_Trace, ("GNUTLS error %d -> CONNECT status %s",
+    CORE_LOGF(eLOG_Trace, ("GNUTLS error %d -> CONNECT GNUTLS status %s",
                            *error, IO_StatusStr(status)));
 
     return status;

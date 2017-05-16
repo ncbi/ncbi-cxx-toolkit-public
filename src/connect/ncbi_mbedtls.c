@@ -247,7 +247,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         break;
     }
 
-    CORE_LOGF(eLOG_Trace, ("MBEDTLS error %d -> CONNECT status %s",
+    CORE_LOGF(eLOG_Trace, ("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
                            error, IO_StatusStr(status)));
 
     return status;
