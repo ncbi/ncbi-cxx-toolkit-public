@@ -39,15 +39,12 @@
 #ifndef INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GENOMIC_COLLECTIONS_CLI_HPP
 #define INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GENOMIC_COLLECTIONS_CLI_HPP
 
-
-// generated includes
 #include <objects/genomecoll/genomic_collections_cli_.hpp>
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyBySequ.hpp>
 #include <objects/genomecoll/cached_assembly.hpp>
-// generated classes
 
 BEGIN_NCBI_SCOPE
 
@@ -62,38 +59,6 @@ class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
 public:
     CGenomicCollectionsService();
-
-
-    typedef CGCClient_GetAssemblyRequest::ELevel ELevel;
-
-    typedef EGCClient_AttributeFlags EAttributeFlags;
-
-    /// @deprecated Use GetAssembly(const string& acc, const string& mode)
-    NCBI_DEPRECATED
-    CRef<CGC_Assembly> GetAssembly
-        (const string& acc, 
-         int level = CGCClient_GetAssemblyRequest::eLevel_scaffold,
-         int asmAttrFlags = eGCClient_AttributeFlags_none, 
-         int chrAttrFlags = eGCClient_AttributeFlags_biosource, 
-         int scafAttrFlags = eGCClient_AttributeFlags_none, 
-         int compAttrFlags = eGCClient_AttributeFlags_none);
-
-    /// @deprecated Use GetAssembly(int releaseId,     const string& mode)
-    NCBI_DEPRECATED
-    CRef<CGC_Assembly> GetAssembly
-        (int releaseId, 
-         int level = CGCClient_GetAssemblyRequest::eLevel_scaffold,
-         int asmAttrFlags = eGCClient_AttributeFlags_none, 
-         int chrAttrFlags = eGCClient_AttributeFlags_biosource, 
-         int scafAttrFlags = eGCClient_AttributeFlags_none, 
-         int compAttrFlags = eGCClient_AttributeFlags_none);
-
-    /// @deprecated Use GetAssembly(const string& acc, const string& mode)
-    NCBI_DEPRECATED
-    CRef<CGC_Assembly> GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode);
-    /// @deprecated Use GetAssembly(int releaseId,     const string& mode)
-    NCBI_DEPRECATED
-    CRef<CGC_Assembly> GetAssembly(int releaseId,     CGCClient_GetAssemblyRequest::EAssemblyMode mode);
 
     CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
     CRef<CGC_Assembly> GetAssembly(int releaseId,     const string& mode);
