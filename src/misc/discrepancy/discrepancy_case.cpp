@@ -1244,6 +1244,9 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc | eSmart, "Bad BGPIPE qualif
         return;
     }
     if(STRING_FIELD_NOT_EMPTY(obj, Except_text)) {
+        if (obj.GetExcept_text() == "ribosomal slippage" && obj.CanGetComment() && obj.GetComment() == "programmed frameshift") {
+            return;
+        }
         m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         return;
     }
