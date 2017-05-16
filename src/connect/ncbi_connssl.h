@@ -44,7 +44,7 @@ extern "C" {
 
 typedef enum {
     eNcbiCred_GnuTls  = 0x484FFB94,
-    eNcbiCred_MbedTls = 0x765CE813
+    eNcbiCred_MbedTls = 0xC12CC16C
 } ENcbiCred;
 
 
