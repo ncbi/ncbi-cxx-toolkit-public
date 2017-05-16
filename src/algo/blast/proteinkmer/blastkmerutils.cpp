@@ -640,7 +640,7 @@ void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
 			vector< vector<int> >& kvector)
 {
 	int max=4*num_k+1;
-	vector<unsigned char> key(max, 0U);
+	vector<unsigned char> key(max);
 	int num_chunks=query_hash.size();
 	uint32_t temp_hash=0;
 	int temp_index=0;

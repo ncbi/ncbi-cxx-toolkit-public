@@ -335,8 +335,8 @@ CBlastKmer::Run() {
 	mhfile.GetBadMers(badMers);
 
 	// hash coefficients
-	vector<uint32_t> a(num_hashes, 0U);
-	vector<uint32_t> b(num_hashes, 0U);
+	vector<uint32_t> a(num_hashes);
+	vector<uint32_t> b(num_hashes);
 	
 	// obtain random coefficients for hashing
 	if (kmerVer == 3)

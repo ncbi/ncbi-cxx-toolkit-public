@@ -327,7 +327,7 @@ static void s_Get_LSH_index_hashes2(vector < vector < vector <uint32_t> > >& seq
 {
 
 	int max=4*num_k+1;
-    vector<unsigned char> key(max, 0U);
+        vector<unsigned char> key(max);
 	int num_chunks=seq_hash[q_oid].size();
 	int temp_index=0;
 	int temp_hash=0;
@@ -518,8 +518,8 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 	index_file.write((char *) &(kSizeLSH), 4);
 	
     // hash coefficients
-    vector<uint32_t> a(m_NumHashFct, 0U);
-    vector<uint32_t> b(m_NumHashFct, 0U);
+    vector<uint32_t> a(m_NumHashFct);
+    vector<uint32_t> b(m_NumHashFct);
     GetRandomNumbers(a.data(), b.data(), m_NumHashFct);
         
 	// sequences that contain no valid kmers
