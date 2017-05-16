@@ -141,25 +141,6 @@ public:
 
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
-    NCBI_DEPRECATED  // Use FindOneAssemblyBySequences
-    CRef<CGCClient_AssemblyInfo> FindBestAssembly
-        (const string& seq_id,
-         int filter_type,
-         int sort_type = eGCClient_FindBestAssemblySort_default);
-
-    NCBI_DEPRECATED  // Use FindOneAssemblyBySequences
-    CRef<CGCClient_AssemblySequenceInfo> FindBestAssembly
-        (const list<string>& seq_id,
-         int filter_type,
-         int sort_type = eGCClient_FindBestAssemblySort_default);
-
-    NCBI_DEPRECATED  // Use FindAssembliesBySequences
-    CRef<CGCClient_AssembliesForSequences> FindAllAssemblies
-        (const list<string>& seq_id,
-         int filter_type,
-         int sort_type = eGCClient_FindBestAssemblySort_default);
-
-
     /// Find assembly by sequence accession
     ///
     /// @param sequence_acc

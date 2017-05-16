@@ -245,20 +245,6 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
     cmds_desc->AddCommand("get-assembly-blob", arg_desc.release(), "ga");
 
     arg_desc.reset(new CArgDescriptions);
-    arg_desc->SetUsageContext("", "Get best assembly containing sequence (deprecated)");
-    AddSeqAcc(arg_desc.get());
-    AddFilterSort(arg_desc.get());
-    AddCommonArgs(arg_desc.get());
-    cmds_desc->AddCommand("get-best-assembly", arg_desc.release());
-
-    arg_desc.reset(new CArgDescriptions);
-    arg_desc->SetUsageContext("", "Get all assemblies containing sequence (deprecated)");
-    AddSeqAcc(arg_desc.get());
-    AddFilterSort(arg_desc.get());
-    AddCommonArgs(arg_desc.get());
-    cmds_desc->AddCommand("get-all-assemblies", arg_desc.release());
-
-    arg_desc.reset(new CArgDescriptions);
     arg_desc->SetUsageContext("", "Get assemblies containing sequence");
     arg_desc->AddFlag("top_asm", "Return top assembly only");
     AddSeqAcc(arg_desc.get());
@@ -403,24 +389,6 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
                 for (auto rel_id: GetIDs(args["rel_id"].AsString())) ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsString()));
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
-        }
-        else if(args.GetCommand() == "get-best-assembly")
-        {
-            const list<string> acc = GetAccessions(args);
-            const int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
-            const int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
-
-            if(acc.size() == 1)
-                ostr << *service.FindBestAssembly(acc.front(), filter, sort);
-            else
-                ostr << *service.FindBestAssembly(acc, filter, sort);
-        }
-        else if(args.GetCommand() == "get-all-assemblies")
-        {
-            const int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
-            const int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
-
-            ostr << *service.FindAllAssemblies(GetAccessions(args), filter, sort);
         }
         else if(args.GetCommand() == "get-assembly-by-sequence")
         {
