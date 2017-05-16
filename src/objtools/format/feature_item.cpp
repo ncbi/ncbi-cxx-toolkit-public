@@ -5523,12 +5523,19 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
             case eSQ_none:
                 break;
             default:
-                if( COrgMod::HoldsInstitutionCode(mod.GetSubtype()) ) {
-                    CRef<COrgMod> new_mod( new COrgMod(mod.GetSubtype(), 
-                        (  sSubname.empty() ? kEmptyStr : s_GetSpecimenVoucherText(ctx, sSubname) ) ));
-                    x_AddQual(slot, new CFlatOrgModQVal(*new_mod));
-                } else {
-                    x_AddQual(slot, new CFlatOrgModQVal(**it));
+                {
+                    const COrgMod::TSubtype stype = mod.GetSubtype();
+                    if( COrgMod::HoldsInstitutionCode(stype) ) {
+                        CRef<COrgMod> new_mod( new COrgMod(stype,
+                            (  sSubname.empty() ? kEmptyStr : s_GetSpecimenVoucherText(ctx, sSubname) ) ));
+                        x_AddQual(slot, new CFlatOrgModQVal(*new_mod));
+                    } else if (stype == COrgMod::eSubtype_type_material && (! COrgMod::IsINSDCValidTypeMaterial(sSubname))) {
+                        CRef<COrgMod> new_mod( new COrgMod(COrgMod::eSubtype_other,
+                            (  sSubname.empty() ? kEmptyStr : "type_material: " + sSubname ) ));
+                        x_AddQual(eSQ_orgmod_note, new CFlatOrgModQVal(*new_mod));
+                    } else {
+                            x_AddQual(slot, new CFlatOrgModQVal(**it));
+                }
                 }
                 break;
             }
