@@ -2157,7 +2157,7 @@ bool CWGSSeqIterator::x_Excluded(void) const
             return true;
         }
         // skip not included entries
-        if ( !(m_IncludeFlags & (1 << state)) ) {
+        if ( !(m_IncludeFlags & TIncludeFlags(1 << state)) ) {
             return true;
         }
     }
