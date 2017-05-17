@@ -203,7 +203,7 @@ public:
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
     /// Compare ids in a defined order (see CSeq_id::CompareOrdered())
-    TIntId NCBI_SEQ_EXPORT CompareOrdered(const CSeq_id_Handle& id) const;
+    int NCBI_SEQ_EXPORT CompareOrdered(const CSeq_id_Handle& id) const;
     /// Predicate for sorting CSeq_id_Handles in a defined order.
     struct PLessOrdered
     {

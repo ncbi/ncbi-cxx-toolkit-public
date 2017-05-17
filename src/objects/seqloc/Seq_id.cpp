@@ -443,7 +443,7 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 }
 
 
-TIntId CSeq_id::CompareOrdered(const CSeq_id& sid2) const
+int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
 {
     int ret = Which() - sid2.Which();
     if ( ret != 0 ) {
@@ -468,7 +468,12 @@ TIntId CSeq_id::CompareOrdered(const CSeq_id& sid2) const
     case e_General:
         return GetGeneral().Compare(sid2.GetGeneral());
     case e_Gi:
-        return GetGi() - sid2.GetGi();
+        if ( GetGi() < sid2.GetGi() ) {
+            return -1;
+        }
+        else {
+            return GetGi() > sid2.GetGi();
+        }
     case e_Pdb:
         return GetPdb().Compare(sid2.GetPdb());
     default:

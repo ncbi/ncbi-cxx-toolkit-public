@@ -426,7 +426,7 @@ public:
 
     /// Compare() - more general
     E_SIC Compare(const CSeq_id& sid2) const;
-    TIntId CompareOrdered(const CSeq_id& sid2) const;
+    int CompareOrdered(const CSeq_id& sid2) const;
     bool operator<(const CSeq_id& sid2) const
         {
             return CompareOrdered(sid2) < 0;

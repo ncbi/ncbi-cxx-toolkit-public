@@ -188,14 +188,19 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 }
 
 
-TIntId CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
+int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
 {
     // small optimization to avoid creation of temporary CSeq_id objects
-    if ( TIntId diff = Which() - id.Which() ) {
+    if ( int diff = Which() - id.Which() ) {
         return diff;
     }
     if ( IsGi() && id.IsGi() ) {
-        return GetGi() - id.GetGi();
+        if ( GetGi() < id.GetGi() ) {
+            return -1;
+        }
+        else {
+            return GetGi() > id.GetGi();
+        }
     }
     return GetSeqId()->CompareOrdered(*id.GetSeqId());
 }
