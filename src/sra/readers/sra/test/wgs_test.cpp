@@ -944,6 +944,9 @@ int CWGSTestApp::Run(void)
             if ( it.HasSeqHash() ) {
                 out << " hash: 0x"<<hex<<it.GetSeqHash()<<dec;
             }
+            if ( it.HasPublicComment() ) {
+                out << " comment: \""<<it.GetPublicComment()<<"\"";
+            }
             out << '\n';
             CRef<CBioseq> seq1 = it.GetBioseq();
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
@@ -1123,7 +1126,12 @@ int CWGSTestApp::Run(void)
                 ++error_count;
             }
             else {
-                out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
+                out << "GI "<<gi<<" len: "<<it.GetSeqLength();
+                if ( it.HasPublicComment() ) {
+                    out << " comment: \""<<it.GetPublicComment()<<"\"";
+                }
+                out << NcbiEndl;
+                
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }

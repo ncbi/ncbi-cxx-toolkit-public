@@ -967,6 +967,9 @@ public:
 
     NCBI_gb_state GetGBState(void) const;
 
+    bool HasPublicComment(void) const;
+    CTempString GetPublicComment(void) const;
+
     bool IsCircular(void) const;
 
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
@@ -1329,6 +1332,9 @@ public:
     CTempString GetRefAcc(void) const;
 
     NCBI_gb_state GetGBState(void) const;
+
+    bool HasPublicComment(void) const;
+    CTempString GetPublicComment(void) const;
 
     TSeqPos GetSeqLength(void) const;
 

@@ -379,6 +379,7 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(NUC_PROT_DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
     DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
+    DECLARE_VDB_COLUMN_AS_STRING(PUBLIC_COMMENT);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, GAP_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, GAP_LEN);
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, GAP_PROPS);
@@ -434,6 +435,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(NUC_PROT_DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
       INIT_OPTIONAL_VDB_COLUMN(GB_STATE),
+      INIT_OPTIONAL_VDB_COLUMN(PUBLIC_COMMENT),
       INIT_OPTIONAL_VDB_COLUMN(GAP_START),
       INIT_OPTIONAL_VDB_COLUMN(GAP_LEN),
       INIT_OPTIONAL_VDB_COLUMN(GAP_PROPS),
@@ -520,6 +522,7 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
     DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
+    DECLARE_VDB_COLUMN_AS_STRING(PUBLIC_COMMENT);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_NAME);
@@ -544,6 +547,7 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
       INIT_VDB_COLUMN(GB_STATE),
+      INIT_OPTIONAL_VDB_COLUMN(PUBLIC_COMMENT),
       INIT_VDB_COLUMN(PROTEIN_LEN),
       INIT_VDB_COLUMN(PROTEIN_NAME),
       INIT_OPTIONAL_VDB_COLUMN(PRODUCT_NAME),
@@ -3035,6 +3039,28 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
 }
 
 
+bool CWGSSeqIterator::HasPublicComment(void) const
+{
+    x_CheckValid("CWGSSeqIterator::HasPublicComment");
+
+    if ( !m_Cur->m_PUBLIC_COMMENT ) {
+        return false;
+    }
+    return !m_Cur->PUBLIC_COMMENT(m_CurrId).empty();
+}
+
+
+CTempString CWGSSeqIterator::GetPublicComment(void) const
+{
+    x_CheckValid("CWGSSeqIterator::GetPublicComment");
+
+    if ( !m_Cur->m_PUBLIC_COMMENT ) {
+        return string();
+    }
+    return *m_Cur->PUBLIC_COMMENT(m_CurrId);
+}
+
+
 bool CWGSSeqIterator::IsCircular(void) const
 {
     x_CheckValid("CWGSSeqIterator::IsCircular");
@@ -5185,6 +5211,28 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
     x_CheckValid("CWGSProteinIterator::GetGBState");
 
     return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
+}
+
+
+bool CWGSProteinIterator::HasPublicComment(void) const
+{
+    x_CheckValid("CWGSProteinIterator::HasPublicComment");
+
+    if ( !m_Cur->m_PUBLIC_COMMENT ) {
+        return false;
+    }
+    return !m_Cur->PUBLIC_COMMENT(m_CurrId).empty();
+}
+
+
+CTempString CWGSProteinIterator::GetPublicComment(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetPublicComment");
+
+    if ( !m_Cur->m_PUBLIC_COMMENT ) {
+        return string();
+    }
+    return *m_Cur->PUBLIC_COMMENT(m_CurrId);
 }
 
 
