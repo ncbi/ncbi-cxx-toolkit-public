@@ -24,7 +24,6 @@ HOSTED_LIBS    = \
                  cobalt                 \
                  composition_adjustment \
                  phytree_format         \
-                 proteinkmer            \
                  xalgoblastdbindex      \
                  xblastformat           \
                  xblast                 \
