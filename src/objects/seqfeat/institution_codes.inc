@@ -1157,6 +1157,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMEI\ts\tClements' Museum of Exotic Insects\t\t",
 "CMFRI\ts\tSee FMRI\t\t",
 "CMGP\ts\tCentral Museum of Geological Prospecting\t\t",
+"CMH\ts\tCanadian Museum of History\t\t",
 "CMIZASDPRK\ts\tCustody Museum\t\t",
 "CMKKU\tc\tClinical Diagnostic Microbiology Srinagarind Hospital, Faculty of Medicine\t\t",
 "CML\ts\tUniversidad Nacional de Tucuman, Coleccion de Mamiferos Lillo (Argentina)\t\t",

@@ -1124,6 +1124,7 @@ CMDM-PUJ	c	Coleccion Microorganismos Departamento Microbiologia
 CMEI	s	Clements' Museum of Exotic Insects		
 CMFRI	s	See FMRI		
 CMGP	s	Central Museum of Geological Prospecting		
+CMH	s	Canadian Museum of History		
 CMIZASDPRK	s	Custody Museum		
 CMKKU	c	Clinical Diagnostic Microbiology Srinagarind Hospital, Faculty of Medicine		
 CML	s	Universidad Nacional de Tucuman, Coleccion de Mamiferos Lillo (Argentina)		
