@@ -1292,6 +1292,12 @@ private:
 // internal structures
 class CCdsMatchInfo;
 class CMrnaMatchInfo;
+
+#define USE_MRNA_MAP 1
+#ifdef USE_MRNA_MAP
+typedef map<const CSeq_feat *, CRef<CMrnaMatchInfo> > TmRNAList;
+#endif
+
 class CValidError_bioseq : private CValidError_base
 {
 public:
@@ -1391,7 +1397,11 @@ private:
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
     void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
+#ifdef USE_MRNA_MAP
+    void x_CheckForMultiplemRNAs(CCdsMatchInfo& cds_match, const TmRNAList& unmatched_mrnas);
+#else
     void x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match, const list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
+#endif
     void x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match);
     void x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo& cds_match);
     void x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds);

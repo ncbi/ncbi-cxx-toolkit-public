@@ -161,21 +161,24 @@ public:
     CCdsMatchInfo(const CSeq_feat& cds, CScope* scope);
     const CSeq_feat& GetSeqfeat(void) const;
     bool Overlaps(const CSeq_feat& mrna) const;
+#ifdef USE_MRNA_MAP
+    bool AssignXrefMatch(TmRNAList& unmatched_mrnas, const CTSE_Handle& tse);
+    bool AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope);
+    void UpdateOtherMrnas(const TmRNAList& unmatched_mrnas);    
+    size_t CountOtherMrnas() { return m_OtherMrnas.size(); }
+    bool AreMrnaProductsUnique() { return m_ProductsUnique; }
+#else
     bool AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
     bool AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
+#endif
+    void SetMatch(CRef<CMrnaMatchInfo> match);
+    bool AssignMatch(TmRNAList& mrna_map, CFeatTree& feat_tree, CScope& scope);
     bool HasMatch(void) const;
     void NeedsMatch(bool needs_match);
     bool NeedsMatch(void) const;
     const CMrnaMatchInfo& GetMatch(void) const;
     bool IsPseudo(void) const;
     void SetPseudo(void);
-
-    enum EMatchType {
-        eMatch_Xref,
-        eMatch_Overlap,
-        eMatch_None
-    };
-    EMatchType GetMatchType(void) const;
 
 private:
     CConstRef<CSeq_feat> m_Cds;
@@ -185,7 +188,10 @@ private:
     CScope* m_Scope;
     bool m_IsPseudo;
     bool m_NeedsMatch;
-    EMatchType m_MatchType;
+#ifdef USE_MRNA_MAP
+    vector<CConstRef<CSeq_feat> > m_OtherMrnas;
+    bool m_ProductsUnique;
+#endif
 };
 
 
@@ -6619,7 +6625,7 @@ CCdsMatchInfo::CCdsMatchInfo(const CSeq_feat& cds,
     m_Scope(scope),
     m_IsPseudo(false),
     m_NeedsMatch(true),
-    m_MatchType(eMatch_None)
+    m_ProductsUnique(true)
 {
     m_OverlapType = eOverlap_CheckIntRev;
     if (m_Cds->IsSetExcept_text() &&
@@ -6627,6 +6633,7 @@ CCdsMatchInfo::CCdsMatchInfo(const CSeq_feat& cds,
     {
         m_OverlapType = eOverlap_SubsetRev;
     }
+    m_OtherMrnas.clear();
 }
 
 
@@ -6672,13 +6679,106 @@ void CCdsMatchInfo::SetPseudo(void) {
     m_IsPseudo = true;
 }
 
-
-CCdsMatchInfo::EMatchType CCdsMatchInfo::GetMatchType(void) const
+#ifdef USE_MRNA_MAP
+bool CCdsMatchInfo::AssignXrefMatch(TmRNAList& unmatched_mrnas, const CTSE_Handle& tse)
 {
-    return m_MatchType;
+    if (unmatched_mrnas.empty()) {
+        return false;
+    }
+
+    FOR_EACH_SEQFEATXREF_ON_SEQFEAT(xref_it, *m_Cds) {
+        if (!(*xref_it)->IsSetId() ||
+            !(*xref_it)->GetId().IsLocal()) {
+            continue;
+        }
+        vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_mRNA, (*xref_it)->GetId().GetLocal());
+        ITERATE(vector<CSeq_feat_Handle>, h, handles) {
+            TmRNAList::iterator mrna_it = unmatched_mrnas.find((*h).GetSeq_feat());
+            if (mrna_it != unmatched_mrnas.end()) {
+                m_BestMatch = mrna_it->second;
+                m_BestMatch->SetMatch(*this);
+                unmatched_mrnas.erase(mrna_it);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
+bool CCdsMatchInfo::AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope)
+{
+    if (unmatched_mrnas.empty()) {
+        return false;
+    }
+
+    bool rval = false;
+    TFeatScores feats;
+    GetOverlappingFeatures(m_Cds->GetLocation(), CSeqFeatData::e_Rna, CSeqFeatData::eSubtype_mRNA,
+                           m_OverlapType, feats, scope);
+    NON_CONST_ITERATE(TFeatScores, it, feats) {
+        TmRNAList::iterator mrna_it = unmatched_mrnas.find(it->second);
+        if (mrna_it != unmatched_mrnas.end()) {
+            if (rval) {
+                m_OtherMrnas.push_back(it->second);
+            } else {
+                m_BestMatch = mrna_it->second;
+                m_BestMatch->SetMatch(*this);
+                unmatched_mrnas.erase(mrna_it);
+                rval = true;
+            }
+        }
+    }
+    return false;
+}
+
+
+string s_GetMrnaProductString(const CSeq_feat& mrna)
+{
+    string product_string = "";
+
+    if (!mrna.IsSetProduct()) {
+        return product_string;
+    }
+
+    mrna.GetProduct().GetLabel(&product_string);
+
+    return product_string;
+}
+
+
+void CCdsMatchInfo::UpdateOtherMrnas(const TmRNAList& unmatched_mrnas)
+{
+    vector<CConstRef<CSeq_feat> >::iterator it = m_OtherMrnas.begin();
+    list<string> product_strings;
+    while (it != m_OtherMrnas.end()) {
+        TmRNAList::const_iterator mrna_it = unmatched_mrnas.find(it->GetPointer());
+        if (mrna_it == unmatched_mrnas.end()) {
+            it = m_OtherMrnas.erase(it);
+        } else {
+            auto product_string = s_GetMrnaProductString(**it);
+            product_strings.push_back(product_string);
+            ++it;
+        }
+    }
+    if (m_OtherMrnas.size() == 0) {
+        return;
+    }
+    product_strings.push_back(s_GetMrnaProductString(m_BestMatch->GetSeqfeat()));
+    const auto num_products = product_strings.size();
+    if (product_strings.size() > 1) {
+        m_ProductsUnique = false;
+        product_strings.sort();
+        product_strings.unique();
+        const auto num_unique_products = product_strings.size();
+        if (num_unique_products == num_products) {
+            m_ProductsUnique = true;
+        }
+    }
+}
+
+
+#else
 bool CCdsMatchInfo::AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas) 
 {
     if (unmatched_mrnas.empty()) {
@@ -6702,7 +6802,6 @@ bool CCdsMatchInfo::AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
             if (s_FeatureIdsMatch((*xref_it)->GetId(), mrna->GetSeqfeat().GetId())) {
                 m_BestMatch = *mrna_it;
                 m_BestMatch->SetMatch(*this);
-                m_MatchType = eMatch_Xref;
                 unmatched_mrnas.erase(mrna_it);
                 return true;
             }
@@ -6713,7 +6812,7 @@ bool CCdsMatchInfo::AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
 }
 
 
-bool CCdsMatchInfo::AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas) 
+bool CCdsMatchInfo::AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
 {
     if (unmatched_mrnas.empty()) {
         return false;
@@ -6726,7 +6825,6 @@ bool CCdsMatchInfo::AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrn
         if (Overlaps(mrna->GetSeqfeat())) {
             m_BestMatch = *mrna_it;
             m_BestMatch->SetMatch(*this);
-            m_MatchType = eMatch_Overlap;
             unmatched_mrnas.erase(mrna_it);
             return true;
         }
@@ -6734,24 +6832,65 @@ bool CCdsMatchInfo::AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrn
     }
     return false;
 }
+#endif
 
 
-string s_GetMrnaProductString(const CSeq_feat& mrna)
+void CCdsMatchInfo::SetMatch(CRef<CMrnaMatchInfo> match)
 {
-    string product_string = "";
-
-    if (!mrna.IsSetProduct()) {
-        return product_string;
-    }
-
-    mrna.GetProduct().GetLabel(&product_string);
-
-    return product_string;
+    m_BestMatch = match;
+    m_BestMatch->SetMatch(*this);
 }
 
 
+bool CCdsMatchInfo::AssignMatch(TmRNAList& mrna_map, CFeatTree& feat_tree, CScope& scope)
+{
+    CSeq_feat_Handle cds = scope.GetSeq_featHandle(*m_Cds);
+    CMappedFeat mrna = feat_tree.GetParent(cds, CSeqFeatData::eSubtype_mRNA);
+    if (mrna) {
+        const CSeq_feat* key = mrna.GetSeq_feat();
+        CRef<CMrnaMatchInfo> match = mrna_map[key];
+        bool rval = false;
+        if (match) {
+            SetMatch(match);
+            rval = true;
+        }
+        mrna_map.erase(key);
+        return rval;
+    } else {
+        return false;
+    }
+}
+
+
+#ifdef USE_MRNA_MAP
+void CValidError_bioseq::x_CheckForMultiplemRNAs(CCdsMatchInfo& cds_match,
+    const TmRNAList& unmatched_mrnas)
+{
+    if (!cds_match.HasMatch()) {
+        return;
+    }
+    cds_match.UpdateOtherMrnas(unmatched_mrnas);
+    size_t num_mrnas = cds_match.CountOtherMrnas() + 1;
+    if (num_mrnas < 2) {
+        return;
+    }
+    if (cds_match.AreMrnaProductsUnique()) {
+        PostErr (eDiag_Info, eErr_SEQ_FEAT_CDSwithMultipleMRNAs, 
+            "CDS matches " + NStr::NumericToString(num_mrnas)
+            + " mRNAs, but product locations are unique",
+            cds_match.GetSeqfeat());
+        return;
+    } else {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+            "CDS matches " + NStr::NumericToString(num_mrnas)
+            + " mRNAs",
+            cds_match.GetSeqfeat());
+    }
+}
+
+#else
 void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match, 
-                                                 const list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
+    const list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
 {
     if (!cds_match.HasMatch()) {
         return;
@@ -6763,7 +6902,6 @@ void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match,
     auto product_string = s_GetMrnaProductString(mrna_match.GetSeqfeat());
     product_strings.push_back(product_string);
     int mrna_count = 1;
-
 
     for (const auto& mrna : unmatched_mrnas) {
         if (!cds_match.Overlaps(mrna->GetSeqfeat())) {
@@ -6804,6 +6942,7 @@ void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match,
               + " mRNAs",
               cds_match.GetSeqfeat());
 }
+#endif
 
 
 void CValidError_bioseq::x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match)
@@ -6955,7 +7094,11 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     }
 
     list<CRef<CCdsMatchInfo>> cds_list;
+#ifdef USE_MRNA_MAP
+    TmRNAList mrna_map;
+#else
     list<CRef<CMrnaMatchInfo>> mrna_list;
+#endif
 
     // Loop over all features
     // Populate the cds and mrna lists
@@ -6982,15 +7125,38 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             cds_list.push_back(cds_match);
         } else if (mapped_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
             const auto& feat = *mapped_feat.GetSeq_feat();
+#ifdef USE_MRNA_MAP
+            mrna_map[mapped_feat.GetSeq_feat()] = Ref(new CMrnaMatchInfo(feat, m_Scope));
+#else
             mrna_list.push_back(Ref(new CMrnaMatchInfo(feat, m_Scope)));
+#endif
         } 
     }
 
+#ifdef USE_MRNA_MAP
+    if (!mrna_map.empty()) {
+#else
     if (!mrna_list.empty()) {
+#endif
         x_ValidateGeneCDSmRNACounts(seq);
     }
    
-
+#ifdef USE_MRNA_MAP
+    const size_t num_mrna = mrna_map.size();
+    const CTSE_Handle& tse = seq.GetTSE_Handle();
+    // First attempt to match by xref
+    for (auto&& cds : cds_list) {
+        cds->AssignXrefMatch(mrna_map, tse);
+    }
+    // Now attempt to match by overlap
+    if (!mrna_map.empty()) {
+        for (auto&& cds : cds_list) {
+            if (!cds->HasMatch()) {
+                cds->AssignOverlapMatch(mrna_map, *m_Scope);
+            }
+        }
+    }
+#else
     const size_t num_mrna = mrna_list.size();
     // First attempt to match by xref
     for (auto&& cds : cds_list) {
@@ -7005,6 +7171,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             }
         } 
     }
+#endif
 
     // Now loop over cds to find number of matched cds and number of matched mrna
     int num_matched_cds = 0;
@@ -7012,7 +7179,11 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     for (auto&& cds : cds_list) {
         // Check to see if a CDS feat references or overlaps multiple mRNAs
         // mrna_list now contains only unmatched mrnas
+#ifdef USE_MRNA_MAP
+        x_CheckForMultiplemRNAs(*cds, mrna_map);
+#else
         x_CheckForMultiplemRNAs(*cds, mrna_list);
+#endif
         x_CheckMrnaProteinLink(*cds);
         // check for mismatching qualifiers
         x_CheckOrigProteinAndTranscriptIds(*cds);
@@ -7053,16 +7224,27 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         }
     }
 
+#ifdef USE_MRNA_MAP
+    const size_t num_unmatched_mrna = mrna_map.size();
+#else
     const size_t num_unmatched_mrna = mrna_list.size();
+#endif
     if (num_unmatched_mrna > 10) {
         string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
                  msg, *(seq.GetCompleteBioseq()));
     } else {
+#ifdef USE_MRNA_MAP
+        ITERATE(TmRNAList, it, mrna_map) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                "No match for 1 mRNA", it->second->GetSeqfeat());
+        }
+#else
         ITERATE(list<CRef<CMrnaMatchInfo>>, it, mrna_list) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
                 "No match for 1 mRNA", (*it)->GetSeqfeat());
         }
+#endif
     }
 }
 
