@@ -460,6 +460,10 @@ private:
 
     CRef<CBDB_CheckPointThread>  m_CheckThread;   ///< Checkpoint thread
     IServer_Monitor*             m_Monitor;       ///< Monitoring interface
+
+    // Stop-thread flag shared with CBDB_Env_OnAppExit
+    shared_ptr<bool>             m_StopThreadFlag;
+    friend class CBDB_Env_OnAppExit;
 };
 
 

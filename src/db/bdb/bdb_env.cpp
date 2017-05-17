@@ -86,7 +86,8 @@ CBDB_Env::CBDB_Env()
       m_CheckPointKB(0),
       m_CheckPointMin(0),
       m_DeadLockMode(eDeadLock_Disable),
-      m_Monitor(0)
+      m_Monitor(0),
+      m_StopThreadFlag(new bool(false))
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV::create");
@@ -1063,17 +1064,22 @@ public:
         }
     }
 
-    CBDB_Env_OnAppExit(CBDB_Env& bdb_env) : m_Env(bdb_env)
+    CBDB_Env_OnAppExit(CBDB_Env& bdb_env)
+        : m_Env(bdb_env),
+          m_StopThreadFlag(bdb_env.m_StopThreadFlag)
     {
     }
 
     void operator()(void) const
     {
-        m_Env.StopBackgroundWriterThread();
+        if (*m_StopThreadFlag) {
+            m_Env.StopBackgroundWriterThread();
+        }
     }
 
 private:
     CBDB_Env& m_Env;
+    shared_ptr<bool> m_StopThreadFlag;
 };
 
 
@@ -1090,6 +1096,7 @@ void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags,
     m_CheckThread->SetMaxErrors(err_max);
     m_CheckThread->SetWorkFlag(flags);
     m_CheckThread->Run();
+    *m_StopThreadFlag = true;
 # else
     LOG_POST_X(7, Warning <<
      "Cannot run BDB transaction checkpoint thread in non-MT configuration.");
@@ -1113,6 +1120,7 @@ void CBDB_Env::StopBackgroundWriterThread()
 # ifdef NCBI_THREADS
     if (!m_CheckThread.Empty()) {
         LOG_POST_X(8, Info << "Stopping BDB transaction checkpoint thread...");
+        *m_StopThreadFlag = false;
         m_CheckThread->RequestStop();
         m_CheckThread->Join();
         m_CheckThread.Reset();

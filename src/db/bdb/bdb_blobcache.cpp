@@ -1148,7 +1148,8 @@ CBDB_Cache::CBDB_Cache()
   m_RoundRobinVolumes(0),
   m_MempTrickle(10),
   m_Monitor(0),
-  m_TimeLine(0)
+  m_TimeLine(0),
+  m_StopThreadFlag(new bool(false))
 {
     m_TimeStampFlag = fTimeStampOnRead |
                       fExpireLeastFrequentlyUsed |
@@ -1212,17 +1213,21 @@ public:
         }
     }
 
-    CBDB_Cache_OnAppExit(CBDB_Cache& bdb_cache) : m_Cache(bdb_cache)
-    {
+    CBDB_Cache_OnAppExit(CBDB_Cache& bdb_cache)
+        : m_Cache(bdb_cache),
+          m_StopThreadFlag(bdb_cache.m_StopThreadFlag)    {
     }
 
     void operator()(void) const
     {
-        m_Cache.StopPurgeThread();
+        if (*m_StopThreadFlag) {
+            m_Cache.StopPurgeThread();
+        }
     }
 
 private:
     CBDB_Cache& m_Cache;
+    shared_ptr<bool> m_StopThreadFlag;
 };
 
 
@@ -1526,6 +1531,7 @@ void CBDB_Cache::Open(const string& cache_path,
        m_PurgeThread.Reset(
            new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
        m_PurgeThread->Run();
+       *m_StopThreadFlag = true;
 
         if (!m_JoinedEnv) {
             CBDB_Env::TBackgroundFlags flags =
@@ -1565,6 +1571,7 @@ void CBDB_Cache::StopPurgeThread()
     if (!m_PurgeThread.Empty()) {
         LOG_POST_X(10, Info << "Stopping cache cleaning thread...");
         StopPurge();
+        *m_StopThreadFlag = false;
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
         m_PurgeThread.Reset(); // Prevent duplicate stop/join.

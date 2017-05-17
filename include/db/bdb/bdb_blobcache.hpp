@@ -992,6 +992,10 @@ private:
     time_t                     m_LastTimeLineCheck;
     /// BLOB ids deleted by GC
     TBitVector                 m_GC_Deleted;
+
+    // Stop-thread flag shared with CBDB_Cache_OnAppExit
+    shared_ptr<bool>           m_StopThreadFlag;
+    friend class CBDB_Cache_OnAppExit;
 };
 
 
