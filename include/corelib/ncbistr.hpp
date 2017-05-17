@@ -2446,8 +2446,8 @@ public:
     /// Whether to merge adjacent delimiters.
     /// Used by some methods that don't need full functionality of ESplitFlags.
     enum EMergeDelims {
-        eMergeDelims   = fSplit_MergeDelimiters, ///< Merge the delimiters
-        eNoMergeDelims = 0                       ///< No merge the delimiters
+        eMergeDelims   = fSplit_MergeDelimiters | fSplit_Truncate,
+        eNoMergeDelims = 0
     };
 
     /// Split a string using specified delimiters.
