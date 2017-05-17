@@ -63,7 +63,7 @@
 
 #include <util/compress/zlib.hpp>
 
-#define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC"
+#define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC_GI64"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
 #define DEFAULT_DB_DRIVER   "ftds;ctlib"
