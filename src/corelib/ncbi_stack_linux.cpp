@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <execinfo.h>
-#if NCBI_COMPILER_VERSION >= 310
+#if defined(HAVE_CXA_DEMANGLE)
 #  include <cxxabi.h>
 #endif
 #include <vector>
@@ -108,7 +108,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         // name demangling
         //
         if ( !info.func.empty()  &&  info.func[0] == '_') {
-#if NCBI_COMPILER_VERSION >= 310
+#if defined(HAVE_CXA_DEMANGLE)
             // use abi::__cxa_demangle
             size_t len = 0;
             char* buf = 0;
