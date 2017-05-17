@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-class NCBI_XBLAST_EXPORT CMinHashException : public CException {
+class CMinHashException : public CException {
 public:
      /// Error types
      enum EErrCode {
@@ -105,7 +105,7 @@ struct MinHashIndexHeader {
 
 
 /// Access data in Minhash files
-class NCBI_XBLAST_EXPORT CMinHashFile : public CObject {
+class CMinHashFile : public CObject {
 public:
     /// parameterized constructor
     CMinHashFile(const string& indexname);

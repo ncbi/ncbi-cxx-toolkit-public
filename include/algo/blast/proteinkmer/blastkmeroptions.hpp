@@ -43,7 +43,7 @@ USING_SCOPE(blast);
 
 
 /// Class of optiosn for the KMEr search.
-class NCBI_XBLAST_EXPORT CBlastKmerOptions : public CObject
+class CBlastKmerOptions : public CObject
 {
 public:
 	/// Constructor
