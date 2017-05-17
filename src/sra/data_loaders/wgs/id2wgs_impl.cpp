@@ -1852,24 +1852,34 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
         }
         CID2_Reply_Get_Blob& reply = main_reply->SetReply().SetGet_blob();
         reply.SetBlob_id(GetBlobId(seq));
-        if ( int blob_state = GetID2BlobState(seq) ) {
-            SetBlobState(context, *main_reply, blob_state);
+        int id2_blob_state = GetID2BlobState(seq);
+        if ( id2_blob_state ) {
+            SetBlobState(context, *main_reply, id2_blob_state);
         }
-        CID2_Reply_Data& data = reply.SetData();
 
-        CRef<CAsnBinData> obj = GetObject(seq);
-        if ( obj->GetMainObject().GetThisTypeInfo() == CID2S_Split_Info::GetTypeInfo() ) {
-            // split info
-            TRACE_X(11, eDebug_resolve, "GetSplitInfo: "<<seq);
-            data.SetData_type(CID2_Reply_Data::eData_type_id2s_split_info);
+        if ( id2_blob_state & (1<<eID2_Blob_State_withdrawn) ) {
+            CRef<CID2_Error> error(new CID2_Error);
+            error->SetSeverity(CID2_Error::eSeverity_restricted_data);
+            main_reply->SetError().push_back(error);
+            TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): withdrawn");
         }
         else {
-            TRACE_X(11, eDebug_resolve, "GetSeq_entry: "<<seq);
-            data.SetData_type(CID2_Reply_Data::eData_type_seq_entry);
+            CID2_Reply_Data& data = reply.SetData();
+
+            CRef<CAsnBinData> obj = GetObject(seq);
+            if ( obj->GetMainObject().GetThisTypeInfo() == CID2S_Split_Info::GetTypeInfo() ) {
+                // split info
+                TRACE_X(11, eDebug_resolve, "GetSplitInfo: "<<seq);
+                data.SetData_type(CID2_Reply_Data::eData_type_id2s_split_info);
+            }
+            else {
+                TRACE_X(11, eDebug_resolve, "GetSeq_entry: "<<seq);
+                data.SetData_type(CID2_Reply_Data::eData_type_seq_entry);
+            }
+            WriteData(context, data, seq, 0, *obj);
+            TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
+                    " data size: "<<sx_GetSize(data));
         }
-        WriteData(context, data, seq, 0, *obj);
-        TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
-                " data size: "<<sx_GetSize(data));
         replies.push_back(main_reply);
     }
     TRACE_X(14, eDebug_resolve,"GetBlobInfo: done");
