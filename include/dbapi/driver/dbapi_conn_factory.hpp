@@ -165,6 +165,7 @@ private:
         IConnValidator::EConnStatus conn_status;
         impl::CDBHandlerStack       handlers;
         list<string>                tried;
+        TSvrRef                     last_tried;
         // params deliberately left out (potentially call-specific)
     };
 

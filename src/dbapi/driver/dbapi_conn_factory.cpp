@@ -33,6 +33,7 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
@@ -370,6 +371,7 @@ CDBConnectionFactory::MakeDBConnection(
 
             // Try to connect.
             try {
+                opening_ctx.last_tried.Reset(dsp_srv); // provisionally
                 // I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
                 // cur_conn_attr.srv_name = dsp_srv->GetName();
                 CDB_DBLB_Delegate cur_params(
@@ -401,8 +403,8 @@ CDBConnectionFactory::MakeDBConnection(
                     // Check conn_status ...
                     if (opening_ctx.conn_status
                         == IConnValidator::eTempInvalidConn) {
-                        rt_data.IncNumOfValidationFailures(params.GetServerName(),
-                                                           dsp_srv);
+                        rt_data.IncNumOfValidationFailures
+                            (params.GetServerName(), opening_ctx.last_tried);
                     }
 
                     // Re-dispatch ...
@@ -411,7 +413,8 @@ CDBConnectionFactory::MakeDBConnection(
             } else {
                 // Dispatched server is already set, but calling of this method
                 // will increase number of successful dispatches.
-                rt_data.SetDispatchedServer(params.GetServerName(), dsp_srv);
+                rt_data.SetDispatchedServer(params.GetServerName(),
+                                            opening_ctx.last_tried);
             }
         }
     }
@@ -574,11 +577,12 @@ CDBConnectionFactory::DispatchServerName(
                 // Server might be temporarily unavailable ...
                 // Check conn_status ...
                 if (ctx.conn_status == IConnValidator::eTempInvalidConn) {
-                    rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
+                    rt_data.IncNumOfValidationFailures(service_name,
+                                                       ctx.last_tried);
                 } else {
                     // conn_status == IConnValidator::eInvalidConn
-                    rt_data.Exclude(service_name, dsp_srv);
-                    tried_servers.push_back(dsp_srv);
+                    rt_data.Exclude(service_name, ctx.last_tried);
+                    tried_servers.push_back(ctx.last_tried);
                 }
             }
         } else {
@@ -613,6 +617,17 @@ CDBConnectionFactory::MakeValidConnection(
 
     if (conn.get())
     {
+        ctx.last_tried.Reset(new CDBServer(conn->ServerName(),
+                                           conn->Host(), conn->Port()));
+        if (conn->IsReusable()  &&  !params.GetParam("pool_name").empty()) {
+            if (conn->Host() != 0) {
+                ctx.tried.back() = (impl::ConvertN2A(conn->Host()) + ':'
+                                    + NStr::NumericToString(conn->Port()));
+            } else {
+                ctx.tried.back() = conn->ServerName();
+            }
+        }
+
         if (conn->Host() == 0) {
             GetRuntimeData(params.GetConnValidator()).GetDBServiceMapper()
                 .RecordServer(conn->GetExtraFeatures());
@@ -634,6 +649,10 @@ CDBConnectionFactory::MakeValidConnection(
         try {
             ctx.conn_status = validator.Validate(*conn);
             if (ctx.conn_status != IConnValidator::eValidConn) {
+                if (conn->IsReusable()) {
+                    static_cast<impl::CConnection&>(conn->GetExtraFeatures())
+                        .m_Reusable = false;
+                }
                 CDB_Exception ex(DIAG_COMPILE_INFO, NULL,
                                  CDB_Exception::EErrCode(0),
                                  "Validation failed against "
@@ -649,6 +668,10 @@ CDBConnectionFactory::MakeValidConnection(
                     = params.GetConnValidator()->ValidateException(ex);
             }
             if (ctx.conn_status != IConnValidator::eValidConn) {
+                if (conn->IsReusable()) {
+                    static_cast<impl::CConnection&>(conn->GetExtraFeatures())
+                        .m_Reusable = false;
+                }
                 // m_Errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
                 return NULL;
@@ -668,6 +691,11 @@ CDBConnectionFactory::MakeValidConnection(
         conn->FinishOpening();
     }
     else {
+        CRef<IConnValidator> validator = params.GetConnValidator();
+        CRuntimeData&        rt_data   = GetRuntimeData(validator);
+        const string&        service   = params.GetServerName();
+        ctx.last_tried.Reset(rt_data.GetDispatchedServer(service));
+
         m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
                            "Parameters prohibited creating connection", eDiag_Error, 0));
     }
@@ -739,12 +767,13 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     CRef<IConnValidator> validator = params.GetConnValidator();
     CRuntimeData&        rt_data   = GetRuntimeData(validator);
     const string&        service   = params.GetServerName();
-    TSvrRef              dsp_srv   = rt_data.GetDispatchedServer(service);
+    TSvrRef              dsp_srv   = ctx.last_tried;
 
     CDiagContext_Extra   extra     = GetDiagContext().Extra();
     string               prefix    = s_GetNextLogPrefix();
 
     if (dsp_srv.Empty()) {
+        // Try rt_data.GetDispatchedServer(service) first?
         dsp_srv.Reset(&stub_dsp_srv);
     }
 

@@ -40,6 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDBConnectionFactory;
 class CDB_Connection;
 
 namespace impl
@@ -62,6 +63,7 @@ class CCommand;
 class NCBI_DBAPIDRIVER_EXPORT CConnection : public I_ConnectionExtra
 {
     friend class impl::CDriverContext;
+    friend class ncbi::CDBConnectionFactory;
     friend class ncbi::CDB_Connection; // Because of AttachTo
 
 public:
