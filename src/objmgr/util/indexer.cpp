@@ -376,6 +376,42 @@ void CBioseqIndex::x_InitFeats (void)
     }
 }
 
+DEFINE_STATIC_MUTEX(idx_UniqueIdMutex);
+static size_t idx_UniqueIdOffset = 0;
+CRef<CSeq_id> idx_MakeUniqueId(CScope& scope)
+{
+    CMutexGuard guard(idx_UniqueIdMutex);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    bool good = false;
+    while (!good) {
+        id->SetLocal().SetStr("tmp_delta" + NStr::NumericToString(idx_UniqueIdOffset));
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
+        if (bsh) {
+            idx_UniqueIdOffset++;
+        } else {
+            good = true;
+        }
+    }
+    return id;
+}
+
+static CRef<CBioseq> idx_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CRef<CBioseq> seq(new CBioseq());
+    seq->SetId().push_back(idx_MakeUniqueId(scope));
+    seq->SetInst().Assign(bsh.GetInst());
+    seq->SetInst().ResetSeq_data();
+    seq->SetInst().ResetExt();
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    CRef<CDelta_seq> element(new CDelta_seq());
+    element->SetLoc().Assign(loc);
+    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
+    seq->SetInst().SetLength(sequence::GetLength(*loc.GetId(), &scope));
+    return seq;
+}
+
 void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
 {
@@ -392,16 +428,15 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
     SAnnotSelector sel;
 
-    sel.SetLimitTSE(m_bsh.GetTSE_Handle());
-
-    if (m_onlyNearFeats) {
-        sel.SetResolveDepth(0);
-    } else {
-        sel.SetAdaptiveDepth(true);
-    }
+    // use temporary delta for selector
+    sel.SetResolveAll();
+    sel.SetResolveDepth(kMax_Int);
+    sel.SetAdaptiveDepth(true);
+    CRef<CBioseq> delta = idx_MakeTemporaryDelta(loc, *m_scope);
+    CBioseq_Handle delta_bsh = m_scope->AddBioseq(*delta);
 
     // explore features
-    for (CFeat_CI feat_it(*m_scope, loc, sel); feat_it; ++feat_it) {
+    for (CFeat_CI feat_it(delta_bsh, sel); feat_it; ++feat_it) {
         const CMappedFeat mf = *feat_it;
 
         CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
@@ -413,6 +448,9 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
         // index CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
     }
+
+    // remove temporary delta
+    m_scope->RemoveBioseq(delta_bsh);
 }
 
 void CBioseqIndex::InitializeFeatures (int from, int to, bool rev_comp)
