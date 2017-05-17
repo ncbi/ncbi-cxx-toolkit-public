@@ -1078,22 +1078,26 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         else if ( blob_id.m_SeqType == 'P' ) {
             if ( CWGSProteinIterator it = GetProteinIterator(blob_id) ) {
                 gb_state = it.GetGBState();
-                entry = it.GetSeq_entry();
+                if ( gb_state != NCBI_gb_state_eWGSGenBankWithdrawn ) {
+                    entry = it.GetSeq_entry();
+                }
             }
         }
         else {
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
                 gb_state = it.GetGBState();
-                CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
-                if ( !GetSplitQualityGraphParam() ) {
-                    flags &= ~it.fSplitQualityGraph;
-                }
-                if ( !GetSplitSequenceParam() ) {
-                    flags &= ~it.fSplitSeqData;
-                }
-                split = it.GetSplitInfo(flags);
-                if ( !split ) {
-                    entry = it.GetSeq_entry(flags);
+                if ( gb_state != NCBI_gb_state_eWGSGenBankWithdrawn ) {
+                    CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
+                    if ( !GetSplitQualityGraphParam() ) {
+                        flags &= ~it.fSplitQualityGraph;
+                    }
+                    if ( !GetSplitSequenceParam() ) {
+                        flags &= ~it.fSplitSeqData;
+                    }
+                    split = it.GetSplitInfo(flags);
+                    if ( !split ) {
+                        entry = it.GetSeq_entry(flags);
+                    }
                 }
             }
         }
@@ -1107,8 +1111,7 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                 state |= CBioseq_Handle::fState_dead;
                 break;
             case NCBI_gb_state_eWGSGenBankWithdrawn:
-                state |= (CBioseq_Handle::fState_withdrawn |
-                          CBioseq_Handle::fState_no_data);
+                state |= CBioseq_Handle::fState_withdrawn;
                 break;
             default:
                 break;
