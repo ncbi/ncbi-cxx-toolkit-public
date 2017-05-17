@@ -1255,7 +1255,7 @@ bool CFormatGuess::x_LooksLikeCLUSTALConservedInfo(const string& line) const
 bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, size_t& seg_length) const
 {
     vector<string> toks;
-    NStr::Split(line, " \t", toks, NStr::eMergeDelims);
+    NStr::Split(line, " \t", toks, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     const size_t num_toks = toks.size();
 
     if (num_toks != 2 &&
@@ -2085,7 +2085,7 @@ bool CFormatGuess::x_CheckStripJsonNumbers(string& testString) const
 
     list<string> subStrings;
     // Split on white space
-    NStr::Split(testString, " \r\t\n", subStrings, NStr::fSplit_MergeDelims);
+    NStr::Split(testString, " \r\t\n", subStrings, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     for (auto it = subStrings.cbegin(); it != subStrings.cend(); ++it) {
         const string subString = *it;
@@ -2172,7 +2172,7 @@ bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
 
     list<string> numStrings;
     // Split on white space
-    NStr::Split(testString, " \r\t\n", numStrings, NStr::fSplit_MergeDelims);
+    NStr::Split(testString, " \r\t\n", numStrings, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     for (auto numString : numStrings) {
         if (!x_IsNumber(numString)) {

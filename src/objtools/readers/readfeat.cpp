@@ -3223,8 +3223,7 @@ bool CFeature_table_reader_imp::ParseInitialFeatureLine (
     NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
     string seqid;
     string annotname;
-    NStr::SplitInTwo(line, " ", seqid, annotname, 
-        NStr::fSplit_MergeDelims );
+    NStr::SplitInTwo(line, " ", seqid, annotname, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     // swap is faster than assignment
     out_seqid.swap(seqid);

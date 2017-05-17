@@ -247,7 +247,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
         NcbiGetlineEOL(input, line);
         if ( !line.empty() ) {
         	vector<string> tmp;
-        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelims);
+        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         	if(tmp.empty()) {
         		continue;
         	}

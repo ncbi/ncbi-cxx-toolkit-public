@@ -205,7 +205,7 @@ CIdMapperConfig::AddMapEntry(
 //  ============================================================================
 {
     vector<string> columns;
-    NStr::Split(strLine, " \t", columns, NStr::fSplit_MergeDelims);
+    NStr::Split(strLine, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     
     //sanity check: two or three columns. If three columns, the last better be
     //integer

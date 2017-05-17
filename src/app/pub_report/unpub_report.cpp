@@ -685,7 +685,7 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     ITERATE(list<string>, author, data.GetAuthors()) {
 
         list<CTempString> names;
-        NStr::Split(*author, " ", names, NStr::fSplit_MergeDelims);
+        NStr::Split(*author, " ", names, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         if (!names.empty()) {
 
             if (!query.empty())
