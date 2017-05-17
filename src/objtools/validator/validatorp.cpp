@@ -1869,7 +1869,6 @@ void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const C
         interval.IsSetFrom() && interval.GetFrom() == 0) {
         check_from = true;
     }
-    TSeqPos len = 0;
     if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() &&
         interval.GetFuzz_to().GetLim() == CInt_fuzz::eLim_tr &&
         interval.IsSetTo()) {
