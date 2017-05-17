@@ -130,7 +130,7 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSeq_descr &descr)
 }
 
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
-void CSeqEntryIndex::BspInSep (const CSeq_entry& sep)
+void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep)
 
 {
     if (sep.IsSeq()) {
@@ -152,7 +152,7 @@ void CSeqEntryIndex::BspInSep (const CSeq_entry& sep)
         if (bssp.CanGetSeq_set()) {
             // recursively explore current Bioseq-set
             for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
-                BspInSep(*tmp);
+                x_InitSeqs(*tmp);
             }
         }
     }
@@ -177,11 +177,8 @@ void CSeqEntryIndex::x_Init (void)
     m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
 
     // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
-    BspInSep( *m_topSEP );
+    x_InitSeqs( *m_topSEP );
 }
-
-
-
 
 
 // CBioseqIndex
@@ -412,6 +409,7 @@ static CRef<CBioseq> idx_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
     return seq;
 }
 
+// Feature collection on location
 void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
 {
@@ -453,6 +451,7 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
     m_scope->RemoveBioseq(delta_bsh);
 }
 
+// Feature collection on range
 void CBioseqIndex::InitializeFeatures (int from, int to, bool rev_comp)
 
 {
@@ -503,20 +502,13 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
 CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd, CBioseqIndex& bsx)
     : m_sd(sd), m_bsx(bsx)
 {
-    x_Init();
+    m_subtype = m_sd.Which();
 }
 
 // Destructor
 CDescriptorIndex::~CDescriptorIndex (void)
 
 {
-}
-
-// Common initialization function
-void CDescriptorIndex::x_Init (void)
-
-{
-    m_subtype = m_sd.Which();
 }
 
 
@@ -526,20 +518,13 @@ void CDescriptorIndex::x_Init (void)
 CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CBioseqIndex& bsx)
     : m_sfh(sfh), m_mf(mf), m_bsx(bsx)
 {
-    x_Init();
+    m_subtype = m_mf.GetData().GetSubtype();
 }
 
 // Destructor
 CFeatureIndex::~CFeatureIndex (void)
 
 {
-}
-
-// Common initialization function
-void CFeatureIndex::x_Init (void)
-
-{
-    m_subtype = m_mf.GetData().GetSubtype();
 }
 
 

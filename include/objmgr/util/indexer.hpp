@@ -133,7 +133,7 @@ private:
     void x_Init (void);
 
     // Populate vector of index objects for Bioseqs in Seq-entry
-    void BspInSep (const CSeq_entry& sep);
+    void x_InitSeqs (const CSeq_entry& sep);
 
 private:
     CRef<CObjectManager> m_objmgr;
@@ -204,6 +204,7 @@ private:
 public:
     // Limit feature selection to a subrange, either forward strand or reverse complement
     void InitializeFeatures (int from, int to, bool rev_comp);
+    // Limit feature selection to a specific location
     void InitializeFeatures (const CSeq_loc& loc);
 
     // Descriptor and feature exploration iterators
@@ -240,11 +241,12 @@ public:
     CConstRef<CBioSource> GetBioSource (void) const { return m_bioSource; }
 
 private:
-    // Common object collection functions, delayed until actually needed
+    // Common descriptor collection, delayed until actually needed
     void x_InitDescs (void);
+    // Common feature collection, delayed until actually needed, can be overridden by InitializeFeatures
     void x_InitFeats (void);
 
-    // Internal mapper
+    // Internal mapper from GetBestGene result to gene's CFeatureIndex object
     CRef<CFeatureIndex> GetFeatIndex (CMappedFeat mf);
 
 private:
@@ -323,10 +325,6 @@ public:
     CSeqdesc::E_Choice GetSubtype (void) const { return m_subtype; }
 
 private:
-    // Common initialization function
-    void x_Init (void);
-
-private:
     const CSeqdesc& m_sd;
     CBioseqIndex& m_bsx;
 
@@ -370,10 +368,6 @@ public:
 
     // Find index object for best gene using internal CFeatTree
     template<typename _Pred> bool GetBestGene (_Pred m);
-
-private:
-    // Common initialization function
-    void x_Init (void);
 
 private:
     CSeq_feat_Handle m_sfh;
