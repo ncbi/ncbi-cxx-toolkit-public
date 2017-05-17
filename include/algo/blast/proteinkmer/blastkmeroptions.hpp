@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/core/blast_export.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(blast);

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/core/blast_export.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
