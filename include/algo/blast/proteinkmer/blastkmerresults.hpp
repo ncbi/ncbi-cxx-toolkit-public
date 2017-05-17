@@ -57,7 +57,7 @@ typedef vector< pair<CRef<CSeq_id>, double> > TBlastKmerScoreVector;
 /// NOTE: recoverable errors (e.g., query shorter than KMER size) will NOT
 /// trigger an exception but the CBlastKmerResults for that query will have 
 /// an error or warning.  Use the HasError or HasWarning message to check.
-class CBlastKmerResults : public CObject
+class NCBI_XBLAST_EXPORT CBlastKmerResults : public CObject
 {
 public:
 	/// Constructor
@@ -140,7 +140,7 @@ private:
 };
 
 /// This class holds one or more CBlastKmerResults
-class CBlastKmerResultsSet : public CObject
+class NCBI_XBLAST_EXPORT CBlastKmerResultsSet : public CObject
 {
 public:
 
