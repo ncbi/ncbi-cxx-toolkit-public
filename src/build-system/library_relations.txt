@@ -486,6 +486,7 @@ gpipe_sqlite needs3party $(SQLITE3_LIBS)
 gpipe_standalone needs gpipe_an_base
 gpipe_teamcity needs gpipe_common
 gpipe_teamcity needs gpipe_curl
+gpipe_test_boost needs test_boost
 gpipe_tree needs gpipe_common
 gpipe_tree needs xalgophytree
 gpipe_type_verifier needs gpipe_asn_cleanup
@@ -1329,7 +1330,6 @@ xcddalignview needs ncbimime
 xcgi needs xutil
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
-xcleanup needs submit
 xcleanup needs taxon3
 xcleanup needs valid
 xcleanup needs xobjutil
@@ -1446,6 +1446,7 @@ xobjreadex needs $(OBJREAD_LIBS)
 xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
+xobjutil needs submit
 xobjwrite needs $(OBJREAD_LIBS)
 xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
