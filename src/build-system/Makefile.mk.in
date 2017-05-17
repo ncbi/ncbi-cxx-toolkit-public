@@ -749,7 +749,7 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
               einfo uilist ehistory
 
 # Object readers
-OBJREAD_LIBS = xobjread variation creaders
+OBJREAD_LIBS = xobjread variation creaders submit
 
 # formatting code
 XFORMAT_LIBS = xformat xcleanup gbseq mlacli mla medlars pubmed valid taxon3
