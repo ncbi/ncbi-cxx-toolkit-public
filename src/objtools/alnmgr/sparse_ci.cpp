@@ -164,7 +164,7 @@ void CSparse_CI::x_InitSegment(void)
             right_offset = m_RowIt.GetFirstRange().GetToOpen() - to;
             if (m_NextAnchorRg.GetToOpen() < to) {
                 from = max(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetFrom());
-                left_offset = m_NextRowRg.GetFrom() - from;
+                left_offset = from - m_NextRowRg.GetFrom();
             }
             else if (m_NextRowRg.GetToOpen() < to) {
                 from = max(m_NextRowRg.GetToOpen(), m_NextAnchorRg.GetFrom());
