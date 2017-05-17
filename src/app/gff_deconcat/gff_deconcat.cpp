@@ -178,7 +178,7 @@ void CGffDeconcatApp::xProcessFile(CNcbiIstream& istr) {
 
 void CGffDeconcatApp::xProcessLine(const string& line, TIdmap& id_map) {
     vector<string> columns;
-    NStr::Split(line, " \t", columns, NStr::eMergeDelims);
+    NStr::Split(line, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (columns.size() <= 1) {
         return;
     }    

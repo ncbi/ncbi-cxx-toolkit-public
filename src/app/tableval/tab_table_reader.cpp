@@ -405,7 +405,7 @@ void CTabDelimitedValidator::RegisterAliases(CNcbiIstream* in_stream)
             if (line[0] == '#' || line[0] == ';')
                 continue;
             CTempString name, alias;
-            NStr::SplitInTwo(line, "\t ", name, alias, NStr::eMergeDelims);
+            NStr::SplitInTwo(line, "\t ", name, alias, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             if (name.empty() || alias.empty())
                 continue;
             r.Register(name, alias);

@@ -521,7 +521,7 @@ vector<string> CMakeProfileDBApp::x_GetSMPFilenames(void)
 		string line;
 		vector<string> tmp;
 		NcbiGetlineEOL(*m_InPssmList, line);
-		NStr::Split(line, " \t\r", tmp, NStr::eMergeDelims);
+		NStr::Split(line, " \t\r", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
 		if(tmp.size()  > 0)
 			filenames.insert(filenames.end(), tmp.begin(), tmp.end() );

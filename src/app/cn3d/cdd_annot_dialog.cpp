@@ -1659,7 +1659,7 @@ bool CDDTypedAnnotDialog::GetData(ncbi::objects::CAlign_annot* alignAnnot)
 
     //  Remove internal runs of whitespace.
     vector<string> tokens;
-    NStr::Tokenize(descr, ws, tokens, NStr::eMergeDelims);
+    NStr::Split(descr, ws, tokens, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (tokens.size() > 0) {
         descr = tokens[0];
         for (unsigned int i = 1; i < tokens.size(); ++i) {
