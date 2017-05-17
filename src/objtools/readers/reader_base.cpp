@@ -408,7 +408,7 @@ bool CReaderBase::xParseBrowserLine(
     CAnnot_descr& desc = annot->SetDesc();
     
     vector<string> fields;
-    NStr::Split( strLine, " \t", fields, NStr::eMergeDelims );
+    NStr::Split(strLine, " \t", fields, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
         if ( *it == "position" ) {
             ++it;

@@ -977,7 +977,7 @@ bool CGff2Reader::x_ParseBrowserLineGff(
         return false;
     }
     vector< string > columns;
-    NStr::Split( strRawInput, " \t", columns, NStr::eMergeDelims );
+    NStr::Split( strRawInput, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
     if ( columns.size() <= 1 || 1 != ( columns.size() % 2 ) ) {
         // don't know how to unwrap this
@@ -1017,7 +1017,7 @@ bool CGff2Reader::x_ParseTrackLineGff(
         }
     }
     vector< string > columns;
-    NStr::Split( strCookedInput, " \t", columns, NStr::eMergeDelims );
+    NStr::Split( strCookedInput, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
     if ( columns.size() <= 1 ) {
         pAnnotDesc.Reset();

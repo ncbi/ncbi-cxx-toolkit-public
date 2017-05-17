@@ -737,7 +737,7 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("Dbxref");
     if (it != attrs_left.end()) {
         vector<string> dbxrefs;
-        NStr::Split(it->second, ",", dbxrefs, NStr::eMergeDelims);
+        NStr::Split(it->second, ",", dbxrefs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         for (vector<string>::iterator it1 = dbxrefs.begin(); it1 != dbxrefs.end();
                 ++it1 ) {
             string dbtag = xNormalizedAttributeValue(*it1);
@@ -877,7 +877,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
             vector<string> synonyms;
-            NStr::Split(it->second, ",", synonyms, NStr::eMergeDelims);
+            NStr::Split(it->second, ",", synonyms, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             for (vector<string>::iterator it1 = synonyms.begin(); it1 != synonyms.end();
                     ++it1 ) {
                 string synonym = xNormalizedAttributeValue(*it1);
@@ -987,7 +987,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsCdregion()) {
             vector<string> codebreaks;
-            NStr::Split(it->second, ",", codebreaks, NStr::eMergeDelims);
+            NStr::Split(it->second, ",", codebreaks, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             for (vector<string>::iterator it1 = codebreaks.begin(); 
                     it1 != codebreaks.end(); ++it1 ) {
                 string breakData = xNormalizedAttributeValue(*it1);

@@ -498,7 +498,7 @@ CVcfReader::xProcessHeaderLine(
     //  After that come the various headers for the genotype information, and these
     //  need to be preserved:
     //
-    NStr::Split(line, " \t", m_GenotypeHeaders, NStr::eMergeDelims);
+    NStr::Split(line, " \t", m_GenotypeHeaders, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     vector<string>::iterator pos_format = find(
         m_GenotypeHeaders.begin(), m_GenotypeHeaders.end(), "FORMAT");
     if ( pos_format == m_GenotypeHeaders.end() ) {
@@ -835,7 +835,7 @@ CVcfReader::xParseData(
 //  ----------------------------------------------------------------------------
 {
     vector<string> columns;
-    NStr::Split( line, "\t", columns, NStr::eMergeDelims );
+    NStr::Split(line, "\t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if ( columns.size() < 8 ) {
         return false;
     }
@@ -857,7 +857,7 @@ CVcfReader::xParseData(
 
         vector<string> infos;
         if ( columns[7] != "." ) {
-            NStr::Split( columns[7], ";", infos, NStr::eMergeDelims );
+            NStr::Split( columns[7], ";", infos, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
             for ( vector<string>::iterator it = infos.begin(); 
                 it != infos.end(); ++it ) 
             {
@@ -868,11 +868,11 @@ CVcfReader::xParseData(
             }
         }
         if ( columns.size() > 8 ) {
-            NStr::Split( columns[8], ":", data.m_FormatKeys, NStr::eMergeDelims );
+            NStr::Split( columns[8], ":", data.m_FormatKeys, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
             for ( size_t u=9; u < columns.size(); ++u ) {
                 vector<string> values;
-                NStr::Split( columns[u], ":", values, NStr::eMergeDelims );
+                NStr::Split( columns[u], ":", values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
                 data.m_GenotypeData[ m_GenotypeHeaders[u-9] ] = values;
             }
         }

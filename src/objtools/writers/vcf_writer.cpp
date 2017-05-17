@@ -884,7 +884,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
             if ( ext.HasField( "info" ) ) {
                 vector<string> extraInfos;
                 info = ext.GetField( "info" ).GetData().GetStr();
-                NStr::Split(info, ";", extraInfos, NStr::eMergeDelims);
+                NStr::Split(info, ";", extraInfos, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 for (vector<string>::const_iterator cit = extraInfos.begin();
                         cit != extraInfos.end();
                         ++cit) {

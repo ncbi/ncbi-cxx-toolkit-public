@@ -273,7 +273,7 @@ CBedReader::xParseFeature(
 
     //  parse
     vector<string> fields;
-    NStr::Split( record_copy, " \t", fields, NStr::eMergeDelims );
+    NStr::Split(record_copy, " \t", fields, NStr::fSplit_MergeDelimiters);
     try {
         xCleanColumnValues(fields);
     }
@@ -1502,7 +1502,7 @@ CBedReader::xReadBedRecordRaw(
 	NStr::TruncateSpacesInPlace(linecopy);
 
     //  parse
-    NStr::Split( linecopy, " \t", columns, NStr::eMergeDelims );
+    NStr::Split(linecopy, " \t", columns, NStr::fSplit_MergeDelimiters);
     try {
         xCleanColumnValues(columns);
     }
