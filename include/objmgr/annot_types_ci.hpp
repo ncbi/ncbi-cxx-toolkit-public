@@ -75,6 +75,12 @@ public:
                    const CSeq_annot_Handle& annot,
                    const SAnnotSelector* params = 0);
 
+    // Iterate annotations from the seq-annot that annotate the location
+    CAnnotTypes_CI(TAnnotType type,
+                   const CSeq_loc& loc,
+                   const CSeq_annot_Handle& annot,
+                   const SAnnotSelector* params = 0);
+
     // Iterate everything from the seq-entry
     CAnnotTypes_CI(TAnnotType type,
                    const CSeq_entry_Handle& entry,

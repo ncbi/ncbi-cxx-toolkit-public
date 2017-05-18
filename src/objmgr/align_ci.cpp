@@ -128,6 +128,26 @@ CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
 }
 
 
+CAlign_CI::CAlign_CI(const CSeq_loc& loc,
+                     const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     loc,
+                     annot)
+{
+}
+
+
+CAlign_CI::CAlign_CI(const CSeq_loc& loc,
+                     const CSeq_annot_Handle& annot,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     loc,
+                     annot,
+                     &sel)
+{
+}
+
+
 CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry)
 {

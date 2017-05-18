@@ -182,6 +182,28 @@ CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
 }
 
 
+CFeat_CI::CFeat_CI(const CSeq_loc& loc,
+                   const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     loc,
+                     annot)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CSeq_loc& loc,
+                   const CSeq_annot_Handle& annot,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     loc,
+                     annot,
+                     &sel)
+{
+    Update();
+}
+
+
 CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      entry)

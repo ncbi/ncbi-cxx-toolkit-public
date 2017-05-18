@@ -308,6 +308,28 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
 }
 
 
+CGraph_CI::CGraph_CI(const CSeq_loc& loc,
+                     const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     loc,
+                     annot)
+{
+    x_Update();
+}
+
+
+CGraph_CI::CGraph_CI(const CSeq_loc& loc,
+                     const CSeq_annot_Handle& annot,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     loc,
+                     annot,
+                     &sel)
+{
+    x_Update();
+}
+
+
 CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
 {

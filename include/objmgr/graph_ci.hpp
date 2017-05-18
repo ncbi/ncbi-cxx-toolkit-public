@@ -276,6 +276,18 @@ public:
     CGraph_CI(const CSeq_annot_Handle& annot,
               const SAnnotSelector& sel);
 
+    /// Iterate all graphs from the seq-annot that annotate the location
+    CGraph_CI(const CSeq_loc& loc,
+              const CSeq_annot_Handle& annot);
+
+    /// Iterate all graphs from the seq-annot that annotate the location
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CGraph_CI(const CSeq_loc& loc,
+              const CSeq_annot_Handle& annot,
+              const SAnnotSelector& sel);
+
     /// Iterate all graphs from the seq-entry regardless of their location
     explicit
     CGraph_CI(const CSeq_entry_Handle& entry);

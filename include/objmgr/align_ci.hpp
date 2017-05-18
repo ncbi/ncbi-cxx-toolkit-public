@@ -133,6 +133,18 @@ public:
     CAlign_CI(const CSeq_annot_Handle& annot,
               const SAnnotSelector& sel);
 
+    /// Iterate all alignments from the seq-annot that annotate the location
+    CAlign_CI(const CSeq_loc& loc,
+              const CSeq_annot_Handle& annot);
+
+    /// Iterate all alignments from the seq-annot that annotate the location
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAlign_CI(const CSeq_loc& loc,
+              const CSeq_annot_Handle& annot,
+              const SAnnotSelector& sel);
+
     /// Create an iterator that enumerates CSeq_align objects
     /// from the seq-entry regardless of their location
     explicit

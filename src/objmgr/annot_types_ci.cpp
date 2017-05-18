@@ -188,6 +188,19 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
+                               const CSeq_loc& loc,
+                               const CSeq_annot_Handle& annot,
+                               const SAnnotSelector* params)
+    : m_DataCollector(new CAnnot_Collector(annot.GetScope()))
+{
+    SAnnotSelector sel = params ? *params : SAnnotSelector();
+    sel.ForceAnnotType(type)
+        .SetLimitSeqAnnot(annot);
+    x_Init(annot.GetScope(), loc, sel);
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CSeq_entry_Handle& entry,
                                const SAnnotSelector* params)
     : m_DataCollector(new CAnnot_Collector(entry.GetScope()))
