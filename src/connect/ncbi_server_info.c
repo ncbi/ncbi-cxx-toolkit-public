@@ -622,8 +622,10 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
         i1->port != i2->port) {
         return 0/*false*/;
     }
-    if (memcmp(&i1->addr, &i2->addr, sizeof(i1->addr)) != 0)
+    if (!NcbiIsEmptyIPv6(&i1->addr)  &&  !NcbiIsEmptyIPv6(&i2->addr)
+        &&  memcmp(&i1->addr, &i2->addr, sizeof(i1->addr)) != 0) {
         return 0/*false*/;
+    }
     if (!(attr = s_GetAttrByType(i1->type/*==i2->type*/)))
         return 0/*false*/;
     return attr->ops.Equal ? attr->ops.Equal(&i1->u, &i2->u) : 1;
