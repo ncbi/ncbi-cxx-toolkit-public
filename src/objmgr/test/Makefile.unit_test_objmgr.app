@@ -10,7 +10,6 @@ LIB = test_boost $(SOBJMGR_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-CHECK_COPY = unit_test_objmgr.ini
 CHECK_CMD = unit_test_objmgr
 
 WATCHERS = vasilche
