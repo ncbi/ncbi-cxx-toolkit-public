@@ -123,7 +123,10 @@ public:
                         }
 
                         // Print feature location
-                        *m_out << "\t" << SeqLocString(sfx.GetMappedFeat().GetLocation());
+                        const CSeq_loc& loc = sfx.GetMappedFeat().GetLocation();
+                        string loc_str;
+                        loc.GetLabel(&loc_str);
+                        *m_out << "\t" << loc_str;
 
                         // If coding region, print underlying nucleotide sequence
                         if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
@@ -153,15 +156,6 @@ public:
         catch (CException& e) {
             LOG_POST(Error << "Error processing seqentry: " << e.what());
         }
-    }
-
-    //  ------------------------------------------------------------------------
-    string SeqLocString( const CSeq_loc& loc )
-    //  ------------------------------------------------------------------------
-    {
-        string str;
-        loc.GetLabel(&str);
-        return str;
     }
 
 protected:
