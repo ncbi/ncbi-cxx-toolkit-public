@@ -261,6 +261,7 @@ private:
     bool m_featsInitialized;
     vector<CRef<CFeatureIndex>> m_sfxList;
     feature::CFeatTree m_featTree;
+    CBioseq_Handle m_deltaBsh;
 
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_featIndexMap;

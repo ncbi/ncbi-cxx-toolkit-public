@@ -247,6 +247,10 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryInd
 CBioseqIndex::~CBioseqIndex (void)
 
 {
+    // remove temporary delta
+    if (m_deltaBsh) {
+        m_scope->RemoveBioseq(m_deltaBsh);
+    }
 }
 
 // Descriptor collection (delayed until needed)
@@ -431,10 +435,10 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
     sel.SetResolveDepth(kMax_Int);
     sel.SetAdaptiveDepth(true);
     CRef<CBioseq> delta = idx_MakeTemporaryDelta(loc, *m_scope);
-    CBioseq_Handle delta_bsh = m_scope->AddBioseq(*delta);
+    m_deltaBsh = m_scope->AddBioseq(*delta);
 
     // explore features
-    for (CFeat_CI feat_it(delta_bsh, sel); feat_it; ++feat_it) {
+    for (CFeat_CI feat_it(m_deltaBsh, sel); feat_it; ++feat_it) {
         const CMappedFeat mf = *feat_it;
 
         CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
@@ -446,9 +450,6 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
         // index CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
     }
-
-    // remove temporary delta
-    m_scope->RemoveBioseq(delta_bsh);
 }
 
 // Feature collection on range
