@@ -10229,9 +10229,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     unit_test_util::AddFeat(mrna2, contig);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[0]->SetErrCode("CDSmRNAmismatch");
-    expected_errors[0]->SetErrMsg("No match for 1 mRNA");
+    CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ProductFetchFailure",
                                                  "Unable to fetch mRNA transcript 'lcl|nuc3'"));
@@ -20771,3 +20769,4 @@ BOOST_AUTO_TEST_CASE(Test_VR_708)
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 }
+
