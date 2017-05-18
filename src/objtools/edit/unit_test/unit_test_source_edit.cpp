@@ -64,8 +64,10 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+extern const char* sc_TestEntry_FixOrgnames;
 
 NCBITEST_INIT_TREE()
 {
@@ -97,14 +99,14 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 {
-    CRef<CBioSource> src(new CBioSource());
-    src->SetOrg().SetTaxname("Norovirus");
+    CBioSource src;
+    src.SetOrg().SetTaxname("Norovirus");
 
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_old_name, "Norwalk-like viruses");
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_acronym, "acronym");
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_strain, "strain");
-    edit::RemoveOldName(*src);
-    FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, *src ) {
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_old_name, "Norwalk-like viruses");
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_acronym, "acronym");
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_strain, "strain");
+    edit::RemoveOldName(src);
+    FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, src ) {
         if ((*orgmod)->IsSetSubtype()) 
             BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() != COrgMod::eSubtype_old_name, true);
     }
@@ -113,13 +115,13 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 
 BOOST_AUTO_TEST_CASE(Test_RemoveTaxId)
 {
-    CRef<CBioSource> src(new CBioSource());
-    src->SetOrg().SetTaxname("Norovirus");
+    CBioSource src;
+    src.SetOrg().SetTaxname("Norovirus");
 
-    unit_test_util::SetDbxref (*src, "newDB", "3456");
-    unit_test_util::SetDbxref (*src, "taxon", "4569");
-    edit::RemoveTaxId(*src);
-    FOR_EACH_DBXREF_ON_ORGREF ( db, src->GetOrg() ) {
+    unit_test_util::SetDbxref (src, "newDB", "3456");
+    unit_test_util::SetDbxref (src, "taxon", "4569");
+    edit::RemoveTaxId(src);
+    FOR_EACH_DBXREF_ON_ORGREF ( db, src.GetOrg() ) {
         if ((*db)->IsSetDb())
             BOOST_CHECK_EQUAL(NStr::Equal((*db)->GetDb(), "taxon", NStr::eNocase), false);
     }
@@ -129,40 +131,37 @@ BOOST_AUTO_TEST_CASE(Test_RemoveTaxId)
 
 BOOST_AUTO_TEST_CASE(Test_CleanupForTaxnameChange)
 {
-    CRef<CBioSource> src(new CBioSource());
-    src->SetOrg().SetTaxname("Norovirus");
+    CBioSource src;
+    src.SetOrg().SetTaxname("Norovirus");
 
     // set the tax id
-    unit_test_util::SetDbxref (*src, "newDB", "3456");
-    unit_test_util::SetDbxref (*src, "taxon", "4569");
+    unit_test_util::SetDbxref (src, "newDB", "3456");
+    unit_test_util::SetDbxref (src, "taxon", "4569");
     // set the old name
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_acronym, "acronym");
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_old_name, "Norwalk-like viruses");
-    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_strain, "strain");
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_acronym, "acronym");
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_old_name, "Norwalk-like viruses");
+    unit_test_util::SetOrgMod(src, COrgMod::eSubtype_strain, "strain");
     // set common name
-    src->SetOrg().SetCommon("common name for Norovirus");
+    src.SetOrg().SetCommon("common name for Norovirus");
     // set synonym
     list<string> synonyms;
     synonyms.push_back("syn1");
     synonyms.push_back("syn2");
-    src->SetOrg().SetSyn() = synonyms;
+    src.SetOrg().SetSyn() = synonyms;
 
-    //cout << MSerial_AsnText << *src << endl;
 
-    edit::CleanupForTaxnameChange(*src);
-    FOR_EACH_DBXREF_ON_ORGREF ( db, src->GetOrg() ) {
+    edit::CleanupForTaxnameChange(src);
+    FOR_EACH_DBXREF_ON_ORGREF ( db, src.GetOrg() ) {
         if ((*db)->IsSetDb())
             BOOST_CHECK_EQUAL(NStr::Equal((*db)->GetDb(), "taxon", NStr::eNocase), false);
     }
 
-    FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, *src ) {
+    FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, src ) {
         if ((*orgmod)->IsSetSubtype()) 
             BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() != COrgMod::eSubtype_old_name, true);
     }
 
-    BOOST_CHECK_EQUAL(src->GetOrg().IsSetSyn(), false);
-
-    //cout << MSerial_AsnText << *src << endl;
+    BOOST_CHECK_EQUAL(src.GetOrg().IsSetSyn(), false);
 }
 
 BOOST_AUTO_TEST_CASE(Test_StateAbbreviation)
@@ -324,6 +323,213 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
 }
 
 
-END_SCOPE(objects)
-END_NCBI_SCOPE
+BOOST_AUTO_TEST_CASE(Test_FixOrgnames)
+{
+    CSeq_entry entry;
+    CNcbiIstrstream istr(sc_TestEntry_FixOrgnames);
+    istr >> MSerial_AsnText >> entry;
 
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+
+    // no particularies in the taxname
+    string title("Unpublished Providencia alcalifaciens");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished Providencia alcalifaciens");
+
+    title.assign("Unpublished PROVIDENCIA ALCALIFACIENS");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished Providencia alcalifaciens");
+
+    title.assign("Unpublished [PROVIDENCIA ALCALIFACIENS]");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished [Providencia alcalifaciens]");
+
+    // with brackets
+    title.assign("Unpublished [AEGOLIUS ACADICUS]");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished [Aegolius acadicus]");
+
+    title.assign("Unpublished AEGOLIUS ACADICUS");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished Aegolius acadicus");
+
+    title.assign("Unpublished (DIPNOI)");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished (Dipnoi)");
+   
+    title.assign("Unpublished DIPNOI");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished Dipnoi");
+
+    title.assign("Unpublished [CANDIDA] sp.");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished [Candida] sp.");
+
+   // title.assign("Unpublished CANDIDA sp.");
+   // edit::FixOrgNames(seh, title);
+   // BOOST_CHECK_EQUAL(title, "Unpublished Candida sp.");
+
+    title.assign("Unpublished CANdida cf. auringIENSIS UWO(PS)99-304.7");
+    edit::FixOrgNames(seh, title);
+    BOOST_CHECK_EQUAL(title, "Unpublished Candida cf. auringiensis UWO(PS)99-304.7");
+}
+
+const char * sc_TestEntry_FixOrgnames = "\
+Seq-entry ::= set {\
+    class phy-set,\
+    seq-set {\
+        seq {\
+            id {\
+              local str \"seq_1\" },\
+            descr{ \
+              source { \
+                  genome genomic , \
+                    org { \
+                      taxname \"Eptatretus burgeri\" , \
+                      orgname { \
+                         mod { \
+                            { \
+                              subtype isolate , \
+                      subname \"BoBM478\" } } } } } }, \
+             inst {\
+                repr raw,\
+                mol rna,\
+                length 15 } } , \
+        seq { \
+          id {\
+            local str \"seq_2\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"Providencia alcalifaciens\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 3652 } }  } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw,\
+            mol dna,\
+            length 20,\
+            topology circular,\
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+        seq { \
+          id {\
+            local str \"seq_3\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"Felis catus]\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 9685 } } } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw,\
+            mol dna,\
+            length 20,\
+            topology circular,\
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+        seq { \
+          id {\
+            local str \"seq_4\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"[Aegolius acadicus]\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 56265 } } } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw,\
+            mol dna,\
+            length 20,\
+            topology circular,\
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+         seq { \
+          id {\
+            local str \"seq_5\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"[Dipnoi\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 7878 } } } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw , \
+            mol dna , \
+            length 20 , \
+            topology circular , \
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+        seq { \
+          id {\
+            local str \"seq_6\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"Candida cf. auringiensis UWO(PS)99-304.7\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 204243 } } } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw , \
+            mol dna , \
+            length 20 , \
+            topology circular , \
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+        seq { \
+          id {\
+            local str \"seq_7\" },\
+          descr{ \
+            source { \
+              genome genomic , \
+                org { \
+                  taxname \"[Candida] sp.\" , \
+                  db { \
+                        { \
+                         db \"taxon\" , \
+                         tag id 3652 } } } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw , \
+            mol dna , \
+            length 20 , \
+            topology circular , \
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } , \
+        seq { \
+          id {\
+            local str \"seq_8\" },\
+          descr{ \
+            source { \
+                org { \
+                  taxname \"Gibbula divaricata: Trochidae: Vetigastropoda: Mollusca\" } }, \
+            molinfo { \
+              biomol genomic } }, \
+         inst {\
+            repr raw,\
+            mol dna,\
+            length 20,\
+            topology circular,\
+            seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } } } \
+}";                               

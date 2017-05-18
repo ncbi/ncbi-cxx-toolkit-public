@@ -701,15 +701,38 @@ void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence)
     
 }
 
+static bool s_ReplaceInPlaceWholeWordNoCase(string& str, const string& search, const string& replace)
+{
+    bool modified = false;
+
+    size_t pos = NStr::FindNoCase(str, search);
+    while (pos != string::npos) {
+        size_t right_end = pos + search.length();
+        if ((pos == 0 || !isalpha(str.c_str()[pos - 1]))
+            && (right_end == str.length() || !isalpha(str.c_str()[right_end]))) {
+                string this_replace = replace;
+                str = str.substr(0, pos) + this_replace + str.substr(right_end);
+                right_end = pos + this_replace.length();
+                modified = true;
+        }
+        pos = NStr::FindNoCase(str, search, right_end);
+    }
+
+    return modified;
+}
+
 void FixOrgNames(objects::CSeq_entry_Handle seh, string& result)
 {
     vector<string> taxnames;
-    FindOrgNames(seh,taxnames);
-    for(vector<string>::const_iterator name=taxnames.begin(); name!=taxnames.end(); ++name) {
-        CRegexpUtil replacer( result );
-        //int num_replacements = 
-        replacer.Replace( "\\b"+*name+"\\b", *name, CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
-        replacer.GetResult().swap( result );
+    FindOrgNames(seh, taxnames);
+    for (vector<string>::const_iterator name = taxnames.begin(); name != taxnames.end(); ++name) {
+        bool modified = s_ReplaceInPlaceWholeWordNoCase(result, *name, *name);
+        if (!modified && (NStr::Find(*name, "]") != NPOS || NStr::Find(*name, "[") != NPOS)) {
+            string temp_taxname(*name);
+            NStr::ReplaceInPlace(temp_taxname, "]", "");
+            NStr::ReplaceInPlace(temp_taxname, "[", "");
+            modified = s_ReplaceInPlaceWholeWordNoCase(result, temp_taxname, temp_taxname);
+        }
     }
 }
 
