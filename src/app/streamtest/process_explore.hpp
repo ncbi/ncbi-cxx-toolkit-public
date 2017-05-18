@@ -119,7 +119,7 @@ public:
                         if (has_locus) {
                             *m_out << "\t" << locus;
                         } else {
-                            *m_out << "\t" << "--";
+                            *m_out << "\t--";
                         }
 
                         // Print feature location
@@ -128,11 +128,16 @@ public:
                         // If coding region, print underlying nucleotide sequence
                         if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
                             const CMappedFeat cds = sfx.GetMappedFeat();
-                            CSeqVector vec(cds.GetLocation(), *m_scope);
-                            vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
-                            string coding;
-                            vec.GetSeqData(0, vec.size(), coding);
-                            *m_out << "\t" << coding;
+                            try {
+                                CSeqVector vec(cds.GetLocation(), *m_scope);
+                                vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+                                string coding;
+                                vec.GetSeqData(0, vec.size(), coding);
+                                *m_out << "\t" << coding;
+                            }
+                            catch (CException& e) {
+                                *m_out << "\t--";
+                            }
                         }
 
                         *m_out << endl;
