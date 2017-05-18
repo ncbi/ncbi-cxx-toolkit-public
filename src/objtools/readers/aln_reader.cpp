@@ -256,6 +256,10 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment: Invalid input or alphabet", 0);
     }
+    if (1 == afp->num_sequences) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                   "Error reading alignment: Need more than one sequence", 0);
+    }
  
 
     // Check sequence lengths
