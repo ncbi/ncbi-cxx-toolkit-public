@@ -130,7 +130,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
         if ((*it)->IsFatal()) {
             out << " fatal=\"true\"";
         }
-        out << " message=\"" << (*it)->GetMsg() << "\">\n";
+        out << " message=\"" << NStr::XmlEncode((*it)->GetMsg()) << "\">\n";
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
             RecursiveXML(out, subs, indent + XML_INDENT, ext);
@@ -139,7 +139,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             TReportObjectList det = (*it)->GetDetails();
             ITERATE(TReportObjectList, obj, det) {
                 Indent(out, indent + XML_INDENT);
-                out << "<object text=\"" << (*obj)->GetText() << "\"/>\n";
+                out << "<object text=\"" << NStr::XmlEncode((*obj)->GetText()) << "\"/>\n";
             }
         }
         Indent(out, indent);
@@ -156,7 +156,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
 
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         Indent(out, XML_INDENT);
-        out << "<test name = \"" << tst->first << "\">\n";
+        out << "<test name = \"" << NStr::XmlEncode(tst->first) << "\">\n";
         TReportItemList rep = tst->second->GetReport();
         RecursiveXML(out, rep, XML_INDENT * 2, ext);
         Indent(out, XML_INDENT);
