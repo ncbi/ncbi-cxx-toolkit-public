@@ -3229,6 +3229,14 @@ AC_CHECK_HEADERS(arpa/inet.h errno.h libgen.h locale.h malloc.h netdb.h \
                  valgrind/memcheck.h wchar.h)
 AC_HEADER_TIME
 
+AC_CHECK_HEADERS(cxxabi.h)
+if test "$ac_cv_header_cxxabi_h" = "yes"; then
+   AC_CHECK_DECL(abi::__cxa_demangle,
+      [AC_DEFINE(HAVE_CXA_DEMANGLE, 1,
+        [Define to 1 if `abi::__cxa_demangle' is available from <cxxabi.h>.])],
+      [], [[#include <cxxabi.h>]])
+fi
+
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,

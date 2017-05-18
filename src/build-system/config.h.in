@@ -83,6 +83,12 @@
 /* Define to 1 if you have the <cpuid.h> header file. */
 #undef HAVE_CPUID_H
 
+/* Define to 1 if `abi::__cxa_demangle' is available from <cxxabi.h>. */
+#undef HAVE_CXA_DEMANGLE
+
+/* Define to 1 if you have the <cxxabi.h> header file. */
+#undef HAVE_CXXABI_H
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
