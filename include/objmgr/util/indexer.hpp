@@ -106,7 +106,7 @@ public:
     // Specialized initializers for streaming through release files, one component at a time
     // Submit-block obtained from top of Seq-submit release file
     void Initialize (CSeq_entry& topsep, CSubmit_block &sblock);
-    // Seq-descr chain obtained from top of Bioseq_set release file
+    // Seq-descr chain obtained from top of Bioseq-set release file
     void Initialize (CSeq_entry& topsep, CSeq_descr &descr);
 
     // Bioseq exploration iterator
@@ -261,7 +261,6 @@ private:
     bool m_featsInitialized;
     vector<CRef<CFeatureIndex>> m_sfxList;
     feature::CFeatTree m_featTree;
-    CBioseq_Handle m_deltaBsh;
 
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_featIndexMap;
