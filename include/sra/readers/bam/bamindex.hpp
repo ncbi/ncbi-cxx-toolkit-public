@@ -105,10 +105,58 @@ private:
 };
 
 
-struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo
+struct SBamIndexDefs
 {
-    typedef Uint4 TBin;
+    // BAM index structure contants
+    enum {
+        // bit shifts of sequence coordinates in BAM index
+        kLevel0BinShift = 14,
+        kLevelStepBinShift = 3
+    };
+    enum EIndexLevel : uint8_t {
+        // number of index levels
+        kMinLevel = 0,
+        kMaxLevel = 5,
+        kNumLevels = kMaxLevel+1
+    };
+    enum EBinSize : uint32_t {
+        // size of minimal bin
+        kMinBinSize = 1 << kLevel0BinShift,
+        // size of maximal bin
+        kMaxBinSize = kMinBinSize << (kLevelStepBinShift*kMaxLevel),
+    };
+    // return bit shift for size of bin on a specific index level
+    static uint32_t GetLevelBinShift(EIndexLevel level)
+    {
+        return kLevel0BinShift + kLevelStepBinShift*level;
+    }
+    // return size of bin on a specific index level
+    static uint32_t GetBinSize(EIndexLevel level)
+    {
+        return 1 << GetLevelBinShift(level);
+    }
 
+    typedef Uint4 TBin;
+    // base for bin numbers calculation
+    static const TBin kBinNumberBase = 4681; // == 011111 in octal
+    // base bin number of a specific index level
+    static TBin GetBinNumberBase(EIndexLevel level)
+    {
+        return kBinNumberBase >> (kLevelStepBinShift*level);
+    }
+    static TBin GetBinNumberOffset(uint32_t pos, EIndexLevel level)
+    {
+        return (pos >> GetLevelBinShift(level));
+    }
+    static TBin GetBinNumber(uint32_t pos, EIndexLevel level)
+    {
+        return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
+    }
+};
+
+
+struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
+{
     void Read(CNcbiIstream& in);
 
     static COpenRange<TSeqPos> GetSeqRange(TBin bin);
@@ -131,7 +179,7 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo
 };
 
 
-struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
+struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
 {
     void Read(CNcbiIstream& in);
 
@@ -142,7 +190,7 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
     void AddLevelFileRanges(vector<CBGZFRange>& ranges,
                             CBGZFRange limit_file_range,
                             COpenRange<TSeqPos> ref_range,
-                            uint32_t index_level) const;
+                            EIndexLevel index_level) const;
     
     vector<SBamIndexBinInfo> m_Bins;
     CBGZFRange m_UnmappedChunk;
@@ -153,51 +201,13 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
 };
 
 
-class NCBI_BAMREAD_EXPORT CBamIndex
+class NCBI_BAMREAD_EXPORT CBamIndex : public SBamIndexDefs
 {
 public:
     CBamIndex();
     explicit
     CBamIndex(const string& index_file_name);
     ~CBamIndex();
-
-    // BAM index structure contants
-    static const uint32_t kLevel0BinShift = 14;
-    static const uint32_t kLevelStepBinShift = 3;
-    // number of index levels
-    static const uint32_t kMaxLevel = 5;
-    static const uint32_t kNumLevels = kMaxLevel+1;
-    // size of minimal bin
-    static const uint32_t kMinBinSize = 1 << kLevel0BinShift;
-    // size of maximal bin
-    static const uint32_t kMaxBinSize = kMinBinSize << (kLevelStepBinShift*kMaxLevel);
-    // return bit shift for size of bin on a specific index level
-    static uint32_t GetLevelBinShift(uint32_t level)
-    {
-        return kLevel0BinShift + kLevelStepBinShift*level;
-    }
-    // return size of bin on a specific index level
-    static uint32_t GetBinSize(uint32_t level)
-    {
-        return 1 << GetLevelBinShift(level);
-    }
-
-    typedef SBamIndexBinInfo::TBin TBin;
-    // base for bin numbers calculation
-    static const TBin kBinNumberBase = 4681; // == 011111 in octal
-    // base bin number of a specific index level
-    static TBin GetBinNumberBase(uint32_t level)
-    {
-        return kBinNumberBase >> (kLevelStepBinShift*level);
-    }
-    static TBin GetBinNumberOffset(uint32_t pos, uint32_t level)
-    {
-        return (pos >> GetLevelBinShift(level));
-    }
-    static TBin GetBinNumber(uint32_t pos, uint32_t level)
-    {
-        return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
-    }
 
     void Read(const string& index_file_name);
 
@@ -334,7 +344,7 @@ private:
 };
 
 
-class NCBI_BAMREAD_EXPORT CBamFileRangeSet
+class NCBI_BAMREAD_EXPORT CBamFileRangeSet : public SBamIndexDefs
 {
 public:
     CBamFileRangeSet();
@@ -350,6 +360,18 @@ public:
                    size_t ref_index, COpenRange<TSeqPos> ref_range);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range);
+    void SetRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   EIndexLevel index_level);
+    void AddRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   EIndexLevel index_level);
+    void SetRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   EIndexLevel min_index_level, EIndexLevel max_index_level);
+    void AddRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   EIndexLevel min_index_level, EIndexLevel max_index_level);
     void SetWhole(const CBamHeader& header);
     void AddWhole(const CBamHeader& header);
 
@@ -370,8 +392,6 @@ public:
         }
 
 protected:
-    typedef SBamIndexBinInfo::TBin TBin;
-    
     void AddSortedRanges(const vector<CBGZFRange>& ranges);
     
 private:
@@ -598,7 +618,7 @@ private:
 };
 
 
-class NCBI_BAMREAD_EXPORT CBamRawAlignIterator
+class NCBI_BAMREAD_EXPORT CBamRawAlignIterator : public SBamIndexDefs
 {
 public:
     CBamRawAlignIterator()
@@ -617,6 +637,23 @@ public:
         : m_Reader(bam_db.GetFile())
         {
             Select(bam_db, ref_label, ref_range);
+        }
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         CRange<TSeqPos> ref_range,
+                         EIndexLevel index_level)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db, ref_label, ref_range, index_level);
+        }
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         CRange<TSeqPos> ref_range,
+                         EIndexLevel min_index_level,
+                         EIndexLevel max_index_level)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
@@ -639,11 +676,35 @@ public:
             x_Select(bam_db.GetIndex(),
                      bam_db.GetRefIndex(ref_label), ref_range);
         }
+    void Select(CBamRawDb& bam_db,
+                const string& ref_label,
+                CRange<TSeqPos> ref_range,
+                EIndexLevel index_level)
+        {
+            x_Select(bam_db.GetIndex(),
+                     bam_db.GetRefIndex(ref_label), ref_range, index_level);
+        }
+    void Select(CBamRawDb& bam_db,
+                const string& ref_label,
+                CRange<TSeqPos> ref_range,
+                EIndexLevel min_index_level,
+                EIndexLevel max_index_level)
+        {
+            x_Select(bam_db.GetIndex(),
+                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level);
+        }
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range)
         {
             x_Select(index, ref_index, ref_range);
+        }
+    void Select(const CBamIndex& index,
+                size_t ref_index,
+                CRange<TSeqPos> ref_range,
+                EIndexLevel index_level)
+        {
+            x_Select(index, ref_index, ref_range, index_level);
         }
     void Next();
 
@@ -659,7 +720,7 @@ public:
         }
     TSeqPos GetRefSeqPos() const
         {
-            return m_AlignInfo.get_ref_pos();
+            return m_AlignRefRange.GetFrom();
         }
 
     CTempString GetShortSeqId() const
@@ -706,19 +767,19 @@ public:
         }
     TSeqPos GetCIGARPos() const
         {
-            return m_AlignInfo.get_cigar_pos();
+            return m_AlignReadRange.GetFrom();
         }
     TSeqPos GetCIGARShortSize() const
         {
-            return m_AlignInfo.get_cigar_read_size();
+            return m_AlignReadRange.GetLength();
         }
     TSeqPos GetCIGARRefSize() const
         {
-            return m_AlignInfo.get_cigar_ref_size();
+            return m_AlignRefRange.GetLength();
         }
     pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> > GetCIGARAlignment(void) const
         {
-            return m_AlignInfo.get_cigar_alignment();
+            return make_pair(m_AlignRefRange, m_AlignReadRange);
         }
     
     string GetCIGAR() const
@@ -775,7 +836,19 @@ public:
 protected:
     void x_Select(const CBamHeader& header);
     void x_Select(const CBamIndex& index,
-                  size_t ref_index, CRange<TSeqPos> ref_range);
+                  size_t ref_index, CRange<TSeqPos> ref_range,
+                  EIndexLevel min_index_level, EIndexLevel max_index_level);
+    void x_Select(const CBamIndex& index,
+                  size_t ref_index, CRange<TSeqPos> ref_range)
+        {
+            x_Select(index, ref_index, ref_range, kMinLevel, kMaxLevel);
+        }
+    void x_Select(const CBamIndex& index,
+                  size_t ref_index, CRange<TSeqPos> ref_range,
+                  EIndexLevel index_level)
+        {
+            x_Select(index, ref_index, ref_range, index_level, index_level);
+        }
     bool x_UpdateRange();
     bool x_NextAnnot()
         {
@@ -791,8 +864,11 @@ protected:
     
 private:
     size_t m_RefIndex;
-    CRange<TSeqPos> m_RefRange;
+    COpenRange<TSeqPos> m_QueryRefRange;
+    EIndexLevel m_MinIndexLevel, m_MaxIndexLevel;
     SBamAlignInfo m_AlignInfo;
+    COpenRange<TSeqPos> m_AlignRefRange;
+    COpenRange<TSeqPos> m_AlignReadRange;
     CBamFileRangeSet m_Ranges;
     CBamFileRangeSet::const_iterator m_NextRange;
     CBGZFPos m_CurrentRangeEnd;

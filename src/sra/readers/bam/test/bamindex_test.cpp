@@ -100,6 +100,10 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddOptionalKey("q", "Query",
                              "Query variants: chr1, chr1:123-432",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("l", "IndexLevel",
+                             "Level of BAM index to scan",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetConstraint("l", new CArgAllow_Integers(CBamIndex::kMinLevel, CBamIndex::kMaxLevel));
 
     arg_desc->AddOptionalKey("title", "Title",
                              "Title of generated Seq-graph",
@@ -268,7 +272,12 @@ int CBamIndexTestApp::Run(void)
             queries.push_back(make_pair(ref_label, ref_range));
         }
     }
-
+    CBamIndex::EIndexLevel level1 = CBamIndex::kMinLevel;
+    CBamIndex::EIndexLevel level2 = CBamIndex::kMaxLevel;
+    if ( args["l"] ) {
+        level1 = level2 = CBamIndex::EIndexLevel(args["l"].AsInteger());
+    }
+    
     CBamRawDb bam_raw_db(path, path+".bai");
 
     for ( auto& q : queries ) {
@@ -321,47 +330,77 @@ int CBamIndexTestApp::Run(void)
         bam_db = CBamDb(mgr, path, path+".bai");
     }
     bool single_thread = args["ST"];
-    
-    Uint8 align_count = 0;
+
+    int error_code = 0;
+    Uint8 total_align_count = 0;
+    Uint8 total_wrong_level_count = 0, total_wrong_range_count = 0;
     const size_t NQ = queries.size();
     vector<thread> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
-            thread([&bam_raw_db, &bam_db, &align_count, verbose, single_thread]
+            thread([&]
                    (string ref_label, CRange<TSeqPos> ref_range)
                    {
                        CMutexGuard guard(eEmptyGuard);
                        if ( single_thread ) {
                            guard.Guard(s_Mutex);
                        }
-                       Uint8 count = 0;
+                       Uint8 align_count = 0;
+                       Uint8 wrong_level_count = 0, wrong_range_count = 0;
                        try {
                            if ( bam_db ) {
                                for ( CBamAlignIterator it(bam_db, ref_label, ref_range.GetFrom(), ref_range.GetLength()); it; ++it ) {
-                                   if ( verbose ) {
-                                       TSeqPos ref_pos = it.GetRefSeqPos();
-                                       TSeqPos ref_size = it.GetCIGARRefSize();
+                                   TSeqPos ref_pos = it.GetRefSeqPos();
+                                   TSeqPos ref_size = it.GetCIGARRefSize();
+                                   TSeqPos ref_end = ref_pos + ref_size;
+                                   if ( verbose ||
+                                        ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
                                        cout << "Ref: " << ref_label
                                             << " at [" << ref_pos
-                                            << " - " << (ref_pos+ref_size-1)
+                                            << " - " << (ref_end-1)
                                             << "] = " << ref_size
                                             << '\n';
+                                       if ( ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
+                                           cout << "Wrong range" << endl;
+                                           ++wrong_range_count;
+                                       }
                                    }
-                                   ++count;
+                                   ++align_count;
                                }
                            }
                            else {
-                               for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range); it; ++it ) {
-                                   if ( verbose ) {
-                                       TSeqPos ref_pos = it.GetRefSeqPos();
-                                       TSeqPos ref_size = it.GetCIGARRefSize();
+                               for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range, level1, level2); it; ++it ) {
+                                   TSeqPos ref_pos = it.GetRefSeqPos();
+                                   TSeqPos ref_size = it.GetCIGARRefSize();
+                                   TSeqPos ref_end = ref_pos + ref_size;
+                                   uint32_t level = CBamIndex::kMinLevel;
+                                   if ( ref_size && (level1 != CBamIndex::kMinLevel || level2 != CBamIndex::kMaxLevel) ) {
+                                       TSeqPos pos1 = ref_pos >> CBamIndex::kLevel0BinShift;
+                                       TSeqPos pos2 = (ref_end-1) >> CBamIndex::kLevel0BinShift;
+                                       while ( pos1 != pos2 ) {
+                                           ++level;
+                                           pos1 >>= CBamIndex::kLevelStepBinShift;
+                                           pos2 >>= CBamIndex::kLevelStepBinShift;
+                                       }
+                                   }
+                                   if ( verbose ||
+                                        level < level1 || level > level2 ||
+                                        ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
                                        cout << "Ref: " << ref_label
                                             << " at [" << ref_pos
-                                            << " - " << (ref_pos+ref_size-1)
+                                            << " - " << (ref_end-1)
                                             << "] = " << ref_size
                                             << '\n';
+                                       if ( level < level1 || level > level2 ) {
+                                           cout << "Wrong index level: " << level << endl;
+                                           ++wrong_level_count;
+                                       }
+                                       if ( ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
+                                           cout << "Wrong range" << endl;
+                                           ++wrong_range_count;
+                                       }
                                    }
-                                   ++count;
+                                   ++align_count;
                                }
                            }
                        }
@@ -370,8 +409,16 @@ int CBamIndexTestApp::Run(void)
                        }
                        {
                            CMutexGuard guard(s_Mutex);
-                           LOG_POST("Run("<<ref_label<<"): count "<<count);
-                           align_count += count;
+                           LOG_POST("Run("<<ref_label<<"): count "<<align_count);
+                           if ( wrong_level_count ) {
+                               LOG_POST("Run("<<ref_label<<"): wrong level count "<<wrong_level_count);
+                           }
+                           if ( wrong_range_count ) {
+                               LOG_POST("Run("<<ref_label<<"): wrong range count "<<wrong_range_count);
+                           }
+                           total_align_count += align_count;
+                           total_wrong_level_count += wrong_level_count;
+                           total_wrong_range_count += wrong_range_count;
                        }
                    }, queries[i].first, queries[i].second);
     }
@@ -392,9 +439,18 @@ int CBamIndexTestApp::Run(void)
       ++align_count;
       }
     */
-    cout << "Align count: "<<align_count<<endl;
+    cout << "Total good align count: "<<
+        (total_align_count-total_wrong_range_count-total_wrong_level_count)<<endl;
+    if ( total_wrong_level_count ) {
+        cout << "Total wrong level count: "<<total_wrong_level_count<<endl;
+        error_code = 1;
+    }
+    if ( total_wrong_range_count ) {
+        cout << "Total wrong range count: "<<total_wrong_range_count<<endl;
+        error_code = 1;
+    }
 
-    return 0;
+    return error_code;
 }
 
 
