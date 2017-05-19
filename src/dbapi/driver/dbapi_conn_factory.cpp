@@ -613,7 +613,20 @@ CDBConnectionFactory::MakeValidConnection(
         ctx.tried.push_back(params.GetServerName());
     }
 
-    unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx.driver_ctx, params));
+    unique_ptr<CDB_Connection> conn;
+    try {
+        conn.reset(CtxMakeConnection(ctx.driver_ctx, params));
+    } catch (...) {
+        CRef<IConnValidator> validator = params.GetConnValidator();
+        CRuntimeData&        rt_data   = GetRuntimeData(validator);
+        const string&        service   = params.GetServerName();
+        ctx.last_tried.Reset(rt_data.GetDispatchedServer(service));
+        if (ctx.last_tried.Empty()) {
+            ctx.last_tried.Reset
+                (new CDBServer(service, params.GetHost(), params.GetPort()));
+        }
+        throw;
+    }
 
     if (conn.get())
     {
@@ -695,6 +708,10 @@ CDBConnectionFactory::MakeValidConnection(
         CRuntimeData&        rt_data   = GetRuntimeData(validator);
         const string&        service   = params.GetServerName();
         ctx.last_tried.Reset(rt_data.GetDispatchedServer(service));
+        if (ctx.last_tried.Empty()) {
+            ctx.last_tried.Reset
+                (new CDBServer(service, params.GetHost(), params.GetPort()));
+        }
 
         m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
                            "Parameters prohibited creating connection", eDiag_Error, 0));
@@ -941,6 +958,9 @@ CDBConnectionFactory::CRuntimeData::IncNumOfValidationFailures(
 void CDBConnectionFactory::CRuntimeData::Exclude(const string& service_name,
                                                  const TSvrRef& server)
 {
+    if (server.Empty()) {
+        return;
+    }
     GetDBServiceMapper().Exclude(service_name, server);
     if (server->GetHost() != 0) {
         string& excluded = m_ExclusionSummaryMap[service_name];
