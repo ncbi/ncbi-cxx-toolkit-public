@@ -208,9 +208,11 @@ case "$MAKE" in
         echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" \
              "MODULE_ASN=$spec" "MODULE_IMPORT='$imports'" \
              "IMPDEPS='$impdeps'" "IMPFILES='$impfiles'" "top_srcdir=$p" \
-             "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
+             "builddir=$build_root/build" "DATATOOL=$datatool" \
+             "MODULE_SEARCH=$search" "$@"
         ;;
 esac
 $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$spec" \
       "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "IMPFILES=$impfiles" \
-      "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
+      "top_srcdir=$p" "builddir=$build_root/build" "DATATOOL=$datatool" \
+      "MODULE_SEARCH=$search" "$@"

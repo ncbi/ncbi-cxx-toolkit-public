@@ -5,6 +5,8 @@
 # (NOTE:  hard-wired for the C++ Toolkit directory structure.)
 #
 
+include $(builddir)/Makefile.mk
+
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
