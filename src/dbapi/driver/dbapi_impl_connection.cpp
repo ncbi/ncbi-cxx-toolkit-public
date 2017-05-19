@@ -144,6 +144,22 @@ void CConnection::CheckCanOpen(void)
 
     // Check for maximum number of connections
     if (!CDbapiConnMgr::Instance().AddConnect()) {
+        // May be ineffective, particularly given that there's no
+        // pool_idle_time by default.
+        m_DriverContext->CloseOldIdleConns(1);
+        if (CDbapiConnMgr::Instance().AddConnect()) {
+            m_Opened = true;
+            return;
+        } else {
+            // Could perhaps try more specific parameters first, but if a
+            // matching connection were already available in the pool, DBAPI
+            // would normally have used it instead of establishing a new one.
+            m_DriverContext->CloseUnusedConnections(kEmptyStr, kEmptyStr, 1);
+            if (CDbapiConnMgr::Instance().AddConnect()) {
+                m_Opened = true;
+                return;
+            }
+        }
         const string conn_num = NStr::NumericToString(CDbapiConnMgr::Instance().GetMaxConnect());
         const string msg = 
             "Cannot create new connection: hit limit of " + conn_num

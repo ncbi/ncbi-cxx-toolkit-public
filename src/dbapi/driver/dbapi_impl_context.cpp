@@ -308,7 +308,8 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 }
 
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
-                                             const string&   pool_name)
+                                            const string&   pool_name,
+                                            unsigned int    max_closings)
 {
     CMutexGuard mg(m_PoolMutex);
 
@@ -326,6 +327,9 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
         it = m_NotInUse.erase(it);
         --it;
         delete con;
+        if (--max_closings == 0) {
+            break;
+        }
     }
 }
 

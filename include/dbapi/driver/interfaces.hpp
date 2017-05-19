@@ -1063,8 +1063,12 @@ public:
     ///   Server/Service name.
     /// @param pool_name 
     ///   Name of connection pool.
+    /// @param max_closings
+    ///   Maximum number of connections to close now.
     virtual void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
-                                const string& pool_name = kEmptyStr) = 0;
+                                        const string& pool_name = kEmptyStr,
+                                        unsigned int max_closings = kMax_UInt)
+        = 0;
 
     /// @brief
     ///   Set application name.

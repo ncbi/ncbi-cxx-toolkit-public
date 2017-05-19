@@ -197,7 +197,8 @@ public:
 
     /// close reusable deleted connections for specified server and/or pool
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
-                                const string& pool_name = kEmptyStr);
+                                const string& pool_name = kEmptyStr,
+                                unsigned int max_closings = kMax_UInt);
 
     const CDBHandlerStack& GetConnHandlerStack(void) const
     {
