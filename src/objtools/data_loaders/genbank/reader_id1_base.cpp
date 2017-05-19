@@ -33,11 +33,14 @@
 #include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <objtools/data_loaders/genbank/impl/processors.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
+
+#define NCBI_USE_ERRCODE_X   Objtools_Reader_Id1
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -118,6 +121,13 @@ bool CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
     }
     
     GetBlob(result, blob_id, chunk_id);
+    if ( !blob.IsLoadedChunk() ) {
+        CLoadLockSetter setter(blob);
+        if ( !setter.IsLoaded() ) {
+            ERR_POST_X(1, "ExtAnnot chunk is not loaded: "<<blob_id);
+            setter.SetLoaded();
+        }
+     }
     _ASSERT(blob.IsLoadedChunk());
     return true;
 }
