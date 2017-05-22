@@ -1467,7 +1467,7 @@ void CSeq_annot_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
     if ( m_ObjectIndex.GetInfos().empty() ) {
         return;
     }
-    if ( m_ObjectIndex.GetInfos()[0].IsFeat() ) {
+    if ( m_Object && m_Object->GetData().IsFtable() ) {
         NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, oit, m_ObjectIndex.GetInfos() ) {
             x_UnmapFeatIds(*oit);
         }
