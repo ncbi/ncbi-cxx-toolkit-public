@@ -90,7 +90,7 @@ esac
 $CHECK_RUN_FILE run
 result=$?
 
-if test -n "$NCBI_AUTOMATED_BUILD"; then
+if test -n "$NCBI_AUTOMATED_BUILD" -a -z "$TEAMCITY_PROJECT_NAME"; then
    $CHECK_RUN_FILE load_to_db
    # Report test_stat_load errors if any
    if [ -f "$build_dir/test_stat_load.log" ]; then
