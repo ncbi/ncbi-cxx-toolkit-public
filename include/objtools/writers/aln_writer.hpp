@@ -65,6 +65,9 @@ public:
         const string& name="",
         const string& descr="");
 
+
+    void SetLineWidth(unsigned int width);
+
 private:
     bool xWriteAlignDenseSeg(const CDense_seg& denseg);
 
@@ -100,8 +103,10 @@ private:
         int start,
         size_t len);
 
+    void xWriteContiguous(const string& defline, const string& seqdata);
+
     CRef<CScope> m_pScope;
-    
+    unsigned int m_Width;
 };
 
 END_objects_SCOPE

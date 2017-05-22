@@ -64,6 +64,7 @@ CAlnWriter::CAlnWriter(
     CWriterBase(ostr, uFlags) 
 {
     m_pScope.Reset(&scope);
+    m_Width = 60;
 };
 
 
@@ -72,11 +73,20 @@ CAlnWriter::CAlnWriter(
 CAlnWriter::CAlnWriter(
     CNcbiOstream& ostr,
     unsigned int uFlags) :
+    CAlnWriter(*(new CScope(*CObjectManager::GetInstance())), ostr, uFlags)
+{
+};
+
+/*
+CAlnWriter::CAlnWriter(
+    CNcbiOstream& ostr,
+    unsigned int uFlags) :
     CWriterBase(ostr, uFlags)
 {
     m_pScope.Reset(new CScope(*CObjectManager::GetInstance()));
+    m_Width = 60;
 };
-
+*/
 
 //  ----------------------------------------------------------------------------
 bool CAlnWriter::WriteAlign(
@@ -218,7 +228,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
         CBioseq_Handle bsh;
         xProcessSeqId(id, bsh, range);
         if (!bsh) {
-            continue;
+            continue; // Throw an exception
         }
 
         string seq_plus;
@@ -241,13 +251,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
                 eNa_strand_plus;
             seqdata += xGetSegString(seq_plus, coding, strand, start, len);
         }
-        m_Os << ">" + id.AsFastaString() << "\n";
-        size_t pos=0;
-        size_t width = 60;
-        while (pos < seqdata.size()) {
-            m_Os << seqdata.substr(pos, width) << "\n";
-            pos += width;
-        }
+        xWriteContiguous(">" + id.AsFastaString(), seqdata);
     }
 
     return true;
@@ -357,7 +361,6 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         const int product_start = exon->GetProduct_start().AsSeqPos();
         const int product_end = exon->GetProduct_end().AsSeqPos();
 
-       
 
         if (product_end < product_start) {
             // Throw an exception
@@ -396,21 +399,10 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         if (product_length != genomic_length) {
             // Throw an exception...maybe
         }
-        
-        m_Os << ">" + genomic_id.AsFastaString() << "\n";
-        size_t width = 60;
-        size_t pos=0;
-        while (pos < genomic_seq.size()) {
-            m_Os << genomic_seq.substr(pos, width) << "\n";
-            pos += width;
-        }
 
-        m_Os << ">" + product_id.AsFastaString() << "\n";
-        pos=0;
-        while (pos < product_seq.size()) {
-            m_Os << product_seq.substr(pos, width) << "\n";
-            pos += width;
-        }
+        xWriteContiguous(">" + genomic_id.AsFastaString(), genomic_seq);
+
+        xWriteContiguous(">" + product_id.AsFastaString(), product_seq);
     }
 
     return true;
@@ -554,13 +546,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
 
-        m_Os << ">" + first_id.AsFastaString() << "\n";
-        size_t pos=0;
-        size_t width = 60;
-        while (pos < seqdata.size()) {
-            m_Os << seqdata.substr(pos, width) << "\n";
-            pos += width;
-        }
+        xWriteContiguous(">" + first_id.AsFastaString(), seqdata);
     }
 
     { // Second row
@@ -590,20 +576,25 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
 
-        m_Os << ">" + second_id.AsFastaString() << "\n";
-        size_t pos=0;
-        size_t width = 60;
-        while (pos < seqdata.size()) {
-            m_Os << seqdata.substr(pos, width) << "\n";
-            pos += width;
-        }
+        xWriteContiguous(">" + second_id.AsFastaString(), seqdata);
+        
     }
-
     return true;
 }
 
 // -----------------------------------------------------------------------------
 
+void CAlnWriter::xWriteContiguous(const string& defline, const string& seqdata) 
+{
+    m_Os << defline << "\n";
+    size_t pos=0;
+    while (pos < seqdata.size()) {
+        m_Os << seqdata.substr(pos, m_Width) << "\n";
+        pos += m_Width;
+    }
+}
+
+// -----------------------------------------------------------------------------
 
 END_NCBI_SCOPE
 
