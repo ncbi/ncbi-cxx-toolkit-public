@@ -6764,16 +6764,29 @@ bool CCdsMatchInfo::AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope
     TFeatScores feats;
     GetOverlappingFeatures(m_Cds->GetLocation(), CSeqFeatData::e_Rna, CSeqFeatData::eSubtype_mRNA,
                            m_OverlapType, feats, scope);
-    NON_CONST_ITERATE(TFeatScores, it, feats) {
-        TmRNAList::iterator mrna_it = unmatched_mrnas.find(it->second);
-        if (mrna_it != unmatched_mrnas.end()) {
-            if (rval) {
-                m_OtherMrnas.push_back(it->second);
-            } else {
+    if (feats.size() == 0) {
+        TmRNAList::iterator mrna_it = unmatched_mrnas.begin();
+        while (mrna_it != unmatched_mrnas.end()) {
+            if (Overlaps(mrna_it->second->GetSeqfeat())) {
                 m_BestMatch = mrna_it->second;
                 m_BestMatch->SetMatch(*this);
                 unmatched_mrnas.erase(mrna_it);
-                rval = true;
+                return true;
+            }
+            ++mrna_it;
+        }
+    } else {
+        NON_CONST_ITERATE(TFeatScores, it, feats) {
+            TmRNAList::iterator mrna_it = unmatched_mrnas.find(it->second);
+            if (mrna_it != unmatched_mrnas.end()) {
+                if (rval) {
+                    m_OtherMrnas.push_back(it->second);
+                } else {
+                    m_BestMatch = mrna_it->second;
+                    m_BestMatch->SetMatch(*this);
+                    unmatched_mrnas.erase(mrna_it);
+                    rval = true;
+                }
             }
         }
     }
