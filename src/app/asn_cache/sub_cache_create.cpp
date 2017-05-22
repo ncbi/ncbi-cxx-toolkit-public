@@ -49,6 +49,7 @@
 
 #include <serial/iterator.hpp>
 
+#include <util/file_manifest.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -657,6 +658,13 @@ void CAsnCacheApplication::Init(void)
                      "Comma-separated paths of one or more main caches",
                      CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("cache-manifest", "CacheManifest",
+                     "manifest of paths of one or more main caches",
+                     CArgDescriptions::eString);
+    arg_desc->SetDependency("cache-manifest",
+                            CArgDescriptions::eExcludes,
+                            "cache");
+
     arg_desc->AddKey("subcache", "Subcache",
                      "Path to the ASN.1 subcache that will be created.",
                      CArgDescriptions::eString);
@@ -788,7 +796,11 @@ int CAsnCacheApplication::Run(void)
 
     vector<CDir> main_cache_roots;
     vector<string> main_cache_paths;
-    NStr::Split(args["cache"].AsString(), ",", main_cache_paths);
+    if (args["cache"]) {
+        NStr::Split(args["cache"].AsString(), ",", main_cache_paths);
+    } else {
+        main_cache_paths = CFileManifest(args["cache-manifest"].AsString()).GetAllFilePaths();
+    }
     ITERATE (vector<string>, it, main_cache_paths) {
         CDir cache_root(CDirEntry::NormalizePath(*it, eFollowLinks));
         if (! cache_root.Exists() ) {
@@ -833,7 +845,6 @@ int CAsnCacheApplication::Run(void)
         max_retrieval_failures = args["max-retrieval-failures"].AsInteger();
     }
 
-    bool skip_withdrawn = args["skip-withdrawn"];
     unsigned max_withdrawn =
         args["skip-withdrawn"] ? UINT_MAX : 0;
     if (args["max-withdrawn"]) {
