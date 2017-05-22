@@ -42,7 +42,8 @@ ValidErrItem ::= SEQUENCE {
     errorName   VisibleString OPTIONAL,
     errorGroup  VisibleString OPTIONAL,
     accnver     VisibleString OPTIONAL,
-    version     INTEGER OPTIONAL
+    version     INTEGER OPTIONAL,
+    location    VisibleString OPTIONAL
 }
 
 
