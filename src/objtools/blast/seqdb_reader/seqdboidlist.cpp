@@ -402,8 +402,7 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
                             int                 vol_end)
                             
 {
-    //m_Atlas.Lock(locked);
-    
+        
     // Open file and get pointers
     
     TCUC* bitmap = 0;
@@ -426,7 +425,7 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
         
         // Cast forces signed/unsigned conversion.
         
-        volmask.GetFileDataPtr(lease, sizeof(Int4), file_length);//does not use x_GetRegion - rename
+        volmask.GetFileDataPtr(lease, sizeof(Int4), file_length);
         
         bitmap = (TCUC*) lease.GetFileDataPtr(sizeof(Int4));
         
@@ -434,7 +433,7 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
     }
     
     CRef<CSeqDB_BitSet> bitset(new CSeqDB_BitSet(vol_start, vol_end, bitmap, bitend));
-    //m_Atlas.RetRegion(lease);
+    
     
     // Disable any enabled bits occuring after the volume end point
     // [this should not normally occur.]

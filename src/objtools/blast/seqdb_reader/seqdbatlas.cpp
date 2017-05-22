@@ -184,40 +184,30 @@ TOut SeqDB_CheckLength(TIn value)
 }
 
 CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
-    : m_UseMmap           (use_mmap),
-      m_CurAlloc          (0),
+     :m_CurAlloc          (0),
       m_LastFID           (0),
-      m_OpenRegionsTrigger(CSeqDBMapStrategy::eOpenRegionsWindow),
-      m_MaxFileSize       (0),
-      m_Strategy          (*this),
+      m_MaxFileSize       (0),      
       m_SearchPath        (GenerateSearchPath())
 {
     m_Alloc = false;
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
-    Verify(true);
 }
 
 CSeqDBAtlas::~CSeqDBAtlas()
 {
-    Verify(true);
-
-    int count = 0;
     //int openedFilesCount = GetOpenedFilseCount();
     //cerr << "********Before Cleaning: openedFilesCount=" << openedFilesCount << endl;                
     for (map<string, CMemoryFile *>::iterator it=m_FileMemMap.begin(); it!=m_FileMemMap.end(); ++it) {
             string filename = it->first;
             it->second->Unmap();
-            ChangeOpenedFilseCount(false);
+            //ChangeOpenedFilseCount(eFileCounterDecrement);
             //cerr << "********Cleaning:Unmap CMemoryFile:" << filename << endl;                
-            delete it->second;
-            count++;                       
+            delete it->second;     
     }
-    //int openedFilesCount = GetOpenedFilseCount();
-    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount << " maxOpenedFilesCount="<< m_MaxOpenedFilesCount << endl;                
-    x_GarbageCollect(0);
+    //openedFilesCount = GetOpenedFilseCount();
+    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount  << " maxOpenedFilesCount="<< m_MaxOpenedFilesCount << endl;                
 
-    // Clear mapped file regions
 
     // For now, and maybe permanently, enforce balance.
 
@@ -235,7 +225,6 @@ CSeqDBAtlas::~CSeqDBAtlas()
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
 {
-    Verify(locked);
     TIndx length(0);
     return GetFileSize(fname, length, locked);
 }
@@ -245,7 +234,7 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
                               CSeqDBLockHold & locked)
 {
     Lock(locked);
-    Verify(true);
+    
 
     return GetFileSizeL(fname, length);
 }
@@ -253,7 +242,7 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
 bool CSeqDBAtlas::GetFileSizeL(const string & fname,
                                TIndx        & length)
 {
-    Verify(true);
+
     // Fields: file-exists, file-length
     pair<bool, TIndx> data;
 
@@ -277,59 +266,10 @@ bool CSeqDBAtlas::GetFileSizeL(const string & fname,
     } else {
         data = (*i).second;
     }
-    Verify(true);
+    
 
     length = data.second;
     return data.first;
-}
-
-void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
-{
-    Lock(locked);
-    x_GarbageCollect(0);
-}
-
-void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
-{
-    Verify(true);
-    if (Uint8(m_CurAlloc) <= reduce_to) {
-        return;
-    }
-
-    x_FlushAll();
-        
-    Verify(true);
-}
-
-
-// Algorithm:
-//
-// In file mode, get exactly what we need.  Otherwise, if the request
-// fits entirely into one slice, use large slice rounding (get large
-// pieces).  If it is on a large slice boundary, use small slice
-// rounding (get small pieces).
-
-
-
-
-// Assumes locked.
-
-void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed, bool returning)
-{
-    Verify(true);
-
-
-        // Use Int8 to avoid "unsigned rollunder"
-
-        Int8 bound = m_Strategy.GetMemoryBound(returning);
-        Int8 capacity_left = bound - m_CurAlloc;
-
-        if (Int8(space_needed) > capacity_left) {
-            x_GarbageCollect(bound - space_needed);
-        }
-    
-
-    Verify(true);
 }
 
 /// Simple idiom for RIIA with malloc + free.
@@ -361,10 +301,9 @@ private:
 
 
 
-/// Releases a hold on a partial mapping of the file.
-void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
+/// Releases allocated memory
+void CSeqDBAtlas::x_RetRegion(const char * datap)
 {
-    Verify(true);
     
     bool worked = x_Free(datap);
     _ASSERT(worked);
@@ -372,12 +311,9 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
     if (! worked) {
         cerr << "Address leak in CSeqDBAtlas::RetRegion" << endl;
     }
-    Verify(true);
+
 }
 
-
-// This does not attempt to garbage collect, but it will influence
-// garbage collection if it is used enough.
 
 char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked, bool clear)
 {
@@ -462,71 +398,6 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
 }
 
 
-EMemoryAdvise CRegionMap::sm_MmapStrategy_Index    = eMADV_Normal;
-
-EMemoryAdvise CRegionMap::sm_MmapStrategy_Sequence = eMADV_Normal;
-
-CRegionMap::CRegionMap(const string * fname, int fid, TIndx begin, TIndx end)
-    : m_Data     (0),
-      m_MemFile  (0),
-      m_Fname    (fname),
-      m_Begin    (begin),
-      m_End      (end),
-      m_Fid      (fid),
-      m_Ref      (0),
-      m_Clock    (0),
-      m_Penalty  (0)
-{
-    INIT_CLASS_MARK();
-    CHECK_MARKER();
-}
-
-CRegionMap::~CRegionMap()
-{
-    CHECK_MARKER();
-
-    if (m_MemFile) {
-        delete m_MemFile;
-        m_MemFile = 0;
-        m_Data    = 0;
-    }
-    if (m_Data) {
-        delete[] ((char*) m_Data);
-        m_Data = 0;
-    }
-    BREAK_MARKER();
-}
-
-
-
-
-const char * CRegionMap::Data(TIndx begin, TIndx end)
-{
-    CHECK_MARKER();
-    _ASSERT(m_Data != 0);
-    _ASSERT(begin  >= m_Begin);
-
-    // Avoid solaris warning.
-    if (! (end <= m_End)) {
-        _ASSERT(end <= m_End);
-    }
-
-    return m_Data + begin - m_Begin;
-}
-
-
-
-void CSeqDBAtlas::SetMemoryBound(Uint8 mb)
-{
-    CSeqDBLockHold locked(*this);
-    Lock(locked);
-
-    Verify(true);
-
-    m_Strategy.SetMemoryBound(mb);
-
-    Verify(true);
-}
 
 void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
                                    size_t           bytes,
@@ -534,11 +405,8 @@ void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
 {
     if (bytes > 0) {
         Lock(locked);
-        PossiblyGarbageCollect(bytes, false);
-
-        _ASSERT(memreg.m_Bytes == 0);
-        //m_CurAlloc += memreg.m_Bytes = bytes;
-	memreg.m_Bytes = bytes;
+        _ASSERT(memreg.m_Bytes == 0);        
+	    memreg.m_Bytes = bytes;
     }
 }
 
@@ -546,242 +414,18 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
 {
     size_t bytes = memreg.m_Bytes;
 
-    if (bytes > 0) {
-        //_ASSERT((size_t)m_CurAlloc >= bytes);
-        //m_CurAlloc     -= bytes;
+    if (bytes > 0) {        
         memreg.m_Bytes = 0;
     }
 }
 
 
-// 16 GB should be enough
-
-const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(16) << 30;
-
-Int8 CSeqDBMapStrategy::m_GlobalMaxBound = 0;
-
-bool CSeqDBMapStrategy::m_AdjustedBound = false;
-
-/// Constructor
-CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
-    : m_Atlas     (atlas),
-      m_MaxBound  (0),
-      m_RetBound  (0),
-      m_SliceSize (0),
-      m_Overhang  (0),
-      m_Order     (0.95, .901),
-      m_InOrder   (true),
-      m_MapFailed (false),
-      m_LastOID   (0),
-      m_BlockSize (4096)
-{
-    m_BlockSize = GetVirtualMemoryPageSize();
-
-    if (m_GlobalMaxBound == 0) {
-        SetDefaultMemoryBound(0);
-        _ASSERT(m_GlobalMaxBound != 0);
-    }
-    m_MaxBound = m_GlobalMaxBound;
-    x_SetBounds(m_MaxBound);
-}
-
-void CSeqDBMapStrategy::MentionOid(int oid, int num_oids)
-{
-    // Still working on the same oid, ignore.
-    if (m_LastOID == oid) {
-        return;
-    }
-
-    // The OID is compared to the previous OID.  Sequential access is
-    // defined as having increasing OIDs about 90% of the time.
-    // However, if the OID is only slightly before the previous OID,
-    // it is ignored.  This is to allow sequential semantics for
-    // multithreaded apps that divide work into chunks of OIDs.
-    //
-    // "Slightly" before is defined as the greater of 10 OIDs or
-    // 10% of the database.  This 'window' of the database can
-    // only move backward when the ordering test fails, so walking
-    // backward through the entire database will not be considered
-    // sequential.
-
-    // In the blast libraries, work is divided into 1% of the database
-    // or 1 OID.  So 10% allows 5 threads and the assumption that some
-    // chunks will take as much as twice as long to run as others.
-
-    int pct = 10;
-    int window = max(num_oids/100*pct, pct);
-    int low_bound = max(m_LastOID - window, 0);
-
-    if (oid > m_LastOID) {
-        // Register sequential access.
-        x_OidOrder(true);
-        m_LastOID = oid;
-    } else if (oid < low_bound) {
-        // Register non-sequential access.
-        x_OidOrder(false);
-        m_LastOID = oid;
-    }
-}
-
-void CSeqDBMapStrategy::x_OidOrder(bool in_order)
-{
-    m_Order.AddData(in_order ? 1.0 : 0);
-
-    // Moving average with thermostat-like hysteresis.
-    bool new_order = m_Order.GetAverage() > (m_InOrder ? .8 : .9);
-
-    if (new_order != m_InOrder) {
-        // Rebuild the bounds with the new ordering constraint.
-        m_InOrder = new_order;
-        x_SetBounds(m_MaxBound);
-    }
-}
 
 
 
-Uint8 CSeqDBMapStrategy::x_Pick(Uint8 low, Uint8 high, Uint8 guess)
-{
-    // max and guess is usually computed; min is usually a
-    // constant, so if there is a conflict, use min.
-
-    if (low > high) {
-        high = low;
-    }
-
-    int bs = int(m_BlockSize);
-
-    if (guess < low) {
-        guess = (low + bs - 1);
-    }
-
-    if (guess > high) {
-        guess = high;
-    }
-
-    guess -= (guess % bs);
-
-    _ASSERT((guess % bs) == 0);
-    _ASSERT((guess >= low) && (guess <= high));
-
-    return guess;
-}
-
-/// Set all parameters.
-void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
-{
-    Uint8 max_bound(0);
-    Uint8 max_slice(0);
-
-    if (sizeof(int*) == 8) {
-        max_bound = e_MaxMemory64;
-        max_slice = e_MaxSlice64;
-    } else {
-        max_bound = e_MaxMemory32;
-        max_slice = e_MaxSlice32;
-    }
-
-    int overhang_ratio = 32;
-    int slice_ratio = 10;
-
-    // If a mapping request has never failed, use large slice for
-    // efficiency.  Otherwise, if the client follows a mostly linear
-    // access pattern, use middle sized slices, and if not, use small
-    // slices.
-
-    const int no_limits   = 4;
-    const int linear_oids = 10;
-    const int random_oids = 80;
-
-    if (! m_MapFailed) {
-        slice_ratio = no_limits;
-    } else if (m_InOrder) {
-        slice_ratio = linear_oids;
-    } else {
-        slice_ratio = random_oids;
-    }
-
-    m_MaxBound = x_Pick(e_MinMemory,
-                        min(max_bound, bound),
-                        bound);
-
-    m_SliceSize = x_Pick(e_MinSlice,
-                         max_slice,
-                         m_MaxBound / slice_ratio);
-
-    m_RetBound = x_Pick(e_MinMemory,
-                        m_MaxBound-((m_SliceSize*3)/2),
-                        (m_MaxBound*8)/10);
-
-    m_Overhang = x_Pick(e_MinOverhang,
-                        e_MaxOverhang,
-                        m_SliceSize / overhang_ratio);
-
-    m_AdjustedBound = false;
-}
-
-void CSeqDBAtlas::SetDefaultMemoryBound(Uint8 bytes)
-{
-    CSeqDBMapStrategy::SetDefaultMemoryBound(bytes);
-}
-
-void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
-{
-    Uint8 app_space = CSeqDBMapStrategy::e_AppSpace;
-
-    if (bytes == 0) {
-        if (sizeof(int*) == 4) {
-            bytes = e_MaxMemory32;
-        } else {
-            bytes = e_MaxMemory64;
-        }
-
-#if defined(NCBI_OS_UNIX)
-        rlimit vspace;
-        rusage ruse;
-
-        int rc = 0;
-        int rc2 = 0;
-
-#ifdef RLIMIT_AS
-        rc = getrlimit(RLIMIT_AS, & vspace);
-#elif defined(RLIMIT_RSS)
-        rc = getrlimit(RLIMIT_RSS, & vspace);
-#else
-        vspace.rlim_cur = RLIM_INFINITY;
-#endif
-        rc2 = getrusage(RUSAGE_SELF, & ruse);
-
-        if (rc || rc2) {
-            _ASSERT(rc == 0);
-            _ASSERT(rc2 == 0);
-        }
-
-        Uint8 max_mem = vspace.rlim_cur;
-        Uint8 max_mem75 = (max_mem/4)*3;
-
-        if (max_mem < (app_space*2)) {
-            app_space = max_mem/2;
-        } else {
-            max_mem -= app_space;
-            if (max_mem > max_mem75) {
-                max_mem = max_mem75;
-            }
-        }
-
-        if (max_mem < bytes) {
-            bytes = max_mem;
-        }
-#endif
-    }
-
-    m_GlobalMaxBound = bytes;
-    m_AdjustedBound = true;
-}
-
-CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,
-                                     CSeqDBFlushCB  * flush,
+CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,                                     
                                      CSeqDBLockHold * lockedp)
-    : m_FlushCB(0)
+    
 {
     {{
     CFastMutexGuard guard(m_Lock);
@@ -791,29 +435,13 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,
     }
     m_Count ++;
     }}
-
-    if (lockedp == NULL) {
-    CSeqDBLockHold locked2(*m_Atlas);
-
-    if (flush)
-        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, locked2);
-    }
-    else {
-    if (flush)
-        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, *lockedp);
-    }
-
 }
 
 DEFINE_CLASS_STATIC_FAST_MUTEX(CSeqDBAtlasHolder::m_Lock);
 
 CSeqDBAtlasHolder::~CSeqDBAtlasHolder()
 {
-    if (m_FlushCB) {
-        CSeqDBLockHold locked(*m_Atlas);
-        m_Atlas->RemoveRegionFlusher(m_FlushCB, locked);
-    }
-
+    
     CFastMutexGuard guard(m_Lock);
     m_Count --;
 
@@ -840,13 +468,6 @@ int CSeqDBAtlasHolder::m_Count = 0;
 CSeqDBAtlas * CSeqDBAtlasHolder::m_Atlas = NULL;
 
 
-void CSeqDBMapStrategy::x_CheckAdjusted()
-{
-    if (m_GlobalMaxBound && m_AdjustedBound) {
-        x_SetBounds(m_GlobalMaxBound);
-    }
-}
-
 CSeqDB_AtlasRegionHolder::
 CSeqDB_AtlasRegionHolder(CSeqDBAtlas & atlas, const char * ptr)
     : m_Atlas(atlas), m_Ptr(ptr)
@@ -859,7 +480,7 @@ CSeqDB_AtlasRegionHolder::~CSeqDB_AtlasRegionHolder()
         CSeqDBLockHold locked(m_Atlas);
         m_Atlas.Lock(locked);
 
-        m_Atlas.RetRegion(m_Ptr);
+        //m_Atlas.RetRegion(m_Ptr);
         m_Ptr = NULL;
     }
 }

@@ -42,7 +42,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     : m_RecentVol(0)
 {
     CSeqDBLockHold locked(atlas);
-    atlas.Verify(locked);
+    
     
     try {
         for(int i = 0; i < (int) vol_names.size(); i++) {
@@ -74,9 +74,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
         throw;
     }
     catch(...) {
-        // The volume destructor will assume the lock is not held.
-        atlas.Unlock(locked);
-        
+          
         // For other exceptions, we'll provide a message.
         
         for(int i = 0; i < (int) m_VolList.size(); i++) {

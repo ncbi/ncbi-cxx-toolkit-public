@@ -48,7 +48,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
                        CSeqDBGiList       * gi_list,
                        CSeqDBNegativeList * neg_list,
                        CSeqDBIdSet          idset)
-    : m_AtlasHolder     (use_mmap, & m_FlushCB, NULL),
+    : m_AtlasHolder     (use_mmap, NULL),
       m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
@@ -98,12 +98,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
     SetIterationRange(0, m_NumOIDs);
 
-    // Don't setup the flush callback until the implementation data
-    // structures are fully populated (otherwise flushing may try to
-    // flush unconstructed memory leases).
-
-    m_FlushCB.SetImpl(this);
-
+    
     // If the alias files seem to provide correct data for the totals,
     // use it; otherwise scan the OID list and use approximate lengths
     // to compute the totals.  Presence of a user GI list implies that
@@ -112,7 +107,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     try {
         if (gi_list || neg_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
             m_NeedTotalsScan = true;
-            x_InitIdSet();
         }
 
         if ((! m_OidListSetup) && (oid_begin || oid_end)) {
@@ -127,7 +121,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
             x_ScanTotals(true, & m_NumSeqs, & m_TotalLength,
                                & m_MaxLength, & m_MinLength, locked);
-            m_Atlas.Verify(locked);
+
         } else {
             m_NumSeqs     = x_GetNumSeqs();
             m_TotalLength = x_GetTotalLength();
@@ -146,7 +140,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
         m_UserGiList.Reset();
         m_NegativeList.Reset();
         m_VolSet.UnLease();
-        m_FlushCB.SetImpl(0);
         throw e;
     }
 
@@ -156,7 +149,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 }
 
 CSeqDBImpl::CSeqDBImpl()
-    : m_AtlasHolder     (false, & m_FlushCB, NULL),
+    : m_AtlasHolder     (false, NULL),
       m_Atlas           (m_AtlasHolder.Get()),
       m_Aliases         (m_Atlas, "", '-'),
       m_RestrictBegin   (0),
@@ -175,12 +168,6 @@ CSeqDBImpl::CSeqDBImpl()
       m_NumThreads      (0)
 {
     INIT_CLASS_MARK();
-
-    // Don't setup the flush callback until the implementation data
-    // structures are fully populated (otherwise flushing may try to
-    // flush unconstructed memory leases).
-
-    m_FlushCB.SetImpl(this);
 
     CHECK_MARKER();
 }
@@ -215,9 +202,7 @@ CSeqDBImpl::~CSeqDBImpl()
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
 
-    // Prevent GC from flushing volumes after they are torn down.
-
-    m_FlushCB.SetImpl(0);
+    
 
     m_VolSet.UnLease();
 
@@ -405,7 +390,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     return x_GetSeqLength(oid, locked);
 }
@@ -433,7 +418,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
 
@@ -456,7 +441,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! persist) {
         gi_to_taxid.clear();
@@ -491,7 +476,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
                            bool          persist)
 {
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! persist) {
         taxids.clear();
@@ -519,7 +504,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! persist) {
         gi_to_taxid_set.clear();
@@ -556,7 +541,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! persist) {
         taxids.clear();
@@ -598,7 +583,7 @@ CSeqDBImpl::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_seq_id, boo
 
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
 
@@ -632,9 +617,9 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
 
     // This returns a reference to part of a memory mapped region.
 
-    m_Atlas.Lock(locked);
+    //m_Atlas.Lock(locked);
 
-    m_Atlas.RetRegion(*buffer);
+    //m_Atlas.RetRegion(*buffer);
     *buffer = 0;
 }
 
@@ -660,11 +645,11 @@ void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer,
     buffer->checked_out = 0;
 
     m_Atlas.Lock(locked);
-
+/*
     for(Uint4 index = 0; index < buffer->results.size(); ++index) {
         m_Atlas.RetRegion(buffer->results[index].address);
     }
-
+*/
     buffer->results.clear();
 }
 
@@ -717,7 +702,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
             res.length = vol->GetSequence(vol_oid++, &seq, locked);
         } while (res.length >= 0 && tot_length >= res.length && vol_oid < m_RestrictEnd);
 
-        if (res.length >= 0)  m_Atlas.RetRegion(seq);
+        //if (res.length >= 0)  m_Atlas.RetRegion(seq);
         return;
     }
 
@@ -738,7 +723,7 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
     int vol_oid = 0;
 
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer, locked);
@@ -756,7 +741,7 @@ CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
     int vol_oid = 0;
 
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqData(vol_oid, begin, end, locked);
@@ -776,7 +761,7 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
     CSeqDBLockHold locked(m_Atlas);
 
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -799,7 +784,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
 
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -853,7 +838,7 @@ Uint8 CSeqDBImpl::GetExactTotalLength()
     	 CSeqDBLockHold locked(m_Atlas);
     	 x_ScanTotals(false, &m_NumSeqs, &m_ExactTotalLength,
     			 	  &m_MaxLength, &m_MinLength, locked);
-    	m_Atlas.Verify(locked);
+    	
     }
     else {
     	m_ExactTotalLength = m_TotalLength;
@@ -1050,7 +1035,7 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked)
 {
     CHECK_MARKER();
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -1100,13 +1085,6 @@ string CSeqDBImpl::x_FixString(const string & s) const
         }
     }
     return s;
-}
-
-void CSeqDBImplFlush::operator()()
-{
-    if (m_Impl) {
-        m_Impl->FlushSeqMemory();
-    }
 }
 
 // Assumes atlas is locked
@@ -1394,7 +1372,7 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             bool             recursive,
                             bool             expand_links)
 {
-    CSeqDBAtlasHolder AH(true, NULL, NULL);
+    CSeqDBAtlasHolder AH(true, NULL);
     CSeqDBAtlas & atlas(AH.Get());
 
     // This constructor handles its own locking.
@@ -1536,7 +1514,7 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
 
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
 
@@ -1733,11 +1711,6 @@ void CSeqDBImpl::FlushOffsetRangeCache()
 }
 
 
-void CSeqDBImpl::SetDefaultMemoryBound(Uint8 bytes)
-{
-    CSeqDBAtlas::SetDefaultMemoryBound(bytes);
-}
-
 unsigned CSeqDBImpl::GetSequenceHash(int oid)
 {
     char * datap(0);
@@ -1790,47 +1763,44 @@ void CSeqDBImpl::HashToOids(unsigned hash, vector<int> & oids)
     }
 }
 
-void CSeqDBImpl::x_InitIdSet()
-{
-	if (m_IdSet.Blank()) {
-	        if (! m_UserGiList.Empty()) {
-	            // Note: this returns a 'blank' IdSet list for positive
-	            // lists that specify filtering using CSeq-id objects.
-
-	            if (m_UserGiList->GetNumGis()) {
-	                vector<TGi> gis;
-	                m_UserGiList->GetGiList(gis);
-
-	                CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
-	                m_IdSet = new_ids;
-	            } else if (m_UserGiList->GetNumTis()) {
-	                vector<TTi> tis;
-	                m_UserGiList->GetTiList(tis);
-
-	                CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
-	                m_IdSet = new_ids;
-	            }
-	        } else if (! m_NegativeList.Empty()) {
-	            const vector<TGi> & ngis = m_NegativeList->GetGiList();
-	            const vector<TTi> & ntis = m_NegativeList->GetTiList();
-	            const vector<string> & stis = m_NegativeList->GetSiList();
-
-	            if (! ngis.empty()) {
-	                CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
-	                m_IdSet = new_ids;
-	            } else if (! ntis.empty()) {
-	                CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
-	                m_IdSet = new_ids;
-	            } else if (!stis.empty()) {
-	                CSeqDBIdSet new_ids(stis, CSeqDBIdSet::eSi, false);
-	                m_IdSet = new_ids;
-	            }
-	        }
-	    }
-}
-
 CSeqDBIdSet CSeqDBImpl::GetIdSet()
 {
+    if (m_IdSet.Blank()) {
+        if (! m_UserGiList.Empty()) {
+            // Note: this returns a 'blank' IdSet list for positive
+            // lists that specify filtering using CSeq-id objects.
+
+            if (m_UserGiList->GetNumGis()) {
+                vector<TGi> gis;
+                m_UserGiList->GetGiList(gis);
+
+                CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
+                m_IdSet = new_ids;
+            } else if (m_UserGiList->GetNumTis()) {
+                vector<TTi> tis;
+                m_UserGiList->GetTiList(tis);
+
+                CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
+                m_IdSet = new_ids;
+            }
+        } else if (! m_NegativeList.Empty()) {
+            const vector<TGi> & ngis = m_NegativeList->GetGiList();
+            const vector<TTi> & ntis = m_NegativeList->GetTiList();
+            const vector<string> & stis = m_NegativeList->GetSiList();
+
+            if (! ngis.empty()) {
+                CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
+                m_IdSet = new_ids;
+            } else if (! ntis.empty()) {
+                CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
+                m_IdSet = new_ids;
+            } else if (!stis.empty()) {
+                CSeqDBIdSet new_ids(stis, CSeqDBIdSet::eSi, false);
+                m_IdSet = new_ids;
+            }
+        }
+    }
+
     return m_IdSet;
 }
 
@@ -2437,13 +2407,6 @@ void CSeqDBImpl::GetMaskData(int                       oid,
 }
 #endif
 
-void CSeqDBImpl::GarbageCollect(void)
-{
-    CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.GarbageCollect(locked);
-}
-
 void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -2464,7 +2427,7 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
         for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
             m_VolSet.GetVol(vol_idx)->OpenSeqFile(locked);
         }
-        m_Atlas.SetSliceSize();
+        //m_Atlas.SetSliceSize();
 
     } else if (num_threads < m_NumThreads) {
 

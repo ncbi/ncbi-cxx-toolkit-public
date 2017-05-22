@@ -345,7 +345,6 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
 
         // create repeat filtering table (genome);
         CRef<CSeqDB> subjdb (new CSeqDB(sdb, CSeqDB::eNucleotide));
-        subjdb->SetMemoryBound(kSeqDbMemBound);
         if(subjdb->GetTotalLength() > numeric_limits<Uint4>::max())
         {
             CNcbiOstrstream ostr;
@@ -602,7 +601,6 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
     size_t current_offset (0);
 
     CRef<CSeqDB> blastdb (new CSeqDB(db, CSeqDB::eNucleotide));
-    blastdb->SetMemoryBound(kSeqDbMemBound);
 
     const Uint8 blastdb_total_length (blastdb->GetTotalLength());
     if((mode == eIM_Genomic && blastdb_total_length / kN > numeric_limits<Uint4>::max())
@@ -888,7 +886,6 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
     size_t mcidx (0);
     size_t current_offset (0);
 
-    m_qsrc->SetMemoryBound(kSeqDbMemBound);
 
     const Uint8 blastdb_total_length (m_qsrc->GetTotalLength());
     if((mode == eIM_Genomic && blastdb_total_length / kN > numeric_limits<Uint4>::max())

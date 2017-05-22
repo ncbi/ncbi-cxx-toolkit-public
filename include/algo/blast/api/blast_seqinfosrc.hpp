@@ -105,8 +105,6 @@ public:
     /// return true.
     virtual bool CanReturnPartialSequence() const = 0;
 
-    /// Allow implementations to provide a facility to release memory
-    virtual void GarbageCollect() {};
 };
 
 END_SCOPE(blast)

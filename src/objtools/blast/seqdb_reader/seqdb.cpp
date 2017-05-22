@@ -171,7 +171,7 @@ CSeqDB::CSeqDB(const string & dbname,
                          true,
                          gi_list);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB(const string       & dbname,
@@ -192,7 +192,7 @@ CSeqDB::CSeqDB(const string       & dbname,
                          NULL,
                          nlist);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 // This could become the primary constructor for SeqDB, and those
@@ -238,7 +238,7 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
                          neg.GetPointerOrNull(),
                          ids);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB(const vector<string> & dbs,
@@ -261,7 +261,7 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          true,
                          gi_list);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -284,7 +284,7 @@ CSeqDB::CSeqDB(const string & dbname,
                          use_mmap,
                          gi_list);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB(const vector<string> & dbs,
@@ -310,60 +310,38 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          use_mmap,
                          gi_list);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 CSeqDB::CSeqDB()
 {
     m_Impl = new CSeqDBImpl;
-    m_Impl->Verify();
-}
-
-void CSeqDB::SetMmapStrategy(
-        EMmapFileTypes  filetype,
-        EMmapStrategies strategy
-)
-{
-    // If this construct looks odd, it's a Perl-ish technique,
-    // chaining the ternary ?: operator.
-    // Read it as
-    // thing = (if this) then that
-    //         else (if this) then that
-    //         else that
-    EMemoryAdvise st =
-            (strategy == eMmap_Sequential) ? eMADV_Sequential
-            : (strategy == eMmap_WillNeed) ? eMADV_WillNeed
-            : eMADV_Normal;
-    if (filetype == eMmap_IndexFile) {
-        CRegionMap::SetMmapStrategy_Index(st);
-    } else if (filetype == eMmap_SequenceFile) {
-        CRegionMap::SetMmapStrategy_Sequence(st);
-    }
+    ////m_Impl->Verify();
 }
 
 int CSeqDB::GetSeqLength(int oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     int length = m_Impl->GetSeqLength(oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return length;
 }
 
 int CSeqDB::GetSeqLengthApprox(int oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     int length = m_Impl->GetSeqLengthApprox(oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return length;
 }
 
 CRef<CBlast_def_line_set> CSeqDB::GetHdr(int oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     CRef<CBlast_def_line_set> rv = m_Impl->GetHdr(oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
@@ -386,7 +364,7 @@ void CSeqDB::GetTaxIDs(int             oid,
                        map<TGi, int> & gi_to_taxid,
                        bool            persist) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     typedef map<TGi, int> TmpMap;
     TmpMap gi_to_taxid_tmp;
     m_Impl->GetTaxIDs(oid, gi_to_taxid_tmp, persist);
@@ -396,16 +374,16 @@ void CSeqDB::GetTaxIDs(int             oid,
     ITERATE ( TmpMap, it, gi_to_taxid_tmp ) {
         gi_to_taxid[it->first] = it->second;
     }
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::GetTaxIDs(int           oid,
                        vector<int> & taxids,
                        bool          persist) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->GetTaxIDs(oid, taxids, persist);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::GetLeafTaxIDs(
@@ -414,7 +392,7 @@ void CSeqDB::GetLeafTaxIDs(
         bool                 persist
 ) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     typedef map<TGi, set<int> > TmpMap;
     TmpMap gi_to_taxid_set_tmp;
     m_Impl->GetLeafTaxIDs(oid, gi_to_taxid_set_tmp, persist);
@@ -424,7 +402,7 @@ void CSeqDB::GetLeafTaxIDs(
     ITERATE ( TmpMap, it, gi_to_taxid_set_tmp ) {
         gi_to_taxid_set[it->first] = it->second;
     }
-    m_Impl->Verify();
+    //m_Impl->Verify();
 }
 
 void CSeqDB::GetLeafTaxIDs(
@@ -433,17 +411,17 @@ void CSeqDB::GetLeafTaxIDs(
         bool         persist
 ) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     m_Impl->GetLeafTaxIDs(oid, taxids, persist);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 }
 
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_id) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, true);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
@@ -451,25 +429,25 @@ CSeqDB::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_id) const
 CRef<CBioseq>
 CSeqDB::GetBioseqNoData(int oid, TGi target_gi, const CSeq_id * target_id) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, false);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
 
 void CSeqDB::RetSequence(const char ** buffer) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     m_Impl->RetSequence(buffer);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 }
 
 int CSeqDB::GetSequence(int oid, const char ** buffer) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     int rv = m_Impl->GetSequence(oid, buffer);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
@@ -478,31 +456,31 @@ CRef<CSeq_data> CSeqDB::GetSeqData(int     oid,
                                    TSeqPos begin,
                                    TSeqPos end) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     CRef<CSeq_data> rv = m_Impl->GetSeqData(oid, begin, end);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
 
 int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     int rv = m_Impl->GetAmbigSeq(oid,
                                  (char **)buffer,
                                  nucl_code,
                                  0,
                                  (ESeqDBAllocType) 0);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
 
 void CSeqDB::RetAmbigSeq(const char ** buffer) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
     m_Impl->RetAmbigSeq(buffer);
-    m_Impl->Verify();
+    //m_Impl->Verify();
 }
 
 int CSeqDB::GetAmbigSeq(int           oid,
@@ -511,7 +489,7 @@ int CSeqDB::GetAmbigSeq(int           oid,
                         int           begin_offset,
                         int           end_offset) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     SSeqDBSlice region(begin_offset, end_offset);
 
@@ -521,7 +499,7 @@ int CSeqDB::GetAmbigSeq(int           oid,
                                  & region,
                                  (ESeqDBAllocType) 0);
 
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
@@ -532,7 +510,7 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
                              ESeqDBAllocType strategy,
                              TSequenceRanges *masks) const
 {
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     if ((strategy != eMalloc) && (strategy != eNew)) {
         NCBI_THROW(CSeqDBException,
@@ -542,7 +520,7 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
 
     int rv = m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy, masks);
 
-    m_Impl->Verify();
+    //m_Impl->Verify();
 
     return rv;
 }
@@ -634,7 +612,7 @@ int CSeqDB::GetMinLength() const
 
 CSeqDB::~CSeqDB()
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     if (m_Impl)
         delete m_Impl;
@@ -647,9 +625,9 @@ CSeqDBIter CSeqDB::Begin() const
 
 bool CSeqDB::CheckOrFindOID(int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->CheckOrFindOID(oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
@@ -662,12 +640,12 @@ CSeqDB::GetNextOIDChunk(int         & begin,
                         vector<int> & lst,
                         int         * state)
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     CSeqDB::EOidListType rv =
         m_Impl->GetNextOIDChunk(begin, end, size, lst, state);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
@@ -684,11 +662,11 @@ const string & CSeqDB::GetDBNameList() const
 
 list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     list< CRef<CSeq_id> > rv = m_Impl->GetSeqIDs(oid);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
@@ -700,63 +678,63 @@ TGi CSeqDB::GetSeqGI(int oid) const
 
 bool CSeqDB::PigToOid(int pig, int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->PigToOid(pig, oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::OidToPig(int oid, int & pig) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->OidToPig(oid, pig);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::TiToOid(Int8 ti, int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->TiToOid(ti, oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::GiToOid(TGi gi, int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->GiToOid(gi, oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::GiToOidwFilterCheck(TGi gi, int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = m_Impl->GiToOidwFilterCheck(gi, oid);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::OidToGi(int oid, TGi & gi) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     TGi gi_tmp;
     bool rv = m_Impl->OidToGi(oid, gi_tmp);
     gi = gi_tmp;
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::PigToGi(int pig, TGi & gi) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = false;
 
     int oid(0);
@@ -766,14 +744,14 @@ bool CSeqDB::PigToGi(int pig, TGi & gi) const
         rv = m_Impl->OidToGi(oid, gi_tmp);
         gi = gi_tmp;
     }
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 bool CSeqDB::GiToPig(TGi gi, int & pig) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = false;
 
     int oid(0);
@@ -782,14 +760,14 @@ bool CSeqDB::GiToPig(TGi gi, int & pig) const
         rv = m_Impl->OidToPig(oid, pig);
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
 void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->AccessionToOids(acc, oids);
 
     // If we have a numeric ID and the search failed, try to look it
@@ -813,19 +791,19 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
         }
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->SeqidToOids(seqid, oids, true);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     bool rv = false;
 
     oid = -1;
@@ -838,21 +816,16 @@ bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
         oid = oids[0];
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
 
-void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
-{
-    m_Impl->SetMemoryBound(membound);
-}
-
 int CSeqDB::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     int rv = m_Impl->GetOidAtOffset(first_seq, residue);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return rv;
 }
@@ -914,7 +887,7 @@ CSeqDBIter & CSeqDBIter::operator++()
 CRef<CBioseq>
 CSeqDB::GiToBioseq(TGi gi) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     CRef<CBioseq> bs;
     int oid(0);
@@ -923,7 +896,7 @@ CSeqDB::GiToBioseq(TGi gi) const
         bs = m_Impl->GetBioseq(oid, gi, NULL, true);
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return bs;
 }
@@ -931,7 +904,7 @@ CSeqDB::GiToBioseq(TGi gi) const
 CRef<CBioseq>
 CSeqDB::PigToBioseq(int pig) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     int oid(0);
     CRef<CBioseq> bs;
@@ -940,7 +913,7 @@ CSeqDB::PigToBioseq(int pig) const
         bs = m_Impl->GetBioseq(oid, ZERO_GI, NULL, true);
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return bs;
 }
@@ -948,7 +921,7 @@ CSeqDB::PigToBioseq(int pig) const
 CRef<CBioseq>
 CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     vector<int> oids;
     CRef<CBioseq> bs;
@@ -959,7 +932,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
         bs = m_Impl->GetBioseq(oids[0], ZERO_GI, &seqid, true);
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     return bs;
 }
@@ -989,15 +962,15 @@ CSeqDB::FindVolumePaths(const string   & dbname,
 void
 CSeqDB::FindVolumePaths(vector<string> & paths, bool recursive) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->FindVolumePaths(paths, recursive);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void
 CSeqDB::GetGis(int oid, vector<TGi> & gis, bool append) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     // This could be done a little faster at a lower level, but not
     // necessarily by too much.  If this operation is important to
@@ -1015,7 +988,7 @@ CSeqDB::GetGis(int oid, vector<TGi> & gis, bool append) const
         }
     }
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
@@ -1025,9 +998,9 @@ void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
 
 void CSeqDB::GetAliasFileValues(TAliasFileValues & afv)
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->GetAliasFileValues(afv);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
@@ -1040,9 +1013,9 @@ void CSeqDB::GetTotals(ESummaryType   sumtype,
                        Uint8        * total_length,
                        bool           use_approx) const
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
     m_Impl->GetTotals(sumtype, oid_count, total_length, use_approx);
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 const CSeqDBGiList * CSeqDB::GetGiList() const
@@ -1053,11 +1026,6 @@ const CSeqDBGiList * CSeqDB::GetGiList() const
 CSeqDBIdSet CSeqDB::GetIdSet() const
 {
     return m_Impl->GetIdSet();
-}
-
-void CSeqDB::SetDefaultMemoryBound(Uint8 bytes)
-{
-    CSeqDBImpl::SetDefaultMemoryBound(bytes);
 }
 
 void CSeqDB::GetSequenceAsString(int      oid,
@@ -1225,24 +1193,19 @@ void CSeqDB::GetMaskData(int                 oid,
 #endif
 
 
-void CSeqDB::GarbageCollect(void)
-{
-    m_Impl->GarbageCollect();
-}
-
 void CSeqDB::SetOffsetRanges(int                        oid,
                              const CSeqDB::TRangeList & offset_ranges,
                              bool                       append_ranges,
                              bool                       cache_data)
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     m_Impl->SetOffsetRanges(oid,
                             offset_ranges,
                             append_ranges,
                             cache_data);
 
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 }
 
 void CSeqDB::RemoveOffsetRanges(int oid)
@@ -1258,7 +1221,7 @@ void CSeqDB::FlushOffsetRangeCache()
 
 void CSeqDB::SetNumberOfThreads(int num_threads, bool force_mt)
 {
-    m_Impl->Verify();
+    ////m_Impl->Verify();
 
     m_Impl->SetNumberOfThreads(num_threads, force_mt);
 }
@@ -1397,13 +1360,6 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
     }
     sort(dbfinder.m_DBs.begin(), dbfinder.m_DBs.end());
     return dbfinder.m_DBs;
-}
-
-Int8 CSeqDB::GetSliceSize() const
-{
-    m_Impl->Verify();
-
-    return m_Impl->GetSliceSize();
 }
 
 Int8 CSeqDB::GetDiskUsage() const

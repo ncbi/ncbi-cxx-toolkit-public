@@ -81,7 +81,6 @@ public:
     virtual int GetSeqLength(int idx) { return (int)GetSequence(GetIds()[idx]).GetSeqVector(CBioseq_Handle::eCoding_Iupac).size(); }
     virtual int GetSeqLength(void) { return GetSeqLength(m_idx); }
 //for stand alone splign  performance sake the following functions added for straightforward implementation based on CSeqDB 
-    virtual void SetMemoryBound(Uint8 membound) {}
     virtual int GetSeq(const char ** buffer) { return GetSeq(m_idx, buffer); }
     virtual int GetSeq(int idx, const char ** buffer) {
         CSeqVector vec = GetSequence(GetIds()[idx]).GetSeqVector();
@@ -127,7 +126,7 @@ public:
         return m_seqdb->CheckOrFindOID(m_idx);
     }
     virtual int GetSeqLength(int idx) { return  m_seqdb->GetSeqLength(idx); }
-    virtual void SetMemoryBound(Uint8 membound) { return m_seqdb->SetMemoryBound(membound); }
+    NCBI_DEPRECATED virtual void SetMemoryBound(Uint8 membound) { }
     virtual int GetSeq(int idx, const char ** buffer) {return m_seqdb->GetSequence(idx, buffer); }
     virtual void RetSequence(const char ** buffer) {  m_seqdb->RetSequence(buffer); }
     virtual CConstRef<CSeq_id> GetSeqID(int idx) { return m_seqdb->GetSeqIDs(idx).front(); }

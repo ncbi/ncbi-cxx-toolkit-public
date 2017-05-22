@@ -29,7 +29,7 @@
 
 /// @file seqdbcol.cpp
 /// This is the implementation file for the CSeqDBColumnReader,
-/// CSeqDBColumn, CSeqDBColumnFlush, and CSeqDB_ColumnEntry classes,
+/// CSeqDBColumn, and CSeqDB_ColumnEntry classes,
 /// which support read operations on BlastDb format database columns.
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/column_reader.hpp>
@@ -103,7 +103,7 @@ CSeqDBColumn::CSeqDBColumn(const string   & basename,
                            const string   & index_extn,
                            const string   & data_extn,
                            CSeqDBLockHold * lockedp)
-    : m_AtlasHolder      (true, & m_FlushCB, lockedp),
+    : m_AtlasHolder      (true, lockedp),
       m_Atlas            (m_AtlasHolder.Get()),
       m_IndexFile        (m_Atlas),      
       m_DataFile         (m_Atlas),     
@@ -141,8 +141,7 @@ CSeqDBColumn::CSeqDBColumn(const string   & basename,
         m_Atlas.Unlock(*lockedp);
         throw;
     }
-    
-    m_FlushCB.SetColumn(this);
+        
 }
 
 CSeqDBColumn::~CSeqDBColumn()
@@ -150,7 +149,6 @@ CSeqDBColumn::~CSeqDBColumn()
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
-    m_FlushCB.SetColumn(NULL);
     Flush();
 }
 
@@ -354,15 +352,6 @@ void CSeqDBColumn::GetBlob(int              oid,
     }
 }
 
-
-// CSeqDBColumnFlush
-
-void CSeqDBColumnFlush::operator()()
-{
-    if (m_Column) {
-        m_Column->Flush();
-    }
-}
 
 const map<string,string> & CSeqDBColumn::GetMetaData()
 {

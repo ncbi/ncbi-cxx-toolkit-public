@@ -86,10 +86,6 @@ int CRPSTBlastnApp::Run(void)
     CBlastAppDiagHandler bah;
 
     try {
-        // Limit the amount of memory used by CSeqDB so that the RPS-BLAST
-        // files not managed by it can be opened without problems
-        CSeqDB::SetDefaultMemoryBound(200000000);
-
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
         SetDiagPostPrefix("rpstblastn");

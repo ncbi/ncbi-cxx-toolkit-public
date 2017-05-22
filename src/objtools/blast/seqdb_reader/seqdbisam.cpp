@@ -372,8 +372,7 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
             }
         }
         
-        //CSeqDBMemLease lease(m_Atlas);
-
+        
         vector<string> sample_keys;
         vector<TIndx> page_offs;
         vector<string> keys;
@@ -384,12 +383,9 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
         keys.reserve(m_PageSize);
         vals.reserve(m_PageSize);
 
-        //m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength); // unchecked        
-        //CSeqDBFileMemMap lease(m_IndexFname);
+        
         x_LoadIndex(m_IndexLease, sample_keys, page_offs);
-        //lease.Clear();        
-        //m_Atlas.RetRegion(lease);
-
+        
         int gilist_index = 0;
         int sample_index = 0;
 
@@ -403,19 +399,9 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
             if (sample_index + 1 == m_NumSamples) {
                 num_keys = m_NumTerms - sample_index * m_PageSize;
             }
-            /*
-            m_Atlas.GetRegion(lease, // unchecked
-                              m_DataFname,
-                              page_offs[sample_index],
-                              page_offs[sample_index + 1]);
-            */
-            
-            //CSeqDBFileMemMap lease(m_DataFname);
+                        
             x_LoadData(m_DataLease, keys, vals, num_keys, page_offs[sample_index]);
-            //lease.Clear();            
-            //m_Atlas.RetRegion(lease);
-
-
+            
             for(int i = 0; i < num_keys; i++) {
                 // 2. Look for it in the negative id list.
 

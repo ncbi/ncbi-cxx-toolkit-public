@@ -449,17 +449,6 @@ public:
     /// been returned by RetSequence().
     ~CSeqDB();
 
-    /// Sets mmap strategy to be used when mapping index or sequence files.
-    ///
-    /// This method sets internal flags of type EMemoryAdvise for a call to
-    /// MemoryAdvise in CRegionMap::MapMmap.
-    /// Note that these are only hints, the system may or may not
-    /// actually alter its behavior when mapping these files.
-    static void SetMmapStrategy(
-            EMmapFileTypes  filetype,
-            EMmapStrategies strategy
-    );
-
     /// Returns the default BLAST database search path
     /// configured for this local installation of BLAST
     static string GenerateSearchPath();
@@ -983,24 +972,6 @@ public:
     /// @return A pointer to the attached ID set, or NULL.
     CSeqDBIdSet GetIdSet() const;
 
-    /// Set upper limit on memory and mapping slice size.
-    ///
-    /// This sets a (not precisely enforced) upper limit on memory
-    /// used by CSeqDB to memory map disk files (and for some large
-    /// arrays).  Setting this to a low value may degrade performance.
-    /// Setting it to too high a value may cause address space
-    /// exhaustion.  Normally, SeqDB will start with a large bound and
-    /// reduces it if memory exhaustion is detected.  Applications
-    /// that use a lot of memory outside of SeqDB may want to call
-    /// this method to scale back SeqDB's demands.  Note that slice
-    /// size is no longer externally adjustable and may be removed in
-    /// the future.  Also note that if SeqDB detects a map failure, it
-    /// will reduce the memory bound.
-    ///
-    /// @param membound Maximum memory for SeqDB.
-    /// @param slice_size No longer used.
-    void SetMemoryBound(Uint8 membound, Uint8 slice_size = 0);
-
     /// Translate a PIG to an OID.
     bool PigToOid(int pig, int & oid) const;
 
@@ -1197,18 +1168,6 @@ public:
                                TSeqPos begin,
                                TSeqPos end) const;
 
-    /// Set global default memory bound for SeqDB.
-    ///
-    /// The memory bound for individual SeqDB objects can be adjusted
-    /// with SetMemoryBound(), but this cannot be called until after
-    /// the object is constructed.  Until that time, the value used is
-    /// set from a global default.  This method allows that global
-    /// default value to be changed.  Any SeqDB object constructed
-    /// after this method is called will use this value as the initial
-    /// memory bound.  If zero is specified, an appropriate default
-    /// will be selected based on system information.
-    static void SetDefaultMemoryBound(Uint8 bytes);
-
     /// Get a sequence in a given encoding.
     ///
     /// This method gets the sequence data for the given OID, converts
@@ -1400,9 +1359,6 @@ public:
                      TSequenceRanges &ranges);
 #endif
 
-    /// Invoke the garbage collector to free up memory
-    void GarbageCollect(void);
-
     /***********************************************************************/
     /* BEGIN: support for partial sequence fetching                        */
 
@@ -1462,9 +1418,6 @@ public:
     ///
     /// @param num_threads   Number of threads
     void SetNumberOfThreads(int num_threads, bool force_mt = false);
-
-    /// Retrieve the current slice size used for mmap
-    Int8 GetSliceSize() const;
 
     /// Retrieve the disk usage in bytes for this BLAST database
     Int8 GetDiskUsage() const;

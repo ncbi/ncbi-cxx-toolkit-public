@@ -263,7 +263,6 @@ CBlastTracebackSearch::Run()
     
     CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
     
-    m_SeqInfoSrc->GarbageCollect();
     vector<TSeqLocInfoVector> subj_masks;
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,

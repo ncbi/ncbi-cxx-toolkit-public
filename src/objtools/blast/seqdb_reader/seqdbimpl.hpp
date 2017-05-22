@@ -35,7 +35,6 @@
 /// The top level of the private implementation layer for SeqDB.
 ///
 /// Defines classes:
-///     CSeqDBImplFlush
 ///     CSeqDBImpl
 ///
 /// Implemented for: UNIX, MS-Windows
@@ -50,55 +49,6 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
-
-/// CSeqDBImplFlush class
-///
-/// This functor like object provides a call back mechanism to return
-/// memory holds to the atlas, from lease objects in the other objects
-/// under CSeqDBImpl.  Without this class, CSeqDBAtlas and CSeqDBImpl
-/// would be codependant, which is somewhat bad style, and creates
-/// annoying cyclical dependencies among the include files.
-
-class CSeqDBImplFlush : public CSeqDBFlushCB {
-public:
-    /// Constructor
-    CSeqDBImplFlush()
-        : m_Impl(0)
-    {
-    }
-
-    /// Destructor
-    virtual ~CSeqDBImplFlush()
-    {
-    }
-
-    /// Specify the implementation layer object.
-    ///
-    /// This method sets the SeqDB implementation layer object
-    /// pointer.  Until this pointer is set, this object will ignore
-    /// attempts to flush unused data.  This pointer should not bet
-    /// set until object construction is complete enough to permit the
-    /// memory lease flushing to happen safely.
-    ///
-    /// @param impl
-    ///   A pointer to the implementation layer object.
-    virtual void SetImpl(class CSeqDBImpl * impl)
-    {
-        m_Impl = impl;
-    }
-
-    /// Flush any held memory leases.
-    ///
-    /// At the beginning of garbage collection, this method is called
-    /// to tell the implementation layer to release any held memory
-    /// leases.  If the SetImpl() method has not been called, this
-    /// method will do nothing.
-    virtual void operator()();
-
-private:
-    /// A pointer to the SeqDB implementation layer.
-    CSeqDBImpl * m_Impl;
-};
 
 
 /// Map user algorithm IDs to volume algorithm IDs.
@@ -634,22 +584,7 @@ public:
     /// @return A pointer to the attached ID set, or NULL.
     CSeqDBIdSet GetIdSet();
 
-    /// Set upper limit on memory and mapping slice size.
-    ///
-    /// This sets an approximate upper limit on memory used by CSeqDB
-    /// for file mappings and large arrays.  This will not be exactly
-    /// enforced; the library will prefer to exceed the bound rather
-    /// than return an error.  Setting this to a very low value will
-    /// cause bad performance.  If this is not set, SeqDB picks a
-    /// large value and lowers it if an allocation fails.
-    ///
-    /// @param membound Maximum memory to use for file mappings.
-    void SetMemoryBound(Uint8 membound)
-    {
-        CHECK_MARKER();
-        m_Atlas.SetMemoryBound(membound);
-    }
-
+    
     /// Flush unnecessarily held memory
     ///
     /// This is used by the atlas garbage collection callback - when
@@ -767,11 +702,6 @@ public:
     ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv);
 
-    /// Verify consistency of the memory management (atlas) layer.
-    void Verify()
-    {
-        m_Atlas.Verify(false);
-    }
 
     /// Get taxonomy information
     ///
@@ -932,18 +862,6 @@ public:
     /// Flush all offset ranges cached
     void FlushOffsetRangeCache();
 
-    /// Set global default memory bound for SeqDB.
-    ///
-    /// The memory bound for individual SeqDB objects can be adjusted
-    /// with SetMemoryBound(), but this cannot be called until after
-    /// the object is constructed.  Until that time, the value used is
-    /// set from a global default.  This method allows that global
-    /// default value to be changed.  Any SeqDB object constructed
-    /// after this method is called will use this value as the initial
-    /// memory bound.  If zero is specified, an appropriate default
-    /// will be selected based on system information.
-    static void SetDefaultMemoryBound(Uint8 bytes);
-
     /// Get the sequence hash for a given OID.
     ///
     /// The sequence data is fetched and the sequence hash is
@@ -1099,7 +1017,7 @@ public:
 #endif
 
     /// Invoke the garbage collector to free up memory
-    void GarbageCollect(void);
+    //void GarbageCollect(void);
 
     /// Set number of threads
     ///
@@ -1121,11 +1039,6 @@ public:
     ///                 num_threads == 1 forces multithread
     ///                 internal mmap. [in]
     void SetNumberOfThreads(int num_threads, bool force_mt = false);
-
-    /// Retrieve the slice size used in internal mmap
-    Int8 GetSliceSize() const{
-        return m_Atlas.GetSliceSize();
-    }
 
     /// Set the membership bit of all volumes
     void SetVolsMemBit(int mbit);
@@ -1321,10 +1234,7 @@ private:
     ///   The mapped local cache ID
     int x_GetCacheID(CSeqDBLockHold &locked) const;
 
-    /// This callback functor allows the atlas code flush any cached
-    /// region holds prior to garbage collection.
-    CSeqDBImplFlush m_FlushCB;
-
+    
     /// Memory management layer guard (RIIA) object.
     CSeqDBAtlasHolder m_AtlasHolder;
 
@@ -1467,9 +1377,6 @@ private:
 
     /// Return sequence to buffer
     void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
-
-    /// Initialize Id Set
-    void x_InitIdSet();
 };
 
 END_NCBI_SCOPE

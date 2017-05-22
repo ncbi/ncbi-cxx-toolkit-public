@@ -330,7 +330,7 @@ public:
     ///   The returned oid. [out]
     /// @param locked
     ///   The lock hold object for this thread. [in|out]
-    bool SeqidToOid(const string & acc, TOid & oid);
+    bool SeqidToOid(const string & acc, TOid & oid);//does not exist
 
     /// Sequence hash lookup
     ///
@@ -581,12 +581,8 @@ private:
         keys.reserve(m_PageSize);
         vals.reserve(m_PageSize);
 
-        //m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);// commented        
-        //CSeqDBFileMemMap lease(m_Atlas,m_IndexFname);
         x_LoadIndex(m_IndexLease, sample_keys, page_offs);
-        //lease.Clear();
-        //m_Atlas.RetRegion(lease);
-
+        
         int gilist_index = 0;
         int sample_index = 0;
 
@@ -608,18 +604,8 @@ private:
             if (sample_index + 1 == m_NumSamples) {
                 num_keys = m_NumTerms - sample_index * m_PageSize;
             }
-            /*
-            m_Atlas.GetRegion(lease, // commented
-                              m_DataFname,
-                              page_offs[sample_index],
-                              page_offs[sample_index + 1]);
-            */
-            
-            //CSeqDBFileMemMap lease(m_Atlas,m_DataFname);
             x_LoadData(m_DataLease, keys, vals, num_keys, page_offs[sample_index]);            
-            //lease.Clear();
-            //m_Atlas.RetRegion(lease);
-
+            
             int index = 0;
 
             while ((gilist_index < gilist_size) && (index < num_keys)) {
@@ -1369,8 +1355,7 @@ inline void CSeqDBIsam::x_LoadIndex<TGi>(
     const char * keydatap = lease.GetFileDataPtr(m_KeySampleOffset);
     
     for (int index=0; index < m_NumSamples; ++index) {
-        keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));
-        // vals.push_back(x_GetNumericData(keydatap));
+        keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));        
         offs.push_back(index * m_PageSize * m_TermSize);
         keydatap += m_TermSize;
     }

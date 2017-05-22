@@ -50,52 +50,6 @@ USING_SCOPE(objects);
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 
-/// CSeqDBColumnFlush class
-/// 
-/// This object provides a call back to return memory holds to the
-/// atlas from lease objects stored under CSeqDBColumn.
-
-class CSeqDBColumnFlush : public CSeqDBFlushCB {
-public:
-    /// Constructor.
-    CSeqDBColumnFlush()
-        : m_Column(0)
-    {
-    }
-    
-    /// Destructor.
-    virtual ~CSeqDBColumnFlush()
-    {
-    }
-    
-    /// Specify the implementation layer object.
-    /// 
-    /// This method sets the SeqDB implementation layer object
-    /// pointer.  Until this pointer is set, this object will ignore
-    /// attempts to flush unused data.  This pointer should not bet
-    /// set until object construction is complete enough to permit the
-    /// memory lease flushing to happen safely.
-    /// 
-    /// @param col A pointer to the column object.
-    void SetColumn(class CSeqDBColumn * col)
-    {
-        m_Column = col;
-    }
-    
-    /// Flush any held memory leases.
-    ///
-    /// At the beginning of garbage collection, this method is called
-    /// to tell the column to release any held memory leases.  If the
-    /// SetColumn() method has not been called, this method will do
-    /// nothing.  This method assumes the atlas lock is held.
-    virtual void operator()();
-    
-private:
-    /// A pointer to the column object.
-    class CSeqDBColumn * m_Column;
-};
-
-
 /// CSeqDBColumn class.
 /// 
 /// This code supports arbitrary user-defined data columns.  These can
@@ -240,7 +194,7 @@ private:
     
     /// This callback functor allows the atlas code to flush any
     /// cached region holds prior to garbage collection.
-    CSeqDBColumnFlush m_FlushCB;
+    //CSeqDBColumnFlush m_FlushCB;
     
     /// Insures that a copy of the atlas exists.
     CSeqDBAtlasHolder m_AtlasHolder;

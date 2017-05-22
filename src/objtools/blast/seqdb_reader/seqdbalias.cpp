@@ -108,7 +108,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
       m_ExpandLinks(expand_links)
 {
     CSeqDBLockHold locked(atlas);
-    m_Atlas.Verify(locked);
+   
     
     m_Values["DBLIST"] = dbname_list;
     
@@ -125,7 +125,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
     
     x_ExpandAliases(CSeqDB_BasePath("-"), prot_nucl, recurse, locked);
     
-    //m_Atlas.Unlock(locked);
+   
     
     _ASSERT(recurse.Size() == 0);
    
@@ -590,10 +590,7 @@ void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
             
             group[value].assign(offsets[i+1], offsets[i+2]);
         }
-    }
-    
-    //m_Atlas.RetRegion(lease);
-    //lease.UnMapFile(aset_path.GetPathS());
+    }   
 }
 
 
@@ -675,8 +672,7 @@ void CSeqDBAliasNode::x_ReadAliasFile(CSeqDBFileMemMap    & lease,
 void CSeqDBAliasNode::x_ReadValues(const CSeqDB_Path & path,
                                    CSeqDBLockHold    & locked)
 {
-    //m_Atlas.Lock(locked);
-    
+      
     CSeqDBFileMemMap lease(m_Atlas,path.GetPathS());
     
     const char * bp(0);
@@ -710,10 +706,7 @@ void CSeqDBAliasNode::x_ReadValues(const CSeqDB_Path & path,
         }
         
         p = eolp + 1;
-    }
-    
-    //m_Atlas.RetRegion(lease);
-    //lease.UnMapFile(path.GetPathS()); - unmapped in destructor
+    }    
 }
 
 

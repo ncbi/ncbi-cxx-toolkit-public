@@ -113,8 +113,6 @@ public:
     /// return true.
     virtual bool CanReturnPartialSequence() const {return false;}
 
-    /// Invoke CSeqDB's garbage collector
-    virtual void GarbageCollect();
 
 private:
     mutable CRef<CSeqDB> m_iSeqDb; ///< BLAST database object

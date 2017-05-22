@@ -66,57 +66,57 @@ void CSeqDBExpert::GetRawSeqAndAmbig(int           oid,
                                      int         * seq_length,
                                      int         * ambig_length) const
 {
-    m_Impl->Verify();
+    
     m_Impl->GetRawSeqAndAmbig(oid, buf, seq_length, ambig_length);
-    m_Impl->Verify();
+    
 }
 
 void CSeqDBExpert::GetGiBounds(TGi * low_id,
                                TGi * high_id,
                                int * count)
 {
-    m_Impl->Verify();
+    
     m_Impl->GetGiBounds(low_id, high_id, count);
-    m_Impl->Verify();
+    
 }
 
 void CSeqDBExpert::GetPigBounds(int * low_id,
                                 int * high_id,
                                 int * count)
 {
-    m_Impl->Verify();
+    
     m_Impl->GetPigBounds(low_id, high_id, count);
-    m_Impl->Verify();
+    
 }
 
 void CSeqDBExpert::GetStringBounds(string * low_id,
                                    string * high_id,
                                    int * count)
 {
-    m_Impl->Verify();
+    
     m_Impl->GetStringBounds(low_id, high_id, count);
-    m_Impl->Verify();
+    
 }
 
 void CSeqDBExpert::Verify()
 {
-    m_Impl->Verify();
+    
 }
 
 unsigned CSeqDBExpert::GetSequenceHash(int oid)
 {
-    m_Impl->Verify();
+    
     unsigned h = m_Impl->GetSequenceHash(oid);
-    m_Impl->Verify();
+    
 
     return h;
 }
 
 void CSeqDBExpert::HashToOids(unsigned hash, vector<int> & oids)
 {
-    m_Impl->Verify();
+    
     m_Impl->HashToOids(hash, oids);
-    m_Impl->Verify();
+    
 }
 
 END_NCBI_SCOPE

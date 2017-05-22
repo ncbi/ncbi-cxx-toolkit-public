@@ -377,7 +377,6 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
     CRef<IBlastSeqInfoSrc> seqinfo_src;
     seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
     _ASSERT(seqinfo_src);
-    seqinfo_src->GarbageCollect();
 
     _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
 
@@ -410,7 +409,6 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
     CRef<IBlastSeqInfoSrc> seqinfo_src;
     seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
     _ASSERT(seqinfo_src);
-    seqinfo_src->GarbageCollect();
 
     BlastQueryInfo* query_info = m_InternalData->m_QueryInfo;
     _ASSERT(results->num_queries == (int)query_data->GetNumQueries());

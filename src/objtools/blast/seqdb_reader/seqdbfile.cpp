@@ -208,13 +208,11 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
         off3   = off2 + region_bytes;
         offend = off3 + region_bytes;
     }
-    catch(...) {
-        //m_Atlas.RetRegion(lease);
+    catch(...) {        
         throw;
     }
     
-    //m_Atlas.RetRegion(lease);
-    
+        
     char db_seqtype = ((f_db_seqtype == 1) ? 'p' : 'n');
     
     if (db_seqtype != x_GetSeqType()) {
