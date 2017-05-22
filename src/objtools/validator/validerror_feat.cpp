@@ -6144,8 +6144,44 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
 }
 
 
+bool CValidError_feat::x_CDSHasGoodParent(const CSeq_feat& feat) const
+{
+    static const CSeqFeatData::ESubtype parent_types[] = {
+        CSeqFeatData::eSubtype_mRNA,
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    };
+    size_t num_parent_types = sizeof(parent_types) / sizeof(CSeqFeatData::ESubtype);
+    CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat, *m_Scope);
+    CSeq_feat_Handle fh;
+    try {
+        // will fail if location is bad
+        fh = m_Scope->GetSeq_featHandle(feat);
+    } catch (CException&) {
+        return false;
+    }
+
+    for (size_t i = 0; i < num_parent_types; i++) {
+        CMappedFeat parent = feat_tree->GetParent(fh, parent_types[i]);
+        if (parent) {
+            sequence::ECompare cmp = sequence::Compare(feat.GetLocation(), parent.GetLocation(), m_Scope);
+            if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 {
+    if (x_CDSHasGoodParent(feat)) {
+        return;
+    }
+
     const CSeq_loc& loc = feat.GetLocation();
 
     CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
