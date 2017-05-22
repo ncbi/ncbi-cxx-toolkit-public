@@ -99,8 +99,9 @@ BOOST_AUTO_TEST_CASE(KmerResults)
 
 	CBlastKmerResults results(qid, prelim_vector, stats, seqdb, TQueryMessages());
 	
+        CRef<CScope> scope(CSimpleOM::NewScope());
 	TSeqLocVector tsl;
-	results.GetTSL(tsl);
+	results.GetTSL(tsl, scope);
 	int index=0;
 	for (TSeqLocVector::iterator iter=tsl.begin(); iter != tsl.end(); ++iter)
 	{
@@ -631,7 +632,7 @@ BOOST_AUTO_TEST_CASE(NoMatches)
 	TGi query_gi=1945387;
 	CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
 	const bool kHasProteinQuery(true);
-	CRef<CScope> scope = CBlastScopeSource(kHasProteinQuery).NewScope();
+	CRef<CScope> scope(CSimpleOM::NewScope(true));
 	
 	CRef<CSeq_loc> loc(new CSeq_loc());
     	loc->SetWhole(*id);

@@ -82,11 +82,6 @@ public:
 	}
 
 	/// Get the results as a TSeqLocVector
-	/// A (default) scope will be provided.
-	/// @param tsl TSeqLocVector to fill [in/out]
-	void GetTSL(TSeqLocVector& tsl) const;
-
-	/// Get the results as a TSeqLocVector
 	/// @param tsl TSeqLocVector to fill [in/out]
 	/// @param scope CScope to use in the TSL [in]
 	void GetTSL(TSeqLocVector& tsl, CRef<CScope> scope) const;

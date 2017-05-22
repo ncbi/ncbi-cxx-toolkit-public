@@ -12,7 +12,7 @@ SRC = proteinkmer_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB_ = test_boost proteinkmer $(BLAST_INPUT_LIBS) $(BLAST_DB_DATA_LOADER_LIBS) \
+LIB_ = test_boost proteinkmer $(BLAST_DB_DATA_LOADER_LIBS) \
        $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))

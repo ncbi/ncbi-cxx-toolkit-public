@@ -60,14 +60,6 @@ void CBlastKmerResults::x_InitScoreVec(TBlastKmerPrelimScoreVector& scores)
 		}
 	}
 }
-void
-CBlastKmerResults::GetTSL(TSeqLocVector& tsl) const
-{
-	CBlastScopeSource blast_scope(m_SeqDB);
-	CRef<CScope> scope = blast_scope.NewScope();
-	GetTSL(tsl, scope);
-	return;
-}
 
 void
 CBlastKmerResults::GetTSL(TSeqLocVector& tsl, CRef<CScope> scope) const
