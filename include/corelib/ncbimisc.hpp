@@ -1277,7 +1277,7 @@ class CNcbiActionGuard
 {
 public:
     CNcbiActionGuard(void) {}
-    ~CNcbiActionGuard(void) { ExecuteActions(); }
+    virtual ~CNcbiActionGuard(void) { ExecuteActions(); }
 
     template<class TFunc> void AddAction(TFunc func)
     {
