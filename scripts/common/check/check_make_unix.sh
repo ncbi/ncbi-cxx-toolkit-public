@@ -437,7 +437,7 @@ fi
 
 if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
    ulimit -c 1000000
-   ulimit -n 5000
+   ulimit -n 8192
    if [ \$cygwin = false ]; then
        if test "\$NCBI_CHECK_TOOLS" = "regular"; then
           ulimit -v 48000000
