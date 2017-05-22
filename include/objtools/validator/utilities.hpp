@@ -165,6 +165,7 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
 /// @param f Seq-feat-Handle [in]
 /// @return Boolean
 bool NCBI_VALIDATOR_EXPORT IsDicistronicGene (CSeq_feat_Handle f);
+bool NCBI_VALIDATOR_EXPORT IsDicistronic(CSeq_feat_Handle f);
 
 typedef enum {
     eDuplicate_Not = 0,

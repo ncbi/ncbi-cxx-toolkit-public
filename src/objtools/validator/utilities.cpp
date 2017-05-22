@@ -1684,8 +1684,14 @@ bool s_AremRNAsLinkedToDifferentCodingRegions (CSeq_feat_Handle f1, CSeq_feat_Ha
 bool IsDicistronicGene(CSeq_feat_Handle f)
 {
     if ( f.GetData().GetSubtype() != CSeqFeatData::eSubtype_gene ) return false;
-    if ( ! f.IsSetExcept() ) return false;
-    if ( ! f.IsSetExcept_text() ) return false;
+    return IsDicistronic(f);
+}
+
+
+bool IsDicistronic(CSeq_feat_Handle f)
+{
+    if (!f.IsSetExcept()) return false;
+    if (!f.IsSetExcept_text()) return false;
 
     const string& except_text = f.GetExcept_text();
     if (NStr::FindNoCase(except_text, "dicistronic gene") == NPOS) return false;

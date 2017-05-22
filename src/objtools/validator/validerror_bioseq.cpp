@@ -7860,10 +7860,27 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 }
 
 
+// assumption: this would only be called if the feature subtypes are already known to match
+bool CValidError_bioseq::x_SuppressDicistronic(const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly)
+{
+    if (!IsDicistronic(f1) || !IsDicistronic(f2)) {
+        return false;
+    }
+    if (fruit_fly && f1.GetData().IsGene()) {
+        return true;
+    }
+    if (m_Imp.IsRefSeq() &&
+        (f1.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ||
+         f1.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene)) {
+        return true;
+    }
+    return false;
+}
+
 
 bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs)
 {
-    if (fruit_fly && IsDicistronicGene(f1) && IsDicistronicGene(f2)) {
+    if (x_SuppressDicistronic(f1, f2, fruit_fly)) {
         return false;
     }
 
