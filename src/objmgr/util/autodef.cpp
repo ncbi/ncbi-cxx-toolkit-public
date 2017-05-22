@@ -1188,8 +1188,7 @@ string CAutoDef::GetOneDefLine(CBioseq_Handle bh)
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
         return sequence::CDeflineGenerator()
             .GenerateDefline(bh,
-            sequence::CDeflineGenerator::fIgnoreExisting |
-            sequence::CDeflineGenerator::fAllProteinNames);
+            sequence::CDeflineGenerator::fIgnoreExisting);
     }
     string org_desc = "Unknown organism";
     unsigned int genome_val = CBioSource::eGenome_unknown;
