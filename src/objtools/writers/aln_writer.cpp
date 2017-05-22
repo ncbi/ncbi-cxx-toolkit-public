@@ -181,14 +181,17 @@ void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TS
 
 // -----------------------------------------------------------------------------
 
-bool CAlnWriter::xGetSeqString(CBioseq_Handle bsh, 
+void CAlnWriter::xGetSeqString(CBioseq_Handle bsh, 
     const CRange<TSeqPos>& range,
     ENa_strand strand, 
     string& seq)
 {
     if (!bsh) {
-        return false;
+        NCBI_THROW(CObjWriterException, 
+            eBadInput, 
+            "Empty bioseq handle");
     }
+
     CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
     if (range.IsWhole()) {
         seq_vec.GetSeqData(0, bsh.GetBioseqLength(), seq);
@@ -196,8 +199,12 @@ bool CAlnWriter::xGetSeqString(CBioseq_Handle bsh,
     else {
         seq_vec.GetSeqData(range.GetFrom(), range.GetTo(), seq);
     }
-
-    return true;
+    
+    if (NStr::IsBlank(seq)) {
+        NCBI_THROW(CObjWriterException,
+            eBadInput,
+            "Empty sequence string"); 
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -226,13 +233,13 @@ bool CAlnWriter::xWriteAlignDenseSeg(
         CBioseq_Handle bsh;
         xProcessSeqId(id, bsh, range);
         if (!bsh) {
-            continue; // Throw an exception
+            NCBI_THROW(CObjWriterException, 
+                eBadInput, 
+                "Unable to fetch Bioseq");
         }
 
         string seq_plus;
-        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
-            // Throw an exception
-        }
+        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
 
         const CSeqUtil::ECoding coding = 
             (bsh.IsNucleotide()) ?
@@ -371,24 +378,18 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         CRange<TSeqPos> genomic_range;
         xProcessSeqId(genomic_id, bsh, genomic_range);
         if (!bsh) { // Throw an exception
-            return false;
         }
 
         string genomic_seq;
-        if (!xGetSeqString(bsh, genomic_range, genomic_strand, genomic_seq)) {
-            // Throw an exception
-        }
+        xGetSeqString(bsh, genomic_range, genomic_strand, genomic_seq);
 
         CRange<TSeqPos> product_range;
         xProcessSeqId(product_id, bsh, product_range);
         if (!bsh) { // Throw an exception
-
         }
 
         string product_seq;
-        if (!xGetSeqString(bsh, product_range, product_strand, product_seq)) {
-            // Throw an exception
-        }
+        xGetSeqString(bsh, product_range, product_strand, product_seq);
 
         if (exon->IsSetParts()) {
             xAddGaps(product_type, exon->GetParts(), genomic_seq, product_seq);   
@@ -533,9 +534,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             CSeqUtil::e_Iupacaa;
 
         string seq_plus;
-        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
-            // Throw an exception
-        }
+        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
     
         string seqdata = "";
         for (int seg=0; seg<num_segs; ++seg) {
@@ -561,9 +560,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             CSeqUtil::e_Iupacaa;
 
         string seq_plus;
-        if (!xGetSeqString(bsh, range, eNa_strand_plus, seq_plus)) {
-            // Throw an exception
-        }
+        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
 
         string seqdata = "";
         const vector<ENa_strand>& strands = sparse_align.IsSetSecond_strands() ?

@@ -92,7 +92,7 @@ private:
 
     void xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
    
-    bool xGetSeqString(CBioseq_Handle bsh,
+    void xGetSeqString(CBioseq_Handle bsh,
         const CRange<TSeqPos>& range,
         ENa_strand strand,
         string& seq);
