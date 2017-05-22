@@ -77,16 +77,6 @@ CAlnWriter::CAlnWriter(
 {
 };
 
-/*
-CAlnWriter::CAlnWriter(
-    CNcbiOstream& ostr,
-    unsigned int uFlags) :
-    CWriterBase(ostr, uFlags)
-{
-    m_pScope.Reset(new CScope(*CObjectManager::GetInstance()));
-    m_Width = 60;
-};
-*/
 
 //  ----------------------------------------------------------------------------
 bool CAlnWriter::WriteAlign(
@@ -107,8 +97,6 @@ bool CAlnWriter::WriteAlign(
     default:
         break;
     }
-
-
 
     return false;
 }
@@ -165,11 +153,20 @@ bool s_TryFindRange(const CObject_id& local_id,
 void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range) 
 {   
     if (m_pScope) {
+
+        bsh = m_pScope->GetBioseqHandle(id);
+        range.SetFrom(CRange<TSeqPos>::GetPositionMin());
+        range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
+/*
         if (false  &&  id.IsLocal()  &&  id.GetLocal().IsStr()) {
             CRef<CSeq_id> pTrueId;
             if (s_TryFindRange(id.GetLocal(), pTrueId, range)) {
+                bsh = m_pScope->GetBioseqHandle(*pTrueId);
+            }
+            else {
                 bsh = m_pScope->GetBioseqHandle(id);
             }
+
         }
         else 
         {
@@ -177,6 +174,7 @@ void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TS
             range.SetFrom(CRange<TSeqPos>::GetPositionMin());
             range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
         }
+        */
     }
 }
 
