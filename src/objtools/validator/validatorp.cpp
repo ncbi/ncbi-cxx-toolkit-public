@@ -600,8 +600,10 @@ void CValidError_imp::PostErr
 
     // Calculate sequence offset
     TSeqPos offset = 0;
+    string location = kEmptyStr;
     if (ft.IsSetLocation()) {
         offset = ft.GetLocation().GetStart(eExtreme_Positional);
+        ft.GetLocation().GetLabel(&location);
     }
 
 
@@ -612,9 +614,9 @@ void CValidError_imp::PostErr
         accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
     }
     if (NStr::IsBlank(feature_id)) {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, offset);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, location, offset);
     } else {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, feature_id, offset);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, feature_id, location, offset);
     }
 }
 

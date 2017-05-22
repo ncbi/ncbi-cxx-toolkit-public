@@ -1112,6 +1112,11 @@ void CValXMLStream::Print(const CValidErrItem& item)
        WriteString(item.GetFeatureId(), eStringTypeVisible);
     }
 
+    if (item.IsSetLocation()) {
+        m_Output.PutString("\" interval=\"");
+        WriteString(item.GetLocation(), eStringTypeVisible);
+    }
+
     m_Output.PutString("\" code=\"");
     WriteString(item.GetErrGroup(), eStringTypeVisible);
     m_Output.PutString("_");

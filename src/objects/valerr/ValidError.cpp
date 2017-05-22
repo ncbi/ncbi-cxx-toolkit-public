@@ -63,12 +63,16 @@ void CValidError::AddValidErrItem
  const CSerialObject& obj,
  const string&        acc,
  const int            ver,
+ const string&        location,
  const int            seq_offset)
 {
     if (ShouldSuppress(ec)) {
         return;
     }
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, seq_offset));
+    if (!NStr::IsBlank(location)) {
+        item->SetLocation(location);
+    }
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
@@ -83,12 +87,16 @@ void CValidError::AddValidErrItem
  const string&        acc,
  const int            ver,
  const string&        feature_id,
+ const string&        location,
  const int            seq_offset)
 {
     if (ShouldSuppress(ec)) {
         return;
     }
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, feature_id, seq_offset));
+    if (!NStr::IsBlank(location)) {
+        item->SetLocation(location);
+    }
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
