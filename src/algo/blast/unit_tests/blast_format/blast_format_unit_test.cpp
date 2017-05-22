@@ -117,6 +117,7 @@ BOOST_AUTO_TEST_CASE(BlastFormatTest)
     BOOST_REQUIRE(myReport.find("Query=") != std::string::npos);
 }
 
+#ifdef NCBI_THREADS
 BOOST_AUTO_TEST_CASE(BlastAsyncFormatTest)
 {
     // First read in the data to use.
@@ -193,4 +194,5 @@ BOOST_AUTO_TEST_CASE(BlastAsyncFormatDuplicateThrow)
     formatThr->Finalize();
     formatThr->Join();
 }
+#endif // NCBI_THREADS
 BOOST_AUTO_TEST_SUITE_END()
