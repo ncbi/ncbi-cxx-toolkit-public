@@ -421,8 +421,10 @@ void SWorkerNodeJobContextImpl::x_RunJob()
 
     CRequestContextSwitcher request_state_guard(m_RequestContext);
 
-    if (g_IsRequestStartEventEnabled())
-        GetDiagContext().PrintRequestStart().Print("jid", m_Job.job_id);
+    if (g_IsRequestStartEventEnabled()) {
+        CNetScheduleKey key(m_Job.job_id);
+        GetDiagContext().PrintRequestStart().Print("jid", m_Job.job_id).Print("_queue", key.queue);
+    }
 
     m_RequestContext->SetAppState(eDiagAppState_Request);
 
