@@ -403,6 +403,9 @@
 /* Define to 1 if libungif is available. */
 #undef HAVE_LIBUNGIF
 
+/* Define to 1 if libunwind is available. */
+#undef HAVE_LIBUNWIND
+
 /* Define to 1 if libuv is available. */
 #undef HAVE_LIBUV
 

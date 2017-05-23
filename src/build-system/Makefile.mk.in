@@ -319,6 +319,11 @@ NETWORK_PURE_LIBS = @NETWORK_PURE_LIBS@
 # $(RESOLVER_LIBS).
 RESOLVER_LIBS = @RESOLVER_LIBS@
 
+# Specialized call stack examination library; normally added to
+# baseline LIBS if present for the sake of corelib, but potentially
+# still useful with C_LIBS.
+LIBUNWIND_INCLUDE = @LIBUNWIND_INCLUDE@
+LIBUNWIND_LIBS    = @LIBUNWIND_LIBS@
 
 #################################
 # Optional variables that may be needed to build some projects

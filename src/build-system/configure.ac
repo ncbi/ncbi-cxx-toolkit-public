@@ -64,7 +64,8 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre, mbedtls,
+      m4_foreach(X, [sss, sssutils, sssdb, vdb, libunwind,
+                     z, bz2, lzo, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
@@ -244,6 +245,8 @@ AC_ARG_WITH(static-vdb,
    [ --with-static-vdb       always link statically against SRA/VDB])
 
 ## Third-party and system packages
+AC_ARG_WITH(libunwind,
+   [ --with-libunwind(=DIR)  use libunwind (in DIR)])
 AC_ARG_WITH(z,
    [ --with-z=DIR            use zlib installation in DIR])
 AC_ARG_WITH(z,
@@ -4204,6 +4207,14 @@ esac
 
 usr_lib=['[/usr]*/lib/*[amdsprcv]*[23469]*']
 no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
+
+: ${with_libunwind:=no}
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libunwind, LIBUNWIND, unwind,
+ [[AC_LANG_PROGRAM([#include <unwind.h>
+                    #include <stdlib.h>],
+      [[_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);]])]])
+LIBS="$LIBUNWIND_LIBS $LIBS"
+orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],

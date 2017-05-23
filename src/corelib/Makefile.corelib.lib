@@ -16,6 +16,8 @@ LIB = xncbi
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
+CPPFLAGS = $(LIBUNWIND_INCLUDE) $(ORIG_CPPFLAGS)
+
 # Special build rules for WorkShop
 ncbicntr_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp -o $@ $(CXX_FILTER)
