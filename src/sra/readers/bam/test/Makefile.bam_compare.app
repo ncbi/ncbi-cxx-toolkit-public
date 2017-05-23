@@ -3,7 +3,7 @@
 
 
 APP = bam_compare
-SRC = bam_compare samtools
+SRC = bam_compare samtools bam_test_common
 
 REQUIRES = objects Linux Z
 

@@ -46,8 +46,8 @@
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/simple/simple_om.hpp>
 #include "samtools.hpp"
+#include "bam_test_common.hpp"
 
-#include <common/test_data_path.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -57,7 +57,7 @@ USING_SCOPE(objects);
 //  CBAMCompareApp::
 
 
-class CBAMCompareApp : public CNcbiApplication
+class CBAMCompareApp : public CBAMTestCommon
 {
 private:
     virtual void Init(void);
@@ -70,17 +70,6 @@ private:
 //  Init test
 
 
-#define BAM_DIR1 "/1000genomes/ftp/data"
-#define BAM_DIR2 "/1000genomes/ftp/phase1/data"
-#define BAM_DIR3 "/1kg_pilot_data/data"
-#define BAM_DIR4 "/1000genomes2/ftp/data"
-#define BAM_DIR5 "/1000genomes3/ftp/data"
-
-#define BAM_FILE1 "NA19240.mapped.SOLID.bfast.YRI.exome.20111114.bam"
-#define BAM_FILE2 "NA19240.chromMT.LS454.ssaha2.YRI.high_coverage.20100311.bam"
-#define BAM_FILE3 "NA19240.chromMT.SLX.SRP000032.2009_04.bam"
-#define BAM_FILE4 "NA19240.chrom3.SLX.SRP000032.2009_04.bam"
-
 void CBAMCompareApp::Init(void)
 {
     // Create command-line argument descriptions class
@@ -88,47 +77,14 @@ void CBAMCompareApp::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CArgDescriptions demo program");
+                              "CBAMCompare test program");
 
-    arg_desc->AddOptionalKey("dir", "Dir",
-                             "BAM files files directory",
-                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("file", "File",
-                            "BAM file name",
-                            CArgDescriptions::eString,
-                            BAM_FILE1);
-    arg_desc->AddFlag("no_index", "Access BAM file without index");
-    arg_desc->AddFlag("refseq_table", "Dump RefSeq table");
+    InitCommonArgs(*arg_desc);
+
     arg_desc->AddFlag("no_short", "Do not collect short ids");
     arg_desc->AddFlag("range_only", "Collect only the range on RefSeq");
     arg_desc->AddFlag("no_ref_size", "Assume zero ref_size");
 
-    arg_desc->AddOptionalKey("mapfile", "MapFile",
-                             "IdMapper config filename",
-                             CArgDescriptions::eInputFile);
-    arg_desc->AddDefaultKey("genome", "Genome",
-                            "UCSC build number",
-                            CArgDescriptions::eString, "");
-
-    arg_desc->AddOptionalKey("refseq", "RefSeqId",
-                             "RefSeq id",
-                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("refpos", "RefSeqPos",
-                            "RefSeq position",
-                            CArgDescriptions::eInteger,
-                            "0");
-    arg_desc->AddOptionalKey("refposs", "RefSeqPoss",
-                            "RefSeq positions",
-                            CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("refwindow", "RefSeqWindow",
-                             "RefSeq window",
-                             CArgDescriptions::eInteger);
-    arg_desc->AddOptionalKey("refend", "RefSeqEnd",
-                             "RefSeq last position",
-                             CArgDescriptions::eInteger);
-    arg_desc->AddOptionalKey("q", "Query",
-                             "Query coordinates in form chr1:100-10000",
-                             CArgDescriptions::eString);
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
                             "Number of BAM entries to read (0 - unlimited)",
                             CArgDescriptions::eInteger,
@@ -140,14 +96,8 @@ void CBAMCompareApp::Init(void)
     arg_desc->AddFlag("make_seq_entry", "Generated Seq-entries");
     arg_desc->AddFlag("print_seq_entry", "Print generated Seq-entry");
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
-    arg_desc->AddFlag("verbose", "Print BAM data");
     arg_desc->AddFlag("short_id_conflicts", "Check for short id conflicts");
     arg_desc->AddFlag("speed", "Do minimum checks for performance comparison");
-
-    arg_desc->AddDefaultKey("o", "OutputFile",
-                            "Output file of ASN.1",
-                            CArgDescriptions::eOutputFile,
-                            "-");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -257,72 +207,11 @@ int CBAMCompareApp::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
-    int ret_code = 0;
-
-    string path;
-
-    vector<string> dirs;
-    if ( args["dir"] ) {
-        dirs.push_back(args["dir"].AsString());
-    }
-    else {
-        vector<string> reps;
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
-        ITERATE ( vector<string>, it, reps ) {
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR2));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR3));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR4));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR5));
-        }
-    }
-
-    ITERATE ( vector<string>, it, dirs ) {
-        string dir = *it;
-        if ( !dir.empty() && !NStr::EndsWith(dir, "/") ) {
-            dir += '/';
-        }
-        string file = args["file"].AsString();
-        path = file;
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        path = dir + file;
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        SIZE_TYPE p1 = file.rfind('/');
-        if ( p1 == NPOS ) {
-            p1 = 0;
-        }
-        else {
-            p1 += 1;
-        }
-        SIZE_TYPE p2 = file.find('.', p1);
-        if ( p2 != NPOS ) {
-            path = dir + file.substr(p1, p2-p1) + "/alignment/" + file;
-            if ( CFile(path).Exists() ) {
-                break;
-            }
-            path = dir + file.substr(p1, p2-p1) + "/exome_alignment/" + file;
-            if ( CFile(path).Exists() ) {
-                break;
-            }
-        }
-        path.clear();
-    }
-#if 0
-    if ( !CFile(path).Exists() ) {
-        NcbiCerr << "\nNCBI_UNITTEST_SKIPPED "
-                 << "Data+file+"<<args["file"].AsString()<<"+not+found."
-                 << NcbiEndl;
+    if ( !ParseCommonArgs(args) ) {
         return 1;
     }
-#endif
-    if ( !CFile(path).Exists() ) {
-        ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
-    }
+
+    int ret_code = 0;
 
     CSeqVector sv;
     if ( args["check_id"] ) {
@@ -333,12 +222,10 @@ int CBAMCompareApp::Run(void)
         sv.SetCoding(CSeq_data::e_Iupacna);
     }
 
-    CNcbiOstream& out = args["o"].AsOutputFile();
-
     out << "File: " << path << NcbiEndl;
     CBamMgr mgr;
     CBamDb bam_db, bam_db2;
-    if ( args["no_index"] ) {
+    if ( index_path.empty() ) {
         if ( !args["raw"] ) {
             bam_db = CBamDb(mgr, path);
         }
@@ -349,33 +236,21 @@ int CBAMCompareApp::Run(void)
     }
     else {
         if ( !args["raw"] ) {
-            bam_db = CBamDb(mgr, path, path+".bai");
+            bam_db = CBamDb(mgr, path, index_path);
         }
         else {
-            bam_db = CBamDb(mgr, path, path+".bai", CBamDb::eUseAlignAccess);
-            bam_db2 = CBamDb(mgr, path, path+".bai", CBamDb::eUseRawIndex);
+            bam_db = CBamDb(mgr, path, index_path, CBamDb::eUseAlignAccess);
+            bam_db2 = CBamDb(mgr, path, index_path, CBamDb::eUseRawIndex);
         }
     }
 
-    AutoPtr<IIdMapper> mapper;
-    if ( args["mapfile"] ) {
-        mapper.reset(new CIdMapperConfig(args["mapfile"].AsInputFile(),
-                                         args["genome"].AsString(),
-                                         false));
-    }
-    else if ( !args["genome"].AsString().empty() ) {
-        LOG_POST("Genome: "<<args["genome"].AsString());
-        mapper.reset(new CIdMapperBuiltin(args["genome"].AsString(),
-                                          false));
-    }
-    if ( mapper ) {
+    if ( id_mapper.get() ) {
         if ( bam_db2 ) {
-            bam_db2.SetIdMapper(mapper.get(), eNoOwnership);
+            bam_db2.SetIdMapper(id_mapper.get(), eNoOwnership);
         }
-        bam_db.SetIdMapper(mapper.release(), eTakeOwnership);
+        bam_db.SetIdMapper(id_mapper.get(), eNoOwnership);
     }
 
-    bool print_refseqs = args["refseq_table"];
     if ( bam_db2 ) {
         if ( bam_db.GetHeaderText() != bam_db2.GetHeaderText() ) {
             ret_code = 1;
@@ -385,13 +260,13 @@ int CBAMCompareApp::Run(void)
                 << endl;
         }
     }
-    if ( bam_db2 || print_refseqs ) {
+    if ( bam_db2 || refseq_table ) {
         CBamRefSeqIterator it2;
         if ( bam_db2 ) {
             it2 = CBamRefSeqIterator(bam_db2);
         }
         for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
-            if ( print_refseqs ) {
+            if ( refseq_table ) {
                 out << "RefSeq: " << it.GetRefSeqId()
                     << " = " << it.GetRefSeq_id()->AsFastaString()
                     << " " << it.GetLength()
@@ -435,7 +310,6 @@ int CBAMCompareApp::Run(void)
 
     size_t limit_count = size_t(max(0, args["limit_count"].AsInteger()));
     bool ignore_errors = args["ignore_errors"];
-    bool verbose = args["verbose"];
     bool speed = args["speed"];
     bool make_seq_entry = args["make_seq_entry"];
     bool print_seq_entry = args["print_seq_entry"];
@@ -443,76 +317,24 @@ int CBAMCompareApp::Run(void)
     typedef map<string, int> TConflicts;
     TConflicts conflicts;
     bool short_id_conflicts = args["short_id_conflicts"];
-    if ( 1 ) {
+    for ( auto& q : queries ) {
         size_t count = 0;
         CBamAlignIterator it, it2;
         bool collect_short = false;
         bool range_only = args["range_only"];
         bool no_ref_size = args["no_ref_size"];
 
-        string query_id;
-        CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
-
-        if ( args["refseq"] ) {
-            query_id = args["refseq"].AsString();
-            query_range.SetFrom(args["refpos"].AsInteger());
-            if ( args["refwindow"] ) {
-                TSeqPos window = args["refwindow"].AsInteger();
-                if ( window != 0 ) {
-                    query_range.SetLength(window);
-                }
-                else {
-                    query_range.SetTo(kInvalidSeqPos);
-                }
-            }
-            if ( args["refend"] ) {
-                query_range.SetTo(args["refend"].AsInteger());
-            }
-        }
-        if ( args["q"] ) {
-            string q = args["q"].AsString();
-            SIZE_TYPE colon_pos = q.find(':');
-            if ( colon_pos == NPOS || colon_pos == 0 ) {
-                ERR_POST(Fatal << "Invalid query format: " << q);
-            }
-            query_id = q.substr(0, colon_pos);
-            SIZE_TYPE dash_pos = q.find('-', colon_pos+1);
-            if ( dash_pos == NPOS ) {
-                ERR_POST(Fatal << "Invalid query format: " << q);
-            }
-            TSeqPos from =
-                NStr::StringToNumeric<TSeqPos>(q.substr(colon_pos+1,
-                                                        dash_pos-colon_pos-1));
-            TSeqPos to = NStr::StringToNumeric<TSeqPos>(q.substr(dash_pos+1));
-            query_range.SetFrom(from).SetTo(to);
-        }
-
         CStopWatch sw;
-        if ( !query_id.empty() ) {
+        if ( !q.refseq_id.empty() ) {
             collect_short = !args["no_short"];
-            if ( args["refposs"] ) {
-                string str = args["refposs"].AsString();
-                CNcbiIstrstream in(str.data(), str.size());
-                TSeqPos pos;
-                while ( in >> pos ) {
-                    NcbiCout << "Trying "<<pos<<NcbiFlush;
-                    CBamAlignIterator ait(bam_db, query_id, pos);
-                    if ( ait ) {
-                        NcbiCout << " -> " << ait.GetRefSeqPos() << NcbiEndl;
-                    }
-                    else {
-                        NcbiCout << " none" << NcbiEndl;
-                    }
-                }
-            }
             sw.Restart();
-            it = CBamAlignIterator(bam_db, query_id,
-                                   query_range.GetFrom(),
-                                   query_range.GetLength());
+            it = CBamAlignIterator(bam_db, q.refseq_id,
+                                   q.refseq_range.GetFrom(),
+                                   q.refseq_range.GetLength());
             if ( bam_db2 ) {
-                it2 = CBamAlignIterator(bam_db2, query_id,
-                                        query_range.GetFrom(),
-                                        query_range.GetLength());
+                it2 = CBamAlignIterator(bam_db2, q.refseq_id,
+                                        q.refseq_range.GetFrom(),
+                                        q.refseq_range.GetLength());
             }
         }
         else {
@@ -591,8 +413,8 @@ int CBAMCompareApp::Run(void)
                     it.GetRawCIGAR(aln.CIGAR);
                     aln.flags = it.GetFlags();
                     aln.quality = it.GetMapQuality();
-                    if ( query_range == CRange<TSeqPos>::GetWhole() ||
-                         aln.ref_range.IntersectingWith(query_range) ) {
+                    if ( q.refseq_range == CRange<TSeqPos>::GetWhole() ||
+                         aln.ref_range.IntersectingWith(q.refseq_range) ) {
                         alns1.push_back(aln);
                     }
                     else {
@@ -675,8 +497,8 @@ int CBAMCompareApp::Run(void)
                     it.GetRawCIGAR(aln.CIGAR);
                     aln.flags = flags;
                     aln.quality = qual;
-                    if ( query_range == CRange<TSeqPos>::GetWhole() ||
-                         aln.ref_range.IntersectingWith(query_range) ) {
+                    if ( q.refseq_range == CRange<TSeqPos>::GetWhole() ||
+                         aln.ref_range.IntersectingWith(q.refseq_range) ) {
                         alns1.push_back(aln);
                     }
                     else {
@@ -982,10 +804,10 @@ int CBAMCompareApp::Run(void)
                                    samtools::CBamFile::eWithoutIndex:
                                    samtools::CBamFile::eWithIndex);
             sw.Restart();
-            if ( !query_id.empty() ) {
-                bam.Fetch(query_id,
-                          query_range.GetFrom(),
-                          query_range.GetTo(),
+            if ( !q.refseq_id.empty() ) {
+                bam.Fetch(q.refseq_id,
+                          q.refseq_range.GetFrom(),
+                          q.refseq_range.GetTo(),
                           alns2, limit_count);
             }
             else {
@@ -1028,8 +850,8 @@ int CBAMCompareApp::Run(void)
                 vector<samtools::SBamAlignment> alns2tmp;
                 swap(alns2, alns2tmp);
                 for ( auto& a : alns2tmp ) {
-                    if ( query_range != CRange<TSeqPos>::GetWhole() &&
-                         !a.ref_range.IntersectingWith(query_range) ) {
+                    if ( q.refseq_range != CRange<TSeqPos>::GetWhole() &&
+                         !a.ref_range.IntersectingWith(q.refseq_range) ) {
                         alnsout2.push_back(a);
                     }
                     else {
@@ -1066,8 +888,8 @@ int CBAMCompareApp::Run(void)
                 size_t size2 = alns2.size(), i2 = 0;
                 out << "SRA SDK and SamTools results differ:" << NcbiEndl;
                 while ( i1 < size1 || i2 < size2 ) {
-                    if ( i2 < size2 && query_range != CRange<TSeqPos>::GetWhole() &&
-                         !alns2[i2].ref_range.IntersectingWith(query_range) ) {
+                    if ( i2 < size2 && q.refseq_range != CRange<TSeqPos>::GetWhole() &&
+                         !alns2[i2].ref_range.IntersectingWith(q.refseq_range) ) {
                         alnsout2.push_back(alns2[i2]);
                         ++i2;
                         continue;

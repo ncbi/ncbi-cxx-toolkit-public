@@ -56,7 +56,8 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
 
-#include <common/test_data_path.h>
+#include "bam_test_common.hpp"
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -66,7 +67,7 @@ USING_SCOPE(objects);
 //  CBAMTestApp::
 
 
-class CBAMTestApp : public CNcbiApplication
+class CBAMTestApp : public CBAMTestCommon
 {
 private:
     virtual void Init(void);
@@ -79,17 +80,6 @@ private:
 //  Init test
 
 
-#define BAM_DIR1 "/1000genomes/ftp/data"
-#define BAM_DIR2 "/1000genomes/ftp/phase1/data"
-#define BAM_DIR3 "/1kg_pilot_data/data"
-#define BAM_DIR4 "/1000genomes2/ftp/data"
-#define BAM_DIR5 "/1000genomes3/ftp/data"
-
-#define BAM_FILE1 "NA19240.mapped.SOLID.bfast.YRI.exome.20111114.bam"
-#define BAM_FILE2 "NA19240.chromMT.ILLUMINA.bwa.YRI.exon_targetted.20100311.bam"
-#define BAM_FILE3 "NA19240.chromMT.SLX.SRP000032.2009_04.bam"
-#define BAM_FILE4 "NA19240.chrom3.SLX.SRP000032.2009_04.bam"
-
 void CBAMTestApp::Init(void)
 {
     // Create command-line argument descriptions class
@@ -97,46 +87,14 @@ void CBAMTestApp::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CArgDescriptions demo program");
+                              "CBAMTestApp test program");
 
-    arg_desc->AddOptionalKey("dir", "Dir",
-                             "BAM files files directory",
-                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("file", "File",
-                            "BAM file name",
-                            CArgDescriptions::eString,
-                            BAM_FILE1);
-    arg_desc->AddOptionalKey("index", "IndexFile",
-                             "Explicit path to BAM index file",
-                             CArgDescriptions::eString);
-    arg_desc->AddFlag("no_index", "Access BAM file without index");
+    InitCommonArgs(*arg_desc);
     arg_desc->AddFlag("header", "Dump BAM header text");
-    arg_desc->AddFlag("refseq_table", "Dump RefSeq table");
     arg_desc->AddFlag("no_short", "Do not collect short ids");
     arg_desc->AddFlag("range_only", "Collect only the range on RefSeq");
     arg_desc->AddFlag("no_ref_size", "Assume zero ref_size");
 
-    arg_desc->AddOptionalKey("mapfile", "MapFile",
-                             "IdMapper config filename",
-                             CArgDescriptions::eInputFile);
-    arg_desc->AddDefaultKey("genome", "Genome",
-                            "UCSC build number",
-                            CArgDescriptions::eString, "");
-
-    arg_desc->AddOptionalKey("refseq", "RefSeqId",
-                             "RefSeq id",
-                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("refpos", "RefSeqPos",
-                            "RefSeq position",
-                            CArgDescriptions::eInteger,
-                            "0");
-    arg_desc->AddOptionalKey("refposs", "RefSeqPoss",
-                            "RefSeq positions",
-                            CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("refwindow", "RefSeqWindow",
-                            "RefSeq window",
-                            CArgDescriptions::eInteger,
-                            "0");
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
                             "Number of BAM entries to read (0 - unlimited)",
                             CArgDescriptions::eInteger,
@@ -154,12 +112,6 @@ void CBAMTestApp::Init(void)
     arg_desc->AddFlag("make_seq_entry", "Generated Seq-entries");
     arg_desc->AddFlag("print_seq_entry", "Print generated Seq-entry");
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
-    arg_desc->AddFlag("verbose", "Print BAM data");
-
-    arg_desc->AddDefaultKey("o", "OutputFile",
-                            "Output file of ASN.1",
-                            CArgDescriptions::eOutputFile,
-                            "-");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -480,72 +432,8 @@ int CBAMTestApp::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
-    string path;
-
-    vector<string> dirs;
-    if ( args["dir"] ) {
-        dirs.push_back(args["dir"].AsString());
-    }
-    else {
-        vector<string> reps;
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
-        ITERATE ( vector<string>, it, reps ) {
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR2));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR3));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR4));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR5));
-        }
-    }
-
-    ITERATE ( vector<string>, it, dirs ) {
-        string dir = *it;
-        if ( !dir.empty() && !NStr::EndsWith(dir, "/") ) {
-            dir += '/';
-        }
-        string file = args["file"].AsString();
-        path = file;
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        path = dir + file;
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        SIZE_TYPE p1 = file.rfind('/');
-        if ( p1 == NPOS ) {
-            p1 = 0;
-        }
-        else {
-            p1 += 1;
-        }
-        SIZE_TYPE p2 = file.find('.', p1);
-        if ( p2 != NPOS ) {
-            path = dir + file.substr(p1, p2-p1) + "/alignment/" + file;
-            if ( CFile(path).Exists() ) {
-                break;
-            }
-            path = dir + file.substr(p1, p2-p1) + "/exome_alignment/" + file;
-            if ( CFile(path).Exists() ) {
-                break;
-            }
-        }
-        path.clear();
-    }
-    if ( path.empty() ) {
-        path = args["file"].AsString();
-    }
-#if 0
-    if ( !CFile(path).Exists() ) {
-        NcbiCerr << "\nNCBI_UNITTEST_SKIPPED "
-                 << "Data+file+"<<args["file"].AsString()<<"+not+found."
-                 << NcbiEndl;
+    if ( !ParseCommonArgs(args) ) {
         return 1;
-    }
-#endif
-    if ( !CFile(path).Exists() ) {
-        ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
     }
 
     bool verbose_weak_matches = args["verbose_weak_matches"];
@@ -558,45 +446,27 @@ int CBAMTestApp::Run(void)
         sv.SetCoding(CSeq_data::e_Iupacna);
     }
 
-    CNcbiOstream& out = args["o"].AsOutputFile();
-
     for ( int cycle = 0; cycle < 1; ++cycle ) {
         if ( cycle ) path = "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam";
         out << "File: " << path << NcbiEndl;
         CBamMgr mgr;
         CBamDb bam_db;
         
-        if ( args["no_index"] ) {
+        if ( index_path.empty() ) {
             bam_db = CBamDb(mgr, path);
         }
         else {
-            string index_path;
-            if ( args["index"] ) {
-                index_path = args["index"].AsString();
-            }
-            else {
-                index_path = path+".bai";
-            }
             bam_db = CBamDb(mgr, path, index_path);
         }
 
-        if ( args["mapfile"] ) {
-            bam_db.SetIdMapper(new CIdMapperConfig(args["mapfile"].AsInputFile(),
-                                                   args["genome"].AsString(),
-                                                   false),
-                               eTakeOwnership);
-        }
-        else if ( !args["genome"].AsString().empty() ) {
-            LOG_POST("Genome: "<<args["genome"].AsString());
-            bam_db.SetIdMapper(new CIdMapperBuiltin(args["genome"].AsString(),
-                                                    false),
-                               eTakeOwnership);
+        if ( id_mapper.get() ) {
+            bam_db.SetIdMapper(id_mapper.get(), eNoOwnership);
         }
 
         if ( args["header"] ) {
             out << bam_db.GetHeaderText() << endl;
         }
-        if ( args["refseq_table"] ) {
+        if ( refseq_table ) {
             out << "RefSeq table:\n";
             for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
                 out << "RefSeq: " << it.GetRefSeqId() << " " << it.GetLength()
@@ -605,7 +475,6 @@ int CBAMTestApp::Run(void)
         }
         int limit_count = args["limit_count"].AsInteger();
         bool ignore_errors = args["ignore_errors"];
-        bool verbose = args["verbose"];
         bool make_seq_entry = args["make_seq_entry"];
         bool print_seq_entry = args["print_seq_entry"];
         int min_quality = args["min_quality"].AsInteger();
@@ -627,33 +496,20 @@ int CBAMTestApp::Run(void)
             refseqs.push_back(string());
         }
 
-        ITERATE ( vector<string>, rit, refseqs ) {
-            string refseq = *rit;
+        if ( queries.empty() ) {
+            queries.push_back(SQuery());
+        }
+        for ( auto& q : queries ) {
             int count = 0;
             CBamAlignIterator it;
             bool collect_short = false;
             bool range_only = args["range_only"];
             bool no_ref_size = args["no_ref_size"];
-            if ( !refseq.empty() ) {
+            if ( !q.refseq_id.empty() ) {
                 collect_short = !args["no_short"];
-                if ( args["refposs"] ) {
-                    string str = args["refposs"].AsString();
-                    CNcbiIstrstream in(str.data(), str.size());
-                    TSeqPos pos;
-                    while ( in >> pos ) {
-                        NcbiCout << "Trying "<<pos<<NcbiFlush;
-                        CBamAlignIterator ait(bam_db, refseq, pos);
-                        if ( ait ) {
-                            NcbiCout << " -> " << ait.GetRefSeqPos() << NcbiEndl;
-                        }
-                        else {
-                            NcbiCout << " none" << NcbiEndl;
-                        }
-                    }
-                }
-                it = CBamAlignIterator(bam_db, refseq,
-                                       args["refpos"].AsInteger(),
-                                       args["refwindow"].AsInteger());
+                it = CBamAlignIterator(bam_db, q.refseq_id,
+                                       q.refseq_range.GetFrom(),
+                                       q.refseq_range.GetLength());
             }
             else {
                 it = CBamAlignIterator(bam_db);

@@ -152,6 +152,15 @@ struct SBamIndexDefs
     {
         return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
     }
+    static EIndexLevel GetBinNumberIndexLevel(TBin bin)
+    {
+        for ( uint8_t k = kMinLevel; ; ++k ) {
+            EIndexLevel level = EIndexLevel(k);
+            if ( bin >= GetBinNumberBase(level) ) {
+                return level;
+            }
+        }
+    }
 };
 
 
@@ -191,6 +200,9 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
                             CBGZFRange limit_file_range,
                             COpenRange<TSeqPos> ref_range,
                             EIndexLevel index_level) const;
+
+    vector<uint64_t> CollectEstimatedCoverage(EIndexLevel min_index_level,
+                                              EIndexLevel max_index_level) const;
     
     vector<SBamIndexBinInfo> m_Bins;
     CBGZFRange m_UnmappedChunk;
@@ -228,27 +240,67 @@ public:
     MakeEstimatedCoverageAnnot(const CBamHeader& header,
                                const string& ref_name,
                                const string& seq_id,
-                               const string& annot_name) const;
+                               const string& annot_name,
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(const CBamHeader& header,
                                const string& ref_name,
                                const CSeq_id& seq_id,
-                               const string& annot_name) const;
+                               const string& annot_name,
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
 
 
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const string& seq_id,
                                const string& annot_name,
-                               TSeqPos ref_length = kInvalidSeqPos) const;
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const CSeq_id& seq_id,
                                const string& annot_name,
-                               TSeqPos ref_length = kInvalidSeqPos) const;
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
 
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level = kMinLevel,
+                               EIndexLevel max_index_level = kMaxLevel) const;
+
+    // collect estimated coverage from index level range
+    // result bin size will be equal to bin size of min_index_level
     vector<uint64_t>
-    CollectEstimatedCoverage(size_t ref_index) const;
+    CollectEstimatedCoverage(size_t ref_index,
+                             EIndexLevel min_index_level,
+                             EIndexLevel max_index_level) const;
+    // collect estimated coverage from specified index level
+    // result bin size will be equal to bin size of index_level
+    vector<uint64_t>
+    CollectEstimatedCoverage(size_t ref_index,
+                             EIndexLevel index_level) const
+        {
+            return CollectEstimatedCoverage(ref_index, index_level, index_level);
+        }
+    // collect estimated coverage from all index levels
+    // result bin size will be equal to bin size of most detailed index level
+    vector<uint64_t>
+    CollectEstimatedCoverage(size_t ref_index) const
+        {
+            return CollectEstimatedCoverage(ref_index, kMinLevel, kMaxLevel);
+        }
 
 private:
     TRefs m_Refs;

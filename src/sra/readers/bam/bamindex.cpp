@@ -193,13 +193,10 @@ int32_t s_ReadInt32(CBGZFStream& in)
 
 COpenRange<TSeqPos> SBamIndexBinInfo::GetSeqRange(uint32_t bin)
 {
-    uint32_t pos = 0, len = 1<<29, count = 1;
-    while ( bin >= count ) {
-        bin -= count;
-        len >>= 3;
-        count <<= 3;
-    }
-    pos += bin*len;
+    EIndexLevel level = GetBinNumberIndexLevel(bin);
+    TSeqPos len = GetBinSize(level);
+    TSeqPos index = bin - GetBinNumberBase(level);
+    TSeqPos pos = index*len;
     return COpenRange<TSeqPos>(pos, pos+len);
 }
 
@@ -222,7 +219,7 @@ void SBamIndexBinInfo::Read(CNcbiIstream& in)
 
 void SBamIndexRefIndex::Read(CNcbiIstream& in)
 {
-    m_EstimatedLength = 0;
+    m_EstimatedLength = kMinBinSize;
     int32_t n_bin = s_ReadInt32(in);
     m_Bins.resize(n_bin);
     const SBamIndexBinInfo::TBin kSpecialBin = 37450;
@@ -239,7 +236,15 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
             m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
         }
         else {
-            m_EstimatedLength = max(m_EstimatedLength, bin.GetSeqRange().GetToOpen());
+            auto range = bin.GetSeqRange();
+            TSeqPos min_end = range.GetFrom();
+            if ( range.GetLength() != kMinBinSize ) {
+                // at least 1 sub-range
+                min_end += range.GetLength() >> kLevelStepBinShift;
+            }
+            // at least 1 minimal page
+            min_end += kMinBinSize;
+            m_EstimatedLength = max(m_EstimatedLength, min_end);
         }
     }
     gfx::timsort(m_Bins.begin(), m_Bins.end());
@@ -251,6 +256,28 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
         m_Intervals[i_intv] = s_ReadFilePos(in);
     }
     m_EstimatedLength = max(m_EstimatedLength, n_intv*kMinBinSize);
+    _ASSERT(m_EstimatedLength >= kMinBinSize);
+}
+
+
+static inline
+Uint8 s_EstimatedPos(const CBGZFPos& pos)
+{
+    return pos.GetFileBlockPos() + Uint8(pos.GetByteOffset()*kEstimatedCompression);
+}
+
+
+static inline
+Uint8 s_EstimatedSize(const CBGZFRange& range)
+{
+    Uint8 pos1 = s_EstimatedPos(range.first);
+    Uint8 pos2 = s_EstimatedPos(range.second);
+    if ( pos1 < pos2 )
+        return pos2-pos1;
+    else if ( range.first != range.second )
+        return 1;
+    else
+        return 0;
 }
 
 
@@ -302,6 +329,49 @@ void SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
             }
         }
     }
+}
+
+
+vector<uint64_t> SBamIndexRefIndex::CollectEstimatedCoverage(EIndexLevel min_index_level,
+                                                             EIndexLevel max_index_level) const
+{
+    vector<uint64_t> vv(((m_EstimatedLength-kMinBinSize) >> GetLevelBinShift(min_index_level))+1);
+    for ( uint8_t k = min_index_level; k <= max_index_level; ++k ) {
+        EIndexLevel level = EIndexLevel(k);
+        uint32_t vv_bin_shift = (k-min_index_level)*kLevelStepBinShift;
+        uint32_t vv_bin_count = 1 << vv_bin_shift;
+        TBin bin_base = GetBinNumberBase(level);
+        auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin_base);
+        auto it_end = level == kMinLevel? m_Bins.end(): lower_bound(m_Bins.begin(), m_Bins.end(), GetBinNumberBase(EIndexLevel(k-1)));
+        for ( ; it != it_end; ++it ) {
+            uint64_t value = 0;
+            for ( auto& c : it->m_Chunks ) {
+                value += s_EstimatedSize(c);
+            }
+            if ( !value ) {
+                continue;
+            }
+            uint32_t pos = (it->m_Bin - bin_base) << vv_bin_shift;
+            _ASSERT(pos < vv.size());
+            uint64_t add = value;
+            uint32_t cnt = min(vv_bin_count, uint32_t(vv.size()-pos));
+            if ( cnt > 1 ) {
+                // distribute
+                add = (add+cnt/2)/cnt;
+            }
+            if ( !add ) {
+                for ( uint32_t i = 0; i < cnt; ++i ) {
+                    vv[pos+i] = max(uint64_t(1), vv[pos+i]);
+                }
+            }
+            else {
+                for ( uint32_t i = 0; i < cnt; ++i ) {
+                    vv[pos+i] += add;
+                }
+            }
+        }
+    }
+    return vv;
 }
 
 
@@ -377,25 +447,6 @@ void CBamIndex::Read(const string& index_file_name)
 }
 
 
-static inline
-Uint8 s_EstimatedPos(const CBGZFPos& pos)
-{
-    return pos.GetFileBlockPos() + Uint8(pos.GetByteOffset()*kEstimatedCompression);
-}
-
-
-static inline
-Uint8 s_EstimatedSize(const CBGZFRange& range)
-{
-    Uint8 pos1 = s_EstimatedPos(range.first);
-    Uint8 pos2 = s_EstimatedPos(range.second);
-    if ( pos1 >= pos2 )
-        return 0;
-    else
-        return pos2-pos1;
-}
-
-
 const SBamIndexRefIndex& CBamIndex::GetRef(size_t ref_index) const
 {
     if ( ref_index >= GetRefCount() ) {
@@ -439,10 +490,12 @@ CRef<CSeq_annot>
 CBamIndex::MakeEstimatedCoverageAnnot(const CBamHeader& header,
                                       const string& ref_name,
                                       const string& seq_id,
-                                      const string& annot_name) const
+                                      const string& annot_name,
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
 {
     CSeq_id id(seq_id);
-    return MakeEstimatedCoverageAnnot(header, ref_name, id, annot_name);
+    return MakeEstimatedCoverageAnnot(header, ref_name, id, annot_name, min_index_level, max_index_level);
 }
 
 
@@ -450,7 +503,9 @@ CRef<CSeq_annot>
 CBamIndex::MakeEstimatedCoverageAnnot(const CBamHeader& header,
                                       const string& ref_name,
                                       const CSeq_id& seq_id,
-                                      const string& annot_name) const
+                                      const string& annot_name,
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
 {
     size_t ref_index = header.GetRefIndex(ref_name);
     if ( ref_index == size_t(-1) ) {
@@ -458,7 +513,7 @@ CBamIndex::MakeEstimatedCoverageAnnot(const CBamHeader& header,
                        "Cannot find RefSeq: "<<ref_name);
     }
     return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
-                                      header.GetRefLength(ref_index));
+                                      header.GetRefLength(ref_index), min_index_level, max_index_level);
 }
 
 
@@ -466,32 +521,23 @@ CRef<CSeq_annot>
 CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
                                       const string& seq_id,
                                       const string& annot_name,
-                                      TSeqPos length) const
+                                      TSeqPos length,
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
 {
     CSeq_id id(seq_id);
-    return MakeEstimatedCoverageAnnot(ref_index, id, annot_name, length);
+    return MakeEstimatedCoverageAnnot(ref_index, id, annot_name, length, min_index_level, max_index_level);
 }
 
 
-vector<uint64_t>
-CBamIndex::CollectEstimatedCoverage(size_t ref_index) const
+CRef<CSeq_annot>
+CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
+                                      const string& seq_id,
+                                      const string& annot_name,
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
 {
-    vector<uint64_t> vv;
-    for ( auto& b : GetRef(ref_index).m_Bins ) {
-        COpenRange<TSeqPos> range = b.GetSeqRange();
-        uint32_t len = range.GetLength();
-        if ( len == kMinBinSize ) {
-            size_t index = range.GetFrom()/kMinBinSize;
-            if ( index >= vv.size() )
-                vv.resize(index+1);
-            uint64_t value = 0;
-            for ( auto& c : b.m_Chunks ) {
-                value += s_EstimatedSize(c);
-            }
-            vv[index] = value;
-        }
-    }
-    return vv;
+    return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, kInvalidSeqPos, min_index_level, max_index_level);
 }
 
 
@@ -499,15 +545,37 @@ CRef<CSeq_annot>
 CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
                                       const CSeq_id& seq_id,
                                       const string& annot_name,
-                                      TSeqPos length) const
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
 {
-    vector<uint64_t> vv = CollectEstimatedCoverage(ref_index);
+    return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, kInvalidSeqPos, min_index_level, max_index_level);
+}
+
+
+vector<uint64_t>
+CBamIndex::CollectEstimatedCoverage(size_t ref_index,
+                                    EIndexLevel min_index_level,
+                                    EIndexLevel max_index_level) const
+{
+    return GetRef(ref_index).CollectEstimatedCoverage(min_index_level, max_index_level);
+}
+
+
+CRef<CSeq_annot>
+CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
+                                      const CSeq_id& seq_id,
+                                      const string& annot_name,
+                                      TSeqPos length,
+                                      EIndexLevel min_index_level,
+                                      EIndexLevel max_index_level) const
+{
+    TSeqPos bin_size = GetBinSize(min_index_level);
+    vector<uint64_t> vv = CollectEstimatedCoverage(ref_index, min_index_level, max_index_level);
     if ( vv.empty() ) vv.push_back(0);
     uint32_t count = uint32_t(vv.size());
     if ( length == 0 || length == kInvalidSeqPos ) {
-        length = count*kMinBinSize;
+        length = count*bin_size;
     }
-    uint64_t max_value = *max_element(vv.begin(), vv.end());
 
     CRef<CSeq_annot> annot(new CSeq_annot);
     CRef<CSeq_graph> graph(new CSeq_graph);
@@ -517,21 +585,25 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
     graph->SetLoc().SetInt().SetId().Assign(seq_id);
     graph->SetLoc().SetInt().SetFrom(0);
     graph->SetLoc().SetInt().SetTo(length-1);
-    graph->SetComp(kMinBinSize);
+    graph->SetComp(bin_size);
     graph->SetNumval(count);
     CByte_graph& bgraph = graph->SetGraph().SetByte();
-    bgraph.SetAxis(0);
     vector<char>& bvalues = bgraph.SetValues();
     bvalues.resize(count);
-    Uint1 bmin = 0xff, bmax = 0;
+    Uint1 bmax = 0;
+    uint64_t max_value = *max_element(vv.begin(), vv.end());
+    double mul = min(1., 255./max_value);
     for ( size_t i = 0; i < count; ++i ) {
-        Uint1 b = Uint1(vv[i]*255./max_value+.5);
+        Uint1 b = Uint1(vv[i]*mul+.5);
         bvalues[i] = b;
-        bmin = min(bmin, b);
         bmax = max(bmax, b);
     }
-    bgraph.SetMin(bmin);
+    bgraph.SetAxis(0);
+    bgraph.SetMin(1);
     bgraph.SetMax(bmax);
+    if ( mul != 1 ) {
+        graph->SetA(1/mul);
+    }
     return annot;
 }
 
@@ -1250,6 +1322,9 @@ bool CBamRawAlignIterator::x_NeedToSkip()
     auto alignment = m_AlignInfo.get_cigar_alignment();
     m_AlignRefRange = alignment.first;
     m_AlignReadRange = alignment.second;
+    if ( m_RefIndex == size_t(-1) ) {
+        return false;
+    }
     if ( m_AlignRefRange.GetFrom() >= m_QueryRefRange.GetToOpen() ) {
         // after search range
         x_Stop();

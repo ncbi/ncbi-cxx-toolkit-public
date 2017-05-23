@@ -7,7 +7,7 @@
 #################################
 
 APP = bamindex_test
-SRC = bamindex_test
+SRC = bamindex_test bam_test_common
 
 LIB =   bamread $(BAM_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil xobjsimple \
         $(OBJMGR_LIBS)

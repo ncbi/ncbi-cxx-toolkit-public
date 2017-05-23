@@ -44,7 +44,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <thread>
 
-#include <common/test_data_path.h>
+#include "bam_test_common.hpp"
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 //  CBamIndexTestApp::
 
 
-class CBamIndexTestApp : public CNcbiApplication
+class CBamIndexTestApp : public CBAMTestCommon
 {
 private:
     virtual void Init(void);
@@ -64,41 +64,22 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-                         //  Init test
+//  Init test
 
-
-#define BAM_DIR1 "/1000genomes/ftp/data"
-#define BAM_DIR2 "/1kg_pilot_data/data"
-#define BAM_DIR3 "/1000genomes2/ftp/data"
-#define BAM_DIR4 "/1000genomes2/ftp/phase1/data"
-
-#define BAM_FILE "HG00116.chrom20.ILLUMINA.bwa.GBR.low_coverage.20101123.bam"
 
 void CBamIndexTestApp::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
+    InitCommonArgs(*arg_desc);
+
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CArgDescriptions demo program");
+                              "CBam raw index access test program");
 
-    arg_desc->AddOptionalKey("dir", "Dir",
-                             "BAM files files directory",
-                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("file", "File",
-                            "BAM file name",
-                            CArgDescriptions::eString,
-                            BAM_FILE);
-
-    arg_desc->AddOptionalKey("ref_label", "RefLabel",
-                             "RefSeq id in BAM file",
-                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("seq_id", "SeqId",
                              "RefSeq Seq-id",
-                             CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("q", "Query",
-                             "Query variants: chr1, chr1:123-432",
                              CArgDescriptions::eString);
     arg_desc->AddOptionalKey("l", "IndexLevel",
                              "Level of BAM index to scan",
@@ -109,13 +90,9 @@ void CBamIndexTestApp::Init(void)
                              "Title of generated Seq-graph",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("o", "OutputFile",
-                             "Output file of ASN.1",
-                             CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("bin", "Write binary ASN.1");
     
     arg_desc->AddFlag("file-range", "Print file range of alignements");
-    arg_desc->AddFlag("verbose", "Verbose output");
     arg_desc->AddFlag("dump", "Dump index");
     arg_desc->AddFlag("sra", "Use SRA toolkit");
     arg_desc->AddFlag("ST", "Single thread");
@@ -176,148 +153,56 @@ int CBamIndexTestApp::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
-    bool verbose = args["verbose"];
-
-    vector<string> dirs;
-    if ( args["dir"] ) {
-        dirs.push_back(args["dir"].AsString());
-    }
-    else {
-        vector<string> reps;
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
-        reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
-        ITERATE ( vector<string>, it, reps ) {
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR2));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR3));
-            dirs.push_back(CFile::MakePath(*it, BAM_DIR4));
-        }
+    if ( !ParseCommonArgs(args) ) {
+        return 1;
     }
 
-    string file = args["file"].AsString();
-    string path;
-    
-    if ( NStr::StartsWith(file, "http://") ||
-         NStr::StartsWith(file, "https://") ||
-         NStr::StartsWith(file, "ftp://") ||
-         CFile(file).Exists() ) {
-        path = file;
-    }
-    else {
-        ITERATE ( vector<string>, it, dirs ) {
-            string dir = *it;
-            if ( !CDirEntry(dir).Exists() ) {
-                continue;
-            }
-            path = CFile::MakePath(dir, file);
-            if ( !CFile(path).Exists() ) {
-                SIZE_TYPE p1 = file.rfind('/');
-                if ( p1 == NPOS ) {
-                    p1 = 0;
-                }
-                else {
-                    p1 += 1;
-                }
-                SIZE_TYPE p2 = file.find('.', p1);
-                if ( p2 != NPOS ) {
-                    path = CFile::MakePath(dir, file.substr(p1, p2-p1) + "/alignment/" + file);
-                }
-            }
-            if ( CFile(path).Exists() ) {
-                break;
-            }
-            path.clear();
-        }
-        if ( path.empty() ) {
-            path = file;
-        }
-        if ( !CFile(path).Exists() ) {
-            ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
-            return 1;
-        }
-    }
-
-    typedef CRange<TSeqPos> TRange;
-    typedef pair<string, TRange> TQuery;
-    vector<TQuery> queries;
-
-    if ( args["ref_label"] ) {
-        vector<string> ss;
-        NStr::Split(args["ref_label"].AsString(), ",", ss);
-        for ( auto& l : ss ) {
-            queries.push_back(make_pair(l, TRange::GetWhole()));
-        }
-    }
-    else if ( args["q"] ) {
-        vector<string> ss;
-        NStr::Split(args["q"].AsString(), ",", ss);
-        for ( auto& q : ss ) {
-            SIZE_TYPE colon = q.find(':');
-            string ref_label;
-            TRange ref_range;
-            if ( colon == NPOS ) {
-                ref_label = q;
-                ref_range = TRange::GetWhole();
-            }
-            else {
-                ref_label = q.substr(0, colon);
-                q = q.substr(colon+1);
-                SIZE_TYPE dash = q.find('-');
-                if ( dash == NPOS ) {
-                    ERR_POST(Fatal<<"Bad query format");
-                }
-                ref_range.SetFrom(NStr::StringToNumeric<TSeqPos>(q.substr(0, dash)));
-                ref_range.SetTo(NStr::StringToNumeric<TSeqPos>(q.substr(dash+1)));
-            }
-            queries.push_back(make_pair(ref_label, ref_range));
-        }
-    }
     CBamIndex::EIndexLevel level1 = CBamIndex::kMinLevel;
     CBamIndex::EIndexLevel level2 = CBamIndex::kMaxLevel;
     if ( args["l"] ) {
         level1 = level2 = CBamIndex::EIndexLevel(args["l"].AsInteger());
     }
     
-    CBamRawDb bam_raw_db(path, path+".bai");
+    CBamRawDb bam_raw_db(path, index_path);
 
     for ( auto& q : queries ) {
-        if ( bam_raw_db.GetRefIndex(q.first) == size_t(-1) ) {
-            ERR_POST(Fatal<<"Unknown reference sequence: "<<q.first);
+        if ( bam_raw_db.GetRefIndex(q.refseq_id) == size_t(-1) ) {
+            ERR_POST(Fatal<<"Unknown reference sequence: "<<q.refseq_id);
         }
         if ( args["dump"] ) {
-            s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(q.first));
+            s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(q.refseq_id));
         }
     }
 
-    if ( args["o"] ) {
+    if ( args["o"].AsString() != "-" ) {
         for ( auto& q : queries ) {
             CSeq_id seq_id;
             if ( args["seq_id"] ) {
                 seq_id.Set(args["seq_id"].AsString());
             }
             else {
-                seq_id.Set(CSeq_id::e_Local, q.first);
+                seq_id.Set(CSeq_id::e_Local, q.refseq_id);
             }
             CRef<CSeq_entry> entry(new CSeq_entry);
             entry->SetSet().SetSeq_set();
             entry->SetSet().SetAnnot().push_back
-                (bam_raw_db.GetIndex().MakeEstimatedCoverageAnnot(bam_raw_db.GetRefIndex(q.first), seq_id, "graph"));
+                (bam_raw_db.GetIndex().MakeEstimatedCoverageAnnot(bam_raw_db.GetRefIndex(q.refseq_id), seq_id, "graph", level1, level2));
 
-            CNcbiOstream& out = args["o"].AsOutputFile();
             if ( args["bin"] )
                 out << MSerial_AsnBinary;
             else
                 out << MSerial_AsnText;
             out << *entry;
         }
+        out << flush;
     }
     
     if ( args["file-range"] ) {
         for ( auto& q : queries ) {
             CBamFileRangeSet rs(bam_raw_db.GetIndex(),
-                                bam_raw_db.GetRefIndex(q.first), q.second);
+                                bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range);
             for ( auto& c : rs ) {
-                cout << "Ref["<<q.first<<"] @"<<q.second<<": "
+                cout << "Ref["<<q.refseq_id<<"] @"<<q.refseq_range<<": "
                      << c.first<<" - "<<c.second
                      << endl;
             }
@@ -327,7 +212,7 @@ int CBamIndexTestApp::Run(void)
     CBamMgr mgr;
     CBamDb bam_db;
     if ( args["sra"] ) {
-        bam_db = CBamDb(mgr, path, path+".bai");
+        bam_db = CBamDb(mgr, path, index_path);
     }
     bool single_thread = args["ST"];
 
@@ -339,7 +224,7 @@ int CBamIndexTestApp::Run(void)
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
             thread([&]
-                   (string ref_label, CRange<TSeqPos> ref_range)
+                   (SQuery q)
                    {
                        CMutexGuard guard(eEmptyGuard);
                        if ( single_thread ) {
@@ -349,18 +234,20 @@ int CBamIndexTestApp::Run(void)
                        Uint8 wrong_level_count = 0, wrong_range_count = 0;
                        try {
                            if ( bam_db ) {
-                               for ( CBamAlignIterator it(bam_db, ref_label, ref_range.GetFrom(), ref_range.GetLength()); it; ++it ) {
+                               for ( CBamAlignIterator it(bam_db, q.refseq_id,
+                                                          q.refseq_range.GetFrom(),
+                                                          q.refseq_range.GetLength()); it; ++it ) {
                                    TSeqPos ref_pos = it.GetRefSeqPos();
                                    TSeqPos ref_size = it.GetCIGARRefSize();
                                    TSeqPos ref_end = ref_pos + ref_size;
                                    if ( verbose ||
-                                        ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
-                                       cout << "Ref: " << ref_label
+                                        ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                       cout << "Ref: " << q.refseq_id
                                             << " at [" << ref_pos
                                             << " - " << (ref_end-1)
                                             << "] = " << ref_size
                                             << '\n';
-                                       if ( ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
+                                       if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
                                            cout << "Wrong range" << endl;
                                            ++wrong_range_count;
                                        }
@@ -369,7 +256,8 @@ int CBamIndexTestApp::Run(void)
                                }
                            }
                            else {
-                               for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range, level1, level2); it; ++it ) {
+                               for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id,
+                                                             q.refseq_range, level1, level2); it; ++it ) {
                                    TSeqPos ref_pos = it.GetRefSeqPos();
                                    TSeqPos ref_size = it.GetCIGARRefSize();
                                    TSeqPos ref_end = ref_pos + ref_size;
@@ -385,8 +273,8 @@ int CBamIndexTestApp::Run(void)
                                    }
                                    if ( verbose ||
                                         level < level1 || level > level2 ||
-                                        ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
-                                       cout << "Ref: " << ref_label
+                                        ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                       cout << "Ref: " << q.refseq_id
                                             << " at [" << ref_pos
                                             << " - " << (ref_end-1)
                                             << "] = " << ref_size
@@ -395,7 +283,7 @@ int CBamIndexTestApp::Run(void)
                                            cout << "Wrong index level: " << level << endl;
                                            ++wrong_level_count;
                                        }
-                                       if ( ref_pos > ref_range.GetTo() || ref_end <= ref_range.GetFrom() ) {
+                                       if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
                                            cout << "Wrong range" << endl;
                                            ++wrong_range_count;
                                        }
@@ -405,40 +293,26 @@ int CBamIndexTestApp::Run(void)
                            }
                        }
                        catch ( exception& exc ) {
-                           ERR_POST("Run("<<ref_label<<"): Exception: "<<exc.what());
+                           ERR_POST("Run("<<q.refseq_id<<"): Exception: "<<exc.what());
                        }
                        {
                            CMutexGuard guard(s_Mutex);
-                           LOG_POST("Run("<<ref_label<<"): count "<<align_count);
+                           LOG_POST("Run("<<q.refseq_id<<"): count "<<align_count);
                            if ( wrong_level_count ) {
-                               LOG_POST("Run("<<ref_label<<"): wrong level count "<<wrong_level_count);
+                               LOG_POST("Run("<<q.refseq_id<<"): wrong level count "<<wrong_level_count);
                            }
                            if ( wrong_range_count ) {
-                               LOG_POST("Run("<<ref_label<<"): wrong range count "<<wrong_range_count);
+                               LOG_POST("Run("<<q.refseq_id<<"): wrong range count "<<wrong_range_count);
                            }
                            total_align_count += align_count;
                            total_wrong_level_count += wrong_level_count;
                            total_wrong_range_count += wrong_range_count;
                        }
-                   }, queries[i].first, queries[i].second);
+                   }, queries[i]);
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
     }
-    /*
-      for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range); it; ++it ) {
-      if ( verbose ) {
-      TSeqPos ref_pos = it.GetRefSeqPos();
-      TSeqPos ref_size = it.GetCIGARRefSize();
-      cout << "Ref: " << ref_label
-      << " at [" << ref_pos
-      << " - " << (ref_pos+ref_size-1)
-      << "] = " << ref_size
-      << '\n';
-      }
-      ++align_count;
-      }
-    */
     cout << "Total good align count: "<<
         (total_align_count-total_wrong_range_count-total_wrong_level_count)<<endl;
     if ( total_wrong_level_count ) {
