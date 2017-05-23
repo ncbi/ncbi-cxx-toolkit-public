@@ -189,6 +189,8 @@ NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
 NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group = 0);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
+NCBI_DISCREPANCY_EXPORT bool IsShortrRNA(const objects::CSeq_feat& f, objects::CScope* scope);
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

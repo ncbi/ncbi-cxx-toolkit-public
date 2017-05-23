@@ -115,7 +115,6 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 
 
 // DISC_SHORT_RRNA
-bool IsShortrRNA(const CSeq_feat& f, CScope* scope);
 
 const string kShortRRNA = "[n] rRNA feature[s] [is] too short";
 
