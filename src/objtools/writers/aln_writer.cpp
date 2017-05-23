@@ -42,10 +42,12 @@
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
@@ -256,7 +258,23 @@ bool CAlnWriter::xWriteAlignDenseSeg(
                 eNa_strand_plus;
             seqdata += xGetSegString(seq_plus, coding, strand, start, len);
         }
-        xWriteContiguous(">" + id.AsFastaString(), seqdata);
+
+        string defline;
+        if (id.IsGi()) {
+            CSeq_id_Handle idh = sequence::GetId(id, *m_pScope, sequence::eGetId_ForceAcc);
+            if (!idh) {
+                NCBI_THROW(CObjWriterException,
+                    eBadInput,
+                    "Empty id handle");
+            }
+            defline =  ">" + idh.GetSeqId()->AsFastaString();
+        }
+        else 
+        {
+            defline = ">" + id.AsFastaString();
+        }
+
+        xWriteContiguous(defline, seqdata);
     }
 
     return true;
