@@ -414,7 +414,10 @@ while [ $# != 0 ]; do
             done;;
 
         "--trace")
-            TRACE_CMAKE="--trace";;
+            TRACE_CMAKE="${TRACE_CMAKE} --trace";;
+
+        "--debug-trycompile")
+            TRACE_CMAKE="${TRACE_CMAKE} --debug-trycompile";;
 
         "--enable-"*)
             set_config_var "$1"
