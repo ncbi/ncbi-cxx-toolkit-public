@@ -1889,7 +1889,7 @@ void CFeatureItem::x_AddQualsRna(
     switch ( rna_type ) {
     case CRNA_ref::eType_tRNA:
     {
-        if ( !pseudo  &&  cfg.ShowTranscript() ) {
+        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() ) ) {
             CSeqVector vec(feat.GetLocation(), scope);
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
             string transcription;
@@ -1962,7 +1962,7 @@ void CFeatureItem::x_AddQualsRna(
     }
     case CRNA_ref::eType_mRNA:
     {
-        if ( !pseudo  &&  cfg.ShowTranscript() ) {
+        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() ) ) {
             CSeqVector vec(feat.GetLocation(), scope);
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
             string transcription;
@@ -3225,7 +3225,7 @@ void CFeatureItem::x_AddQualsProt(
     } else { // protein feature on subpeptide bioseq
         x_AddQual(eFQ_derived_from, new CFlatSeqLocQVal(m_Feat.GetLocation()));
     }
-    if ( !pseudo  &&  ctx.Config().ShowPeptides() ) {
+    if ( !pseudo  &&  ( ctx.Config().ShowPeptides() || ctx.Config().IsFormatGBSeq() ) ) {
         if ( processed == CProt_ref::eProcessed_mature          ||
              processed == CProt_ref::eProcessed_signal_peptide  ||
              processed == CProt_ref::eProcessed_transit_peptide  ||
