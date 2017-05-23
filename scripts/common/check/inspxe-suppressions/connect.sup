@@ -60,3 +60,14 @@ suppression = {
 		}
 	}
 }
+
+suppression = {
+	name = "gethostbyname()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			mod=WS2_32.dll,func=gethostbyname;
+		}
+	}
+}
