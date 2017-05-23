@@ -69,11 +69,11 @@ void ThrowIllegalChar(const string& name, const string& value, char c)
 
 using namespace grid::netschedule;
 
-void g_AppendClientIPSessionIDHitID(string& cmd)
+void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
     g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req.GetCurrentSubHitID());
+    g_AppendHitID(cmd, use_next_sub_hit_id ? req.GetNextSubHitID() : req.GetCurrentSubHitID());
 }
 
 SNetScheduleNotificationThread::SNetScheduleNotificationThread(
@@ -528,15 +528,7 @@ string SNetScheduleAPIImpl::MakeAuthString()
     // like the "queue not found" error.
     if (m_Mode & fNonWnCompatible) {
         auth += "\r\nVERSION";
-
-        if (!g_AppendClientIPAndSessionID(auth) &&
-                !m_ClientSession.empty()) {
-            auth += " sid=\"";
-            auth += NStr::PrintableString(m_ClientSession);
-            auth += '"';
-        }
-
-        g_AppendHitID(auth);
+        g_AppendClientIPSessionIDHitID(auth);
     }
 
     return auth;

@@ -122,9 +122,7 @@ void CNetScheduleAdmin::CancelAllJobs(const string& job_statuses)
         cmd.assign("CANCEL status=");
         cmd.append(job_statuses);
     }
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req.GetNextSubHitID());
+    g_AppendClientIPSessionIDHitID(cmd, true);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

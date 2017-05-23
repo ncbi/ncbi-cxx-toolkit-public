@@ -138,8 +138,7 @@ using namespace grid::netschedule;
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
 inline
-void g_AppendHitID(string& cmd, const string& sub_hit_id =
-        CDiagContext::GetRequestContext().GetCurrentSubHitID())
+void g_AppendHitID(string& cmd, const string& sub_hit_id)
 {
     cmd += " ncbi_phid=\"";
     cmd += sub_hit_id;
@@ -147,8 +146,7 @@ void g_AppendHitID(string& cmd, const string& sub_hit_id =
 }
 
 inline
-bool g_AppendClientIPAndSessionID(string& cmd,
-    const CRequestContext& req = CDiagContext::GetRequestContext())
+void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req)
 {
     if (req.IsSetClientIP()) {
         cmd += " ip=\"";
@@ -156,14 +154,9 @@ bool g_AppendClientIPAndSessionID(string& cmd,
         cmd += '"';
     }
 
-    if (req.IsSetSessionID()) {
-        cmd += " sid=\"";
-        cmd += NStr::PrintableString(req.GetSessionID());
-        cmd += '"';
-        return true;
-    }
-
-    return false;
+    cmd += " sid=\"";
+    cmd += NStr::PrintableString(req.GetSessionID());
+    cmd += '"';
 }
 
 
@@ -464,6 +457,8 @@ struct SNetScheduleSubmitterImpl : public CObject
 
     CNetScheduleAPI::EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
             unsigned wait_time, time_t* job_exptime = NULL);
+
+    void AppendClientIPSessionIDHitID(string& cmd, const string& job_group);
 
     CNetScheduleAPI m_API;
 

@@ -89,6 +89,21 @@ string CNetScheduleSubmitter::SubmitJob(CNetScheduleNewJob& job)
     return m_Impl->SubmitJobImpl(job, 0, 0);
 }
 
+void SNetScheduleSubmitterImpl::AppendClientIPSessionIDHitID(string& cmd, const string& job_group)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
+
+    if (!job_group.empty()) {
+        limits::Check<limits::SJobGroup>(job_group);
+        cmd.append(" group=");
+        cmd.append(job_group);
+    }
+
+    m_UseNextSubHitID.ProperCommand();
+    g_AppendHitID(cmd, m_UseNextSubHitID ? req.GetNextSubHitID() : req.GetCurrentSubHitID());
+}
+
 string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,
         unsigned short udp_port, unsigned wait_time, CNetServer* server)
 {
@@ -98,19 +113,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,
     string cmd = "SUBMIT ";
 
     s_SerializeJob(cmd, job, udp_port, wait_time);
-
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-
-    if (!job.group.empty()) {
-        limits::Check<limits::SJobGroup>(job.group);
-        cmd.append(" group=");
-        cmd.append(job.group);
-    }
-
-    m_UseNextSubHitID.ProperCommand();
-    g_AppendHitID(cmd, m_UseNextSubHitID ?
-            req.GetNextSubHitID() : req.GetCurrentSubHitID());
+    AppendClientIPSessionIDHitID(cmd, job.group);
 
     CNetServer::SExecResult exec_result(
             m_API->m_Service.FindServerAndExec(cmd, false));
@@ -139,19 +142,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
 
     // Batch submit command.
     string cmd = "BSUB";
-
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-
-    if (!job_group.empty()) {
-        limits::Check<limits::SJobGroup>(job_group);
-        cmd.append(" group=");
-        cmd.append(job_group);
-    }
-
-    m_Impl->m_UseNextSubHitID.ProperCommand();
-    g_AppendHitID(cmd, m_Impl->m_UseNextSubHitID ?
-            req.GetNextSubHitID() : req.GetCurrentSubHitID());
+    m_Impl->AppendClientIPSessionIDHitID(cmd, job_group);
 
     CNetServer::SExecResult exec_result(
         m_Impl->m_API->m_Service.FindServerAndExec(cmd, false));
@@ -587,9 +578,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
     string cmd(g_MakeBaseCmd("CANCEL", job_key));
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req.GetNextSubHitID());
+    g_AppendClientIPSessionIDHitID(cmd, true);
 
     CNetServer::SExecResult exec_result;
     m_Impl->m_API->GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
@@ -604,9 +593,7 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
         cmd.append(" status=");
         cmd.append(job_statuses);
     }
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req.GetNextSubHitID());
+    g_AppendClientIPSessionIDHitID(cmd, true);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

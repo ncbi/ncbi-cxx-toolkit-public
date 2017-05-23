@@ -47,7 +47,7 @@ NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 extern NCBI_XCONNECT_EXPORT const char* const kNetScheduleAPIDriverName;
 
 extern NCBI_XCONNECT_EXPORT
-void g_AppendClientIPSessionIDHitID(string& cmd);
+void g_AppendClientIPSessionIDHitID(string& cmd, bool = false);
 
 extern NCBI_XCONNECT_EXPORT
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
