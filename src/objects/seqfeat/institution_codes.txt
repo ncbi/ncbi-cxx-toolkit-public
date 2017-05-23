@@ -7164,6 +7164,7 @@ VTCC	c	Vietnam Type Culture Collection, Center of Biotechnology
 VTMH	s	Virginia Tech Massey Herbarium		
 VTT	c	VTT Biotechnology, Culture Collection		
 VU	s	Voronezh State University		
+VU<NLD>	s	Vrije Universiteit Amsterdam		
 VUT	c	School of Veterinary Medicine, Faculty of Agriculture		
 VUW	s	Victoria University		
 VUWE	s	Victoria University		

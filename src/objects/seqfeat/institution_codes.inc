@@ -7197,6 +7197,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VTMH\ts\tVirginia Tech Massey Herbarium\t\t",
 "VTT\tc\tVTT Biotechnology, Culture Collection\t\t",
 "VU\ts\tVoronezh State University\t\t",
+"VU<NLD>\ts\tVrije Universiteit Amsterdam\t\t",
 "VUT\tc\tSchool of Veterinary Medicine, Faculty of Agriculture\t\t",
 "VUW\ts\tVictoria University\t\t",
 "VUWE\ts\tVictoria University\t\t",
