@@ -1684,6 +1684,9 @@ same id type" } },
    { eErr_SEQ_FEAT_TranslExceptIsPartial,
    { "TranslExceptIsPartial",
 "A translation exception location should not be partial." } },
+   { eErr_SEQ_FEAT_GeneIdMismatch,
+   { "GeneIdMismatch",
+"GeneID for parent and child features should match." } },
 
 /* SEQ_ALIGN */
 

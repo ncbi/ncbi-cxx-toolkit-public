@@ -252,6 +252,7 @@ void CValidError_feat::ValidateSeqFeat(
     
         if (feat.CanGetDbxref ()) {
             m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
+            x_ValidateGeneId(feat);
         }
     
         if ( feat.CanGetComment() ) {
@@ -5768,6 +5769,50 @@ void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
 }
 
 
+bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag)
+{
+    if (!sf.IsSetDbxref()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TDbxref, it, sf.GetDbxref()) {
+        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID") &&
+            (*it)->IsSetTag() && (*it)->GetTag().Equals(tag)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CValidError_feat::x_ValidateGeneId(const CSeq_feat& feat)
+{
+    if (!feat.IsSetDbxref()) {
+        return;
+    }
+
+    CRef<feature::CFeatTree> feat_tree(NULL);
+    CMappedFeat mf = m_Scope->GetSeq_featHandle(feat);
+    ITERATE(CSeq_feat::TDbxref, it, feat.GetDbxref()) {
+        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID") &&
+            (*it)->IsSetTag()) {
+            if (!feat_tree) {
+                feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat, *m_Scope);
+            }
+            if (feat_tree) {
+                CMappedFeat parent = feat_tree->GetParent(mf);
+                while (parent) {
+                    if (!HasGeneIdXref(parent, (*it)->GetTag())) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_GeneIdMismatch,
+                            "GeneID mismatch", feat);
+                    }
+                    parent = feat_tree->GetParent(parent);
+                }
+            }
+        }
+    }
+}
+
+
 // Precondition: feat is a coding region
 void CValidError_feat::ValidateCommonCDSProduct
 (const CSeq_feat& feat)
@@ -6147,7 +6192,6 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
 bool CValidError_feat::x_CDSHasGoodParent(const CSeq_feat& feat) const
 {
     static const CSeqFeatData::ESubtype parent_types[] = {
-        CSeqFeatData::eSubtype_mRNA,
         CSeqFeatData::eSubtype_C_region,
         CSeqFeatData::eSubtype_D_segment,
         CSeqFeatData::eSubtype_J_segment,
