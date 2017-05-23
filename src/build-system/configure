@@ -843,6 +843,8 @@ CASSANDRA_INCLUDE
 CASSANDRA_LIBS
 LIBXLSXWRITER_INCLUDE
 LIBXLSXWRITER_LIBS
+GRPC_INCLUDE
+GRPC_LIBS
 signature
 build_root
 top_srcdir
@@ -883,6 +885,10 @@ CFLAGS_DLL
 CXXFLAGS_DLL
 ALLOW_UNDEF
 FORBID_UNDEF
+AS_NEEDED
+NO_AS_NEEDED
+WHOLE_ARCHIVE
+NO_WHOLE_ARCHIVE
 OPT_GROUPS
 local_lbsm
 ncbi_crypt
@@ -1066,6 +1072,8 @@ LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
 LIBXLSXWRITER_STATIC_LIBS
+GRPC_UNSECURE_LIBS
+GRPC_REFLECTION_LIBS
 ncbi_xreader_pubseqos
 ncbi_xreader_pubseqos2
 UNLESS_PUBSEQOS
@@ -1635,7 +1643,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter 3psw \
+libuv libssh2 cassandra libxlsxwriter grpc 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1706,7 +1714,8 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
+      | --with-grpc=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2032,6 +2041,8 @@ Optional Packages:
  --without-cassandra     do not use Datastax Cassandra driver
  --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR
  --without-libxlsxwriter do not use libxlsxwriter
+ --with-grpc=DIR         use GRPC installation in DIR
+ --without-grpc          do not use GRPC
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2608,6 +2619,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_libxlsxwriter=no
+         fi
+        if test "${with_grpc-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-grpc but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_grpc=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -4163,6 +4180,18 @@ fi
 # Check whether --with-libxlsxwriter was given.
 if test "${with_libxlsxwriter+set}" = set; then
   withval=$with_libxlsxwriter;
+fi
+
+
+# Check whether --with-grpc was given.
+if test "${with_grpc+set}" = set; then
+  withval=$with_grpc;
+fi
+
+
+# Check whether --with-grpc was given.
+if test "${with_grpc+set}" = set; then
+  withval=$with_grpc;
 fi
 
 
@@ -8812,6 +8841,176 @@ echo "${ECHO_T}$ncbi_cv_prog_cc_new_dtags" >&6; }
              LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
           fi
       fi
+      ;;
+esac
+
+{ echo "$as_me:$LINENO: checking whether $CC has an option to discard unneeded shared libraries" >&5
+echo $ECHO_N "checking whether $CC has an option to discard unneeded shared libraries... $ECHO_C" >&6; }
+if test "${ncbi_cv_prog_cc_as_needed+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_LDFLAGS=$LDFLAGS
+    ncbi_cv_prog_cc_as_needed=no
+    for x in -Wl,--as-needed; do
+       LDFLAGS="$orig_LDFLAGS $x"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_cc_as_needed=$x
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+       test "x$ncbi_cv_prog_cc_as_needed" = "xno"  ||  break
+    done
+    LDFLAGS=$orig_LDFLAGS
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_as_needed" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cc_as_needed" >&6; }
+case "$ncbi_cv_prog_cc_as_needed" in
+   -Wl,--as-needed )
+      AS_NEEDED=-Wl,--as-needed
+      NO_AS_NEEDED=-Wl,--no-as-needed
+      ;;
+   no )
+      AS_NEEDED=
+      NO_AS_NEEDED=
+      ;;
+esac
+
+{ echo "$as_me:$LINENO: checking whether $CC has an option to link in whole static archives" >&5
+echo $ECHO_N "checking whether $CC has an option to link in whole static archives... $ECHO_C" >&6; }
+if test "${ncbi_cv_prog_cc_whole_archive+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_LDFLAGS=$LDFLAGS
+    ncbi_cv_prog_cc_whole_archive=no
+    for x in -Wl,--whole-archive; do
+       LDFLAGS="$orig_LDFLAGS $x `echo $x | sed -e 's/--/--no-/'`"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_cc_whole_archive=$x
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+       test "x$ncbi_cv_prog_cc_whole_archive" = "xno"  ||  break
+    done
+    LDFLAGS=$orig_LDFLAGS
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_whole_archive" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cc_whole_archive" >&6; }
+case "$ncbi_cv_prog_cc_whole_archive" in
+   -Wl,--whole-archive )
+      WHOLE_ARCHIVE=-Wl,--whole-archive
+      NO_WHOLE_ARCHIVE=-Wl,--no-whole-archive
+      ;;
+   no )
+      WHOLE_ARCHIVE=
+      NO_WHOLE_ARCHIVE=
       ;;
 esac
 
@@ -47314,6 +47513,227 @@ else
     LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
+if test -d "$GRPC_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $GRPC_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GRPC_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GRPC_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$GRPC_PATH" in
+               /*) ;;
+               * ) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         GRPC_PATH=$d
+         ncbi_fix_dir_tmp=`if cd $GRPC_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GRPC_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GRPC_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$GRPC_PATH" in
+               /*) ;;
+               * ) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+if test "$with_grpc" != "no"; then
+    case "$with_grpc" in
+       yes | "" ) ;;
+       *        ) GRPC_PATH=$with_grpc ;;
+    esac
+    if test "$GRPC_PATH" != /usr -a -d "$GRPC_PATH"; then
+       in_path=" in $GRPC_PATH"
+       if test -z "$GRPC_INCLUDE" -a -d "$GRPC_PATH/include"; then
+          GRPC_INCLUDE="-I$GRPC_PATH/include"
+       fi
+       if test -n "$GRPC_LIBPATH"; then
+          :
+       elif test -d "$GRPC_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GRPC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GRPC_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GRPC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GRPC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$GRPC_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GRPC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GRPC_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GRPC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GRPC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ -lgrpc -lgpr -lprotobuf$D_SFX -lcares"
+    else
+       GRPC_INCLUDE=""
+       GRPC_LIBS="-lgrpc++ -lgrpc -lgpr -lprotobuf$D_SFX -lcares"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libgrpc++$in_path" >&5
+echo $ECHO_N "checking for libgrpc++$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_grpc+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $GRPC_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GRPC_LIBS $OPENSSL_LIBS $Z_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <grpc++/grpc++.h>
+int
+main ()
+{
+return grpc::Version().size();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_grpc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_grpc=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_grpc" >&5
+echo "${ECHO_T}$ncbi_cv_lib_grpc" >&6; }
+    if test "$ncbi_cv_lib_grpc" = "no"; then
+       if test "${with_grpc:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-grpc explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-grpc explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_grpc" = "no"; then
+    GRPC_PATH="No_GRPC"
+    GRPC_INCLUDE=
+    GRPC_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}GRPC"; WithPackagesSep=" "
+    GRPC_INCLUDE=" $GRPC_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGRPC 1
+_ACEOF
+
+ fi
+
+
+
+if test -n "$GRPC_LIBS"; then
+   GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
+   GRPC_LIBS="$GRPC_LIBS $OPENSSL_LIBS"
+   GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
+   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
+   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -47766,7 +48186,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -47874,6 +48294,12 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
+
+
+
+
 
 
 
@@ -49156,6 +49582,8 @@ CASSANDRA_INCLUDE!$CASSANDRA_INCLUDE$ac_delim
 CASSANDRA_LIBS!$CASSANDRA_LIBS$ac_delim
 LIBXLSXWRITER_INCLUDE!$LIBXLSXWRITER_INCLUDE$ac_delim
 LIBXLSXWRITER_LIBS!$LIBXLSXWRITER_LIBS$ac_delim
+GRPC_INCLUDE!$GRPC_INCLUDE$ac_delim
+GRPC_LIBS!$GRPC_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
@@ -49196,6 +49624,10 @@ CFLAGS_DLL!$CFLAGS_DLL$ac_delim
 CXXFLAGS_DLL!$CXXFLAGS_DLL$ac_delim
 ALLOW_UNDEF!$ALLOW_UNDEF$ac_delim
 FORBID_UNDEF!$FORBID_UNDEF$ac_delim
+AS_NEEDED!$AS_NEEDED$ac_delim
+NO_AS_NEEDED!$NO_AS_NEEDED$ac_delim
+WHOLE_ARCHIVE!$WHOLE_ARCHIVE$ac_delim
+NO_WHOLE_ARCHIVE!$NO_WHOLE_ARCHIVE$ac_delim
 OPT_GROUPS!$OPT_GROUPS$ac_delim
 local_lbsm!$local_lbsm$ac_delim
 ncbi_crypt!$ncbi_crypt$ac_delim
@@ -49206,12 +49638,6 @@ bdb!$bdb$ac_delim
 dbapi!$dbapi$ac_delim
 objects!$objects$ac_delim
 gui!$gui$ac_delim
-algo!$algo$ac_delim
-app!$app$ac_delim
-internal!$internal$ac_delim
-check!$check$ac_delim
-CHECK_ARG!$CHECK_ARG$ac_delim
-CHECK_TOOLS!$CHECK_TOOLS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49253,6 +49679,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+algo!$algo$ac_delim
+app!$app$ac_delim
+internal!$internal$ac_delim
+check!$check$ac_delim
+CHECK_ARG!$CHECK_ARG$ac_delim
+CHECK_TOOLS!$CHECK_TOOLS$ac_delim
 CHECK_TIMEOUT_MULT!$CHECK_TIMEOUT_MULT$ac_delim
 CHECK_OS_NAME!$CHECK_OS_NAME$ac_delim
 FEATURES!$FEATURES$ac_delim
@@ -49344,12 +49776,6 @@ BOOST_TEST_UTF_STATIC_LIBS!$BOOST_TEST_UTF_STATIC_LIBS$ac_delim
 BOOST_THREAD_LIBS!$BOOST_THREAD_LIBS$ac_delim
 BOOST_THREAD_STATIC_LIBS!$BOOST_THREAD_STATIC_LIBS$ac_delim
 NCBI_C_INCLUDE!$NCBI_C_INCLUDE$ac_delim
-NCBI_C_LIBPATH!$NCBI_C_LIBPATH$ac_delim
-OPENGL_INCLUDE!$OPENGL_INCLUDE$ac_delim
-OPENGL_LIBS!$OPENGL_LIBS$ac_delim
-OPENGL_STATIC_LIBS!$OPENGL_STATIC_LIBS$ac_delim
-OSMESA_INCLUDE!$OSMESA_INCLUDE$ac_delim
-OSMESA_LIBS!$OSMESA_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49391,6 +49817,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+NCBI_C_LIBPATH!$NCBI_C_LIBPATH$ac_delim
+OPENGL_INCLUDE!$OPENGL_INCLUDE$ac_delim
+OPENGL_LIBS!$OPENGL_LIBS$ac_delim
+OPENGL_STATIC_LIBS!$OPENGL_STATIC_LIBS$ac_delim
+OSMESA_INCLUDE!$OSMESA_INCLUDE$ac_delim
+OSMESA_LIBS!$OSMESA_LIBS$ac_delim
 OSMESA_STATIC_LIBS!$OSMESA_STATIC_LIBS$ac_delim
 GLUT_INCLUDE!$GLUT_INCLUDE$ac_delim
 GLUT_LIBS!$GLUT_LIBS$ac_delim
@@ -49461,6 +49893,8 @@ LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
+GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
+GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
@@ -49480,14 +49914,6 @@ configurables_mfname!$configurables_mfname$ac_delim
 CC_FILTER!$CC_FILTER$ac_delim
 CXX_FILTER!$CXX_FILTER$ac_delim
 AR_FILTER!$AR_FILTER$ac_delim
-LINK_FILTER!$LINK_FILTER$ac_delim
-CC_WRAPPER!$CC_WRAPPER$ac_delim
-CXX_WRAPPER!$CXX_WRAPPER$ac_delim
-AR_WRAPPER!$AR_WRAPPER$ac_delim
-LINK_WRAPPER!$LINK_WRAPPER$ac_delim
-KeepStateTarget!$KeepStateTarget$ac_delim
-Rules!$Rules$ac_delim
-serial_ws50_rtti_kludge!$serial_ws50_rtti_kludge$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49529,6 +49955,14 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LINK_FILTER!$LINK_FILTER$ac_delim
+CC_WRAPPER!$CC_WRAPPER$ac_delim
+CXX_WRAPPER!$CXX_WRAPPER$ac_delim
+AR_WRAPPER!$AR_WRAPPER$ac_delim
+LINK_WRAPPER!$LINK_WRAPPER$ac_delim
+KeepStateTarget!$KeepStateTarget$ac_delim
+Rules!$Rules$ac_delim
+serial_ws50_rtti_kludge!$serial_ws50_rtti_kludge$ac_delim
 ncbicntr!$ncbicntr$ac_delim
 UNIX_SRC!$UNIX_SRC$ac_delim
 UNIX_USR_PROJ!$UNIX_USR_PROJ$ac_delim
@@ -49545,7 +49979,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 14; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 22; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

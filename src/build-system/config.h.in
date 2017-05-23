@@ -294,6 +294,9 @@
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
 
+/* Define to 1 if libgrpc++ is available. */
+#undef HAVE_LIBGRPC
+
 /* Define to 1 if libgsoapssl++ is available. */
 #undef HAVE_LIBGSOAP
 

@@ -50,6 +50,7 @@ try_local() {
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
         test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
         test -f "$d/include/gnutls/gnutls.h"  &&  : ${GNUTLS_PATH=$d}
+        test -f "$d/include/grpc++/grpc++.h"  &&  : ${GRPC_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
@@ -170,6 +171,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
     *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
 esac
+
+: ${GRPC_PATH=$NCBI/grpc-1.3.1-ncbi1}
 
 case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;

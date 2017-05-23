@@ -245,6 +245,15 @@ COLOR_DIAGNOSTICS = @COLOR_DIAGNOSTICS@
 # Refrain from optimizations that assume no aliasing.
 NO_STRICT_ALIASING = @NO_STRICT_ALIASING@
 
+# Do/do not discard shared libraries that appear unnecessary.
+AS_NEEDED    = @AS_NEEDED@
+NO_AS_NEEDED = @NO_AS_NEEDED@
+
+# Do/do not link static archives in their entirety, even if some portions
+# appear unnecessary.
+WHOLE_ARCHIVE    = @WHOLE_ARCHIVE@
+NO_WHOLE_ARCHIVE = @NO_WHOLE_ARCHIVE@
+
 ### For platform-specific includes
 COMPILER = @COMPILER@
 OSTYPE   = @OSTYPE@
@@ -695,6 +704,12 @@ CASSANDRA_STATIC_LIBS = @CASSANDRA_STATIC_LIBS@
 LIBXLSXWRITER_INCLUDE     = @LIBXLSXWRITER_INCLUDE@
 LIBXLSXWRITER_LIBS        = @LIBXLSXWRITER_LIBS@
 LIBXLSXWRITER_STATIC_LIBS = @LIBXLSXWRITER_STATIC_LIBS@
+
+# GRPC
+GRPC_INCLUDE         = @GRPC_INCLUDE@
+GRPC_LIBS            = @GRPC_LIBS@
+GRPC_UNSECURE_LIBS   = @GRPC_UNSECURE_LIBS@
+GRPC_REFLECTION_LIBS = @GRPC_REFLECTION_LIBS@
 
 # Compress
 COMPRESS_LDEP = $(CMPRS_LIB)

@@ -72,7 +72,7 @@ case "$with_3psw" in
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack,
-                     libuv, libssh2, cassandra, libxlsxwriter],
+                     libuv, libssh2, cassandra, libxlsxwriter, grpc],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -512,6 +512,10 @@ AC_ARG_WITH(libxlsxwriter,
    [ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR])
 AC_ARG_WITH(libxlsxwriter,
    [ --without-libxlsxwriter do not use libxlsxwriter])
+AC_ARG_WITH(grpc,
+   [ --with-grpc=DIR         use GRPC installation in DIR])
+AC_ARG_WITH(grpc,
+   [ --without-grpc          do not use GRPC])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -574,7 +578,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter 3psw \
+libuv libssh2 cassandra libxlsxwriter grpc 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -644,7 +648,8 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
+      | --with-grpc=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -1759,6 +1764,50 @@ case "$host_os:$compiler" in
       ;;
 esac
 
+AC_CACHE_CHECK([whether $CC has an option to discard unneeded shared libraries],
+   ncbi_cv_prog_cc_as_needed,
+   [orig_LDFLAGS=$LDFLAGS
+    ncbi_cv_prog_cc_as_needed=no
+    for x in -Wl,--as-needed; do
+       LDFLAGS="$orig_LDFLAGS $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+          [ncbi_cv_prog_cc_as_needed=$x])
+       test "x$ncbi_cv_prog_cc_as_needed" = "xno"  ||  break
+    done
+    LDFLAGS=$orig_LDFLAGS])
+case "$ncbi_cv_prog_cc_as_needed" in
+   -Wl,--as-needed )
+      AS_NEEDED=-Wl,--as-needed
+      NO_AS_NEEDED=-Wl,--no-as-needed
+      ;;
+   no )
+      AS_NEEDED=
+      NO_AS_NEEDED=
+      ;;
+esac
+       
+AC_CACHE_CHECK([whether $CC has an option to link in whole static archives],
+   ncbi_cv_prog_cc_whole_archive,
+   [orig_LDFLAGS=$LDFLAGS
+    ncbi_cv_prog_cc_whole_archive=no
+    for x in -Wl,--whole-archive; do
+       LDFLAGS="$orig_LDFLAGS $x `echo $x | sed -e 's/--/--no-/'`"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+          [ncbi_cv_prog_cc_whole_archive=$x])
+       test "x$ncbi_cv_prog_cc_whole_archive" = "xno"  ||  break
+    done
+    LDFLAGS=$orig_LDFLAGS])
+case "$ncbi_cv_prog_cc_whole_archive" in
+   -Wl,--whole-archive )
+      WHOLE_ARCHIVE=-Wl,--whole-archive
+      NO_WHOLE_ARCHIVE=-Wl,--no-whole-archive
+      ;;
+   no )
+      WHOLE_ARCHIVE=
+      NO_WHOLE_ARCHIVE=
+      ;;
+esac
+       
 if $CXX -v 2>&1 | grep -q clang; then
    CFLAGS="$CFLAGS -Wno-deprecated-register"
    CXXFLAGS="$CXXFLAGS -Wno-deprecated-register"
@@ -7528,6 +7577,31 @@ else
     LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
+if test -d "$GRPC_PATH"; then
+   NCBI_FIX_DIR(GRPC_PATH)
+   for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         GRPC_PATH=$d
+         NCBI_FIX_DIR(GRPC_PATH)
+         break
+      fi
+   done
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
+   [AC_LANG_PROGRAM([[#include <grpc++/grpc++.h>]],
+       [[return grpc::Version().size();]])],
+   [-lgrpc -lgpr -lprotobuf$D_SFX -lcares], [$OPENSSL_LIBS $Z_LIBS])
+if test -n "$GRPC_LIBS"; then
+   GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
+   GRPC_LIBS="$GRPC_LIBS $OPENSSL_LIBS"
+   GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
+   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
+   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -8084,6 +8158,10 @@ AC_SUBST(CFLAGS_DLL)
 AC_SUBST(CXXFLAGS_DLL)
 AC_SUBST(ALLOW_UNDEF)
 AC_SUBST(FORBID_UNDEF)
+AC_SUBST(AS_NEEDED)
+AC_SUBST(NO_AS_NEEDED)
+AC_SUBST(WHOLE_ARCHIVE)
+AC_SUBST(NO_WHOLE_ARCHIVE)
 
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
@@ -8272,6 +8350,8 @@ AC_SUBST(LIBUV_STATIC_LIBS)
 AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)
 AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
+AC_SUBST(GRPC_UNSECURE_LIBS)
+AC_SUBST(GRPC_REFLECTION_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
