@@ -1109,7 +1109,8 @@ std::string DbIndexInit(
     }
     catch( CException & e ) {
         ERR_POST( Info << "old style index failed to load" );
-        result += '\n' + e.what();
+        result += "\n"; 
+	result += e.what();
     }
 
     return result;
