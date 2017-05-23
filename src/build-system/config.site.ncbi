@@ -38,7 +38,7 @@ try_local() {
         test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
-        test -d "$d/include/cassandra.h"   &&  : ${CASSANDRA_PATH=$d}
+        test -f "$d/include/cassandra.h"   &&  : ${CASSANDRA_PATH=$d}
         test -d "$d/include/cereal"        &&  : ${CEREAL_PATH=$d}
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
@@ -56,7 +56,7 @@ try_local() {
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
-        test -d "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
+        test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
         test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
