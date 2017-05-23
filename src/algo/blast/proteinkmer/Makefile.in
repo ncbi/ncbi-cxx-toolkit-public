@@ -1,5 +1,6 @@
 LIB_PROJ = proteinkmer
-SUB_PROJ = unit_test demo
+SUB_PROJ = unit_test 
+#SUB_PROJ = unit_test demo
 
 REQUIRES = algo
 
