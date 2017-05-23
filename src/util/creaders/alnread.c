@@ -5614,6 +5614,26 @@ s_FindBadDataCharsInSequence
     EBool              match_not_in_beginning_gap;
     EBool              match_not_in_end_gap;
 
+    char               beginning_gap = '-';
+    char               middle_gap = '-';
+    char               end_gap = '-';
+
+    if (strlen(sip->beginning_gap) > 0 &&
+        strchr(sip->beginning_gap, '-') == NULL){
+        beginning_gap = sip->beginning_gap[0];
+    }
+
+    if (strlen(sip->middle_gap) > 0 &&
+        strchr(sip->middle_gap, '-') == NULL){
+        middle_gap = sip->middle_gap[0];
+    }
+
+    if (strlen(sip->end_gap) > 0 &&
+        strchr(sip->end_gap, '-') == NULL){
+        end_gap = sip->end_gap[0];
+    }
+
+
     if (arsp == NULL  ||  master_arsp == NULL  ||  sip == NULL) {
         return eTrue;
     }
@@ -5675,7 +5695,7 @@ s_FindBadDataCharsInSequence
                                 report_error, report_error_userdata);
                 rval = eTrue;
             } else {
-                *lirp->curr_line_pos = '-';
+                *lirp->curr_line_pos = beginning_gap;
                 data_position ++;
             }
         } else {
@@ -5740,7 +5760,7 @@ s_FindBadDataCharsInSequence
                 data_position ++;
             }
         } else if (strchr (sip->middle_gap, curr_char) != NULL) {
-            *lirp->curr_line_pos = '-';
+            *lirp->curr_line_pos = middle_gap;
             data_position ++;
         } else {
             /* Report error - found bad character in middle */
@@ -5764,7 +5784,7 @@ s_FindBadDataCharsInSequence
                                       report_error, report_error_userdata);
             rval = eTrue;
         } else {
-            *lirp->curr_line_pos = '-';
+            *lirp->curr_line_pos = end_gap;
             data_position++;
         }
         curr_char = s_FindNthDataChar (lirp, data_position);
