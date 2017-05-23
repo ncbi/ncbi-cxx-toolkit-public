@@ -581,7 +581,14 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
 
 void CAlnWriter::xWriteContiguous(const string& defline, const string& seqdata) 
 {
-    m_Os << defline << "\n";
+    if (defline.back() == '|' && defline.size() > 1) 
+    {
+        const auto length = defline.size();
+        m_Os << defline.substr(0,length-1) << "\n";
+    }
+    else {
+        m_Os << defline << "\n";
+    }
     size_t pos=0;
     while (pos < seqdata.size()) {
         m_Os << seqdata.substr(pos, m_Width) << "\n";
