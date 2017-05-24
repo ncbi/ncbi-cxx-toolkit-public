@@ -106,7 +106,8 @@ public:
         return eRR_Continue_Data;
     }
 
-    ERR_Action Validate(CTempString raw_line)
+    ERR_Action Validate(CTempString raw_line,
+                        ERR_ValidationMode /*validation_mode*/)
     {
         m_Tokens.clear();
         this->Tokenize(raw_line, m_Tokens);

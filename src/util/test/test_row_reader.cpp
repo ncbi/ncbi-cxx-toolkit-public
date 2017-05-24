@@ -814,7 +814,8 @@ public:
     typedef MyExtendedFieldType TExtendedFieldType;
     typedef CRR_Context TRR_Context;
 
-    ERR_Action Validate(CTempString raw_line)
+    ERR_Action Validate(CTempString /*raw_line*/,
+                        ERR_ValidationMode /*validation_mode*/)
     {
         ++m_ValidateCount;
         return eRR_Skip;

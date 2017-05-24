@@ -356,9 +356,10 @@ public:
     ///  are no read permissions
     void SetDataSource(const string& filename);
 
-    /// Read and validate-only the stream, calling TTraits::Validate()
-    /// on each row
-    void Validate(void);
+    /// Read and validate-only the stream, calling
+    /// TTraits::Validate(row, validation_mode) on each row
+    void Validate(typename TTraits::ERR_ValidationMode validation_mode
+                  = TTraits::eRR_ValidationMode_Default);
 
     /// Get the number of the line that is currently being processed
     /// @return
@@ -1215,7 +1216,8 @@ void CRowReader<TTraits>::SetDataSource(const string& filename)
 
 
 template <typename TTraits>
-void CRowReader<TTraits>::Validate(void)
+void CRowReader<TTraits>::Validate(
+        typename TTraits::ERR_ValidationMode validation_mode)
 {
     ERR_Action action = eRR_Interrupt;
     size_t     phys_lines_read;
@@ -1254,7 +1256,8 @@ void CRowReader<TTraits>::Validate(void)
             x_UpdateCurrentLineNo(phys_lines_read);
 
             try {
-                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData));
+                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData),
+                                           validation_mode);
                 if (action == eRR_Interrupt)
                     break;
             } catch (const CException& exc) {

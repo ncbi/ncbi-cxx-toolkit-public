@@ -64,13 +64,23 @@ public:
     // Requirement: the TRR_Context must derive from CRR_Context if extended
     typedef CRR_Context TRR_Context;
 
+    /// Validation mode
+    /// Derived traits can override and extend this enum type.
+    /// @attention  The overrides must have eRR_ValidationMode_Default variant!
+    enum ERR_ValidationMode {
+        eRR_ValidationMode_Default
+    };
+
     /// Called by CRowReader<>::Validate() for each line
     /// @param raw_line
     ///  current stream line
+    /// @param validation_mode
+    ///  validation mode
     /// @return
     ///  Instructions of what to do next e.g. interrupt validation or continue.
     ///  See ERR_Action in row_reader.inl
-    ERR_Action Validate(CTempString raw_line)
+    ERR_Action Validate(CTempString raw_line,
+                        ERR_ValidationMode validation_mode)
     { return eRR_Skip; }
 
     /// Called before any other processing of the next read line
