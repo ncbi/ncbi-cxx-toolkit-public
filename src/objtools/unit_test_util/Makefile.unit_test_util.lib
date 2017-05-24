@@ -7,6 +7,8 @@ SRC = unit_test_util
 
 LIB = xunittestutil
 
+DLL_LIB = xobjutil
+
 ASN_DEP = general biblio pub seq seqset submit
 
 WATCHERS = bollin
