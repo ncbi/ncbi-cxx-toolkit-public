@@ -316,8 +316,6 @@ COrgMod::TInstitutionCodeMap::iterator COrgMod::FindInstitutionCode(const string
 
 bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country)
 {
-    bool rval = false;
-
     is_miscapitalized = false;
     needs_country = false;
     erroneous_country = false;
@@ -577,7 +575,7 @@ bool COrgMod::RescueInstFromParentheses(string& val, const string& voucher_type)
     if (colon_pos != 0 && colon_pos != string::npos) {
         return false;
     }
-    size_t pos = NStr::Find(val, "(", 0, val.length() - 1, NStr::eLast);
+    size_t pos = NStr::Find(val, "(", NStr::eNocase, NStr::eReverseSearch);
     if (pos == string::npos) {
         return false;
     }

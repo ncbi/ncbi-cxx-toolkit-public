@@ -257,8 +257,6 @@ bool s_HasOneIntervalInSet(const CSeq_loc& loc, const CBioseq_set& set, CScope& 
 {
     for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
         const CSeq_id& id = loc_it.GetSeq_id();
-            TSeqPos start = loc_it.GetRange().GetFrom();
-        TSeqPos stop = loc_it.GetRange().GetTo();
         CBioseq_Handle in_record = scope.GetBioseqHandleFromTSE(id, tse);
         if (!in_record) continue;
 

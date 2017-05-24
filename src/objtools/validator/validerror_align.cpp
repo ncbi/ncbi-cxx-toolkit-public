@@ -410,7 +410,6 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
 {
     TSeqPos col = 0;
     size_t num_match = 0;
-    size_t match_25 = 0;
     bool   ids_missing = false;
 
     // Now calculate Percent Identity
