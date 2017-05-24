@@ -323,7 +323,6 @@ gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_common
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
-gc_load_utils needs xid_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
 gc_schedule needs ncbi_xcache_netcache
@@ -466,6 +465,7 @@ gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs xalnmgr
+gpipe_objutil needs xid_wgsdb
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
@@ -600,7 +600,6 @@ ideocoord needs ideo_gridcli
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
-idload_utils needs xid_utils
 igblast needs $(BLAST_LIBS)
 insdseq needs xser
 jiracli needs jirasvc
@@ -894,7 +893,6 @@ prok_cluster_data needs gpipe_sqlite
 prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 protein_match needs xobjutil
-proteinkmer needs $(BLAST_INPUT_LIBS)
 proteinkmer needs $(BLAST_LIBS)
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
