@@ -3730,7 +3730,17 @@ CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(CBioseq_Handle bsh)
 
 CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope)
 {
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CBioseq_Handle bsh;
+    try {
+        bsh = scope.GetBioseqHandle(loc);
+    } catch (CException&) {
+        CSeq_loc_CI li(loc);
+        while (li && !bsh) {
+            bsh = scope.GetBioseqHandle(li.GetSeq_id());
+            ++li;
+        }
+    }
+
     if (bsh) {
         return GetFeatTreeFromCache(bsh);
     } else {

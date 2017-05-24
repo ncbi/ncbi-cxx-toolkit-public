@@ -245,16 +245,15 @@ void CValidError_feat::ValidateSeqFeat(
             }
         }
 
-
         ValidateSeqFeatData(feat.GetData(), feat);
-  
+
         ValidateBothStrands (feat);
     
         if (feat.CanGetDbxref ()) {
             m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
             x_ValidateGeneId(feat);
         }
-    
+
         if ( feat.CanGetComment() ) {
             ValidateFeatComment(feat.GetComment(), feat);
         }
@@ -1531,6 +1530,7 @@ void CValidError_feat::ValidateCdregion (
             }
         }
     }
+
     if ( cdregion.IsSetCode_break()  &&  feat.IsSetExcept_text()  &&
          NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") != NPOS ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
@@ -1649,7 +1649,6 @@ void CValidError_feat::ValidateCdregion (
                      "Apparent EC number in CDS comment", feat);
         }
     }
-
 }
 
 
@@ -6274,6 +6273,9 @@ bool CValidError_feat::x_CDSHasGoodParent(const CSeq_feat& feat) const
     };
     size_t num_parent_types = sizeof(parent_types) / sizeof(CSeqFeatData::ESubtype);
     CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat, *m_Scope);
+    if (!feat_tree) {
+        return false;
+    }
     CSeq_feat_Handle fh;
     try {
         // will fail if location is bad
