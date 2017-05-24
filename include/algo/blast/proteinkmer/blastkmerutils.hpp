@@ -161,6 +161,7 @@ struct SOneBlastKmerSearch {
 ///@param kmerNum size of kmer [in]
 ///@param alphabetChoice 0 is 15 letter, 1 is 10 letter alphabet [in]
 ///@return set of unsigned ints for the kmers.
+NCBI_XBLAST_EXPORT
 set<uint32_t> BlastKmerGetKmerSet(const string& query_sequence, bool do_seg, TSeqRange& range, int kmerNum, int alphabetChoice);
 	
 /// Get KMERs for a given sequence using a compressed alphabet.
@@ -171,6 +172,7 @@ set<uint32_t> BlastKmerGetKmerSet(const string& query_sequence, bool do_seg, TSe
 ///@param alphabetChoice 0 is 15 letter, 1 is 10 letter alphabet [in]
 ///@param badMers Overrepresented KMERs [in]
 ///@return set of unsigned ints for the kmers.
+NCBI_XBLAST_EXPORT
 set<uint32_t> BlastKmerGetKmerSet2(const string& query_sequence, TSeqRange& range, int kmerNum, int alphabetChoice, vector<int> badMers);
 	
 /// Simplified version of BlastKmerGetKmerSet.  Intended
@@ -183,6 +185,7 @@ set<uint32_t> BlastKmerGetKmerSet2(const string& query_sequence, TSeqRange& rang
 ///@param alphabetChoice 0 is 15 letter, 1 is 10 letter alphabet [in]
 ///@param perQuery COunt kmers per query or total in database.
 ///@return set of unsigned ints for the kmers.
+NCBI_XBLAST_EXPORT
 set<uint32_t> BlastKmerGetKmerSetStats(const string& query_sequence, int kmerNum, map<string, int>& kmerCount, map<string, int>& kmerCountPlus, int alphabetChoice, bool perQuery);
 
 /// Breaks a sequences up into chunks if the sequences is above a certain length.
@@ -194,6 +197,7 @@ set<uint32_t> BlastKmerGetKmerSetStats(const string& query_sequence, int kmerNum
 /// @param range_v Vector of ranges to be filled in [out]
 /// @param chunkSize number of residues in sequence chunk [in]
 /// @return number of chunks.  Should be integer more than zero.  Zero or less indicates an error.
+NCBI_XBLAST_EXPORT
 int BlastKmerBreakUpSequence(int length, vector<TSeqRange>& range_v, int chunkSize);
 
 /// Creates translation table for compressed alphabets
@@ -201,6 +205,7 @@ int BlastKmerBreakUpSequence(int length, vector<TSeqRange>& range_v, int chunkSi
 /// @param trans_table Translation table [out]
 /// @param alphabetChoice 0 is 15 letter, 1 is 10 letter alphabet [in]
 ///
+NCBI_XBLAST_EXPORT
 void BlastKmerGetCompressedTranslationTable(vector<Uint1>& trans_table, int alphabetChoice);
 
 /// Calculates the number of differences between two minhash arrays.
@@ -209,8 +214,10 @@ void BlastKmerGetCompressedTranslationTable(vector<Uint1>& trans_table, int alph
 /// @param minhash1 First array [in]
 /// @param minhash2 Second array [in]
 /// @return distance.  
+NCBI_XBLAST_EXPORT
 int BlastKmerGetDistance(const vector<uint32_t>& minhash1, const vector<uint32_t>& minhash2);
 
+NCBI_XBLAST_EXPORT
 bool minhash_query(const string& query,
                      vector < vector <uint32_t> >& seq_hash,
                      int num_hashes,
@@ -228,6 +235,7 @@ bool minhash_query(const string& query,
 /// @param numHashes number of hashes in a signature [in]
 /// @param alphabetChoice 15 or 10 letters [in]
 /// @param badMers Overrepresented KMERS [in]
+NCBI_XBLAST_EXPORT
 bool minhash_query2(const string& query,
                      vector < vector <uint32_t> >& seq_hash,
                      int kmerNum,
@@ -236,10 +244,12 @@ bool minhash_query2(const string& query,
 		     vector<int> badMers,
                      int chunkSize);
 
+NCBI_XBLAST_EXPORT
 void get_LSH_match_from_hash(const vector< vector <uint32_t> > &lsh_hash_vec,
                       const uint64_t* lsh_array,
                       vector < set<uint32_t> >& candidates);
 
+NCBI_XBLAST_EXPORT
 void get_LSH_hashes(vector < vector <uint32_t> >& query_hash,
                       vector < vector <uint32_t> >& lsh_hash_vec,
                       int num_bands,
@@ -250,11 +260,13 @@ void get_LSH_hashes(vector < vector <uint32_t> >& query_hash,
 /// @param lsh_hash_vec LSH query hash [out]
 /// @param numHashes number of hashes in signature [in]
 /// @param numRows number of rows (2?) in LSH [in]
+NCBI_XBLAST_EXPORT
 void get_LSH_hashes5(vector < vector <uint32_t> >& query_hash,
                       vector < vector <uint32_t> >&lsh_hash_vec,
                       int numHashes,
                       int numRows);
 
+NCBI_XBLAST_EXPORT
 void neighbor_query(const vector < vector <uint32_t> >& query_hash,
                       const uint64_t* lsh,
                       vector< set<uint32_t> >& candidates,
@@ -267,11 +279,13 @@ void neighbor_query(const vector < vector <uint32_t> >& query_hash,
                       int kmerVersion);
 
 /// Get the random numbers for the hash function.
+NCBI_XBLAST_EXPORT
 void GetRandomNumbers(uint32_t* a, 
 		uint32_t* b, 
 		int numHashes);
 
 /// Function to get the k sites to compare for Buhler LSH.
+NCBI_XBLAST_EXPORT
 void GetKValues(vector< vector <int> >& kvector, 
 		int k_value, 
 		int l_value, 
@@ -281,6 +295,7 @@ void GetKValues(vector< vector <int> >& kvector,
 // Based on article by Buhler (PMID:11331236) but applied to our arrays
 // of hash functions rather than sequences.
 //
+NCBI_XBLAST_EXPORT
 void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
                       vector < vector <uint32_t> >&lsh_hash_vec,
                       int num_k,
@@ -289,6 +304,7 @@ void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
 
 
 
+NCBI_XBLAST_EXPORT
 int BlastKmerVerifyIndex(CRef<CSeqDB> seqdb, string &error_msg);
 
 END_NCBI_SCOPE
