@@ -15,6 +15,7 @@ ASN_DEP = seq seqset biotree xnetblast blastdb
 CXXFLAGS  = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
+DLL_LIB = $(BLAST_LIBS) xalgoalignnw xalgophytree fastme
 
 USES_LIBRARIES =  \
     $(BLAST_LIBS) xalgoalignnw xalgophytree
