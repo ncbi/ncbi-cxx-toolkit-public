@@ -6,7 +6,7 @@ ASN_DEP = xnetblast
 
 SRC = contig_assembly
 
-DLL_LIB = xalnmgr
+DLL_LIB = $(BLAST_LIBS) xalnmgr
 
 LIB = xalgocontig_assembly
 
