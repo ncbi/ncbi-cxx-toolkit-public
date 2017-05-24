@@ -216,11 +216,10 @@ public:
     ERR_EventAction OnEvent(ERR_Event event)
     {
         switch (event) {
-            case eRR_Event_SourceSwitch:
+            case eRR_Event_SourceBegin:
                 GetMyStream().ClearFieldsInfo();
-                return eRR_EventAction_Continue;
-
-            case eRR_Event_SourceEOF:
+                // fall through
+            case eRR_Event_SourceEnd:
             case eRR_Event_SourceError:
             default:
                 ;

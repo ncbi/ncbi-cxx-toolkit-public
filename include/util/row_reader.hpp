@@ -592,6 +592,10 @@ private:
     void x_ReadNextRow(void);
     void x_OpenFile(SRR_SourceInfo& stream_info);
     void x_Reset(void);
+    void x_ResetToEnd(void);
+    void x_UpdateCurrentLineNo(size_t phys_lines_read);
+    ERR_EventAction x_OnEvent(ERR_Event event);
+    CRR_Context* x_GetContextClone(void);
 
 private:
     // Note: it was decided that when an underlying data stream is switched the
@@ -623,6 +627,14 @@ private:
     // performance bottleneck) and to reuse the tokens vector. Thus the
     // variable scope was extended to the class scope introducing a pollution.
     vector<CTempString> m_Tokens;
+
+    // Note: instead of having two booleans here it is is possible to use just
+    // one because they are always in oppisite states. However the code looks
+    // easier to read if there are separate variables. Bearing in mind that the
+    // state switching happens only at the moment a stream is switched it seems
+    // acceptable (from the performance POV) to have two variables.
+    bool                m_NeedOnSourceBegin;
+    bool                m_NeedOnSourceEnd;
 
 private:
     // prohibit assignment and copy-ctor
@@ -1149,7 +1161,7 @@ CRowReader<TTraits>::CRowReader(
     m_DataSource(is, sourcename, ownership == eTakeOwnership),
     m_AtEnd(false), m_LinesAlreadyRead(false), m_RawDataAvailable(false),
     m_CurrentLineNo(0), m_PreviousPhysLinesRead(0),
-    m_Validation(false)
+    m_Validation(false), m_NeedOnSourceBegin(true), m_NeedOnSourceEnd(false)
 {
     m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
     m_Traits.x_SetMyStream(this);
@@ -1163,7 +1175,7 @@ CRowReader<TTraits>::CRowReader(const string& filename) :
     m_AtEnd(false), m_LinesAlreadyRead(false),
     m_RawDataAvailable(false), m_CurrentLineNo(0),
     m_PreviousPhysLinesRead(0),
-    m_Validation(false)
+    m_Validation(false), m_NeedOnSourceBegin(true), m_NeedOnSourceEnd(false)
 {
     CRR_Util::CheckExistanceAndPermissions(filename);
     x_OpenFile(m_DataSource);
@@ -1208,55 +1220,84 @@ void CRowReader<TTraits>::Validate(void)
     ERR_Action action = eRR_Interrupt;
     size_t     phys_lines_read;
 
+    x_ResetToEnd();
+    m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
     for (;;) {
         m_AtEnd = false;
         m_Validation = true;
-        while (x_GetRowData(&phys_lines_read)) {
-            if (m_LinesAlreadyRead)
-                m_CurrentLineNo += m_PreviousPhysLinesRead;
-            else
-                m_LinesAlreadyRead = true;
-            m_PreviousPhysLinesRead = phys_lines_read;
+
+        // The beginning of the source
+        try {
+            if (m_NeedOnSourceBegin && m_NextDataSource.m_Stream == nullptr) {
+                if (x_OnEvent(eRR_Event_SourceBegin) == eRR_EventAction_Stop) {
+                    x_ResetToEnd();
+                    goto onEnd;
+                }
+            }
+        } catch (...) {
+            // The x_OnEvent() has already attached the proper context to the
+            // generated exception so the only thing to to is to reset the
+            // stream state.
+            x_ResetToEnd();
+            throw;
+        }
+
+        for (;;) {
+            try {
+                if (!x_GetRowData(&phys_lines_read))
+                    break;
+            } catch (...) {
+                // The x_GetRowData() can also generate an exception...
+                x_ResetToEnd();
+                throw;
+            }
+            x_UpdateCurrentLineNo(phys_lines_read);
 
             try {
                 action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData));
                 if (action == eRR_Interrupt)
                     break;
             } catch (const CException& exc) {
-                m_Validation = false;
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
                 NCBI_RETHROW2(exc, CRowReaderException, eValidating,
-                              "Validation error",
-                              m_Traits.GetContext(GetBasicContext()).Clone());
+                              "Validation error", ctxt);
             } catch (const exception& exc) {
-                m_Validation = false;
-                NCBI_THROW2(CRowReaderException, eValidating, exc.what(),
-                            m_Traits.GetContext(GetBasicContext()).Clone());
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
+                NCBI_THROW2(CRowReaderException, eValidating, exc.what(), ctxt);
             } catch (...) {
-                m_Validation = false;
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
                 NCBI_THROW2(CRowReaderException, eValidating,
-                            "Unknown validating error",
-                            m_Traits.GetContext(GetBasicContext()).Clone());
+                            "Unknown validating error", ctxt);
             }
         }
-        m_Validation = false;
 
-        // The end of the stream has been reached
-        x_Reset();
-        m_CurrentRow.x_OnFreshRead();
+      onEnd:
         m_AtEnd = true;
 
-        switch (m_Traits.OnEvent(eRR_Event_SourceEOF)) {
-            case eRR_EventAction_Continue:
-                // Note: if traits return eRR_EventAction_Continue without
-                // swithing the underlying data source then an infinite loop is
-                // possible
-                continue;
-            case eRR_EventAction_Default:
-            case eRR_EventAction_Stop:
-            default:
-                // The actual end of the loop
-                return;
+        try {
+            if (m_NeedOnSourceEnd) {
+                if (x_OnEvent(eRR_Event_SourceEnd) == eRR_EventAction_Stop) {
+                    x_ResetToEnd();
+                    return;
+                }
+            }
+        } catch (...) {
+            // The x_OnEvent() has already attached the proper context to the
+            // generated exception so the only thing to to is to reset the
+            // stream state.
+            x_ResetToEnd();
+            throw;
         }
+
+        x_ResetToEnd();
+
+        // Test if there was a source switch in the Traits::onEvent(...) call.
+        // If there was then we continue reading.
+        if (m_NextDataSource.m_Stream == nullptr)
+            break;
     }
 }
 
@@ -1390,12 +1431,28 @@ CRowReader<TTraits>::GetContext(void) const
 }
 
 
+// This member throws only exceptions which already have the attached context.
+// I.e. the higher level needs to bother only about the stream state after an
+// exception is generated.
+
+// true: the line is ready; a non-end iterator needs to be provided
+// false: the stream is over; an end iterator needs to be provided
+
+// In case of the soft end iterator it is an upper level responsibility to
+// update the stream state.
 template <typename TTraits>
 bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
 {
     for (;;) {
         // Switch the source stream if needed
         if (m_NextDataSource.m_Stream != nullptr) {
+
+            if (m_NeedOnSourceEnd) {
+                if (x_OnEvent(eRR_Event_SourceEnd) == eRR_EventAction_Stop) {
+                    return false; // soft end iterator
+                }
+            }
+
             m_DataSource.Clear();
             m_DataSource = m_NextDataSource;
 
@@ -1407,15 +1464,13 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
             m_CurrentRowPos = NcbiStreamposToInt8(
                                         m_DataSource.m_Stream->tellg());
 
-            switch ( m_Traits.OnEvent(eRR_Event_SourceSwitch) ) {
-                case eRR_EventAction_Stop:
-                    // This will lead to the 'soft' end iterator
-                    m_RawDataAvailable = false;
-                    return false;
-                case eRR_EventAction_Continue:
-                case eRR_EventAction_Default:
-                default:
-                    ;
+            if (m_NeedOnSourceBegin) {
+                if (x_OnEvent(eRR_Event_SourceBegin) == eRR_EventAction_Stop) {
+                    // Note: there is no need to call eRR_Event_SourceEnd. When an
+                    //       upper level function gets an end iterator, it calls
+                    //       the eRR_Event_SourceEnd.
+                    return false; // soft end iterator
+                }
             }
         }
 
@@ -1424,18 +1479,19 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
 
         if (m_DataSource.m_Stream->bad() ||
             (m_DataSource.m_Stream->fail() && !m_DataSource.m_Stream->eof())) {
-            switch ( m_Traits.OnEvent(eRR_Event_SourceError) ) {
+            switch ( x_OnEvent(eRR_Event_SourceError) ) {
+                case eRR_EventAction_Stop:
+                    return false;
                 case eRR_EventAction_Continue:
                     // Note: if traits return eRR_EventAction_Continue without
-                    // swithing the underlying data source or repairing the
+                    // switching the underlying data source or repairing the
                     // current stream then an infinite loop is possible
                     continue;
                 case eRR_EventAction_Default:
-                case eRR_EventAction_Stop:
                 default:
                     NCBI_THROW2(CRowReaderException, eStreamFailure,
                                 "Input stream failed before reaching the end",
-                                GetBasicContext().Clone());
+                                x_GetContextClone());
             }
         }
 
@@ -1446,15 +1502,13 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
                                                     &m_CurrentRow.m_RawData);
         } catch (const CException& exc) {
             NCBI_RETHROW2(exc, CRowReaderException, eRowDataReading,
-                          "Reading row data error",
-                          m_Traits.GetContext(GetBasicContext()).Clone());
+                          "Reading row data error", x_GetContextClone());
         } catch (const exception& exc) {
             NCBI_THROW2(CRowReaderException, eRowDataReading, exc.what(),
-                        m_Traits.GetContext(GetBasicContext()).Clone());
+                        x_GetContextClone());
         } catch (...) {
             NCBI_THROW2(CRowReaderException, eRowDataReading,
-                        "Unknown reading row data error",
-                        m_Traits.GetContext(GetBasicContext()).Clone());
+                        "Unknown reading row data error", x_GetContextClone());
         }
 
         m_RawDataAvailable = true;
@@ -1463,22 +1517,41 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
 }
 
 
-// true: the line is ready; a non-end iterator needs to be provided
-// false: the stream is over; an end iterator needs to be provided
 template <typename TTraits>
 void CRowReader<TTraits>::x_ReadNextRow(void)
 {
+    if (m_NeedOnSourceBegin && m_NextDataSource.m_Stream == nullptr) {
+        m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
+
+        try {
+            if (x_OnEvent(eRR_Event_SourceBegin) == eRR_EventAction_Stop) {
+                x_ResetToEnd();
+                if (x_OnEvent(eRR_Event_SourceError) == eRR_EventAction_Stop) {
+                    x_ResetToEnd();
+                    return;
+                }
+            }
+        } catch (...) {
+            x_ResetToEnd();
+            throw;
+        }
+    }
+
     ERR_Action action = eRR_Interrupt;
     size_t     phys_lines_read;
 
     for (;;) {
         m_AtEnd = false;
-        while (x_GetRowData(&phys_lines_read)) {
-            if (m_LinesAlreadyRead)
-                m_CurrentLineNo += m_PreviousPhysLinesRead;
-            else
-                m_LinesAlreadyRead = true;
-            m_PreviousPhysLinesRead = phys_lines_read;
+        for (;;) {
+            try {
+                if (!x_GetRowData(&phys_lines_read))
+                    break;
+            } catch (...) {
+                // The x_GetRowData() can also generate an exception...
+                x_ResetToEnd();
+                throw;
+            }
+            x_UpdateCurrentLineNo(phys_lines_read);
 
             // Call the user OnNextLine(). The line may need to be skipped
             // or the stream processing needs to be interrupted.
@@ -1488,10 +1561,7 @@ void CRowReader<TTraits>::x_ReadNextRow(void)
                 if (action == eRR_Skip)
                     continue;
                 if (action == eRR_Interrupt) {
-                    m_CurrentRow.x_OnFreshRead();
-
-                    // Note: break leads to a 'soft end' return
-                    break;
+                    break;  // Leads to a 'soft end' return
                 }
 
                 m_CurrentRow.m_RowType = CRR_Util::ActionToRowType(action);
@@ -1504,10 +1574,7 @@ void CRowReader<TTraits>::x_ReadNextRow(void)
                     if (action == eRR_Skip)
                         continue;
                     if (action == eRR_Interrupt) {
-                        m_CurrentRow.x_OnFreshRead();
-
-                        // Note: break leads to a 'soft end' return
-                        break;
+                        break;  // Leads to a 'soft end' return
                     }
                     if (action != eRR_Continue_Data) {
                         NCBI_THROW2(CRowReaderException,
@@ -1547,42 +1614,53 @@ void CRowReader<TTraits>::x_ReadNextRow(void)
                     }
                 }
             } catch (CRowReaderException& exc) {
-                exc.SetContext(m_Traits.GetContext(GetBasicContext()).Clone());
+                exc.SetContext(x_GetContextClone());
+                x_ResetToEnd();
                 throw exc;
             } catch (const CException& exc) {
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
                 NCBI_RETHROW2(exc, CRowReaderException,
-                              eLineProcessing, "Error processing line",
-                              m_Traits.GetContext(GetBasicContext()).Clone());
+                              eLineProcessing, "Error processing line", ctxt);
             } catch (const exception& exc) {
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
                 NCBI_THROW2(CRowReaderException, eLineProcessing, exc.what(),
-                            m_Traits.GetContext(GetBasicContext()).Clone());
+                            ctxt);
             } catch (...) {
+                CRR_Context* ctxt = x_GetContextClone();
+                x_ResetToEnd();
                 NCBI_THROW2(CRowReaderException, eLineProcessing,
-                            "Unknown line processing error",
-                            m_Traits.GetContext(GetBasicContext()).Clone());
+                            "Unknown line processing error", ctxt);
             }
 
             // Data for an iterator has been prepared
             return;
         }
 
-        // The end of the stream has been reached
-        x_Reset();
-        m_CurrentRow.x_OnFreshRead();
         m_AtEnd = true;
 
-        switch (m_Traits.OnEvent(eRR_Event_SourceEOF)) {
-            case eRR_EventAction_Continue:
-                // Note: if traits return eRR_EventAction_Continue without
-                // swithing the underlying data source then an infinite loop is
-                // possible
-                continue;
-            case eRR_EventAction_Default:
-            case eRR_EventAction_Stop:
-            default:
-                // The actual return from the loop with the 'soft end' iterator
-                return;
+        try {
+            if (m_NeedOnSourceEnd) {
+                if (x_OnEvent(eRR_Event_SourceEnd) == eRR_EventAction_Stop) {
+                    x_ResetToEnd();
+                    return;
+                }
+            }
+        } catch (...) {
+            // The x_OnEvent() has already attached the proper context to the
+            // generated exception so the only thing to to is to reset the
+            // stream state.
+            x_ResetToEnd();
+            throw;
         }
+
+        x_ResetToEnd();
+
+        // Test if there was a source switch in the Traits::onEvent(...) call.
+        // If there was then we continue reading.
+        if (m_NextDataSource.m_Stream == nullptr)
+            return;
     }
 }
 
@@ -1608,6 +1686,91 @@ void CRowReader<TTraits>::x_Reset(void)
     m_PreviousPhysLinesRead = 0;
     m_CurrentRowPos = 0;
 }
+
+
+template <typename TTraits>
+void CRowReader<TTraits>::x_ResetToEnd(void)
+{
+    // Resetting to end happens in a few cases:
+    // - there was a normal end of the iterating over the rows
+    // - there was an exception in the traits calls
+    // - the traits instructed to stop the process
+    // In all these cases the row reader is reset to the original state and no
+    // data are available via iterators even if they were stored previously.
+    m_AtEnd = true;
+    m_Validation = false;
+    m_NeedOnSourceEnd = false;
+    m_NeedOnSourceBegin = true;
+    x_Reset();
+    m_CurrentRow.x_OnFreshRead();
+}
+
+
+template <typename TTraits>
+CRR_Context* CRowReader<TTraits>::x_GetContextClone(void)
+{
+    // When a traits callback generates an exception, a context is required
+    // to attach it to a CRowReaderException. The context generation may
+    // generate an exception in turn...
+    try {
+        return m_Traits.GetContext(GetBasicContext()).Clone();
+    } catch (const CException& exc) {
+        ERR_POST("Exception while getting traits context: " << exc.what());
+        return GetBasicContext().Clone();
+    } catch (const exception& exc) {
+        ERR_POST("Exception while getting traits context: " << exc.what());
+        return GetBasicContext().Clone();
+    } catch (...) {
+        ERR_POST("Unknown exception while getting traits context");
+        return GetBasicContext().Clone();
+    }
+}
+
+
+template <typename TTraits>
+void CRowReader<TTraits>::x_UpdateCurrentLineNo(size_t phys_lines_read)
+{
+    if (m_LinesAlreadyRead)
+        m_CurrentLineNo += m_PreviousPhysLinesRead;
+    else
+        m_LinesAlreadyRead = true;
+    m_PreviousPhysLinesRead = phys_lines_read;
+}
+
+
+template <typename TTraits>
+ERR_EventAction CRowReader<TTraits>::x_OnEvent(ERR_Event event)
+{
+    switch (event) {
+        case eRR_Event_SourceBegin:
+            m_NeedOnSourceEnd = true;
+            m_NeedOnSourceBegin = false;
+            break;
+        case eRR_Event_SourceEnd:
+            m_NeedOnSourceEnd = false;
+            m_NeedOnSourceBegin = true;
+            break;
+        default: ;
+    }
+
+    try {
+        return m_Traits.OnEvent(event);
+    } catch (const CException& exc) {
+        NCBI_RETHROW2(exc, CRowReaderException, eTraitsOnEvent,
+                      "Traits error in handling the " +
+                      CRR_Util::ERR_EventToString(event) + " event",
+                      x_GetContextClone());
+    } catch (const exception& exc) {
+        NCBI_THROW2(CRowReaderException, eTraitsOnEvent, exc.what(),
+                    x_GetContextClone());
+    } catch (...) {
+        NCBI_THROW2(CRowReaderException, eTraitsOnEvent,
+                    "Unknown traits error in handling the " +
+                    CRR_Util::ERR_EventToString(event) + " event",
+                    x_GetContextClone());
+    }
+}
+
 
 // End of the CRowReader implementation
 
@@ -1744,6 +1907,10 @@ void CRowReader<TTraits>::CRowIterator::x_CheckDereferencing(void) const
     if (m_IsEndIter || m_RowReader->m_AtEnd)
         NCBI_THROW2(CRowReaderException, eDereferencingEndIterator,
                     "Dereferencing end iterator is prohibited", nullptr);
+    if (!m_RowReader->m_RawDataAvailable)
+        NCBI_THROW2(CRowReaderException, eDereferencingNoDataIterator,
+                    "Dereferencing iterator when no data is available",
+                    nullptr);
 }
 
 

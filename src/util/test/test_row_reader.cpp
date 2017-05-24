@@ -802,7 +802,8 @@ class CTestStreamTraits : public CRowReaderStream_Base
 {
 public:
     CTestStreamTraits() :
-        m_EndReachedCount(0), m_ValidateCount(0), m_MyStream(nullptr)
+        m_BeginSourceCount(0), m_EndSourceCount(0),
+        m_ValidateCount(0), m_MyStream(nullptr)
     {}
 
     enum MyExtendedFieldType {
@@ -859,26 +860,31 @@ public:
     ERR_EventAction OnEvent(ERR_Event event)
     {
         switch (event) {
-            case eRR_Event_SourceEOF:
-                ++m_EndReachedCount;
+            case eRR_Event_SourceEnd:
+                ++m_EndSourceCount;
                 break;
-            case eRR_Event_SourceSwitch:
-                return eRR_EventAction_Continue;
+            case eRR_Event_SourceBegin:
+                ++m_BeginSourceCount;
+                break;
             case eRR_Event_SourceError:
             default:
                 break;
         }
-        return eRR_EventAction_Stop;
+        return eRR_EventAction_Default;
     }
 
+    size_t GetBeginSourceCount(void) const
+    { return m_BeginSourceCount; }
+
     size_t  GetEndReachedCount(void) const
-    { return m_EndReachedCount; }
+    { return m_EndSourceCount; }
 
     size_t  GetValidCount(void) const
     { return m_ValidateCount; }
 
 private:
-    size_t      m_EndReachedCount;
+    size_t      m_BeginSourceCount;
+    size_t      m_EndSourceCount;
     size_t      m_ValidateCount;
 
     RR_TRAITS_PARENT_STREAM(CTestStreamTraits);
@@ -1199,7 +1205,6 @@ BOOST_AUTO_TEST_CASE(RR_VALIDATE)
 }
 
 
-
 BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
 {
     string                  data = "1\tone\t111\r\n"
@@ -1283,6 +1288,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_STREAM_EVENT)
     for (; it != end_it; ++it)
     {}
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
+    BOOST_CHECK(src_stream.GetTraits().GetBeginSourceCount() == 1);
 
 
     src_stream.SetDataSource(kRRDataFileName);
@@ -1291,6 +1297,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_STREAM_EVENT)
     {
         ++line_no;
     }
+    BOOST_CHECK(src_stream.GetTraits().GetBeginSourceCount() == 2);
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 2);
     BOOST_CHECK(line_no == 4);
 }
@@ -1309,11 +1316,38 @@ BOOST_AUTO_TEST_CASE(RR_VALID_COUNT)
     for (; it != end_it; ++it)
     {}
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
+    BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
 
     src_stream.SetDataSource(kRRDataFileName);
     src_stream.Validate();
+
+    BOOST_CHECK(src_stream.GetTraits().GetBeginSourceCount() == 2);
     BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 2);
     BOOST_CHECK(src_stream.GetTraits().GetValidCount() == 4);
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_VALID_COUNT2)
+{
+    string                  data = "1\tone\t111\r\n"
+                                   "2\ttwo\t222\n"
+                                   "3\tthree\t333";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TTestDelimitedStream    src_stream(kRRDataFileName);
+
+    src_stream.Validate();
+    BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
+    BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 1);
+    BOOST_CHECK(src_stream.GetTraits().GetValidCount() == 4);
+
+    src_stream.SetDataSource(&data_stream, "");
+    auto it = src_stream.begin();
+    auto end_it = src_stream.end();
+    for (; it != end_it; ++it)
+    {}
+
+    BOOST_CHECK(src_stream.GetTraits().GetBeginSourceCount() == 2);
+    BOOST_CHECK(src_stream.GetTraits().GetEndReachedCount() == 2);
 }
 
 
@@ -1597,6 +1631,110 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_COPY_CONSTRUCTOR)
     BOOST_CHECK(field3.Get<string>() == string("111"));
     BOOST_CHECK(field3.GetOriginalData() == string("111"));
 }
+
+
+class CBeginExceptionTestStreamTraits : public CRowReaderStream_Base
+{
+public:
+    ERR_EventAction OnEvent(ERR_Event event)
+    {
+        switch (event) {
+            case eRR_Event_SourceBegin:
+                throw std::runtime_error("ON_BEGIN_EXC");
+            default:
+                break;
+        }
+        return eRR_EventAction_Default;
+    }
+
+private:
+    RR_TRAITS_PARENT_STREAM(CBeginExceptionTestStreamTraits);
+};
+typedef CRowReader<CBeginExceptionTestStreamTraits>  TBeginExceptionTestDelimitedStream;
+
+
+
+BOOST_AUTO_TEST_CASE(RR_ON_BEGIN_EXCEPTION_STREAM_EVENT)
+{
+    string                  data = "1\tone\t111\r\n"
+                                   "2\ttwo\t222\n"
+                                   "3\tthree\t333";
+    CNcbiIstrstream                     data_stream(data.c_str());
+    TBeginExceptionTestDelimitedStream  src_stream(&data_stream, "");
+
+    try {
+        src_stream.begin();
+        BOOST_FAIL("Exception 'onBegin' is expected");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("ON_BEGIN_EXC") == string::npos)
+            BOOST_FAIL("Expected on begin exception");
+    }
+
+    try {
+        src_stream.begin();
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Advancing end iterator is prohibited") == string::npos)
+            BOOST_FAIL("Expected advancing exception");
+    }
+
+    BOOST_CHECK(src_stream.GetCurrentLineNo() == 0);
+}
+
+
+class CEndExceptionTestStreamTraits : public CRowReaderStream_Base
+{
+public:
+    ERR_EventAction OnEvent(ERR_Event event)
+    {
+        switch (event) {
+            case eRR_Event_SourceEnd:
+                throw std::runtime_error("ON_END_EXC");
+            default:
+                break;
+        }
+        return eRR_EventAction_Default;
+    }
+
+private:
+    RR_TRAITS_PARENT_STREAM(CEndExceptionTestStreamTraits);
+};
+typedef CRowReader<CEndExceptionTestStreamTraits>  TEndExceptionTestDelimitedStream;
+
+
+BOOST_AUTO_TEST_CASE(RR_ON_END_EXCEPTION_STREAM_EVENT)
+{
+    string                  data = "1\tone\t111\r\n"
+                                   "2\ttwo\t222\n"
+                                   "3\tthree\t333";
+    CNcbiIstrstream                     data_stream(data.c_str());
+    TEndExceptionTestDelimitedStream    src_stream(&data_stream, "");
+
+    try {
+        auto it = src_stream.begin();
+        auto end_it = src_stream.end();
+        for (; it != end_it; ++it)
+        {}
+        BOOST_FAIL("Exception 'onEnd' is expected");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("ON_END_EXC") == string::npos)
+            BOOST_FAIL("Expected on end exception");
+    }
+
+    try {
+        src_stream.begin();
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Advancing end iterator is prohibited") == string::npos)
+            BOOST_FAIL("Expected advancing exception");
+    }
+
+    BOOST_CHECK(src_stream.GetCurrentLineNo() == 0);
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 END_NCBI_SCOPE

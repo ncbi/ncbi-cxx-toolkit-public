@@ -91,10 +91,10 @@ typedef int TTraitsFlags;  ///< Bit-wise OR of ERR_TraitsFlags
 /// Potentially disruptive events
 /// CRowReader passes such events to the Traits via OnEvent() callback
 enum ERR_Event {
-    eRR_Event_SourceEOF,   ///< Data source has hit EOF
-    eRR_Event_SourceError, ///< Data source has hit an error on read
-    eRR_Event_SourceSwitch ///< Data source has been switched
+    eRR_Event_SourceBegin, ///< Data source has started or been switched
                            ///< (no reads yet though).
+    eRR_Event_SourceEnd,   ///< Data source has hit EOF
+    eRR_Event_SourceError  ///< Data source has hit an error on read
 };
 
 
@@ -204,6 +204,7 @@ public:
         eFieldNoNotFound,
         eDereferencingEndIterator,
         eAdvancingEndIterator,
+        eDereferencingNoDataIterator,
         eFileNotFound,
         eNoReadPermissions,
         eInvalidAction,
@@ -218,7 +219,8 @@ public:
         eValidating,
         eNonEndIteratorCompare,
         eIteratorWhileValidating,
-        eRowDataReading
+        eRowDataReading,
+        eTraitsOnEvent
     };
 
     CRowReaderException(
@@ -243,6 +245,8 @@ public:
                 return "eDereferencingEndIterator";
             case eAdvancingEndIterator:
                 return "eAdvancingEndIterator";
+            case eDereferencingNoDataIterator:
+                return "eDereferencingNoDataIterator";
             case eFileNotFound:
                 return "eFileNotFound";
             case eNoReadPermissions:
@@ -273,6 +277,8 @@ public:
                 return "eIteratorWhileValidating";
             case eRowDataReading:
                 return "eRowDataReading";
+            case eTraitsOnEvent:
+                return "eTraitsOnEvent";
             default:
                 return CException::GetErrCodeString();
         }
@@ -332,6 +338,17 @@ public:
             case eRR_Continue_Metadata: return "eRR_Continue_Metadata";
             case eRR_Continue_Invalid:  return "eRR_Continue_Invalid";
             case eRR_Interrupt:         return "eRR_Interrupt";
+        }
+        return "unknown";
+    }
+
+    // Converts a framework event into a string
+    static string ERR_EventToString(ERR_Event event)
+    {
+        switch (event) {
+            case eRR_Event_SourceBegin: return "eRR_Event_SourceBegin";
+            case eRR_Event_SourceEnd:   return "eRR_Event_SourceEnd";
+            case eRR_Event_SourceError: return "eRR_Event_SourceError";
         }
         return "unknown";
     }
