@@ -71,16 +71,19 @@ public:
         eRR_ValidationMode_Default
     };
 
+    /// Set the validation mode
+    /// @param validation_mode
+    ///  validation mode
+    void SetValidationMode(ERR_ValidationMode validation_mode)
+    {}
+
     /// Called by CRowReader<>::Validate() for each line
     /// @param raw_line
     ///  current stream line
-    /// @param validation_mode
-    ///  validation mode
     /// @return
     ///  Instructions of what to do next e.g. interrupt validation or continue.
     ///  See ERR_Action in row_reader.inl
-    ERR_Action Validate(CTempString raw_line,
-                        ERR_ValidationMode validation_mode)
+    ERR_Action Validate(CTempString raw_line)
     { return eRR_Skip; }
 
     /// Called before any other processing of the next read line

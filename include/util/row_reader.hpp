@@ -1224,6 +1224,25 @@ void CRowReader<TTraits>::Validate(
 
     x_ResetToEnd();
     m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
+
+    try {
+        m_Traits.SetValidationMode(validation_mode);
+    } catch (const CException& exc) {
+        CRR_Context* ctxt = x_GetContextClone();
+        x_ResetToEnd();
+        NCBI_RETHROW2(exc, CRowReaderException, eValidating,
+                      "Set validation mode error", ctxt);
+    } catch (const exception& exc) {
+        CRR_Context* ctxt = x_GetContextClone();
+        x_ResetToEnd();
+        NCBI_THROW2(CRowReaderException, eValidating, exc.what(), ctxt);
+    } catch (...) {
+        CRR_Context* ctxt = x_GetContextClone();
+        x_ResetToEnd();
+        NCBI_THROW2(CRowReaderException, eValidating,
+                    "Unknown set validation mode error", ctxt);
+    }
+
     for (;;) {
         m_AtEnd = false;
         m_Validation = true;
@@ -1256,8 +1275,7 @@ void CRowReader<TTraits>::Validate(
             x_UpdateCurrentLineNo(phys_lines_read);
 
             try {
-                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData),
-                                           validation_mode);
+                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData));
                 if (action == eRR_Interrupt)
                     break;
             } catch (const CException& exc) {
