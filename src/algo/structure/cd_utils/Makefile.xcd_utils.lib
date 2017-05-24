@@ -67,7 +67,7 @@ SRC = \
     cuTaxTree \
     cuUtils
 
-DLL_LIB = xobjread
+DLL_LIB = blast_services entrez2cli id1cli ncbimime taxon1 xblast xregexp
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
