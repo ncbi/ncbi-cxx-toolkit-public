@@ -53,7 +53,7 @@ USING_SCOPE(blast);
 /// Each thread runs a batch of input sequences
 /// through KMER lookup and then through BLAST.
 ////////////
-class CBlastKmerSearch : public CObject
+class NCBI_XBLAST_EXPORT CBlastKmerSearch : public CObject
 {
 public:
     CBlastKmerSearch(CRef<IQueryFactory> queryFactory,

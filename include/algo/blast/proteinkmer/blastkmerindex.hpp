@@ -48,7 +48,7 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
-class CBlastKmerBuildIndex : public CObject
+class NCBI_XBLAST_EXPORT CBlastKmerBuildIndex : public CObject
 {
 public:
 	/// Constructor

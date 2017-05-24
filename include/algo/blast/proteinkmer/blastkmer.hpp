@@ -68,7 +68,7 @@ USING_SCOPE(objects);
 /// NOTE: recoverable errors (e.g., query shorter than KMER size) will NOT
 /// trigger an exception but the CBlastKmerResults for that query will have 
 /// an error or warning.  Use the HasError or HasWarning message to check.
-class CBlastKmer : public CObject, public CThreadable
+class NCBI_XBLAST_EXPORT CBlastKmer : public CObject, public CThreadable
 {
 public:
 	/// Constructor
