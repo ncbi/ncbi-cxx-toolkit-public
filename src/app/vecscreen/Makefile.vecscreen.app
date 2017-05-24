@@ -4,7 +4,7 @@ WATCHERS = camacho madden
 
 APP = vecscreen
 SRC = vecscreen_app
-LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 # FIXME: do we need blast_app_util
 #LIB = blast_app_util $(LIB_:%=%$(STATIC))

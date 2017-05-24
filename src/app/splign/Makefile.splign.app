@@ -12,7 +12,7 @@ REQUIRES = algo SQLITE3 objects -Cygwin
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       $(BLAST_DB_DATA_LOADER_LIBS) \
       ncbi_xloader_lds2 lds2 sqlitewrapp \
-      xqueryparse xalgoseq $(PCRE_LIB) \
+      xqueryparse xalgoseq taxon1 xregexp $(PCRE_LIB) \
       $(BLAST_LIBS:%=%$(STATIC)) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 

@@ -9,9 +9,10 @@
 APP = asn2fasta
 SRC = asn2fasta
 LIB = $(ncbi_xloader_wgs) $(SRAREAD_LIBS) \
-          xobjwrite xobjread $(XFORMAT_LIBS) xalnmgr xobjutil valerr xregexp \
+          xobjwrite variation_utils $(OBJREAD_LIBS) $(XFORMAT_LIBS) \
+          xalnmgr xobjutil valerr xregexp \
 	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
-	  entrez2cli entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
+          entrez2cli entrez2 tables $(OBJMGR_LIBS) xregexp $(PCRE_LIB)
 
 LIBS = $(FTDS_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
 	   $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)

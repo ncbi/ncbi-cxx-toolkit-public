@@ -2,7 +2,8 @@
 
 APP = igblastp
 SRC = igblastp_app
-LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = xalgoalignutil $(BLAST_INPUT_LIBS) xqueryparse $(BLAST_LIBS) \
+	xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIB = blast_app_util igblast $(LIB_:%=%$(STATIC))
 
 # De-universalize Mac builds to work around a PPC toolchain limitation

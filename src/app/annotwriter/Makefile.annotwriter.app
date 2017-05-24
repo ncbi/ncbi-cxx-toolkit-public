@@ -8,8 +8,8 @@
 
 APP = annotwriter
 SRC = annotwriter
-LIB = xobjwrite variation_utils $(OBJEDIT_LIBS) $(OBJREAD_LIBS) xalnmgr xobjutil \
-      gbseq entrez2cli entrez2 tables $(OBJMGR_LIBS)
+LIB = xobjwrite $(XFORMAT_LIBS) variation_utils $(OBJEDIT_LIBS) xalnmgr \
+      xobjutil entrez2cli entrez2 tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

@@ -5,8 +5,8 @@
 APP = compart
 SRC = compart
 
-LIB =  xalgoalignsplign xalgoalignutil xalgoalignnw xqueryparse \
-       $(BLAST_LIBS:%=%$(STATIC)) \
+LIB =  xalgoalignsplign xalgoalignutil xalgoalignnw xalgoseq taxon1 \
+       $(BLAST_LIBS:%=%$(STATIC)) xqueryparse xregexp $(PCRE_LIB) \
        $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

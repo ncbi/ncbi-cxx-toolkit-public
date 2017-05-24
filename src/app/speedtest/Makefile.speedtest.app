@@ -8,8 +8,8 @@
 
 APP = speedtest
 SRC = speedtest
-LIB = prosplign xalgoalignutil xcleanup taxon3 valid valerr $(BLAST_LIBS) \
-      xqueryparse xregexp $(PCRE_LIB) $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = prosplign xalgoalignutil taxon1 xalgoseq xcleanup taxon3 valid valerr \
+      $(BLAST_LIBS) xqueryparse xregexp $(PCRE_LIB) $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
