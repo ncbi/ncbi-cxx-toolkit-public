@@ -949,8 +949,13 @@ public:
         ePassword,
         ePasswordFile,
         ePasswordKeyID,
-        eService,   ///< Database server (or alias, including LBSM service)
-        ePort,      ///< Database server's port
+        /// Named service, interfaces-file alias, or raw server name, per
+        /// http://ncbi.github.io/cxx-toolkit/pages/ch_dbapi#ch_dbapi.Getting_started
+        /// @note In the interfaces file, if there are multiple choices for
+        /// a given alias, FreeTDS (used by SDBAPI) will always attempt to
+        /// connect to the last one, even if it's out of commission.
+        eService,
+        ePort, ///< DB server's port (when not using an alias or named service)
         eDatabase,
         eLoginTimeout,
         eIOTimeout,
