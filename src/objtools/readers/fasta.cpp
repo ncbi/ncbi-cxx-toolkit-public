@@ -1711,20 +1711,17 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
     TSeqPos iLineNum,
     ILineErrorListener * pMessageListener) const
 {
-    bool bFoundProblem = false;
 
     // check for nuc or aa sequences at the end of the title
     const static size_t kWarnNumNucCharsAtEnd = 20;
     const static size_t kWarnAminoAcidCharsAtEnd = 50;
 
-    if (TestFlag(fAssumeProt))
-    {
-    }
-    else
-    if( sLineText.length() > kWarnNumNucCharsAtEnd ) {
+    const size_t length = sLineText.length();
+    SIZE_TYPE pos_to_check = length-1;
+    
 
+    if((length > kWarnNumNucCharsAtEnd) && !TestFlag(fAssumeProt)) {
         // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
-        SIZE_TYPE pos_to_check = (sLineText.length() - 1);
         const SIZE_TYPE last_pos_to_check_for_nuc = (sLineText.length() - kWarnNumNucCharsAtEnd);
         for( ; pos_to_check >= last_pos_to_check_for_nuc; --pos_to_check ) {
             if( ! s_ASCII_IsUnAmbigNuc(sLineText[pos_to_check]) ) {
@@ -1740,38 +1737,40 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
                 ILineError::eProblem_UnexpectedNucResidues,
                 "defline"
                 );
-            bFoundProblem = true;
-        } else if( sLineText.length() > kWarnAminoAcidCharsAtEnd ) {
-            // check for aa's at the end of the title
-            // for efficiency, continue where the nuc search left off, since
-            // we know that nucs can be amino acids, also
-            const SIZE_TYPE last_pos_to_check_for_amino_acid =
-                ( sLineText.length() - kWarnAminoAcidCharsAtEnd );
-            for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
-                // can't just use "isalpha" in case it includes characters
-                // with diacritics (an accent, tilde, umlaut, etc.)
-                const char ch = sLineText[pos_to_check];
-                if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
-                    // potential amino acid, so keep going
-                } else {
-                    // non-amino-acid found
-                    break;
-                }
-            }
-
-            if( pos_to_check < last_pos_to_check_for_amino_acid ) {
-                FASTA_WARNING(iLineNum,
-                    "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
-                    << " valid amino acid characters.  Was the sequence "
-                    << "accidentally put in the title line?",
-                    ILineError::eProblem_UnexpectedAminoAcids,
-                    "defline");
-                bFoundProblem = true;
-            }
+            return true; // found problem
         }
     }
 
-    return bFoundProblem;
+    if((length > kWarnAminoAcidCharsAtEnd) && !TestFlag(fAssumeNuc)) {
+        // check for aa's at the end of the title
+        // for efficiency, continue where the nuc search left off, since
+        // we know that nucs can be amino acids, also
+        const SIZE_TYPE last_pos_to_check_for_amino_acid =
+            ( sLineText.length() - kWarnAminoAcidCharsAtEnd );
+        for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
+            // can't just use "isalpha" in case it includes characters
+            // with diacritics (an accent, tilde, umlaut, etc.)
+            const char ch = sLineText[pos_to_check];
+            if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
+                // potential amino acid, so keep going
+            } else {
+                // non-amino-acid found
+                break;
+            }
+        }
+
+        if( pos_to_check < last_pos_to_check_for_amino_acid ) {
+            FASTA_WARNING(iLineNum,
+                "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
+                << " valid amino acid characters.  Was the sequence "
+                << "accidentally put in the title line?",
+                ILineError::eProblem_UnexpectedAminoAcids,
+                "defline");
+            return true; // found problem
+        }
+    }
+
+    return false;
 }
 
 CRef<CSeq_entry> CFastaReader::ReadAlignedSet(

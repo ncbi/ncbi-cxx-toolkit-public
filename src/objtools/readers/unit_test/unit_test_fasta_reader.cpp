@@ -146,8 +146,16 @@ namespace {
         CFastaReader::fAssumeNuc | 
         CFastaReader::fForceType;
 
+
+    const static CFastaReader::TFlags kProtFastaReaderFlags =
+        CFastaReader::fAssumeProt |
+        CFastaReader::fForceType |
+        CFastaReader::fDisableNoResidues; 
+
+
     // list of FASTA warning tests
     const SWarningTest fasta_warning_test_arr[] = {
+
         { 
             "test case of no warnings",
 
@@ -212,20 +220,15 @@ namespace {
             "ACGACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
             "ACEACGTACGTACGTAEETACGTACGTACGTACGTACGTACGTACGT\n"
         },
-
         {
             "amino acids in title",
 
             {
                 { ILineError::eProblem_UnexpectedAminoAcids, "defline",    1 },
-//                { ILineError::eProblem_Missing, "sequence", 1 },
             },
-
-            //kDefaultFastaReaderFlags, // CFastaReader flags
-            kDefaultFastaReaderFlags | CFastaReader::fDisableNoResidues, // CFastaReader flags
+            kProtFastaReaderFlags, // CFastaReader flags
             "> blah ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ\n"
         },
-
         {
             "trigger as many warnings as possible",
 
@@ -371,6 +374,7 @@ BOOST_AUTO_TEST_CASE(TestBadResidues)
 // Test that the right warnings appear under the right conditions
 BOOST_AUTO_TEST_CASE(TestWarnings)
 {
+
     for( size_t warn_test_idx = 0; 
         warn_test_idx < ArraySize(fasta_warning_test_arr); 
         ++warn_test_idx )
@@ -388,7 +392,6 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
         CStringReader fastaStringReader( warning_test.m_sInputFASTA );
         CRStream fastaRStream( &fastaStringReader );
         CFastaReader fasta_reader( fastaRStream, warning_test.m_fFastaFlags );
-
         // do the parsing
         BOOST_CHECK_NO_THROW( fasta_reader.ReadSet(kMax_Int, pMessageListener.GetPointer()) );
 
