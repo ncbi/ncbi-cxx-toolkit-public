@@ -1620,6 +1620,7 @@ void CValidError_feat::ValidateCdregion (
 
     ValidateBadMRNAOverlap(feat);
     ValidateCommonCDSProduct(feat);
+    ValidateFarProducts(feat);
     ValidateCDSPartial(feat);
 
     if(nonsense_intron == false && !feat.IsSetExcept() &&
@@ -5812,6 +5813,80 @@ void CValidError_feat::x_ValidateGeneId(const CSeq_feat& feat)
     }
 }
 
+// VR-619
+// for an mRNA / CDS pair where both have far products
+// (which is only true for genomic RefSeqs with instantiated mRNA products), 
+// please check that the pair found by CFeatTree corresponds to the nuc-prot pair in ID
+// (i.e.the CDS product is annotated on the mRNA product).
+void CValidError_feat::ValidateFarProducts(const CSeq_feat& feat)
+{
+    // no point if not far-fetching
+    if (!m_Imp.IsRemoteFetch()) {
+        return;
+    }
+    if (!feat.GetData().IsCdregion() || !feat.IsSetProduct()) {
+        return;
+    }
+    if (!m_Imp.IsRefSeq()) {
+        return;
+    }
+    const CSeq_id * cds_sid = feat.GetProduct().GetId();
+    if (!cds_sid) {
+        return;
+    }
+    CBioseq_Handle cds_prod = m_Scope->GetBioseqHandleFromTSE(*cds_sid, m_Imp.GetTSE_Handle());
+    if (cds_prod) {
+        // coding region product is not far
+        return;
+    }
+    CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat, *m_Scope);
+    if (!feat_tree) {
+        return;
+    }
+    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(feat);
+    if (!fh) {
+        return;
+    }
+    CMappedFeat mrna = feat_tree->GetParent(fh, CSeqFeatData::eSubtype_mRNA);
+    if (!mrna || !mrna.IsSetProduct()) {
+        // no mRNA or no mRNA product
+        return;
+    }
+    const CSeq_id * mrna_sid = mrna.GetProduct().GetId();
+    if (!mrna_sid) {
+        return;
+    }
+    CBioseq_Handle mrna_prod = m_Scope->GetBioseqHandleFromTSE(*mrna_sid, m_Imp.GetTSE_Handle());
+    if (mrna_prod) {
+        // mRNA product is not far
+        return;
+    }
+    mrna_prod = m_Scope->GetBioseqHandle(*mrna_sid);
+    cds_prod = m_Scope->GetBioseqHandle(*cds_sid);
+    if (!mrna_prod && !cds_prod) {
+        return;
+    }
+    if (!mrna_prod) {
+        // mRNA product can't be fetched
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far mRNA product cannot be fetched", *(mrna.GetSeq_feat()));
+        return;
+    }
+    if (!cds_prod) {
+        // CDS product can't be fetched
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product cannot be fetched", feat);
+        return;
+    }
+    CSeq_entry_Handle far_cds_nps =
+        cds_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+    CSeq_entry_Handle far_mrna_nps =
+        mrna_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+
+    if (!far_cds_nps || !far_mrna_nps || far_cds_nps != far_mrna_nps) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", feat);
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
+    }
+}
+
 
 // Precondition: feat is a coding region
 void CValidError_feat::ValidateCommonCDSProduct
@@ -7405,7 +7480,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
     const CCdregion& cdregion = feat.GetData().GetCdregion();
     const CSeq_loc& location = feat.GetLocation();
-    unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
 
     // check frame
     x_CheckCDSFrame(feat, report_errors, has_errors, other_than_mismatch);
@@ -7943,7 +8017,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     size_t num_match_by_locus_tag = 0;
 
     for ( ; gene_it; ++gene_it) {
-        bool bad_strand = s_LocationStrandsIncompatible(gene_it->GetLocation(), feat.GetLocation(), m_Scope);
         if (gene_xref && gene_xref->IsSetLocus() &&
             gene_it->GetData().GetGene().IsSetLocus() &&
             NStr::Equal(gene_xref->GetLocus(), gene_it->GetData().GetGene().GetLocus())) {

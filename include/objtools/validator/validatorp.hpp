@@ -1135,6 +1135,7 @@ private:
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
+    void ValidateFarProducts(const CSeq_feat& feat);
     void x_ValidateGeneId(const CSeq_feat& feat);
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
     bool x_CDSHasGoodParent(const CSeq_feat& feat) const;
