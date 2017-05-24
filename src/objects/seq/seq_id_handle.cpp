@@ -322,7 +322,7 @@ string GetLabel(const vector<CSeq_id_Handle>& ids)
     ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
         CConstRef<CSeq_id> id = it->GetSeqId();
 #ifdef _DEBUG
-        if (id->IsGi()) {
+        if (it->IsGi()) {
             gi = id->GetGi();
         }
 #endif
@@ -335,10 +335,13 @@ string GetLabel(const vector<CSeq_id_Handle>& ids)
     if ( best_id ) {
         ret = GetLabel(best_id);
 #ifdef _DEBUG
-        const CTextseq_id* txt_id = best_id.GetSeqId()->GetTextseq_Id();
-        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
-            ERR_POST("Using version-less accession " << txt_id->GetAccession()
-                << " instead of GI " << gi);
+        if ( gi != ZERO_GI && !best_id.IsGi() ) {
+            CConstRef<CSeq_id> best_seq_id = best_id.GetSeqId();
+            const CTextseq_id* txt_id = best_seq_id->GetTextseq_Id();
+            if ( txt_id && !txt_id->IsSetVersion() ) {
+                ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                         << " instead of GI " << gi);
+            }
         }
 #endif
     }
@@ -370,10 +373,12 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
     if ( best_id ) {
         ret = GetLabel(*best_id);
 #ifdef _DEBUG
-        const CTextseq_id* txt_id = best_id->GetTextseq_Id();
-        if (txt_id && !txt_id->IsSetVersion() && gi != ZERO_GI) {
-            ERR_POST("Using version-less accession " << txt_id->GetAccession()
-                << " instead of GI " << gi);
+        if ( gi != ZERO_GI && !best_id->IsGi() ) {
+            const CTextseq_id* txt_id = best_id->GetTextseq_Id();
+            if ( txt_id && !txt_id->IsSetVersion() ) {
+                ERR_POST("Using version-less accession " << txt_id->GetAccession()
+                         << " instead of GI " << gi);
+            }
         }
 #endif
     }
