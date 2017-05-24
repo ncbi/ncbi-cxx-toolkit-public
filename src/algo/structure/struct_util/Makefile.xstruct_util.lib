@@ -18,6 +18,7 @@ SRC = aaa_dummy_pch \
 	su_pssm \
 	su_sequence_set
 
+DLL_LIB = $(BLAST_LIBS) xstruct_dp
 
 USES_LIBRARIES =  \
     $(BLAST_LIBS) xstruct_dp
