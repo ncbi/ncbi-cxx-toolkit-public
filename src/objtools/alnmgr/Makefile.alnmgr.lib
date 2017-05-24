@@ -10,7 +10,7 @@ SRC = aln_builders aln_converters aln_generators aln_seqid aln_serial	\
       alnsegments alnseq alnvec alnvec_iterator alnvecprint		\
       pairwise_aln sparse_aln sparse_ci alntext score_builder_base
 
-DLL_LIB = tables
+DLL_LIB = xobjutil tables
 
 WATCHERS = grichenk
 
