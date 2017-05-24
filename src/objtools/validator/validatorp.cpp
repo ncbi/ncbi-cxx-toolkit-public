@@ -3731,7 +3731,11 @@ CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(CBioseq_Handle bsh)
 CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    return GetFeatTreeFromCache(bsh);
+    if (bsh) {
+        return GetFeatTreeFromCache(bsh);
+    } else {
+        return (CRef<feature::CFeatTree>(NULL));
+    }
 }
 
 
@@ -3752,6 +3756,9 @@ CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope&
         try {
             CSeq_feat_Handle fh = scope.GetSeq_featHandle(*feat);
             CRef<feature::CFeatTree> tr = GetFeatTreeFromCache(*feat, scope);
+            if (!tr) {
+                return CConstRef<CSeq_feat>(NULL);
+            }
             CMappedFeat mf = tr->GetBestGene(fh);
             if (mf) {
                 gene = mf.GetSeq_feat();
