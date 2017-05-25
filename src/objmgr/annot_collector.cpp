@@ -3530,7 +3530,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                        "search segments limit exceeded, no annotations found");
         }
         if ( m_SearchSegmentsAction == SAnnotSelector::eMaxSearchSegmentsLog ) {
-            ERR_POST_X(2, "CAnnot_Collector: "
+            ERR_POST_X(2, Warning << "CAnnot_Collector: "
                        "search segments limit exceeded, no annotations found");
         }
         // stop searching
