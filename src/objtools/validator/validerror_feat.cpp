@@ -1670,11 +1670,17 @@ void CValidError_feat::x_ValidateCdregionCodebreak
             if (cbr_loc.GetStop(eExtreme_Biological) == feat_loc.GetStop(eExtreme_Biological)) {
                 // terminal exception - don't bother checking, can't be mapped
             } else {
-                int frame = 0;
-                CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
-                if (!p_loc || p_loc->IsNull() || frame != 1 ) {
-                    PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
-                        "Code-break location not in coding region - may be frame problem", feat);
+                if (SeqLocCheck(cbr_loc, m_Scope) == eSeqLocCheck_error) {
+                    string lbl = GetValidatorLocationLabel(cbr_loc, *m_Scope);
+                    PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
+                        "Code-break: SeqLoc [" + lbl + "] out of range", feat);
+                } else {
+                    int frame = 0;
+                    CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
+                    if (!p_loc || p_loc->IsNull() || frame != 1) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_Range,
+                            "Code-break location not in coding region - may be frame problem", feat);
+                    }
                 }
             }
         }
