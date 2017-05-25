@@ -10,6 +10,9 @@ if (SQLITE3_FOUND)
     set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES_OLD}")
 
     check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${SQLITE3_INCLUDE_DIR})
+    if (HAVE_SQLITE3ASYNC_H)
+        message(STATUS "  SQLite3: Found sqlite3async.h")
+    endif()
 endif(SQLITE3_FOUND)
 
 set(SQLITE3_INCLUDE ${SQLITE3_INCLUDE_DIR})
