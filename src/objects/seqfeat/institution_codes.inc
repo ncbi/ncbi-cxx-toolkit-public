@@ -1077,6 +1077,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIBM\ts\tCentro Invest. Biol. Noroeste\t\t",
 "CIC\ts\tAlbertson College of Idaho, Biology Department\t\t",
 "CICC\tc\tChina Center for Industrial Culture Collection\t\t",
+"CICCM\tc\tCawthron Institute Culture Collection of Micro-algae\t\t",
 "CICESE\ts\tCentro de Investigacion Cientifica y de Educacion Superior de Ensenada\t\t",
 "CICIM\tc\tCulture and Information Centre of Industrial Microorganisms of China's Univeristies\t\t",
 "CICIMAR\ts\tCentro Interdisciplinario de Ciencias Marinas\t\t",
