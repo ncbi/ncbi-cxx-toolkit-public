@@ -2405,14 +2405,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         CSeq_id::ParseIDs(ids, val,                                
                                  CSeq_id::fParse_ValidLocal
                                | CSeq_id::fParse_PartialOK);
-                        if ((flags & CFeature_table_reader::fLeaveProteinIds) || (ids.size()>1))
+                        if (!ids.empty())
                         {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
+                            return true;
                         }
-                        CRef<CSeq_id> best = GetBestId(ids);
-                        if (!best.Empty())
-                           sfp->SetProduct().SetWhole(*best);
-                        return true;
                     } catch( CSeqIdException & ) {
                         return false;
                     }
