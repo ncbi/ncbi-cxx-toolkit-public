@@ -11480,7 +11480,7 @@ bool s_IsGenomeAnnotationStart(const CUser_object& user)
                 NStr::Equal(prefix.GetData().GetStr(), "##Genome-Annotation-Data-START##")) {
                 return true;
             }
-        } catch (CException& e) {
+        } catch (CException&) {
 
         }
     }
@@ -11784,7 +11784,7 @@ void CNewCleanup_imp::x_ChangePopToPhy(CBioseq_set& bioseq_set)
         }
 
         // Make sure all the taxnames in the set are the same.
-        if (!NStr::CompareNocase(first_taxname, taxname) == 0) {
+        if (NStr::CompareNocase(first_taxname, taxname) != 0) {
             all_same = false;
             break;
         }
@@ -12655,7 +12655,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
                     }
                 }
             }
-        } catch (CException& ex) {
+        } catch (CException&) {
             // unable to get bioseq handle when loc is on multiple sequences
         }
     }
@@ -12687,7 +12687,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
                 }
                 ChangeMade(CCleanupChange::eChangeFeatureLocation);
             }
-        } catch (CException& ex) {
+        } catch (CException& ) {
             // unable to get bioseq handle when loc is on multiple sequences
         }
     }
