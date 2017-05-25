@@ -2662,55 +2662,57 @@ void CValidError_feat::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_H
     CSeq_loc_CI si(loc);
     try{
         CSeq_loc::TRange range = si.GetRange();
-        CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, *si.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+        CConstRef<CSeq_loc> cur_int = si.GetRangeAsSeq_loc();
+        if (cur_int) {
+            CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, *cur_int, m_Imp.GetTSE_Handle());
 
-        if (bsh_si) {
-            CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-            string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
+            if (bsh_si) {
+                CSeqVector vec = bsh_si.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                string label = GetBioseqIdLabel(*(bsh_si.GetCompleteBioseq()), true);
 
-            TSeqPos start, stop;
-            if (eNa_strand_minus == strand) {
-                start = range.GetTo();
-                stop = range.GetFrom();
-            }
-            else {
-                start = range.GetFrom();
-                stop = range.GetTo();
-            }
+                TSeqPos start, stop;
+                if (eNa_strand_minus == strand) {
+                    start = range.GetTo();
+                    stop = range.GetFrom();
+                } else {
+                    start = range.GetFrom();
+                    stop = range.GetTo();
+                }
 
-            if (overlap_feat_exists) {
-                if (!si.GetSeq_loc().IsPartialStop(eExtreme_Biological)) {
-                    if (stop == overlap_feat_stop) {
-                        if (overlap_feat_partial_3) {
+                if (overlap_feat_exists) {
+                    if (!cur_int->IsPartialStop(eExtreme_Biological)) {
+                        if (stop == overlap_feat_stop) {
+                            if (overlap_feat_partial_3) {
+                                ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, has_errors, feat, true);
+                            }
+                        } else {
                             ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                label, report_errors, has_errors, feat, true);
+                                label, report_errors, has_errors, feat, false);
                         }
-                    } else {
+                    }
+
+                    if (!cur_int->IsPartialStart(eExtreme_Biological)) {
+                        if (start == overlap_feat_start) {
+                            if (overlap_feat_partial_5) {
+                                ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, has_errors, feat, true);
+                            }
+                        } else {
+                            ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                label, report_errors, has_errors, feat, false);
+                        }
+                    }
+                } else {
+                    // Overlapping feature - mRNA or gene - not found.
+                    if (!cur_int->IsPartialStop(eExtreme_Biological)) {
                         ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                             label, report_errors, has_errors, feat, false);
                     }
-                }
-
-                if (!si.GetSeq_loc().IsPartialStart(eExtreme_Biological)) {
-                    if (start == overlap_feat_start) {
-                        if (overlap_feat_partial_5) {
-                            ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                label, report_errors, has_errors, feat, true);
-                        }
-                    } else {
+                    if (!cur_int->IsPartialStart(eExtreme_Biological)) {
                         ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                             label, report_errors, has_errors, feat, false);
                     }
-                }
-            } else {
-                // Overlapping feature - mRNA or gene - not found.
-                if (!si.GetSeq_loc().IsPartialStop(eExtreme_Biological)) {
-                    ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                        label, report_errors, has_errors, feat, false);
-                }
-                if (!si.GetSeq_loc().IsPartialStart(eExtreme_Biological)) {
-                    ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                        label, report_errors, has_errors, feat, false);
                 }
             }
         }
@@ -3209,7 +3211,7 @@ void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq
 {
     if (NStr::EndsWith(prot_name, "]")) {
         bool report_name = true;
-        size_t pos = NStr::Find(prot_name, "[", 0, string::npos, NStr::eLast);
+        size_t pos = NStr::Find(prot_name, "[", NStr::eNocase, NStr::eReverseSearch);
         if (pos == string::npos) {
             // no disqualifying text
         } else if (prot_name.length() - pos < 5) {
@@ -6293,7 +6295,7 @@ bool CValidError_feat::x_CDSHasGoodParent(const CSeq_feat& feat) const
     for (size_t i = 0; i < num_parent_types; i++) {
         CMappedFeat parent = feat_tree->GetParent(fh, parent_types[i]);
         if (parent) {
-            sequence::ECompare cmp = sequence::Compare(feat.GetLocation(), parent.GetLocation(), m_Scope);
+            sequence::ECompare cmp = sequence::Compare(feat.GetLocation(), parent.GetLocation(), m_Scope, sequence::fCompareOverlapping);
             if (cmp == sequence::eContained || cmp == sequence::eSame) {
                 return true;
             }
