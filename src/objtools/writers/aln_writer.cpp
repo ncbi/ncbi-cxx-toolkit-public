@@ -89,11 +89,11 @@ bool CAlnWriter::WriteAlign(
 
     switch (align.GetSegs().Which()) {
     case CSeq_align::C_Segs::e_Denseg:
-        return xWriteAlignDenseSeg(align.GetSegs().GetDenseg());
+        return WriteAlignDenseSeg(align.GetSegs().GetDenseg());
     case CSeq_align::C_Segs::e_Spliced:
-        return xWriteAlignSplicedSeg(align.GetSegs().GetSpliced());
+        return WriteAlignSplicedSeg(align.GetSegs().GetSpliced());
     case CSeq_align::C_Segs::e_Sparse:
-        return xWriteAlignSparseSeg(align.GetSegs().GetSparse());
+        return WriteAlignSparseSeg(align.GetSegs().GetSparse());
     case CSeq_align::C_Segs::e_Std:
         break;
     default:
@@ -152,7 +152,7 @@ bool s_TryFindRange(const CObject_id& local_id,
 
 // -----------------------------------------------------------------------------
 
-void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range) 
+void CAlnWriter::ProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range) 
 {   
     if (m_pScope) {
 
@@ -183,7 +183,7 @@ void CAlnWriter::xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TS
 
 // -----------------------------------------------------------------------------
 
-void CAlnWriter::xGetSeqString(CBioseq_Handle bsh, 
+void CAlnWriter::GetSeqString(CBioseq_Handle bsh, 
     const CRange<TSeqPos>& range,
     ENa_strand strand, 
     string& seq)
@@ -211,7 +211,7 @@ void CAlnWriter::xGetSeqString(CBioseq_Handle bsh,
 
 // -----------------------------------------------------------------------------
 
-bool CAlnWriter::xWriteAlignDenseSeg(
+bool CAlnWriter::WriteAlignDenseSeg(
     const CDense_seg& denseg)
 {
     if (!denseg.CanGetDim() ||
@@ -233,7 +233,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
         CRange<TSeqPos> range;
 
         CBioseq_Handle bsh;
-        xProcessSeqId(id, bsh, range);
+        ProcessSeqId(id, bsh, range);
         if (!bsh) {
             NCBI_THROW(CObjWriterException, 
                 eBadInput, 
@@ -241,7 +241,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
         }
 
         string seq_plus;
-        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
+        GetSeqString(bsh, range, eNa_strand_plus, seq_plus);
 
         const CSeqUtil::ECoding coding = 
             (bsh.IsNucleotide()) ?
@@ -256,7 +256,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
             const ENa_strand strand = (denseg.IsSetStrands()) ?
                 denseg.GetStrands()[seg*num_rows + row] :
                 eNa_strand_plus;
-            seqdata += xGetSegString(seq_plus, coding, strand, start, len);
+            seqdata += GetSegString(seq_plus, coding, strand, start, len);
         }
 
         string defline;
@@ -274,7 +274,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
             defline = ">" + id.AsFastaString();
         }
 
-        xWriteContiguous(defline, seqdata);
+        WriteContiguous(defline, seqdata);
     }
 
     return true;
@@ -282,7 +282,7 @@ bool CAlnWriter::xWriteAlignDenseSeg(
 
 // -----------------------------------------------------------------------------
 
-bool CAlnWriter::xWriteAlignSplicedSeg(
+bool CAlnWriter::WriteAlignSplicedSeg(
     const CSpliced_seg& spliced_seg)
 {
     if (!spliced_seg.IsSetExons()) {
@@ -314,7 +314,7 @@ bool CAlnWriter::xWriteAlignSplicedSeg(
         spliced_seg.GetProduct_strand() :
         eNa_strand_plus;
 
-    return xWriteSplicedExons(spliced_seg.GetExons(),
+    return WriteSplicedExons(spliced_seg.GetExons(),
                               spliced_seg.GetProduct_type(),
                               genomic_id,
                               genomic_strand,
@@ -340,7 +340,7 @@ unsigned int s_ProductLength(const CProduct_pos& start, const CProduct_pos& end)
 
 
 // -----------------------------------------------------------------------------
-bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,   
+bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,   
     CSpliced_seg::TProduct_type product_type,
     CRef<CSeq_id> default_genomic_id, // May be NULL
     ENa_strand default_genomic_strand,
@@ -394,32 +394,32 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         
         CBioseq_Handle bsh;
         CRange<TSeqPos> genomic_range;
-        xProcessSeqId(genomic_id, bsh, genomic_range);
+        ProcessSeqId(genomic_id, bsh, genomic_range);
         if (!bsh) { // Throw an exception
         }
 
         string genomic_seq;
-        xGetSeqString(bsh, genomic_range, genomic_strand, genomic_seq);
+        GetSeqString(bsh, genomic_range, genomic_strand, genomic_seq);
 
         CRange<TSeqPos> product_range;
-        xProcessSeqId(product_id, bsh, product_range);
+        ProcessSeqId(product_id, bsh, product_range);
         if (!bsh) { // Throw an exception
         }
 
         string product_seq;
-        xGetSeqString(bsh, product_range, product_strand, product_seq);
+        GetSeqString(bsh, product_range, product_strand, product_seq);
 
         if (exon->IsSetParts()) {
-            xAddGaps(product_type, exon->GetParts(), genomic_seq, product_seq);   
+            AddGaps(product_type, exon->GetParts(), genomic_seq, product_seq);   
         }
         else 
         if (product_length != genomic_length) {
             // Throw an exception...maybe
         }
 
-        xWriteContiguous(">" + genomic_id.AsFastaString(), genomic_seq);
+        WriteContiguous(">" + genomic_id.AsFastaString(), genomic_seq);
 
-        xWriteContiguous(">" + product_id.AsFastaString(), product_seq);
+        WriteContiguous(">" + product_id.AsFastaString(), product_seq);
     }
 
     return true;
@@ -427,7 +427,7 @@ bool CAlnWriter::xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
 
 // -----------------------------------------------------------------------------
 
-void CAlnWriter::xAddGaps(
+void CAlnWriter::AddGaps(
         CSpliced_seg::TProduct_type product_type,
         const CSpliced_exon::TParts& exon_chunks, 
         string& genomic_seq,
@@ -493,7 +493,7 @@ void CAlnWriter::xAddGaps(
 
 // -----------------------------------------------------------------------------
 
-string CAlnWriter::xGetSegString(const string& seq_plus, 
+string CAlnWriter::GetSegString(const string& seq_plus, 
     CSeqUtil::ECoding coding,
     const ENa_strand strand,
     const int start,
@@ -517,12 +517,12 @@ string CAlnWriter::xGetSegString(const string& seq_plus,
 
 
 // -----------------------------------------------------------------------------
-bool CAlnWriter::xWriteAlignSparseSeg(
+bool CAlnWriter::WriteAlignSparseSeg(
     const CSparse_seg& sparse_seg)
 {
     for (CRef<CSparse_align> align : sparse_seg.GetRows()) 
     {
-        if (!xWriteSparseAlign(*align)) {
+        if (!WriteSparseAlign(*align)) {
             return false;
         }
     } 
@@ -533,7 +533,7 @@ bool CAlnWriter::xWriteAlignSparseSeg(
 
 // -----------------------------------------------------------------------------
 
-bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
+bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 {
     const auto num_segs = sparse_align.GetNumseg();
     
@@ -542,7 +542,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
         const CSeq_id& first_id  = sparse_align.GetFirst_id();
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
-        xProcessSeqId(first_id, bsh, range);
+        ProcessSeqId(first_id, bsh, range);
         if (!bsh) {
             // Throw an exception
         }
@@ -552,23 +552,23 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             CSeqUtil::e_Iupacaa;
 
         string seq_plus;
-        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
+        GetSeqString(bsh, range, eNa_strand_plus, seq_plus);
     
         string seqdata = "";
         for (int seg=0; seg<num_segs; ++seg) {
             const auto start = sparse_align.GetFirst_starts()[seg];
             const auto len = sparse_align.GetLens()[seg];
-            seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
+            seqdata += GetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
 
-        xWriteContiguous(">" + first_id.AsFastaString(), seqdata);
+        WriteContiguous(">" + first_id.AsFastaString(), seqdata);
     }
 
     { // Second row
         const CSeq_id& second_id  = sparse_align.GetSecond_id();
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
-        xProcessSeqId(second_id, bsh, range);
+        ProcessSeqId(second_id, bsh, range);
         if (!bsh) {
             // Throw an exception
         }
@@ -578,7 +578,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
             CSeqUtil::e_Iupacaa;
 
         string seq_plus;
-        xGetSeqString(bsh, range, eNa_strand_plus, seq_plus);
+        GetSeqString(bsh, range, eNa_strand_plus, seq_plus);
 
         string seqdata = "";
         const vector<ENa_strand>& strands = sparse_align.IsSetSecond_strands() ?
@@ -586,10 +586,10 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
         for (int seg=0; seg<num_segs; ++seg) {
             const auto start = sparse_align.GetFirst_starts()[seg];
             const auto len = sparse_align.GetLens()[seg];
-            seqdata += xGetSegString(seq_plus, coding, eNa_strand_plus, start, len);
+            seqdata += GetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
 
-        xWriteContiguous(">" + second_id.AsFastaString(), seqdata);
+        WriteContiguous(">" + second_id.AsFastaString(), seqdata);
         
     }
     return true;
@@ -597,7 +597,7 @@ bool CAlnWriter::xWriteSparseAlign(const CSparse_align& sparse_align)
 
 // -----------------------------------------------------------------------------
 
-void CAlnWriter::xWriteContiguous(const string& defline, const string& seqdata) 
+void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata) 
 {
     if (defline.back() == '|' && defline.size() > 1) 
     {

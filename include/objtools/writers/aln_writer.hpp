@@ -68,42 +68,42 @@ public:
 
     void SetLineWidth(unsigned int width);
 
-private:
-    bool xWriteAlignDenseSeg(const CDense_seg& denseg);
+protected:
+    bool WriteAlignDenseSeg(const CDense_seg& denseg);
 
-    bool xWriteAlignSplicedSeg(const CSpliced_seg& spliced_seg);
+    bool WriteAlignSplicedSeg(const CSpliced_seg& spliced_seg);
 
-    bool xWriteAlignSparseSeg(const CSparse_seg& sparse_seg);
+    bool WriteAlignSparseSeg(const CSparse_seg& sparse_seg);
 
-    bool xWriteSparseAlign(const CSparse_align& sparse_aln);
+    bool WriteSparseAlign(const CSparse_align& sparse_aln);
 
-    bool xWriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
+    bool WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         CSpliced_seg::TProduct_type product_type,
         CRef<CSeq_id> default_genomic_id,
         ENa_strand default_genomic_strand,
         CRef<CSeq_id> default_product_id,
         ENa_strand default_product_strand);
 
-    void xAddGaps(
+    void AddGaps(
         CSpliced_seg::TProduct_type product_type,
         const CSpliced_exon::TParts& exon_chunks,
         string& genomic_seq,
         string& product_seq); 
 
-    void xProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
+    void ProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
    
-    void xGetSeqString(CBioseq_Handle bsh,
+    void GetSeqString(CBioseq_Handle bsh,
         const CRange<TSeqPos>& range,
         ENa_strand strand,
         string& seq);
 
-    string xGetSegString(const string& seq_plus,
+    string GetSegString(const string& seq_plus,
         CSeqUtil::ECoding coding,
         ENa_strand strand,
         int start,
         size_t len);
 
-    void xWriteContiguous(const string& defline, const string& seqdata);
+    void WriteContiguous(const string& defline, const string& seqdata);
 
     CRef<CScope> m_pScope;
     unsigned int m_Width;
