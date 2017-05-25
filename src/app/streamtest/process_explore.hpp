@@ -66,7 +66,7 @@ public:
         try {
   
             // Create master index variable on stack
-            CSeqEntryIndex idx(CSeqEntryIndex::fSkipRemoteFeatures);
+            CSeqEntryIndex idx( CSeqEntryIndex::fDefaultIndexing );
 
             // Initialize with top-level Seq-entry
             idx.Initialize(*m_entry);
@@ -121,25 +121,64 @@ public:
                         } else {
                             *m_out << "\t--";
                         }
+                        *m_out << endl;
 
                         // Print feature location
-                        const CSeq_loc& loc = sfx.GetMappedFeat().GetLocation();
+                        const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
                         string loc_str;
                         loc.GetLabel(&loc_str);
-                        *m_out << "\t" << loc_str;
+                        *m_out << "\tOrig: " << loc_str;
+                        *m_out << endl;
+
+                        /*
+                        const CSeq_loc& mloc = sfx.GetMappedFeat().GetLocation();
+                        string mloc_str;
+                        mloc.GetLabel(&mloc_str);
+                        *m_out << "\t FAILS: " << mloc_str;
+                        *m_out << endl;
+                        */
+
+                        CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
+                        if (sloc) {
+                            string sloc_str;
+                            sloc->GetLabel(&sloc_str);
+                            *m_out << "\tSubs: " << sloc_str;
+                            *m_out << endl;
+                        }
 
                         // If coding region, print underlying nucleotide sequence
                         if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
-                            const CMappedFeat cds = sfx.GetMappedFeat();
+                            const CSeq_feat& md = sfx.GetMappedFeat().GetOriginalFeature();
                             try {
-                                CSeqVector vec(cds.GetLocation(), *m_scope);
+                                const CSeq_loc& mloc = md.GetLocation();
+                                *m_out << "CSeqVector original" << endl;
+                                CSeqVector vec(mloc, *m_scope);
                                 vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
                                 string coding;
                                 vec.GetSeqData(0, vec.size(), coding);
-                                *m_out << "\t" << coding;
+                                *m_out << "\tOrig: " << coding;
+                                *m_out << endl;
+                             }
+                            catch (CException& e) {
+                                LOG_POST(Error << "Error processing seqvector original: " << e.what());
+                            }
+                        }
+
+                        if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
+                            try {
+                                CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
+                                if (sloc) {
+                                    *m_out << "CSeqVector mapped" << endl;
+                                    CSeqVector vec(*sloc, *m_scope);
+                                    vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+                                    string coding;
+                                    vec.GetSeqData(0, vec.size(), coding);
+                                    *m_out << "\tSubs: " << coding;
+                                    *m_out << endl;
+                                }
                             }
                             catch (CException& e) {
-                                *m_out << "\t--";
+                                LOG_POST(Error << "Error processing seqvector mapped: " << e.what());
                             }
                         }
 
@@ -147,6 +186,23 @@ public:
                     }
                 });
                 *m_out << "Feature count " << NStr::IntToString(num_feats) << endl;
+
+                *m_out << "GetDeltaHandle" << endl;
+                CBioseq_Handle delt = bsx.GetDeltaHandle();
+                if (delt) {
+                    try {
+                        *m_out << "CSeqVector delta" << endl;
+                        CSeqVector vec(delt);
+                        string seq;
+                        *m_out << "GetSeqData" << endl;
+                        vec.GetSeqData(0, vec.size() - 1, seq);
+                        *m_out << "\tDelta: " << seq;
+                        *m_out << endl;
+                    }
+                    catch (CException& e) {
+                        LOG_POST(Error << "Error processing seqvector delta: " << e.what());
+                    }
+                }
             });
 
             if (! ok) {
