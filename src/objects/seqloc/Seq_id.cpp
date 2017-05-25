@@ -755,6 +755,20 @@ struct SAccGuide : public CObject
     };
     typedef map<TFormatCode, SSubMap> TMainMap;
 
+    struct SHints {
+        SHints()
+            : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL)
+            {}
+
+        TAccInfo FindAccInfo(CTempString name);
+        SSubMap& FindSubMap(TMainMap& rules, TFormatCode fmt);
+        
+        TAccInfo              prev_type;
+        CTempString           prev_type_name;
+        TMainMap::value_type* prev_submap;
+        TSpecialMap::iterator prev_special;
+    };
+    
     SAccGuide(void);
     SAccGuide(const string& filename)
         : count(0)
@@ -763,8 +777,7 @@ struct SAccGuide : public CObject
         : count(0)
         { x_Load(lr); }
 
-    void AddRule(const CTempString& rule, TAccInfo& prev_type,
-                 CTempString& prev_type_name);
+    void AddRule(const CTempString& rule, SHints& hints);
     TAccInfo Find(TFormatCode fmt, const CTempString& acc_or_pfx,
                   string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
@@ -780,8 +793,43 @@ private:
     void x_InitGeneral(void);
 };
 
-void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
-                        CTempString& prev_type_name)
+static const SAccGuide::TAccInfo kUnrecognized
+    = static_cast<SAccGuide::TAccInfo>(-1);
+
+inline
+SAccGuide::TAccInfo SAccGuide::SHints::FindAccInfo(CTempString name)
+{
+    if (name == prev_type_name) {
+        return prev_type;
+    } else {
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(name);
+        if (it == sc_AccInfoMap.end()) {
+            return kUnrecognized;
+        } else {
+            prev_type_name = it->first;
+            return prev_type = it->second;
+        }
+    }
+}
+
+inline
+SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
+                                                  SAccGuide::TFormatCode fmt)
+{
+    if (prev_submap != NULL  &&  prev_submap->first == fmt) {
+        return prev_submap->second;
+    } else {
+        SAccGuide::TMainMap::iterator it = rules.lower_bound(fmt);
+        if (it->first != fmt) {
+            it = rules.insert(it, make_pair(fmt, SAccGuide::SSubMap()));
+        }
+        prev_submap = &*it;
+        prev_special = it->second.specials.end();
+        return it->second;
+    }
+}
+
+void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
 {
     CTempString         tmp1, tmp2;
     vector<CTempStringEx> tokens;
@@ -814,14 +862,14 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
         TFormatCode fmt
             = s_Key(NStr::StringToUInt(tmp1, NStr::fConvErr_NoThrow),
                     NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow));
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
-        if (it == sc_AccInfoMap.end()) {
+        TAccInfo value = hints.FindAccInfo(tokens[2]);
+        if (value == kUnrecognized) {
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
             if (old != CSeq_id::eAcc_unknown) {
                 string old_name;
-                if (old == prev_type) {
-                    old_name = prev_type_name;
+                if (old == hints.prev_type) {
+                    old_name = hints.prev_type_name;
                 } else {
                     old_name = "0x" + NStr::UIntToString(old, 16);
                 }
@@ -838,22 +886,21 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
                            << " for " << tokens[1]);
             }
         } else {
-            prev_type_name = it->first;
-            TAccInfo value = prev_type = it->second;
+            SSubMap& submap = hints.FindSubMap(rules, fmt);
             if (tokens.size() == 4) {
                 value = TAccInfo(value | CSeq_id::fAcc_specials);
             }
             if (tokens[1].find_first_of("?*") == NPOS) {
-                rules[fmt].prefixes[tokens[1]] = value;
+                submap.prefixes[tokens[1]] = value;
             } else {
                 // Account for possible refinements of fallback definitions
-                NON_CONST_ITERATE (TPairs, wit, rules[fmt].wildcards) {
+                NON_CONST_ITERATE (TPairs, wit, submap.wildcards) {
                     if (wit->first == tokens[1]) {
                         wit->second = value;
                         return;
                     }
                 }
-                rules[fmt].wildcards.push_back(TPair(tokens[1], value));
+                submap.wildcards.push_back(TPair(tokens[1], value));
             }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
@@ -861,14 +908,14 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
         pos2 = tokens[1].find('-', pos);
         TFormatCode fmt
             = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
-        if (it == sc_AccInfoMap.end()) {
+        TAccInfo value = hints.FindAccInfo(tokens[2]);
+        if (value == kUnrecognized) {
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
             if (old) {
                 string old_name;
-                if (old == prev_type) {
-                    old_name = prev_type_name;
+                if (old == hints.prev_type) {
+                    old_name = hints.prev_type_name;
                 } else {
                     old_name = "0x" + NStr::UIntToString(old, 16);
                 }
@@ -885,22 +932,34 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
                            << " for stray(!) special case " << tokens[1]);
             }
         } else {
-            prev_type_name = it->first;
-            TAccInfo value = prev_type = it->second;
+            SSubMap& submap = hints.FindSubMap(rules, fmt);
             if (pos2 == NPOS) {
-                rules[fmt].specials[tokens[1]] = TPair(tokens[1], value);
+                tmp1 = tmp2 = tokens[1];
+            } else {
+                tmp1.assign(tokens[1], 0, pos2);
+                tmp2.assign(tokens[1], pos2 + 1, NPOS);
+            }
+            hints.prev_special
+                = submap.specials.insert(hints.prev_special,
+                                         make_pair(tmp2, TPair(tmp1, value)));
+            // Account for possible refinement.
+            hints.prev_special->second.second = value;
+            /*
+            if (pos2 == NPOS) {
+                submap.specials[tokens[1]] = TPair(tokens[1], value);
             } else {
                 // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
                 tmp1.assign(tokens[1], 0, pos2);
                 tmp2.assign(tokens[1], pos2 + 1, NPOS);
-                rules[fmt].specials[tmp2] = TPair(tmp1, value);
+                submap.specials[tmp2] = TPair(tmp1, value);
             }
+            */
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
         string key(tokens[1]);
         NStr::ToUpper(key);
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
-        if (it == sc_AccInfoMap.end()) {
+        TAccInfo value = hints.FindAccInfo(tokens[2]);
+        if (value == kUnrecognized) {
             TPrefixes::const_iterator it2 = general.find(key);
             if (it2 == general.end()) {
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
@@ -908,8 +967,8 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
                            << " for " << key);
             } else {
                 string old_name;
-                if (it2->second == prev_type) {
-                    old_name = prev_type_name;
+                if (it2->second == hints.prev_type) {
+                    old_name = hints.prev_type_name;
                 } else {
                     old_name = "0x" + NStr::UIntToString(it2->second, 16);
                 }
@@ -919,8 +978,7 @@ void SAccGuide::AddRule(const CTempString& rule, TAccInfo& prev_type,
                            << tokens[2]);
             }
         } else {
-            prev_type_name = it->first;
-            general[key] = prev_type = it->second;
+            general[key] = value;
         }
     } else {
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
@@ -998,10 +1056,9 @@ SAccGuide::SAccGuide(void)
         }
         static const unsigned int kNumBuiltInRules
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
-        TAccInfo    prev_type = CSeq_id::eAcc_unknown;
-        CTempString prev_type_name;
+        SHints hints;
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
-            AddRule(kBuiltInGuide[i], prev_type, prev_type_name);
+            AddRule(kBuiltInGuide[i], hints);
         }
     }
     x_InitGeneral();
@@ -1030,10 +1087,9 @@ void SAccGuide::x_Load(const string& filename)
 
 void SAccGuide::x_Load(ILineReader& in)
 {
-    TAccInfo    prev_type = CSeq_id::eAcc_unknown;
-    CTempString prev_type_name;
+    SHints hints;
     do {
-        AddRule(*++in, prev_type, prev_type_name);
+        AddRule(*++in, hints);
     } while ( !in.AtEOF() );
 }
 
