@@ -1629,7 +1629,8 @@ esac
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug max-debug symbols optimization profiling tcheck dll static static-exe \
+debug max-debug symbols optimization profiling code-coverage \
+tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
 lfs limited-linker openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
@@ -1855,6 +1856,7 @@ Optional Packages:
  --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
  --with-profiling        build profiled versions of libs and apps
+ --with-code-coverage    track which code blocks have been exercised
  --with-tcheck(=DIR)     build for Intel Thread Checker (in DIR)
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
@@ -3047,6 +3049,12 @@ fi
 # Check whether --with-profiling was given.
 if test "${with_profiling+set}" = set; then
   withval=$with_profiling;
+fi
+
+
+# Check whether --with-code-coverage was given.
+if test "${with_code_coverage+set}" = set; then
+  withval=$with_code_coverage;
 fi
 
 
@@ -11137,6 +11145,24 @@ if test "$with_profiling" = "yes" ; then
    STRIP="@:" # Stripping may lose profiling info
 else
    prof_sfx=
+fi
+
+
+#### Code coverage
+if test "$with_code_coverage" = "yes"; then
+   case "$compiler" in
+      GCC ) # including Clang
+         COVFLAGS="--coverage"
+         ;;
+      * )
+         { { echo "$as_me:$LINENO: error: --with-code-coverage not implemented for $compiler" >&5
+echo "$as_me: error: --with-code-coverage not implemented for $compiler" >&2;}
+   { (exit 1); exit 1; }; }
+         ;;
+   esac
+   CFLAGS="$CFLAGS $COVFLAGS"
+   CXXFLAGS="$CXXFLAGS $COVFLAGS"
+   LDFLAGS="$LDFLAGS $COVFLAGS"
 fi
 
 

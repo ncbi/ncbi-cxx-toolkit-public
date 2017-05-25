@@ -129,6 +129,8 @@ AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(profiling,
    [ --with-profiling        build profiled versions of libs and apps])
+AC_ARG_WITH(code-coverage,
+   [ --with-code-coverage    track which code blocks have been exercised])
 AC_ARG_WITH(tcheck,
    [ --with-tcheck(=DIR)     build for Intel Thread Checker (in DIR)])
 AC_ARG_WITH(dll,
@@ -565,7 +567,8 @@ dnl to which AC_MSG_ERROR normally copies its output, to be available.
 m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug max-debug symbols optimization profiling tcheck dll static static-exe \
+debug max-debug symbols optimization profiling code-coverage \
+tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
 lfs limited-linker openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
@@ -2634,6 +2637,22 @@ if test "$with_profiling" = "yes" ; then
    STRIP="@:" # Stripping may lose profiling info
 else
    prof_sfx=
+fi
+
+
+#### Code coverage
+if test "$with_code_coverage" = "yes"; then
+   case "$compiler" in
+      GCC ) # including Clang
+         COVFLAGS="--coverage"
+         ;;
+      * )
+         AC_MSG_ERROR([--with-code-coverage not implemented for $compiler])
+         ;;
+   esac
+   CFLAGS="$CFLAGS $COVFLAGS"
+   CXXFLAGS="$CXXFLAGS $COVFLAGS"
+   LDFLAGS="$LDFLAGS $COVFLAGS"
 fi
 
 
