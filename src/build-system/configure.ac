@@ -572,7 +572,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb static-vdb \
+geo included-geo vdb downloaded-vdb static-vdb libunwind \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -634,8 +634,9 @@ for x_arg in "$@" ; do
       --with-vdb=rc ) ;;
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
-      | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
-      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-mbedtls=* \
+      | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-libunwind=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* \
+      | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
