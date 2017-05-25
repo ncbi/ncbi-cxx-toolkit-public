@@ -531,20 +531,20 @@ AC_ARG_WITH(ncbi-crypt,
    [ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt])
 AC_ARG_WITH(connext,
    [ --without-connext       do not build non-public CONNECT library extensions])
-AC_ARG_WITH(serial,
-   [ --without-serial        do not build the serialization library and tools])
-AC_ARG_WITH(objects,
-   [ --without-objects       do not generate/build serializeable objects from ASNs])
-AC_ARG_WITH(dbapi,
-   [ --without-dbapi         do not build database connectivity libraries])
+dnl AC_ARG_WITH(serial,
+dnl    [ --without-serial        do not build the serialization library and tools])
+dnl AC_ARG_WITH(objects,
+dnl    [ --without-objects       do not generate/build serializeable objects from ASNs])
+dnl AC_ARG_WITH(dbapi,
+dnl    [ --without-dbapi         do not build database connectivity libraries])
 AC_ARG_WITH(app,
    [ --without-app           do not build standalone applications like ID1_FETCH])
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
    [ --without-gui           do not build most graphical projects])
-AC_ARG_WITH(algo,
-   [ --without-algo          do not build CPU-intensive algorithms])
+dnl AC_ARG_WITH(algo,
+dnl    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
    [ --with-internal         always try to build internal projects])
 AC_ARG_WITH(internal,
@@ -774,6 +774,13 @@ case "$with_static_gnutls:$with_gnutls" in
       with_static_gnutls=$with_ncbi_public
       ;;
 esac
+
+m4_foreach(OPT, [serial,objects,dbapi,algo],
+   [if test -n "[$with_]OPT"; then
+       AC_MSG_WARN([--with(out)-]OPT[ is deprecated])
+       AC_MSG_WARN([please simply pass an appropriate project list])
+    fi
+   ])
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then

@@ -2051,13 +2051,9 @@ Optional Packages:
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
  --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt
  --without-connext       do not build non-public CONNECT library extensions
- --without-serial        do not build the serialization library and tools
- --without-objects       do not generate/build serializeable objects from ASNs
- --without-dbapi         do not build database connectivity libraries
  --without-app           do not build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
  --without-gui           do not build most graphical projects
- --without-algo          do not build CPU-intensive algorithms
  --with-internal         always try to build internal projects
  --without-internal      never build internal projects
  --with-gbench           ensure that Genome Workbench can be built
@@ -4242,24 +4238,6 @@ if test "${with_connext+set}" = set; then
 fi
 
 
-# Check whether --with-serial was given.
-if test "${with_serial+set}" = set; then
-  withval=$with_serial;
-fi
-
-
-# Check whether --with-objects was given.
-if test "${with_objects+set}" = set; then
-  withval=$with_objects;
-fi
-
-
-# Check whether --with-dbapi was given.
-if test "${with_dbapi+set}" = set; then
-  withval=$with_dbapi;
-fi
-
-
 # Check whether --with-app was given.
 if test "${with_app+set}" = set; then
   withval=$with_app;
@@ -4275,12 +4253,6 @@ fi
 # Check whether --with-gui was given.
 if test "${with_gui+set}" = set; then
   withval=$with_gui;
-fi
-
-
-# Check whether --with-algo was given.
-if test "${with_algo+set}" = set; then
-  withval=$with_algo;
 fi
 
 
@@ -4523,6 +4495,32 @@ echo "$as_me: error: incompatible options: --without-gnutls but --with-static-gn
       with_static_gnutls=$with_ncbi_public
       ;;
 esac
+
+if test -n "$with_serial"; then
+       { echo "$as_me:$LINENO: WARNING: --with(out)-serial is deprecated" >&5
+echo "$as_me: WARNING: --with(out)-serial is deprecated" >&2;}
+       { echo "$as_me:$LINENO: WARNING: please simply pass an appropriate project list" >&5
+echo "$as_me: WARNING: please simply pass an appropriate project list" >&2;}
+    fi
+   if test -n "$with_objects"; then
+       { echo "$as_me:$LINENO: WARNING: --with(out)-objects is deprecated" >&5
+echo "$as_me: WARNING: --with(out)-objects is deprecated" >&2;}
+       { echo "$as_me:$LINENO: WARNING: please simply pass an appropriate project list" >&5
+echo "$as_me: WARNING: please simply pass an appropriate project list" >&2;}
+    fi
+   if test -n "$with_dbapi"; then
+       { echo "$as_me:$LINENO: WARNING: --with(out)-dbapi is deprecated" >&5
+echo "$as_me: WARNING: --with(out)-dbapi is deprecated" >&2;}
+       { echo "$as_me:$LINENO: WARNING: please simply pass an appropriate project list" >&5
+echo "$as_me: WARNING: please simply pass an appropriate project list" >&2;}
+    fi
+   if test -n "$with_algo"; then
+       { echo "$as_me:$LINENO: WARNING: --with(out)-algo is deprecated" >&5
+echo "$as_me: WARNING: --with(out)-algo is deprecated" >&2;}
+       { echo "$as_me:$LINENO: WARNING: please simply pass an appropriate project list" >&5
+echo "$as_me: WARNING: please simply pass an appropriate project list" >&2;}
+    fi
+
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
