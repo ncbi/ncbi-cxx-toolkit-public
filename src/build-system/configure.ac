@@ -719,6 +719,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
+   : ${with_pcre=no} # Too much variation across distributions.
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
 fi
