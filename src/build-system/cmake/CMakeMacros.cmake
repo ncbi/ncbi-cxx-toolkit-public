@@ -27,6 +27,37 @@ macro(find_package arg_mod)
 
     if (${${arg_mod}_FOUND})
         list(APPEND NCBI_MODULES_FOUND ${arg_mod})
+
+        #
+        # everything below is an insulation layer
+        # this is designed to make the standard C++ toolkit-type macros work
+        #
+
+        string(TOUPPER ${arg_mod} _arg_mod_upper)
+        if (DEFINED ${arg_mod}_LIBRARIES)
+            set(${_arg_mod_upper}_LIBS ${${arg_mod}_LIBRARIES})
+        elseif(DEFINED ${arg_mod}_LIBRARY)
+            set(${_arg_mod_upper}_LIBS ${${arg_mod}_LIBRARY})
+        elseif (DEFINED ${_arg_mod_upper}_LIBRARIES)
+            set(${_arg_mod_upper}_LIBS ${${_arg_mod_upper}_LIBRARIES})
+        elseif(DEFINED ${_arg_mod_upper}_LIBRARY)
+            set(${_arg_mod_upper}_LIBS ${${_arg_mod_upper}_LIBRARY})
+        endif()
+
+        if (DEFINED ${arg_mod}_INCLUDE_DIRS)
+            set(${_arg_mod_upper}_INCLUDE ${${arg_mod}_INCLUDE_DIRS})
+        elseif(DEFINED ${arg_mod}_INCLUDE_DIR)
+            set(${_arg_mod_upper}_INCLUDE ${${arg_mod}_INCLUDE_DIR})
+        elseif (DEFINED ${_arg_mod_upper}_INCLUDE_DIRS)
+            set(${_arg_mod_upper}_INCLUDE ${${_arg_mod_upper}_INCLUDE_DIRS})
+        elseif(DEFINED ${_arg_mod_upper}_INCLUDE_DIR)
+            set(${_arg_mod_upper}_INCLUDE ${${_arg_mod_upper}_INCLUDE_DIR})
+        endif()
+
+        if (_NCBI_MODULE_DEBUG)
+            message(STATUS "  FindPackage(): ${_arg_mod_upper}_INCLUDE = ${${_arg_mod_upper}_INCLUDE}")
+            message(STATUS "  FindPackage(): ${_arg_mod_upper}_LIBS = ${${_arg_mod_upper}_LIBS}")
+        endif()
     endif()
 endmacro()
 

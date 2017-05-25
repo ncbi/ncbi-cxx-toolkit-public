@@ -159,7 +159,6 @@ find_package(GnuTLS)
 if (GnuTLS_FOUND)
     set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${ZLIB_LIBRARIES} ${IDN_LIB} ${RT_LIBS} ${HOGWEED_LIB} ${NETTLE_LIB} ${GMP_LIB})
     set(GNUTLS_LIBS ${GNUTLS_LIBRARIES})
-    set(GNUTLS_INCLUDE ${GNUTLS_INCLUDE_DIR})
 endif()
 
 ############################################################################
