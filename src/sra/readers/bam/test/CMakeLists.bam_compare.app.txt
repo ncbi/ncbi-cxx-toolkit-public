@@ -1,5 +1,5 @@
 add_executable(bam_compare-app
-    bam_compare samtools
+    bam_compare samtools bam_test_common
 )
 
 set_target_properties(bam_compare-app PROPERTIES OUTPUT_NAME bam_compare)
