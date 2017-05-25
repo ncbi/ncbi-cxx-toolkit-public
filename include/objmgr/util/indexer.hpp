@@ -79,7 +79,8 @@ public:
 
     enum EFlags {
         // general policy flags to use for all records
-        fSkipRemoteFeatures = 1 << 1
+        fDefaultIndexing = 0,
+        fSkipRemoteFeatures = 1
     };
 
     typedef unsigned int TFlags; // binary OR of "EFlags"
@@ -218,6 +219,8 @@ public:
     CRef<CScope> GetScope (void) const { return m_scope; }
     feature::CFeatTree& GetFeatTree (void) { return m_featTree; }
 
+    CBioseq_Handle GetDeltaHandle (void) const { return m_deltaBsh; }
+
     // Seq-id field
     const string& GetAccession (void) const { return m_Accession; }
 
@@ -261,6 +264,7 @@ private:
     bool m_featsInitialized;
     vector<CRef<CFeatureIndex>> m_sfxList;
     feature::CFeatTree m_featTree;
+    CBioseq_Handle m_deltaBsh;
 
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_featIndexMap;
@@ -347,7 +351,7 @@ class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObject
     friend class CBioseqIndex;
 public:
     // Constructor
-    CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CBioseqIndex& bsx);
+    CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CConstRef<CSeq_loc> fl, CBioseqIndex& bsx);
 
     // Destructor
     ~CFeatureIndex (void);
@@ -361,6 +365,7 @@ public:
     // Getters
     CSeq_feat_Handle GetSeqFeatHandle (void) const { return m_sfh; }
     const CMappedFeat GetMappedFeat (void) const { return m_mf; }
+    CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_fl; }
     CBioseqIndex& GetBioseqIndex (void) const { return m_bsx; }
 
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mrna)
@@ -372,6 +377,7 @@ public:
 private:
     CSeq_feat_Handle m_sfh;
     const CMappedFeat m_mf;
+    CConstRef<CSeq_loc> m_fl;
     CBioseqIndex& m_bsx;
 
     CSeqFeatData::ESubtype m_subtype;

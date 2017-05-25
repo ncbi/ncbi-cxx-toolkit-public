@@ -249,6 +249,10 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryInd
 CBioseqIndex::~CBioseqIndex (void)
 
 {
+    // remove temporary delta
+    if (m_deltaBsh) {
+        m_scope->RemoveBioseq(m_deltaBsh);
+    }
 }
 
 // Descriptor collection (delayed until needed)
@@ -363,9 +367,12 @@ void CBioseqIndex::x_InitFeats (void)
     // iterate features on Bioseq
     for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
         const CMappedFeat mf = *feat_it;
-
         CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
-        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
+
+        const CSeq_feat& mpd = mf.GetOriginalFeature();
+        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
+
+        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
         m_sfxList.push_back(sfx);
 
         m_featTree.AddFeature(mf);
@@ -373,6 +380,127 @@ void CBioseqIndex::x_InitFeats (void)
         // index CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
     }
+}
+
+DEFINE_STATIC_MUTEX(idx_UniqueIdMutex);
+static size_t idx_UniqueIdOffset = 0;
+CRef<CSeq_id> idx_MakeUniqueId(CScope& scope)
+{
+    CMutexGuard guard(idx_UniqueIdMutex);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    bool good = false;
+    while (!good) {
+        id->SetLocal().SetStr("tmp_delta" + NStr::NumericToString(idx_UniqueIdOffset));
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
+        if (bsh) {
+            idx_UniqueIdOffset++;
+        } else {
+            good = true;
+        }
+    }
+    return id;
+}
+
+static CRef<CBioseq> idx_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CRef<CBioseq> seq(new CBioseq());
+    seq->SetId().push_back(idx_MakeUniqueId(scope));
+    seq->SetInst().Assign(bsh.GetInst());
+    seq->SetInst().ResetSeq_data();
+    seq->SetInst().ResetExt();
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    CRef<CDelta_seq> element(new CDelta_seq());
+    element->SetLoc().Assign(loc);
+    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
+    seq->SetInst().SetLength(sequence::GetLength(*loc.GetId(), &scope));
+    return seq;
+}
+
+static CRef<CSeq_loc> idx_FixId(const CSeq_loc& loc, const CSeq_id& orig, const CSeq_id& temporary)
+{
+    bool any_change = false;
+    CRef<CSeq_loc> new_loc(new CSeq_loc());
+    new_loc->Assign(loc);
+    CSeq_loc_I it(*new_loc);
+    for (; it; ++it) {
+        const CSeq_id& id = it.GetSeq_id();
+        if (id.Equals(temporary)) {            
+            it.SetSeq_id(orig);
+            any_change = true;
+        }
+    }
+    if (any_change) {
+        new_loc->Assign(*it.MakeSeq_loc());
+    }
+    return new_loc;
+}
+
+static
+CConstRef<CSeq_loc> idx_NormalizeNullsBetween( CConstRef<CSeq_loc> loc, bool force_adding_nulls = false )
+{
+    if( ! loc ) {
+        return loc;
+    }
+
+    if( ! loc->IsMix() || ! loc->GetMix().IsSet() ) {
+        return loc;
+    }
+
+    if( loc->GetMix().Get().size() < 2 ) {
+        return loc;
+    }
+
+    bool need_to_normalize = false;
+    if( force_adding_nulls ) {
+        // user forces us to add NULLs
+        need_to_normalize = true;
+    } else {
+        // first check for the common cases of not having to normalize anything
+        CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Allow );
+        bool saw_multiple_non_nulls_in_a_row = false;
+        bool last_was_null = true; // edges considered NULL for our purposes here
+        bool any_null_seen = false; // edges don't count here, though
+        for ( ; loc_ci ; ++loc_ci ) {
+            if( loc_ci.IsEmpty() ) {
+                last_was_null = true;
+                any_null_seen = true;
+            } else {
+                if( last_was_null ) {
+                    last_was_null = false;
+                } else {
+                    // two non-nulls in a row
+                    saw_multiple_non_nulls_in_a_row = true;
+                }
+            }
+        }
+
+        need_to_normalize = ( any_null_seen && saw_multiple_non_nulls_in_a_row );
+    }
+
+    if( ! need_to_normalize ) {
+        return loc;
+    }
+
+    // normalization is needed
+    // it's very rare that we actually have to do the normalization.
+    CRef<CSeq_loc> null_loc( new CSeq_loc );
+    null_loc->SetNull();
+
+    CRef<CSeq_loc> new_loc( new CSeq_loc );
+    CSeq_loc_mix::Tdata &mix_data = new_loc->SetMix().Set();
+    CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Skip );
+    for( ; loc_ci ; ++loc_ci ) {
+        if( ! mix_data.empty() ) {
+            mix_data.push_back( null_loc );
+        }
+        CRef<CSeq_loc> loc_piece( new CSeq_loc );
+        loc_piece->Assign( *loc_ci.GetRangeAsSeq_loc() );
+        mix_data.push_back( loc_piece );
+    }
+
+    return new_loc;
 }
 
 // Feature collection on location
@@ -392,20 +520,25 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
     SAnnotSelector sel;
 
-    if (m_onlyNearFeats) {
-        sel.SetResolveDepth(0);
-    } else {
-        sel.SetResolveAll();
-        sel.SetResolveDepth(kMax_Int);
-        sel.SetAdaptiveDepth(true);
-    }
+    sel.SetResolveAll();
+    sel.SetResolveDepth(kMax_Int);
+    sel.SetAdaptiveDepth(true);
+
+    // use temporary delta for selector
+    CRef<CBioseq> delta = idx_MakeTemporaryDelta(loc, *m_scope);
+    m_deltaBsh = m_scope->AddBioseq(*delta);
 
     // iterate features on location
-    for (CFeat_CI feat_it(*m_scope, loc, sel); feat_it; ++feat_it) {
+    for (CFeat_CI feat_it(m_deltaBsh, sel); feat_it; ++feat_it) {
         const CMappedFeat mf = *feat_it;
-
         CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
-        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
+
+        const CSeq_feat& mpd = mf.GetMappedFeature();
+        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
+        fl = idx_FixId(*fl, *(m_bsp.GetId().front()), *(delta->GetId().front()));
+        fl = idx_NormalizeNullsBetween( fl );
+
+        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
         m_sfxList.push_back(sfx);
 
         m_featTree.AddFeature(mf);
@@ -479,8 +612,8 @@ CDescriptorIndex::~CDescriptorIndex (void)
 // CFeatureIndex
 
 // Constructor
-CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CBioseqIndex& bsx)
-    : m_sfh(sfh), m_mf(mf), m_bsx(bsx)
+CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CConstRef<CSeq_loc> fl, CBioseqIndex& bsx)
+    : m_sfh(sfh), m_mf(mf), m_fl(fl), m_bsx(bsx)
 {
     m_subtype = m_mf.GetData().GetSubtype();
 }
