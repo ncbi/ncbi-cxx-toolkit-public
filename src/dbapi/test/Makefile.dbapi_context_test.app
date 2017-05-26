@@ -15,7 +15,7 @@ LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) $(FTDS64_LIBS) \
 
 REQUIRES = Boost.Test.Included
 
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = connext in-house-resources
 
 CHECK_COPY = dbapi_context_test.ini
 
