@@ -36,6 +36,12 @@
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
 
+#include <array>
+#include <deque>
+#include <list>
+#include <memory>
+#include <utility>
+
 
 #define NCBI_USE_ERRCODE_X   ConnServ_ReadWrite
 
@@ -45,6 +51,125 @@ static const char s_JobOutputPrefixEmbedded[] = "D ";
 static const char s_JobOutputPrefixNetCache[] = "K ";
 
 #define JOB_OUTPUT_PREFIX_LEN 2
+
+struct SMultiWriter : IEmbeddedStreamWriter
+{
+    SMultiWriter(initializer_list<IEmbeddedStreamWriter*> init);
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override;
+    ERW_Result Flush() override;
+
+    void Close() override;
+    void Abort() override;
+
+private:
+    using TBuffer = deque<char>;
+    using TWriter = unique_ptr<IEmbeddedStreamWriter>;
+    using TWriterPos = size_t;
+    using TWriterInfo = pair<TWriter, TWriterPos>;
+    using TWriters = list<TWriterInfo>;
+
+    template <class TAction>
+    void Do(TAction action);
+
+    TBuffer m_Buffer;
+    TWriters m_Writers;
+};
+
+SMultiWriter::SMultiWriter(initializer_list<IEmbeddedStreamWriter*> init)
+{
+    for (auto p : init) {
+        m_Writers.emplace_back(TWriter(p), 0);
+    }
+}
+
+template <class TAction>
+void SMultiWriter::Do(TAction action)
+{
+    auto i = m_Writers.begin();
+
+    while (i != m_Writers.end()) {
+        try {
+            if (action(i)) {
+                ++i;
+                continue;
+            }
+        }
+        catch (...) {
+        }
+
+        i = m_Writers.erase(i);
+    }
+}
+
+ERW_Result SMultiWriter::Write(const void* buf, size_t count, size_t* bytes_written)
+{
+    if (bytes_written) *bytes_written = count;
+    if (!count) return eRW_Success;
+
+    m_Buffer.insert(m_Buffer.end(), static_cast<const char*>(buf), static_cast<const char*>(buf) + count);
+    bool all_failed = true;
+
+    Do([&](TWriters::iterator i) {
+        array<char, 1024 * 1024> buf;
+
+        for (;;) {
+            auto start = m_Buffer.cbegin() + i->second;
+            const size_t max = distance(start, m_Buffer.cend());
+            size_t to_write = min(buf.size(), max);
+
+            if (!to_write) return true;
+
+            copy_n(start, to_write, buf.begin());
+
+            char* data = buf.data();
+            size_t written = 0;
+
+            while (to_write) {
+                switch (i->first->Write(data, to_write, &written)) {
+                case eRW_Success:
+                    all_failed = false;
+                    data += written;
+                    to_write -= written;
+                    i->second += written;
+                    continue;
+
+                case eRW_Timeout:
+                    return true;
+
+                default:
+                    return false;
+                }
+            }
+        }
+    });
+
+    return all_failed ? eRW_Error : eRW_Success;
+}
+
+ERW_Result SMultiWriter::Flush()
+{
+    Do([](TWriters::iterator i) {
+        return i->first->Flush() != eRW_Error;
+    });
+
+    return m_Writers.empty() ? eRW_Error : eRW_Success;
+}
+
+void SMultiWriter::Close()
+{
+    Do([](TWriters::iterator i) {
+        i->first->Close();
+        return true;
+    });
+}
+
+void SMultiWriter::Abort()
+{
+    Do([](TWriters::iterator i) {
+        i->first->Abort();
+        return true;
+    });
+}
 
 CStringOrBlobStorageWriter::CStringOrBlobStorageWriter(size_t max_string_size,
         SNetCacheAPIImpl* storage, string& job_output_ref) :
