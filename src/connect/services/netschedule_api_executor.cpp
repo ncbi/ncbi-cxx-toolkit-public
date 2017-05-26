@@ -53,6 +53,8 @@ bool s_DoParseGet2JobResponse(CNetScheduleJob& job, const string& response)
         eClientSessionID,
         ePageHitID,
         eJobMask,
+        eSubmitterNotifHost,
+        eSubmitterNotifPort,
         eNumberOfJobBits
     };
     int job_bits = 0;
@@ -90,7 +92,24 @@ bool s_DoParseGet2JobResponse(CNetScheduleJob& job, const string& response)
         } else if (field->name == "ncbi_phid") {
             job_bits |= (1 << ePageHitID);
             job.page_hit_id = field->value;
+
+        } else if (field->name == "submitter_notif_host") {
+            job_bits |= (1 << eSubmitterNotifHost);
+            job.submitter.first = field->value;
+
+        } else if (field->name == "submitter_notif_port") {
+            job_bits |= (1 << eSubmitterNotifPort);
+            job.submitter.second = static_cast<unsigned short>(stoul(field->value));
+
+        // TODO: Remove after there are no NetSchedule servers of version 4.30.0 (with this typo)
+        } else if (field->name == "sumbitter_notif_host") {
+            job_bits |= (1 << eSubmitterNotifHost);
+            job.submitter.first = field->value;
+        } else if (field->name == "sumbitter_notif_port") {
+            job_bits |= (1 << eSubmitterNotifPort);
+            job.submitter.second = static_cast<unsigned short>(stoul(field->value));
         }
+        // TODO: End
 
         if (job_bits == (1 << eNumberOfJobBits) - 1)
             break;

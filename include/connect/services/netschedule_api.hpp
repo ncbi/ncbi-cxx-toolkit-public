@@ -378,6 +378,8 @@ struct CNetScheduleJob : CNetScheduleNewJob
 
     /// The server the job belongs to.
     CNetServer server;
+
+    pair<string, unsigned short> submitter;
 };
 
 struct SNetScheduleSubmitterImpl;
