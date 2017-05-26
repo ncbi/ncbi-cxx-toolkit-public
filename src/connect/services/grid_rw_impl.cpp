@@ -43,7 +43,6 @@
 #include <array>
 #include <deque>
 #include <list>
-#include <memory>
 #include <utility>
 #include <sstream>
 
@@ -270,62 +269,68 @@ void SMultiWriter::Abort()
     });
 }
 
-CStringOrBlobStorageWriter::CStringOrBlobStorageWriter(size_t max_string_size,
-        SNetCacheAPIImpl* storage, string& job_output_ref) :
-    m_Storage(storage), m_Data(job_output_ref), m_MaxBuffSize(max_string_size)
+CStringOrWriter::CStringOrWriter(size_t max_data_size, string& data_ref, TWriterCreate writer_create) :
+    m_MaxDataSize(max_data_size),
+    m_Data(data_ref),
+    m_WriterCreate(writer_create)
 {
-    job_output_ref = s_JobOutputPrefixEmbedded;
+    m_Data = s_JobOutputPrefixEmbedded;
 }
 
-ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
-                                             size_t      count,
-                                             size_t*     bytes_written)
+ERW_Result CStringOrWriter::Write(const void* buf, size_t count, size_t* bytes_written)
 {
-    if (m_NetCacheWriter.get())
-        return m_NetCacheWriter->Write(buf, count, bytes_written);
+    if (m_Writer) return m_Writer->Write(buf, count, bytes_written);
 
-    if (m_Data.size() + count <= m_MaxBuffSize) {
+    if (m_Data.size() + count <= m_MaxDataSize) {
         m_Data.append((const char*) buf, count);
 
-        if (bytes_written != NULL)
-            *bytes_written = count;
+        if (bytes_written) *bytes_written = count;
         return eRW_Success;
     }
 
     string key;
-    m_NetCacheWriter.reset(m_Storage.PutData(&key));
+    unique_ptr<IEmbeddedStreamWriter> writer(m_WriterCreate(key));
+
+    if (!writer) return eRW_Error;
 
     if (m_Data.size() > JOB_OUTPUT_PREFIX_LEN) {
-        ERW_Result ret = m_NetCacheWriter->Write(
+        ERW_Result ret = writer->Write(
             m_Data.data() + JOB_OUTPUT_PREFIX_LEN,
             m_Data.size() - JOB_OUTPUT_PREFIX_LEN);
 
-        if (ret != eRW_Success) {
-            m_NetCacheWriter.reset(NULL);
-            return ret;
-        }
+        if (ret != eRW_Success) return ret;
     }
 
     m_Data = s_JobOutputPrefixNetCache + key;
 
-    return m_NetCacheWriter->Write(buf, count, bytes_written);
+    m_Writer = move(writer);
+    return m_Writer->Write(buf, count, bytes_written);
 }
 
-ERW_Result CStringOrBlobStorageWriter::Flush(void)
+ERW_Result CStringOrWriter::Flush(void)
 {
-    return m_NetCacheWriter.get() ? m_NetCacheWriter->Flush() : eRW_Success;
+    return m_Writer ? m_Writer->Flush() : eRW_Success;
 }
 
-void CStringOrBlobStorageWriter::Close()
+void CStringOrWriter::Close()
 {
-    if (m_NetCacheWriter.get())
-        m_NetCacheWriter->Close();
+    if (m_Writer) m_Writer->Close();
 }
 
-void CStringOrBlobStorageWriter::Abort()
+void CStringOrWriter::Abort()
 {
-    if (m_NetCacheWriter.get())
-        m_NetCacheWriter->Abort();
+    if (m_Writer) m_Writer->Abort();
+}
+
+CStringOrWriter::TWriterCreate s_NetCacheWriterCreate(CNetCacheAPI api)
+{
+    return [api](string& key) mutable { return api.PutData(&key); };
+}
+
+CStringOrBlobStorageWriter::CStringOrBlobStorageWriter(size_t max_string_size,
+        SNetCacheAPIImpl* storage, string& job_output_ref) :
+    CStringOrWriter(max_string_size, job_output_ref, s_NetCacheWriterCreate(storage))
+{
 }
 
 CNcbiOstream& SGridWrite::operator()(CNetCacheAPI nc_api, size_t embedded_max_size, string& data)

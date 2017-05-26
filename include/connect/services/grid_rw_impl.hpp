@@ -37,7 +37,30 @@
 
 #include <corelib/reader_writer.hpp>
 
+#include <functional>
+#include <memory>
+
 BEGIN_NCBI_SCOPE
+
+class NCBI_XCONNECT_EXPORT CStringOrWriter : public IEmbeddedStreamWriter
+{
+public:
+    using TWriterCreate = function<IEmbeddedStreamWriter*(string&)>;
+
+    CStringOrWriter(size_t max_data_size, string& data_ref, TWriterCreate writer_create);
+
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override;
+    ERW_Result Flush() override;
+
+    void Close() override;
+    void Abort() override;
+
+private:
+    size_t m_MaxDataSize;
+    string& m_Data;
+    TWriterCreate m_WriterCreate;
+    unique_ptr<IEmbeddedStreamWriter> m_Writer;
+};
 
 /// String or Blob Storage Writer
 ///
@@ -49,27 +72,12 @@ BEGIN_NCBI_SCOPE
 /// In this case "data_or_key" parameter holds a blob key for the written data.
 ///
 class NCBI_XCONNECT_EXPORT CStringOrBlobStorageWriter :
-    public IEmbeddedStreamWriter
+    public CStringOrWriter
 {
 public:
     CStringOrBlobStorageWriter(size_t max_string_size,
                                SNetCacheAPIImpl* storage,
                                string& job_output_ref);
-
-    virtual ERW_Result Write(const void* buf,
-                             size_t      count,
-                             size_t*     bytes_written = 0);
-
-    virtual ERW_Result Flush(void);
-
-    virtual void Close();
-    virtual void Abort();
-
-private:
-    CNetCacheAPI m_Storage;
-    auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
-    string& m_Data;
-    size_t m_MaxBuffSize;
 };
 
 struct SGridWrite
