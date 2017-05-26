@@ -446,8 +446,10 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
     bool done = false;
 
     auto reader = [&] {
+        const auto host = static_cast<unsigned>(stoul(worker_node_host));
+        const auto port = static_cast<unsigned short>(stoul(worker_node_port));
         STimeout timeout{ 0, 1 };
-        CSocket socket(stoul(worker_node_host), stoul(worker_node_port), &timeout);
+        CSocket socket(host, port, &timeout);
         CSocketReaderWriter socket_reader(&socket);
         CTransmissionReader reader(&socket_reader);
         array<char, 1024 * 1024> buf;

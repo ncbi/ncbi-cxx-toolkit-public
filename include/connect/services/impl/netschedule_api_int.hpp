@@ -51,7 +51,7 @@ void g_AppendClientIPSessionIDHitID(string& cmd, bool = false);
 
 extern NCBI_XCONNECT_EXPORT
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
-        string* attr_values, int attr_count);
+        string* attr_values, size_t attr_count);
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,

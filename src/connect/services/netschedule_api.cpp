@@ -122,7 +122,7 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 }
 
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
-        string* attr_values, int attr_count)
+        string* attr_values, size_t attr_count)
 {
     try {
         CUrlArgs attr_parser(attr_string);
