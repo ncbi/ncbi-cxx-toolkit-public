@@ -43,6 +43,11 @@
 
 #include <stdio.h>
 #include <cmath>
+#include <array>
+#include <condition_variable>
+#include <deque>
+#include <mutex>
+#include <thread>
 
 BEGIN_NCBI_SCOPE
 
@@ -435,32 +440,106 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
         return false;
     }
 
-    STimeout timeout{ 0, 1 };
-    CSocket socket(stoul(worker_node_host), stoul(worker_node_port), &timeout);
-    CSocketReaderWriter socket_reader(&socket);
-    CTransmissionReader reader(&socket_reader);
+    mutex m;
+    condition_variable cv;
+    deque<char> d;
+    bool done = false;
 
-    array<char, 1024 * 1024> buf;
+    auto reader = [&] {
+        STimeout timeout{ 0, 1 };
+        CSocket socket(stoul(worker_node_host), stoul(worker_node_port), &timeout);
+        CSocketReaderWriter socket_reader(&socket);
+        CTransmissionReader reader(&socket_reader);
+        array<char, 1024 * 1024> buf;
+        bool eof = false;
 
-    for (;;) {
-        size_t bytes_read = 0;
+        while (!eof) {
+            char* data = buf.data();
+            size_t to_read = buf.size();
 
-        switch (reader.Read(buf.data(), buf.size(), &bytes_read)) {
-            case eRW_Success:
-                break;
+            while (!eof && to_read) {
+                ERW_Result status = eRW_Error;
+                size_t bytes_read = 0;
 
-            case eRW_Eof:
-                receiver.second->write(buf.data(), bytes_read);
-                /* FALL THROUGH */
+                try {
+                    status = reader.Read(data, to_read, &bytes_read);
+                }
+                catch (...) {
+                }
 
-            default:
-                job_status = CNetScheduleAPI::eDone;
-                *receiver.first = true;
-                return true;
+                switch (status) {
+                    case eRW_Success:
+                        break;
+
+                    case eRW_Eof:
+                        eof = true;
+                        break;
+
+                    default:
+                        eof = true;
+                        bytes_read = 0;
+                        break;
+                }
+
+                data += bytes_read;
+                to_read -= bytes_read;
+            }
+
+            unique_lock<mutex> lock(m);
+            d.insert(d.end(), buf.cbegin(), buf.cbegin() + (buf.size() - to_read));
+
+            if (done) eof = true;
+
+            done = eof;
+            lock.unlock();
+            cv.notify_one();
         }
+    };
 
-        receiver.second->write(buf.data(), bytes_read);
-    }
+    auto writer = [&] {
+        array<char, 1024 * 1024> buf;
+        bool eof = false;
+
+        while (!eof) {
+            char* data = buf.data();
+            size_t to_write = 0;
+
+            {
+                unique_lock<mutex> lock(m);
+
+                if (!receiver.second->good()) {
+                    done = true;
+                    return;
+                }
+
+                cv.wait(lock, [&]{ return d.size() || done; });
+
+                to_write = min(buf.size(), d.size());
+
+                if (to_write) {
+                    copy_n(d.cbegin(), to_write, buf.begin());
+                    d.erase(d.begin(), d.begin() + to_write);
+                }
+
+                eof = done;
+            }
+
+            try {
+                receiver.second->write(data, to_write);
+            }
+            catch (...) {
+                receiver.second->setstate(ios_base::badbit);
+            }
+        }
+    };
+
+    thread t(reader);
+    writer();
+    t.join();
+
+    job_status = CNetScheduleAPI::eDone;
+    *receiver.first = true;
+    return true;
 }
 
 CNetScheduleAPI::EJobStatus
