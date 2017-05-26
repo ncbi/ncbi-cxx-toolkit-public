@@ -229,7 +229,7 @@ public:
 
     /// Submit a job to the queue
     ///
-    CNetScheduleAPI::EJobStatus SubmitAndWait(unsigned wait_time);
+    CNetScheduleAPI::EJobStatus SubmitAndWait(unsigned wait_time, pair<bool*, CNcbiOstream*> = {});
 
     /// Wait for job to finish its execution (done/failed/canceled).
     /// @sa CNetScheduleAPI

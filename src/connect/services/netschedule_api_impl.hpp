@@ -454,7 +454,7 @@ struct SNetScheduleSubmitterImpl : public CObject
         const string& error_message);
 
     CNetScheduleAPI::EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
-            unsigned wait_time, time_t* job_exptime = NULL);
+            unsigned wait_time, time_t* job_exptime = NULL, pair<bool*, CNcbiOstream*> = {});
 
     void AppendClientIPSessionIDHitID(string& cmd, const string& job_group);
 

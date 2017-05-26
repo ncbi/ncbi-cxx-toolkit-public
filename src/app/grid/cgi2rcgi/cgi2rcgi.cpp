@@ -765,8 +765,21 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         grid_ctx.DefinePersistentEntry(kSinceTime,
             NStr::NumericToString(GetFastLocalTime().GetTimeT()));
 
+        bool output_written;
+        auto& out = grid_ctx.GetCGIContext().GetResponse().out();
+        auto receiver = make_pair(&output_written, &out);
+
         CNetScheduleAPI::EJobStatus status =
-                m_GridClient->SubmitAndWait(m_FirstDelay);
+                m_GridClient->SubmitAndWait(m_FirstDelay, receiver);
+
+        if (output_written) {
+            auto& job = m_GridClient->GetJob();
+            SetRequestId(job.job_id, true);
+
+            grid_ctx.NeedRenderPage(false);
+            grid_ctx.Clear();
+            return;
+        }
 
         CNetScheduleJob& job(m_GridClient->GetJob());
 
