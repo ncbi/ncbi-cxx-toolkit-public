@@ -820,7 +820,7 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
         return prev_submap->second;
     } else {
         SAccGuide::TMainMap::iterator it = rules.lower_bound(fmt);
-        if (it->first != fmt) {
+        if (it == rules.end() || it->first != fmt) {
             it = rules.insert(it, make_pair(fmt, SAccGuide::SSubMap()));
         }
         prev_submap = &*it;
