@@ -37,6 +37,10 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/util.hpp>
 
+#include <connect/ncbi_conn_reader_writer.hpp>
+
+#include <util/transmissionrw.hpp>
+
 #include <stdio.h>
 #include <cmath>
 
@@ -396,19 +400,18 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
 bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
         time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status, pair<bool*, CNcbiOstream*> receiver)
 {
-    array<string, 2> attr_values;
+    const char* const attr_names[] = {"job_key", "job_status", "worker_node_host", "worker_node_port"};
+    array<string, 4> attr_values;
     const string& received_job_id = attr_values[0];
     const string& received_job_status = attr_values[1];
+    const string& worker_node_host = attr_values[2];
+    const string& worker_node_port = attr_values[3];
 
-    g_ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values.data(), attr_values.size());
+    g_ParseNSOutput(m_Message, attr_names, attr_values.data(), attr_values.size());
 
     if (received_job_id != job.job_id) return false;
 
-    if (receiver.first && receiver.second) {
-        // TODO: Reading of direct output
-        *receiver.first = false;
-        return false;
-    }
+    if (ReadOutput(job_status, receiver, worker_node_host, worker_node_port)) return true;
 
     switch (CNetScheduleAPI::StringToStatus(received_job_status)) {
     case CNetScheduleAPI::eJobNotFound:
@@ -419,6 +422,44 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
     default:
         job_status = ns_api.GetJobDetails(job, job_exptime);
         return true;
+    }
+}
+
+bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
+        pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port)
+{
+    if (!receiver.first || !receiver.second) return false;
+
+    if (worker_node_host.empty() || worker_node_port.empty()) {
+        *receiver.first = false;
+        return false;
+    }
+
+    STimeout timeout{ 0, 1 };
+    CSocket socket(stoul(worker_node_host), stoul(worker_node_port), &timeout);
+    CSocketReaderWriter socket_reader(&socket);
+    CTransmissionReader reader(&socket_reader);
+
+    array<char, 1024 * 1024> buf;
+
+    for (;;) {
+        size_t bytes_read = 0;
+
+        switch (reader.Read(buf.data(), buf.size(), &bytes_read)) {
+            case eRW_Success:
+                break;
+
+            case eRW_Eof:
+                receiver.second->write(buf.data(), bytes_read);
+                /* FALL THROUGH */
+
+            default:
+                job_status = CNetScheduleAPI::eDone;
+                *receiver.first = true;
+                return true;
+        }
+
+        receiver.second->write(buf.data(), bytes_read);
     }
 }
 
