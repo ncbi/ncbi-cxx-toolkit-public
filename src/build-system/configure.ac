@@ -776,7 +776,7 @@ case "$with_static_gnutls:$with_gnutls" in
       with_gnutls=yes
       ;;
    :* )
-      with_static_gnutls=$with_ncbi_public
+      with_static_gnutls=$with_bin_release
       ;;
 esac
 
