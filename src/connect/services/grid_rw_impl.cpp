@@ -33,14 +33,19 @@
 
 #include <corelib/rwstream.hpp>
 
+#include <connect/ncbi_conn_reader_writer.hpp>
+
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <util/transmissionrw.hpp>
 
 #include <array>
 #include <deque>
 #include <list>
 #include <memory>
 #include <utility>
+#include <sstream>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_ReadWrite
@@ -51,6 +56,100 @@ static const char s_JobOutputPrefixEmbedded[] = "D ";
 static const char s_JobOutputPrefixNetCache[] = "K ";
 
 #define JOB_OUTPUT_PREFIX_LEN 2
+
+struct SDataDirectWriter : IEmbeddedStreamWriter
+{
+    SDataDirectWriter(const CNetScheduleJob& job);
+
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override;
+    ERW_Result Flush() override;
+
+    void Close() override;
+    void Abort() override;
+
+private:
+    bool Connect();
+
+    enum { Created, Connected, Off } m_State;
+    CListeningSocket m_ListeningSocket;
+    unique_ptr<CTransmissionWriter> m_TransmissionWriter;
+};
+
+SDataDirectWriter::SDataDirectWriter(const CNetScheduleJob& job) :
+    m_State(Off)
+{
+    if (m_ListeningSocket.Listen(0) != eIO_Success) return;
+
+    auto local_host = CSocketAPI::GetLocalHostAddress();
+    auto local_port = m_ListeningSocket.GetPort(eNH_HostByteOrder);
+
+    auto other_host = job.submitter.first;
+    auto other_port = job.submitter.second;
+
+    if (other_host.empty() || !other_port) return;
+
+    ostringstream oss;
+    oss << "job_key=" << job.job_id << "&job_status=ReadyToWrite&worker_node_host=" << local_host <<
+        "&worker_node_port=" << local_port;
+
+    CDatagramSocket udp_socket;
+    auto buf = oss.str();
+
+    if (udp_socket.Send(buf.data(), buf.size(), other_host, other_port) != eIO_Success) return;
+
+    m_State = Created;
+}
+
+bool SDataDirectWriter::Connect()
+{
+    CSocket* socket = nullptr;
+    STimeout timeout{ 0, 1 };
+
+    if (m_ListeningSocket.Accept(socket, &timeout) != eIO_Success) return false;
+
+    auto socket_writer = new CSocketReaderWriter(socket, eTakeOwnership, eIO_WritePlain);
+    m_TransmissionWriter.reset(new CTransmissionWriter(socket_writer, eTakeOwnership));
+    m_State = Connected;
+    return true;
+}
+
+ERW_Result SDataDirectWriter::Write(const void* buf, size_t count, size_t* bytes_written)
+{
+    if (m_State == Off) return eRW_Timeout;
+
+    if ((m_State != Connected) && !Connect()) return eRW_Timeout;
+
+    if (m_TransmissionWriter->Write(buf, count, bytes_written) == eRW_Success) return eRW_Success;
+
+    Abort();
+    return eRW_Error;
+}
+
+ERW_Result SDataDirectWriter::Flush()
+{
+    if (m_State != Connected) return eRW_Success;
+
+    if (m_TransmissionWriter->Flush() == eRW_Success) return eRW_Success;
+
+    Abort();
+    return eRW_Error;
+}
+
+void SDataDirectWriter::Close()
+{
+    if (m_State != Connected) return;
+
+    m_TransmissionWriter->SetSendEof(CTransmissionWriter::eSendEofPacket);
+    Abort();
+}
+
+void SDataDirectWriter::Abort()
+{
+    if (m_State != Connected) return;
+
+    m_TransmissionWriter->Close();
+    m_TransmissionWriter.reset();
+}
 
 struct SMultiWriter : IEmbeddedStreamWriter
 {
