@@ -100,7 +100,9 @@ public:
         eInvalidArg,    ///< Invalid argument error
         eInitFailed,    ///< Initialization failed
         eNoData,        ///< Data not found
-        eBadCIGAR       ///< Bad CIGAR string
+        eBadCIGAR,      ///< Bad CIGAR string
+        eInvalidBAMFormat, ///< Invalid data in BAM file
+        eInvalidBAIFormat  ///< Invalid data in BAM index file
     };
     /// Constructors.
     CBamException(const CDiagCompileInfo& info,

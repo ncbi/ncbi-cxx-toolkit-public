@@ -109,6 +109,8 @@ void CBAMTestApp::Init(void)
     arg_desc->AddFlag("verbose_weak_matches", "Print light mismatches");
     arg_desc->AddFlag("no_spot_id_detector",
                       "Do not use SpotId detector to resolve short id conflicts");
+    arg_desc->AddFlag("no_conflict_detector",
+                      "Do not run expensive conflict detection");
     arg_desc->AddFlag("make_seq_entry", "Generated Seq-entries");
     arg_desc->AddFlag("print_seq_entry", "Print generated Seq-entry");
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
@@ -446,6 +448,9 @@ int CBAMTestApp::Run(void)
         sv.SetCoding(CSeq_data::e_Iupacna);
     }
 
+    bool no_spot_id_detector = args["no_spot_id_detector"];
+    bool no_conflict_detector = args["no_conflict_detector"];
+    
     for ( int cycle = 0; cycle < 1; ++cycle ) {
         if ( cycle ) path = "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam";
         out << "File: " << path << NcbiEndl;
@@ -515,7 +520,7 @@ int CBAMTestApp::Run(void)
                 it = CBamAlignIterator(bam_db);
             }
             CRef<CSimpleSpotIdDetector> detector(new CSimpleSpotIdDetector);
-            if ( !args["no_spot_id_detector"] ) {
+            if ( !no_spot_id_detector ) {
                 it.SetSpotIdDetector(detector);
             }
             string p_ref_seq_id, p_short_seq_id, p_short_seq_acc, p_data, p_cigar;
@@ -764,7 +769,7 @@ int CBAMTestApp::Run(void)
                         }
                     }
                     out << flush;
-                    if ( qual >= min_quality ) {
+                    if ( !no_conflict_detector && qual >= min_quality ) {
                         if ( CRef<CBioseq> seq = it.GetShortBioseq() ) {
                             conflict_objstr << *seq;
                             conflict_objstr.FlushBuffer();

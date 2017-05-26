@@ -155,6 +155,8 @@ const char* CBamException::GetErrCodeString(void) const
     case eInitFailed:   return "eInitFailed";
     case eNoData:       return "eNoData";
     case eBadCIGAR:     return "eBadCIGAR";
+    case eInvalidBAMFormat: return "eInvalidBAMFormat";
+    case eInvalidBAIFormat: return "eInvalidBAIFormat";
     default:            return CException::GetErrCodeString();
     }
 }

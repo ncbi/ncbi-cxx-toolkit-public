@@ -90,12 +90,18 @@ void CBamIndexTestApp::Init(void)
                              "Title of generated Seq-graph",
                              CArgDescriptions::eString);
 
+    arg_desc->AddDefaultKey("limit_count", "LimitCount",
+                            "Number of BAM entries to read (0 - unlimited)",
+                            CArgDescriptions::eInteger,
+                            "100000");
+    
     arg_desc->AddFlag("bin", "Write binary ASN.1");
     
     arg_desc->AddFlag("file-range", "Print file range of alignements");
     arg_desc->AddFlag("dump", "Dump index");
     arg_desc->AddFlag("sra", "Use SRA toolkit");
     arg_desc->AddFlag("ST", "Single thread");
+    arg_desc->AddFlag("overstart", "Verify overstart info");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -116,7 +122,7 @@ void s_DumpIndex(const CBamIndex& index,
     for ( size_t i = ref_index; i <= ref_index; ++i ) {
         const SBamIndexRefIndex& r = index.GetRef(i);
         for ( size_t k = 0; k < r.m_Intervals.size(); ++k ) {
-            cout << "ref["<<i<<"] int["<<k<<" = "<<k*kBlockSize<<"] = "
+            cout << "ref["<<i<<"] linear["<<k<<" = "<<k*kBlockSize<<"] FP = "
                  << r.m_Intervals[k]
                  << endl;
         }
@@ -129,10 +135,10 @@ void s_DumpIndex(const CBamIndex& index,
     sort(cc.begin(), cc.end());
     CBGZFPos prev(0);
     for ( auto& v : cc ) {
-        cout << v.first.first << '-' << v.first.second
-             << " : ref[" << v.second.first << "] "
+        cout << "FP( " << v.first.first << " - " << v.first.second
+             << " ) : ref[" << v.second.first << "] bin(" << v.second.second << ") = "
              << SBamIndexBinInfo::GetSeqRange(v.second.second)
-             << endl;
+             << '\n';
         _ASSERT(v.first.first < v.first.second);
         if ( prev.GetVirtualPos() ) {
             if ( prev != v.first.first ) {
@@ -153,24 +159,32 @@ int CBamIndexTestApp::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
+    int error_code = 0;
+    
     if ( !ParseCommonArgs(args) ) {
         return 1;
     }
 
+    Uint8 limit_count = args["limit_count"].AsInteger();
+    
     CBamIndex::EIndexLevel level1 = CBamIndex::kMinLevel;
     CBamIndex::EIndexLevel level2 = CBamIndex::kMaxLevel;
     if ( args["l"] ) {
         level1 = level2 = CBamIndex::EIndexLevel(args["l"].AsInteger());
     }
-    
+
+    CStopWatch sw;
+    sw.Restart();
     CBamRawDb bam_raw_db(path, index_path);
+    cout << "Opened bam file in "<<sw.Elapsed()<<"s"<<endl;
 
     for ( auto& q : queries ) {
-        if ( bam_raw_db.GetRefIndex(q.refseq_id) == size_t(-1) ) {
+        auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+        if ( ref_index == size_t(-1) ) {
             ERR_POST(Fatal<<"Unknown reference sequence: "<<q.refseq_id);
         }
         if ( args["dump"] ) {
-            s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(q.refseq_id));
+            s_DumpIndex(bam_raw_db.GetIndex(), ref_index);
         }
     }
 
@@ -209,6 +223,32 @@ int CBamIndexTestApp::Run(void)
         }
     }
 
+    if ( args["overstart"] ) {
+        for ( auto& q : queries ) {
+            auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+            auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+            auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
+            sw.Restart();
+            const auto& overstart = ref.GetAlnOverStarts();
+            cout <<"Collected overstart data in "<<sw.Elapsed()<<"s"<<endl;
+            for ( TSeqPos pos = (q.refseq_range.GetFrom()+16383)&-16384;
+                  pos < q.refseq_range.GetToOpen() && pos < ref_len;
+                  pos += 16384 ) {
+                TSeqPos k = pos/16384;
+                TSeqPos start = pos;
+                CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, 1);
+                if ( it ) {
+                    start = it.GetRefSeqPos()&-16384;
+                }
+                TSeqPos got_start = k < overstart.size()? overstart[k]: pos;
+                if ( start != got_start ) {
+                    cout << "overstart["<<pos<<"] = "<<got_start << " != "<<start<<endl;
+                    error_code = 1;
+                }
+            }
+        }
+    }
+
     CBamMgr mgr;
     CBamDb bam_db;
     if ( args["sra"] ) {
@@ -216,7 +256,6 @@ int CBamIndexTestApp::Run(void)
     }
     bool single_thread = args["ST"];
 
-    int error_code = 0;
     Uint8 total_align_count = 0;
     Uint8 total_wrong_level_count = 0, total_wrong_range_count = 0;
     const size_t NQ = queries.size();
@@ -253,6 +292,9 @@ int CBamIndexTestApp::Run(void)
                                        }
                                    }
                                    ++align_count;
+                                   if ( limit_count && align_count >= limit_count ) {
+                                       break;
+                                   }
                                }
                            }
                            else {
@@ -289,6 +331,9 @@ int CBamIndexTestApp::Run(void)
                                        }
                                    }
                                    ++align_count;
+                                   if ( limit_count && align_count >= limit_count ) {
+                                       break;
+                                   }
                                }
                            }
                        }

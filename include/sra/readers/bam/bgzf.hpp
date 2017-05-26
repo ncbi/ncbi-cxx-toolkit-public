@@ -193,17 +193,29 @@ public:
             return TByteOffset(m_VirtualPos&(0xffff));
         }
 
-    bool operator<(const CBGZFPos& b) const
-        {
-            return m_VirtualPos < b.m_VirtualPos;
-        }
     bool operator==(const CBGZFPos& b) const
         {
             return m_VirtualPos == b.m_VirtualPos;
         }
     bool operator!=(const CBGZFPos& b) const
         {
-            return !(*this == b);
+            return m_VirtualPos != b.m_VirtualPos;
+        }
+    bool operator<(const CBGZFPos& b) const
+        {
+            return m_VirtualPos < b.m_VirtualPos;
+        }
+    bool operator>(const CBGZFPos& b) const
+        {
+            return m_VirtualPos > b.m_VirtualPos;
+        }
+    bool operator<=(const CBGZFPos& b) const
+        {
+            return m_VirtualPos <= b.m_VirtualPos;
+        }
+    bool operator>=(const CBGZFPos& b) const
+        {
+            return m_VirtualPos >= b.m_VirtualPos;
         }
 
     static CBGZFPos GetInvalid()

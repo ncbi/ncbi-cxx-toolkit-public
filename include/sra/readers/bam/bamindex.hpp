@@ -167,6 +167,7 @@ struct SBamIndexDefs
 struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
 {
     void Read(CNcbiIstream& in);
+    const char* Read(const char* buffer_ptr, const char* buffer_end);
 
     static COpenRange<TSeqPos> GetSeqRange(TBin bin);
     COpenRange<TSeqPos> GetSeqRange() const
@@ -185,13 +186,23 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
         {
             return m_Bin < b;
         }
+
+    CBGZFPos GetStartFilePos() const
+        {
+            return m_Chunks.front().first;
+        }
+    CBGZFPos GetEndFilePos() const
+        {
+            return m_Chunks.back().second;
+        }
 };
 
 
 struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
 {
-    void Read(CNcbiIstream& in);
-
+    void Read(CNcbiIstream& in, int32_t ref_index);
+    const char* Read(const char* buffer_ptr, const char* buffer_end, int32_t ref_index);
+    
     // return limits of data in file based on linear index
     // also adjusts argument ref_range to be within reference sequence
     CBGZFRange GetLimitRange(COpenRange<TSeqPos>& ref_range) const;
@@ -203,8 +214,16 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
 
     vector<uint64_t> CollectEstimatedCoverage(EIndexLevel min_index_level,
                                               EIndexLevel max_index_level) const;
+
+    // return array of start position of alignmnets overlapping with each page
+    // return empty array if at most one page overlapping is allowed
+    vector<TSeqPos> GetAlnOverStarts(void) const;
+
+    typedef vector<SBamIndexBinInfo> TBins;
+    typedef TBins::const_iterator TBinsIter;
+    pair<TBinsIter, TBinsIter> GetLevelBins(EIndexLevel level) const;
     
-    vector<SBamIndexBinInfo> m_Bins;
+    TBins m_Bins;
     CBGZFRange m_UnmappedChunk;
     Uint8 m_MappedCount;
     Uint8 m_UnmappedCount;
@@ -222,6 +241,8 @@ public:
     ~CBamIndex();
 
     void Read(const string& index_file_name);
+    void Read(CNcbiIstream& in);
+    void Read(const char* buffer_ptr, size_t buffer_size);
 
     typedef vector<SBamIndexRefIndex> TRefs;
     const TRefs& GetRefs() const
