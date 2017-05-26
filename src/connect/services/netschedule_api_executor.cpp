@@ -42,10 +42,6 @@ BEGIN_NCBI_SCOPE
 
 using namespace grid::netschedule;
 
-#define SKIP_SPACE(ptr) \
-    while (isspace((unsigned char) *(ptr))) \
-        ++ptr;
-
 static bool s_DoParseGet2JobResponse(
     CNetScheduleJob& job, const string& response)
 {
@@ -116,84 +112,6 @@ static bool s_DoParseGet2JobResponse(
     return !job.job_id.empty();
 }
 
-static bool s_DoParseGetJobResponse(
-    CNetScheduleJob& job, const string& response)
-{
-    // Server message format:
-    //    JOB_KEY "input" "affinity" "client_ip session_id" mask auth_token
-
-    // 1. Extract job ID.
-    const char* response_begin = response.c_str();
-    const char* response_end = response_begin + response.length();
-
-    SKIP_SPACE(response_begin);
-
-    if (*response_begin == 0)
-        return false;
-
-    const char* ptr = response_begin;
-
-    do
-        if (*++ptr == 0)
-            return false;
-    while (!isspace((unsigned char) (*ptr)));
-
-    job.job_id.assign(response_begin, ptr - response_begin);
-
-    while (isspace((unsigned char) *++ptr))
-        ;
-
-    try {
-        size_t field_len;
-
-        // 2. Extract job input
-        job.input = NStr::ParseQuoted(CTempString(ptr,
-            response_end - ptr), &field_len);
-
-        ptr += field_len;
-        SKIP_SPACE(ptr);
-
-        // 3. Extract optional job affinity.
-        job.affinity = NStr::ParseQuoted(CTempString(ptr,
-            response_end - ptr), &field_len);
-
-        ptr += field_len;
-        SKIP_SPACE(ptr);
-
-        // 4. Extract optional "client_ip session_id".
-        string client_ip_and_session_id(NStr::ParseQuoted(
-            CTempString(ptr, response_end - ptr), &field_len));
-
-        NStr::SplitInTwo(client_ip_and_session_id, " ",
-            job.client_ip, job.session_id);
-
-        ptr += field_len;
-        SKIP_SPACE(ptr);
-
-        // 5. Parse job mask.
-        job.mask = atoi(ptr);
-
-        while (!isspace((unsigned char) *ptr) && *ptr != '\0')
-            ++ptr;
-
-        SKIP_SPACE(ptr);
-
-        if (*ptr == '\0') {
-            ERR_POST("GET2: missing auth_token");
-            return false;
-        }
-
-        // 6. Retrieve auth token.
-        job.auth_token = ptr;
-    }
-    catch (CStringException& e) {
-        ERR_POST("Error while parsing GET2 response " << e);
-        return false;
-    }
-
-    return true;
-}
-
 string s_GET2(CNetScheduleExecutor::EJobAffinityPreference affinity_preference);
 
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
@@ -205,9 +123,6 @@ bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
         return s_DoParseGet2JobResponse(job, response);
     }
     catch (CUrlParserException&) {
-        if (s_DoParseGetJobResponse(job, response))
-            return true;
-
         NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
                 "Cannot parse server output for GET:\n" + response);
     }
