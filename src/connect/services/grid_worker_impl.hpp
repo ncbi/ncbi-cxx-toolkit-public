@@ -37,6 +37,8 @@
 #include "wn_cleanup.hpp"
 #include "netschedule_api_impl.hpp"
 
+#include <connect/services/grid_rw_impl.hpp>
+
 #include <unordered_map>
 
 BEGIN_NCBI_SCOPE
@@ -68,6 +70,9 @@ struct SWorkerNodeJobContextImpl : public CObject
     const CDeadline GetTimeout() const { return m_Deadline; }
     void ResetTimeout(unsigned seconds) { m_Deadline = CDeadline(seconds, 0); }
 
+    CNcbiIstream& GetIStream();
+    CNcbiOstream& GetOStream();
+
     SGridWorkerNodeImpl* m_WorkerNode;
     CNetScheduleJob m_Job;
     CWorkerNodeJobContext::ECommitStatus m_JobCommitStatus;
@@ -83,9 +88,8 @@ struct SWorkerNodeJobContextImpl : public CObject
     CRequestRateControl m_ProgressMsgThrottler;
     CNetScheduleExecutor m_NetScheduleExecutor;
     CNetCacheAPI m_NetCacheAPI;
-    auto_ptr<CNcbiIstream> m_RStream;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_WStream;
+    SGridRead m_GridRead;
+    SGridWrite m_GridWrite;
 
     // Used for the job "pullback" mechanism.
     unsigned m_JobGeneration;

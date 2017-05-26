@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/rwstream.hpp>
+
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -102,6 +104,26 @@ void CStringOrBlobStorageWriter::Abort()
         m_NetCacheWriter->Abort();
 }
 
+CNcbiOstream& SGridWrite::operator()(CNetCacheAPI nc_api, size_t embedded_max_size, string& data)
+{
+    writer.reset(new CStringOrBlobStorageWriter(embedded_max_size, nc_api, data));
+
+    stream.reset(new CWStream(writer.get(), 0, 0, CRWStreambuf::fLeakExceptions));
+    stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
+    return *stream;
+}
+
+void SGridWrite::Reset(bool flush)
+{
+    if (flush && stream) stream->flush();
+    stream.reset();
+
+    if (writer) {
+        writer->Close();
+        writer.reset();
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -190,6 +212,21 @@ ERW_Result CStringOrBlobStorageReader::PendingCount(size_t* count)
 
     *count = m_BytesToRead;
     return eRW_Success;
+}
+
+CNcbiIstream& SGridRead::operator()(CNetCacheAPI nc_api, const string& data, size_t* data_size)
+{
+    auto reader = new CStringOrBlobStorageReader(data, nc_api, data_size);
+
+    stream.reset(new CRStream(reader, 0, 0, CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
+    stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
+    return *stream;
+}
+
+void SGridRead::Reset()
+{
+    stream.reset();
 }
 
 END_NCBI_SCOPE

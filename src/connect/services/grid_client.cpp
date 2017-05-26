@@ -37,8 +37,6 @@
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 
-#include <corelib/rwstream.hpp>
-
 BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
@@ -114,31 +112,12 @@ void CGridClient::SetJobInput(const string& input)
 CNcbiOstream& CGridClient::GetOStream()
 {
     UseNextSubHitID();
-
-    m_Writer.reset(new CStringOrBlobStorageWriter(
-        GetMaxServerInputSize(),
-        GetNetCacheAPI(),
-        m_Job.input));
-
-    m_WStream.reset(new CWStream(m_Writer.get(),
-        0, 0, CRWStreambuf::fLeakExceptions));
-
-    m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-
-    return *m_WStream;
+    return m_GridWrite(GetNetCacheAPI(), GetMaxServerInputSize(), m_Job.input);
 }
 
 void CGridClient::CloseStream()
 {
-    if (m_Writer.get() != NULL) {
-        if (m_WStream.get() != NULL) {
-            m_WStream->flush();
-            m_WStream.reset();
-        }
-
-        m_Writer->Close();
-        m_Writer.reset();
-    }
+    m_GridWrite.Reset(true);
 }
 
 string CGridClient::Submit(const string& affinity)
@@ -199,18 +178,8 @@ void CGridJobBatchSubmitter::SetJobInput(const string& input)
 CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
 {
     CheckIfBatchSubmittedAndPrepareNextJob();
-
-    m_Writer.reset(new CStringOrBlobStorageWriter(
-        m_GridClient.GetMaxServerInputSize(),
-        m_GridClient.GetNetCacheAPI(),
-        m_Jobs[m_JobIndex].input));
-
-    m_WStream.reset(new CWStream(m_Writer.get(),
-        0, 0, CRWStreambuf::fLeakExceptions));
-
-    m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-
-    return *m_WStream;
+    return m_GridWrite(m_GridClient.GetNetCacheAPI(), m_GridClient.GetMaxServerInputSize(),
+            m_Jobs[m_JobIndex].input);
 }
 
 void CGridJobBatchSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
@@ -230,11 +199,7 @@ void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
 void CGridJobBatchSubmitter::PrepareNextJob()
 {
     CheckIfBatchAlreadySubmitted();
-    m_WStream.reset();
-    if (m_Writer.get() != NULL) {
-        m_Writer->Close();
-        m_Writer.reset();
-    }
+    m_GridWrite.Reset();
     if (!m_Jobs.empty())
         ++m_JobIndex;
     m_Jobs.push_back(CNetScheduleJob());
@@ -244,11 +209,7 @@ void CGridJobBatchSubmitter::PrepareNextJob()
 void CGridJobBatchSubmitter::Submit(const string& job_group)
 {
     CheckIfBatchAlreadySubmitted();
-    m_WStream.reset();
-    if (m_Writer.get() != NULL) {
-        m_Writer->Close();
-        m_Writer.reset();
-    }
+    m_GridWrite.Reset();
     if (!m_Jobs.empty()) {
         m_GridClient.GetNetScheduleSubmitter().SubmitJobBatch(m_Jobs,
                 job_group);
@@ -258,11 +219,7 @@ void CGridJobBatchSubmitter::Submit(const string& job_group)
 
 void CGridJobBatchSubmitter::Reset()
 {
-    m_WStream.reset();
-    if (m_Writer.get() != NULL) {
-        m_Writer->Close();
-        m_Writer.reset();
-    }
+    m_GridWrite.Reset();
     m_HasBeenSubmitted = false;
     m_JobIndex = 0;
     m_Jobs.clear();
@@ -318,12 +275,7 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
 CNcbiIstream& CGridClient::GetIStream()
 {
     x_GetJobDetails();
-    IReader* reader = new CStringOrBlobStorageReader(
-        m_Job.output, GetNetCacheAPI(), &m_BlobSize);
-    m_RStream.reset(new CRStream(reader,0,0,CRWStreambuf::fOwnReader
-                                          | CRWStreambuf::fLeakExceptions));
-    m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-    return *m_RStream;
+    return m_GridRead(GetNetCacheAPI(), m_Job.output, &m_BlobSize);
 }
 
 string CGridClient::GetProgressMessage()
@@ -360,7 +312,7 @@ void CGridClient::SetJobKey(const string& job_key)
 {
     m_Job.Reset();
     m_Job.job_id = job_key;
-    m_RStream.reset();
+    m_GridRead.Reset();
     m_BlobSize = 0;
     m_JobDetailsRead = false;
 }

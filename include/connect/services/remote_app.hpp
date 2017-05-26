@@ -75,9 +75,8 @@ protected:
 
 private:
     CNetCacheAPI m_Storage;
-    auto_ptr<CNcbiIstream> m_IStream;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_OStream;
+    SGridRead m_GridRead;
+    SGridWrite m_GridWrite;
     string* m_Data;
     size_t* m_DataSize;
 };

@@ -36,8 +36,6 @@
 #include <connect/services/error_codes.hpp>
 
 #include <corelib/ncbifile.hpp>
-#include <corelib/rwstream.hpp>
-#include <corelib/ncbifile.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Remote
@@ -78,26 +76,23 @@ CNcbiOstream& CBlobStreamHelper::GetOStream(const string& fname /*= ""*/,
     EStdOutErrStorageType type /*= eBlobStorage*/,
     size_t max_inline_size /*= kMaxBlobInlineSize*/)
 {
-    if (!m_OStream.get()) {
-        _ASSERT(!m_IStream.get());
-        m_Writer.reset(new CStringOrBlobStorageWriter(
-            max_inline_size, m_Storage, *m_Data));
-        m_OStream.reset(new CWStream(m_Writer.get(),
-            0, 0, CRWStreambuf::fLeakExceptions));
-        m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-        *m_OStream << (int) type << " ";
-        WriteStrWithLen(*m_OStream, fname);
+    if (!m_GridWrite.stream) {
+        _ASSERT(!m_GridRead.stream);
+
+        m_GridWrite(m_Storage, max_inline_size, *m_Data);
+        *m_GridWrite.stream << (int) type << " ";
+        WriteStrWithLen(*m_GridWrite.stream, fname);
         if (!fname.empty() && type == eLocalFile) {
-            m_OStream.reset(new CNcbiOfstream(fname.c_str()));
-            m_Writer.reset();
-            if (!m_OStream->good()) {
+            m_GridWrite.stream.reset(new CNcbiOfstream(fname.c_str()));
+            m_GridWrite.writer.reset();
+            if (!m_GridWrite.stream->good()) {
                 NCBI_THROW(CFileException, eRelativePath,
                     "Cannot open " + fname + " for output");
             }
-            m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+            m_GridWrite.stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         }
     }
-    return *m_OStream.get();
+    return *m_GridWrite.stream;
 }
 
 int CBlobStreamHelper::x_GetTypeAndName(CNcbiIstream& istream,
@@ -112,26 +107,22 @@ int CBlobStreamHelper::x_GetTypeAndName(CNcbiIstream& istream,
 CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
     EStdOutErrStorageType* type /*= NULL*/)
 {
-    if (!m_IStream.get()) {
-        _ASSERT(!m_OStream.get());
-        auto_ptr<IReader> reader(
-            new CStringOrBlobStorageReader(*m_Data, m_Storage, m_DataSize));
-        m_IStream.reset(new CRStream(reader.release(),
-            0,0,CRWStreambuf::fOwnReader
-            | CRWStreambuf::fLeakExceptions));
-        m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    if (!m_GridRead.stream) {
+        _ASSERT(!m_GridWrite.stream);
+
+        m_GridRead(m_Storage, *m_Data, m_DataSize);
         string name;
         int tmp = (int)eBlobStorage;
         try {
-            tmp = x_GetTypeAndName(*m_IStream, name);
+            tmp = x_GetTypeAndName(*m_GridRead.stream, name);
         } catch (...) {
-            if (!m_IStream->eof()) {
+            if (!m_GridRead.stream->eof()) {
                 string msg =
                         "Job output does not match remote_app output format";
                 ERR_POST_X(1, msg);
-                m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
+                m_GridRead.stream.reset(new CNcbiIstrstream(msg.c_str()));
             }
-            return *m_IStream.get();
+            return *m_GridRead.stream.get();
         }
 
         if (fname) *fname = name;
@@ -139,32 +130,23 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
         if (!name.empty() && (EStdOutErrStorageType)tmp == eLocalFile) {
             auto_ptr<CNcbiIstream> fstr(new CNcbiIfstream(name.c_str()));
             if (fstr->good()) {
-                m_IStream.reset(fstr.release());
-                m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+                m_GridRead.stream.reset(fstr.release());
+                m_GridRead.stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             } else {
                 string msg = "Can not open " + name;
                 msg += " for reading";
                 ERR_POST_X(2, msg);
-                m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
+                m_GridRead.stream.reset(new CNcbiIstrstream(msg.c_str()));
             }
         }
     }
-    return *m_IStream.get();
+    return *m_GridRead.stream;
 }
 
 void CBlobStreamHelper::Reset()
 {
-    m_IStream.reset();
-
-    if (m_OStream.get()) {
-        m_OStream->flush();
-        m_OStream.reset();
-    }
-
-    if (m_Writer.get() != NULL) {
-        m_Writer->Close();
-        m_Writer.reset();
-    }
+    m_GridRead.Reset();
+    m_GridWrite.Reset(true);
 }
 //////////////////////////////////////////////////////////////////////////////
 //

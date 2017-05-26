@@ -38,10 +38,7 @@
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_worker_app.hpp>
-#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/ns_job_serializer.hpp>
-
-#include <corelib/rwstream.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
@@ -149,24 +146,24 @@ const string& CWorkerNodeJobContext::GetClientName() const
     return m_Impl->m_WorkerNode->GetClientName();
 }
 
+CNcbiIstream& SWorkerNodeJobContextImpl::GetIStream()
+{
+    return m_GridRead(m_NetCacheAPI, m_Job.input, &m_InputBlobSize);
+}
+
 CNcbiIstream& CWorkerNodeJobContext::GetIStream()
 {
-    IReader* reader = new CStringOrBlobStorageReader(GetJobInput(),
-            m_Impl->m_NetCacheAPI, &m_Impl->m_InputBlobSize);
-    m_Impl->m_RStream.reset(new CRStream(reader, 0, 0,
-            CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
-    m_Impl->m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-    return *m_Impl->m_RStream;
+    return m_Impl->GetIStream();
 }
+
+CNcbiOstream& SWorkerNodeJobContextImpl::GetOStream()
+{
+    return m_GridWrite(m_NetCacheAPI, m_WorkerNode->m_QueueEmbeddedOutputSize, m_Job.output);
+}
+
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
-    m_Impl->m_Writer.reset(new CStringOrBlobStorageWriter(
-            m_Impl->m_WorkerNode->m_QueueEmbeddedOutputSize,
-                    m_Impl->m_NetCacheAPI, GetJob().output));
-    m_Impl->m_WStream.reset(new CWStream(m_Impl->m_Writer.get(), 0, 0,
-            CRWStreambuf::fLeakExceptions));
-    m_Impl->m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-    return *m_Impl->m_WStream;
+    return m_Impl->GetOStream();
 }
 
 void CWorkerNodeJobContext::CloseStreams()
@@ -176,13 +173,8 @@ void CWorkerNodeJobContext::CloseStreams()
         m_Impl->m_StatusThrottler.Reset(1,
                 CTimeSpan(m_Impl->m_WorkerNode->m_CheckStatusPeriod, 0));
 
-        m_Impl->m_RStream.reset();
-        m_Impl->m_WStream.reset();
-
-        if (m_Impl->m_Writer.get() != NULL) {
-            m_Impl->m_Writer->Close();
-            m_Impl->m_Writer.reset();
-        }
+        m_Impl->m_GridRead.Reset();
+        m_Impl->m_GridWrite.Reset();
     }
     NCBI_CATCH_ALL_X(61, "Could not close IO streams");
 }

@@ -37,6 +37,7 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_api.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 
 #include <connect/connect_export.h>
 
@@ -103,8 +104,7 @@ private:
     vector<CNetScheduleJob> m_Jobs;
     size_t       m_JobIndex;
     bool         m_HasBeenSubmitted;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_WStream;
+    SGridWrite   m_GridWrite;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -271,8 +271,8 @@ private:
     CNetCacheAPI m_NetCacheAPI;
 
     CNetScheduleJob m_Job;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_WStream;
+    SGridRead m_GridRead;
+    SGridWrite m_GridWrite;
 
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
 
@@ -286,7 +286,6 @@ private:
     size_t       m_BlobSize;
     bool         m_AutoCleanUp;
     bool         m_UseProgress;
-    auto_ptr<CNcbiIstream> m_RStream;
     bool         m_JobDetailsRead;
 
     /// The copy constructor and the assignment operator

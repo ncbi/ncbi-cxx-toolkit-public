@@ -72,6 +72,14 @@ private:
     size_t m_MaxBuffSize;
 };
 
+struct SGridWrite
+{
+    unique_ptr<IEmbeddedStreamWriter> writer;
+    unique_ptr<CNcbiOstream> stream;
+
+    CNcbiOstream& operator()(CNetCacheAPI nc_api, size_t embedded_max_size, string& data);
+    void Reset(bool flush = false);
+};
 
 /// String or Blob Storage Reader
 ///
@@ -104,6 +112,13 @@ private:
     size_t m_BytesToRead;
 };
 
+struct SGridRead
+{
+    unique_ptr<CNcbiIstream> stream;
+
+    CNcbiIstream& operator()(CNetCacheAPI nc_api, const string& data, size_t* data_size);
+    void Reset();
+};
 
 class CStringOrBlobStorageRWException : public CException
 {
