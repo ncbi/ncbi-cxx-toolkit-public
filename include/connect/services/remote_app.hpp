@@ -33,6 +33,7 @@
  */
 
 #include <connect/services/netcache_api.hpp>
+#include <include/connect/services/grid_rw_impl.hpp>
 
 #include <connect/connect_export.h>
 
