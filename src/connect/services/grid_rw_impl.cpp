@@ -343,6 +343,30 @@ CNcbiOstream& SGridWrite::operator()(CNetCacheAPI nc_api, size_t embedded_max_si
     return *stream;
 }
 
+CNcbiOstream& SGridWrite::operator()(CNetCacheAPI nc_api, size_t embedded_max_size, bool direct_output, CNetScheduleJob& job)
+{
+    if (!direct_output) return operator()(nc_api, embedded_max_size, job.output);
+
+    using TWriter = unique_ptr<IEmbeddedStreamWriter>;
+
+    auto l = [nc_api, &job](string& key) mutable {
+        TWriter direct_writer(new SDataDirectWriter(job));
+        TWriter nc_writer(nc_api.PutData(&key));
+        TWriter multi_writer(new SMultiWriter{direct_writer.get(), nc_writer.get()});
+
+        direct_writer.release();
+        nc_writer.release();
+        return multi_writer.release();
+    };
+
+    writer.reset(new CStringOrWriter(embedded_max_size, job.output, l));
+
+    stream.reset(new CWStream(writer.get(), 0, 0, CRWStreambuf::fLeakExceptions));
+    stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
+    return *stream;
+}
+
 void SGridWrite::Reset(bool flush)
 {
     if (flush && stream) stream->flush();

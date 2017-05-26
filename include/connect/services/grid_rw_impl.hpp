@@ -31,6 +31,7 @@
  *
  */
 
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_api.hpp>
 
 #include <connect/connect_export.h>
@@ -86,6 +87,7 @@ struct SGridWrite
     unique_ptr<CNcbiOstream> stream;
 
     CNcbiOstream& operator()(CNetCacheAPI nc_api, size_t embedded_max_size, string& data);
+    CNcbiOstream& operator()(CNetCacheAPI nc_api, size_t embedded_max_size, bool direct_output, CNetScheduleJob& job);
     void Reset(bool flush = false);
 };
 

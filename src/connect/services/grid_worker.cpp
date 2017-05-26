@@ -443,6 +443,7 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
         "log_progress", false, 0, IRegistry::eErrPost);
     m_ThreadPoolTimeout = reg.GetInt(kServerSec,
         "thread_pool_timeout", 30, 0, IRegistry::eErrPost);
+    m_DirectOutput = reg.GetBool(kServerSec, "direct_output", false, 0, IRegistry::eErrPost);
 }
 
 void SGridWorkerNodeImpl::x_StartWorkerThreads()
