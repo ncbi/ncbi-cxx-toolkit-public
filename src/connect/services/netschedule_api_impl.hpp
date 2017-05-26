@@ -160,8 +160,6 @@ void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req)
 }
 
 
-bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
-
 inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
 {
     string cmd(cmd_name);

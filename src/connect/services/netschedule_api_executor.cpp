@@ -42,8 +42,7 @@ BEGIN_NCBI_SCOPE
 
 using namespace grid::netschedule;
 
-static bool s_DoParseGet2JobResponse(
-    CNetScheduleJob& job, const string& response)
+bool s_DoParseGet2JobResponse(CNetScheduleJob& job, const string& response)
 {
     enum {
         eJobKey,
@@ -59,53 +58,40 @@ static bool s_DoParseGet2JobResponse(
     int job_bits = 0;
     CUrlArgs url_parser(response);
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-        switch (field->name[0]) {
-        case 'j':
-            if (field->name == "job_key") {
-                job_bits |= (1 << eJobKey);
-                job.job_id = field->value;
-            }
-            break;
 
-        case 'i':
-            if (field->name == "input") {
-                job_bits |= (1 << eJobInput);
-                job.input = field->value;
-            }
-            break;
+        if (field->name == "job_key") {
+            job_bits |= (1 << eJobKey);
+            job.job_id = field->value;
 
-        case 'a':
-            if (field->name == "auth_token") {
-                job_bits |= (1 << eJobAuthToken);
-                job.auth_token = field->value;
-            } else if (field->name == "affinity") {
-                job_bits |= (1 << eJobAffinity);
-                job.affinity = field->value;
-            }
-            break;
+        } else if (field->name == "input") {
+            job_bits |= (1 << eJobInput);
+            job.input = field->value;
 
-        case 'c':
-            if (field->name == "client_ip") {
-                job_bits |= (1 << eClientIP);
-                job.client_ip = field->value;
-            } else if (field->name == "client_sid") {
-                job_bits |= (1 << eClientSessionID);
-                job.session_id = field->value;
-            }
-            break;
+        } else if (field->name == "auth_token") {
+            job_bits |= (1 << eJobAuthToken);
+            job.auth_token = field->value;
 
-        case 'm':
-            if (field->name == "mask") {
-                job_bits |= (1 << eJobMask);
-                job.mask = atoi(field->value.c_str());
-            }
-            break;
-        case 'n':
-            if (field->name == "ncbi_phid") {
-                job_bits |= (1 << ePageHitID);
-                job.page_hit_id = field->value;
-            }
+        } else if (field->name == "affinity") {
+            job_bits |= (1 << eJobAffinity);
+            job.affinity = field->value;
+
+        } else if (field->name == "client_ip") {
+            job_bits |= (1 << eClientIP);
+            job.client_ip = field->value;
+
+        } else if (field->name == "client_sid") {
+            job_bits |= (1 << eClientSessionID);
+            job.session_id = field->value;
+
+        } else if (field->name == "mask") {
+            job_bits |= (1 << eJobMask);
+            job.mask = atoi(field->value.c_str());
+
+        } else if (field->name == "ncbi_phid") {
+            job_bits |= (1 << ePageHitID);
+            job.page_hit_id = field->value;
         }
+
         if (job_bits == (1 << eNumberOfJobBits) - 1)
             break;
     }
@@ -114,7 +100,7 @@ static bool s_DoParseGet2JobResponse(
 
 string s_GET2(CNetScheduleExecutor::EJobAffinityPreference affinity_preference);
 
-bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
+bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 {
     if (response.empty())
         return false;
@@ -124,7 +110,7 @@ bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
     }
     catch (CUrlParserException&) {
         NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
-                "Cannot parse server output for GET:\n" + response);
+                "Cannot parse server output for GET2:\n" + response);
     }
 }
 
@@ -260,7 +246,7 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
                 exec_result, NULL, &get_cmd_listener);
     }
 
-    if (!g_ParseGetJobResponse(job, exec_result.response))
+    if (!s_ParseGetJobResponse(job, exec_result.response))
         return false;
 
     // Remember the server that issued this job.
@@ -318,7 +304,7 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
             cmd.erase(base_cmd.length());
             m_Impl->m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(
                     cmd, deadline, m_Impl->m_JobGroup);
-            if (g_ParseGetJobResponse(job, server.ExecWithRetry(cmd,
+            if (s_ParseGetJobResponse(job, server.ExecWithRetry(cmd,
                         false).response)) {
                 // Remember the server that issued this job.
                 job.server = server;
