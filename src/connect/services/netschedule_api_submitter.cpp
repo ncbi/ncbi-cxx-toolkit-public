@@ -43,8 +43,8 @@
 
 #include <stdio.h>
 #include <cmath>
-#ifdef NCBI_THREADS
 #include <array>
+#ifdef NCBI_THREADS
 #include <condition_variable>
 #include <deque>
 #include <mutex>
