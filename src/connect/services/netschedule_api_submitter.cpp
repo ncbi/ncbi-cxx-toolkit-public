@@ -44,12 +44,10 @@
 #include <stdio.h>
 #include <cmath>
 #include <array>
-#ifdef NCBI_THREADS
 #include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <thread>
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -432,10 +430,10 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
     }
 }
 
+#ifdef NCBI_THREADS
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
         pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port)
 {
-#ifdef NCBI_THREADS
     if (!receiver.first || !receiver.second) return false;
 
     if (worker_node_host.empty() || worker_node_port.empty()) {
@@ -545,12 +543,14 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
     job_status = CNetScheduleAPI::eDone;
     *receiver.first = true;
     return true;
-#else
-    NCBI_THROW(CNetScheduleException, eInternalError,
-               "CNetScheduleNotificationHandler::ReadOutput requires"
-               " a multithreaded configuration.");
-#endif
 }
+#else
+bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus&,
+        pair<bool*, CNcbiOstream*>, const string&, const string&)
+{
+    return false;
+}
+#endif
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
