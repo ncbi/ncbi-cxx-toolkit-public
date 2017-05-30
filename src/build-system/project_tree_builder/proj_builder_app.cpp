@@ -2649,7 +2649,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                     bool is_framework = false;
                     if (NStr::StartsWith(*t, "-l")) {
                         is_lib = true;
-                        t_name = t->substr(2);
+                        t_name = t_name.substr(2);
                     } else if (NStr::CompareNocase(*t,"-framework") == 0) {
                         if (t != third_list.end()) {
                             is_framework = true;
