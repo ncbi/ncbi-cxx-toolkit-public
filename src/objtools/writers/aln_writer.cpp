@@ -503,7 +503,7 @@ string CAlnWriter::GetSegString(const string& seq_plus,
         if (start >= seq_plus.size()) {
             // Throw an exception
         }
-        if (strand == eNa_strand_plus) {
+        if (strand != eNa_strand_minus) {
             return seq_plus.substr(start, len);
         }
         // else
