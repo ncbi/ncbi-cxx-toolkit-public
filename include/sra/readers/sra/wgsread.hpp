@@ -212,8 +212,9 @@ public:
     // parse row id from accession
     // returns (row, accession_type) pair
     // row will be 0 if accession is in wrong format
+    static
     pair<TVDBRowId, ERowType> ParseRowType(CTempString acc,
-                                           TAllowRowType allow) const;
+                                           TAllowRowType allow);
     // parse row id from accession
     // returns 0 if accession is in wrong format
     // if is_scaffold flag pointer is not null, then scaffold ids are also
@@ -221,17 +222,20 @@ public:
     TVDBRowId ParseRow(CTempString acc, bool* is_scaffold) const;
     // parse contig row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseContigRow(CTempString acc) const {
+    static
+    TVDBRowId ParseContigRow(CTempString acc) {
         return ParseRowType(acc, fAllowRowType_contig).first;
     }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseScaffoldRow(CTempString acc) const {
+    static
+    TVDBRowId ParseScaffoldRow(CTempString acc) {
         return ParseRowType(acc, fAllowRowType_scaffold).first;
     }
     // parse protein row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseProteinRow(CTempString acc) const {
+    static
+    TVDBRowId ParseProteinRow(CTempString acc) {
         return ParseRowType(acc, fAllowRowType_protein).first;
     }
     SIZE_TYPE GetIdRowDigits(void) const {
@@ -578,18 +582,21 @@ public:
     }
     // parse contig row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseContigRow(CTempString acc) const {
-        return GetObject().ParseContigRow(acc);
+    static
+    TVDBRowId ParseContigRow(CTempString acc) {
+        return CWGSDb_Impl::ParseContigRow(acc);
     }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseScaffoldRow(CTempString acc) const {
-        return GetObject().ParseScaffoldRow(acc);
+    static
+    TVDBRowId ParseScaffoldRow(CTempString acc) {
+        return CWGSDb_Impl::ParseScaffoldRow(acc);
     }
     // parse protein row id from accession
     // returns 0 if accession is in wrong format
-    TVDBRowId ParseProteinRow(CTempString acc) const {
-        return GetObject().ParseProteinRow(acc);
+    static
+    TVDBRowId ParseProteinRow(CTempString acc) {
+        return CWGSDb_Impl::ParseProteinRow(acc);
     }
 
     // get GI range of nucleotide sequences

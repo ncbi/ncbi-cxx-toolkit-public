@@ -249,6 +249,44 @@ void* read_thread_func(void* arg)
 int LowLevelTest(void)
 {
     if ( 1 ) {
+        cout << "LowLevelTest for CSHW01000012.1 gap info..." << endl;
+        const VDBManager* mgr = 0;
+        CALL(VDBManagerMakeRead(&mgr, 0));
+        
+        const VDatabase* db = 0;
+        CALL(VDBManagerOpenDBRead(mgr, &db, 0, "CSHW01"));
+        
+        const VTable* table = 0;
+        CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
+        
+        const VCursor* cursor = 0;
+        CALL(VTableCreateCursorRead(table, &cursor));
+        CALL(VCursorPermitPostOpenAdd(cursor));
+        CALL(VCursorOpen(cursor));
+        
+        uint32_t col_GAP_PROPS;
+        CALL(VCursorAddColumn(cursor, &col_GAP_PROPS, "GAP_PROPS"));
+
+        const void* data;
+        uint32_t bit_offset, bit_length;
+        uint32_t elem_count;
+        CALL(VCursorCellDataDirect(cursor, 12, col_GAP_PROPS,
+                                   &bit_length, &data, &bit_offset,
+                                   &elem_count));
+        cout << "GAP_PROPS:";
+        for ( uint32_t i = 0; i < elem_count; ++i ) {
+            cout << ' ' << ((int16_t*)data)[i];
+        }
+        cout << endl;
+        
+        CALL(VCursorRelease(cursor));
+        CALL(VTableRelease(table));
+        CALL(VDatabaseRelease(db));
+        CALL(VDBManagerRelease(mgr));
+        return 0;
+    }
+
+    if ( 1 ) {
         cout << "LowLevelTest for AAAD01 opening..." << endl;
         const VDBManager* mgr = 0;
         CALL(VDBManagerMakeRead(&mgr, 0));
@@ -817,29 +855,6 @@ int CWGSTestApp::Run(void)
         }
     }
 
-    CWGSDb wgs_db(mgr, path);
-    if ( verbose ) {
-        out << "Opened WGS in "<<sw.Restart()
-            << NcbiEndl;
-    }
-    if ( args["master"] ) {
-        CWGSDb::EDescrFilter filter = CWGSDb::eDescrDefaultFilter;
-        if ( args["master-no-filter"] ) {
-            filter = CWGSDb::eDescrNoFilter;
-        }
-        if ( !wgs_db.LoadMasterDescr(filter) ) {
-            ERR_POST("No master descriptors found");
-        }
-    }
-    if ( args["print-master"] ) {
-        if ( CRef<CSeq_entry> master = wgs_db->GetMasterSeq_entry() ) {
-            out << "Master " << MSerial_AsnText << *master;
-        }
-        else {
-            out << "No master entry" << NcbiEndl;
-        }
-    }
-
     bool is_component = false, is_scaffold = false, is_protein = false;
     uint64_t row = 0;
     int contig_version = -1;
@@ -868,23 +883,44 @@ int CWGSTestApp::Run(void)
         }
     }
     else {
-        row = wgs_db.ParseContigRow(path);
-        if ( row ) {
+        if ( !row && (row = CWGSDb::ParseContigRow(path)) ) {
             is_component = true;
+            path = path.substr(0, 6);
         }
-        if ( !row ) {
-            if ( (row = wgs_db.ParseScaffoldRow(path)) ) {
-                is_scaffold = true;
-            }
+        if ( !row && (row = CWGSDb::ParseScaffoldRow(path)) ) {
+            is_scaffold = true;
+            path = path.substr(0, 6);
         }
-        if ( !row ) {
-            if ( (row = wgs_db.ParseProteinRow(path)) ) {
-                is_protein = true;
-            }
+        if ( !row && (row = CWGSDb::ParseProteinRow(path)) ) {
+            is_protein = true;
+            path = path.substr(0, 6);
         }
     }
     if ( row && !args["limit_count"] ) {
         limit_count = 1;
+    }
+
+    CWGSDb wgs_db(mgr, path);
+    if ( verbose ) {
+        out << "Opened WGS in "<<sw.Restart()
+            << NcbiEndl;
+    }
+    if ( args["master"] ) {
+        CWGSDb::EDescrFilter filter = CWGSDb::eDescrDefaultFilter;
+        if ( args["master-no-filter"] ) {
+            filter = CWGSDb::eDescrNoFilter;
+        }
+        if ( !wgs_db.LoadMasterDescr(filter) ) {
+            ERR_POST("No master descriptors found");
+        }
+    }
+    if ( args["print-master"] ) {
+        if ( CRef<CSeq_entry> master = wgs_db->GetMasterSeq_entry() ) {
+            out << "Master " << MSerial_AsnText << *master;
+        }
+        else {
+            out << "No master entry" << NcbiEndl;
+        }
     }
 
     vector< CConstRef<CBioseq> > all_seqs;

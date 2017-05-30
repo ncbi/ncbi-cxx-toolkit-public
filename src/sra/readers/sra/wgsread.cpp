@@ -956,7 +956,7 @@ void CWGSDb_Impl::OpenProtAccIndex(void)
 
 pair<TVDBRowId, CWGSDb_Impl::ERowType>
 CWGSDb_Impl::ParseRowType(CTempString acc,
-                          TAllowRowType allow_type) const
+                          TAllowRowType allow_type)
 {
     pair<TVDBRowId, ERowType> ret(0, eRowType_contig);
     const SIZE_TYPE start = 0;
@@ -3102,17 +3102,8 @@ CRef<CSeq_literal> sx_MakeGapLiteral(TSeqPos len,
                                      NCBI_WGS_gap_linkage gap_linkage)
 {
     CRef<CSeq_literal> literal(new CSeq_literal);
-    static const int kLenTypeMask =
-        -NCBI_WGS_gap_known |
-        -NCBI_WGS_gap_unknown;
-    static const int kGapTypeMask =
-        -NCBI_WGS_gap_scaffold |
-        -NCBI_WGS_gap_contig |
-        -NCBI_WGS_gap_centromere |
-        -NCBI_WGS_gap_short_arm |
-        -NCBI_WGS_gap_heterochromatin |
-        -NCBI_WGS_gap_telomere |
-        -NCBI_WGS_gap_repeat;
+    static const int kLenTypeMask = 0x03;
+    static const int kGapTypeMask = 0x3c;
     _ASSERT(props < 0);
     int len_type    = -(-props & kLenTypeMask);
     int gap_type    = -(-props & kGapTypeMask);
@@ -3146,6 +3137,9 @@ CRef<CSeq_literal> sx_MakeGapLiteral(TSeqPos len,
             break;
         case NCBI_WGS_gap_repeat:
             gap.SetType(CSeq_gap::eType_repeat);
+            break;
+        case 8 * -4:
+            gap.SetType(CSeq_gap::eType_unknown);
             break;
         default:
             break;
