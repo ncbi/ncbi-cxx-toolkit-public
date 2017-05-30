@@ -53,11 +53,13 @@ ifneq "" "$(wildcard Makefile.$(TMPL).app.libdep)"
   endif
 endif
 
+include $(builddir)/Makefile.$(Rules)
+
 CMD_BASE = $(LINK_WRAPPER) $(LINK)
 CMD_BASEARGS = $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS)
 CMD_TAIL = @f_outexe@$(XAPP) $(LINK_FILTER)
-CMD_ARGS  = $(CMD_BASEARGS)  $(XLIB) $(XAPP_LIBS)
-CMD_ARGS2 = $(CMD_BASEARGS2) $(XLIB) $(XAPP_LIBS)
+CMD_ARGS  = $(CMD_BASEARGS) $(XLIB)  $(XAPP_LIBS)
+CMD_ARGS2 = $(CMD_BASEARGS) $(XLIB2) $(XAPP_LIBS2)
 CMD  = $(CMD_BASE) $(call regroup_runpaths,$(CMD_ARGS)) $(CMD_TAIL)
 CMD2 = $(CMD_BASE) $(call regroup_runpaths,$(CMD_ARGS2)) $(CMD_TAIL)
 
@@ -67,8 +69,6 @@ else
   NOTE = "The original settings failed.  Trying project_tree_builder's suggestions:"
   OR_CMD2 = || (echo $(NOTE); echo $(CMD2); $(CMD2))
 endif
-
-include $(builddir)/Makefile.$(Rules)
 
 ASK_REBUILD = \
     base=`echo $$l | $(SED) -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
