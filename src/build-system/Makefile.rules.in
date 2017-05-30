@@ -9,6 +9,15 @@
 
 ifeq "$(ALT_GOALS)" ""
 
+non_runpaths     = $(filter-out $(RUNPATH_FLAG)%,$(1))
+extract_runpaths = $(filter     $(RUNPATH_FLAG)%,$(1))
+extract_rpargs   = $(patsubst $(RUNPATH_FLAG)%,%,$(call extract_runpaths,$(1)))
+extract_rpdirs   = $(subst :, ,$(call extract_rpargs,$(1)))
+remote_last      = $(filter-out /net%,$(1)) $(filter /net%,$(1))
+regrouped_rpdirs = $(call remote_last,$(call extract_rpdirs,$(1)))
+regrouped_runpaths=$(patsubst %,$(RUNPATH_FLAG)%,$(call regrouped_rpdirs,$(1)))
+regroup_runpaths = $(call regrouped_runpaths,$(1)) $(call non_runpaths,$(1))
+
 # Requirements checking
 XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XAPP_LIB) $(XDLL_LIBS)))
 include $(wildcard $(XREQLIB:%=$(status_dir)/.%.disabled))

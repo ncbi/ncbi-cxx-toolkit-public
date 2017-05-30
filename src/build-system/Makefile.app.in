@@ -53,10 +53,13 @@ ifneq "" "$(wildcard Makefile.$(TMPL).app.libdep)"
   endif
 endif
 
-CMD_BASE = $(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS)
+CMD_BASE = $(LINK_WRAPPER) $(LINK)
+CMD_BASEARGS = $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS)
 CMD_TAIL = @f_outexe@$(XAPP) $(LINK_FILTER)
-CMD  = $(CMD_BASE) $(XLIB) $(XAPP_LIBS) $(CMD_TAIL)
-CMD2 = $(CMD_BASE) $(XLIB2) $(XAPP_LIBS2) $(CMD_TAIL)
+CMD_ARGS  = $(CMD_BASEARGS)  $(XLIB) $(XAPP_LIBS)
+CMD_ARGS2 = $(CMD_BASEARGS2) $(XLIB) $(XAPP_LIBS)
+CMD  = $(CMD_BASE) $(call regroup_runpaths,$(CMD_ARGS)) $(CMD_TAIL)
+CMD2 = $(CMD_BASE) $(call regroup_runpaths,$(CMD_ARGS2)) $(CMD_TAIL)
 
 ifeq "$(CMD)" "$(CMD2)"
   OR_CMD2 =

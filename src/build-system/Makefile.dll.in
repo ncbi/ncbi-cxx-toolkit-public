@@ -144,12 +144,14 @@ ifeq "$(JUST_TOUCH)" "1"
 	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) retouch; \
 	fi
 else
+ ARGS = $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
+ TAIL = $(call regroup_runpaths,$(ARGS)) $(LINK_FILTER)
  $(XDLL): $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
+	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(TAIL)
 	$(POST_LINK) $(XDLL)
-	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
+	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(TAIL)
 	@has_dll_loadable@$(POST_LINK) $(XDLL_LOADABLE)
  ifeq "$(wildcard $(XDLLDEP))" ""
 	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XDLLDEP)
