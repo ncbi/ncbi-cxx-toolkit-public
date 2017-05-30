@@ -30,11 +30,15 @@
 *
 */
 
+#include <corelib/ncbicntr.hpp>
+
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/util/feature.hpp>
@@ -61,10 +65,10 @@ class CFeatureIndex;
 // A Seq-entry wrapper is created if the top-level object is a Bioseq or Bioseq-set.
 // Bioseqs within the Seq-entry are then indexed and added to a vector of CBioseqIndex.
 //
-// The CBioseqIndex for the desired Bioseq is found with FindBioseq (given an accession),
-// or with FirstBioseq or NthBioseq, or by exploring all Bioseqs with IterateBioseqs:
+// Bioseqs are explored with IterateBioseqs, or selected individually by ProcessBioseq
+// (given an accession, index number, or subregion):
 //
-//   idx.FindBioseq("U54469", [this](CBioseqIndex& bsx) {
+//   idx.ProcessBioseq("U54469", [this](CBioseqIndex& bsx) {
 //       ...
 //   });
 //
@@ -112,11 +116,19 @@ public:
 
     // Bioseq exploration iterator
     template<typename _Pred> int IterateBioseqs (_Pred m);
-    // Find Bioseq index by position
-    template<typename _Pred> bool FirstBioseq (_Pred m);
-    template<typename _Pred> bool NthBioseq (int n, _Pred m);
-    // Find Bioseq index by accession
-    template<typename _Pred> bool FindBioseq (string& accn, _Pred m);
+
+    // Process first Bioseq
+    template<typename _Pred> bool ProcessBioseq (_Pred m);
+    // Process Nth Bioseq
+    template<typename _Pred> bool ProcessBioseq (int n, _Pred m);
+    // Process Bioseq by accession
+    template<typename _Pred> bool ProcessBioseq (const string& accn, _Pred m);
+
+    // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
+    // Process Bioseq by sublocation
+    template<typename _Pred> bool ProcessBioseq (const CSeq_loc& loc, _Pred m);
+    // Process Bioseq by subrange, either forward strand or reverse complement
+    template<typename _Pred> bool ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m);
 
     // Getters
     CRef<CObjectManager> GetObjectManager (void) const { return m_objmgr; }
@@ -136,6 +148,14 @@ private:
     // Populate vector of index objects for Bioseqs in Seq-entry
     void x_InitSeqs (const CSeq_entry& sep);
 
+    CRef<CSeq_id> MakeUniqueId(void);
+
+    // Create delta sequence referring to location, using temporary local ID
+    CRef<CBioseqIndex> x_DeltaIndex(const CSeq_loc& loc);
+
+    // Create location from range, to use in x_DeltaIndex
+    CRef<CSeq_loc> x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp);
+
 private:
     CRef<CObjectManager> m_objmgr;
     CRef<CScope> m_scope;
@@ -153,6 +173,8 @@ private:
 
     typedef map<string, CRef<CBioseqIndex> > TAccnIndexMap;
     TAccnIndexMap m_accnIndexMap;
+
+    mutable CAtomicCounter m_Counter;
 };
 
 
@@ -164,10 +186,6 @@ private:
 //
 // CBioseqIndex also maintains a CFeatTree for each Bioseq, used to find the best gene
 // for each feature.
-//
-// Prior to feature iteration on a given Bioseq, InitializeFeatures can be used to explicitly
-// restrict feature collection to a specified sequence subrange, either on the forward strand
-// or on the reverse complement, remapping to the indicated location.
 //
 // Descriptors can be explored with:
 //
@@ -203,11 +221,6 @@ private:
     CBioseqIndex& operator= (const CBioseqIndex&);
 
 public:
-    // Limit feature selection to a subrange, either forward strand or reverse complement
-    void InitializeFeatures (int from, int to, bool rev_comp);
-    // Limit feature selection to a specific location
-    void InitializeFeatures (const CSeq_loc& loc);
-
     // Descriptor and feature exploration iterators
     template<typename _Pred> int IterateDescriptors (_Pred m);
     template<typename _Pred> int IterateFeatures (_Pred m);
@@ -219,9 +232,6 @@ public:
     CRef<CScope> GetScope (void) const { return m_scope; }
     feature::CFeatTree& GetFeatTree (void) { return m_featTree; }
 
-    CBioseq_Handle GetDeltaHandle (void) const { return m_deltaBsh; }
-
-    // Seq-id field
     const string& GetAccession (void) const { return m_Accession; }
 
     // Seq-inst fields
@@ -246,7 +256,7 @@ public:
 private:
     // Common descriptor collection, delayed until actually needed
     void x_InitDescs (void);
-    // Common feature collection, delayed until actually needed, can be overridden by InitializeFeatures
+    // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
 
     // Internal mapper from GetBestGene result to gene's CFeatureIndex object
@@ -264,7 +274,6 @@ private:
     bool m_featsInitialized;
     vector<CRef<CFeatureIndex>> m_sfxList;
     feature::CFeatTree m_featTree;
-    CBioseq_Handle m_deltaBsh;
 
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_featIndexMap;
@@ -403,7 +412,7 @@ int CSeqEntryIndex::IterateBioseqs (_Pred m)
 // Find CBioseqIndex for first Bioseq
 template<typename _Pred>
 inline
-bool CSeqEntryIndex::FirstBioseq (_Pred m)
+bool CSeqEntryIndex::ProcessBioseq (_Pred m)
 
 {
     for (auto& bsx : m_bsxList) {
@@ -416,7 +425,7 @@ bool CSeqEntryIndex::FirstBioseq (_Pred m)
 // Find CBioseqIndex for Bioseq by position
 template<typename _Pred>
 inline
-bool CSeqEntryIndex::NthBioseq (int n, _Pred m)
+bool CSeqEntryIndex::ProcessBioseq (int n, _Pred m)
 
 {
     for (auto& bsx : m_bsxList) {
@@ -431,7 +440,7 @@ bool CSeqEntryIndex::NthBioseq (int n, _Pred m)
 // Find CBioseqIndex for Bioseq by accession
 template<typename _Pred>
 inline
-bool CSeqEntryIndex::FindBioseq (string& accn, _Pred m)
+bool CSeqEntryIndex::ProcessBioseq (const string& accn, _Pred m)
 
 {
     TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
@@ -439,6 +448,35 @@ bool CSeqEntryIndex::FindBioseq (string& accn, _Pred m)
         CRef<CBioseqIndex> bsx = it->second;
         m(*bsx);
         return true;
+    }
+    return false;
+}
+
+// Create CBioseqIndex for Bioseq subregion
+template<typename _Pred>
+inline
+bool CSeqEntryIndex::ProcessBioseq (const CSeq_loc& loc, _Pred m)
+
+{
+    CRef<CBioseqIndex> bsx = x_DeltaIndex(loc);
+
+    if (bsx) {
+        m(*bsx);
+        return true;
+    }
+    return false;
+}
+
+// Create CBioseqIndex for Bioseq subrange
+template<typename _Pred>
+inline
+bool CSeqEntryIndex::ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m)
+
+{
+    CRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
+
+    if (loc) {
+        return ProcessBioseq(*loc, m);
     }
     return false;
 }

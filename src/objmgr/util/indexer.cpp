@@ -174,6 +174,8 @@ void CSeqEntryIndex::x_Init (void)
         /* raise hell */;
     }
 
+    m_Counter.Set(0);
+
     m_scope->AddDefaults();
 
     m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
@@ -182,6 +184,92 @@ void CSeqEntryIndex::x_Init (void)
     x_InitSeqs( *m_topSEP );
 }
 
+CRef<CSeq_id> CSeqEntryIndex::MakeUniqueId(void)
+{
+    CRef<CSeq_id> id(new CSeq_id());
+    bool good = false;
+    while (!good) {
+        id->SetLocal().SetStr("tmp_delta_subset_" + NStr::NumericToString(m_Counter.Add(1)));
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(*id);
+        if (! bsh) {
+            good = true;
+        }
+    }
+    return id;
+}
+
+CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
+
+{
+    // create delta sequence referring to location or range, using temporary local Seq-id
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+    CRef<CBioseq> delta(new CBioseq());
+    delta->SetId().push_back(MakeUniqueId());
+    delta->SetInst().Assign(bsh.GetInst());
+    delta->SetInst().ResetSeq_data();
+    delta->SetInst().ResetExt();
+    delta->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    CRef<CDelta_seq> element(new CDelta_seq());
+    element->SetLoc().Assign(loc);
+    delta->SetInst().SetExt().SetDelta().Set().push_back(element);
+    delta->SetInst().SetLength(sequence::GetLength(loc, m_scope));
+
+    CBioseq_Handle deltaBsh = m_scope->AddBioseq(*delta);
+    if (deltaBsh) {
+        // create CBioseqIndex object for delta Bioseq
+        CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, *this));
+
+        // use temporary local ID as accession
+        for (const CRef<CSeq_id>& id : bsx->GetBioseq().GetId()) {
+            if (id->IsLocal()) {
+                const CObject_id &obj_id = id->GetLocal();
+                if (obj_id.IsStr()) {
+                    bsx->m_Accession = obj_id.GetStr();
+                }
+            }
+        }
+
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
+
+{
+    // create location from range
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CSeq_interval& ival = loc->SetInt();
+    ival.SetFrom(from);
+    ival.SetTo(to);
+    if (rev_comp) {
+        ival.SetStrand(eNa_strand_minus);
+    }
+    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
+    if (it != m_accnIndexMap.end()) {
+        CRef<CBioseqIndex> bsx = it->second;
+        for (const CRef<CSeq_id>& id : bsx->GetBioseq().GetId()) {
+            switch (id->Which()) {
+                case CSeq_id::e_Other:
+                case CSeq_id::e_Genbank:
+                case CSeq_id::e_Embl:
+                case CSeq_id::e_Ddbj:
+                case CSeq_id::e_Tpg:
+                case CSeq_id::e_Tpe:
+                case CSeq_id::e_Tpd:
+                    {
+                        ival.SetId().Assign(*id);
+                        // CRef<CSeq_loc> loc(new CSeq_loc(TId& id, TPoint from, TPoint to, TStrand strand = eNa_strand_unknown));
+                        return loc;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    return CRef<CSeq_loc> ();
+}
 
 // CBioseqIndex
 
@@ -249,10 +337,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryInd
 CBioseqIndex::~CBioseqIndex (void)
 
 {
-    // remove temporary delta
-    if (m_deltaBsh) {
-        m_scope->RemoveBioseq(m_deltaBsh);
-    }
 }
 
 // Descriptor collection (delayed until needed)
@@ -339,85 +423,6 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-// Feature collection (delayed until needed)
-void CBioseqIndex::x_InitFeats (void)
-
-{
-    if (m_featsInitialized) {
-        return;
-    }
-
-    if (! m_descsInitialized) {
-        // initialize descriptors first to get m_onlyNearFeats flag
-        x_InitDescs();
-    }
-
-    m_featsInitialized = true;
-
-    SAnnotSelector sel;
-
-    sel.SetLimitTSE(m_bsh.GetTSE_Handle());
-
-    if (m_onlyNearFeats) {
-        sel.SetResolveDepth(0);
-    } else {
-        sel.SetAdaptiveDepth(true);
-    }
-
-    // iterate features on Bioseq
-    for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
-        const CMappedFeat mf = *feat_it;
-        CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
-
-        const CSeq_feat& mpd = mf.GetOriginalFeature();
-        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-
-        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
-        m_sfxList.push_back(sfx);
-
-        m_featTree.AddFeature(mf);
-
-        // index CFeatIndex from CMappedFeat for use with GetBestGene
-        m_featIndexMap[mf] = sfx;
-    }
-}
-
-DEFINE_STATIC_MUTEX(idx_UniqueIdMutex);
-static size_t idx_UniqueIdOffset = 0;
-CRef<CSeq_id> idx_MakeUniqueId(CScope& scope)
-{
-    CMutexGuard guard(idx_UniqueIdMutex);
-
-    CRef<CSeq_id> id(new CSeq_id());
-    bool good = false;
-    while (!good) {
-        id->SetLocal().SetStr("tmp_delta" + NStr::NumericToString(idx_UniqueIdOffset));
-        CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
-        if (bsh) {
-            idx_UniqueIdOffset++;
-        } else {
-            good = true;
-        }
-    }
-    return id;
-}
-
-static CRef<CBioseq> idx_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
-{
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    CRef<CBioseq> seq(new CBioseq());
-    seq->SetId().push_back(idx_MakeUniqueId(scope));
-    seq->SetInst().Assign(bsh.GetInst());
-    seq->SetInst().ResetSeq_data();
-    seq->SetInst().ResetExt();
-    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-    CRef<CDelta_seq> element(new CDelta_seq());
-    element->SetLoc().Assign(loc);
-    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
-    seq->SetInst().SetLength(sequence::GetLength(*loc.GetId(), &scope));
-    return seq;
-}
-
 static CRef<CSeq_loc> idx_FixId(const CSeq_loc& loc, const CSeq_id& orig, const CSeq_id& temporary)
 {
     bool any_change = false;
@@ -437,8 +442,7 @@ static CRef<CSeq_loc> idx_FixId(const CSeq_loc& loc, const CSeq_id& orig, const 
     return new_loc;
 }
 
-static
-CConstRef<CSeq_loc> idx_NormalizeNullsBetween( CConstRef<CSeq_loc> loc, bool force_adding_nulls = false )
+static CConstRef<CSeq_loc> idx_NormalizeNullsBetween( CConstRef<CSeq_loc> loc, bool force_adding_nulls = false )
 {
     if( ! loc ) {
         return loc;
@@ -503,8 +507,8 @@ CConstRef<CSeq_loc> idx_NormalizeNullsBetween( CConstRef<CSeq_loc> loc, bool for
     return new_loc;
 }
 
-// Feature collection on location
-void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
+// Feature collection (delayed until needed)
+void CBioseqIndex::x_InitFeats (void)
 
 {
     if (m_featsInitialized) {
@@ -520,23 +524,22 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
     SAnnotSelector sel;
 
-    sel.SetResolveAll();
-    sel.SetResolveDepth(kMax_Int);
-    sel.SetAdaptiveDepth(true);
+    if (m_onlyNearFeats) {
+        sel.SetResolveDepth(0);
+    } else {
+        sel.SetResolveAll();
+        sel.SetResolveDepth(kMax_Int);
+        sel.SetAdaptiveDepth(true);
+    }
 
-    // use temporary delta for selector
-    CRef<CBioseq> delta = idx_MakeTemporaryDelta(loc, *m_scope);
-    m_deltaBsh = m_scope->AddBioseq(*delta);
-
-    // iterate features on location
-    for (CFeat_CI feat_it(m_deltaBsh, sel); feat_it; ++feat_it) {
+    // iterate features on Bioseq
+    for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
         const CMappedFeat mf = *feat_it;
         CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
         const CSeq_feat& mpd = mf.GetMappedFeature();
         CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-        fl = idx_FixId(*fl, *(m_bsp.GetId().front()), *(delta->GetId().front()));
-        fl = idx_NormalizeNullsBetween( fl );
+        // fl = idx_NormalizeNullsBetween( fl );
 
         CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
         m_sfxList.push_back(sfx);
@@ -545,38 +548,6 @@ void CBioseqIndex::InitializeFeatures (const CSeq_loc& loc)
 
         // index CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
-    }
-}
-
-// Feature collection on range
-void CBioseqIndex::InitializeFeatures (int from, int to, bool rev_comp)
-
-{
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    CSeq_interval& ival = loc->SetInt();
-    ival.SetFrom(from);
-    ival.SetTo(to);
-    if (rev_comp) {
-        ival.SetStrand(eNa_strand_minus);
-    }
-    for (const CRef<CSeq_id>& id : m_bsp.GetId()) {
-        switch (id->Which()) {
-            case NCBI_SEQID(Other):
-            case NCBI_SEQID(Genbank):
-            case NCBI_SEQID(Embl):
-            case NCBI_SEQID(Ddbj):
-            case NCBI_SEQID(Tpg):
-            case NCBI_SEQID(Tpe):
-            case NCBI_SEQID(Tpd):
-                {
-                    ival.SetId().Assign(*id);
-                    InitializeFeatures(*loc);
-                    return;
-                }
-                break;
-            default:
-                break;
-        }
     }
 }
 

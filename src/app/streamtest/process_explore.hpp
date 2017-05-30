@@ -74,139 +74,75 @@ public:
             // IterateBioseqs visits each Bioseq in blob
             int num_seqs = 0;
             idx.IterateBioseqs([this, &num_seqs](CBioseqIndex& bsx) {
-                // Must pass &num_segs as closure argument for it to be visible inside lambda function
+                // Must pass &num_segs as closure argument for it to be visible and editable inside lambda function
                 num_seqs++;
             });
             *m_out << "Bioseq count " << NStr::IntToString(num_seqs) << endl;
 
-            // If no -accn argument, set with accession from FirstBioseq
+            // If no -accn argument, set with accession from first Bioseq
             if (m_accn.empty()) {
-                idx.FirstBioseq([this](CBioseqIndex& bsx) {
-                    // Compiler does not allow passing m_accn as closure argument
+                // get first Bioseq
+                idx.ProcessBioseq([this](CBioseqIndex& bsx) {
+                    // Compiler does not allow passing m_accn member variable as closure argument
                     m_accn = bsx.GetAccession();
-                    // *m_out << m_accn << endl;
                 });
             }
 
-            // Find Bioseq by -accn accession argument (ensures match with optional -from and -to arguments)
-            bool ok = idx.FindBioseq(m_accn, [this](CBioseqIndex& bsx) {
+            if (m_from > 0 && m_to > 0) {
+                // create temporary delta on Bioseq range, pass surrogate CBioseqIndex to lambda function
+                bool ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp, [this](CBioseqIndex& bsx) {
 
-                if (m_from > 0 && m_to > 0) {
-                    // Force feature collection on specified subrange (ignores fSkipRemoteFeatures flag)
-                    bsx.InitializeFeatures(m_from - 1, m_to - 1, m_revcomp);
-                }
+                    int num_feats = 0;
+                    // IterateFeatures causes feature vector to be initialized by CFeat_CI
+                    // ProcessBioseq on subregion provides delta sequence pointing to portion of original Bioseq
+                    bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
 
-                int num_feats = 0;
-                // IterateFeatures causes feature vector to be initialized by CFeat_CI,
-                // if not already done on a subrange with a prior call to InitializeFeatures
-                bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
-                    num_feats++;
-                    CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
-                    if (bsx.IsNA() && sbt != CSeqFeatData::ESubtype::eSubtype_gene) {
+                        num_feats++;
+                        CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
+                        if (bsx.IsNA() && sbt != CSeqFeatData::ESubtype::eSubtype_gene) {
 
-                        // Print feature eSubtype number
-                        *m_out << NStr::IntToString(sbt);
+                            // Print feature eSubtype number
+                            *m_out << NStr::IntToString(sbt) << endl;
 
-                        // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
-                        string locus;
-                        bool has_locus = sfx.GetBestGene([this, &sfx, sbt, &locus](CFeatureIndex& fsx){
-                            CMappedFeat best = fsx.GetMappedFeat();
-                            const CGene_ref& gene = best.GetData().GetGene();
-                            if (gene.IsSetLocus()) {
-                                locus = gene.GetLocus();
+                            // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
+                            string locus;
+                            bool has_locus = sfx.GetBestGene([this, &sfx, sbt, &locus](CFeatureIndex& fsx){
+                                CMappedFeat best = fsx.GetMappedFeat();
+                                const CGene_ref& gene = best.GetData().GetGene();
+                                if (gene.IsSetLocus()) {
+                                    locus = gene.GetLocus();
+                                }
+                            });
+                            if (has_locus) {
+                                *m_out << locus << endl;
+                            } else {
+                                *m_out << "--" << endl;
                             }
-                        });
-                        if (has_locus) {
-                            *m_out << "\t" << locus;
-                        } else {
-                            *m_out << "\t--";
-                        }
-                        *m_out << endl;
 
-                        // Print feature location
-                        const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
-                        string loc_str;
-                        loc.GetLabel(&loc_str);
-                        *m_out << "\tOrig: " << loc_str;
-                        *m_out << endl;
+                            // Print feature location
+                            const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
+                            string loc_str;
+                            loc.GetLabel(&loc_str);
+                            *m_out << "Original: " << loc_str << endl;
 
-                        /*
-                        const CSeq_loc& mloc = sfx.GetMappedFeat().GetLocation();
-                        string mloc_str;
-                        mloc.GetLabel(&mloc_str);
-                        *m_out << "\t FAILS: " << mloc_str;
-                        *m_out << endl;
-                        */
+                            CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
+                            if (sloc) {
+                                string sloc_str;
+                                sloc->GetLabel(&sloc_str);
+                                *m_out << "MappedLoc: " << sloc_str << endl;
+                            }
 
-                        CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
-                        if (sloc) {
-                            string sloc_str;
-                            sloc->GetLabel(&sloc_str);
-                            *m_out << "\tSubs: " << sloc_str;
                             *m_out << endl;
                         }
 
-                        // If coding region, print underlying nucleotide sequence
-                        if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
-                            const CSeq_feat& md = sfx.GetMappedFeat().GetOriginalFeature();
-                            try {
-                                const CSeq_loc& mloc = md.GetLocation();
-                                *m_out << "CSeqVector original" << endl;
-                                CSeqVector vec(mloc, *m_scope);
-                                vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
-                                string coding;
-                                vec.GetSeqData(0, vec.size(), coding);
-                                *m_out << "\tOrig: " << coding;
-                                *m_out << endl;
-                             }
-                            catch (CException& e) {
-                                LOG_POST(Error << "Error processing seqvector original: " << e.what());
-                            }
-                        }
+                    });
 
-                        if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
-                            try {
-                                CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
-                                if (sloc) {
-                                    *m_out << "CSeqVector mapped" << endl;
-                                    CSeqVector vec(*sloc, *m_scope);
-                                    vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
-                                    string coding;
-                                    vec.GetSeqData(0, vec.size(), coding);
-                                    *m_out << "\tSubs: " << coding;
-                                    *m_out << endl;
-                                }
-                            }
-                            catch (CException& e) {
-                                LOG_POST(Error << "Error processing seqvector mapped: " << e.what());
-                            }
-                        }
-
-                        *m_out << endl;
-                    }
+                    *m_out << "Feature count " << NStr::IntToString(num_feats) << endl;
                 });
-                *m_out << "Feature count " << NStr::IntToString(num_feats) << endl;
 
-                *m_out << "GetDeltaHandle" << endl;
-                CBioseq_Handle delt = bsx.GetDeltaHandle();
-                if (delt) {
-                    try {
-                        *m_out << "CSeqVector delta" << endl;
-                        CSeqVector vec(delt);
-                        string seq;
-                        *m_out << "GetSeqData" << endl;
-                        vec.GetSeqData(0, vec.size() - 1, seq);
-                        *m_out << "\tDelta: " << seq;
-                        *m_out << endl;
-                    }
-                    catch (CException& e) {
-                        LOG_POST(Error << "Error processing seqvector delta: " << e.what());
-                    }
+                if (! ok) {
+                    LOG_POST(Error << "Unable to find accession: " << m_accn);
                 }
-            });
-
-            if (! ok) {
-                LOG_POST(Error << "Unable to find accession: " << m_accn);
             }
         }
         catch (CException& e) {
