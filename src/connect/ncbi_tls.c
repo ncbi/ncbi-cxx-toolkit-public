@@ -63,6 +63,7 @@ static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 static SOCKSSL x_SetupNoTls(void)
 {
     static const struct SOCKSSL_struct kNoTlsOps = {
+        "NONE",
         s_NoTlsInit
     };
     CORE_LOG(eLOG_Trace, "SSL has been explicitly disabled");

@@ -779,7 +779,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 extern SOCKSSL NcbiSetupGnuTls(void)
 {
     static const struct SOCKSSL_struct kGnuTlsOps = {
-        s_GnuTlsInit
+        "GNUTLS"
+        , s_GnuTlsInit
 #ifdef HAVE_LIBGNUTLS
         , s_GnuTlsCreate
         , s_GnuTlsOpen

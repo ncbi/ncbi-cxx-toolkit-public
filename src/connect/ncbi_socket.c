@@ -835,6 +835,7 @@ static EIO_Status s_Send(SOCK, const void*, size_t, size_t*, int);
 
 static EIO_Status s_InitAPI_(int secure)
 {
+    static const struct SOCKSSL_struct kNoSSL = { "", 0 };
     EIO_Status status;
 
     if (!s_Initialized  &&  (status = s_Init()) != eIO_Success)
@@ -845,23 +846,25 @@ static EIO_Status s_InitAPI_(int secure)
     if (s_Initialized < 0)
         return eIO_NotSupported;
 
-    if (!secure  ||  s_SSL)
+    if (!secure)
         return eIO_Success;
+
+    if (s_SSL)
+        return s_SSL == &kNoSSL ? eIO_NotSupported : eIO_Success;
 
     if (s_SSLSetup) {
         CORE_LOCK_WRITE;
         if (!s_SSL) {
-            static const struct SOCKSSL_struct kNoSSL = { 0 };
-            SOCKSSL ssl = s_SSLSetup ? s_SSLSetup() : 0;
-            if (ssl  &&  ssl->Init) {
-                s_SSL = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
-                         ? ssl : &kNoSSL);
-            } else {
+            SOCKSSL ssl;
+            if (!s_SSLSetup  ||  !(ssl = s_SSLSetup())) {
                 s_SSL = &kNoSSL;
                 status = eIO_NotSupported;
+            } else {
+                s_SSL = ssl;
+                status = ssl->Init(s_Recv, s_Send);
             }
         } else
-            status = eIO_Success;
+            status = s_SSL == &kNoSSL ? eIO_NotSupported : eIO_Success;
         CORE_UNLOCK;
     } else {
         static void* /*bool*/ s_Once = 0/*false*/;
@@ -8346,4 +8349,10 @@ extern EIO_Status SOCK_SetupSSLEx(FSSLSetup setup)
 {
     SOCK_SetupSSL(setup);
     return setup ? s_InitAPI(1/*secure*/) : eIO_Success;
+}
+
+
+extern const char* SOCK_SSLName(void)
+{
+    return !s_SSLSetup ? 0 : !s_SSL ? "" : s_SSL->Name;
 }

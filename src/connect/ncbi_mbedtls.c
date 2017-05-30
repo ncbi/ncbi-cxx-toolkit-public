@@ -708,7 +708,8 @@ static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 extern SOCKSSL NcbiSetupMbedTls(void)
 {
     static const struct SOCKSSL_struct kMbedTlsOps = {
-        s_MbedTlsInit
+        "MBEDTLS"
+        , s_MbedTlsInit
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         , s_MbedTlsCreate
         , s_MbedTlsOpen

@@ -272,6 +272,18 @@ static int x_CertRtrCB(gnutls_session_t session,
 #endif /*HAVE_LIBGNUTLS*/
 
 
+static int xstrcasecmp(const char* s1, const char* s2)
+{
+    if (s1  &&  s2)
+        return strcasecmp(s1, s2);
+    if (!s1)
+        return -1;
+    if (!s2)
+        return  1;
+    return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
 #ifdef HAVE_LIBGNUTLS
@@ -331,11 +343,13 @@ int main(int argc, char* argv[])
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
     if (*blk) {
         status = SOCK_SetupSSLEx(NcbiSetupTls);
-        CORE_LOGF(eLOG_Note, ("SSL request%s acknowledged: %s",
-                              status != eIO_Success ? " NOT" : "",
+        CORE_LOGF(eLOG_Note, ("SSL setup request for %s%s acknowledged: %s",
+                              blk, status != eIO_Success ? " NOT" : "",
                               IO_StatusStr(status)));
     }
-    if (net_info->scheme == eURL_Https) {
+
+    if (net_info->scheme == eURL_Https
+        &&  xstrcasecmp(SOCK_SSLName(), "GNUTLS") == 0) {
 #ifdef HAVE_LIBGNUTLS
         int err;
         char type[40];
@@ -391,18 +405,9 @@ int main(int argc, char* argv[])
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
             }
         }
+#else
+        CORE_LOG(eLOG_Critical, "GNUTLS required but not supported");
 #endif /*HAVE_LIBGNUTLS*/
-#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
-        CORE_LOG(eLOG_Warning, "MBEDTLS does not support credentials yet");
-#  ifdef HAVE_LIBGNUTLS
-        net_info->credentials = 0;  /* do not clobber with foreign stuff */
-#  endif /*HAVE_LIBGNUTLS*/
-#endif /*HAVE_LIBMBEDTLS*/
-#if !defined(HAVE_LIBGNUTLS)   &&                                   \
-    !defined(HAVE_LIBMBEDTLS)  &&                                   \
-    !defined(NCBI_CXX_TOOLKIT)
-        CORE_LOG(eLOG_Warning, "SSL required but may not be supported");
-#endif /*!HAVE_LIBGNUTLS && !HAVE_LIBMBEDTLS && !NCBI_CXX_TOOLKIT*/
     }
 
     CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",

@@ -108,15 +108,16 @@ typedef const char* (*FSSLError) (void* session, int  error,
 /* Table of "virtual functions"
  */
 struct SOCKSSL_struct {
-    FSSLInit   Init;
-    FSSLCreate Create;
-    FSSLOpen   Open;
-    FSSLRead   Read;
-    FSSLWrite  Write;
-    FSSLClose  Close;
-    FSSLDelete Delete;
-    FSSLExit   Exit;
-    FSSLError  Error;
+    const char* Name;
+    FSSLInit    Init;
+    FSSLCreate  Create;
+    FSSLOpen    Open;
+    FSSLRead    Read;
+    FSSLWrite   Write;
+    FSSLClose   Close;
+    FSSLDelete  Delete;
+    FSSLExit    Exit;
+    FSSLError   Error;
 };
 
 

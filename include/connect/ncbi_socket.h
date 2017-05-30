@@ -2161,6 +2161,15 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
 
+/** Return an SSL vendor name (in a const static storage), with special
+ *  considerations:  return "" if SSL has not been properly initialized,
+ *  NULL if SSL has not been properly set up.
+ * @note
+ *  "NONE" is returned as a name if SSL has been explicitly disabled.
+ */
+extern NCBI_XCONNECT_EXPORT const char* SOCK_SSLName(void);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
