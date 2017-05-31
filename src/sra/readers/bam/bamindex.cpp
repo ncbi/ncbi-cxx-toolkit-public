@@ -401,7 +401,8 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
 {
     size_t nBins = m_Intervals.size();
     vector<TSeqPos> aln_over_starts(nBins);
-    auto bin_it = GetLevelBins(kMinLevel).first;
+    // next_bin_it points to a low-level bin that starts after current position
+    auto bin_it_start = GetLevelBins(kMinLevel).first, next_bin_it = bin_it_start;
     for ( size_t i = 0; i < nBins; ++i ) {
         TSeqPos ref_pos = i * kMinBinSize;
         CBGZFPos min_fp = m_Intervals[i];
@@ -410,16 +411,17 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
             aln_over_starts[i] = ref_pos;
             continue;
         }
-        // find start refseq position
-        while ( bin_it+1 < m_Bins.end() && bin_it[1].GetStartFilePos() <= min_fp ) {
-            ++bin_it;
+        // update next_bin_it to point to the next bin after current refseq position
+        while ( next_bin_it != m_Bins.end() && next_bin_it->GetStartFilePos() <= min_fp ) {
+            ++next_bin_it;
         }
         TSeqPos min_aln_start = i? aln_over_starts[i-1]: 0;
         bool inside_min_bin = false;
-        if ( bin_it != m_Bins.end() ) {
-            _ASSERT(bin_it->GetStartFilePos() <= min_fp);
-            inside_min_bin = bin_it->GetEndFilePos() > min_fp;
-            min_aln_start = max(min_aln_start, (bin_it->m_Bin-GetBinNumberBase(kMinLevel))*kMinBinSize);
+        if ( next_bin_it != bin_it_start ) {
+            auto& bin = next_bin_it[-1];
+            _ASSERT(bin.GetStartFilePos() <= min_fp);
+            inside_min_bin = bin.GetEndFilePos() > min_fp;
+            min_aln_start = max(min_aln_start, (bin.m_Bin-GetBinNumberBase(kMinLevel))*kMinBinSize);
         }
         if ( min_aln_start+kMinBinSize < ref_pos && !inside_min_bin ) {
             // more than 1 page before -> lookup all levels for better estimate
@@ -1303,6 +1305,7 @@ static inline char* s_format(char* dst, uint32_t v)
     }
     if ( v >= 100 ) {
         dst = s_format(dst, v/100);
+        v %= 100;
     }
     dst[0] = '0'+(v/10);
     dst[1] = '0'+(v%10);
