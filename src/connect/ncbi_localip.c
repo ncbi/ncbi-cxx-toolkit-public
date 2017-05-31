@@ -54,7 +54,7 @@
 #  endif /*!R_OK*/
 #endif /*NCBI_OS_...*/
 
-#define NCBI_USE_ERRCODE_X   Connect_LocalNet
+#define NCBI_USE_ERRCODE_X   Connect_LocalIP
 
 
 #ifndef   INADDR_LOOPBACK
@@ -97,7 +97,7 @@ static SIPRange s_LocalIP[256 + 1] = { { eIPRange_None } };
 #  include "ext/ncbi_localip.c"
 
 
-static const SIPRange* s_IsOverlappingRange(const SIPRange* range, size_t n)
+static const SIPRange* x_IsOverlappingRange(const SIPRange* range, size_t n)
 {
     size_t i;
     assert(n < SizeOf(s_LocalIP));
@@ -159,7 +159,7 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn)
                 if (s_LocalIP[len].type == eIPRange_Application
                     &&  strcasecmp((const char*) s_LocalIP[len].a.octet,
                                    (const char*) local.a.octet) == 0) {
-                    CORE_LOGF_X(4, eLOG_Error,
+                    CORE_LOGF_X(2, eLOG_Error,
                                 ("Ignoring duplicate domain at line %u: '%s'",
                                  lineno, c));
                     break;
@@ -175,12 +175,12 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn)
                 || (local.type == eIPRange_Host && NcbiIsEmptyIPv6(&local.a))){
                 if (!*err)
                     err = c;
-                CORE_LOGF_X(2, eLOG_Error,
+                CORE_LOGF_X(3, eLOG_Error,
                             ("Ignoring invalid local IP spec at line %u: '%s'",
                              lineno, err));
                 continue;
             }
-            if ((over = s_IsOverlappingRange(&local, n)) != 0) {
+            if ((over = x_IsOverlappingRange(&local, n)) != 0) {
                 char temp[150];
                 const char* tmp
                     = strchr(NcbiDumpIPRange(over, temp, sizeof(temp)), ' ');
@@ -193,7 +193,7 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn)
         }
         assert(local.type != eIPRange_None);
         if (n >= SizeOf(s_LocalIP)) {
-            CORE_LOGF_X(3, eLOG_Error,
+            CORE_LOGF_X(5, eLOG_Error,
                         ("Too many local IP specs, max %u allowed",
                          (unsigned int)(n - 2/*localnet*/)));
             break;
