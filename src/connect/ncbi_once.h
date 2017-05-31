@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Anton Lavrentiev, Pavel Ivanov
+ * Authors:  Anton Lavrentiev
  *
  * File Description:
  *   Once time setter CORE_Once
