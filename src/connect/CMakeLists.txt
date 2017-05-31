@@ -58,12 +58,12 @@ set(SRC_TLS ncbi_gnutls ncbi_mbedtls ncbi_tls
 
 set(SRC_C
     ncbi_ansi_ext ncbi_buffer ncbi_types ncbi_priv ncbi_core ncbi_util
-    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector          
-    ncbi_socket_connector ncbi_file_connector ncbi_http_connector     
-    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service  
-    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail    
-    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version    
-    ncbi_lbos ncbi_namerd parson ncbi_ipv6
+    ncbi_socket ncbi_connutil ncbi_connection ncbi_connector
+    ncbi_socket_connector ncbi_file_connector ncbi_http_connector
+    ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service
+    ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail
+    ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version
+    ncbi_lbos ncbi_namerd parson ncbi_ipv6 ncbi_iprange ncbi_localip
     ${os_src}
     )
 
