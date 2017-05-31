@@ -404,8 +404,18 @@ public:
     void InitAffinities(ISynRegistry& registry, const SRegSynonyms& sections);
     string MakeAuthString();
 
+    struct SConfig
+    {
+        STimeout direct_output_connect_timeout;
+
+        void Init(ISynRegistry& registry, SRegSynonyms& sections);
+    };
+
+    const SConfig& GetConfig() const { return m_Config; }
+
 private:
     const TMode m_Mode;
+    SConfig m_Config;
 
 public:
     CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;

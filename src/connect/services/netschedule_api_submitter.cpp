@@ -416,7 +416,9 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
 
     if (received_job_id != job.job_id) return false;
 
-    if (ReadOutput(job_status, receiver, worker_node_host, worker_node_port)) return true;
+    const auto& timeout = ns_api->GetConfig().direct_output_connect_timeout;
+
+    if (ReadOutput(job_status, receiver, worker_node_host, worker_node_port, timeout)) return true;
 
     switch (CNetScheduleAPI::StringToStatus(received_job_status)) {
     case CNetScheduleAPI::eJobNotFound:
@@ -432,7 +434,8 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
 
 #ifdef NCBI_THREADS
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
-        pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port)
+        pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
+        const STimeout& timeout)
 {
     if (!receiver.first || !receiver.second) return false;
 
@@ -443,7 +446,6 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
 
     const auto host = static_cast<unsigned>(stoul(worker_node_host));
     const auto port = static_cast<unsigned short>(stoul(worker_node_port));
-    STimeout timeout{ 0, 30000 };
     unique_ptr<CSocket> socket;
 
     try {
@@ -556,7 +558,7 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
 }
 #else
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus&,
-        pair<bool*, CNcbiOstream*>, const string&, const string&)
+        pair<bool*, CNcbiOstream*>, const string&, const string&, const STimeout&)
 {
     return false;
 }

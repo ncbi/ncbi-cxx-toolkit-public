@@ -133,8 +133,8 @@ protected:
     bool CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
             time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status, pair<bool*, CNcbiOstream*> = {});
     bool ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
-            pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port);
-
+            pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
+            const STimeout& timeout);
 
     CDatagramSocket m_UDPSocket;
     unsigned short m_UDPPort;
