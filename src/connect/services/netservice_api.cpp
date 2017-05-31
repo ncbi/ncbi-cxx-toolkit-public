@@ -41,6 +41,7 @@
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 
+#include <connect/ncbi_localip.h>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -359,28 +360,10 @@ static const char kXSiteFwd[] = "XSITEFWD";
 
 void SNetServiceXSiteAPI::AllowXSiteConnections()
 {
+    const auto local_ip = CSocketAPI::GetLocalHostAddress();
+    const auto local_domain = GetDomain(local_ip);
+    m_LocalDomain.store(local_domain);
     m_AllowXSiteConnections.store(true);
-
-    SConnNetInfo* net_info = ConnNetInfo_Create(kXSiteFwd);
-
-    // ATTENTION!
-    //   We specifically set "fSERV_Promiscuous" flag here to avoid a
-    //   fallback hit to DISPD.CGI if the service is marked as "Down" in the
-    //   local LBSM table (and thus, is not immediately "visible" unless
-    //   the "fSERV_Promiscuous" flag is set.
-    SSERV_Info* sinfo = SERV_GetInfo(kXSiteFwd,
-            fSERV_Standalone|fSERV_Promiscuous, SERV_LOCALHOST, net_info);
-
-    ConnNetInfo_Destroy(net_info);
-
-    if (sinfo == NULL) {
-        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-            "Cannot find cross-site proxy");
-    }
-
-    m_ColoNetwork.store(SOCK_NetToHostLong(sinfo->host) >> 16);
-
-    free(sinfo);
 }
 
 bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
@@ -402,7 +385,7 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
     SServerAddress actual(original);
     ticket_t ticket = 0;
 
-    if (IsUsingXSiteProxy() && IsColoAddr(actual.host)) {
+    if (IsForeignAddr(actual.host)) {
         union {
             SFWDRequestReply rq;
             char buffer[FWD_MAX_RR_SIZE + 1];
@@ -477,7 +460,29 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
     }
 }
 
-atomic<unsigned> SNetServiceXSiteAPI::m_ColoNetwork{0};
+int SNetServiceXSiteAPI::GetDomain(unsigned int ip)
+{
+    TNCBI_IPv6Addr addr;
+    NcbiIPv4ToIPv6(&addr, ip, 0);
+
+    SNcbiDomainInfo info;
+    NcbiIsLocalIPEx(&addr, &info);
+
+    if (!info.num) {
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound, "Cannot determine local domain");
+    }
+    
+    return info.num;
+}
+
+bool SNetServiceXSiteAPI::IsForeignAddr(unsigned int ip)
+{
+    if (!IsUsingXSiteProxy()) return false;
+
+    return m_LocalDomain != GetDomain(ip);
+}
+
+atomic<int> SNetServiceXSiteAPI::m_LocalDomain{0};
 atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else

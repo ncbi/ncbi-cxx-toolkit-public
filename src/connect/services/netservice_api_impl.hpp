@@ -278,13 +278,11 @@ struct SNetServiceXSiteAPI : public CObject
     static bool IsUsingXSiteProxy();
     static void AllowXSiteConnections();
 
-    static bool IsColoAddr(unsigned int ip)
-    {
-        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork.load();
-    }
-
 private:
-    static atomic<unsigned> m_ColoNetwork;
+    static bool IsForeignAddr(unsigned int ip);
+    static int GetDomain(unsigned int ip);
+
+    static atomic<int> m_LocalDomain;
     static atomic<bool> m_AllowXSiteConnections;
 #endif
 };
