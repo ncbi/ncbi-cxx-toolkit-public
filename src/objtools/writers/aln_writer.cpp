@@ -262,14 +262,12 @@ bool CAlnWriter::WriteAlignDenseSeg(
         string defline;
         if (id.IsGi()) {
             CSeq_id_Handle idh = sequence::GetId(id, *m_pScope, sequence::eGetId_ForceAcc);
-            if (!idh) {
-                NCBI_THROW(CObjWriterException,
-                    eBadInput,
-                    "Empty id handle");
+            if (idh) {
+                defline =  ">" + idh.GetSeqId()->AsFastaString();
             }
-            defline =  ">" + idh.GetSeqId()->AsFastaString();
         }
-        else 
+
+        if (NStr::IsBlank(defline))
         {
             defline = ">" + id.AsFastaString();
         }
