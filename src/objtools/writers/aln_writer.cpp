@@ -438,9 +438,6 @@ void CAlnWriter::AddGaps(
 
     string genomic_string = "";
     string product_string = "";
-    unsigned int common = 0;
-    unsigned int genomic_ins = 0;
-    unsigned int product_ins = 0;
 
     const unsigned int res_width = 
         (product_type == CSpliced_seg::eProduct_type_transcript) ?
@@ -584,7 +581,7 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
         for (int seg=0; seg<num_segs; ++seg) {
             const auto start = sparse_align.GetFirst_starts()[seg];
             const auto len = sparse_align.GetLens()[seg];
-            seqdata += GetSegString(seq_plus, coding, eNa_strand_plus, start, len);
+            seqdata += GetSegString(seq_plus, coding, strands[seg], start, len);
         }
 
         WriteContiguous(">" + second_id.AsFastaString(), seqdata);
