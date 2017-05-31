@@ -40,7 +40,8 @@
 #include <stdlib.h>
 
 
-int/*bool*/ NcbiIsInIPRange(const SIPRange* range, const TNCBI_IPv6Addr* addr)
+extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
+                                   const TNCBI_IPv6Addr* addr)
 {
     if (range  &&  addr) {
         unsigned int a, b, ip;
@@ -87,7 +88,7 @@ int/*bool*/ NcbiIsInIPRange(const SIPRange* range, const TNCBI_IPv6Addr* addr)
 }
 
 
-SIPRange NcbiTrueIPRange(const SIPRange* range)
+extern SIPRange NcbiTrueIPRange(const SIPRange* range)
 {
     SIPRange retval;
     if (range) {
@@ -140,7 +141,8 @@ static size_t x_size(const char* dst, size_t len, const char* ptr)
 }
  
 
-const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize)
+extern const char* NcbiDumpIPRange(const SIPRange* range,
+                                   char* buf, size_t bufsize)
 {
     char result[150];
 
@@ -205,7 +207,7 @@ const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize)
 }
 
 
-int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
+extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
 {
     unsigned int addr, temp;
     const char* t;

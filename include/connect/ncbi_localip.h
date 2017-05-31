@@ -46,7 +46,8 @@ extern "C" {
  * NB: This call invalidates any domain information returned to client via the
  *     NcbiIsLocalIPEx() calls.
  */
-extern void NcbiInitLocalIP(void);
+extern NCBI_XCONNECT_EXPORT
+void NcbiInitLocalIP(void);
 
 
 /**
@@ -54,7 +55,8 @@ extern void NcbiInitLocalIP(void);
  * an agrument, is a local one (i.e. belongs to NCBI); return zero (false)
  * otherwise.
  */
-extern int/*bool*/ NcbiIsLocalIP(unsigned int ip);
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/ NcbiIsLocalIP(unsigned int ip);
 
 
 typedef struct {
@@ -70,7 +72,8 @@ typedef struct {
  * otherwise.
  * NB: Domain information remains valid until a call for NcbiInitLocalIP().
  */
-extern int/*bool*/ NcbiIsLocalIPEx
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/ NcbiIsLocalIPEx
 (const TNCBI_IPv6Addr* addr,
  SNcbiDomainInfo*      info);
 

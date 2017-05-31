@@ -56,14 +56,17 @@ typedef struct {
 } SIPRange;
 
 
+extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
                             const TNCBI_IPv6Addr* addr);
 
 
 /* NB: NOP for IPv6 (which can be either "Host" or "Network") */
+extern NCBI_XCONNECT_EXPORT
 SIPRange    NcbiTrueIPRange(const SIPRange* range);
 
 
+extern NCBI_XCONNECT_EXPORT
 const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize);
 
 
@@ -75,7 +78,7 @@ const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize);
  * Wildcard:        123.123.*       (meaning 123.123.0.0 thru 123.123.255.255)
  * IPv6[/CIDR]:     aa:bb::cc/64    (IPv6 addr must be complete,/CIDR optional)
  */
-
+extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* s);
 
 
