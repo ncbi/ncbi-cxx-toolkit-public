@@ -201,6 +201,8 @@ private:
 //       ...
 //   });
 //
+// and are presented in order of position along the parent sequence.
+//
 // Fetching external features uses SAnnotSelector adaptive depth unless explicitly overridden.
 class NCBI_XOBJUTIL_EXPORT CBioseqIndex : public CObject
 {
@@ -221,8 +223,9 @@ private:
     CBioseqIndex& operator= (const CBioseqIndex&);
 
 public:
-    // Descriptor and feature exploration iterators
+    // Descriptor exploration iterator
     template<typename _Pred> int IterateDescriptors (_Pred m);
+    // Feature exploration iterator
     template<typename _Pred> int IterateFeatures (_Pred m);
 
     // Getters
@@ -238,6 +241,7 @@ public:
     bool IsNA (void) const {  return m_IsNA; }
     bool IsAA (void) const { return m_IsAA; }
     CSeq_inst::TTopology GetTopology (void) const { return m_topology; }
+    CSeq_inst::TLength GetLength (void) const { return m_length; }
 
     bool IsDelta (void) const { return m_IsDelta; }
     bool IsVirtual (void) const { return m_IsVirtual; }
@@ -286,6 +290,7 @@ private:
     bool m_IsNA;
     bool m_IsAA;
     CSeq_inst::TTopology m_topology;
+    CSeq_inst::TLength m_length;
 
     bool m_IsDelta;
     bool m_IsVirtual;

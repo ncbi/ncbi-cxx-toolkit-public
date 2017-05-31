@@ -92,6 +92,8 @@ public:
                 // create temporary delta on Bioseq range, pass surrogate CBioseqIndex to lambda function
                 bool ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp, [this](CBioseqIndex& bsx) {
 
+                    *m_out << "Accession: " << bsx.GetAccession() << endl;
+
                     int num_feats = 0;
                     // IterateFeatures causes feature vector to be initialized by CFeat_CI
                     // ProcessBioseq on subregion provides delta sequence pointing to portion of original Bioseq
