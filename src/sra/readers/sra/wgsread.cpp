@@ -56,7 +56,7 @@
 #include <sra/readers/sra/kdbread.hpp>
 #include <ncbi/ncbi.h>
 #include <insdc/insdc.h>
-#include <ncbi/wgs-contig.h>
+#include <sra/readers/sra/impl/wgs-contig.h>
 #include <vdb/vdb-priv.h>
 
 //#define COLLECT_PROFILE
@@ -3102,8 +3102,18 @@ CRef<CSeq_literal> sx_MakeGapLiteral(TSeqPos len,
                                      NCBI_WGS_gap_linkage gap_linkage)
 {
     CRef<CSeq_literal> literal(new CSeq_literal);
-    static const int kLenTypeMask = 0x03;
-    static const int kGapTypeMask = 0x3c;
+    static const int kLenTypeMask = 
+        -NCBI_WGS_gap_known |
+        -NCBI_WGS_gap_unknown; 	 
+    static const int kGapTypeMask = 	 
+        -NCBI_WGS_gap_scaffold | 	 
+        -NCBI_WGS_gap_contig | 	 
+        -NCBI_WGS_gap_centromere | 	 
+        -NCBI_WGS_gap_short_arm | 	 
+        -NCBI_WGS_gap_heterochromatin | 	 
+        -NCBI_WGS_gap_telomere | 	 
+        -NCBI_WGS_gap_repeat |
+        -NCBI_WGS_gap_unknown_type;
     _ASSERT(props < 0);
     int len_type    = -(-props & kLenTypeMask);
     int gap_type    = -(-props & kGapTypeMask);
@@ -3138,7 +3148,7 @@ CRef<CSeq_literal> sx_MakeGapLiteral(TSeqPos len,
         case NCBI_WGS_gap_repeat:
             gap.SetType(CSeq_gap::eType_repeat);
             break;
-        case 8 * -4:
+        case NCBI_WGS_gap_unknown_type:
             gap.SetType(CSeq_gap::eType_unknown);
             break;
         default:
