@@ -41,12 +41,26 @@
 BEGIN_NCBI_SCOPE
 
 
-// Note 1: IANA TSV requires to have the same number of fields in each row.
-//         So an exception will be generated if a mismatch is detected in both
-//         cases:
-//          - validation of the source
-//          - iterating over the source
-// Note 2: The row with names does not appear in the iteration loop
+const size_t    kReadBufferSize = 128 * 1024;
+
+
+// Note 1: The row with names does not appear in the iteration loop
+// Note 2: IANA TSV has two validation modes:
+//  - default; matches source reading iterations requirements
+//  - strict; follows the BNF strictly
+//
+// Check                          | Strict     | Default validation/
+//                                | validation | reading iteraitons
+// -------------------------------------------------------------------
+// empty source                   | exc        | OK
+// empty lines                    | exc        | exc
+// 0 data records                 | exc        | OK
+// empty field names              | exc        | exc
+// empty field values             | exc        | exc
+// no EOL in the last data record | exc        | OK
+//
+// 'exc' -> exception is generated
+// 'OK' -> no checking performed
 
 
 /// Exception specific to IANA TSV sources
@@ -54,7 +68,12 @@ class CCRowReaderStream_IANA_TSV_Exception : public CException
 {
 public:
     enum EErrCode {
-        eNumberOfFieldsMismatch = 1
+        eNumberOfFieldsMismatch = 1,
+        eEmptyDataSource = 2,
+        eNoTrailingEOL = 3,
+        eEmptyFieldName = 4,
+        eEmptyLine = 5,
+        eEmptyFieldValue = 6
     };
 
     virtual const char * GetErrCodeString(void) const
@@ -62,6 +81,16 @@ public:
         switch (GetErrCode()) {
             case eNumberOfFieldsMismatch:
                 return "eNumberOfFieldsMismatch";
+            case eEmptyDataSource:
+                return "eEmptyDataSource";
+            case eNoTrailingEOL:
+                return "eNoTrailingEOL";
+            case eEmptyFieldName:
+                return "eEmptyFieldName";
+            case eEmptyLine:
+                return "eEmptyLine";
+            case eEmptyFieldValue:
+                return "eEmptyFieldValue";
             default:
                 return CException::GetErrCodeString();
         }
@@ -78,13 +107,76 @@ public:
 class CRowReaderStream_IANA_TSV : public TRowReaderStream_SingleTabDelimited
 {
 public:
+    enum ERR_ValidationMode {
+        eRR_ValidationMode_Default,
+        eRR_ValidationMode_Strict
+    };
+
+public:
     CRowReaderStream_IANA_TSV() :
-        m_FieldNamesExtracted(false), m_NumberOfFields(0)
+        m_FieldNamesExtracted(false), m_NumberOfFields(0),
+        m_ValidationMode(eRR_ValidationMode_Default),
+        m_LineHasTrailingEOL(true),
+        m_ReadBuffer(new char[kReadBufferSize])
     {}
+
+    ~CRowReaderStream_IANA_TSV()
+    {
+        delete [] m_ReadBuffer;
+    }
+
+    void SetValidationMode(ERR_ValidationMode validation_mode)
+    {
+        m_ValidationMode = validation_mode;
+    }
+
+    // The only reason to have this method re-implemented is to detect if the
+    // last line in the stream has a trailing EOL. It makes difference if it is
+    // a strict validation mode.
+    size_t ReadRowData(CNcbiIstream& is, string* data)
+    {
+        data->clear();
+
+        // Note: the std::getline() does not affect the read bytes counter so a
+        // stream version is used. The stream version uses a character buffer
+        streamsize  bytes_read = 0;
+        streamsize  total_read = 0;
+        for (;;) {
+            is.getline(m_ReadBuffer, kReadBufferSize);
+            bytes_read = is.gcount();
+            total_read += bytes_read;
+
+            if (!is.fail()) {
+                // this is presumably the most common case
+                break;
+            }
+
+            if (is.eof()) {
+                if (bytes_read == 0)
+                    return 0;
+                break;
+            }
+
+            // Here: the buffer size is not enough to read the whole line
+            data->append(m_ReadBuffer);
+            is.clear();
+        }
+
+        data->append(m_ReadBuffer);
+        m_LineHasTrailingEOL =
+            total_read != static_cast<ssize_t>(data->size());
+        if(!data->empty()  &&  data->back() == '\r')
+            data->pop_back();
+        return 1;
+    }
 
     ERR_Action Tokenize(const CTempString    raw_line,
                         vector<CTempString>& tokens)
     {
+        if (raw_line.empty())
+            NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
+                       eEmptyLine, "Empty lines are not allowed");
+
         if (!m_FieldNamesExtracted) {
             x_ExtractNames(raw_line);
             return eRR_Skip;
@@ -94,6 +186,12 @@ public:
         // consistency.
         // Note: the only action Tokenize() returns is eRR_Continue_Data
         TRowReaderStream_SingleTabDelimited::Tokenize(raw_line, tokens);
+        for (const auto&  name : m_Tokens) {
+            if (name.empty())
+                NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
+                           eEmptyFieldValue,
+                           "Empty field values are not allowed");
+        }
 
         if (tokens.size() != m_NumberOfFields)
             NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
@@ -110,10 +208,19 @@ public:
     {
         m_Tokens.clear();
         this->Tokenize(raw_line, m_Tokens);
+
+        if (m_ValidationMode == eRR_ValidationMode_Strict) {
+            if (!m_LineHasTrailingEOL)
+                NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
+                           eNoTrailingEOL,
+                           "Strict validation requires "
+                           "trailing EOL in the last line as well");
+        }
         return eRR_Skip;
     }
 
-    ERR_EventAction OnEvent(ERR_Event event)
+    ERR_EventAction OnEvent(ERR_Event event,
+                            ERR_EventMode event_mode)
     {
         switch (event) {
             case eRR_Event_SourceBegin:
@@ -123,6 +230,17 @@ public:
                 return eRR_EventAction_Continue;
 
             case eRR_Event_SourceEnd:
+                if (event_mode == eRR_EventMode_Validating) {
+                    if (m_ValidationMode == eRR_ValidationMode_Strict) {
+                        if (GetMyStream().GetCurrentLineNo() < 1) {
+                            NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
+                                       eEmptyDataSource,
+                                       "Strict validation requires "
+                                       "non empty data source with at least "
+                                       "two lines (a nameline and a record)");
+                        }
+                    }
+                }
             case eRR_Event_SourceError:
             default:
                 ;
@@ -134,12 +252,21 @@ private:
     bool                    m_FieldNamesExtracted;
     TFieldNo                m_NumberOfFields;
     vector<CTempString>     m_Tokens;
+    ERR_ValidationMode      m_ValidationMode;
+    bool                    m_LineHasTrailingEOL;
+
+    char*                   m_ReadBuffer;
 
     void x_ExtractNames(const CTempString& raw_line)
     {
         m_Tokens.clear();
         TRowReaderStream_SingleTabDelimited::Tokenize(raw_line, m_Tokens);
         for (const auto&  name : m_Tokens) {
+            if (name.empty())
+                NCBI_THROW(CCRowReaderStream_IANA_TSV_Exception,
+                           eEmptyFieldName,
+                           "Empty field names are not allowed");
+
             GetMyStream().SetFieldName(m_NumberOfFields,
                                        string(name.data(), name.length()));
             ++m_NumberOfFields;

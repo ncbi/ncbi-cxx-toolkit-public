@@ -183,6 +183,181 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_ITERATE_FAILURE)
 }
 
 
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_SOURCE)
+{
+    string                  data = "";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("empty data source") == string::npos)
+            BOOST_FAIL("Expected empty data source exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_SOURCE)
+{
+    string                  data = "";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+}
+
+
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_NO_RECORDS)
+{
+    string                  data = "Name\tAge\tAddress\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("empty data source") == string::npos)
+            BOOST_FAIL("Expected empty data source exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_NO_RECORDS)
+{
+    string                  data = "Name\tAge\tAddress\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+}
+
+
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_TRAILING_EOL)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t45\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+}
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_TRAILING_EOL)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t45\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+}
+
+
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_NO_TRAILING_EOL)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t45\tW Main St";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("trailing EOL") == string::npos)
+            BOOST_FAIL("Expected trailing EOL exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_NO_TRAILING_EOL)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t45\tW Main St";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+}
+
+
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_FIELD_NAME)
+{
+    string                  data = "Name\t\tAddress\n"
+                                   "Zeke\t45\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Empty field names") == string::npos)
+            BOOST_FAIL("Expected empty name exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_FIELD_NAME)
+{
+    string                  data = "Name\t\tAddress\n"
+                                   "Zeke\t45\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Empty field names") == string::npos)
+            BOOST_FAIL("Expected empty name exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_FIELD_VALUE)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Empty field values") == string::npos)
+            BOOST_FAIL("Expected empty value exception");
+    }
+}
+
+
+
+BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_FIELD_VALUE)
+{
+    string                  data = "Name\tAge\tAddress\n"
+                                   "Zeke\t\tW Main St\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    try {
+        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Empty field values") == string::npos)
+            BOOST_FAIL("Expected empty value exception");
+    }
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END()
 END_NCBI_SCOPE
 

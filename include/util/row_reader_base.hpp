@@ -156,10 +156,13 @@ public:
     /// and then return "eRR_EventAction_Continue"
     /// @param event
     ///  An event in the in input stream
+    /// @param event_mode
+    ///  An event mode (to distinguish if it is a validiation or not)
     /// @return
     ///  Instructions what to do next e.g. stop processing the stream. See
     ///  ERR_EventAction in row_reader.inl
-    ERR_EventAction OnEvent(ERR_Event /*event*/)
+    ERR_EventAction OnEvent(ERR_Event /*event*/,
+                            ERR_EventMode /*event_mode*/)
     { return eRR_EventAction_Default; }
 
     /// Read data for one row.
@@ -173,6 +176,8 @@ public:
     ///  Number of raw lines read from the stream
     size_t ReadRowData(CNcbiIstream& is, string* data)
     {
+        data->clear();
+
         // Optimized version of NcbiGetlineEOL
         // This works for \n and \r\n but not for \r, but the latter was used
         // in old MacOS which has been obsolete for 15 years.

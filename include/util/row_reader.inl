@@ -88,13 +88,20 @@ enum ERR_TraitsFlags {
 typedef int TTraitsFlags;  ///< Bit-wise OR of ERR_TraitsFlags
 
 
-/// Potentially disruptive events
 /// CRowReader passes such events to the Traits via OnEvent() callback
 enum ERR_Event {
     eRR_Event_SourceBegin, ///< Data source has started or been switched
                            ///< (no reads yet though).
     eRR_Event_SourceEnd,   ///< Data source has hit EOF
     eRR_Event_SourceError  ///< Data source has hit an error on read
+};
+
+
+/// Indicate whether the "ERR_Event" event (passed to the OnEvent() callback)
+/// occured during regular read vs during validation
+enum ERR_EventMode {
+    eRR_EventMode_Iterating,  ///< We are iterating through the rows
+    eRR_EventMode_Validating  ///< We are performing data validation
 };
 
 

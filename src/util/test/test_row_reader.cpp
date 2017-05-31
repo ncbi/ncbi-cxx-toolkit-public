@@ -857,7 +857,8 @@ public:
     TRR_Context GetContext(const CRR_Context& stream_ctx) const
     { return stream_ctx; }
 
-    ERR_EventAction OnEvent(ERR_Event event)
+    ERR_EventAction OnEvent(ERR_Event event,
+                            ERR_EventMode /*event_mode*/)
     {
         switch (event) {
             case eRR_Event_SourceEnd:
@@ -1636,7 +1637,8 @@ BOOST_AUTO_TEST_CASE(RR_FIELD_COPY_CONSTRUCTOR)
 class CBeginExceptionTestStreamTraits : public CRowReaderStream_Base
 {
 public:
-    ERR_EventAction OnEvent(ERR_Event event)
+    ERR_EventAction OnEvent(ERR_Event event,
+                            ERR_EventMode /*event_mode*/)
     {
         switch (event) {
             case eRR_Event_SourceBegin:
@@ -1686,7 +1688,8 @@ BOOST_AUTO_TEST_CASE(RR_ON_BEGIN_EXCEPTION_STREAM_EVENT)
 class CEndExceptionTestStreamTraits : public CRowReaderStream_Base
 {
 public:
-    ERR_EventAction OnEvent(ERR_Event event)
+    ERR_EventAction OnEvent(ERR_Event event,
+                            ERR_EventMode /*event_mode*/)
     {
         switch (event) {
             case eRR_Event_SourceEnd:

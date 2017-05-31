@@ -1775,7 +1775,10 @@ ERR_EventAction CRowReader<TTraits>::x_OnEvent(ERR_Event event)
     }
 
     try {
-        return m_Traits.OnEvent(event);
+        ERR_EventMode   event_mode = eRR_EventMode_Iterating;
+        if (m_Validation)
+            event_mode = eRR_EventMode_Validating;
+        return m_Traits.OnEvent(event, event_mode);
     } catch (const CException& exc) {
         NCBI_RETHROW2(exc, CRowReaderException, eTraitsOnEvent,
                       "Traits error in handling the " +

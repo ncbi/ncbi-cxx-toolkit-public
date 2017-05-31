@@ -213,7 +213,8 @@ public:
     void SetHasHeader(bool  has_header)
     { m_HasHeader = has_header; }
 
-    ERR_EventAction OnEvent(ERR_Event event)
+    ERR_EventAction OnEvent(ERR_Event event,
+                            ERR_EventMode /*event_mode*/)
     {
         switch (event) {
             case eRR_Event_SourceBegin:
