@@ -2405,11 +2405,15 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         CSeq_id::ParseIDs(ids, val,                                
                                  CSeq_id::fParse_ValidLocal
                                | CSeq_id::fParse_PartialOK);
-                        if (!ids.empty())
-                        {
+                        if (ids.size()>0) {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
-                            return true;
+                            if (typ == CSeqFeatData::e_Cdregion) {
+                                CRef<CSeq_id> best = GetBestId(ids);
+                                if (!best.Empty())
+                                    sfp->SetProduct().SetWhole(*best);
+                            }
                         }
+                        return true;
                     } catch( CSeqIdException & ) {
                         return false;
                     }
