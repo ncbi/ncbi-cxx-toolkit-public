@@ -441,17 +441,27 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
         return false;
     }
 
+    const auto host = static_cast<unsigned>(stoul(worker_node_host));
+    const auto port = static_cast<unsigned short>(stoul(worker_node_port));
+    STimeout timeout{ 0, 30000 };
+    unique_ptr<CSocket> socket;
+
+    try {
+        // There is no CSocket::Connect(unsigned host...) and no CSocket::CSocket(const CSocket&),
+        // have to create on heap.
+        socket.reset(new CSocket(host, port, &timeout));
+    }
+    catch (...) {
+        return false;
+    }
+
     mutex m;
     condition_variable cv;
     deque<char> d;
     bool done = false;
 
     auto reader = [&] {
-        const auto host = static_cast<unsigned>(stoul(worker_node_host));
-        const auto port = static_cast<unsigned short>(stoul(worker_node_port));
-        STimeout timeout{ 0, 1 };
-        CSocket socket(host, port, &timeout);
-        CSocketReaderWriter socket_reader(&socket);
+        CSocketReaderWriter socket_reader(socket.get());
         CTransmissionReader reader(&socket_reader);
         array<char, 1024 * 1024> buf;
         bool eof = false;
