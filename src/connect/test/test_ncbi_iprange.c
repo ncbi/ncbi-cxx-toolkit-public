@@ -31,7 +31,7 @@
  */
 
 #include <ncbiconf.h>
-#include "../../ncbi_priv.h"
+#include "../ncbi_priv.h"
 #include <connect/ncbi_iprange.h>
 #include <stdio.h>
 #include <string.h>
