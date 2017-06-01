@@ -167,7 +167,9 @@ private:
     using TWriters = list<TWriterInfo>;
 
     template <class TAction>
-    void Do(TAction action);
+    ERW_Result Do(bool all_writers, TAction action);
+
+    ERW_Result WriteImpl(TWriters::iterator i);
 
     TBuffer m_Buffer;
     TWriters m_Writers;
@@ -181,15 +183,26 @@ SMultiWriter::SMultiWriter(initializer_list<IEmbeddedStreamWriter*> init)
 }
 
 template <class TAction>
-void SMultiWriter::Do(TAction action)
+ERW_Result SMultiWriter::Do(bool all_writers, TAction action)
 {
+    bool any_success = false;
     auto i = m_Writers.begin();
 
     while (i != m_Writers.end()) {
         try {
-            if (action(i)) {
+            switch (action(i)) {
+            case eRW_Success:
+                if (!all_writers) return eRW_Success;
+
+                any_success = true;
+                /* FALL THROUGH */
+
+            case eRW_Timeout:
                 ++i;
                 continue;
+
+            default:
+                break;
             }
         }
         catch (...) {
@@ -197,6 +210,8 @@ void SMultiWriter::Do(TAction action)
 
         i = m_Writers.erase(i);
     }
+
+    return m_Writers.empty() ? eRW_Error : (any_success ? eRW_Success : eRW_Timeout);
 }
 
 ERW_Result SMultiWriter::Write(const void* buf, size_t count, size_t* bytes_written)
@@ -205,67 +220,66 @@ ERW_Result SMultiWriter::Write(const void* buf, size_t count, size_t* bytes_writ
     if (!count) return eRW_Success;
 
     m_Buffer.insert(m_Buffer.end(), static_cast<const char*>(buf), static_cast<const char*>(buf) + count);
-    bool all_failed = true;
 
-    Do([&](TWriters::iterator i) {
-        array<char, 1024 * 1024> buf;
+    return Do(false, [&](TWriters::iterator i) {
+        return WriteImpl(i);
+    });
+}
 
-        for (;;) {
-            auto start = m_Buffer.cbegin() + i->second;
-            const size_t max = distance(start, m_Buffer.cend());
-            size_t to_write = min(buf.size(), max);
+ERW_Result SMultiWriter::WriteImpl(TWriters::iterator i)
+{
+    array<char, 1024 * 1024> buf;
 
-            if (!to_write) return true;
+    for (;;) {
+        auto start = m_Buffer.cbegin() + i->second;
+        const size_t max = distance(start, m_Buffer.cend());
+        size_t to_write = min(buf.size(), max);
 
-            copy_n(start, to_write, buf.begin());
+        if (!to_write) return eRW_Success;
 
-            char* data = buf.data();
-            size_t written = 0;
+        copy_n(start, to_write, buf.begin());
 
-            while (to_write) {
-                switch (i->first->Write(data, to_write, &written)) {
-                case eRW_Success:
-                    all_failed = false;
-                    data += written;
-                    to_write -= written;
-                    i->second += written;
-                    continue;
+        char* data = buf.data();
+        size_t written = 0;
 
-                case eRW_Timeout:
-                    return true;
+        while (to_write) {
+        auto result = i->first->Write(data, to_write, &written);
 
-                default:
-                    return false;
-                }
+            switch (result) {
+            case eRW_Success:
+                data += written;
+                to_write -= written;
+                i->second += written;
+                continue;
+
+            default:
+                return result;
             }
         }
-    });
-
-    return all_failed ? eRW_Error : eRW_Success;
+    }
 }
 
 ERW_Result SMultiWriter::Flush()
 {
-    Do([](TWriters::iterator i) {
-        return i->first->Flush() != eRW_Error;
+    return Do(false, [](TWriters::iterator i) {
+        return i->first->Flush();
     });
-
-    return m_Writers.empty() ? eRW_Error : eRW_Success;
 }
 
 void SMultiWriter::Close()
 {
-    Do([](TWriters::iterator i) {
+    Do(true, [&](TWriters::iterator i) {
+        WriteImpl(i);
         i->first->Close();
-        return true;
+        return eRW_Success;
     });
 }
 
 void SMultiWriter::Abort()
 {
-    Do([](TWriters::iterator i) {
+    Do(true, [](TWriters::iterator i) {
         i->first->Abort();
-        return true;
+        return eRW_Success;
     });
 }
 
