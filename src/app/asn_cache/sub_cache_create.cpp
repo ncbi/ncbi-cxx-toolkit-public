@@ -63,6 +63,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -70,6 +71,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #ifdef HAVE_NCBI_VDB
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
@@ -248,6 +250,7 @@ void ExtractExtraIds(CBioseq_Handle         bsh,
 
 static bool s_TrimLargeNucprots = false;
 static bool s_RemoveAnnot = false;
+static bool s_FillInWgsDescriptors = false;
 
 bool s_RemoveAnnotsFromEntry(CSeq_entry &entry)
 {
@@ -338,6 +341,33 @@ bool TrimEntry(CConstRef<CSeq_entry> &entry, CBioseq_Handle bsh)
   return trimmed;
 }
 
+bool IsWGS(CBioseq_Handle bsh)
+{
+    ITERATE (CBioseq_Handle::TId, id_it, bsh.GetId()) {
+        if (id_it->IdentifyAccession() & CSeq_id::eAcc_wgs) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FillInDescriptors(CConstRef<CSeq_entry> &entry, CBioseq_Handle bsh,
+                       CScope &id_scope)
+{
+    if (!s_FillInWgsDescriptors || !IsWGS(bsh)) {
+        return false;
+    }
+
+    CSeq_descr &descr = CBioseq_EditHandle(bsh).SetDescr();
+    descr.Set().clear();
+    CBioseq_Handle bsh_from_id = id_scope.GetBioseqHandle(bsh.GetSeq_id_Handle());
+    for (CSeqdesc_CI desc_ci(bsh_from_id); desc_ci; ++desc_ci) {
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->Assign(*desc_ci);
+        descr.Set().push_back(desc);
+    }
+    return true;
+}
 
 struct SBlobCopier
 {
@@ -345,13 +375,15 @@ struct SBlobCopier
                 bool        extract_delta,
                 bool        extract_product)
         : m_BlobCount(0), m_BioseqCount(0), m_SeqIdCount(0),
-          m_Scope(*CObjectManager::GetInstance()),
+          m_InternalScope(*CObjectManager::GetInstance()),
+          m_IDScope(*CObjectManager::GetInstance()),
           m_SubcacheRoot( subcache_root ),
           m_LastBlob(NULL),
           m_ExtractDelta(extract_delta),
           m_ExtractProducts(extract_product)
     {
         m_Buffer.reserve(128 * 1024 * 1024);
+        m_IDScope.AddDefaults();
     }
 
     void operator() (const SBlobLocator & main_cache_locator,
@@ -372,12 +404,13 @@ struct SBlobCopier
         if (m_LastBlob && *m_LastBlob == main_cache_locator) {
             /// This is the same blob we copied on the last call (this can
             /// happen if several bioseqs belong to the same seq-entry
-            bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
+            bsh = m_InternalScope.GetBioseqHandle(main_cache_locator.m_Idh);
             if (m_CurrentNucprotSeqEntry) {
                 /// Current blob, containing the previous id and this one, is a
                 /// large Nucprot; create a new trimmed entry with this new id
                 CConstRef<CSeq_entry> trimmed_entry = m_CurrentNucprotSeqEntry;
                 TrimEntry(trimmed_entry, bsh);
+                FillInDescriptors(trimmed_entry, bsh, m_IDScope);
 
                 m_OutputChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
                 sub_cache_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
@@ -417,12 +450,14 @@ struct SBlobCopier
             m_LastBlobTimestamp = blob.GetTimestamp();
 
             CConstRef<CSeq_entry> trimmed_entry = entry;
-            m_Scope.ResetDataAndHistory();
-            m_Scope.AddTopLevelSeqEntry(*entry);
-            bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
-            if (TrimEntry(trimmed_entry, bsh)) {
-                /// Seq-entry was trimmed, so we need to create and write
-                /// new smaller blob
+            m_InternalScope.ResetDataAndHistory();
+            m_InternalScope.AddTopLevelSeqEntry(*entry);
+            bsh = m_InternalScope.GetBioseqHandle(main_cache_locator.m_Idh);
+            bool trimmed = TrimEntry(trimmed_entry, bsh);
+            bool filled_in = FillInDescriptors(trimmed_entry, bsh, m_IDScope);
+            if (trimmed || filled_in) {
+                /// Seq-entry was either trimmed or had descriptors added, so
+                /// we need to create and write new smaller blob
                 m_CurrentNucprotSeqEntry = entry;
                 CCache_blob small_blob;
                 small_blob.SetTimestamp( m_LastBlobTimestamp );
@@ -460,7 +495,8 @@ public:
     vector<CSeq_id_Handle> extra_ids;
 
 private:
-    CScope       m_Scope;
+    CScope       m_InternalScope;
+    CScope       m_IDScope;
     const CDir&  m_SubcacheRoot;
     const SBlobLocator* m_LastBlob;
     CAsnIndex::TOffset m_LastBlobOffset;
@@ -733,6 +769,9 @@ void CAsnCacheApplication::Init(void)
     arg_desc->AddFlag("remove-annotation",
                       "Remove all annotation from caches entries");
 
+    arg_desc->AddFlag("fill-in-wgs-descriptors",
+                      "Fill in missing descriptors for WGS contigs by fetching from ID");
+
     arg_desc->SetDependency("skip-retrieval-failures",
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-retrieval-failures",
@@ -793,6 +832,7 @@ int CAsnCacheApplication::Run(void)
 
     s_TrimLargeNucprots = args["trim-large-nucprots"];
     s_RemoveAnnot = args["remove-annotation"];
+    s_FillInWgsDescriptors = args["fill-in-wgs-descriptors"];
 
     vector<CDir> main_cache_roots;
     vector<string> main_cache_paths;
