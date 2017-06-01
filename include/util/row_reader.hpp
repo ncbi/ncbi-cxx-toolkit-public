@@ -756,7 +756,7 @@ CRR_Field<TTraits>::CRR_Field(const CRR_Field&& other_field) :
     m_OriginalDataCopy(std::move(other_field.m_OriginalDataCopy)),
     m_IsNull(other_field.m_IsNull),
     m_Translated(other_field.m_Translated),
-    m_OriginalData(other_field.m_OriginalData),
+    m_OriginalData(m_OriginalDataCopy.data(), m_OriginalDataCopy.size()),
     m_TranslatedValue(std::move(other_field.m_TranslatedValue)),
     m_RowReader(other_field.m_RowReader)
 {}
