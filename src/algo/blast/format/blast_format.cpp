@@ -306,7 +306,7 @@ CBlastFormat::~CBlastFormat()
 
 static const string kHTML_Prefix =
 "<HTML>\n"
-"<TITLE>BLAST Search Results</TITLE>\n"
+"<HEAD><TITLE>BLAST Search Results</TITLE></HEAD>\n"
 "<BODY BGCOLOR=\"#FFFFFF\" LINK=\"#0000FF\" VLINK=\"#660099\" ALINK=\"#660099\">\n"
 "<PRE>\n";
 
