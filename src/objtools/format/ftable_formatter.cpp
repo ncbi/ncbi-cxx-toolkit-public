@@ -116,6 +116,8 @@ void CFtableFormatter::x_FormatLocation
     bool need_key = true;
     for (CSeq_loc_CI it(loc); it; ++it) {
         const CSeq_loc& curr = it.GetEmbeddingSeq_loc();
+        CConstRef<CSeq_loc> curr_it = it.GetRangeAsSeq_loc();
+
         bool is_between = s_IsBetween(curr);
      
         const bool minus_strand  = it.GetStrand() == eNa_strand_minus;
@@ -133,14 +135,14 @@ void CFtableFormatter::x_FormatLocation
         }
         string left, right;
        
-        if ( curr.IsPartialStart(eExtreme_Positional) ) {
+        if ( curr_it->IsPartialStart(eExtreme_Positional) ) {
             left = minus_strand ? '>' : '<';
         }
         left += NStr::IntToString(start);
         if ( is_between ) {
             left += '^';
         }
-        if ( curr.IsPartialStop(eExtreme_Positional) ) {
+        if ( curr_it->IsPartialStop(eExtreme_Positional) ) {
             right = minus_strand ? '<' : '>';
         }
         right += NStr::IntToString(stop);
