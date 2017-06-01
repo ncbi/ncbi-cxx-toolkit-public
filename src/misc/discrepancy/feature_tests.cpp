@@ -394,7 +394,7 @@ bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& 
                 break;
             }
         }
-        if (left - last_gap_stop < 3) {
+        if (left >= last_gap_stop && left - last_gap_stop <= 3) {
             rval = true;
             extend_len = left - last_gap_stop;
         }
@@ -430,9 +430,9 @@ bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos
                 break;
             }
         }
-        if (next_gap_start > right && next_gap_start - right < 3) {
+        if (next_gap_start > right && next_gap_start - right - 1 <= 3) {
             rval = true;
-            extend_len = next_gap_start - right;
+            extend_len = next_gap_start - right - 1;
         }
     }
     return rval;
@@ -475,6 +475,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, 
     if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
         return;
     }
+
     //ignore if feature already has exception
     if (obj.IsSetExcept_text() && NStr::FindNoCase(obj.GetExcept_text(), kNonExtendableException) != string::npos) {
         return;
@@ -591,7 +592,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len)) {
-                add_this = extend_len > 3;
+                add_this = extend_len > 0 && extend_len <= 3;
             }
         }
     }
@@ -600,7 +601,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
-                add_this = extend_len > 3;
+                add_this = extend_len > 0 && extend_len <= 3;
             }
         }
     }
