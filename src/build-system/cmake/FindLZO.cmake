@@ -16,9 +16,9 @@ else (LZO_INCLUDE_DIR AND LZO_LIBRARIES)
 	)
 
 	if(WIN32 AND MSVC)
-	else(WIN32 AND MSVC)
 		FIND_LIBRARY(LZO_LIBRARIES NAMES lzo2
 			PATHS
+			${CMAKE_PREFIX_PATH}
 			${LZO_ROOT}/lib
 			/usr/lib
 			/usr/local/lib
@@ -38,6 +38,8 @@ else (LZO_INCLUDE_DIR AND LZO_LIBRARIES)
 	else (LZO_FOUND)
 		 if (LZO_FIND_REQUIRED)
 				message(FATAL_ERROR "Could NOT find LZO")
+		else()
+			message(STATUS "Could NOT find LZO")
 		 endif (LZO_FIND_REQUIRED)
 	endif (LZO_FOUND)
 
