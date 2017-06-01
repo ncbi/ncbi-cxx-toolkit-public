@@ -490,10 +490,11 @@ find_library(SASL2_LIBS sasl2)
 if (NOT WIN32)
     find_package(MongoCXX)
 endif()
-if (MongoCXX_FOUND)
+if (MONGOCXX_FOUND)
     set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
     set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES} ${OPENSSL_LIBS} ${SASL2_LIBS})
 endif()
+message(STATUS "MongoCXX Includes: ${MONGOCXX_INCLUDE}")
 
 ## find_external_library(MONGOCXX
 ##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
