@@ -1,5 +1,5 @@
 # wxWidgets
-set(foo "${CMAKE_PREFIX_PATH}")
+set(_foo_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
 #set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxwidgets/${CMAKE_BUILD_TYPE}/bin")
 set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}/bin")
 
@@ -32,8 +32,7 @@ else (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
 
 endif (EXISTS ${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1)
 
-set(CMAKE_PREFIX_PATH "${foo}")
-set(foo)
+set(CMAKE_PREFIX_PATH "${_foo_CMAKE_PREFIX_PATH}")
 
 
 #FIXME: this is broken
