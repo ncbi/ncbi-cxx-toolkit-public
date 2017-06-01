@@ -236,7 +236,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
     return CRef<CBioseqIndex> ();
 }
 
-CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
+CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
 
 {
     TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
@@ -258,7 +258,7 @@ CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int t
                         }
                         CSeq_id& nc_id = const_cast<CSeq_id&>(*id);
                         // create location from range
-                        CRef<CSeq_loc> loc(new CSeq_loc(nc_id, from, to, strand));
+                        CConstRef<CSeq_loc> loc(new CSeq_loc(nc_id, from, to, strand));
                         if (loc) {
                             return loc;
                         }
@@ -269,7 +269,7 @@ CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int t
             }
         }
     }
-    return CRef<CSeq_loc> ();
+    return CConstRef<CSeq_loc> ();
 }
 
 

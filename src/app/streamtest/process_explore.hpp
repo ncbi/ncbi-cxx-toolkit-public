@@ -61,17 +61,15 @@ public:
 
     //  ------------------------------------------------------------------------
     void DoOneBioseq(
-        CBioseqIndex& bsx, CExploreProcess& exp)
+        CBioseqIndex& bsx )
     //  ------------------------------------------------------------------------
     {
-        CNcbiOstream* m_out = exp.m_out;
-
         *m_out << "Accession: " << bsx.GetAccession() << endl;
 
         int num_feats = 0;
         // IterateFeatures causes feature vector to be initialized by CFeat_CI
         // ProcessBioseq on subregion provides delta sequence pointing to portion of original Bioseq
-        bsx.IterateFeatures([m_out, &bsx, &num_feats](CFeatureIndex& sfx) {
+        bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
 
             num_feats++;
             CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
@@ -149,7 +147,7 @@ public:
                 // Create temporary delta on Bioseq range, pass surrogate CBioseqIndex to lambda function
                 bool ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp, [this](CBioseqIndex& bsx) {
 
-                    DoOneBioseq(bsx, *this);
+                    DoOneBioseq(bsx);
                 });
                 if (! ok) {
                     LOG_POST(Error << "Unable to find accession: " << m_accn);
@@ -160,7 +158,7 @@ public:
                 // Process selected Bioseq
                 bool ok = idx.ProcessBioseq(m_accn, [this](CBioseqIndex& bsx) {
 
-                    DoOneBioseq(bsx, *this);
+                    DoOneBioseq(bsx);
                 });
                 if (! ok) {
                     LOG_POST(Error << "Unable to find accession: " << m_accn);
@@ -171,7 +169,7 @@ public:
                 // Process first Bioseq
                 bool ok = idx.ProcessBioseq([this](CBioseqIndex& bsx) {
 
-                    DoOneBioseq(bsx, *this);
+                    DoOneBioseq(bsx);
                 });
                 if (! ok) {
                     LOG_POST(Error << "Unable to find first");

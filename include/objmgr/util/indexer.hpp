@@ -157,7 +157,7 @@ private:
     CRef<CBioseqIndex> x_DeltaIndex(const CSeq_loc& loc);
 
     // Create location from range, to use in x_DeltaIndex
-    CRef<CSeq_loc> x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp);
+    CConstRef<CSeq_loc> x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp);
 
 private:
     CRef<CObjectManager> m_objmgr;
@@ -486,7 +486,7 @@ inline
 bool CSeqEntryIndex::ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m)
 
 {
-    CRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
+    CConstRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
 
     if (loc) {
         return ProcessBioseq(*loc, m);
