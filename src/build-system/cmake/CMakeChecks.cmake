@@ -1,5 +1,20 @@
 ############################################################################
 #
+# Note:
+# This file is included before everything else
+# Anything related to the initial state should go early in this file!
+
+if (WIN32)
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
+        set(CMAKE_BUILD_TYPE Debug)
+    endif()
+    if ("${BUILD_SHARED_LIBS}" STREQUAL "")
+        set(BUILD_SHARED_LIBS ON)
+    endif()
+endif()
+
+############################################################################
+#
 # Basic Setup
 #
 
@@ -31,6 +46,39 @@ else()
     message(STATUS "NCBI Root: <not found>")
 endif()
 
+if(WIN32)
+    # Specific location overrides for Windows packages
+    # Note: this variable must be set in the CMake GUI!!
+    #set(WIN32_PACKAGE_ROOT "C:/Users/dicuccio/dev/packages")
+    set(CMAKE_PREFIX_PATH
+        "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib"
+        "${WIN32_PACKAGE_ROOT}/zlib-1.2.3-lib"
+        "${WIN32_PACKAGE_ROOT}/gnutls-3.5.8-w64"
+        "${WIN32_PACKAGE_ROOT}/bzip2-1.0.5-lib"
+        "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib"
+        "${WIN32_PACKAGE_ROOT}/jpeg-6b-4-lib"
+        "${WIN32_PACKAGE_ROOT}/libpng-1.2.37-lib"
+        "${WIN32_PACKAGE_ROOT}/tiff-3.8.2-1-lib"
+        "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib"
+        "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32"
+        "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32"
+        "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32"
+        "${WIN32_PACKAGE_ROOT}/freetype-2.3.5-1-lib"
+        "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
+        "${WIN32_PACKAGE_ROOT}/ftgl-2.1.3_rc5"
+        )
+endif()
+
+#
+# Initial messaging about some important stuff
+#
+message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
+
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
+
 if (NOT buildconf)
   set(buildconf "${CMAKE_BUILD_TYPE}MT64")
   set(buildconf0 ${CMAKE_BUILD_TYPE})
@@ -56,7 +104,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 # when building, use the install RPATH already
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+SET(CMAKE_INSTALL_RPATH "/$ORIGIN/../lib")
 
 #this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
@@ -104,10 +152,20 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.os.cmake)
 #################################
 # Some platform-specific system libs that can be linked eventually
 set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-set(KSTAT_LIBS    )
-set(RPCSVC_LIBS   )
-set(DEMANGLE_LIBS )
-set(ICONV_LIBS    )
+set(KSTAT_LIBS    "")
+set(RPCSVC_LIBS   "")
+set(DEMANGLE_LIBS "")
+set(ICONV_LIBS    "")
+set(UUID_LIBS      "")
+set(NETWORK_LIBS  "")
+set(RT_LIBS          "")
+set(MATH_LIBS      "")
+set(CURL_LIBS      "")
+set(GNUTLS_INCLUDE_DIR      "")
+set(BERKELEYDB_INCLUDE      "")
+set(MYSQL_INCLUDE_DIR      "")
+set(SQLITE3_INCLUDE_DIR "")
+set(SQLITE3_LIBRARY "")
 
 find_library(UUID_LIBS NAMES uuid)
 find_library(CRYPT_LIBS NAMES crypt)
@@ -270,16 +328,25 @@ endif ()
 # these as appropriate.)
 
 find_package(OpenGL)
-find_package(GLEW)
+if (WIN32)
+    set(GLEW_INCLUDE ${WIN32_PACKAGE_ROOT}/glew-1.5.8/include)
+    set(GLEW_LIBRARIES ${WIN32_PACKAGE_ROOT}/glew-1.5.8/lib/glew32mx.lib)
+else()
+    find_package(GLEW)
+endif()
 find_package(OSMesa)
+if (${OPENGL_FOUND})
+    set(OPENGL_INCLUDE "${OPENGL_INCLUDE_DIR}")
+    set(OPENGL_LIBS "${OPENGL_LIBRARIES}")
 
-set(OPENGL_INCLUDE ${OPENGL_INCLUDE_DIRS})
-set(OPENGL_LIBS ${OPENGL_LIBRARIES})
-set(GLEW_INCLUDE ${GLEW_INCLUDE_DIRS})
-set(GLEW_LIBS ${GLEW_LIBRARIES})
-set(OSMESA_INCLUDE ${OSMesa_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
-set(OSMESA_LIBS ${OSMesa_LIBRARIES} ${OPENGL_LIBRARIES})
+    set(OPENGL_INCLUDE ${OPENGL_INCLUDE_DIRS})
+    set(OPENGL_LIBS ${OPENGL_LIBRARIES})
+    set(GLEW_INCLUDE ${GLEW_INCLUDE_DIRS})
+    set(GLEW_LIBS ${GLEW_LIBRARIES})
+    set(OSMESA_INCLUDE ${OSMesa_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
+    set(OSMESA_LIBS ${OSMesa_LIBRARIES} ${OPENGL_LIBRARIES})
 
+endif()
 
 ############################################################################
 #
@@ -348,7 +415,12 @@ find_library(GCRYPT_LIBS NAMES gcrypt HINTS "$ENV{NCBI}/libgcrypt/${CMAKE_BUILD_
 find_library(GPG_ERROR_LIBS NAMES gpg-error HINTS "$ENV{NCBI}/libgpg-error/${CMAKE_BUILD_TYPE}/lib")
 message(STATUS "GCrypt = ${GCRYPT_LIBS}")
 message(STATUS "GPG error = ${GPG_ERROR_LIBS}")
-set(GCRYPT_LIBS ${GCRYPT_LIBS} ${GPG_ERROR_LIBS})
+if (NOT GCRYPT_LIBS STREQUAL "GCRYPT_LIBS-NOTFOUND")
+    set(GCRYPT_FOUND True)
+    set(GCRYPT_LIBS ${GCRYPT_LIBS} ${GPG_ERROR_LIBS})
+else()
+    set(GCRYPT_FOUND False)
+endif()
 
 find_package(LibXml2)
 if (LIBXML2_FOUND)
@@ -359,9 +431,13 @@ endif()
 find_package(LibXslt)
 if (LIBXSLT_FOUND)
     set(LIBXSLT_INCLUDE  ${LIBXSLT_INCLUDE_DIR})
-    set(LIBXSLT_LIBS     ${LIBXSLT_EXSLT_LIBRARIES} ${LIBXSLT_LIBRARIES} ${LIBXML_LIBS} ${GCRYPT_LIBS})
+    set(LIBXSLT_LIBS     ${LIBXSLT_EXSLT_LIBRARIES} ${LIBXSLT_LIBRARIES} ${LIBXML_LIBS})
     set(LIBEXSLT_INCLUDE ${LIBXSLT_INCLUDE_DIR})
-    set(LIBEXSLT_LIBS    ${LIBXSLT_EXSLT_LIBRARIES} ${GCRYPT_LIBS})
+    set(LIBEXSLT_LIBS    ${LIBXSLT_EXSLT_LIBRARIES})
+    if (GCRYPT_FOUND)
+        set(LIBXSLT_LIBS     ${LIBXSLT_LIBS} ${GCRYPT_LIBS})
+        set(LIBEXSLT_LIBS    ${LIBEXSLT_LIBS} ${GCRYPT_LIBS})
+    endif()
 endif()
 
 
@@ -411,9 +487,13 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.image.cmake)
 
 find_library(SASL2_LIBS sasl2)
 
-find_package(MongoCXX)
-set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
-set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES} ${OPENSSL_LIBS} ${SASL2_LIBS})
+if (NOT WIN32)
+    find_package(MongoCXX)
+endif()
+if (MongoCXX_FOUND)
+    set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE_DIRS})
+    set(MONGOCXX_LIB ${MONGOCXX_LIBRARIES} ${OPENSSL_LIBS} ${SASL2_LIBS})
+endif()
 
 ## find_external_library(MONGOCXX
 ##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
@@ -574,14 +654,19 @@ set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
 #
 
 if (UNIX)
+    message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
 endif(UNIX)
 
 if (WIN32)
+    message(STATUS "Generating ${build_root}/inc/ncbiconf_msvc.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
+    message(STATUS "Generating ${includedir}/common/config/ncbiconf_msvc_site.h...")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbiconf_msvc_site.h.in ${includedir}/common/config/ncbiconf_msvc_site.h)
 endif (WIN32)
 
 if (APPLE AND NOT UNIX) #XXX 
+    message(STATUS "Generating ${build_root}/inc/ncbiconf_xcode.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
 endif (APPLE AND NOT UNIX)
 
@@ -594,7 +679,7 @@ endif (APPLE AND NOT UNIX)
 #  - SYBASE_LCL_PATH
 #  - SYBASE_PATH
 #  - FEATURES
-set(c_ncbi_runpath "\$ORIGIN/../lib")
+set(c_ncbi_runpath "/$ORIGIN/../lib")
 set(SYBASE_LCL_PATH ${SYBASE_LIBRARIES})
 set(SYBASE_PATH "")
 set(FEATURES "")
