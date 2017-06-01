@@ -3298,6 +3298,7 @@ KNYA	s	Selcuk Ueniversitesi, Biyoloji Boeluemue
 KO	s	P. J. Safarik University		
 KOCH	s	Kochi University, Department of Natural Environmental Science		
 KOELN	s	Universitaet Koeln, Arbeitsgruppe Geobotanik und Phytotaxonomie		
+KOLABIC	s	Korean Lichen & Allied Bioresource Center	KoLRI
 KONL	s	Bodensee-Naturmuseum		
 KOPRI	c	Korean Polar Research Institute		
 KOPRI:KCCPM	c	Korean Polar Research Institute, KOPRI Culture Collection of Polar Microorganisms

@@ -3331,6 +3331,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KO\ts\tP. J. Safarik University\t\t",
 "KOCH\ts\tKochi University, Department of Natural Environmental Science\t\t",
 "KOELN\ts\tUniversitaet Koeln, Arbeitsgruppe Geobotanik und Phytotaxonomie\t\t",
+"KOLABIC\ts\tKorean Lichen & Allied Bioresource Center\tKoLRI",
 "KONL\ts\tBodensee-Naturmuseum\t\t",
 "KOPRI\tc\tKorean Polar Research Institute\t\t",
 "KOPRI:KCCPM\tc\tKorean Polar Research Institute, KOPRI Culture Collection of Polar Microorganisms",
