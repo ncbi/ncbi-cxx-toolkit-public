@@ -141,10 +141,10 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep)
             // create CBioseqIndex object for current Bioseq
             CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, *this));
 
-            // record as CBioseqIndex in vector
+            // record as CBioseqIndex in vector for IterateBioseqs or ProcessBioseq
             m_bsxList.push_back(bsx);
 
-            // index CBioseqIndex from accession string
+            // map from accession string to CBioseqIndex object
             string& accn = bsx->m_Accession;
             m_accnIndexMap[accn] = bsx;
         }
@@ -214,7 +214,9 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
     delta->SetInst().SetExt().SetDelta().Set().push_back(element);
     delta->SetInst().SetLength(sequence::GetLength(loc, m_scope));
 
+    // add to scope
     CBioseq_Handle deltaBsh = m_scope->AddBioseq(*delta);
+
     if (deltaBsh) {
         // create CBioseqIndex object for delta Bioseq
         CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, *this));
@@ -237,14 +239,6 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
 CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
 
 {
-    // create location from range
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    CSeq_interval& ival = loc->SetInt();
-    ival.SetFrom(from);
-    ival.SetTo(to);
-    if (rev_comp) {
-        ival.SetStrand(eNa_strand_minus);
-    }
     TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
     if (it != m_accnIndexMap.end()) {
         CRef<CBioseqIndex> bsx = it->second;
@@ -258,9 +252,16 @@ CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int t
                 case CSeq_id::e_Tpe:
                 case CSeq_id::e_Tpd:
                     {
-                        ival.SetId().Assign(*id);
-                        // CRef<CSeq_loc> loc(new CSeq_loc(TId& id, TPoint from, TPoint to, TStrand strand = eNa_strand_unknown));
-                        return loc;
+                        CSeq_loc::TStrand strand = eNa_strand_unknown;
+                        if (rev_comp) {
+                            strand = eNa_strand_minus;
+                        }
+                        CSeq_id& nc_id = const_cast<CSeq_id&>(*id);
+                        // create location from range
+                        CRef<CSeq_loc> loc(new CSeq_loc(nc_id, from, to, strand));
+                        if (loc) {
+                            return loc;
+                        }
                     }
                     break;
                 default:
@@ -270,6 +271,7 @@ CRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int t
     }
     return CRef<CSeq_loc> ();
 }
+
 
 // CBioseqIndex
 
@@ -472,7 +474,7 @@ void CBioseqIndex::x_InitFeats (void)
 
         m_featTree.AddFeature(mf);
 
-        // index CFeatIndex from CMappedFeat for use with GetBestGene
+        // CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
     }
 }
@@ -489,6 +491,7 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
 
     return sfx;
 }
+
 
 // CDescriptorIndex
 
