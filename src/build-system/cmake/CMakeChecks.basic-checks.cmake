@@ -182,7 +182,9 @@ endif (CMAKE_USE_PTHREADS_INIT)
 if(HAVE_LIBDL)
     set(DL_LIBS -ldl)
 else(HAVE_LIBDL)
-    message(FATAL_ERROR "dl library not found")
+	if (UNIX)
+		message(FATAL_ERROR "dl library not found")
+	endif(UNIX)
 endif(HAVE_LIBDL)
 
 
