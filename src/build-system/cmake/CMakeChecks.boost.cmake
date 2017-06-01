@@ -11,16 +11,28 @@ endif()
 set(Boost_USE_MULTITHREADED     ON)
 
 #Hints for FindBoost
-if (EXISTS "${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1")
-    set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
+
+set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
+
+if(WIN32)
+	#set(Boost_DEBUG ON)
+	set(WINDOWS_BOOST_DIR "${WIN32_PACKAGE_ROOT}/boost_1_57_0")
+	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${WINDOWS_BOOST_DIR})
+	set(BOOST_ROOT "${WINDOWS_BOOST_DIR}")
+	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
+else()
+	set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
 endif()
 
+
+#set(Boost_DEBUG ON)
+include(FindBoost)
+#set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
-             COMPONENTS filesystem regex system)
-if (NOT Boost_FOUND)
-    message(FATAL "BOOST not found...") 
-  #XXX WARNING
-endif (NOT Boost_FOUND)
+             COMPONENTS filesystem regex system
+			 REQUIRED)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set(BOOST_LIBPATH -L${Boost_LIBRARY_DIRS} -Wl,-rpath,${Boost_LIBRARY_DIRS})
+
+set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
