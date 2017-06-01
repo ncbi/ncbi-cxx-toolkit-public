@@ -11,10 +11,14 @@ option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
 option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions(-D_DEBUG -gdwarf-3)
+    add_definitions(-D_DEBUG)
+    if (NOT WIN32)
+        add_definitions(-gdwarf-3)
+    endif()
 ELSE()
     add_definitions(-DNDEBUG)
 ENDIF()
+
 
 if (APPLE)
   add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
@@ -60,9 +64,10 @@ macro(set_c_compiler_flag_optional)
 endmacro()
 
 # Check for appropriate C++11 flags
-set_cxx_compiler_flag_optional("-std=gnu++11" "-std=c++11" "-std=c++0x")
-set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
-
+if (UNIX)
+	set_cxx_compiler_flag_optional("-std=gnu++11" "-std=c++11" "-std=c++0x")
+	set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
+endif()
 
 find_program(CCACHE_EXECUTABLE ccache
              PATHS /usr/local/ccache/3.2.5/bin/)
