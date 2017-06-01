@@ -355,9 +355,6 @@ private:
     /// The custom output format specification
     string m_CustomOutputFormatSpec;
 
-    /// Flag indicating a non-Blast DB source of subject sequences.
-    bool m_IsNonBlastDB;
-
     /// Structure for incremental XML BLAST output.
     CRef<SBlastXMLIncremental> m_BlastXMLIncremental;
 
