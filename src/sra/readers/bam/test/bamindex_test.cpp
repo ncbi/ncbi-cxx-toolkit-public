@@ -102,6 +102,7 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddFlag("sra", "Use SRA toolkit");
     arg_desc->AddFlag("ST", "Single thread");
     arg_desc->AddFlag("overstart", "Verify overstart info");
+    arg_desc->AddFlag("data-size", "Check data size info");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -177,7 +178,16 @@ int CBamIndexTestApp::Run(void)
     sw.Restart();
     CBamRawDb bam_raw_db(path, index_path);
     cout << "Opened bam file in "<<sw.Elapsed()<<"s"<<endl;
-
+    
+    if ( refseq_table ) {
+        cout << "RefSeq table:\n";
+        for ( size_t i = 0; i < bam_raw_db.GetHeader().GetRefs().size(); ++i ) {
+            cout << "RefSeq: " << bam_raw_db.GetRefName(i) << " " << bam_raw_db.GetRefSeqLength(i) << " @ "
+                 << bam_raw_db.GetIndex().GetRef(i).GetFileRange()
+                 << endl;
+        }
+    }
+    
     for ( auto& q : queries ) {
         auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
         if ( ref_index == size_t(-1) ) {
@@ -213,13 +223,33 @@ int CBamIndexTestApp::Run(void)
     
     if ( args["file-range"] ) {
         for ( auto& q : queries ) {
-            CBamFileRangeSet rs(bam_raw_db.GetIndex(),
-                                bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range);
+            CBamFileRangeSet rs;
+            if ( level1 != CBamIndex::kMinLevel || level2 != CBamIndex::kMaxLevel ) {
+                rs.AddRanges(bam_raw_db.GetIndex(),
+                             bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range,
+                             level1, level2);
+            }
+            else {
+                rs = CBamFileRangeSet(bam_raw_db.GetIndex(),
+                                      bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range);
+            }
             for ( auto& c : rs ) {
                 cout << "Ref["<<q.refseq_id<<"] @"<<q.refseq_range<<": "
                      << c.first<<" - "<<c.second
                      << endl;
             }
+        }
+    }
+
+    if ( args["data-size"] ) {
+        for ( auto& q : queries ) {
+            auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+            auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+            auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
+            sw.Restart();
+            const auto& data_size = ref.EstimateDataSizeByAlnStartPos(ref_len);
+            cout <<"Collected data size data in "<<sw.Elapsed()<<"s"<<endl;
+            cout <<"Total size: "<<accumulate(data_size.begin(), data_size.end(), Uint8(0))<<" bytes"<<endl;
         }
     }
 
@@ -231,21 +261,31 @@ int CBamIndexTestApp::Run(void)
             sw.Restart();
             const auto& overstart = ref.GetAlnOverStarts();
             cout <<"Collected overstart data in "<<sw.Elapsed()<<"s"<<endl;
+            cout <<"Verifying..."<<endl;
             for ( TSeqPos pos = (q.refseq_range.GetFrom()+16383)&-16384;
                   pos < q.refseq_range.GetToOpen() && pos < ref_len;
                   pos += 16384 ) {
                 TSeqPos k = pos/16384;
-                TSeqPos start = pos;
+                TSeqPos actual_start = pos;
                 CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, 1);
                 if ( it ) {
-                    start = it.GetRefSeqPos()&-16384;
+                    actual_start = it.GetRefSeqPos()&-16384;
                 }
-                TSeqPos got_start = k < overstart.size()? overstart[k]: pos;
-                if ( start != got_start ) {
-                    cout << "overstart["<<pos<<"] = "<<got_start << " != "<<start<<endl;
+                TSeqPos calculated_start = k < overstart.size()? overstart[k]: pos;
+                if ( actual_start < calculated_start ) {
+                    cout << "overstart["<<pos<<"] = "
+                         << calculated_start << " != " << actual_start
+                         << endl;
                     error_code = 1;
                 }
+                else if ( verbose && actual_start != calculated_start ) {
+                    cout << "inexact overstart["<<pos<<"] = "
+                         << calculated_start << " != " << actual_start
+                         << " by " << (actual_start-calculated_start)
+                         << endl;
+                }
             }
+            cout <<"Done verifying overstart data."<<endl;
         }
     }
 
