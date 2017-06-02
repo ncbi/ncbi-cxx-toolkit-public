@@ -859,50 +859,23 @@ int CBAMCompareApp::Run(void)
                     }
                 }
             }
-            if ( alns1 != alns2 ) {
-                size_t size1 = alns1.size(), i1 = 0;
-                size_t size2 = alns2.size(), i2 = 0;
-                out << "SRA SDK and SamTools results differ:" << NcbiEndl;
-                while ( i1 < size1 || i2 < size2 ) {
-                    if ( i1 < size1 &&
-                         (i2 == size2 || alns1[i1] < alns2[i2]) ) {
-                        out << " aln1["<<i1<<"]: "<<alns1[i1]<<NcbiEndl;
-                        ++i1;
-                    }
-                    else if ( i2 < size2 &&
-                              (i1 == size1 || alns2[i2] < alns1[i1]) ) {
-                        out << " aln2["<<i2<<"]: "<<alns2[i2]<<NcbiEndl;
-                        ++i2;
-                    }
-                    else {
-                        ++i1;
-                        ++i2;
-                    }
-                }
-            }
-            sort(alns1.begin(), alns1.end());
-            sort(alns2.begin(), alns2.end());
             size_t diff_count = 0;
             if ( alns1 != alns2 ) {
                 size_t size1 = alns1.size(), i1 = 0;
                 size_t size2 = alns2.size(), i2 = 0;
                 out << "SRA SDK and SamTools results differ:" << NcbiEndl;
                 while ( i1 < size1 || i2 < size2 ) {
-                    if ( i2 < size2 && q.refseq_range != CRange<TSeqPos>::GetWhole() &&
-                         !alns2[i2].ref_range.IntersectingWith(q.refseq_range) ) {
-                        alnsout2.push_back(alns2[i2]);
-                        ++i2;
-                        continue;
-                    }
                     if ( i1 < size1 &&
                          (i2 == size2 || alns1[i1] < alns2[i2]) ) {
                         out << " aln1["<<i1<<"]: "<<alns1[i1]<<NcbiEndl;
                         ++i1;
+                        ++diff_count;
                     }
                     else if ( i2 < size2 &&
                               (i1 == size1 || alns2[i2] < alns1[i1]) ) {
                         out << " aln2["<<i2<<"]: "<<alns2[i2]<<NcbiEndl;
                         ++i2;
+                        ++diff_count;
                     }
                     else {
                         ++i1;
@@ -918,7 +891,7 @@ int CBAMCompareApp::Run(void)
                 alnsout1.clear();
                 alnsout2.clear();
             }
-            diff_count = alnsout1.size() + alnsout2.size();
+            diff_count += alnsout1.size() + alnsout2.size();
             if ( !alnsout1.empty() ) {
                 out << "SRA SDK returned "<<alnsout1.size()
                     << " non-overlapping alignments." << NcbiEndl;
