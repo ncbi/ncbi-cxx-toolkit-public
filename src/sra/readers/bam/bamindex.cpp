@@ -246,16 +246,21 @@ const char* SBamIndexBinInfo::Read(const char* ptr, const char* end)
 /////////////////////////////////////////////////////////////////////////////
 
 
+SBamIndexRefIndex::TBinsIter SBamIndexRefIndex::GetLevelEnd(EIndexLevel level) const
+{
+    if ( level == kMinLevel ) {
+        return m_Bins.end();
+    }
+    else {
+        return lower_bound(m_Bins.begin(), m_Bins.end(), GetBinNumberBase(EIndexLevel(level-1)));
+    }
+}
+
 pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>
 SBamIndexRefIndex::GetLevelBins(EIndexLevel level) const
 {
     pair<TBinsIter, TBinsIter> ret;
-    if ( level == kMinLevel ) {
-        ret.second = m_Bins.end();
-    }
-    else {
-        ret.second = lower_bound(m_Bins.begin(), m_Bins.end(), GetBinNumberBase(EIndexLevel(level-1)));
-    }
+    ret.second = GetLevelEnd(level);
     ret.first = lower_bound(m_Bins.begin(), ret.second, GetBinNumberBase(level));
     return ret;
 }
@@ -452,24 +457,33 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
 }
 
 
-static inline
-Uint8 s_EstimatedPos(const CBGZFPos& pos)
+inline
+Uint8 s_EstimatedPos(CBGZFPos pos)
 {
     return pos.GetFileBlockPos() + Uint8(pos.GetByteOffset()*kEstimatedCompression);
 }
 
 
-static inline
+inline
+Uint8 s_EstimatedSize(CBGZFPos file_pos1, CBGZFPos file_pos2)
+{
+    if ( file_pos1 >= file_pos2 ) {
+        // empty file region
+        return 0;
+    }
+    Uint8 pos1 = s_EstimatedPos(file_pos1);
+    Uint8 pos2 = s_EstimatedPos(file_pos2);
+    if ( pos1 < pos2 )
+        return pos2 - pos1;
+    else
+        return 1; // report non-zero size of non-empty region
+}
+
+
+inline
 Uint8 s_EstimatedSize(const CBGZFRange& range)
 {
-    Uint8 pos1 = s_EstimatedPos(range.first);
-    Uint8 pos2 = s_EstimatedPos(range.second);
-    if ( pos1 < pos2 )
-        return pos2-pos1;
-    else if ( range.first != range.second )
-        return 1;
-    else
-        return 0;
+    return s_EstimatedSize(range.first, range.second);
 }
 
 
@@ -521,6 +535,195 @@ void SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
             }
         }
     }
+}
+
+
+struct SBamRangeBlock {
+    size_t block_beg, block_end; // range of low-level pages
+    size_t fill_beg_to, fill_end_to; // uncertainty about start and end positions
+    CBGZFPos file_beg, file_end; // included BAM file range
+
+    static
+    void x_AddDataSize(vector<Uint8>& vv, size_t beg_pos, size_t end_pos,
+                       CBGZFPos file_beg, CBGZFPos file_end)
+        {
+            _ASSERT(beg_pos < vv.size());
+            _ASSERT(beg_pos <= end_pos);
+            _ASSERT(end_pos < vv.size());
+            Uint8 file_size = s_EstimatedSize(file_beg, file_end);
+            if ( !file_size ) {
+                return;
+            }
+            size_t page_count = end_pos - beg_pos + 1;
+            Uint8 add_size = (file_size + page_count/2) / page_count;
+            if ( add_size ) {
+                for ( size_t i = beg_pos; i <= end_pos; ++i ) {
+                    vv[i] += add_size;
+                }
+            }
+            else {
+                // rounding produced zero, but the original data size was non-zero,
+                // so make resulting esimated sizes at least non-zero
+                for ( size_t i = beg_pos; i <= end_pos; ++i ) {
+                    if ( !vv[i] ) {
+                        vv[i] = 1;
+                    }
+                }
+            }
+        }
+    
+    void Init(size_t index)
+        {
+            block_beg = block_end = index;
+        }
+
+    void InitData(vector<Uint8>& vv, const SBamIndexBinInfo& bin)
+        {
+            if ( bin.m_Chunks.empty() ) {
+                return;
+            }
+            size_t i = block_beg;
+            _ASSERT(block_end == i);
+            _ASSERT(!file_end.GetVirtualPos());
+            fill_beg_to = fill_end_to = i;
+            file_beg = bin.GetStartFilePos();
+            file_end = bin.GetEndFilePos();
+            _ASSERT(file_beg < file_end);
+            vv[i] = s_EstimatedSize(file_beg, file_end);
+        }
+    void ExpandData(vector<Uint8>& vv, const SBamIndexBinInfo& bin)
+        {
+            if ( bin.m_Chunks.empty() ) {
+                return;
+            }
+            CBGZFPos new_file_beg = bin.GetStartFilePos();
+            CBGZFPos new_file_end = bin.GetEndFilePos();
+            _ASSERT(new_file_beg < new_file_end);
+            if ( !file_end.GetVirtualPos() ) {
+                // start BAM file range
+                x_AddDataSize(vv, block_beg, block_end, new_file_beg, new_file_end);
+                file_beg = new_file_beg;
+                file_end = new_file_end;
+                // pages are completely uncertain
+                fill_beg_to = block_end; // beg/end cross assignment is intentional
+                fill_end_to = block_beg; // beg/end cross assignment is intentional
+            }
+            else {
+                // expand BAM file range
+                if ( new_file_beg < file_beg ) {
+                    x_AddDataSize(vv, block_beg, fill_beg_to, new_file_beg, file_beg);
+                    file_beg = new_file_beg;
+                }
+                if ( new_file_end > file_end ) {
+                    x_AddDataSize(vv, fill_end_to, block_end, file_end, new_file_end);
+                    file_end = new_file_end;
+                }
+            }
+        }
+    
+    SBamRangeBlock()
+        {
+        }
+    SBamRangeBlock(vector<Uint8>& vv,
+                   const vector<SBamRangeBlock>& bb, size_t bb_beg, size_t bb_end)
+        {
+            for ( size_t i = bb_beg; i <= bb_end; ++i ) {
+                const SBamRangeBlock& b = bb[i];
+                if ( !b.file_end.GetVirtualPos() ) {
+                    continue;
+                }
+                if ( !file_end.GetVirtualPos() ) {
+                    // start BAM file range
+                    *this = b;
+                }
+                else {
+                    // include gap
+                    _ASSERT(file_end <= b.file_beg);
+                    x_AddDataSize(vv, fill_end_to, b.fill_beg_to, file_end, b.file_beg);
+                    fill_end_to = b.fill_end_to;
+                    file_end = b.file_end;
+                }
+            }
+            block_beg = bb[bb_beg].block_beg;
+            block_end = bb[bb_end].block_end;
+        }
+};
+
+
+CBGZFRange SBamIndexRefIndex::GetFileRange() const
+{
+    CBGZFRange range;
+    range.first = CBGZFPos::GetInvalid();
+    for ( uint8_t k = kMinLevel; k <= kMaxLevel; ++k ) {
+        auto bins = GetLevelBins(EIndexLevel(k));
+        if ( bins.first != bins.second ) {
+            CBGZFPos pos_beg = bins.first->GetStartFilePos();
+            CBGZFPos pos_end = prev(bins.second)->GetEndFilePos();
+            if ( pos_beg < range.first ) {
+                range.first = pos_beg;
+            }
+            if ( pos_end > range.second ) {
+                range.second = pos_end;
+            }
+        }
+    }
+    if ( range.first.IsInvalid() ) {
+        range.first = CBGZFPos();
+    }
+    return range;
+}
+
+
+vector<Uint8> SBamIndexRefIndex::EstimateDataSizeByAlnStartPos(TSeqPos seqlen) const
+{
+    size_t bin_count;
+    if ( seqlen == kInvalidSeqPos ) {
+        seqlen = m_EstimatedLength;
+    }
+    else {
+        seqlen = max(seqlen, m_EstimatedLength);
+    }
+    bin_count = (seqlen+kMinBinSize-1) >> kLevel0BinShift;
+    _ASSERT(bin_count);
+    vector<Uint8> vv(bin_count);
+    // init blocks
+    vector<SBamRangeBlock> bb(bin_count);
+    size_t bb_end = bin_count-1;
+    for ( size_t i = 0; i <= bb_end; ++i ) {
+        bb[i].Init(i);
+    }
+    // fill smallest bins
+    {
+        TBin bin_number_base = GetBinNumberBase(kMinLevel);
+        auto level_bins = GetLevelBins(kMinLevel);
+        for ( auto bin_it = level_bins.first; bin_it != level_bins.second; ++bin_it ) {
+            size_t i = bin_it->m_Bin - bin_number_base;
+            _ASSERT(i <= bb_end);
+            bb[i].InitData(vv, *bin_it);
+        }
+    }
+    for ( uint8_t k = kMinLevel+1; k <= kMaxLevel; ++k ) {
+        EIndexLevel level = EIndexLevel(k);
+        
+        // merge
+        for ( size_t i = 0; (i<<kLevelStepBinShift) <= bb_end; ++i ) {
+            size_t src_beg = i<<kLevelStepBinShift;
+            size_t src_end = min(bb_end, src_beg+(1<<kLevelStepBinShift)-1);
+            bb[i] = SBamRangeBlock(vv, bb, src_beg, src_end);
+        }
+        bb_end >>= kLevelStepBinShift;
+        
+        // add next level bins
+        TBin bin_number_base = GetBinNumberBase(level);
+        auto level_bins = GetLevelBins(level);
+        for ( auto bin_it = level_bins.first; bin_it != level_bins.second; ++bin_it ) {
+            size_t i = bin_it->m_Bin - bin_number_base;
+            _ASSERT(i <= bb_end);
+            bb[i].ExpandData(vv, *bin_it);
+        }
+    }
+    _ASSERT(bb_end == 0);
+    return vv;
 }
 
 

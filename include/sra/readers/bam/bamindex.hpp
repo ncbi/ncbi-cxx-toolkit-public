@@ -138,10 +138,12 @@ struct SBamIndexDefs
 
     typedef Uint4 TBin;
     // base for bin numbers calculation
-    static const TBin kBinNumberBase = 4681; // == 011111 in octal
+
     // base bin number of a specific index level
     static TBin GetBinNumberBase(EIndexLevel level)
     {
+        // kBinNumberBase == 4681 == 011111 in octal for 5 levels with 3 bits per level
+        const TBin kBinNumberBase = (1<<(kMaxLevel*kLevelStepBinShift))/((1<<kLevelStepBinShift)-1);
         return kBinNumberBase >> (kLevelStepBinShift*level);
     }
     static TBin GetBinNumberOffset(uint32_t pos, EIndexLevel level)
@@ -151,6 +153,10 @@ struct SBamIndexDefs
     static TBin GetBinNumber(uint32_t pos, EIndexLevel level)
     {
         return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
+    }
+    static TBin GetUpperBinNumber(TBin bin)
+    {
+        return (bin-1)>>kLevelStepBinShift;
     }
     static EIndexLevel GetBinNumberIndexLevel(TBin bin)
     {
@@ -212,8 +218,10 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
                             COpenRange<TSeqPos> ref_range,
                             EIndexLevel index_level) const;
 
+    CBGZFRange GetFileRange() const;
     vector<uint64_t> CollectEstimatedCoverage(EIndexLevel min_index_level,
                                               EIndexLevel max_index_level) const;
+    vector<Uint8> EstimateDataSizeByAlnStartPos(TSeqPos seqlen = kInvalidSeqPos) const;
 
     // return array of start position of alignmnets overlapping with each page
     // return empty array if at most one page overlapping is allowed
@@ -221,6 +229,7 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
 
     typedef vector<SBamIndexBinInfo> TBins;
     typedef TBins::const_iterator TBinsIter;
+    TBinsIter GetLevelEnd(EIndexLevel level) const;
     pair<TBinsIter, TBinsIter> GetLevelBins(EIndexLevel level) const;
     
     TBins m_Bins;
@@ -321,6 +330,13 @@ public:
     CollectEstimatedCoverage(size_t ref_index) const
         {
             return CollectEstimatedCoverage(ref_index, kMinLevel, kMaxLevel);
+        }
+    // collect estimated coverage from all index levels
+    // result bin size will be equal to bin size of most detailed index level
+    vector<uint64_t>
+    EstimateDataSizeByAlnStartPos(size_t ref_index) const
+        {
+            return GetRef(ref_index).EstimateDataSizeByAlnStartPos();
         }
 
 private:
@@ -505,6 +521,10 @@ public:
     size_t GetRefIndex(const string& ref_label) const
         {
             return GetHeader().GetRefIndex(ref_label);
+        }
+    const string& GetRefName(size_t ref_index) const
+        {
+            return GetHeader().GetRefName(ref_index);
         }
     TSeqPos GetRefSeqLength(size_t ref_index) const
         {
