@@ -250,6 +250,8 @@ CWiggleReader::xReadSeqAnnotTable(
         return CRef<CSeq_annot>();
     }
     xResetChromValues();
+    //set track defaults in case mandatory track line is missing
+    xParseTrackLine("track type=wiggle_0", pMessageListener);
 
     bool haveData = false;
     while (xGetLine(lr, m_CurLine)) {
