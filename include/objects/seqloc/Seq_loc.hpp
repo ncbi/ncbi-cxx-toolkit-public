@@ -240,7 +240,9 @@ public:
     /// Invalidate id/range cache after deserialization.
     void PostRead(void) const;
 
-    /// Compare locations.
+    /// Compare locations by total range for each seq-id.
+    /// Compares seq-ids (@sa CSeq_loc::CompareOrdered()), then compares
+    /// total range starts (left to right) and lengths (longerst first).
     int Compare(const CSeq_loc& loc) const;
 
     /// Used as a helper for determining which pieces of a
