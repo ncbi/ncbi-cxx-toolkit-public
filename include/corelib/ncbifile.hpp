@@ -3456,15 +3456,15 @@ public:
     /// Read file.
     ///
     /// @return
-    ///   The number of bytes read (zero indicates end of file, 
-    ///   or that 'count' is zero).
+    ///   The number of bytes actually read.
+    ///   Can be less than 'count', zero indicates end of file.
     size_t Read(void* buf, size_t count) const;
 
     /// Write file.
     ///
     /// Always write all 'count' bytes of data to the file.
     /// @return
-    ///   The number of bytes written (equal to 'count'). 
+    ///   The number of bytes written; equal to 'count'. 
     size_t Write(const void* buf, size_t count) const;
 
     /// Flush file buffers.

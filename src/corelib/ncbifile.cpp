@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbierror.hpp>
@@ -41,7 +42,6 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include "ncbi_os_mswin_p.hpp"
-#  include <corelib/ncbi_limits.hpp>
 #  include <direct.h>
 #  include <io.h>
 #  include <fcntl.h> // for _O_* flags
@@ -6479,27 +6479,47 @@ void CFileIO::Close(void)
 
 size_t CFileIO::Read(void* buf, size_t count) const
 {
+    if (count == 0) {
+        return 0;
+    }
+    char* ptr = (char*) buf;
+    
 #if defined(NCBI_OS_MSWIN)
-    DWORD n = 0;
-    if (count > ULONG_MAX) {
-        count = ULONG_MAX;
-    }
-    if ( ::ReadFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
-        if (GetLastError() == ERROR_HANDLE_EOF) {
-            return 0;
-        }
-        NCBI_THROW(CFileErrnoException, eFileIO, "ReadFile() failed");
-    }
-    return n;
+    const DWORD   kMax = numeric_limits<DWORD>::max();
 #elif defined(NCBI_OS_UNIX)
-    ssize_t n = 0;
-    while ((n = ::read(int(m_Handle), buf, count)) < 0) {
-        if (errno != EINTR) {
+    const ssize_t kMax = numeric_limits<ssize_t>::max();
+#endif   
+    
+    while (count) {
+#if defined(NCBI_OS_MSWIN)
+        DWORD nmax = count > kMax ? kMax : (DWORD) count;
+        DWORD n = 0;
+        if ( ::ReadFile(m_Handle, ptr, nmax, &n, NULL) == 0 ) {
+            if (GetLastError() == ERROR_HANDLE_EOF) {
+                break;
+            }
+            NCBI_THROW(CFileErrnoException, eFileIO, "ReadFile() failed");
+        }
+        if ( n == 0 ) {
+            break;
+        }
+#elif defined(NCBI_OS_UNIX)
+        ssize_t nmax = count > kMax ? kMax : (ssize_t) count;
+        ssize_t n = ::read(int(m_Handle), ptr, nmax);
+        if (n == 0) {
+            break;
+        }
+        if ( n < 0 ) {
+            if (errno == EINTR) {
+                continue;
+            }
             NCBI_THROW(CFileErrnoException, eFileIO, "read() failed");
         }
-    }
-    return n;
 #endif
+        count -= n;
+        ptr += n;
+    }
+    return ptr - (char*)buf;
 }
 
 
@@ -6509,31 +6529,34 @@ size_t CFileIO::Write(const void* buf, size_t count) const
         return 0;
     }
     const char* ptr = (const char*) buf;
-    size_t n = count;
-    do {
+    
 #if defined(NCBI_OS_MSWIN)
-        DWORD n_write   = n > ULONG_MAX ? ULONG_MAX : (DWORD) n;
-        DWORD n_written = 0;
-        if ( ::WriteFile(m_Handle, ptr, n_write, &n_written, NULL) == 0 ) {
+    const DWORD   kMax = numeric_limits<DWORD>::max();
+#elif defined(NCBI_OS_UNIX)
+    const ssize_t kMax = numeric_limits<ssize_t>::max();
+#endif   
+    
+    while (count) {
+#if defined(NCBI_OS_MSWIN)
+        DWORD nmax = count > kMax ? kMax : (DWORD) count;
+        DWORD n = 0;
+        if ( ::WriteFile(m_Handle, ptr, nmax, &n, NULL) == 0 ) {
             NCBI_THROW(CFileErrnoException, eFileIO, "WriteFile() failed");
         }
 #elif defined(NCBI_OS_UNIX)
-        ssize_t n_written = ::write(int(m_Handle), ptr, n);
-        if (n_written == 0) {
-            NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
+        ssize_t nmax = count > kMax ? kMax : (ssize_t) count;
+        ssize_t n = ::write(int(m_Handle), ptr, nmax);
+        if ( n < 0  &&  errno == EINTR ) {
+            continue;
         }
-        if ( n_written < 0 ) {
-            if (errno == EINTR) {
-                continue;
-            }
+        if ( n <= 0 ) {
             NCBI_THROW(CFileErrnoException, eFileIO, "write() failed");
         }
 #endif
-        n   -= n_written;
-        ptr += n_written;
+        count -= n;
+        ptr += n;
     }
-    while (n > 0);
-    return count;
+    return ptr - (char*)buf;
 }
 
 

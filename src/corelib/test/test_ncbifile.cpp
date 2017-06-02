@@ -1483,10 +1483,11 @@ static void s_TEST_FileIO(void)
 
 static void s_TEST_FileIO_LargeFiles(void)
 {
-    const Uint8  kSize_1GB = NCBI_CONST_UINT8(1*1024*1024*1024);
-    const Uint8  kSize_5GB = NCBI_CONST_UINT8(5*1024*1024*1024);
-    const Uint8  kSize_6GB = NCBI_CONST_UINT8(6*1024*1024*1024);
-    const size_t kSize_Buf = 64*1024;
+    const Uint8  kSize_1GB  = NCBI_CONST_UINT8(1*1024*1024*1024);
+    const Uint8  kSize_5GB  = NCBI_CONST_UINT8(5*1024*1024*1024);
+    const Uint8  kSize_6GB  = NCBI_CONST_UINT8(6*1024*1024*1024);
+    const size_t kChunkSize = 64*1024;
+    const size_t kDataSize  = kSize_5GB;
 
     CFileUtil::SFileSystemInfo info;
     CFileUtil::GetFileSystemInfo(".", &info);
@@ -1507,61 +1508,95 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert((Uint8)rl.rlim_cur > kSize_6GB);
 #endif
     cout << endl;
-
-    const char*  filename = "test_fio.tmp";
-    char         buf_src[kSize_Buf];
-    char         buf_cmp[kSize_Buf];
-    size_t       n;
-
-    // Init buffer size
+    
+    AutoArray<char> arr_src(kDataSize);
+    AutoArray<char> arr_cmp(kDataSize);
+    char* buf_src = arr_src.get();
+    char* buf_cmp = arr_cmp.get();
+    assert(buf_src);
+    assert(buf_cmp);
+     
+    // Init buffer
     srand((unsigned)time(NULL));
-    for (size_t i=0; i<kSize_Buf; i++) {
+    for (size_t i=0; i<kDataSize; i++) {
         buf_src[i] = (char)(rand() % sizeof(char));
     }
 
+    const char* filename = "test_fio.tmp";
+    size_t  n;
     CFileIO fio;
     CFile   f(filename);
 
     // Check that file doesn't exists
     assert( !f.Exists() );
 
-    // Create new file
-    fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
-    assert( fio.GetFilePos() == 0 );
+    // Read/write whole buffer at once
+    {{
+        // Create new file
+        fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
 
-    // Write file >4GB (5GB)
-    for (size_t i = 0; i < (kSize_5GB / kSize_Buf); i++) {
-        n = fio.Write(buf_src, kSize_Buf);
-        assert(n == kSize_Buf);
-    }
-    assert( fio.GetFilePos()  == kSize_5GB);
-    assert( fio.GetFileSize() == kSize_5GB);
-    fio.Close();
-    // We can check real file length via "file name" only after closing
-    assert( f.GetLength() == (Int8)kSize_5GB );
+        // Write file >4GB (5GB)
+        n = fio.Write(buf_src, kDataSize);
+        assert(n == kDataSize);
+        assert( fio.GetFilePos()  == kDataSize);
+        assert( fio.GetFileSize() == kDataSize);
+        fio.Close();
+        // We can check real file length via "file name" only after closing
+        assert( f.GetLength() == (Int8)kDataSize );
 
-    fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
-    assert( fio.GetFilePos() == 0 );
+        // Read file and compare with source
+        fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
+        n = fio.Read(buf_cmp, kDataSize);
+        assert(n == kDataSize);
+        assert(memcmp(buf_cmp, buf_src, kDataSize) == 0 );
+        assert( fio.GetFilePos() == kDataSize );
 
-    // Read file and compare with buffer
-    for (size_t i = 0; i < (kSize_5GB / kSize_Buf); i++) {
-        // Read next kSize_Buf
-        size_t pos = 0;
-        do {
-            n = fio.Read(buf_cmp + pos, kSize_Buf - pos);
-            assert(n != 0);
-            pos += n;
-        } while (pos < kSize_Buf);
-        // Compare buffers
-        assert(pos == kSize_Buf);
-        assert( memcmp(buf_cmp, buf_src, kSize_Buf) == 0 );
-    }
-    assert( fio.GetFilePos() == kSize_5GB );
-    // EOF
-    n = fio.Read(buf_cmp, kSize_Buf);
-    assert(n == 0);
-    assert( fio.GetFilePos() == kSize_5GB );
+        // Close file
+        fio.Close();
+    }}
+        
+    // Read/write with chunks
+    {{
+        // Create new file
+        fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
+        assert( fio.GetFilePos() == 0 );
 
+        // Write file >4GB (5GB)
+        for (size_t i = 0; i < (kDataSize / kChunkSize); i++) {
+            n = fio.Write(buf_src, kChunkSize);
+            assert(n == kChunkSize);
+        }
+        assert( fio.GetFilePos()  == kDataSize);
+        assert( fio.GetFileSize() == kDataSize);
+        fio.Close();
+        // We can check real file length via "file name" only after closing
+        assert( f.GetLength() == (Int8)kDataSize );
+
+        fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
+        assert( fio.GetFilePos() == 0 );
+
+        // Read file and compare with source
+        for (size_t i = 0; i < (kDataSize / kChunkSize); i++) {
+            // Read next chunk
+            size_t pos = 0;
+            do {
+                n = fio.Read(buf_cmp + pos, kChunkSize - pos);
+                assert(n != 0);
+                pos += n;
+            } while (pos < kChunkSize);
+            // Compare buffers
+            assert(pos == kChunkSize);
+            assert(memcmp(buf_cmp, buf_src, kChunkSize) == 0 );
+        }
+        assert( fio.GetFilePos() == kDataSize );
+        // EOF
+        n = fio.Read(buf_cmp, kChunkSize);
+        assert(n == 0);
+        assert( fio.GetFilePos() == kDataSize );
+    }}
+
+    // file is not closed yet....
+    
     // Extend file size to 6GB
     fio.SetFileSize(kSize_6GB, CFileIO::eEnd);
     assert( f.GetLength()     == (Int8)kSize_6GB );
@@ -1578,7 +1613,7 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert( fio.GetFileSize() == 100 );
     assert( f.GetLength() == 100 );
     fio.SetFilePos(0, CFileIO::eBegin);
-    n = fio.Read(buf_cmp, kSize_Buf);
+    n = fio.Read(buf_cmp, kChunkSize);
     assert(n == 100);
     assert( memcmp(buf_cmp, buf_src, n) == 0 );
 
