@@ -140,6 +140,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_use_hypothetic_protein(false),
     m_eukariote(false),
     m_di_fasta(false),
+    m_allow_accession(false),
     m_logger(0)
 {
 }
@@ -510,29 +511,49 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
     if (!feature.IsSetQual())
         return;
 
+    string mask_transcript = "gnl|*|mrna." + m_locus_tag_prefix + "*";
+    string mask_protein    = "gnl|*|" + m_locus_tag_prefix + "*";
     CSeq_feat::TQual& quals = feature.SetQual();
     for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end();) // no ++ iterator
     {
-        if ((**it).GetQual() == "transcript_id")
+        auto& qual = (**it);
+        if (qual.CanGetVal())
         {
-            (**it).SetQual("orig_transcript_id");
-            it++;
-        }
-        else
-        if ((**it).GetQual() == "protein_id")
-        {
-            if (feature.IsSetData() && feature.GetData().IsCdregion())
-               it = quals.erase(it);
-            else
+            const auto& qual_name = qual.GetQual();
+            const auto& qual_value = qual.GetVal();
+            if (qual_name == "transcript_id")
             {
-               (**it).SetQual("orig_protein_id");
-               it++;
+                if (NStr::MatchesMask(qual_value, mask_transcript))
+                {
+                    it = quals.erase(it);
+                }
+                else {
+                    qual.SetQual("orig_transcript_id");
+                    it++;
+                }
             }
+            else
+                if (qual_name == "protein_id")
+                {
+                    if (feature.IsSetData() && feature.GetData().IsCdregion() ||
+                        NStr::MatchesMask(qual_value, mask_protein))
+                        it = quals.erase(it);
+                    else
+                    {
+                        qual.SetQual("orig_protein_id");
+                        it++;
+                    }
+                }
+                else
+                {
+                    it++;
+                }
         }
         else
         {
             it++;
         }
+
     }
     if (quals.empty())
         feature.ResetQual();

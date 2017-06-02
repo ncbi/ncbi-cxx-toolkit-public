@@ -69,7 +69,8 @@ public:
         fCreateGenesFromCDSs    = (1<<4), ///< = 0x10 (If a CDS has a gene xref, create a gene with the same intervals if one doesn't already exist.)
         fCDSsMustBeInTheirGenes = (1<<5), ///< = 0x20 (If a CDS has a gene xref, it *must* be inside of that gene)
         fReportDiscouragedKey   = (1<<6), ///< = 0x40 (Report discouraged keys into the error container)
-        fLeaveProteinIds        = (1<<7)  ///< = 0x80 (Leave all protein_id as a qualifiers)
+        fLeaveProteinIds        = (1<<7), ///< = 0x80 (Leave all protein_id as a qualifiers)
+        fAllIdsAsLocal          = (1<<8), ///< = 0xA0 (Do not attempt to parse accessions)
     };
     typedef int TFlags;
 

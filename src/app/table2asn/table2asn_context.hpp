@@ -104,6 +104,7 @@ public:
     bool   m_use_hypothetic_protein;
     bool   m_eukariote;
     bool   m_di_fasta;
+    bool   m_allow_accession;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
@@ -143,8 +144,8 @@ public:
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
     void MakeGenomeCenterId(objects::CSeq_entry& entry);
-    static void RenameProteinIdsQuals(objects::CSeq_feat& feature);
-    static void RemoveProteinIdsQuals(objects::CSeq_feat& feature);
+    void RenameProteinIdsQuals(objects::CSeq_feat& feature);
+    void RemoveProteinIdsQuals(objects::CSeq_feat& feature);
     static bool IsDBLink(const objects::CSeqdesc& desc);
 
 

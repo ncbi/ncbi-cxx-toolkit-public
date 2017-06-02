@@ -309,7 +309,7 @@ private:
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
-    void x_InitId(const string& seq_id);
+    void x_InitId(const string& seq_id, const CFeature_table_reader::TFlags flags);
     // returns true if parsed (otherwise, out_offset is left unchanged)
     bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
 
@@ -2873,7 +2873,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
         ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
 
     // if sequence ID is a list, use just one sequence ID string    
-    x_InitId(seqid);
+    x_InitId(seqid, flags);
 
     // Use this to efficiently find the best CDS for a prot feature
     // (only add CDS's for it to work right)
@@ -3137,11 +3137,12 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     return sfp;
 }
 
-void CFeature_table_reader_imp::x_InitId(const string& seq_id)
+void CFeature_table_reader_imp::x_InitId(const string& seq_id, const CFeature_table_reader::TFlags flags)
 {
     if (!NStr::IsBlank(seq_id)) {
         CBioseq::TId ids;
-        CSeq_id::ParseIDs(ids, seq_id);
+        CSeq_id::ParseIDs(ids, seq_id, 
+            (flags && CFeature_table_reader::fAllIdsAsLocal) ? CSeq_id::fParse_AnyLocal:CSeq_id::fParse_Default);
         m_real_seqid.clear();
         ids.front()->GetLabel(&m_real_seqid, CSeq_id::eFasta);
         m_seq_id = ids.front();
@@ -3157,7 +3158,7 @@ void CFeature_table_reader_imp::AddFeatQual (
     const string &seq_id1 )
 
 {
-    x_InitId(seq_id1);
+    x_InitId(seq_id1, flags);
 
     if ((! qual.empty ()) && (! val.empty ())) {
 

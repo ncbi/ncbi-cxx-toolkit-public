@@ -117,7 +117,7 @@ public:
 
 private:
 
-    static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault;
+    static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
     void Setup(const CArgs& args);
 
     string GenerateOutputFilename(const CTempString& ext) const;
@@ -346,12 +346,14 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
     arg_desc->AddFlag("euk", "Assume eukariote");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
+    arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
+    arg_desc->AddFlag("fetchall", "Search data in all available databases");
 
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
@@ -443,6 +445,7 @@ int CTbl2AsnApp::Run(void)
     m_context.m_GenomicProductSet = args["g"].AsBoolean();
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
+    m_context.m_allow_accession = args["allow-acc"].AsBoolean();
 
     if (args["U"] && args["U"].AsBoolean())
       m_context.m_cleanup += 'U';
@@ -920,11 +923,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_delay_genprodset)
     {
-        VisitAllFeatures(entry_edit_handle, &m_context.RenameProteinIdsQuals);
+        VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
     }
     else
     {
-        VisitAllFeatures(entry_edit_handle, &m_context.RemoveProteinIdsQuals);
+        VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
     if (m_context.m_RemotePubLookup)

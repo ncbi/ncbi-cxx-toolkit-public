@@ -228,15 +228,18 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
         m_iFlags |= CFastaReader::fNoSplit;
 //                 |  CFastaReader::fLeaveAsText;
     }
+
     m_iFlags |= CFastaReader::fAddMods
              |  CFastaReader::fValidate
              |  CFastaReader::fHyphensIgnoreAndWarn;
 
+    if (m_context.m_allow_accession)
+        m_iFlags |= CFastaReader::fParseRawID;
+
     if (m_context.m_handle_as_aa)
     {
         m_iFlags |= CFastaReader::fAssumeProt 
-                 |  CFastaReader::fForceType;
-                   
+                 |  CFastaReader::fForceType;                   
     }
     else
     if (m_context.m_handle_as_nuc)
@@ -813,7 +816,8 @@ public:
                     *m_line_reader,
                     CFeature_table_reader::fReportBadKey |
                     CFeature_table_reader::fLeaveProteinIds |
-                    CFeature_table_reader::fCreateGenesFromCDSs,
+                    CFeature_table_reader::fCreateGenesFromCDSs |
+                    CFeature_table_reader::fAllIdsAsLocal,
                     m_logger, 0/*filter*/, m_seqid_prefix);
 
                 if (annot.NotEmpty() && annot->IsSetData() && annot->GetData().IsFtable() &&
@@ -1027,7 +1031,7 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     flags |= CGtfReader::fNewCode;
     flags |= CGtfReader::fGenbankMode;
     flags |= CGtfReader::fRetainLocusIds;
-    //flags |= CGtfReader::fNumericIdsAsLocal;
+    flags |= CGtfReader::fAllIdsAsLocal;
     flags |= CGtfReader::fGenerateChildXrefs;
 
     CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
