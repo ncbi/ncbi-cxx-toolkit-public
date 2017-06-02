@@ -264,6 +264,12 @@ ostream& operator<<(ostream& out, const CBGZFPos& p)
 }
 
 
+ostream& operator<<(ostream& out, const CBGZFRange& r)
+{
+    return out << r.first << '-' << r.second;
+}
+
+
 CBGZFBlock::CBGZFBlock()
     : m_FileBlockPos(TFileBlockPos(-1)),
       m_FileBlockSize(0),

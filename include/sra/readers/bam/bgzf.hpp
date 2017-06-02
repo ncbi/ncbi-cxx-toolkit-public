@@ -235,7 +235,8 @@ NCBI_BAMREAD_EXPORT
 ostream& operator<<(ostream& out, const CBGZFPos& p);
 
 typedef pair<CBGZFPos, CBGZFPos> CBGZFRange;
-
+NCBI_BAMREAD_EXPORT
+ostream& operator<<(ostream& out, const CBGZFRange& r);
 
 class CBGZFBlock
 {
