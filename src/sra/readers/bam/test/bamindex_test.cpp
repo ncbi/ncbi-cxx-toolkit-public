@@ -42,6 +42,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <numeric>
 #include <thread>
 
 #include "bam_test_common.hpp"
