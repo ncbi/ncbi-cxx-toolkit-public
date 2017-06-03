@@ -218,6 +218,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
     m_DoTaxLookup = (options & CValidator::eVal_do_tax_lookup) != 0;
     m_DoBarcodeTests = (options & CValidator::eVal_do_barcode_tests) != 0;
+    m_RefSeqConventions = (options & CValidator::eVal_refseq_conventions) != 0;
     m_SeqSubmitParent = (options & CValidator::eVal_seqsubmit_parent) != 0;
     m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
     m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;

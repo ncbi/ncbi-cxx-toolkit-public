@@ -6461,7 +6461,9 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                 CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
                 bool check_refseq = false;
                 if (bsh) {
-                    if (GetGenProdSetParent (bsh)) {
+                    if (m_Imp.IsRefSeqConventions()) {
+                        check_refseq = true;
+                    } else if (GetGenProdSetParent (bsh)) {
                         check_refseq = true;
                     } else {
                         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {

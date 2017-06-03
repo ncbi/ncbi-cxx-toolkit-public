@@ -64,6 +64,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("splice_as_error", "Report splice problems as errors");
     argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0"); 
     argdescr->AddFlag("B", "Do Barcode Validation");
+    argdescr->AddFlag("refseq", "Use RefSeq Conventions");
 }
 
 
@@ -139,6 +140,10 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
 
     if (args["B"]) {
         options |= CValidator::eVal_do_barcode_tests;
+    }
+
+    if (args["refseq"]) {
+        options |= CValidator::eVal_refseq_conventions;
     }
 
     return options;
