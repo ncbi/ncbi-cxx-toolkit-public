@@ -94,6 +94,7 @@ public:
         eVal_genome_submission       = 0x100000,
         eVal_do_tax_lookup           = 0x200000,  
         eVal_do_barcode_tests        = 0x400000,
+        eVal_refseq_conventions      = 0x800000,
     };
 
     // Constructor / Destructor

@@ -533,6 +533,7 @@ public:
     bool ReportSpliceAsError(void) const { return m_ReportSpliceAsError; }
     bool IsLatLonCheckState(void)     const { return m_LatLonCheckState; }
     bool IsLatLonIgnoreWater(void)    const { return m_LatLonIgnoreWater; }
+    bool IsRefSeqConventions(void)    const { return m_RefSeqConventions; }
 
 
     // flags calculated by examining data in record
@@ -773,6 +774,7 @@ private:
     bool m_ReportSpliceAsError;
     bool m_DoTaxLookup;
     bool m_DoBarcodeTests;
+    bool m_RefSeqConventions;
     bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
 
     // flags calculated by examining data in record
