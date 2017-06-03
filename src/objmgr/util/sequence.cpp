@@ -3538,7 +3538,7 @@ void x_Translate(const Container& seq,
 
     if ( aa != '*' && include_stop && (! mod) && prot.size() > 0 ) {
         // check for stop codon that normally encodes an amino acid
-        aa = tbl.GetStartResidue(state);
+        aa = tbl.GetStopResidue(state);
         if (aa == '*') {
             prot[prot.size()-1] = aa;
         }

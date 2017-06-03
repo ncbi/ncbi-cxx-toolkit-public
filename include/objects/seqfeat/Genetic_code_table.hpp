@@ -109,6 +109,7 @@ public:
     // lookup of amino acid translated for given codon (state)
     char GetCodonResidue (int state) const;
     char GetStartResidue (int state) const;
+    char GetStopResidue  (int state) const;
 
     bool IsOrfStart   (int state) const;
     bool IsAmbigStart (int state) const;
@@ -129,6 +130,7 @@ private:
     // translation tables specific to each genetic code instance
     mutable char  m_AminoAcid [4097];
     mutable char  m_OrfStart  [4097];
+    mutable char  m_OrfStop   [4097];
 
     // initialize genetic code specific translation tables
     void x_InitFsaTransl (const string *ncbieaa,
@@ -235,6 +237,13 @@ char CTrans_table::GetStartResidue (int state) const
 }
 
 inline
+char CTrans_table::GetStopResidue (int state) const
+{
+    if (state < 0 || state > 4096) return 0;
+    return (m_OrfStop [state]);
+}
+
+inline
 bool CTrans_table::IsOrfStart (int state) const
 {
     return (GetStartResidue (state) == 'M');
@@ -255,7 +264,7 @@ bool CTrans_table::IsAnyStart (int state) const
 inline
 bool CTrans_table::IsOrfStop (int state) const
 {
-    return (GetCodonResidue (state) == '*');
+    return (GetStopResidue (state) == '*');
 }
 
 inline

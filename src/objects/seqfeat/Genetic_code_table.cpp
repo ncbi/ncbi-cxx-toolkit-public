@@ -156,6 +156,7 @@ void CTrans_table::x_InitFsaTransl (const string *ncbieaa,
     for (i = 0; i <= 4096; i++) {
         m_AminoAcid [i] = 'X';
         m_OrfStart [i] = '-';
+        m_OrfStop [i] = '-';
     }
 
     // lookup amino acid for each codon in genetic code table
@@ -224,11 +225,14 @@ void CTrans_table::x_InitFsaTransl (const string *ncbieaa,
                     }
                 }
 
-                // assign amino acid and orf start
+                // assign amino acid
                 if (aa != '\0') {
                     m_AminoAcid [st] = aa;
                 }
-                if (orf != '\0') {
+                // assign orf start/stop
+                if (orf == '*') {
+                    m_OrfStop [st] = orf;
+                } else if (orf != '\0') {
                     m_OrfStart [st] = orf;
                 }
             }
@@ -505,7 +509,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     if ( size_t(id) < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
-        	// already in list, already initialized, so return
+            // already in list, already initialized, so return
             return *tbl;
         }
     }
@@ -518,7 +522,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     if ( size_t(id) < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
-        	// already in list, already initialized, so return
+            // already in list, already initialized, so return
             return *tbl;
         }
     }
@@ -528,18 +532,18 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
         ITERATE (CGenetic_code::Tdata, gcd, (*gcl)->Get ()) {
             if ((*gcd)->IsId ()  &&  (*gcd)->GetId () == id) {
 
-        	    // found proper genetic code, so create new trans table
-        	    CRef< CTrans_table> tbl(new CTrans_table (**gcl));
+                // found proper genetic code, so create new trans table
+                CRef< CTrans_table> tbl(new CTrans_table (**gcl));
 
-        	    // extend size of translation table list, if necessary
-        	    if ( size_t(id) >= m_TransTablesById.size ()) {
-        	        m_TransTablesById.resize (id + 1);
-        	    }
+                // extend size of translation table list, if necessary
+                if ( size_t(id) >= m_TransTablesById.size ()) {
+                    m_TransTablesById.resize (id + 1);
+                }
 
-        	    // add new table to list of translation tables
-        	    m_TransTablesById [id] = tbl;
+                // add new table to list of translation tables
+                m_TransTablesById [id] = tbl;
 
-        	    return *tbl;
+                return *tbl;
             }
         }
     }
@@ -638,7 +642,7 @@ const string& CGen_code_table_imp::GetSncbieaa(const CGenetic_code& gc) const
 // standard genetic code
 //
 // ncbieaa  "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG"
-// sncbieaa "---M---------------M---------------M----------------------------"
+// sncbieaa "---M------**--*----M---------------M----------------------------"
 //
 // -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG
 // -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG
