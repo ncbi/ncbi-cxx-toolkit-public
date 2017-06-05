@@ -3020,7 +3020,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
     try { 
 
         if (IsAllNs(bsh)) {
-            PostErr(eDiag_Fatal, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
+            PostErr(eDiag_Critical, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
             return;
         }
 
