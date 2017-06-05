@@ -485,7 +485,7 @@ const CSeqMap_CI& CSeqVector_CI::GetCurrentSeqMap_CI(void) const
 inline
 bool CSeqVector_CI::IsInGap(void) const
 {
-    return m_Seg.GetType() == CSeqMap::eSeqGap;
+    return *this && m_Seg.GetType() == CSeqMap::eSeqGap;
 }
 
 
