@@ -2,6 +2,11 @@
 #
 # Compression libraries
 
+set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
+if (WIN32)
+    set(CMAKE_PREFIX_PATH ${ZLIB_ROOT})
+endif()
+
 find_package(ZLIB)
 find_package(BZip2)
 find_package(LZO)
@@ -25,5 +30,5 @@ endif()
 
 set(COMPRESS_LIBS xcompress ${CMPRS_LIBS})
 
-
+set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 

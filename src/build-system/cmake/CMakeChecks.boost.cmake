@@ -15,22 +15,22 @@ set(Boost_USE_MULTITHREADED     ON)
 set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
 
 if(WIN32)
-	#set(Boost_DEBUG ON)
-	set(WINDOWS_BOOST_DIR "${WIN32_PACKAGE_ROOT}/boost_1_57_0")
-	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${WINDOWS_BOOST_DIR})
-	set(BOOST_ROOT "${WINDOWS_BOOST_DIR}")
-	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${BOOST_ROOT})
+#	set(WINDOWS_BOOST_DIR "${WIN32_PACKAGE_ROOT}/boost_1_57_0")
+#	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${WINDOWS_BOOST_DIR})
+#	set(BOOST_ROOT "${WINDOWS_BOOST_DIR}")
+#	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
 else()
 	set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
 endif()
 
 
 #set(Boost_DEBUG ON)
-include(FindBoost)
+#include(FindBoost)
 #set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
              COMPONENTS filesystem regex system
-			 REQUIRED)
+             REQUIRED)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set(BOOST_LIBPATH -L${Boost_LIBRARY_DIRS} -Wl,-rpath,${Boost_LIBRARY_DIRS})

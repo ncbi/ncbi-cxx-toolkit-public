@@ -1,7 +1,10 @@
 # wxWidgets
 set(_foo_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
-#set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxwidgets/${CMAKE_BUILD_TYPE}/bin")
-set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}/bin")
+if (WIN32)
+    set(CMAKE_PREFIX_PATH ${WXWIDGETS_ROOT})
+else()
+    set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.0.1-ncbi1/${CMAKE_BUILD_TYPE}/bin")
+endif()
 
 set(wxWidgets_USE_UNICODE ON)
 set(wxWidgets_USE_SHAREED_LIBS ${BUILD_SHARED_LIBS})

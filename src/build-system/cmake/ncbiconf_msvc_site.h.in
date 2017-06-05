@@ -44,5 +44,3 @@
 /* #undef USE_LOCAL_PCRE */
 /* #undef USE_LOCAL_ZLIB */
 
-#define NCBI_SIGNATURE "MSVC_1400-DebugDLLMT--i386-pc-x64-NCBIPC8101"
-

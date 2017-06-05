@@ -9,8 +9,26 @@ if (WIN32)
         set(CMAKE_BUILD_TYPE Debug)
     endif()
     if ("${BUILD_SHARED_LIBS}" STREQUAL "")
-        set(BUILD_SHARED_LIBS ON)
+        set(BUILD_SHARED_LIBS OFF)
     endif()
+endif()
+
+cmake_policy(SET CMP0054 OLD)
+
+############################################################################
+#
+# Hunter packages for Windows
+#
+
+if (WIN32)
+    #set(HUNTER_STATUS_DEBUG TRUE)
+    hunter_add_package(wxWidgets)
+    hunter_add_package(Boost COMPONENTS filesystem regex system)
+    hunter_add_package(ZLIB)
+    hunter_add_package(BZip2)
+    hunter_add_package(Jpeg)
+    hunter_add_package(PNG)
+    hunter_add_package(TIFF)
 endif()
 
 ############################################################################
@@ -52,13 +70,13 @@ if(WIN32)
     #set(WIN32_PACKAGE_ROOT "C:/Users/dicuccio/dev/packages")
     set(CMAKE_PREFIX_PATH
         "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib"
-        "${WIN32_PACKAGE_ROOT}/zlib-1.2.3-lib"
+        #"${WIN32_PACKAGE_ROOT}/zlib-1.2.3-lib"
         "${WIN32_PACKAGE_ROOT}/gnutls-3.5.8-w64"
-        "${WIN32_PACKAGE_ROOT}/bzip2-1.0.5-lib"
+        #"${WIN32_PACKAGE_ROOT}/bzip2-1.0.5-lib"
         "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib"
-        "${WIN32_PACKAGE_ROOT}/jpeg-6b-4-lib"
-        "${WIN32_PACKAGE_ROOT}/libpng-1.2.37-lib"
-        "${WIN32_PACKAGE_ROOT}/tiff-3.8.2-1-lib"
+        #"${WIN32_PACKAGE_ROOT}/jpeg-6b-4-lib"
+        #"${WIN32_PACKAGE_ROOT}/libpng-1.2.37-lib"
+        #"${WIN32_PACKAGE_ROOT}/tiff-3.8.2-1-lib"
         "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib"
         "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32"
         "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32"
@@ -152,20 +170,22 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.os.cmake)
 #################################
 # Some platform-specific system libs that can be linked eventually
 set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-#set(KSTAT_LIBS    "")
-#set(RPCSVC_LIBS   "")
-#set(DEMANGLE_LIBS "")
-#set(ICONV_LIBS    "")
-#set(UUID_LIBS      "")
-#set(NETWORK_LIBS  "")
-#set(RT_LIBS          "")
-#set(MATH_LIBS      "")
-#set(CURL_LIBS      "")
-#set(GNUTLS_INCLUDE_DIR      "")
-#set(BERKELEYDB_INCLUDE      "")
-#set(MYSQL_INCLUDE_DIR      "")
-#set(SQLITE3_INCLUDE_DIR "")
-#set(SQLITE3_LIBRARY "")
+if (WIN32)
+    set(KSTAT_LIBS    "")
+    set(RPCSVC_LIBS   "")
+    set(DEMANGLE_LIBS "")
+    set(ICONV_LIBS    "")
+    set(UUID_LIBS      "")
+    set(NETWORK_LIBS  "")
+    set(RT_LIBS          "")
+    set(MATH_LIBS      "")
+    set(CURL_LIBS      "")
+    set(GNUTLS_INCLUDE_DIR      "")
+    set(BERKELEYDB_INCLUDE      "")
+    set(MYSQL_INCLUDE_DIR      "")
+    set(SQLITE3_INCLUDE_DIR "")
+    set(SQLITE3_LIBRARY "")
+endif()
 
 find_library(UUID_LIBS NAMES uuid)
 find_library(CRYPT_LIBS NAMES crypt)
