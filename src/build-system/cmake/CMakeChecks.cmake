@@ -255,9 +255,10 @@ set(FTDS95_LIBS        ${FTDS95_CTLIB_LIBS})
 set(FTDS95_LIB        ${FTDS95_CTLIB_LIB})
 set(FTDS95_INCLUDE    ${FTDS95_CTLIB_INCLUDE})
 
-set(FTDS_LIBS     ${FTDS64_LIBS})
-set(FTDS_LIB      ${FTDS64_LIB})
-set(FTDS_INCLUDE  ${FTDS64_INCLUDE})
+set(ftds          ftds95)
+set(FTDS_LIBS     ${FTDS95_LIBS})
+set(FTDS_LIB      ${FTDS95_LIB})
+set(FTDS_INCLUDE  ${FTDS95_INCLUDE})
 
 #OpenSSL
 find_package(OpenSSL)

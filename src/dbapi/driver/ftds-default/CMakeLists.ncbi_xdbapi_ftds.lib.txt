@@ -8,5 +8,5 @@ include_directories(SYSTEM  ${FTDS_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR} )
 add_definitions( -DFTDS_IN_USE )
 
 target_link_libraries(ncbi_xdbapi_ftds
-    ct_ftds64 dbapi_driver
+    ct_${ftds} dbapi_driver
 )
