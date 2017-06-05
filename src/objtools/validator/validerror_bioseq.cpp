@@ -5641,7 +5641,9 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
             TSeqPos start = cds.GetLocation().GetStart(eExtreme_Biological),
                     pos = is_minus_strand ? start + 1 : start - 1;
 
-            has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+            if (pos < bh.GetBioseqLength()) {
+                has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+            }
         }
 
         if (!has_abutting_gap) {
@@ -5656,7 +5658,9 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
             TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Biological),
                     pos = is_minus_strand ? stop - 1 : stop + 1;
 
-            has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+            if (pos < bh.GetBioseqLength()) {
+                has_abutting_gap = s_CheckPosNOrGap(pos, seq_vec);
+            }
         }
 
         if (!has_abutting_gap) {
