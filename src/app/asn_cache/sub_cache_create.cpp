@@ -344,7 +344,8 @@ bool TrimEntry(CConstRef<CSeq_entry> &entry, CBioseq_Handle bsh)
 bool IsWGS(CBioseq_Handle bsh)
 {
     ITERATE (CBioseq_Handle::TId, id_it, bsh.GetId()) {
-        if (id_it->IdentifyAccession() & CSeq_id::eAcc_wgs) {
+        if ((id_it->IdentifyAccession() & CSeq_id::eAcc_wgs) == CSeq_id::eAcc_wgs)
+        {
             return true;
         }
     }
