@@ -5796,17 +5796,18 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     // supress warning
                 } else if ( m_Scope && x_MatchesOverlappingFeaturePartial(feat, errtype)) {
                     // error is suppressed
-                } else if ( m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
+                } else if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
                     m_Imp.SetFarFetchFailure();
+                } else if (feat.GetData().IsCdregion() && 
+                    m_Imp.IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation())) &&
+                    x_PartialAdjacentToIntron(feat.GetLocation())) {
+                    // suppress
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
                     if (!is_gap) {
                         if (feat.GetData().IsCdregion() && m_Imp.IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation()))) {
-                            if (x_PartialAdjacentToIntron(feat.GetLocation())) {
-                            } else {
-                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                                     "PartialLocation: " + parterrs[j] + " (organelle does not use standard splice site convention)",
                                     *(feat.GetSeq_feat()));
-                            }
                         } else if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
                             if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                                 // ignore in genomic gpipe sequence
