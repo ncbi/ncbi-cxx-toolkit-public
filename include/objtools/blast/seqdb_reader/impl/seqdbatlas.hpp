@@ -773,7 +773,8 @@ public:
                         if(fileMemMap.count(m_Filename) == 0) {      
                             m_MappedFile = new CMemoryFile(m_Filename);
                             fileMemMap.insert(map<string, CMemoryFile * >::value_type(m_Filename,m_MappedFile));                                                          
-                            x_LogMessage(eMapNewLocked,CSeqDBAtlas::eFileCounterIncrement);
+                            m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
+                            x_LogMessage(eMapNewLocked);
                         }
                         else {                                     
                             m_MappedFile = fileMemMap[m_Filename];                            
@@ -781,8 +782,9 @@ public:
                         }                        
                     }
                     else {
-                        m_MappedFile = new CMemoryFile(m_Filename);		                                                            
-                        x_LogMessage(eMapNew,CSeqDBAtlas::eFileCounterIncrement);
+                        m_MappedFile = new CMemoryFile(m_Filename);		                       
+                        m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);                        
+                        x_LogMessage(eMapNew);
                     }                     
                     m_Mapped = true;                        
                 }
@@ -805,7 +807,8 @@ public:
         
         if(m_MappedFile && m_Mapped && !IsIndexFile()) { 
                 m_MappedFile->Unmap();		                                                        
-                x_LogMessage(eUnmap,CSeqDBAtlas::eFileCounterDecrement);
+                m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterDecrement);                        
+                x_LogMessage(eUnmap);
                 delete m_MappedFile;
                 m_MappedFile = NULL;
                 m_Mapped = false;
