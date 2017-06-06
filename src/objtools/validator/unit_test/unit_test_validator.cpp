@@ -19403,7 +19403,7 @@ BOOST_AUTO_TEST_CASE(Test_AllNs)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "AllNs",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "AllNs",
                               "Sequence is all Ns"));
 
     eval = validator.Validate(seh, options);
