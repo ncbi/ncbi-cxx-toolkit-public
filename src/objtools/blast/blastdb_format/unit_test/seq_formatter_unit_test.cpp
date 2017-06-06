@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
     ofstream out(fname.c_str());
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int id = -1;
-    db.GiToOid(kGi, id);
+    db.GiToOid(GI_CONST(kGi), id);
     CBlastDB_FormatterConfig config;
     f.Write(id, config);
     out.close();
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqId)
     ofstream out(fname.c_str());
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     CBlastDB_FormatterConfig config;
     f.Write(oid, config);
     out.close();
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqIdLong)
     ofstream out(fname.c_str());
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     CBlastDB_FormatterConfig config;
     f.Write(oid, config);
     out.close();
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
     ofstream out(fname.c_str());
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     CBlastDB_FormatterConfig config;
     f.Write(oid, config);
     out.close();
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
     ofstream out(fname.c_str());
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     CBlastDB_FormatterConfig config;
     f.Write(oid, config);
     out.close();
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(TestMaskedFasta)
     //config.m_FiltAlgoIds.push_back(40);
     CBlastDB_FastaFormatter f(db, out, config.m_SeqRange.GetLength());
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     f.Write(oid, config);
     out.close();
 
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(TestMaskedSequenceData)
     //config.m_FiltAlgoIds.push_back(40);
     CBlastDB_SeqFormatter f(format_spec, db, out);
     int oid = -1;
-    db.GiToOid(kGi, oid);
+    db.GiToOid(GI_CONST(kGi), oid);
     f.Write(oid, config);
     out.close();
 
