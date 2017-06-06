@@ -5899,7 +5899,8 @@ s_ConvertDataToOutput
         afp->num_sequences++;
     }
 
-    if (afp->num_sequences != afrp->num_organisms
+    if (afp->num_organisms > 0 
+        && afp->num_sequences != afrp->num_organisms
         && afp->num_sequences / afp->num_segments != afrp->num_organisms) {
         s_ReportMissingOrganismInfo (afrp->report_error,
                                    afrp->report_error_userdata);
