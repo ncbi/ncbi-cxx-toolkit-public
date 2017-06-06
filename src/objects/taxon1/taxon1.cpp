@@ -138,6 +138,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts, unsigned cac
             ( (tmp=getenv("NI_SERVICE_NAME_TAXONOMY")) != NULL ) ) {
             m_pchService = tmp;
         }
+        auto_ptr<CConn_ServiceStream> pServer;
         auto_ptr<CObjectOStream> pOut;
         auto_ptr<CObjectIStream> pIn;
 	pNi = ConnNetInfo_Create( m_pchService );
@@ -148,8 +149,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts, unsigned cac
 	pNi->max_try = reconnect_attempts + 1;
 	ConnNetInfo_SetTimeout( pNi, timeout );
 
-        auto_ptr<CConn_ServiceStream>
-            pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
+   pServer.reset( new CConn_ServiceStream(m_pchService, fSERV_Any,
                                              pNi, 0, m_timeout) );
 	ConnNetInfo_Destroy( pNi );
 	pNi = NULL;
