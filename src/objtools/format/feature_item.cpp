@@ -1874,7 +1874,9 @@ void CFeatureItem::x_AddQualsRna(
                                 CRef<CSeq_id> acc_id(new CSeq_id(acc));
                                 x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
                             }
-                            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
+                            if (! cfg.HideGI()) {
+                                x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
+                            }
                         }
                     }
                 }
