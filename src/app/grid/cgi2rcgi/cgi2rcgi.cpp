@@ -676,7 +676,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             OnJobFailed(ex.what(), grid_ctx);
         }
 
-        PopulatePage(grid_ctx);
+        if (grid_ctx.NeedRenderPage()) PopulatePage(grid_ctx);
     } //try
     catch (exception& e) {
         ERR_POST("Failed to populate " << m_Title <<
