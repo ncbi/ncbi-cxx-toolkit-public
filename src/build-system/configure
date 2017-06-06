@@ -30279,10 +30279,10 @@ if test "$with_gnutls" != "no"; then
     GNUTLS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       GNUTLS_LIBS="$GNUTLS_LIBPATH -lgnutls $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS"
+       GNUTLS_LIBS="$GNUTLS_LIBPATH -lgnutls $GNUTLS_CONFIG_LIBS"
     else
        GNUTLS_INCLUDE=""
-       GNUTLS_LIBS="-lgnutls $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS"
+       GNUTLS_LIBS="-lgnutls $GNUTLS_CONFIG_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libgnutls$in_path" >&5
@@ -30291,7 +30291,7 @@ if test "${ncbi_cv_lib_gnutls+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS=" $GNUTLS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$GNUTLS_LIBS  $orig_LIBS"
+       LIBS="$GNUTLS_LIBS $GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -30378,8 +30378,9 @@ _ACEOF
 
 
 
-if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
-   if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+if test "x$with_gnutls" != xno; then
+   if test -n "$GNUTLS_CONFIG_LIBS"; then
+      if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GNUTLS_LIBS=`echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else
     GNUTLS_LIBS=
@@ -30408,6 +30409,9 @@ if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
     done
     GNUTLS_LIBS="$GNUTLS_LIBS${ncbi_rp_R_flags}"
  fi
+   else
+      GNUTLS_LIBS="$GNUTLS_LIBS $NETTLE_LIBS $GMP_LIBS"
+   fi
    # Conservatively build against gcrypt if available even when gnutls
    # uses nettle instead, because gcrypt needs explicit initialization
    # to be thread-safe, but gnutls's headers don't indicate which

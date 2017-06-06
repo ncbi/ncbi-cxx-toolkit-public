@@ -4480,9 +4480,14 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
  [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
    [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
- $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS)
-if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
-   NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])
+ [$GNUTLS_CONFIG_LIBS], [$GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS])
+if test "x$with_gnutls" != xno; then
+   if test -n "$GNUTLS_CONFIG_LIBS"; then
+      NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS],
+         [$no_usr_lib])
+   else
+      GNUTLS_LIBS="$GNUTLS_LIBS $NETTLE_LIBS $GMP_LIBS"
+   fi
    # Conservatively build against gcrypt if available even when gnutls
    # uses nettle instead, because gcrypt needs explicit initialization
    # to be thread-safe, but gnutls's headers don't indicate which
