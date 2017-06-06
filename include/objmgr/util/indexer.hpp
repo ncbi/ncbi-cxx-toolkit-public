@@ -188,8 +188,8 @@ private:
 // obtain descriptors and iterate through features that apply to the Bioseq.  (These are
 // stored in vectors, which are initialized upon first request.)
 //
-// CBioseqIndex also maintains a CFeatTree for each Bioseq, used to find the best gene
-// for each feature.
+// CBioseqIndex also maintains a CFeatTree for its Bioseq, used to find the best gene for
+// each feature.
 //
 // Descriptors are explored with:
 //
@@ -197,7 +197,8 @@ private:
 //       ...
 //   });
 //
-// starting with descriptors packaged on the Bioseq, then on its parent Bioseq-set, etc.
+// and are presented based on the order of the descriptor chain hierarchy, starting with
+// descriptors packaged on the Bioseq, then on its parent Bioseq-set, etc.
 //
 // Features are explored with:
 //
@@ -205,7 +206,7 @@ private:
 //       ...
 //   });
 //
-// and are presented in order of position along the parent sequence.
+// and are presented in order of biological position along the parent sequence.
 //
 // Fetching external features uses SAnnotSelector adaptive depth unless explicitly overridden.
 class NCBI_XOBJUTIL_EXPORT CBioseqIndex : public CObject
