@@ -505,9 +505,9 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBGiList> seqdb_gilist(new CSeqDBGiList());
-	seqdb_gilist->AddGi(3091);
-	seqdb_gilist->AddGi(129296);
-	seqdb_gilist->AddGi(448824824);
+	seqdb_gilist->AddGi(GI_CONST(3091));
+	seqdb_gilist->AddGi(GI_CONST(129296));
+	seqdb_gilist->AddGi(GI_CONST(448824824));
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
 
@@ -536,9 +536,9 @@ BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBNegativeList> seqdb_gilist(new CSeqDBNegativeList());
-	seqdb_gilist->AddGi(3091);
-	seqdb_gilist->AddGi(129296);
-	seqdb_gilist->AddGi(448824824);
+	seqdb_gilist->AddGi(GI_CONST(3091));
+	seqdb_gilist->AddGi(GI_CONST(129296));
+	seqdb_gilist->AddGi(GI_CONST(448824824));
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> resultSet = kmersearch.RunSearches();
 	CBlastKmerResults results = (*resultSet)[0];
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBGiList> seqdb_gilist(new CSeqDBGiList());
-	seqdb_gilist->AddGi(3091);
+	seqdb_gilist->AddGi(GI_CONST(3091));
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
 
@@ -577,9 +577,8 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 
 BOOST_AUTO_TEST_CASE(NoMatches)
 {
-	TGi query_gi=1945387;
+	TGi query_gi(GI_CONST(1945387));
 	CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
-	const bool kHasProteinQuery(true);
 	CRef<CScope> scope(CSimpleOM::NewScope(true));
 	
 	CRef<CSeq_loc> loc(new CSeq_loc());
