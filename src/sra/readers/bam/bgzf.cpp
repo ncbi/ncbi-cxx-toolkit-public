@@ -62,7 +62,7 @@ enum EFileMode {
 };
 static const EFileMode kFileMode = eUseVDBFile;
 static const bool kCheckBlockCRC32 = true;
-static const size_t kSegmentSize = 16<<20; // 16 MB
+static const size_t kSegmentSize = 4<<20; // 4 MB
 
 
 static inline
