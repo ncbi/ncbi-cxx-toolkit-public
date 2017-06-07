@@ -433,6 +433,20 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
 }
 
 #ifdef NCBI_THREADS
+struct SOutputCopy
+{
+    SOutputCopy(IReader& reader, CNcbiOstream& writer);
+    void Reader(IReader& reader);
+    void Writer(CNcbiOstream& writer);
+
+private:
+    mutex m;
+    condition_variable cv;
+    deque<char> d;
+    bool done = false;
+};
+
+
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
         pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
         const STimeout& timeout)
@@ -457,104 +471,107 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
         return false;
     }
 
-    mutex m;
-    condition_variable cv;
-    deque<char> d;
-    bool done = false;
+    CSocketReaderWriter socket_reader(socket.get());
+    CTransmissionReader reader(&socket_reader);
 
-    auto reader = [&] {
-        CSocketReaderWriter socket_reader(socket.get());
-        CTransmissionReader reader(&socket_reader);
-        array<char, 1024 * 1024> buf;
-        bool eof = false;
-
-        while (!eof) {
-            char* data = buf.data();
-            size_t to_read = buf.size();
-
-            while (!eof && to_read) {
-                ERW_Result status = eRW_Error;
-                size_t bytes_read = 0;
-
-                try {
-                    status = reader.Read(data, to_read, &bytes_read);
-                }
-                catch (...) {
-                }
-
-                switch (status) {
-                    case eRW_Success:
-                        break;
-
-                    case eRW_Eof:
-                        eof = true;
-                        break;
-
-                    default:
-                        eof = true;
-                        bytes_read = 0;
-                        break;
-                }
-
-                data += bytes_read;
-                to_read -= bytes_read;
-            }
-
-            unique_lock<mutex> lock(m);
-            d.insert(d.end(), buf.cbegin(), buf.cbegin() + (buf.size() - to_read));
-
-            if (done) eof = true;
-
-            done = eof;
-            lock.unlock();
-            cv.notify_one();
-        }
-    };
-
-    auto writer = [&] {
-        array<char, 1024 * 1024> buf;
-        bool eof = false;
-
-        while (!eof) {
-            char* data = buf.data();
-            size_t to_write = 0;
-
-            {
-                unique_lock<mutex> lock(m);
-
-                if (!receiver.second->good()) {
-                    done = true;
-                    return;
-                }
-
-                cv.wait(lock, [&]{ return d.size() || done; });
-
-                to_write = min(buf.size(), d.size());
-
-                if (to_write) {
-                    copy_n(d.cbegin(), to_write, buf.begin());
-                    d.erase(d.begin(), d.begin() + to_write);
-                }
-
-                eof = done;
-            }
-
-            try {
-                receiver.second->write(data, to_write);
-            }
-            catch (...) {
-                receiver.second->setstate(ios_base::badbit);
-            }
-        }
-    };
-
-    thread t(reader);
-    writer();
-    t.join();
+    SOutputCopy copy(reader, *receiver.second);
 
     job_status = CNetScheduleAPI::eDone;
     *receiver.first = true;
     return true;
+}
+
+SOutputCopy::SOutputCopy(IReader& reader, CNcbiOstream& writer)
+{
+    thread t(&SOutputCopy::Reader, this, ref(reader));
+    Writer(writer);
+    t.join();
+}
+
+void SOutputCopy::Reader(IReader& reader)
+{
+    array<char, 1024 * 1024> buf;
+    bool eof = false;
+
+    while (!eof) {
+        char* data = buf.data();
+        size_t to_read = buf.size();
+
+        while (!eof && to_read) {
+            ERW_Result status = eRW_Error;
+            size_t bytes_read = 0;
+
+            try {
+                status = reader.Read(data, to_read, &bytes_read);
+            }
+            catch (...) {
+            }
+
+            switch (status) {
+                case eRW_Success:
+                    break;
+
+                case eRW_Eof:
+                    eof = true;
+                    break;
+
+                default:
+                    eof = true;
+                    bytes_read = 0;
+                    break;
+            }
+
+            data += bytes_read;
+            to_read -= bytes_read;
+        }
+
+        unique_lock<mutex> lock(m);
+        d.insert(d.end(), buf.cbegin(), buf.cbegin() + (buf.size() - to_read));
+
+        if (done) eof = true;
+
+        done = eof;
+        lock.unlock();
+        cv.notify_one();
+    }
+}
+
+void SOutputCopy::Writer(CNcbiOstream& writer)
+{
+    array<char, 1024 * 1024> buf;
+    bool eof = false;
+
+    while (!eof) {
+        char* data = buf.data();
+        size_t to_write = 0;
+
+        {
+            unique_lock<mutex> lock(m);
+
+            if (!writer.good()) {
+                done = true;
+                return;
+            }
+
+            cv.wait(lock, [&]{ return d.size() || done; });
+
+            to_write = min(buf.size(), d.size());
+
+            if (to_write) {
+                copy_n(d.cbegin(), to_write, buf.begin());
+                d.erase(d.begin(), d.begin() + to_write);
+            }
+
+            eof = done;
+        }
+
+        try {
+            writer.write(data, to_write);
+        }
+        catch (...) {
+            writer.setstate(ios_base::badbit);
+        }
+    }
 }
 #else
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus&,
