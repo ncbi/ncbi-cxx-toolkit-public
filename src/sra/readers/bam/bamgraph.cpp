@@ -548,6 +548,9 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(const vector<Uint8>& cov,
     CUser_object& user_desc = desc->SetUser();
     user_desc.SetType().SetStr("BAM coverage");
     annot->SetDesc().Set().push_back(desc);
+    if ( GetEstimated() ) {
+        user_desc.AddField("Estimated", true);
+    }
     user_desc.AddField("MinMapQuality", GetMinMapQuality());
 
     Uint8 min_cov = kMax_UI8, max_cov = 0, sum_cov = 0;
