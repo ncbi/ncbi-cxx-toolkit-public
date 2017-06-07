@@ -103,6 +103,7 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddFlag("sra", "Use SRA toolkit");
     arg_desc->AddFlag("ST", "Single thread");
     arg_desc->AddFlag("overstart", "Verify overstart info");
+    arg_desc->AddFlag("overend", "Verify overend info");
     arg_desc->AddFlag("data-size", "Check data size info");
 
     // Setup arg.descriptions for this application
@@ -153,6 +154,27 @@ void s_DumpIndex(const CBamIndex& index,
 
 
 DEFINE_STATIC_MUTEX(s_Mutex);
+
+
+static inline
+TSeqPos s_BinIndex(TSeqPos pos, TSeqPos bin_size)
+{
+    return pos/bin_size;
+}
+
+
+static inline
+TSeqPos s_BinStart(TSeqPos pos, TSeqPos bin_size)
+{
+    return s_BinIndex(pos, bin_size)*bin_size;
+}
+
+
+static inline
+TSeqPos s_BinEnd(TSeqPos pos, TSeqPos bin_size)
+{
+    return s_BinStart(pos, bin_size)+bin_size-1;
+}
 
 
 int CBamIndexTestApp::Run(void)
@@ -256,6 +278,7 @@ int CBamIndexTestApp::Run(void)
 
     if ( args["overstart"] ) {
         for ( auto& q : queries ) {
+            TSeqPos bin_size = CBamIndex::kMinBinSize;
             auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
             auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
             auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
@@ -263,16 +286,16 @@ int CBamIndexTestApp::Run(void)
             const auto& overstart = ref.GetAlnOverStarts();
             cout <<"Collected overstart data in "<<sw.Elapsed()<<"s"<<endl;
             cout <<"Verifying..."<<endl;
-            for ( TSeqPos pos = (q.refseq_range.GetFrom()+16383)&-16384;
+            for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
                   pos < q.refseq_range.GetToOpen() && pos < ref_len;
-                  pos += 16384 ) {
-                TSeqPos k = pos/16384;
-                TSeqPos actual_start = pos;
-                CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, 1);
-                if ( it ) {
-                    actual_start = it.GetRefSeqPos()&-16384;
+                  pos += bin_size ) {
+                TSeqPos actual_start = s_BinStart(pos, bin_size);
+                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size); it; ++it ) {
+                    TSeqPos start = it.GetRefSeqPos();
+                    actual_start = min(actual_start, s_BinStart(start, bin_size));
                 }
-                TSeqPos calculated_start = k < overstart.size()? overstart[k]: pos;
+                TSeqPos k = s_BinIndex(pos, bin_size);
+                TSeqPos calculated_start = k < overstart.size()? overstart[k]: s_BinStart(pos, bin_size);
                 if ( actual_start < calculated_start ) {
                     cout << "overstart["<<pos<<"] = "
                          << calculated_start << " != " << actual_start
@@ -287,6 +310,43 @@ int CBamIndexTestApp::Run(void)
                 }
             }
             cout <<"Done verifying overstart data."<<endl;
+        }
+    }
+
+    if ( args["overend"] ) {
+        for ( auto& q : queries ) {
+            TSeqPos bin_size = CBamIndex::kMinBinSize;
+            auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+            auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+            auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
+            sw.Restart();
+            const auto& overend = ref.GetAlnOverEnds();
+            cout <<"Collected overend data in "<<sw.Elapsed()<<"s"<<endl;
+            cout <<"Verifying..."<<endl;
+            for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
+                  pos < q.refseq_range.GetToOpen() && pos < ref_len;
+                  pos += bin_size ) {
+                TSeqPos actual_end = s_BinEnd(pos, bin_size);
+                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size); it; ++it ) {
+                    TSeqPos end = it.GetRefSeqPos()+it.GetCIGARRefSize()-1;
+                    actual_end = max(actual_end, s_BinEnd(end, bin_size));
+                }
+                TSeqPos k = s_BinIndex(pos, bin_size);
+                TSeqPos calculated_end = k < overend.size()? overend[k]: s_BinEnd(pos, bin_size);
+                if ( actual_end > calculated_end ) {
+                    cout << "overend["<<pos<<"] = "
+                         << calculated_end << " != " << actual_end
+                         << endl;
+                    error_code = 1;
+                }
+                else if ( verbose && actual_end != calculated_end ) {
+                    cout << "inexact overend["<<pos<<"] = "
+                         << calculated_end << " != " << actual_end
+                         << " by " << (calculated_end-actual_end)
+                         << endl;
+                }
+            }
+            cout <<"Done verifying overend data."<<endl;
         }
     }
 
