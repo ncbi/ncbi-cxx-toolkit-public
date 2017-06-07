@@ -5799,7 +5799,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 } else if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
                     m_Imp.SetFarFetchFailure();
                 } else if (feat.GetData().IsCdregion() && 
-                    m_Imp.IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation())) &&
+                    m_Imp.IsOrganelle(m_CurrentHandle) &&
                     x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
