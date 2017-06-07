@@ -439,7 +439,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(ILineErrorListener * pMessageListene
     CBioseq& master_seq = master->SetSeq();
     CSeq_inst& inst = master_seq.SetInst();
     // XXX - work out less generic ID?
-    CRef<CSeq_id> id(m_IDGenerator->GenerateID(true));
+    CRef<CSeq_id> id(m_IDHandler->SetGenerator().GenerateID(true));
     if (m_CurrentMask) {
         m_CurrentMask->SetId(*id);
     }
@@ -504,7 +504,6 @@ CRef<CSeq_loc> CFastaReader::SaveMask(void)
 void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
 {
     m_IDHandler->SetGenerator(gen);
- //   m_IDGenerator.Reset(&gen);
 }
 
 // For reasons of efficiency, this method does not use 
@@ -1948,21 +1947,6 @@ void CFastaReader::x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids)
     annot.SetData().SetAlign().push_back(sa);
 }
 
-/*
-class CCounterManager
-{
-public:
-    CCounterManager(CSeqIdGenerator& generator, int* counter)
-        : m_Generator(generator), m_Counter(counter)
-        { if (counter) { generator.SetCounter(*counter); } }
-    ~CCounterManager()
-        { if (m_Counter) { *m_Counter = m_Generator.GetCounter(); } }
-
-private:
-    CSeqIdGenerator& m_Generator;
-    int*             m_Counter;
-};
-*/
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv,
@@ -1970,7 +1954,6 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
 {
     CRef<ILineReader> lr(ILineReader::New(in));
     CFastaReader      reader(*lr, flags);
-   // CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
     if (counter) {
         reader.SetIDGenerator().SetCounter(*counter);
     }
