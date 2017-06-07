@@ -72,6 +72,7 @@ public:
         {
         }
 
+    // estimated number of alignments
     size_t GetAlignCount(void) const
         {
             return m_AlignCount;
@@ -80,13 +81,34 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     void AddRefSeqRange(const TRange& range);
+
+    // full reference sequence range covered by alignments in this chunk
     const TRange& GetRefSeqRange(void) const
         {
             return m_RefSeqRange;
         }
+    // max start position of an alignmnent in this chunk
     TSeqPos GetMaxRefSeqFrom(void) const
         {
             return m_MaxRefSeqFrom;
+        }
+    // All alignments have their start position in range
+    // GetRefSeqRange().GetFrom()...GetMaxRefSeqFrom().
+    // The chunk is registered to have alignments in range GetRefSeqRange(),
+    // and having pileup graphs over range GetRefSeqRange() excluding start of the next chunk.
+    const TRange& GetAlignRange() const
+        {
+            return GetRefSeqRange();
+        }
+    TRange GetAlignStartRange() const
+        {
+            TRange range = GetRefSeqRange();
+            range.SetTo(GetMaxRefSeqFrom());
+            return range;
+        }
+    TRange GetGraphRangeUnfiltered() const
+        {
+            return GetRefSeqRange();
         }
 
 protected:
@@ -120,8 +142,11 @@ public:
         }
 
     void LoadRanges(void);
+    CRange<TSeqPos> GetChunkGraphRange(size_t range_id);
+    
     void LoadMainSplit(CTSE_LoadLock& load_lock);
     void LoadMainEntry(CTSE_LoadLock& load_lock);
+    void CreateChunks(CTSE_Split_Info& split_info);
     void LoadChunk(CTSE_Chunk_Info& chunk_info);
     void LoadMainChunk(CTSE_Chunk_Info& chunk_info);
     void LoadAlignChunk(CTSE_Chunk_Info& chunk_info);

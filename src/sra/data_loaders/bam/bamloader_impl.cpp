@@ -64,7 +64,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   BAMLoader
-NCBI_DEFINE_ERR_SUBCODE_X(10);
+NCBI_DEFINE_ERR_SUBCODE_X(13);
 
 BEGIN_SCOPE(objects)
 
@@ -408,7 +408,6 @@ bool CBAMDataLoader_Impl::IsShortSeq(const CSeq_id_Handle& idh)
 CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const CBAMDataLoader::SBamFileName& bam)
 {
-    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, bam);
     for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
         string refseq_label = rit.GetRefSeqId();
@@ -423,7 +422,6 @@ CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const string& refseq_label,
                            const CSeq_id_Handle& seq_id)
 {
-    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, bam);
     AddRefSeq(refseq_label, seq_id);
 }
@@ -658,13 +656,12 @@ void CBamRefSeqInfo::LoadRanges(void)
     if ( m_LoadedRanges ) {
         return;
     }
-    //CMutexGuard guard(m_File->GetMutex());
     if ( m_LoadedRanges ) {
         return;
     }
 
     _TRACE("Loading "<<GetRefSeqId()<<" -> "<<GetRefSeq_id());
-    if ( !x_LoadRangesCov() ) {
+    if ( !x_LoadRangesCov() && !x_LoadRangesEstimated() ) {
         if ( 1 ) {
             x_LoadRangesStat();
         }
@@ -842,70 +839,101 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
 }
 
 
+static inline
+TSeqPos s_GetEnd(const vector<TSeqPos>& over_ends, TSeqPos i, TSeqPos bin_size)
+{
+    return i < over_ends.size()? over_ends[i]: i*bin_size+bin_size-1;
+}
+
+
 bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
 {
-    static const TSeqPos kZeroBlocks = 8;
-    static const TSeqPos kChunkCoverage = 50000;
-    
     if ( !m_File->GetBamDb().UsesRawIndex() ) {
         return false;
     }
-    CBam2Seq_graph cvt;
-    cvt.SetRefLabel(GetRefSeqId());
-    vector<Uint8> cov = cvt.CollectEstimatedCoverage(m_File->GetBamDb());
-    LOG_POST("Total cov: "<<accumulate(cov.begin(), cov.end(), 0ull));
+
+    CBamRawDb& raw_db = m_File->GetBamDb().GetRawDb();
+    auto refseq_index = raw_db.GetRefIndex(GetRefSeqId());
+    auto& refseq = raw_db.GetIndex().GetRef(refseq_index);
+    vector<Uint8> data_sizes = refseq.EstimateDataSizeByAlnStartPos(raw_db.GetRefSeqLength(refseq_index));
+    vector<Uint4> over_ends = refseq.GetAlnOverEnds();
+    TSeqPos bin_count = data_sizes.size();
+    TSeqPos bin_size = CBamIndex::kMinBinSize;
+    if ( GetDebugLevel() >= 1 ) {
+        LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
+    }
+    static const TSeqPos kZeroBlocks = 8;
+    static const TSeqPos kChunkDataSize = 250000;
 
     TSeqPos last_pos = 0;
     TSeqPos zero_count = 0;
-    Uint8 cur_cov = 0;
-    for ( TSeqPos i = 0; i < cov.size(); ++i ) {
-        if ( !cov[i] ) {
+    Uint8 cur_data_size = 0;
+    for ( TSeqPos i = 0; i <= bin_count; ++i ) {
+        if ( i < bin_count && !data_sizes[i] ) {
             ++zero_count;
             continue;
         }
-        TSeqPos pos = i*cvt.kEstimatedGraphBinSize;
-        if ( zero_count >= kZeroBlocks ) {
-            if ( cur_cov ) {
-                TSeqPos non_zero_end = pos - zero_count*cvt.kEstimatedGraphBinSize;
-                // add chunk from last_pos to non_zero_end;
+        TSeqPos pos = i*bin_size;
+        if ( i == bin_count || zero_count >= kZeroBlocks ) {
+            // add non-empty chunk at last_pos
+            if ( cur_data_size ) {
+                _ASSERT(i > zero_count);
+                _ASSERT(last_pos < pos-zero_count*bin_size);
+                _ASSERT(cur_data_size > 0);
+                TSeqPos non_zero_end = pos - zero_count*bin_size;
+                CBamRefSeqChunkInfo info;
+                info.m_AlignCount = cur_data_size;
+                info.m_RefSeqRange.SetFrom(last_pos);
+                info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count-1, bin_size));
+                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
+                info.m_MaxRefSeqFrom = non_zero_end-1;
+                m_Chunks.push_back(info);
                 
                 last_pos = non_zero_end;
-                cur_cov = 0;
+                cur_data_size = 0;
             }
-            // add zero chunk from last_pos to pos
-            
-            last_pos = pos;
-            zero_count = 0;
+            // add remaining empty chunk
+            if ( zero_count > 0 ) {
+                _ASSERT(i > 0);
+                _ASSERT(zero_count > 0);
+                _ASSERT(last_pos == pos-zero_count*bin_size);
+                _ASSERT(cur_data_size == 0);
+                CBamRefSeqChunkInfo info;
+                info.m_AlignCount = 0;
+                info.m_RefSeqRange.SetFrom(last_pos);
+                info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count, bin_size));
+                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
+                info.m_MaxRefSeqFrom = last_pos;
+                m_Chunks.push_back(info);
+                
+                cur_data_size = 0;
+                last_pos = pos;
+                zero_count = 0;
+            }
         }
-        cur_cov += cov.size();
-        if ( cur_cov >= kChunkCoverage ) {
-            // add chunk from last_pos to pos
-            
-            last_pos = pos;
-            cur_cov = 0;
+        if ( i == bin_count ) {
+            break;
         }
-    }
-    TSeqPos pos = cov.size()*cvt.kEstimatedGraphBinSize;
-    if ( zero_count >= kZeroBlocks ) {
-        if ( cur_cov ) {
-            TSeqPos non_zero_end = pos - zero_count*cvt.kEstimatedGraphBinSize;
-            // add chunk from last_pos to non_zero_end;
-            
-            last_pos = non_zero_end;
-            cur_cov = 0;
-        }
-        // add zero chunk from last_pos to pos
-        
-        last_pos = pos;
         zero_count = 0;
+        cur_data_size += data_sizes[i];
+        if ( cur_data_size >= kChunkDataSize ) {
+            // add chunk from last_pos to pos
+            {
+                _ASSERT(last_pos <= pos);
+                _ASSERT(cur_data_size > 0);
+                CBamRefSeqChunkInfo info;
+                info.m_AlignCount = cur_data_size;
+                info.m_RefSeqRange.SetFrom(last_pos);
+                info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i, bin_size));
+                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
+                info.m_MaxRefSeqFrom = pos+bin_size-1;
+                m_Chunks.push_back(info);
+                last_pos = pos+bin_size;
+                cur_data_size = 0;
+            }
+        }
     }
-    if ( cur_cov ) {
-        // add chunk from last_pos to pos
-        
-        last_pos = pos;
-        cur_cov = 0;
-    }
-    return false;
+    return true;
 }
 
 
@@ -1053,9 +1081,18 @@ void CBamRefSeqInfo::x_LoadRangesScan(void)
 }
 
 
+CRange<TSeqPos> CBamRefSeqInfo::GetChunkGraphRange(size_t range_id)
+{
+    CRange<TSeqPos> range = m_Chunks[range_id].GetRefSeqRange();
+    if ( range_id+1 < m_Chunks.size() ) {
+        range.SetToOpen(m_Chunks[range_id+1].GetRefSeqRange().GetFrom());
+    }
+    return range;
+}
+
+
 void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     LoadRanges();
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(kTSEId);
@@ -1063,48 +1100,12 @@ void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
         entry->SetSet().SetAnnot() = m_CovEntry->GetAnnot();
     }
     load_lock->SetSeq_entry(*entry);
-    CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
-    int chunk_count = int(m_Chunks.size());
-    bool has_pileup = GetPileupGraphsParam();
-    CAnnotName name, pileup_name;
-    if ( !m_File->GetAnnotName().empty() ) {
-        string base = m_File->GetAnnotName();
-        name = CAnnotName(base);
-        if ( has_pileup ) {
-            pileup_name = CAnnotName(base + ' ' + PILEUP_NAME_SUFFIX);
-        }
-    }
-
-    // create chunk info for alignments
-    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
-        CRef<CTSE_Chunk_Info> chunk;
-        int base_id = range_id*kChunkIdMul;
-        chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
-        chunk->x_AddAnnotType(name,
-                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                              GetRefSeq_id(),
-                              m_Chunks[range_id].GetRefSeqRange());
-        split_info.AddChunk(*chunk);
-
-        if ( has_pileup ) {
-            CRange<TSeqPos> range = m_Chunks[range_id].GetRefSeqRange();
-            if ( range_id+1 < chunk_count ) {
-                range.SetToOpen(m_Chunks[range_id+1].GetRefSeqRange().GetFrom());
-            }
-            chunk = new CTSE_Chunk_Info(base_id+eChunk_pileup_graph);
-            chunk->x_AddAnnotType(pileup_name,
-                                  CSeq_annot::C_Data::e_Graph,
-                                  GetRefSeq_id(),
-                                  range);
-            split_info.AddChunk(*chunk);
-        }
-    }
+    CreateChunks(load_lock->GetSplitInfo());
 }
 
 
 void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(kTSEId);
     load_lock->SetSeq_entry(*entry);
@@ -1143,11 +1144,20 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 
 void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     LoadRanges();
-    CTSE_Split_Info& split_info =
-        const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
-    int chunk_count = int(m_Chunks.size());
+    if ( m_CovEntry ) {
+        CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
+        ITERATE ( CBioseq::TAnnot, it, m_CovEntry->GetAnnot() ) {
+            chunk_info.x_LoadAnnot(place, **it);
+        }
+    }
+    CreateChunks(const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo()));
+    chunk_info.SetLoaded();
+}
+
+
+void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
+{
     bool has_pileup = GetPileupGraphsParam();
     CAnnotName name, pileup_name;
     if ( !m_File->GetAnnotName().empty() ) {
@@ -1157,39 +1167,38 @@ void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
             pileup_name = CAnnotName(base + ' ' + PILEUP_NAME_SUFFIX);
         }
     }
-    CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-
-    if ( m_CovEntry ) {
-        ITERATE ( CBioseq::TAnnot, it, m_CovEntry->GetAnnot() ) {
-            chunk_info.x_LoadAnnot(place, **it);
-        }
-    }
-
+    
     // create chunk info for alignments
-    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
+    for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
         CRef<CTSE_Chunk_Info> chunk;
-        int base_id = range_id*kChunkIdMul;
-        chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
-        chunk->x_AddAnnotType(name,
-                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                              GetRefSeq_id(),
-                              m_Chunks[range_id].GetRefSeqRange());
-        split_info.AddChunk(*chunk);
+        int base_id = int(range_id*kChunkIdMul);
+        if ( m_Chunks[range_id].GetAlignCount() ) {
+            chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
+            chunk->x_AddAnnotType(name,
+                                  SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                  GetRefSeq_id(),
+                                  m_Chunks[range_id].GetAlignRange());
+            split_info.AddChunk(*chunk);
+            if ( GetDebugLevel() >= 2 ) {
+                LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                           "Align Chunk "<<chunk->GetChunkId()<<": "<<m_Chunks[range_id].GetAlignRange()<<
+                           " with "<<m_Chunks[range_id].GetAlignCount()<<" aligns");
+            }
+        }
 
         if ( has_pileup ) {
-            CRange<TSeqPos> range = m_Chunks[range_id].GetRefSeqRange();
-            if ( range_id+1 < chunk_count ) {
-                range.SetToOpen(m_Chunks[range_id+1].GetRefSeqRange().GetFrom());
-            }
             chunk = new CTSE_Chunk_Info(base_id+eChunk_pileup_graph);
             chunk->x_AddAnnotType(pileup_name,
                                   CSeq_annot::C_Data::e_Graph,
                                   GetRefSeq_id(),
-                                  range);
+                                  GetChunkGraphRange(range_id));
             split_info.AddChunk(*chunk);
+            if ( GetDebugLevel() >= 2 ) {
+                LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                           "Pileup Chunk "<<chunk->GetChunkId()<<": "<<GetChunkGraphRange(range_id));
+            }
         }
     }
-    chunk_info.SetLoaded();
 }
 
 
@@ -1215,16 +1224,14 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
 
 void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     int range_id = chunk_info.GetChunkId()/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
-    TSeqPos pos = chunk.GetRefSeqRange().GetFrom();
-    TSeqPos len = chunk.GetMaxRefSeqFrom() - pos + 1;
+    auto start_range = chunk.GetAlignStartRange();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
-    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
+    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<start_range);
     size_t skipped = 0, count = 0, repl_count = 0, fail_count = 0;
     vector<CSeq_id_Handle> short_ids;
     
@@ -1234,13 +1241,13 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
 #endif
-    CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
+    CBamAlignIterator ait(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength());
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     for( ; ait; ++ait ) {
         TSeqPos align_pos = ait.GetRefSeqPos();
-        if ( align_pos < pos ) {
+        if ( align_pos < start_range.GetFrom() ) {
             // the alignments starts before current chunk range
             ++skipped;
             continue;
@@ -1299,12 +1306,10 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 
 void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
-    TSeqPos pos = chunk.GetRefSeqRange().GetFrom();
-    TSeqPos len = chunk.GetMaxRefSeqFrom() - pos + 1;
+    auto start_range = chunk.GetAlignStartRange();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
     _TRACE("Loading seqs "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
@@ -1314,14 +1319,14 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
 #endif
-    CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
+    CBamAlignIterator ait(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength());
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     list< CRef<CBioseq> > bioseqs;
     for( ; ait; ++ait ){
         TSeqPos align_pos = ait.GetRefSeqPos();
-        if ( align_pos < pos ) {
+        if ( align_pos < start_range.GetFrom() ) {
             // the alignments starts before current chunk range
             ++skipped;
             continue;
@@ -1484,28 +1489,20 @@ END_LOCAL_NAMESPACE;
 
 void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 {
-    //CMutexGuard guard(m_File->GetMutex());
     size_t range_id = chunk_info.GetChunkId()/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
-    TSeqPos chunk_pos = chunk.GetRefSeqRange().GetFrom();
-    TSeqPos chunk_len;
-    if ( range_id+1 < m_Chunks.size() ) {
-        chunk_len = m_Chunks[range_id+1].GetRefSeqRange().GetFrom()-chunk_pos;
-    }
-    else {
-        chunk_len = chunk.GetMaxRefSeqFrom() - chunk_pos + 1;
-    }
+    auto graph_range = GetChunkGraphRange(range_id);
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
     _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
     size_t count = 0, skipped = 0;
 
-    SBaseStats ss(chunk_len);
+    SBaseStats ss(graph_range.GetLength());
     
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
 #endif
-    CBamAlignIterator ait(*m_File, GetRefSeqId(), chunk_pos, chunk_len);
+    CBamAlignIterator ait(*m_File, GetRefSeqId(), graph_range.GetFrom(), graph_range.GetLength());
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
@@ -1519,7 +1516,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 
             CTempString read_raw = rit->GetShortSequenceRaw();
             TSeqPos align_pos = rit->GetRefSeqPos();
-            TSeqPos ss_pos = align_pos - chunk_pos;
+            TSeqPos ss_pos = align_pos - graph_range.GetFrom();
             TSeqPos read_pos = 0;
             for ( Uint2 i = 0, count = rit->GetCIGAROpsCount(); i < count; ++i ) {
                 Uint4 op = rit->GetCIGAROp(i);
@@ -1574,7 +1571,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             }
             ++count;
 
-            TSignedSeqPos ss_pos = align_pos - chunk_pos;
+            TSignedSeqPos ss_pos = align_pos - graph_range.GetFrom();
             TSeqPos read_pos = ait.GetCIGARPos();
             CTempString read = ait.GetShortSequence();
             CTempString cigar = ait.GetCIGAR();
@@ -1634,7 +1631,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     }
 
     if ( GetDebugLevel() >= 2 ) {
-        LOG_POST_X(10, Info<<"CBAMDataLoader: "
+        LOG_POST_X(11, Info<<"CBAMDataLoader: "
                    "Loaded pileup "<<GetRefSeqId()<<" @ "<<
                    chunk.GetRefSeqRange()<<": "<<
                    count<<" skipped: "<<skipped);
@@ -1671,9 +1668,9 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         graph->SetTitle(titles[k]);
         CSeq_interval& loc = graph->SetLoc().SetInt();
         loc.SetId(*ref_id);
-        loc.SetFrom(chunk_pos);
-        loc.SetTo(chunk_pos+chunk_len-1);
-        graph->SetNumval(chunk_len);
+        loc.SetFrom(graph_range.GetFrom());
+        loc.SetTo(graph_range.GetTo());
+        graph->SetNumval(graph_range.GetLength());
 
         if ( c_max[k] < 256 ) {
             CByte_graph& data = graph->SetGraph().SetByte();
