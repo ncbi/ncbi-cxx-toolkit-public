@@ -492,6 +492,38 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
     return sfx;
 }
 
+string CBioseqIndex::GetSequence (void)
+
+{
+    return GetSequence (0, -1);
+}
+
+string CBioseqIndex::GetSequence (int from, int to)
+
+{
+    if (! m_sv) {
+        m_sv = new CSeqVector(m_bsh);
+        if (m_sv) {
+            m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+        }
+    }
+
+    string coding;
+
+    if (m_sv) {
+        CSeqVector& vec = *m_sv;
+        if (from < 0) {
+            from = 0;
+        }
+        if (to < 0 || to >= vec.size()) {
+            to = vec.size();
+        }
+        vec.GetSeqData(from, to, coding);
+    }
+
+    return coding;
+}
+
 
 // CDescriptorIndex
 
@@ -522,6 +554,26 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CConst
 CFeatureIndex::~CFeatureIndex (void)
 
 {
+}
+
+string CFeatureIndex::GetSequence (void)
+
+{
+    if (! m_sv) {
+        m_sv = new CSeqVector(*m_fl, *GetBioseqIndex().GetScope());
+        if (m_sv) {
+            m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+        }
+    }
+
+    string coding;
+
+    if (m_sv) {
+        CSeqVector& vec = *m_sv;
+        vec.GetSeqData(0, vec.size(), coding);
+    }
+
+    return coding;
 }
 
 

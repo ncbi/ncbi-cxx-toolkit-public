@@ -41,6 +41,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -240,6 +241,7 @@ public:
     CSeqEntryIndex& GetSeqEntryIndex (void) const { return m_enx; }
     CRef<CScope> GetScope (void) const { return m_scope; }
     feature::CFeatTree& GetFeatTree (void) { return m_featTree; }
+    CRef<CSeqVector> GetSeqVector (void) const { return m_sv; }
 
     const string& GetAccession (void) const { return m_Accession; }
 
@@ -263,6 +265,11 @@ public:
     CMolInfo::TCompleteness GetCompleteness (void) const { return m_completeness; }
 
     CConstRef<CBioSource> GetBioSource (void) const { return m_bioSource; }
+
+    // Get sequence letters from Bioseq
+    string GetSequence (void);
+    // Get sequence letters from Bioseq subrange
+    string GetSequence (int from, int to);
 
 private:
     // Common descriptor collection, delayed until actually needed
@@ -290,6 +297,8 @@ private:
     // CFeatIndex from CMappedFeat for use with GetBestGene
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_featIndexMap;
+
+    CRef<CSeqVector> m_sv;
 
 private:
     // Seq-id field
@@ -389,10 +398,14 @@ public:
     CSeq_feat_Handle GetSeqFeatHandle (void) const { return m_sfh; }
     const CMappedFeat GetMappedFeat (void) const { return m_mf; }
     CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_fl; }
+    CRef<CSeqVector> GetSeqVector (void) const { return m_sv; }
     CBioseqIndex& GetBioseqIndex (void) const { return m_bsx; }
 
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mrna)
     CSeqFeatData::ESubtype GetSubtype (void) const { return m_subtype; }
+
+    // Get sequence letters under feature intervals
+    string GetSequence (void);
 
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
     template<typename _Pred> bool GetBestGene (_Pred m);
@@ -401,6 +414,7 @@ private:
     CSeq_feat_Handle m_sfh;
     const CMappedFeat m_mf;
     CConstRef<CSeq_loc> m_fl;
+    CRef<CSeqVector> m_sv;
     CBioseqIndex& m_bsx;
 
     CSeqFeatData::ESubtype m_subtype;
