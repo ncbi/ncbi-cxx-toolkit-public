@@ -101,14 +101,14 @@ typedef struct
 } SExpHit;
 
 typedef enum {
-    fMatch_None,
-    fMatch_Type,
-    fMatch_Host,
-    fMatch_Port,
-    fMatch_Extra,
-    fMatch_Loc,
-    fMatch_Priv,
-    fMatch_Stateful,
+    fMatch_None         = 0,
+    fMatch_Type         = 0x01,
+    fMatch_Host         = 0x02,
+    fMatch_Port         = 0x04,
+    fMatch_Extra        = 0x08,
+    fMatch_Loc          = 0x10,
+    fMatch_Priv         = 0x20,
+    fMatch_Stateful     = 0x40,
     fMatch_All          = -1,
     fMatch_Default      = fMatch_All & ~fMatch_Extra,
     fMatch_NoHostPort   = fMatch_Default & ~fMatch_Host & ~fMatch_Port

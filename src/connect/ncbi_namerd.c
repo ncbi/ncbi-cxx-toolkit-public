@@ -35,6 +35,7 @@
 #include "ncbi_comm.h"
 #include "ncbi_lb.h"
 #include "ncbi_namerd.h"
+#include "ncbi_once.h"
 #include "ncbi_priv.h"
 #include "parson.h"
 
@@ -274,8 +275,8 @@ static void s_Init(void)
         s_initialized = 1;
         CORE_UNLOCK;
     } else {
-        static int once = 0;
-        if ( ! once++) {
+        static void* s_Once = 0;
+        if (CORE_Once(&s_Once)) {
             CORE_LOG_X(eNSub_Libc, eLOG_Error,
                        "Error registering atexit function.");
         }
@@ -958,8 +959,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 if ( ! timeval)
                     goto out;
             } else {
-                static int once = 0;
-                if ( ! once++) {
+                static void* s_Once = 0;
+                if (CORE_Once(&s_Once)) {
                     CORE_LOGF_X(eNSub_Json, eLOG_Warning,
                         ("Missing JSON {\"addrs[i].meta.expires\"} - "
                          "using current time (" FMT_TIME_T
@@ -984,6 +985,11 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                             "JSON for an HTTP type service");
                     extra = "/ERROR/namerd/API/did/not/return/a/path/in"
                             "/meta.extra/JSON/for/an/HTTP/type/service";
+                } else if (strcmp(svc_type, "NCBID") == 0) {
+                    CORE_LOG_X(eNSub_Json, eLOG_Warning,
+                            "Namerd API did not return args in meta.extra "
+                            "JSON for an NCBID type service");
+                    extra = "''";
                 } else {
                     extra = "";
                 }
@@ -1273,8 +1279,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
                 now - info->time, tnow - now));
 #endif
             any_expired = 1;
-            if ((size_t)i < --data->n_cand)
-                s_RemoveCand(data, (size_t)i, 1);
+            s_RemoveCand(data, (size_t)i, 1);
         }
     }
 
@@ -1405,7 +1410,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     assert(iter->name);
     assert(*iter->name);
 
-    /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>)". */
+    /* Prohibit catalog-prefixed services, e.g. "/lbsm/<svc>" */
     if (iter->name[0] == '/') {
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
             ("Invalid service name \"%s\" - must not begin with '/'.",

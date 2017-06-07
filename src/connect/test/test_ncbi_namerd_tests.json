@@ -430,7 +430,7 @@
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.24.231\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":45.65,\"serviceType\":\"NCBID\",\"expires\":\"2017-06-06T13:22:45Z\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "Special Case: \"External\" services (NAMERD wip, Toolkit wip)",
@@ -464,7 +464,7 @@
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.22.93\",\"port\":9103,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"2017-06-06T13:26:35Z\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "Special Case: type-specific metadata (NAMERD done, Toolkit done)",
@@ -500,7 +500,6 @@
                     "stnd": "Foreign"
                 }
             ],
-            "sock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}",
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.143\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":10000.0,\"standing\":\"Static\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:25_\",\"stateful\":false,\"mode\":\"L\",\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}},{\"ip\":\"130.14.22.95\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":10000.0,\"standing\":\"Static\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"mode\":\"L\",\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}},{\"ip\":\"130.14.29.110\",\"port\":443,\"meta\":{\"mock\":\"true\",\"rate\":100.0,\"standing\":\"Foreign\",\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:27Z\",\"stateful\":false,\"extra\":\"/projects/r_gencoll/access/gc_get_assembly_v3.cgi\"}}],\"meta\":{}}"
         },
         {
@@ -593,7 +592,7 @@
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.46\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:23_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.20\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:24_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.18\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.12\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.16\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.131\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:28_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.28\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:29_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.152\",\"port\":7011,\"meta\":{\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:30_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.46\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:23_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.20\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:24_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.18\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.12\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.16\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.131\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:28_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.28\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:29_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.18.152\",\"port\":7011,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:30_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "Special Case: \"Weights\" (NAMERD wip, Toolkit wip)",
