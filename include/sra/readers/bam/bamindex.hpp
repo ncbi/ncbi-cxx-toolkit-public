@@ -223,9 +223,13 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
                                               EIndexLevel max_index_level) const;
     vector<Uint8> EstimateDataSizeByAlnStartPos(TSeqPos seqlen = kInvalidSeqPos) const;
 
-    // return array of start position of alignmnets overlapping with each page
-    // return empty array if at most one page overlapping is allowed
+    // return array of min start position of alignments overlapping with each page
+    // may return shorter array if the remaining alignments are completely within their page
     vector<TSeqPos> GetAlnOverStarts(void) const;
+    // return array of max end position of alignments overlapping with each page
+    // may return shorter array if the remaining alignments are completely within their page
+    vector<TSeqPos> GetAlnOverEnds(void) const;
+
 
     typedef vector<SBamIndexBinInfo> TBins;
     typedef TBins::const_iterator TBinsIter;
@@ -537,6 +541,12 @@ public:
             return *m_File;
         }
 
+    vector<Uint8> EstimateDataSizeByAlnStartPos(const string& ref_label) const
+        {
+            size_t ref_index = GetRefIndex(ref_label);
+            return GetIndex().GetRef(ref_index).EstimateDataSizeByAlnStartPos(GetRefSeqLength(ref_index));
+        }
+    
 private:
     CRef<CBGZFFile> m_File;
     CBamHeader m_Header;

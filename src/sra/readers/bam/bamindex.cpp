@@ -457,6 +457,25 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
 }
 
 
+vector<TSeqPos> SBamIndexRefIndex::GetAlnOverEnds(void) const
+{
+    TSeqPos bin_size = kMinBinSize;
+    vector<TSeqPos> starts = GetAlnOverStarts();
+    TSeqPos count = starts.size();
+    vector<TSeqPos> ends(count);
+    TSeqPos si = 0, ei = 0;
+    for ( ; ei < count; ++ei ) {
+        while ( si*bin_size < starts[ei] ) {
+            ends[si++] = ei*bin_size-1;
+        }
+    }
+    while ( si < count ) {
+        ends[si++] = ei*bin_size-1;
+    }
+    return ends;
+}
+
+
 inline
 Uint8 s_EstimatedPos(CBGZFPos pos)
 {
