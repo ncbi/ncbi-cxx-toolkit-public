@@ -4968,6 +4968,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
+                              "OrganismNotFound", "Organism not found in taxonomy database"));
+
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "BadOrgMod",
                               "Unknown orgmod subtype 0"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "BadOrgMod",
@@ -5821,6 +5824,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
                               "Variety value specified is not found in taxname"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5832,21 +5837,25 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma, "");
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "foo");
-    expected_errors[0]->SetErrMsg("Forma specialis value specified is not found in taxname");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "foo");
     expected_errors[0]->SetErrMsg("Subspecies value specified is not found in taxname");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+    // this one does not cause taxname lookup to fail
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "foo");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
+                              "BioSourceInconsistency",
+                              "Forma specialis value specified is not found in taxname"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
     // some don't produce errors
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_biovar, "foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
