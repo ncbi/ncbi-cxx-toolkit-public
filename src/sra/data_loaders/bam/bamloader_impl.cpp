@@ -656,18 +656,9 @@ void CBamRefSeqInfo::LoadRanges(void)
     if ( m_LoadedRanges ) {
         return;
     }
-    if ( m_LoadedRanges ) {
-        return;
-    }
-
     _TRACE("Loading "<<GetRefSeqId()<<" -> "<<GetRefSeq_id());
     if ( !x_LoadRangesCov() && !x_LoadRangesEstimated() ) {
-        if ( 1 ) {
-            x_LoadRangesStat();
-        }
-        else {
-            x_LoadRangesScan();
-        }
+        x_LoadRangesStat();
     }
     _TRACE("Loaded ranges on "<<GetRefSeqId());
     m_LoadedRanges = true;
@@ -865,6 +856,7 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     static const TSeqPos kZeroBlocks = 8;
     static const TSeqPos kChunkDataSize = 250000;
 
+    m_Chunks.clear();
     TSeqPos last_pos = 0;
     TSeqPos zero_count = 0;
     Uint8 cur_data_size = 0;
@@ -933,6 +925,17 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
             }
         }
     }
+
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set();
+    CBam2Seq_graph cvt;
+    cvt.SetRefLabel(GetRefSeqId());
+    cvt.SetRefId(*GetRefSeq_id().GetSeqId());
+    cvt.SetAnnotName(m_File->GetAnnotName());
+    cvt.SetEstimated();
+    cvt.SetMinMapQuality(m_MinMapQuality);
+    entry->SetAnnot().push_back(cvt.MakeSeq_annot(raw_db, m_File->GetBamName()));
+    m_CovEntry = entry;
     return true;
 }
 
@@ -1122,7 +1125,7 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kMainChunkId));
     CRange<TSeqPos> whole_range = CRange<TSeqPos>::GetWhole();
-    if ( m_CovEntry || !m_CovFileName.empty() ) {
+    if ( m_CovEntry || !m_CovFileName.empty() || m_File->GetBamDb().UsesRawIndex() ) {
         chunk->x_AddAnnotType(name,
                               SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
                               GetRefSeq_id(),

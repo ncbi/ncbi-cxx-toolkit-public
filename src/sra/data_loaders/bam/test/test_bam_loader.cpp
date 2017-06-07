@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
     sel.SetSearchUnresolved();
 
     CGraph_CI git(scope, *loc, sel);
-    BOOST_CHECK_EQUAL(git.GetSize(), 0u);
+    BOOST_CHECK(git.GetSize() <= 1u);
 
     CAlign_CI it(scope, *loc, sel);
     if ( it ) {
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
     sel.SetSearchUnresolved();
 
     CGraph_CI git(scope, *loc, sel);
-    BOOST_CHECK_EQUAL(git.GetSize() % 5, 0u); // no 'match' graph in this file
+    BOOST_CHECK(git.GetSize() % 5 <= 1u); // no 'match' graph in this file
     BOOST_CHECK(git.GetSize());
 
     CAlign_CI it(scope, *loc, sel);
@@ -702,22 +702,22 @@ typedef tuple<string, CRange<TSeqPos>, bool, size_t, size_t> TQuery;
 vector<TQuery> s_GetQueries()
 {
     vector<TQuery> queries;
-    queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), true, 5, 5));
+    queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), true, 5, 6));
     queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), false, 397, 0));
-    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(100000, 200000), true, 10, 10));
-    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(200000, 300000), true, 15, 10));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(100000, 200000), true, 10, 11));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(200000, 300000), true, 15, 11));
     queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(0, 400000), false, 1424, 0));
-    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(1000000, 2000000), true, 120, 160));
-    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(2000000, 3000000), true, 120, 155));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(1000000, 2000000), true, 120, 161));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(2000000, 3000000), true, 120, 156));
     queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(2700000, 2800000), false, 15816, 0));
-    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(11000000, 12000000), true, 120, 160));
-    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(12000000, 13000000), true, 120, 155));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(11000000, 12000000), true, 120, 161));
+    queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(12000000, 13000000), true, 120, 156));
     queries.push_back(make_tuple("lcl|2", CRange<TSeqPos>(11500000, 11600000), false, 15841, 0));
-    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(21000000, 22000000), true, 135, 150));
-    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(22000000, 23000000), true, 135, 155));
+    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(21000000, 22000000), true, 135, 151));
+    queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(22000000, 23000000), true, 135, 156));
     queries.push_back(make_tuple("lcl|3", CRange<TSeqPos>(21500000, 21600000), false, 14054, 0));
-    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(31000000, 32000000), true, 145, 120));
-    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(42000000, 43000000), true, 145, 155));
+    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(31000000, 32000000), true, 145, 121));
+    queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(42000000, 43000000), true, 145, 156));
     queries.push_back(make_tuple("lcl|4", CRange<TSeqPos>(21500000, 21600000), false, 14936, 0));
     return queries;
 }
