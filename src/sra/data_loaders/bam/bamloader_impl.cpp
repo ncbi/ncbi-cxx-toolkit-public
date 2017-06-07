@@ -98,6 +98,17 @@ static int GetDebugLevel(void)
 }
 
 
+NCBI_PARAM_DECL(string, BAM_LOADER, MAPPER_FILE);
+NCBI_PARAM_DEF_EX(string, BAM_LOADER, MAPPER_FILE, "",
+                  eParam_NoThread, BAM_LOADER_MAPPER_FILE);
+
+static string GetMapperFileName(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, MAPPER_FILE)> s_Value;
+    return s_Value->Get();
+}
+
+
 NCBI_PARAM_DECL(bool, BAM_LOADER, PILEUP_GRAPHS);
 NCBI_PARAM_DEF_EX(bool, BAM_LOADER, PILEUP_GRAPHS, true,
                   eParam_NoThread, BAM_LOADER_PILEUP_GRAPHS);
@@ -175,6 +186,13 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
     const CBAMDataLoader::SLoaderParams& params)
     : m_IdMapper(params.m_IdMapper)
 {
+    if ( !m_IdMapper ) {
+        string mapper_file_name = GetMapperFileName();
+        if ( !mapper_file_name.empty() ) {
+            CNcbiIfstream in(mapper_file_name);
+            m_IdMapper.reset(new CIdMapperConfig(in, "", false));
+        }
+    }
     CSrzPath srz_path;
     m_DirPath = srz_path.FindAccPathNoThrow(params.m_DirPath);
     if ( m_DirPath.empty() ) {
