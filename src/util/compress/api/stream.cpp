@@ -133,12 +133,14 @@ void CCompressionStream::Create(CNcbiIos&                    stream,
     m_Ownership = ownership;
     
     // Create a new stream buffer
-    unique_ptr<CCompressionStreambuf> sb(
-        new CCompressionStreambuf(&stream, read_sp, write_sp));
+    unique_ptr<CCompressionStreambuf> sb(new CCompressionStreambuf(&stream, read_sp, write_sp));
     init(sb.get());
     m_StreamBuf = sb.release();
     if ( !m_StreamBuf->IsOkay() ) {
         setstate(badbit | eofbit);
+    } else {
+        // Copy state from the underlying stream
+        setstate(stream.rdstate());
     }
 }
 
