@@ -430,7 +430,7 @@
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.24.231\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":45.65,\"serviceType\":\"NCBID\",\"expires\":\"2017-06-06T13:22:45Z\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.24.231\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":45.65,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "Special Case: \"External\" services (NAMERD wip, Toolkit wip)",
@@ -464,7 +464,7 @@
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.22.93\",\"port\":9103,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"2017-06-06T13:26:35Z\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.22.93\",\"port\":9103,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "Special Case: type-specific metadata (NAMERD done, Toolkit done)",
