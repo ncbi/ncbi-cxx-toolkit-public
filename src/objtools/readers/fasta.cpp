@@ -587,31 +587,40 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     parseInfo.maxIdLength = m_MaxIDLength;
     parseInfo.lineNumber = LineNumber();
 
+    CBioseq::TId defline_ids;
+
     CFastaDeflineReader::ParseDefline(s,
                  parseInfo,
                  m_ignorable,
-                 SetIDs(), 
+                 defline_ids, 
                  has_range,
                  range_start,
                  range_end,
                  m_CurrentSeqTitles, 
                  pMessageListener);
 
-    if (GetIDs().empty()) {
-        // No [usable] IDs
+
+    if (defline_ids.empty()) {
         if (TestFlag(fRequireID)) {
+            // No [usable] IDs
             FASTA_ERROR(LineNumber(),
-                        "CFastaReader: Defline lacks a proper ID around line " << LineNumber(),
-                        CObjReaderParseException::eNoIDs );
+                "CFastaReader: Defline lacks a proper ID around line " << LineNumber(),
+                CObjReaderParseException::eNoIDs );
         }
-        GenerateID();
-    } else if ( !TestFlag(fForceType) ) {
+    }
+    else if (!TestFlag(fForceType)) {
         CSeq_inst::EMol mol;
-        if (xSetSeqMol(GetIDs(), mol)) {
+        if (xSetSeqMol(defline_ids, mol)) { 
             m_CurrentSeq->SetInst().SetMol(mol);
         }
     }
 
+    if (defline_ids.empty()) {
+        GenerateID();
+    } 
+    else {
+        SetIDs() = defline_ids;
+    }
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
 
 
