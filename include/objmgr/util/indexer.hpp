@@ -146,10 +146,10 @@ public:
     bool IsFetchFailure (void) const { return m_fetchFailure; }
 
 private:
-    // Common initialization function
+    // Common initialization function called by each Initialize variant
     void x_Init (void);
 
-    // Populate vector of index objects for Bioseqs in Seq-entry
+    // Recursive exploration to populate vector of index objects for Bioseqs in Seq-entry
     void x_InitSeqs (const CSeq_entry& sep);
 
     CRef<CSeq_id> MakeUniqueId(void);
@@ -257,14 +257,15 @@ public:
 
     // Most important descriptor fields
 
-    const string& GetTitle (void) const { return m_title; }
+    const string& GetTitle (void);
 
-    CConstRef<CMolInfo> GetMolInfo (void) const { return m_molInfo; }
-    CMolInfo::TBiomol GetBiomol (void) const { return m_biomol; }
-    CMolInfo::TTech GetTech (void) const { return m_tech; }
-    CMolInfo::TCompleteness GetCompleteness (void) const { return m_completeness; }
+    CConstRef<CMolInfo> GetMolInfo (void);
+    CMolInfo::TBiomol GetBiomol (void);
+    CMolInfo::TTech GetTech (void);
+    CMolInfo::TCompleteness GetCompleteness (void);
 
-    CConstRef<CBioSource> GetBioSource (void) const { return m_bioSource; }
+    CConstRef<CBioSource> GetBioSource (void);
+    const string& GetTaxname (void);
 
     // Get sequence letters from Bioseq
     string GetSequence (void);
@@ -325,6 +326,7 @@ private:
 
     // BioSource fields
     CConstRef<CBioSource> m_bioSource;
+    string m_taxname;
 
     // User object fields
     bool m_forceOnlyNearFeats;

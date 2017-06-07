@@ -337,6 +337,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryInd
     m_title.clear();
     m_molInfo.Reset();
     m_bioSource.Reset();
+    m_taxname.clear();
 
     m_biomol = CMolInfo::eBiomol_unknown;
     m_tech = CMolInfo::eTech_unknown;
@@ -372,7 +373,14 @@ void CBioseqIndex::x_InitDescs (void)
             case CSeqdesc::e_Source:
             {
                 if (! m_bioSource) {
-                    m_bioSource.Reset (&sd.GetSource());
+                    const CBioSource& biosrc = sd.GetSource();
+                    m_bioSource.Reset (&biosrc);
+                    if (biosrc.IsSetOrgname()) {
+                        const COrg_ref& org = biosrc.GetOrg();
+                        if (org.CanGetTaxname()) {
+                            m_taxname = org.GetTaxname();
+                        }
+                    }
                 }
                 break;
             }
@@ -477,6 +485,77 @@ void CBioseqIndex::x_InitFeats (void)
         // CFeatIndex from CMappedFeat for use with GetBestGene
         m_featIndexMap[mf] = sfx;
     }
+}
+
+// Common descriptor field getters
+const string& CBioseqIndex::GetTitle (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_title;
+}
+
+CConstRef<CMolInfo> CBioseqIndex::GetMolInfo (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_molInfo;
+}
+
+CMolInfo::TBiomol CBioseqIndex::GetBiomol (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_biomol;
+}
+
+CMolInfo::TTech CBioseqIndex::GetTech (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_tech;
+}
+
+CMolInfo::TCompleteness CBioseqIndex::GetCompleteness (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_completeness;
+}
+
+CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_bioSource;
+}
+
+const string& CBioseqIndex::GetTaxname (void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+     return m_taxname;
 }
 
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
