@@ -368,7 +368,7 @@ protected:
     string                  m_SeqData;
     TGaps                   m_Gaps;
     TSeqPos                 m_CurrentPos; // does not count gaps
-    TSeqPos                 m_ExpectedEnd;
+    NCBI_DEPRECATED TSeqPos m_ExpectedEnd;
     TSeqPos                 m_MaskRangeStart;
     TSeqPos                 m_SegmentBase;
     TSeqPos                 m_CurrentGapLength;
