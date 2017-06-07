@@ -6,7 +6,7 @@ $(ORIG_LIBS) needs3party
 16S_summaries needs 16S_common
 16S_summaries needs gpipe_xmlutil
 16S_summaries needs xregexp
-Assembly2Fscreen needs fscreen
+Assembly2Fscreen needs fscr1
 Assembly2Fscreen needs idload_utils
 BlastCgiUtils needs $(CONNEXT)
 BlastCgiUtils needs connect
@@ -308,8 +308,8 @@ fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
 freetype needs3party $(ORIG_LIBS)
-fscreen needs agp_lookup
-fscreen needs dbapi_util_blobstore
+fscr1 needs agp_lookup
+fscr1 needs dbapi_util_blobstore
 ftgl needs3party $(FREETYPE_LIBS)
 ftgl needs3party $(OPENGL_LIBS)
 ftgl needs3party $(ORIG_LIBS)
