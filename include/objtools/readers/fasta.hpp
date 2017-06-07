@@ -363,7 +363,7 @@ protected:
     TMask                   m_CurrentMask;
     TMask                   m_NextMask;
     TMasks *                m_MaskVec;
-    CRef<CSeqIdGenerator>   m_IDGenerator;
+    NCBI_DEPRECATED CRef<CSeqIdGenerator>   m_IDGenerator;
     CRef<CFastaIdHandler>   m_IDHandler;
     string                  m_SeqData;
     TGaps                   m_Gaps;
