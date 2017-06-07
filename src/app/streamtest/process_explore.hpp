@@ -60,60 +60,6 @@ public:
     };
 
     //  ------------------------------------------------------------------------
-    void DoOneBioseq(
-        CBioseqIndex& bsx )
-    //  ------------------------------------------------------------------------
-    {
-        *m_out << "Accession: " << bsx.GetAccession() << endl;
-
-        int num_feats = 0;
-        // IterateFeatures causes feature vector to be initialized by CFeat_CI
-        // ProcessBioseq on subregion provides delta sequence pointing to portion of original Bioseq
-        bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
-
-            num_feats++;
-            CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
-            if (bsx.IsNA() && sbt != CSeqFeatData::ESubtype::eSubtype_gene) {
-
-                // Print feature eSubtype number
-                *m_out << NStr::IntToString(sbt) << endl;
-
-                // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
-                string locus;
-                bool has_locus = sfx.GetBestGene([&sfx, sbt, &locus](CFeatureIndex& fsx){
-                    CMappedFeat best = fsx.GetMappedFeat();
-                    const CGene_ref& gene = best.GetData().GetGene();
-                    if (gene.IsSetLocus()) {
-                        locus = gene.GetLocus();
-                    }
-                });
-                if (has_locus) {
-                    *m_out << locus << endl;
-                } else {
-                    *m_out << "--" << endl;
-                }
-
-                // Print feature location
-                const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
-                string loc_str;
-                loc.GetLabel(&loc_str);
-                *m_out << "Original: " << loc_str << endl;
-
-                CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
-                if (sloc) {
-                    string sloc_str;
-                    sloc->GetLabel(&sloc_str);
-                    *m_out << "MappedLoc: " << sloc_str << endl;
-                }
-
-                *m_out << endl;
-            }
-        });
-
-        *m_out << "Feature count " << NStr::IntToString(num_feats) << endl;
-    }
-
-    //  ------------------------------------------------------------------------
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
@@ -180,6 +126,95 @@ public:
         catch (CException& e) {
             LOG_POST(Error << "Error processing seqentry: " << e.what());
         }
+    }
+
+    //  ------------------------------------------------------------------------
+    void DoOneBioseq(
+        CBioseqIndex& bsx )
+    //  ------------------------------------------------------------------------
+    {
+        *m_out << "Accession: " << bsx.GetAccession() << endl;
+
+        int num_feats = 0;
+        // IterateFeatures causes feature vector to be initialized by CFeat_CI
+        // ProcessBioseq on subregion provides delta sequence pointing to portion of original Bioseq
+        bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
+
+            num_feats++;
+            CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
+            if (bsx.IsNA() && sbt != CSeqFeatData::ESubtype::eSubtype_gene) {
+
+                // Print feature eSubtype number
+                *m_out << NStr::IntToString(sbt) << "  ";
+
+                // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
+                string locus;
+                bool has_locus = sfx.GetBestGene([this, &sfx, sbt, &locus](CFeatureIndex& fsx){
+                    CMappedFeat best = fsx.GetMappedFeat();
+                    const CGene_ref& gene = best.GetData().GetGene();
+                    if (gene.IsSetLocus()) {
+                        locus = gene.GetLocus();
+                    }
+                });
+                if (has_locus) {
+                    *m_out << locus;
+                } else {
+                    *m_out << "--";
+                }
+                *m_out << endl;
+
+                // Print feature location
+                const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
+                string loc_str;
+                loc.GetLabel(&loc_str);
+                *m_out << "Location: " << loc_str << endl;
+
+                CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
+                if (sloc) {
+                    string sloc_str;
+                    sloc->GetLabel(&sloc_str);
+                    if (! NStr::EqualNocase(loc_str, sloc_str)) {
+                        *m_out << "MappedLoc: " << sloc_str << endl;
+                    }
+                }
+
+                if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
+                    string feat_seq = sfx.GetSequence();
+                    *m_out << "CdRegion seq: " << feat_seq << endl;
+                }
+
+                *m_out << endl;
+
+            } else if (bsx.IsAA()) {
+
+                // Print feature eSubtype number
+                *m_out << NStr::IntToString(sbt) << "  ";
+
+                // Print feature location
+                const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
+                string loc_str;
+                loc.GetLabel(&loc_str);
+                *m_out << "Location: " << loc_str << endl;
+
+                CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
+                if (sloc) {
+                    string sloc_str;
+                    sloc->GetLabel(&sloc_str);
+                    if (! NStr::EqualNocase(loc_str, sloc_str)) {
+                        *m_out << "MappedLoc: " << sloc_str << endl;
+                    }
+                }
+
+                if (sbt == CSeqFeatData::ESubtype::eSubtype_prot) {
+                    string feat_seq = sfx.GetSequence();
+                    *m_out << "Protein seq: " << feat_seq << endl;
+                }
+
+                *m_out << endl;
+            }
+        });
+
+        *m_out << "Feature count " << NStr::IntToString(num_feats) << endl;
     }
 
 protected:
