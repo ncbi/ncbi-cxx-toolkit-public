@@ -370,14 +370,21 @@ DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc | eSmart, "G
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {
         const CSeq_loc& loc_i = genes[i]->GetLocation();
+        ENa_strand strand_i = loc_i.IsSetStrand() ? loc_i.GetStrand() : eNa_strand_unknown;
+
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
-            if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
-                m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[i]));
-            }
-            else if (ovlp == sequence::eContains) {
-                m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[j]));
+            ENa_strand strand_j = loc_j.IsSetStrand() ? loc_j.GetStrand() : eNa_strand_unknown;
+
+            if (strand_i == strand_j) {
+
+                sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
+                if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
+                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[i]));
+                }
+                else if (ovlp == sequence::eContains) {
+                    m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[j]));
+                }
             }
         }
     }
