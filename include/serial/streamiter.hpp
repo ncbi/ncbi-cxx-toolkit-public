@@ -705,7 +705,7 @@ CObjectIStreamIterator<TRoot>::CData::CData(
     const CParams& params, TTypeInfo tinfo)
     : m_Istr(&istr), m_Own(deleteInStream)
     , m_ValueType(tinfo), m_Value(tinfo), m_HasReader(false)
-    , m_EndOfData(false), m_Params(params)
+    , m_EndOfData(m_Istr->EndOfData()), m_Params(params)
 {
     ETypeFamily type = tinfo->GetTypeFamily();
     if (type != eTypeFamilyClass && type != eTypeFamilyChoice && type != eTypeFamilyContainer) {
@@ -1426,7 +1426,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::CData(
     , m_MaxRawSize(    params.m_SameThread ? 0 : params.m_MaxTotalRawSize)
     , m_CurrentRawSize(0)
     , m_Policy(params.m_ThreadPolicy)
-    , m_EndOfData(false)
+    , m_EndOfData(m_Istr->EndOfData())
     , m_Params(params)
 {
     if (m_MaxRawSize != 0) {

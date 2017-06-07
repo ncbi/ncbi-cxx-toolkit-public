@@ -148,14 +148,6 @@ unsigned IFStreamFlags(bool binary)
 CStreamByteSource::CStreamByteSource(CNcbiIstream& in)
     : m_Stream(&in)
 {
-    if ( !in ) {
-        NCBI_THROW(CUtilException,eNoInput,"input stream in bad state");
-    }
-}
-
-CStreamByteSource::CStreamByteSource(CNcbiIstream& in, bool)
-    : m_Stream(&in)
-{
 }
 
 
@@ -261,7 +253,7 @@ CFStreamByteSource::CFStreamByteSource(CNcbiIstream& in)
 
 CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
-                                           IFStreamFlags(binary)),false)
+                                           IFStreamFlags(binary)))
 {
     if ( !*m_Stream ) {
         NCBI_THROW(CUtilException,eNoInput,"file not found: " + fileName);
