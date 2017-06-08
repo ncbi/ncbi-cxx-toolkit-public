@@ -943,5 +943,3 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
 
-/* Defined to the SVN revision number */
-#cmakedefine TOOLKIT_WC_REVISION @TOOLKIT_WC_REVISION@

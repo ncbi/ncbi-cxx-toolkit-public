@@ -94,11 +94,30 @@ endif()
 
 ############################################################################
 #
-# SVN stuff
+# Build revision stuff
 # This is needed for some use cases
 include(FindSubversion)
 Subversion_WC_INFO(${top_src_dir} TOOLKIT)
+Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
+set(NCBI_SUBVERSION_REVISION ${TOOLKIT_WC_REVISION})
 message(STATUS "SVN revision = ${TOOLKIT_WC_REVISION}")
+message(STATUS "SVN URL = ${TOOLKIT_WC_URL}")
+
+if ("$ENV{NCBI_TEAMCITY_BUILD_NUMBER}" STREQUAL "")
+    set(NCBI_TEAMCITY_BUILD_NUMBER 0)
+    message(STATUS "TeamCity build number = ${NCBI_TEAMCITY_BUILD_NUMBER}")
+endif()
+
+string(REGEX REPLACE ".*/([0-9]+)\\.[0-9]+/.*" "\\1" "${CORELIB_WC_URL}" _SC_VER)
+string(LENGTH "${_SC_VER}" _SC_VER_LEN)
+if (${_SC_VER_LEN} LESS 10)
+    set(NCBI_SC_VERSION ${_SC_VER})
+    message(STATUS "Stable Components Number = ${NCBI_SC_VERSION}")
+else()
+    set(NCBI_SC_VERSION 0)
+endif()
+
+
 #
 # Initial messaging about some important stuff
 #
@@ -691,6 +710,9 @@ endif()
 # Final tasks
 #
 
+message(STATUS "Generating ${build_root}/inc/ncbi_build_ver.h...")
+configure_file(${includedir}/common/ncbi_build_ver.h.in ${build_root}/inc/ncbi_build_ver.h)
+
 if (UNIX)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
@@ -717,7 +739,7 @@ endif (APPLE AND NOT UNIX)
 #  - SYBASE_LCL_PATH
 #  - SYBASE_PATH
 #  - FEATURES
-set(c_ncbi_runpath "/$ORIGIN/../lib")
+set(c_ncbi_runpath "$ORIGIN/../lib")
 set(SYBASE_LCL_PATH ${SYBASE_LIBRARIES})
 set(SYBASE_PATH "")
 set(FEATURES "")
