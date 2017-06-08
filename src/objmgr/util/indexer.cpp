@@ -360,6 +360,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CBioseq_Hand
     m_bioSource.Reset();
     m_taxname.clear();
     m_defline.clear();
+    m_dlflags = 0;
 
     m_biomol = CMolInfo::eBiomol_unknown;
     m_tech = CMolInfo::eTech_unknown;
@@ -588,10 +589,17 @@ const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags 
         x_InitFeats();
     }
 
+    if (flags == m_dlflags && ! m_defline.empty()) {
+        // Return previous result if flags are the same
+        return m_defline;
+    }
+
     sequence::CDeflineGenerator gen (m_enx.m_topSEH);
 
     // Pass original target BioseqHandle if using Bioseq sublocation
     m_defline = gen.GenerateDefline (m_obsh, m_featTree, flags);
+
+    m_dlflags = flags;
 
     return m_defline;
 }

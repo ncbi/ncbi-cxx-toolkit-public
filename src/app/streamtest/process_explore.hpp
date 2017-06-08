@@ -84,8 +84,8 @@ public:
                     num_prots++;
                 }
             });
-            *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs > 1) ? "s" : "");
-            *m_out << " and " << num_prots << " protein" << ((num_prots > 1) ? "s" : "");
+            *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
+            *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
             *m_out << endl;
 
 
@@ -147,6 +147,7 @@ public:
         *m_out << "Title: " << bsx.GetTitle() << endl;
         *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << endl;
 
+        *m_out << endl;
 
         CRef<CSeqsetIndex> prnt = bsx.GetParent();
         if (prnt) {

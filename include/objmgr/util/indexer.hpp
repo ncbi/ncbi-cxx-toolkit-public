@@ -317,7 +317,7 @@ public:
     CConstRef<CBioSource> GetBioSource (void);
     const string& GetTaxname (void);
 
-    // Run deflinition line generator
+    // Run definition line generator
     const string& GetDefline (sequence::CDeflineGenerator::TUserFlags = 0);
 
     // Get sequence letters from Bioseq
@@ -391,6 +391,7 @@ private:
 
     // Generated definition line
     string m_defline;
+    sequence::CDeflineGenerator::TUserFlags m_dlflags;
 };
 
 
