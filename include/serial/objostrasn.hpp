@@ -200,6 +200,16 @@ private:
 };
 
 
+inline
+string& operator<<(string& s, const CSerialObject& obj)
+{
+    CNcbiOstrstream out;
+    out << MSerial_AsnText << obj;
+    s.append(CNcbiOstrstreamToString(out));
+    return s;
+}
+
+
 /* @} */
 
 

@@ -643,6 +643,9 @@ public:
 #define MSerial_Xml       MSerial_Format_Xml()
 #define MSerial_Json      MSerial_Format_Json()
 
+/// Flat ASN text output - no indentation or line breaks.
+#define MSerial_FlatAsnText   MSerial_AsnText(fSerial_AsnText_NoIndentation | fSerial_AsnText_NoEol)
+
 /// Reset all formatting flags for the I/O stream
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_None(CNcbiIos& io);
 
