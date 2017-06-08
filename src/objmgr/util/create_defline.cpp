@@ -137,19 +137,6 @@ CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh)
     m_InitializedFeatTree = false;
 }
 
-// constructor
-CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh, feature::CFeatTree& ftree)
-{
-    // initialize common bits (FSA)
-    x_Init();
-
-    // then store top SeqEntry Handle and reference to external CFeatTree
-    m_TopSEH = tseh;
-    m_ConstructedFeatTree = true;
-    m_InitializedFeatTree = true;
-    m_Feat_Tree = &ftree;
-}
-
 // destructor
 CDeflineGenerator::~CDeflineGenerator (void)
 
@@ -2831,6 +2818,20 @@ string CDeflineGenerator::GenerateDefline (
 }
 
 string CDeflineGenerator::GenerateDefline (
+    const CBioseq_Handle& bsh,
+    feature::CFeatTree& ftree,
+    TUserFlags flags
+)
+
+{
+    m_ConstructedFeatTree = true;
+    m_InitializedFeatTree = true;
+    m_Feat_Tree = &ftree;
+
+    return GenerateDefline(bsh, flags);
+}
+
+string CDeflineGenerator::GenerateDefline (
     const CBioseq& bioseq,
     CScope& scope,
     TUserFlags flags
@@ -2841,6 +2842,21 @@ string CDeflineGenerator::GenerateDefline (
                                          CScope::kPriority_Default,
                                          CScope::eExist_Get);
     return GenerateDefline(bsh, flags);
+}
+
+string CDeflineGenerator::GenerateDefline (
+    const CBioseq& bioseq,
+    CScope& scope,
+    feature::CFeatTree& ftree,
+    TUserFlags flags
+)
+
+{
+    m_ConstructedFeatTree = true;
+    m_InitializedFeatTree = true;
+    m_Feat_Tree = &ftree;
+
+    return GenerateDefline(bioseq, scope, flags);
 }
 
 CDeflineGenerator::CLowQualityTextFsm::CLowQualityTextFsm(void) {

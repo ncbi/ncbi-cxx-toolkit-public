@@ -142,8 +142,17 @@ public:
     {
         *m_out << "Accession: " << bsx.GetAccession() << endl;
         *m_out << "Length: " << bsx.GetLength() << endl;
-        *m_out << "Title: " << bsx.GetTitle() << endl;
         *m_out << "Taxname: " << bsx.GetTaxname() << endl;
+
+        *m_out << "Title: " << bsx.GetTitle() << endl;
+        *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << endl;
+
+
+        CRef<CSeqsetIndex> prnt = bsx.GetParent();
+        if (prnt) {
+            *m_out << "Parent Bioseq-set class: " << prnt->GetClass() << endl;
+        }
+
 
         int num_feats = 0;
         // IterateFeatures causes feature vector to be initialized by CFeat_CI
@@ -171,30 +180,33 @@ public:
                         *m_out << "Best gene: " << locus << endl;
                     }
 
+
                     // Print feature location
                     const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
                     string loc_str;
                     loc.GetLabel(&loc_str);
                     *m_out << "Location: " << loc_str << endl;
 
+
                     CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
                     if (sloc) {
                         string sloc_str;
                         sloc->GetLabel(&sloc_str);
                         if (! NStr::EqualNocase(loc_str, sloc_str)) {
-                            // Print mapped location if different
+                            // Print mapped location if different (i.e., using Bioseq sublocation)
                             *m_out << "MappedLoc: " << sloc_str << endl;
                         }
                     }
+
 
                     if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
                         // Print nucleotide sequence under coding region
                         string feat_seq = sfx.GetSequence();
                         *m_out << "CdRegion seq: " << feat_seq << endl;
                     }
-
-                    *m_out << endl;
                 }
+
+                *m_out << endl;
 
             } else if (bsx.IsAA()) {
 

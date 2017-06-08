@@ -75,9 +75,6 @@ public:
     /// Constructor
     CDeflineGenerator (const CSeq_entry_Handle& tseh);
 
-    /// Constructor
-    CDeflineGenerator (const CSeq_entry_Handle& tseh, feature::CFeatTree& ftree);
-
     /// Destructor
     ~CDeflineGenerator (void);
 
@@ -103,8 +100,23 @@ public:
 
     /// Main method
     string GenerateDefline (
+        const CBioseq_Handle& bsh,
+        feature::CFeatTree& ftree,
+        TUserFlags flags = 0
+    );
+
+    /// Main method
+    string GenerateDefline (
         const CBioseq& bioseq,
         CScope& scope,
+        TUserFlags flags = 0
+    );
+
+    /// Main method
+    string GenerateDefline (
+        const CBioseq& bioseq,
+        CScope& scope,
+        feature::CFeatTree& ftree,
         TUserFlags flags = 0
     );
 

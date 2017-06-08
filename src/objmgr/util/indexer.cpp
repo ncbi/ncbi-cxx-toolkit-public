@@ -130,7 +130,7 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSeq_descr &descr)
 }
 
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
-void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep)
+void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 
 {
     if (sep.IsSeq()) {
@@ -139,9 +139,9 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep)
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, *this));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, *this));
 
-            // record as CBioseqIndex in vector for IterateBioseqs or ProcessBioseq
+            // record CBioseqIndex in vector for IterateBioseqs or ProcessBioseq
             m_bsxList.push_back(bsx);
 
             // map from accession string to CBioseqIndex object
@@ -151,10 +151,19 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep)
     } else if (sep.IsSet()) {
         // Is Bioseq-set
         const CBioseq_set& bssp = sep.GetSet();
-        if (bssp.CanGetSeq_set()) {
-            // recursively explore current Bioseq-set
-            for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
-                x_InitSeqs(*tmp);
+        CBioseq_set_Handle ssh = m_scope->GetBioseq_setHandle(bssp);
+        if (ssh) {
+            // create CSeqsetIndex object for current Bioseq-set
+            CRef<CSeqsetIndex> ssx(new CSeqsetIndex(ssh, bssp, prnt, *this));
+
+            // record CSeqsetIndex in vector
+            m_ssxList.push_back(ssx);
+
+            if (bssp.CanGetSeq_set()) {
+                // recursively explore current Bioseq-set
+                for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
+                    x_InitSeqs(*tmp, ssx);
+                }
             }
         }
     }
@@ -181,7 +190,8 @@ void CSeqEntryIndex::x_Init (void)
     m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
 
     // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
-    x_InitSeqs( *m_topSEP );
+    CRef<CSeqsetIndex> noparent;
+    x_InitSeqs( *m_topSEP, noparent );
 }
 
 CRef<CSeq_id> CSeqEntryIndex::MakeUniqueId(void)
@@ -219,19 +229,10 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
 
     if (deltaBsh) {
         // create CBioseqIndex object for delta Bioseq
-        CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, *this));
+        CRef<CSeqsetIndex> noparent;
+        CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this));
 
-        // use temporary local ID as accession
-        for (const CRef<CSeq_id>& id : bsx->GetBioseq().GetId()) {
-            if (id->IsLocal()) {
-                const CObject_id &obj_id = id->GetLocal();
-                if (obj_id.IsStr()) {
-                    bsx->m_Accession = obj_id.GetStr();
-                }
-            }
-        }
-
-        return bsx;
+       return bsx;
     }
     return CRef<CBioseqIndex> ();
 }
@@ -260,7 +261,7 @@ CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, 
                         // create location from range
                         CConstRef<CSeq_loc> loc(new CSeq_loc(nc_id, from, to, strand));
                         if (loc) {
-                            return loc;
+                           return loc;
                         }
                     }
                     break;
@@ -273,18 +274,38 @@ CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, 
 }
 
 
+// CSeqsetIndex
+
+// Constructor
+CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh, const CBioseq_set& bssp, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx)
+    : m_ssh(ssh), m_bssp(bssp), m_prnt(prnt), m_enx(enx), m_scope(enx.m_scope)
+{
+    m_class = CBioseq_set::eClass_not_set;
+
+    if (ssh.IsSetClass()) {
+        m_class = ssh.GetClass();
+    }
+}
+
+// Destructor
+CSeqsetIndex::~CSeqsetIndex (void)
+
+{
+}
+
+
 // CBioseqIndex
 
 // Constructor
-CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryIndex& enx)
-    : m_bsh(bsh), m_bsp(bsp), m_enx(enx), m_scope(enx.m_scope)
+CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CBioseq_Handle obsh, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx)
+    : m_bsh(bsh), m_bsp(bsp), m_obsh(obsh), m_prnt(prnt), m_enx(enx), m_scope(enx.m_scope)
 {
     m_descsInitialized = false;
     m_featsInitialized = false;
 
     m_Accession.clear();
 
-    for (CSeq_id_Handle sid : bsh.GetId()) {
+    for (CSeq_id_Handle sid : obsh.GetId()) {
         switch (sid.Which()) {
             case CSeq_id::e_Other:
             case CSeq_id::e_Genbank:
@@ -338,6 +359,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CSeqEntryInd
     m_molInfo.Reset();
     m_bioSource.Reset();
     m_taxname.clear();
+    m_defline.clear();
 
     m_biomol = CMolInfo::eBiomol_unknown;
     m_tech = CMolInfo::eTech_unknown;
@@ -358,13 +380,13 @@ void CBioseqIndex::x_InitDescs (void)
 
 {
     if (m_descsInitialized) {
-        return;
+       return;
     }
 
     m_descsInitialized = true;
 
-    // explore descriptors
-    for (CSeqdesc_CI desc_it(m_bsh); desc_it; ++desc_it) {
+    // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
+    for (CSeqdesc_CI desc_it(m_obsh); desc_it; ++desc_it) {
         const CSeqdesc& sd = *desc_it;
         CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
         m_sdxList.push_back(sdx);
@@ -449,7 +471,7 @@ void CBioseqIndex::x_InitFeats (void)
 
 {
     if (m_featsInitialized) {
-        return;
+       return;
     }
 
     if (! m_descsInitialized) {
@@ -495,7 +517,7 @@ const string& CBioseqIndex::GetTitle (void)
         x_InitDescs();
     }
 
-     return m_title;
+    return m_title;
 }
 
 CConstRef<CMolInfo> CBioseqIndex::GetMolInfo (void)
@@ -505,7 +527,7 @@ CConstRef<CMolInfo> CBioseqIndex::GetMolInfo (void)
         x_InitDescs();
     }
 
-     return m_molInfo;
+    return m_molInfo;
 }
 
 CMolInfo::TBiomol CBioseqIndex::GetBiomol (void)
@@ -515,7 +537,7 @@ CMolInfo::TBiomol CBioseqIndex::GetBiomol (void)
         x_InitDescs();
     }
 
-     return m_biomol;
+    return m_biomol;
 }
 
 CMolInfo::TTech CBioseqIndex::GetTech (void)
@@ -525,7 +547,7 @@ CMolInfo::TTech CBioseqIndex::GetTech (void)
         x_InitDescs();
     }
 
-     return m_tech;
+    return m_tech;
 }
 
 CMolInfo::TCompleteness CBioseqIndex::GetCompleteness (void)
@@ -535,7 +557,7 @@ CMolInfo::TCompleteness CBioseqIndex::GetCompleteness (void)
         x_InitDescs();
     }
 
-     return m_completeness;
+    return m_completeness;
 }
 
 CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
@@ -545,7 +567,7 @@ CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
         x_InitDescs();
     }
 
-     return m_bioSource;
+    return m_bioSource;
 }
 
 const string& CBioseqIndex::GetTaxname (void)
@@ -555,7 +577,23 @@ const string& CBioseqIndex::GetTaxname (void)
         x_InitDescs();
     }
 
-     return m_taxname;
+    return m_taxname;
+}
+
+// Run defline generator
+const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags flags)
+
+{
+    if (! m_featsInitialized) {
+        x_InitFeats();
+    }
+
+    sequence::CDeflineGenerator gen (m_enx.m_topSEH);
+
+    // Pass original target BioseqHandle if using Bioseq sublocation
+    m_defline = gen.GenerateDefline (m_obsh, m_featTree, flags);
+
+    return m_defline;
 }
 
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
