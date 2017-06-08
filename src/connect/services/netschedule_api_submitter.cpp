@@ -562,7 +562,7 @@ void SOutputCopy::Writer(CNcbiOstream& writer)
                 d.erase(d.begin(), d.begin() + to_write);
             }
 
-            eof = done;
+            if (d.empty()) eof = done;
         }
 
         try {

@@ -1,0 +1,15 @@
+# $Id$
+
+CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
+
+APP = test_grid_rw
+SRC = test_grid_rw
+LIB = xconnserv xthrserv xconnect xutil test_boost xncbi
+
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Test.Included
+
+CHECK_REQUIRES = in-house-resources
+
+WATCHERS = sadyrovr
