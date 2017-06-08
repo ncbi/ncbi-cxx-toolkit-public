@@ -39,6 +39,8 @@
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 
+#include <cmath>
+
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
@@ -97,9 +99,9 @@ private:
 
         odds(double pos_ = 0.0, double neg_ = 0.0) : pos(pos_), neg(neg_) {}
        
-        void operator += (double x)     { (x > 0 ? pos : neg) += abs(x);   }
-        void operator += (const odds o) { pos += o.pos;  neg  += o.neg;    }
-        double logodds(int a = 2) const { return log( (a+pos)/(a+neg) );   }
+        void operator += (double x)     { (x > 0 ? pos : neg) += std::fabs(x);  }
+        void operator += (const odds o) { pos += o.pos;  neg  += o.neg;         }
+        double logodds(int a = 2) const { return std::log( (a+pos)/(a+neg) );   }
 
         string AsString() const
         {
@@ -111,7 +113,7 @@ private:
     static double as_logodds(double ratio)
     {
         _ASSERT(0 < ratio && ratio < 1);
-        return log( ratio / (1 - ratio) );
+        return std::log( ratio / (1 - ratio) );
     }
 
     ///////////////////////////////////////////////////////////////////////
