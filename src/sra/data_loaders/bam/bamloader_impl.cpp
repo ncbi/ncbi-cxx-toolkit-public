@@ -64,7 +64,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   BAMLoader
-NCBI_DEFINE_ERR_SUBCODE_X(13);
+NCBI_DEFINE_ERR_SUBCODE_X(17);
 
 BEGIN_SCOPE(objects)
 
@@ -189,7 +189,7 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
     if ( !m_IdMapper ) {
         string mapper_file_name = GetMapperFileName();
         if ( !mapper_file_name.empty() ) {
-            CNcbiIfstream in(mapper_file_name);
+            CNcbiIfstream in(mapper_file_name.c_str());
             m_IdMapper.reset(new CIdMapperConfig(in, "", false));
         }
     }
@@ -426,11 +426,18 @@ bool CBAMDataLoader_Impl::IsShortSeq(const CSeq_id_Handle& idh)
 CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const CBAMDataLoader::SBamFileName& bam)
 {
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 1 ) {
+        sw.Start();
+    }
     x_Initialize(impl, bam);
     for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
         string refseq_label = rit.GetRefSeqId();
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(*rit.GetRefSeq_id());
         AddRefSeq(refseq_label, seq_id);
+    }
+    if ( GetDebugLevel() >= 1 ) {
+        LOG_POST_X(16, "Opened BAM file "<<bam.m_BamName<<" in "<<sw.Elapsed());
     }
 }
 
@@ -464,7 +471,7 @@ void CBamFileInfo::x_Initialize(const CBAMDataLoader_Impl& impl,
 void CBamFileInfo::AddRefSeq(const string& refseq_label,
                                const CSeq_id_Handle& refseq_id)
 {
-    if ( GetDebugLevel() >= 1 ) {
+    if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(9, Info << "CBAMDataLoader(" << m_BamName << "): "
                    "Found "<<refseq_label<<" -> "<<refseq_id);
     }
@@ -657,7 +664,7 @@ namespace {
                 break;
             }
         }
-        if ( GetDebugLevel() >= 2 ) {
+        if ( GetDebugLevel() >= 3 ) {
             LOG_POST_X(4, Info << "CBAMDataLoader: "
                        "Stat @ "<<m_RefPosQuery<<": "<<m_Count<<" entries: "<<
                        m_RefPosFirst<<"-"<<m_RefPosLast<<
@@ -812,7 +819,7 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
                   (next_cnt >= kChunkSize*2 && cur_cnt >= kChunkSize*.7) ||
                   (empty && cur_cnt >= kChunkSize)) ) {
                 // flush collected slots
-                if ( GetDebugLevel() >= 2 ) {
+                if ( GetDebugLevel() >= 3 ) {
                     LOG_POST_X(8, Info << "CBAMDataLoader:"
                                " Chunk "<<m_Chunks.size()<<
                                " Slots "<<cur_first<<"-"<<cur_last<<
@@ -868,7 +875,7 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     vector<Uint4> over_ends = refseq.GetAlnOverEnds();
     TSeqPos bin_count = data_sizes.size();
     TSeqPos bin_size = CBamIndex::kMinBinSize;
-    if ( GetDebugLevel() >= 1 ) {
+    if ( GetDebugLevel() >= 2 ) {
         LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }
     static const TSeqPos kZeroBlocks = 8;
@@ -1025,7 +1032,7 @@ void CBamRefSeqInfo::x_LoadRangesStat(void)
     unsigned chunks = unsigned(exp_count/kChunkSize+1);
     chunks = min(chunks, unsigned(sqrt(exp_count)+1));
     max_len *= 2;
-    if ( GetDebugLevel() >= 1 ) {
+    if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(5, Info << "CBAMDataLoader: "
                    "Total range: "<<ref_begin<<"-"<<ref_end-1<<
                    " exp count: "<<exp_count<<" chunks: "<<chunks);
@@ -1092,7 +1099,7 @@ void CBamRefSeqInfo::x_LoadRangesScan(void)
             m_Chunks.push_back(chunk);
             p = e;
         }
-        if ( GetDebugLevel() >= 1 ) {
+        if ( GetDebugLevel() >= 2 ) {
             LOG_POST_X(6, Info<<"CBAMDataLoader: "
                        "Total range: "<<
                        rr[0].GetFrom()<<"-"<<rr.back().GetTo()<<
@@ -1127,6 +1134,10 @@ void CBamRefSeqInfo::LoadMainEntry(CTSE_LoadLock& load_lock)
 
 void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 {
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 1 ) {
+        sw.Start();
+    }
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetId().SetId(kTSEId);
     load_lock->SetSeq_entry(*entry);
@@ -1160,6 +1171,9 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
                           GetRefSeq_id(),
                           whole_range);
     split_info.AddChunk(*chunk);
+    if ( GetDebugLevel() >= 1 ) {
+        LOG_POST_X(17, "Initialized BAM refseq "<<GetRefSeq_id()<<" in "<<sw.Elapsed());
+    }
 }
 
 
@@ -1245,6 +1259,10 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
 
 void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 3 ) {
+        sw.Start();
+    }
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     int range_id = chunk_info.GetChunkId()/kChunkIdMul;
@@ -1296,13 +1314,6 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     if ( annot ) {
         chunk_info.x_LoadAnnot(place, *annot);
     }
-    if ( GetDebugLevel() >= 2 ) {
-        LOG_POST_X(7, Info<<"CBAMDataLoader: "
-                   "Loaded "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
-                   count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
-                   " skipped: "<<skipped);
-    }
     {{
         CMutexGuard guard(m_File->GetMutex());
         int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq;
@@ -1321,12 +1332,23 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             split_info.AddChunk(*seq_chunk);
         }
     }}
+    if ( GetDebugLevel() >= 3 ) {
+        LOG_POST_X(7, Info<<"CBAMDataLoader: "
+                   "Loaded "<<GetRefSeqId()<<" @ "<<
+                   chunk.GetRefSeqRange()<<": "<<
+                   count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
+                   " skipped: "<<skipped<<" in "<<sw.Elapsed());
+    }
     chunk_info.SetLoaded();
 }
 
 
 void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 3 ) {
+        sw.Start();
+    }
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
@@ -1386,11 +1408,11 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     }
     chunk_info.x_LoadBioseqs(place, bioseqs);
 
-    if ( GetDebugLevel() >= 2 ) {
+    if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(10, Info<<"CBAMDataLoader: "
                    "Loaded seqs "<<GetRefSeqId()<<" @ "<<
                    chunk.GetRefSeqRange()<<": "<<
-                   count<<" skipped: "<<skipped<<" dups: "<<dups<<" far: "<<far_refs);
+                   count<<" skipped: "<<skipped<<" dups: "<<dups<<" far: "<<far_refs<<" in "<<sw.Elapsed());
     }
 
     chunk_info.SetLoaded();
@@ -1510,6 +1532,10 @@ END_LOCAL_NAMESPACE;
 
 void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 3 ) {
+        sw.Start();
+    }
     size_t range_id = chunk_info.GetChunkId()/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
     auto graph_range = GetChunkGraphRange(range_id);
@@ -1644,18 +1670,11 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     ss_pos += seglen;
                 }
                 else if ( type != 'P' ) {
-                    ERR_POST_X(4, "Bad CIGAR char: "<<type<<" in "<<cigar);
+                    ERR_POST_X(14, "Bad CIGAR char: "<<type<<" in "<<cigar);
                     break;
                 }
             }
         }
-    }
-
-    if ( GetDebugLevel() >= 2 ) {
-        LOG_POST_X(11, Info<<"CBAMDataLoader: "
-                   "Loaded pileup "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
-                   count<<" skipped: "<<skipped);
     }
 
     ss.finish_add();
@@ -1710,6 +1729,13 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         annot->SetData().SetGraph().push_back(graph);
     }
     chunk_info.x_LoadAnnot(place, *annot);
+
+    if ( GetDebugLevel() >= 3 ) {
+        LOG_POST_X(11, Info<<"CBAMDataLoader: "
+                   "Loaded pileup "<<GetRefSeqId()<<" @ "<<
+                   chunk.GetRefSeqRange()<<": "<<
+                   count<<" skipped: "<<skipped<<" in "<<sw.Elapsed());
+    }
 
     chunk_info.SetLoaded();
 }
