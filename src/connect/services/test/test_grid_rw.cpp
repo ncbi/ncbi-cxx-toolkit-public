@@ -83,6 +83,25 @@ NCBITEST_AUTO_INIT()
 }
 
 #ifdef NCBI_THREADS
+struct STestStringReader : CStringReader
+{
+    using CStringReader::CStringReader;
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
+    {
+        // Prime numbers
+        const size_t kMin = 4099;
+        const size_t kDiff = 8209;
+
+        const size_t kMax = kMin + kDiff;
+
+        // Limit count by a number from [kMin, kMin + KDiff]
+        if (count > kMax) count = kMin + count % kDiff;
+
+        return CStringReader::Read(buf, count, bytes_read);
+    }
+};
+
 BOOST_AUTO_TEST_CASE(OutputCopy)
 {
     const size_t kLength = 10 * 1024 * 1024;
@@ -90,7 +109,7 @@ BOOST_AUTO_TEST_CASE(OutputCopy)
     SStringGenerator generator;
 
     string source(generator.GetString(kLength));
-    CStringReader reader(source);
+    STestStringReader reader(source);
     ostringstream writer;
 
     SOutputCopy copy(reader, writer);
