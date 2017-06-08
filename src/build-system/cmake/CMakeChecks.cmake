@@ -87,6 +87,13 @@ if(WIN32)
         )
 endif()
 
+############################################################################
+#
+# SVN stuff
+# This is needed for some use cases
+include(FindSubversion)
+Subversion_WC_INFO(${top_src_dir} TOOLKIT)
+message(STATUS "SVN revision = ${TOOLKIT_WC_REVISION}")
 #
 # Initial messaging about some important stuff
 #
