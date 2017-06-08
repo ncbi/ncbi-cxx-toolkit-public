@@ -489,6 +489,9 @@ private:
 
     const TAnnotNames& x_GetAnnotNames(void) const;
 
+    Uint8 x_GetCostOfLoadingInBytes(void) const;
+    double x_GetCostOfLoadingInSeconds(void) const;
+
     void x_StopSearchLimits(void);
     bool x_MaxSearchSegmentsLimitIsReached(void) const
         {
@@ -513,6 +516,7 @@ private:
     TAnnotTypesBitset       m_UnseenAnnotTypes;
     TAnnotTypesBitset       m_CollectAnnotTypes;
     mutable auto_ptr<TAnnotNames> m_AnnotNames;
+    
     typedef SAnnotSelector::TMaxSize TMaxSize;
     typedef SAnnotSelector::TMaxSearchSegments TMaxSearchSegments;
     CStopWatch              m_SearchTime;

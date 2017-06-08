@@ -108,6 +108,9 @@ public:
     typedef set<CAnnotName> TAnnotNames;
     const TAnnotNames& GetAnnotNames(void) const;
 
+    Uint8 GetCostOfLoadingInBytes(void) const;
+    double GetCostOfLoadingInSeconds(void) const;
+
 protected:
     friend class CAnnot_CI;
     friend class CTableFieldHandle_Base;
@@ -216,6 +219,20 @@ CScope& CAnnotTypes_CI::GetScope(void) const
 {
     _ASSERT(m_DataCollector);
     return m_DataCollector->GetScope();
+}
+
+
+inline
+Uint8 CAnnotTypes_CI::GetCostOfLoadingInBytes(void) const
+{
+    return m_DataCollector->x_GetCostOfLoadingInBytes();
+}
+
+
+inline
+double CAnnotTypes_CI::GetCostOfLoadingInSeconds(void) const
+{
+    return m_DataCollector->x_GetCostOfLoadingInSeconds();
 }
 
 

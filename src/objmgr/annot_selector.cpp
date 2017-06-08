@@ -77,6 +77,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
+      m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
       m_FilterMask(0),
       m_FilterBits(0)
@@ -108,6 +109,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
+      m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
       m_FilterMask(0),
       m_FilterBits(0)
@@ -135,6 +137,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
+      m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
       m_FilterMask(0),
       m_FilterBits(0)
@@ -179,6 +182,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_CollectSeq_annots = sel.m_CollectSeq_annots;
         m_CollectTypes = sel.m_CollectTypes;
         m_CollectNames = sel.m_CollectNames;
+        m_CollectCostOfLoading = sel.m_CollectCostOfLoading;
         m_IgnoreStrand = sel.m_IgnoreStrand;
         m_FilterMask = sel.m_FilterMask;
         m_FilterBits = sel.m_FilterBits;

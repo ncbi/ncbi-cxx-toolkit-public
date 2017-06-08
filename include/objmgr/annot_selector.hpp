@@ -715,6 +715,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Collect cost of loading requested data.
+    SAnnotSelector& SetCollectCostOfLoading(bool value = true)
+        {
+            m_CollectCostOfLoading = value;
+            return *this;
+        }
+
     /// Ignore strand when testing for range overlap
     SAnnotSelector& SetIgnoreStrand(bool value = true)
         {
@@ -812,6 +819,7 @@ protected:
     bool                  m_CollectSeq_annots;
     bool                  m_CollectTypes;
     bool                  m_CollectNames;
+    bool                  m_CollectCostOfLoading;
     bool                  m_IgnoreStrand;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;

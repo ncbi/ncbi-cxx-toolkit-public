@@ -3602,5 +3602,17 @@ CAnnot_Collector::x_GetAnnotNames(void) const
 }
 
 
+Uint8 CAnnot_Collector::x_GetCostOfLoadingInBytes(void) const
+{
+    return 0;
+}
+
+
+double CAnnot_Collector::x_GetCostOfLoadingInSeconds(void) const
+{
+    return 0;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
