@@ -1113,6 +1113,7 @@ CM:M	s	Carnegie Museum of Natural History, Section of Mammals
 CM:O	s	Carnegie Museum of Natural History, Section of Birds
 CM<CHN>	s	Chongqing Museum		
 CMA	s	Crayford Manor House Adult Education Centre		
+CMAA	c	Culture Collection of Agriculture and Environmental Importance		
 CMBGCAS	c	Collection of Marine Biological Germplasm		
 CMBK	s	The City Museum and Art Gallery, Department of Natural History		
 CMBY	s	Camberley Museum		
@@ -3658,7 +3659,7 @@ LUCH	s	Musee du Pays de Luchon
 LUD	s	Ludlow Natural History Society		
 LUG	s	Museo cantonale di storia naturale		
 LUGO	s	Universidad de Satniago de Compostela, Departamento de Produccion Vegetal		
-LUH	s	University of Lagos, Biological Sciences Department, Botany Unit		
+LUH	s	University of Lagos, Department of Botany		
 LUH<NLD>	c	Leiden University Medical Center		
 LUKI	h	Institut National pour l'Etude et la Recherche Agronomiques		
 LUNZ	s	Lincoln University Entomology Research Museum		
