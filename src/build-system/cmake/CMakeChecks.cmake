@@ -29,6 +29,7 @@ if (WIN32)
     hunter_add_package(Jpeg)
     hunter_add_package(PNG)
     hunter_add_package(TIFF)
+    #hunter_add_package(freetype)
 endif()
 
 ############################################################################
@@ -68,22 +69,26 @@ if(WIN32)
     # Specific location overrides for Windows packages
     # Note: this variable must be set in the CMake GUI!!
     #set(WIN32_PACKAGE_ROOT "C:/Users/dicuccio/dev/packages")
+    set(GIF_ROOT "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib")
+    set (ENV{GIF_DIR} "${GIF_ROOT}")
+
+    set(FREETYPE_ROOT "${WIN32_PACKAGE_ROOT}/freetype-2.3.5-1-lib")
+    set(ENV{FREETYPE_DIR} "${FREETYPE_ROOT}")
+
+    set(FTGL_ROOT "${WIN32_PACKAGE_ROOT}/ftgl-2.1.3_rc5")
+
     set(CMAKE_PREFIX_PATH
+        ${CMAKE_PREFIX_PATH}
         "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib"
-        #"${WIN32_PACKAGE_ROOT}/zlib-1.2.3-lib"
         "${WIN32_PACKAGE_ROOT}/gnutls-3.5.8-w64"
-        #"${WIN32_PACKAGE_ROOT}/bzip2-1.0.5-lib"
         "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib"
-        #"${WIN32_PACKAGE_ROOT}/jpeg-6b-4-lib"
-        #"${WIN32_PACKAGE_ROOT}/libpng-1.2.37-lib"
-        #"${WIN32_PACKAGE_ROOT}/tiff-3.8.2-1-lib"
-        "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib"
+        "${GIF_ROOT}"
         "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32"
         "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32"
         "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32"
-        "${WIN32_PACKAGE_ROOT}/freetype-2.3.5-1-lib"
+        "${FREETYPE_ROOT}"
         "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
-        "${WIN32_PACKAGE_ROOT}/ftgl-2.1.3_rc5"
+        "${FTGL_ROOT}"
         )
 endif()
 
@@ -675,7 +680,11 @@ set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
 #
 # NCBI-isms
 # FIXME: these should be tested not hard-coded
-set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
+if (WIN32)
+    set(NCBI_DATATOOL "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc/2.16.0/datatool.exe")
+else()
+    set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
+endif()
 
 
 #

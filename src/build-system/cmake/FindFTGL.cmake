@@ -10,32 +10,38 @@ GET_FILENAME_COMPONENT(module_file_path ${CMAKE_CURRENT_LIST_FILE} PATH )
 
 # Look for the header file.
 FIND_PATH(FTGL_INCLUDE_DIR NAMES FTGL/ftgl.h
-                           PATHS /usr/include
-                                 /usr/local/include
-                                 ../../External/include
+                           PATH_SUFFIXES include
+                           PATHS /usr
+                                 /usr/local
+                                 ../../External
                                  "C:\\libs\\ftgl\\ftgl"
-                                 ${module_file_path}/../../../External/include)
+                                 ${FTGL_ROOT}
+                                 ${module_file_path}/../../../External)
 #MARK_AS_ADVANCED(FTGL_INCLUDE_DIR)
 
 if ( WIN32 )
  # Look for the library.
  FIND_LIBRARY(FTGL_LIBRARY_RELEASE NAMES ftgl ftgl_dynamic_MTD
-                           PATHS /usr/lib64
-                                 /usr/local/lib64
-                                 /usr/lib
-                                 /usr/local/lib
-                                 ../../External/lib
-                                 "C:\\libs\\ftgl\\msvc\\Build"
-                ${module_file_path}/../../../External/lib)
+                           PATH_SUFFIXES lib64 lib Build
+                           PATHS /usr
+                                 /usr/local
+                                 /usr
+                                 /usr/local
+                                 ../../External
+                                 ${FTGL_ROOT}
+                                 "C:\\libs\\ftgl\\msvc"
+                ${module_file_path}/../../../External)
 
  FIND_LIBRARY(FTGL_LIBRARY_DEBUG NAMES ftgl_d ftgld
-                           PATHS /usr/lib64
-                                 /usr/local/lib64
-                                 /usr/lib
-                                 /usr/local/lib
-                                 ../../External/lib
-                                 "C:\\libs\\ftgl\\msvc\\Build"
-                  ${module_file_path}/../../../External/lib)
+                           PATH_SUFFIXES lib64 lib Build
+                           PATHS /usr
+                                 /usr/local
+                                 /usr
+                                 /usr/local
+                                 ../../External
+                                 ${FTGL_ROOT}
+                                 "C:\\libs\\ftgl\\msvc"
+                  ${module_file_path}/../../../External)
 
  set( FTGL_LIBRARY optimized;${FTGL_LIBRARY_RELEASE};debug;${FTGL_LIBRARY_DEBUG} )
 
@@ -51,6 +57,7 @@ else(WIN32)
                                  /usr/lib
                                  /usr/local/lib
                                  ../../External/lib
+                                 ${FTGL_ROOT}
                                  "C:\\libs\\ftgl\\msvc\\Build"
                 ${module_file_path}/../../../External/lib)
 

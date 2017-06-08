@@ -242,7 +242,7 @@ macro( RunDatatool MODULE MODULE_SEARCH )
 
     add_custom_command(
         OUTPUT ${generated}
-        COMMAND ${NCBI_DATATOOL} -oR \"${top_src_dir}\" -opm \"${MODULE_SEARCH}\" -m \"${MODULE_PATH}\" -M \""${MODULE_IMPORT}"\" -oA -oc \"${MODULE}\" -or \"${MODULE_PATH_RELATIVE}\" -odi -od \"${SOURCE_PATH}/${MODULE}.def\" -oex '' -ocvs -pch \"ncbi_pch.hpp\" -fd ${MODULE}.dump
+        COMMAND ${NCBI_DATATOOL} -oR "${top_src_dir}" -opm "${MODULE_SEARCH}" -m "${MODULE_PATH}" -M "${MODULE_IMPORT}" -oA -oc "${MODULE}" -or "${MODULE_PATH_RELATIVE}" -odi -od "${SOURCE_PATH}/${MODULE}.def" -oex '' -ocvs -pch "ncbi_pch.hpp" -fd ${MODULE}.dump VERBATIM
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating module: ${MODULE}"
         DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
