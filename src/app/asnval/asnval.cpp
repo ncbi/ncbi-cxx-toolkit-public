@@ -1021,7 +1021,7 @@ void CAsnvalApp::PrintValidError
 }
 
 
-static string s_GetSeverityLabel (EDiagSev sev, bool is_xml = false)
+static string s_GetSeverityLabel(EDiagSev sev, bool is_xml = false)
 {
     static const string str_sev[] = {
         "NOTE", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
@@ -1041,56 +1041,56 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
 {
     CNcbiOstream& os = *m_ValidErrorStream;
     switch (m_verbosity) {
-        case eVerbosity_Normal:
-            os << s_GetSeverityLabel(item.GetSeverity())
-                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
-                << item.GetMsg();
-            if (item.IsSetObjDesc()) {
-                os << " " << item.GetObjDesc();
-            }
-            os << endl;
-            break;
-        case eVerbosity_Spaced:
-            {
-                string spacer = "                    ";
-                string msg = item.GetAccnver() + spacer;
-                msg = msg.substr(0, 15);
-                msg += s_GetSeverityLabel(item.GetSeverity());
-                msg += spacer;
-                msg = msg.substr(0, 30);
-                msg += item.GetErrGroup() + "_" + item.GetErrCode();
-                os << msg << endl;
-            }
-            break;
-        case eVerbosity_Tabbed:
-            os << item.GetAccnver() << "\t"
-               << s_GetSeverityLabel(item.GetSeverity()) << "\t"
-               << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
-            break;
+    case eVerbosity_Normal:
+        os << s_GetSeverityLabel(item.GetSeverity())
+            << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
+            << item.GetMsg();
+        if (item.IsSetObjDesc()) {
+            os << " " << item.GetObjDesc();
+        }
+        os << endl;
+        break;
+    case eVerbosity_Spaced:
+    {
+        string spacer = "                    ";
+        string msg = item.GetAccnver() + spacer;
+        msg = msg.substr(0, 15);
+        msg += s_GetSeverityLabel(item.GetSeverity());
+        msg += spacer;
+        msg = msg.substr(0, 30);
+        msg += item.GetErrGroup() + "_" + item.GetErrCode();
+        os << msg << endl;
+    }
+    break;
+    case eVerbosity_Tabbed:
+        os << item.GetAccnver() << "\t"
+            << s_GetSeverityLabel(item.GetSeverity()) << "\t"
+            << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
+        break;
 #ifdef USE_XMLWRAPP_LIBS
-        case eVerbosity_XML:
-            {
-                m_ostr_xml->Print(item);
-            }
+    case eVerbosity_XML:
+    {
+        m_ostr_xml->Print(item);
+    }
 #else
-        case eVerbosity_XML:
-            {
-                string msg = NStr::XmlEncode(item.GetMsg());
-                if (item.IsSetFeatureId()) {
-                    os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                       << "\" seq-id=\"" << item.GetAccnver() 
-                       << "\" feat-id=\"" << item.GetFeatureId()
-                       << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                       << "\">" << msg << "</message>" << endl;
-                } else {
-                    os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                       << "\" seq-id=\"" << item.GetAccnver() 
-                       << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                       << "\">" << msg << "</message>" << endl;
-                }
-            }
+    case eVerbosity_XML:
+    {
+        string msg = NStr::XmlEncode(item.GetMsg());
+        if (item.IsSetFeatureId()) {
+            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
+                << "\" seq-id=\"" << item.GetAccnver() 
+                << "\" feat-id=\"" << item.GetFeatureId()
+                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
+                << "\">" << msg << "</message>" << endl;
+        } else {
+            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
+                << "\" seq-id=\"" << item.GetAccnver() 
+                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
+                << "\">" << msg << "</message>" << endl;
+        }
+    }
 #endif
-            break;
+    break;
     }
 }
 
@@ -1108,13 +1108,17 @@ void CValXMLStream::Print(const CValidErrItem& item)
     }
 
     if (item.IsSetFeatureId()) {
-       m_Output.PutString("\" feat-id=\"");
-       WriteString(item.GetFeatureId(), eStringTypeVisible);
+        m_Output.PutString("\" feat-id=\"");
+        WriteString(item.GetFeatureId(), eStringTypeVisible);
     }
 
     if (item.IsSetLocation()) {
         m_Output.PutString("\" interval=\"");
-        WriteString(item.GetLocation(), eStringTypeVisible);
+        string loc = item.GetLocation();
+        if (NStr::StartsWith(loc, "(") && NStr::EndsWith(loc, ")")) {
+            loc = "[" + loc.substr(1, loc.length() - 2) + "]";
+        }
+        WriteString(loc, eStringTypeVisible);
     }
 
     m_Output.PutString("\" code=\"");

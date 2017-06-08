@@ -1953,6 +1953,38 @@ CValidErrItem::CValidErrItem
 }
 
 
+void CValidErrItem::SetFeatureObjDescFromFields()
+{
+    // Add feature part of label
+    string desc = "FEATURE: ";
+    if (IsSetObj_content()) {
+        desc += GetObj_content();
+    }
+
+    // Add feature ID part of label (if present)
+    if (IsSetFeatureId()) {
+        desc += " <" + GetFeatureId() + "> ";
+    }
+
+    // Add feature location part of label
+    if (IsSetLocation()) {
+        desc += " [" + GetLocation() + "]";
+    }
+
+    // Append label for bioseq of feature location
+    if (IsSetBioseq()) {
+        desc += GetBioseq();
+    }
+
+    // Append label for product of feature
+    if (IsSetProduct_loc()) {
+        desc += " -> " + GetProduct_loc();
+    }
+
+    SetObjDesc(desc);
+}
+
+
 // destructor
 CValidErrItem::~CValidErrItem(void)
 {
@@ -2043,6 +2075,12 @@ const CSerialObject& CValidErrItem::GetObject(void) const
 bool CValidErrItem::IsSetObject(void) const 
 {
     return m_Object.NotEmpty(); 
+}
+
+
+void CValidErrItem::SetObject(const CSerialObject& obj)
+{
+    m_Object.Reset(&obj);
 }
 
 

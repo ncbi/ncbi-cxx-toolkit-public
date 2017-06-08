@@ -580,23 +580,29 @@ void CValidError_imp::PostErr
  const string&  msg,
  TFeat          ft)
 {
+    CRef<CValidErrItem> item(new CValidErrItem());
+
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
     }
 
-    string desc = CValidErrorFormat::GetFeatureLabel(ft, m_Scope, m_SuppressContext);
+    item->SetSev(sv);
+    item->SetErrIndex(et);
+    item->SetMsg(msg);
+    item->SetObject(ft);
 
-    string feature_id = "";
-    if (ft.IsSetId()) {
-        feature_id = CValidErrorFormat::GetFeatureIdLabel(ft.GetId());
-    } else if (ft.IsSetIds()) {
-        ITERATE (CSeq_feat::TIds, id_it, ft.GetIds()) {
-            feature_id = CValidErrorFormat::GetFeatureIdLabel ((**id_it));
-            if (!NStr::IsBlank(feature_id)) {
-                break;
-            }
-        }
+    string content_label = CValidErrorFormat::GetFeatureContentLabel(ft, m_Scope);
+    item->SetObj_content(content_label);
+
+    string feature_id = CValidErrorFormat::GetFeatureIdLabel(ft);
+    if (!NStr::IsBlank(feature_id)) {
+        item->SetFeatureId(feature_id);
+    }
+
+    string bioseq_label = CValidErrorFormat::GetFeatureBioseqLabel(ft, m_Scope, m_SuppressContext);
+    if (!NStr::IsBlank(bioseq_label)) {
+        item->SetBioseq(bioseq_label);
     }
 
     // Calculate sequence offset
@@ -604,22 +610,36 @@ void CValidError_imp::PostErr
     string location = kEmptyStr;
     if (ft.IsSetLocation()) {
         offset = ft.GetLocation().GetStart(eExtreme_Positional);
-        ft.GetLocation().GetLabel(&location);
+        string loc_label = CValidErrorFormat::GetFeatureLocationLabel(ft, m_Scope, m_SuppressContext);
+        if (!NStr::IsBlank(loc_label)) {
+            item->SetLocation(loc_label);
+        }
+        item->SetSeqOffset(offset);
     }
 
 
-    // if feature ID, add with feature id, otherwise without
+    string product_label = CValidErrorFormat::GetFeatureProductLocLabel(ft, m_Scope, m_SuppressContext);
+    if (!NStr::IsBlank(product_label)) {
+        item->SetProduct_loc(product_label);
+    }
+
     int version = 0;
     string accession = "";
     if (m_Scope) {
         accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
     }
-    if (NStr::IsBlank(feature_id)) {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, location, offset);
+    item->SetAccession(accession);
+    if (version > 0) {
+        item->SetAccnver(accession + "." + NStr::IntToString(version));
+        item->SetVersion(version);
     } else {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, feature_id, location, offset);
+        item->SetAccnver(accession);
     }
+
+    item->SetFeatureObjDescFromFields();
+    m_ErrRepository->AddValidErrItem(item);
 }
+
 
 void CValidError_imp::PostErr
 (EDiagSev       sv,

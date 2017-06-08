@@ -249,19 +249,27 @@ void RemoveSuffix(string& str, const string& suffix)
 string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem& error) const
 {
     string obj_desc = error.GetObjDesc();
-    RemovePrefix(obj_desc, "FEATURE: ");
-    RemovePrefix(obj_desc, "DESCRIPTOR: ");
-    RemovePrefix(obj_desc, "BioSrc: ");
-    RemoveSuffix(obj_desc, " BIOSEQ: ");
-    RemoveSuffix(obj_desc, " BIOSEQ-SET: ");
+    if (NStr::StartsWith(obj_desc, "FEATURE") && error.IsSetObj_content()) {
+        obj_desc = error.GetObj_content();
+        NStr::ReplaceInPlace(obj_desc, ":", "\t", 0, 1);
+        // Add feature location part of label
+        if (error.IsSetLocation()) {
+            obj_desc += "\t" + error.GetLocation();
+        }
 
-    NStr::ReplaceInPlace(obj_desc, ":", "\t", 0, 1);
-    size_t close_pos = NStr::Find(obj_desc, "]");
-    if (close_pos != string::npos) {
-        obj_desc = obj_desc.substr(0, close_pos);
-        NStr::ReplaceInPlace(obj_desc, "[", "\t");
+    } else {
+        RemovePrefix(obj_desc, "DESCRIPTOR: ");
+        RemovePrefix(obj_desc, "BioSrc: ");
+        RemoveSuffix(obj_desc, " BIOSEQ: ");
+        RemoveSuffix(obj_desc, " BIOSEQ-SET: ");
+
+        NStr::ReplaceInPlace(obj_desc, ":", "\t", 0, 1);
+        size_t close_pos = NStr::Find(obj_desc, "]");
+        if (close_pos != string::npos) {
+            obj_desc = obj_desc.substr(0, close_pos);
+            NStr::ReplaceInPlace(obj_desc, "[", "\t");
+        }
     }
-
     string rval = error.GetAccession() + ":" + obj_desc;
 
     return rval;
@@ -541,6 +549,23 @@ string CValidErrorFormat::GetFeatureIdLabel (const CFeat_id& feat_id)
 }
 
 
+string CValidErrorFormat::GetFeatureIdLabel(const CSeq_feat& ft)
+{
+    string feature_id = "";
+    if (ft.IsSetId()) {
+        feature_id = CValidErrorFormat::GetFeatureIdLabel(ft.GetId());
+    } else if (ft.IsSetIds()) {
+        ITERATE(CSeq_feat::TIds, id_it, ft.GetIds()) {
+            feature_id = CValidErrorFormat::GetFeatureIdLabel((**id_it));
+            if (!NStr::IsBlank(feature_id)) {
+                break;
+            }
+        }
+    }
+    return feature_id;
+}
+
+
 static void s_FixBioseqLabelProblems (string& str)
 {
     size_t pos = NStr::Find(str, ",");
@@ -742,46 +767,9 @@ string CValidErrorFormat::GetFeatureContentLabel (const CSeq_feat& feat, CRef<CS
 }
 
 
-string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
+string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
 {
-    // Add feature part of label
-    string desc = "FEATURE: ";
-    string content_label = CValidErrorFormat::GetFeatureContentLabel(ft, scope);
-    desc += content_label;
-
-    // Add feature ID part of label (if present)
-    string feature_id = "";
-    if (ft.IsSetId()) {
-        feature_id = CValidErrorFormat::GetFeatureIdLabel(ft.GetId());
-    } else if (ft.IsSetIds()) {
-        ITERATE (CSeq_feat::TIds, id_it, ft.GetIds()) {
-            feature_id = CValidErrorFormat::GetFeatureIdLabel ((**id_it));
-            if (!NStr::IsBlank(feature_id)) {
-                break;
-            }
-        }
-    }
-    if (!NStr::IsBlank(feature_id)) {
-        desc += " <" + feature_id + "> ";
-    }
-
-    string loc_label;
-    // Add feature location part of label
-    if (ft.IsSetLocation() && scope) {
-        if (suppress_context) {
-            CSeq_loc loc;
-            loc.Assign(ft.GetLocation());
-            ChangeSeqLocId(&loc, false, scope);
-            loc_label = "[" + GetValidatorLocationLabel(loc, *scope) + "]";
-        } else {
-            loc_label = "[" + GetValidatorLocationLabel(ft.GetLocation(), *scope) + "]";
-        }
-        if (loc_label.size() > 800) {
-            loc_label.replace(796, NPOS, "...]");
-        }
-        desc += " " + loc_label;
-    }
-
+    string desc = kEmptyStr;
     // Append label for bioseq of feature location
     if (!suppress_context && scope) {
         bool find_failed = false;
@@ -794,8 +782,8 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
             if (ex.GetErrCode() == CObjMgrException::eFindFailed) {
                 find_failed = true;
             }
-        } catch (CException ) {
-        } catch (std::exception ) {
+        } catch (CException) {
+        } catch (std::exception) {
         };
         if (find_failed) {
             try {
@@ -810,26 +798,86 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
             };
         }
     }
+    return desc;
+}
 
+
+string CValidErrorFormat::GetFeatureProductLocLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
+{
+    string desc = kEmptyStr;
     // Append label for product of feature
     if (ft.IsSetProduct() && scope) {
-        loc_label.erase();
+        string loc_label;
         if (suppress_context) {
             CSeq_loc loc;
             loc.Assign(ft.GetProduct());
             ChangeSeqLocId(&loc, false, scope);
             loc_label = GetValidatorLocationLabel(loc, *scope);
         } else {
-            loc_label = GetValidatorLocationLabel (ft.GetProduct(), *scope);
+            loc_label = GetValidatorLocationLabel(ft.GetProduct(), *scope);
         }
         if (loc_label.size() > 800) {
             loc_label.replace(797, NPOS, "...");
         }
         if (!loc_label.empty()) {
-            desc += " -> [";
+            desc += "[";
             desc += loc_label;
             desc += "]";
         }
+    }
+    return desc;
+}
+
+
+string CValidErrorFormat::GetFeatureLocationLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
+{
+    string loc_label;
+    // Add feature location part of label
+    if (ft.IsSetLocation() && scope) {
+        if (suppress_context) {
+            CSeq_loc loc;
+            loc.Assign(ft.GetLocation());
+            ChangeSeqLocId(&loc, false, scope);
+            loc_label = GetValidatorLocationLabel(loc, *scope);
+        } else {
+            loc_label = GetValidatorLocationLabel(ft.GetLocation(), *scope);
+        }
+        if (loc_label.size() > 800) {
+            loc_label.replace(796, NPOS, "...");
+        }
+    }
+    return loc_label;
+}
+
+string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
+{
+    // Add feature part of label
+    string desc = "FEATURE: ";
+    string content_label = CValidErrorFormat::GetFeatureContentLabel(ft, scope);
+    desc += content_label;
+
+    // Add feature ID part of label (if present)
+    string feature_id = GetFeatureIdLabel(ft);
+    if (!NStr::IsBlank(feature_id)) {
+        desc += " <" + feature_id + "> ";
+    }
+
+    // Add feature location part of label
+    string loc_label = GetFeatureLocationLabel(ft, scope, suppress_context);
+    if (!NStr::IsBlank(loc_label)) {
+        desc += " [" + loc_label + "]";
+    }
+
+    // Append label for bioseq of feature location
+    string bioseq_label = GetFeatureBioseqLabel(ft, scope, suppress_context);
+    if (!NStr::IsBlank(bioseq_label)) {
+        desc += bioseq_label;
+    }
+
+    // Append label for product of feature
+    string product_label = GetFeatureProductLocLabel(ft, scope, suppress_context);
+    if (!NStr::IsBlank(product_label)) {
+        desc += product_label;
     }
     return desc;
 }

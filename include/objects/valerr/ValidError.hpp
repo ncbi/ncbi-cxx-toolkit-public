@@ -97,6 +97,8 @@ public:
                           unsigned int         ec,      // error code
                           const string&        msg);     // specific error message
 
+     void AddValidErrItem(CRef<CValidErrItem> item);
+
     // Statistics
     SIZE_TYPE TotalSize(void)    const;
     SIZE_TYPE Size(EDiagSev sev) const;

@@ -635,6 +635,7 @@ public:
     // Offending object
     const CSerialObject&    GetObject   (void) const;
     bool                    IsSetObject (void) const;
+    void                    SetObject(const CSerialObject& obj);
 
     // Convert Severity from enum to a string representation
     static const string    ConvertSeverity(EDiagSev sev);
@@ -647,6 +648,9 @@ public:
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
     
+    // use previously populated fields to construct the "standard" description
+    void SetFeatureObjDescFromFields();
+
 private:
     friend class CValidError;
 

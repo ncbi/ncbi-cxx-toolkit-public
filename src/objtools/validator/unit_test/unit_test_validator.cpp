@@ -11716,7 +11716,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
     
     CValidErrorFormat format(*objmgr);
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_InternalStop);
-    BOOST_CHECK_EQUAL(rval, "InternalStop\nlcl|nuc:CDS\t fake protein name \tlcl|nuc:1-27\n");
+    BOOST_CHECK_EQUAL(rval, "InternalStop\nlcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\n");
 
     CLEAR_ERRORS
 }

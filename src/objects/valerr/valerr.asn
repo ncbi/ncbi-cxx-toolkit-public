@@ -43,7 +43,11 @@ ValidErrItem ::= SEQUENCE {
     errorGroup  VisibleString OPTIONAL,
     accnver     VisibleString OPTIONAL,
     version     INTEGER OPTIONAL,
-    location    VisibleString OPTIONAL
+    location    VisibleString OPTIONAL,
+    product-loc VisibleString OPTIONAL,
+    bioseq      VisibleString OPTIONAL,
+    locus-tag   VisibleString OPTIONAL,
+    obj-content VisibleString OPTIONAL
 }
 
 

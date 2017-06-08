@@ -94,7 +94,11 @@ public:
 
     // for formatting the objects as presented by the validator
     static string GetFeatureContentLabel (const CSeq_feat& feat, CRef<CScope> scope);
+    static string GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context);
+    static string GetFeatureProductLocLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context);
+    static string GetFeatureIdLabel(const CSeq_feat& ft);
     static string GetFeatureIdLabel (const CFeat_id& feat_id);
+    static string GetFeatureLocationLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context);
     static string GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context);
     static string GetDescriptorContent (const CSeqdesc& ds);
     static string GetDescriptorLabel(const CSeqdesc& ds, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context);
