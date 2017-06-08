@@ -7036,12 +7036,20 @@ void CValidError_bioseq::x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match)
 
 bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
 {
-    if (!NStr::StartsWith(protein_id, "gnl|")) {
+    size_t start_pos = NStr::Find(protein_id, "gnl|");
+    if (start_pos == string::npos) {
         return false;
     }
-    size_t pos = NStr::Find(protein_id, "|", 5);
-    if (pos == string::npos) {
+    start_pos = NStr::Find(protein_id, "|", start_pos + 5);
+    if (start_pos == string::npos) {
         return false;
+    }
+    size_t end_pos = NStr::Find(protein_id, "|", start_pos + 1);
+    string prot_tag = kEmptyStr;
+    if (end_pos == string::npos) {
+        prot_tag = protein_id.substr(start_pos + 1);
+    } else {
+        prot_tag = protein_id.substr(start_pos + 1, end_pos - start_pos - 1);
     }
     CTempString tag = kEmptyStr;
 
@@ -7053,11 +7061,13 @@ bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
         }
     }
 
-    if (NStr::Equal(tag, protein_id.substr(pos + 1))) {
+    if (NStr::Equal(prot_tag, tag)) {
         return true;
     } else {
         return false;
     }
+
+    return false;
 }
 
 void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds)
