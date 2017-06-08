@@ -1483,6 +1483,10 @@ static void s_TEST_FileIO(void)
 
 static void s_TEST_FileIO_LargeFiles(void)
 {
+#if (SIZEOF_SIZE_T < 8)
+    ERR_POST(Warning << "The large files test is disabled on this platform, size_t type is too small.");
+    return;
+#else
     const Uint8  kSize_1GB  = NCBI_CONST_UINT8(1*1024*1024*1024);
     const Uint8  kSize_5GB  = NCBI_CONST_UINT8(5*1024*1024*1024);
     const Uint8  kSize_6GB  = NCBI_CONST_UINT8(6*1024*1024*1024);
@@ -1622,6 +1626,7 @@ static void s_TEST_FileIO_LargeFiles(void)
 
     // Remove test file
     assert( f.Remove() );
+#endif
 }
 
 
