@@ -223,6 +223,12 @@ protected:
 
     virtual bool   ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
+    virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
+        const string& defline,
+        bool has_range=false,
+        TSeqPos range_start=kInvalidSeqPos,
+        TSeqPos range_end=kInvalidSeqPos);
+
     static bool ParseIDs (const TStr& s, 
         const SDefLineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,

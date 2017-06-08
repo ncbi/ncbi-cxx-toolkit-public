@@ -614,30 +614,12 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
         }
     }
 
-    if (defline_ids.empty()) {
-        GenerateID();
-    } 
-    else {
-        SetIDs() = defline_ids;
-    }
+    PostProcessIDs(defline_ids, s, has_range, range_start, range_end);
+
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
-
-
-    if (has_range) {
-        // generate a new ID, and record its relation to the given one(s).
-        SetIDs().clear();
-        GenerateID();
-
-        CRef<CSeq_align> align = xCreateAlignment(m_BestID, 
-            GetIDs().front(), range_start, range_end);
-
-        m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(align);
-        _ASSERT(m_BestID->IsLocal()  ||  !GetIDs().front()->IsLocal()
-                ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
-        m_BestID = GetIDs().front();
+    if(has_range) {
         m_ExpectedEnd = range_end - range_start;
     }
-
     FASTA_PROGRESS("Processing Seq-id: " <<
         ( m_BestID ? m_BestID->AsFastaString() : string("UNKNOWN") ) );
 
@@ -652,7 +634,6 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     if (TestFlag(fUniqueIDs)) {
         ITERATE (CBioseq::TId, it, GetIDs()) {
             CSeq_id_Handle h = CSeq_id_Handle::GetHandle(**it);
-            //if ( !m_IDTracker.insert(h).second ) {
             if ( !m_IDHandler->CacheIdHandle(h) ) {
                 FASTA_ERROR(LineNumber(),
                     "CFastaReader: Seq-id " << h.AsString()
@@ -660,6 +641,34 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
                     CObjReaderParseException::eDuplicateID );
             }
         }
+    }
+}
+
+
+void CFastaReader::PostProcessIDs(
+    const CBioseq::TId& defline_ids, 
+    const string& defline,
+    const bool has_range,
+    const TSeqPos range_start,
+    const TSeqPos range_end)
+{
+    if (defline_ids.empty()) {
+        GenerateID();
+    } 
+    else {
+        SetIDs() = defline_ids;
+    }
+
+    if (has_range) {
+        auto old_id = FindBestChoice(GetIDs(), CSeq_id::BestRank);
+        // generate a new ID, and record its relation to the given one(s).
+        SetIDs().clear();
+        GenerateID();
+
+        CRef<CSeq_align> align = xCreateAlignment(old_id, 
+            GetIDs().front(), range_start, range_end);
+
+        m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(align);
     }
 }
 
