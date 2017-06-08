@@ -211,6 +211,9 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("csra", "cSRA",
                              "Add cSRA accessions (comma separated)",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("bam", "BAM",
+                             "Add BAM file",
+                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("other_loaders", "OtherLoaders",
                              "Extra data loaders as plugins (comma separated)",
                              CArgDescriptions::eString);
@@ -294,6 +297,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
+    arg_desc->AddFlag("print_annot_desc", "print all found Seq-annot descriptors");
     arg_desc->AddFlag("reverse", "reverse order of features");
     arg_desc->AddFlag("labels", "compare features by labels too");
     arg_desc->AddFlag("no_sort", "do not sort features");
@@ -746,6 +750,8 @@ int CDemoApp::Run(void)
 {
     //SetDiagPostLevel(eDiag_Info);
 
+    //s_Test();
+
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
@@ -831,6 +837,7 @@ int CDemoApp::Run(void)
     bool get_feat_handle = args["get_feat_handle"];
     bool print_graphs = args["print_graphs"];
     bool print_alignments = args["print_alignments"];
+    bool print_annot_desc = args["print_annot_desc"];
     bool check_cds = args["check_cds"];
     bool check_seq_data = args["check_seq_data"];
     bool seq_vector_tse = args["seq_vector_tse"];
@@ -978,6 +985,12 @@ int CDemoApp::Run(void)
         GetRWConfig().Set("CSRA", "ACCESSIONS", args["csra"].AsString());
         other_loaders.push_back(pOm->RegisterDataLoader(0, "csra")->GetName());
         GetRWConfig().Set("CSRA", "ACCESSIONS", old_param);
+    }
+    if ( args["bam"] ) {
+        string old_param = GetConfig().Get("BAM", "BAM_NAME");
+        GetConfig().Set("BAM", "BAM_NAME", args["bam"].AsString());
+        other_loaders.push_back(pOm->RegisterDataLoader(0, "bam")->GetName());
+        GetConfig().Set("BAM", "BAM_NAME", old_param);
     }
     if ( args["other_loaders"] ) {
         vector<string> names;
@@ -1285,10 +1298,13 @@ int CDemoApp::Run(void)
             x_Pause("getting seq data", pause_key);
             // Get the sequence using CSeqVector. Use default encoding:
             // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-            CSeqVector seq_vect(*range_loc, scope,
-                                CBioseq_Handle::eCoding_Iupac);
+            CSeqVector seq_vect;
             if ( seq_vector_tse ) {
                 seq_vect = CSeqVector(*range_loc, handle.GetTSE_Handle(),
+                                      CBioseq_Handle::eCoding_Iupac);
+            }
+            else {
+                seq_vect = CSeqVector(*range_loc, scope,
                                       CBioseq_Handle::eCoding_Iupac);
             }
             //handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -1314,8 +1330,15 @@ int CDemoApp::Run(void)
             }
             else {
                 try {
-                    seq_vect[seq_vect.size()-1];
-                    NcbiCout << " got last byte";
+                    char c = seq_vect[0];
+                    NcbiCout << " got first byte: "<<NStr::PrintableString(string(1, c));
+                }
+                catch ( CException& exc ) {
+                    ERR_POST(" cannot get last byte: Exception: "<<exc.what());
+                }
+                try {
+                    char c = seq_vect[seq_vect.size()-1];
+                    NcbiCout << " got last byte: "<<NStr::PrintableString(string(1, c));
                 }
                 catch ( CException& exc ) {
                     ERR_POST(" cannot get last byte: Exception: "<<exc.what());
@@ -1640,28 +1663,33 @@ int CDemoApp::Run(void)
             }
             if ( get_names ) {
                 sw.Restart();
-                if ( !base_sel.IsIncludedAnyNamedAnnotAccession() ) {
-                    NcbiCout << "GB Annot names:" << NcbiEndl;
-                    set<string> annot_names =
-                        gb_loader->GetNamedAnnotAccessions(idh);
-                    ITERATE ( set<string>, i, annot_names ) {
-                        NcbiCout << "Named annot: " << *i
-                                 << NcbiEndl;
-                    }
-                }
-                else {
-                    ITERATE ( vector<string>, it, include_named_accs ) {
-                        NcbiCout << "GB Annot names for "<<*it<<":" << NcbiEndl;
+                try {
+                    if ( !base_sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        NcbiCout << "GB Annot names:" << NcbiEndl;
                         set<string> annot_names =
-                            gb_loader->GetNamedAnnotAccessions(idh, *it);
+                            gb_loader->GetNamedAnnotAccessions(idh);
                         ITERATE ( set<string>, i, annot_names ) {
                             NcbiCout << "Named annot: " << *i
                                      << NcbiEndl;
                         }
                     }
+                    else {
+                        ITERATE ( vector<string>, it, include_named_accs ) {
+                            NcbiCout << "GB Annot names for "<<*it<<":" << NcbiEndl;
+                            set<string> annot_names =
+                                gb_loader->GetNamedAnnotAccessions(idh, *it);
+                            ITERATE ( set<string>, i, annot_names ) {
+                                NcbiCout << "Named annot: " << *i
+                                         << NcbiEndl;
+                            }
+                        }
+                    }
+                    NcbiCout << "Got GB annot names in " << sw.Elapsed() << " secs"
+                             << NcbiEndl;
                 }
-                NcbiCout << "Got GB annot names in " << sw.Elapsed() << " secs"
-                         << NcbiEndl;
+                catch ( CException& exc ) {
+                    ERR_POST("Exception: "<<exc);
+                }
                 {{
                     NcbiCout << "All annot names:" << NcbiEndl;
                     SAnnotSelector sel = base_sel;
@@ -1901,6 +1929,7 @@ int CDemoApp::Run(void)
             
             x_Pause("getting features", pause_key);
             sw.Restart();
+            set<CSeq_annot_Handle> annots;
             CFeat_CI it(scope, *range_loc, base_sel);
             if ( it.MaxSearchSegmentsLimitIsReached() ) {
                 NcbiCout << "***** Max search segments limit is reached *****" << NcbiEndl;
@@ -1913,6 +1942,9 @@ int CDemoApp::Run(void)
                     ++subtypes_counts[it->GetFeatSubtype()];
                 }
                 ++count;
+                if ( print_annot_desc ) {
+                    annots.insert(it.GetAnnot());
+                }
                 if ( get_mapped_location )
                     it->GetLocation();
                 if ( get_original_feature )
@@ -1921,8 +1953,10 @@ int CDemoApp::Run(void)
                     if ( it->IsSetId() )
                         NcbiCout << MSerial_AsnText << it->GetId();
                     NcbiCout << MSerial_AsnText << it->GetData();
-                    if ( it->IsSetPartial() )
+                    if ( it->IsSetPartial() ) {
                         NcbiCout << "Partial: " << it->GetPartial() << '\n';
+                        NcbiCout << "Partial2: " << CMappedFeat(it->GetSeq_feat_Handle()).GetPartial() << '\n';
+                    }
                     if ( it->IsSetExcept() )
                         NcbiCout << "Except: " << it->GetExcept() << '\n';
                     if ( it->IsSetComment() )
@@ -2136,6 +2170,13 @@ int CDemoApp::Run(void)
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << " in " << sw.Elapsed() << " secs "
                      << NcbiEndl;
+            if ( print_annot_desc ) {
+                for ( auto& annot : annots ) {
+                    if ( annot.Seq_annot_IsSetDesc() ) {
+                        NcbiCout << "Seq-annot descr: " << MSerial_AsnText << annot.Seq_annot_GetDesc();
+                    }
+                }
+            }
             if ( matches ) {
                 NcbiCout << "Matches: "<< matches << NcbiEndl;
             }
@@ -2408,8 +2449,12 @@ int CDemoApp::Run(void)
                 // except that there is no type filter for both of them.
                 count = 0;
                 sw.Restart();
+                set<CSeq_annot_Handle> annots;
                 for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
                     count++;
+                    if ( print_annot_desc ) {
+                        annots.insert(it.GetAnnot());
+                    }
                     // Get seq-annot containing the feature
                     if ( get_mapped_location )
                         it->GetLoc();
@@ -2426,6 +2471,13 @@ int CDemoApp::Run(void)
                 NcbiCout << "Graph count (loc range):\t" << count
                          << " in " << sw.Elapsed() << " secs"
                          << NcbiEndl;
+                if ( print_annot_desc ) {
+                    for ( auto& annot : annots ) {
+                        if ( annot.Seq_annot_IsSetDesc() ) {
+                            NcbiCout << "Seq-annot descr: " << MSerial_AsnText << annot.Seq_annot_GetDesc();
+                        }
+                    }
+                }
             }
 
             if ( !skip_alignments ) {
