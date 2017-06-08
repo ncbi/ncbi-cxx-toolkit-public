@@ -1306,6 +1306,7 @@ private:
     {
     public:
         CAction_Base(void) {}
+        virtual ~CAction_Base() {}
         virtual void Execute(void) const = 0;
     private:
         CAction_Base(const CAction_Base&);
@@ -1316,7 +1317,7 @@ private:
     {
     public:
         CAction(TFunc func) : m_Func(func) {}
-        ~CAction(void) {}
+        virtual ~CAction(void) {}
         void Execute(void) const override { m_Func(); }
     private:
         TFunc m_Func;
