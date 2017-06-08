@@ -38,6 +38,7 @@
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <cmath>
 
