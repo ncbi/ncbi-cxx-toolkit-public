@@ -63,75 +63,68 @@ public:
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
-        try {
-  
-            // Create master index variable on stack
-            CSeqEntryIndex idx( CSeqEntryIndex::fDefaultIndexing );
+        // Create master index variable on stack
+        CSeqEntryIndex idx( CSeqEntryIndex::fDefaultIndexing );
 
 
-            // Initialize with top-level Seq-entry, builds Bioseq index
-            idx.Initialize(*m_entry);
+        // Initialize with top-level Seq-entry, builds Bioseq index
+        idx.Initialize(*m_entry);
 
 
-            // IterateBioseqs visits each Bioseq in blob
-            int num_nucs = 0;
-            int num_prots = 0;
-            idx.IterateBioseqs([&num_nucs, &num_prots](CBioseqIndex& bsx) {
-                // Must pass &num_nucs and &num_prots as closure arguments
-                if (bsx.IsNA()) {
-                    num_nucs++;
-                } else if (bsx.IsAA()) {
-                    num_prots++;
-                }
+        // IterateBioseqs visits each Bioseq in blob
+        int num_nucs = 0;
+        int num_prots = 0;
+        idx.IterateBioseqs([&num_nucs, &num_prots](CBioseqIndex& bsx) {
+            // Must pass &num_nucs and &num_prots as closure arguments
+            if (bsx.IsNA()) {
+                num_nucs++;
+            } else if (bsx.IsAA()) {
+                num_prots++;
+            }
+        });
+        *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
+        *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
+        *m_out << endl;
+
+
+        bool ok = false;
+
+        // Select desired sequence record, call application DoOneBioseq method
+        if (m_from > 0 && m_to > 0) {
+
+            // If no -accn argument, set with accession from first Bioseq
+            if (m_accn.empty()) {
+                // get first Bioseq
+                idx.ProcessBioseq([this](CBioseqIndex& bsx) {
+                    // Must pass "this" to see m_accn member variable
+                    m_accn = bsx.GetAccession();
+                });
+            }
+
+            // Create temporary delta on Bioseq range
+            ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp,
+                                   [this](CBioseqIndex& bsx) {
+                DoOneBioseq(bsx);
             });
-            *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
-            *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
-            *m_out << endl;
 
+        } else if (! m_accn.empty()) {
 
-            bool ok = false;
+            // Process selected Bioseq
+            ok = idx.ProcessBioseq(m_accn, [this](CBioseqIndex& bsx) {
+                DoOneBioseq(bsx);
+            });
 
-            // Select desired sequence record, call application DoOneBioseq method
-            if (m_from > 0 && m_to > 0) {
+        } else {
 
-                // If no -accn argument, set with accession from first Bioseq
-                if (m_accn.empty()) {
-                    // get first Bioseq
-                    idx.ProcessBioseq([this](CBioseqIndex& bsx) {
-                        // Must pass "this" to see m_accn member variable
-                        m_accn = bsx.GetAccession();
-                    });
-                }
+            // Process first Bioseq
+            ok = idx.ProcessBioseq([this](CBioseqIndex& bsx) {
+                DoOneBioseq(bsx);
+            });
 
-                // Create temporary delta on Bioseq range
-                ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp,
-                                       [this](CBioseqIndex& bsx) {
-                    DoOneBioseq(bsx);
-                });
-
-            } else if (! m_accn.empty()) {
-
-                // Process selected Bioseq
-                ok = idx.ProcessBioseq(m_accn, [this](CBioseqIndex& bsx) {
-                    DoOneBioseq(bsx);
-                });
-
-            } else {
-
-                // Process first Bioseq
-                ok = idx.ProcessBioseq([this](CBioseqIndex& bsx) {
-                    DoOneBioseq(bsx);
-                });
-
-            }
-
-
-            if (! ok) {
-                LOG_POST(Error << "Unable to process Bioseq");
-            }
         }
-        catch (CException& e) {
-            LOG_POST(Error << "Error processing seqentry: " << e.what());
+
+        if (! ok) {
+            LOG_POST(Error << "Unable to process Bioseq");
         }
     }
 

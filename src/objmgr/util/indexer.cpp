@@ -173,25 +173,30 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 void CSeqEntryIndex::x_Init (void)
 
 {
-    m_objmgr = CObjectManager::GetInstance();
-    if ( !m_objmgr ) {
-        /* raise hell */;
+    try {
+        m_objmgr = CObjectManager::GetInstance();
+        if ( !m_objmgr ) {
+            /* raise hell */;
+        }
+
+        m_scope.Reset( new CScope( *m_objmgr ) );
+        if ( !m_scope ) {
+            /* raise hell */;
+        }
+
+        m_Counter.Set(0);
+
+        m_scope->AddDefaults();
+
+        m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
+
+        // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
+        CRef<CSeqsetIndex> noparent;
+        x_InitSeqs( *m_topSEP, noparent );
     }
-
-    m_scope.Reset( new CScope( *m_objmgr ) );
-    if ( !m_scope ) {
-        /* raise hell */;
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CSeqEntryIndex::x_Init: " << e.what());
     }
-
-    m_Counter.Set(0);
-
-    m_scope->AddDefaults();
-
-    m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
-
-    // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
-    CRef<CSeqsetIndex> noparent;
-    x_InitSeqs( *m_topSEP, noparent );
 }
 
 CRef<CSeq_id> CSeqEntryIndex::MakeUniqueId(void)
@@ -211,28 +216,33 @@ CRef<CSeq_id> CSeqEntryIndex::MakeUniqueId(void)
 CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
 
 {
-    // create delta sequence referring to location or range, using temporary local Seq-id
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
-    CRef<CBioseq> delta(new CBioseq());
-    delta->SetId().push_back(MakeUniqueId());
-    delta->SetInst().Assign(bsh.GetInst());
-    delta->SetInst().ResetSeq_data();
-    delta->SetInst().ResetExt();
-    delta->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-    CRef<CDelta_seq> element(new CDelta_seq());
-    element->SetLoc().Assign(loc);
-    delta->SetInst().SetExt().SetDelta().Set().push_back(element);
-    delta->SetInst().SetLength(sequence::GetLength(loc, m_scope));
+    try {
+        // create delta sequence referring to location or range, using temporary local Seq-id
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+        CRef<CBioseq> delta(new CBioseq());
+        delta->SetId().push_back(MakeUniqueId());
+        delta->SetInst().Assign(bsh.GetInst());
+        delta->SetInst().ResetSeq_data();
+        delta->SetInst().ResetExt();
+        delta->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+        CRef<CDelta_seq> element(new CDelta_seq());
+        element->SetLoc().Assign(loc);
+        delta->SetInst().SetExt().SetDelta().Set().push_back(element);
+        delta->SetInst().SetLength(sequence::GetLength(loc, m_scope));
 
-    // add to scope
-    CBioseq_Handle deltaBsh = m_scope->AddBioseq(*delta);
+        // add to scope
+        CBioseq_Handle deltaBsh = m_scope->AddBioseq(*delta);
 
-    if (deltaBsh) {
-        // create CBioseqIndex object for delta Bioseq
-        CRef<CSeqsetIndex> noparent;
-        CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this));
+        if (deltaBsh) {
+            // create CBioseqIndex object for delta Bioseq
+            CRef<CSeqsetIndex> noparent;
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this));
 
-       return bsx;
+           return bsx;
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CSeqEntryIndex::x_DeltaIndex: " << e.what());
     }
     return CRef<CBioseqIndex> ();
 }
@@ -626,24 +636,29 @@ string CBioseqIndex::GetSequence (void)
 string CBioseqIndex::GetSequence (int from, int to)
 
 {
-    if (! m_sv) {
-        m_sv = new CSeqVector(m_bsh);
-        if (m_sv) {
-            m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
-        }
-    }
-
     string coding;
 
-    if (m_sv) {
-        CSeqVector& vec = *m_sv;
-        if (from < 0) {
-            from = 0;
+    try {
+        if (! m_sv) {
+            m_sv = new CSeqVector(m_bsh);
+            if (m_sv) {
+                m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+            }
         }
-        if (to < 0 || to >= vec.size()) {
-            to = vec.size();
+
+        if (m_sv) {
+            CSeqVector& vec = *m_sv;
+            if (from < 0) {
+                from = 0;
+            }
+            if (to < 0 || to >= vec.size()) {
+                to = vec.size();
+            }
+            vec.GetSeqData(from, to, coding);
         }
-        vec.GetSeqData(from, to, coding);
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::GetSequence: " << e.what());
     }
 
     return coding;
@@ -684,18 +699,23 @@ CFeatureIndex::~CFeatureIndex (void)
 string CFeatureIndex::GetSequence (void)
 
 {
-    if (! m_sv) {
-        m_sv = new CSeqVector(*m_fl, *GetBioseqIndex().GetScope());
-        if (m_sv) {
-            m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
-        }
-    }
-
     string coding;
 
-    if (m_sv) {
-        CSeqVector& vec = *m_sv;
-        vec.GetSeqData(0, vec.size(), coding);
+    try {
+        if (! m_sv) {
+            m_sv = new CSeqVector(*m_fl, *GetBioseqIndex().GetScope());
+            if (m_sv) {
+                m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+            }
+        }
+
+        if (m_sv) {
+            CSeqVector& vec = *m_sv;
+            vec.GetSeqData(0, vec.size(), coding);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CFeatureIndex::GetSequence: " << e.what());
     }
 
     return coding;
