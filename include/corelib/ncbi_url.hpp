@@ -132,11 +132,11 @@ public:
     virtual string EncodeUser(const string& user) const
         {  return NStr::URLEncode(user, NStr::eUrlEnc_URIUserinfo); }
     virtual string DecodeUser(const string& user) const
-        {  return NStr::URLDecode(user); }
+        {  return NStr::URLDecode(user, NStr::eUrlDec_Percent); }
     virtual string EncodePassword(const string& password) const
         {  return NStr::URLEncode(password, NStr::eUrlEnc_URIUserinfo); }
     virtual string DecodePassword(const string& password) const
-        {  return NStr::URLDecode(password); }
+        {  return NStr::URLDecode(password, NStr::eUrlDec_Percent); }
     virtual string EncodePath(const string& path) const
         { return NStr::URLEncode(path, NStr::eUrlEnc_URIPath); }
     virtual string DecodePath(const string& path) const
@@ -156,7 +156,7 @@ public:
     virtual string EncodeFragment(const string& value) const
         { return NStr::URLEncode(value, NStr::eUrlEnc_URIFragment); }
     virtual string DecodeFragment(const string& value) const
-        { return NStr::URLDecode(value, NStr::eUrlDec_All); }
+        { return NStr::URLDecode(value, NStr::eUrlDec_Percent); }
 private:
     NStr::EUrlEncode m_Encode;
 };
