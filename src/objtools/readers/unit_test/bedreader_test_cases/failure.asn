@@ -22,6 +22,11 @@ Seq-annot ::= {
       }
     },
     user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {

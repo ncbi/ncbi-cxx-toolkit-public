@@ -114,9 +114,6 @@ CTrackData::WriteToAnnot(
     CSeq_annot& annot)
 //  -----------------------------------------------------------------------------
 {
-    if (!ContainsData()) {
-        return false;
-    }
     CAnnot_descr& desc = annot.SetDesc();
     CRef<CUser_object> pTrackdata(new CUser_object());
     pTrackdata->SetType().SetStr("Track Data");
@@ -127,17 +124,17 @@ CTrackData::WriteToAnnot(
     if (!Name().empty()) {
         annot.SetNameDesc(Name());
     }
+    pTrackdata->SetData();
+
     map<const string,string>::const_iterator cit = Values().begin();
     while ( cit != Values().end() ) {
         pTrackdata->AddField( cit->first, cit->second );
         ++cit;
     }
-    if ( pTrackdata->CanGetData() && ! pTrackdata->GetData().empty() ) {
-        CRef<CAnnotdesc> user(new CAnnotdesc());
-        user->SetUser(*pTrackdata);
-        desc.Set().push_back(user);
-    }
-    return true;
+    CRef<CAnnotdesc> user(new CAnnotdesc());
+    user->SetUser(*pTrackdata);
+    desc.Set().push_back(user);
+     return true;
 }
 
 END_SCOPE(objects)

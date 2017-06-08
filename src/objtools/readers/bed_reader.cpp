@@ -148,6 +148,9 @@ CBedReader::ReadSeqAnnot(
     annot->SetDesc(*desc);
 
     m_CurrentFeatureCount = 0;
+
+    xParseTrackLine("track", pEC);
+
     string line;
     while (xGetLine(lr, line)) {
 
