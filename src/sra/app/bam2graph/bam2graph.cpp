@@ -283,10 +283,12 @@ void CBam2GraphApp::ProcessFile(const string& file)
 
     CRef<CSeq_entry> entry;
 
+    CStopWatch sw(CStopWatch::eStart);
     if ( 0 && args["estimated"] ) {
         // faster estimated graph from index only
         CBamHeader header(path);
         CBamIndex index(path+".bai");
+        LOG_POST(Info<<"CBam2Seq_graph: Opened BAM file in "<<sw.Restart());
         CRef<CSeq_annot> annot =
             index.MakeEstimatedCoverageAnnot(header, ref_label,
                                              cvt.GetRefId(),
@@ -297,8 +299,11 @@ void CBam2GraphApp::ProcessFile(const string& file)
     }
     else {
         CBamMgr mgr;
-        entry = cvt.MakeSeq_entry(mgr, path);
+        CBamDb bam(mgr, path, path+".bai");
+        LOG_POST(Info<<"CBam2Seq_graph: Opened BAM file in "<<sw.Restart());
+        entry = cvt.MakeSeq_entry(bam);
     }
+    LOG_POST(Info<<"CBam2Seq_graph: Generated graph in "<<sw.Elapsed());
 
     CNcbiOstream& out = args["o"].AsOutputFile();
     if ( args["b"] )
