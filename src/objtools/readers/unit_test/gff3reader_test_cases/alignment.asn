@@ -1,6 +1,11 @@
 Seq-annot ::= {
   desc {
-    name "alignments"
+    name "alignments",
+    user {
+      type str "Track Data",
+      data {
+      }
+    }
   },
   data align {
     {

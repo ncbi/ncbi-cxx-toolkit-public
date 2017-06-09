@@ -23,6 +23,11 @@ Seq-annot ::= {
           data int 0
         }
       }
+    },
+    user {
+      type str "Track Data",
+      data {
+      }
     }
   },
   data ftable {
@@ -3784,6 +3789,11 @@ Seq-annot ::= {
           label str "notes",
           data int 0
         }
+      }
+    },
+    user {
+      type str "Track Data",
+      data {
       }
     }
   },
