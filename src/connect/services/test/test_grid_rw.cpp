@@ -85,7 +85,10 @@ NCBITEST_AUTO_INIT()
 #ifdef NCBI_THREADS
 struct STestStringReader : CStringReader
 {
-    using CStringReader::CStringReader;
+    // using CStringReader::CStringReader;
+    STestStringReader(const string& source)
+        : CStringReader(source)
+        { }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
     {
