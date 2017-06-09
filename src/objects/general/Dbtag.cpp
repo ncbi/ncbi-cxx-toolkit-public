@@ -585,7 +585,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_EcoGene, "https://www.ecogene.org/gene/" },
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016                               
-    { CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?" }, // https not available, http site “experiencing problems” tested 7/13/2016
+    { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site “experiencing problems” tested 7/13/2016
     { CDbtag::eDbtagType_Fungorum, "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_GABI, "https://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
     { CDbtag::eDbtagType_GEO, "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" },
