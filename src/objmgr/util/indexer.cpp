@@ -42,20 +42,9 @@ BEGIN_SCOPE(objects)
 
 // CSeqEntryIndex
 
-// Constructor
-CSeqEntryIndex::CSeqEntryIndex (TFlags flags)
+// Constructors take top-level object, create Seq-entry wrapper if necessary
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, TFlags flags)
     : m_flags(flags)
-{
-}
-
-// Destructor
-CSeqEntryIndex::~CSeqEntryIndex (void)
-
-{
-}
-
-// Initializers take top-level object, create Seq-entry wrapper if necessary
-void CSeqEntryIndex::Initialize (CSeq_entry& topsep)
 {
     topsep.Parentize();
     m_topSEP.Reset(&topsep);
@@ -63,7 +52,8 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep)
     x_Init();
 }
 
-void CSeqEntryIndex::Initialize (CBioseq_set& seqset)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, TFlags flags)
+    : m_flags(flags)
 {
     CSeq_entry* parent = seqset.GetParentEntry();
     if (parent) {
@@ -79,7 +69,8 @@ void CSeqEntryIndex::Initialize (CBioseq_set& seqset)
     x_Init();
 }
 
-void CSeqEntryIndex::Initialize (CBioseq& bioseq)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, TFlags flags)
+    : m_flags(flags)
 {
     CSeq_entry* parent = bioseq.GetParentEntry();
     if (parent) {
@@ -95,7 +86,8 @@ void CSeqEntryIndex::Initialize (CBioseq& bioseq)
     x_Init();
 }
 
-void CSeqEntryIndex::Initialize (CSeq_submit& submit)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
+    : m_flags(flags)
 {
     _ASSERT(submit.CanGetData());
     _ASSERT(submit.CanGetSub());
@@ -110,7 +102,8 @@ void CSeqEntryIndex::Initialize (CSeq_submit& submit)
     x_Init();
 }
 
-void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSubmit_block &sblock)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlags flags)
+    : m_flags(flags)
 {
     topsep.Parentize();
     m_topSEP.Reset(&topsep);
@@ -119,7 +112,8 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSubmit_block &sblock)
     x_Init();
 }
 
-void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSeq_descr &descr)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags)
+    : m_flags(flags)
 {
     topsep.Parentize();
     m_topSEP.Reset(&topsep);
@@ -128,6 +122,11 @@ void CSeqEntryIndex::Initialize (CSeq_entry& topsep, CSeq_descr &descr)
     x_Init();
 }
 
+// Destructor
+CSeqEntryIndex::~CSeqEntryIndex (void)
+
+{
+}
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
 void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 
@@ -407,90 +406,95 @@ CBioseqIndex::~CBioseqIndex (void)
 void CBioseqIndex::x_InitDescs (void)
 
 {
-    if (m_descsInitialized) {
-       return;
-    }
+    try {
+        if (m_descsInitialized) {
+           return;
+        }
 
-    m_descsInitialized = true;
+        m_descsInitialized = true;
 
-    // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
-    for (CSeqdesc_CI desc_it(m_obsh); desc_it; ++desc_it) {
-        const CSeqdesc& sd = *desc_it;
-        CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
-        m_sdxList.push_back(sdx);
+        // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
+        for (CSeqdesc_CI desc_it(m_obsh); desc_it; ++desc_it) {
+            const CSeqdesc& sd = *desc_it;
+            CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
+            m_sdxList.push_back(sdx);
 
-        switch (sd.Which()) {
-            case CSeqdesc::e_Source:
-            {
-                if (! m_bioSource) {
-                    const CBioSource& biosrc = sd.GetSource();
-                    m_bioSource.Reset (&biosrc);
-                    if (biosrc.IsSetOrgname()) {
-                        const COrg_ref& org = biosrc.GetOrg();
-                        if (org.CanGetTaxname()) {
-                            m_taxname = org.GetTaxname();
+            switch (sd.Which()) {
+                case CSeqdesc::e_Source:
+                {
+                    if (! m_bioSource) {
+                        const CBioSource& biosrc = sd.GetSource();
+                        m_bioSource.Reset (&biosrc);
+                        if (biosrc.IsSetOrgname()) {
+                            const COrg_ref& org = biosrc.GetOrg();
+                            if (org.CanGetTaxname()) {
+                                m_taxname = org.GetTaxname();
+                            }
                         }
                     }
+                    break;
                 }
-                break;
-            }
-            case CSeqdesc::e_Molinfo:
-            {
-                if (! m_molInfo) {
-                    const CMolInfo& molinf = sd.GetMolinfo();
-                    m_molInfo.Reset (&molinf);
-                    m_biomol = molinf.GetBiomol();
-                    m_tech = molinf.GetTech();
-                    m_completeness = molinf.GetCompleteness();
+                case CSeqdesc::e_Molinfo:
+                {
+                    if (! m_molInfo) {
+                        const CMolInfo& molinf = sd.GetMolinfo();
+                        m_molInfo.Reset (&molinf);
+                        m_biomol = molinf.GetBiomol();
+                        m_tech = molinf.GetTech();
+                        m_completeness = molinf.GetCompleteness();
+                    }
+                    break;
                 }
-                break;
-            }
-            case CSeqdesc::e_Title:
-            {
-                if (m_title.empty()) {
-                    m_title = sd.GetTitle();
+                case CSeqdesc::e_Title:
+                {
+                    if (m_title.empty()) {
+                        m_title = sd.GetTitle();
+                    }
+                    break;
                 }
-                break;
-            }
-            case CSeqdesc::e_User:
-            {
-                const CUser_object& usr = sd.GetUser();
-                if (usr.IsSetType()) {
-                    const CObject_id& oi = usr.GetType();
-                    if (oi.IsStr()) {
-                        const string& type = oi.GetStr();
-                        if (NStr::EqualNocase(type, "FeatureFetchPolicy")) {
-                            FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
-                                const CUser_field& fld = **uitr;
-                                if (fld.IsSetLabel() && fld.GetLabel().IsStr()) {
-                                    const string &label_str = GET_FIELD(fld.GetLabel(), Str);
-                                    if (! NStr::EqualNocase(label_str, "Policy")) continue;
-                                    if (fld.IsSetData() && fld.GetData().IsStr()) {
-                                        const string& str = fld.GetData().GetStr();
-                                        if (NStr::EqualNocase(str, "OnlyNearFeatures")) {
-                                            m_forceOnlyNearFeats = true;
+                case CSeqdesc::e_User:
+                {
+                    const CUser_object& usr = sd.GetUser();
+                    if (usr.IsSetType()) {
+                        const CObject_id& oi = usr.GetType();
+                        if (oi.IsStr()) {
+                            const string& type = oi.GetStr();
+                            if (NStr::EqualNocase(type, "FeatureFetchPolicy")) {
+                                FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
+                                    const CUser_field& fld = **uitr;
+                                    if (fld.IsSetLabel() && fld.GetLabel().IsStr()) {
+                                        const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                                        if (! NStr::EqualNocase(label_str, "Policy")) continue;
+                                        if (fld.IsSetData() && fld.GetData().IsStr()) {
+                                            const string& str = fld.GetData().GetStr();
+                                            if (NStr::EqualNocase(str, "OnlyNearFeatures")) {
+                                                m_forceOnlyNearFeats = true;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    break;
                 }
-                break;
+                default:
+                    break;
             }
-            default:
-                break;
+        }
+
+        // set policy flags for object manager feature exploration
+        if (m_forceOnlyNearFeats) {
+            m_onlyNearFeats = true;
+        }
+
+        // initialization option can also prevent far feature exploration
+        if ((m_enx.m_flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
+            m_onlyNearFeats = true;
         }
     }
-
-    // set policy flags for object manager feature exploration
-    if (m_forceOnlyNearFeats) {
-        m_onlyNearFeats = true;
-    }
-
-    // initialization option can also prevent far feature exploration
-    if ((m_enx.m_flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
-        m_onlyNearFeats = true;
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::x_InitDescs: " << e.what());
     }
 }
 
@@ -498,56 +502,61 @@ void CBioseqIndex::x_InitDescs (void)
 void CBioseqIndex::x_InitFeats (void)
 
 {
-    if (m_featsInitialized) {
-       return;
-    }
-
-    if (! m_descsInitialized) {
-        // initialize descriptors first to get m_onlyNearFeats flag
-        x_InitDescs();
-    }
-
-    m_featsInitialized = true;
-
-    SAnnotSelector sel;
-
-    // handle far fetching policy, from user object or initializer argument
-    if (m_onlyNearFeats) {
-  
-        if (m_surrogate) {
-            // delta with sublocation needs to map features from original Bioseq
-            sel.SetResolveAll();
-            sel.SetResolveDepth(1);
-            sel.SetExcludeExternal();
-        } else {
-            // otherwise limit collection to local records in top-level Seq-entry
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal();
+    try {
+        if (m_featsInitialized) {
+           return;
         }
 
-    } else {
+        if (! m_descsInitialized) {
+            // initialize descriptors first to get m_onlyNearFeats flag
+            x_InitDescs();
+        }
 
-        // normal situation allowing adaptive depth for feature collection
-        sel.SetResolveAll();
-        sel.SetResolveDepth(kMax_Int);
-        sel.SetAdaptiveDepth(true);
+        m_featsInitialized = true;
+
+        SAnnotSelector sel;
+
+        // handle far fetching policy, from user object or initializer argument
+        if (m_onlyNearFeats) {
+  
+            if (m_surrogate) {
+                // delta with sublocation needs to map features from original Bioseq
+                sel.SetResolveAll();
+                sel.SetResolveDepth(1);
+                sel.SetExcludeExternal();
+            } else {
+                // otherwise limit collection to local records in top-level Seq-entry
+                sel.SetResolveDepth(0);
+                sel.SetExcludeExternal();
+            }
+
+        } else {
+
+            // normal situation allowing adaptive depth for feature collection
+            sel.SetResolveAll();
+            sel.SetResolveDepth(kMax_Int);
+            sel.SetAdaptiveDepth(true);
+        }
+
+        // iterate features on Bioseq
+        for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
+            const CMappedFeat mf = *feat_it;
+            CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
+
+            const CSeq_feat& mpd = mf.GetMappedFeature();
+            CConstRef<CSeq_loc> fl(&mpd.GetLocation());
+
+            CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
+            m_sfxList.push_back(sfx);
+
+            m_featTree.AddFeature(mf);
+
+            // CFeatIndex from CMappedFeat for use with GetBestGene
+            m_featIndexMap[mf] = sfx;
+        }
     }
-
-    // iterate features on Bioseq
-    for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
-        const CMappedFeat mf = *feat_it;
-        CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
-
-        const CSeq_feat& mpd = mf.GetMappedFeature();
-        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-
-        CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
-        m_sfxList.push_back(sfx);
-
-        m_featTree.AddFeature(mf);
-
-        // CFeatIndex from CMappedFeat for use with GetBestGene
-        m_featIndexMap[mf] = sfx;
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::x_InitFeats: " << e.what());
     }
 }
 

@@ -63,12 +63,8 @@ public:
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
-        // Create master index variable on stack
-        CSeqEntryIndex idx( CSeqEntryIndex::fSkipRemoteFeatures );
-
-
-        // Initialize with top-level Seq-entry, builds Bioseq index
-        idx.Initialize(*m_entry);
+        // Create master index variable on stack, initialize with top-level Seq-entry
+        CSeqEntryIndex idx( *m_entry, CSeqEntryIndex::fSkipRemoteFeatures );
 
 
         // IterateBioseqs visits each Bioseq in blob
@@ -87,7 +83,7 @@ public:
 
         *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
         *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
-        *m_out << endl;
+        *m_out << '\n';
 
 
         bool ok = false;
@@ -136,23 +132,23 @@ public:
         CBioseqIndex& bsx )
     //  ------------------------------------------------------------------------
     {
-        *m_out << "Accession: " << bsx.GetAccession() << endl;
-        *m_out << "Length: " << bsx.GetLength() << endl;
+        *m_out << "Accession: " << bsx.GetAccession() << '\n';
+        *m_out << "Length: " << bsx.GetLength() << '\n';
 
         // Title, MolInfo, and BioSource fields are saved when descriptors are indexed (on first request)
-        *m_out << "Taxname: " << bsx.GetTaxname() << endl;
-        *m_out << "Title: " << bsx.GetTitle() << endl;
+        *m_out << "Taxname: " << bsx.GetTaxname() << '\n';
+        *m_out << "Title: " << bsx.GetTitle() << '\n';
 
         // Passes Bioseq-specific CFeatTree to defline generator for efficiency
-        *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << endl;
+        *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << '\n';
 
-        *m_out << endl;
+        *m_out << '\n';
 
 
         // Determine class of immediate Bioseq-set parent
         CRef<CSeqsetIndex> prnt = bsx.GetParent();
         if (prnt) {
-            *m_out << "Parent Bioseq-set class: " << prnt->GetClass() << endl;
+            *m_out << "Parent Bioseq-set class: " << prnt->GetClass() << '\n';
         }
 
 
@@ -165,7 +161,7 @@ public:
             CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
 
             // Print feature eSubtype number
-            *m_out << "Feature subtype: " << sbt << endl;
+            *m_out << "Feature subtype: " << sbt << '\n';
 
 
             if (bsx.IsNA()) {
@@ -181,7 +177,7 @@ public:
                         }
                     });
                     if (has_locus) {
-                        *m_out << "Best gene: " << locus << endl;
+                        *m_out << "Best gene: " << locus << '\n';
                     }
 
 
@@ -189,7 +185,7 @@ public:
                     const CSeq_loc& loc = sfx.GetMappedFeat().GetOriginalFeature().GetLocation();
                     string loc_str;
                     loc.GetLabel(&loc_str);
-                    *m_out << "Location: " << loc_str << endl;
+                    *m_out << "Location: " << loc_str << '\n';
 
 
                     CConstRef<CSeq_loc> sloc = sfx.GetMappedLocation();
@@ -198,7 +194,7 @@ public:
                         sloc->GetLabel(&sloc_str);
                         if (! NStr::EqualNocase(loc_str, sloc_str)) {
                             // Print mapped location if different (i.e., using Bioseq sublocation)
-                            *m_out << "MappedLoc: " << sloc_str << endl;
+                            *m_out << "MappedLoc: " << sloc_str << '\n';
                         }
                     }
 
@@ -206,25 +202,25 @@ public:
                     if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
                         // Print nucleotide sequence under coding region
                         string feat_seq = sfx.GetSequence();
-                        *m_out << "CdRegion seq: " << feat_seq << endl;
+                        *m_out << "CdRegion seq: " << feat_seq << '\n';
                     }
                 }
 
-                *m_out << endl;
+                *m_out << '\n';
 
             } else if (bsx.IsAA()) {
 
                 if (sbt == CSeqFeatData::ESubtype::eSubtype_prot) {
                     // Print sequence under protein feature
                     string feat_seq = sfx.GetSequence();
-                    *m_out << "Protein seq: " << feat_seq << endl;
+                    *m_out << "Protein seq: " << feat_seq << '\n';
                 }
 
-                *m_out << endl;
+                *m_out << '\n';
             }
         });
 
-        *m_out << "Feature count " << num_feats << endl;
+        *m_out << "Feature count " << num_feats << '\n';
     }
 
 protected:

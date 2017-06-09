@@ -60,10 +60,9 @@ class CFeatureIndex;
 // CSeqEntryIndex
 //
 // CSeqEntryIndex is the master, top-level Seq-entry exploration organizer.  A variable
-// is created, with optional control flags, then initialized with the top-level object:
+// is created, with optional control flags, and initialized with the top-level object:
 //
-//   CSeqEntryIndex idx(CSeqEntryIndex::fDefaultIndexing);
-//   idx.Initialize(*m_entry);
+//   CSeqEntryIndex idx(*m_entry, CSeqEntryIndex::fDefaultIndexing);
 //
 // A Seq-entry wrapper is created if the top-level object is a Bioseq or Bioseq-set.
 // Bioseqs within the Seq-entry are then indexed and added to a vector of CBioseqIndex.
@@ -95,8 +94,19 @@ public:
     typedef unsigned int TFlags; // binary OR of "EFlags"
 
 public:
-    // Constructor
-    CSeqEntryIndex (TFlags flags = 0);
+    // Constructors take the top-level object
+    CSeqEntryIndex (CSeq_entry& topsep, TFlags flags = 0);
+    CSeqEntryIndex (CBioseq_set& seqset, TFlags flags = 0);
+    CSeqEntryIndex (CBioseq& bioseq, TFlags flags = 0);
+    CSeqEntryIndex (CSeq_submit& submit, TFlags flags = 0);
+
+    // Specialized constructors for streaming through release files, one component at a time
+
+    // Submit-block obtained from top of Seq-submit release file
+    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlags flags = 0);
+    // Seq-descr chain obtained from top of Bioseq-set release file
+    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags = 0);
+
 
     // Destructor
     ~CSeqEntryIndex (void);
@@ -107,20 +117,6 @@ private:
     CSeqEntryIndex& operator= (const CSeqEntryIndex&);
 
 public:
-    // Initializers take the top-level object
-
-    void Initialize (CSeq_entry& topsep);
-    void Initialize (CBioseq_set& seqset);
-    void Initialize (CBioseq& bioseq);
-    void Initialize (CSeq_submit& submit);
-
-    // Specialized initializers for streaming through release files, one component at a time
-
-    // Submit-block obtained from top of Seq-submit release file
-    void Initialize (CSeq_entry& topsep, CSubmit_block &sblock);
-    // Seq-descr chain obtained from top of Bioseq-set release file
-    void Initialize (CSeq_entry& topsep, CSeq_descr &descr);
-
     // Bioseq exploration iterator
     template<typename _Pred> int IterateBioseqs (_Pred m);
 
@@ -590,15 +586,20 @@ inline
 int CBioseqIndex::IterateDescriptors (_Pred m)
 
 {
-    // Delay descriptor collection until first request
-    if (! m_descsInitialized) {
-        x_InitDescs();
-    }
-
     int count = 0;
-    for (auto& sdx : m_sdxList) {
-        count++;
-        m(*sdx);
+    try {
+        // Delay descriptor collection until first request
+        if (! m_descsInitialized) {
+            x_InitDescs();
+        }
+
+        for (auto& sdx : m_sdxList) {
+            count++;
+            m(*sdx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateDescriptors: " << e.what());
     }
     return count;
 }
@@ -609,15 +610,20 @@ inline
 int CBioseqIndex::IterateFeatures (_Pred m)
 
 {
-    // Delay feature collection until first request
-    if (! m_featsInitialized) {
-        x_InitFeats();
-    }
-
     int count = 0;
-    for (auto& sfx : m_sfxList) {
-        count++;
-        m(*sfx);
+    try {
+        // Delay feature collection until first request
+        if (! m_featsInitialized) {
+            x_InitFeats();
+        }
+
+        for (auto& sfx : m_sfxList) {
+            count++;
+            m(*sfx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
 }
@@ -640,7 +646,9 @@ bool CFeatureIndex::GetBestGene (_Pred m)
                 return true;
             }
         }
-    } catch (CException&) {}
+    } catch (CException& e) {
+        LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
+    }
     return false;
 }
 
