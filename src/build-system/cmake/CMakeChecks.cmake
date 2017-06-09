@@ -96,9 +96,17 @@ endif()
 #
 # Build revision stuff
 # This is needed for some use cases
-include(FindSubversion)
-Subversion_WC_INFO(${top_src_dir} TOOLKIT)
-Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
+if (EXISTS ${top_src_dir}/.svn)
+    include(FindSubversion)
+    Subversion_WC_INFO(${top_src_dir} TOOLKIT)
+    Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
+else()
+    set(TOOLKIT_WC_REVISION 0)
+    set(TOOLKIT_WC_URL "")
+    set(CORELIB_WC_REVISION 0)
+    set(CORELIB_WC_URL "")
+endif()
+
 set(NCBI_SUBVERSION_REVISION ${TOOLKIT_WC_REVISION})
 message(STATUS "SVN revision = ${TOOLKIT_WC_REVISION}")
 message(STATUS "SVN URL = ${TOOLKIT_WC_URL}")
@@ -108,15 +116,15 @@ if ("$ENV{NCBI_TEAMCITY_BUILD_NUMBER}" STREQUAL "")
     message(STATUS "TeamCity build number = ${NCBI_TEAMCITY_BUILD_NUMBER}")
 endif()
 
-string(REGEX REPLACE ".*/([0-9]+)\\.[0-9]+/.*" "\\1" "${CORELIB_WC_URL}" _SC_VER)
-string(LENGTH "${_SC_VER}" _SC_VER_LEN)
-if (${_SC_VER_LEN} LESS 10)
-    set(NCBI_SC_VERSION ${_SC_VER})
-    message(STATUS "Stable Components Number = ${NCBI_SC_VERSION}")
-else()
-    set(NCBI_SC_VERSION 0)
+set(NCBI_SC_VERSION 0)
+if (NOT "${CORELIB_WC_URL}" STREQUAL "")
+    string(REGEX REPLACE ".*/([0-9]+)\\.[0-9]+/.*" "\\1" "${CORELIB_WC_URL}" _SC_VER)
+    string(LENGTH "${_SC_VER}" _SC_VER_LEN)
+    if (${_SC_VER_LEN} LESS 10)
+        set(NCBI_SC_VERSION ${_SC_VER})
+        message(STATUS "Stable Components Number = ${NCBI_SC_VERSION}")
+    endif()
 endif()
-
 
 #
 # Initial messaging about some important stuff
