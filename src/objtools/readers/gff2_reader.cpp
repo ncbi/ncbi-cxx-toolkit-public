@@ -162,28 +162,6 @@ CGff2Reader::ReadSeqAnnots(
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
 
-//  ---------------------------------------------------------------------------                       
-void
-CGff2Reader::ReadSeqAnnots(
-    TAnnotList& annots,
-    ILineReader& lr,
-    ILineErrorListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-    xProgressInit(lr);
-
-    if ( m_iFlags & fNewCode ) {
-        ReadSeqAnnotsNew(annots, lr, pMessageListener);
-    }
-    else {
-        CRef< CSeq_entry > entry = ReadSeqEntry(lr, pMessageListener);
-        CTypeIterator<CSeq_annot> annot_iter( *entry );
-        for (; annot_iter; ++annot_iter) {
-            annots.push_back(CRef<CSeq_annot>(annot_iter.operator->()));
-        }
-    }
-}
-
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot>
 CGff2Reader::ReadSeqAnnot(
@@ -258,9 +236,10 @@ CGff2Reader::ReadSeqAnnot(
     return pAnnot;
 }
 
+
 //  ---------------------------------------------------------------------------                       
 void
-CGff2Reader::ReadSeqAnnotsNew(
+CGff2Reader::ReadSeqAnnots(
     TAnnots& annots,
     ILineReader& lr,
     ILineErrorListener* pEC )
@@ -326,6 +305,7 @@ CGff2Reader::ReadSeqAnnotsNew(
     return;
 }
 
+
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >
 CGff2Reader::ReadSeqEntry(
@@ -336,7 +316,8 @@ CGff2Reader::ReadSeqEntry(
     xProgressInit(lr);
 
     TAnnots annots;
-    ReadSeqAnnotsNew( annots, lr, pMessageListener );
+    //ReadSeqAnnotsNew( annots, lr, pMessageListener );
+    ReadSeqAnnots( annots, lr, pMessageListener );
     
     CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
     pSeqEntry->SetSet();

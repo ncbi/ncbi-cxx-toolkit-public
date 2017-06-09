@@ -357,12 +357,12 @@ bool CFormatGuessEx::x_TryGtf()
 
     int GtfCount = 0;
 	
-    CGtfReader Reader(CGtfReader::fNewCode);
+    CGtfReader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
     CGtfReader::TAnnots LocalAnnots;
     try {
-        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+        Reader.ReadSeqAnnots(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
@@ -383,12 +383,12 @@ bool CFormatGuessEx::x_TryGff3()
 
     int Gff3Count = 0;
 	
-    CGff3Reader Reader(CGff3Reader::fNewCode);
+    CGff3Reader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
     CGff3Reader::TAnnots LocalAnnots;
     try {
-        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+        Reader.ReadSeqAnnots(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
@@ -409,12 +409,12 @@ bool CFormatGuessEx::x_TryGff2()
 
     int Gff2Count = 0;
 	
-    CGff2Reader Reader(CGff2Reader::fNewCode);
+    CGff2Reader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
     CGff2Reader::TAnnots LocalAnnots;
     try {
-        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+        Reader.ReadSeqAnnots(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }

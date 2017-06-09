@@ -61,7 +61,7 @@ class NCBI_XOBJREAD_EXPORT CGff2Reader
 public:
     typedef enum {
         fNormal =       0,
-        fNewCode =      0x1000, // for now don't clobber CGFFReader flags
+//        fNewCode =      0x1000, // for now don't clobber CGFFReader flags
         fGenbankMode =  0x2000,
         fRetainLocusIds = 0x4000,
     } TFlags;
@@ -114,12 +114,6 @@ public:
     virtual void
     ReadSeqAnnots(
         TAnnotList&,
-        ILineReader&,
-        ILineErrorListener* =0 );
-
-    virtual void
-    ReadSeqAnnotsNew(
-        TAnnots&,
         ILineReader&,
         ILineErrorListener* =0 );
 
