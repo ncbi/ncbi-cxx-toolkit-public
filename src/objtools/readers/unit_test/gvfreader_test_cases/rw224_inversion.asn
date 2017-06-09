@@ -4,6 +4,11 @@ Seq-annot ::= {
   },
   desc {
     user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
       type str "gvf-import-pragmas",
       data {
         {
