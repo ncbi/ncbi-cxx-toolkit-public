@@ -5441,6 +5441,7 @@ R<CHL>	s	Departamento de Geologia, Universidad de Chile
 RAB	s	Institut Scientifique, Departement de Botanique et d'Ecologie Vegetale		
 RAF	s	Myanmar Forest Herbarium		
 RAM	s	Ramsey Public Library		
+RAM<CAN>	s	Royal Alberta Museum		
 RAME	s	Royal Albert Memorial Museum		
 RAMK	s	Ramkhamhaeng University, Biology Department		
 RAMM	s	Royal Albert Memorial Museum, Leisure and Tourism Department		

@@ -5474,6 +5474,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RAB\ts\tInstitut Scientifique, Departement de Botanique et d'Ecologie Vegetale\t\t",
 "RAF\ts\tMyanmar Forest Herbarium\t\t",
 "RAM\ts\tRamsey Public Library\t\t",
+"RAM<CAN>\ts\tRoyal Alberta Museum\t\t",
 "RAME\ts\tRoyal Albert Memorial Museum\t\t",
 "RAMK\ts\tRamkhamhaeng University, Biology Department\t\t",
 "RAMM\ts\tRoyal Albert Memorial Museum, Leisure and Tourism Department\t\t",
