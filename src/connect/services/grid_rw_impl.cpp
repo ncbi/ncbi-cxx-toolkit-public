@@ -41,10 +41,10 @@
 #include <util/transmissionrw.hpp>
 
 #include <array>
-#include <deque>
 #include <list>
 #include <utility>
 #include <sstream>
+#include <vector>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_ReadWrite
@@ -160,7 +160,7 @@ struct SMultiWriter : IEmbeddedStreamWriter
     void Abort() override;
 
 private:
-    using TBuffer = deque<char>;
+    using TBuffer = vector<char>;
     using TWriter = unique_ptr<IEmbeddedStreamWriter>;
     using TWriterPos = size_t;
     using TWriterInfo = pair<TWriter, TWriterPos>;
@@ -177,6 +177,8 @@ private:
 
 SMultiWriter::SMultiWriter(initializer_list<IEmbeddedStreamWriter*> init)
 {
+    m_Buffer.reserve(16 * 1024 * 1024);
+
     for (auto p : init) {
         m_Writers.emplace_back(TWriter(p), 0);
     }

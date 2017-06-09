@@ -45,9 +45,9 @@
 #include <cmath>
 #include <array>
 #include <condition_variable>
-#include <deque>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -442,10 +442,9 @@ struct SOutputCopy
 private:
     mutex m;
     condition_variable cv;
-    deque<char> d;
+    vector<char> d;
     bool done = false;
 };
-
 
 bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
         pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
@@ -483,6 +482,7 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
 
 SOutputCopy::SOutputCopy(IReader& reader, CNcbiOstream& writer)
 {
+    d.reserve(16 * 1024 * 1024);
     thread t(&SOutputCopy::Reader, this, ref(reader));
     Writer(writer);
     t.join();
@@ -540,6 +540,7 @@ void SOutputCopy::Writer(CNcbiOstream& writer)
 {
     array<char, 1024 * 1024> buf;
     bool eof = false;
+    size_t copied = 0;
 
     while (!eof) {
         char* data = buf.data();
@@ -553,16 +554,16 @@ void SOutputCopy::Writer(CNcbiOstream& writer)
                 return;
             }
 
-            cv.wait(lock, [&]{ return d.size() || done; });
+            cv.wait(lock, [&]{ return d.size() > copied || done; });
 
-            to_write = min(buf.size(), d.size());
+            to_write = min(buf.size(), d.size() - copied);
 
             if (to_write) {
-                copy_n(d.cbegin(), to_write, buf.begin());
-                d.erase(d.begin(), d.begin() + to_write);
+                copy_n(d.cbegin() + copied, to_write, buf.begin());
+                copied += to_write;
             }
 
-            if (d.empty()) eof = done;
+            if (d.size() == copied) eof = done;
         }
 
         try {
