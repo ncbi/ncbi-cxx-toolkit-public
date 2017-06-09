@@ -134,6 +134,18 @@ public:
     // Process Bioseq by subrange, either forward strand or reverse complement
     template<typename _Pred> bool ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m);
 
+    // Get first Bioseq index
+    CRef<CBioseqIndex> GetBioseqIndex (void);
+    // Get Nth Bioseq index
+    CRef<CBioseqIndex> GetBioseqIndex (int n);
+    // Get Bioseq index by accession
+    CRef<CBioseqIndex> GetBioseqIndex (const string& accn);
+
+    // Get Bioseq index by sublocation
+    CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
+    // Get Bioseq index by subrange
+    CRef<CBioseqIndex> GetBioseqIndex (const string& accn, int from, int to, bool rev_comp);
+
     // Getters
     CRef<CObjectManager> GetObjectManager (void) const { return m_objmgr; }
     CRef<CScope> GetScope (void) const { return m_scope; }

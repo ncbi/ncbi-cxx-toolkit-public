@@ -281,6 +281,64 @@ CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, 
     return CConstRef<CSeq_loc> ();
 }
 
+// Get first Bioseq index
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (void)
+
+{
+    for (auto& bsx : m_bsxList) {
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Nth Bioseq index
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int n)
+
+{
+    for (auto& bsx : m_bsxList) {
+        n--;
+        if (n > 0) continue;
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Bioseq index by accession
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn)
+
+{
+    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
+    if (it != m_accnIndexMap.end()) {
+        CRef<CBioseqIndex> bsx = it->second;
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Bioseq index by sublocation
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CSeq_loc& loc)
+
+{
+    CRef<CBioseqIndex> bsx = x_DeltaIndex(loc);
+
+    if (bsx) {
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Bioseq index by subrange
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn, int from, int to, bool rev_comp)
+
+{
+    CConstRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
+
+    if (loc) {
+        return GetBioseq(*loc);
+    }
+    return CRef<CBioseqIndex> ();
+}
+
 
 // CSeqsetIndex
 
@@ -721,7 +779,6 @@ string CBioseqIndex::GetSequence (void)
 
     return buffer;
 }
-
 
 
 // CDescriptorIndex
