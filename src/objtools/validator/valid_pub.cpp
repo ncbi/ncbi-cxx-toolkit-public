@@ -1087,7 +1087,7 @@ void CValidError_imp::ValidateCitSub
     }
     if ( !has_affil ) {
         EDiagSev sev = 
-            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope) ?
+            IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope) ?
             eDiag_Warning : eDiag_Critical;
         PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no affiliation", obj, ctx);

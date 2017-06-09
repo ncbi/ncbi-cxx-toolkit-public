@@ -5511,7 +5511,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         return;
     }
 
-    bool is_refseq = false;
+    bool is_refseq = m_Imp.IsRefSeqConventions();
     size_t mismatches = 0, total = 0;
 
     FOR_EACH_SEQID_ON_BIOSEQ (it, *(nuc.GetCompleteBioseq())) {

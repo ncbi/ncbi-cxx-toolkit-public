@@ -1130,7 +1130,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
         }
     }
 
-    if (is_refseq) {
+    if (is_refseq || m_Imp.IsRefSeqConventions()) {
         if (is_ng) return false;
     } else if (is_gb) {
         if (! is_wgs && ! is_grc) return false;
@@ -1372,7 +1372,7 @@ bool CValidError_bioseq::x_AllowOrphanedProtein(const CBioseq& seq) const
     bool is_genbank = false;
     bool is_embl = false;
     bool is_ddbj = false;
-    bool is_refseq = false;
+    bool is_refseq = m_Imp.IsRefSeqConventions();
     bool is_wp = false;
     bool is_yp = false;
     bool is_gibbmt = false;
@@ -3101,7 +3101,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             }
         }
 
-        if (!IsRefSeq(seq) && !IsEmblOrDdbj(seq)) {
+        if (!m_Imp.IsRefSeqConventions() && !IsRefSeq(seq) && !IsEmblOrDdbj(seq)) {
             if (IsWGS(bsh)) {
                 ReportBadWGSGap(seq);
             } else if (IsBioseqTSA(seq, m_Scope)) {
@@ -5936,7 +5936,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         bool is_virtual = (m_CurrentHandle.GetInst_Repr() == CSeq_inst::eRepr_virtual);
         TSeqPos len = m_CurrentHandle.IsSetInst_Length() ? m_CurrentHandle.GetInst_Length() : 0;
 
-        bool is_nc = false, is_emb = false, is_refseq = false, non_pseudo_16S_rRNA = false;
+        bool is_nc = false, is_emb = false, non_pseudo_16S_rRNA = false;
+        bool is_refseq = m_Imp.IsRefSeqConventions();
         FOR_EACH_SEQID_ON_BIOSEQ (seq_it, seq) {
             if ((*seq_it)->IsEmbl()) {
                 is_emb = true;
@@ -8196,9 +8197,9 @@ bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 }
 
 
-static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq)
+static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq, bool has_refseq)
 {
-    bool has_local = false, has_genbank = false, has_refseq = false;
+    bool has_local = false, has_genbank = false;
     bool has_gi = false, has_tpa = false, has_bankit = false, has_smart = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
@@ -8777,7 +8778,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                 const CUser_object& usr = desc.GetUser();
                 const CObject_id& oi = usr.GetType();
                 if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 
-                    && !s_IsTPAAssemblyOkForBioseq(seq)) {
+                    && !s_IsTPAAssemblyOkForBioseq(seq, m_Imp.IsRefSeqConventions())) {
                     string id_str;
                     seq.GetLabel(&id_str, CBioseq::eContent, false);
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
@@ -8869,7 +8870,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
                 // nucleotide refseq sequences should start with the organism name,
                 // protein refseq sequences should end with the organism name.
-                bool is_refseq = false;
+                bool is_refseq = m_Imp.IsRefSeqConventions();
                 FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
                     if ((*id_it)->IsOther()) {
                         is_refseq = true;

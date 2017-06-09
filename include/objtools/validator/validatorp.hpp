@@ -545,7 +545,7 @@ public:
     inline bool IsGED(void) const { return m_IsGED; }
     inline bool IsPDB(void) const { return m_IsPDB; }
     inline bool IsPatent(void) const { return m_IsPatent; }
-    inline bool IsRefSeq(void) const { return m_IsRefSeq; }
+    inline bool IsRefSeq(void) const { return m_IsRefSeq || m_RefSeqConventions; }
     inline bool IsEmbl(void) const { return m_IsEmbl; }
     inline bool IsDdbj(void) const { return m_IsDdbj; }
     inline bool IsTPE(void) const { return m_IsTPE; }
