@@ -68,6 +68,42 @@ enum ERR_FieldType {
 };
 
 
+
+/// Basic or an extended field type with an added arbitrary string property.
+/// The string property serves the purpose of special treatment of a field.
+/// At the moment there is only one case supported:
+/// if instantiated for ERR_FieldType and the field type is provided as
+/// eRR_DateTime then the string stores a format string.
+template <class TFieldType>
+class CRR_FieldType
+{
+public:
+    CRR_FieldType(TFieldType field_type, const string& field_props = string())
+        : m_Type(field_type),
+          m_Props(field_props)
+    {}
+
+    CRR_FieldType()
+    {}
+
+public:
+    TFieldType GetType(void) const
+    {
+        return m_Type;
+    }
+
+    string GetProps(void) const
+    {
+        return m_Props;
+    }
+
+private:
+    TFieldType m_Type;
+    string     m_Props;
+};
+
+
+
 /// Row type
 enum ERR_RowType {
     eRR_Data,      ///< row contains data
@@ -77,14 +113,21 @@ enum ERR_RowType {
 };
 
 
-#define UTIL___ROW_READER_INCLUDE__INL
-#include "row_reader.inl"
-#undef  UTIL___ROW_READER_INCLUDE__INL
+/// Whether to check validity of the fields (names and/or values)
+enum ERR_FieldValidationMode {
+    eRR_NoFieldValidation, ///< don't validate fields' value and name
+    eRR_FieldValidation    ///< check that the field's value (or name) is valid
+};
 
 
 // Forward declarations
 template <typename TTraits> class CRowReader;
 template <typename TTraits> class CRR_Row;
+
+
+#define UTIL___ROW_READER_INCLUDE__INL
+#include "row_reader.inl"
+#undef  UTIL___ROW_READER_INCLUDE__INL
 
 
 /// A single field in a row abstraction.
@@ -226,33 +269,43 @@ public:
     ///  The row original data
     CTempString GetOriginalData(void) const;
 
-    /// Get the field name.
-    /// @param field
-    ///  0-based field number
+    /// Get the number of a fields for which any kind of meta info is provided.
     /// @return
-    ///  Field name
-    /// @exception
-    ///  Throws an exception if the field name has not been previously set.
-    const string& GetFieldName(TFieldNo field) const;
+    ///  Number of fields for which any kind of meta info is provided
+    TFieldNo GetDescribedFieldCount(void) const;
 
-    /// Get the (basic) data type of the field.
-    /// @param field
-    ///  0-based field number
-    /// @return
-    ///  The previously set field type
-    /// @exception
-    ///  Throws an exception if the field type has not been previously set.
-    ERR_FieldType GetFieldType(TFieldNo field) const;
+    struct SFieldMetaInfo {
+    public:
+        SFieldMetaInfo() :
+            field_no(0), is_name_initialized(false),
+            is_type_initialized(false), is_ext_type_initialized(false)
+        {}
 
-    /// Get the (trait specific) data type of the field.
-    /// @param field
-    ///  0-based field number
+        TFieldNo field_no;
+
+        bool     is_name_initialized;
+        string   name;
+
+        bool     is_type_initialized;
+        CRR_FieldType<ERR_FieldType>  type;
+
+        bool     is_ext_type_initialized;
+        CRR_FieldType<typename TTraits::TExtendedFieldType> ext_type;
+    };
+
+    /// Get the collected fields meta info.
+    /// @param from
+    ///  Field number to start from
+    /// @param to
+    ///  Field number to end with
     /// @return
-    ///  The previously set extended field type
-    /// @exception
-    ///  Throws an exception if the field type has not been previously set.
-    typename TTraits::TExtendedFieldType
-    GetExtendedFieldType(TFieldNo field) const;
+    ///  A vector of structures with a meta information about fields.
+    ///  If a field has no meta information then the vector will not have a
+    ///  corresponding structure.
+    ///  The fields interval is inclusive.
+    vector<SFieldMetaInfo> GetFieldsMetaInfo
+    (TFieldNo from = 0,
+     TFieldNo to   = numeric_limits<TFieldNo>::max());
 
 private:
     friend class CRowReader<TTraits>;
@@ -260,12 +313,18 @@ private:
     void x_OnFreshRead(void);
     void x_AdjustFieldsSize(size_t new_size);
     void x_CopyFields(const CRR_Row& other_row);
-    void x_SetFieldName(TFieldNo field, const string& name);
-    void x_SetFieldType(TFieldNo field, ERR_FieldType type);
-    void x_SetFieldTypeEx(TFieldNo                             field,
-                          ERR_FieldType                        type,
-                          typename TTraits::TExtendedFieldType extended_type);
+    void x_SetFieldName(TFieldNo field, const string& name, bool user_init);
+    void x_SetFieldType(
+        TFieldNo                            field,
+        const CRR_FieldType<ERR_FieldType>& type,
+        bool                                user_init);
+    void x_SetFieldTypeEx(
+        TFieldNo                                                   field,
+        const CRR_FieldType<ERR_FieldType>&                        type,
+        const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type,
+        bool                                                       user_init);
     void x_ClearFieldsInfo(void);
+    void x_ClearTraitsProvidedFieldsInfo(void);
     void x_DetachMetaInfo(void);
     TFieldNo x_GetFieldIndex(CTempString field) const;
 
@@ -359,7 +418,9 @@ public:
     /// Read and validate-only the stream, calling
     /// TTraits::Validate(row, validation_mode) on each row
     void Validate(typename TTraits::ERR_ValidationMode validation_mode
-                  = TTraits::eRR_ValidationMode_Default);
+                  = TTraits::eRR_ValidationMode_Default,
+                  ERR_FieldValidationMode field_validation_mode
+                  = eRR_FieldValidation);
 
     /// Get the number of the line that is currently being processed
     /// @return
@@ -391,21 +452,14 @@ public:
     ///  The field name
     void SetFieldName(TFieldNo field, const string& name);
 
-    /// Get the field name
-    /// @param field
-    ///  0-based field number
-    /// @return
-    ///  Field name
-    /// @exception
-    ///  Throws an exception if the field name has not been previously set
-    const string& GetFieldName(TFieldNo field) const;
-
     /// Set the (basic) data type of the field
     /// @param field
     ///  0-based field number. The new type overrides the previously set if so.
     /// @param type
     ///  The field type
-    void SetFieldType(TFieldNo field, ERR_FieldType type);
+    void SetFieldType
+    (TFieldNo                            field,
+     const CRR_FieldType<ERR_FieldType>& type);
 
     /// Set the (trait specific) data type of the field
     /// @param field
@@ -414,30 +468,29 @@ public:
     ///  The field type
     /// @param extended_type
     ///  The field extended type
-    /// @attention
-    ///  This call resets the basic field type!
-    void SetFieldTypeEx(TFieldNo                             field,
-                        ERR_FieldType                        type,
-                        typename TTraits::TExtendedFieldType extended_type);
+    void SetFieldTypeEx
+    (TFieldNo                                                   field,
+     const CRR_FieldType<ERR_FieldType>&                        type,
+     const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type);
 
-    /// Get the (basic) data type of the field.
-    /// @param field
-    ///  0-based field number
+    /// Get the collected fields meta info.
+    /// @param from
+    ///  Field number to start from
+    /// @param to
+    ///  Field number to end with
     /// @return
-    ///  The previously set field type
-    /// @exception
-    ///  Throws an exception if the field type has not been previously set
-    ERR_FieldType GetFieldType(TFieldNo field) const;
+    ///  A vector of structures with a meta information about fields.
+    ///  If a field has no meta information then the vector will not have a
+    ///  corresponding structure.
+    ///  The fields interval is inclusive.
+    vector<typename CRR_Row<TTraits>::SFieldMetaInfo> GetFieldsMetaInfo
+    (TFieldNo from = 0,
+     TFieldNo to   = numeric_limits<TFieldNo>::max());
 
-    /// Get the (trait specific) data type of the field.
-    /// @param field
-    ///  0-based field number
+    /// Get the number of a fields for which any kind of meta info is provided.
     /// @return
-    ///  The previously set extended field type
-    /// @exception
-    ///  Throws an exception if the field type has not been previously set
-    typename TTraits::TExtendedFieldType
-    GetExtendedFieldType(TFieldNo field) const;
+    ///  Number of fields for which any kind of meta info is provided
+    TFieldNo GetDescribedFieldCount(void) const;
 
     /// Clear the information about all field names, types and extended types
     /// @note
@@ -589,12 +642,28 @@ public:
     typename TTraits::TRR_Context GetContext(void) const;
 
 private:
+    friend TTraits;
+
     bool x_GetRowData(size_t* phys_lines_read);
     void x_ReadNextRow(void);
     void x_OpenFile(SRR_SourceInfo& stream_info);
     void x_Reset(void);
     void x_ResetToEnd(void);
     void x_UpdateCurrentLineNo(size_t phys_lines_read);
+
+    // Three SetField...() methods are for the traits in opposite to the
+    // 'user' available methods SetField...(...)
+    void x_SetFieldName(TFieldNo field, const string& name);
+    void x_SetFieldType(
+        TFieldNo                            field,
+        const CRR_FieldType<ERR_FieldType>& type);
+    void x_SetFieldTypeEx(
+        TFieldNo                                                   field,
+        const CRR_FieldType<ERR_FieldType>&                        type,
+        const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type);
+
+    void x_ClearTraitsProvidedFieldsInfo(void);
+
     ERR_EventAction x_OnEvent(ERR_Event event);
     CRR_Context* x_GetContextClone(void);
 
@@ -939,89 +1008,6 @@ CTempString CRR_Row<TTraits>::GetOriginalData(void) const
 
 
 template <typename TTraits>
-const string& CRR_Row<TTraits>::GetFieldName(TFieldNo field) const
-{
-    if (m_RowReader == nullptr)
-        return m_MetaInfo->GetFieldName(field);
-    try {
-        return m_MetaInfo->GetFieldName(field);
-    } catch (CRowReaderException& exc) {
-        exc.SetContext(m_RowReader->GetBasicContext().Clone());
-        throw exc;
-    } catch (const CException& exc) {
-        NCBI_RETHROW2(exc, CRowReaderException, eFieldMetaInfoAccess,
-                      "Cannot get field name for the field number " +
-                      NStr::NumericToString(field),
-                      m_RowReader->GetBasicContext().Clone());
-    } catch (const exception& exc) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    exc.what(), m_RowReader->GetBasicContext().Clone());
-    } catch (...) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    "Unknown error while getting field name for the field "
-                    "number " + NStr::NumericToString(field),
-                    m_RowReader->GetBasicContext().Clone());
-    }
-}
-
-
-template <typename TTraits>
-ERR_FieldType CRR_Row<TTraits>::GetFieldType(TFieldNo field) const
-{
-    if (m_RowReader == nullptr)
-        return m_MetaInfo->GetFieldType(field);
-    try {
-        return m_MetaInfo->GetFieldType(field);
-    } catch (CRowReaderException& exc) {
-        exc.SetContext(m_RowReader->GetBasicContext().Clone());
-        throw exc;
-    } catch (const CException& exc) {
-        NCBI_RETHROW2(exc, CRowReaderException, eFieldMetaInfoAccess,
-                      "Cannot get field type for the field number " +
-                      NStr::NumericToString(field),
-                      m_RowReader->GetBasicContext().Clone());
-    } catch (const exception& exc) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    exc.what(), m_RowReader->GetBasicContext().Clone());
-    } catch (...) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    "Unknown error while getting field type for the field "
-                    "number " + NStr::NumericToString(field),
-                    m_RowReader->GetBasicContext().Clone());
-    }
-}
-
-
-template <typename TTraits>
-typename TTraits::TExtendedFieldType
-CRR_Row<TTraits>::GetExtendedFieldType(TFieldNo field) const
-{
-    if (m_RowReader == nullptr)
-        return m_MetaInfo->GetExtendedFieldType(field);
-    try {
-        return m_MetaInfo->GetExtendedFieldType(field);
-    } catch (CRowReaderException& exc) {
-        exc.SetContext(m_RowReader->GetBasicContext().Clone());
-        throw exc;
-    } catch (const CException& exc) {
-        NCBI_RETHROW2(exc, CRowReaderException,
-                      eFieldMetaInfoAccess,
-                      "Cannot get field extended type for the field "
-                      "number " + NStr::NumericToString(field),
-                      m_RowReader->GetBasicContext().Clone());
-    } catch (const exception& exc) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    exc.what(), m_RowReader->GetBasicContext().Clone());
-    } catch (...) {
-        NCBI_THROW2(CRowReaderException, eFieldMetaInfoAccess,
-                    "Unknown error while getting field extended type for the "
-                    "field number " + NStr::NumericToString(field),
-                    m_RowReader->GetBasicContext().Clone());
-    }
-}
-
-
-template <typename TTraits>
 void CRR_Row<TTraits>::x_OnFreshRead(void)
 {
     m_RawData.clear();
@@ -1074,29 +1060,76 @@ void CRR_Row<TTraits>::x_CopyFields(const CRR_Row& other_row)
 
 
 template <typename TTraits>
-void CRR_Row<TTraits>::x_SetFieldName(TFieldNo field, const string& name)
+void CRR_Row<TTraits>::x_SetFieldName(TFieldNo field, const string& name,
+                                      bool user_init)
 {
     x_DetachMetaInfo();
-    m_MetaInfo->SetFieldName(field, name);
+    m_MetaInfo->SetFieldName(field, name, user_init);
 }
 
 
 template <typename TTraits>
-void CRR_Row<TTraits>::x_SetFieldType(TFieldNo field, ERR_FieldType type)
+void CRR_Row<TTraits>::x_SetFieldType(
+    TFieldNo field,
+    const CRR_FieldType<ERR_FieldType>& type,
+    bool user_init)
 {
     x_DetachMetaInfo();
-    m_MetaInfo->SetFieldType(field, type);
+    m_MetaInfo->SetFieldType(field, type, user_init);
 }
 
 
 template <typename TTraits>
 void CRR_Row<TTraits>::x_SetFieldTypeEx(
-            TFieldNo                             field,
-            ERR_FieldType                        type,
-            typename TTraits::TExtendedFieldType extended_type)
+    TFieldNo                                                   field,
+    const CRR_FieldType<ERR_FieldType>&                        type,
+    const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type,
+    bool                                                       user_init)
 {
     x_DetachMetaInfo();
-    m_MetaInfo->SetFieldTypeEx(field, type, extended_type);
+    m_MetaInfo->SetFieldTypeEx(field, type, extended_type, user_init);
+}
+
+
+template <typename TTraits>
+TFieldNo CRR_Row<TTraits>::GetDescribedFieldCount(void) const
+{
+    return m_MetaInfo->GetDescribedFieldCount();
+}
+
+
+template <typename TTraits>
+vector<typename CRR_Row<TTraits>::SFieldMetaInfo>
+CRR_Row<TTraits>::GetFieldsMetaInfo(TFieldNo from, TFieldNo to)
+{
+    vector<SFieldMetaInfo>  result;
+
+    if (m_MetaInfo->m_FieldsInfo.empty())
+        return result;
+
+    size_t  last_index = min(static_cast<size_t>(to),
+                             m_MetaInfo->m_FieldsInfo.size() - 1);
+    for (size_t index = from; index <= to && index <= last_index; ++index) {
+        const auto &  field_info = m_MetaInfo->m_FieldsInfo[index];
+        if (field_info.IsInitialized()) {
+            SFieldMetaInfo  info;
+
+            info.field_no = index;
+            info.is_name_initialized =
+                field_info.m_NameInit != CRR_MetaInfo<TTraits>::eNotInitialized;
+            if (info.is_name_initialized)
+                info.name = *field_info.m_FieldName;
+            info.is_type_initialized =
+                field_info.m_TypeInit != CRR_MetaInfo<TTraits>::eNotInitialized;
+            info.type = field_info.m_FieldType;
+            info.is_ext_type_initialized =
+                field_info.m_ExtTypeInit != CRR_MetaInfo<TTraits>::eNotInitialized;
+            info.ext_type = field_info.m_FieldExtType;
+
+            result.push_back(info);
+        }
+    }
+    return result;
 }
 
 
@@ -1104,7 +1137,17 @@ template <typename TTraits>
 void CRR_Row<TTraits>::x_ClearFieldsInfo(void)
 {
     x_DetachMetaInfo();
-    m_MetaInfo->Clear();
+    m_MetaInfo->Clear(true);    // true -> clears both user and
+                                // traits provided meta info
+}
+
+
+template <typename TTraits>
+void CRR_Row<TTraits>::x_ClearTraitsProvidedFieldsInfo(void)
+{
+    x_DetachMetaInfo();
+    m_MetaInfo->Clear(false);   // false -> clears only trits provided
+                                // meta info
 }
 
 
@@ -1217,7 +1260,8 @@ void CRowReader<TTraits>::SetDataSource(const string& filename)
 
 template <typename TTraits>
 void CRowReader<TTraits>::Validate(
-        typename TTraits::ERR_ValidationMode validation_mode)
+        typename TTraits::ERR_ValidationMode validation_mode,
+        ERR_FieldValidationMode field_validation_mode)
 {
     ERR_Action action = eRR_Interrupt;
     size_t     phys_lines_read;
@@ -1275,7 +1319,8 @@ void CRowReader<TTraits>::Validate(
             x_UpdateCurrentLineNo(phys_lines_read);
 
             try {
-                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData));
+                action = m_Traits.Validate(CTempString(m_CurrentRow.m_RawData),
+                                           field_validation_mode);
                 if (action == eRR_Interrupt)
                     break;
             } catch (const CException& exc) {
@@ -1355,47 +1400,76 @@ template <typename TTraits>
 void CRowReader<TTraits>::SetFieldName(TFieldNo      field,
                                        const string& name)
 {
-    m_CurrentRow.x_SetFieldName(field, name);
+    // true - user (not traits) setting
+    m_CurrentRow.x_SetFieldName(field, name, true);
 }
 
 
 template <typename TTraits>
-const string& CRowReader<TTraits>::GetFieldName(TFieldNo field) const
+void
+CRowReader<TTraits>::SetFieldType(
+    TFieldNo                            field,
+    const CRR_FieldType<ERR_FieldType>& type)
 {
-    return m_CurrentRow.GetFieldName(field);
+    // true = user (not traits) setting
+    m_CurrentRow.x_SetFieldType(field, type, true);
 }
 
 
 template <typename TTraits>
-void CRowReader<TTraits>::SetFieldType(TFieldNo      field,
-                                       ERR_FieldType type)
+void
+CRowReader<TTraits>::SetFieldTypeEx(
+    TFieldNo                                                   field,
+    const CRR_FieldType<ERR_FieldType>&                        type,
+    const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type)
 {
-    m_CurrentRow.x_SetFieldType(field, type);
+    // true - user (not traits) setting
+    m_CurrentRow.x_SetFieldTypeEx(field, type, extended_type, true);
 }
 
 
 template <typename TTraits>
-void CRowReader<TTraits>::SetFieldTypeEx(
-                    TFieldNo                             field,
-                    ERR_FieldType                        type,
-                    typename TTraits::TExtendedFieldType extended_type)
+void CRowReader<TTraits>::x_SetFieldName(TFieldNo field,
+                                         const string& name)
 {
-    m_CurrentRow.x_SetFieldTypeEx(field, type, extended_type);
+    // false - traits (not user) setting
+    m_CurrentRow.x_SetFieldName(field, name, false);
 }
 
 
 template <typename TTraits>
-ERR_FieldType CRowReader<TTraits>::GetFieldType(TFieldNo field) const
+void CRowReader<TTraits>::x_SetFieldType(
+    TFieldNo                            field,
+    const CRR_FieldType<ERR_FieldType>& type)
 {
-    return m_CurrentRow.GetFieldType(field);
+    // false - traits (not user) setting
+    m_CurrentRow.x_SetFieldType(field, type, false);
 }
 
 
 template <typename TTraits>
-typename TTraits::TExtendedFieldType
-CRowReader<TTraits>::GetExtendedFieldType(TFieldNo field) const
+void CRowReader<TTraits>::x_SetFieldTypeEx(
+    TFieldNo                                                   field,
+    const CRR_FieldType<ERR_FieldType>&                        type,
+    const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type)
 {
-    return m_CurrentRow.GetExtendedFieldType(field);
+    // false - traits (not user) setting
+    m_CurrentRow.x_SetFieldTypeEx(field, type, extended_type, false);
+}
+
+
+template <typename TTraits>
+vector<typename CRR_Row<TTraits>::SFieldMetaInfo>
+CRowReader<TTraits>::GetFieldsMetaInfo(TFieldNo from, TFieldNo to)
+{
+    return m_CurrentRow.GetFieldsMetaInfo(from, to);
+}
+
+
+template <typename TTraits>
+TFieldNo CRowReader<TTraits>::GetDescribedFieldCount(void) const
+{
+    return m_CurrentRow.GetDescribedFieldCount();
 }
 
 
@@ -1403,6 +1477,13 @@ template <typename TTraits>
 void CRowReader<TTraits>::ClearFieldsInfo(void)
 {
     m_CurrentRow.x_ClearFieldsInfo();
+}
+
+
+template <typename TTraits>
+void CRowReader<TTraits>::x_ClearTraitsProvidedFieldsInfo(void)
+{
+    m_CurrentRow.x_ClearTraitsProvidedFieldsInfo();
 }
 
 

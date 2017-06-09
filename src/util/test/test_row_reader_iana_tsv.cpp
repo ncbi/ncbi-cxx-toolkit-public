@@ -67,9 +67,21 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_HEADER_ONLY)
                    "Row data: " + row.GetOriginalData());
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
 }
 
 
@@ -88,7 +100,8 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_DATA)
             case 1:
                 BOOST_CHECK(row.GetNumberOfFields() == 3);
                 BOOST_CHECK(row.GetType() == eRR_Data);
-                BOOST_CHECK(row.GetOriginalData() == string("Paul\t23\t1115 W Franklin"));
+                BOOST_CHECK(row.GetOriginalData() ==
+                            string("Paul\t23\t1115 W Franklin"));
                 BOOST_CHECK(row[0].Get<string>() == string("Paul"));
                 BOOST_CHECK(row[1].Get<string>() == string("23"));
                 BOOST_CHECK(row[1].Get<int>() == 23);
@@ -97,16 +110,20 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_DATA)
             case 2:
                 BOOST_CHECK(row.GetNumberOfFields() == 3);
                 BOOST_CHECK(row.GetType() == eRR_Data);
-                BOOST_CHECK(row.GetOriginalData() == string("Bessy the Cow\t5\tBig Farm Way"));
-                BOOST_CHECK(row["Name"].Get<string>() == string("Bessy the Cow"));
+                BOOST_CHECK(row.GetOriginalData() ==
+                            string("Bessy the Cow\t5\tBig Farm Way"));
+                BOOST_CHECK(row["Name"].Get<string>() ==
+                            string("Bessy the Cow"));
                 BOOST_CHECK(row["Age"].Get<string>() == string("5"));
                 BOOST_CHECK(row["Age"].Get<int>() == 5);
-                BOOST_CHECK(row["Address"].Get<string>() == string("Big Farm Way"));
+                BOOST_CHECK(row["Address"].Get<string>() ==
+                            string("Big Farm Way"));
                 break;
             case 3:
                 BOOST_CHECK(row.GetNumberOfFields() == 3);
                 BOOST_CHECK(row.GetType() == eRR_Data);
-                BOOST_CHECK(row.GetOriginalData() == string("Zeke\t45\tW Main St"));
+                BOOST_CHECK(row.GetOriginalData() ==
+                            string("Zeke\t45\tW Main St"));
                 BOOST_CHECK(row[0].Get<string>() == string("Zeke"));
                 BOOST_CHECK(row[1].Get<string>() == string("45"));
                 BOOST_CHECK(row[1].Get<int>() == 45);
@@ -116,9 +133,22 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_DATA)
         ++line_no;
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
+
     BOOST_CHECK(line_no == 4);
 }
 
@@ -190,7 +220,8 @@ BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_SOURCE)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
         BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
@@ -217,7 +248,8 @@ BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_NO_RECORDS)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
         BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
@@ -267,7 +299,8 @@ BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_NO_TRAILING_EOL)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
         BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
@@ -296,7 +329,9 @@ BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_FIELD_NAME)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
         if (what.find("Empty field names") == string::npos)
@@ -313,7 +348,9 @@ BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_FIELD_NAME)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+        BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
         if (what.find("Empty field names") == string::npos)
@@ -330,7 +367,9 @@ BOOST_AUTO_TEST_CASE(STRICT_VALIDATION_EMPTY_FIELD_VALUE)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Strict);
+        BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
         if (what.find("Empty field values") == string::npos)
@@ -348,7 +387,9 @@ BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_FIELD_VALUE)
     TIANATSVStream          src_stream(&data_stream, "");
 
     try {
-        src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default);
+        BOOST_FAIL("Expected a validation exception");
     } catch (const exception &  exc) {
         string  what = exc.what();
         if (what.find("Empty field values") == string::npos)
@@ -356,6 +397,141 @@ BOOST_AUTO_TEST_CASE(DEFAULT_VALIDATION_EMPTY_FIELD_VALUE)
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION)
+{
+    string                  data = "Integer\tDouble\tBool\n"
+                                   "1\t2.2\tTrue\n"
+                                   "3\t3.14\tFalse\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL)
+{
+    string                  data = "Integer\tDouble\tBool\n"
+                                   "1\t2.2\tTrue\n"
+                                   "3\tExpectedDouble\tFalse\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_NO_FAIL)
+{
+    string                  data = "Integer\tDouble\tBool\n"
+                                   "1\t2.2\tTrue\n"
+                                   "3\tExpectedDouble\tFalse\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+                        eRR_NoFieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT)
+{
+    string                  data = "DateTime\n"
+                                   "01/02/1903 12:13:14\n"
+                                   "02/03/1967 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_DateTime);
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT_FAIL)
+{
+    string                  data = "DateTime\n"
+                                   "12:13:14 04/04/1999\n"
+                                   "02/03/1967 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_DateTime);
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT)
+{
+    string                  data = "DateTime\n"
+                                   "1903 01 02 12:13:14\n"
+                                   "1967 02 03 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
+                                                            "Y M D h:m:s"));
+
+    src_stream.Validate(CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT_FAIL)
+{
+    string                  data = "DateTime\n"
+                                   "01 02 1903 12:13:14\n"
+                                   "1967 02 03 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANATSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
+                                                            "Y M D h:m:s"));
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_TSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -83,7 +83,8 @@ public:
     /// @return
     ///  Instructions of what to do next e.g. interrupt validation or continue.
     ///  See ERR_Action in row_reader.inl
-    ERR_Action Validate(CTempString raw_line)
+    ERR_Action Validate(CTempString raw_line,
+                        ERR_FieldValidationMode field_validation_mode)
     { return eRR_Skip; }
 
     /// Called before any other processing of the next read line

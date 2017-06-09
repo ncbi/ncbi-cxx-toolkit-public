@@ -66,9 +66,21 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_HEADER_ONLY)
                    "Row data: " + row.GetOriginalData());
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
 }
 
 
@@ -115,9 +127,22 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_DATA)
         ++line_no;
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
+
     BOOST_CHECK(line_no == 4);
 }
 
@@ -220,9 +245,22 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_FIELDS)
         ++line_no;
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
+
     BOOST_CHECK(line_no == 4);
 }
 
@@ -238,9 +276,21 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
                    "Row data: " + row.GetOriginalData());
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Address"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
 
     data = "Name,\"Age\",Address";
     CNcbiIstrstream         data_stream1(data.c_str());
@@ -251,10 +301,21 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
                    "Row data: " + row.GetOriginalData());
     }
 
-    BOOST_CHECK(src_stream1.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream1.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream1.GetFieldName(2) == string("Address"));
+    field_info = src_stream1.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
 
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
 
     data = "Name,Age,\"Address\"";
     CNcbiIstrstream         data_stream2(data.c_str());
@@ -265,9 +326,21 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
                    "Row data: " + row.GetOriginalData());
     }
 
-    BOOST_CHECK(src_stream2.GetFieldName(0) == string("Name"));
-    BOOST_CHECK(src_stream2.GetFieldName(1) == string("Age"));
-    BOOST_CHECK(src_stream2.GetFieldName(2) == string("Address"));
+    field_info = src_stream2.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Name"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("Age"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Address"));
+    }
 }
 
 
@@ -296,9 +369,22 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_FIELDS_WITH_QUOTES)
         ++line_no;
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("Na\"me"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("A\"ge"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("Addr\"ess"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("Na\"me"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("A\"ge"));
+
+        BOOST_CHECK(field_info[2].field_no == 2);
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("Addr\"ess"));
+    }
+
     BOOST_CHECK(line_no == 2);
 }
 
@@ -328,8 +414,18 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_QUOTED_MULTILINE)
         ++line_no;
     }
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("abc\r\ncde"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("fgh\nklm"));
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 2);
+    if (field_info.size() == 2) {
+        BOOST_CHECK(field_info[0].field_no == 0);
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("abc\r\ncde"));
+
+        BOOST_CHECK(field_info[1].field_no == 1);
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("fgh\nklm"));
+    }
+
     BOOST_CHECK(line_no == 2);
 }
 
@@ -469,6 +565,182 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NON_BALANCED_QUOTE_VALIDATING)
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION)
+{
+    string                  data = "Integer,Double,Bool\n"
+                                   "1,2.2,True\n"
+                                   "3,3.14,False\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+    src_stream.Validate(CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL)
+{
+    string                  data = "Integer,Double,Bool\n"
+                                   "1,2.2,True\n"
+                                   "3,ExpectedDouble,False\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_NO_FAIL)
+{
+    string                  data = "Integer,Double,Bool\n"
+                                   "1,2.2,True\n"
+                                   "3,ExpectedDouble,False\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+
+    src_stream.Validate(CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+                        eRR_NoFieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT)
+{
+    string                  data = "DateTime\n"
+                                   "01/02/1903 12:13:14\n"
+                                   "02/03/1967 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_DateTime);
+
+    src_stream.Validate(CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT_FAIL)
+{
+    string                  data = "DateTime\n"
+                                   "12:13:14 04/04/1999\n"
+                                   "02/03/1967 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_DateTime);
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT)
+{
+    string                  data = "DateTime\n"
+                                   "1903 01 02 12:13:14\n"
+                                   "1967 02 03 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
+                                                            "Y M D h:m:s"));
+
+    src_stream.Validate(CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT_FAIL)
+{
+    string                  data = "DateTime\n"
+                                   "01 02 1903 12:13:14\n"
+                                   "1967 02 03 07:56:00\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
+                                                            "Y M D h:m:s"));
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_WITH_TRANSLATION)
+{
+    string                  data = "Integer,Double,Bool\n"
+                                   "\"1\",\"2.2\",\"True\"\n"
+                                   "\"3\",\"3.14\",\"False\"\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+    src_stream.Validate(CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+                        eRR_FieldValidation);
+}
+
+
+BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL_WITH_TRANSLATION)
+{
+    string                  data = "Integer,Double,Bool\n"
+                                   "\"1\",\"2.2\",\"True\"\n"
+                                   "\"3\",\"ExpectedDouble\",\"False\"\n";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TIANACSVStream          src_stream(&data_stream, "");
+
+    src_stream.SetFieldType(0, eRR_Integer);
+    src_stream.SetFieldType(1, eRR_Double);
+    src_stream.SetFieldType(2, eRR_Boolean);
+
+    try {
+        src_stream.Validate(
+            CRowReaderStream_IANA_CSV::eRR_ValidationMode_Default,
+            eRR_FieldValidation);
+        BOOST_FAIL("Expected a validation exception");
+    } catch (const exception &  exc) {
+        string  what = exc.what();
+        if (what.find("Error validating") == string::npos)
+            BOOST_FAIL("Expected validating error");
+    }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 END_NCBI_SCOPE

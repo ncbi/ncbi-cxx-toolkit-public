@@ -207,9 +207,18 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_NAMES)
                 BOOST_CHECK(row["intval"].Get<string>() == string("111"));
                 BOOST_CHECK(row["intval"].GetOriginalData() == string("111"));
 
-                BOOST_CHECK(row.GetFieldName(0) == string("index"));
-                BOOST_CHECK(row.GetFieldName(1) == string("strval"));
-                BOOST_CHECK(row.GetFieldName(2) == string("intval"));
+                {
+                    auto field_info = row.GetFieldsMetaInfo();
+                    BOOST_CHECK(field_info.size() == 3);
+                    if (field_info.size() == 3) {
+                        BOOST_CHECK(field_info[0].is_name_initialized == true);
+                        BOOST_CHECK(field_info[0].name == string("index"));
+                        BOOST_CHECK(field_info[1].is_name_initialized == true);
+                        BOOST_CHECK(field_info[1].name == string("strval"));
+                        BOOST_CHECK(field_info[2].is_name_initialized == true);
+                        BOOST_CHECK(field_info[2].name == string("intval"));
+                    }
+                }
                 break;
             case 1:
                 BOOST_CHECK(row.GetType() == eRR_Data);
@@ -300,9 +309,18 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_ROW_COPYING)
     BOOST_CHECK(row3["intval"].Get<string>() == string("333"));
     BOOST_CHECK(row3["intval"].GetOriginalData() == string("333"));
 
-    BOOST_CHECK(src_stream.GetFieldName(0) == string("index"));
-    BOOST_CHECK(src_stream.GetFieldName(1) == string("strval"));
-    BOOST_CHECK(src_stream.GetFieldName(2) == string("intval"));
+
+    auto field_info = src_stream.GetFieldsMetaInfo();
+
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("index"));
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("strval"));
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("intval"));
+    }
 }
 
 
@@ -496,14 +514,29 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_TYPES)
     for (auto &  row : src_stream) {
         BOOST_CHECK(row.GetNumberOfFields() == 3);
         BOOST_CHECK(row.GetType() == eRR_Data);
-        BOOST_CHECK(row.GetFieldType(0) == eRR_Integer);
-        BOOST_CHECK(row.GetFieldType(1) == eRR_String);
-        BOOST_CHECK(row.GetFieldType(2) == eRR_Double);
+
+        auto field_info = row.GetFieldsMetaInfo();
+        BOOST_CHECK(field_info.size() == 3);
+        if (field_info.size() == 3) {
+            BOOST_CHECK(field_info[0].is_type_initialized == true);
+            BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+            BOOST_CHECK(field_info[1].is_type_initialized == true);
+            BOOST_CHECK(field_info[1].type.GetType() == eRR_String);
+            BOOST_CHECK(field_info[2].is_type_initialized == true);
+            BOOST_CHECK(field_info[2].type.GetType() == eRR_Double);
+        }
     }
 
-    BOOST_CHECK(src_stream.GetFieldType(0) == eRR_Integer);
-    BOOST_CHECK(src_stream.GetFieldType(1) == eRR_String);
-    BOOST_CHECK(src_stream.GetFieldType(2) == eRR_Double);
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_type_initialized == true);
+        BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+        BOOST_CHECK(field_info[1].is_type_initialized == true);
+        BOOST_CHECK(field_info[1].type.GetType() == eRR_String);
+        BOOST_CHECK(field_info[2].is_type_initialized == true);
+        BOOST_CHECK(field_info[2].type.GetType() == eRR_Double);
+    }
 }
 
 
@@ -522,20 +555,41 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_EXT_TYPES)
     for (auto &  row : src_stream) {
         BOOST_CHECK(row.GetNumberOfFields() == 3);
         BOOST_CHECK(row.GetType() == eRR_Data);
-        BOOST_CHECK(row.GetFieldType(0) == eRR_Integer);
-        BOOST_CHECK(row.GetExtendedFieldType(0) == eRR_String);
-        BOOST_CHECK(row.GetFieldType(1) == eRR_String);
-        BOOST_CHECK(row.GetExtendedFieldType(1) == eRR_Double);
-        BOOST_CHECK(row.GetFieldType(2) == eRR_Double);
-        BOOST_CHECK(row.GetExtendedFieldType(2) == eRR_Integer);
+
+        auto field_info = row.GetFieldsMetaInfo();
+        BOOST_CHECK(field_info.size() == 3);
+        if (field_info.size() == 3) {
+            BOOST_CHECK(field_info[0].is_type_initialized == true);
+            BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+            BOOST_CHECK(field_info[0].is_ext_type_initialized == true);
+            BOOST_CHECK(field_info[0].ext_type.GetType() == eRR_String);
+            BOOST_CHECK(field_info[1].is_type_initialized == true);
+            BOOST_CHECK(field_info[1].type.GetType() == eRR_String);
+            BOOST_CHECK(field_info[1].is_ext_type_initialized == true);
+            BOOST_CHECK(field_info[1].ext_type.GetType() == eRR_Double);
+            BOOST_CHECK(field_info[2].is_type_initialized == true);
+            BOOST_CHECK(field_info[2].type.GetType() == eRR_Double);
+            BOOST_CHECK(field_info[2].is_ext_type_initialized == true);
+            BOOST_CHECK(field_info[2].ext_type.GetType() == eRR_Integer);
+        }
     }
 
-    BOOST_CHECK(src_stream.GetFieldType(0) == eRR_Integer);
-    BOOST_CHECK(src_stream.GetExtendedFieldType(0) == eRR_String);
-    BOOST_CHECK(src_stream.GetFieldType(1) == eRR_String);
-    BOOST_CHECK(src_stream.GetExtendedFieldType(1) == eRR_Double);
-    BOOST_CHECK(src_stream.GetFieldType(2) == eRR_Double);
-    BOOST_CHECK(src_stream.GetExtendedFieldType(2) == eRR_Integer);
+    auto field_info = src_stream.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_type_initialized == true);
+        BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+        BOOST_CHECK(field_info[0].is_ext_type_initialized == true);
+        BOOST_CHECK(field_info[0].ext_type.GetType() == eRR_String);
+        BOOST_CHECK(field_info[1].is_type_initialized == true);
+        BOOST_CHECK(field_info[1].type.GetType() == eRR_String);
+        BOOST_CHECK(field_info[1].is_ext_type_initialized == true);
+        BOOST_CHECK(field_info[1].ext_type.GetType() == eRR_Double);
+        BOOST_CHECK(field_info[2].is_type_initialized == true);
+        BOOST_CHECK(field_info[2].type.GetType() == eRR_Double);
+        BOOST_CHECK(field_info[2].is_ext_type_initialized == true);
+        BOOST_CHECK(field_info[2].ext_type.GetType() == eRR_Integer);
+    }
 }
 
 
@@ -573,32 +627,14 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
                 BOOST_FAIL("Expected no field exception context");
         }
 
-        try {
-            row.GetFieldName(0);
-            BOOST_FAIL("Expected no field name exception");
-        } catch (const exception &  exc) {
-            string  what = exc.what();
-            if (what.find(kRRContextPattern) == string::npos)
-                BOOST_FAIL("Expected no field name exception context");
-        }
+        auto field_info = row.GetFieldsMetaInfo(0, 0);
+        BOOST_CHECK(field_info.size() == 0);
 
-        try {
-            row.GetFieldType(1);
-            BOOST_FAIL("Expected no field type exception");
-        } catch (const exception &  exc) {
-            string  what = exc.what();
-            if (what.find(kRRContextPattern) == string::npos)
-                BOOST_FAIL("Expected no field type exception context");
-        }
+        field_info = row.GetFieldsMetaInfo(1, 1);
+        BOOST_CHECK(field_info.size() == 0);
 
-        try {
-            row.GetExtendedFieldType(2);
-            BOOST_FAIL("Expected no field extended type exception");
-        } catch (const exception &  exc) {
-            string  what = exc.what();
-            if (what.find(kRRContextPattern) == string::npos)
-                BOOST_FAIL("Expected no field extended type exception context");
-        }
+        field_info = row.GetFieldsMetaInfo(2, 2);
+        BOOST_CHECK(field_info.size() == 0);
     }
 }
 
@@ -679,120 +715,71 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
     }
 
     // Access to copied row 1
-    BOOST_CHECK(row1.GetFieldName(0) == string("field"));
-    BOOST_CHECK(row1.GetFieldName(1) == string("other_field"));
-    BOOST_CHECK(row1.GetFieldName(2) == string("floatval"));
-    BOOST_CHECK(row1.GetFieldType(0) == eRR_Integer);
-    try {
-        row1.GetFieldType(1);
-        BOOST_FAIL("Expected no field type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field type exception context");
-    }
-    try {
-        row1.GetFieldType(2);
-        BOOST_FAIL("Expected no field type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field type exception context");
-    }
-    try {
-        row1.GetExtendedFieldType(0);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
-    }
-    try {
-        row1.GetExtendedFieldType(1);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
-    }
-    try {
-        row1.GetExtendedFieldType(2);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
+    auto field_info = row1.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("field"));
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("other_field"));
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("floatval"));
+
+        BOOST_CHECK(field_info[0].is_type_initialized == true);
+        BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+
+        BOOST_CHECK(field_info[1].is_type_initialized == false);
+        BOOST_CHECK(field_info[2].is_type_initialized == false);
+
+        BOOST_CHECK(field_info[0].is_ext_type_initialized == false);
+        BOOST_CHECK(field_info[1].is_ext_type_initialized == false);
+        BOOST_CHECK(field_info[2].is_ext_type_initialized == false);
     }
 
     // Access to copied row 2
-    BOOST_CHECK(row2.GetFieldName(0) == string("new_name_int"));
-    BOOST_CHECK(row2.GetFieldName(1) == string("new_name_str"));
-    BOOST_CHECK(row2.GetFieldName(2) == string("new_name_float"));
-    BOOST_CHECK(row2.GetFieldType(1) == eRR_String);
-    BOOST_CHECK(row2.GetExtendedFieldType(1) == eRR_String);
-    BOOST_CHECK(row2.GetFieldType(0) == eRR_Integer);
-    try {
-        row2.GetExtendedFieldType(0);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
-    }
-    try {
-        row2.GetFieldType(2);
-        BOOST_FAIL("Expected no field type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field type exception context");
-    }
-    try {
-        row2.GetExtendedFieldType(2);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
+    field_info = row2.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("new_name_int"));
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("new_name_str"));
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("new_name_float"));
+
+        BOOST_CHECK(field_info[0].is_type_initialized == true);
+        BOOST_CHECK(field_info[0].type.GetType() == eRR_Integer);
+        BOOST_CHECK(field_info[0].is_ext_type_initialized == false);
+
+        BOOST_CHECK(field_info[1].is_type_initialized == true);
+        BOOST_CHECK(field_info[1].type.GetType() == eRR_String);
+        BOOST_CHECK(field_info[1].is_ext_type_initialized == true);
+        BOOST_CHECK(field_info[1].ext_type.GetType() == eRR_String);
+
+        BOOST_CHECK(field_info[2].is_type_initialized == false);
+        BOOST_CHECK(field_info[2].is_ext_type_initialized == false);
     }
 
     // Access to copied row 3
-    BOOST_CHECK(row3.GetFieldName(0) == string("name_int"));
-    BOOST_CHECK(row3.GetFieldName(1) == string("name_str"));
-    BOOST_CHECK(row3.GetFieldName(2) == string("name_float"));
-    BOOST_CHECK(row3.GetFieldType(2) == eRR_Double);
-    BOOST_CHECK(row3.GetExtendedFieldType(2) == eRR_Double);
-    try {
-        row3.GetFieldType(0);
-        BOOST_FAIL("Expected no field type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field type exception context");
-    }
-    try {
-        row3.GetExtendedFieldType(0);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
-    }
-    try {
-        row3.GetFieldType(1);
-        BOOST_FAIL("Expected no field type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field type exception context");
-    }
-    try {
-        row3.GetExtendedFieldType(1);
-        BOOST_FAIL("Expected no field extended type exception");
-    } catch (const exception &  exc) {
-        string  what = exc.what();
-        if (what.find(kRRContextPattern) != string::npos)
-            BOOST_FAIL("Not expected no field extended type exception context");
+    field_info = row3.GetFieldsMetaInfo();
+    BOOST_CHECK(field_info.size() == 3);
+    if (field_info.size() == 3) {
+        BOOST_CHECK(field_info[0].is_name_initialized == true);
+        BOOST_CHECK(field_info[0].name == string("name_int"));
+        BOOST_CHECK(field_info[1].is_name_initialized == true);
+        BOOST_CHECK(field_info[1].name == string("name_str"));
+        BOOST_CHECK(field_info[2].is_name_initialized == true);
+        BOOST_CHECK(field_info[2].name == string("name_float"));
+
+        BOOST_CHECK(field_info[2].is_type_initialized == true);
+        BOOST_CHECK(field_info[2].type.GetType() == eRR_Double);
+        BOOST_CHECK(field_info[2].is_ext_type_initialized == true);
+        BOOST_CHECK(field_info[2].ext_type.GetType() == eRR_Double);
+
+        BOOST_CHECK(field_info[0].is_type_initialized == false);
+        BOOST_CHECK(field_info[0].is_ext_type_initialized == false);
+        BOOST_CHECK(field_info[1].is_type_initialized == false);
+        BOOST_CHECK(field_info[1].is_ext_type_initialized == false);
     }
 }
 
@@ -814,7 +801,8 @@ public:
     typedef MyExtendedFieldType TExtendedFieldType;
     typedef CRR_Context TRR_Context;
 
-    ERR_Action Validate(CTempString /*raw_line*/)
+    ERR_Action Validate(CTempString /*raw_line*/,
+                        ERR_FieldValidationMode /*field_validation_mode*/)
     {
         ++m_ValidateCount;
         return eRR_Skip;
@@ -1100,9 +1088,19 @@ BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_FILE_STR)
                 BOOST_CHECK(row["intval"].Get<string>() == string("111"));
                 BOOST_CHECK(row["intval"].GetOriginalData() == string("111"));
 
-                BOOST_CHECK(row.GetFieldName(0) == string("index"));
-                BOOST_CHECK(row.GetFieldName(1) == string("strval"));
-                BOOST_CHECK(row.GetFieldName(2) == string("intval"));
+                {
+                    auto field_info = row.GetFieldsMetaInfo();
+
+                    BOOST_CHECK(field_info.size() == 3);
+                    if (field_info.size() == 3) {
+                        BOOST_CHECK(field_info[0].is_name_initialized == true);
+                        BOOST_CHECK(field_info[0].name == string("index"));
+                        BOOST_CHECK(field_info[1].is_name_initialized == true);
+                        BOOST_CHECK(field_info[1].name == string("strval"));
+                        BOOST_CHECK(field_info[2].is_name_initialized == true);
+                        BOOST_CHECK(field_info[2].name == string("intval"));
+                    }
+                }
                 break;
             case 1:
                 BOOST_CHECK(row.GetType() == eRR_Data);

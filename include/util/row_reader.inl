@@ -227,7 +227,8 @@ public:
         eNonEndIteratorCompare,
         eIteratorWhileValidating,
         eRowDataReading,
-        eTraitsOnEvent
+        eTraitsOnEvent,
+        eFieldValueValidation
     };
 
     CRowReaderException(
@@ -286,6 +287,8 @@ public:
                 return "eRowDataReading";
             case eTraitsOnEvent:
                 return "eTraitsOnEvent";
+            case eFieldValueValidation:
+                return "eFieldValueValidation";
             default:
                 return CException::GetErrCodeString();
         }
@@ -356,6 +359,19 @@ public:
             case eRR_Event_SourceBegin: return "eRR_Event_SourceBegin";
             case eRR_Event_SourceEnd:   return "eRR_Event_SourceEnd";
             case eRR_Event_SourceError: return "eRR_Event_SourceError";
+        }
+        return "unknown";
+    }
+
+    // Converts a basic field type into a string
+    static string ERR_FieldTypeToString(ERR_FieldType type)
+    {
+        switch (type) {
+            case eRR_String:   return "eRR_String";
+            case eRR_Boolean:  return "eRR_Boolean";
+            case eRR_Integer:  return "eRR_Integer";
+            case eRR_Double:   return "eRR_Double";
+            case eRR_DateTime: return "eRR_DateTime";
         }
         return "unknown";
     }
@@ -443,6 +459,69 @@ public:
                         "' to " + typeid(T).name(), nullptr);
         }
     }
+
+    // Validates a few basic type fields
+    static void ValidateBasicTypeFieldValue(const CTempString& str_value,
+                                            ERR_FieldType field_type,
+                                            const string& props)
+    {
+        try {
+            switch (field_type) {
+                case eRR_Boolean:
+                    {
+                        bool    converted;
+                        CRR_Util::GetFieldValueConverted(str_value, converted);
+                    }
+                    break;
+                case eRR_Integer:
+                    {
+                        Int8    converted_int8;
+                        try {
+                            CRR_Util::GetFieldValueConverted(str_value,
+                                                             converted_int8);
+                        } catch (...) {
+                            Uint8   converted_uint8;
+                            CRR_Util::GetFieldValueConverted(str_value,
+                                                             converted_uint8);
+                        }
+                    }
+                    break;
+                case eRR_Double:
+                    {
+                        double  converted;
+                        CRR_Util::GetFieldValueConverted(str_value, converted);
+                    }
+                    break;
+                case eRR_DateTime:
+                    {
+                        CTime(string(str_value.data(), str_value.size()),
+                              props);
+                    }
+                default:
+                    break;
+            }
+        } catch (const CException& exc) {
+            NCBI_RETHROW2(exc, CRowReaderException, eFieldValueValidation,
+                          "Error validating field value '" +
+                          string(str_value.data(), str_value.size()) +
+                          "' of type " +
+                          CRR_Util::ERR_FieldTypeToString(field_type),
+                          nullptr);
+        } catch (const exception& exc) {
+            NCBI_THROW2(CRowReaderException, eFieldValueValidation,
+                        "Error validating field value '" +
+                        string(str_value.data(), str_value.size()) +
+                        "' of type " +
+                        CRR_Util::ERR_FieldTypeToString(field_type) +
+                        ": " + exc.what(), nullptr);
+        } catch (...) {
+            NCBI_THROW2(CRowReaderException, eFieldValueValidation,
+                        "Unknown error while validating field value '" +
+                        string(str_value.data(), str_value.size()) +
+                        "' of type " +
+                        CRR_Util::ERR_FieldTypeToString(field_type), nullptr);
+        }
+    }
 };
 
 
@@ -458,13 +537,13 @@ public:
 
     CRR_MetaInfo(const CRR_MetaInfo& other)
     {
-        Clear();
+        Clear(true);    // true -> clears both user and traits provided info
         m_FieldNamesIndex = other.m_FieldNamesIndex;
 
         m_FieldsInfo.reserve(other.m_FieldsInfo.size());
         for (size_t  k = 0; k < other.m_FieldsInfo.size(); ++k) {
             m_FieldsInfo.push_back(other.m_FieldsInfo[k]);
-            if (other.m_FieldsInfo[k].m_NameInitialized) {
+            if (other.m_FieldsInfo[k].m_NameInit != eNotInitialized) {
                 auto  it = m_FieldNamesIndex.find(
                                 *other.m_FieldsInfo[k].m_FieldName);
                 m_FieldsInfo[k].m_FieldName = &it->first;
@@ -473,85 +552,93 @@ public:
     }
 
 public:
-    void Clear()
+    void Clear(bool user_clear)
     {
-        m_FieldsInfo.clear();
-        m_FieldNamesIndex.clear();
+        if (user_clear) {
+            m_FieldsInfo.clear();
+            m_FieldNamesIndex.clear();
+            return;
+        }
+
+        // Non-user clear, i.e. the only traits provided meta information
+        // should be erased.
+        for (size_t index = 0; index < m_FieldsInfo.size(); ++index) {
+            if (m_FieldsInfo[index].m_ExtTypeInit == eTraitInitialized)
+                m_FieldsInfo[index].m_ExtTypeInit = eNotInitialized;
+            if (m_FieldsInfo[index].m_TypeInit == eTraitInitialized)
+                m_FieldsInfo[index].m_TypeInit = eNotInitialized;
+            if (m_FieldsInfo[index].m_NameInit == eTraitInitialized) {
+                if (x_UpdateNameRef(index) == 1)
+                    m_FieldNamesIndex.erase(*m_FieldsInfo[index].m_FieldName);
+                m_FieldsInfo[index].m_NameInit = eNotInitialized;
+                m_FieldsInfo[index].m_FieldName = nullptr;
+            }
+        }
     }
 
-    void SetFieldName(TFieldNo field, const string& name)
+    void SetFieldName(TFieldNo field, const string& name,
+                      bool user_init)
     {
         if (field >= m_FieldsInfo.size())
             m_FieldsInfo.resize(field + 1);
 
-        if (m_FieldsInfo[field].m_NameInitialized) {
-            if (name == *m_FieldsInfo[field].m_FieldName)
+        // Traits provided name must be ignored if the user has already set it
+        if (m_FieldsInfo[field].m_NameInit == eUserInitialized && (!user_init))
+            return;
+
+        if (m_FieldsInfo[field].m_NameInit != eNotInitialized) {
+            if (name == *m_FieldsInfo[field].m_FieldName) {
+                x_UpdateInitField(&m_FieldsInfo[field].m_NameInit, user_init);
+                if (user_init)
+                    m_FieldNamesIndex[name] = field;
                 return;
+            }
 
             if (x_UpdateNameRef(field) == 1)
                 m_FieldNamesIndex.erase(*m_FieldsInfo[field].m_FieldName);
         }
 
         auto inserted = m_FieldNamesIndex.insert(make_pair(name, field));
-        m_FieldsInfo[field].m_NameInitialized = true;
         m_FieldsInfo[field].m_FieldName = &inserted.first->first;
+        x_UpdateInitField(&m_FieldsInfo[field].m_NameInit, user_init);
     }
 
-    void SetFieldType(TFieldNo field, ERR_FieldType type)
+    void SetFieldType(
+        TFieldNo                            field,
+        const CRR_FieldType<ERR_FieldType>& type,
+        bool                                user_init)
     {
         if (field >= m_FieldsInfo.size())
             m_FieldsInfo.resize(field + 1);
+
+        // Traits provided type must be ignored if the user has already set it
+        if (m_FieldsInfo[field].m_TypeInit == eUserInitialized && (!user_init))
+            return;
+
         m_FieldsInfo[field].m_FieldType = type;
-        m_FieldsInfo[field].m_TypeInitialized = true;
+        x_UpdateInitField(&m_FieldsInfo[field].m_TypeInit, user_init);
     }
 
-    void SetFieldTypeEx(TFieldNo                             field,
-                        ERR_FieldType                        type,
-                        typename TTraits::TExtendedFieldType extended_type)
+    void SetFieldTypeEx(
+        TFieldNo                                                   field,
+        const CRR_FieldType<ERR_FieldType>&                        type,
+        const CRR_FieldType<typename TTraits::TExtendedFieldType>& extended_type,
+        bool                                                       user_init)
     {
         if (field >= m_FieldsInfo.size())
             m_FieldsInfo.resize(field + 1);
+
+        // Traits provided type must be ignored if the user has already set it.
+        // To avoid non-synced type updates the extended type is not set
+        // (updated) either even if it was not initialized.
+        if (m_FieldsInfo[field].m_TypeInit == eUserInitialized && (!user_init))
+            return;
+
         m_FieldsInfo[field].m_FieldType = type;
-        m_FieldsInfo[field].m_TypeInitialized = true;
         m_FieldsInfo[field].m_FieldExtType = extended_type;
-        m_FieldsInfo[field].m_ExtTypeInitialized = true;
-    }
 
-    const string& GetFieldName(TFieldNo field) const
-    {
-        bool      found(field < m_FieldsInfo.size());
-        if (found && !m_FieldsInfo[field].m_NameInitialized)
-            found = false;
-        if (!found)
-            NCBI_THROW2(CRowReaderException, eFieldNoNotFound,
-                        "Field name is not found for the field number " +
-                        NStr::NumericToString(field), nullptr);
-        return *m_FieldsInfo[field].m_FieldName;
-    }
-
-    ERR_FieldType GetFieldType(TFieldNo field) const
-    {
-        bool      found(field < m_FieldsInfo.size());
-        if (found && !m_FieldsInfo[field].m_TypeInitialized)
-            found = false;
-        if (!found)
-            NCBI_THROW2(CRowReaderException, eFieldNoNotFound,
-                        "Field type is not found for the field number " +
-                        NStr::NumericToString(field), nullptr);
-        return m_FieldsInfo[field].m_FieldType;
-    }
-
-    typename TTraits::TExtendedFieldType
-    GetExtendedFieldType(TFieldNo field) const
-    {
-        bool      found(field < m_FieldsInfo.size());
-        if (found && !m_FieldsInfo[field].m_ExtTypeInitialized)
-            found = false;
-        if (!found)
-            NCBI_THROW2(CRowReaderException, eFieldNoNotFound,
-                        "Field extended type is not found for the field "
-                        "number " + NStr::NumericToString(field), nullptr);
-        return m_FieldsInfo[field].m_FieldExtType;
+        x_UpdateInitField(&m_FieldsInfo[field].m_TypeInit, user_init);
+        x_UpdateInitField(&m_FieldsInfo[field].m_ExtTypeInit, user_init);
     }
 
     TFieldNo GetFieldIndexByName(const string& field) const
@@ -563,6 +650,15 @@ public:
         return it->second;
     }
 
+    TFieldNo GetDescribedFieldCount(void) const
+    {
+        TFieldNo    count = 0;
+        for (size_t  index = 0; index < m_FieldsInfo.size(); ++index)
+            if (m_FieldsInfo[index].IsInitialized())
+                ++count;
+        return count;
+    }
+
 private:
     size_t  x_UpdateNameRef(TFieldNo  field)
     {
@@ -571,7 +667,7 @@ private:
         TFieldNo      candidate = 0;
 
         for (TFieldNo index = 0; index < m_FieldNamesIndex.size(); ++index) {
-            if (m_FieldsInfo[index].m_NameInitialized) {
+            if (m_FieldsInfo[index].m_NameInit != eNotInitialized) {
                 if (m_FieldsInfo[index].m_FieldName == name_ptr) {
                     ++use_count;
                     if (index != field)
@@ -586,20 +682,46 @@ private:
     }
 
 private:
+    friend class CRR_Row<TTraits>;
+
+    enum ERR_FieldMetaInfoInit
+    {
+        eNotInitialized = 0,
+        eTraitInitialized = 1,
+        eUserInitialized = 2
+    };
+
+    void x_UpdateInitField(ERR_FieldMetaInfoInit* field, bool user_init)
+    {
+        if (user_init)
+            *field = eUserInitialized;
+        else
+            *field = eTraitInitialized;
+    }
+
     struct SMetainfo
     {
         SMetainfo() :
             m_FieldName(nullptr),
-            m_NameInitialized(false), m_TypeInitialized(false),
-            m_ExtTypeInitialized(false)
+            m_NameInit(eNotInitialized),
+            m_TypeInit(eNotInitialized),
+            m_ExtTypeInit(eNotInitialized)
         {}
 
-        const string *                          m_FieldName;
-        ERR_FieldType                           m_FieldType;
-        typename TTraits::TExtendedFieldType    m_FieldExtType;
-        bool                                    m_NameInitialized;
-        bool                                    m_TypeInitialized;
-        bool                                    m_ExtTypeInitialized;
+        const string *                                      m_FieldName;
+        CRR_FieldType<ERR_FieldType>                        m_FieldType;
+        CRR_FieldType<typename TTraits::TExtendedFieldType> m_FieldExtType;
+
+        ERR_FieldMetaInfoInit                   m_NameInit;
+        ERR_FieldMetaInfoInit                   m_TypeInit;
+        ERR_FieldMetaInfoInit                   m_ExtTypeInit;
+
+        bool IsInitialized(void) const
+        {
+            return (m_NameInit != eNotInitialized) ||
+                   (m_TypeInit != eNotInitialized) ||
+                   (m_ExtTypeInit != eNotInitialized);
+        }
     };
 
     map<string, TFieldNo>   m_FieldNamesIndex;

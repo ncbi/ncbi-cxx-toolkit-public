@@ -80,7 +80,7 @@ public:
 ///       line. If your source does not features a header then use the
 ///       CRowReaderStream_IANA_CSV_no_header traits or use the SetHasHeader()
 ///       member to switch between modes at runtime.
-class CRowReaderStream_IANA_CSV : public TRowReaderStream_SingleTabDelimited
+class CRowReaderStream_IANA_CSV : public TRowReaderStream_SingleCommaDelimited
 {
 public:
     CRowReaderStream_IANA_CSV() :
@@ -191,6 +191,46 @@ public:
         return eRR_Continue_Data;
     }
 
+    ERR_Action Validate(CTempString raw_line,
+                        ERR_FieldValidationMode field_validation_mode)
+    {
+        if (field_validation_mode == eRR_NoFieldValidation)
+            return eRR_Skip;
+        if (m_FieldsToValidate.empty())
+            return eRR_Skip;
+
+        if (raw_line.empty())
+            return eRR_Skip;
+
+        // Here: the field values need to be validated and there is some type
+        // information
+        m_ValidationTokens.clear();
+        ERR_Action action = this->Tokenize(raw_line, m_ValidationTokens);
+
+        if (action == eRR_Skip)
+            return eRR_Skip;
+
+        for (const auto& info : m_FieldsToValidate) {
+            if (info.first < m_Tokens.size()) {
+                string                  translated;
+                ERR_TranslationResult   translation_result =
+                    this->Translate(info.first, m_ValidationTokens[info.first],
+                                    translated);
+                if (translation_result == eRR_UseOriginal) {
+                    CRR_Util::ValidateBasicTypeFieldValue(
+                        m_ValidationTokens[info.first],
+                        info.second.first, info.second.second);
+                } else {
+                    CRR_Util::ValidateBasicTypeFieldValue(
+                        translated,
+                        info.second.first, info.second.second);
+                }
+            }
+        }
+
+        return eRR_Skip;
+    }
+
     ERR_TranslationResult Translate(TFieldNo          field_no,
                                     const CTempString raw_value,
                                     string&           translated_value)
@@ -214,11 +254,15 @@ public:
     { m_HasHeader = has_header; }
 
     ERR_EventAction OnEvent(ERR_Event event,
-                            ERR_EventMode /*event_mode*/)
+                            ERR_EventMode event_mode)
     {
         switch (event) {
             case eRR_Event_SourceBegin:
-                GetMyStream().ClearFieldsInfo();
+                GetMyStream().x_ClearTraitsProvidedFieldsInfo();
+
+                if (event_mode == eRR_EventMode_Validating)
+                    x_GetFieldTypesToValidate();
+
                 // fall through
             case eRR_Event_SourceEnd:
             case eRR_Event_SourceError:
@@ -260,11 +304,25 @@ private:
                                        field_size);
 
             if (Translate(field_no, raw_field_name, translated) == eRR_UseOriginal)
-                GetMyStream().SetFieldName(field_no,
-                                           string(raw_field_name.data(),
-                                                  raw_field_name.size()));
+                GetMyStream().x_SetFieldName(field_no,
+                                             string(raw_field_name.data(),
+                                                    raw_field_name.size()));
             else
-                GetMyStream().SetFieldName(field_no, translated);
+                GetMyStream().x_SetFieldName(field_no, translated);
+        }
+    }
+
+    void x_GetFieldTypesToValidate(void)
+    {
+        m_FieldsToValidate.clear();
+        for (const auto& info : GetMyStream().GetFieldsMetaInfo()) {
+            if (info.is_type_initialized) {
+                auto field_type = info.type.GetType();
+                if (field_type == eRR_Boolean || field_type == eRR_Integer ||
+                    field_type == eRR_Double || field_type == eRR_DateTime)
+                    m_FieldsToValidate[info.field_no] =
+                        make_pair(field_type, info.type.GetProps());
+            }
         }
     }
 
@@ -274,6 +332,9 @@ private:
     string          m_LineSeparator;
     string          m_PreviousLineSeparator;
     string          m_RawLine;
+
+    map<size_t, pair<ERR_FieldType, string>> m_FieldsToValidate;
+    vector<CTempString>                      m_ValidationTokens;
 
     RR_TRAITS_PARENT_STREAM(CRowReaderStream_IANA_CSV);
 };

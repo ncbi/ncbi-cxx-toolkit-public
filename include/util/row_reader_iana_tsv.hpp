@@ -61,6 +61,11 @@ const size_t    kReadBufferSize = 128 * 1024;
 //
 // 'exc' -> exception is generated
 // 'OK' -> no checking performed
+//
+// Note 3: If the validation is called with the eRR_FieldValidation flag then
+// the field basic type information is taken into account. For each provided
+// type except eRR_String a conversion is tried. In case of a conversion
+// failure an exception is generated.
 
 
 /// Exception specific to IANA TSV sources
@@ -73,7 +78,8 @@ public:
         eNoTrailingEOL = 3,
         eEmptyFieldName = 4,
         eEmptyLine = 5,
-        eEmptyFieldValue = 6
+        eEmptyFieldValue = 6,
+        eValidateConversion = 7
     };
 
     virtual const char * GetErrCodeString(void) const
@@ -91,6 +97,8 @@ public:
                 return "eEmptyLine";
             case eEmptyFieldValue:
                 return "eEmptyFieldValue";
+            case eValidateConversion:
+                return "eValidateConversion";
             default:
                 return CException::GetErrCodeString();
         }
@@ -204,10 +212,11 @@ public:
         return eRR_Continue_Data;
     }
 
-    ERR_Action Validate(CTempString raw_line)
+    ERR_Action Validate(CTempString raw_line,
+                        ERR_FieldValidationMode field_validation_mode)
     {
         m_Tokens.clear();
-        this->Tokenize(raw_line, m_Tokens);
+        ERR_Action action = this->Tokenize(raw_line, m_Tokens);
 
         if (m_ValidationMode == eRR_ValidationMode_Strict) {
             if (!m_LineHasTrailingEOL)
@@ -216,6 +225,22 @@ public:
                            "Strict validation requires "
                            "trailing EOL in the last line as well");
         }
+
+        // Validate field values in accordance with the available
+        // basic field types. It is conditional:
+        // - the requested validation mode includes value checking
+        // - it is not a field names row
+        // - the user has provided some type information
+        if (field_validation_mode == eRR_FieldValidation &&
+            action == eRR_Continue_Data &&
+            !m_FieldsToValidate.empty()) {
+            for (const auto& info : m_FieldsToValidate)
+                if (info.first < m_Tokens.size())
+                    CRR_Util::ValidateBasicTypeFieldValue(
+                        m_Tokens[info.first],
+                        info.second.first, info.second.second);
+        }
+
         return eRR_Skip;
     }
 
@@ -224,9 +249,13 @@ public:
     {
         switch (event) {
             case eRR_Event_SourceBegin:
-                GetMyStream().ClearFieldsInfo();
+                GetMyStream().x_ClearTraitsProvidedFieldsInfo();
                 m_FieldNamesExtracted = false;
                 m_NumberOfFields = 0;
+
+                if (event_mode == eRR_EventMode_Validating)
+                    x_GetFieldTypesToValidate();
+
                 return eRR_EventAction_Continue;
 
             case eRR_Event_SourceEnd:
@@ -255,6 +284,8 @@ private:
     ERR_ValidationMode      m_ValidationMode;
     bool                    m_LineHasTrailingEOL;
 
+    map<size_t, pair<ERR_FieldType, string>> m_FieldsToValidate;
+
     char*                   m_ReadBuffer;
 
     void x_ExtractNames(const CTempString& raw_line)
@@ -267,11 +298,25 @@ private:
                            eEmptyFieldName,
                            "Empty field names are not allowed");
 
-            GetMyStream().SetFieldName(m_NumberOfFields,
-                                       string(name.data(), name.length()));
+            GetMyStream().x_SetFieldName(m_NumberOfFields,
+                                         string(name.data(), name.length()));
             ++m_NumberOfFields;
         }
         m_FieldNamesExtracted = true;
+    }
+
+    void x_GetFieldTypesToValidate(void)
+    {
+        m_FieldsToValidate.clear();
+        for (const auto& info : GetMyStream().GetFieldsMetaInfo()) {
+            if (info.is_type_initialized) {
+                auto field_type = info.type.GetType();
+                if (field_type == eRR_Boolean || field_type == eRR_Integer ||
+                    field_type == eRR_Double || field_type == eRR_DateTime)
+                    m_FieldsToValidate[info.field_no] =
+                        make_pair(field_type, info.type.GetProps());
+            }
+        }
     }
 
     RR_TRAITS_PARENT_STREAM(CRowReaderStream_IANA_TSV);
