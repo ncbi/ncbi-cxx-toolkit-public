@@ -675,7 +675,7 @@ CObjectIStreamIterator<TRoot>::CObjectIStreamIterator(
     CObjectIStream& istr, EOwnership deleteInStream, const CParams& params)
     : CObjectIStreamIterator(istr, params, deleteInStream)
 {
-    if (m_Data->m_FilterType != CData::eNone) {
+    if (m_Data->m_FilterType != CData::eNone && !m_Data->m_EndOfData) {
         m_Data->m_HasReader = true;
         m_Data->m_Reader = thread( mem_fun<void, CObjectIStreamIterator<TRoot> >(
             &CObjectIStreamIterator<TRoot>::x_ReaderThread), this);
@@ -1101,9 +1101,11 @@ CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator(
     CObjectIStream& istr, EOwnership deleteInStream, const CParams& params)
     : CParent(istr, params, deleteInStream)
 {
-    this->m_Data->m_HasReader = true;
-    this->m_Data->m_Reader = thread( mem_fun<void, CObjectIStreamIterator<TRoot,TChild> >(
-        &CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread), this);
+    if (!this->m_Data->m_EndOfData) {
+        this->m_Data->m_HasReader = true;
+        this->m_Data->m_Reader = thread( mem_fun<void, CObjectIStreamIterator<TRoot,TChild> >(
+            &CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread), this);
+    }
     ++(*this);
 }
 
@@ -1429,7 +1431,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::CData(
     , m_EndOfData(m_Istr->EndOfData())
     , m_Params(params)
 {
-    if (m_MaxRawSize != 0) {
+    if (m_MaxRawSize != 0 && !m_EndOfData) {
         m_Reader = thread(
             mem_fun<void, CObjectIStreamAsyncIterator<TRoot>::CData >(
                 &CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread), this);

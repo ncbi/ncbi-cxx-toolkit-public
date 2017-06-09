@@ -569,6 +569,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
                 CObjectIStream::Open(eSerial_AsnText, ifs));
             CObjectIStreamIterator<CTestSerialObject> i(*is);
             for ( ; i.IsValid(); ++i) {
+                BOOST_CHECK(false);
             }
         }
     }
@@ -579,6 +580,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
                 CObjectIStream::Open(eSerial_AsnText, ifs));
             CObjectIStreamIterator<CTestSerialObject, CWeb_Env> i(*is);
             for ( ; i.IsValid(); ++i) {
+                BOOST_CHECK(false);
             }
         }
     }
@@ -589,6 +591,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
                 CObjectIStream::Open(eSerial_AsnText, ifs));
             CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
             for ( ; i.IsValid(); ++i) {
+                BOOST_CHECK(false);
             }
         }
     }
@@ -601,6 +604,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
                 eNoOwnership,
                 CObjectIStreamAsyncIterator<CTestSerialObject>::CParams().ReadAndSkipInTheSameThread(true));
             for ( ; i.IsValid(); ++i) {
+                BOOST_CHECK(false);
             }
         }
     }
@@ -611,6 +615,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
                 CObjectIStream::Open(eSerial_AsnText, ifs));
             CObjectIStreamAsyncIterator<CTestSerialObject, CWeb_Env> i(*is);
             for ( ; i.IsValid(); ++i) {
+                BOOST_CHECK(false);
             }
         }
     }
