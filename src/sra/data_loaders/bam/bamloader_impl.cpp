@@ -75,7 +75,7 @@ static const size_t kChunkSize = 500;
 //static const size_t kGraphScale = 1000;
 //static const size_t kGraphPoints = 20;
 static const int kChunkIdMul = 4;
-static const int kMainChunkId = -1;
+static const int kMainChunkId = CTSE_Chunk_Info::kDelayedMain_ChunkId;
 
 //#define SKIP_TOO_LONG_ALIGNMENTS
 
@@ -1202,7 +1202,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
             pileup_name = CAnnotName(base + ' ' + PILEUP_NAME_SUFFIX);
         }
     }
-    
+
+    bool raw_index = m_File->GetBamDb().UsesRawIndex();
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
         CRef<CTSE_Chunk_Info> chunk;
@@ -1213,6 +1214,9 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                   SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                                   GetRefSeq_id(),
                                   m_Chunks[range_id].GetAlignRange());
+            if ( raw_index ) {
+                chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+            }
             split_info.AddChunk(*chunk);
             if ( GetDebugLevel() >= 2 ) {
                 LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
@@ -1227,6 +1231,9 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                   CSeq_annot::C_Data::e_Graph,
                                   GetRefSeq_id(),
                                   GetChunkGraphRange(range_id));
+            if ( raw_index ) {
+                chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+            }
             split_info.AddChunk(*chunk);
             if ( GetDebugLevel() >= 2 ) {
                 LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "

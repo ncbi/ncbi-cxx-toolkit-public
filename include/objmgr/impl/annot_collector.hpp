@@ -516,6 +516,8 @@ private:
     TAnnotTypesBitset       m_UnseenAnnotTypes;
     TAnnotTypesBitset       m_CollectAnnotTypes;
     mutable auto_ptr<TAnnotNames> m_AnnotNames;
+    Uint8 m_LoadBytes;
+    double m_LoadSeconds;
     
     typedef SAnnotSelector::TMaxSize TMaxSize;
     typedef SAnnotSelector::TMaxSearchSegments TMaxSearchSegments;

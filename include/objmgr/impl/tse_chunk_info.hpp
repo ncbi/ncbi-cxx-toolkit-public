@@ -76,7 +76,13 @@ public:
     typedef CBlobIdKey TBlobId;
     typedef int TBlobVersion;
     typedef int TChunkId;
-
+    
+    enum {
+        kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
+        kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
+        kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
+    };
+    
     // contents place identification
     typedef int TBioseq_setId;
     typedef CSeq_id_Handle TBioseqId;
@@ -240,6 +246,12 @@ public:
             return m_AssemblyInfos;
         }
 
+    Uint4 GetLoadBytes() const;
+    float GetLoadSeconds() const;
+    
+    void x_SetLoadBytes(Uint4 bytes);
+    void x_SetLoadSeconds(float seconds);
+
 protected:
     //////////////////////////////////////////////////////////////////
     // interaction with CTSE_Info
@@ -290,6 +302,9 @@ private:
     CTSE_Split_Info* m_SplitInfo;
     TChunkId         m_ChunkId;
 
+    Uint4            m_LoadBytes;
+    float            m_LoadSeconds;
+
     bool             m_AnnotIndexEnabled;
     bool             m_ExplicitFeatIds;
 
@@ -335,6 +350,20 @@ const CTSE_Split_Info& CTSE_Chunk_Info::GetSplitInfo(void) const
 {
     _ASSERT(m_SplitInfo);
     return *m_SplitInfo;
+}
+
+
+inline
+Uint4 CTSE_Chunk_Info::GetLoadBytes() const
+{
+    return m_LoadBytes;
+}
+
+
+inline
+float CTSE_Chunk_Info::GetLoadSeconds() const
+{
+    return m_LoadSeconds;
 }
 
 

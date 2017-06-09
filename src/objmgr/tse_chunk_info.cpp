@@ -56,6 +56,8 @@ NCBI_DEFINE_ERR_SUBCODE_X(11);
 
 BEGIN_SCOPE(objects)
 
+class CTSE_Chunk_Info;
+
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_Chunk_Info
 /////////////////////////////////////////////////////////////////////////////
@@ -64,6 +66,8 @@ BEGIN_SCOPE(objects)
 CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
     : m_SplitInfo(0),
       m_ChunkId(id),
+      m_LoadBytes(0),
+      m_LoadSeconds(0),
       m_AnnotIndexEnabled(false),
       m_ExplicitFeatIds(false)
 {
@@ -770,6 +774,18 @@ void CTSE_Chunk_Info::x_LoadSeq_entry(CSeq_entry& entry,
 {
     _ASSERT(x_Attached());
     m_SplitInfo->x_LoadSeq_entry(entry, set_info);
+}
+
+
+void CTSE_Chunk_Info::x_SetLoadBytes(Uint4 bytes)
+{
+    m_LoadBytes = bytes;
+}
+
+
+void CTSE_Chunk_Info::x_SetLoadSeconds(float seconds)
+{
+    m_LoadSeconds = seconds;
 }
 
 

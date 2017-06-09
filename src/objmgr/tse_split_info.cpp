@@ -179,17 +179,19 @@ CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
 bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
 {
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
-    return iter != begin && (--iter)->first == kMax_Int;
+    return iter != begin && (--iter)->first == CTSE_Chunk_Info::kDelayedMain_ChunkId;
 }
 
 
 bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 {
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
-    if ( iter == begin || (--iter)->first != kMax_Int ) {
+    if ( iter == begin || (--iter)->first != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
+        // no delayed main chunk
         return false;
     }
-    return iter == begin || ((--iter)->first == kMax_Int-1 && iter == begin);
+    // no other chunks except maybe WGS master chunk
+    return iter == begin || ((--iter)->first == CTSE_Chunk_Info::kMasterWGS_ChunkId && iter == begin);
 }
 
 
@@ -207,7 +209,7 @@ void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
     CMutexGuard guard(m_SeqIdToChunksMutex);
     _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
-    _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != kMax_Int);
+    _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != chunk_info.kDelayedMain_ChunkId);
     bool need_update = x_HasDelayedMainChunk();
     m_Chunks[chunk_info.GetChunkId()].Reset(&chunk_info);
     chunk_info.x_SplitAttach(*this);

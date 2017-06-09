@@ -1568,7 +1568,9 @@ public:
 CAnnot_Collector::CAnnot_Collector(CScope& scope)
     : m_Selector(0),
       m_Scope(scope),
-      m_FromOtherTSE(false)
+      m_FromOtherTSE(false),
+      m_LoadBytes(0),
+      m_LoadSeconds(0)
 {
 }
 
@@ -2776,6 +2778,9 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
             return;
         }
     }
+    if ( m_Selector->m_CollectCostOfLoading ) {
+        return;
+    }
 
     static const size_t kAnnotTypeIndex_SNP =
         CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::eSubtype_variation);
@@ -2938,6 +2943,22 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             // Skip chunk stub
                             continue;
                         }
+                        if ( chunk.NotLoaded() &&
+                             m_Selector->m_CollectCostOfLoading &&
+                             chunk.GetChunkId() != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
+                            // accumulate cost of chunks to be loaded
+                            auto bytes = chunk.GetLoadBytes();
+                            auto seconds = chunk.GetLoadSeconds();
+                            if ( !bytes ) {
+                                bytes = 10000; // TODO default
+                            }
+                            if ( !seconds ) {
+                                seconds = bytes*1e-7; // TODO default
+                            }
+                            m_LoadBytes += bytes;
+                            m_LoadSeconds += seconds;
+                            continue;
+                        }
                         if ( !restart ) {
                             restart = true;
                             // New annot objects are to be loaded,
@@ -2955,6 +2976,9 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     if ( restart ) {
                         _ASSERT(!enough);
                         continue;
+                    }
+                    if ( m_Selector->m_CollectCostOfLoading ) {
+                        break;
                     }
 
                     if ( annot_info.IsLocs() ) {
@@ -3604,13 +3628,13 @@ CAnnot_Collector::x_GetAnnotNames(void) const
 
 Uint8 CAnnot_Collector::x_GetCostOfLoadingInBytes(void) const
 {
-    return 0;
+    return m_LoadBytes;
 }
 
 
 double CAnnot_Collector::x_GetCostOfLoadingInSeconds(void) const
 {
-    return 0;
+    return m_LoadSeconds;
 }
 
 
