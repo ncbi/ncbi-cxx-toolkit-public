@@ -2947,8 +2947,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                              m_Selector->m_CollectCostOfLoading &&
                              chunk.GetChunkId() != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
                             // accumulate cost of chunks to be loaded
-                            auto bytes = chunk.GetLoadBytes();
-                            auto seconds = chunk.GetLoadSeconds();
+                            Uint8 bytes = chunk.GetLoadBytes();
+                            double seconds = chunk.GetLoadSeconds();
                             if ( !bytes ) {
                                 bytes = 10000; // TODO default
                             }
