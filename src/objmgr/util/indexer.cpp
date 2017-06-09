@@ -741,7 +741,7 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
             if (from < 0) {
                 from = 0;
             }
-            if (to < 0 || to >= vec.size()) {
+            if (to < 0 || to >= (int) vec.size()) {
                 to = vec.size();
             }
             if (vec.CanGetRange(from, to)) {
@@ -836,7 +836,7 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
             if (from < 0) {
                 from = 0;
             }
-            if (to < 0 || to >= vec.size()) {
+            if (to < 0 || to >= (int) vec.size()) {
                 to = vec.size();
             }
             if (vec.CanGetRange(from, to)) {

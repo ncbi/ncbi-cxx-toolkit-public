@@ -120,6 +120,8 @@ public:
     // Bioseq exploration iterator
     template<typename _Pred> int IterateBioseqs (_Pred m);
 
+    // Callback access methods
+
     // Process first Bioseq
     template<typename _Pred> bool ProcessBioseq (_Pred m);
     // Process Nth Bioseq
@@ -133,6 +135,8 @@ public:
     template<typename _Pred> bool ProcessBioseq (const CSeq_loc& loc, _Pred m);
     // Process Bioseq by subrange, either forward strand or reverse complement
     template<typename _Pred> bool ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m);
+
+    // Alternative access methods
 
     // Get first Bioseq index
     CRef<CBioseqIndex> GetBioseqIndex (void);
