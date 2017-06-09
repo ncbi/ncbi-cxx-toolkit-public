@@ -33,6 +33,8 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
+#include <functional>
+
 BEGIN_NCBI_SCOPE
 
 class NBestPlacement
