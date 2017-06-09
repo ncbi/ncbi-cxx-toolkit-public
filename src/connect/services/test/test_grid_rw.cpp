@@ -35,7 +35,9 @@
 
 #include <connect/ncbi_socket.hpp>
 
+#ifndef NCBI_OS_MSWIN
 #include "../netschedule_api_submitter.cpp"
+#endif
 
 #include <random>
 
@@ -82,6 +84,7 @@ NCBITEST_AUTO_INIT()
     req.SetClientIP(CSocketAPI::ntoa(addr));
 }
 
+#ifndef NCBI_OS_MSWIN
 #ifdef NCBI_THREADS
 struct STestStringReader : CStringReader
 {
@@ -121,6 +124,7 @@ BOOST_AUTO_TEST_CASE(OutputCopy)
     BOOST_CHECK_EQUAL(source.size(), dest.size());
     BOOST_CHECK(source == dest);
 }
+#endif
 #endif
 
 BOOST_AUTO_TEST_SUITE_END()
