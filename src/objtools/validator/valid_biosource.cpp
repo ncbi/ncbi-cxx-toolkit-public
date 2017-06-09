@@ -1406,6 +1406,11 @@ const CSeq_entry *ctx)
                 "taxname " + taxname + " has SGML",
                 obj, ctx);
         }
+
+        // VR-723: taxname must match orgname.name if present
+        if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetName()) {
+            ValidateTaxNameOrgname(taxname, orgref.GetOrgname().GetName(), obj, ctx);
+        }
     }
 
     if (orgref.IsSetDb()) {
@@ -1492,6 +1497,90 @@ const CSeq_entry *ctx)
         }
     }
 
+}
+
+
+static string s_GetBinomialString(const CBinomialOrgName& binomial)
+{
+    string val = kEmptyStr;
+    if (binomial.IsSetGenus()) {
+        val = binomial.GetGenus();
+    }
+    if (binomial.IsSetSpecies()) {
+        val += " " + binomial.GetSpecies();
+    }
+    if (binomial.IsSetSubspecies()) {
+        val += " " + binomial.GetSubspecies();
+    }
+    return val;
+}
+
+
+static bool s_MatchOrgname(const string& taxname, const COrgName::C_Name& orgname, string& mismatch)
+{
+    mismatch = kEmptyStr;
+    bool rval = false;
+    switch (orgname.Which()) {
+    case COrgName::C_Name::e_Binomial:
+        mismatch = s_GetBinomialString(orgname.GetBinomial());
+        rval = NStr::Equal(taxname, mismatch);
+        break;
+    case COrgName::C_Name::e_Hybrid:
+        ITERATE(CMultiOrgName::Tdata, it, orgname.GetHybrid().Get()) {
+            if ((*it)->IsSetName() && s_MatchOrgname(taxname, (*it)->GetName(), mismatch)) {
+                rval = true;
+                break;
+            }
+        }
+        if (!rval && orgname.GetHybrid().Get().size() > 1 &&
+            orgname.GetHybrid().Get().front()->IsSetName()) {
+            // use first element for error
+            s_MatchOrgname(taxname, orgname.GetHybrid().Get().front()->GetName(), mismatch);
+        }
+        break;
+    case COrgName::C_Name::e_Namedhybrid:
+        mismatch = s_GetBinomialString(orgname.GetNamedhybrid());
+        rval = NStr::Equal(taxname, mismatch);
+        break;
+    case COrgName::C_Name::e_Partial:
+        ITERATE(CPartialOrgName::Tdata, it, orgname.GetPartial().Get()) {
+            if ((*it)->IsSetName()) {
+                mismatch = (*it)->GetName();
+                rval = NStr::Equal(taxname, mismatch);
+                if (rval) {
+                    break;
+                }
+            }
+        }
+        if (!rval && orgname.GetPartial().Get().size() > 1 && 
+            orgname.GetPartial().Get().front()->IsSetName()) {
+            // use first element for error
+            mismatch = orgname.GetPartial().Get().front()->GetName();
+        }
+        break;
+    case COrgName::C_Name::e_Virus:
+        mismatch = orgname.GetVirus();
+        rval = NStr::Equal(taxname, mismatch);
+        break;
+    case COrgName::C_Name::e_not_set:
+        break;
+    }
+    return rval;
+}
+
+
+void CValidError_imp::ValidateTaxNameOrgname
+(const string& taxname, 
+ const COrgName::TName& orgname, 
+ const CSerialObject& obj, 
+ const CSeq_entry *ctx)
+{
+    string mismatch = kEmptyStr;
+    if (!s_MatchOrgname(taxname, orgname, mismatch)) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Taxname does not match orgname ('" + taxname + "', '" + mismatch + "')",
+                    obj, ctx);
+    }
 }
 
 

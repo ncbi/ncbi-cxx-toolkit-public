@@ -20779,3 +20779,99 @@ BOOST_AUTO_TEST_CASE(Test_VR_708)
     CLEAR_ERRORS
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_VR_723)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CBioSource> src;
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsSource()) {
+            src.Reset(&((*it)->SetSource()));
+        }
+    }
+    COrgName::C_Name& orgname = src->SetOrg().SetOrgname().SetName();
+    STANDARD_SETUP
+
+    // binomial
+    orgname.SetBinomial().SetGenus("Sebaea");
+    orgname.SetBinomial().SetSpecies("microphylla");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    orgname.SetBinomial().SetGenus("x");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "Taxname does not match orgname ('Sebaea microphylla', 'x microphylla')"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    orgname.SetBinomial().SetSpecies("y");
+    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x y')");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    orgname.SetBinomial().SetSubspecies("z");
+    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x y z')");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // virus
+    orgname.SetVirus("x");
+    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x')");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+    orgname.SetVirus("Sebaea microphylla");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // hybrid
+    CRef<COrgName> org1(new COrgName());
+    org1->SetName().SetBinomial().SetGenus("x");
+    CRef<COrgName> org2(new COrgName());
+    org2->SetName().SetBinomial().SetGenus("y");
+    orgname.SetHybrid().Set().push_back(org1);
+    orgname.SetHybrid().Set().push_back(org2);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "Taxname does not match orgname ('Sebaea microphylla', 'x')"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    org2->SetName().SetBinomial().SetGenus("Sebaea");
+    org2->SetName().SetBinomial().SetSpecies("microphylla");
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // named hybrid
+    orgname.SetNamedhybrid().SetGenus("Sebaea");
+    orgname.SetNamedhybrid().SetSpecies("microphylla");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    orgname.SetNamedhybrid().SetGenus("x");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "Taxname does not match orgname ('Sebaea microphylla', 'x microphylla')"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // partial
+    CRef<CTaxElement> elem1(new CTaxElement());
+    elem1->SetFixed_level(CTaxElement::eFixed_level_class);
+    elem1->SetName("x");
+    orgname.SetPartial().Set().push_back(elem1);
+    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x')");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CRef<CTaxElement> elem2(new CTaxElement());
+    elem2->SetFixed_level(CTaxElement::eFixed_level_family);
+    elem2->SetName("Sebaea microphylla");
+    orgname.SetPartial().Set().push_back(elem2);
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
