@@ -334,7 +334,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn, int from,
     CConstRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
 
     if (loc) {
-        return GetBioseq(*loc);
+        return GetBioseqIndex(*loc);
     }
     return CRef<CBioseqIndex> ();
 }
