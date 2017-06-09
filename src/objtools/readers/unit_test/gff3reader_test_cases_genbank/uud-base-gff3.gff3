@@ -1,0 +1,1000 @@
+## Rs025080 R1 979 2319 +
+R1	Ver1.2.2	gene	829	2526	.	+	.	ID=Rs025080;Name=Rs025080
+R1	Ver1.2.2	promoter	1	828	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	829	2526	.	+	.	ID=Rs025080.1;Parent=Rs025080;Family=RsFAM09575;Product=anthranilate n-benzoyltransferase protein 1-like [BLAST2GO] | HXXXD-type acyl-transferase family protein [AT1G31490]
+R1	Ver1.2.2	protein	979	2319	.	+	.	ID=Rs025080.1.protein1;Name=Rs025080.1;Derives_from=Rs025080.1;Family=RsFAM09575;Product=anthranilate n-benzoyltransferase protein 1-like [BLAST2GO] | HXXXD-type acyl-transferase family protein [AT1G31490]
+R1	Ver1.2.2	exon	829	2526	.	+	.	ID=Rs025080.1.exon1;Parent=Rs025080.1
+R1	Ver1.2.2	five_prime_UTR	829	978	.	+	.	ID=Rs025080.1.utr5;Parent=Rs025080.1
+R1	Ver1.2.2	CDS	979	2319	.	+	0	ID=Rs025080.1.cds1;Parent=Rs025080.1
+R1	Ver1.2.2	three_prime_UTR	2320	2526	.	+	.	ID=Rs025080.1.utr3;Parent=Rs025080.1
+## Rs035250 R1 21059 21755 +
+R1	Ver1.2.2	gene	21059	21755	.	+	.	ID=Rs035250;Name=Rs035250
+R1	Ver1.2.2	promoter	20091	21058	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	21059	21755	.	+	.	ID=Rs035250.1;Parent=Rs035250;Family=RsFAM22342;Product=organelle transcript processing partial [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G08070]
+R1	Ver1.2.2	protein	21059	21755	.	+	.	ID=Rs035250.1.protein1;Name=Rs035250.1;Derives_from=Rs035250.1;Family=RsFAM22342;Product=organelle transcript processing partial [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G08070]
+R1	Ver1.2.2	exon	21059	21364	.	+	.	ID=Rs035250.1.exon1;Parent=Rs035250.1
+R1	Ver1.2.2	CDS	21059	21364	.	+	0	ID=Rs035250.1.cds1;Parent=Rs035250.1
+R1	Ver1.2.2	exon	21441	21755	.	+	.	ID=Rs035250.1.exon2;Parent=Rs035250.1
+R1	Ver1.2.2	CDS	21441	21755	.	+	0	ID=Rs035250.1.cds2;Parent=Rs035250.1
+## Rs035280 R1 34618 35130 -
+R1	Ver1.2.2	gene	34618	35130	.	-	.	ID=Rs035280;Name=Rs035280
+R1	Ver1.2.2	promoter	35131	36630	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	34618	35130	.	-	.	ID=Rs035280.1;Parent=Rs035280;Product=Unknown protein
+R1	Ver1.2.2	protein	34618	35130	.	-	.	ID=Rs035280.1.protein1;Name=Rs035280.1;Derives_from=Rs035280.1;Product=Unknown protein
+R1	Ver1.2.2	exon	34979	35130	.	-	.	ID=Rs035280.1.exon1;Parent=Rs035280.1
+R1	Ver1.2.2	CDS	34979	35130	.	-	0	ID=Rs035280.1.cds1;Parent=Rs035280.1
+R1	Ver1.2.2	exon	34618	34873	.	-	.	ID=Rs035280.1.exon2;Parent=Rs035280.1
+R1	Ver1.2.2	CDS	34618	34873	.	-	2	ID=Rs035280.1.cds2;Parent=Rs035280.1
+## Rs035290 R1 42453 43198 +
+R1	Ver1.2.2	gene	42453	43198	.	+	.	ID=Rs035290;Name=Rs035290
+R1	Ver1.2.2	promoter	40953	42452	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	42453	43198	.	+	.	ID=Rs035290.1;Parent=Rs035290;Product=ribosomal l25 tl5 ctc n-terminal 5s rrna binding domain-containing protein [BLAST2GO] | Ribosomal protein L25/Gln-tRNA synthetase, anti-codon-binding domain [AT4G23620]
+R1	Ver1.2.2	protein	42453	43198	.	+	.	ID=Rs035290.1.protein1;Name=Rs035290.1;Derives_from=Rs035290.1;Product=ribosomal l25 tl5 ctc n-terminal 5s rrna binding domain-containing protein [BLAST2GO] | Ribosomal protein L25/Gln-tRNA synthetase, anti-codon-binding domain [AT4G23620]
+R1	Ver1.2.2	exon	42453	42546	.	+	.	ID=Rs035290.1.exon1;Parent=Rs035290.1
+R1	Ver1.2.2	CDS	42453	42546	.	+	0	ID=Rs035290.1.cds1;Parent=Rs035290.1
+R1	Ver1.2.2	exon	42786	42831	.	+	.	ID=Rs035290.1.exon2;Parent=Rs035290.1
+R1	Ver1.2.2	CDS	42786	42831	.	+	1	ID=Rs035290.1.cds2;Parent=Rs035290.1
+R1	Ver1.2.2	exon	43021	43198	.	+	.	ID=Rs035290.1.exon3;Parent=Rs035290.1
+R1	Ver1.2.2	CDS	43021	43198	.	+	2	ID=Rs035290.1.cds3;Parent=Rs035290.1
+## Rs035300 R1 54643 55229 -
+R1	Ver1.2.2	gene	54461	55423	.	-	.	ID=Rs035300;Name=Rs035300
+R1	Ver1.2.2	promoter	55424	56923	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	54461	55423	.	-	.	ID=Rs035300.1;Parent=Rs035300;Product=double-stranded rna-binding protein 2-like [BLAST2GO]
+R1	Ver1.2.2	protein	54643	55229	.	-	.	ID=Rs035300.1.protein1;Name=Rs035300.1;Derives_from=Rs035300.1;Product=double-stranded rna-binding protein 2-like [BLAST2GO]
+R1	Ver1.2.2	exon	54986	55423	.	-	.	ID=Rs035300.1.exon1;Parent=Rs035300.1
+R1	Ver1.2.2	five_prime_UTR	55230	55423	.	-	.	ID=Rs035300.1.utr5;Parent=Rs035300.1
+R1	Ver1.2.2	CDS	54986	55229	.	-	0	ID=Rs035300.1.cds1;Parent=Rs035300.1
+R1	Ver1.2.2	exon	54461	54854	.	-	.	ID=Rs035300.1.exon2;Parent=Rs035300.1
+R1	Ver1.2.2	CDS	54643	54854	.	-	1	ID=Rs035300.1.cds2;Parent=Rs035300.1
+R1	Ver1.2.2	three_prime_UTR	54461	54642	.	-	.	ID=Rs035300.1.utr3;Parent=Rs035300.1
+## Rs035320 R1 75475 78249 +
+R1	Ver1.2.2	gene	75210	78577	.	+	.	ID=Rs035320;Name=Rs035320
+R1	Ver1.2.2	promoter	74138	75209	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	75210	78577	.	+	.	ID=Rs035320.1;Parent=Rs035320;Family=RsFAM01400;Product=uncharacterized protein [BLAST2GO] | Family of unknown function (DUF566)  [AT1G49890]
+R1	Ver1.2.2	protein	75475	78249	.	+	.	ID=Rs035320.1.protein1;Name=Rs035320.1;Derives_from=Rs035320.1;Family=RsFAM01400;Product=uncharacterized protein [BLAST2GO] | Family of unknown function (DUF566)  [AT1G49890]
+R1	Ver1.2.2	exon	75210	76788	.	+	.	ID=Rs035320.1.exon1;Parent=Rs035320.1
+R1	Ver1.2.2	five_prime_UTR	75210	75474	.	+	.	ID=Rs035320.1.utr5;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	75475	76788	.	+	0	ID=Rs035320.1.cds1;Parent=Rs035320.1
+R1	Ver1.2.2	exon	77012	77131	.	+	.	ID=Rs035320.1.exon2;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	77012	77131	.	+	0	ID=Rs035320.1.cds2;Parent=Rs035320.1
+R1	Ver1.2.2	exon	77541	77657	.	+	.	ID=Rs035320.1.exon3;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	77541	77657	.	+	0	ID=Rs035320.1.cds3;Parent=Rs035320.1
+R1	Ver1.2.2	exon	77770	77859	.	+	.	ID=Rs035320.1.exon4;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	77770	77859	.	+	0	ID=Rs035320.1.cds4;Parent=Rs035320.1
+R1	Ver1.2.2	exon	77989	78096	.	+	.	ID=Rs035320.1.exon5;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	77989	78096	.	+	0	ID=Rs035320.1.cds5;Parent=Rs035320.1
+R1	Ver1.2.2	exon	78172	78577	.	+	.	ID=Rs035320.1.exon6;Parent=Rs035320.1
+R1	Ver1.2.2	CDS	78172	78249	.	+	0	ID=Rs035320.1.cds6;Parent=Rs035320.1
+R1	Ver1.2.2	three_prime_UTR	78250	78577	.	+	.	ID=Rs035320.1.utr3;Parent=Rs035320.1
+## Rs035330 R1 78966 80084 -
+R1	Ver1.2.2	gene	78954	80084	.	-	.	ID=Rs035330;Name=Rs035330
+R1	Ver1.2.2	promoter	80085	80942	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	78954	80084	.	-	.	ID=Rs035330.1;Parent=Rs035330;Family=RsFAM09773;Product=zinc-finger protein 2 [BLAST2GO] | C2H2 type zinc finger transcription factor family [AT1G49900]
+R1	Ver1.2.2	protein	78966	80084	.	-	.	ID=Rs035330.1.protein1;Name=Rs035330.1;Derives_from=Rs035330.1;Family=RsFAM09773;Product=zinc-finger protein 2 [BLAST2GO] | C2H2 type zinc finger transcription factor family [AT1G49900]
+R1	Ver1.2.2	exon	78954	80084	.	-	.	ID=Rs035330.1.exon1;Parent=Rs035330.1
+R1	Ver1.2.2	CDS	78966	80084	.	-	0	ID=Rs035330.1.cds1;Parent=Rs035330.1
+R1	Ver1.2.2	three_prime_UTR	78954	78965	.	-	.	ID=Rs035330.1.utr3;Parent=Rs035330.1
+## Rs035340 R1 81227 82747 -
+R1	Ver1.2.2	gene	81085	82792	.	-	.	ID=Rs035340;Name=Rs035340
+R1	Ver1.2.2	promoter	82793	84292	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	81085	82792	.	-	.	ID=Rs035340.1;Parent=Rs035340;Family=RsFAM09774;Product=telomere repeat binding factor 1 [BLAST2GO] | telomere repeat binding factor 1 [AT1G49950]
+R1	Ver1.2.2	protein	81227	82747	.	-	.	ID=Rs035340.1.protein1;Name=Rs035340.1;Derives_from=Rs035340.1;Family=RsFAM09774;Product=telomere repeat binding factor 1 [BLAST2GO] | telomere repeat binding factor 1 [AT1G49950]
+R1	Ver1.2.2	exon	82598	82792	.	-	.	ID=Rs035340.1.exon1;Parent=Rs035340.1
+R1	Ver1.2.2	five_prime_UTR	82748	82792	.	-	.	ID=Rs035340.1.utr5;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	82598	82747	.	-	0	ID=Rs035340.1.cds1;Parent=Rs035340.1
+R1	Ver1.2.2	exon	82273	82502	.	-	.	ID=Rs035340.1.exon2;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	82273	82502	.	-	0	ID=Rs035340.1.cds2;Parent=Rs035340.1
+R1	Ver1.2.2	exon	81976	82060	.	-	.	ID=Rs035340.1.exon3;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	81976	82060	.	-	2	ID=Rs035340.1.cds3;Parent=Rs035340.1
+R1	Ver1.2.2	exon	81814	81897	.	-	.	ID=Rs035340.1.exon4;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	81814	81897	.	-	0	ID=Rs035340.1.cds4;Parent=Rs035340.1
+R1	Ver1.2.2	exon	81323	81682	.	-	.	ID=Rs035340.1.exon5;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	81323	81682	.	-	0	ID=Rs035340.1.cds5;Parent=Rs035340.1
+R1	Ver1.2.2	exon	81085	81241	.	-	.	ID=Rs035340.1.exon6;Parent=Rs035340.1
+R1	Ver1.2.2	CDS	81227	81241	.	-	0	ID=Rs035340.1.cds6;Parent=Rs035340.1
+R1	Ver1.2.2	three_prime_UTR	81085	81226	.	-	.	ID=Rs035340.1.utr3;Parent=Rs035340.1
+## Rs000040 R1 98145 99279 -
+R1	Ver1.2.2	gene	98042	99279	.	-	.	ID=Rs000040;Name=Rs000040
+R1	Ver1.2.2	promoter	99280	100779	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	98042	99279	.	-	.	ID=Rs000040.1;Parent=Rs000040;Product=Unknown protein
+R1	Ver1.2.2	protein	98145	99279	.	-	.	ID=Rs000040.1.protein1;Name=Rs000040.1;Derives_from=Rs000040.1;Product=Unknown protein
+R1	Ver1.2.2	exon	99206	99279	.	-	.	ID=Rs000040.1.exon1;Parent=Rs000040.1
+R1	Ver1.2.2	CDS	99206	99279	.	-	0	ID=Rs000040.1.cds1;Parent=Rs000040.1
+R1	Ver1.2.2	exon	98621	98740	.	-	.	ID=Rs000040.1.exon2;Parent=Rs000040.1
+R1	Ver1.2.2	CDS	98621	98740	.	-	2	ID=Rs000040.1.cds2;Parent=Rs000040.1
+R1	Ver1.2.2	exon	98437	98479	.	-	.	ID=Rs000040.1.exon3;Parent=Rs000040.1
+R1	Ver1.2.2	CDS	98437	98479	.	-	2	ID=Rs000040.1.cds3;Parent=Rs000040.1
+R1	Ver1.2.2	exon	98042	98228	.	-	.	ID=Rs000040.1.exon4;Parent=Rs000040.1
+R1	Ver1.2.2	CDS	98145	98228	.	-	0	ID=Rs000040.1.cds4;Parent=Rs000040.1
+R1	Ver1.2.2	three_prime_UTR	98042	98144	.	-	.	ID=Rs000040.1.utr3;Parent=Rs000040.1
+## Rs000940 R1 165960 167868 -
+R1	Ver1.2.2	gene	165960	168042	.	-	.	ID=Rs000940;Name=Rs000940
+R1	Ver1.2.2	promoter	168043	169542	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	165960	168042	.	-	.	ID=Rs000940.1;Parent=Rs000940;Product=Unknown protein
+R1	Ver1.2.2	protein	165960	167868	.	-	.	ID=Rs000940.1.protein1;Name=Rs000940.1;Derives_from=Rs000940.1;Product=Unknown protein
+R1	Ver1.2.2	exon	167091	168042	.	-	.	ID=Rs000940.1.exon1;Parent=Rs000940.1
+R1	Ver1.2.2	five_prime_UTR	167869	168042	.	-	.	ID=Rs000940.1.utr5;Parent=Rs000940.1
+R1	Ver1.2.2	CDS	167091	167868	.	-	0	ID=Rs000940.1.cds1;Parent=Rs000940.1
+R1	Ver1.2.2	exon	166359	166450	.	-	.	ID=Rs000940.1.exon2;Parent=Rs000940.1
+R1	Ver1.2.2	CDS	166359	166450	.	-	1	ID=Rs000940.1.cds2;Parent=Rs000940.1
+R1	Ver1.2.2	exon	165960	166037	.	-	.	ID=Rs000940.1.exon3;Parent=Rs000940.1
+R1	Ver1.2.2	CDS	165960	166037	.	-	0	ID=Rs000940.1.cds3;Parent=Rs000940.1
+## Rs000920 R1 173191 179237 -
+R1	Ver1.2.2	gene	173069	179366	.	-	.	ID=Rs000920;Name=Rs000920
+R1	Ver1.2.2	promoter	179367	179864	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	173069	179366	.	-	.	ID=Rs000920.1;Parent=Rs000920;Family=RsFAM04397;Product=kinesin motor protein [BLAST2GO] | P-loop containing nucleoside triphosphate hydrolases superfamily protein [AT3G10180]
+R1	Ver1.2.2	protein	173191	179237	.	-	.	ID=Rs000920.1.protein1;Name=Rs000920.1;Derives_from=Rs000920.1;Family=RsFAM04397;Product=kinesin motor protein [BLAST2GO] | P-loop containing nucleoside triphosphate hydrolases superfamily protein [AT3G10180]
+R1	Ver1.2.2	exon	179120	179366	.	-	.	ID=Rs000920.1.exon1;Parent=Rs000920.1
+R1	Ver1.2.2	five_prime_UTR	179238	179366	.	-	.	ID=Rs000920.1.utr5;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	179120	179237	.	-	0	ID=Rs000920.1.cds1;Parent=Rs000920.1
+R1	Ver1.2.2	exon	178939	179028	.	-	.	ID=Rs000920.1.exon2;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	178939	179028	.	-	1	ID=Rs000920.1.cds2;Parent=Rs000920.1
+R1	Ver1.2.2	exon	178726	178844	.	-	.	ID=Rs000920.1.exon3;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	178726	178844	.	-	1	ID=Rs000920.1.cds3;Parent=Rs000920.1
+R1	Ver1.2.2	exon	178518	178631	.	-	.	ID=Rs000920.1.exon4;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	178518	178631	.	-	0	ID=Rs000920.1.cds4;Parent=Rs000920.1
+R1	Ver1.2.2	exon	178363	178444	.	-	.	ID=Rs000920.1.exon5;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	178363	178444	.	-	0	ID=Rs000920.1.cds5;Parent=Rs000920.1
+R1	Ver1.2.2	exon	178107	178174	.	-	.	ID=Rs000920.1.exon6;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	178107	178174	.	-	1	ID=Rs000920.1.cds6;Parent=Rs000920.1
+R1	Ver1.2.2	exon	177961	178035	.	-	.	ID=Rs000920.1.exon7;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	177961	178035	.	-	0	ID=Rs000920.1.cds7;Parent=Rs000920.1
+R1	Ver1.2.2	exon	177731	177876	.	-	.	ID=Rs000920.1.exon8;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	177731	177876	.	-	0	ID=Rs000920.1.cds8;Parent=Rs000920.1
+R1	Ver1.2.2	exon	177533	177635	.	-	.	ID=Rs000920.1.exon9;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	177533	177635	.	-	2	ID=Rs000920.1.cds9;Parent=Rs000920.1
+R1	Ver1.2.2	exon	177335	177415	.	-	.	ID=Rs000920.1.exon10;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	177335	177415	.	-	0	ID=Rs000920.1.cds10;Parent=Rs000920.1
+R1	Ver1.2.2	exon	177142	177210	.	-	.	ID=Rs000920.1.exon11;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	177142	177210	.	-	0	ID=Rs000920.1.cds11;Parent=Rs000920.1
+R1	Ver1.2.2	exon	176999	177058	.	-	.	ID=Rs000920.1.exon12;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	176999	177058	.	-	0	ID=Rs000920.1.cds12;Parent=Rs000920.1
+R1	Ver1.2.2	exon	176757	176924	.	-	.	ID=Rs000920.1.exon13;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	176757	176924	.	-	0	ID=Rs000920.1.cds13;Parent=Rs000920.1
+R1	Ver1.2.2	exon	176612	176671	.	-	.	ID=Rs000920.1.exon14;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	176612	176671	.	-	0	ID=Rs000920.1.cds14;Parent=Rs000920.1
+R1	Ver1.2.2	exon	176243	176527	.	-	.	ID=Rs000920.1.exon15;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	176243	176527	.	-	0	ID=Rs000920.1.cds15;Parent=Rs000920.1
+R1	Ver1.2.2	exon	175983	176168	.	-	.	ID=Rs000920.1.exon16;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	175983	176168	.	-	0	ID=Rs000920.1.cds16;Parent=Rs000920.1
+R1	Ver1.2.2	exon	175775	175879	.	-	.	ID=Rs000920.1.exon17;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	175775	175879	.	-	0	ID=Rs000920.1.cds17;Parent=Rs000920.1
+R1	Ver1.2.2	exon	175550	175642	.	-	.	ID=Rs000920.1.exon18;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	175550	175642	.	-	0	ID=Rs000920.1.cds18;Parent=Rs000920.1
+R1	Ver1.2.2	exon	175298	175444	.	-	.	ID=Rs000920.1.exon19;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	175298	175444	.	-	0	ID=Rs000920.1.cds19;Parent=Rs000920.1
+R1	Ver1.2.2	exon	175059	175169	.	-	.	ID=Rs000920.1.exon20;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	175059	175169	.	-	0	ID=Rs000920.1.cds20;Parent=Rs000920.1
+R1	Ver1.2.2	exon	174899	174967	.	-	.	ID=Rs000920.1.exon21;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	174899	174967	.	-	0	ID=Rs000920.1.cds21;Parent=Rs000920.1
+R1	Ver1.2.2	exon	174099	174266	.	-	.	ID=Rs000920.1.exon22;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	174099	174266	.	-	0	ID=Rs000920.1.cds22;Parent=Rs000920.1
+R1	Ver1.2.2	exon	173833	173985	.	-	.	ID=Rs000920.1.exon23;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	173833	173985	.	-	0	ID=Rs000920.1.cds23;Parent=Rs000920.1
+R1	Ver1.2.2	exon	173662	173715	.	-	.	ID=Rs000920.1.exon24;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	173662	173715	.	-	0	ID=Rs000920.1.cds24;Parent=Rs000920.1
+R1	Ver1.2.2	exon	173446	173511	.	-	.	ID=Rs000920.1.exon25;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	173446	173511	.	-	0	ID=Rs000920.1.cds25;Parent=Rs000920.1
+R1	Ver1.2.2	exon	173069	173361	.	-	.	ID=Rs000920.1.exon26;Parent=Rs000920.1
+R1	Ver1.2.2	CDS	173191	173361	.	-	0	ID=Rs000920.1.cds26;Parent=Rs000920.1
+R1	Ver1.2.2	three_prime_UTR	173069	173190	.	-	.	ID=Rs000920.1.utr3;Parent=Rs000920.1
+## Rs000910 R1 180072 181076 -
+R1	Ver1.2.2	gene	180072	181180	.	-	.	ID=Rs000910;Name=Rs000910
+R1	Ver1.2.2	promoter	181181	182543	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	180072	181180	.	-	.	ID=Rs000910.1;Parent=Rs000910;Product=hypothetical protein ARALYDRAFT_311263 [Arabidopsis lyrata subsp. lyrata] [BLAST2GO]
+R1	Ver1.2.2	protein	180072	181076	.	-	.	ID=Rs000910.1.protein1;Name=Rs000910.1;Derives_from=Rs000910.1;Product=hypothetical protein ARALYDRAFT_311263 [Arabidopsis lyrata subsp. lyrata] [BLAST2GO]
+R1	Ver1.2.2	exon	180908	181180	.	-	.	ID=Rs000910.1.exon1;Parent=Rs000910.1
+R1	Ver1.2.2	five_prime_UTR	181077	181180	.	-	.	ID=Rs000910.1.utr5;Parent=Rs000910.1
+R1	Ver1.2.2	CDS	180908	181076	.	-	0	ID=Rs000910.1.cds1;Parent=Rs000910.1
+R1	Ver1.2.2	exon	180434	180752	.	-	.	ID=Rs000910.1.exon2;Parent=Rs000910.1
+R1	Ver1.2.2	CDS	180434	180752	.	-	1	ID=Rs000910.1.cds2;Parent=Rs000910.1
+R1	Ver1.2.2	exon	180072	180288	.	-	.	ID=Rs000910.1.exon3;Parent=Rs000910.1
+R1	Ver1.2.2	CDS	180072	180288	.	-	2	ID=Rs000910.1.cds3;Parent=Rs000910.1
+## Rs000900 R1 182943 183855 +
+R1	Ver1.2.2	gene	182866	183954	.	+	.	ID=Rs000900;Name=Rs000900
+R1	Ver1.2.2	promoter	181476	182865	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	182866	183954	.	+	.	ID=Rs000900.1;Parent=Rs000900;Family=RsFAM08818;Product=Best-Hit: ferredoxin-related [AT1G02180]
+R1	Ver1.2.2	protein	182943	183855	.	+	.	ID=Rs000900.1.protein1;Name=Rs000900.1;Derives_from=Rs000900.1;Family=RsFAM08818;Product=Best-Hit: ferredoxin-related [AT1G02180]
+R1	Ver1.2.2	exon	182866	183021	.	+	.	ID=Rs000900.1.exon1;Parent=Rs000900.1
+R1	Ver1.2.2	five_prime_UTR	182866	182942	.	+	.	ID=Rs000900.1.utr5;Parent=Rs000900.1
+R1	Ver1.2.2	CDS	182943	183021	.	+	0	ID=Rs000900.1.cds1;Parent=Rs000900.1
+R1	Ver1.2.2	exon	183248	183954	.	+	.	ID=Rs000900.1.exon2;Parent=Rs000900.1
+R1	Ver1.2.2	CDS	183248	183855	.	+	1	ID=Rs000900.1.cds2;Parent=Rs000900.1
+R1	Ver1.2.2	three_prime_UTR	183856	183954	.	+	.	ID=Rs000900.1.utr3;Parent=Rs000900.1
+## Rs000880 R1 185277 186803 -
+R1	Ver1.2.2	gene	184923	186972	.	-	.	ID=Rs000880;Name=Rs000880
+R1	Ver1.2.2	mRNA	184923	186972	.	-	.	ID=Rs000880.1;Parent=Rs000880;Family=RsFAM08816;Product=pentatricopeptide repeat-containing protein at1g02150-like [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G02150]
+R1	Ver1.2.2	protein	185277	186803	.	-	.	ID=Rs000880.1.protein1;Name=Rs000880.1;Derives_from=Rs000880.1;Family=RsFAM08816;Product=pentatricopeptide repeat-containing protein at1g02150-like [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G02150]
+R1	Ver1.2.2	exon	184923	186972	.	-	.	ID=Rs000880.1.exon1;Parent=Rs000880.1
+R1	Ver1.2.2	five_prime_UTR	186804	186972	.	-	.	ID=Rs000880.1.utr5;Parent=Rs000880.1
+R1	Ver1.2.2	CDS	185277	186803	.	-	0	ID=Rs000880.1.cds1;Parent=Rs000880.1
+R1	Ver1.2.2	three_prime_UTR	184923	185276	.	-	.	ID=Rs000880.1.utr3;Parent=Rs000880.1
+## Rs000870 R1 187028 196722 -
+R1	Ver1.2.2	gene	186973	196722	.	-	.	ID=Rs000870;Name=Rs000870
+R1	Ver1.2.2	mRNA	186973	196722	.	-	.	ID=Rs000870.1;Parent=Rs000870;Product=dol-p-man:man c -pp-dol alpha- -mannosyltransferase [BLAST2GO] | homolog of asparagine-linked glycosylation 12 [AT1G02145]
+R1	Ver1.2.2	protein	187028	196722	.	-	.	ID=Rs000870.1.protein1;Name=Rs000870.1;Derives_from=Rs000870.1;Product=dol-p-man:man c -pp-dol alpha- -mannosyltransferase [BLAST2GO] | homolog of asparagine-linked glycosylation 12 [AT1G02145]
+R1	Ver1.2.2	exon	196684	196722	.	-	.	ID=Rs000870.1.exon1;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	196684	196722	.	-	0	ID=Rs000870.1.cds1;Parent=Rs000870.1
+R1	Ver1.2.2	exon	196521	196584	.	-	.	ID=Rs000870.1.exon2;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	196521	196584	.	-	0	ID=Rs000870.1.cds2;Parent=Rs000870.1
+R1	Ver1.2.2	exon	196320	196423	.	-	.	ID=Rs000870.1.exon3;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	196320	196423	.	-	1	ID=Rs000870.1.cds3;Parent=Rs000870.1
+R1	Ver1.2.2	exon	196033	196104	.	-	.	ID=Rs000870.1.exon4;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	196033	196104	.	-	0	ID=Rs000870.1.cds4;Parent=Rs000870.1
+R1	Ver1.2.2	exon	188251	188337	.	-	.	ID=Rs000870.1.exon5;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	188251	188337	.	-	0	ID=Rs000870.1.cds5;Parent=Rs000870.1
+R1	Ver1.2.2	exon	188097	188164	.	-	.	ID=Rs000870.1.exon6;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	188097	188164	.	-	0	ID=Rs000870.1.cds6;Parent=Rs000870.1
+R1	Ver1.2.2	exon	187944	188012	.	-	.	ID=Rs000870.1.exon7;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187944	188012	.	-	2	ID=Rs000870.1.cds7;Parent=Rs000870.1
+R1	Ver1.2.2	exon	187781	187863	.	-	.	ID=Rs000870.1.exon8;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187781	187863	.	-	2	ID=Rs000870.1.cds8;Parent=Rs000870.1
+R1	Ver1.2.2	exon	187522	187621	.	-	.	ID=Rs000870.1.exon9;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187522	187621	.	-	1	ID=Rs000870.1.cds9;Parent=Rs000870.1
+R1	Ver1.2.2	exon	187377	187442	.	-	.	ID=Rs000870.1.exon10;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187377	187442	.	-	2	ID=Rs000870.1.cds10;Parent=Rs000870.1
+R1	Ver1.2.2	exon	187186	187279	.	-	.	ID=Rs000870.1.exon11;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187186	187279	.	-	2	ID=Rs000870.1.cds11;Parent=Rs000870.1
+R1	Ver1.2.2	exon	186973	187105	.	-	.	ID=Rs000870.1.exon12;Parent=Rs000870.1
+R1	Ver1.2.2	CDS	187028	187105	.	-	0	ID=Rs000870.1.cds12;Parent=Rs000870.1
+R1	Ver1.2.2	three_prime_UTR	186973	187027	.	-	.	ID=Rs000870.1.utr3;Parent=Rs000870.1
+## Rs000860 R1 194275 198072 -
+R1	Ver1.2.2	gene	194275	198072	.	-	.	ID=Rs000860;Name=Rs000860
+R1	Ver1.2.2	mRNA	194275	198072	.	-	.	ID=Rs000860.1;Parent=Rs000860;Product=dol-p-man:man c -pp-dol alpha- -mannosyltransferase [BLAST2GO] | homolog of asparagine-linked glycosylation 12 [AT1G02145]
+R1	Ver1.2.2	protein	194275	198072	.	-	.	ID=Rs000860.1.protein1;Name=Rs000860.1;Derives_from=Rs000860.1;Product=dol-p-man:man c -pp-dol alpha- -mannosyltransferase [BLAST2GO] | homolog of asparagine-linked glycosylation 12 [AT1G02145]
+R1	Ver1.2.2	exon	198048	198072	.	-	.	ID=Rs000860.1.exon1;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	198048	198072	.	-	0	ID=Rs000860.1.cds1;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197884	197969	.	-	.	ID=Rs000860.1.exon2;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197884	197969	.	-	1	ID=Rs000860.1.cds2;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197747	197788	.	-	.	ID=Rs000860.1.exon3;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197747	197788	.	-	0	ID=Rs000860.1.cds3;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197630	197675	.	-	.	ID=Rs000860.1.exon4;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197630	197675	.	-	0	ID=Rs000860.1.cds4;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197456	197542	.	-	.	ID=Rs000860.1.exon5;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197456	197542	.	-	1	ID=Rs000860.1.cds5;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197280	197335	.	-	.	ID=Rs000860.1.exon6;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197280	197335	.	-	1	ID=Rs000860.1.cds6;Parent=Rs000860.1
+R1	Ver1.2.2	exon	197031	197148	.	-	.	ID=Rs000860.1.exon7;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	197031	197148	.	-	0	ID=Rs000860.1.cds7;Parent=Rs000860.1
+R1	Ver1.2.2	exon	196858	196916	.	-	.	ID=Rs000860.1.exon8;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	196858	196916	.	-	1	ID=Rs000860.1.cds8;Parent=Rs000860.1
+R1	Ver1.2.2	exon	196684	196755	.	-	.	ID=Rs000860.1.exon9;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	196684	196755	.	-	0	ID=Rs000860.1.cds9;Parent=Rs000860.1
+R1	Ver1.2.2	exon	196521	196584	.	-	.	ID=Rs000860.1.exon10;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	196521	196584	.	-	0	ID=Rs000860.1.cds10;Parent=Rs000860.1
+R1	Ver1.2.2	exon	196322	196423	.	-	.	ID=Rs000860.1.exon11;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	196322	196423	.	-	1	ID=Rs000860.1.cds11;Parent=Rs000860.1
+R1	Ver1.2.2	exon	195601	195622	.	-	.	ID=Rs000860.1.exon12;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	195601	195622	.	-	1	ID=Rs000860.1.cds12;Parent=Rs000860.1
+R1	Ver1.2.2	exon	195502	195549	.	-	.	ID=Rs000860.1.exon13;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	195502	195549	.	-	2	ID=Rs000860.1.cds13;Parent=Rs000860.1
+R1	Ver1.2.2	exon	195168	195237	.	-	.	ID=Rs000860.1.exon14;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	195168	195237	.	-	2	ID=Rs000860.1.cds14;Parent=Rs000860.1
+R1	Ver1.2.2	exon	194275	194457	.	-	.	ID=Rs000860.1.exon15;Parent=Rs000860.1
+R1	Ver1.2.2	CDS	194275	194457	.	-	0	ID=Rs000860.1.cds15;Parent=Rs000860.1
+## Rs000850 R1 198348 199323 +
+R1	Ver1.2.2	gene	198289	199536	.	+	.	ID=Rs000850;Name=Rs000850
+R1	Ver1.2.2	promoter	196789	198288	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	198289	199536	.	+	.	ID=Rs000850.1;Parent=Rs000850;Family=RsFAM03719;Product=mago nashi-like protein [BLAST2GO] | mago nashi family protein [AT1G02140]
+R1	Ver1.2.2	protein	198348	199323	.	+	.	ID=Rs000850.1.protein1;Name=Rs000850.1;Derives_from=Rs000850.1;Family=RsFAM03719;Product=mago nashi-like protein [BLAST2GO] | mago nashi family protein [AT1G02140]
+R1	Ver1.2.2	exon	198289	198569	.	+	.	ID=Rs000850.1.exon1;Parent=Rs000850.1
+R1	Ver1.2.2	five_prime_UTR	198289	198347	.	+	.	ID=Rs000850.1.utr5;Parent=Rs000850.1
+R1	Ver1.2.2	CDS	198348	198569	.	+	0	ID=Rs000850.1.cds1;Parent=Rs000850.1
+R1	Ver1.2.2	exon	198872	199048	.	+	.	ID=Rs000850.1.exon2;Parent=Rs000850.1
+R1	Ver1.2.2	CDS	198872	199048	.	+	0	ID=Rs000850.1.cds2;Parent=Rs000850.1
+R1	Ver1.2.2	exon	199264	199536	.	+	.	ID=Rs000850.1.exon3;Parent=Rs000850.1
+R1	Ver1.2.2	CDS	199264	199323	.	+	0	ID=Rs000850.1.cds3;Parent=Rs000850.1
+R1	Ver1.2.2	three_prime_UTR	199324	199536	.	+	.	ID=Rs000850.1.utr3;Parent=Rs000850.1
+## Rs000840 R1 200283 204198 -
+R1	Ver1.2.2	gene	200075	204285	.	-	.	ID=Rs000840;Name=Rs000840
+R1	Ver1.2.2	promoter	204286	204741	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	200075	204285	.	-	.	ID=Rs000840.1;Parent=Rs000840;Family=RsFAM08814;Product=protein vascular associated death1 [BLAST2GO] | GRAM domain family protein [AT1G02120]
+R1	Ver1.2.2	protein	200283	204198	.	-	.	ID=Rs000840.1.protein1;Name=Rs000840.1;Derives_from=Rs000840.1;Family=RsFAM08814;Product=protein vascular associated death1 [BLAST2GO] | GRAM domain family protein [AT1G02120]
+R1	Ver1.2.2	exon	204034	204285	.	-	.	ID=Rs000840.1.exon1;Parent=Rs000840.1
+R1	Ver1.2.2	five_prime_UTR	204199	204285	.	-	.	ID=Rs000840.1.utr5;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	204034	204198	.	-	0	ID=Rs000840.1.cds1;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203896	203955	.	-	.	ID=Rs000840.1.exon2;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203896	203955	.	-	0	ID=Rs000840.1.cds2;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203746	203796	.	-	.	ID=Rs000840.1.exon3;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203746	203796	.	-	0	ID=Rs000840.1.cds3;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203607	203672	.	-	.	ID=Rs000840.1.exon4;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203607	203672	.	-	0	ID=Rs000840.1.cds4;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203397	203492	.	-	.	ID=Rs000840.1.exon5;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203397	203492	.	-	0	ID=Rs000840.1.cds5;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203227	203322	.	-	.	ID=Rs000840.1.exon6;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203227	203322	.	-	0	ID=Rs000840.1.cds6;Parent=Rs000840.1
+R1	Ver1.2.2	exon	203059	203153	.	-	.	ID=Rs000840.1.exon7;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	203059	203153	.	-	0	ID=Rs000840.1.cds7;Parent=Rs000840.1
+R1	Ver1.2.2	exon	202809	202981	.	-	.	ID=Rs000840.1.exon8;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	202809	202981	.	-	2	ID=Rs000840.1.cds8;Parent=Rs000840.1
+R1	Ver1.2.2	exon	202173	202213	.	-	.	ID=Rs000840.1.exon9;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	202173	202213	.	-	1	ID=Rs000840.1.cds9;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201961	202048	.	-	.	ID=Rs000840.1.exon10;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201961	202048	.	-	0	ID=Rs000840.1.cds10;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201756	201842	.	-	.	ID=Rs000840.1.exon11;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201756	201842	.	-	1	ID=Rs000840.1.cds11;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201616	201670	.	-	.	ID=Rs000840.1.exon12;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201616	201670	.	-	1	ID=Rs000840.1.cds12;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201449	201515	.	-	.	ID=Rs000840.1.exon13;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201449	201515	.	-	2	ID=Rs000840.1.cds13;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201274	201373	.	-	.	ID=Rs000840.1.exon14;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201274	201373	.	-	0	ID=Rs000840.1.cds14;Parent=Rs000840.1
+R1	Ver1.2.2	exon	201075	201136	.	-	.	ID=Rs000840.1.exon15;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	201075	201136	.	-	1	ID=Rs000840.1.cds15;Parent=Rs000840.1
+R1	Ver1.2.2	exon	200940	200982	.	-	.	ID=Rs000840.1.exon16;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	200940	200982	.	-	0	ID=Rs000840.1.cds16;Parent=Rs000840.1
+R1	Ver1.2.2	exon	200647	200861	.	-	.	ID=Rs000840.1.exon17;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	200647	200861	.	-	1	ID=Rs000840.1.cds17;Parent=Rs000840.1
+R1	Ver1.2.2	exon	200075	200525	.	-	.	ID=Rs000840.1.exon18;Parent=Rs000840.1
+R1	Ver1.2.2	CDS	200283	200525	.	-	0	ID=Rs000840.1.cds18;Parent=Rs000840.1
+R1	Ver1.2.2	three_prime_UTR	200075	200282	.	-	.	ID=Rs000840.1.utr3;Parent=Rs000840.1
+## Rs000830 R1 204921 205658 -
+R1	Ver1.2.2	gene	204742	205677	.	-	.	ID=Rs000830;Name=Rs000830
+R1	Ver1.2.2	promoter	205678	207177	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	204742	205677	.	-	.	ID=Rs000830.1;Parent=Rs000830;Product=c2h2-type zinc finger protein [BLAST2GO] | C2H2-type zinc finger family protein [AT1G02040]
+R1	Ver1.2.2	protein	204921	205658	.	-	.	ID=Rs000830.1.protein1;Name=Rs000830.1;Derives_from=Rs000830.1;Product=c2h2-type zinc finger protein [BLAST2GO] | C2H2-type zinc finger family protein [AT1G02040]
+R1	Ver1.2.2	exon	204742	205677	.	-	.	ID=Rs000830.1.exon1;Parent=Rs000830.1
+R1	Ver1.2.2	five_prime_UTR	205659	205677	.	-	.	ID=Rs000830.1.utr5;Parent=Rs000830.1
+R1	Ver1.2.2	CDS	204921	205658	.	-	0	ID=Rs000830.1.cds1;Parent=Rs000830.1
+R1	Ver1.2.2	three_prime_UTR	204742	204920	.	-	.	ID=Rs000830.1.utr3;Parent=Rs000830.1
+## Rs000820 R1 211883 213513 +
+R1	Ver1.2.2	gene	211661	213759	.	+	.	ID=Rs000820;Name=Rs000820
+R1	Ver1.2.2	promoter	211383	211660	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	211661	213759	.	+	.	ID=Rs000820.1;Parent=Rs000820;Family=RsFAM08811;Product=squamosa promoter-binding-like protein 8 [BLAST2GO] | squamosa promoter binding protein-like 8 [AT1G02065]
+R1	Ver1.2.2	protein	211883	213513	.	+	.	ID=Rs000820.1.protein1;Name=Rs000820.1;Derives_from=Rs000820.1;Family=RsFAM08811;Product=squamosa promoter-binding-like protein 8 [BLAST2GO] | squamosa promoter binding protein-like 8 [AT1G02065]
+R1	Ver1.2.2	exon	211661	212583	.	+	.	ID=Rs000820.1.exon1;Parent=Rs000820.1
+R1	Ver1.2.2	five_prime_UTR	211661	211882	.	+	.	ID=Rs000820.1.utr5;Parent=Rs000820.1
+R1	Ver1.2.2	CDS	211883	212583	.	+	0	ID=Rs000820.1.cds1;Parent=Rs000820.1
+R1	Ver1.2.2	exon	213147	213277	.	+	.	ID=Rs000820.1.exon2;Parent=Rs000820.1
+R1	Ver1.2.2	CDS	213147	213277	.	+	2	ID=Rs000820.1.cds2;Parent=Rs000820.1
+R1	Ver1.2.2	exon	213350	213759	.	+	.	ID=Rs000820.1.exon3;Parent=Rs000820.1
+R1	Ver1.2.2	CDS	213350	213513	.	+	1	ID=Rs000820.1.cds3;Parent=Rs000820.1
+R1	Ver1.2.2	three_prime_UTR	213514	213759	.	+	.	ID=Rs000820.1.utr3;Parent=Rs000820.1
+## Rs000810 R1 215289 217039 -
+R1	Ver1.2.2	gene	215289	217039	.	-	.	ID=Rs000810;Name=Rs000810
+R1	Ver1.2.2	promoter	217040	217496	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	215289	217039	.	-	.	ID=Rs000810.1;Parent=Rs000810;Product=Unknown protein
+R1	Ver1.2.2	protein	215289	217039	.	-	.	ID=Rs000810.1.protein1;Name=Rs000810.1;Derives_from=Rs000810.1;Product=Unknown protein
+R1	Ver1.2.2	exon	216990	217039	.	-	.	ID=Rs000810.1.exon1;Parent=Rs000810.1
+R1	Ver1.2.2	CDS	216990	217039	.	-	0	ID=Rs000810.1.cds1;Parent=Rs000810.1
+R1	Ver1.2.2	exon	216009	216101	.	-	.	ID=Rs000810.1.exon2;Parent=Rs000810.1
+R1	Ver1.2.2	CDS	216009	216101	.	-	2	ID=Rs000810.1.cds2;Parent=Rs000810.1
+R1	Ver1.2.2	exon	215621	215706	.	-	.	ID=Rs000810.1.exon3;Parent=Rs000810.1
+R1	Ver1.2.2	CDS	215621	215706	.	-	2	ID=Rs000810.1.cds3;Parent=Rs000810.1
+R1	Ver1.2.2	exon	215289	215443	.	-	.	ID=Rs000810.1.exon4;Parent=Rs000810.1
+R1	Ver1.2.2	CDS	215289	215443	.	-	1	ID=Rs000810.1.cds4;Parent=Rs000810.1
+## Rs000800 R1 217647 218378 +
+R1	Ver1.2.2	gene	217502	218679	.	+	.	ID=Rs000800;Name=Rs000800
+R1	Ver1.2.2	promoter	217190	217501	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	217502	218679	.	+	.	ID=Rs000800.1;Parent=Rs000800;Family=RsFAM08809;Product=Best-Hit: unknown protein [AT1G01990]
+R1	Ver1.2.2	protein	217647	218378	.	+	.	ID=Rs000800.1.protein1;Name=Rs000800.1;Derives_from=Rs000800.1;Family=RsFAM08809;Product=Best-Hit: unknown protein [AT1G01990]
+R1	Ver1.2.2	exon	217502	218679	.	+	.	ID=Rs000800.1.exon1;Parent=Rs000800.1
+R1	Ver1.2.2	five_prime_UTR	217502	217646	.	+	.	ID=Rs000800.1.utr5;Parent=Rs000800.1
+R1	Ver1.2.2	CDS	217647	218378	.	+	0	ID=Rs000800.1.cds1;Parent=Rs000800.1
+R1	Ver1.2.2	three_prime_UTR	218379	218679	.	+	.	ID=Rs000800.1.utr3;Parent=Rs000800.1
+## Rs000790 R1 218884 220066 -
+R1	Ver1.2.2	gene	218773	220320	.	-	.	ID=Rs000790;Name=Rs000790
+R1	Ver1.2.2	promoter	220321	220970	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	218773	220320	.	-	.	ID=Rs000790.1;Parent=Rs000790;Family=RsFAM08808;Product=pentatricopeptide repeat-containing protein at1g01970-like [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G01970]
+R1	Ver1.2.2	protein	218884	220066	.	-	.	ID=Rs000790.1.protein1;Name=Rs000790.1;Derives_from=Rs000790.1;Family=RsFAM08808;Product=pentatricopeptide repeat-containing protein at1g01970-like [BLAST2GO] | Tetratricopeptide repeat (TPR)-like superfamily protein [AT1G01970]
+R1	Ver1.2.2	exon	219773	220320	.	-	.	ID=Rs000790.1.exon1;Parent=Rs000790.1
+R1	Ver1.2.2	five_prime_UTR	220067	220320	.	-	.	ID=Rs000790.1.utr5;Parent=Rs000790.1
+R1	Ver1.2.2	CDS	219773	220066	.	-	0	ID=Rs000790.1.cds1;Parent=Rs000790.1
+R1	Ver1.2.2	exon	218773	219657	.	-	.	ID=Rs000790.1.exon2;Parent=Rs000790.1
+R1	Ver1.2.2	CDS	218884	219657	.	-	0	ID=Rs000790.1.cds2;Parent=Rs000790.1
+R1	Ver1.2.2	three_prime_UTR	218773	218883	.	-	.	ID=Rs000790.1.utr3;Parent=Rs000790.1
+## Rs000780 R1 221270 222250 -
+R1	Ver1.2.2	gene	220971	222348	.	-	.	ID=Rs000780;Name=Rs000780
+R1	Ver1.2.2	promoter	222349	223848	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	220971	222348	.	-	.	ID=Rs000780.1;Parent=Rs000780;Family=RsFAM24315;Product=Best-Hit: NAC-like, activated by AP3/PI [Bra004385]
+R1	Ver1.2.2	protein	221270	222250	.	-	.	ID=Rs000780.1.protein1;Name=Rs000780.1;Derives_from=Rs000780.1;Family=RsFAM24315;Product=Best-Hit: NAC-like, activated by AP3/PI [Bra004385]
+R1	Ver1.2.2	exon	222003	222348	.	-	.	ID=Rs000780.1.exon1;Parent=Rs000780.1
+R1	Ver1.2.2	five_prime_UTR	222251	222348	.	-	.	ID=Rs000780.1.utr5;Parent=Rs000780.1
+R1	Ver1.2.2	CDS	222003	222250	.	-	0	ID=Rs000780.1.cds1;Parent=Rs000780.1
+R1	Ver1.2.2	exon	221644	221887	.	-	.	ID=Rs000780.1.exon2;Parent=Rs000780.1
+R1	Ver1.2.2	CDS	221644	221887	.	-	2	ID=Rs000780.1.cds2;Parent=Rs000780.1
+R1	Ver1.2.2	exon	221499	221567	.	-	.	ID=Rs000780.1.exon3;Parent=Rs000780.1
+R1	Ver1.2.2	CDS	221499	221567	.	-	0	ID=Rs000780.1.cds3;Parent=Rs000780.1
+R1	Ver1.2.2	exon	220971	221416	.	-	.	ID=Rs000780.1.exon4;Parent=Rs000780.1
+R1	Ver1.2.2	CDS	221270	221416	.	-	0	ID=Rs000780.1.cds4;Parent=Rs000780.1
+R1	Ver1.2.2	three_prime_UTR	220971	221269	.	-	.	ID=Rs000780.1.utr3;Parent=Rs000780.1
+## Rs000770 R1 226207 227936 -
+R1	Ver1.2.2	gene	225945	227936	.	-	.	ID=Rs000770;Name=Rs000770
+R1	Ver1.2.2	promoter	227937	228385	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	225945	227936	.	-	.	ID=Rs000770.1;Parent=Rs000770;Product=Unknown protein
+R1	Ver1.2.2	protein	226207	227936	.	-	.	ID=Rs000770.1.protein1;Name=Rs000770.1;Derives_from=Rs000770.1;Product=Unknown protein
+R1	Ver1.2.2	exon	227807	227936	.	-	.	ID=Rs000770.1.exon1;Parent=Rs000770.1
+R1	Ver1.2.2	CDS	227807	227936	.	-	0	ID=Rs000770.1.cds1;Parent=Rs000770.1
+R1	Ver1.2.2	exon	227198	227347	.	-	.	ID=Rs000770.1.exon2;Parent=Rs000770.1
+R1	Ver1.2.2	CDS	227198	227347	.	-	1	ID=Rs000770.1.cds2;Parent=Rs000770.1
+R1	Ver1.2.2	exon	226798	227038	.	-	.	ID=Rs000770.1.exon3;Parent=Rs000770.1
+R1	Ver1.2.2	CDS	226798	227038	.	-	1	ID=Rs000770.1.cds3;Parent=Rs000770.1
+R1	Ver1.2.2	exon	225945	226726	.	-	.	ID=Rs000770.1.exon4;Parent=Rs000770.1
+R1	Ver1.2.2	CDS	226207	226726	.	-	2	ID=Rs000770.1.cds4;Parent=Rs000770.1
+R1	Ver1.2.2	three_prime_UTR	225945	226206	.	-	.	ID=Rs000770.1.utr3;Parent=Rs000770.1
+## Rs000760 R1 233794 236319 -
+R1	Ver1.2.2	gene	233632	236445	.	-	.	ID=Rs000760;Name=Rs000760
+R1	Ver1.2.2	promoter	236446	237932	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	233632	236445	.	-	.	ID=Rs000760.1;Parent=Rs000760;Family=RsFAM00031;Product=subtilisin-like protease-like [BLAST2GO] | subtilase family protein [AT1G01900]
+R1	Ver1.2.2	protein	233794	236319	.	-	.	ID=Rs000760.1.protein1;Name=Rs000760.1;Derives_from=Rs000760.1;Family=RsFAM00031;Product=subtilisin-like protease-like [BLAST2GO] | subtilase family protein [AT1G01900]
+R1	Ver1.2.2	exon	235718	236445	.	-	.	ID=Rs000760.1.exon1;Parent=Rs000760.1
+R1	Ver1.2.2	five_prime_UTR	236320	236445	.	-	.	ID=Rs000760.1.utr5;Parent=Rs000760.1
+R1	Ver1.2.2	CDS	235718	236319	.	-	0	ID=Rs000760.1.cds1;Parent=Rs000760.1
+R1	Ver1.2.2	exon	234083	235463	.	-	.	ID=Rs000760.1.exon2;Parent=Rs000760.1
+R1	Ver1.2.2	CDS	234083	235463	.	-	2	ID=Rs000760.1.cds2;Parent=Rs000760.1
+R1	Ver1.2.2	exon	233632	234000	.	-	.	ID=Rs000760.1.exon3;Parent=Rs000760.1
+R1	Ver1.2.2	CDS	233794	234000	.	-	0	ID=Rs000760.1.cds3;Parent=Rs000760.1
+R1	Ver1.2.2	three_prime_UTR	233632	233793	.	-	.	ID=Rs000760.1.utr3;Parent=Rs000760.1
+## Rs000750 R1 242250 242711 -
+R1	Ver1.2.2	gene	241693	242838	.	-	.	ID=Rs000750;Name=Rs000750
+R1	Ver1.2.2	promoter	242839	244338	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	241693	242838	.	-	.	ID=Rs000750.1;Parent=Rs000750;Family=RsFAM08801;Product=at1g01840 t1n6_19 [BLAST2GO] | Best-Hit: unknown protein [AT1G01840]
+R1	Ver1.2.2	protein	242250	242711	.	-	.	ID=Rs000750.1.protein1;Name=Rs000750.1;Derives_from=Rs000750.1;Family=RsFAM08801;Product=at1g01840 t1n6_19 [BLAST2GO] | Best-Hit: unknown protein [AT1G01840]
+R1	Ver1.2.2	exon	241693	242838	.	-	.	ID=Rs000750.1.exon1;Parent=Rs000750.1
+R1	Ver1.2.2	five_prime_UTR	242712	242838	.	-	.	ID=Rs000750.1.utr5;Parent=Rs000750.1
+R1	Ver1.2.2	CDS	242250	242711	.	-	0	ID=Rs000750.1.cds1;Parent=Rs000750.1
+R1	Ver1.2.2	three_prime_UTR	241693	242249	.	-	.	ID=Rs000750.1.utr3;Parent=Rs000750.1
+## Rs000740 R1 246147 247859 +
+R1	Ver1.2.2	gene	245748	248044	.	+	.	ID=Rs000740;Name=Rs000740
+R1	Ver1.2.2	promoter	244248	245747	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	245748	248044	.	+	.	ID=Rs000740.1;Parent=Rs000740;Family=RsFAM00915;Product=armadillo beta-catenin-like repeat-containing protein [BLAST2GO] | ARM repeat superfamily protein [AT1G01830]
+R1	Ver1.2.2	protein	246147	247859	.	+	.	ID=Rs000740.1.protein1;Name=Rs000740.1;Derives_from=Rs000740.1;Family=RsFAM00915;Product=armadillo beta-catenin-like repeat-containing protein [BLAST2GO] | ARM repeat superfamily protein [AT1G01830]
+R1	Ver1.2.2	exon	245748	248044	.	+	.	ID=Rs000740.1.exon1;Parent=Rs000740.1
+R1	Ver1.2.2	five_prime_UTR	245748	246146	.	+	.	ID=Rs000740.1.utr5;Parent=Rs000740.1
+R1	Ver1.2.2	CDS	246147	247859	.	+	0	ID=Rs000740.1.cds1;Parent=Rs000740.1
+R1	Ver1.2.2	three_prime_UTR	247860	248044	.	+	.	ID=Rs000740.1.utr3;Parent=Rs000740.1
+## Rs000730 R1 248105 249573 -
+R1	Ver1.2.2	gene	248045	249952	.	-	.	ID=Rs000730;Name=Rs000730
+R1	Ver1.2.2	mRNA	248045	249952	.	-	.	ID=Rs000730.1;Parent=Rs000730;Family=RsFAM08800;Product=short-chain dehydrogenase reductase family protein [BLAST2GO] | Best-Hit: NAD(P)-binding Rossmann-fold superfamily protein [AT1G01800]
+R1	Ver1.2.2	protein	248105	249573	.	-	.	ID=Rs000730.1.protein1;Name=Rs000730.1;Derives_from=Rs000730.1;Family=RsFAM08800;Product=short-chain dehydrogenase reductase family protein [BLAST2GO] | Best-Hit: NAD(P)-binding Rossmann-fold superfamily protein [AT1G01800]
+R1	Ver1.2.2	exon	249560	249952	.	-	.	ID=Rs000730.1.exon1;Parent=Rs000730.1
+R1	Ver1.2.2	five_prime_UTR	249574	249952	.	-	.	ID=Rs000730.1.utr5;Parent=Rs000730.1
+R1	Ver1.2.2	CDS	249560	249573	.	-	0	ID=Rs000730.1.cds1;Parent=Rs000730.1
+R1	Ver1.2.2	exon	249213	249465	.	-	.	ID=Rs000730.1.exon2;Parent=Rs000730.1
+R1	Ver1.2.2	CDS	249213	249465	.	-	2	ID=Rs000730.1.cds2;Parent=Rs000730.1
+R1	Ver1.2.2	exon	248891	248956	.	-	.	ID=Rs000730.1.exon3;Parent=Rs000730.1
+R1	Ver1.2.2	CDS	248891	248956	.	-	0	ID=Rs000730.1.cds3;Parent=Rs000730.1
+R1	Ver1.2.2	exon	248591	248767	.	-	.	ID=Rs000730.1.exon4;Parent=Rs000730.1
+R1	Ver1.2.2	CDS	248591	248767	.	-	0	ID=Rs000730.1.cds4;Parent=Rs000730.1
+R1	Ver1.2.2	exon	248045	248482	.	-	.	ID=Rs000730.1.exon5;Parent=Rs000730.1
+R1	Ver1.2.2	CDS	248105	248482	.	-	0	ID=Rs000730.1.cds5;Parent=Rs000730.1
+R1	Ver1.2.2	three_prime_UTR	248045	248104	.	-	.	ID=Rs000730.1.utr3;Parent=Rs000730.1
+## Rs000720 R1 250078 255569 -
+R1	Ver1.2.2	gene	249953	255901	.	-	.	ID=Rs000720;Name=Rs000720
+R1	Ver1.2.2	promoter	255902	256367	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	249953	255901	.	-	.	ID=Rs000720.1;Parent=Rs000720;Family=RsFAM00772;Product=k(+) efflux antiporter chloroplastic-like [BLAST2GO] | K+ efflux antiporter 1 [AT1G01790]
+R1	Ver1.2.2	protein	250078	255569	.	-	.	ID=Rs000720.1.protein1;Name=Rs000720.1;Derives_from=Rs000720.1;Family=RsFAM00772;Product=k(+) efflux antiporter chloroplastic-like [BLAST2GO] | K+ efflux antiporter 1 [AT1G01790]
+R1	Ver1.2.2	exon	254173	255901	.	-	.	ID=Rs000720.1.exon1;Parent=Rs000720.1
+R1	Ver1.2.2	five_prime_UTR	255570	255901	.	-	.	ID=Rs000720.1.utr5;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	254173	255569	.	-	0	ID=Rs000720.1.cds1;Parent=Rs000720.1
+R1	Ver1.2.2	exon	253900	254071	.	-	.	ID=Rs000720.1.exon2;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	253900	254071	.	-	2	ID=Rs000720.1.cds2;Parent=Rs000720.1
+R1	Ver1.2.2	exon	253729	253819	.	-	.	ID=Rs000720.1.exon3;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	253729	253819	.	-	0	ID=Rs000720.1.cds3;Parent=Rs000720.1
+R1	Ver1.2.2	exon	253432	253568	.	-	.	ID=Rs000720.1.exon4;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	253432	253568	.	-	1	ID=Rs000720.1.cds4;Parent=Rs000720.1
+R1	Ver1.2.2	exon	253287	253346	.	-	.	ID=Rs000720.1.exon5;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	253287	253346	.	-	0	ID=Rs000720.1.cds5;Parent=Rs000720.1
+R1	Ver1.2.2	exon	253079	253198	.	-	.	ID=Rs000720.1.exon6;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	253079	253198	.	-	0	ID=Rs000720.1.cds6;Parent=Rs000720.1
+R1	Ver1.2.2	exon	252931	252999	.	-	.	ID=Rs000720.1.exon7;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	252931	252999	.	-	0	ID=Rs000720.1.cds7;Parent=Rs000720.1
+R1	Ver1.2.2	exon	252789	252854	.	-	.	ID=Rs000720.1.exon8;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	252789	252854	.	-	0	ID=Rs000720.1.cds8;Parent=Rs000720.1
+R1	Ver1.2.2	exon	252537	252626	.	-	.	ID=Rs000720.1.exon9;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	252537	252626	.	-	0	ID=Rs000720.1.cds9;Parent=Rs000720.1
+R1	Ver1.2.2	exon	252313	252417	.	-	.	ID=Rs000720.1.exon10;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	252313	252417	.	-	0	ID=Rs000720.1.cds10;Parent=Rs000720.1
+R1	Ver1.2.2	exon	252094	252222	.	-	.	ID=Rs000720.1.exon11;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	252094	252222	.	-	0	ID=Rs000720.1.cds11;Parent=Rs000720.1
+R1	Ver1.2.2	exon	251756	251965	.	-	.	ID=Rs000720.1.exon12;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	251756	251965	.	-	0	ID=Rs000720.1.cds12;Parent=Rs000720.1
+R1	Ver1.2.2	exon	251518	251667	.	-	.	ID=Rs000720.1.exon13;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	251518	251667	.	-	0	ID=Rs000720.1.cds13;Parent=Rs000720.1
+R1	Ver1.2.2	exon	251299	251352	.	-	.	ID=Rs000720.1.exon14;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	251299	251352	.	-	0	ID=Rs000720.1.cds14;Parent=Rs000720.1
+R1	Ver1.2.2	exon	251145	251203	.	-	.	ID=Rs000720.1.exon15;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	251145	251203	.	-	0	ID=Rs000720.1.cds15;Parent=Rs000720.1
+R1	Ver1.2.2	exon	250876	250942	.	-	.	ID=Rs000720.1.exon16;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	250876	250942	.	-	2	ID=Rs000720.1.cds16;Parent=Rs000720.1
+R1	Ver1.2.2	exon	250617	250793	.	-	.	ID=Rs000720.1.exon17;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	250617	250793	.	-	0	ID=Rs000720.1.cds17;Parent=Rs000720.1
+R1	Ver1.2.2	exon	250467	250523	.	-	.	ID=Rs000720.1.exon18;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	250467	250523	.	-	0	ID=Rs000720.1.cds18;Parent=Rs000720.1
+R1	Ver1.2.2	exon	250304	250378	.	-	.	ID=Rs000720.1.exon19;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	250304	250378	.	-	0	ID=Rs000720.1.cds19;Parent=Rs000720.1
+R1	Ver1.2.2	exon	249953	250206	.	-	.	ID=Rs000720.1.exon20;Parent=Rs000720.1
+R1	Ver1.2.2	CDS	250078	250206	.	-	0	ID=Rs000720.1.cds20;Parent=Rs000720.1
+R1	Ver1.2.2	three_prime_UTR	249953	250077	.	-	.	ID=Rs000720.1.utr3;Parent=Rs000720.1
+## Rs000710 R1 256632 262123 -
+R1	Ver1.2.2	gene	256420	262390	.	-	.	ID=Rs000710;Name=Rs000710
+R1	Ver1.2.2	promoter	262391	263248	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	256420	262390	.	-	.	ID=Rs000710.1;Parent=Rs000710;Family=RsFAM00772;Product=k(+) efflux antiporter chloroplastic-like [BLAST2GO] | Best-Hit: K+ efflux antiporter 1 [AT1G01790]
+R1	Ver1.2.2	protein	256632	262123	.	-	.	ID=Rs000710.1.protein1;Name=Rs000710.1;Derives_from=Rs000710.1;Family=RsFAM00772;Product=k(+) efflux antiporter chloroplastic-like [BLAST2GO] | Best-Hit: K+ efflux antiporter 1 [AT1G01790]
+R1	Ver1.2.2	exon	260703	262390	.	-	.	ID=Rs000710.1.exon1;Parent=Rs000710.1
+R1	Ver1.2.2	five_prime_UTR	262124	262390	.	-	.	ID=Rs000710.1.utr5;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	260703	262123	.	-	0	ID=Rs000710.1.cds1;Parent=Rs000710.1
+R1	Ver1.2.2	exon	260451	260622	.	-	.	ID=Rs000710.1.exon2;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	260451	260622	.	-	2	ID=Rs000710.1.cds2;Parent=Rs000710.1
+R1	Ver1.2.2	exon	260273	260363	.	-	.	ID=Rs000710.1.exon3;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	260273	260363	.	-	0	ID=Rs000710.1.cds3;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259985	260121	.	-	.	ID=Rs000710.1.exon4;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259985	260121	.	-	1	ID=Rs000710.1.cds4;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259834	259893	.	-	.	ID=Rs000710.1.exon5;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259834	259893	.	-	0	ID=Rs000710.1.cds5;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259625	259744	.	-	.	ID=Rs000710.1.exon6;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259625	259744	.	-	0	ID=Rs000710.1.cds6;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259477	259545	.	-	.	ID=Rs000710.1.exon7;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259477	259545	.	-	0	ID=Rs000710.1.cds7;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259339	259404	.	-	.	ID=Rs000710.1.exon8;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259339	259404	.	-	0	ID=Rs000710.1.cds8;Parent=Rs000710.1
+R1	Ver1.2.2	exon	259053	259142	.	-	.	ID=Rs000710.1.exon9;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	259053	259142	.	-	0	ID=Rs000710.1.cds9;Parent=Rs000710.1
+R1	Ver1.2.2	exon	258847	258951	.	-	.	ID=Rs000710.1.exon10;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	258847	258951	.	-	0	ID=Rs000710.1.cds10;Parent=Rs000710.1
+R1	Ver1.2.2	exon	258622	258750	.	-	.	ID=Rs000710.1.exon11;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	258622	258750	.	-	0	ID=Rs000710.1.cds11;Parent=Rs000710.1
+R1	Ver1.2.2	exon	258241	258450	.	-	.	ID=Rs000710.1.exon12;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	258241	258450	.	-	0	ID=Rs000710.1.cds12;Parent=Rs000710.1
+R1	Ver1.2.2	exon	258003	258152	.	-	.	ID=Rs000710.1.exon13;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	258003	258152	.	-	0	ID=Rs000710.1.cds13;Parent=Rs000710.1
+R1	Ver1.2.2	exon	257794	257847	.	-	.	ID=Rs000710.1.exon14;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	257794	257847	.	-	0	ID=Rs000710.1.cds14;Parent=Rs000710.1
+R1	Ver1.2.2	exon	257610	257668	.	-	.	ID=Rs000710.1.exon15;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	257610	257668	.	-	0	ID=Rs000710.1.cds15;Parent=Rs000710.1
+R1	Ver1.2.2	exon	257442	257508	.	-	.	ID=Rs000710.1.exon16;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	257442	257508	.	-	2	ID=Rs000710.1.cds16;Parent=Rs000710.1
+R1	Ver1.2.2	exon	257186	257362	.	-	.	ID=Rs000710.1.exon17;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	257186	257362	.	-	0	ID=Rs000710.1.cds17;Parent=Rs000710.1
+R1	Ver1.2.2	exon	257023	257079	.	-	.	ID=Rs000710.1.exon18;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	257023	257079	.	-	0	ID=Rs000710.1.cds18;Parent=Rs000710.1
+R1	Ver1.2.2	exon	256869	256943	.	-	.	ID=Rs000710.1.exon19;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	256869	256943	.	-	0	ID=Rs000710.1.cds19;Parent=Rs000710.1
+R1	Ver1.2.2	exon	256420	256760	.	-	.	ID=Rs000710.1.exon20;Parent=Rs000710.1
+R1	Ver1.2.2	CDS	256632	256760	.	-	0	ID=Rs000710.1.cds20;Parent=Rs000710.1
+R1	Ver1.2.2	three_prime_UTR	256420	256631	.	-	.	ID=Rs000710.1.utr3;Parent=Rs000710.1
+## Rs000700 R1 263622 264756 -
+R1	Ver1.2.2	gene	263405	265005	.	-	.	ID=Rs000700;Name=Rs000700
+R1	Ver1.2.2	promoter	265006	265962	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	263405	265005	.	-	.	ID=Rs000700.1;Parent=Rs000700;Family=RsFAM16937;Product=lim domain-containing protein [BLAST2GO] | GATA type zinc finger transcription factor family protein [AT1G01780]
+R1	Ver1.2.2	protein	263622	264756	.	-	.	ID=Rs000700.1.protein1;Name=Rs000700.1;Derives_from=Rs000700.1;Family=RsFAM16937;Product=lim domain-containing protein [BLAST2GO] | GATA type zinc finger transcription factor family protein [AT1G01780]
+R1	Ver1.2.2	exon	264622	265005	.	-	.	ID=Rs000700.1.exon1;Parent=Rs000700.1
+R1	Ver1.2.2	five_prime_UTR	264757	265005	.	-	.	ID=Rs000700.1.utr5;Parent=Rs000700.1
+R1	Ver1.2.2	CDS	264622	264756	.	-	0	ID=Rs000700.1.cds1;Parent=Rs000700.1
+R1	Ver1.2.2	exon	264336	264435	.	-	.	ID=Rs000700.1.exon2;Parent=Rs000700.1
+R1	Ver1.2.2	CDS	264336	264435	.	-	0	ID=Rs000700.1.cds2;Parent=Rs000700.1
+R1	Ver1.2.2	exon	264221	264243	.	-	.	ID=Rs000700.1.exon3;Parent=Rs000700.1
+R1	Ver1.2.2	CDS	264221	264243	.	-	1	ID=Rs000700.1.cds3;Parent=Rs000700.1
+R1	Ver1.2.2	exon	264000	264089	.	-	.	ID=Rs000700.1.exon4;Parent=Rs000700.1
+R1	Ver1.2.2	CDS	264000	264089	.	-	0	ID=Rs000700.1.cds4;Parent=Rs000700.1
+R1	Ver1.2.2	exon	263405	263891	.	-	.	ID=Rs000700.1.exon5;Parent=Rs000700.1
+R1	Ver1.2.2	CDS	263622	263891	.	-	0	ID=Rs000700.1.cds5;Parent=Rs000700.1
+R1	Ver1.2.2	three_prime_UTR	263405	263621	.	-	.	ID=Rs000700.1.utr3;Parent=Rs000700.1
+## Rs000690 R1 272353 274511 +
+R1	Ver1.2.2	gene	272268	274656	.	+	.	ID=Rs000690;Name=Rs000690
+R1	Ver1.2.2	promoter	270961	272267	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	272268	274656	.	+	.	ID=Rs000690.1;Parent=Rs000690;Family=RsFAM08798;Product=adenosine-deaminase domain-containing protein [BLAST2GO] | adenosine deaminases [AT1G01760]
+R1	Ver1.2.2	protein	272353	274511	.	+	.	ID=Rs000690.1.protein1;Name=Rs000690.1;Derives_from=Rs000690.1;Family=RsFAM08798;Product=adenosine-deaminase domain-containing protein [BLAST2GO] | adenosine deaminases [AT1G01760]
+R1	Ver1.2.2	exon	272268	272500	.	+	.	ID=Rs000690.1.exon1;Parent=Rs000690.1
+R1	Ver1.2.2	five_prime_UTR	272268	272352	.	+	.	ID=Rs000690.1.utr5;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	272353	272500	.	+	0	ID=Rs000690.1.cds1;Parent=Rs000690.1
+R1	Ver1.2.2	exon	272587	272707	.	+	.	ID=Rs000690.1.exon2;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	272587	272707	.	+	1	ID=Rs000690.1.cds2;Parent=Rs000690.1
+R1	Ver1.2.2	exon	272806	272987	.	+	.	ID=Rs000690.1.exon3;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	272806	272987	.	+	2	ID=Rs000690.1.cds3;Parent=Rs000690.1
+R1	Ver1.2.2	exon	273068	273190	.	+	.	ID=Rs000690.1.exon4;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	273068	273190	.	+	1	ID=Rs000690.1.cds4;Parent=Rs000690.1
+R1	Ver1.2.2	exon	273278	273382	.	+	.	ID=Rs000690.1.exon5;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	273278	273382	.	+	1	ID=Rs000690.1.cds5;Parent=Rs000690.1
+R1	Ver1.2.2	exon	273529	273698	.	+	.	ID=Rs000690.1.exon6;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	273529	273698	.	+	1	ID=Rs000690.1.cds6;Parent=Rs000690.1
+R1	Ver1.2.2	exon	273786	273862	.	+	.	ID=Rs000690.1.exon7;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	273786	273862	.	+	0	ID=Rs000690.1.cds7;Parent=Rs000690.1
+R1	Ver1.2.2	exon	273950	274069	.	+	.	ID=Rs000690.1.exon8;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	273950	274069	.	+	2	ID=Rs000690.1.cds8;Parent=Rs000690.1
+R1	Ver1.2.2	exon	274165	274252	.	+	.	ID=Rs000690.1.exon9;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	274165	274252	.	+	2	ID=Rs000690.1.cds9;Parent=Rs000690.1
+R1	Ver1.2.2	exon	274404	274656	.	+	.	ID=Rs000690.1.exon10;Parent=Rs000690.1
+R1	Ver1.2.2	CDS	274404	274511	.	+	0	ID=Rs000690.1.cds10;Parent=Rs000690.1
+R1	Ver1.2.2	three_prime_UTR	274512	274656	.	+	.	ID=Rs000690.1.utr3;Parent=Rs000690.1
+## Rs000680 R1 274704 275528 -
+R1	Ver1.2.2	gene	274657	275628	.	-	.	ID=Rs000680;Name=Rs000680
+R1	Ver1.2.2	promoter	275629	276282	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	274657	275628	.	-	.	ID=Rs000680.1;Parent=Rs000680;Product=actin depolymerizing [BLAST2GO] | actin depolymerizing factor 11 [AT1G01750]
+R1	Ver1.2.2	protein	274704	275528	.	-	.	ID=Rs000680.1.protein1;Name=Rs000680.1;Derives_from=Rs000680.1;Product=actin depolymerizing [BLAST2GO] | actin depolymerizing factor 11 [AT1G01750]
+R1	Ver1.2.2	exon	275466	275628	.	-	.	ID=Rs000680.1.exon1;Parent=Rs000680.1
+R1	Ver1.2.2	five_prime_UTR	275529	275628	.	-	.	ID=Rs000680.1.utr5;Parent=Rs000680.1
+R1	Ver1.2.2	CDS	275466	275528	.	-	0	ID=Rs000680.1.cds1;Parent=Rs000680.1
+R1	Ver1.2.2	exon	274941	275206	.	-	.	ID=Rs000680.1.exon2;Parent=Rs000680.1
+R1	Ver1.2.2	CDS	274941	275206	.	-	0	ID=Rs000680.1.cds2;Parent=Rs000680.1
+R1	Ver1.2.2	exon	274657	274857	.	-	.	ID=Rs000680.1.exon3;Parent=Rs000680.1
+R1	Ver1.2.2	CDS	274704	274857	.	-	2	ID=Rs000680.1.cds3;Parent=Rs000680.1
+R1	Ver1.2.2	three_prime_UTR	274657	274703	.	-	.	ID=Rs000680.1.utr3;Parent=Rs000680.1
+## Rs000670 R1 276533 278697 +
+R1	Ver1.2.2	gene	276496	279857	.	+	.	ID=Rs000670;Name=Rs000670
+R1	Ver1.2.2	promoter	275779	276495	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	276496	279857	.	+	.	ID=Rs000670.1;Parent=Rs000670;Family=RsFAM00113;Product=kinase family protein [BLAST2GO] | Best-Hit: Protein kinase protein with tetratricopeptide repeat domain [AT1G01740]
+R1	Ver1.2.2	protein	276533	278697	.	+	.	ID=Rs000670.1.protein1;Name=Rs000670.1;Derives_from=Rs000670.1;Family=RsFAM00113;Product=kinase family protein [BLAST2GO] | Best-Hit: Protein kinase protein with tetratricopeptide repeat domain [AT1G01740]
+R1	Ver1.2.2	exon	276496	276614	.	+	.	ID=Rs000670.1.exon1;Parent=Rs000670.1
+R1	Ver1.2.2	five_prime_UTR	276496	276532	.	+	.	ID=Rs000670.1.utr5;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	276533	276614	.	+	0	ID=Rs000670.1.cds1;Parent=Rs000670.1
+R1	Ver1.2.2	exon	276703	276923	.	+	.	ID=Rs000670.1.exon2;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	276703	276923	.	+	1	ID=Rs000670.1.cds2;Parent=Rs000670.1
+R1	Ver1.2.2	exon	276994	277129	.	+	.	ID=Rs000670.1.exon3;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	276994	277129	.	+	0	ID=Rs000670.1.cds3;Parent=Rs000670.1
+R1	Ver1.2.2	exon	277212	277345	.	+	.	ID=Rs000670.1.exon4;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	277212	277345	.	+	1	ID=Rs000670.1.cds4;Parent=Rs000670.1
+R1	Ver1.2.2	exon	277434	277539	.	+	.	ID=Rs000670.1.exon5;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	277434	277539	.	+	0	ID=Rs000670.1.cds5;Parent=Rs000670.1
+R1	Ver1.2.2	exon	277634	277719	.	+	.	ID=Rs000670.1.exon6;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	277634	277719	.	+	1	ID=Rs000670.1.cds6;Parent=Rs000670.1
+R1	Ver1.2.2	exon	277812	278141	.	+	.	ID=Rs000670.1.exon7;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	277812	278141	.	+	0	ID=Rs000670.1.cds7;Parent=Rs000670.1
+R1	Ver1.2.2	exon	278247	278357	.	+	.	ID=Rs000670.1.exon8;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	278247	278357	.	+	0	ID=Rs000670.1.cds8;Parent=Rs000670.1
+R1	Ver1.2.2	exon	278449	279857	.	+	.	ID=Rs000670.1.exon9;Parent=Rs000670.1
+R1	Ver1.2.2	CDS	278449	278697	.	+	0	ID=Rs000670.1.cds9;Parent=Rs000670.1
+R1	Ver1.2.2	three_prime_UTR	278698	279857	.	+	.	ID=Rs000670.1.utr3;Parent=Rs000670.1
+## Rs000660 R1 280243 281312 -
+R1	Ver1.2.2	gene	279894	281356	.	-	.	ID=Rs000660;Name=Rs000660
+R1	Ver1.2.2	promoter	281357	282173	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	279894	281356	.	-	.	ID=Rs000660.1;Parent=Rs000660;Family=RsFAM08796;Product=nam-like protein [BLAST2GO] | NAC (No Apical Meristem) domain transcriptional regulator superfamily protein [AT1G01720]
+R1	Ver1.2.2	protein	280243	281312	.	-	.	ID=Rs000660.1.protein1;Name=Rs000660.1;Derives_from=Rs000660.1;Family=RsFAM08796;Product=nam-like protein [BLAST2GO] | NAC (No Apical Meristem) domain transcriptional regulator superfamily protein [AT1G01720]
+R1	Ver1.2.2	exon	281156	281356	.	-	.	ID=Rs000660.1.exon1;Parent=Rs000660.1
+R1	Ver1.2.2	five_prime_UTR	281313	281356	.	-	.	ID=Rs000660.1.utr5;Parent=Rs000660.1
+R1	Ver1.2.2	CDS	281156	281312	.	-	0	ID=Rs000660.1.cds1;Parent=Rs000660.1
+R1	Ver1.2.2	exon	280771	281051	.	-	.	ID=Rs000660.1.exon2;Parent=Rs000660.1
+R1	Ver1.2.2	CDS	280771	281051	.	-	1	ID=Rs000660.1.cds2;Parent=Rs000660.1
+R1	Ver1.2.2	exon	279894	280683	.	-	.	ID=Rs000660.1.exon3;Parent=Rs000660.1
+R1	Ver1.2.2	CDS	280243	280683	.	-	0	ID=Rs000660.1.cds3;Parent=Rs000660.1
+R1	Ver1.2.2	three_prime_UTR	279894	280242	.	-	.	ID=Rs000660.1.utr3;Parent=Rs000660.1
+## Rs000650 R1 286749 290100 -
+R1	Ver1.2.2	gene	286479	290188	.	-	.	ID=Rs000650;Name=Rs000650
+R1	Ver1.2.2	promoter	290189	291688	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	286479	290188	.	-	.	ID=Rs000650.1;Parent=Rs000650;Family=RsFAM04792;Product=acyl-coenzyme a thioesterase 8-like [BLAST2GO] | Acyl-CoA thioesterase family protein [AT1G01710]
+R1	Ver1.2.2	protein	286749	290100	.	-	.	ID=Rs000650.1.protein1;Name=Rs000650.1;Derives_from=Rs000650.1;Family=RsFAM04792;Product=acyl-coenzyme a thioesterase 8-like [BLAST2GO] | Acyl-CoA thioesterase family protein [AT1G01710]
+R1	Ver1.2.2	exon	290085	290188	.	-	.	ID=Rs000650.1.exon1;Parent=Rs000650.1
+R1	Ver1.2.2	five_prime_UTR	290101	290188	.	-	.	ID=Rs000650.1.utr5;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	290085	290100	.	-	0	ID=Rs000650.1.cds1;Parent=Rs000650.1
+R1	Ver1.2.2	exon	289884	289976	.	-	.	ID=Rs000650.1.exon2;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	289884	289976	.	-	1	ID=Rs000650.1.cds2;Parent=Rs000650.1
+R1	Ver1.2.2	exon	289676	289743	.	-	.	ID=Rs000650.1.exon3;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	289676	289743	.	-	1	ID=Rs000650.1.cds3;Parent=Rs000650.1
+R1	Ver1.2.2	exon	289489	289564	.	-	.	ID=Rs000650.1.exon4;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	289489	289564	.	-	0	ID=Rs000650.1.cds4;Parent=Rs000650.1
+R1	Ver1.2.2	exon	289350	289396	.	-	.	ID=Rs000650.1.exon5;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	289350	289396	.	-	1	ID=Rs000650.1.cds5;Parent=Rs000650.1
+R1	Ver1.2.2	exon	289147	289272	.	-	.	ID=Rs000650.1.exon6;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	289147	289272	.	-	0	ID=Rs000650.1.cds6;Parent=Rs000650.1
+R1	Ver1.2.2	exon	288930	289007	.	-	.	ID=Rs000650.1.exon7;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	288930	289007	.	-	0	ID=Rs000650.1.cds7;Parent=Rs000650.1
+R1	Ver1.2.2	exon	288500	288613	.	-	.	ID=Rs000650.1.exon8;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	288500	288613	.	-	0	ID=Rs000650.1.cds8;Parent=Rs000650.1
+R1	Ver1.2.2	exon	288298	288360	.	-	.	ID=Rs000650.1.exon9;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	288298	288360	.	-	0	ID=Rs000650.1.cds9;Parent=Rs000650.1
+R1	Ver1.2.2	exon	288165	288220	.	-	.	ID=Rs000650.1.exon10;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	288165	288220	.	-	0	ID=Rs000650.1.cds10;Parent=Rs000650.1
+R1	Ver1.2.2	exon	287979	288083	.	-	.	ID=Rs000650.1.exon11;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	287979	288083	.	-	2	ID=Rs000650.1.cds11;Parent=Rs000650.1
+R1	Ver1.2.2	exon	287770	287826	.	-	.	ID=Rs000650.1.exon12;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	287770	287826	.	-	2	ID=Rs000650.1.cds12;Parent=Rs000650.1
+R1	Ver1.2.2	exon	287387	287488	.	-	.	ID=Rs000650.1.exon13;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	287387	287488	.	-	2	ID=Rs000650.1.cds13;Parent=Rs000650.1
+R1	Ver1.2.2	exon	287193	287241	.	-	.	ID=Rs000650.1.exon14;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	287193	287241	.	-	2	ID=Rs000650.1.cds14;Parent=Rs000650.1
+R1	Ver1.2.2	exon	287009	287077	.	-	.	ID=Rs000650.1.exon15;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	287009	287077	.	-	0	ID=Rs000650.1.cds15;Parent=Rs000650.1
+R1	Ver1.2.2	exon	286479	286826	.	-	.	ID=Rs000650.1.exon16;Parent=Rs000650.1
+R1	Ver1.2.2	CDS	286749	286826	.	-	0	ID=Rs000650.1.cds16;Parent=Rs000650.1
+R1	Ver1.2.2	three_prime_UTR	286479	286748	.	-	.	ID=Rs000650.1.utr3;Parent=Rs000650.1
+## Rs000640 R1 299061 300743 -
+R1	Ver1.2.2	gene	298890	300772	.	-	.	ID=Rs000640;Name=Rs000640
+R1	Ver1.2.2	promoter	300773	302242	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	298890	300772	.	-	.	ID=Rs000640.1;Parent=Rs000640;Family=RsFAM04792;Product=protein pair1-like [BLAST2GO] | putative recombination initiation defects 3 [AT1G01690]
+R1	Ver1.2.2	protein	299061	300743	.	-	.	ID=Rs000640.1.protein1;Name=Rs000640.1;Derives_from=Rs000640.1;Family=RsFAM04792;Product=protein pair1-like [BLAST2GO] | putative recombination initiation defects 3 [AT1G01690]
+R1	Ver1.2.2	exon	300659	300772	.	-	.	ID=Rs000640.1.exon1;Parent=Rs000640.1
+R1	Ver1.2.2	five_prime_UTR	300744	300772	.	-	.	ID=Rs000640.1.utr5;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	300659	300743	.	-	0	ID=Rs000640.1.cds1;Parent=Rs000640.1
+R1	Ver1.2.2	exon	300453	300505	.	-	.	ID=Rs000640.1.exon2;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	300453	300505	.	-	1	ID=Rs000640.1.cds2;Parent=Rs000640.1
+R1	Ver1.2.2	exon	300171	300365	.	-	.	ID=Rs000640.1.exon3;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	300171	300365	.	-	0	ID=Rs000640.1.cds3;Parent=Rs000640.1
+R1	Ver1.2.2	exon	299978	300040	.	-	.	ID=Rs000640.1.exon4;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299978	300040	.	-	0	ID=Rs000640.1.cds4;Parent=Rs000640.1
+R1	Ver1.2.2	exon	299848	299889	.	-	.	ID=Rs000640.1.exon5;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299848	299889	.	-	0	ID=Rs000640.1.cds5;Parent=Rs000640.1
+R1	Ver1.2.2	exon	299694	299755	.	-	.	ID=Rs000640.1.exon6;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299694	299755	.	-	0	ID=Rs000640.1.cds6;Parent=Rs000640.1
+R1	Ver1.2.2	exon	299453	299600	.	-	.	ID=Rs000640.1.exon7;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299453	299600	.	-	2	ID=Rs000640.1.cds7;Parent=Rs000640.1
+R1	Ver1.2.2	exon	299296	299377	.	-	.	ID=Rs000640.1.exon8;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299296	299377	.	-	0	ID=Rs000640.1.cds8;Parent=Rs000640.1
+R1	Ver1.2.2	exon	298890	299161	.	-	.	ID=Rs000640.1.exon9;Parent=Rs000640.1
+R1	Ver1.2.2	CDS	299061	299161	.	-	1	ID=Rs000640.1.cds9;Parent=Rs000640.1
+R1	Ver1.2.2	three_prime_UTR	298890	299060	.	-	.	ID=Rs000640.1.utr3;Parent=Rs000640.1
+## Rs000630 R1 302642 305305 +
+R1	Ver1.2.2	gene	302608	305467	.	+	.	ID=Rs000630;Name=Rs000630
+R1	Ver1.2.2	promoter	301143	302607	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	302608	305467	.	+	.	ID=Rs000630.1;Parent=Rs000630;Family=RsFAM04791;Product=kinase family protein [BLAST2GO] | plant U-box 54 [AT1G01680]
+R1	Ver1.2.2	protein	302642	305305	.	+	.	ID=Rs000630.1.protein1;Name=Rs000630.1;Derives_from=Rs000630.1;Family=RsFAM04791;Product=kinase family protein [BLAST2GO] | plant U-box 54 [AT1G01680]
+R1	Ver1.2.2	exon	302608	302795	.	+	.	ID=Rs000630.1.exon1;Parent=Rs000630.1
+R1	Ver1.2.2	five_prime_UTR	302608	302641	.	+	.	ID=Rs000630.1.utr5;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	302642	302795	.	+	0	ID=Rs000630.1.cds1;Parent=Rs000630.1
+R1	Ver1.2.2	exon	303488	303591	.	+	.	ID=Rs000630.1.exon2;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	303488	303591	.	+	1	ID=Rs000630.1.cds2;Parent=Rs000630.1
+R1	Ver1.2.2	exon	304143	304273	.	+	.	ID=Rs000630.1.exon3;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	304143	304273	.	+	0	ID=Rs000630.1.cds3;Parent=Rs000630.1
+R1	Ver1.2.2	exon	304367	304468	.	+	.	ID=Rs000630.1.exon4;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	304367	304468	.	+	2	ID=Rs000630.1.cds4;Parent=Rs000630.1
+R1	Ver1.2.2	exon	304555	304687	.	+	.	ID=Rs000630.1.exon5;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	304555	304687	.	+	2	ID=Rs000630.1.cds5;Parent=Rs000630.1
+R1	Ver1.2.2	exon	304893	305000	.	+	.	ID=Rs000630.1.exon6;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	304893	305000	.	+	0	ID=Rs000630.1.cds6;Parent=Rs000630.1
+R1	Ver1.2.2	exon	305108	305467	.	+	.	ID=Rs000630.1.exon7;Parent=Rs000630.1
+R1	Ver1.2.2	CDS	305108	305305	.	+	0	ID=Rs000630.1.cds7;Parent=Rs000630.1
+R1	Ver1.2.2	three_prime_UTR	305306	305467	.	+	.	ID=Rs000630.1.utr3;Parent=Rs000630.1
+## Rs000620 R1 306354 308832 +
+R1	Ver1.2.2	gene	306110	309085	.	+	.	ID=Rs000620;Name=Rs000620
+R1	Ver1.2.2	promoter	305567	306109	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	306110	309085	.	+	.	ID=Rs000620.1;Parent=Rs000620;Family=RsFAM08793;Product=u-box domain-containing protein 56 [BLAST2GO] | RING/U-box superfamily protein [AT1G01670]
+R1	Ver1.2.2	protein	306354	308832	.	+	.	ID=Rs000620.1.protein1;Name=Rs000620.1;Derives_from=Rs000620.1;Family=RsFAM08793;Product=u-box domain-containing protein 56 [BLAST2GO] | RING/U-box superfamily protein [AT1G01670]
+R1	Ver1.2.2	exon	306110	306513	.	+	.	ID=Rs000620.1.exon1;Parent=Rs000620.1
+R1	Ver1.2.2	five_prime_UTR	306110	306353	.	+	.	ID=Rs000620.1.utr5;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	306354	306513	.	+	0	ID=Rs000620.1.cds1;Parent=Rs000620.1
+R1	Ver1.2.2	exon	306898	307001	.	+	.	ID=Rs000620.1.exon2;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	306898	307001	.	+	1	ID=Rs000620.1.cds2;Parent=Rs000620.1
+R1	Ver1.2.2	exon	307090	307220	.	+	.	ID=Rs000620.1.exon3;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	307090	307220	.	+	0	ID=Rs000620.1.cds3;Parent=Rs000620.1
+R1	Ver1.2.2	exon	307307	307411	.	+	.	ID=Rs000620.1.exon4;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	307307	307411	.	+	2	ID=Rs000620.1.cds4;Parent=Rs000620.1
+R1	Ver1.2.2	exon	307508	307664	.	+	.	ID=Rs000620.1.exon5;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	307508	307664	.	+	2	ID=Rs000620.1.cds5;Parent=Rs000620.1
+R1	Ver1.2.2	exon	308007	308450	.	+	.	ID=Rs000620.1.exon6;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	308007	308450	.	+	0	ID=Rs000620.1.cds6;Parent=Rs000620.1
+R1	Ver1.2.2	exon	308644	309085	.	+	.	ID=Rs000620.1.exon7;Parent=Rs000620.1
+R1	Ver1.2.2	CDS	308644	308832	.	+	0	ID=Rs000620.1.cds7;Parent=Rs000620.1
+R1	Ver1.2.2	three_prime_UTR	308833	309085	.	+	.	ID=Rs000620.1.utr3;Parent=Rs000620.1
+## Rs000610 R1 309169 311792 +
+R1	Ver1.2.2	gene	309086	312209	.	+	.	ID=Rs000610;Name=Rs000610
+R1	Ver1.2.2	mRNA	309086	312209	.	+	.	ID=Rs000610.1;Parent=Rs000610;Family=RsFAM08792;Product=receptor protein [BLAST2GO] | RING/U-box superfamily protein [AT1G01660]
+R1	Ver1.2.2	protein	309169	311792	.	+	.	ID=Rs000610.1.protein1;Name=Rs000610.1;Derives_from=Rs000610.1;Family=RsFAM08792;Product=receptor protein [BLAST2GO] | RING/U-box superfamily protein [AT1G01660]
+R1	Ver1.2.2	exon	309086	309328	.	+	.	ID=Rs000610.1.exon1;Parent=Rs000610.1
+R1	Ver1.2.2	five_prime_UTR	309086	309168	.	+	.	ID=Rs000610.1.utr5;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	309169	309328	.	+	0	ID=Rs000610.1.cds1;Parent=Rs000610.1
+R1	Ver1.2.2	exon	309421	309497	.	+	.	ID=Rs000610.1.exon2;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	309421	309497	.	+	1	ID=Rs000610.1.cds2;Parent=Rs000610.1
+R1	Ver1.2.2	exon	309586	309716	.	+	.	ID=Rs000610.1.exon3;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	309586	309716	.	+	0	ID=Rs000610.1.cds3;Parent=Rs000610.1
+R1	Ver1.2.2	exon	309793	309897	.	+	.	ID=Rs000610.1.exon4;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	309793	309897	.	+	2	ID=Rs000610.1.cds4;Parent=Rs000610.1
+R1	Ver1.2.2	exon	309978	310158	.	+	.	ID=Rs000610.1.exon5;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	309978	310158	.	+	2	ID=Rs000610.1.cds5;Parent=Rs000610.1
+R1	Ver1.2.2	exon	310273	310410	.	+	.	ID=Rs000610.1.exon6;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	310273	310410	.	+	0	ID=Rs000610.1.cds6;Parent=Rs000610.1
+R1	Ver1.2.2	exon	310496	310757	.	+	.	ID=Rs000610.1.exon7;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	310496	310757	.	+	0	ID=Rs000610.1.cds7;Parent=Rs000610.1
+R1	Ver1.2.2	exon	310852	311000	.	+	.	ID=Rs000610.1.exon8;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	310852	311000	.	+	1	ID=Rs000610.1.cds8;Parent=Rs000610.1
+R1	Ver1.2.2	exon	311072	311392	.	+	.	ID=Rs000610.1.exon9;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	311072	311392	.	+	0	ID=Rs000610.1.cds9;Parent=Rs000610.1
+R1	Ver1.2.2	exon	311607	312209	.	+	.	ID=Rs000610.1.exon10;Parent=Rs000610.1
+R1	Ver1.2.2	CDS	311607	311792	.	+	0	ID=Rs000610.1.cds10;Parent=Rs000610.1
+R1	Ver1.2.2	three_prime_UTR	311793	312209	.	+	.	ID=Rs000610.1.utr3;Parent=Rs000610.1
+## Rs000600 R1 314018 317487 +
+R1	Ver1.2.2	gene	313855	317763	.	+	.	ID=Rs000600;Name=Rs000600
+R1	Ver1.2.2	promoter	312355	313854	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	313855	317763	.	+	.	ID=Rs000600.1;Parent=Rs000600;Family=RsFAM01091;Product=signal peptide peptidase-like 2b-like [BLAST2GO] | SIGNAL PEPTIDE PEPTIDASE-LIKE 4 [AT1G01650]
+R1	Ver1.2.2	protein	314018	317487	.	+	.	ID=Rs000600.1.protein1;Name=Rs000600.1;Derives_from=Rs000600.1;Family=RsFAM01091;Product=signal peptide peptidase-like 2b-like [BLAST2GO] | SIGNAL PEPTIDE PEPTIDASE-LIKE 4 [AT1G01650]
+R1	Ver1.2.2	exon	313855	314155	.	+	.	ID=Rs000600.1.exon1;Parent=Rs000600.1
+R1	Ver1.2.2	five_prime_UTR	313855	314017	.	+	.	ID=Rs000600.1.utr5;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	314018	314155	.	+	0	ID=Rs000600.1.cds1;Parent=Rs000600.1
+R1	Ver1.2.2	exon	314577	314735	.	+	.	ID=Rs000600.1.exon2;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	314577	314735	.	+	0	ID=Rs000600.1.cds2;Parent=Rs000600.1
+R1	Ver1.2.2	exon	314871	314982	.	+	.	ID=Rs000600.1.exon3;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	314871	314982	.	+	0	ID=Rs000600.1.cds3;Parent=Rs000600.1
+R1	Ver1.2.2	exon	315053	315172	.	+	.	ID=Rs000600.1.exon4;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	315053	315172	.	+	1	ID=Rs000600.1.cds4;Parent=Rs000600.1
+R1	Ver1.2.2	exon	315242	315393	.	+	.	ID=Rs000600.1.exon5;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	315242	315393	.	+	1	ID=Rs000600.1.cds5;Parent=Rs000600.1
+R1	Ver1.2.2	exon	315490	315672	.	+	.	ID=Rs000600.1.exon6;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	315490	315672	.	+	0	ID=Rs000600.1.cds6;Parent=Rs000600.1
+R1	Ver1.2.2	exon	315765	315799	.	+	.	ID=Rs000600.1.exon7;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	315765	315799	.	+	0	ID=Rs000600.1.cds7;Parent=Rs000600.1
+R1	Ver1.2.2	exon	315882	316044	.	+	.	ID=Rs000600.1.exon8;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	315882	316044	.	+	2	ID=Rs000600.1.cds8;Parent=Rs000600.1
+R1	Ver1.2.2	exon	316140	316193	.	+	.	ID=Rs000600.1.exon9;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	316140	316193	.	+	0	ID=Rs000600.1.cds9;Parent=Rs000600.1
+R1	Ver1.2.2	exon	316446	316538	.	+	.	ID=Rs000600.1.exon10;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	316446	316538	.	+	0	ID=Rs000600.1.cds10;Parent=Rs000600.1
+R1	Ver1.2.2	exon	316635	316777	.	+	.	ID=Rs000600.1.exon11;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	316635	316777	.	+	0	ID=Rs000600.1.cds11;Parent=Rs000600.1
+R1	Ver1.2.2	exon	317046	317116	.	+	.	ID=Rs000600.1.exon12;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	317046	317116	.	+	2	ID=Rs000600.1.cds12;Parent=Rs000600.1
+R1	Ver1.2.2	exon	317212	317295	.	+	.	ID=Rs000600.1.exon13;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	317212	317295	.	+	1	ID=Rs000600.1.cds13;Parent=Rs000600.1
+R1	Ver1.2.2	exon	317381	317763	.	+	.	ID=Rs000600.1.exon14;Parent=Rs000600.1
+R1	Ver1.2.2	CDS	317381	317487	.	+	1	ID=Rs000600.1.cds14;Parent=Rs000600.1
+R1	Ver1.2.2	three_prime_UTR	317488	317763	.	+	.	ID=Rs000600.1.utr3;Parent=Rs000600.1
+## Rs000590 R1 318948 319676 +
+R1	Ver1.2.2	gene	318927	319842	.	+	.	ID=Rs000590;Name=Rs000590
+R1	Ver1.2.2	promoter	317852	318926	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	318927	319842	.	+	.	ID=Rs000590.1;Parent=Rs000590;Family=RsFAM08791;Product=btb poz domain-containing protein [BLAST2GO] | BTB/POZ domain-containing protein [AT1G01640]
+R1	Ver1.2.2	protein	318948	319676	.	+	.	ID=Rs000590.1.protein1;Name=Rs000590.1;Derives_from=Rs000590.1;Family=RsFAM08791;Product=btb poz domain-containing protein [BLAST2GO] | BTB/POZ domain-containing protein [AT1G01640]
+R1	Ver1.2.2	exon	318927	319106	.	+	.	ID=Rs000590.1.exon1;Parent=Rs000590.1
+R1	Ver1.2.2	five_prime_UTR	318927	318947	.	+	.	ID=Rs000590.1.utr5;Parent=Rs000590.1
+R1	Ver1.2.2	CDS	318948	319106	.	+	0	ID=Rs000590.1.cds1;Parent=Rs000590.1
+R1	Ver1.2.2	exon	319182	319842	.	+	.	ID=Rs000590.1.exon2;Parent=Rs000590.1
+R1	Ver1.2.2	CDS	319182	319676	.	+	0	ID=Rs000590.1.cds2;Parent=Rs000590.1
+R1	Ver1.2.2	three_prime_UTR	319677	319842	.	+	.	ID=Rs000590.1.utr3;Parent=Rs000590.1
+## Rs000580 R1 320073 321485 -
+R1	Ver1.2.2	gene	319975	321663	.	-	.	ID=Rs000580;Name=Rs000580
+R1	Ver1.2.2	promoter	321664	323163	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	319975	321663	.	-	.	ID=Rs000580.1;Parent=Rs000580;Family=RsFAM08790;Product=random slug protein 5-like [BLAST2GO] | Sec14p-like phosphatidylinositol transfer family protein [AT1G01630]
+R1	Ver1.2.2	protein	320073	321485	.	-	.	ID=Rs000580.1.protein1;Name=Rs000580.1;Derives_from=Rs000580.1;Family=RsFAM08790;Product=random slug protein 5-like [BLAST2GO] | Sec14p-like phosphatidylinositol transfer family protein [AT1G01630]
+R1	Ver1.2.2	exon	321339	321663	.	-	.	ID=Rs000580.1.exon1;Parent=Rs000580.1
+R1	Ver1.2.2	five_prime_UTR	321486	321663	.	-	.	ID=Rs000580.1.utr5;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	321339	321485	.	-	0	ID=Rs000580.1.cds1;Parent=Rs000580.1
+R1	Ver1.2.2	exon	320846	321104	.	-	.	ID=Rs000580.1.exon2;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	320846	321104	.	-	0	ID=Rs000580.1.cds2;Parent=Rs000580.1
+R1	Ver1.2.2	exon	320716	320752	.	-	.	ID=Rs000580.1.exon3;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	320716	320752	.	-	1	ID=Rs000580.1.cds3;Parent=Rs000580.1
+R1	Ver1.2.2	exon	320507	320612	.	-	.	ID=Rs000580.1.exon4;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	320507	320612	.	-	2	ID=Rs000580.1.cds4;Parent=Rs000580.1
+R1	Ver1.2.2	exon	320315	320425	.	-	.	ID=Rs000580.1.exon5;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	320315	320425	.	-	0	ID=Rs000580.1.cds5;Parent=Rs000580.1
+R1	Ver1.2.2	exon	319975	320189	.	-	.	ID=Rs000580.1.exon6;Parent=Rs000580.1
+R1	Ver1.2.2	CDS	320073	320189	.	-	0	ID=Rs000580.1.cds6;Parent=Rs000580.1
+R1	Ver1.2.2	three_prime_UTR	319975	320072	.	-	.	ID=Rs000580.1.utr3;Parent=Rs000580.1
+## Rs000570 R1 328718 329870 +
+R1	Ver1.2.2	gene	328664	330111	.	+	.	ID=Rs000570;Name=Rs000570
+R1	Ver1.2.2	promoter	328605	328663	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	328664	330111	.	+	.	ID=Rs000570.1;Parent=Rs000570;Family=RsFAM05049;Product=probable plasma membrane intrinsic protein 1c [BLAST2GO] | Best-Hit: plasma membrane intrinsic protein 1 [AT4G00430]
+R1	Ver1.2.2	protein	328718	329870	.	+	.	ID=Rs000570.1.protein1;Name=Rs000570.1;Derives_from=Rs000570.1;Family=RsFAM05049;Product=probable plasma membrane intrinsic protein 1c [BLAST2GO] | Best-Hit: plasma membrane intrinsic protein 1 [AT4G00430]
+R1	Ver1.2.2	exon	328664	329045	.	+	.	ID=Rs000570.1.exon1;Parent=Rs000570.1
+R1	Ver1.2.2	five_prime_UTR	328664	328717	.	+	.	ID=Rs000570.1.utr5;Parent=Rs000570.1
+R1	Ver1.2.2	CDS	328718	329045	.	+	0	ID=Rs000570.1.cds1;Parent=Rs000570.1
+R1	Ver1.2.2	exon	329129	329424	.	+	.	ID=Rs000570.1.exon2;Parent=Rs000570.1
+R1	Ver1.2.2	CDS	329129	329424	.	+	1	ID=Rs000570.1.cds2;Parent=Rs000570.1
+R1	Ver1.2.2	exon	329511	329651	.	+	.	ID=Rs000570.1.exon3;Parent=Rs000570.1
+R1	Ver1.2.2	CDS	329511	329651	.	+	0	ID=Rs000570.1.cds3;Parent=Rs000570.1
+R1	Ver1.2.2	exon	329775	330111	.	+	.	ID=Rs000570.1.exon4;Parent=Rs000570.1
+R1	Ver1.2.2	CDS	329775	329870	.	+	0	ID=Rs000570.1.cds4;Parent=Rs000570.1
+R1	Ver1.2.2	three_prime_UTR	329871	330111	.	+	.	ID=Rs000570.1.utr3;Parent=Rs000570.1
+## Rs000560 R1 332884 335346 +
+R1	Ver1.2.2	gene	332485	335540	.	+	.	ID=Rs000560;Name=Rs000560
+R1	Ver1.2.2	promoter	330985	332484	.	+	.	Note=promoter region
+R1	Ver1.2.2	mRNA	332485	335540	.	+	.	ID=Rs000560.1;Parent=Rs000560;Family=RsFAM00412;Product=er glycerol-phosphate acyltransferase [BLAST2GO] | glycerol-3-phosphate acyltransferase 4 [AT1G01610]
+R1	Ver1.2.2	protein	332884	335346	.	+	.	ID=Rs000560.1.protein1;Name=Rs000560.1;Derives_from=Rs000560.1;Family=RsFAM00412;Product=er glycerol-phosphate acyltransferase [BLAST2GO] | glycerol-3-phosphate acyltransferase 4 [AT1G01610]
+R1	Ver1.2.2	exon	332485	333197	.	+	.	ID=Rs000560.1.exon1;Parent=Rs000560.1
+R1	Ver1.2.2	five_prime_UTR	332485	332883	.	+	.	ID=Rs000560.1.utr5;Parent=Rs000560.1
+R1	Ver1.2.2	CDS	332884	333197	.	+	0	ID=Rs000560.1.cds1;Parent=Rs000560.1
+R1	Ver1.2.2	exon	333287	333599	.	+	.	ID=Rs000560.1.exon2;Parent=Rs000560.1
+R1	Ver1.2.2	CDS	333287	333599	.	+	2	ID=Rs000560.1.cds2;Parent=Rs000560.1
+R1	Ver1.2.2	exon	334204	334678	.	+	.	ID=Rs000560.1.exon3;Parent=Rs000560.1
+R1	Ver1.2.2	CDS	334204	334678	.	+	0	ID=Rs000560.1.cds3;Parent=Rs000560.1
+R1	Ver1.2.2	exon	334937	335540	.	+	.	ID=Rs000560.1.exon4;Parent=Rs000560.1
+R1	Ver1.2.2	CDS	334937	335346	.	+	1	ID=Rs000560.1.cds4;Parent=Rs000560.1
+R1	Ver1.2.2	three_prime_UTR	335347	335540	.	+	.	ID=Rs000560.1.utr3;Parent=Rs000560.1
+## Rs000550 R1 336308 338730 -
+R1	Ver1.2.2	gene	336077	338943	.	-	.	ID=Rs000550;Name=Rs000550
+R1	Ver1.2.2	promoter	338944	340443	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	336077	338943	.	-	.	ID=Rs000550.1;Parent=Rs000550;Family=RsFAM00262;Product=cytochrome p450 86a2-like [BLAST2GO] | Best-Hit: cytochrome P450, family 86, subfamily A, polypeptide 4 [AT1G01600]
+R1	Ver1.2.2	protein	336308	338730	.	-	.	ID=Rs000550.1.protein1;Name=Rs000550.1;Derives_from=Rs000550.1;Family=RsFAM00262;Product=cytochrome p450 86a2-like [BLAST2GO] | Best-Hit: cytochrome P450, family 86, subfamily A, polypeptide 4 [AT1G01600]
+R1	Ver1.2.2	exon	338309	338943	.	-	.	ID=Rs000550.1.exon1;Parent=Rs000550.1
+R1	Ver1.2.2	five_prime_UTR	338731	338943	.	-	.	ID=Rs000550.1.utr5;Parent=Rs000550.1
+R1	Ver1.2.2	CDS	338309	338730	.	-	0	ID=Rs000550.1.cds1;Parent=Rs000550.1
+R1	Ver1.2.2	exon	336077	337541	.	-	.	ID=Rs000550.1.exon2;Parent=Rs000550.1
+R1	Ver1.2.2	CDS	336308	337541	.	-	2	ID=Rs000550.1.cds2;Parent=Rs000550.1
+R1	Ver1.2.2	three_prime_UTR	336077	336307	.	-	.	ID=Rs000550.1.utr3;Parent=Rs000550.1
+## Rs000530 R1 347665 350051 -
+R1	Ver1.2.2	gene	347501	350135	.	-	.	ID=Rs000530;Name=Rs000530
+R1	Ver1.2.2	promoter	350136	351635	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	347501	350135	.	-	.	ID=Rs000530.1;Parent=Rs000530;Family=RsFAM01946;Product=fringe-related protein [BLAST2GO] | Protein of unknown function (DUF604) [AT1G01570]
+R1	Ver1.2.2	protein	347665	350051	.	-	.	ID=Rs000530.1.protein1;Name=Rs000530.1;Derives_from=Rs000530.1;Family=RsFAM01946;Product=fringe-related protein [BLAST2GO] | Protein of unknown function (DUF604) [AT1G01570]
+R1	Ver1.2.2	exon	349161	350135	.	-	.	ID=Rs000530.1.exon1;Parent=Rs000530.1
+R1	Ver1.2.2	five_prime_UTR	350052	350135	.	-	.	ID=Rs000530.1.utr5;Parent=Rs000530.1
+R1	Ver1.2.2	CDS	349161	350051	.	-	0	ID=Rs000530.1.cds1;Parent=Rs000530.1
+R1	Ver1.2.2	exon	347858	348409	.	-	.	ID=Rs000530.1.exon2;Parent=Rs000530.1
+R1	Ver1.2.2	CDS	347858	348409	.	-	0	ID=Rs000530.1.cds2;Parent=Rs000530.1
+R1	Ver1.2.2	exon	347501	347775	.	-	.	ID=Rs000530.1.exon3;Parent=Rs000530.1
+R1	Ver1.2.2	CDS	347665	347775	.	-	0	ID=Rs000530.1.cds3;Parent=Rs000530.1
+R1	Ver1.2.2	three_prime_UTR	347501	347664	.	-	.	ID=Rs000530.1.utr3;Parent=Rs000530.1
+## Rs000510 R1 355553 356605 -
+R1	Ver1.2.2	gene	355400	357491	.	-	.	ID=Rs000510;Name=Rs000510
+R1	Ver1.2.2	promoter	357492	358991	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	355400	357491	.	-	.	ID=Rs000510.1;Parent=Rs000510;Family=RsFAM08789;Product=protein bps1 [BLAST2GO] | Protein of unknown function (DUF793) [AT1G01550]
+R1	Ver1.2.2	protein	355553	356605	.	-	.	ID=Rs000510.1.protein1;Name=Rs000510.1;Derives_from=Rs000510.1;Family=RsFAM08789;Product=protein bps1 [BLAST2GO] | Protein of unknown function (DUF793) [AT1G01550]
+R1	Ver1.2.2	exon	355400	357491	.	-	.	ID=Rs000510.1.exon1;Parent=Rs000510.1
+R1	Ver1.2.2	five_prime_UTR	356606	357491	.	-	.	ID=Rs000510.1.utr5;Parent=Rs000510.1
+R1	Ver1.2.2	CDS	355553	356605	.	-	0	ID=Rs000510.1.cds1;Parent=Rs000510.1
+R1	Ver1.2.2	three_prime_UTR	355400	355552	.	-	.	ID=Rs000510.1.utr3;Parent=Rs000510.1
+## Rs000500 R1 359434 360961 -
+R1	Ver1.2.2	gene	359213	362142	.	-	.	ID=Rs000500;Name=Rs000500
+R1	Ver1.2.2	promoter	362143	363082	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	359213	362142	.	-	.	ID=Rs000500.1;Parent=Rs000500;Product=protein kinase family protein [BLAST2GO] | Protein kinase superfamily protein [AT1G01540]
+R1	Ver1.2.2	protein	359434	360961	.	-	.	ID=Rs000500.1.protein1;Name=Rs000500.1;Derives_from=Rs000500.1;Product=protein kinase family protein [BLAST2GO] | Protein kinase superfamily protein [AT1G01540]
+R1	Ver1.2.2	exon	360894	362142	.	-	.	ID=Rs000500.1.exon1;Parent=Rs000500.1
+R1	Ver1.2.2	five_prime_UTR	360962	362142	.	-	.	ID=Rs000500.1.utr5;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	360894	360961	.	-	0	ID=Rs000500.1.cds1;Parent=Rs000500.1
+R1	Ver1.2.2	exon	360633	360737	.	-	.	ID=Rs000500.1.exon2;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	360633	360737	.	-	2	ID=Rs000500.1.cds2;Parent=Rs000500.1
+R1	Ver1.2.2	exon	360386	360508	.	-	.	ID=Rs000500.1.exon3;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	360386	360508	.	-	2	ID=Rs000500.1.cds3;Parent=Rs000500.1
+R1	Ver1.2.2	exon	360124	360294	.	-	.	ID=Rs000500.1.exon4;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	360124	360294	.	-	2	ID=Rs000500.1.cds4;Parent=Rs000500.1
+R1	Ver1.2.2	exon	359924	360053	.	-	.	ID=Rs000500.1.exon5;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	359924	360053	.	-	2	ID=Rs000500.1.cds5;Parent=Rs000500.1
+R1	Ver1.2.2	exon	359619	359828	.	-	.	ID=Rs000500.1.exon6;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	359619	359828	.	-	0	ID=Rs000500.1.cds6;Parent=Rs000500.1
+R1	Ver1.2.2	exon	359213	359538	.	-	.	ID=Rs000500.1.exon7;Parent=Rs000500.1
+R1	Ver1.2.2	CDS	359434	359538	.	-	0	ID=Rs000500.1.cds7;Parent=Rs000500.1
+R1	Ver1.2.2	three_prime_UTR	359213	359433	.	-	.	ID=Rs000500.1.utr3;Parent=Rs000500.1
+## Rs000490 R1 363482 365036 -
+R1	Ver1.2.2	gene	363167	365191	.	-	.	ID=Rs000490;Name=Rs000490
+R1	Ver1.2.2	promoter	365192	365646	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	363167	365191	.	-	.	ID=Rs000490.1;Parent=Rs000490;Family=RsFAM08788;Product=homeodomain-like superfamily protein [BLAST2GO] | Homeodomain-like superfamily protein [AT1G01520]
+R1	Ver1.2.2	protein	363482	365036	.	-	.	ID=Rs000490.1.protein1;Name=Rs000490.1;Derives_from=Rs000490.1;Family=RsFAM08788;Product=homeodomain-like superfamily protein [BLAST2GO] | Homeodomain-like superfamily protein [AT1G01520]
+R1	Ver1.2.2	exon	364834	365191	.	-	.	ID=Rs000490.1.exon1;Parent=Rs000490.1
+R1	Ver1.2.2	five_prime_UTR	365037	365191	.	-	.	ID=Rs000490.1.utr5;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	364834	365036	.	-	0	ID=Rs000490.1.cds1;Parent=Rs000490.1
+R1	Ver1.2.2	exon	364673	364730	.	-	.	ID=Rs000490.1.exon2;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	364673	364730	.	-	2	ID=Rs000490.1.cds2;Parent=Rs000490.1
+R1	Ver1.2.2	exon	364372	364495	.	-	.	ID=Rs000490.1.exon3;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	364372	364495	.	-	0	ID=Rs000490.1.cds3;Parent=Rs000490.1
+R1	Ver1.2.2	exon	364134	364268	.	-	.	ID=Rs000490.1.exon4;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	364134	364268	.	-	1	ID=Rs000490.1.cds4;Parent=Rs000490.1
+R1	Ver1.2.2	exon	363934	364035	.	-	.	ID=Rs000490.1.exon5;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	363934	364035	.	-	1	ID=Rs000490.1.cds5;Parent=Rs000490.1
+R1	Ver1.2.2	exon	363740	363852	.	-	.	ID=Rs000490.1.exon6;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	363740	363852	.	-	1	ID=Rs000490.1.cds6;Parent=Rs000490.1
+R1	Ver1.2.2	exon	363598	363657	.	-	.	ID=Rs000490.1.exon7;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	363598	363657	.	-	0	ID=Rs000490.1.cds7;Parent=Rs000490.1
+R1	Ver1.2.2	exon	363167	363514	.	-	.	ID=Rs000490.1.exon8;Parent=Rs000490.1
+R1	Ver1.2.2	CDS	363482	363514	.	-	0	ID=Rs000490.1.cds8;Parent=Rs000490.1
+R1	Ver1.2.2	three_prime_UTR	363167	363481	.	-	.	ID=Rs000490.1.utr3;Parent=Rs000490.1
+## Rs000480 R1 365849 370099 -
+R1	Ver1.2.2	gene	365647	370208	.	-	.	ID=Rs000480;Name=Rs000480
+R1	Ver1.2.2	promoter	370209	371708	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	365647	370208	.	-	.	ID=Rs000480.1;Parent=Rs000480;Family=RsFAM05832;Product=c-terminal binding protein an-like [BLAST2GO] | NAD(P)-binding Rossmann-fold superfamily protein [AT1G01510]
+R1	Ver1.2.2	protein	365849	370099	.	-	.	ID=Rs000480.1.protein1;Name=Rs000480.1;Derives_from=Rs000480.1;Family=RsFAM05832;Product=c-terminal binding protein an-like [BLAST2GO] | NAD(P)-binding Rossmann-fold superfamily protein [AT1G01510]
+R1	Ver1.2.2	exon	369401	370208	.	-	.	ID=Rs000480.1.exon1;Parent=Rs000480.1
+R1	Ver1.2.2	five_prime_UTR	370100	370208	.	-	.	ID=Rs000480.1.utr5;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	369401	370099	.	-	0	ID=Rs000480.1.cds1;Parent=Rs000480.1
+R1	Ver1.2.2	exon	369065	369291	.	-	.	ID=Rs000480.1.exon2;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	369065	369291	.	-	0	ID=Rs000480.1.cds2;Parent=Rs000480.1
+R1	Ver1.2.2	exon	367841	368474	.	-	.	ID=Rs000480.1.exon3;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	367841	368474	.	-	2	ID=Rs000480.1.cds3;Parent=Rs000480.1
+R1	Ver1.2.2	exon	367560	367725	.	-	.	ID=Rs000480.1.exon4;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	367560	367725	.	-	0	ID=Rs000480.1.cds4;Parent=Rs000480.1
+R1	Ver1.2.2	exon	367340	367470	.	-	.	ID=Rs000480.1.exon5;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	367340	367470	.	-	1	ID=Rs000480.1.cds5;Parent=Rs000480.1
+R1	Ver1.2.2	exon	366478	367251	.	-	.	ID=Rs000480.1.exon6;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	366478	367251	.	-	0	ID=Rs000480.1.cds6;Parent=Rs000480.1
+R1	Ver1.2.2	exon	366205	366252	.	-	.	ID=Rs000480.1.exon7;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	366205	366252	.	-	0	ID=Rs000480.1.cds7;Parent=Rs000480.1
+R1	Ver1.2.2	exon	366018	366131	.	-	.	ID=Rs000480.1.exon8;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	366018	366131	.	-	0	ID=Rs000480.1.cds8;Parent=Rs000480.1
+R1	Ver1.2.2	exon	365647	365920	.	-	.	ID=Rs000480.1.exon9;Parent=Rs000480.1
+R1	Ver1.2.2	CDS	365849	365920	.	-	0	ID=Rs000480.1.cds9;Parent=Rs000480.1
+R1	Ver1.2.2	three_prime_UTR	365647	365848	.	-	.	ID=Rs000480.1.utr3;Parent=Rs000480.1
+## Rs000460 R1 379168 381218 -
+R1	Ver1.2.2	gene	379168	381218	.	-	.	ID=Rs000460;Name=Rs000460
+R1	Ver1.2.2	promoter	381219	381560	.	-	.	Note=promoter region
+R1	Ver1.2.2	mRNA	379168	381218	.	-	.	ID=Rs000460.1;Parent=Rs000460;Product=1-aminocyclopropane-1-carboxylate synthase 2 [BLAST2GO] | 1-amino-cyclopropane-1-carboxylate synthase 2 [AT1G01480]
+R1	Ver1.2.2	protein	379168	381218	.	-	.	ID=Rs000460.1.protein1;Name=Rs000460.1;Derives_from=Rs000460.1;Product=1-aminocyclopropane-1-carboxylate synthase 2 [BLAST2GO] | 1-amino-cyclopropane-1-carboxylate synthase 2 [AT1G01480]
+R1	Ver1.2.2	exon	380171	381218	.	-	.	ID=Rs000460.1.exon1;Parent=Rs000460.1
+R1	Ver1.2.2	CDS	380171	381218	.	-	0	ID=Rs000460.1.cds1;Parent=Rs000460.1
+R1	Ver1.2.2	exon	379873	379904	.	-	.	ID=Rs000460.1.exon2;Parent=Rs000460.1
+R1	Ver1.2.2	CDS	379873	379904	.	-	1	ID=Rs000460.1.cds2;Parent=Rs000460.1
+R1	Ver1.2.2	exon	379168	379224	.	-	.	ID=Rs000460.1.exon3;Parent=Rs000460.1
+R1	Ver1.2.2	CDS	379168	379224	.	-	0	ID=Rs000460.1.cds3;Parent=Rs000460.1
+## Rs000450 R1 381673 383819 -
+R1	Ver1.2.2	gene	381652	383819	.	-	.	ID=Rs000450;Name=Rs000450
+R1	Ver1.2.2	mRNA	381652	383819	.	-	.	ID=Rs000450.1;Parent=Rs000450;Product=1-aminocyclopropane-1-carboxylate synthase [BLAST2GO] | Best-Hit: 1-amino-cyclopropane-1-carboxylate synthase 2 [AT1G01480]
+R1	Ver1.2.2	protein	381673	383819	.	-	.	ID=Rs000450.1.protein1;Name=Rs000450.1;Derives_from=Rs000450.1;Product=1-aminocyclopropane-1-carboxylate synthase [BLAST2GO] | Best-Hit: 1-amino-cyclopropane-1-carboxylate synthase 2 [AT1G01480]
+R1	Ver1.2.2	exon	383640	383819	.	-	.	ID=Rs000450.1.exon1;Parent=Rs000450.1
+R1	Ver1.2.2	CDS	383640	383819	.	-	0	ID=Rs000450.1.cds1;Parent=Rs000450.1
+R1	Ver1.2.2	exon	383378	383509	.	-	.	ID=Rs000450.1.exon2;Parent=Rs000450.1
+R1	Ver1.2.2	CDS	383378	383509	.	-	0	ID=Rs000450.1.cds2;Parent=Rs000450.1
+R1	Ver1.2.2	exon	382247	382407	.	-	.	ID=Rs000450.1.exon3;Parent=Rs000450.1
+R1	Ver1.2.2	CDS	382247	382407	.	-	0	ID=Rs000450.1.cds3;Parent=Rs000450.1
