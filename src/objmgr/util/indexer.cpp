@@ -667,17 +667,9 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
     return sfx;
 }
 
-string CBioseqIndex::GetSequence (void)
+void CBioseqIndex::GetSequence (int from, int to, string& buffer)
 
 {
-    return GetSequence (0, -1);
-}
-
-string CBioseqIndex::GetSequence (int from, int to)
-
-{
-    string coding;
-
     try {
         if (! m_sv) {
             m_sv = new CSeqVector(m_bsh);
@@ -694,15 +686,42 @@ string CBioseqIndex::GetSequence (int from, int to)
             if (to < 0 || to >= vec.size()) {
                 to = vec.size();
             }
-            vec.GetSeqData(from, to, coding);
+            if (vec.CanGetRange(from, to)) {
+                vec.GetSeqData(from, to, buffer);
+            }
         }
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CBioseqIndex::GetSequence: " << e.what());
     }
-
-    return coding;
 }
+
+string CBioseqIndex::GetSequence (int from, int to)
+
+{
+    string buffer;
+
+    GetSequence(from, to, buffer);
+
+    return buffer;
+}
+
+void CBioseqIndex::GetSequence (string& buffer)
+
+{
+    GetSequence(0, -1, buffer);
+}
+
+string CBioseqIndex::GetSequence (void)
+
+{
+    string buffer;
+
+    GetSequence(0, -1, buffer);
+
+    return buffer;
+}
+
 
 
 // CDescriptorIndex
@@ -744,11 +763,9 @@ CFeatureIndex::~CFeatureIndex (void)
 {
 }
 
-string CFeatureIndex::GetSequence (void)
+void CFeatureIndex::GetSequence (int from, int to, string& buffer)
 
 {
-    string coding;
-
     try {
         if (! m_sv) {
             m_sv = new CSeqVector(*m_fl, *GetBioseqIndex().GetScope());
@@ -759,14 +776,46 @@ string CFeatureIndex::GetSequence (void)
 
         if (m_sv) {
             CSeqVector& vec = *m_sv;
-            vec.GetSeqData(0, vec.size(), coding);
+            if (from < 0) {
+                from = 0;
+            }
+            if (to < 0 || to >= vec.size()) {
+                to = vec.size();
+            }
+            if (vec.CanGetRange(from, to)) {
+                vec.GetSeqData(from, to, buffer);
+            }
         }
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CFeatureIndex::GetSequence: " << e.what());
     }
+}
 
-    return coding;
+string CFeatureIndex::GetSequence (int from, int to)
+
+{
+    string buffer;
+
+    GetSequence(from, to, buffer);
+
+    return buffer;
+}
+
+void CFeatureIndex::GetSequence (string& buffer)
+
+{
+    GetSequence(0, -1, buffer);
+}
+
+string CFeatureIndex::GetSequence (void)
+
+{
+    string buffer;
+
+    GetSequence(0, -1, buffer);
+
+    return buffer;
 }
 
 

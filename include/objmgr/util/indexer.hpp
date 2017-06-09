@@ -326,8 +326,10 @@ public:
 
     // Get sequence letters from Bioseq
     string GetSequence (void);
+    void GetSequence (string& buffer);
     // Get sequence letters from Bioseq subrange
     string GetSequence (int from, int to);
+    void GetSequence (int from, int to, string& buffer);
 
 private:
     // Common descriptor collection, delayed until actually needed
@@ -477,6 +479,10 @@ public:
 
     // Get sequence letters under feature intervals
     string GetSequence (void);
+    void GetSequence (string& buffer);
+    // Get sequence letters under feature subrange
+    string GetSequence (int from, int to);
+    void GetSequence (int from, int to, string& buffer);
 
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
     template<typename _Pred> bool GetBestGene (_Pred m);
