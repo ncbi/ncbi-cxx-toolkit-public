@@ -1568,9 +1568,9 @@ public:
 CAnnot_Collector::CAnnot_Collector(CScope& scope)
     : m_Selector(0),
       m_Scope(scope),
-      m_FromOtherTSE(false),
       m_LoadBytes(0),
-      m_LoadSeconds(0)
+      m_LoadSeconds(0),
+      m_FromOtherTSE(false)
 {
 }
 
@@ -2978,7 +2978,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                         continue;
                     }
                     if ( m_Selector->m_CollectCostOfLoading ) {
-                        break;
+                        continue;
                     }
 
                     if ( annot_info.IsLocs() ) {
