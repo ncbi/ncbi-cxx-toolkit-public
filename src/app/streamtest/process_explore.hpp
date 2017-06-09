@@ -74,14 +74,17 @@ public:
         // IterateBioseqs visits each Bioseq in blob
         int num_nucs = 0;
         int num_prots = 0;
-        idx.IterateBioseqs([&num_nucs, &num_prots](CBioseqIndex& bsx) {
-            // Must pass &num_nucs and &num_prots as closure arguments
+
+       // Must pass &num_nucs and &num_prots references as closure arguments
+       idx.IterateBioseqs([&num_nucs, &num_prots](CBioseqIndex& bsx) {
+            // Lambda function executed for each Bioseq
             if (bsx.IsNA()) {
                 num_nucs++;
             } else if (bsx.IsAA()) {
                 num_prots++;
             }
         });
+
         *m_out << "Record has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
         *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
         *m_out << endl;
@@ -101,7 +104,7 @@ public:
                 });
             }
 
-            // Create temporary delta on Bioseq range
+            // Create surrogate delta sequence pointing to Bioseq subrange (mixed indexing)
             ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp,
                                    [this](CBioseqIndex& bsx) {
                 DoOneBioseq(bsx);
@@ -135,28 +138,35 @@ public:
     {
         *m_out << "Accession: " << bsx.GetAccession() << endl;
         *m_out << "Length: " << bsx.GetLength() << endl;
-        *m_out << "Taxname: " << bsx.GetTaxname() << endl;
 
+        // Title, MolInfo, and BioSource fields are saved when descriptors are indexed (on first request)
+        *m_out << "Taxname: " << bsx.GetTaxname() << endl;
         *m_out << "Title: " << bsx.GetTitle() << endl;
+
+        // Passes Bioseq-specific CFeatTree to defline generator for efficiency
         *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << endl;
 
         *m_out << endl;
 
+
+        // Determine class of immediate Bioseq-set parent
         CRef<CSeqsetIndex> prnt = bsx.GetParent();
         if (prnt) {
             *m_out << "Parent Bioseq-set class: " << prnt->GetClass() << endl;
         }
 
 
-        int num_feats = 0;
-        // IterateFeatures causes feature vector to be initialized by CFeat_CI
-        bsx.IterateFeatures([this, &bsx, &num_feats](CFeatureIndex& sfx) {
+        // IterateFeatures causes feature vector to be initialized by CFeat_CI, locations mapped to master
+        int num_feats = bsx.IterateFeatures([this, &bsx](CFeatureIndex& sfx) {
 
-            num_feats++;
+            // Alternative to passing &bsx reference in closure
+            // CBioseqIndex& bsx = sfx.GetBioseqIndex();
+
             CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
 
             // Print feature eSubtype number
             *m_out << "Feature subtype: " << sbt << endl;
+
 
             if (bsx.IsNA()) {
 
@@ -164,7 +174,7 @@ public:
 
                     // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
                     string locus;
-                    bool has_locus = sfx.GetBestGene([this, &sfx, &locus](CFeatureIndex& fsx){
+                    bool has_locus = sfx.GetBestGene([&locus](CFeatureIndex& fsx){
                         const CGene_ref& gene = fsx.GetMappedFeat().GetData().GetGene();
                         if (gene.IsSetLocus()) {
                             locus = gene.GetLocus();
