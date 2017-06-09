@@ -703,7 +703,6 @@ CFormatGuess::EFormat CMultiReader::LoadFile(const string& filename, CRef<CSeq_e
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
     int flags = 0;
-    flags |= CGff3Reader::fNewCode;
     flags |= CGff3Reader::fGenbankMode;
     flags |= CGff3Reader::fRetainLocusIds;
     flags |= CGff3Reader::fGeneXrefs;
@@ -713,7 +712,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     CStreamLineReader lr(instream);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq();
-    reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
+    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
 
     x_PostProcessAnnot(*entry);
 
@@ -1028,9 +1027,6 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
     int flags = 0;
-    flags |= CGtfReader::fNewCode;
-    flags |= CGtfReader::fGenbankMode;
-    flags |= CGtfReader::fRetainLocusIds;
     flags |= CGtfReader::fAllIdsAsLocal;
     flags |= CGtfReader::fGenerateChildXrefs;
 
@@ -1038,7 +1034,7 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     CStreamLineReader lr(instream);
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq();
-    reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
+    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
 
     x_PostProcessAnnot(*entry);
 
