@@ -44,9 +44,8 @@ BEGIN_SCOPE(objects)
 
 // Constructor
 CSeqEntryIndex::CSeqEntryIndex (TFlags flags)
-
+    : m_flags(flags)
 {
-    m_flags = flags;
 }
 
 // Destructor
@@ -139,7 +138,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, *this));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, *this, false));
 
             // record CBioseqIndex in vector for IterateBioseqs or ProcessBioseq
             m_bsxList.push_back(bsx);
@@ -236,7 +235,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
         if (deltaBsh) {
             // create CBioseqIndex object for delta Bioseq
             CRef<CSeqsetIndex> noparent;
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this, true));
 
            return bsx;
         }
@@ -287,8 +286,15 @@ CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, 
 // CSeqsetIndex
 
 // Constructor
-CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh, const CBioseq_set& bssp, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx)
-    : m_ssh(ssh), m_bssp(bssp), m_prnt(prnt), m_enx(enx), m_scope(enx.m_scope)
+CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh,
+                            const CBioseq_set& bssp,
+                            CRef<CSeqsetIndex> prnt,
+                            CSeqEntryIndex& enx)
+    : m_ssh(ssh),
+      m_bssp(bssp),
+      m_prnt(prnt),
+      m_enx(enx),
+      m_scope(enx.m_scope)
 {
     m_class = CBioseq_set::eClass_not_set;
 
@@ -307,8 +313,19 @@ CSeqsetIndex::~CSeqsetIndex (void)
 // CBioseqIndex
 
 // Constructor
-CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CBioseq_Handle obsh, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx)
-    : m_bsh(bsh), m_bsp(bsp), m_obsh(obsh), m_prnt(prnt), m_enx(enx), m_scope(enx.m_scope)
+CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
+                            const CBioseq& bsp,
+                            CBioseq_Handle obsh,
+                            CRef<CSeqsetIndex> prnt,
+                            CSeqEntryIndex& enx,
+                            bool surrogate)
+    : m_bsh(bsh),
+      m_bsp(bsp),
+      m_obsh(obsh),
+      m_prnt(prnt),
+      m_enx(enx),
+      m_scope(enx.m_scope),
+      m_surrogate(surrogate)
 {
     m_descsInitialized = false;
     m_featsInitialized = false;
@@ -494,9 +511,23 @@ void CBioseqIndex::x_InitFeats (void)
 
     SAnnotSelector sel;
 
+    // handle far fetching policy, from user object or initializer argument
     if (m_onlyNearFeats) {
-        sel.SetResolveDepth(0);
+  
+        if (m_surrogate) {
+            // delta with sublocation needs to map features from original Bioseq
+            sel.SetResolveAll();
+            sel.SetResolveDepth(1);
+            sel.SetExcludeExternal();
+        } else {
+            // otherwise limit collection to local records in top-level Seq-entry
+            sel.SetResolveDepth(0);
+            sel.SetExcludeExternal();
+        }
+
     } else {
+
+        // normal situation allowing adaptive depth for feature collection
         sel.SetResolveAll();
         sel.SetResolveDepth(kMax_Int);
         sel.SetAdaptiveDepth(true);
@@ -668,8 +699,10 @@ string CBioseqIndex::GetSequence (int from, int to)
 // CDescriptorIndex
 
 // Constructor
-CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd, CBioseqIndex& bsx)
-    : m_sd(sd), m_bsx(bsx)
+CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd,
+                                    CBioseqIndex& bsx)
+    : m_sd(sd),
+      m_bsx(bsx)
 {
     m_subtype = m_sd.Which();
 }
@@ -684,8 +717,14 @@ CDescriptorIndex::~CDescriptorIndex (void)
 // CFeatureIndex
 
 // Constructor
-CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CConstRef<CSeq_loc> fl, CBioseqIndex& bsx)
-    : m_sfh(sfh), m_mf(mf), m_fl(fl), m_bsx(bsx)
+CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
+                              const CMappedFeat mf,
+                              CConstRef<CSeq_loc> fl,
+                              CBioseqIndex& bsx)
+    : m_sfh(sfh),
+      m_mf(mf),
+      m_fl(fl),
+      m_bsx(bsx)
 {
     m_subtype = m_mf.GetData().GetSubtype();
 }

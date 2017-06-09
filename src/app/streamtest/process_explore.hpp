@@ -64,7 +64,7 @@ public:
     //  ------------------------------------------------------------------------
     {
         // Create master index variable on stack
-        CSeqEntryIndex idx( CSeqEntryIndex::fDefaultIndexing );
+        CSeqEntryIndex idx( CSeqEntryIndex::fSkipRemoteFeatures );
 
 
         // Initialize with top-level Seq-entry, builds Bioseq index

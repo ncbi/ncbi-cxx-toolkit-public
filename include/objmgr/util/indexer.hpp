@@ -199,7 +199,10 @@ class NCBI_XOBJUTIL_EXPORT CSeqsetIndex : public CObject
 
 public:
     // Constructor
-    CSeqsetIndex (CBioseq_set_Handle ssh, const CBioseq_set& bssp, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx);
+    CSeqsetIndex (CBioseq_set_Handle ssh,
+                  const CBioseq_set& bssp,
+                  CRef<CSeqsetIndex> prnt,
+                  CSeqEntryIndex& enx);
 
     // Destructor
     ~CSeqsetIndex (void);
@@ -266,7 +269,12 @@ class NCBI_XOBJUTIL_EXPORT CBioseqIndex : public CObject
 
 public:
     // Constructor
-    CBioseqIndex (CBioseq_Handle bsh, const CBioseq& bsp, CBioseq_Handle obsh, CRef<CSeqsetIndex> prnt, CSeqEntryIndex& enx);
+    CBioseqIndex (CBioseq_Handle bsh,
+                  const CBioseq& bsp,
+                  CBioseq_Handle obsh,
+                  CRef<CSeqsetIndex> prnt,
+                  CSeqEntryIndex& enx,
+                  bool surrogate);
 
     // Destructor
     ~CBioseqIndex (void);
@@ -389,6 +397,8 @@ private:
     // Derived policy flags
     bool m_onlyNearFeats;
 
+    bool m_surrogate;
+
     // Generated definition line
     string m_defline;
     sequence::CDeflineGenerator::TUserFlags m_dlflags;
@@ -403,7 +413,8 @@ class NCBI_XOBJUTIL_EXPORT CDescriptorIndex : public CObject
     friend class CBioseqIndex;
 public:
     // Constructor
-    CDescriptorIndex (const CSeqdesc& sd, CBioseqIndex& bsx);
+    CDescriptorIndex (const CSeqdesc& sd,
+                      CBioseqIndex& bsx);
 
     // Destructor
     ~CDescriptorIndex (void);
@@ -444,7 +455,10 @@ class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObject
     friend class CBioseqIndex;
 public:
     // Constructor
-    CFeatureIndex (CSeq_feat_Handle sfh, const CMappedFeat mf, CConstRef<CSeq_loc> fl, CBioseqIndex& bsx);
+    CFeatureIndex (CSeq_feat_Handle sfh,
+                   const CMappedFeat mf,
+                   CConstRef<CSeq_loc> fl,
+                   CBioseqIndex& bsx);
 
     // Destructor
     ~CFeatureIndex (void);
