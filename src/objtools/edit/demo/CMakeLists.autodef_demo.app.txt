@@ -8,6 +8,6 @@ add_executable(autodef_demo-app
 set_target_properties(autodef_demo-app PROPERTIES OUTPUT_NAME autodef_demo)
 
 target_link_libraries(autodef_demo-app
-    xobjedit
+    xobjutil
 )
 

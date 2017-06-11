@@ -8,6 +8,6 @@ add_library(proteinkmer
 )
 
 target_link_libraries(proteinkmer
-    blastinput ${BOOST_LIBS}
+    xblast
 )
 

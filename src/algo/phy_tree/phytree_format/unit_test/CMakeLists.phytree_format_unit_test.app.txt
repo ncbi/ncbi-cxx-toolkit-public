@@ -10,6 +10,6 @@ set_target_properties(phytree_format_unit_test-app PROPERTIES OUTPUT_NAME phytre
 
 
 target_link_libraries(phytree_format_unit_test-app
-    ncbi_xloader_genbank phytree_format test_boost
+    phytree_format test_boost
 )
 

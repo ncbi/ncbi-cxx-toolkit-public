@@ -23,5 +23,5 @@ add_dependencies(xobjwrite
 )
 
 target_link_libraries(xobjwrite
-    variation_utils xobjedit
+    variation_utils xformat xobjread
 )

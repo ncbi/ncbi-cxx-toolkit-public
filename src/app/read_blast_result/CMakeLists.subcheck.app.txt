@@ -10,6 +10,6 @@ add_executable(subcheck-app
 set_target_properties(subcheck-app PROPERTIES OUTPUT_NAME subcheck)
 
 target_link_libraries(subcheck-app
-    submit xobjutil
+    xobjutil
 )
 

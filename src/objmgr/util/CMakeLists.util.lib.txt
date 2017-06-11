@@ -12,6 +12,6 @@ add_dependencies(xobjutil
 )
 
 target_link_libraries(xobjutil
-    xobjmgr submit
+    submit xobjmgr
 )
 

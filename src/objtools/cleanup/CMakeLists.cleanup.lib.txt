@@ -10,6 +10,5 @@ add_dependencies(xcleanup
 )
 
 target_link_libraries(xcleanup
-    submit taxon3 valid
-    xobjutil
+    taxon3 valid xobjutil
 )

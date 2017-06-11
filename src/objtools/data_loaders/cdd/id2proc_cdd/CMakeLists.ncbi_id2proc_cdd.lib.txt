@@ -7,5 +7,5 @@ add_dependencies(ncbi_id2proc_cdd
 )
 
 target_link_libraries(ncbi_id2proc_cdd
-    id2 cdd_access ${COMPRESS_LIBS}
+    cdd_access xcompress
 )

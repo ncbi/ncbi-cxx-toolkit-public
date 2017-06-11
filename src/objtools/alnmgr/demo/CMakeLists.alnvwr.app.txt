@@ -8,6 +8,6 @@ add_executable(alnvwr-app
 set_target_properties(alnvwr-app PROPERTIES OUTPUT_NAME alnvwr)
 
 target_link_libraries(alnvwr-app
-    ncbi_xloader_genbank submit xalnmgr
+    ncbi_xloader_genbank xalnmgr
 )
 
