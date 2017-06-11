@@ -718,9 +718,11 @@ endif()
 # Final tasks
 #
 
+# This file holds information about the build version
 message(STATUS "Generating ${build_root}/inc/ncbi_build_ver.h...")
-configure_file(${includedir}/common/ncbi_build_ver.h.in ${build_root}/inc/ncbi_build_ver.h)
+configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncbi_build_ver.h)
 
+# OS-specific generated header configs
 if (UNIX)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)

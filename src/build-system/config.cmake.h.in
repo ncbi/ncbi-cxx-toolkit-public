@@ -913,6 +913,9 @@
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
 
+/* Define to 1 to indicate that the generated build version header is present */
+#define HAVE_COMMON_NCBI_BUILD_VER_H 1
+
 /* Define to 1 if using a local copy of bzlib. */
 #cmakedefine USE_LOCAL_BZLIB 1
 
