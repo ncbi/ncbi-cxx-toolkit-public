@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "grid_rw.hpp"
+
 #include <corelib/rwstream.hpp>
 
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -44,6 +46,7 @@
 #include <list>
 #include <utility>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 
@@ -496,6 +499,101 @@ CNcbiIstream& SGridRead::operator()(CNetCacheAPI nc_api, const string& data, siz
 void SGridRead::Reset()
 {
     stream.reset();
+}
+
+SOutputCopy::SOutputCopy(IReader& reader, CNcbiOstream& writer)
+{
+    d.reserve(16 * 1024 * 1024);
+    thread t(&SOutputCopy::Reader, this, ref(reader));
+    Writer(writer);
+    t.join();
+}
+
+void SOutputCopy::Reader(IReader& reader)
+{
+    array<char, 1024 * 1024> buf;
+    bool eof = false;
+
+    while (!eof) {
+        char* data = buf.data();
+        size_t to_read = buf.size();
+
+        while (!eof && to_read) {
+            ERW_Result status = eRW_Error;
+            size_t bytes_read = 0;
+
+            try {
+                status = reader.Read(data, to_read, &bytes_read);
+            }
+            catch (...) {
+            }
+
+            switch (status) {
+                case eRW_Success:
+                    break;
+
+                case eRW_Eof:
+                    eof = true;
+                    break;
+
+                default:
+                    eof = true;
+                    bytes_read = 0;
+                    break;
+            }
+
+            data += bytes_read;
+            to_read -= bytes_read;
+        }
+
+        unique_lock<mutex> lock(m);
+        d.insert(d.end(), buf.cbegin(), buf.cbegin() + (buf.size() - to_read));
+
+        if (done) eof = true;
+
+        done = eof;
+        lock.unlock();
+        cv.notify_one();
+    }
+}
+
+void SOutputCopy::Writer(CNcbiOstream& writer)
+{
+    array<char, 1024 * 1024> buf;
+    bool eof = false;
+    size_t copied = 0;
+
+    while (!eof) {
+        char* data = buf.data();
+        size_t to_write = 0;
+
+        {
+            unique_lock<mutex> lock(m);
+
+            if (!writer.good()) {
+                done = true;
+                return;
+            }
+
+            cv.wait(lock, [&]{ return d.size() > copied || done; });
+
+            to_write = min(buf.size(), d.size() - copied);
+
+            if (to_write) {
+                copy_n(d.cbegin() + copied, to_write, buf.begin());
+                copied += to_write;
+            }
+
+            if (d.size() == copied) eof = done;
+        }
+
+        try {
+            writer.write(data, to_write);
+        }
+        catch (...) {
+            writer.setstate(ios_base::badbit);
+        }
+    }
 }
 
 END_NCBI_SCOPE
