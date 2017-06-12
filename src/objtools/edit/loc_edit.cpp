@@ -340,6 +340,9 @@ bool CLocationEditPolicy::Interpret5Policy
         case ePartialPolicy_eClearForGoodEnd:
             if (orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
                 && orig_feat.GetData().IsCdregion()
+                && (!orig_feat.GetData().GetCdregion().IsSetFrame() ||
+                    orig_feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_not_set ||
+                    orig_feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_one)
                 && bsh) {
                 string transl_prot;
                 try {
