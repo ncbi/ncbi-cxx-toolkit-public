@@ -1270,7 +1270,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "COR\ts\tUniversidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Ambiente\t\t",
 "CORB\ts\tCorchester School\t\t",
 "CORBIDI\ts\tCentro de Ornitologia y Biodiversidad\t\t",
-"CORD\ts\tUniversidad Nacional de Cordoba, Facultad de Ciencias Exactas, Fisicas y Naturales\t\t",
+"CORD\ts\tUniversidad Nacional de Cordoba\t\t",
 "Coriell\tcb\tCoriell Institute for Medical Research\t\t",
 "CORO\ts\tIUTAG, Departamento de Investigacion\t\t",
 "CORT\ts\tState University of New York College at Cortland, Biological Sciences Department\t\t",
