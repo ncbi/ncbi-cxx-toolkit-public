@@ -3872,6 +3872,11 @@ void CValidError_feat::ValidateTrnaCodons(
                 "tRNA codon value " + NStr::IntToString(*iter) + 
                 " is greater than maximum 63", feat);
             continue;
+        } else if (*iter < 0) {
+            PostErr(sev, eErr_SEQ_FEAT_BadTrnaCodon,
+                "tRNA codon value " + NStr::IntToString(*iter) +
+                " is less than 0", feat);
+            continue;
         }
 
         if ( !modified_codon_recognition && !rna_editing ) {
