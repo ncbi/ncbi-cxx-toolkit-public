@@ -345,40 +345,24 @@ bool CMatchTabulate::x_FetchAccession(const CSeq_align& align,
     string& accession) 
 {
     const bool withVersion = false;
-
     map<string, string> id_map;
-
 
     if (align.IsSetSegs() &&
         align.GetSegs().IsDenseg() &&
         align.GetSegs().GetDenseg().IsSetIds()) {
         for (CRef<CSeq_id> id : align.GetSegs().GetDenseg().GetIds()) {
-            if (id->IsGenbank()) { 
-                id_map["genbank"] = id->GetSeqIdString(withVersion);
-                break;
-            }
-
-            if (id->IsOther()) {
-                id_map["other"] = id->GetSeqIdString(withVersion);
+            if (id->IsGenbank() || id->IsOther()) { 
+                accession = id->GetSeqIdString(withVersion);
+                return true;
             }
 
             // Could optimize this by only performing look up if no genbank id has been 
             // found after the loop over look ups is complete
-            if (id->IsGi() && (id_map.find("genbank") == id_map.end())) {
-                id_map["genbank"] = sequence::GetAccessionForGi(id->GetGi(), *m_DBScope, sequence::eWithoutAccessionVersion);
-                break;
+            if (id->IsGi()) {
+                accession = sequence::GetAccessionForGi(id->GetGi(), *m_DBScope, sequence::eWithoutAccessionVersion);
+                return true;
             }
         }
-    }
-
-    if (id_map.find("genbank") != id_map.end()) {
-        accession = id_map["genbank"];
-        return true;
-    }
-
-    if (id_map.find("other") != id_map.end()) {
-        accession = id_map["other"];
-        return true;
     }
 
     return false;

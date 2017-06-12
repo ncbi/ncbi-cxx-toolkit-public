@@ -109,19 +109,10 @@ bool CMatchSetup::GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
 {
     CRef<CSeq_id> other_id;
     for (auto pNucId : nuc_seq.GetId()) {
-        if (pNucId->IsGenbank()) {
+        if (pNucId->IsGenbank() || pNucId->IsOther()) {
             id = pNucId;
             return true;
         }
-
-        if (pNucId->IsOther()) {
-            other_id = pNucId;
-        }
-    }
-
-    if (other_id && !other_id.IsNull()) {
-        id = other_id;
-        return true;
     }
     return false;
 }
