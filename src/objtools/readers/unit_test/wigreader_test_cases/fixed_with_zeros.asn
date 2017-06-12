@@ -1,4 +1,15 @@
 Seq-annot ::= {
+  desc {
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "type",
+          data str "wiggle_0"
+        }
+      }
+    }
+  },
   data seq-table {
     feat-type 0,
     num-rows 3,

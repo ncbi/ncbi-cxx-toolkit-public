@@ -222,10 +222,10 @@ CReaderBase::ReadSeqAnnots(
     ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
+    xReadInit();
     xProgressInit(lr);
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
     while (annot) {
-        //xAssignTrackData(annot);
         annots.push_back(annot);
         annot = ReadSeqAnnot(lr, pMessageListener);
     }
