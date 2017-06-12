@@ -1962,7 +1962,6 @@ void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
 
 void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    bool isclass = false;
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
@@ -1971,7 +1970,6 @@ void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
             dynamic_cast<const CClassTypeInfo*>(GetRealTypeInfo(namedTypeInfo));
         if (classType) {
             CheckStdXml(classType);
-            isclass = true;
         }
         OpenTag(namedTypeInfo);
     }

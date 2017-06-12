@@ -1291,7 +1291,6 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    bool isclass = false;
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
@@ -1300,7 +1299,6 @@ void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
             dynamic_cast<const CClassTypeInfo*>(GetRealTypeInfo(namedTypeInfo));
         if (classType) {
             CheckStdXml(classType);
-            isclass = true;
         }
         bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
         OpenTag(namedTypeInfo);
