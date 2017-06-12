@@ -350,6 +350,8 @@ private:
     bool x_AddGeneOntologyToFeature (CRef<CSeq_feat> sfp, 
                                      const CTempString& qual, const CTempString& val);
 
+    bool x_AddCodons(const string& val, CTrna_ext& trna_ext) const;
+
     typedef CConstRef<CSeq_feat> TFeatConstRef;
     struct SFeatAndLineNum {
         SFeatAndLineNum(
@@ -1557,8 +1559,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                         if (codon_index >= 0) {
                             CRNA_ref::TExt& tex = rrp.SetExt ();
                             CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
-                            ext_trna.SetAa().SetNcbieaa();
-                            ext_trna.SetCodon().push_back( codon_index );
+                            if (!x_AddCodons(val, ext_trna)) {
+                                return false;
+                            }
                         }
                         return true;
                     }
@@ -1571,6 +1574,26 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
             break;
     }
     return false;
+}
+
+
+bool CFeature_table_reader_imp::x_AddCodons(
+        const string& val,
+        CTrna_ext& trna_ext
+    ) const
+{
+    if (val.size() != 3) {
+        return false;
+    }
+
+    const auto codon_index = CGen_code_table::CodonToIndex(val);
+    if (codon_index >= 0) {
+        trna_ext.SetAa().SetNcbieaa();
+        trna_ext.SetCodon().push_back( codon_index );
+        return true;
+    }
+
+    return true; // Need to change this
 }
 
 
