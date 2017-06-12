@@ -1,0 +1,144 @@
+>Feature gb|MF194022|				
+1	69	tRNA		
+			product	tRNA-Met
+70	1095	gene		
+			gene	ND2
+70	1095	CDS		
+			product	NADH dehydrogenase subunit 2
+			transl_table	5
+			protein_id	gb|ARW59264|
+1096	1165	tRNA		
+			product	tRNA-Trp
+1231	1165	tRNA		
+			product	tRNA-Cys
+1299	1232	tRNA		
+			product	tRNA-Tyr
+1298	2834	gene		
+			gene	COX1
+1298	2834	CDS		
+			product	cytochrome c oxidase subunit I
+			transl_except	(pos:2834,aa:TERM)
+			transl_table	5
+			protein_id	gb|ARW59265|
+			note	start codon not determined; TAA stop codon is completed by the addition of 3' A residues to the mRNA
+2835	2901	tRNA		
+			product	tRNA-Leu
+			codon_recognized	UUR
+2903	3587	gene		
+			gene	COX2
+2903	3587	CDS		
+			product	cytochrome c oxidase subunit II
+			transl_except	(pos:3587,aa:TERM)
+			transl_table	5
+			protein_id	gb|ARW59266|
+			note	TAA stop codon is completed by the addition of 3' A residues to the mRNA
+3588	3658	tRNA		
+			product	tRNA-Lys
+3675	3743	tRNA		
+			product	tRNA-Asp
+3744	3905	gene		
+			gene	ATP8
+3744	3905	CDS		
+			product	ATP synthase F0 subunit 8
+			transl_table	5
+			protein_id	gb|ARW59267|
+3899	4579	gene		
+			gene	ATP6
+3899	4579	CDS		
+			product	ATP synthase F0 subunit 6
+			transl_table	5
+			protein_id	gb|ARW59268|
+4583	5370	gene		
+			gene	COX3
+4583	5370	CDS		
+			product	cytochrome c oxidase subunit III
+			transl_except	(pos:5369..5370,aa:TERM)
+			transl_table	5
+			protein_id	gb|ARW59269|
+			note	TAA stop codon is completed by the addition of 3' A residues to the mRNA
+5371	5437	tRNA		
+			product	tRNA-Gly
+5462	5790	gene		
+			gene	ND3
+5462	5790	CDS		
+			product	NADH dehydrogenase subunit 3
+			transl_except	(pos:5789..5790,aa:TERM)
+			transl_table	5
+			protein_id	gb|ARW59270|
+			note	TAA stop codon is completed by the addition of 3' A residues to the mRNA
+5791	5850	tRNA		
+			product	tRNA-Arg
+5855	5923	tRNA		
+			product	tRNA-Ala
+5925	5994	tRNA		
+			product	tRNA-Asn
+5996	6062	tRNA		
+			product	tRNA-Ser
+			codon_recognized	AGN
+6075	6140	tRNA		
+			product	tRNA-Glu
+6205	6139	tRNA		
+			product	tRNA-Phe
+7955	6213	gene		
+			gene	ND5
+7955	6213	CDS		
+			product	NADH dehydrogenase subunit 5
+			transl_table	5
+			protein_id	gb|ARW59271|
+8021	7956	tRNA		
+			product	tRNA-His
+9370	8027	gene		
+			gene	ND4
+9370	8027	CDS		
+			product	NADH dehydrogenase subunit 4
+			transl_table	5
+			protein_id	gb|ARW59272|
+9660	9364	gene		
+			gene	ND4L
+9660	9364	CDS		
+			product	NADH dehydrogenase subunit 4L
+			transl_table	5
+			protein_id	gb|ARW59273|
+9663	9728	tRNA		
+			product	tRNA-Thr
+9795	9729	tRNA		
+			product	tRNA-Pro
+9798	10319	gene		
+			gene	ND6
+9798	10319	CDS		
+			product	NADH dehydrogenase subunit 6
+			transl_table	5
+			protein_id	gb|ARW59274|
+10323	11457	gene		
+			gene	CYTB
+10323	11457	CDS		
+			product	cytochrome b
+			transl_except	(pos:11457,aa:TERM)
+			transl_table	5
+			protein_id	gb|ARW59275|
+			note	TAA stop codon is completed by the addition of 3' A residues to the mRNA
+11458	11523	tRNA		
+			product	tRNA-Ser
+			codon_recognized	UCN
+12488	11547	gene		
+			gene	ND1
+12488	11547	CDS		
+			product	NADH dehydrogenase subunit 1
+			transl_table	5
+			protein_id	gb|ARW59276|
+12565	12498	tRNA		
+			product	tRNA-Leu
+			codon_recognized	CUN
+13899	12566	rRNA		
+			product	16S ribosomal RNA
+			note	16S ribosomal RNA
+13972	13901	tRNA		
+			product	tRNA-Val
+14659	13973	rRNA		
+			product	12S ribosomal RNA
+14840	14789	tRNA		
+			product	tRNA-Leu
+16608	16674	tRNA		
+			product	tRNA-Ile
+16745	16677	tRNA		
+			product	tRNA-Gln
