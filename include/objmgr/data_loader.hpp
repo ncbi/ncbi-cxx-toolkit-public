@@ -434,6 +434,9 @@ public:
 
     virtual CObjectManager::TPriority GetDefaultPriority(void) const;
 
+    virtual Uint4 EstimateLoadBytes(const CTSE_Chunk_Info& chunk) const;
+    virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
+
 protected:
     /// Register the loader only if the name is not yet
     /// registered in the object manager
@@ -464,7 +467,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 2, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 3, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

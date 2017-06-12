@@ -843,6 +843,18 @@ CObjectManager::TPriority CDataLoader::GetDefaultPriority(void) const
 }
 
 
+Uint4 CDataLoader::EstimateLoadBytes(const CTSE_Chunk_Info& /*chunk*/) const
+{
+    return 32000; // assume 32KB chunk size
+}
+
+
+double CDataLoader::EstimateLoadSeconds(const CTSE_Chunk_Info& /*chunk*/, Uint4 bytes) const
+{
+    return bytes*1e-7+0.001; // assume 10MB/s transfer speed and 1ms overhead
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBlobId
 

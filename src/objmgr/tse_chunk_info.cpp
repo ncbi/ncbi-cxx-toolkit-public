@@ -783,9 +783,22 @@ void CTSE_Chunk_Info::x_SetLoadBytes(Uint4 bytes)
 }
 
 
-void CTSE_Chunk_Info::x_SetLoadSeconds(float seconds)
+void CTSE_Chunk_Info::x_SetLoadSeconds(double seconds)
 {
-    m_LoadSeconds = seconds;
+    m_LoadSeconds = float(seconds);
+}
+
+
+pair<Uint4, double> CTSE_Chunk_Info::GetLoadCost() const
+{
+    pair<Uint4, double> ret(GetLoadBytes(), GetLoadSeconds());
+    if ( !ret.first ) {
+        ret.first = m_SplitInfo->GetDataLoader().EstimateLoadBytes(*this);
+    }
+    if ( !ret.second ) {
+        ret.second = m_SplitInfo->GetDataLoader().EstimateLoadSeconds(*this, ret.first);
+    }
+    return ret;
 }
 
 

@@ -247,10 +247,11 @@ public:
         }
 
     Uint4 GetLoadBytes() const;
-    float GetLoadSeconds() const;
+    double GetLoadSeconds() const;
+    pair<Uint4, double> GetLoadCost() const;
     
     void x_SetLoadBytes(Uint4 bytes);
-    void x_SetLoadSeconds(float seconds);
+    void x_SetLoadSeconds(double seconds);
 
 protected:
     //////////////////////////////////////////////////////////////////
@@ -361,7 +362,7 @@ Uint4 CTSE_Chunk_Info::GetLoadBytes() const
 
 
 inline
-float CTSE_Chunk_Info::GetLoadSeconds() const
+double CTSE_Chunk_Info::GetLoadSeconds() const
 {
     return m_LoadSeconds;
 }
