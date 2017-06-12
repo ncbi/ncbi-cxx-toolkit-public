@@ -149,6 +149,18 @@ CGff2Reader::~CGff2Reader()
 {
 }
 
+//  --------------------------------------------------------------------------- 
+void
+CGff2Reader::ReadSeqAnnots(
+    TAnnotList& annots,
+    CNcbiIstream& istr,
+    ILineErrorListener* pMessageListener )
+//  ---------------------------------------------------------------------------
+{
+    xReadInit();
+    CStreamLineReader lr( istr );
+    ReadSeqAnnots( annots, lr, pMessageListener );
+}
 
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot>
@@ -201,11 +213,9 @@ CGff2Reader::ReadSeqAnnot(
             break;
         }
 
-        if ( CGff2Reader::IsAlignmentData(line)) {
-            if ((m_iFlags && fGenbankMode)  ||  
-                    x_ParseAlignmentGff(line, id_list, alignments)) {
-                continue;
-            }
+        if ( CGff2Reader::IsAlignmentData(line) &&
+             x_ParseAlignmentGff(line, id_list, alignments)) {
+            continue;
         }
 
         if (xParseFeature(line, pAnnot, pEC)) {
@@ -218,15 +228,15 @@ CGff2Reader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
 
-
     if (!alignments.empty()) {
         x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
     }
+
     xPostProcessAnnot(pAnnot, pEC);
     return pAnnot;
 }
 
-/*
+
 //  ---------------------------------------------------------------------------                       
 void
 CGff2Reader::ReadSeqAnnots(
@@ -236,6 +246,57 @@ CGff2Reader::ReadSeqAnnots(
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
+
+    if (m_iFlags&fGenbankMode) {
+        CRef<CSeq_annot> pAnnot;
+        pAnnot.Reset(new CSeq_annot);
+
+        map<string, list<CRef<CSeq_align>>> alignments;
+        list<string> id_list;
+
+        string line;
+        while (xGetLine(lr, line)) {
+            if (IsCanceled()) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Info,
+                    0,
+                    "Reader stopped by user.",
+                    ILineError::eProblem_ProgressInfo));
+                ProcessError(*pErr, pEC);
+                annots.clear();
+                return;
+            }
+            xReportProgress(pEC);
+
+            try {
+                if (xParseStructuredComment(line)) {
+                    continue;
+                }
+                if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
+                    continue;
+                }
+                if ( x_ParseTrackLineGff(line, m_CurrentTrackInfo)) {
+                    continue;
+                }
+
+                if ( ! x_ParseDataGff(line, annots, pEC) ) {
+                    continue;
+                }
+            }
+            catch( CObjReaderLineException& err ) {
+                err.SetLineNumber( m_uLineNumber );
+                ProcessError(err, pEC);
+            }
+        }
+
+        if (!alignments.empty()) {
+            x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
+        }        
+        return;
+    }
+    
+    //main line code:
     CRef<CSeq_annot> pAnnot = ReadSeqAnnot(lr, pEC);
     while (pAnnot) {
         annots.push_back(pAnnot);
@@ -243,7 +304,7 @@ CGff2Reader::ReadSeqAnnots(
     }
     return;
 }
-*/
+
 
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >
@@ -295,12 +356,10 @@ void CGff2Reader::xPostProcessAnnot(
     ILineErrorListener *pEC)
 //  ----------------------------------------------------------------------------
 {
+    xAddConversionInfo(pAnnot, pEC);
+    xAssignTrackData(pAnnot);
     xAssignAnnotId(pAnnot);
-    if (!(m_iFlags && fGenbankMode)) {
-        xAssignTrackData(pAnnot);
-        xAddConversionInfo(pAnnot, pEC);
-        xGenerateParentChildXrefs(pAnnot);
-    }
+    xGenerateParentChildXrefs(pAnnot);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1192,9 +1251,9 @@ bool CGff2Reader::xGetStartsOnMinusStrand(TSeqPos offset,
 //  ----------------------------------------------------------------------------
 {
     starts.clear();
-    const size_t gapCount = gapParts.size();
+    const auto gapCount = gapParts.size();
 
-    for (size_t i=0; i<gapCount; ++i) {
+    for (auto i=0; i<gapCount; ++i) {
         char changeType = gapParts[i][0];
         int changeSize = NStr::StringToInt(gapParts[i].substr(1));
         switch (changeType) {
@@ -2155,6 +2214,16 @@ void CGff2Reader::xSetAncestorXrefs(
         pDescendentXref->SetId(*pDescendentId);
         ancestor.SetXref().push_back(pDescendentXref);
     }
+}
+
+//  ============================================================================
+bool CGff2Reader::xReadInit()
+//  ============================================================================
+{
+    if (!CReaderBase::xReadInit()) {
+        return false;
+    }
+    return true;
 }
 
 //  ============================================================================
