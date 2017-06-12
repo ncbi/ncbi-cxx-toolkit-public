@@ -325,8 +325,6 @@ public:
         bool isTarget,
         vector<int>& starts) const;
 
-    virtual bool xReadInit();
-
     virtual bool xAnnotPostProcess(
         CRef<CSeq_annot>);
     virtual bool xGenerateParentChildXrefs(
