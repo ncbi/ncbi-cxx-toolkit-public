@@ -1553,10 +1553,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                     break;
                 case eQual_codon_recognized: 
                     {
-                        CRNA_ref::TExt& tex = rrp.SetExt ();
-                        CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
-                        ext_trna.SetAa().SetNcbieaa();
-                        ext_trna.SetCodon().push_back( CGen_code_table::CodonToIndex(val) );
+                        const auto codon_index = CGen_code_table::CodonToIndex(val);
+                        if (codon_index >= 0) {
+                            CRNA_ref::TExt& tex = rrp.SetExt ();
+                            CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
+                            ext_trna.SetAa().SetNcbieaa();
+                            ext_trna.SetCodon().push_back( codon_index );
+                        }
                         return true;
                     }
                     break;
