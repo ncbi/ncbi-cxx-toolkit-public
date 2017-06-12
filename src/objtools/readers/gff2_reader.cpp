@@ -309,7 +309,7 @@ void CGff2Reader::xPostProcessAnnot(
 {
     xAssignAnnotId(pAnnot);
     if (!(m_iFlags && fGenbankMode)) {
-        xAssignTrackData(pAnnot);
+        //xAssignTrackData(pAnnot);
         xAddConversionInfo(pAnnot, pEC);
         xGenerateParentChildXrefs(pAnnot);
     }

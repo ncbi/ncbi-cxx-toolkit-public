@@ -2,13 +2,6 @@ Seq-annot ::= {
   id {
     local str "Contig602"
   },
-  desc {
-    user {
-      type str "Track Data",
-      data {
-      }
-    }
-  },
   data ftable {
     {
       id local str "gene|20",

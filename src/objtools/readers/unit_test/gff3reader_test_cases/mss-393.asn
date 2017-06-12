@@ -4,11 +4,6 @@ Seq-annot ::= {
   },
   desc {
     user {
-      type str "Track Data",
-      data {
-      }
-    },
-    user {
       type str "Conversion Info",
       data {
         {
