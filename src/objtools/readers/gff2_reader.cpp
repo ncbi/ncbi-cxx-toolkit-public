@@ -378,23 +378,6 @@ bool CGff2Reader::xParseStructuredComment(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseDataGff(
-    const string& strLine,
-    TAnnots& annots,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    if (CGff2Reader::IsAlignmentData(strLine)) {
-        if (m_iFlags&fGenbankMode) {
-            return true;
-        }
-        //return x_ParseAlignmentGff(strLine, annots);
-        return true;
-    }
-    return x_ParseFeatureGff(strLine, annots, pEC);
-}
-
-//  ----------------------------------------------------------------------------
 bool
 CGff2Reader::xParseFeature(
     const string& line,
@@ -785,10 +768,6 @@ bool CGff2Reader::x_ParseFeatureGff(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //
-    //  Parse the record and determine which ID the given feature will pertain 
-    //  to:
-    //
     auto_ptr<CGff2Record> pRecord(x_CreateRecord());
     try {
         if (!pRecord->AssignFromGff(strLine)) {
@@ -804,44 +783,15 @@ bool CGff2Reader::x_ParseFeatureGff(
         return true;
     }
 
-    //
-    //  Search annots for a pre-existing annot pertaining to the same ID:
-    //
-    TAnnotIt it = annots.begin();
-    for ( /*NOOP*/; it != annots.end(); ++it ) {
-        if (!(**it).IsFtable()) continue;
-        const string* strAnnotId = s_GetAnnotId(**it);
-        if (strAnnotId == 0) {
-            return false;
-        }
-        if ( pRecord->Id() == *strAnnotId ) {
-            break;
-        }
-    }
-
-    //
-    //  If a preexisting annot was found, update it with the new feature
-    //  information:
-    //
-    if (it != annots.end()) {
-        if ( ! x_UpdateAnnotFeature( *pRecord, *it, pEC ) ) {
-            return false;
-        }
-    }
-
-    //
-    //  Otherwise, create a new annot pertaining to the new ID and initialize it
-    //  with the given feature information:
-    //
-    else {
+    if (annots.empty()) {
         CRef< CSeq_annot > pAnnot( new CSeq_annot );
         if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
             return false;
         }
         annots.push_back(pAnnot);
-        //annots.insert(annots.end(), pAnnot );      
+        return true;
     }
-    return true; 
+    return x_UpdateAnnotFeature(*pRecord, annots.back(), pEC); 
 };
 
 
@@ -988,9 +938,9 @@ bool CGff2Reader::x_InitAnnot(
     ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CAnnot_id > pAnnotId( new CAnnot_id );
-    pAnnotId->SetLocal().SetStr( gff.Id() );
-    pAnnot->SetId().push_back( pAnnotId );
+    //CRef< CAnnot_id > pAnnotId( new CAnnot_id );
+    //pAnnotId->SetLocal().SetStr( gff.Id() );
+    //pAnnot->SetId().push_back( pAnnotId );
     //pAnnot->SetData().SetFtable();
 
     // if available, add current browser information

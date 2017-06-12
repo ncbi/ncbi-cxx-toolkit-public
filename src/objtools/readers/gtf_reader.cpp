@@ -242,7 +242,13 @@ CGtfReader::ReadSeqAnnots(
             if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
                 continue;
             }
-            if (xParseTrackLine(line, pEC)) {
+            if (xIsTrackLine(line)) {
+                if (!annots.empty()) {
+                    xPostProcessAnnot(annots.back(), pEC);
+                }
+                xParseTrackLine(line, pEC);
+                CRef< CSeq_annot > pAnnot( new CSeq_annot );
+                annots.push_back(pAnnot);
                 continue;
             }
             if (x_ParseFeatureGff(line, annots, pEC)) {
@@ -252,6 +258,9 @@ CGtfReader::ReadSeqAnnots(
         catch(CObjReaderLineException& err) {
             err.SetLineNumber(m_uLineNumber);
         }
+    }
+    if (!annots.empty()) {
+        xPostProcessAnnot(annots.back(), pEC);
     }
 }
 
