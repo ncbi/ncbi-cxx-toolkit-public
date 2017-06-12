@@ -4,6 +4,11 @@ Seq-annot ::= {
   },
   desc {
     user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
       type str "Conversion Info",
       data {
         {
@@ -22,11 +27,6 @@ Seq-annot ::= {
           label str "notes",
           data int 0
         }
-      }
-    },
-    user {
-      type str "Track Data",
-      data {
       }
     }
   },
@@ -3771,6 +3771,11 @@ Seq-annot ::= {
   desc {
     name "alignments",
     user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
       type str "Conversion Info",
       data {
         {
@@ -3789,11 +3794,6 @@ Seq-annot ::= {
           label str "notes",
           data int 0
         }
-      }
-    },
-    user {
-      type str "Track Data",
-      data {
       }
     }
   },
