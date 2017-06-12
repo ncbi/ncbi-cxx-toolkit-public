@@ -131,6 +131,9 @@ public:
     static bool GetPileupGraphsParamDefault(void);
     static void SetPileupGraphsParamDefault(bool param);
 
+    static bool GetEstimatedCoverageGraphParamDefault(void);
+    static void SetEstimatedCoverageGraphParamDefault(bool param);
+
 private:
     typedef CParamLoaderMaker<CBAMDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CBAMDataLoader, SLoaderParams>;

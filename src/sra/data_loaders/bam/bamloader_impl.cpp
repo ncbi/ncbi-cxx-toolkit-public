@@ -132,6 +132,28 @@ static bool GetPileupGraphsParam(void)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH);
+NCBI_PARAM_DEF(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH, true);
+
+bool CBAMDataLoader::GetEstimatedCoverageGraphParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, ESTIMATED_COVERAGE_GRAPH)::GetDefault();
+}
+
+
+void CBAMDataLoader::SetEstimatedCoverageGraphParamDefault(bool param)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, ESTIMATED_COVERAGE_GRAPH)::SetDefault(param);
+}
+
+
+static bool GetEstimatedCoverageGraphParam(void)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, ESTIMATED_COVERAGE_GRAPH) s_Value;
+    return s_Value.Get();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBAMBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -951,16 +973,18 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
         }
     }
 
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSet().SetSeq_set();
-    CBam2Seq_graph cvt;
-    cvt.SetRefLabel(GetRefSeqId());
-    cvt.SetRefId(*GetRefSeq_id().GetSeqId());
-    cvt.SetAnnotName(m_File->GetAnnotName());
-    cvt.SetEstimated();
-    cvt.SetMinMapQuality(m_MinMapQuality);
-    entry->SetAnnot().push_back(cvt.MakeSeq_annot(raw_db, m_File->GetBamName()));
-    m_CovEntry = entry;
+    if ( GetEstimatedCoverageGraphParam() ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSet().SetSeq_set();
+        CBam2Seq_graph cvt;
+        cvt.SetRefLabel(GetRefSeqId());
+        cvt.SetRefId(*GetRefSeq_id().GetSeqId());
+        cvt.SetAnnotName(m_File->GetAnnotName());
+        cvt.SetEstimated();
+        cvt.SetMinMapQuality(m_MinMapQuality);
+        entry->SetAnnot().push_back(cvt.MakeSeq_annot(raw_db, m_File->GetBamName()));
+        m_CovEntry = entry;
+    }
     return true;
 }
 
@@ -1154,7 +1178,8 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
 
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kMainChunkId));
     CRange<TSeqPos> whole_range = CRange<TSeqPos>::GetWhole();
-    if ( m_CovEntry || !m_CovFileName.empty() || m_File->GetBamDb().UsesRawIndex() ) {
+    if ( m_CovEntry || !m_CovFileName.empty() ||
+         (m_File->GetBamDb().UsesRawIndex() && GetEstimatedCoverageGraphParam()) ) {
         chunk->x_AddAnnotType(name,
                               SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
                               GetRefSeq_id(),
