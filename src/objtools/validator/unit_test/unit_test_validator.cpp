@@ -20811,7 +20811,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
     CheckErrors(*eval, expected_errors);
 
     orgname.SetBinomial().SetSubspecies("z");
-    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x y z')");
+    expected_errors[0]->SetErrMsg("Taxname does not match orgname ('Sebaea microphylla', 'x y subsp. z')");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 

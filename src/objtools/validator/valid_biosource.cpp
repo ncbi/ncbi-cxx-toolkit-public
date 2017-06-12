@@ -1510,7 +1510,7 @@ static string s_GetBinomialString(const CBinomialOrgName& binomial)
         val += " " + binomial.GetSpecies();
     }
     if (binomial.IsSetSubspecies()) {
-        val += " " + binomial.GetSubspecies();
+        val += " subsp. " + binomial.GetSubspecies();
     }
     return val;
 }
