@@ -801,6 +801,7 @@ protected:
     bool  m_WriteNamedIntegersByValue;
     bool  m_FastWriteDouble;
     bool  m_EnforceWritingDefaults;
+    TTypeInfo m_TypeAlias;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,

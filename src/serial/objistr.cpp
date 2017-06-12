@@ -438,6 +438,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
+      m_TypeAlias(nullptr),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault()),
       m_SkipUnknown(eSerialSkipUnknown_Default),
@@ -464,7 +465,7 @@ void CObjectIStream::ResetState(void)
 {
     CObjectStack::ResetState();
     m_DiscardCurrObject = false;
-    SetMemberDefault(0);
+    UnsetMemberSpecialCase();
 }
 
 void CObjectIStream::Open(CByteSourceReader& reader)
@@ -1490,13 +1491,21 @@ void CObjectIStream::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
 void CObjectIStream::ReadAlias(const CAliasTypeInfo* aliasType,
                                TObjectPtr aliasPtr)
 {
+    if (aliasType->IsFullAlias()) {
+        m_TypeAlias = aliasType;
+    }
     ReadNamedType(aliasType, aliasType->GetPointedType(),
         aliasType->GetDataPtr(aliasPtr));
+    m_TypeAlias = nullptr;
 }
 
 void CObjectIStream::SkipAlias(const CAliasTypeInfo* aliasType)
 {
+    if (aliasType->IsFullAlias()) {
+        m_TypeAlias = aliasType;
+    }
     SkipNamedType(aliasType, aliasType->GetPointedType());
+    m_TypeAlias = nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////

@@ -585,6 +585,11 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     NCBI_NAME2(ClassName,_Base), \
     SERIAL_ALIAS(RefType), RefCode)
 
+#define BEGIN_NESTED_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
+    BEGIN_ALIAS_INFO_METHOD(AliasName, ClassName, \
+    ClassName, \
+    SERIAL_ALIAS(RefType), RefCode)
+
 #define BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
 const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \

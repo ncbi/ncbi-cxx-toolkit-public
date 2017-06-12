@@ -72,6 +72,7 @@ public:
             CParent::SetCreateFunction(func);
         }
 
+    // used in serialization
     void SetFullAlias(bool set=true) {
         m_FullAlias = set;
     }

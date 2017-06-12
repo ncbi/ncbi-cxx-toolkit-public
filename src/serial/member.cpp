@@ -721,13 +721,12 @@ void CMemberInfoFunctions::ReadSimpleMember(CObjectIStream& in,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(!memberInfo->HaveSetFlag());
-    in.SetMemberDefault(0);
     if (memberInfo->Nillable()) {
         in.SetMemberNillable();
     }
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    in.SetMemberDefault(0);
+    in.UnsetMemberNillable();
 }
 
 void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
@@ -825,10 +824,10 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
                 memberInfo->UpdateSetFlagMaybe(classPtr);
             }
         }
-        in.SetMemberDefault(0);
+        in.UnsetMemberSpecialCase();
     }
     catch (CSerialException& e) {
-        in.SetMemberDefault(0);
+        in.UnsetMemberSpecialCase();
         if (e.GetErrCode() == CSerialException::eNullValue) {
             if ( memberInfo->HaveSetFlag() && memberInfo->Nillable() ) {
                 memberInfo->UpdateSetFlagNo(classPtr);
@@ -1130,9 +1129,7 @@ void CMemberInfoFunctions::WriteLongMember(CObjectOStream& out,
 void CMemberInfoFunctions::CopySimpleMember(CObjectStreamCopier& copier,
                                             const CMemberInfo* memberInfo)
 {
-    copier.In().SetMemberDefault(0);
     copier.CopyObject(memberInfo->GetTypeInfo());
-    copier.In().SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::CopyWithDefaultMemberX(CObjectStreamCopier& copier,
@@ -1143,7 +1140,7 @@ void CMemberInfoFunctions::CopyWithDefaultMemberX(CObjectStreamCopier& copier,
         copier.In().SetMemberNillable();
     }
     copier.CopyObject(memberInfo->GetTypeInfo());
-    copier.In().SetMemberDefault(0);
+    copier.In().UnsetMemberSpecialCase();
 }
 
 void CMemberInfoFunctions::CopyMissingSimpleMember(CObjectStreamCopier& copier,
@@ -1162,9 +1159,7 @@ void CMemberInfoFunctions::CopyMissingOptionalMember(CObjectStreamCopier& /*copi
 void CMemberInfoFunctions::SkipSimpleMember(CObjectIStream& in,
                                             const CMemberInfo* memberInfo)
 {
-    in.SetMemberDefault(0);
     in.SkipObject(memberInfo->GetTypeInfo());
-    in.SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::SkipWithDefaultMemberX(CObjectIStream& in,
@@ -1175,7 +1170,7 @@ void CMemberInfoFunctions::SkipWithDefaultMemberX(CObjectIStream& in,
         in.SetMemberNillable();
     }
     in.SkipObject(memberInfo->GetTypeInfo());
-    in.SetMemberDefault(0);
+    in.UnsetMemberSpecialCase();
 }
 
 void CMemberInfoFunctions::SkipMissingSimpleMember(CObjectIStream& in,

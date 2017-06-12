@@ -503,7 +503,12 @@ void CObjectOStreamJson::BeginClassMember(const CMemberId& id)
             NextElement();
 #endif
         } else {
-            m_SkippedMemberId = id.GetName();
+            auto tn = [this]()->const string& {
+                const string& r(m_TypeAlias->GetName());
+                m_TypeAlias = nullptr;
+                return r;
+            };
+            m_SkippedMemberId = (m_TypeAlias && id.HasNotag()) ? tn() : id.GetName();
         }
         return;
     }

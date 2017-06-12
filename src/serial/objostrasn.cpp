@@ -585,7 +585,13 @@ void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
 
 void CObjectOStreamAsn::WriteMemberId(const CMemberId& id)
 {
-    const string& name = id.GetName();
+    auto tn = [this]()->const string& {
+        const string& r(m_TypeAlias->GetName());
+        m_TypeAlias = nullptr;
+        return r;
+    };
+    const string& name = (m_TypeAlias && id.HasNotag()) ? tn() : id.GetName();
+
     if ( !name.empty() ) {
         if (id.HaveNoPrefix() && isupper((unsigned char)name[0])) {
             m_Output.PutChar((char)tolower((unsigned char)name[0]));

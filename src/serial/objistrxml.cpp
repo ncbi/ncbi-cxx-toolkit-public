@@ -331,7 +331,9 @@ void CObjectIStreamXml::EndTag(void)
 bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 {
     if (!StackIsEmpty() && TopFrame().GetNotag()) {
-        return SelfClosedTag();
+        if (SelfClosedTag()) {
+            return true;
+        }
     }
     if( InsideOpeningTag() ) {
         char c = SkipWS();
@@ -1428,7 +1430,7 @@ CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
             return eNullPointer;
         }
     }
-    if ( !HasAttlist() && ((InsideOpeningTag() && EndOpeningTagSelfClosed()) || SelfClosedTag()) ) {
+    if ( (!m_SkipNextTag || ExpectSpecialCase()) && !HasAttlist() && ((InsideOpeningTag() && EndOpeningTagSelfClosed()) || SelfClosedTag()) ) {
         // self closed tag
         return eNullPointer;
     }
@@ -1966,19 +1968,21 @@ void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         m_SkipNextTag = false;
     } else {
         const CClassTypeInfo* classType =
-            dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
+            dynamic_cast<const CClassTypeInfo*>(GetRealTypeInfo(namedTypeInfo));
         if (classType) {
             CheckStdXml(classType);
             isclass = true;
         }
         OpenTag(namedTypeInfo);
     }
-    if (!isclass) {
-        const CAliasTypeInfo* aliasType = 
-            dynamic_cast<const CAliasTypeInfo*>(namedTypeInfo);
-        if (aliasType) {
-            m_SkipNextTag = aliasType->IsFullAlias();
-        }
+    const CAliasTypeInfo* aliasType = 
+        dynamic_cast<const CAliasTypeInfo*>(namedTypeInfo);
+    if (aliasType) {
+        m_SkipNextTag = aliasType->IsFullAlias();
+    }
+    else if (m_StdXml) {
+        const CClassTypeInfo* classType = dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
+        m_SkipNextTag = (classType && classType->Implicit());
     }
 }
 
@@ -2258,8 +2262,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         elem_type->GetName() == mem_type->GetName());
                 }
             } else {
-                needUndo = (type != eTypeFamilyPrimitive) ||
-                    mem_info->GetId().HasAnyContent();
+                needUndo = mem_info->GetId().HasNotag() || mem_info->GetId().HasAnyContent() || type == eTypeFamilyContainer;
+                m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
             }
             if (needUndo) {
                 TopFrame().SetNotag();
@@ -2305,6 +2309,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
 
 void CObjectIStreamXml::EndClassMember(void)
 {
+    m_SkipNextTag = false;
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
     } else {
@@ -2414,7 +2419,8 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
                         elem_type->GetName() == var_type->GetName());
                 }
             } else {
-                needUndo = (type != eTypeFamilyPrimitive);
+                needUndo = var_info->GetId().HasNotag() || var_info->GetId().HasAnyContent() || type == eTypeFamilyContainer;
+                m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
             }
             if (needUndo) {
                 TopFrame().SetNotag();
@@ -2442,6 +2448,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
 
 void CObjectIStreamXml::EndChoiceVariant(void)
 {
+    m_SkipNextTag = false;
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
     } else {

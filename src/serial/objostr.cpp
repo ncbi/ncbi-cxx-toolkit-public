@@ -297,6 +297,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_WriteNamedIntegersByValue(false),
       m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_EnforceWritingDefaults(false),
+      m_TypeAlias(nullptr),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {
@@ -1082,15 +1083,23 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
 void CObjectOStream::WriteAlias(const CAliasTypeInfo* aliasType,
                                 TConstObjectPtr aliasPtr)
 {
+    if (aliasType->IsFullAlias()) {
+        m_TypeAlias = aliasType;
+    }
     WriteNamedType(aliasType, aliasType->GetPointedType(),
         aliasType->GetDataPtr(aliasPtr));
+    m_TypeAlias = nullptr;
 }
 
 void CObjectOStream::CopyAlias(const CAliasTypeInfo* aliasType,
                                 CObjectStreamCopier& copier)
 {
+    if (aliasType->IsFullAlias()) {
+        copier.In().m_TypeAlias = m_TypeAlias = aliasType;
+    }
     CopyNamedType(aliasType, aliasType->GetPointedType(),
         copier);
+    copier.In().m_TypeAlias = m_TypeAlias = nullptr;
 }
 
 void CObjectOStream::BeginBytes(const ByteBlock& )

@@ -852,6 +852,7 @@ void CObjectIStreamAsnBinary::BeginNamedType(TTypeInfo namedTypeInfo)
 void CObjectIStreamAsnBinary::EndNamedType(void)
 {
 #if !USE_OLD_TAGS
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         ExpectEndOfContent();
     }
@@ -928,6 +929,7 @@ void CObjectIStreamAsnBinary::EndContainer(void)
 #if USE_OLD_TAGS
     ExpectEndOfContent();
 #else
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         ExpectEndOfContent();
     }
@@ -1035,6 +1037,7 @@ void CObjectIStreamAsnBinary::EndClass(void)
 #if USE_OLD_TAGS
     ExpectEndOfContent();
 #else
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         ExpectEndOfContent();
     }
@@ -1161,6 +1164,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
 
 void CObjectIStreamAsnBinary::EndClassMember(void)
 {
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         ExpectEndOfContent();
     }
@@ -1353,6 +1357,7 @@ void CObjectIStreamAsnBinary::EndChoiceVariant(void)
 #if USE_OLD_TAGS
     ExpectEndOfContent();
 #else
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         ExpectEndOfContent();
     }

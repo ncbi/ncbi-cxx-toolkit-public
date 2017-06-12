@@ -1297,7 +1297,7 @@ void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         m_SkipNextTag = false;
     } else {
         const CClassTypeInfo* classType =
-            dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
+            dynamic_cast<const CClassTypeInfo*>(GetRealTypeInfo(namedTypeInfo));
         if (classType) {
             CheckStdXml(classType);
             isclass = true;
@@ -1308,12 +1308,14 @@ void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
             x_WriteClassNamespace(namedTypeInfo);
         }
     }
-    if (!isclass) {
-        const CAliasTypeInfo* aliasType = 
-            dynamic_cast<const CAliasTypeInfo*>(namedTypeInfo);
-        if (aliasType) {
-            m_SkipNextTag = aliasType->IsFullAlias();
-        }
+    const CAliasTypeInfo* aliasType = 
+        dynamic_cast<const CAliasTypeInfo*>(namedTypeInfo);
+    if (aliasType) {
+        m_SkipNextTag = aliasType->IsFullAlias();
+    }
+    else if (m_StdXml) {
+        const CClassTypeInfo* classType = dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
+        m_SkipNextTag = (classType && classType->Implicit());
     }
 }
 
@@ -1420,8 +1422,8 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
                         elem_type->GetName() != mem_type->GetName());
                 }
             } else {
-                needTag = (type == eTypeFamilyPrimitive &&
-                    !id.HasNotag() && !id.HasAnyContent());
+                needTag = !id.HasNotag() && !id.HasAnyContent() && type != eTypeFamilyContainer;
+                m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
             }
             if (needTag) {
                 OpenStackTag(0);
@@ -1439,6 +1441,7 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
 
 void CObjectOStreamXml::EndClassMember(void)
 {
+    m_SkipNextTag = false;
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
         m_Attlist = false;
@@ -1567,7 +1570,8 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                     elem_type->GetName() != var_type->GetName());
             }
         } else {
-            needTag = (type == eTypeFamilyPrimitive && !id.HasNotag());
+            needTag = !id.HasNotag() && !id.HasAnyContent() && type != eTypeFamilyContainer;
+            m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
         }
         if (needTag) {
             OpenStackTag(0);
@@ -1584,6 +1588,7 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
 
 void CObjectOStreamXml::EndChoiceVariant(void)
 {
+    m_SkipNextTag = false;
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
     } else {

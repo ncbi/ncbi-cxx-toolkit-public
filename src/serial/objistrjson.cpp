@@ -858,6 +858,10 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
     bool deep = false;
     TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
     if (ind == kInvalidMember) {
+        if (m_TypeAlias && classType->GetMembers().GetItemInfo(last)->GetId().HasNotag()) {
+            m_TypeAlias = nullptr;
+            return last;
+        }
         if (classType->GetMembers().GetItemInfo(last)->GetId().HasAnyContent()) {
             UndoClassMember();
             return last;

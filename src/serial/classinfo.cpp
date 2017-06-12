@@ -306,9 +306,7 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
     if (memberInfo->HaveSetFlag() && in.GetSpecialCaseUsed() == CObjectIStream::eReadAsNil) {
         memberInfo->UpdateSetFlagNo(objectPtr);
     }
-    if (memberInfo->Nillable()) {
-        in.SetMemberDefault(0);
-    }
+    in.UnsetMemberNillable();
 }
 
 void CClassTypeInfo::WriteClassRandom(CObjectOStream& out,
@@ -399,7 +397,7 @@ void CClassTypeInfo::CopyImplicitMember(CObjectStreamCopier& copier,
         copier.In().SetMemberNillable();
     }
     copier.CopyNamedType(classType, memberInfo->GetTypeInfo());
-    copier.In().SetMemberDefault(0);
+    copier.In().UnsetMemberNillable();
 }
 
 void CClassTypeInfo::SkipClassRandom(CObjectIStream& in,
@@ -431,7 +429,7 @@ void CClassTypeInfo::SkipImplicitMember(CObjectIStream& in,
         in.SetMemberNillable();
     }
     in.SkipNamedType(classType, memberInfo->GetTypeInfo());
-    in.SetMemberDefault(0);
+    in.UnsetMemberNillable();
 }
 
 bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const

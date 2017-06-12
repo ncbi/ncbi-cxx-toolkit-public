@@ -1030,6 +1030,7 @@ protected:
     bool m_DiscardCurrObject;
     ESerialDataFormat   m_DataFormat;
     EDelayBufferParsing  m_ParseDelayBuffers;
+    TTypeInfo m_TypeAlias;
     
 private:
     static CObjectIStream* CreateObjectIStreamAsn(void);
@@ -1072,7 +1073,7 @@ public:
         eReadAsNormal  = 0,
         eReadAsDefault = 1,
         eReadAsNil     = 2,
-        eReadAsBigInt  = 3
+        eReadAsBigInt  = 4
     };
 private:
     TConstObjectPtr m_MemberDefault;
@@ -1081,13 +1082,27 @@ private:
 
     void SetMemberDefault( TConstObjectPtr def)
     {
-        m_MemberDefault = def;
         m_SpecialCaseUsed = eReadAsNormal;
-        m_SpecialCaseToExpect = def ? eReadAsDefault : eReadAsNormal;
+        m_MemberDefault = def;
+        if (def) {
+            m_SpecialCaseToExpect = m_SpecialCaseToExpect | (int)eReadAsDefault;
+        }
+    }
+    void UnsetMemberSpecialCase(void)
+    {
+        m_SpecialCaseUsed = eReadAsNormal;
+        m_MemberDefault = nullptr;
+        m_SpecialCaseToExpect = eReadAsNormal;
     }
     void SetMemberNillable()
     {
-        m_SpecialCaseToExpect = (m_SpecialCaseToExpect | (int)eReadAsNil);
+        m_SpecialCaseUsed = eReadAsNormal;
+        m_SpecialCaseToExpect = m_SpecialCaseToExpect | (int)eReadAsNil;
+    }
+    void UnsetMemberNillable()
+    {
+        m_SpecialCaseUsed = eReadAsNormal;
+        m_SpecialCaseToExpect = m_SpecialCaseToExpect & ~((int)eReadAsNil);
     }
 public:
     int ExpectSpecialCase(void) const
@@ -1115,6 +1130,7 @@ public:
     CLocalHookSet<CSkipClassMemberHook> m_ClassMemberSkipHookKey;
     CLocalHookSet<CSkipChoiceVariantHook> m_ChoiceVariantSkipHookKey;
 
+    friend class CObjectOStream;
     friend class CObjectStreamCopier;
     friend class CMemberInfoFunctions;
     friend class CClassTypeInfo;

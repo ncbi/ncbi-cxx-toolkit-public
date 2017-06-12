@@ -1312,7 +1312,10 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     CTempString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
-        if (CanSkipUnknownMembers()) {
+        if (m_TypeAlias && classType->GetMembers().GetItemInfo(pos)->GetId().HasNotag()) {
+            m_TypeAlias = nullptr;
+            return pos;
+        } else if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
             return BeginClassMember(classType, pos);

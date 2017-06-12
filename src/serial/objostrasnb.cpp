@@ -1061,6 +1061,7 @@ void CObjectOStreamAsnBinary::BeginNamedType(TTypeInfo namedTypeInfo)
 void CObjectOStreamAsnBinary::EndNamedType(void)
 {
 #if !USE_OLD_TAGS
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         WriteEndOfContent();
     }
@@ -1157,6 +1158,7 @@ void CObjectOStreamAsnBinary::EndContainer(void)
 #if USE_OLD_TAGS
     WriteEndOfContent();
 #else
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         WriteEndOfContent();
     }
@@ -1296,6 +1298,7 @@ void CObjectOStreamAsnBinary::EndClass(void)
 #if USE_OLD_TAGS
     WriteEndOfContent();
 #else
+    m_SkipNextTag = false;
     if (!TopFrame().GetNoEOC()) {
         WriteEndOfContent();
     }
@@ -1328,6 +1331,7 @@ void CObjectOStreamAsnBinary::EndClassMember(void)
 #if USE_OLD_TAGS
     WriteEndOfContent();
 #else
+    m_SkipNextTag = false;
     const CMemberId& id = TopFrame().GetMemberId();
     if (id.HasTag() && id.IsTagConstructed()) {
         WriteEndOfContent();
@@ -1645,6 +1649,7 @@ void CObjectOStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* ,
 
 void CObjectOStreamAsnBinary::EndChoiceVariant(void)
 {
+    m_SkipNextTag = false;
     if (FetchFrameFromTop(1).GetNotag()) {
         WriteEndOfContent();
     }
