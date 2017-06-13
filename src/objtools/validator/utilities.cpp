@@ -1263,12 +1263,16 @@ void CheckBioseqEndsForNAndGap
  EBioseqEndIsType& begin_n,
  EBioseqEndIsType& begin_gap,
  EBioseqEndIsType& end_n,
- EBioseqEndIsType& end_gap)
+ EBioseqEndIsType& end_gap,
+ bool& begin_ambig,
+ bool& end_ambig)
 {
     begin_n = eBioseqEndIsType_None;
     begin_gap = eBioseqEndIsType_None;
     end_n = eBioseqEndIsType_None;
     end_gap = eBioseqEndIsType_None;
+    begin_ambig = false;
+    end_ambig = false;
 
     try {
         if (!bsh || bsh.GetInst_Length() < 10 || (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular)) {
@@ -1316,6 +1320,38 @@ void CheckBioseqEndsForNAndGap
                 for (int i = vec.size() - 10; i < vec.size(); i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
                         end_n = eBioseqEndIsType_Last;
+                        break;
+                    }
+                }
+            }
+
+            // check for ambiguous concentration
+            size_t check_len = 50;
+            if (vec.size() < 50) {
+                check_len = vec.size();
+            }
+            size_t num_ns = 0;
+            for (size_t i = 0; i < check_len; i++) {
+                if (vec[i] == 'N') {
+                    num_ns++;
+                    if (num_ns >= 5 && i < 10) {
+                        begin_ambig = true;
+                        break;
+                    } else if (num_ns >= 15) {
+                        begin_ambig = true;
+                        break;
+                    }                    
+                }
+            }
+            num_ns = 0;
+            for (int i = 0; i < check_len; i++) {
+                if (vec[vec.size() - i - 1] == 'N') {
+                    num_ns++;
+                    if (num_ns >= 5 && i < 10) {
+                        end_ambig = true;
+                        break;
+                    } else if (num_ns >= 15) {
+                        end_ambig = true;
                         break;
                     }
                 }

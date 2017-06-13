@@ -3034,8 +3034,9 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         EBioseqEndIsType begin_gap = eBioseqEndIsType_None;
         EBioseqEndIsType end_n = eBioseqEndIsType_None;
         EBioseqEndIsType end_gap = eBioseqEndIsType_None;
+        bool begin_ambig = false, end_ambig = false;
         if (x_IsDeltaLitOnly(seq.GetInst())) {
-            CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+            CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap, begin_ambig, end_ambig);
         }
 
         bool is_circular = false;
@@ -3057,6 +3058,17 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         } else if (end_gap != eBioseqEndIsType_None) {
             sev = GetBioseqEndWarning(seq, is_circular, end_gap);
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
+        }
+
+        if (begin_ambig) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
+                "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases",
+                seq);
+        }
+        if (end_ambig) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
+                "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases",
+                seq);
         }
 
         // don't check N content for patent sequences

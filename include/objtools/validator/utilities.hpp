@@ -158,7 +158,9 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
  EBioseqEndIsType& begin_n,
  EBioseqEndIsType& begin_gap,
  EBioseqEndIsType& end_n,
- EBioseqEndIsType& end_gap);
+ EBioseqEndIsType& end_gap,
+ bool &begin_ambig,
+ bool &end_ambig);
 
 
 /// Indicates whether feature is a dicistronic gene 
