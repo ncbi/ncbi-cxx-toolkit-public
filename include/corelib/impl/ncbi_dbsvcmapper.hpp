@@ -77,7 +77,7 @@ public:
 
 protected:
     virtual CObject* x_GetUserData(void) const = 0;
-    virtual void     x_RecordServer(const CDBServer& server) { }
+    virtual void     x_RecordServer(const CDBServer&) { }
 
 private:
     friend class IDBServiceMapper;
@@ -151,7 +151,8 @@ public:
     virtual void    CleanExcluded(const string&    service) = 0;
 
     /// Get list of all servers for the given service disregarding any exclusions
-    virtual void GetServersList(const string& service, list<string>* serv_list) const
+    virtual void GetServersList(const string& /* service */,
+                                list<string>* serv_list) const
     {
         serv_list->clear();
     }
@@ -172,7 +173,7 @@ public:
     /// low-level handle (if available); on success, pass the result
     /// to its x_RecordServer method to inform subsequent logging.
     /// @return true if successful, false otherwise.
-    virtual bool RecordServer(I_ConnectionExtra& extra) const { return false; }
+    virtual bool RecordServer(I_ConnectionExtra&) const { return false; }
 
 protected:
     static void x_RecordServer(I_ConnectionExtra& extra, CDBServer& server)
