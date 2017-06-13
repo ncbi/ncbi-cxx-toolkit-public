@@ -170,7 +170,11 @@ Seq-annot ::= {
       data rna {
         type tRNA,
         ext tRNA {
-          aa ncbieaa 76
+          aa ncbieaa 76,
+          codon {
+            2,
+            3
+          }
         }
       },
       comment "tRNA-Leu",
@@ -537,7 +541,13 @@ Seq-annot ::= {
       data rna {
         type tRNA,
         ext tRNA {
-          aa ncbieaa 83
+          aa ncbieaa 83,
+          codon {
+            44,
+            45,
+            46,
+            47
+          }
         }
       },
       comment "tRNA-Ser",
@@ -875,7 +885,13 @@ Seq-annot ::= {
       data rna {
         type tRNA,
         ext tRNA {
-          aa ncbieaa 83
+          aa ncbieaa 83,
+          codon {
+            4,
+            5,
+            6,
+            7
+          }
         }
       },
       comment "tRNA-Ser",
@@ -938,7 +954,13 @@ Seq-annot ::= {
       data rna {
         type tRNA,
         ext tRNA {
-          aa ncbieaa 76
+          aa ncbieaa 76,
+          codon {
+            16,
+            17,
+            18,
+            19
+          }
         }
       },
       comment "tRNA-Leu",

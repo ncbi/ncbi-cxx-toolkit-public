@@ -152,7 +152,29 @@ CRef<CSeq_id> GetBestId(const CBioseq::TId& ids)
     return id;
 }
 
+
+map<char, list<char>> s_IUPACmap 
+{
+    {'A', list<char>({'A'})},
+    {'G', list<char>({'G'})},
+    {'C', list<char>({'C'})},
+    {'T', list<char>({'T'})},
+    {'U', list<char>({'U'})},
+    {'M', list<char>({'A', 'C'})},
+    {'R', list<char>({'A', 'G'})},
+    {'W', list<char>({'A', 'T'})},
+    {'S', list<char>({'C', 'G'})},
+    {'Y', list<char>({'C', 'T'})},
+    {'K', list<char>({'G', 'T'})},
+    {'V', list<char>({'A', 'C', 'G'})},
+    {'H', list<char>({'A', 'C', 'T'})},
+    {'D', list<char>({'A', 'G', 'T'})},
+    {'B', list<char>({'C', 'G', 'T'})},
+    {'N', list<char>({'A', 'C', 'G', 'T'})}
+};
+
 }
+
 
 class /* NCBI_XOBJREAD_EXPORT */ CFeature_table_reader_imp
 {
@@ -1555,14 +1577,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                     break;
                 case eQual_codon_recognized: 
                     {
-                        const auto codon_index = CGen_code_table::CodonToIndex(val);
-                        if (codon_index >= 0) {
+                        //const auto codon_index = CGen_code_table::CodonToIndex(val);
+                        //if (codon_index >= 0) {
                             CRNA_ref::TExt& tex = rrp.SetExt ();
                             CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
                             if (!x_AddCodons(val, ext_trna)) {
                                 return false;
                             }
-                        }
+                        //}
                         return true;
                     }
                     break;
@@ -1586,14 +1608,28 @@ bool CFeature_table_reader_imp::x_AddCodons(
         return false;
     }
 
-    const auto codon_index = CGen_code_table::CodonToIndex(val);
-    if (codon_index >= 0) {
-        trna_ext.SetAa().SetNcbieaa();
-        trna_ext.SetCodon().push_back( codon_index );
+    set<int> codons;
+    try {
+        for (char char1 : s_IUPACmap.at(val[0])) {
+            for (char char2 : s_IUPACmap.at(val[1])) {
+                for (char char3 : s_IUPACmap.at(val[2])) {
+                    const auto codon_index = CGen_code_table::CodonToIndex(char1, char2, char3);
+                    codons.insert(codon_index);
+                }
+            }
+        }
+
+        if (!codons.empty()) {
+            trna_ext.SetAa().SetNcbieaa();
+            for (const auto codon_index : codons) {
+                trna_ext.SetCodon().push_back(codon_index);
+            }
+        }
         return true;
     }
+    catch(...) {}
 
-    return true; // Need to change this
+    return false;
 }
 
 
