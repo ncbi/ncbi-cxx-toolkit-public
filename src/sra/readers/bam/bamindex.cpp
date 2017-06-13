@@ -523,6 +523,21 @@ CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range) cons
     if ( beg_bin_offset < m_Intervals.size() ) {
         limit.first = m_Intervals[beg_bin_offset];
     }
+    if ( !limit.first.GetVirtualPos() ) {
+        // if no long alignments are overlapping with the first bin
+        // then we'll have to use start of the first bin (on different levels) that overlaps with
+        // the requested range
+        SBamIndexBinInfo::TBin beg_bin = GetBinNumberBase(kMinLevel) + beg_bin_offset;
+        auto beg_it = lower_bound(m_Bins.begin(), m_Bins.end(), beg_bin);
+        if ( beg_it != m_Bins.end() && beg_it->m_Bin == beg_bin ) {
+            // start of the first bin
+            limit.first = beg_it->GetStartFilePos();
+        }
+        else if ( beg_it != m_Bins.begin() && (--beg_it)->m_Bin >= GetBinNumberBase(kMinLevel) ) {
+            // end of previous non-empty bin
+            limit.first = beg_it->GetEndFilePos();
+        }
+    }
     // end limit is from low-level block after end position
     limit.second = CBGZFPos::GetInvalid();
     SBamIndexBinInfo::TBin end_bin = GetBinNumber(ref_range.GetTo(), kMinLevel)+1;
