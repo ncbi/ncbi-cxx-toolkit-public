@@ -3703,6 +3703,9 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     TSeqPos k;
     int state = 0;
     TSeqPos length = usable_size / 3;
+    if (length == 0) {
+        return CRef<CBioseq>(NULL);
+    }
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
 

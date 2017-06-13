@@ -3047,7 +3047,10 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
     if (new_inst->IsSetSeq_data()) {
         // Generate new protein sequence data and length
         new_protein_bioseq = CSeqTranslator::TranslateToProtein(*cds, new_scope);
-        if (new_protein_bioseq->GetInst().GetSeq_data().IsIupacaa()) 
+        if (!new_protein_bioseq) {
+            // too short to translate
+        }
+        else if (new_protein_bioseq->GetInst().GetSeq_data().IsIupacaa()) 
         {
             new_inst->SetSeq_data().SetIupacaa().Set( 
                 new_protein_bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
