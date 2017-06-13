@@ -236,12 +236,35 @@ string CReferenceDataType::GetDefaultString(const CDataValue& value) const
 
 AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const
 {
-    return CParent::GenerateCode();
+    bool alias = IsTypeAlias();
+    SetIsTypeAlias(false);
+    AutoPtr<CTypeStrings>  t = CParent::GenerateCode();
+    SetIsTypeAlias(alias);
+    return t;
+}
+
+AutoPtr<CTypeStrings> CReferenceDataType::GetRefCType(void) const
+{
+    bool alias = IsTypeAlias();
+    SetIsTypeAlias(false);
+    AutoPtr<CTypeStrings>  t = CParent::GetRefCType();
+    SetIsTypeAlias(alias);
+    return t;
 }
 
 AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
 {
     const CDataType* resolved = ResolveOrThrow();
+    if (resolved == this) {
+        NCBI_THROW(CDatatoolException,eWrongInput,
+            "invalid definition of " + GetUserTypeName());
+    }
+    if (IsAlias() && IsTypeAlias()) {
+        SetIsTypeAlias(false);
+        AutoPtr<CTypeStrings> type = CParent::GenerateCode();
+        SetIsTypeAlias(true);
+        return type;  
+    }
     AutoPtr<CTypeStrings> type = resolved->Skipped() ?
         resolved->GetFullCType() : resolved->GetRefCType();
     type->SetDataType(this);

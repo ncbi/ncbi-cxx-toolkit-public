@@ -90,6 +90,7 @@ private:
     string m_ClassName;
     AutoPtr<CTypeStrings> m_RefType;
     bool m_FullAlias;
+    mutable bool m_Nested;
 };
 
 

@@ -58,6 +58,7 @@ public:
     CTypeInfo* CreateTypeInfo(void);
 
     AutoPtr<CTypeStrings> GenerateCode(void) const;
+    AutoPtr<CTypeStrings> GetRefCType(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
 
     virtual const CDataType* Resolve(void) const; // resolve or this

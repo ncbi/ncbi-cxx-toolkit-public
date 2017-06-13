@@ -119,6 +119,7 @@ public:
 				return m_Methods;
         }
 
+    CNcbiOstream& GenerateEmpty(CNcbiOstream& header) const;
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateINL(CNcbiOstream& code) const;
     CNcbiOstream& GenerateCPP(CNcbiOstream& code) const;
@@ -128,6 +129,10 @@ public:
     void AddHPPCode(const CNcbiOstrstream& code);
     void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
+
+    void SetEmptyClassCode(void) {
+        m_EmptyClassCode = true;
+    }
 
     static void SetExportSpecifier(const string& str);
     static const string& GetExportSpecifier(void);
@@ -152,6 +157,7 @@ private:
     static string sm_DocRootURL;
 
     bool m_VirtualDestructor;
+    bool m_EmptyClassCode;
     CNcbiOstrstream m_ClassPublic;
     CNcbiOstrstream m_ClassProtected;
     CNcbiOstrstream m_ClassPrivate;

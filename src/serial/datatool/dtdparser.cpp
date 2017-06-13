@@ -1058,6 +1058,9 @@ CDataType* DTDParser::x_Type(
                 }
                 type = new CReferenceDataType(base);
                 type->SetIsAlias(true);
+                if (m_SrcType != eJson) {
+                    type->SetIsTypeAlias(true);
+                }
             }
             break;
         case DTDElement::eEnum:

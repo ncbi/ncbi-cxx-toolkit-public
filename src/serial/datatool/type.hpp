@@ -271,6 +271,13 @@ public:
     bool IsAlias(void) const {
         return m_IsAlias;
     }
+    // used when generating code, to provide backward compatibility
+    void SetIsTypeAlias(bool value) const {
+        m_IsTypeAlias = value;
+    }
+    bool IsTypeAlias(void) const {
+        return m_IsTypeAlias;
+    }
 
     static void EnableDTDEntities(bool enable = true) {
         sm_EnableDTDEntities = enable;
@@ -359,6 +366,7 @@ private:
     CAsnBinaryDefs::ETagClass m_TagClass;
     CAsnBinaryDefs::ETagType  m_TagType;
     bool m_IsAlias;
+    mutable bool m_IsTypeAlias;
     multimap<string,string> m_ForbidVar;
     string m_Namespace;
     ENsQualifiedMode m_NsQualified;

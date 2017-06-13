@@ -131,6 +131,9 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& external_name,
         memberType = in_union? eBufferMember: ePointerMember;
         break;
     }
+    if ( type->GetKind() == eKindOther && type->DataType() && type->DataType()->IsTypeAlias()) {
+            memberType = eObjectPointerMember;
+    }
 }
 
 bool CChoiceTypeStrings::x_IsNullType(TVariants::const_iterator i) const
@@ -138,7 +141,7 @@ bool CChoiceTypeStrings::x_IsNullType(TVariants::const_iterator i) const
     return (dynamic_cast<CNullTypeStrings*>(i->type.get()) != 0);
 }
 
-bool CChoiceTypeStrings::x_IsNullWithAttlist(TVariants::const_iterator i) const
+bool CChoiceTypeStrings::x_IsNullWithAttlist(TVariants::const_iterator i, string& memname) const
 {
     if (i->dataType) {
         const CDataType* resolved = i->dataType->Resolve();
@@ -147,6 +150,7 @@ bool CChoiceTypeStrings::x_IsNullWithAttlist(TVariants::const_iterator i) const
             if (typeStr) {
                 ITERATE ( TMembers, ir, typeStr->m_Members ) {
                     if (ir->simple) {
+                        memname = ir->cName;
                         return CClassTypeStrings::x_IsNullType(ir);
                     }
                 }
@@ -920,8 +924,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             string rType = methodPrefix + tType;
 #endif
             CTypeStrings::EKind kind = i->type->GetKind();
+            string extname;
             bool isNull = x_IsNullType(i);
-            bool isNullWithAtt = x_IsNullWithAttlist(i);
+            bool isNullWithAtt = x_IsNullWithAttlist(i, extname);
 
             if (!CClassCode::GetDoxygenComments()) {
                 if (!isNull) {
@@ -1184,7 +1189,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     if (isNullWithAtt) {
                         code.Methods(inl) <<
                             "    "<<rType<<"& value = "<<memberRef<<";\n" <<
-                            "    value.Set"<<i->cName<<"();\n" <<
+                            "    value.Set"<<extname<<"();\n" <<
                             "    return value;\n";
                     } else {
                         code.Methods(inl) <<

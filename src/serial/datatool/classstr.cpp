@@ -76,7 +76,7 @@ bool CClassTypeStrings::x_IsNullType(TMembers::const_iterator i) const
         (dynamic_cast<CNullTypeStrings*>(i->type.get()) != 0) : false;
 }
 
-bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
+bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i, string& memname) const
 {
     if (i->ref && i->dataType) {
         const CDataType* resolved = i->dataType->Resolve();
@@ -85,6 +85,7 @@ bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
             if (typeStr) {
                 ITERATE ( TMembers, ir, typeStr->m_Members ) {
                     if (ir->simple) {
+                        memname = ir->cName;
                         return x_IsNullType(ir);
                     }
                 }
@@ -160,10 +161,14 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& external_name,
 //    }
     // true [optional] CObject type should be implemented as CRef
     if ( ptrType.empty() ) {
-        if ( type->GetKind() == eKindObject )
+        if ( type->GetKind() == eKindObject ) {
             ptrType = "Ref";
-        else
+        } else {
             ptrType = "false";
+            if ( type->GetKind() == eKindOther && type->DataType() && type->DataType()->IsTypeAlias()) {
+                ptrType = "Ref";
+            }
+        }
     }
     if (dynamic_cast<CAnyContentTypeStrings*>(type.get()) != 0) {
         ptrType = "Ref";
@@ -387,6 +392,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if (!x_IsNullType(i)) {
                 code.ClassPublic() <<
                     "    typedef "<<cType<<" "<<i->tName<<";\n";
+                if (i->dataType && i->dataType->IsTypeAlias()) {
+// for backward compatibility only
+                    string dt(i->dataType->ClassName());
+                    if (dt != cType) {
+                        code.ClassPublic() <<
+                            "    typedef "<<cType<<" "<<dt<<";\n";
+                    }
+                }
             }
         }
         code.ClassPublic() << 
@@ -399,16 +412,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     CNcbiOstream& methods = code.Methods();
     CNcbiOstream& inlineMethods = code.InlineMethods();
 
+#if 0
     if ( wrapperClass ) {
         const SMemberInfo& info = m_Members.front();
         if ( info.type->CanBeCopied() && !x_IsNullType(m_Members.begin()) ) {
             string cType = info.type->GetCType(code.GetNamespace());
+            string tname = info.tName;
             code.ClassPublic() <<
-                "    /// Data copy constructor.\n"
-                "    "<<code.GetClassNameDT()<<"(const "<<cType<<"& value);\n"
-                "\n"
-                "    /// Data assignment operator.\n"
-                "    void operator=(const "<<cType<<"& value);\n"
+                "    /// Constructor from the primitive type\n"
+                "    "<<code.GetClassNameDT()<<"(const "<<tname<<"& value);\n"
+                "    /// Assignment operator.\n"
+                "    void operator=(const "<<tname<<"& value);\n"
                 "\n";
             inlineMethods <<
                 "inline\n"<<
@@ -425,6 +439,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "\n";
         }
     }
+#endif
 
     // generate member getters & setters
     {
@@ -436,7 +451,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         size_t set_index;
         size_t set_offset;
         Uint4  set_mask, set_mask_maybe;
-        bool isNull, isNullWithAtt, as_ref;
+        bool isNull, isNullWithAtt, as_ref, mem_simple;
+        string extname, mem_cName;
         ITERATE ( TMembers, i, m_Members ) {
             // generate IsSet... method
             ++member_index;
@@ -445,9 +461,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             set_mask   = (0x03 << set_offset);
             set_mask_maybe = (0x01 << set_offset);
             as_ref = i->ref /*|| x_IsAnyContentType(i)*/;
+/*
+    unfinished
+    the idea is for simple members to have Set/Get instead of SetX/GetX
+    this could help a lot in defining nested aliases (ie, remove them completely)
+*/
+//            mem_simple = i->simple && !i->cName.empty();
+mem_simple = false;
+            mem_cName = mem_simple ? kEmptyStr : i->cName;
             {
                 isNull = x_IsNullType(i);
-                isNullWithAtt = x_IsNullWithAttlist(i);
+                isNullWithAtt = x_IsNullWithAttlist(i, extname);
 // IsSetX
                 i->comments.PrintHPPMember(code.ClassPublic());
                 if (CClassCode::GetDoxygenComments()) {
@@ -500,18 +524,22 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.ClassPublic() <<
                         "    ///  Check whether the "<<i->cName<<" data member has been assigned a value.\n";
                 }
+                if (mem_simple) {
+                    code.ClassPublic() <<
+                        "    NCBI_DEPRECATED bool IsSet" << i->cName<<"(void) const {return IsSet();}\n";
+                }
                 code.ClassPublic() <<
-                    "    bool IsSet" << i->cName<<"(void) const;\n";
+                    "    bool IsSet" << mem_cName<<"(void) const;\n";
 
 
                 if (!i->haveFlag && as_ref && isNullWithAtt) {
                     methods <<
-                        "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n{\n" <<
-                        "    return "<<i->mName<<" ? "<<i->mName<<"->IsSet"<<i->cName<<"() : false;\n}\n\n";
+                        "bool "<<methodPrefix<<"IsSet"<<mem_cName<<"(void) const\n{\n" <<
+                        "    return "<<i->mName<<" ? "<<i->mName<<"->IsSet"<<extname<<"() : false;\n}\n\n";
                 } else {
                     inlineMethods <<
                         "inline\n"
-                        "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
+                        "bool "<<methodPrefix<<"IsSet"<<mem_cName<<"(void) const\n"
                         "{\n";
                     if ( i->haveFlag ) {
                         // use special boolean flag
@@ -563,11 +591,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.ClassPublic() <<
                         "    /// Check whether it is safe or not to call Get"<<i->cName<<" method.\n";
                 }
+                if (mem_simple) {
+                    code.ClassPublic() <<
+                        "    NCBI_DEPRECATED bool CanGet" << i->cName<<"(void) const {return CanGet();}\n";
+                }
                 code.ClassPublic() <<
-                    "    bool CanGet" << i->cName<<"(void) const;\n";
+                    "    bool CanGet" << mem_cName<<"(void) const;\n";
                 inlineMethods <<
                     "inline\n"
-                    "bool "<<methodPrefix<<"CanGet"<<i->cName<<"(void) const\n"
+                    "bool "<<methodPrefix<<"CanGet"<<mem_cName<<"(void) const\n"
                     "{\n";
                 if (!i->defaultValue.empty() ||
                     i->type->GetKind() == eKindContainer ||
@@ -577,7 +609,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if (isNull || isNullWithAtt) {
                         inlineMethods <<"    return false;\n";
                     } else {
-                        inlineMethods <<"    return IsSet"<<i->cName<<"();\n";
+                        inlineMethods <<"    return IsSet"<<mem_cName<<"();\n";
                     }
                 }
                 inlineMethods <<
@@ -600,12 +632,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "\n"
                     "    /// Reset "<<i->cName<<" data member.\n";
             }
+            if (mem_simple) {
+                code.ClassPublic() <<
+                    "    NCBI_DEPRECATED void Reset" << i->cName<<"(void) {Reset();}\n";
+            }
             setters <<
-                "    void Reset"<<i->cName<<"(void);\n";
+                "    void Reset"<<mem_cName<<"(void);\n";
             // inline only when non reference and doesn't have reset code
             bool inl = !as_ref && resetCode.empty();
             code.MethodStart(inl) <<
-                "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
+                "void "<<methodPrefix<<"Reset"<<mem_cName<<"(void)\n"
                 "{\n";
             if ( i->delayed ) {
                 code.Methods(inl) <<
@@ -675,10 +711,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "\n"
                         "    /// Assign default value to "<<i->cName<<" data member.\n";
                 }
+                if (mem_simple) {
+                    setters <<
+                        "    NCBI_DEPRECTED void SetDefault"<<i->cName<<"(void) {SetDefault();}\n";
+                }
                 setters <<
-                    "    void SetDefault"<<i->cName<<"(void);\n";
+                    "    void SetDefault"<<mem_cName<<"(void);\n";
                 code.MethodStart(inl) <<
-                    "void "<<methodPrefix<<"SetDefault"<<i->cName<<"(void)\n"
+                    "void "<<methodPrefix<<"SetDefault"<<mem_cName<<"(void)\n"
                     "{\n"
                     "    Reset"<<i->cName<<"();\n";
                 if ( i->haveFlag && i->noPrefix) {
@@ -726,10 +766,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    /// @return\n"
                             "    ///   Copy of the member data.\n";
                     }
+                    if (mem_simple) {
+                        code.ClassPublic() <<
+                            "    NCBI_DEPRECATED "<<i->tName<<" Get"<<i->cName<<"(void) const {return Get();}\n";
+                    }
                     code.ClassPublic() <<
-                        "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n";
+                        "    "<<i->tName<<" Get"<<mem_cName<<"(void) const;\n";
                     code.MethodStart(inl) <<
-                        ""<<rType<<" "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                        ""<<rType<<" "<<methodPrefix<<"Get"<<mem_cName<<"(void) const\n"
                         "{\n";
                 } else {
                     if (CClassCode::GetDoxygenComments()) {
@@ -740,10 +784,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    /// @return\n"
                             "    ///   Reference to the member data.\n";
                     }
+                    if (mem_simple) {
+                        code.ClassPublic() <<
+                            "    NCBI_DEPRECATED const "<<i->tName<<"& Get"<<i->cName<<"(void) const {return Get();}\n";
+                    }
                     code.ClassPublic() <<
-                        "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+                        "    const "<<i->tName<<"& Get"<<mem_cName<<"(void) const;\n";
                     code.MethodStart(inl) <<
-                        "const "<<rType<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                        "const "<<rType<<"& "<<methodPrefix<<"Get"<<mem_cName<<"(void) const\n"
                         "{\n";
                 }
                 if ( i->delayed ) {
@@ -753,14 +801,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( (as_ref && !i->canBeNull) ) {
                     code.Methods(inl) <<
                         "    if ( !"<<i->mName<<" ) {\n"
-                        "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<i->cName<<"();\n"
+                        "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<mem_cName<<"();\n"
                         "    }\n";
                 }
                 else if (i->defaultValue.empty() &&
                          i->type->GetKind() != eKindContainer &&
                          !isNullWithAtt) {
                     code.Methods(inl) <<
-                        "    if (!CanGet"<< i->cName<<"()) {\n"
+                        "    if (!CanGet"<< mem_cName<<"()) {\n"
                         "        ThrowUnassigned("<<member_index;
 #if 0
                     code.Methods(inl) << ", __FILE__, __LINE__";
@@ -785,10 +833,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    /// @param value\n"
                         "    ///   Reference to value.\n";
                 }
+                if (mem_simple) {
+                    setters <<
+                        "    NCBI_DEPRECATED void Set"<<i->cName<<"("<<i->tName<<"& value) {Set(value);}\n";
+                }
                 setters <<
-                    "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
+                    "    void Set"<<mem_cName<<"("<<i->tName<<"& value);\n";
                 methods <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
+                    "void "<<methodPrefix<<"Set"<<mem_cName<<"("<<rType<<"& value)\n"
                     "{\n";
                 if ( i->delayed ) {
                     methods <<
@@ -815,13 +867,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    /// @return\n"
                         "    ///   Reference to the data value.\n";
                 }
+                if (mem_simple) {
+                    setters <<
+                        "    NCBI_DEPRECATED "<<i->tName<<"& Set"<<i->cName<<"(void) {return Set();}\n";
+                }
                 setters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<i->tName<<"& Set"<<mem_cName<<"(void);\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
                     _ASSERT(!i->haveFlag);
                     methods <<
-                        rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        rType<<"& "<<methodPrefix<<"Set"<<mem_cName<<"(void)\n"
                         "{\n";
                     if ( i->delayed ) {
                         methods <<
@@ -829,10 +885,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     methods <<
                         "    if ( !"<<i->mName<<" )\n"
-                        "        "<<i->mName<<".Reset("<<i->type->NewInstance(NcbiEmptyString)<<");\n";
+                        "        "<<i->mName<<".Reset(new "<<i->tName<<"("<<assignValue<<"));\n";
                     if (isNullWithAtt) {
                         methods <<
-                            "    "<<i->mName<<"->Set"<<i->cName<<"();\n";
+                            "    "<<i->mName<<"->Set"<<extname<<"();\n";
                     }
                     methods <<
                         "    return "<<i->valueName<<";\n"
@@ -842,14 +898,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 else {
                     if (isNullWithAtt) {
                         methods <<
-                            rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                            rType<<"& "<<methodPrefix<<"Set"<<mem_cName<<"(void)\n"
                             "{\n";
                         methods <<
                             "    if ( !"<<i->mName<<" ) {\n"
                             "        Reset"<<i->cName<<"();\n"
                             "    }\n";
                         methods <<
-                            "    "<<i->mName<<"->Set"<<i->cName<<"();\n";
+                            "    "<<i->mName<<"->Set"<<extname<<"();\n";
                         methods <<
                             "    return "<<i->valueName<<";\n"
                             "}\n"
@@ -858,7 +914,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         // value already not null -> simple inline method
                         inlineMethods <<
                             "inline\n"<<
-                            rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                            rType<<"& "<<methodPrefix<<"Set"<<mem_cName<<"(void)\n"
                             "{\n";
                         if ( i->delayed ) {
                             inlineMethods <<
@@ -867,7 +923,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         if ( (as_ref && !i->canBeNull) ) {
                             inlineMethods <<
                                 "    if ( !"<<i->mName<<" ) {\n"
-                                "        Reset"<<i->cName<<"();\n"
+                                "        Reset"<<mem_cName<<"();\n"
                                 "    }\n";
                         }
                         if (i->attlist && thisNullWithAtt) {
@@ -901,16 +957,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                             "    /// @param value\n"
                                             "    ///   Reference to value.\n";
                                     }
+                                    if (mem_simple) {
+                                        setters <<
+                                            "    void Set"<<i->cName<<"(const "<<ircType<<"& value) {Set(value);}\n";
+                                    }
                                     setters <<
-                                        "    void Set"<<i->cName<<"(const "<<
+                                        "    void Set"<<mem_cName<<"(const "<<
                                         ircType<<"& value);\n";
                                     methods <<
                                         "void "<<methodPrefix<<"Set"<<
-                                        i->cName<<"(const "<<ircType<<
+                                        mem_cName<<"(const "<<ircType<<
                                         "& value)\n"
                                         "{\n";
                                     methods <<
-                                        "    Set" << i->cName <<
+                                        "    Set" << mem_cName <<
                                         "() = value;\n"
                                         "}\n"
                                         "\n";
@@ -927,11 +987,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "\n"
                             "    /// Set NULL data member (assign \'NULL\' value to "<<i->cName<<" data member).\n";
                     }
+                    if (mem_simple) {
+                        setters <<
+                            "    NCBI_DEPRECATED void Set"<<i->cName<<"(void) {Set();}\n";
+                    }
                     setters <<
-                        "    void Set"<<i->cName<<"(void);\n";
+                        "    void Set"<<mem_cName<<"(void);\n";
                     inlineMethods <<
                         "inline\n"<<
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        "void "<<methodPrefix<<"Set"<<mem_cName<<"(void)\n"
                         "{\n";
                     inlineMethods <<
                         "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
@@ -949,18 +1013,26 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    ///   Value to assign\n";
                         }
                         if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
+                            if (mem_simple) {
+                                setters <<
+                                    "    NCBI_DEPRECATED void Set"<<i->cName<<"("<<i->tName<<" value) {Set(value);}\n";
+                            }
                             setters <<
-                                "    void Set"<<i->cName<<"("<<i->tName<<" value);\n";
+                                "    void Set"<<mem_cName<<"("<<i->tName<<" value);\n";
                             inlineMethods <<
                                 "inline\n"
-                                "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<" value)\n"
+                                "void "<<methodPrefix<<"Set"<<mem_cName<<"("<<rType<<" value)\n"
                                 "{\n";
                         } else {
+                            if (mem_simple) {
+                                setters <<
+                                    "    NCBI_DEPRECATED void Set"<<i->cName<<"(const "<<i->tName<<"& value) {Set(value);}\n";
+                            }
                             setters <<
-                                "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                                "    void Set"<<mem_cName<<"(const "<<i->tName<<"& value);\n";
                             inlineMethods <<
                                 "inline\n"
-                                "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
+                                "void "<<methodPrefix<<"Set"<<mem_cName<<"(const "<<rType<<"& value)\n"
                                 "{\n";
                         }
                         if ( i->delayed ) {
@@ -985,11 +1057,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    /// @return\n"
                             "    ///   Reference to the data value.\n";
                     }
+                    if (mem_simple) {
+                        setters <<
+                            "    NCBI_DEPRECATED "<<i->tName<<"& Set"<<i->cName<<"(void) {return Set();}\n";
+                    }
                     setters <<
-                        "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                        "    "<<i->tName<<"& Set"<<mem_cName<<"(void);\n";
                     inlineMethods <<
                         "inline\n"<<
-                        rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        rType<<"& "<<methodPrefix<<"Set"<<mem_cName<<"(void)\n"
                         "{\n";
                     if ( i->delayed ) {
                         inlineMethods <<
@@ -1000,7 +1076,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         if ((kind == eKindStd) || (kind == eKindEnum) || (kind == eKindString)) {
                             inlineMethods <<
                                 "#ifdef _DEBUG\n"
-                                "    if (!IsSet"<<i->cName<<"()) {\n"
+                                "    if (!IsSet"<<mem_cName<<"()) {\n"
                                 "        ";
                             if (kind == eKindString) {
                                 if (string_utf8) {
@@ -1041,11 +1117,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     NCBI_THROW(CDatatoolException,eInvalidData,
                         loc + ": the only member of adaptor class is optional");
                 }
-                code.ClassPublic() <<
+                code.ClassPublic() << "\n"
                     "    /// Conversion operator to \'const "<<i->tName<<"\' type.\n"
-                    "    operator const "<<i->tName<<"& (void) const;\n\n"
+                    "    operator const "<<i->tName<<"& (void) const;\n"
                     "    /// Conversion operator to \'"<<i->tName<<"\' type.\n"
-                    "    operator "<<i->tName<<"& (void);\n\n";
+                    "    operator "<<i->tName<<"& (void);\n";
                 inlineMethods <<
                     "inline\n"<<
                     methodPrefix<<"operator const "<<rType<<"& (void) const\n"
@@ -1530,26 +1606,26 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     if ( generateCopy ) {
         const SMemberInfo& info = m_Members.front();
         string cType = info.type->GetCType(GetNamespace());
+        string tname = info.tName;
+        out << "    // typedef " << cType << " " << info.tName << ";\n\n";
         out <<
-            "    /// Copy constructor\n"
-            "    "<<GetClassNameDT()<<"(const "<<cType<<"& value);\n\n"
-            "\n"
+            "    /// Constructor from the primitive type.\n"
+            "    "<<GetClassNameDT()<<"(const "<<tname<<"& value);\n"
             "    /// Assignment operator\n"
-            "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n\n"
-            "\n";
+            "    "<<GetClassNameDT()<<"& operator=(const "<<tname<<"& value);\n\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
         if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
+            string cType = i->type->GetCType(GetNamespace());
+            string tname = i->tName;
+            out << "    // typedef " << cType << " " << i->tName << ";\n\n";
             out <<
-            "    /// Conversion operator to \'"
-            << i->type->GetCType(GetNamespace()) << "\' type.\n"
-            "    operator const " << i->type->GetCType(GetNamespace()) <<
-            "&(void) const;\n\n";
+            "    /// Conversion operator to \'" << tname << "\' type.\n"
+            "    operator const " << tname << "&(void) const;\n";
             out <<
             "    /// Assignment operator.\n"
             "    " << GetClassNameDT() << "& operator="<<"(const "<<
-            i->type->GetCType(GetNamespace()) << "& value);\n" <<
-            "\n";
+            tname << "& value);\n\n";
             break;
         }
     }
@@ -1592,8 +1668,8 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "// data copy constructors\n"
             "inline\n"<<
             GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<info.tName<<"& value)\n"
-            "    : Tparent(value)\n"
             "{\n"
+            "    Set(value);\n"
             "}\n"
             "\n"
             "// data assignment operators\n"
@@ -1609,18 +1685,15 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
             "inline\n"<<
-            GetClassNameDT() << "::"
-            "operator const " << i->type->GetCType(GetNamespace()) <<
-            "&(void) const\n" <<
+            GetClassNameDT() << "::operator const " << i->tName << "&(void) const\n" <<
             "{\n" <<
             "    return Get" << i->cName << "();\n" <<
             "}\n" <<
             "\n";
             out <<
             "inline\n"<<
-            GetClassNameDT() << "& " << GetClassNameDT() << "::"
-            "operator="<<"(const "<<
-            i->type->GetCType(GetNamespace()) << "& value)\n" <<
+            GetClassNameDT() << "& " << GetClassNameDT() << "::operator="<<"(const "<<
+            i->tName << "& value)\n" <<
             "{\n" <<
             "    Set" << i->cName << "(value);\n" <<
             "    return *this;\n" <<

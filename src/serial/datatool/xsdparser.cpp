@@ -36,6 +36,7 @@
 #include "xsdparser.hpp"
 #include "tokens.hpp"
 #include "module.hpp"
+#include "datatool.hpp"
 #include <serial/error_codes.hpp>
 
 
@@ -871,6 +872,11 @@ void XSDParser::ParseContainer(DTDElement& node)
 void XSDParser::ParseComplexType(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
+    if (node.GetName().empty() && GetAttribute("name")) {
+        node.SetNamespaceName(m_ValuePrefix.empty() ? m_TargetNamespace : m_PrefixToNamespace[m_ValuePrefix]);
+        node.SetName(m_Value);
+        node.SetNamed();
+    }
     if (GetAttribute("mixed")) {
         if (IsValue("true")) {
             string name(s_SpecialName);
@@ -1378,6 +1384,8 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
 
 void XSDParser::ProcessNamedTypes(void)
 {
+    string code_style = ((CDataTool*)CNcbiApplication::Instance())->GetConfigValue(
+        "-", "CodeGenerationStyle");
     m_ResolveTypes = true;
     set<string> processed;
     bool found;
@@ -1403,10 +1411,42 @@ void XSDParser::ProcessNamedTypes(void)
                     if (j != m_MapElement.end()) {
                         break;
                     }
-                    PushEntityLexer(node.GetTypeName());
                     bool elementForm = m_ElementFormDefault;
-                    bool hasContents = ParseContent(node);
-                    node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
+                    if (code_style == "0") {
+                        PushEntityLexer(node.GetTypeName());
+                        bool hasContents = ParseContent(node);
+                        node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
+                    } else {
+                        if (m_MapElement.find(node.GetTypeName()) != m_MapElement.end()) {
+                            DTDElement& etype( m_MapElement[node.GetTypeName()]);
+                            node.SetType(DTDElement::eAlias);
+                        } else {
+                            PushEntityLexer(node.GetTypeName());
+                            DTDElement item;
+                            bool hasContents = ParseContent(item);
+                            if (item.GetName().empty() || 
+                                (!item.GetName().empty() && item.GetName() == node.GetName()) || 
+                                item.GetNamespaceName() != node.GetNamespaceName()) {
+                                PushEntityLexer(node.GetTypeName());
+                                hasContents = ParseContent(node);
+                                node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
+                            } else {
+                                item.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
+                                DTDElement::EType  itype = item.GetType();
+                                bool pod = (itype >= DTDElement::eString) && (itype <= DTDElement::eBase64Binary);
+                                if (node.IsEmbedded() && pod &&
+                                    item.GetContent().empty() && !item.HasAttributes() &&
+                                    node.GetContent().empty() && !node.HasAttributes()) {
+// special case - plain std type
+                                    node.SetType(item.GetType());
+                                } else {
+                                    item.SetEmbedded(false);
+                                    m_MapElement[node.GetTypeName()] = item;
+                                    node.SetType(DTDElement::eAlias);
+                                }
+                            }
+                        }
+                    }
 
 // Make local elements defined by means of global types global.
 // In fact, this is incorrect; also, in case of unqualified form default we must keep

@@ -35,6 +35,9 @@
 #include "exceptions.hpp"
 #include "type.hpp"
 #include "aliasstr.hpp"
+#include "reftype.hpp"
+#include "statictype.hpp"
+#include "stdstr.hpp"
 #include "code.hpp"
 #include "srcutil.hpp"
 #include "classstr.hpp"
@@ -51,7 +54,8 @@ CAliasTypeStrings::CAliasTypeStrings(const string& externalName,
       m_ExternalName(externalName),
       m_ClassName(className),
       m_RefType(&ref_type),
-      m_FullAlias(false)
+      m_FullAlias(false),
+      m_Nested(false)
 {
 }
 
@@ -145,13 +149,25 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
 {
     const CNamespace& ns = ctx.GetNamespace();
     string ref_name = m_RefType->GetCType(ns);
-    string className = GetClassName() + "_Base";
+    string className;
+    if (m_Nested) {
+        className = GetClassName();
+    } else {
+        className = GetClassName() + "_Base";
+    }
     CClassCode code(ctx, className);
     string methodPrefix = code.GetMethodPrefix();
+    string classFullName(GetClassName());
+    if (m_Nested) {
+        classFullName = NStr::TrimSuffix_Unsafe(methodPrefix, "::");
+    }
     bool is_class = false;
     bool is_ref_to_alias = false;
+    const CClassTypeStrings::SMemberInfo* mem_alias = nullptr;
+    bool mem_isnull = false;
+    bool type_alias = DataType() && DataType()->IsTypeAlias();
+    AutoPtr<CTypeStrings> mem_type;
 
-    BeginClassDeclaration(ctx);
     CTypeStrings::EKind kind = m_RefType->GetKind();
     switch ( kind ) {
     case eKindClass:
@@ -167,6 +183,32 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         }
         is_class = true;
         is_ref_to_alias = (dynamic_cast<const CAliasRefTypeStrings*>(m_RefType.get()) != NULL);
+
+// only if we have two members, and one of them is attlist
+// that is, if it was created by DTDParser::CompositeNode
+        if (!is_ref_to_alias && DataType() && !DataType()->IsASNDataSpec() && DataType()->IsReference()) {
+            const CReferenceDataType* reftype = dynamic_cast<const CReferenceDataType*>(DataType());
+            const CDataType* resolved = reftype->Resolve();
+            if (resolved && resolved != reftype) {
+                CClassTypeStrings* typeStr = resolved->GetTypeStr();
+                bool has_attlist = false;
+                if (typeStr && typeStr->m_Members.size() == 2) {
+                    for ( const auto& ir: typeStr->m_Members ) {
+                        if (ir.attlist) {
+                            has_attlist = true;
+                        } else {
+                            mem_alias = &ir;
+                            mem_isnull = ir.haveFlag ? (dynamic_cast<CNullTypeStrings*>(ir.type.get()) != 0) : false;
+                        }
+                    }
+                    if (!has_attlist || mem_alias->externalName != reftype->GetUserTypeName()) {
+                        mem_alias = nullptr;
+                    }
+                } else {
+                    mem_isnull = dynamic_cast<const CNullDataType*>(resolved) != nullptr;
+                }
+            }
+        }
         break;
     case eKindStd:
     case eKindEnum:
@@ -188,9 +230,19 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "Invalid aliased type: " + ref_name);
     }
 
+
+    if (m_Nested && type_alias && !mem_alias && !DataType()->HasTag() &&
+        DataType()->GetTagType() == CAsnBinaryDefs::eAutomatic)
+    {
+        m_RefType->GenerateTypeCode(ctx);
+        code.SetEmptyClassCode();
+        return;
+    }
+
     string parentNamespaceRef =
         code.GetNamespace().GetNamespaceRef(code.GetParentClassNamespace());
-    // generate type info
+    BeginClassDeclaration(ctx);
+    // constructor
     code.ClassPublic() <<
         "    " << className << "(void);\n" <<
         "\n";
@@ -213,20 +265,83 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
                 "\n";
         }
 //        m_RefType->GenerateTypeCode(ctx);
-        code.ClassPublic() <<
-            "    // parent type getter/setter\n" <<
-            "    const " << ref_name << "& Get(void) const;\n" <<
-            "    " << ref_name << "& Set(void);\n";
-        code.MethodStart(true) <<
-            "const " << ref_name << "& " << methodPrefix << "Get(void) const\n" <<
-            "{\n" <<
-            "    return *this;\n" <<
-            "}\n\n";
-        code.MethodStart(true) <<
-            ref_name << "& " << methodPrefix << "Set(void)\n" <<
-            "{\n" <<
-            "    return *this;\n" <<
-            "}\n\n";
+
+// I have strong feeling that this was a bad idea
+// and these methods should be removed
+        if (/*!mem_isnull &&*/ !type_alias) {
+            code.ClassPublic() <<
+                "    // parent type getter/setter\n" <<
+                "    const " << ref_name << "& Get(void) const;\n" <<
+                "    " << ref_name << "& Set(void);\n";
+            code.MethodStart(true) <<
+                "const " << ref_name << "& " << methodPrefix << "Get(void) const\n" <<
+                "{\n" <<
+                "    return *this;\n" <<
+                "}\n\n";
+            code.MethodStart(true) <<
+                ref_name << "& " << methodPrefix << "Set(void)\n" <<
+                "{\n" <<
+                "    return *this;\n" <<
+                "}\n\n";
+        }
+
+        if (type_alias && mem_alias) {
+            string extname(m_ClassName);
+            if (NStr::StartsWith(extname, "C_")) {
+                NStr::TrimPrefixInPlace(extname, "C_");
+            } else if (NStr::StartsWith(extname, "C")) {
+                NStr::TrimPrefixInPlace(extname, "C");
+            }
+            string mem_extname(mem_alias->cName);
+            code.ClassPublic() << "\n";
+            if (!mem_isnull) {
+                code.ClassPublic() << "    typedef "
+                    << "Tparent::" << mem_alias->tName << " T" << extname << ";\n";
+            }
+            code.ClassPublic() <<
+                "    bool IsSet" << extname << "(void) const {\n" <<
+                "        return Tparent::IsSet" << mem_extname << "();\n" <<
+                "    }\n";
+            code.ClassPublic() <<
+                "    bool CanGet" << extname << "(void) const {\n" <<
+                "        return Tparent::CanGet" << mem_extname << "();\n" <<
+                "    }\n";
+            code.ClassPublic() <<
+                "    void Reset" << extname << "(void) {\n" <<
+                "        Tparent::Reset" << mem_extname << "();\n" <<
+                "    }\n";
+            if (mem_isnull) {
+                code.ClassPublic() << "    " <<
+                    "void" << " Set" << extname << "(void) {\n" <<
+                    "        Tparent::Set" << mem_extname << "();\n" <<
+                    "    }\n";
+            } else {
+                code.ClassPublic() << "    const " <<
+                    "T" << extname << "& Get" << extname << "(void) const {\n" <<
+                    "        return Tparent::Get" << mem_extname << "();\n" <<
+                    "    }\n";
+                code.ClassPublic() << "    " <<
+                    "T" << extname << "& Set" << extname << "(void) {\n" <<
+                    "        return Tparent::Set" << mem_extname << "();\n" <<
+                    "    }\n";
+//                if (mem_alias->dataType && mem_alias->dataType->IsPrimitive()) {
+                if (mem_alias->type->CanBeCopied()) {
+                    code.ClassPublic() << "    " <<
+                        "void" << " Set" << extname << "(const T"  << extname << "& value) {\n" <<
+                        "        Tparent::Set" << mem_extname << "(value);\n" <<
+                        "    }\n";
+                    if (mem_alias->simple && m_Nested) {
+                        code.ClassPublic() << "    " <<
+                            className << "(const" << " T" << extname << "& value) : Tparent(value) {\n    }\n";
+                        code.ClassPublic() << "    " <<
+                            className << "& operator=(const" << " T" << extname << "& value) {\n" <<
+                            "        Tparent::operator=(value);\n" <<
+                            "        return *this;\n" <<
+                            "    }\n";
+                    }
+                }
+            }
+        }
     }
     else {
         code.ClassPublic() <<
@@ -286,12 +401,15 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
 //        code.CPPIncludes().insert("serial/aliasinfo");
         CNcbiOstream& methods = code.Methods();
         methods << "BEGIN";
+        if (m_Nested) {
+            methods << "_NESTED";
+        }
         if (dynamic_cast<const CEnumRefTypeStrings*>(m_RefType.get())) {
             methods << "_ENUM";
         }
         methods << "_ALIAS_INFO(\""
             << GetExternalName() << "\", "
-            << GetClassName() << ", "
+            << classFullName << ", "
             << m_RefType->GetRef(ns) << ")\n"
             "{\n";
         if ( !GetModuleName().empty() ) {
@@ -320,10 +438,9 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         }
         methods <<
             "_ALIAS_DATA_PTR;\n";
-        if (this->IsFullAlias()) {
+        if (mem_alias || type_alias || this->IsFullAlias()) {
             methods <<
-                "    SET_FULL_ALIAS;\n"
-                "\n";
+                "    SET_FULL_ALIAS;\n";
         }
         methods <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
         methods <<  "    info->DataSpec(" << CDataType::GetSourceDataSpecString() << ");\n";
@@ -374,10 +491,48 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "\n";
 
     bool is_class = false;
+    const CClassTypeStrings::SMemberInfo* mem_alias = nullptr;
+    bool mem_isnull = false;
+    AutoPtr<CTypeStrings> mem_type;
     switch ( m_RefType->GetKind() ) {
     case eKindClass:
     case eKindObject:
         is_class = true;
+        if (DataType()->IsReference()) {
+            const CReferenceDataType* reftype = dynamic_cast<const CReferenceDataType*>(DataType());
+            const CDataType* resolved = reftype->Resolve();
+            if (resolved && resolved != reftype) {
+                CClassTypeStrings* typeStr = resolved->GetTypeStr();
+                bool has_attlist = false;
+                if (typeStr) {
+                    if (typeStr->m_Members.size() == 2) {
+                        for ( const auto& ir: typeStr->m_Members ) {
+                            if (ir.attlist) {
+                                has_attlist = true;
+                            } else {
+                                mem_alias = &ir;
+                                mem_isnull = ir.haveFlag ? (dynamic_cast<CNullTypeStrings*>(ir.type.get()) != 0) : false;
+                            }
+                        }
+                        if (!has_attlist || mem_alias->externalName != reftype->GetUserTypeName()) {
+                            mem_alias = nullptr;
+                        }
+                    }
+                    if (mem_alias && mem_alias->dataType && !mem_alias->dataType->IsStdType()) {
+                        mem_alias = nullptr;
+                    }
+                } else {
+                    mem_isnull = dynamic_cast<const CNullDataType*>(resolved) != nullptr;
+                    if (!mem_isnull && !resolved->IsAlias() && resolved->IsStdType()) {
+                        mem_type = resolved->GenerateCode();
+                        const CClassTypeStrings* mem_class = dynamic_cast<const CClassTypeStrings*>(mem_type.get());
+                        if (mem_class && mem_class->m_Members.size() == 1) {
+                            mem_alias = &(mem_class->m_Members.front());
+                        }
+                    }
+                }
+            }
+        }
         break;
     default:
         is_class = false;
@@ -387,8 +542,38 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         // Generate type convertions
         out <<
             "    /// Explicit constructor from the primitive type.\n" <<
-            "    explicit " << className + "(const " + ref_name + "& data)" << "\n"
-            "        : Tparent(data) {}\n\n";
+            "    explicit " << className + "(const " + ref_name + "& value)" << "\n"
+            "        : Tparent(value) {}\n\n";
+    }
+    else if (mem_alias) {
+#if 0
+        string tname = mem_alias->type->GetCType(ns); // or mem_alias->tName?
+#else
+        string tname = "Tparent::" + mem_alias->tName;
+        out << "    // typedef " << mem_alias->type->GetCType(ns) << " " << mem_alias->tName << ";\n\n";
+#endif
+        string mem_extname(mem_alias->cName);
+        out <<
+            "    /// Constructor from the primitive type.\n" <<
+            "    " << className << "(const " << tname << "& value) {\n" <<
+            "        Set" << mem_extname << "(value);\n" <<
+            "    }\n";
+        out <<
+            "    /// Assignment operator\n" <<
+            "    " << className << "& operator=(const " << tname << "& value) {\n" <<
+            "        Set" << mem_extname << "(value);\n" <<
+            "        return *this;\n" <<
+            "    }\n";
+#if 0
+        out <<
+            "    /// Conversion operator\n" <<
+            "    operator const " << tname << "& (void) {\n" <<
+            "        return Get" << mem_extname << "();\n" <<
+            "    }\n" <<
+            "    operator " << tname << "& (void) {\n" <<
+            "        return Set" << mem_extname << "();\n" <<
+            "    }\n";
+#endif
     }
     out << "};\n";
     if (CClassCode::GetDoxygenComments()) {
@@ -409,6 +594,12 @@ void CAliasTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 void CAliasTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 {
+    if (DataType()->IsTypeAlias()) {
+        m_Nested = true;
+        GenerateCode(ctx);
+        m_Nested = false;
+        return;
+    }
     m_RefType->GeneratePointerTypeCode(ctx);
 }
 

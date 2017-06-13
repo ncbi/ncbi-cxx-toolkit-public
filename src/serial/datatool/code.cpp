@@ -50,26 +50,33 @@ CClassContext::~CClassContext(void)
 CClassCode::CClassCode(CClassContext& owner, const string& className)
     : m_Code(owner),
       m_ClassName(className),
-      m_VirtualDestructor(false)
+      m_VirtualDestructor(false),
+      m_EmptyClassCode(false)
 {
 }
 
 CClassCode::~CClassCode(void)
 {
-    {
+    if (m_EmptyClassCode) {
         CNcbiOstrstream hpp;
-        GenerateHPP(hpp);
+        GenerateEmpty(hpp);
         m_Code.AddHPPCode(hpp);
-    }
-    {
-        CNcbiOstrstream inl;
-        GenerateINL(inl);
-        m_Code.AddINLCode(inl);
-    }
-    {
-        CNcbiOstrstream cpp;
-        GenerateCPP(cpp);
-        m_Code.AddCPPCode(cpp);
+    } else {
+        {
+            CNcbiOstrstream hpp;
+            GenerateHPP(hpp);
+            m_Code.AddHPPCode(hpp);
+        }
+        {
+            CNcbiOstrstream inl;
+            GenerateINL(inl);
+            m_Code.AddINLCode(inl);
+        }
+        {
+            CNcbiOstrstream cpp;
+            GenerateCPP(cpp);
+            m_Code.AddCPPCode(cpp);
+        }
     }
 }
 
@@ -211,6 +218,17 @@ CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
         WriteTabbed(out, *i);
     }
     return out;
+}
+
+CNcbiOstream& CClassCode::GenerateEmpty(CNcbiOstream& header) const
+{
+    if ( !GetParentClassName().empty() ) {
+        string parentNamespaceRef =
+            GetNamespace().GetNamespaceRef(GetParentClassNamespace());
+        header << "typedef "<<parentNamespaceRef<<GetParentClassName() 
+               << " " << GetClassNameDT() << ";\n";
+    }
+    return header;
 }
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const

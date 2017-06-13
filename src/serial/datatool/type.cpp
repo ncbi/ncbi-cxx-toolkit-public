@@ -86,7 +86,7 @@ CDataType::CDataType(void)
       m_DataMember(0), m_TypeStr(0), m_Set(0), m_Choice(0), m_Checked(false),
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
       m_TagType(CAsnBinaryDefs::eAutomatic),
-      m_IsAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false)
+      m_IsAlias(false), m_IsTypeAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false)
 {
 }
 
@@ -716,9 +716,12 @@ TTypeInfo CDataType::GetAnyTypeInfo(void)
         typeInfo = GetRealTypeInfo();
         if ( NeedAutoPointer(typeInfo) ) {
             if (IsAlias() && !IsStdType()) {
-                CTypeInfo *alias =
+                CAliasTypeInfo *alias =
                     new CAliasTypeInfo(GlobalName(),typeInfo);
                 alias->SetModuleName( typeInfo->GetModuleName());
+                if (IsTypeAlias()) {
+                    alias->SetFullAlias();
+                }
                 typeInfo = alias;
             }
             m_AnyTypeInfo.reset(new CAutoPointerTypeInfo(typeInfo));
@@ -785,7 +788,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
                                                               Comments()));
         code->SetDataType(this);
         code->SetNamespaceName( GetNamespaceName());
-        code->SetFullAlias(!fullalias.empty());
+        code->SetFullAlias(!fullalias.empty() || IsTypeAlias());
         return AutoPtr<CTypeStrings>(code.release());
     }
 }

@@ -157,7 +157,7 @@ protected:
                                    bool haveUserClass,
                                    const string& classPrefix) const;
     bool x_IsNullType(TMembers::const_iterator i) const;
-    bool x_IsNullWithAttlist(TMembers::const_iterator i) const;
+    bool x_IsNullWithAttlist(TMembers::const_iterator i, string& name) const;
     bool x_IsAnyContentType(TMembers::const_iterator i) const;
     bool x_IsUniSeq(TMembers::const_iterator i) const;
 

@@ -98,7 +98,7 @@ protected:
                            bool haveUserClass,
                            const string& classPrefix) const;
     bool x_IsNullType(TVariants::const_iterator i) const;
-    bool x_IsNullWithAttlist(TVariants::const_iterator i) const;
+    bool x_IsNullWithAttlist(TVariants::const_iterator i, string& name) const;
 
 private:
     TVariants m_Variants;
