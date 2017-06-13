@@ -485,7 +485,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, 
     bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
 
     if (add_this) {
-        m_Objs[kNonExtendable].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+        m_Objs[kNonExtendable].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true),
             false).Fatal();
     }
 }
@@ -607,7 +607,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
     }
 
     if (add_this) {
-        m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+        m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true),
             false).Fatal();
     }
 }
@@ -678,7 +678,7 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
             }
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("PARTIAL_PROBLEMS: [n] feature[s] [is] extended to end or gap", n) : 0);
 }
 
 
