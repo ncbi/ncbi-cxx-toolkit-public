@@ -51,6 +51,7 @@ BEGIN_SCOPE(edit)
 bool CleanupForTaxnameChange( objects::CBioSource& src )
 {
     bool rval = RemoveOldName(src);
+    rval |= RemoveMod(src, COrgMod::eSubtype_type_material);
     rval |= RemoveTaxId(src);
     if (src.IsSetOrg() && src.GetOrg().IsSetCommon()) {
         src.SetOrg().ResetCommon();
@@ -65,12 +66,17 @@ bool CleanupForTaxnameChange( objects::CBioSource& src )
 
 bool RemoveOldName( objects::CBioSource& src )
 {
+    return RemoveMod(src, COrgMod::eSubtype_old_name);
+}
+
+bool RemoveMod( objects::CBioSource& src, objects::COrgMod::ESubtype subtype )
+{
     bool erased = false;
     if (src.IsSetOrg() && src.GetOrg().IsSetOrgname()
         && src.GetOrg().GetOrgname().IsSetMod()) {
         COrgName::TMod::iterator it = src.SetOrg().SetOrgname().SetMod().begin();
         while (it != src.SetOrg().SetOrgname().SetMod().end()) {
-            if ((*it)->GetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_old_name) {
+            if ((*it)->GetSubtype() && (*it)->GetSubtype() == subtype) {
                 it = src.SetOrg().SetOrgname().SetMod().erase(it);
                 erased = true;
             } else {

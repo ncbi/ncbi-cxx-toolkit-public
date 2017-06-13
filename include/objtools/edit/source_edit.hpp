@@ -33,7 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/BioSource.hpp>
-
+#include <objects/seqfeat/OrgMod.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -43,6 +43,7 @@ BEGIN_SCOPE(edit)
 /// resets the common name and removes the synonyms for taxname
 NCBI_XOBJEDIT_EXPORT bool CleanupForTaxnameChange( objects::CBioSource& src );
 NCBI_XOBJEDIT_EXPORT bool RemoveOldName( objects::CBioSource& src );
+NCBI_XOBJEDIT_EXPORT bool RemoveMod( objects::CBioSource& src, objects::COrgMod::ESubtype subtype );
 NCBI_XOBJEDIT_EXPORT bool RemoveTaxId( objects::CBioSource& src );
 NCBI_XOBJEDIT_EXPORT CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2);
 
