@@ -44,6 +44,7 @@
 #include <objtools/readers/iidmapper.hpp>
 
 #include <sra/readers/bam/bamread_base.hpp>
+#include <unordered_map>
 
 //#include <align/bam.h>
 struct BAMFile;
@@ -200,7 +201,7 @@ public:
             return m_IdMapper.get();
         }
 
-    CRef<CSeq_id> GetRefSeq_id(const string& str) const;
+    CRef<CSeq_id> GetRefSeq_id(const string& label) const;
     CRef<CSeq_id> GetShortSeq_id(const string& str, bool external = false) const;
 
     TSeqPos GetRefSeqLength(const string& str) const;
@@ -223,8 +224,10 @@ private:
     string m_DbName;
     string m_IndexName;
     AutoPtr<IIdMapper> m_IdMapper;
-    typedef map<string, TSeqPos> TRefSeqLengths;
+    typedef unordered_map<string, TSeqPos> TRefSeqLengths;
     mutable AutoPtr<TRefSeqLengths> m_RefSeqLengths;
+    typedef unordered_map<string, CRef<CSeq_id> > TRefSeqIds;
+    mutable AutoPtr<TRefSeqIds> m_RefSeqIds;
     CRef<SAADBImpl> m_AADB;
     CRef< CObjectFor<CBamRawDb> > m_RawDB;
 };
@@ -328,13 +331,9 @@ public:
 
     DECLARE_OPERATOR_BOOL(m_AADBImpl || m_RawDB);
 
-    void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
-        {
-            m_IdMapper.reset(idmapper, ownership);
-        }
     IIdMapper* GetIdMapper(void) const
         {
-            return m_IdMapper.get();
+            return m_DB->GetIdMapper();
         }
 
     CBamRefSeqIterator& operator++(void);
@@ -363,10 +362,10 @@ private:
         mutable CBamString m_RefSeqIdBuffer;
     };
 
+    const CBamDb* m_DB;
     CRef<SAADBImpl> m_AADBImpl;
     CRef< CObjectFor<CBamRawDb> > m_RawDB;
     size_t m_RefIndex;
-    AutoPtr<IIdMapper> m_IdMapper;
     mutable CRef<CSeq_id> m_CachedRefSeq_id;
 };
 
@@ -401,13 +400,9 @@ public:
 
     DECLARE_OPERATOR_BOOL(m_AADBImpl || m_RawImpl);
 
-    void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
-        {
-            m_IdMapper.reset(idmapper, ownership);
-        }
     IIdMapper* GetIdMapper(void) const
         {
-            return m_IdMapper.get();
+            return m_DB->GetIdMapper();
         }
 
     /// ISpotIdDetector interface is used to detect spot id in case
@@ -548,10 +543,10 @@ private:
         void x_InvalidateBuffers();
     };
 
+    const CBamDb* m_DB;
     CRef<SAADBImpl> m_AADBImpl;
     CRef<SRawImpl> m_RawImpl;
     
-    AutoPtr<IIdMapper> m_IdMapper;
     CIRef<ISpotIdDetector> m_SpotIdDetector;
     enum EStrandValues {
         eStrand_not_read = -2,

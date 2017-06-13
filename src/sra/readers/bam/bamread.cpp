@@ -565,9 +565,25 @@ CBamDb::CBamDb(const CBamMgr& mgr,
 }
 
 
-CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& str) const
+CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& label) const
 {
-    return sx_GetRefSeq_id(str, GetIdMapper());
+    if ( !m_RefSeqIds ) {
+        DEFINE_STATIC_FAST_MUTEX(sx_RefSeqMutex);
+        CFastMutexGuard guard(sx_RefSeqMutex);
+        if ( !m_RefSeqIds ) {
+            AutoPtr<TRefSeqIds> ids(new TRefSeqIds);
+            for ( CBamRefSeqIterator it(*this); it; ++it ) {
+                string label = it.GetRefSeqId();
+                (*ids)[label] = sx_GetRefSeq_id(label, GetIdMapper());
+            }
+            m_RefSeqIds = ids;
+        }
+    }
+    TRefSeqIds::const_iterator it = m_RefSeqIds->find(label);
+    if ( it != m_RefSeqIds->end() ) {
+        return it->second;
+    }
+    return sx_GetRefSeq_id(label, GetIdMapper());
 }
 
 
@@ -628,12 +644,13 @@ string CBamDb::GetHeaderText(void) const
 /////////////////////////////////////////////////////////////////////////////
 
 CBamRefSeqIterator::CBamRefSeqIterator()
+    : m_DB(0)
 {
 }
 
 
 CBamRefSeqIterator::CBamRefSeqIterator(const CBamDb& bam_db)
-    : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership)
+    : m_DB(&bam_db)
 {
     if ( bam_db.UsesRawIndex() ) {
         m_RawDB = bam_db.m_RawDB;
@@ -684,10 +701,10 @@ CBamRefSeqIterator::CBamRefSeqIterator(const CBamRefSeqIterator& iter)
 CBamRefSeqIterator& CBamRefSeqIterator::operator=(const CBamRefSeqIterator& iter)
 {
     if ( this != &iter ) {
+        m_DB = iter.m_DB;
         m_AADBImpl = iter.m_AADBImpl;
         m_RawDB = iter.m_RawDB;
         m_RefIndex = iter.m_RefIndex;
-        m_IdMapper = iter.m_IdMapper;
         m_CachedRefSeq_id.Reset();
     }
     return *this;
@@ -791,7 +808,7 @@ CTempString CBamRefSeqIterator::GetRefSeqId(void) const
 CRef<CSeq_id> CBamRefSeqIterator::GetRefSeq_id(void) const
 {
     if ( !m_CachedRefSeq_id ) {
-        m_CachedRefSeq_id = sx_GetRefSeq_id(GetRefSeqId(), GetIdMapper());
+        m_CachedRefSeq_id = m_DB->GetRefSeq_id(GetRefSeqId());
     }
     return m_CachedRefSeq_id;
 }
@@ -872,13 +889,14 @@ void CBamAlignIterator::SAADBImpl::x_InvalidateBuffers()
 
 
 CBamAlignIterator::CBamAlignIterator(void)
-    : m_BamFlagsAvailability(eBamFlags_NotTried)
+    : m_DB(0),
+      m_BamFlagsAvailability(eBamFlags_NotTried)
 {
 }
 
 
 CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
-    : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership),
+    : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     if ( bam_db.UsesRawIndex() ) {
@@ -909,7 +927,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                      const string& ref_id,
                                      TSeqPos ref_pos,
                                      TSeqPos window)
-    : m_IdMapper(bam_db.GetIdMapper(), eNoOwnership),
+    : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     if ( bam_db.UsesRawIndex() ) {
@@ -946,9 +964,9 @@ CBamAlignIterator::CBamAlignIterator(const CBamAlignIterator& iter)
 CBamAlignIterator& CBamAlignIterator::operator=(const CBamAlignIterator& iter)
 {
     if ( this != &iter ) {
+        m_DB = iter.m_DB;
         m_AADBImpl = iter.m_AADBImpl;
         m_RawImpl = iter.m_RawImpl;
-        m_IdMapper = iter.m_IdMapper;
         m_SpotIdDetector = iter.m_SpotIdDetector;
         m_BamFlagsAvailability = iter.m_BamFlagsAvailability;
     }
@@ -1367,7 +1385,7 @@ CBamAlignIterator::GetCIGARAlignment(void) const
 CRef<CSeq_id> CBamAlignIterator::GetRefSeq_id(void) const
 {
     if ( !m_RefSeq_id ) {
-        m_RefSeq_id = sx_GetRefSeq_id(GetRefSeqId(), GetIdMapper());
+        m_RefSeq_id = m_DB->GetRefSeq_id(GetRefSeqId());
     }
     return m_RefSeq_id;
 }
