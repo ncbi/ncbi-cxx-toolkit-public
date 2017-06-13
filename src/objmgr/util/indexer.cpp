@@ -139,7 +139,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
             // create CBioseqIndex object for current Bioseq
             CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, *this, false));
 
-            // record CBioseqIndex in vector for IterateBioseqs or ProcessBioseq
+            // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
             m_bsxList.push_back(bsx);
 
             // map from accession string to CBioseqIndex object
@@ -331,12 +331,34 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CSeq_loc& loc)
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn, int from, int to, bool rev_comp)
 
 {
-    CConstRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
+    string accession = accn;
+    if (accession.empty()) {
+        CRef<CBioseqIndex> bsx = GetBioseqIndex();
+        if (bsx) {
+            accession = bsx->m_Accession;
+        }
+    }
 
-    if (loc) {
-        return GetBioseqIndex(*loc);
+    if (! accession.empty()) {
+        CConstRef<CSeq_loc> loc = x_SubRangeLoc(accession, from, to, rev_comp);
+
+        if (loc) {
+            return GetBioseqIndex(*loc);
+        }
     }
     return CRef<CBioseqIndex> ();
+}
+
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int from, int to, bool rev_comp)
+
+{
+    return GetBioseqIndex("", from, to, rev_comp);
+}
+
+const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
+
+{
+    return m_bsxList;
 }
 
 
@@ -780,6 +802,26 @@ string CBioseqIndex::GetSequence (void)
     return buffer;
 }
 
+const vector<CRef<CDescriptorIndex>>& CBioseqIndex::GetDescriptorIndices(void)
+
+{
+    if (! m_descsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_sdxList;
+}
+
+const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
+
+{
+    if (! m_featsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_sfxList;
+}
+
 
 // CDescriptorIndex
 
@@ -818,6 +860,24 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
 CFeatureIndex::~CFeatureIndex (void)
 
 {
+}
+
+// Find CFeatureIndex object for best gene using internal CFeatTree
+CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
+
+{
+    try {
+        CMappedFeat best;
+        CBioseqIndex& bsx = GetBioseqIndex();
+        best = feature::GetBestGeneForFeat(m_mf, &bsx.m_featTree, 0,
+                                           feature::CFeatTree::eBestGene_AllowOverlapped);
+        if (best) {
+            return bsx.GetFeatIndex(best);
+        }
+    } catch (CException& e) {
+        LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
+    }
+    return CRef<CFeatureIndex> ();
 }
 
 void CFeatureIndex::GetSequence (int from, int to, string& buffer)

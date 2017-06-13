@@ -86,43 +86,41 @@ public:
         *m_out << '\n';
 
 
-        bool ok = false;
+        // Find Bioseq from arguments, call application DoOneBioseq method
+        CRef<CBioseqIndex> bsx;
 
-        // Select desired sequence record, call application DoOneBioseq method
+        // Select desired sequence record
         if (m_from > 0 && m_to > 0) {
 
-            // If no -accn argument, set with accession from first Bioseq
-            if (m_accn.empty()) {
-                // get first Bioseq
-                idx.ProcessBioseq([this](CBioseqIndex& bsx) {
-                    // Must pass "this" to see m_accn member variable
-                    m_accn = bsx.GetAccession();
-                });
-            }
-
             // Create surrogate delta sequence pointing to Bioseq subrange (mixed indexing)
-            ok = idx.ProcessBioseq(m_accn, m_from - 1, m_to - 1, m_revcomp,
-                                   [this](CBioseqIndex& bsx) {
-                DoOneBioseq(bsx);
-            });
+            if (m_accn.empty()) {
+                // If no -accn argument, use first Bioseq
+                bsx = idx.GetBioseqIndex(m_from - 1, m_to - 1, m_revcomp);
+            } else {
+                bsx = idx.GetBioseqIndex(m_accn, m_from - 1, m_to - 1, m_revcomp);
+            }
+            if (bsx) {
+                DoOneBioseq(*bsx);
+            }
 
         } else if (! m_accn.empty()) {
 
             // Process selected Bioseq
-            ok = idx.ProcessBioseq(m_accn, [this](CBioseqIndex& bsx) {
-                DoOneBioseq(bsx);
-            });
+            bsx = idx.GetBioseqIndex(m_accn);
+            if (bsx) {
+                DoOneBioseq(*bsx);
+            }
 
         } else {
 
             // Process first Bioseq
-            ok = idx.ProcessBioseq([this](CBioseqIndex& bsx) {
-                DoOneBioseq(bsx);
-            });
-
+            bsx = idx.GetBioseqIndex();
+            if (bsx) {
+                DoOneBioseq(*bsx);
+            }
         }
 
-        if (! ok) {
+        if (! bsx) {
             LOG_POST(Error << "Unable to process Bioseq");
         }
     }
@@ -170,14 +168,13 @@ public:
 
                     // Get referenced or overlapping gene using internal Bioseq-specific CFeatTree
                     string locus;
-                    bool has_locus = sfx.GetBestGene([&locus](CFeatureIndex& fsx){
-                        const CGene_ref& gene = fsx.GetMappedFeat().GetData().GetGene();
+                    CRef<CFeatureIndex> fsx = sfx.GetBestGene();
+                    if (fsx) {
+                        const CGene_ref& gene = fsx->GetMappedFeat().GetData().GetGene();
                         if (gene.IsSetLocus()) {
                             locus = gene.GetLocus();
+                            *m_out << "Best gene: " << locus << '\n';
                         }
-                    });
-                    if (has_locus) {
-                        *m_out << "Best gene: " << locus << '\n';
                     }
 
 

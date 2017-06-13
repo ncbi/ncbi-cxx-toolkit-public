@@ -67,10 +67,10 @@ class CFeatureIndex;
 // A Seq-entry wrapper is created if the top-level object is a Bioseq or Bioseq-set.
 // Bioseqs within the Seq-entry are then indexed and added to a vector of CBioseqIndex.
 //
-// Bioseqs are explored with IterateBioseqs, or selected individually by ProcessBioseq
+// Bioseqs are explored with IterateBioseqs, or selected individually by GetBioseqIndex
 // (given an accession, index number, or subregion):
 //
-//   idx.ProcessBioseq("U54469", [this](CBioseqIndex& bsx) {
+//   idx.IterateBioseqs("U54469", [this](CBioseqIndex& bsx) {
 //       ...
 //   });
 //
@@ -113,30 +113,12 @@ public:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CSeqEntryIndex (const CSeqEntryIndex&);
-    CSeqEntryIndex& operator= (const CSeqEntryIndex&);
+    CSeqEntryIndex (const CSeqEntryIndex&) = delete;
+    CSeqEntryIndex& operator= (const CSeqEntryIndex&) = delete;
 
 public:
     // Bioseq exploration iterator
-    template<typename _Pred> int IterateBioseqs (_Pred m);
-
-    // Callback access methods
-
-    // Process first Bioseq
-    template<typename _Pred> bool ProcessBioseq (_Pred m);
-    // Process Nth Bioseq
-    template<typename _Pred> bool ProcessBioseq (int n, _Pred m);
-    // Process Bioseq by accession
-    template<typename _Pred> bool ProcessBioseq (const string& accn, _Pred m);
-
-    // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
-
-    // Process Bioseq by sublocation
-    template<typename _Pred> bool ProcessBioseq (const CSeq_loc& loc, _Pred m);
-    // Process Bioseq by subrange, either forward strand or reverse complement
-    template<typename _Pred> bool ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m);
-
-    // Alternative access methods
+    template<typename _Pred> size_t IterateBioseqs (_Pred m);
 
     // Get first Bioseq index
     CRef<CBioseqIndex> GetBioseqIndex (void);
@@ -145,10 +127,12 @@ public:
     // Get Bioseq index by accession
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn);
 
+    // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
     // Get Bioseq index by sublocation
     CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
     // Get Bioseq index by subrange
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn, int from, int to, bool rev_comp);
+    CRef<CBioseqIndex> GetBioseqIndex (int from, int to, bool rev_comp);
 
     // Getters
     CRef<CObjectManager> GetObjectManager (void) const { return m_objmgr; }
@@ -157,6 +141,8 @@ public:
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_topSEP; }
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_sbtBlk; }
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_topDescr; }
+
+    const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure (void) const { return m_fetchFailure; }
@@ -221,8 +207,8 @@ public:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CSeqsetIndex (const CSeqsetIndex&);
-    CSeqsetIndex& operator= (const CSeqsetIndex&);
+    CSeqsetIndex (const CSeqsetIndex&) = delete;
+    CSeqsetIndex& operator= (const CSeqsetIndex&) = delete;
 
 public:
     // Getters
@@ -293,15 +279,15 @@ public:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CBioseqIndex (const CBioseqIndex&);
-    CBioseqIndex& operator= (const CBioseqIndex&);
+    CBioseqIndex (const CBioseqIndex&) = delete;
+    CBioseqIndex& operator= (const CBioseqIndex&) = delete;
 
 public:
     // Descriptor exploration iterator
-    template<typename _Pred> int IterateDescriptors (_Pred m);
+    template<typename _Pred> size_t IterateDescriptors (_Pred m);
 
     // Feature exploration iterator
-    template<typename _Pred> int IterateFeatures (_Pred m);
+    template<typename _Pred> size_t IterateFeatures (_Pred m);
 
     // Getters
     CBioseq_Handle GetBioseqHandle (void) const { return m_bsh; }
@@ -346,6 +332,10 @@ public:
     // Get sequence letters from Bioseq subrange
     string GetSequence (int from, int to);
     void GetSequence (int from, int to, string& buffer);
+
+    const vector<CRef<CDescriptorIndex>>& GetDescriptorIndices(void);
+
+    const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
 
 private:
     // Common descriptor collection, delayed until actually needed
@@ -435,12 +425,14 @@ public:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CDescriptorIndex (const CDescriptorIndex&);
-    CDescriptorIndex& operator= (const CDescriptorIndex&);
+    CDescriptorIndex (const CDescriptorIndex&) = delete;
+    CDescriptorIndex& operator= (const CDescriptorIndex&) = delete;
 
 public:
     // Getters
     const CSeqdesc& GetSeqDesc (void) const { return m_sd; }
+
+    // Get parent Bioseq index
     CBioseqIndex& GetBioseqIndex (void) const { return m_bsx; }
 
     // Get descriptor subtype (e.g., CSeqdesc::e_Molinfo)
@@ -457,13 +449,6 @@ private:
 // CFeatureIndex
 //
 // CFeatureIndex stores information about an indexed feature
-//
-// GetBestGene returns the best (referenced or overlapping) gene, if available:
-//
-//   sfx.GetBestGene([this](CFeatureIndex& gnx) {
-//       ...
-//   });
-//
 class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObject
 {
     friend class CBioseqIndex;
@@ -479,8 +464,8 @@ public:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CFeatureIndex (const CFeatureIndex&);
-    CFeatureIndex& operator= (const CFeatureIndex&);
+    CFeatureIndex (const CFeatureIndex&) = delete;
+    CFeatureIndex& operator= (const CFeatureIndex&) = delete;
 
 public:
     // Getters
@@ -488,6 +473,8 @@ public:
     const CMappedFeat GetMappedFeat (void) const { return m_mf; }
     CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_fl; }
     CRef<CSeqVector> GetSeqVector (void) const { return m_sv; }
+
+    // Get parent Bioseq index
     CBioseqIndex& GetBioseqIndex (void) const { return m_bsx; }
 
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mrna)
@@ -501,7 +488,7 @@ public:
     void GetSequence (int from, int to, string& buffer);
 
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
-    template<typename _Pred> bool GetBestGene (_Pred m);
+    CRef<CFeatureIndex> GetBestGene (void);
 
 private:
     CSeq_feat_Handle m_sfh;
@@ -519,7 +506,7 @@ private:
 // Visit CBioseqIndex objects for all Bioseqs
 template<typename _Pred>
 inline
-int CSeqEntryIndex::IterateBioseqs (_Pred m)
+size_t CSeqEntryIndex::IterateBioseqs (_Pred m)
 
 {
     int count = 0;
@@ -530,82 +517,10 @@ int CSeqEntryIndex::IterateBioseqs (_Pred m)
     return count;
 }
 
-// Find CBioseqIndex for first Bioseq
-template<typename _Pred>
-inline
-bool CSeqEntryIndex::ProcessBioseq (_Pred m)
-
-{
-    for (auto& bsx : m_bsxList) {
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-// Find CBioseqIndex for Bioseq by position
-template<typename _Pred>
-inline
-bool CSeqEntryIndex::ProcessBioseq (int n, _Pred m)
-
-{
-    for (auto& bsx : m_bsxList) {
-        n--;
-        if (n > 0) continue;
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-// Find CBioseqIndex for Bioseq by accession
-template<typename _Pred>
-inline
-bool CSeqEntryIndex::ProcessBioseq (const string& accn, _Pred m)
-
-{
-    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
-    if (it != m_accnIndexMap.end()) {
-        CRef<CBioseqIndex> bsx = it->second;
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-// Create CBioseqIndex and delta sequence for Bioseq subregion
-template<typename _Pred>
-inline
-bool CSeqEntryIndex::ProcessBioseq (const CSeq_loc& loc, _Pred m)
-
-{
-    CRef<CBioseqIndex> bsx = x_DeltaIndex(loc);
-
-    if (bsx) {
-        m(*bsx);
-        return true;
-    }
-    return false;
-}
-
-// Create CBioseqIndex and delta sequence for Bioseq subrange
-template<typename _Pred>
-inline
-bool CSeqEntryIndex::ProcessBioseq (const string& accn, int from, int to, bool rev_comp, _Pred m)
-
-{
-    CConstRef<CSeq_loc> loc = x_SubRangeLoc(accn, from, to, rev_comp);
-
-    if (loc) {
-        return ProcessBioseq(*loc, m);
-    }
-    return false;
-}
-
 // Visit CDescriptorIndex objects for all descriptors
 template<typename _Pred>
 inline
-int CBioseqIndex::IterateDescriptors (_Pred m)
+size_t CBioseqIndex::IterateDescriptors (_Pred m)
 
 {
     int count = 0;
@@ -629,7 +544,7 @@ int CBioseqIndex::IterateDescriptors (_Pred m)
 // Visit CFeatureIndex objects for all features
 template<typename _Pred>
 inline
-int CBioseqIndex::IterateFeatures (_Pred m)
+size_t CBioseqIndex::IterateFeatures (_Pred m)
 
 {
     int count = 0;
@@ -648,30 +563,6 @@ int CBioseqIndex::IterateFeatures (_Pred m)
         LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
-}
-
-// Find CFeatureIndex object for best gene using internal CFeatTree
-template<typename _Pred>
-inline
-bool CFeatureIndex::GetBestGene (_Pred m)
-
-{
-    try {
-        CMappedFeat best;
-        CBioseqIndex& bsx = GetBioseqIndex();
-        best = feature::GetBestGeneForFeat(m_mf, &bsx.m_featTree, 0,
-                                           feature::CFeatTree::eBestGene_AllowOverlapped);
-        if (best) {
-            CRef<CFeatureIndex> sfx = bsx.GetFeatIndex(best);
-            if (sfx) {
-                m(*sfx);
-                return true;
-            }
-        }
-    } catch (CException& e) {
-        LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
-    }
-    return false;
 }
 
 
