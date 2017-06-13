@@ -175,9 +175,10 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
                 }
             }
             if (trace) {
+                double t = sw.Elapsed();
                 LOG_POST("BGZF: Read page "<<file_pos/kSegmentSize<<
-                         " @ "<<file_pos<<
-                         " in "<<(size-rem)/sw.Elapsed()/(1<<20)<<" MB/s");
+                         " @ "<<file_pos<<" in "<<t<<" sec"
+                         " speed: "<<(size-rem)/(t*(1<<20))<<" MB/s");
             }
         }
         if (rem) {
@@ -392,9 +393,7 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
     
     CBGZFPos::TFileBlockPos file_pos = file_pos0;
 
-    if ( s_GetDebug() >= 2 ) {
-        LOG_POST("BGZF: Decompressing block at "<<file_pos0);
-    }
+    bool trace = s_GetDebug() >= 2;
     
     // parse header
     char header_tmp[kFixedHeaderSize + kInitialExtraSize];
@@ -469,6 +468,11 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
     // decompress data
     size_t decompressed_size = 0;
     {
+        CStopWatch sw;
+        if ( trace ) {
+            sw.Start();
+        }
+        
         const char* src = compressed_data;
         size_t src_size = compressed_size;
         char* dst = block.m_Data.get();
@@ -497,6 +501,13 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
                 decompressed_size = stream.total_out;
             }
             inflateEnd(&stream);
+        }
+        
+        if ( trace ) {
+            double t = sw.Elapsed();
+            LOG_POST("BGZF: Decompressed block"
+                     " @ "<<file_pos0<<" in "<<t<<" sec"
+                     " speed: "<<compressed_size/(t*(1<<20))<<" MB/s");
         }
     }
     
