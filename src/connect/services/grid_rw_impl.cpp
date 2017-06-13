@@ -516,11 +516,21 @@ void SOutputCopy::Reader(IReader& reader)
     array<char, 1024 * 1024> buf;
     bool eof = false;
 
+    auto copy = [&](unique_lock<mutex>& lock, size_t read) {
+        d.insert(d.end(), buf.cbegin(), buf.cbegin() + read);
+
+        if (done) eof = true;
+
+        done = eof;
+        lock.unlock();
+        cv.notify_one();
+    };
+
     while (!eof) {
         char* data = buf.data();
         size_t to_read = buf.size();
 
-        while (!eof && to_read) {
+        if (to_read) {
             ERW_Result status = eRW_Error;
             size_t bytes_read = 0;
 
@@ -548,14 +558,15 @@ void SOutputCopy::Reader(IReader& reader)
             to_read -= bytes_read;
         }
 
-        unique_lock<mutex> lock(m);
-        d.insert(d.end(), buf.cbegin(), buf.cbegin() + (buf.size() - to_read));
+        size_t read = buf.size() - to_read;
 
-        if (done) eof = true;
-
-        done = eof;
-        lock.unlock();
-        cv.notify_one();
+        if (eof) {
+            unique_lock<mutex> lock(m);
+            copy(lock, read);
+        } else {
+            unique_lock<mutex> lock(m, try_to_lock);
+            if (lock.owns_lock()) copy(lock, read);
+        }
     }
 }
 
