@@ -55,6 +55,12 @@ static int s_GetDebug(void)
 }
 
 
+static double s_ReadSize;
+static double s_ReadTime;
+static double s_UnzipSize;
+static double s_UnzipTime;
+
+
 enum EFileMode {
     eUseFileIO,
     eUseMemFile,
@@ -121,6 +127,12 @@ CPagedFile::CPagedFile(const string& file_name)
 
 CPagedFile::~CPagedFile()
 {
+    if ( s_ReadSize ) {
+        LOG_POST("BGZF: Total read "<<s_ReadSize/(1<<20)<<" MB speed: "<<s_ReadSize/(s_ReadTime*(1<<20))<<" MB/s");
+    }
+    if ( s_UnzipSize ) {
+        LOG_POST("BGZF: Total decompressed "<<s_UnzipSize/(1<<20)<<" MB speed: "<<s_UnzipSize/(s_UnzipTime*(1<<20))<<" MB/s");
+    }
 }
 
 
@@ -176,7 +188,9 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
             }
             if (trace) {
                 double t = sw.Elapsed();
-                LOG_POST("BGZF: Read page "<<file_pos/kSegmentSize<<
+                s_ReadSize += size-rem;
+                s_ReadTime += t;
+                LOG_POST(Info<<"BGZF: Read page "<<file_pos/kSegmentSize<<
                          " @ "<<file_pos<<" in "<<t<<" sec"
                          " speed: "<<(size-rem)/(t*(1<<20))<<" MB/s");
             }
@@ -505,7 +519,9 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
         
         if ( trace ) {
             double t = sw.Elapsed();
-            LOG_POST("BGZF: Decompressed block"
+            s_UnzipSize += compressed_size;
+            s_UnzipTime += t;
+            LOG_POST(Info<<"BGZF: Decompressed block"
                      " @ "<<file_pos0<<" in "<<t<<" sec"
                      " speed: "<<compressed_size/(t*(1<<20))<<" MB/s");
         }
@@ -520,7 +536,7 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
                        "Bad BGZF("<<file_pos0<<") DATA SIZE: " << data_size);
     }
     if ( data_size == 0 && s_GetDebug() >= 2 ) {
-        LOG_POST("Zero BGZF("<<file_pos0<<")");
+        LOG_POST(Warning<<"Zero BGZF("<<file_pos0<<")");
     }
 
     // check decompression results
