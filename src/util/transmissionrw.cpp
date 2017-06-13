@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 
 static const Uint4 sStartWord = 0x01020304;
 static const Uint4 sEndPacket = 0xFFFFFFFF;
+const size_t kLengthSize = sizeof(Uint4);
 
 CTransmissionWriter::CTransmissionWriter(IWriter* wrt, 
                                          EOwnership own_writer,
@@ -52,8 +53,8 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt,
     _ASSERT(wrt);
 
     size_t written;
-    ERW_Result res = m_Wrt->Write(&sStartWord, sizeof(sStartWord), &written);
-    if (res != eRW_Success || written != sizeof(sStartWord)) {
+    ERW_Result res = m_Wrt->Write(&sStartWord, kLengthSize, &written);
+    if (res != eRW_Success || written != kLengthSize) {
         NCBI_THROW(CIOException, eWrite,  "Cannot write the byte order");
     }
 }
@@ -88,10 +89,10 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
     if (!m_PacketBytesToWrite) {
         Uint4 cnt = (Uint4) count;
         size_t written = 0;
-        ERW_Result res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
+        ERW_Result res = m_Wrt->Write(&cnt, kLengthSize, &written);
         if (res != eRW_Success) 
             return res;
-        if (written != sizeof(cnt))
+        if (written != kLengthSize)
             return eRW_Error;
         m_PacketBytesToWrite = cnt;
     }
@@ -117,7 +118,7 @@ ERW_Result CTransmissionWriter::Close(void)
 
     m_SendEof = eDontSendEofPacket;
 
-    return m_Wrt->Write(&sEndPacket, sizeof(sEndPacket));
+    return m_Wrt->Write(&sEndPacket, kLengthSize);
 }
 
 CTransmissionWriter::~CTransmissionWriter()
@@ -164,7 +165,7 @@ ERW_Result CTransmissionReader::Read(void*    buf,
     // read packet header
     while (m_PacketBytesToRead == 0) {
         Uint4 cnt;
-        res = x_ReadRepeated(&cnt, sizeof(cnt));
+        res = x_ReadRepeated(&cnt, kLengthSize);
         if (res != eRW_Success) { 
             return res;
         }
@@ -200,9 +201,9 @@ ERW_Result CTransmissionReader::x_ReadStart()
     m_StartRead = true;
 
     ERW_Result res;
-    unsigned start_word_coming;
+    Uint4 start_word_coming;
 
-    res = x_ReadRepeated(&start_word_coming, sizeof(start_word_coming));
+    res = x_ReadRepeated(&start_word_coming, kLengthSize);
     if (res != eRW_Success) {
         return res;
     }
