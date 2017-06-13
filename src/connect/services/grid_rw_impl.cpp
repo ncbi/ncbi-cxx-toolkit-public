@@ -503,10 +503,12 @@ void SGridRead::Reset()
 
 SOutputCopy::SOutputCopy(IReader& reader, CNcbiOstream& writer)
 {
+#ifdef NCBI_THREADS
     d.reserve(16 * 1024 * 1024);
     thread t(&SOutputCopy::Reader, this, ref(reader));
     Writer(writer);
     t.join();
+#endif
 }
 
 void SOutputCopy::Reader(IReader& reader)
