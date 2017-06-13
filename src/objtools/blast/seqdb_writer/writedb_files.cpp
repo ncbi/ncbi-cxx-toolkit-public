@@ -112,12 +112,16 @@ CWriteDB_File::CWriteDB_File(const string & basename,
     // deducting one for the sign bit.
     static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8) - 1;
     // Define maximum allowed max_file_size.
+#ifdef _DEBUG
     static const Uint8 MAX_FILE_SIZE = (1L << MAX_OFFSET_BITS) - 1L;
+#endif
 
     if (m_MaxFileSize == 0) {
         m_MaxFileSize = x_DefaultByteLimit();
     } else {
+#ifdef _DEBUG
         _ASSERT(max_file_size <= MAX_FILE_SIZE);
+#endif
     }
 
     m_Nul.resize(1);
@@ -144,10 +148,14 @@ int CWriteDB_File::Write(const CTempString & data)
     // deducting one for the sign bit.
     static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8) - 1;
     // Define maximum allowed max_file_size.
+#ifdef _DEBUG
     static const Uint8 MAX_OFFSET = (1L << MAX_OFFSET_BITS) - 1L;
+#endif
 
     _ASSERT(m_Created);
+#ifdef _DEBUG
     _ASSERT(((Uint8) m_Offset + data.length()) <= MAX_OFFSET);
+#endif
     m_RealFile.write(data.data(), data.length());
 
     m_Offset += data.length();
@@ -324,8 +332,12 @@ CWriteDB_SequenceFile::CWriteDB_SequenceFile(const string & dbname,
                     max_file_size,
                     true),
       m_Letters  (0),
+#ifdef _DEBUG
       m_BaseLimit(max_letters),
       m_Protein  (protein)
+#else
+      m_BaseLimit(max_letters)
+#endif
 {
     // Only protein sequences need the inter-sequence NUL bytes.
     // The first null written here is for nucleotide sequences.

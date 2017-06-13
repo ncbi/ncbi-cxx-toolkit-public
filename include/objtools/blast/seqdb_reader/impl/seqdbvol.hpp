@@ -61,8 +61,7 @@ public:
     CSeqDBGiIndex(CSeqDBAtlas  & atlas,
                   const string & dbname,
                   char           prot_nucl)
-        : m_Atlas    (atlas),
-          m_Lease    (atlas),
+      : m_Lease    (atlas),
           //m_Fname    (dbname + '.' + prot_nucl + "og"),
           m_NumOIDs  (0) { 
               m_Lease.Init(dbname + '.' + prot_nucl + "og");
@@ -83,7 +82,6 @@ public:
     TGi GetSeqGI(TOid oid, CSeqDBLockHold & locked);
 
 private:
-    CSeqDBAtlas &  m_Atlas;
     CSeqDBFileMemMap m_Lease;
     //string         m_Fname;
     Int4           m_Size;
@@ -104,11 +102,7 @@ public:
     /// Constructor.
     /// @param atlas The SeqDB memory management layer. [in]
     CSeqDBRangeList(CSeqDBAtlas & atlas)
-        : m_Atlas     (atlas),
-          m_CacheData (false),
-          m_Sequence  (0),
-          m_Length    (0),
-          m_RefCount  (0)
+      : m_CacheData (false)
     {
         // Sequence caching is not implemented yet.  It would increase
         // performance further, but requires some consideration of the
@@ -156,23 +150,11 @@ public:
     }
 
 private:
-    /// Memory management layer.
-    CSeqDBAtlas & m_Atlas;
-
     /// Range of offsets needed for this sequence.
     TRangeList m_Ranges;
 
     /// True if caching of sequence data is required for this sequence.
     bool m_CacheData;
-
-    /// Pointer to cached sequence data.
-    const char * m_Sequence;
-
-    /// Length of sequence.
-    int m_Length;
-
-    /// Number of user-held references to this sequence.
-    int m_RefCount;
 };
 
 /// CSeqDBVol class.

@@ -85,8 +85,6 @@ public:
 private:
 
     Uint4 window;   /**<\internal dust window in base pairs */
-    Uint4 level;    /**<\internal dust level */
-    Uint4 linker;   /**<\internal dust linker length in base pairs */
 
     CSymDustMasker duster_; /**<\internal symmetric dust masker */
 };

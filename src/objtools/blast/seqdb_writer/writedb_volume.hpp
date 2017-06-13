@@ -247,7 +247,6 @@ private:
     string           m_Date;        ///< Construct time (same for all volumes).
     int              m_Index;       ///< Index of this volume (1 based).
     EIndexType       m_Indices;     ///< Indices are sparse, full, or disabled.
-    Uint8            m_MaxFileSize; ///< Maximum size for any component file.
 
     // Status.
 

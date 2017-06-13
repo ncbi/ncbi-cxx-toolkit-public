@@ -158,7 +158,6 @@ private:
     double m_Pixel_factor;
     int m_Round_number;
     SAlignGraphTemplates *m_AlignGraphTemplates;
-    int m_MasterPixelLength;
 
     //blast sub-sequence query
     CRange<TSeqPos>* m_MasterRange; 

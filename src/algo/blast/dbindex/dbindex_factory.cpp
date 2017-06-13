@@ -1306,7 +1306,6 @@ class COffsetData_Factory
                 COffsetList::CDataPool * pool )
             : subject_map_( subject_map ),
               hash_table_( 1<<(2*options.hkey_width) ),
-              report_level_( options.report_level ),
               total_( 0 ),
               hkey_width_( options.hkey_width ),
               last_seq_( 0 ),
@@ -1388,7 +1387,6 @@ class COffsetData_Factory
 
         TSubjectMap & subject_map_;     /**< Instance of subject map structure. */
         THashTable hash_table_;         /**< Mapping from Nmer values to the corresponding offset lists. */
-        unsigned long report_level_;    /**< Level of reporting requested by the user. */
         TWord total_;                   /**< Current size of the structure in bytes. */
         unsigned long hkey_width_;      /**< Nmer width in bases. */
         TSeqNum last_seq_;              /**< Logical oid of last processed sequence. */

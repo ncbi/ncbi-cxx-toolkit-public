@@ -80,7 +80,6 @@ private:
 
     CRef< CSeqDB > seqdb_;  /**< BLAST database object. */
     CSeqDB::TOID oid_;      /**< Current OID (to be read). */
-    bool is_nucleotide_;    /**< BLAST database contains nucleotide sequences */
 };
 
 END_NCBI_SCOPE

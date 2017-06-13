@@ -1022,7 +1022,6 @@ public:
              bool recurse)
         : CTestData(outp, dbtype),
           m_Dir     (dir),
-          m_Threads (threads),
           m_Recurse (recurse) { }
     
     virtual bool Test(CTestActionList & action);
@@ -1031,7 +1030,6 @@ private:
     string         m_Dir;
     vector<SSeqDBInitInfo> m_DBs;
     
-    int    m_Threads;
     bool   m_Recurse;
 
     int x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &vlist, set <string> &alist) const;

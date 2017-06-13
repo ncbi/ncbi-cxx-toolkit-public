@@ -65,8 +65,7 @@ static inline char iupacna_to_blastna( char c )
 
 //------------------------------------------------------------------------------
 CSDustMasker::CSDustMasker( Uint4 arg_window, Uint4 arg_level, Uint4 arg_linker )
-: window( arg_window ), level( arg_level ), linker( arg_linker ),
-  duster_( arg_level, arg_window, arg_linker )
+  : window( arg_window ), duster_( arg_level, arg_window, arg_linker )
 {}
 
 //------------------------------------------------------------------------------

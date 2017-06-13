@@ -57,7 +57,6 @@ public:
     CMaskFastaReader( CNcbiIstream & newInputStream, bool is_nucl = true,
                       bool parse_seqids = false )
         : CMaskReader( newInputStream ), is_nucleotide_(is_nucl),
-          parse_seqids_(parse_seqids), 
           fasta_reader_( newInputStream,
                          CONST_FLAGS | 
                          (is_nucl ? objects::CFastaReader::fAssumeNuc 
@@ -95,7 +94,6 @@ private:
         objects::CFastaReader::fAllSeqIds;
 
     bool is_nucleotide_; /**< This object is reading nucleotide sequences */
-    bool parse_seqids_;  /**< Should the Seq-ids be parsed? */
 
     objects::CFastaReader fasta_reader_; /**< Fasta reader object. */
 };

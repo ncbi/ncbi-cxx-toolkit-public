@@ -54,7 +54,7 @@ static objects::CFastaReader::TFlags CFASTAREADER_FLAGS =
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         const std::string & name , size_t pos )
-    : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), 
+  : stream_allocated_( false ), istream_( 0 ),
       fasta_reader_( 0 ), name_( name ),
       cache_( null ), use_cache_( false )
 {
@@ -74,7 +74,7 @@ CSequenceIStreamFasta::CSequenceIStreamFasta(
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         CNcbiIstream & input_stream, size_t pos )
     : stream_allocated_( false ), istream_( &input_stream ), 
-      curr_seq_( 0 ), fasta_reader_( 0 ),
+      fasta_reader_( 0 ),
       cache_( null ), use_cache_( false )
 {
     if( !*istream_ ) {

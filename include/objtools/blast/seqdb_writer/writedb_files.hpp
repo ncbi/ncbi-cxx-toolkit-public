@@ -422,7 +422,9 @@ public:
                      int          & offset,
                      int            length)
     {
+#ifdef _DEBUG
         _ASSERT(m_Protein);
+#endif
         offset = WriteWithNull(sequence);
         m_Letters += length;
     }
@@ -442,7 +444,9 @@ public:
                      int          & off_amb,
                      int            length)
     {
+#ifdef _DEBUG
         _ASSERT(! m_Protein);
+#endif
         off_seq = Write(sequence);
         off_amb = Write(ambig);
         m_Letters += length;
@@ -458,7 +462,9 @@ private:
 
     Uint8 m_Letters;   ///< Letters of sequence data added so far.
     Uint8 m_BaseLimit; ///< Limit on letters of sequence data.
+#ifdef _DEBUG
     bool  m_Protein;   ///< True if this is a protein database.
+#endif
 };
 
 END_NCBI_SCOPE

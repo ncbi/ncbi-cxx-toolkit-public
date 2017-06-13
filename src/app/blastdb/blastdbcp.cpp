@@ -57,8 +57,6 @@ private: /* Private Methods */
                           CSeqDB::ESeqType seq_type) const;
 
 private: /* Private Data */
-    bool m_bCheckOnly;
-
     typedef map<string, ICriteria::EMembershipBit> TMemBitMap;
 
     TMemBitMap m_MembershipMap;
@@ -72,8 +70,7 @@ private: /* Private Data */
 //  Constructor
 
 BlastdbCopyApplication::BlastdbCopyApplication()
-  : m_bCheckOnly(false),
-    kTargetOnly("target_only"),
+  : kTargetOnly("target_only"),
     kMembershipBits("membership_bits"),
     kCopyOnly("copy_only")
 {

@@ -73,8 +73,7 @@ public:
     CSeqDBVolEntry(CSeqDBVol * new_vol)
         : m_Vol        (new_vol),
           m_OIDStart   (0),
-          m_OIDEnd     (0),
-          m_AllOIDs    (false)
+          m_OIDEnd     (0)
     {
     }
     
@@ -144,9 +143,6 @@ private:
     
     /// The end of the OID range.
     int             m_OIDEnd;
-    
-    /// True if all OIDs are included.
-    bool            m_AllOIDs;
 };
 
 
