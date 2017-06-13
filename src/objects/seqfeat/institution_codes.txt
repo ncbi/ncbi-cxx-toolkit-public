@@ -2655,6 +2655,7 @@ IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics		
 IBAR	h	Ibaraki University		
 IBAUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal		
+IBBS	s	Insitute of Biology and Soil Science, Russian Academy of Sciences		
 IBE	s	Institute for Botanical Exploration		
 IBE<ESP>	s	Institut de Biologia Evolutiva, (CSIC-UPF)		
 IBEF	s	Museum of the Izumi Board of Education		
@@ -2774,7 +2775,7 @@ IFM<AUS>	c	IFM Quality Services Pty Ltd
 IFM<JPN>	c	Research Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University		
 IFO	c	Institute for Fermentation		
 IFP	s	Institute of Applied Ecology, Academia Sinica		
-IFRD	h	Research Institute of Resource Insects		
+IFRD	s	Research Institute of Resource Insects		
 IFRDCC	c	International Fungal Research and Development Culture Collection		
 IFREMER	s	Institut Francais pour l'Etude de la Mer		
 IFRI	s	Indian Forest Research Institute		
@@ -2894,7 +2895,6 @@ INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia
 INPC	s	National Pusa Collections		
 INRA	b	Institut National de la Recherche Agronomique		
 INRA:CGAB	cb	Institut National de la Recherche Agronomique, Collection of Germplasms of Agaricus bisporus
-Insitute of Biology and Soil Science, Russian Academy of Sciences	s	Insitute of Biology and Soil Science, Russian Academy of Sciences		
 INU	h	Inonu University		
 INV	s	Inverness Museum and Art Gallery		
 INVA	s	Invergordon Academy		
