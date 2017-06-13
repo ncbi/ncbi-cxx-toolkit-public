@@ -129,6 +129,40 @@ CTransmissionWriter::~CTransmissionWriter()
         delete m_Wrt;
 }
 
+template <typename TType>
+inline const TType* CTransmissionReader::SReadData::Data() const
+{
+    return reinterpret_cast<const TType*>(data() + m_Start);
+}
+
+inline size_t CTransmissionReader::SReadData::DataSize() const
+{
+    return m_End - m_Start;
+}
+
+inline char* CTransmissionReader::SReadData::Space()
+{
+    return data() + m_End;
+}
+
+inline size_t CTransmissionReader::SReadData::SpaceSize() const
+{
+    return size() - m_End;
+}
+
+inline void CTransmissionReader::SReadData::Add(size_t count)
+{
+    m_End += count;
+    _ASSERT(m_End <= size());
+}
+
+inline void CTransmissionReader::SReadData::Remove(size_t count)
+{
+    m_Start += count;
+    if (DataSize() == 0) m_Start = m_End = 0;
+    _ASSERT(m_Start < size());
+}
+
 CTransmissionReader::CTransmissionReader(IReader* rdr, EOwnership own_reader)
     : m_Rdr(rdr),
       m_OwnRdr(own_reader),
@@ -136,7 +170,6 @@ CTransmissionReader::CTransmissionReader(IReader* rdr, EOwnership own_reader)
       m_ByteSwap(false),
       m_StartRead(false)
 {
-    return;
 }
 
 
@@ -152,39 +185,35 @@ ERW_Result CTransmissionReader::Read(void*    buf,
                                      size_t   count,
                                      size_t*  bytes_read)
 {
-    ERW_Result res;
     CIOBytesCountGuard read(bytes_read);
 
     if (!m_StartRead) {
-        res = x_ReadStart();
-        if (res != eRW_Success) {
-            return res;
-        }
+        auto res = x_ReadStart();
+        if (res != eRW_Success) return res;
     }
 
     // read packet header
     while (m_PacketBytesToRead == 0) {
-        Uint4 cnt;
-        res = x_ReadRepeated(&cnt, kLengthSize);
-        if (res != eRW_Success) { 
-            return res;
-        }
-        if (m_ByteSwap) {
-            m_PacketBytesToRead = CByteSwap::GetInt4((unsigned char*)&cnt);
-        } else {
-            m_PacketBytesToRead = cnt;
-        }
+        auto res = ReadLength(m_PacketBytesToRead);
+        if (res != eRW_Success) return res;
     }
 
-    if (m_PacketBytesToRead == sEndPacket) 
-        return  eRW_Eof;
+    if (m_PacketBytesToRead == sEndPacket) return eRW_Eof;
 
-    size_t to_read = min(count, m_PacketBytesToRead);
+    size_t to_read = count < m_PacketBytesToRead ? count : m_PacketBytesToRead;
+    size_t already_read = m_ReadData.DataSize();
 
-    res = m_Rdr->Read(buf, to_read, &read.count);
+    if (already_read) {
+        read.count = min(to_read, already_read);
+        copy_n(m_ReadData.Data(), read.count, static_cast<char*>(buf));
+        m_ReadData.Remove(read.count);
+    } else {
+        auto res = m_Rdr->Read(buf, to_read, &read.count);
+        if (res != eRW_Success) return res;
+    }
+
     m_PacketBytesToRead -= read.count;
-
-    return res;
+    return eRW_Success;
 }
 
 
@@ -200,17 +229,12 @@ ERW_Result CTransmissionReader::x_ReadStart()
 
     m_StartRead = true;
 
-    ERW_Result res;
     Uint4 start_word_coming;
 
-    res = x_ReadRepeated(&start_word_coming, kLengthSize);
-    if (res != eRW_Success) {
-        return res;
-    }
-    m_ByteSwap = (start_word_coming != sStartWord);
+    auto res = ReadLength(start_word_coming);
+    if (res != eRW_Success) return res;
 
-    //    _ASSERT(start_word_coming == 0x01020304 || 
-    //            start_word_coming == 0x04030201);
+    m_ByteSwap = (start_word_coming != sStartWord);
 
     if (start_word_coming != sStartWord &&
         start_word_coming != 0x04030201)
@@ -218,23 +242,29 @@ ERW_Result CTransmissionReader::x_ReadStart()
                    "Cannot determine the byte order. Got: " 
                    + NStr::UIntToString(start_word_coming, 0, 16));
 
-    return res;
+    return eRW_Success;
 }
 
 
-ERW_Result CTransmissionReader::x_ReadRepeated(void* buf, size_t count)
+ERW_Result CTransmissionReader::ReadLength(Uint4& length)
 {
-    ERW_Result res = eRW_Success;
-    char* ptr = (char*)buf;
-    size_t read;
-    
-    for( ; count > 0; count -= read, ptr += read) {
-        res = m_Rdr->Read(ptr, count, &read);
-        if (res != eRW_Success) {
-            return res;
-       }
+    while (m_ReadData.DataSize() < kLengthSize) {
+        size_t read;
+
+        auto res = m_Rdr->Read(m_ReadData.Space(), m_ReadData.SpaceSize(), &read);
+        if (res != eRW_Success) return res;
+
+        m_ReadData.Add(read);
     }
-    return res;
+
+    if (m_ByteSwap) {
+        length = CByteSwap::GetInt4(m_ReadData.Data<unsigned char>());
+    } else {
+        length = *m_ReadData.Data<Uint4>();
+    }
+
+    m_ReadData.Remove(kLengthSize);
+    return eRW_Success;
 }
 
 

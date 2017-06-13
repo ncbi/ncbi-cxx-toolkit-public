@@ -41,6 +41,7 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/ncbidbg.hpp> // for _ASSERT
 
+#include <array>
 
 BEGIN_NCBI_SCOPE
 
@@ -75,17 +76,31 @@ public:
 private:
 
     ERW_Result x_ReadStart();
-    ERW_Result x_ReadRepeated(void*   buf,
-                              size_t  count);
+    ERW_Result ReadLength(Uint4& length);
 
 private:
     CTransmissionReader(const CTransmissionReader&);
     CTransmissionReader& operator=(const CTransmissionReader&);
 
 private:
+    struct SReadData : array<char, 256 * 1024>
+    {
+        template <typename TType = char> inline const TType* Data() const;
+        inline size_t DataSize() const;
+        inline char* Space();
+        inline size_t SpaceSize() const;
+        inline void Add(size_t count);
+        inline void Remove(size_t count);
+
+    private:
+        size_t m_Start = 0;
+        size_t m_End = 0;
+    };
+
+    SReadData  m_ReadData;
     IReader*   m_Rdr;
     EOwnership m_OwnRdr;
-    size_t     m_PacketBytesToRead;
+    Uint4      m_PacketBytesToRead;
     bool       m_ByteSwap;
     bool       m_StartRead;
 };
