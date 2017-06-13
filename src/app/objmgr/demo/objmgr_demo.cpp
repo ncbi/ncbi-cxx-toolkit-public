@@ -257,6 +257,8 @@ void CDemoApp::Init(void)
                       "print only types of features found");
     arg_desc->AddFlag("get_names",
                       "print only Seq-annot names of features found");
+    arg_desc->AddFlag("get_cost",
+                      "print cost of loading");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
                              "features starting at this point on the sequence",
                              CArgDescriptions::eInteger);
@@ -823,6 +825,7 @@ int CDemoApp::Run(void)
     if ( count_types || count_subtypes ) {
         only_features = true;
     }
+    bool get_cost = args["get_cost"];
     bool print_tse = args["print_tse"];
     bool print_seq = args["print_seq"];
     bool print_descr = args["print_descr"];
@@ -1521,7 +1524,8 @@ int CDemoApp::Run(void)
             .SetAdaptiveDepth(adaptive)
             .SetExactDepth(exact_depth)
             .SetUnresolvedFlag(missing)
-            .SetIgnoreStrand(ignore_strand);
+            .SetIgnoreStrand(ignore_strand)
+            .SetCollectCostOfLoading(get_cost);
         if ( args["max_search_segments"] ) {
             base_sel.SetMaxSearchSegments(args["max_search_segments"].AsInteger());
             if ( args["max_search_segments_action"] ) {
@@ -1933,6 +1937,11 @@ int CDemoApp::Run(void)
             CFeat_CI it(scope, *range_loc, base_sel);
             if ( it.MaxSearchSegmentsLimitIsReached() ) {
                 NcbiCout << "***** Max search segments limit is reached *****" << NcbiEndl;
+            }
+            if ( get_cost ) {
+                NcbiCout << "Cost of loading feats: "<<it.GetCostOfLoadingInBytes()<<" bytes or "
+                         << it.GetCostOfLoadingInSeconds() << " seconds"
+                         << NcbiEndl;
             }
             for ( ; it;  ++it) {
                 if ( count_types ) {
@@ -2450,7 +2459,13 @@ int CDemoApp::Run(void)
                 count = 0;
                 sw.Restart();
                 set<CSeq_annot_Handle> annots;
-                for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
+                CGraph_CI it(scope, *range_loc, base_sel);
+                if ( get_cost ) {
+                    NcbiCout << "Cost of loading graphs: "<<it.GetCostOfLoadingInBytes()<<" bytes or "
+                             << it.GetCostOfLoadingInSeconds() << " seconds"
+                             << NcbiEndl;
+                }
+                for ( ; it;  ++it) {
                     count++;
                     if ( print_annot_desc ) {
                         annots.insert(it.GetAnnot());
@@ -2484,7 +2499,13 @@ int CDemoApp::Run(void)
                 count = 0;
                 // Create CAlign_CI using the current scope and location.
                 sw.Restart();
-                for (CAlign_CI it(scope, *range_loc, base_sel); it;  ++it) {
+                CAlign_CI it(scope, *range_loc, base_sel);
+                if ( get_cost ) {
+                    NcbiCout << "Cost of loading aligns: "<<it.GetCostOfLoadingInBytes()<<" bytes or "
+                             << it.GetCostOfLoadingInSeconds() << " seconds"
+                             << NcbiEndl;
+                }
+                for ( ; it;  ++it) {
                     count++;
                     if ( get_mapped_alignments ) {
                         *it;
