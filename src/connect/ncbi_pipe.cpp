@@ -2056,7 +2056,11 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     bool err_done = false;
     bool in_done  = false;
     
+#ifdef NCBI_OS_MSWIN
     const size_t buf_size = 16 * 1024;
+#else
+    const size_t buf_size = 512 * 1024;
+#endif
     size_t total_bytes_written = 0;
     size_t bytes_in_inbuf = 0;
     char   inbuf[buf_size];
