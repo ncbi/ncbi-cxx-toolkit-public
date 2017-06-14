@@ -117,6 +117,8 @@ bool CCompression::x_CompressFile(const string&     src_file,
         SetError(-1, "Buffer size cannot be zero");
         return false;
     }
+    _ASSERT(buf_size <= kMax_Int);
+    
     CNcbiIfstream is(src_file.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !is.good() ) {
         SetError(-1, "Cannot open source file");
@@ -143,6 +145,11 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
         SetError(-1, "Buffer size cannot be zero");
         return false;
     }
+    if ( buf_size > kMax_Int ) {
+        buf_size = kMax_Int;
+    }
+    _ASSERT(buf_size <= kMax_Int);
+    
     CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
         SetError(-1, "Cannot open destination file");

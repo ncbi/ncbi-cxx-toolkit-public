@@ -65,31 +65,34 @@ BEGIN_NCBI_SCOPE
 //   Notice that generally the input/output stream you pass to
 //   CCompression[IO]Stream class constructor must be in binary mode, because
 //   the compressed data always is binary (decompressed data also can be
-//   binary) and the conversions which happen in text mode will corrupt it.
+//   binary) and the conversions which happen in the text mode will corrupt it.
 //
 // Note:
 //   CCompression[IO]Stream class objects must be finalized after use.
 //   Only after finalization all data put into stream will be processed
-//   for sure. By default finalization called in the class destructor, however
-//   it can be done in any time by call Finalize(). After finalization you
-//   can only read from the stream (if it is derived from istream).
-//   If you don't read that some data can be lost. 
+//   for sure. By default finalization is done in the class destructor,
+//   however it is better to call it directly by using Finalize() method.
+//   This allow to check result and be sure that you read/write all necessary
+//   data. You cannot do this if Finalize() is called in the destructor
+//   automatically. After finalization you can only read from the stream
+//   (if it is derived from istream). If you don't read that some data
+//   can be lost there.
 //
 // Note:
-//   The compression streams don't write nothing into output, if no input data
-//   is provided. This can be especially important for cases where output data 
-//   should have any header/footer (like .gz files for example). So, for empty
-//   input, you will have empty output, that may not be acceptable to external
-//   tools like gunzip and etc.
+//   The compression streams write nothing into the output, if input data
+//   has not provided. This can be especially important for cases where
+//   the output data should have any header/footer (like .gz files for example).
+//   So, for empty input, you will have empty output, that may not be acceptable
+///  to external tools like gunzip and etc.
 //
 // Note:
-//   There is one special aspect of CCompression[I]OStream class. Basically
-//   the compression algorithms works on blocks of data. They waits until
-//   a block is full and then compresses it. As long as you only feed data
-//   to the stream without flushing it this works normally. If you flush
-//   the stream, you force a premature end of the data block. This will cause
-//   a worse compression factor. You should avoid flushing an output buffer
-//   to get a better compression ratio.
+//   There is one special aspect of the output stream classes (CCompression[I]OStream).
+//   You should avoid flushing an output buffer if not necessary to get
+//   a better compression ratio. Basically, the compression algorithms works
+//   on blocks of data. They waits until a block is full and then compresses it.
+//   As long as you only feed data to the stream without flushing it works
+//   as expected. If you flush the stream, you force a premature end of the data block.
+//   This will cause a worse compression ratio.
 //
 //   Accordingly, the using input stream with compression usually have worse
 //   compression than output stream with compression. Because a stream needs
@@ -172,9 +175,9 @@ protected:
     bool x_GetError(CCompressionStream::EDirection dir,
                     int& status, string& description);
     /// Return number of processed bytes.
-    unsigned long x_GetProcessedSize(CCompressionStream::EDirection dir);
+    size_t x_GetProcessedSize(CCompressionStream::EDirection dir);
     /// Return number of output bytes.
-    unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
+    size_t x_GetOutputSize(CCompressionStream::EDirection dir);
 
 
 protected:
@@ -292,7 +295,7 @@ public:
     /// and waiting to be compressed/decompressed. Usually, only after
     /// stream finalization by Finalize() it will be equal a number of 
     /// bytes read from underlying stream.
-    unsigned long GetProcessedSize(void) {
+    size_t GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eRead);
     };
     /// Get total number of bytes, that "stream_processor" returns.
@@ -300,9 +303,14 @@ public:
     /// Some data can be still cashed in the internal buffer.
     /// Usually, only after stream finalization by Finalize() it 
     /// will be equal a size of decompressed data in underlying stream.
-    unsigned long GetOutputSize(void) {
+    size_t GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
+    /// Auxiliary method to read from stream.
+    /// Read up to "len" bytes from the stream into the buffer "buf". 
+    /// Returning value less than "n" mean EOF or error, check stream state bits for details.
+    /// @note Allow to read more than 4GB, that regular read() cannot handle on some platforms.
+    size_t Read(void* buf, size_t len);
 
 protected:
     /// Default constructor.
@@ -361,7 +369,7 @@ public:
     /// and waiting to be compressed/decompressed. Usually, only after
     /// stream finalization by Finalize() it will be equal a number of
     /// bytes written into stream.
-    unsigned long GetProcessedSize(void) {
+    size_t GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eWrite);
     };
     /// Get total number of bytes, that "stream_processor" returns.
@@ -369,18 +377,22 @@ public:
     /// stream, some data can be still cashed in the internal buffer
     /// for better I/O performance. Usually, only after stream
     /// finalization by Finalize() these numvbers will be equal.
-    unsigned long GetOutputSize(void) {
+    size_t GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
     /// Finalize stream's compression/decompression process for read/write.
     /// This function just calls a streambuf Finalize().
-    virtual void Finalize(CCompressionStream::EDirection dir 
-        = CCompressionStream::eWrite) {
+    virtual void Finalize(CCompressionStream::EDirection dir = CCompressionStream::eWrite) {
         if ( m_StreamBuf ) {
             CCompressionStream::Finalize(dir);
             flush();
         }
     };
+    /// Auxiliary method to write into stream.
+    /// Write up "len" bytes from the buffer "buf" into the stream. 
+    /// Returning value less than "n" mean error, check stream state bits for details.
+    /// @note Allow to write more than 4GB, that regular write() cannot handle on some platforms.
+    size_t Write(const void* buf, size_t len);
 
 protected:
     /// Default constructor.
@@ -439,23 +451,33 @@ public:
     }
     /// Get total number of bytes processed by specified "stream_processor".
     /// @sa CCompressionIStream, CCompressionOStream
-    unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
+    size_t GetProcessedSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetProcessedSize(dir);
     };
     /// Get total number of bytes, that "stream_processor" returns.
     /// @sa CCompressionIStream, CCompressionOStream
-    unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
+    size_t GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
     /// Finalize stream's compression/decompression process for read/write.
     /// This function just calls a streambuf Finalize().
-    virtual void Finalize(CCompressionStream::EDirection dir 
-        = CCompressionStream::eReadWrite) {
+    virtual void Finalize(CCompressionStream::EDirection dir = CCompressionStream::eReadWrite) {
         if ( m_StreamBuf ) {
             CCompressionStream::Finalize(dir);
             flush();
         }
     };
+    /// Auxiliary method to read from stream.
+    /// Read up to "len" bytes from the stream into the buffer "buf". 
+    /// Returning value less than "n" mean EOF or error, check stream state bits for details.
+    /// @note Allow to read more than 4GB, that regular read() cannot handle on some platforms.
+    size_t Read(void* buf, size_t len);
+
+    /// Auxiliary method to write into stream.
+    /// Write up "len" bytes from the buffer "buf" into the stream. 
+    /// Returning value less than "n" mean error, check stream state bits for details.
+    /// @note Allow to write more than 4GB, that regular write() cannot handle on some platforms.
+    size_t Write(const void* buf, size_t len);
 
 protected:
     /// Default constructor.
@@ -466,6 +488,7 @@ protected:
     /// @sa CCompressionStream, Create()
     CCompressionIOStream(void) : CNcbiIostream(0) { }
 };
+
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -98,9 +98,12 @@ const size_t kMaxHeaderSize = 512;
 // Macro to check flags
 #define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
 
-// Convert 'size_t' to '[unsigned] int' which used internally in LZO
-#define LIMIT_SIZE_PARAM(value) if (value > (size_t)kMax_Int) value = kMax_Int
-#define LIMIT_SIZE_PARAM_U(value) if (value > kMax_UInt) value = kMax_UInt
+// Limit 'size_t' values to max values of other used types to avoid overflow
+#define LIMIT_SIZE_PARAM_LONG(value)  if (value > (size_t)kMax_Long) value = kMax_Long
+#define LIMIT_SIZE_PARAM_STREAMSIZE(value) \
+    if (value > (size_t)numeric_limits<std::streamsize>::max()) \
+        value = (size_t)numeric_limits<std::streamsize>::max()
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -128,6 +131,10 @@ struct SCompressionParam {
 CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
     : CCompression(level), m_BlockSize(blocksize)
 {
+    if (blocksize > kMax_UInt) {
+        ERR_COMPRESS(41, FormatErrorMessage("CLZOCompression:: block size is too big"));
+        return;
+    }
     m_Param.reset(new SCompressionParam);
     m_Param->workmem = 0;
     return;
@@ -155,7 +162,7 @@ bool CLZOCompression::Initialize(void)
 CCompression::ELevel CLZOCompression::GetLevel(void) const
 {
     CCompression::ELevel level = CCompression::GetLevel();
-    // LZO do not support a zero compression level -- make conversion 
+    // LZO does not support a zero compression level -- make conversion 
     if ( level == eLevel_NoCompression) {
         return eLevel_Lowest;
     }
@@ -232,13 +239,11 @@ size_t s_CheckLZOHeader(const void* src_buf, size_t src_len,
             *lzo_flags |= CLZOCompression::fChecksum;
         }
     }
-
     // File modification time
     if (info  &&  ((flags & F_MTIME) != 0)  &&  (pos + 4 < src_len)) {
         info->mtime = CCompressionUtil::GetUI4(buf + pos);
         pos += 4;
     }
-
     // Skip the original file name
     if ((flags & F_NAME) > 0) {
         size_t start = pos;
@@ -268,6 +273,8 @@ static size_t s_WriteLZOHeader(void* src_buf, size_t buf_size,
     if (buf_size < kMinHeaderSize) {
         return 0;
     }
+    _ASSERT(block_size <= kMax_UInt);
+
     char* buf = (char*)src_buf;
     memset(buf, 0, kMinHeaderSize);
     memcpy(buf, kMagic, kMagicSize);
@@ -286,8 +293,7 @@ static size_t s_WriteLZOHeader(void* src_buf, size_t buf_size,
     }
     // Original file name.
     // Store it only if buffer have enough size.
-    if ( info  &&  !info->name.empty()  &&
-         buf_size > (info->name.length() + size) ) {
+    if ( info  &&  !info->name.empty()  &&  buf_size > (info->name.length() + size) ) {
         flags |= F_NAME;
         strncpy((char*)buf + size, info->name.data(), info->name.length());
         size += info->name.length();
@@ -295,11 +301,9 @@ static size_t s_WriteLZOHeader(void* src_buf, size_t buf_size,
     }
     // File comment.
     // Store it only if buffer have enough size.
-    if ( info  &&  !info->comment.empty()  &&
-         buf_size > (info->comment.length() + size) ) {
+    if ( info  &&  !info->comment.empty()  &&  buf_size > (info->comment.length() + size) ) {
         flags |= F_COMMENT;
-        strncpy((char*)buf + size, info->comment.data(),
-                info->comment.length());
+        strncpy((char*)buf + size, info->comment.data(), info->comment.length());
         size += info->comment.length();
         buf[size++] = '\0';
     }
@@ -378,6 +382,7 @@ int CLZOCompression::CompressBlockStream(const void*   src_buf,
     }
     // Compress buffer
     int errcode = CompressBlock(src_buf, src_len, (lzo_bytep)dst_buf + offset, dst_len);
+    _ASSERT(*dst_len <= kMax_UInt);
 
     // Write size of compressed block
     CCompressionUtil::StoreUI4(dst_buf, (unsigned long)(*dst_len));
@@ -472,43 +477,39 @@ bool CLZOCompression::CompressBuffer(
     *dst_len = 0;
 
     // Check parameters
-    if ( !src_len ) {
-        if ( !F_ISSET(fAllowEmptyData) ) {
-            src_buf = NULL;
-        }
+    if (!src_len  &&  !F_ISSET(fAllowEmptyData)) {
+        src_buf = NULL;
     }
-    if ( !src_buf ) {
+    if (!src_buf || !dst_buf || !dst_len) {
         SetError(LZO_E_ERROR, "bad argument");
         ERR_COMPRESS(35, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
-    if ( !dst_buf || !dst_len ) {
-        SetError(LZO_E_ERROR, "bad argument");
-        ERR_COMPRESS(35, FormatErrorMessage("CLZOCompression::CompressBuffer"));
-        return false;
-    }
-    if (src_len > kMax_UInt) {
-        SetError(LZO_E_ERROR, "size of the source buffer is too big");
-        ERR_COMPRESS(36, FormatErrorMessage("CLZOCompression::CompressBuffer"));
-        return false;
-    }
-    LIMIT_SIZE_PARAM_U(dst_size);
 
     // Determine block size used for compression.
     // For small amount of data use blocksize equal to the source
-    // buffer size, for big -- use specified block size (m_BlockSize).
+    // buffer size, for bigger -- use specified block size (m_BlockSize).
     // This can help to reduce memory usage at decompression stage.
     size_t block_size = src_len;
-    if ( F_ISSET(fStreamFormat)  &&  block_size > m_BlockSize) {
-        block_size = m_BlockSize;
+    if ( F_ISSET(fStreamFormat) ) {
+        if ( block_size > m_BlockSize) {
+            block_size = m_BlockSize;
+        }
+    } else {
+        if (src_len > kMax_UInt) {
+            SetError(LZO_E_NOT_COMPRESSIBLE,
+                     "size of the source buffer is too big, " \
+                     "please use CLZOCompression::fStreamFormat flag");
+        }
     }
-
     // LZO doesn't have "safe" algorithm for compression, so we should
     // check output buffer size to avoid memory overrun.
     if ( dst_size < EstimateCompressionBufferSize(src_len, block_size) ) {
-        SetError(LZO_E_OUTPUT_OVERRUN,
-                 GetLZOErrorDescription(LZO_E_OUTPUT_OVERRUN));
-        ERR_COMPRESS(37, FormatErrorMessage("CLZOCompression::CompressBuffer"));
+        SetError(LZO_E_OUTPUT_OVERRUN, GetLZOErrorDescription(LZO_E_OUTPUT_OVERRUN));
+    }
+
+    if ( GetErrorCode() != LZO_E_OK ) {
+        ERR_COMPRESS(36, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
 
@@ -579,26 +580,15 @@ bool CLZOCompression::DecompressBuffer(
         }
         src_buf = NULL;
     }
-    if ( !src_buf ) {
+    if (!src_buf || !dst_buf || !dst_len) {
         SetError(LZO_E_ERROR, "bad argument");
         ERR_COMPRESS(85, FormatErrorMessage("CLZOCompression::DecompressBuffer"));
         return false;
     }
-    if ( !dst_buf || !dst_len ) {
-        SetError(LZO_E_ERROR, "bad argument");
-        ERR_COMPRESS(85, FormatErrorMessage("CLZOCompression::DecompressBuffer"));
-        return false;
-    }
-    if (src_len > kMax_UInt) {
-        SetError(LZO_E_ERROR, "size of the source buffer is too big");
-        ERR_COMPRESS(39, FormatErrorMessage("CLZOCompression::DecompressBuffer"));
-        return false;
-    }
-    LIMIT_SIZE_PARAM_U(dst_size);
 
     // Size of destination buffer
     size_t out_len = dst_size;
-    int errcode = LZO_E_OK;
+    int errcode = LZO_E_ERROR;
     bool is_first_block = true;
 
     if ( F_ISSET(fStreamFormat) ) {
@@ -634,10 +624,17 @@ bool CLZOCompression::DecompressBuffer(
             *dst_len = (char*)dst - (char*)dst_buf;
         }
     } else {
-        // Decompress whole buffer as one big block
-        errcode = DecompressBlock((lzo_bytep)src_buf, src_len,
-                                  (lzo_bytep)dst_buf, &out_len, GetFlags());
-        *dst_len = out_len;
+        if (src_len > kMax_UInt) {
+            errcode = LZO_E_NOT_COMPRESSIBLE;
+            SetError(LZO_E_NOT_COMPRESSIBLE,
+                     "size of the source data is too big, " \
+                     "probably you forgot to specify CLZOCompression::fStreamFormat flag");
+        } else {
+            // Decompress whole buffer as one big block
+            errcode = DecompressBlock((lzo_bytep)src_buf, src_len,
+                                      (lzo_bytep)dst_buf, &out_len, GetFlags());
+            *dst_len = out_len;
+        }
     }
     // Check on errors
     if ( errcode != LZO_E_OK) {
@@ -658,8 +655,7 @@ bool CLZOCompression::DecompressBuffer(
 // Applicable for next algorithms:
 //     LZO1, LZO1A, LZO1B, LZO1C, LZO1F, LZO1X, LZO1Y, LZO1Z.
 
-size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
-                                                      size_t block_size)
+size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len, size_t block_size)
 {
     return EstimateCompressionBufferSize(src_len, block_size, GetFlags());
 }
@@ -848,8 +844,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode)
 }
 
 
-bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
-                               SFileInfo* info)
+bool CLZOCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* info)
 {
     m_Mode = mode;
 
@@ -859,8 +854,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
                                   IOS_BASE::in | IOS_BASE::binary);
     } else {
         m_File = new CNcbiFstream(file_name.c_str(),
-                                  IOS_BASE::out | IOS_BASE::binary |
-                                  IOS_BASE::trunc);
+                                  IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
     }
     if ( !m_File->good() ) {
         Close();
@@ -919,7 +913,8 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
 
 long CLZOCompressionFile::Read(void* buf, size_t len)
 {
-    LIMIT_SIZE_PARAM(len);
+    LIMIT_SIZE_PARAM_LONG(len);
+    LIMIT_SIZE_PARAM_STREAMSIZE(len);
 
     if ( !m_Stream  ||  m_Mode != eMode_Read ) {
         NCBI_THROW(CCompressionException, eCompressionFile, 
@@ -957,8 +952,9 @@ long CLZOCompressionFile::Write(const void* buf, size_t len)
     if (len == 0) {
         return 0;
     }
-    LIMIT_SIZE_PARAM(len);
-
+    LIMIT_SIZE_PARAM_LONG(len);
+    LIMIT_SIZE_PARAM_STREAMSIZE(len);
+    
     m_Stream->write((char*)buf, len);
     if ( m_Stream->good() ) {
         return (long)len;
@@ -1027,8 +1023,7 @@ void CLZOBuffer::ResetBuffer(size_t in_bufsize, size_t out_bufsize)
 //
 
 
-CLZOCompressor::CLZOCompressor(
-                  ELevel level, size_t blocksize, TLZOFlags flags)
+CLZOCompressor::CLZOCompressor(ELevel level, size_t blocksize, TLZOFlags flags)
     : CLZOCompression(level, blocksize), m_NeedWriteHeader(true)
 {
     SetFlags(flags | fStreamFormat);
@@ -1075,23 +1070,15 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
                       /* out */            size_t* out_avail)
 {
     *out_avail = 0;
-    if (in_len > kMax_UInt) {
-        SetError(LZO_E_ERROR, "size of the source buffer is too big");
-        ERR_COMPRESS(41, FormatErrorMessage("CLZOCompressor::Process"));
-        return eStatus_Error;
-    }
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
     CCompressionProcessor::EStatus status = eStatus_Success;
 
     // Write file header
     if ( m_NeedWriteHeader ) {
         size_t header_len = s_WriteLZOHeader(m_OutEndPtr, m_OutSize,
-                                             m_BlockSize,
-                                             GetFlags(), &m_FileInfo);
+                                             m_BlockSize, GetFlags(), &m_FileInfo);
         if (!header_len) {
             SetError(-1, "Cannot write LZO header");
             ERR_COMPRESS(42, FormatErrorMessage("LZOCompressor::Process"));
@@ -1108,7 +1095,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
         memcpy(m_InBuf + m_InLen, in_buf, n);
         *in_avail = in_len - n;
         m_InLen += n;
-        IncreaseProcessedSize((unsigned long)n);
+        IncreaseProcessedSize(n);
     } else {
         // New data has not processed
         *in_avail = in_len;
@@ -1138,8 +1125,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Flush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
+    
     // If we have some data in the output cache buffer -- return it
     if ( m_OutEndPtr != m_OutBegPtr ) {
         if ( !out_size ) {
@@ -1149,7 +1135,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Flush(
         memcpy(out_buf, m_OutBegPtr, n);
         *out_avail = n;
         m_OutBegPtr += n;
-        IncreaseOutputSize((unsigned long)n);
+        IncreaseOutputSize(n);
         // Here is still some data in the output cache buffer
         if (m_OutBegPtr != m_OutEndPtr) {
             return eStatus_Overflow;
@@ -1170,8 +1156,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
+    
     // If we have some already processed data in the output cache buffer
     if ( m_OutEndPtr != m_OutBegPtr ) {
         EStatus status = Flush(out_buf, out_size, out_avail);
@@ -1200,7 +1185,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
                                              GetFlags(), &m_FileInfo);
         if (!header_len) {
             SetError(-1, "Cannot write LZO header");
-            ERR_COMPRESS(42, FormatErrorMessage("LZOCompressor::Process"));
+            ERR_COMPRESS(44, FormatErrorMessage("LZOCompressor::Process"));
             return eStatus_Error;
         }
         m_OutEndPtr += header_len;
@@ -1300,17 +1285,10 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                       /* out */            size_t* out_avail)
 {
     *out_avail = 0;
-    if (in_len > kMax_UInt) {
-        SetError(LZO_E_ERROR, "size of the source buffer is too big");
-        ERR_COMPRESS(44, FormatErrorMessage("CLZODecompressor::Process"));
-        return eStatus_Error;
-    }
-    *in_avail = in_len;
+    *in_avail  = in_len;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
     CCompressionProcessor::EStatus status = eStatus_Success;
 
     try {
@@ -1321,17 +1299,15 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 size_t n = min(m_HeaderLen - m_Cache.size(), in_len);
                 m_Cache.append(in_buf, n);
                 *in_avail = in_len - n;
-                IncreaseProcessedSize((unsigned long)n);
+                IncreaseProcessedSize(n);
                 if ( m_Cache.size() < kMaxHeaderSize ) {
                     // All data was cached - success state
                     return eStatus_Success;
                 }
             }
             // Check header
-            size_t header_len = s_CheckLZOHeader(m_Cache.data(),
-                                                 m_Cache.size(),
-                                                 &m_BlockSize,
-                                                 &m_HeaderFlags);
+            size_t header_len = s_CheckLZOHeader(m_Cache.data(), m_Cache.size(),
+                                                 &m_BlockSize, &m_HeaderFlags);
             if ( !header_len ) {
                 if ( !F_ISSET(fAllowTransparentRead) ) {
                     SetError(LZO_E_ERROR, "LZO header missing");
@@ -1344,10 +1320,10 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
             // Initialize buffers. The input buffer should store
             // the block of data compressed with the same block size.
             // Output buffer should have size of uncompressed block.
-            ResetBuffer(EstimateCompressionBufferSize(m_BlockSize, 
-                                                      m_BlockSize,
-                                                      m_HeaderFlags),
-                                                      m_BlockSize);
+            ResetBuffer(
+               EstimateCompressionBufferSize(m_BlockSize, m_BlockSize, m_HeaderFlags),
+               m_BlockSize
+            );
             // Move unprocessed data from cache to begin of the buffer.
             m_InLen = m_Cache.size() - header_len;
             memmove(m_InBuf, m_Cache.data() + header_len, m_InLen);
@@ -1369,10 +1345,10 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 n = min(*in_avail, out_size);
                 memcpy(out_buf, in_buf + in_len - *in_avail, n);
                 *in_avail  -= n;
-                IncreaseProcessedSize((unsigned long)n);
+                IncreaseProcessedSize(n);
             }
             *out_avail = n;
-            IncreaseOutputSize((unsigned long)n);
+            IncreaseOutputSize(n);
             return eStatus_Success;
         }
 
@@ -1390,7 +1366,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 memcpy(m_InBuf + m_InLen, in_buf + in_len - *in_avail, n);
                 *in_avail -= n;
                 m_InLen += n;
-                IncreaseProcessedSize((unsigned long)n);
+                IncreaseProcessedSize(n);
             }
             if ( m_InLen >= 4 ) {
                 size_t block_len = CCompressionUtil::GetUI4(m_InBuf);
@@ -1418,12 +1394,11 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
         if ( m_BlockLen ) {
             // Cache data until whole block is not in the input buffer
             if ( m_InLen < m_BlockLen ) {
-                // Fill it in using data from 'in_buf'
                 size_t n = min(m_BlockLen - m_InLen, *in_avail);
                 memcpy(m_InBuf + m_InLen, in_buf + in_len - *in_avail, n);
                 *in_avail -= n;
                 m_InLen += n;
-                IncreaseProcessedSize((unsigned long)n);
+                IncreaseProcessedSize(n);
             }
             // If the input cache buffer have a full block and
             // no data in the output cache buffer -- decompress it
@@ -1456,15 +1431,14 @@ CCompressionProcessor::EStatus CLZODecompressor::Flush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
+   
     // If we have some data in the output cache buffer -- return it
     if ( m_DecompressMode != eMode_Unknown  &&  m_OutEndPtr != m_OutBegPtr ) {
         size_t n = min((size_t)(m_OutEndPtr - m_OutBegPtr), out_size);
         memcpy(out_buf, m_OutBegPtr, n);
         *out_avail = n;
         m_OutBegPtr += n;
-        IncreaseOutputSize((unsigned long)n);
+        IncreaseOutputSize(n);
         // Here is still some data in the output cache buffer
         if (m_OutBegPtr != m_OutEndPtr) {
             return eStatus_Overflow;
@@ -1485,8 +1459,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(out_size);
-
+    
     if ( m_DecompressMode == eMode_Unknown ) {
         if (m_Cache.size() < kMinHeaderSize) {
             if ( !m_Cache.size()  &&  F_ISSET(fAllowEmptyData) ) {
@@ -1500,8 +1473,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
             CCompressionProcessor::EStatus status = eStatus_Success;
             while (status == eStatus_Success) {
                 size_t x_out_avail = 0;
-                status = Process(0, 0, out_buf, out_size,
-                                 &in_avail, &x_out_avail);
+                status = Process(0, 0, out_buf, out_size, &in_avail, &x_out_avail);
                 if (status == eStatus_Success  &&  !x_out_avail) {
                     return eStatus_Error;
                 }

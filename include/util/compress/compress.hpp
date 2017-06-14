@@ -286,6 +286,8 @@ public:
 
     /// Writes the given number of uncompressed bytes into the compressed file.
     /// Return the number of bytes actually written or -1 for error.
+    /// Returned value can be less than "len", especially if it exceed
+    /// numeric_limits<long>::max(), you should repeat writing for remaining portion.
     virtual long Write(const void* buf, size_t len) = 0;
 
     /// Flushes all pending output if necessary, closes the compressed file.
@@ -338,8 +340,8 @@ public:
     bool IsBusy(void) const;
 
     // Return number of processed/output bytes.
-    unsigned long GetProcessedSize(void);
-    unsigned long GetOutputSize(void);
+    size_t GetProcessedSize(void);
+    size_t GetOutputSize(void);
 
 protected:
     /// Initialize the internal stream state for compression/decompression.
@@ -395,14 +397,13 @@ protected:
     void SetBusy(bool busy = true);
 
     // Increase number of processed/output bytes.
-    void IncreaseProcessedSize(unsigned long n_bytes);
-    void IncreaseOutputSize(unsigned long n_bytes);
+    void IncreaseProcessedSize(size_t n_bytes);
+    void IncreaseOutputSize(size_t n_bytes);
 
 private:
-    unsigned long m_ProcessedSize; //< The number of processed bytes
-    unsigned long m_OutputSize;    //< The number of output bytes
-    bool          m_Busy;          //< Is true if compressor is ready to begin
-                                   //< next session
+    size_t  m_ProcessedSize;  //< The number of processed bytes
+    size_t  m_OutputSize;     //< The number of output bytes
+    bool    m_Busy;           //< Is true if compressor is ready to begin next session
     // Friend classes
     friend class CCompressionStream;
     friend class CCompressionStreambuf;
@@ -526,25 +527,25 @@ void CCompressionProcessor::SetBusy(bool busy)
 }
 
 inline
-void CCompressionProcessor::IncreaseProcessedSize(unsigned long n_bytes)
+void CCompressionProcessor::IncreaseProcessedSize(size_t n_bytes)
 {
     m_ProcessedSize += n_bytes;
 }
 
 inline
-void CCompressionProcessor::IncreaseOutputSize(unsigned long n_bytes)
+void CCompressionProcessor::IncreaseOutputSize(size_t n_bytes)
 {
     m_OutputSize += n_bytes;
 }
 
 inline
-unsigned long CCompressionProcessor::GetProcessedSize(void)
+size_t CCompressionProcessor::GetProcessedSize(void)
 {
     return m_ProcessedSize;
 }
 
 inline
-unsigned long CCompressionProcessor::GetOutputSize(void)
+size_t CCompressionProcessor::GetOutputSize(void)
 {
     return m_OutputSize;
 }

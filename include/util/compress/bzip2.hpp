@@ -166,12 +166,13 @@ public:
     ///   Size of data in source buffer.
     /// @param dst_buf
     ///   Destination buffer.
-    /// @param dst_len
+    /// @param dst_size
     ///   Size of destination buffer.
+    ///   It must be large enough to hold all of the uncompressed data for the operation to complete.
     /// @param dst_len
     ///   Size of decompressed data in destination buffer.
     /// @return
-    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   Return TRUE if operation was successfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains decompressed data of dst_len size.
     /// @sa
     ///   CompressBuffer
@@ -294,7 +295,7 @@ public:
     ///    Number of bytes to read.
     /// @return
     ///   Number of bytes actually read (0 for end of file, -1 for error).
-    ///   The number of really readed bytes can be less than requested.
+    ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
     virtual long Read(void* buf, size_t len);

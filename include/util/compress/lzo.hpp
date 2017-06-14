@@ -37,6 +37,13 @@
 /// (de)compression in real-time. This means it favours speed
 /// over compression ratio.
 ///
+/// LZO is good to compress some sort of data only, that have a limited
+/// set of characters or many recurring sequences. It is not suitable
+/// for a random data, that limits its usage. It is better to test 
+/// compression on yours own data before making decision to use LZO.
+/// Use zlib if you need a more universal and robust solution, that is also
+/// slower and needs more memory.
+
 /// We don't support all possible algorithms, implemented in LZO.
 /// Only LZO1X is used in this API. Author of LZO says that it is 
 /// often the best choice of all.
@@ -134,6 +141,9 @@ public:
         ///< Use this flag with DecompressBuffer() to decompress data,
         ///< compressed using streams, or compress data with CompressBuffer(),
         ///< that can be decompressed using decompression stream.
+        ///< Also, this flag is reguired to compress data > 4GB.
+        ///< LZO default single block compression cannot handle such large
+        ///< amount of data on some platforms.
         fStreamFormat         = (1<<3),
         ///< Store file information like file name and file modification date
         ///< of the compressed file into the file/stream.
@@ -167,10 +177,10 @@ public:
 
     /// Get compression level.
     ///
-    /// NOTE: LZO library used only 2 compression levels for used in this API
-    ///       LZO1X algorithm. So, all levels will be translated only to 2 real
-    ///       value. We use LZO1X-999 for "eLevel_Best", and LZO1X-1 for
-    ///       all other levels of compression.
+    /// NOTE: This API use only two compression levels for LZO method.
+    ///       So, all compression levels will be translated only into 2
+    ///       real values. We use LZO1X-999 for "eLevel_Best", and 
+    ///       LZO1X-1 for all other levels of compression.
     virtual ELevel GetLevel(void) const;
 
     /// Returns default compression level for a compression algorithm.
@@ -183,8 +193,6 @@ public:
 
     /// Compress data in the buffer.
     ///
-    /// Altogether, the total size of the destination buffer must be little
-    /// more then size of the source buffer.
     /// @param src_buf
     ///   [in] Source buffer.
     /// @param src_len
@@ -193,11 +201,17 @@ public:
     ///   [in] Destination buffer.
     /// @param dst_size
     ///   [in] Size of destination buffer.
+    ///    The size of the destination buffer must be a little more
+    ///    then size of the source buffer.
     /// @param dst_len
     ///   [out] Size of compressed data in destination buffer.
     /// @return
     ///   Return TRUE if operation was succesfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains compressed data of dst_len size.
+    /// @note
+    ///   Use fStreamFormat flag to compress data > 4GB.
+    ///   LZO default single block compression cannot handle such large
+    ///   amount of data on some platforms.
     /// @sa
     ///   EstimateCompressionBufferSize, DecompressBuffer
     virtual bool CompressBuffer(
@@ -214,13 +228,17 @@ public:
     ///   Size of data in source buffer.
     /// @param dst_buf
     ///   Destination buffer.
-    /// @param dst_len
+    /// @param dst_size
     ///   Size of destination buffer.
+    ///   It must be large enough to hold all of the uncompressed data for the operation to complete.
     /// @param dst_len
     ///   Size of decompressed data in destination buffer.
     /// @return
-    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   Return TRUE if operation was successfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains decompressed data of dst_len size.
+    /// @note
+    ///   Use fStreamFormat flag to decompress data, compressed using streams,
+    ///   or CompressBuffer() with this flag.
     /// @sa
     ///   CompressBuffer
     virtual bool DecompressBuffer(
@@ -373,15 +391,15 @@ public:
     CLZOCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level            = eLevel_Default,
-        size_t        blocksize        = kLZODefaultBlockSize
+        ELevel        level     = eLevel_Default,
+        size_t        blocksize = kLZODefaultBlockSize
     );
 
     /// Conventional constructor.
     /// For a special parameters description see CLZOCompression.
     CLZOCompressionFile(
-        ELevel        level            = eLevel_Default,
-        size_t        blocksize        = kLZODefaultBlockSize
+        ELevel        level     = eLevel_Default,
+        size_t        blocksize = kLZODefaultBlockSize
     );
 
     /// Destructor
@@ -427,7 +445,7 @@ public:
     ///    Number of bytes to read.
     /// @return
     ///   Number of bytes actually read (0 for end of file, -1 for error).
-    ///   The number of really readed bytes can be less than requested.
+    ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
     virtual long Read(void* buf, size_t len);
@@ -442,6 +460,7 @@ public:
     ///    Number of bytes to write.
     /// @return
     ///   Number of bytes actually written or -1 for error.
+    ///   Returned value can be less than "len".
     /// @sa
     ///   Open, Read, Close
     virtual long Write(const void* buf, size_t len);
@@ -493,7 +512,7 @@ protected:
     void ResetBuffer(size_t in_bufsize, size_t out_bufsize);
 
 private:
-    size_t          m_Size;      ///< Size of In/Out buffers.
+    size_t          m_Size;      ///< Size of in/out buffers.
     AutoArray<char> m_Buf;       ///< Buffer for caching (size of m_Size*2).
     char*           m_InBuf;     ///< Pointer to input buffer.
     size_t          m_InSize;    ///< Size of the input buffer.
@@ -599,13 +618,13 @@ protected:
     bool DecompressCache(void);
 
 private:
-    size_t  m_BlockLen;        ///< Length of the compressed data in the block
-    string  m_Cache;           ///< Buffer to cache header.
+    size_t    m_BlockLen;     ///< Length of the compressed data in the block
+    string    m_Cache;        ///< Buffer to cache header.
 
     // Parameters read from header (used for compression).
     // See fStreamFormat flag description.
-    size_t       m_HeaderLen;   ///< Length of the header.
-    unsigned int m_HeaderFlags; ///< Flags used for compression.
+    size_t    m_HeaderLen;    ///< Length of the header.
+    TLZOFlags m_HeaderFlags;  ///< Flags used for compression.
 };
 
 

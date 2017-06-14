@@ -42,86 +42,16 @@
 
 USING_NCBI_SCOPE;
 
+
+#define KB * NCBI_CONST_UINT8(1024)
+
 /// Number of tests.
 const size_t  kTestCount = 3;
 /// Length of data buffers for tests.
-const size_t  kDataLength[kTestCount] = {20, 16*1024, 40*1024};
-/// Output buffer length. ~20% more than maximum value from kDataLength[].
-const size_t  kBufLen = 45*1024;  
-/// Maximum number of bytes to read.
-const size_t  kReadMax = kBufLen;
+const size_t  kTests[kTestCount] = {20, 16 KB, 40 KB};
+/// Output buffer length. ~20% more than maximum value from kTests[].
+const size_t  kBufLen = 45 KB;
 
-const int           kUnknownErr = kMax_Int;
-const unsigned int  kUnknown    = kMax_UInt;
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// The template class for compressor test
-//
-
-template<class TCompression,
-         class TCompressionFile,
-         class TStreamCompressor,
-         class TStreamDecompressor>
-class CTestCompressor
-{
-public:
-    // Run test for the template compressor usind data from "src_buf"
-    static void Run(int idx, const char* src_buf, size_t data_len);
-
-    // Print out compress/decompress status
-    enum EPrintType { 
-        eCompress,
-        eDecompress 
-    };
-    static void PrintResult(EPrintType type, int last_errcode,
-                            size_t src_len, size_t dst_len, size_t out_len);
-};
-
-
-/// Print OK message.
-#define OK _TRACE("OK\n")
-
-/// Initialize destination buffers.
-#define INIT_BUFFERS  memset(dst_buf, 0, kBufLen); memset(cmp_buf, 0, kBufLen)
-
-
-template<class TCompression,
-    class TCompressionFile,
-    class TStreamCompressor,
-    class TStreamDecompressor>
-void CTestCompressor<TCompression, TCompressionFile,
-    TStreamCompressor, TStreamDecompressor>
-    ::Run(int idx, const char* src_buf, size_t kDataLen)
-{
-    const string kFileName_str = "compressed.file." + NStr::IntToString(idx);
-    const char*  kFileName = kFileName_str.c_str();
-#   include "test_compress_run.inl"
-}
-
-
-template<class TCompression,
-         class TCompressionFile,
-         class TStreamCompressor,
-         class TStreamDecompressor>
-void CTestCompressor<TCompression, TCompressionFile,
-                     TStreamCompressor, TStreamDecompressor>
-    ::PrintResult(EPrintType type, int last_errcode, 
-                  size_t src_len, size_t dst_len, size_t out_len)
-{
-    _TRACE(((type == eCompress) ? "Compress   ": "Decompress ")
-           << "errcode = "
-           << ((last_errcode == kUnknownErr) ? 
-                  "?" : NStr::IntToString(last_errcode)) << ", "
-           << ((src_len == kUnknown) ? 
-                  "?" : NStr::SizetToString(src_len)) << " -> "
-           << ((out_len == kUnknown) ? 
-                  "?" : NStr::SizetToString(out_len)) << ", limit "
-           << ((dst_len == kUnknown) ? 
-                  "?" : NStr::SizetToString(dst_len))
-    );
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -131,12 +61,44 @@ void CTestCompressor<TCompression, TCompressionFile,
 
 class CTest : public CThreadedApp
 {
-    typedef CThreadedApp TParent;
 public:
     bool Thread_Init(int idx);
     bool Thread_Run(int idx);
     bool TestApp_Args(CArgDescriptions& args);
+
+public:
+    // Test specified compression method
+    template<class TCompression,
+             class TCompressionFile,
+             class TStreamCompressor,
+             class TStreamDecompressor>
+    void TestMethod(int idx, const char* src_buf, size_t src_len, size_t buf_len);
+
+    // Print out compress/decompress status
+    enum EPrintType { 
+        eCompress,
+        eDecompress 
+    };
+    void PrintResult(EPrintType type, int last_errcode,
+                     size_t src_len, size_t dst_len, size_t out_len);
+
+private:
+    // Auxiliary methods
+    CNcbiIos* x_CreateIStream(const string& filename, const char* buf, size_t len, size_t buf_len);
+    void x_CreateFile(const string& filename, const char* buf, size_t len);
+
+private:
+    // MT test doesn't use "big data" test, so we have next members to 
+    // compatibility with ST test
+    bool   m_AllowIstrstream;   // allow using CNcbiIstrstream
+    bool   m_AllowOstrstream;   // allow using CNcbiOstrstream
+    bool   m_AllowStrstream;    // allow using CNcbiStrstream
+    string m_SrcFile;           // file with source data
 };
+
+
+#include "test_compress_util.inl"
+
 
 
 bool CTest::TestApp_Args(CArgDescriptions& args)
@@ -150,10 +112,17 @@ bool CTest::TestApp_Args(CArgDescriptions& args)
     return true;
 }
 
+
 bool CTest::Thread_Init(int)
 {
     SetDiagPostLevel(eDiag_Error);
-    GetDiagContext().SetOldPostFormat(false);
+    // To see all output, uncomment next line:
+    //SetDiagPostLevel(eDiag_Trace);
+
+    m_AllowIstrstream = true;
+    m_AllowOstrstream = true;
+    m_AllowStrstream  = true;
+
     return true;
 }
 
@@ -164,19 +133,36 @@ bool CTest::Thread_Run(int idx)
     const CArgs& args = GetArgs();
     string test = args["lib"].AsString();
 
+    // Define available tests
+
+    bool bz2 = (test == "all" || test == "bz2");
+    bool z   = (test == "all" || test == "z");
+    bool lzo = (test == "all" || test == "lzo");
+#if !defined(HAVE_LIBLZO)
+    if (lzo) {
+        ERR_POST(Warning << "LZO is not available on this platform, ignored.");
+        lzo = false;
+    }
+#endif
+
     // Set a random starting point
-    unsigned int seed = (unsigned int)time(0) + idx*999;
-    LOG_POST("Random seed = " << seed);
+    unsigned int seed = (unsigned int)time(0);
+    ERR_POST(Info << "Random seed = " << seed);
     srand(seed);
 
-    // Preparing a data for compression
+    // Preparing data for compression
+    ERR_POST(Trace << "Creating test data...");
     AutoArray<char> src_buf_arr(kBufLen + 1 /* for possible '\0' */);
     char* src_buf = src_buf_arr.get();
     assert(src_buf);
 
-    for (size_t i=0; i<kBufLen; i++) {
+    for (size_t i = 0; i < kBufLen; i += 2) {
         // Use a set of 25 chars [A-Z]
-        src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
+        // NOTE: manipulator tests don't allow '\0'.
+        src_buf[i]   = (char)(65+(double)rand()/RAND_MAX*(90-65));
+        // Make data more predictable for better compression,
+        // especially for LZO, that is bad on a random data.
+        src_buf[i+1] = src_buf[i] + 1;
     }
     // Modify first bytes to fixed value, this possible will prevent decoders
     // to treat random text data as compressed data.
@@ -185,34 +171,38 @@ bool CTest::Thread_Run(int idx)
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
-        // Some test require zero-terminated data.
-        size_t len = kDataLength[i];
+        // Some test require zero-terminated data (manipulators).
+        size_t len   = kTests[i];
         char   saved = src_buf[len];
         src_buf[len] = '\0';
 
-        _TRACE("====================================\n" << 
-               "Data size = " << kDataLength[i] << "\n\n");
+        ERR_POST(Trace << "====================================");
+        ERR_POST(Trace << "Data size = " << len);
 
-        if (test == "all"  ||  test == "z") {
-            _TRACE("-------------- Zlib ----------------\n");
-            CTestCompressor<CZipCompression, CZipCompressionFile,
-                            CZipStreamCompressor, CZipStreamDecompressor>
-                ::Run(idx, src_buf, kDataLength[i]);
-        }
-        if (test == "all"  ||  test == "bz2") {
-            _TRACE("-------------- BZip2 ---------------\n");
-            CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
-                            CBZip2StreamCompressor, CBZip2StreamDecompressor>
-                ::Run(idx, src_buf, kDataLength[i]);
+        if ( bz2 ) {
+            ERR_POST(Trace << "-------------- BZip2 ---------------");
+            TestMethod<CBZip2Compression,
+                       CBZip2CompressionFile,
+                       CBZip2StreamCompressor,
+                       CBZip2StreamDecompressor> (idx, src_buf, len, kBufLen);
         }
 #if defined(HAVE_LIBLZO)
-        if (test == "all"  ||  test == "lzo") {
-            _TRACE("-------------- LZO -----------------\n");
-            CTestCompressor<CLZOCompression, CLZOCompressionFile,
-                            CLZOStreamCompressor, CLZOStreamDecompressor>
-                ::Run(idx, src_buf, kDataLength[i]);
+        if ( lzo ) {
+            ERR_POST(Trace << "-------------- LZO -----------------");
+            TestMethod<CLZOCompression,
+                       CLZOCompressionFile,
+                       CLZOStreamCompressor,
+                       CLZOStreamDecompressor> (idx, src_buf, len, kBufLen);
         }
 #endif
+        if ( z ) {
+            ERR_POST(Trace << "-------------- Zlib ----------------");
+            TestMethod<CZipCompression,
+                       CZipCompressionFile,
+                       CZipStreamCompressor,
+                       CZipStreamDecompressor> (idx, src_buf, len, kBufLen);
+        }
+
         // Restore saved character
         src_buf[len] = saved;
     }
@@ -220,6 +210,47 @@ bool CTest::Thread_Run(int idx)
     _TRACE("\nTEST execution completed successfully!\n");
     return true;
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Test specified compression method
+//
+
+// Print OK message.
+#define OK          ERR_POST(Trace << "OK")
+#define OK_MSG(msg) ERR_POST(Trace << msg << " - OK")
+
+// Initialize destination buffers.
+#define INIT_BUFFERS  memset(dst_buf, 0, buf_len); memset(cmp_buf, 0, buf_len)
+
+
+template<class TCompression,
+         class TCompressionFile,
+         class TStreamCompressor,
+         class TStreamDecompressor>
+void CTest::TestMethod(int idx, const char* src_buf, size_t src_len, size_t buf_len)
+{
+    const string kFileName_str = "test_compress.compressed.file." + NStr::IntToString(idx);
+    const char*  kFileName = kFileName_str.c_str();
+#   include "test_compress_run.inl"
+}
+
+
+void CTest::PrintResult(EPrintType type, int last_errcode, 
+                       size_t src_len, size_t dst_len, size_t out_len)
+{
+    ERR_POST(Trace
+        << string((type == eCompress) ? "Compress   " : "Decompress ")
+        << "errcode = "
+        << ((last_errcode == kUnknownErr) ? "?" : NStr::IntToString(last_errcode)) << ", "
+        << ((src_len == kUnknown) ?         "?" : NStr::SizetToString(src_len)) << " -> "
+        << ((out_len == kUnknown) ?         "?" : NStr::SizetToString(out_len)) << ", limit "
+        << ((dst_len == kUnknown) ?         "?" : NStr::SizetToString(dst_len))
+    );
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////

@@ -114,7 +114,7 @@ public:
         /// if data source contains broken data and API cannot detect that
         /// it is compressed data, that you can get binary instead of
         /// decompressed data. By default this flag is OFF.
-        /// NOTE: zlib v1.1.4 and earlier have a bug in decoding. 
+        /// Note: zlib v1.1.4 and earlier have a bug in decoding. 
         /// In some cases decompressor can produce output data on invalid 
         /// compressed data. So, it is not recommended to use this flag
         /// with old zlib versions.
@@ -174,8 +174,6 @@ public:
 
     /// Compress data in the buffer.
     ///
-    /// Altogether, the total size of the destination buffer must be little
-    /// more then size of the source buffer.
     /// @param src_buf
     ///   Source buffer.
     /// @param src_len
@@ -184,11 +182,13 @@ public:
     ///   Destination buffer.
     /// @param dst_size
     ///   Size of destination buffer.
+    ///   In some cases, small source data or bad compressed data for example,
+    ///   it should be a little more then size of the source buffer.
     /// @param dst_len
     ///   Size of compressed data in destination buffer.
     /// @return
-    ///   Return TRUE if operation was succesfully or FALSE otherwise.
-    ///   On success, 'dst_buf' contains compressed data of dst_len size.
+    ///   Return TRUE if operation was successfully or FALSE otherwise.
+    ///   On success, 'dst_buf' contains compressed data of 'dst_len' size.
     /// @sa
     ///   EstimateCompressionBufferSize, DecompressBuffer
     virtual bool CompressBuffer(
@@ -201,8 +201,8 @@ public:
     ///
     /// @note
     ///   The decompressor stops and returns TRUE, if it find logical
-    ///   end in the compressed data, even not all compressed data was processed. 
-    ///   Only for case of decompressing concatenated gzip files in memory.
+    ///   end in the compressed data, even not all compressed data was processed.
+    ///   Only for case of decompressing concatenated gzip files in memory
     ///   it try to decompress data behind of logical end of recurrent gzip chunk,
     ///   to check on next portion of data. See fCheckFileHeader,
     ///   fAllowConcatenatedGZip and fGZip flags description. 
@@ -212,12 +212,13 @@ public:
     ///   Size of data in source  buffer.
     /// @param dst_buf
     ///   Destination buffer.
+    ///   It must be large enough to hold all of the uncompressed data for the operation to complete.
     /// @param dst_size
     ///   Size of destination buffer.
     /// @param dst_len
     ///   Size of decompressed data in destination buffer.
     /// @return
-    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   Return TRUE if operation was successfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains decompressed data of dst_len size.
     /// @sa
     ///   CompressBuffer, EFlags
@@ -267,7 +268,7 @@ public:
     ///   original file name and timestamp stored in the file.
     ///   UNIX gunzip have -N option for this, but by default
     ///   do not use it, and just creates a decompressed file with
-    ///   the name of the compressed file without .gz extention.
+    ///   the name of the compressed file without .gz extension.
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
@@ -317,7 +318,7 @@ public:
     ///   the compressed file. If fRestoreFileAttr flag is set,
     ///   that original file name and time stamp, stored in
     ///   the file header will be restored. If not, that destination
-    ///   file will be named as archive name without extention.
+    ///   file will be named as archive name without extension.
     virtual bool DecompressFileIntoDir(
         const string& src_file,
         const string& dst_dir, 
@@ -334,8 +335,8 @@ public:
 
 protected:
     /// Format string with last error description.
-    /// If pos equl to 0, that use internal m_Stream's position to report.
-    string FormatErrorMessage(string where, unsigned long pos = 0) const;
+    /// If pos == 0, that use internal m_Stream's position to report.
+    string FormatErrorMessage(string where, size_t pos = 0) const;
 
 protected:
     void*  m_Stream;     ///< Compressor stream.
@@ -393,7 +394,7 @@ public:
     /// @param mode
     ///   File open mode.
     /// @return
-    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
     virtual bool Open(const string& file_name, EMode mode);
@@ -410,7 +411,7 @@ public:
     ///   that it will be used to get information about compressed file
     ///   in the read mode, and set it in the write mode for gzip files.
     /// @return
-    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
     virtual bool Open(const string& file_name, EMode mode, SFileInfo* info);
@@ -425,7 +426,7 @@ public:
     ///    Number of bytes to read.
     /// @return
     ///   Number of bytes actually read (0 for end of file, -1 for error).
-    ///   The number of really readed bytes can be less than requested.
+    ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
     virtual long Read(void* buf, size_t len);
@@ -440,6 +441,7 @@ public:
     ///    Number of bytes to write.
     /// @return
     ///   Number of bytes actually written or -1 for error.
+    ///   Returned value can be less than "len".
     /// @sa
     ///   Open, Read, Close
     virtual long Write(const void* buf, size_t len);
@@ -568,9 +570,9 @@ private:
 /// See util/compress/stream.hpp for details of stream processing.
 /// @note
 ///   Compression/decompression flags (CZipCompression:EFlags) can greatly
-///   affect CZipStreamCompressor behaviour. By default, compressor
+///   affect CZipStreamCompressor behavior. By default, compressor
 ///   produce plain zip data, that is not compatible with gzip/gunzip utility.
-///   Please use appropriate flags in constructor to change default behaviour.
+///   Please use appropriate flags in constructor to change default behavior.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CZipStreamCompressor
@@ -665,8 +667,8 @@ public:
 ///   Opened input stream to scan (should be opened in binary mode).
 /// @param handler
 ///   Call handler's IChunkHandler::OnChunk() method with positions 
-///   of each new gzip file insize stream and size of uncompressed data on
-///   that moment.
+///   of each new gzip file inside a stream and size of uncompressed data
+///   on that moment.
 NCBI_XUTIL_EXPORT
 void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler);
 

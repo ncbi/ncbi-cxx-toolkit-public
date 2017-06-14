@@ -86,12 +86,12 @@ void CCompressionStreamProcessor::Init(void)
             init_status = m_Processor->Init();
         }
     }
-    m_InBuf         = 0;
-    m_OutBuf        = 0;
-    m_Begin         = 0;
-    m_End           = 0;
-    m_LastStatus    = init_status;
-    m_State         = eInit;
+    m_InBuf      = 0;
+    m_OutBuf     = 0;
+    m_Begin      = 0;
+    m_End        = 0;
+    m_LastStatus = init_status;
+    m_State      = eInit;
 }
 
 
@@ -218,8 +218,7 @@ bool CCompressionStream::x_GetError(CCompressionStream::EDirection dir,
 }
 
 
-unsigned long CCompressionStream::x_GetProcessedSize(
-                                  CCompressionStream::EDirection dir)
+size_t CCompressionStream::x_GetProcessedSize(CCompressionStream::EDirection dir)
 {
     CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
     if (!sp  ||  !sp->m_Processor) {
@@ -229,8 +228,7 @@ unsigned long CCompressionStream::x_GetProcessedSize(
 }
 
 
-unsigned long CCompressionStream::x_GetOutputSize(
-                                  CCompressionStream::EDirection dir)
+size_t CCompressionStream::x_GetOutputSize(CCompressionStream::EDirection dir)
 {
     CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
     if (!sp  ||  !sp->m_Processor) {
@@ -239,6 +237,81 @@ unsigned long CCompressionStream::x_GetOutputSize(
     return sp->m_Processor->GetOutputSize();
 }
 
+
+size_t CCompressionIStream::Read(void* buf, size_t len)
+{
+    char* ptr = (char*)buf;
+    const streamsize kMax = numeric_limits<streamsize>::max();
+    while (len) {
+        streamsize n = len > (size_t)kMax ? kMax : (streamsize)len;
+        read(ptr, n);
+        n = gcount();
+        if (n <= 0) {
+            break;
+        }
+        len -= n;
+        ptr += n;
+    }
+    return ptr - (char*)buf;
+}
+
+
+size_t CCompressionOStream::Write(const void* buf, size_t len)
+{
+    if (!good()) {
+        return 0;
+    }
+    const char* ptr = (const char*)buf;
+    const streamsize kMax = numeric_limits<streamsize>::max();
+    while (len) {
+        streamsize n = len > (size_t)kMax ? kMax : (streamsize)len;
+        write(ptr, n);
+        if (!good()) {
+            break;
+        }
+        len -= n;
+        ptr += n;
+    }
+    return ptr - (const char*)buf;
+}
+
+
+size_t CCompressionIOStream::Read(void* buf, size_t len)
+{
+    char* ptr = (char*)buf;
+    const streamsize kMax = numeric_limits<streamsize>::max();
+    while (len) {
+        streamsize n = len > (size_t)kMax ? kMax : (streamsize)len;
+        read(ptr, n);
+        n = gcount();
+        if (n <= 0) {
+            break;
+        }
+        len -= n;
+        ptr += n;
+    }
+    return ptr - (char*)buf;
+}
+
+
+size_t CCompressionIOStream::Write(const void* buf, size_t len)
+{
+    if (!good()) {
+        return 0;
+    }
+    const char* ptr = (const char*)buf;
+    const streamsize kMax = numeric_limits<streamsize>::max();
+    while (len) {
+        streamsize n = len > (size_t)kMax ? kMax : (streamsize)len;
+        write(ptr, n);
+        if (!good()) {
+            break;
+        }
+        len -= n;
+        ptr += n;
+    }
+    return ptr - (const char*)buf;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -278,8 +351,8 @@ CCompressionProcessor::EStatus CTransparentProcessor::Process(
     memcpy(out_buf, in_buf, n);
     *in_avail  = in_len - n;
     *out_avail = n;
-    IncreaseProcessedSize((unsigned long)n);
-    IncreaseOutputSize((unsigned long)n);
+    IncreaseProcessedSize(n);
+    IncreaseOutputSize(n);
     return eStatus_Success;
 }
 
