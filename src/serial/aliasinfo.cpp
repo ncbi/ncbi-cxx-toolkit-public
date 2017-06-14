@@ -61,7 +61,7 @@ typedef CAliasTypeInfoFunctions TFunc;
 
 CAliasTypeInfo::CAliasTypeInfo(const string& name, TTypeInfo type)
     : CParent(name, type->GetSize(), type),
-      m_DataOffset(0)
+      m_DataOffset(0), m_FullAlias(false)
 {
     InitAliasTypeInfoFunctions();
 }
