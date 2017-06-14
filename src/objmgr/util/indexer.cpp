@@ -143,7 +143,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
             m_bsxList.push_back(bsx);
 
             // map from accession string to CBioseqIndex object
-            string& accn = bsx->m_Accession;
+            const string& accn = bsx->GetAccession();
             m_accnIndexMap[accn] = bsx;
         }
     } else if (sep.IsSet()) {
@@ -335,7 +335,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn, int from,
     if (accession.empty()) {
         CRef<CBioseqIndex> bsx = GetBioseqIndex();
         if (bsx) {
-            accession = bsx->m_Accession;
+            accession = bsx->GetAccession();
         }
     }
 
@@ -373,7 +373,7 @@ CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh,
       m_bssp(bssp),
       m_prnt(prnt),
       m_enx(enx),
-      m_scope(enx.m_scope)
+      m_scope(enx.GetScope())
 {
     m_class = CBioseq_set::eClass_not_set;
 
@@ -403,7 +403,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
       m_obsh(obsh),
       m_prnt(prnt),
       m_enx(enx),
-      m_scope(enx.m_scope),
+      m_scope(enx.GetScope()),
       m_surrogate(surrogate)
 {
     m_descsInitialized = false;
@@ -569,7 +569,7 @@ void CBioseqIndex::x_InitDescs (void)
         }
 
         // initialization option can also prevent far feature exploration
-        if ((m_enx.m_flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
+        if ((m_enx.GetFlags() & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
             m_onlyNearFeats = true;
         }
     }
@@ -724,7 +724,7 @@ const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags 
         return m_defline;
     }
 
-    sequence::CDeflineGenerator gen (m_enx.m_topSEH);
+    sequence::CDeflineGenerator gen (m_enx.GetTopSEH());
 
     // Pass original target BioseqHandle if using Bioseq sublocation
     m_defline = gen.GenerateDefline (m_obsh, m_featTree, flags);
@@ -869,7 +869,7 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
     try {
         CMappedFeat best;
         CBioseqIndex& bsx = GetBioseqIndex();
-        best = feature::GetBestGeneForFeat(m_mf, &bsx.m_featTree, 0,
+        best = feature::GetBestGeneForFeat(m_mf, &bsx.GetFeatTree(), 0,
                                            feature::CFeatTree::eBestGene_AllowOverlapped);
         if (best) {
             return bsx.GetFeatIndex(best);

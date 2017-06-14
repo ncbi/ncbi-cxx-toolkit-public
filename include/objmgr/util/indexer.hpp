@@ -81,8 +81,6 @@ class CFeatureIndex;
 // the application.
 class NCBI_XOBJUTIL_EXPORT CSeqEntryIndex : public CObject
 {
-    friend class CSeqsetIndex;
-    friend class CBioseqIndex;
 public:
 
     enum EFlags {
@@ -141,6 +139,7 @@ public:
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_topSEP; }
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_sbtBlk; }
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_topDescr; }
+    TFlags GetFlags (void) const { return m_flags; }
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
@@ -192,9 +191,6 @@ private:
 // CSeqsetIndex stores information about an element in the Bioseq-set hierarchy
 class NCBI_XOBJUTIL_EXPORT CSeqsetIndex : public CObject
 {
-    friend class CSeqEntryIndex;
-    friend class CBioseqIndex;
-
 public:
     // Constructor
     CSeqsetIndex (CBioseq_set_Handle ssh,
@@ -260,11 +256,6 @@ private:
 // Fetching external features uses SAnnotSelector adaptive depth unless explicitly overridden.
 class NCBI_XOBJUTIL_EXPORT CBioseqIndex : public CObject
 {
-    friend class CSeqEntryIndex;
-    friend class CSeqsetIndex;
-    friend class CDescriptorIndex;
-    friend class CFeatureIndex;
-
 public:
     // Constructor
     CBioseqIndex (CBioseq_Handle bsh,
@@ -333,6 +324,9 @@ public:
     string GetSequence (int from, int to);
     void GetSequence (int from, int to, string& buffer);
 
+    // Map from GetBestGene result to CFeatureIndex object
+    CRef<CFeatureIndex> GetFeatIndex (CMappedFeat mf);
+
     const vector<CRef<CDescriptorIndex>>& GetDescriptorIndices(void);
 
     const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
@@ -343,9 +337,6 @@ private:
 
     // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
-
-    // Map from GetBestGene result to CFeatureIndex object
-    CRef<CFeatureIndex> GetFeatIndex (CMappedFeat mf);
 
 private:
     CBioseq_Handle m_bsh;
@@ -414,7 +405,6 @@ private:
 // CDescriptorIndex stores information about an indexed descriptor
 class NCBI_XOBJUTIL_EXPORT CDescriptorIndex : public CObject
 {
-    friend class CBioseqIndex;
 public:
     // Constructor
     CDescriptorIndex (const CSeqdesc& sd,
@@ -451,7 +441,6 @@ private:
 // CFeatureIndex stores information about an indexed feature
 class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObject
 {
-    friend class CBioseqIndex;
 public:
     // Constructor
     CFeatureIndex (CSeq_feat_Handle sfh,
