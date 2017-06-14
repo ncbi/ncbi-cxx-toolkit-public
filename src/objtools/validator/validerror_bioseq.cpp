@@ -146,6 +146,7 @@ public:
     bool Overlaps(const CSeq_feat& cds) const;
     void SetMatch(CCdsMatchInfo& match);
     bool HasMatch(void) const;
+    void SetPseudo(bool val = true) { m_IsPseudo = val; }
     bool OkWithoutCds(void) const;
 
 private:
@@ -154,6 +155,7 @@ private:
 
     CScope* m_Scope;
     bool m_HasMatch;
+    bool m_IsPseudo;
 };
 
 
@@ -6606,7 +6608,8 @@ CMrnaMatchInfo::CMrnaMatchInfo(const CSeq_feat& mrna,
                                CScope* scope) :
     m_Mrna(&mrna),
     m_Scope(scope),
-    m_HasMatch(false)
+    m_HasMatch(false),
+    m_IsPseudo(false)
 {
 }
 
@@ -6640,6 +6643,7 @@ bool CMrnaMatchInfo::HasMatch(void) const {
 
 bool CMrnaMatchInfo::OkWithoutCds(void) const
 {
+    if (m_IsPseudo) return true;
     const CSeq_loc& loc = m_Mrna->GetLocation();
     TSeqPos len = GetLength(loc, m_Scope);
     if (len < 6) {
@@ -7280,7 +7284,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         // check for mismatching qualifiers
         x_CheckOrigProteinAndTranscriptIds(*cds);
 
-        if (cds->IsPseudo() ||
+        if (cds->IsPseudo() || 
             (cds->GetSeqfeat().IsSetExcept() &&
              cds->GetSeqfeat().IsSetExcept_text() &&
              NStr::Find(cds->GetSeqfeat().GetExcept_text(), "rearrangement required for product") != string::npos)) {
@@ -7317,7 +7321,20 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     }
 
 #ifdef USE_MRNA_MAP
-    const size_t num_unmatched_mrna = mrna_map.size();
+    // check to see if remaining mRNAs are pseudo
+    size_t num_unmatched_mrna = 0;
+
+    NON_CONST_ITERATE(TmRNAList, it, mrna_map) {
+        CConstRef<CSeq_feat> gene_feat = m_Imp.GetCachedGene(CConstRef<CSeq_feat>(&(it->second->GetSeqfeat())));
+        if (gene_feat &&
+            gene_feat->IsSetPseudo() && gene_feat->GetPseudo()) {
+            it->second->SetPseudo();
+        }
+        if (!it->second->OkWithoutCds()) {
+            num_unmatched_mrna++;
+        }
+    }
+
 #else
     const size_t num_unmatched_mrna = mrna_list.size();
 #endif
