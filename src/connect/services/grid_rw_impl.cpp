@@ -74,6 +74,7 @@ private:
 
     enum { Created, Connected, Off } m_State;
     CListeningSocket m_ListeningSocket;
+    CSocket m_OutputSocket;
     unique_ptr<CTransmissionWriter> m_TransmissionWriter;
 };
 
@@ -104,12 +105,15 @@ SDataDirectWriter::SDataDirectWriter(const CNetScheduleJob& job) :
 
 bool SDataDirectWriter::Connect()
 {
-    CSocket* socket = nullptr;
     STimeout timeout{ 0, 1 };
 
-    if (m_ListeningSocket.Accept(socket, &timeout) != eIO_Success) return false;
+    if (m_ListeningSocket.Accept(m_OutputSocket, &timeout) != eIO_Success) return false;
 
-    auto socket_writer = new CSocketReaderWriter(socket, eTakeOwnership, eIO_WritePlain);
+    m_ListeningSocket.Close();
+    m_OutputSocket.SetCork();
+    m_OutputSocket.DisableOSSendDelay();
+
+    auto socket_writer = new CSocketReaderWriter(&m_OutputSocket, eNoOwnership, eIO_WritePlain);
     m_TransmissionWriter.reset(new CTransmissionWriter(socket_writer, eTakeOwnership));
     m_State = Connected;
     return true;
@@ -150,6 +154,8 @@ void SDataDirectWriter::Abort()
     if (m_State != Connected) return;
 
     m_TransmissionWriter->Close();
+    m_OutputSocket.SetCork(false);
+
     m_TransmissionWriter.reset();
 }
 
