@@ -792,10 +792,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
                         const CSeq_loc& loc = graph.GetLoc();
                         TSeqPos left = loc.GetStart(eExtreme_Positional);
                         while (curpos < left) {
-                            if (j > 0) {
-                                *out_stream << " ";
-                            }
-                            *out_stream << "-1";
+                            *out_stream << " -1";
                             if (j < 19) {
                                 j++;
                             } else {
@@ -809,11 +806,6 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
                     if (byte_graph.IsSetValues()) {
                         const CByte_graph::TValues& bytes = byte_graph.GetValues();
                         for (i = 0; i < bytes.size(); i++) {
-                            /*
-                            if (j > 0) {
-                                *out_stream << " ";
-                            }
-                            */
                             *out_stream << " ";
                             char ch = bytes [i];
                             if ((int) ch < 10) {
@@ -838,10 +830,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
     }
     if (! first) {
         while (curpos < len) {
-            if (j > 0) {
-                *out_stream << " ";
-            }
-            *out_stream << "-1";
+            *out_stream << " -1";
             if (j < 19) {
                 j++;
             } else {
