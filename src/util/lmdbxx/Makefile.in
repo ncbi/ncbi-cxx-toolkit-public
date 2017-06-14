@@ -1,0 +1,8 @@
+# $Id$
+
+REQUIRES = LMDB
+
+APP_PROJ = lmdbxx_sample
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

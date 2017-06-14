@@ -1,0 +1,13 @@
+# $Id$
+
+REQUIRES = LMDB
+
+SRC = example
+APP = lmdbxx_sample
+PROJ_TAG = demo
+
+CPPFLAGS = -I$(includedir)/util/lmdbxx $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)
+
+LIBS = $(LMDB_LIBS)
+
+WATCHERS = ivanov

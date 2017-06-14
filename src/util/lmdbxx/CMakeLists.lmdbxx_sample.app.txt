@@ -1,0 +1,10 @@
+
+add_executable(lmdbxx_sample-app
+    example.cc
+)
+
+set_target_properties(lmdbxx_sample-app PROPERTIES OUTPUT_NAME lmdbxx_sample)
+
+target_link_libraries(lmdbxx_sample-app
+    ${LMDB_LIBS}
+)
