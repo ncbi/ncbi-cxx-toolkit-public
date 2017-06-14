@@ -1407,10 +1407,13 @@ const CSeq_entry *ctx)
                 obj, ctx);
         }
 
+#if 0
         // VR-723: taxname must match orgname.name if present
+        // commented out for now
         if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetName()) {
             ValidateTaxNameOrgname(taxname, orgref.GetOrgname().GetName(), obj, ctx);
         }
+#endif
     }
 
     if (orgref.IsSetDb()) {

@@ -20890,6 +20890,8 @@ BOOST_AUTO_TEST_CASE(Test_VR_708)
 }
 
 
+#if 0
+// commented out for now
 BOOST_AUTO_TEST_CASE(Test_VR_723)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -20985,3 +20987,4 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
     CheckErrors(*eval, expected_errors);
 
 }
+#endif
