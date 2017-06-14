@@ -212,7 +212,7 @@ ERW_Result CTransmissionReader::Read(void*    buf,
         if (res != eRW_Success) return res;
     }
 
-    m_PacketBytesToRead -= read.count;
+    m_PacketBytesToRead -= static_cast<Uint4>(read.count);
     return eRW_Success;
 }
 

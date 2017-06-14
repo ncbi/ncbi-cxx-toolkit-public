@@ -41,6 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef NCBI_THREADS
 struct NCBI_XCONNECT_EXPORT SOutputCopy
 {
     SOutputCopy(IReader& reader, CNcbiOstream& writer);
@@ -53,6 +54,7 @@ private:
     vector<char> d;
     bool done = false;
 };
+#endif
 
 END_NCBI_SCOPE
 
