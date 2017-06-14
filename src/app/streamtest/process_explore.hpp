@@ -86,6 +86,22 @@ public:
         *m_out << '\n';
 
 
+        // Alternative method uses access to vector of CRef<CBioseqIndex> in for loop
+        num_nucs = 0;
+        num_prots = 0;
+        for (auto &bsx : idx.GetBioseqIndices()) {
+            if (bsx->IsNA()) {
+                num_nucs++;
+            } else if (bsx->IsAA()) {
+                num_prots++;
+            }
+        }
+
+        *m_out << "Second has " << num_nucs << " nucleotide" << ((num_nucs != 1) ? "s" : "");
+        *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
+        *m_out << '\n';
+
+
         // Find Bioseq from arguments, call application DoOneBioseq method
         CRef<CBioseqIndex> bsx;
 
