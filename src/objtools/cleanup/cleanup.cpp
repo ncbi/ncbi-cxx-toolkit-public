@@ -1060,6 +1060,10 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
     }
 
     size_t stop = loc.GetStop(eExtreme_Biological);
+    if (stop < 1 || stop > bsh.GetBioseqLength() - 1) {
+        // no room to extend
+        return false;
+    }
     // figure out if we have a partial codon at the end
     size_t orig_len = sequence::GetLength(loc, &(bsh.GetScope()));
     size_t len = orig_len;

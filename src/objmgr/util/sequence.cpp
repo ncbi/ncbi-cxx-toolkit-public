@@ -3471,69 +3471,73 @@ void x_Translate(const Container& seq,
         (code ? CGen_code_table::GetTransTable(*code) :
                 CGen_code_table::GetTransTable(1));
 
-    // main loop through bases
-    typename Container::const_iterator start = seq.begin();
-    {{
-         for (int i = 0;  i < frame;  ++i) {
-             ++start;
-         }
-     }}
-
-    size_t i;
-    size_t k;
+    char aa = '\0';
     int state = 0;
     int start_state = 0;
-    size_t length = usable_size / 3;
-    bool check_start = (is_5prime_complete && frame == 0);
-    bool first_time = true;
-    char aa = '\0';
+    try {
+        // main loop through bases
+        typename Container::const_iterator start = seq.begin();
+        {{
+                for (int i = 0; i < frame; ++i) {
+                    ++start;
+                }
+        }}
 
-    for (i = 0;  i < length;  ++i) {
+        size_t i;
+        size_t k;
+        size_t length = usable_size / 3;
+        bool check_start = (is_5prime_complete && frame == 0);
+        bool first_time = true;
 
-        // loop through one codon at a time
-        for (k = 0;  k < 3;  ++k, ++start) {
-            state = tbl.NextCodonState(state, *start);
+        for (i = 0; i < length; ++i) {
+
+            // loop through one codon at a time
+            for (k = 0; k < 3; ++k, ++start) {
+                state = tbl.NextCodonState(state, *start);
+            }
+
+            if (first_time) {
+                start_state = state;
+            }
+
+            // save translated amino acid
+            if (first_time  &&  check_start) {
+                aa = tbl.GetStartResidue(state);
+                prot.append(1, aa);
+            } else {
+                aa = tbl.GetCodonResidue(state);
+                prot.append(1, aa);
+            }
+
+            first_time = false;
         }
 
-        if (first_time) {
-            start_state = state;
-        }
+        if (mod) {
+            for (k = 0; k < mod; ++k, ++start) {
+                state = tbl.NextCodonState(state, *start);
+            }
 
-        // save translated amino acid
-        if (first_time  &&  check_start) {
-            aa = tbl.GetStartResidue(state);
-            prot.append(1, aa);
-        } else {
-            aa = tbl.GetCodonResidue(state);
-            prot.append(1, aa);
-        }
+            for (; k < 3; ++k) {
+                state = tbl.NextCodonState(state, 'N');
+            }
 
-        first_time = false;
-    }
+            if (first_time) {
+                start_state = state;
+            }
 
-    if (mod) {
-        for (k = 0;  k < mod;  ++k, ++start) {
-            state = tbl.NextCodonState(state, *start);
+            // save translated amino acid
+            char c = tbl.GetCodonResidue(state);
+            if (first_time  &&  check_start) {
+                aa = tbl.GetStartResidue(state);
+                prot.append(1, aa);
+            } else if (c != 'X') {
+                // if padding was needed, trim ambiguous last residue
+                aa = tbl.GetCodonResidue(state);
+                prot.append(1, aa);
+            }
         }
-
-        for ( ;  k < 3;  ++k) {
-            state = tbl.NextCodonState(state, 'N');
-        }
-
-        if (first_time) {
-            start_state = state;
-        }
-
-        // save translated amino acid
-        char c = tbl.GetCodonResidue(state);
-        if (first_time  &&  check_start) {
-            aa = tbl.GetStartResidue(state);
-            prot.append(1, aa);
-        } else if (c != 'X') {
-            // if padding was needed, trim ambiguous last residue
-            aa = tbl.GetCodonResidue(state);
-            prot.append(1, aa);
-        }
+    } catch (CSeqVectorException& ex) {
+        // ran out of sequence
     }
 
     if ( aa != '*' && include_stop && (! mod) && prot.size() > 0 ) {
@@ -3693,100 +3697,101 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         (code ? CGen_code_table::GetTransTable(*code) :
         CGen_code_table::GetTransTable(1));
 
-    // main loop through bases
-    CSeqVector::const_iterator start = seq.begin();
-    for (int i = 0; i < frame; ++i) {
-        ++start;
-    }
-
-    TSeqPos i;
-    TSeqPos k;
-    int state = 0;
-    TSeqPos length = usable_size / 3;
-    if (length == 0) {
-        return CRef<CBioseq>(NULL);
-    }
-    bool check_start = (is_5prime_complete && frame == 0);
-    bool first_time = true;
-
-    for (i = 0; i < length; ++i) {
-        bool is_gap = true;
-        bool unknown_length = false;
-        TSeqPos pos = (i * 3) + frame;
-
-        if (start.HasZeroGapBefore()) {
-            AddGapToDeltaSeq(prot, true, 0);
+    try {
+        // main loop through bases
+        CSeqVector::const_iterator start = seq.begin();
+        for (int i = 0; i < frame; ++i) {
+            ++start;
         }
 
-        // loop through one codon at a time
-        for (k = 0; k < 3; ++k, ++start) {
-            state = tbl.NextCodonState(state, *start);
-            if (seq.IsInGap(pos + k)) {
-                if (is_gap && !unknown_length) {
-                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
-                    if (map_iter.GetType() == CSeqMap::eSeqGap
-                        && map_iter.IsUnknownLength()) {
-                        unknown_length = true;
-                    }
-                }
-            } else {
-                is_gap = false;
-            }
-        }
+        TSeqPos i;
+        TSeqPos k;
+        int state = 0;
+        TSeqPos length = usable_size / 3;
+        bool check_start = (is_5prime_complete && frame == 0);
+        bool first_time = true;
 
-        if (is_gap) {
-            AddGapToDeltaSeq(prot, unknown_length, 1);
-        } else {
-            // save translated amino acid
-            if (first_time  &&  check_start) {
-                AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
-            } else {
-                AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
+        for (i = 0; i < length; ++i) {
+            bool is_gap = true;
+            bool unknown_length = false;
+            TSeqPos pos = (i * 3) + frame;
+
+            if (start.HasZeroGapBefore()) {
+                AddGapToDeltaSeq(prot, true, 0);
             }
 
-        }
-
-        first_time = false;
-    }
-
-    if (mod) {
-        bool is_gap = true;
-        bool unknown_length = false;
-        TSeqPos pos = (length * 3) + frame;
-        for (k = 0; k < mod; ++k, ++start) {
-            state = tbl.NextCodonState(state, *start);
-            if (seq.IsInGap(pos + k)) {
-                if (is_gap && !unknown_length) {
-                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
-                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
-                        if (map_iter.IsUnknownLength()) {
+            // loop through one codon at a time
+            for (k = 0; k < 3; ++k, ++start) {
+                state = tbl.NextCodonState(state, *start);
+                if (seq.IsInGap(pos + k)) {
+                    if (is_gap && !unknown_length) {
+                        CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                        if (map_iter.GetType() == CSeqMap::eSeqGap
+                            && map_iter.IsUnknownLength()) {
                             unknown_length = true;
                         }
                     }
+                } else {
+                    is_gap = false;
                 }
+            }
+
+            if (is_gap) {
+                AddGapToDeltaSeq(prot, unknown_length, 1);
             } else {
-                is_gap = false;
-            }
-        }
-
-        CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
-        if (is_gap) {
-            AddGapToDeltaSeq(prot, unknown_length, 1);
-        } else {
-            for (; k < 3; ++k) {
-                state = tbl.NextCodonState(state, 'N');
-            }
-
-            // save translated amino acid
-            char c = tbl.GetCodonResidue(state);
-            if (c != 'X') {
+                // save translated amino acid
                 if (first_time  &&  check_start) {
                     AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
                 } else {
                     AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
                 }
+
+            }
+
+            first_time = false;
+        }
+
+        if (mod) {
+            bool is_gap = true;
+            bool unknown_length = false;
+            TSeqPos pos = (length * 3) + frame;
+            for (k = 0; k < mod; ++k, ++start) {
+                state = tbl.NextCodonState(state, *start);
+                if (seq.IsInGap(pos + k)) {
+                    if (is_gap && !unknown_length) {
+                        CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                        if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                            if (map_iter.IsUnknownLength()) {
+                                unknown_length = true;
+                            }
+                        }
+                    }
+                } else {
+                    is_gap = false;
+                }
+            }
+
+            CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
+            if (is_gap) {
+                AddGapToDeltaSeq(prot, unknown_length, 1);
+            } else {
+                for (; k < 3; ++k) {
+                    state = tbl.NextCodonState(state, 'N');
+                }
+
+                // save translated amino acid
+                char c = tbl.GetCodonResidue(state);
+                if (c != 'X') {
+                    if (first_time  &&  check_start) {
+                        AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
+                    } else {
+                        AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
+                    }
+                }
             }
         }
+    } catch (CSeqVectorException& ex) {
+        // ran out of sequence
     }
 
     TSeqPos prot_len = 0;
