@@ -1796,7 +1796,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
             }
             if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
                  NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
-                &&  !m_LocalAnnotsOnly ) {
+                /* &&  !m_LocalAnnotsOnly */ ) {
                 gene = x_GetGeneRefViaCDS (mapped_cds);
                 if (gene) {
                     const CGene_ref& grp = *gene;
