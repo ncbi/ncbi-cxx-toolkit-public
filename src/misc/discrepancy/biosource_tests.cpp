@@ -1136,7 +1136,6 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                         "18S ribosomal RNA",
                         "5.8S ribosomal RNA",
                         "25S ribosomal RNA",
-                        "26S ribosomal RNA",
                         "28S ribosomal RNA",
                         "internal transcribed spacer 1",
                         "internal transcribed spacer 2"
@@ -1150,18 +1149,9 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
 
                     if ((*feat)->IsSetComment()) {
                         string comment = (*feat)->GetComment();
-                        if (!comment.empty()) {
-
-                            for (auto suspectable = suspectable_products.begin(); suspectable != suspectable_products.end(); ++suspectable) {
-                                if (NStr::FindNoCase(comment, *suspectable) != NPOS) {
-                                    has_suspect = true;
-                                    break;
-                                }
-                            }
-
-                            if (has_suspect) {
-                                break;
-                            }
+                        if (!comment.empty() && NStr::FindNoCase(suspectable_products, comment) != nullptr) {
+                            has_suspect = true;
+                            break;
                         }
                     }
                 }
