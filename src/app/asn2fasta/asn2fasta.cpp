@@ -713,78 +713,146 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     return ret;
 }
 
+namespace {
+
+bool s_GetMaxMin(const vector<char>& values, int& max, int& min) 
+{
+    if (values.empty()) {
+        return false;
+    }
+    max = values[0];
+    min = values[0];
+    for (auto i=1; i<values.size(); ++i) {
+        int current_value = static_cast<int>(values[i]);
+        if (current_value > max) {
+            max = current_value;
+        } 
+        else if(current_value < min) {
+            min = current_value;
+        }
+    }
+    return true;
+}
+
+};
+
+void s_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) 
+{
+    ostream << ">";
+
+    bool id_done = false;
+    for (const CRef<CSeq_id>& pId : bioseq.GetId()) {
+        if (pId->IsGenbank() ||
+            pId->IsDdbj() ||
+            pId->IsEmbl() ||
+            pId->IsSwissprot() ||
+            pId->IsOther() ||
+            pId->IsTpd() ||
+            pId->IsTpe() ||
+            pId->IsTpg()) {
+            pId->WriteAsFasta(ostream);
+            id_done = true;
+            break;
+        }
+    }
+
+    if (!id_done) {
+        CSeq_id::WriteAsFasta(ostream, bioseq);
+    }
+
+
+    TSeqPos length = 0;
+
+    if (bioseq.IsSetLength()) {
+        length = bioseq.GetLength();
+    }
+
+    string header;
+    if (!bioseq.IsSetAnnot()) {
+        return;
+    }
+
+    string score_header;
+    string graph_title;
+    int min=256;
+    int max=0;
+    bool have_title = false;
+
+    for (const CRef<CSeq_annot>& pAnnot : bioseq.GetAnnot()) {
+        if (!pAnnot->IsGraph()) {
+            continue;
+        }
+
+        for (const CRef<CSeq_graph>& pGraph : pAnnot->GetData().GetGraph()) {
+            if (!have_title &&
+                pGraph->IsSetTitle()) {
+                graph_title = pGraph->GetTitle();
+                have_title = true;
+            }
+            const auto& graph_data = pGraph->GetGraph();
+            if (graph_data.Which() == CSeq_graph::TGraph::e_Byte) {
+                const CByte_graph& byte_graph = graph_data.GetByte();
+
+                int local_max;
+                int local_min;
+
+                if (s_GetMaxMin(byte_graph.GetValues(), local_max, local_min)) {
+                    min = (local_min<min) ? local_min : min;
+                    max = (local_max>max) ? local_max : max;
+                }
+            }
+        }
+    }
+
+    score_header = graph_title;
+    if (!NStr::IsBlank(score_header)) {
+        score_header += " ";
+    }
+
+    if (length>0) {
+        score_header += "(Length: ";
+        score_header += NStr::IntToString(length);
+        score_header += ", Min: ";
+    }
+    else {
+        score_header += "(Min: "; 
+    }
+    score_header += NStr::IntToString(min);
+    score_header += ", Max: ";
+    score_header += NStr::IntToString(max);
+    score_header += ")";
+
+    ostream << " " << score_header << "\n";
+}
+
+
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream)
 //  --------------------------------------------------------------------------
 {
     TSeqPos curpos = 0;
     TSeqPos len = 0;
-    int i = 0;
     int j = 0;
     bool first = true;
-    bool needToWrite = true;
-    int min = 0;
-    int max = 0;
 
     if (bsp.IsSetLength()) {
         len = bsp.GetLength();
     }
+
+    s_WriteScoreHeader(bsp, *out_stream); 
+
+
     FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, bsp) {
         const CSeq_annot& annot = **sa_itr;
         if (! annot.IsGraph()) continue;
         FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
             const CSeq_graph& graph = **gr_itr;
             const CSeq_graph::TGraph& src_data = graph.GetGraph();
-            if (first) {
+
+            if (first) { // Strange logic here
                 first = false;
-                *out_stream << ">";
-                needToWrite = true;
-                FOR_EACH_SEQID_ON_BIOSEQ (id_it, bsp) {
-                     if ((*id_it)->IsGenbank()
-                        || (*id_it)->IsDdbj() 
-                        || (*id_it)->IsEmbl()
-                        || (*id_it)->IsSwissprot()
-                        || (*id_it)->IsOther()
-                        || (*id_it)->IsTpd()
-                        || (*id_it)->IsTpe()
-                        || (*id_it)->IsTpg()) {
-                        (*id_it)->WriteAsFasta(*out_stream);
-                        needToWrite = false;
-                        break;
-                    }
-                }
-                if (needToWrite) {
-                    CSeq_id::WriteAsFasta(*out_stream, bsp);
-                }
-                if (graph.IsSetTitle()) {
-                    const string& g_title = graph.GetTitle();
-                    *out_stream << " " << g_title;
-                }
-                if (src_data.Which() == CSeq_graph::TGraph::e_Byte) {
-                    const CByte_graph& byte_graph = src_data.GetByte();
-                    if (byte_graph.IsSetValues()) {
-                        const CByte_graph::TValues& bytes = byte_graph.GetValues();
-                        if (bytes.size() > 0) {
-                            char ch = bytes [0];
-                            min = (int) ch;
-                            max = (int) ch;
-                            for (i = 1; i < bytes.size(); i++) {
-                                char ch = bytes [i];
-                                if (min > (int) ch) {
-                                    min = (int) ch;
-                                }
-                                if (max < (int) ch) {
-                                    max = (int) ch;
-                                }
-                            }
-                            *out_stream << " (Length: " << bytes.size();
-                            *out_stream << ", Min: " << min;
-                            *out_stream << ", Max: " << max << ")";
-                        }
-                    }
-                }
-                *out_stream << '\n';
             }
+
             switch (src_data.Which()) {
                 case CSeq_graph::TGraph::e_Byte:
                     {
@@ -805,20 +873,18 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
                     const CByte_graph& byte_graph = src_data.GetByte();
                     if (byte_graph.IsSetValues()) {
                         const CByte_graph::TValues& bytes = byte_graph.GetValues();
-                        for (i = 0; i < bytes.size(); i++) {
+                        for (auto i = 0; i < bytes.size(); i++) {
                             *out_stream << " ";
                             char ch = bytes [i];
-                            if ((int) ch < 10) {
-                                *out_stream << " ";
-                            }
-                            *out_stream << (int) ch;
-                            if (j < 19) {
-                                j++;
-                            } else {
-                                *out_stream << '\n';
+                            *out_stream << setw(2) << static_cast<int>(ch);
+                            if (j==19) {
                                 j = 0;
+                                *out_stream << '\n';
+                            } 
+                            else {
+                                ++j;
                             }
-                            curpos++;
+                            ++curpos;
                         }
                     }
                     }
