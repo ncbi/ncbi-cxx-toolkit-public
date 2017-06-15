@@ -536,7 +536,7 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len, size_t buf_
         if ( m_AllowIstrstream ) {
             stm.reset(new CNcbiIstrstream(src_buf, (streamsize)src_len));
         } else {
-            stm.reset(new CNcbiIfstream(m_SrcFile, ios::in | ios::binary));
+            stm.reset(new CNcbiIfstream(_T_XCSTRING(m_SrcFile), ios::in | ios::binary));
         }
         assert(stm->good());
         
