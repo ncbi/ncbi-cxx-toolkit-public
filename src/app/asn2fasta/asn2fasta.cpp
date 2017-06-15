@@ -99,6 +99,7 @@ private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
     bool x_IsOtherFeat(const CSeq_feat& feat) const;
+    void x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const;
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -736,7 +737,9 @@ bool s_GetMaxMin(const vector<char>& values, int& max, int& min)
 
 };
 
-void s_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) 
+//  --------------------------------------------------------------------------
+void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const
+//  --------------------------------------------------------------------------
 {
     ostream << ">";
 
@@ -839,7 +842,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
         len = bsp.GetLength();
     }
 
-    s_WriteScoreHeader(bsp, *out_stream); 
+    x_WriteScoreHeader(bsp, *out_stream); 
 
 
     FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, bsp) {
