@@ -2532,7 +2532,12 @@ void CValidError_imp::ValidateSpecificHost
         size_t len = min(chunk_size, org_rq_list.size() - i);
         vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
         CRef<CTaxon3_reply> tmp_spec_host_reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
-        string err_msg = tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply);
+        string err_msg = kEmptyStr;
+        if (tmp_spec_host_reply) {
+            err_msg = tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply);
+        } else {
+            err_msg = "Connection to taxonomy failed";
+        }
         if (!NStr::IsBlank(err_msg)) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, *(tval.GetTopReportObject()));
             return;
