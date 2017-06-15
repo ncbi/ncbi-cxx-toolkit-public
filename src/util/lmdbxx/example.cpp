@@ -3,4 +3,6 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_config.hpp>
+
 #include "example.cc"
