@@ -157,6 +157,7 @@ void SDataDirectWriter::Abort()
     m_OutputSocket.SetCork(false);
 
     m_TransmissionWriter.reset();
+    m_OutputSocket.Close();
 }
 
 struct SMultiWriter : IEmbeddedStreamWriter

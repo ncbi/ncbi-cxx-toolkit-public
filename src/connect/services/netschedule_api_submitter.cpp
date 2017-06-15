@@ -454,10 +454,16 @@ bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& jo
         return false;
     }
 
-    CSocketReaderWriter socket_reader(socket.get());
-    CTransmissionReader reader(&socket_reader);
+    {
+        CSocketReaderWriter socket_reader(socket.get());
+        CTransmissionReader reader(&socket_reader);
 
-    SOutputCopy copy(reader, *receiver.second);
+        SOutputCopy copy(reader, *receiver.second);
+    }
+
+    const STimeout close_timeout{0, 0};
+    socket->SetTimeout(eIO_Close, &close_timeout);
+    socket->Close();
 
     job_status = CNetScheduleAPI::eDone;
     *receiver.first = true;
