@@ -24,7 +24,7 @@ REQUIRES = Boost.Test.Included
 
 # Comment out if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD = $(APP)
+CHECK_CMD =
 # If your test application uses config file, then uncomment this line -- and,
 # remember to rename 'taxon1_unit_test.ini' to '<your_app_name>.ini'.
 #CHECK_COPY = taxon1_unit_test.ini
