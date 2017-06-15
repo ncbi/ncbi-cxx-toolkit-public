@@ -360,6 +360,7 @@ private:
     CTypeRef m_TypeRef;
     AutoPtr<CTypeInfo> m_AnyTypeInfo;
     AutoPtr<CTypeInfo> m_RealTypeInfo;
+    static set<string, PNocase> sm_AllFileNames;
     mutable string m_CachedFileName;
     mutable auto_ptr<CNamespace> m_CachedNamespace;
     CAsnBinaryDefs::TLongTag  m_Tag;

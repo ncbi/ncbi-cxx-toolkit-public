@@ -61,6 +61,7 @@ bool CDataType::sm_EnforcedStdXml = false;
 EDataSpec CDataType::sm_SourceDataSpec = EDataSpec::eUnknown;
 set<string> CDataType::sm_SavedNames;
 map<string,string> CDataType::sm_ClassToMember;
+set<string, PNocase> CDataType::sm_AllFileNames;
 
 class CAnyTypeSource : public CTypeInfoSource
 {
@@ -629,7 +630,30 @@ string CDataType::FileName(void) const
             m_CachedFileName =
                 Path(dir,
                      MakeFileName(prefix+m_MemberName, 5 /* strlen("_.cpp") */ ));
+
+            // verify that this name is not used already
+            if (sm_AllFileNames.find(m_CachedFileName) != sm_AllFileNames.end()) {
+                string tmp(m_CachedFileName);
+                while (sm_AllFileNames.find(tmp) != sm_AllFileNames.end()) {
+                    string::size_type p = tmp.find_last_not_of('x');
+                    if (p == 0) {
+                        tmp.clear();
+                        break;
+                    }
+                    if (p != string::npos) {
+                        tmp[p] = 'x';
+                    }
+                }
+                if (tmp.empty()) {
+                    tmp = m_CachedFileName;
+                    while (sm_AllFileNames.find(tmp) != sm_AllFileNames.end()) {
+                        tmp.append(1,'x');
+                    }
+                }
+                m_CachedFileName = tmp;
+            }
         }
+        sm_AllFileNames.insert(m_CachedFileName);
     }
     return m_CachedFileName;
 }
