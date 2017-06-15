@@ -2632,8 +2632,8 @@ CNCMessageHandler::x_LogCmdEvent( const CTempString& evt)
     CSrvTime cmd_time = cmd_now;
     cmd_time -= m_CmdStartTime;
     m_CmdPrevTime = cmd_now;
-    m_CmdLog.push_back( evt + ": " + NStr::NumericToString(cmd_len.AsUSec())  + "mks ("
-                                   + NStr::NumericToString(cmd_time.AsUSec()) + "mks)");
+    m_CmdLog.push_back( evt + ": " + NStr::NumericToString(cmd_len.AsUSec())  + "us ("
+                                   + NStr::NumericToString(cmd_time.AsUSec()) + "us)");
 }
 
 void CNCMessageHandler::x_LogCmdLog(void)
@@ -3051,6 +3051,13 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     m_MirrorsDone.clear();
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
+#if 0
+            if (m_BlobAccess->IsCurBlobExpired()) {
+                delete write_event;
+                CNCPeerControl::MirrorRemove(m_NCBlobKey, m_BlobSlot, m_BlobAccess->GetNewBlobCreateTime()-1);
+                return &CNCMessageHandler::x_FinishCommand;
+            }
+#endif
             // If fCopyLogEvent is not set then this blob comes from client and
             // thus we need to check quorum value before answering to client.
             // If fCopyLogEvent is set then this write comes from other server
@@ -3264,7 +3271,8 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobChunk(void)
 {
     LOG_CURRENT_FUNCTION
-    x_LogCmdEvent("ReadBlobChunk");
+// there are too many of them
+//    x_LogCmdEvent("ReadBlobChunk");
     while (m_ChunkLen != 0) {
         Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
         if (m_BlobAccess->HasError()) {
