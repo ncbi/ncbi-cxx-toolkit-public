@@ -1685,7 +1685,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         if (i->simple && !x_IsNullType(i) && i->type->CanBeCopied()) {
             out <<
             "inline\n"<<
-            GetClassNameDT() << "::operator const " << i->tName << "&(void) const\n" <<
+            GetClassNameDT() << "::operator const " << GetClassNameDT() << "::" << i->tName << "&(void) const\n" <<
             "{\n" <<
             "    return Get" << i->cName << "();\n" <<
             "}\n" <<
