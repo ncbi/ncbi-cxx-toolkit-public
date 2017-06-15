@@ -1229,6 +1229,12 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
     }
 
     bool raw_index = m_File->GetBamDb().UsesRawIndex();
+    double load_seconds = 1e-9; // 1000 MB/s
+    double decompress_seconds = 11e-9; // 90 MB/s
+    double make_graph_seconds = 7.5e-9; // 133 MB/s
+    double make_align_seconds = 80e-9; // 12 MB/s
+    double graph_seconds = load_seconds + decompress_seconds + make_graph_seconds;
+    double align_seconds = load_seconds + decompress_seconds + make_align_seconds;
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
         CRef<CTSE_Chunk_Info> chunk;
@@ -1240,7 +1246,10 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                   GetRefSeq_id(),
                                   m_Chunks[range_id].GetAlignRange());
             if ( raw_index ) {
-                chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+                size_t bytes = m_Chunks[range_id].GetAlignCount();
+                double seconds = bytes*align_seconds;
+                chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                chunk->x_SetLoadSeconds(seconds);
             }
             split_info.AddChunk(*chunk);
             if ( GetDebugLevel() >= 2 ) {
@@ -1257,7 +1266,10 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                   GetRefSeq_id(),
                                   GetChunkGraphRange(range_id));
             if ( raw_index ) {
-                chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+                size_t bytes = m_Chunks[range_id].GetAlignCount();
+                double seconds = bytes*graph_seconds;
+                chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                chunk->x_SetLoadSeconds(seconds);
             }
             split_info.AddChunk(*chunk);
             if ( GetDebugLevel() >= 2 ) {
