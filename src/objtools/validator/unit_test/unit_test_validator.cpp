@@ -20890,6 +20890,29 @@ BOOST_AUTO_TEST_CASE(Test_VR_708)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_TM_145)
+{
+    string host = "Rhesus monkey";
+    string error_msg;
+
+    BOOST_CHECK_EQUAL("Rhesus monkey", FixSpecificHost("Rhesus monkey"));
+    BOOST_CHECK_EQUAL(true, IsSpecificHostValid("Rhesus monkey", error_msg));
+
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Rhesus monkey");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+
 #if 0
 // commented out for now
 BOOST_AUTO_TEST_CASE(Test_VR_723)
