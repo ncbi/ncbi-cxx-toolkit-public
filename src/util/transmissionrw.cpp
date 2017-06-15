@@ -181,10 +181,23 @@ CTransmissionReader::~CTransmissionReader()
 }
 
 
+ERW_Result CTransmissionReader::ReadData()
+{
+    size_t read;
+
+    auto res = m_Rdr->Read(m_ReadData.Space(), m_ReadData.SpaceSize(), &read);
+    if (res == eRW_Success) m_ReadData.Add(read);
+
+    return res;
+}
+
+
 ERW_Result CTransmissionReader::Read(void*    buf,
                                      size_t   count,
                                      size_t*  bytes_read)
 {
+    const size_t kMinReadSize = 32 * 1024;
+
     CIOBytesCountGuard read(bytes_read);
 
     if (!m_StartRead) {
@@ -203,13 +216,24 @@ ERW_Result CTransmissionReader::Read(void*    buf,
     size_t to_read = count < m_PacketBytesToRead ? count : m_PacketBytesToRead;
     size_t already_read = m_ReadData.DataSize();
 
+    if (!already_read) {
+        // If chunk to read is big enough, read directly in the buf
+        if (to_read >= kMinReadSize) {
+            auto res = m_Rdr->Read(buf, to_read, &read.count);
+            if (res == eRW_Success) m_PacketBytesToRead -= static_cast<Uint4>(read.count);
+            return res;
+        }
+
+        auto res = ReadData();
+        if (res != eRW_Success) return res;
+
+        already_read = m_ReadData.DataSize();
+    }
+
     if (already_read) {
         read.count = min(to_read, already_read);
         copy_n(m_ReadData.Data(), read.count, static_cast<char*>(buf));
         m_ReadData.Remove(read.count);
-    } else {
-        auto res = m_Rdr->Read(buf, to_read, &read.count);
-        if (res != eRW_Success) return res;
     }
 
     m_PacketBytesToRead -= static_cast<Uint4>(read.count);
@@ -249,12 +273,8 @@ ERW_Result CTransmissionReader::x_ReadStart()
 ERW_Result CTransmissionReader::ReadLength(Uint4& length)
 {
     while (m_ReadData.DataSize() < kLengthSize) {
-        size_t read;
-
-        auto res = m_Rdr->Read(m_ReadData.Space(), m_ReadData.SpaceSize(), &read);
+        auto res = ReadData();
         if (res != eRW_Success) return res;
-
-        m_ReadData.Add(read);
     }
 
     if (m_ByteSwap) {

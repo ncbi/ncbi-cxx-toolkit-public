@@ -77,6 +77,7 @@ private:
 
     ERW_Result x_ReadStart();
     ERW_Result ReadLength(Uint4& length);
+    ERW_Result ReadData();
 
 private:
     CTransmissionReader(const CTransmissionReader&);
