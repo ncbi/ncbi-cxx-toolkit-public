@@ -517,11 +517,15 @@ CTaxon1::GetTaxIdByName(const string& orgname)
     SetLastError(NULL);
     if( orgname.empty() )
         return 0;
-    COrg_ref orgRef;
+    list< CRef< CTaxon1_name > > lNames;
+    TTaxId retc = SearchTaxIdByName(orgname, eSearch_Exact, &lNames);
+    switch( retc ) {
+    case -2: retc = -1; break;
+    case -1: retc = -lNames.front()->GetTaxid(); break; // Multiple nodes found, get first taxid
+    default: break;
+    }
 
-    orgRef.SetTaxname().assign( orgname );
-
-    return GetTaxIdByOrgRef(orgRef);
+    return retc;
 }
 
 //----------------------------------------------
@@ -632,6 +636,8 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
             SetLastError( "INTERNAL: TaxService response type is not Searchname" );
             return -2;
         }
+    } else if( GetLastError().find("Nothing found") != string::npos ) {
+        return 0;
     }
     return -2;
 }
