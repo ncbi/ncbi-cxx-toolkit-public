@@ -713,6 +713,8 @@ CSoMap::TYPEFUNCMAP CSoMap::mMapTypeFunc = {
     {CSeqFeatData::eSubtype_source, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_stem_loop, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_STS, CSoMap::xMapGeneric},
+    {CSeqFeatData::eSubtype_snRNA, CSoMap::xMapNcRna},
+    {CSeqFeatData::eSubtype_snoRNA, CSoMap::xMapNcRna},
     {CSeqFeatData::eSubtype_telomere, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_tmRNA, CSoMap::xMapGeneric},
     {CSeqFeatData::eSubtype_transit_peptide, CSoMap::xMapGeneric},
@@ -995,6 +997,14 @@ bool CSoMap::xMapNcRna(
             if (ncrna_class == "classRNA") {
                 ncrna_class = "ncRNA";
             }
+        }
+    }
+    if (ncrna_class.empty()) {
+        if (feature.IsSetData()  &&
+                feature.GetData().IsRna()  &&
+                feature.GetData().GetRna().IsSetType()) {
+            auto ncrna_type = feature.GetData().GetRna().GetType();
+            ncrna_class = CRNA_ref::GetRnaTypeName(ncrna_type);
         }
     }
     if (ncrna_class.empty()) {
