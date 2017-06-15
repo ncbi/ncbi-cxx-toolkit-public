@@ -70,7 +70,7 @@ CNcbiIos* CTest::x_CreateIStream(const string& filename, const char* buf, size_t
             fname = filename;
             x_CreateFile(fname, buf, len);
         }
-        stm = new CNcbiIfstream(fname, ios::in | ios::binary);
+        stm = new CNcbiIfstream(fname.c_str(), ios::in | ios::binary);
     }
     assert(stm->good());
     return stm;
