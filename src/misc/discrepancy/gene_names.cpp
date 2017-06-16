@@ -228,7 +228,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | e
     }
     ITERATE (list <string>, jt, prot.GetName()) {
         if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos) {
-            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
+            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
             break;
         }
     }

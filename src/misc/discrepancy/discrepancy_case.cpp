@@ -151,8 +151,9 @@ DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart
     }
     _ASSERT(NStr::EqualNocase(protein_id_prefix, canonical_protein_id_prefix));
 
-    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
+    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Fatal().Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
 }
+
 
 DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 {
@@ -166,6 +167,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 
     m_ReportItems = reports_collected.Export(*this)->GetSubitems();
 }
+
 
 // SHORT_SEQUENCES
 DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSubmitter | eSmart, "Find Short Sequences")
@@ -681,9 +683,9 @@ DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmar
             if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
                 const char* strand = StrandsMatch(strand_i, loc_j.GetStrand()) ? kContainedSame : kContainedOpps;
                 bool has_note = HasContainedNote(*cds[i]);
-                m_Objs[kContained][has_note ? kContainedNote : strand].Add(*context.NewDiscObj(cds[i], eNoRef, compare == sequence::eContained && !has_note));
+                m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.NewDiscObj(cds[i], eNoRef, compare == sequence::eContained && !has_note));
                 has_note = HasContainedNote(*cds[j]);
-                m_Objs[kContained][has_note ? kContainedNote : strand].Add(*context.NewDiscObj(cds[j], eNoRef, compare == sequence::eContains && !has_note));
+                m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.NewDiscObj(cds[j], eNoRef, compare == sequence::eContains && !has_note));
             }
         }
     }
@@ -1132,6 +1134,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
 }
 
 
+// BAD_LOCUS_TAG_FORMAT
 DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad locus tag format")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
@@ -1153,7 +1156,7 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc | eSubmitter | eSmart
     // Report non-empty, bad-format locus tags
     string locus_tag = gene_ref.GetLocus_tag();
     if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
-        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
+        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Fatal().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
