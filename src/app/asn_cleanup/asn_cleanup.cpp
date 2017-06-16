@@ -233,7 +233,8 @@ void CCleanupApp::Init(void)
             "\tw GFF/WGS Genome Cleanup\n"
             "\tr Regenerate Definition Lines\n"
             "\tb Batch Cleanup of Multireader Output\n"
-            "\ta Remove Assembly Gaps\n",
+            "\ta Remove Assembly Gaps\n"
+            "\ti Make Influenza Small Genome Sets\n",
             CArgDescriptions::eString);
 
         arg_desc->AddFlag("T", "TaxonomyLookup");
@@ -312,7 +313,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a') {
+            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a' && *s != 'i') {
                 unrecognized += *s;
             }
         }
@@ -808,10 +809,15 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
         
     }
     if (NStr::Find(opt, "b") != string::npos) {
-        any_changes = x_GFF3Batch(seh);
+        any_changes |= x_GFF3Batch(seh);
     }
     if (NStr::Find(opt, "a") != string::npos) {
-        any_changes = CCleanup::ConvertDeltaSeqToRaw(seh);
+        any_changes |= CCleanup::ConvertDeltaSeqToRaw(seh);
+    }
+    if (NStr::Find(opt, "i") != string::npos) {
+        if (CCleanup::MakeSmallGenomeSet(seh) > 0) {
+            any_changes = true;
+        }
     }
     return any_changes;
 }

@@ -502,6 +502,8 @@ public:
 /// @return bool indicates changes were made
     static bool ParseCodeBreaks(CSeq_feat& feat, CScope& scope);
 
+    static size_t MakeSmallGenomeSet(CSeq_entry_Handle entry);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

@@ -1188,3 +1188,196 @@ BOOST_AUTO_TEST_CASE(Test_MatPeptidePartial)
         ++f;
     }
 }
+
+
+CRef<CSeq_entry> BuildInfluenzaSegment
+(const string& taxname, 
+ const string& strain, 
+ const string& serotype,
+ size_t segment, 
+ bool partial,
+ bool is_seq = false)
+{
+    CRef<CSeq_entry> np;
+    CRef<CSeq_feat> feat_to_partial;
+    if (is_seq) {
+        np = BuildGoodSeq();
+        feat_to_partial = AddMiscFeature(np);
+        feat_to_partial->SetData().SetGene().SetLocus("abc");
+    } else {
+        np = unit_test_util::BuildGoodNucProtSet();
+        feat_to_partial = GetCDSFromGoodNucProtSet(np);
+    }
+    unit_test_util::SetTaxname(np, taxname);
+    if (!NStr::IsBlank(strain)) {
+        unit_test_util::SetOrgMod(np, COrgMod::eSubtype_strain, strain);
+    }
+    if (!NStr::IsBlank(serotype)) {
+        SetOrgMod(np, COrgMod::eSubtype_serotype, serotype);
+    }
+
+    if (segment < 100) {
+        SetSubSource(np, CSubSource::eSubtype_segment, NStr::NumericToString(segment));
+    }
+    if (partial) {
+        feat_to_partial->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    }
+    return np;
+}
+
+
+void AddOneInfluenzaSegment
+(CBioseq_set& set,
+size_t seg_num,
+size_t& id_offset,
+const string& taxname,
+const string& strain,
+const string& serotype = kEmptyStr,
+bool make_partial = false,
+bool make_seq = false)
+{
+    CRef<CSeq_entry> seg = BuildInfluenzaSegment(taxname, strain, serotype, seg_num, make_partial, make_seq);
+    if (make_seq) {
+        CRef<CSeq_id> nid(new CSeq_id());
+        nid->SetLocal().SetStr("seg_" + NStr::NumericToString(id_offset));
+        ChangeId(seg, nid);
+    } else {
+        CRef<CSeq_id> nid(new CSeq_id());
+        nid->SetLocal().SetStr("nseg_" + NStr::NumericToString(id_offset));
+        ChangeNucProtSetNucId(seg, nid);
+        CRef<CSeq_id> pid(new CSeq_id());
+        pid->SetLocal().SetStr("pseg_" + NStr::NumericToString(id_offset));
+        ChangeNucProtSetProteinId(seg, pid);
+    }
+    set.SetSeq_set().push_back(seg);
+    id_offset++;    
+}
+
+
+void AddInfluenzaSegments
+(CBioseq_set& set, 
+ size_t num_segments,
+ size_t& id_offset,
+ const string& taxname, 
+ const string& strain, 
+ const string& serotype = kEmptyStr)
+{
+    for (size_t i = 0; i < num_segments; i++) {
+        AddOneInfluenzaSegment(set, i + 1, id_offset, taxname, strain, serotype);
+    }
+}
+
+
+void CheckSmallGenomeSet(const CBioseq_set& sm_set, size_t expected)
+{
+    BOOST_CHECK_EQUAL(sm_set.GetClass(), CBioseq_set::eClass_small_genome_set);
+    BOOST_CHECK_EQUAL(sm_set.GetSeq_set().size(), expected);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MakeSmallGenomeSet)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    size_t id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 8, id_offset, "Influenza A virus", "X", "Y");
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 1);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 1);
+    CheckSmallGenomeSet(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().front()->GetSet(), 8);
+
+    // duplicate segments are ok
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 8, id_offset, "Influenza A virus", "X", "Y");
+    AddInfluenzaSegments(entry->SetSet(), 4, id_offset, "Influenza A virus", "X", "Y");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 1);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 1);
+    CheckSmallGenomeSet(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().front()->GetSet(), 12);
+
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 8, id_offset, "Influenza A virus", "X", "Y");
+    AddInfluenzaSegments(entry->SetSet(), 4, id_offset, "Influenza A virus", "X", "Y");
+    // too few, won't make new set
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza B virus", "X");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 1);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 7);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    // not fooled by duplicate
+    AddInfluenzaSegments(entry->SetSet(), 7, id_offset, "Influenza B virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza B virus", "X");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 0);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 8);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    // too many
+    AddInfluenzaSegments(entry->SetSet(), 8, id_offset, "Influenza C virus", "X");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 0);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 8);
+
+    // interspersed
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 7, id_offset, "Influenza A virus", "X", "Y");
+    AddInfluenzaSegments(entry->SetSet(), 7, id_offset, "Influenza B virus", "X");
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza C virus", "X");
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza D virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 8, id_offset, "Influenza A virus", "X", "Y");
+    AddOneInfluenzaSegment(entry->SetSet(), 8, id_offset, "Influenza B virus", "X", "Y");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza C virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza D virus", "X");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 4);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 4);
+    CheckSmallGenomeSet(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().front()->GetSet(), 8);
+    CheckSmallGenomeSet(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSet(), 7);
+
+
+    //make sure we can add a sequence instead of a nuc-prot set
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza D virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza D virus", "X", kEmptyStr, false, true);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 1);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 1);
+    CheckSmallGenomeSet(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().front()->GetSet(), 7);
+
+    //make sure we don't create the set if one sequence has partial coding region
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza D virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza D virus", "X", kEmptyStr, true, false);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 0);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 7);
+
+    // make sure we don't create the set if one sequence has partial gene
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSet().ResetSeq_set();
+    id_offset = 1;
+    AddInfluenzaSegments(entry->SetSet(), 6, id_offset, "Influenza D virus", "X");
+    AddOneInfluenzaSegment(entry->SetSet(), 7, id_offset, "Influenza D virus", "X", kEmptyStr, true, true);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    BOOST_CHECK_EQUAL(CCleanup::MakeSmallGenomeSet(seh), 0);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 7);
+
+}

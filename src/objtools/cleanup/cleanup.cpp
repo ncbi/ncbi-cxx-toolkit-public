@@ -4090,6 +4090,271 @@ bool CCleanup::ParseCodeBreaks(CSeq_feat& feat, CScope& scope)
 }
 
 
+// From SQD-4297
+// Influenza is a multi-segmented virus. We would like to create 
+// small-genome sets when all segments of a particular viral strain
+// are submitted together. This is made more difficult due to fact 
+// that submitters often have large submissions with multiple strains 
+// at one time.
+// This function will segregate sequences with the same taxname 
+// plus additional qualifiers into small-genome sets, if there are enough 
+// sequences for that type of Influenza *AND* all CDS and gene features 
+// on the sequences are complete.
+// * Influenza A virus: 8 or more nucleotide sequences with same strain and serotype
+// * Influenza B virus: 8 or more nucleotide sequences with same strain 
+// * Influenza C virus: 7 or more nucleotide sequences with same strain 
+// * Influenza D virus: 7 or more records with same strain
+// Note that as long as we are making strain-specific organism names, 
+// the taxname must only start with the Influenza designation, not match it.
+// Can only make a set if at least one instance of each segment value is represented.
+class CInfluenzaSet : public CObject {
+public:
+    CInfluenzaSet(const string& key);
+    ~CInfluenzaSet() {}
+
+    static string GetKey(const COrg_ref& org);
+    bool OkToMakeSet() const;
+    void MakeSet();
+
+    typedef enum {
+        eNotInfluenza = 0,
+        eInfluenzaA,
+        eInfluenzaB,
+        eInfluenzaC,
+        eInfluenzaD
+    } EInfluenzaType;
+
+    static EInfluenzaType GetInfluenzaType(const string& taxname);
+
+    void AddBioseq(CBioseq_Handle bsh);
+
+protected:
+    typedef vector<CBioseq_Handle> TMembers;
+    TMembers m_Members;
+    const string m_Key;
+    EInfluenzaType m_FluType;
+    size_t m_Required;
+};
+
+
+CInfluenzaSet::CInfluenzaSet(const string& key) : m_Key(key) 
+{ 
+    m_FluType = GetInfluenzaType(key);
+    m_Required = 7;
+    if (m_FluType == eInfluenzaA || m_FluType == eInfluenzaB) {
+        m_Required = 8;
+    }
+}
+
+
+CInfluenzaSet::EInfluenzaType CInfluenzaSet::GetInfluenzaType(const string& taxname)
+{
+    if (NStr::StartsWith(taxname, "Influenza A virus", NStr::eNocase)) {
+        return eInfluenzaA;
+    } else if (NStr::StartsWith(taxname, "Influenza B virus", NStr::eNocase)) {
+        return eInfluenzaB;
+    } else if (NStr::StartsWith(taxname, "Influenza C virus", NStr::eNocase)) {
+        return eInfluenzaC;
+    } else if (NStr::StartsWith(taxname, "Influenza D virus", NStr::eNocase)) {
+        return eInfluenzaD;
+    } else {
+        return eNotInfluenza;
+    }
+}
+
+
+string CInfluenzaSet::GetKey(const COrg_ref& org)
+{
+    if (!org.IsSetTaxname() || !org.IsSetOrgname() || !org.GetOrgname().IsSetMod()) {
+        return kEmptyStr;
+    }
+    EInfluenzaType flu_type = GetInfluenzaType(org.GetTaxname());
+    if (flu_type == eNotInfluenza) {
+        return kEmptyStr;
+    }
+
+    CTempString strain = kEmptyStr;
+    CTempString serotype = kEmptyStr;
+
+    ITERATE(COrgName::TMod, it, org.GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
+            if ((*it)->GetSubtype() == COrgMod::eSubtype_strain) {
+                strain = (*it)->GetSubname();
+            } else if ((*it)->GetSubtype() == COrgMod::eSubtype_serotype &&
+                flu_type == eInfluenzaA) {
+                serotype = (*it)->GetSubname();
+            }
+        }
+    }
+    if(NStr::IsBlank(strain)) {
+        return kEmptyStr;
+    }
+    if (flu_type == eInfluenzaA) {
+        if (NStr::IsBlank(serotype)) {
+            return kEmptyStr;
+        } else {
+            return org.GetTaxname() + ":" + strain + ":" + serotype;
+        }
+    } else {
+        return org.GetTaxname() + ":" + strain;
+    }
+}
+
+
+void CInfluenzaSet::AddBioseq(CBioseq_Handle bsh)
+{
+    m_Members.push_back(bsh);
+}
+
+
+bool CInfluenzaSet::OkToMakeSet() const
+{
+    if (m_Members.size() < m_Required) {
+        return false;
+    }
+
+    bool ok = true;
+    bool* seg_found = new bool[m_Required];
+    for (size_t i = 0; i < m_Required; i++) {
+        seg_found[i] = false;
+    }
+
+    ITERATE(TMembers, it, m_Members) {
+        // check to make sure one of each segment is represented
+        CSeqdesc_CI src(*it, CSeqdesc::e_Source);
+        if (src->GetSource().IsSetSubtype()) {
+            bool found_seg = false;
+            ITERATE(CBioSource::TSubtype, s, src->GetSource().GetSubtype()) {
+                if ((*s)->IsSetSubtype() && (*s)->IsSetName() &&
+                    (*s)->GetSubtype() == CSubSource::eSubtype_segment) {
+                    try {
+                        size_t seg = NStr::StringToSizet((*s)->GetName());
+                        if (seg < 1 || seg > m_Required) {
+                            ok = false;
+                            break;
+                        }
+                        seg_found[seg - 1] = true;
+                        found_seg = true;
+                    } catch (CException& ex) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+            if (!found_seg) {
+                ok = false;
+            }
+        } else {
+            ok = false;
+        }
+        if (!ok) {
+            break;
+        }
+
+        // make sure all coding regions and genes are complete
+        SAnnotSelector sel;
+        sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+        sel.IncludeFeatType(CSeqFeatData::e_Gene);
+        CFeat_CI f(*it, sel);
+        while (f) {
+            if (f->GetLocation().IsPartialStart(eExtreme_Biological) ||
+                f->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                ok = false;
+                break;
+            }
+            ++f;
+        }
+        if (!ok) break;
+    }
+
+    if (ok) {
+        for (size_t i = 0; i < m_Required; i++) {
+            if (!seg_found[i]) {
+                ok = false;
+                break;
+            }
+        }
+    }
+    delete[] seg_found;
+
+    return ok;
+}
+
+
+void CInfluenzaSet::MakeSet()
+{
+    if (m_Members.size() == 0) {
+        return;
+    }
+    CBioseq_set_Handle parent = m_Members[0].GetParentBioseq_set();
+    if (!parent) {
+        return;
+    }
+    if (parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        parent = parent.GetParentBioseq_set();
+    }
+    if (!parent) {
+        return;
+    }
+    CSeq_entry_Handle peh = parent.GetParentEntry();
+    CSeq_entry_EditHandle peeh(peh);
+    CBioseq_set_EditHandle parent_edit(parent);
+    CRef<CSeq_entry> ns(new CSeq_entry());
+    ns->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
+    CSeq_entry_EditHandle new_set = parent_edit.AttachEntry(*ns, -1);
+    ITERATE(TMembers, it, m_Members) {
+        CBioseq_set_Handle np = it->GetParentBioseq_set();
+        if (np && np.IsSetClass() && np.GetClass() == CBioseq_set::eClass_nuc_prot) {
+            CSeq_entry_Handle nps = np.GetParentEntry();
+            CSeq_entry_EditHandle npse(nps);
+            npse.Remove();
+            new_set.AttachEntry(npse);
+        } else {
+            CSeq_entry_Handle s = it->GetParentEntry();
+            CSeq_entry_EditHandle se(s);
+            se.Remove();
+            new_set.AttachEntry(se);
+        }
+    }
+}
+
+
+typedef map<string, CRef<CInfluenzaSet> > TInfluenzaSetMap;
+
+size_t CCleanup::MakeSmallGenomeSet(CSeq_entry_Handle entry)
+{
+    TInfluenzaSetMap flu_map;
+
+    CBioseq_CI bi(entry, CSeq_inst::eMol_na);
+    while (bi) {
+        CSeqdesc_CI src(*bi, CSeqdesc::e_Source);
+        if (src && src->GetSource().IsSetOrg()) {
+            string key = CInfluenzaSet::GetKey(src->GetSource().GetOrg());
+            if (!NStr::IsBlank(key)) {
+                // add to set
+                TInfluenzaSetMap::iterator it = flu_map.find(key);
+                if (it == flu_map.end()) {
+                    CRef<CInfluenzaSet> new_set(new CInfluenzaSet(key));
+                    new_set->AddBioseq(*bi);
+                    flu_map[key] = new_set;
+                } else {
+                    it->second->AddBioseq(*bi);
+                }
+            }
+        }
+        ++bi;
+    }
+    // now create sets
+    size_t added = 0;
+    NON_CONST_ITERATE(TInfluenzaSetMap, it, flu_map) {
+        if (it->second->OkToMakeSet()) {
+            it->second->MakeSet();
+            added++;
+        }
+    }
+
+    return added;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
