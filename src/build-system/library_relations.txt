@@ -545,6 +545,7 @@ gui_objutils needs snputil
 gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
 gui_objutils needs xdiscrepancy
+gui_objutils needs xobjreadex
 gui_objutils needs xobjwrite
 gui_objutils needs xvalidate
 gui_opengl needs gui_utils
@@ -1147,6 +1148,7 @@ w_aln_crossaln needs w_hit_matrix
 w_aln_multi needs w_seq_graphic
 w_aln_score needs w_wx
 w_aln_table needs w_wx
+w_data needs gui_objects
 w_data needs w_wx
 w_edit needs align_format
 w_edit needs hydra_client
@@ -1154,6 +1156,8 @@ w_edit needs prosplign
 w_edit needs w_loaders
 w_edit needs w_seq
 w_feat_table needs w_wx
+w_feedback needs gui_objects
+w_feedback needs w_wx
 w_gl needs w_wx
 w_grid_widget needs w_data
 w_hapmap needs w_seq_graphic
@@ -1166,8 +1170,7 @@ w_loaders needs hgvs
 w_loaders needs ncbi_xloader_blastdb
 w_loaders needs w_wx
 w_loaders needs xalgophytree
-w_loaders needs xobjreadex
-w_macro_edit needs w_wx
+w_macro_edit needs w_feedback
 w_object_list needs w_text_widget
 w_phylo_tree needs gui_graph
 w_phylo_tree needs w_data
@@ -1179,6 +1182,8 @@ w_seq_graphic needs genesbyloc
 w_seq_graphic needs gui_config
 w_seq_graphic needs gui_graph
 w_seq_graphic needs ncbi_xcache_netcache
+w_seq_graphic needs ncbi_xloader_bam
+w_seq_graphic needs ncbi_xloader_csra
 w_seq_graphic needs w_aln_score
 w_seq_graphic needs w_gl
 w_seq_graphic needs w_loaders
