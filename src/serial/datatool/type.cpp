@@ -653,7 +653,9 @@ string CDataType::FileName(void) const
                 m_CachedFileName = tmp;
             }
         }
-        sm_AllFileNames.insert(m_CachedFileName);
+        if (!IsPrimitive()) {
+            sm_AllFileNames.insert(m_CachedFileName);
+        }
     }
     return m_CachedFileName;
 }
