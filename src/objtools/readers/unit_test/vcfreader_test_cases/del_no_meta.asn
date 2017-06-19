@@ -1,4 +1,11 @@
 Seq-annot ::= {
+  desc {
+    user {
+      type str "Track Data",
+      data {
+      }
+    }
+  },
   data ftable {
     {
       data variation {

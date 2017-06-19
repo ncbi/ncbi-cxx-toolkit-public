@@ -1,6 +1,11 @@
 Seq-annot ::= {
   desc {
     user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
       type str "vcf-meta-info",
       data {
         {
