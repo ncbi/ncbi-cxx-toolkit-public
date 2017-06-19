@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/error_codes.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -111,6 +112,7 @@ public:
 private:
 
     void Setup(const CArgs& args);
+    void x_AliasLogFile();
 
     auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
     auto_ptr<CObjectIStream> OpenFile(const string& fname);
@@ -161,7 +163,7 @@ private:
     unsigned int m_Options;
     bool m_Continue;
     bool m_OnlyAnnots;
-    time_t m_Longest;
+    double m_Longest;
     string m_CurrentId;
     string m_LongestId;
     size_t m_NumFiles;
@@ -181,7 +183,6 @@ private:
     string     m_obj_type;
 
     CNcbiOstream* m_ValidErrorStream;
-    CNcbiOstream* m_LogStream;
 #ifdef USE_XMLWRAPP_LIBS
     auto_ptr<CValXMLStream> m_ostr_xml;
 #endif
@@ -200,7 +201,7 @@ CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
     m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
-    m_ValidErrorStream(0), m_LogStream(0)
+    m_ValidErrorStream(0)
 {
     SetVersionByBuild(1);
 }
@@ -210,6 +211,25 @@ CAsnvalApp::CAsnvalApp(void) :
 CAsnvalApp::~CAsnvalApp (void)
 
 {
+}
+
+
+void CAsnvalApp::x_AliasLogFile(void)
+{
+    const CArgs& args = GetArgs();
+    Setup(args);
+
+    if (args["L"]) {
+        if (args["logfile"]) {
+            if (NStr::Equal(args["L"].AsString(), args["logfile"].AsString())) {
+                // no-op
+            } else {
+                NCBI_THROW(CException, eUnknown, "Cannot specify both -L and -logfile");
+            }
+        } else {
+            SetLogFile(args["L"].AsString());
+        }
+    }
 }
 
 
@@ -291,6 +311,7 @@ void CAsnvalApp::Init(void)
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
 
+    x_AliasLogFile();
 }
 
 
@@ -353,9 +374,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
 {
     const CArgs& args = GetArgs();
 
-    if (m_LogStream) {
-        *m_LogStream << fname << endl;
-    }
+    LOG_POST_XX(Corelib_App, 1, fname);
     auto_ptr<CNcbiOfstream> local_stream;
 
     bool close_error_stream = false;
@@ -366,7 +385,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             if (fname.empty())  {
                 path = "stdin.val";
             } else {
-                size_t pos = NStr::Find(fname, ".", 0, string::npos, NStr::eLast);
+                size_t pos = NStr::Find(fname, ".", NStr::eNocase, NStr::eReverseSearch);
                 if (pos != string::npos)
                     path = fname.substr(0, pos);
                 else
@@ -398,7 +417,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             else {
                 size_t num_validated = 0;
                 while (true) {
-                   time_t start_time = time(NULL);
+                   CStopWatch sw(CStopWatch::eStart);
                    try {
                         CConstRef<CValidError> eval = ValidateInput();
 
@@ -414,9 +433,8 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                         else {
                             break;
                         }
-                    }
-                    time_t stop_time = time(NULL);
-                    time_t elapsed = stop_time - start_time;
+                    }                    
+                    double elapsed = sw.Elapsed();
                     if (elapsed > m_Longest) {
                         m_Longest = elapsed;
                         m_LongestId = m_CurrentId;
@@ -481,8 +499,11 @@ int CAsnvalApp::Run(void)
     if (args["o"]) {
         m_ValidErrorStream = &(args["o"].AsOutputFile());
     }
-            
-    m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
+
+    if (args["L"] && !args["logfile"]) {
+        // todo - redirect to logfile    
+        //m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
+    }
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to asnvalidate match asnval expectations
@@ -527,11 +548,9 @@ int CAsnvalApp::Run(void)
     }
 
     time_t stop_time = time(NULL);
-    if (m_LogStream) {
-        *m_LogStream << "Finished in " << stop_time - start_time << " seconds" << endl;
-        *m_LogStream << "Longest processing time " << m_Longest << " seconds on " << m_LongestId << endl;
-        *m_LogStream << "Total number of records " << m_NumRecords << endl;
-    }
+    LOG_POST_XX(Corelib_App, 1, "Finished in " << stop_time - start_time << " seconds");
+    LOG_POST_XX(Corelib_App, 1, "Longest processing time " << m_Longest << " seconds on " << m_LongestId);
+    LOG_POST_XX(Corelib_App, 1, "Total number of records " << m_NumRecords);
 
     DestroyOutputStreams();
 
@@ -573,13 +592,11 @@ void CAsnvalApp::ReadClassMember
                 CRef<CScope> scope = BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
-                if (m_LogStream) {
-                    CBioseq_CI bi(seh);
-                    if (bi) {
-                        m_CurrentId = "";
-                        bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-                        *m_LogStream << m_CurrentId << endl;
-                    }
+                CBioseq_CI bi(seh);
+                if (bi) {
+                    m_CurrentId = "";
+                    bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
+                    LOG_POST_XX(Corelib_App, 1, m_CurrentId);
                 }
 
                 if (m_DoCleanup) {
@@ -601,7 +618,7 @@ void CAsnvalApp::ReadClassMember
                     CStopWatch sw(CStopWatch::eStart);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
                     m_NumRecords++;
-                    time_t elapsed = sw.Elapsed();
+                    double elapsed = sw.Elapsed();
                     if (elapsed > m_Longest) {
                         m_Longest = elapsed;
                         m_LongestId = m_CurrentId;
@@ -772,13 +789,11 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
         m_Cleanup.BasicCleanup (se);
     }
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
-    if (m_LogStream) {
-        CBioseq_CI bi(seh);
-        if (bi) {
-            m_CurrentId = "";
-            bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-            *m_LogStream << m_CurrentId << endl;
-        }
+    CBioseq_CI bi(seh);
+    if (bi) {
+        m_CurrentId = "";
+        bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
+        LOG_POST_XX(Corelib_App, 1, m_CurrentId);
     }
 
     if ( m_OnlyAnnots ) {
@@ -938,6 +953,8 @@ void CAsnvalApp::Setup(const CArgs& args)
 
     // Set validator options
     m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
+
+
 }
 
 
