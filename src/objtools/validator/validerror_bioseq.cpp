@@ -2217,6 +2217,25 @@ bool CValidError_bioseq::IsWGSMaster(const CBioseq& seq, CScope& scope)
 }
 
 
+bool CValidError_bioseq::IsWGSMaster(const CSeq_entry& entry)
+{
+    bool rval = false;
+    if (entry.IsSeq()) {
+        if (IsMaster(entry.GetSeq()) && IsWGS(entry.GetSeq())) {
+            rval = true;
+        }
+    } else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set()) {
+            if (IsWGSMaster(**it)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
 bool CValidError_bioseq::IsWGS(const CBioseq& seq)
 {
     if (!seq.IsSetDescr()) {

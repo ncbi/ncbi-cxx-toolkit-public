@@ -325,9 +325,13 @@ bool CValidError_desc::ValidateStructuredComment
 void CValidError_desc::x_ReportStructuredCommentErrors(const CSeqdesc& desc, const CComment_rule::TErrorList& errors)
 {
     ITERATE(CComment_rule::TErrorList, it, errors) {
-        PostErr(s_ErrorLevelFromFieldRuleSev(it->first),
-            s_GetErrTypeFromString(it->second),
-            it->second, *m_Ctx, desc);
+        EErrType et = s_GetErrTypeFromString(it->second);
+        EDiagSev sev = s_ErrorLevelFromFieldRuleSev(it->first);
+        if (et == eErr_SEQ_DESCR_BadStrucCommFieldOutOfOrder && sev < eDiag_Error &&
+            CValidError_bioseq::IsWGSMaster(*m_Ctx)) {
+            sev = eDiag_Error;
+        }
+        PostErr(sev, et, it->second, *m_Ctx, desc);
     }
 }
 

@@ -1324,6 +1324,7 @@ public:
 
     static bool IsMaster(const CBioseq& seq);
     static bool IsWGSMaster(const CBioseq& seq, CScope& scope);
+    static bool IsWGSMaster(const CSeq_entry& entry);
     static bool IsWGS(const CBioseq& seq);
     static bool IsWGS(CBioseq_Handle bsh);
     static bool IsWGSAccession(const CSeq_id& id);
