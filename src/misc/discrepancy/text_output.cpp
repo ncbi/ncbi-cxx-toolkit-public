@@ -37,30 +37,6 @@ USING_SCOPE(objects);
 // THIS WHOLE THING IS EVIL!
 // DATA LAYER IS MIXED WITH PRESENTATION LAYER :(
 
-static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal, bool ext)
-{
-    ITERATE (TReportItemList, it, list) {
-        if ((*it)->IsExtended() && !ext) {
-            continue;
-        }
-        if (fatal && (*it)->IsFatal()) {
-            out << "FATAL: ";
-        }
-        out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
-        TReportItemList subs = (*it)->GetSubitems();
-        if (!subs.empty() && (ext || !subs[0]->IsExtended()) && !subs[0]->IsSummary()) {
-            RecursiveText(out, subs, fatal, ext);
-        }
-        else {
-            TReportObjectList det = (*it)->GetDetails();
-            ITERATE (TReportObjectList, obj, det) {
-                out << (*obj)->GetText() << "\n";
-            }
-            out << "\n";
-        }
-    }
-}
-
 
 static bool ShowFatal(const CReportItem& item)
 {
@@ -74,6 +50,31 @@ static bool ShowFatal(const CReportItem& item)
         }
     }
     return true;
+}
+
+
+static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal, bool ext)
+{
+    ITERATE (TReportItemList, it, list) {
+        if ((*it)->IsExtended() && !ext) {
+            continue;
+        }
+        if (fatal && ShowFatal(**it)) {
+            out << "FATAL: ";
+        }
+        out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+        TReportItemList subs = (*it)->GetSubitems();
+        if (!subs.empty() && (ext || !subs[0]->IsExtended() && !subs[0]->IsSummary())) {
+            RecursiveText(out, subs, fatal, ext);
+        }
+        else {
+            TReportObjectList det = (*it)->GetDetails();
+            ITERATE (TReportObjectList, obj, det) {
+                out << (*obj)->GetText() << "\n";
+            }
+            out << "\n";
+        }
+    }
 }
 
 
