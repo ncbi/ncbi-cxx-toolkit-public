@@ -1596,6 +1596,12 @@ int CMagicBlastApp::Run(void)
         // larger database by database
         if (db_size < kLargeDb) {
             num_query_threads = m_CmdLineArgs->GetNumThreads();
+
+            // when not counting words in the database, processing smaller
+            // batches is faster
+            if (!opt.GetLookupDbFilter()) {
+                batch_size = MAX(batch_size / num_query_threads, 5000000);
+            }
         }
         else {
             num_db_threads = m_CmdLineArgs->GetNumThreads();
