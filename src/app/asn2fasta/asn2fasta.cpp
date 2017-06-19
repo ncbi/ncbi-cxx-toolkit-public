@@ -289,6 +289,49 @@ void CAsn2FastaApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
+namespace {
+
+class CAsn2FastaAppOstream : public CFastaOstreamEx 
+{
+    using CFastaOstreamEx::CFastaOstreamEx;
+
+    void x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& best_id, bool& hide_prefix, const CBioseq& bioseq) override
+    {
+        best_id = FindBestChoice(bioseq.GetId(), CSeq_id::WorstRank);
+
+         ITERATE(CBioseq::TId, id, bioseq.GetId()) {
+            if ((*id)->IsGi()) {
+                gi_id = *id;
+                break;
+            }
+        }
+
+        if (best_id.NotEmpty() && 
+            (m_Flags & fEnableGI) == 0 &&
+            (m_Flags & fHideGenBankPrefix) != 0)
+        {
+            switch (best_id->Which())
+            {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Other:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                hide_prefix = true;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+};
+
+}
+
+
 //  --------------------------------------------------------------------------
 CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
 //  --------------------------------------------------------------------------
@@ -316,7 +359,8 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
             return NULL;
         }
     }
-    auto_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
+    //auto_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
+    auto_ptr<CFastaOstreamEx> fasta_os(new CAsn2FastaAppOstream(*os));
 
     fasta_os->SetAllFlags(        
         CFastaOstreamEx::fInstantiateGaps |

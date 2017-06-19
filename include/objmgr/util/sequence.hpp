@@ -867,12 +867,12 @@ protected:
     //virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
     virtual void x_WriteSeqTitle( const CBioseq_Handle & handle,
                                     const string& custom_title);
+    TFlags              m_Flags;
 
 private:
     CConstRef<CSeq_loc> m_SoftMask;
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;
-    TFlags              m_Flags;
     EGapMode            m_GapMode;
     TSeq_id_HandleSet   m_PreviousWholeIds;
     // avoid recomputing for every sequence

@@ -53,6 +53,7 @@ class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx
 public:
 
     CFastaOstreamEx(CNcbiOstream& out);
+    virtual ~CFastaOstreamEx() = default;
    
 
     bool WriteFeatures(CFeat_CI feat_it, 
