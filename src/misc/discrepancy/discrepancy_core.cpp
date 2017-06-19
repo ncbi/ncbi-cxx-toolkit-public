@@ -170,8 +170,9 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     bool autofix = false;
     bool fatal = m_Fatal;
     NON_CONST_ITERATE(TNodeMap, it, m_Map) {
-        fatal |= it->second->m_Fatal;
         CRef<CReportItem> sub = it->second->Export(test, unique);
+        fatal |= it->second->m_Fatal;
+        fatal |= sub->IsFatal();
         autofix |= sub->CanAutofix();
         subs.push_back(sub);
         if (!m_NoRec) {

@@ -62,11 +62,26 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal,
 }
 
 
+static bool ShowFatal(const CReportItem& item)
+{
+    if (!item.IsFatal()) {
+        return false;
+    }
+    TReportItemList subs = item.GetSubitems();
+    ITERATE (TReportItemList, it, subs) {
+        if ((*it)->IsSummary() && (*it)->IsFatal()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fatal, size_t level = 0)
 {
     ITERATE (TReportItemList, it, list) {
         if (!level) {
-            if (fatal && (*it)->IsFatal()) {
+            if (fatal && ShowFatal(**it)) {
                 out << "FATAL: ";
             }
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
@@ -74,6 +89,9 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
         else if ((*it)->IsSummary()) {
             for (size_t i = 0; i < level; i++) {
                 out << "\t" ;
+            }
+            if (fatal && ShowFatal(**it)) {
+                out << "FATAL: ";
             }
             out << (*it)->GetMsg() << "\n";
         }

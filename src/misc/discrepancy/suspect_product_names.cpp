@@ -5437,15 +5437,12 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 
     if (prot.IsSetName() && !prot.GetName().empty()) {
         string prot_name = *prot.GetName().begin();
-
         if (!ContainsLetters(prot_name)) {
-
             const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
             CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
             node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat())).Fatal();
         }
         else {
-
             size_t rule_num = 1;
             ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
                 string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
@@ -5472,11 +5469,9 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 }
                 rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
                 string rule_text = leading_space + GetRuleMatch(**rule);
-                CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->IsFatal());
+                CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ();
                 const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
-
-                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(),
-                    eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
+                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
             }
         }
     }
