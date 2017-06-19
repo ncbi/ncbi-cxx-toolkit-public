@@ -301,6 +301,9 @@ public:
     static bool IsASNDataSpec(void) {
         return sm_SourceDataSpec == EDataSpec::eASN;
     }
+    static bool IsXMLDataSpec(void) {
+        return sm_SourceDataSpec == EDataSpec::eDTD || sm_SourceDataSpec == EDataSpec::eXSD;
+    }
 
     virtual const char* GetDEFKeyword(void) const;
     const string& GetMemberName(void) const
@@ -331,6 +334,12 @@ public:
     bool IsNillable(void) const
     {
         return m_IsNillable;
+    }
+    void SetGlobalType(bool type) {
+        m_GlobalType = type;
+    }
+    bool IsGlobalType(void) const {
+        return m_GlobalType;
     }
     string GetFullName(void) const;
 
@@ -372,6 +381,7 @@ private:
     string m_Namespace;
     ENsQualifiedMode m_NsQualified;
     bool m_IsNillable;
+    bool m_GlobalType;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

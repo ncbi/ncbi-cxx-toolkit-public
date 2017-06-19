@@ -131,9 +131,6 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& external_name,
         memberType = in_union? eBufferMember: ePointerMember;
         break;
     }
-    if ( type->GetKind() == eKindOther && type->DataType() && type->DataType()->IsTypeAlias()) {
-            memberType = eObjectPointerMember;
-    }
 }
 
 bool CChoiceTypeStrings::x_IsNullType(TVariants::const_iterator i) const

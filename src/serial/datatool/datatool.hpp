@@ -58,6 +58,16 @@ public:
     string GetConfigValue(const string& section, const string& name) const;
     bool HasConfig(void) const;
 
+
+    enum ECodeGenerationStyle {
+        eNoGlobalTypeClasses     = 1,
+        ePreserveNestedElements  = 2
+    };
+    typedef Uint8 FCodeGenerationStyle;
+    bool IsSetCodeGenerationStyle(ECodeGenerationStyle e) const {
+        return (m_codestyle & FCodeGenerationStyle(e)) != 0;
+    }
+
 private:
     bool ProcessModules(void);
     bool ProcessData(void);
@@ -70,7 +80,13 @@ private:
         SourceFile::EType srctype = SourceFile::eUnknown);
 
     CCodeGenerator generator;
+    FCodeGenerationStyle m_codestyle;
 };
+
+inline
+CDataTool& DataTool(void) {
+    return *(CDataTool*)CNcbiApplication::Instance();
+}
 
 END_NCBI_SCOPE
 

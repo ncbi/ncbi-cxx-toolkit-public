@@ -320,6 +320,13 @@ public:
         return m_Nillable;
     }
 
+    void SetGlobalType(bool def) {
+        m_GlobalType = def;
+    }
+    bool IsGlobalType(void) const {
+        return m_GlobalType;
+    }
+
     CComments& Comments(void)
     {
         return m_Comments;
@@ -352,6 +359,7 @@ private:
     bool m_Named;
     bool m_Qualified;
     bool m_Nillable;
+    bool m_GlobalType;
     CComments m_Comments;
     CComments m_AttribComments;
 };

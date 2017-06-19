@@ -65,6 +65,9 @@ CAliasTypeStrings::~CAliasTypeStrings(void)
 
 CAliasTypeStrings::EKind CAliasTypeStrings::GetKind(void) const
 {
+    if (DataType() && DataType()->IsTypeAlias()) {
+        return eKindObject;
+    }
     return eKindOther;
 }
 
@@ -96,6 +99,9 @@ bool CAliasTypeStrings::HaveSpecialRef(void) const
 
 string CAliasTypeStrings::GetRef(const CNamespace& ns) const
 {
+    if (DataType() && DataType()->IsTypeAlias()) {
+        return "CLASS, ("+GetCType(ns)+')';
+    }
     return m_RefType->GetRef(ns);
 }
 
@@ -232,6 +238,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
 
 
     if (m_Nested && type_alias && !mem_alias && !DataType()->HasTag() &&
+        !DataType()->IsInUniSeq() &&
         DataType()->GetTagType() == CAsnBinaryDefs::eAutomatic)
     {
         m_RefType->GenerateTypeCode(ctx);

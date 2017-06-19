@@ -289,6 +289,7 @@ DTDElement::DTDElement(void)
     m_Named= false;
     m_Qualified = false;
     m_Nillable = false;
+    m_GlobalType = false;
 }
 
 DTDElement::DTDElement(const DTDElement& other)
@@ -313,6 +314,7 @@ DTDElement& DTDElement::operator=(const DTDElement& other)
     m_Named    = other.m_Named;
     m_Qualified= other.m_Qualified;
     m_Nillable = other.m_Nillable;
+    m_GlobalType = other.m_GlobalType;
     m_Comments = other.m_Comments;
     m_AttribComments = other.m_AttribComments;
     return *this;

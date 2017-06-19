@@ -68,6 +68,7 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
 {
     string tag(XmlTagName());
     string userType(UserTypeXmlTagName());
+    bool isTypeAlias = IsTypeAlias();
 
     if (tag == userType || (GetEnforcedStdXml() && contents_only)) {
 
@@ -105,16 +106,31 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
     } else {
         if (!contents_only) {
             PrintASNNewLine(out,indent++) << "<xs:element name=\"" << tag << "\"";
+            if (isTypeAlias) {
+                out << " type=\"" << userType << "\"";
+            }
             if (GetDataMember() && GetDataMember()->Optional()) {
                 out << " minOccurs=\"0\"";
             }
 #if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
             if (!(GetDataMember() && GetDataMember()->GetComments().PrintSchemaComments(out, indent))) {
+                if (isTypeAlias) {
+                    out << "/>";
+                    return;
+                }
                 out << ">";
             }
 #else
+            if (isTypeAlias) {
+                out << "/>";
+                return;
+            }
             out << ">";
 #endif
+            if (isTypeAlias) {
+                PrintASNNewLine(out,--indent) << "</xs:element>";
+                return;
+            }
             PrintASNNewLine(out,indent++) << "<xs:complexType>";
             PrintASNNewLine(out,indent++) << "<xs:sequence>";
         }
@@ -259,7 +275,7 @@ AutoPtr<CTypeStrings> CReferenceDataType::GetFullCType(void) const
         NCBI_THROW(CDatatoolException,eWrongInput,
             "invalid definition of " + GetUserTypeName());
     }
-    if (IsAlias() && IsTypeAlias()) {
+    if (IsAlias() && IsTypeAlias() && IsXMLDataSpec()) {
         SetIsTypeAlias(false);
         AutoPtr<CTypeStrings> type = CParent::GenerateCode();
         SetIsTypeAlias(true);

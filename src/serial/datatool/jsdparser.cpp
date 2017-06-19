@@ -109,6 +109,8 @@ void JSDParser::ParseMemberDefinition(DTDElement* owner)
     item.SetNamed();
     if (owner) {
         item.SetEmbedded();
+    } else {
+        item.SetGlobalType(true);
     }
     TToken tok = GetNextToken();
     if (tok == K_BEGIN_OBJECT) {

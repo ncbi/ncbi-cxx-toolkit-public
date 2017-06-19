@@ -1301,6 +1301,7 @@ void XSDParser::CreateTypeDefinition(DTDEntity::EType type)
     m_MapEntity[id].SetParseAttributes( m_TargetNamespace,
         m_ElementFormDefault,m_AttributeFormDefault,
         m_PrefixToNamespace);
+    Lexer().FlushComments();
     if (tok == K_CLOSING) {
         ParseTypeDefinition(m_MapEntity[id]);
     }
@@ -1353,6 +1354,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
                     data += ">";
                     closing = m_Raw;
                     doctag_open = true;
+                    EndCommentBlock();
                 }
             }
         } else if (tok == K_APPINFO) {
@@ -1374,8 +1376,8 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
         CNcbiOstrstream buffer;
         comments.Print(buffer, "", "\n", "");
         data += CNcbiOstrstreamToString(buffer);
-        data += closing;
     }
+    data += closing;
     data += '\n';
     data += m_Raw;
     ent.SetData(data);
@@ -1384,8 +1386,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
 
 void XSDParser::ProcessNamedTypes(void)
 {
-    string code_style = ((CDataTool*)CNcbiApplication::Instance())->GetConfigValue(
-        "-", "CodeGenerationStyle");
+    const CDataTool& app = DataTool();
     m_ResolveTypes = true;
     set<string> processed;
     bool found;
@@ -1412,7 +1413,7 @@ void XSDParser::ProcessNamedTypes(void)
                         break;
                     }
                     bool elementForm = m_ElementFormDefault;
-                    if (code_style == "0") {
+                    if (app.IsSetCodeGenerationStyle(CDataTool::eNoGlobalTypeClasses)) {
                         PushEntityLexer(node.GetTypeName());
                         bool hasContents = ParseContent(node);
                         node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
@@ -1441,6 +1442,7 @@ void XSDParser::ProcessNamedTypes(void)
                                     node.SetType(item.GetType());
                                 } else {
                                     item.SetEmbedded(false);
+                                    item.SetGlobalType(true);
                                     m_MapElement[node.GetTypeName()] = item;
                                     node.SetType(DTDElement::eAlias);
                                 }
@@ -1459,7 +1461,8 @@ void XSDParser::ProcessNamedTypes(void)
 
 // as of 24may11, the code generator is modified.
 // BUT, the mistake is already made; we want to provide backward compatibility now.
-                    if (node.IsNamed() && node.IsEmbedded() && elementForm) {
+                    if (!app.IsSetCodeGenerationStyle(CDataTool::ePreserveNestedElements) &&
+                        node.IsNamed() && node.IsEmbedded() && elementForm) {
 
                         map<string,DTDElement>::iterator k;
                         for (k = m_MapElement.begin(); k != m_MapElement.end(); ++k) {

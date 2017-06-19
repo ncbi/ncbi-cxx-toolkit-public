@@ -1058,9 +1058,7 @@ CDataType* DTDParser::x_Type(
                 }
                 type = new CReferenceDataType(base);
                 type->SetIsAlias(true);
-                if (m_SrcType != eJson) {
-                    type->SetIsTypeAlias(true);
-                }
+                type->SetIsTypeAlias(true);
             }
             break;
         case DTDElement::eEnum:
@@ -1129,6 +1127,7 @@ CDataType* DTDParser::x_Type(
     type->SetSourceLine(node.GetSourceLine());
     type->SetNamespaceName( node.GetNamespaceName());
     type->SetNsQualified( node.IsQualified());
+    type->SetGlobalType( node.IsGlobalType());
     if (node.IsNillable()) {
         type->SetNillable();
     }

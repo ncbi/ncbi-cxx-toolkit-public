@@ -67,7 +67,11 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     string xsdk("element"), use, form;
     const CDataMember* mem = GetDataMember();
     bool optional = mem ? mem->Optional() : false;
+    bool isGlobalType = IsGlobalType();
 
+    if (isGlobalType) {
+        xsdk = "complexType";
+    }
     if (GetParentType() && GetParentType()->GetDataMember()) {
         if (GetParentType()->GetDataMember()->Attlist()) {
             xsdk = "attribute";
@@ -86,7 +90,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     }
     PrintASNNewLine(out, indent) << "<xs:" << xsdk << " name=\"" << tag << "\"";
     string type = GetSchemaTypeString();
-    if (!type.empty()) {
+    if (!isGlobalType && !type.empty()) {
         out << " type=\"" << type << "\"";
     }
     if (!use.empty()) {
@@ -120,6 +124,14 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     if (IsNillable()) {
         out << " nillable=\"true\"";
     }
+    if (isGlobalType && !type.empty()) {
+        out << ">";
+        PrintASNNewLine(out, ++indent) << "<xs:simpleContent>";
+        PrintASNNewLine(out, ++indent) << "<xs:extension base=\"" << type << "\"/>";
+        PrintASNNewLine(out, --indent) << "</xs:simpleContent>";
+        PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
+        return;
+    }
     if (PrintXMLSchemaContents(out,indent+1,mem)) {
         PrintASNNewLine(out, indent) << "</xs:" << xsdk << ">";
     } else {
@@ -130,7 +142,8 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
 bool CStaticDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const
 {
 #if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
-    return (mem && mem->GetComments().PrintSchemaComments(out,indent));
+    const CComments& cm(mem ? mem->GetComments() : Comments());
+    return cm.PrintSchemaComments(out,indent);
 #else
     return false;
 #endif
@@ -209,9 +222,15 @@ bool CNullDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const 
 {
 #if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
     if (!CStaticDataType::PrintXMLSchemaContents(out, indent, mem)) {
+        if (IsGlobalType()) {
+            return false;
+        }
         out << ">";
     }
 #else
+    if (IsGlobalType()) {
+        return false;
+    }
     out << ">";
 #endif
     PrintASNNewLine(out, indent) << "<xs:complexType/>";
@@ -283,7 +302,9 @@ bool CBoolDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const 
 #else
     bool tagclosed = false;
 #endif
-
+    if (!IsASNDataSpec()) {
+        return tagclosed;
+    }
     if (GetParentType() && 
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {

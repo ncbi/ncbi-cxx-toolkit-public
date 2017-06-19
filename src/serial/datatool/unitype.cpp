@@ -129,6 +129,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
 
     string tag(XmlTagName());
     string userType = typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+    bool isTypeAlias = typeElem->IsTypeAlias();
 
     if ( GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
         string type(typeStatic ? typeStatic->GetSchemaTypeString() : typeElem->GetSchemaTypeString());
@@ -257,6 +258,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 xsdk = "all";
             }
             string tmp = "<xs:element name=\"" + tag + "\"";
+            if (isTypeAlias) {
+                tmp += " type=\"" + userType + "\"";
+            }
             if (GetDataMember()) {
                 if (GetDataMember()->Optional()) {
                     tmp += " minOccurs=\"0\"";
@@ -267,6 +271,10 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 if (isNillable) {
                     tmp += " nillable=\"true\"";
                 }
+            }
+            if (isTypeAlias) {
+                PrintASNNewLine(out, indent) << tmp << "/>";
+                return;
             }
             opentag.push_back(tmp + ">");
             closetag.push_front("</xs:element>");
@@ -307,6 +315,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 opentag.push_back(tmp + ">");
                 closetag.push_front("</xs:" + xsdk + ">");
             }
+
             ITERATE ( list<string>, s, opentag ) {
                 PrintASNNewLine(out, indent++) << *s;
             }

@@ -77,7 +77,7 @@ const string& CFileCode::ChangeFileBaseName(void)
 
 string CFileCode::GetBaseFileBaseName(void) const
 {
-    _ASSERT(BaseName(GetFileBaseName()).size() + 5 <= MAX_FILE_NAME_LENGTH);
+//    _ASSERT(BaseName(GetFileBaseName()).size() + 5 <= MAX_FILE_NAME_LENGTH);
     return GetFileBaseName() + "_";
 }
 

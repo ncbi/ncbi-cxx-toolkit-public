@@ -129,6 +129,7 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
     bool isSimple= false, isSimpleSeq= false, isSeq= false, isMixed=false;
     bool isSimpleContainer= false, parent_isSeq= false;
     bool defineAsType = false;
+    bool isGlobalType = IsGlobalType();
     string simpleType;
     list<string> opentag, closetag1, closetag2;
     CNcbiOstream* os = &out;
@@ -244,43 +245,49 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
     if (!isAttlist && !parent_isSeq) {
         if (!hasNotag) {
             if (!contents_only) {
-                tmp = "<xs:element name=\"" + tag + "\"";
-                if (isOptionalMember) {
-                    tmp += " minOccurs=\"0\"";
-                }
-                if (IsNillable()) {
-                    tmp += " nillable=\"true\"";
-                }
                 string tname;
-                if (defineAsType) {
-                    const CDataType* par = GetParentType();
-                    while ( par->GetParentType() ) {
-                        par = par->GetParentType();
-                    }
-                    tname = par->GetMemberName() + tag + "_Type";
-                    tmp += " type=\"" + tname + "\"/>";
-                    PrintASNNewLine(out, indent) << tmp;
+                if (isGlobalType) {
+                    tname = tag;
                 } else {
-#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
-                    PrintASNNewLine(out, indent) << tmp;
-                    if (!Comments().PrintSchemaComments(out, indent+1)) {
-                        out << '>';
+                    tmp = "<xs:element name=\"" + tag + "\"";
+                    if (isOptionalMember) {
+                        tmp += " minOccurs=\"0\"";
                     }
-                    ++indent;
+                    if (IsNillable()) {
+                        tmp += " nillable=\"true\"";
+                    }
+                    if (defineAsType) {
+                        const CDataType* par = GetParentType();
+                        while ( par->GetParentType() ) {
+                            par = par->GetParentType();
+                        }
+                        tname = par->GetMemberName() + tag + "_Type";
+                        tmp += " type=\"" + tname + "\"/>";
+                        PrintASNNewLine(out, indent) << tmp;
+                    } else {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+                        PrintASNNewLine(out, indent) << tmp;
+                        if (!Comments().PrintSchemaComments(out, indent+1)) {
+                            out << '>';
+                        }
+                        ++indent;
 #else
-                    tmp += ">";
-                    opentag.push_back(tmp);
+                        tmp += ">";
+                        opentag.push_back(tmp);
 #endif
-                    closetag2.push_front("</xs:element>");
+                        closetag2.push_front("</xs:element>");
+                    }
                 }
 
                 tmp = "<xs:complexType";
                 if (isMixed) {
                     tmp += " mixed=\"true\"";
                 }
-                if (defineAsType) {
+                if (defineAsType || isGlobalType) {
                     tmp += " name=\"" + tname + "\"";
-                    os = &otype;
+                    if (!isGlobalType) {
+                        os = &otype;
+                    }
                     indent = 0;
                 }
                 opentag.push_back(tmp + ">");

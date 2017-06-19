@@ -167,28 +167,36 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
         opentag.push_back(tmp + ">");
 #endif
         closetag.push_front("</xs:element>");
-        opentag.push_back("<xs:complexType>");
-        closetag.push_front("</xs:complexType>");
-        if(IsInteger()) {
-            opentag.push_back("<xs:simpleContent>");
-            closetag.push_front("</xs:simpleContent>");
-            opentag.push_back("<xs:extension base=\"xs:integer\">");
-            closetag.push_front("</xs:extension>");
-            use = "optional";
+        if (IsASNDataSpec()) {
+            opentag.push_back("<xs:complexType>");
+            closetag.push_front("</xs:complexType>");
+            if(IsInteger()) {
+                opentag.push_back("<xs:simpleContent>");
+                closetag.push_front("</xs:simpleContent>");
+                opentag.push_back("<xs:extension base=\"xs:integer\">");
+                closetag.push_front("</xs:extension>");
+                use = "optional";
+            }
         }
     }
-    string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"" + form;
-    const CDataMember* mem = GetDataMember();
-    if (!inAttlist) {
-        if (mem && mem->Optional() && mem->GetDefault()) {
-            tmp += " default=\"" + GetXmlValueName(mem->GetDefault()->GetXmlString()) + "\"";
+    if (IsASNDataSpec()) {
+        string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"" + form;
+        const CDataMember* mem = GetDataMember();
+        if (!inAttlist) {
+            if (mem && mem->Optional() && mem->GetDefault()) {
+                tmp += " default=\"" + GetXmlValueName(mem->GetDefault()->GetXmlString()) + "\"";
+            }
         }
+        opentag.push_back(tmp + ">");
+        closetag.push_front("</xs:attribute>");
     }
-    opentag.push_back(tmp + ">");
-    closetag.push_front("</xs:attribute>");
     opentag.push_back("<xs:simpleType>");
     closetag.push_front("</xs:simpleType>");
-    opentag.push_back("<xs:restriction base=\"xs:string\">");
+    if (IsASNDataSpec() || !IsInteger()) {
+        opentag.push_back("<xs:restriction base=\"xs:string\">");
+    } else {
+        opentag.push_back("<xs:restriction base=\"xs:integer\">");
+    }
     closetag.push_front("</xs:restriction>");
 
     ITERATE ( list<string>, s, opentag ) {
@@ -225,7 +233,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
     ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent) <<
             "<xs:enumeration value=\"" << i->GetName() << "\"";
-        if (IsInteger()) {
+        if (IsASNDataSpec() && IsInteger()) {
             out << " ncbi:intvalue=\"" << i->GetValue() << "\"";
         }
         out << "/>";

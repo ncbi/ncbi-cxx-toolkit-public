@@ -91,6 +91,7 @@ int CDataTool::Run(void)
 CDataTool::CDataTool(void)
 {
     SetVersion( CVersionInfo(DATATOOL_VERSION_MAJOR,DATATOOL_VERSION_MINOR,DATATOOL_VERSION_PATCH) );
+    m_codestyle = 0;
 }
 
 void CDataTool::Init(void)
@@ -258,6 +259,24 @@ bool CDataTool::ProcessModules(void)
 
     list<string> modulesPath;
     string opt;
+
+    m_codestyle = 0;
+    string style = GetConfigValue("-", "CodeGenerationStyle");
+    if (!style.empty()) {
+        vector<string> values;
+        NStr::Split(style, " ,", values, NStr::fSplit_Tokenize);
+        for ( const string& v : values) {
+            if (v == "#") {
+                break;
+            } else if (NStr::CompareNocase(v,"no_globaltypes")==0) {
+                m_codestyle |= FCodeGenerationStyle(eNoGlobalTypeClasses);
+            } else if (NStr::CompareNocase(v,"keep_nestedelem")==0) {
+                m_codestyle |= FCodeGenerationStyle(ePreserveNestedElements);
+            } else {
+                ERR_POST_X(1, "Unknown code generation value: " << v);
+            }
+        }
+    }
 
     if ( generator.GetOpt("oR", &opt) ) {
         // NCBI directory tree
@@ -579,6 +598,7 @@ bool CDataTool::ProcessData(void)
 bool CDataTool::GenerateCode(bool undo)
 {
     string opt;
+
     //if ( const CArgValue& oD = args["oD"] )
     //    generator.AddConfigLine(oD.AsString());
 

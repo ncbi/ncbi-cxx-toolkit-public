@@ -165,9 +165,6 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& external_name,
             ptrType = "Ref";
         } else {
             ptrType = "false";
-            if ( type->GetKind() == eKindOther && type->DataType() && type->DataType()->IsTypeAlias()) {
-                ptrType = "Ref";
-            }
         }
     }
     if (dynamic_cast<CAnyContentTypeStrings*>(type.get()) != 0) {
@@ -392,7 +389,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if (!x_IsNullType(i)) {
                 code.ClassPublic() <<
                     "    typedef "<<cType<<" "<<i->tName<<";\n";
-                if (i->dataType && i->dataType->IsTypeAlias()) {
+                if (i->dataType && i->dataType->IsTypeAlias() && i->dataType->IsXMLDataSpec()) {
 // for backward compatibility only
                     string dt(i->dataType->ClassName());
                     if (dt != cType) {
