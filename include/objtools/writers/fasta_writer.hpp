@@ -52,7 +52,7 @@ class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx
 {
 public:
 
-    CFastaOstreamEx(CNcbiOstream& out);
+    explicit CFastaOstreamEx(CNcbiOstream& out);
     virtual ~CFastaOstreamEx() = default;
    
 

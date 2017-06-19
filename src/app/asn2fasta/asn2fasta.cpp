@@ -290,12 +290,16 @@ void CAsn2FastaApp::Init(void)
 }
 
 
+
 namespace {
 
 class CAsn2FastaAppOstream : public CFastaOstreamEx 
 {
-    using CFastaOstreamEx::CFastaOstreamEx;
+    //using CFastaOstreamEx::CFastaOstreamEx; - getting a compiler error on some platforms. Check this.
+public:
+    CAsn2FastaAppOstream(CNcbiOstream& ostream) : CFastaOstreamEx(ostream) {}
 
+private:
     void x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& best_id, bool& hide_prefix, const CBioseq& bioseq) override
     {
         best_id = FindBestChoice(bioseq.GetId(), CSeq_id::WorstRank);
@@ -330,7 +334,6 @@ class CAsn2FastaAppOstream : public CFastaOstreamEx
 };
 
 }
-
 
 //  --------------------------------------------------------------------------
 CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
