@@ -101,7 +101,6 @@ public:
         *m_out << " and " << num_prots << " protein" << ((num_prots != 1) ? "s" : "");
         *m_out << '\n';
 
-
         // Find Bioseq from arguments, call application DoOneBioseq method
         CRef<CBioseqIndex> bsx;
 
@@ -163,6 +162,8 @@ public:
         CRef<CSeqsetIndex> prnt = bsx.GetParent();
         if (prnt) {
             *m_out << "Parent Bioseq-set class: " << prnt->GetClass() << '\n';
+        } else {
+            *m_out << "Unable to process GetParent" << '\n';
         }
 
 

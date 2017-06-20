@@ -47,7 +47,7 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, TFlags flags)
     : m_flags(flags)
 {
     topsep.Parentize();
-    m_topSEP.Reset(&topsep);
+    m_tsep.Reset(&topsep);
 
     x_Init();
 }
@@ -58,12 +58,12 @@ CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, TFlags flags)
     CSeq_entry* parent = seqset.GetParentEntry();
     if (parent) {
         parent->Parentize();
-        m_topSEP.Reset(parent);
+        m_tsep.Reset(parent);
     } else {
         CRef<CSeq_entry> sep(new CSeq_entry);
         sep->SetSet(seqset);
         sep->Parentize();
-        m_topSEP.Reset(sep);
+        m_tsep.Reset(sep);
     }
 
     x_Init();
@@ -75,12 +75,12 @@ CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, TFlags flags)
     CSeq_entry* parent = bioseq.GetParentEntry();
     if (parent) {
         parent->Parentize();
-        m_topSEP.Reset(parent);
+        m_tsep.Reset(parent);
     } else {
         CRef<CSeq_entry> sep(new CSeq_entry);
         sep->SetSeq(bioseq);
         sep->Parentize();
-        m_topSEP.Reset(sep);
+        m_tsep.Reset(sep);
     }
 
     x_Init();
@@ -96,7 +96,7 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
 
     CRef<CSeq_entry> sep = submit.GetData().GetEntrys().front();
     sep->Parentize();
-    m_topSEP.Reset(sep);
+    m_tsep.Reset(sep);
     m_sbtBlk.Reset(&submit.GetSub());
 
     x_Init();
@@ -106,7 +106,7 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlag
     : m_flags(flags)
 {
     topsep.Parentize();
-    m_topSEP.Reset(&topsep);
+    m_tsep.Reset(&topsep);
     m_sbtBlk.Reset(&sblock);
 
     x_Init();
@@ -116,7 +116,7 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags fl
     : m_flags(flags)
 {
     topsep.Parentize();
-    m_topSEP.Reset(&topsep);
+    m_tsep.Reset(&topsep);
     m_topDescr.Reset(&descr);
 
     x_Init();
@@ -127,6 +127,7 @@ CSeqEntryIndex::~CSeqEntryIndex (void)
 
 {
 }
+
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
 void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 
@@ -137,7 +138,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, *this, false));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_tseh, m_scope, m_localFeatures, false));
 
             // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
             m_bsxList.push_back(bsx);
@@ -152,7 +153,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
         CBioseq_set_Handle ssh = m_scope->GetBioseq_setHandle(bssp);
         if (ssh) {
             // create CSeqsetIndex object for current Bioseq-set
-            CRef<CSeqsetIndex> ssx(new CSeqsetIndex(ssh, bssp, prnt, *this));
+            CRef<CSeqsetIndex> ssx(new CSeqsetIndex(ssh, bssp, prnt));
 
             // record CSeqsetIndex in vector
             m_ssxList.push_back(ssx);
@@ -186,11 +187,18 @@ void CSeqEntryIndex::x_Init (void)
 
         m_scope->AddDefaults();
 
-        m_topSEH = m_scope->AddTopLevelSeqEntry( *m_topSEP );
+        m_tseh = m_scope->AddTopLevelSeqEntry( *m_tsep );
+
+        m_fetchFailure = false;
+
+        m_localFeatures = false;
+        if ((m_flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
+            m_localFeatures = true;
+        }
 
         // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
         CRef<CSeqsetIndex> noparent;
-        x_InitSeqs( *m_topSEP, noparent );
+        x_InitSeqs( *m_tsep, noparent );
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CSeqEntryIndex::x_Init: " << e.what());
@@ -234,7 +242,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
         if (deltaBsh) {
             // create CBioseqIndex object for delta Bioseq
             CRef<CSeqsetIndex> noparent;
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, *this, true));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_tseh, m_scope, m_localFeatures, true));
 
            return bsx;
         }
@@ -367,13 +375,10 @@ const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
 // Constructor
 CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh,
                             const CBioseq_set& bssp,
-                            CRef<CSeqsetIndex> prnt,
-                            CSeqEntryIndex& enx)
+                            CRef<CSeqsetIndex> prnt)
     : m_ssh(ssh),
       m_bssp(bssp),
-      m_prnt(prnt),
-      m_enx(enx),
-      m_scope(enx.GetScope())
+      m_prnt(prnt)
 {
     m_class = CBioseq_set::eClass_not_set;
 
@@ -396,14 +401,17 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                             const CBioseq& bsp,
                             CBioseq_Handle obsh,
                             CRef<CSeqsetIndex> prnt,
-                            CSeqEntryIndex& enx,
+                            CSeq_entry_Handle tseh,
+                            CRef<CScope> scope,
+                            bool localFeatures,
                             bool surrogate)
     : m_bsh(bsh),
       m_bsp(bsp),
       m_obsh(obsh),
       m_prnt(prnt),
-      m_enx(enx),
-      m_scope(enx.GetScope()),
+      m_tseh(tseh),
+      m_scope(scope),
+      m_localFeatures(localFeatures),
       m_surrogate(surrogate)
 {
     m_descsInitialized = false;
@@ -569,7 +577,7 @@ void CBioseqIndex::x_InitDescs (void)
         }
 
         // initialization option can also prevent far feature exploration
-        if ((m_enx.GetFlags() & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
+        if (m_localFeatures) {
             m_onlyNearFeats = true;
         }
     }
@@ -724,7 +732,7 @@ const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags 
         return m_defline;
     }
 
-    sequence::CDeflineGenerator gen (m_enx.GetTopSEH());
+    sequence::CDeflineGenerator gen (m_tseh);
 
     // Pass original target BioseqHandle if using Bioseq sublocation
     m_defline = gen.GenerateDefline (m_obsh, m_featTree, flags);
@@ -829,7 +837,7 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
 CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd,
                                     CBioseqIndex& bsx)
     : m_sd(sd),
-      m_bsx(bsx)
+      m_bsx(&bsx)
 {
     m_subtype = m_sd.Which();
 }
@@ -851,7 +859,7 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
     : m_sfh(sfh),
       m_mf(mf),
       m_fl(fl),
-      m_bsx(bsx)
+      m_bsx(&bsx)
 {
     m_subtype = m_mf.GetData().GetSubtype();
 }
@@ -868,11 +876,14 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
 {
     try {
         CMappedFeat best;
-        CBioseqIndex& bsx = GetBioseqIndex();
-        best = feature::GetBestGeneForFeat(m_mf, &bsx.GetFeatTree(), 0,
-                                           feature::CFeatTree::eBestGene_AllowOverlapped);
-        if (best) {
-            return bsx.GetFeatIndex(best);
+        CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
+        auto bsxl = bsx.Lock();
+        if (bsxl) {
+            best = feature::GetBestGeneForFeat(m_mf, &bsxl->GetFeatTree(), 0,
+                                               feature::CFeatTree::eBestGene_AllowOverlapped);
+            if (best) {
+                return bsxl->GetFeatIndex(best);
+            }
         }
     } catch (CException& e) {
         LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
@@ -885,9 +896,13 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
 {
     try {
         if (! m_sv) {
-            m_sv = new CSeqVector(*m_fl, *GetBioseqIndex().GetScope());
-            if (m_sv) {
-                m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+            CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
+            auto bsxl = bsx.Lock();
+            if (bsxl) {
+                m_sv = new CSeqVector(*m_fl, *bsxl->GetScope());
+                if (m_sv) {
+                    m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                }
             }
         }
 
