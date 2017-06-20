@@ -191,7 +191,7 @@ private:
 class CValXMLStream: public CObjectOStreamXml
 {
 public:
-    CValXMLStream(CNcbiOstream& out, bool deleteOut): CObjectOStreamXml(out, deleteOut){};
+    CValXMLStream(CNcbiOstream& out, EOwnership deleteOut) : CObjectOStreamXml(out, deleteOut){};
     void Print(const CValidErrItem& item);
 };
 
@@ -407,6 +407,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     m_In = OpenFile(fname);
     if (m_In.get() == 0) {
         PrintValidError(ReportReadFailure(), args);
+        if (close_error_stream) {
+            DestroyOutputStreams();
+        }
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
     } else {
         try {
@@ -498,11 +501,6 @@ int CAsnvalApp::Run(void)
 
     if (args["o"]) {
         m_ValidErrorStream = &(args["o"].AsOutputFile());
-    }
-
-    if (args["L"] && !args["logfile"]) {
-        // todo - redirect to logfile    
-        //m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
     }
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
@@ -1156,7 +1154,7 @@ void CAsnvalApp::ConstructOutputStreams()
     if (m_ValidErrorStream && m_verbosity == eVerbosity_XML)
     {
 #ifdef USE_XMLWRAPP_LIBS
-        m_ostr_xml.reset(new CValXMLStream(*m_ValidErrorStream, false));
+        m_ostr_xml.reset(new CValXMLStream(*m_ValidErrorStream, eNoOwnership));
         m_ostr_xml->SetEncoding(eEncoding_UTF8);
         m_ostr_xml->SetReferenceDTD(false);
         m_ostr_xml->SetEnforcedStdXml(true);
