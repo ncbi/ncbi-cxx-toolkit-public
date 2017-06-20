@@ -227,6 +227,8 @@ public:
             return GetVirtualPos() == TVirtualPos(-1);
         }
 
+    DECLARE_OPERATOR_BOOL(m_VirtualPos != 0);
+
 private:    
     TVirtualPos m_VirtualPos;
 
