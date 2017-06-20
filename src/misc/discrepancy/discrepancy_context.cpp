@@ -95,6 +95,12 @@ CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const
                 else if (BS->GetClass() == CBioseq_set::eClass_segset) {
                     GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
                 }
+                else {
+                    CBioseq_CI bi(scope.GetBioseq_setHandle(*BS), CSeq_inst::eMol_na);
+                    if (bi) {
+                        GetCurrentBioseq_bioseq.Reset(bi->GetCompleteBioseq());
+                    }
+                }
             }
         }
     }
