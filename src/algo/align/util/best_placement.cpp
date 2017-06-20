@@ -85,7 +85,7 @@ struct SAlignmentScoringModel
 {
     int operator() (const CSeq_align& aln) const
     {
-        return (int)std::round(100 * GetScore(aln));
+        return (int)round(100 * GetScore(aln));
     }
     
     ///////////////////////////////////////////////////////////////////////
@@ -100,9 +100,9 @@ private:
 
         odds(double pos_ = 0.0, double neg_ = 0.0) : pos(pos_), neg(neg_) {}
        
-        void operator += (double x)     { (x > 0 ? pos : neg) += std::fabs(x);  }
+        void operator += (double x)     { (x > 0 ? pos : neg) += fabs(x);  }
         void operator += (const odds o) { pos += o.pos;  neg  += o.neg;         }
-        double logodds(int a = 2) const { return std::log( (a+pos)/(a+neg) );   }
+        double logodds(int a = 2) const { return log( (a+pos)/(a+neg) );   }
 
         string AsString() const
         {
@@ -114,7 +114,7 @@ private:
     static double as_logodds(double ratio)
     {
         _ASSERT(0 < ratio && ratio < 1);
-        return std::log( ratio / (1 - ratio) );
+        return log( ratio / (1 - ratio) );
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ private:
              << " s" << splices_odds.AsString()
              << " e" << exons_odds.AsString()
              << " " << (defect_free ? "perfect" : "not-perfect") 
-             << (int)std::round(100 * ret)
+             << (int)round(100 * ret)
              << "\n";
 #endif
 
@@ -623,4 +623,3 @@ void NBestPlacement::Rank(
         sas.Set().emplace_back(aln);
     }
 }
-
