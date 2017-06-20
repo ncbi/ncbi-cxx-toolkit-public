@@ -72,6 +72,14 @@ if(WIN32)
     set(GIF_ROOT "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib")
     set (ENV{GIF_DIR} "${GIF_ROOT}")
 
+    set(PCRE_PKG_ROOT "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib")
+    set(PCRE_PKG_INCLUDE_DIRS "${PCRE_PKG_ROOT}/include")
+    set(PCRE_PKG_LIBRARY_DIRS "${PCRE_PKG_ROOT}/lib")
+
+    set(GNUTLS_ROOT "${WIN32_PACKAGE_ROOT}/gnutls-3.4.9")
+    set(PC_GNUTLS_INCLUDEDIR "${GNUTLS_ROOT}/include")
+    set(PC_GNUTLS_LIBDIR "${GNUTLS_ROOT}/lib")
+
     set(FREETYPE_ROOT "${WIN32_PACKAGE_ROOT}/freetype-2.3.5-1-lib")
     set(ENV{FREETYPE_DIR} "${FREETYPE_ROOT}")
 
@@ -79,8 +87,8 @@ if(WIN32)
 
     set(CMAKE_PREFIX_PATH
         ${CMAKE_PREFIX_PATH}
-        "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib"
-        "${WIN32_PACKAGE_ROOT}/gnutls-3.5.8-w64"
+        "${PCRE_PKG_ROOT}"
+        "${GNUTLS_ROOT}"
         "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib"
         "${GIF_ROOT}"
         "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32"
@@ -149,7 +157,7 @@ get_filename_component(includedir "${includedir}" REALPATH)
 get_filename_component(EXECUTABLE_OUTPUT_PATH "${build_root}/../bin" REALPATH)
 get_filename_component(LIBRARY_OUTPUT_PATH "${build_root}/../lib" REALPATH)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/" ${CMAKE_MODULE_PATH})
 
 # Establishing compiler definitions
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compiler.cmake)
@@ -219,7 +227,6 @@ if (WIN32)
     set(RT_LIBS          "")
     set(MATH_LIBS      "")
     set(CURL_LIBS      "")
-    set(GNUTLS_INCLUDE_DIR      "")
     set(BERKELEYDB_INCLUDE      "")
     set(MYSQL_INCLUDE_DIR      "")
     set(SQLITE3_INCLUDE_DIR "")
@@ -267,10 +274,17 @@ set(LOCAL_LBSM ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd)
 ############################################################################
 #
 # OS-specific settings
-find_library(GMP_LIB LIBS gmp HINTS "$ENV{NCBI}/gmp-6.0.0a/lib64/")
-find_library(IDN_LIB LIBS idn HINTS "/lib64")
-find_library(NETTLE_LIB LIBS nettle HINTS "$ENV{NCBI}/nettle-3.1.1/lib64")
-find_library(HOGWEED_LIB LIBS hogweed HINTS "$ENV{NCBI}/nettle-3.1.1/lib64")
+if (UNIX)
+    find_library(GMP_LIB LIBS gmp HINTS "$ENV{NCBI}/gmp-6.0.0a/lib64/")
+    find_library(IDN_LIB LIBS idn HINTS "/lib64")
+    find_library(NETTLE_LIB LIBS nettle HINTS "$ENV{NCBI}/nettle-3.1.1/lib64")
+    find_library(HOGWEED_LIB LIBS hogweed HINTS "$ENV{NCBI}/nettle-3.1.1/lib64")
+elseif (WIN32)
+    set(GMP_LIB "")
+    set(IDN_LIB "")
+    set(NETTLE_LIB "")
+    set(HOGWEED_LIB "")
+endif()
 
 find_package(GnuTLS)
 if (GnuTLS_FOUND)

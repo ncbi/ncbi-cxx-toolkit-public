@@ -240,12 +240,22 @@ macro( RunDatatool MODULE MODULE_SEARCH )
     #SET_TARGET_PROPERTIES(${MODULE} PROPERTIES LINKER_LANGUAGE CXX)
     SET(NEW_MODULE_FILES ${SOURCE_PATH}/${MODULE}__.cpp ${SOURCE_PATH}/${MODULE}___.cpp)
 
-    add_custom_command(
-        OUTPUT ${generated}
-        COMMAND ${NCBI_DATATOOL} -oR \"${top_src_dir}\" -opm \"${MODULE_SEARCH}\" -m \"${MODULE_PATH}\" -M \""${MODULE_IMPORT}"\" -oA -oc \"${MODULE}\" -or \"${MODULE_PATH_RELATIVE}\" -odi -od \"${SOURCE_PATH}/${MODULE}.def\" -oex '' -ocvs -pch \"ncbi_pch.hpp\" -fd ${MODULE}.dump
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Generating module: ${MODULE}"
-        DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
+    if (WIN32)
+        add_custom_command(
+            OUTPUT ${generated}
+            COMMAND ${NCBI_DATATOOL} -oR "${top_src_dir}" -opm "${MODULE_SEARCH}" -m "${MODULE_PATH}" -M "${MODULE_IMPORT}" -oA -oc "${MODULE}" -or "${MODULE_PATH_RELATIVE}" -odi -od "${SOURCE_PATH}/${MODULE}.def" -oex '' -ocvs     -pch "ncbi_pch.hpp" -fd ${MODULE}.dump VERBATIM
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating module: ${MODULE}"
+            DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
         )
+    else()
+        add_custom_command(
+            OUTPUT ${generated}
+            COMMAND ${NCBI_DATATOOL} -oR \"${top_src_dir}\" -opm \"${MODULE_SEARCH}\" -m \"${MODULE_PATH}\" -M \""${MODULE_IMPORT}"\" -oA -oc \"${MODULE}\" -or \"${MODULE_PATH_RELATIVE}\" -odi -od \"${SOURCE_PATH}/${MODULE}.def\" -oex '' -ocvs -pch \"ncbi_pch.hpp\" -fd ${MODULE}.dump
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating module: ${MODULE}"
+            DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
+        )
+    endif()
 
 endmacro( RunDatatool )

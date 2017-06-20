@@ -5,6 +5,21 @@
 # We require at least cmake-3.0
 cmake_minimum_required(VERSION 3.0)
 
+###############################################################################
+## Initialize Hunter
+##
+if (WIN32)
+    if (NOT HUNTER_ROOT)
+        set(HUNTER_ROOT ${CMAKE_SOURCE_DIR}/../HunterPackages)
+    endif()
+    include(build-system/cmake/HunterGate.cmake)
+    HunterGate(
+        URL "https://github.com/ruslo/hunter/archive/v0.18.39.tar.gz"
+        SHA1 "a6fbc056c3d9d7acdaa0a07c575c9352951c2f6c"
+    )
+endif()
+
+
 project(CPP)
 
 include(build-system/cmake/CMakeMacros.cmake)

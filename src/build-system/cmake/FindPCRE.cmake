@@ -12,7 +12,7 @@
 
 if(PCRE_INCLUDE_DIR AND PCRE_LIBRARIES)
     # in cache already
-    set(LIBUSB_FOUND TRUE)
+    set(PCRE_FOUND TRUE)
 else(PCRE_INCLUDE_DIR AND PCRE_LIBRARIES)
     if(NOT WIN32)
         # use pkg-config to get the directories and then use these values
