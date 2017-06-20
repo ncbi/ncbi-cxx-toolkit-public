@@ -377,9 +377,6 @@ bool CGtfReader::x_UpdateAnnotCds(
             return false;
         }
     }
-    if (needXref) {
-        //xSetXrefFromTo(*pCds, *pGene);
-    }
 
     if ( x_CdsIsPartial( gff ) ) {
         CRef<CSeq_feat> pParent;
@@ -535,6 +532,30 @@ bool CGtfReader::x_CreateMrnaXrefs(
 {
     CRef< CSeq_feat > pParent;
     if ( ! x_FindParentMrna( record, pParent ) ) {
+        return true;
+    }
+    
+    CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
+    pXrefToChild->SetId( pFeature->SetId() );
+    pParent->SetXref().push_back( pXrefToChild );
+
+    if (m_iFlags & CGtfReader::fGenerateChildXrefs) {
+        CRef< CSeqFeatXref > pXrefToParent( new CSeqFeatXref );
+        pXrefToParent->SetId( pParent->SetId() );    
+        pFeature->SetXref().push_back( pXrefToParent );
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_CreateCdsXrefs(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_feat > pParent;
+    if ( ! x_FindParentCds( record, pParent ) ) {
         return true;
     }
     
@@ -730,6 +751,9 @@ bool CGtfReader::x_CreateParentMrna(
         return false;
     }
     if ( ! x_CreateGeneXrefs( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_CreateCdsXrefs( gff, pFeature ) ) {
         return false;
     }
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {

@@ -114,6 +114,10 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
     
+    bool x_CreateCdsXrefs(
+        const CGff2Record&,
+        CRef< CSeq_feat > );
+    
     bool x_MergeFeatureLocationSingleInterval(
         const CGff2Record&,
         CRef< CSeq_feat > );

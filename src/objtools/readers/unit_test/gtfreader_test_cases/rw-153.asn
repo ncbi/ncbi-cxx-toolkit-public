@@ -114,6 +114,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|26"
+        },
+        {
+          id local str "cds|28"
         }
       }
     },
@@ -176,9 +179,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|26"
-        },
-        {
-          id local str "mrna|27"
         }
       }
     }

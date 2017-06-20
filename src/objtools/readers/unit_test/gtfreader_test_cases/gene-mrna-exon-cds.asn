@@ -76,6 +76,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|4"
+        },
+        {
+          id local str "cds|6"
         }
       }
     },
@@ -134,9 +137,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|4"
-        },
-        {
-          id local str "mrna|5"
         }
       }
     },
@@ -237,6 +237,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|7"
+        },
+        {
+          id local str "cds|9"
         }
       }
     },
@@ -313,9 +316,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|7"
-        },
-        {
-          id local str "mrna|8"
         }
       }
     },
@@ -387,6 +387,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|7"
+        },
+        {
+          id local str "cds|11"
         }
       }
     },
@@ -451,9 +454,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|7"
-        },
-        {
-          id local str "mrna|10"
         }
       }
     },
@@ -506,6 +506,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|12"
+        },
+        {
+          id local str "cds|14"
         }
       }
     },
@@ -532,9 +535,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|12"
-        },
-        {
-          id local str "mrna|13"
         }
       }
     },
@@ -695,6 +695,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|15"
+        },
+        {
+          id local str "cds|17"
         }
       }
     },
@@ -837,9 +840,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|15"
-        },
-        {
-          id local str "mrna|16"
         }
       }
     },
@@ -941,6 +941,9 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|15"
+        },
+        {
+          id local str "cds|19"
         }
       }
     },
@@ -1041,9 +1044,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene|15"
-        },
-        {
-          id local str "mrna|18"
         }
       }
     }
