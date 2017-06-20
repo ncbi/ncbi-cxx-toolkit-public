@@ -387,13 +387,19 @@ public:
 class NCBI_BAMREAD_EXPORT CBamAlignIterator
 {
 public:
+    enum ESearchMode {
+        eSearchByOverlap,
+        eSearchByStart
+    };
+
     CBamAlignIterator(void);
     explicit
     CBamAlignIterator(const CBamDb& bam_db);
     CBamAlignIterator(const CBamDb& bam_db,
                       const string& ref_id,
                       TSeqPos ref_pos,
-                      TSeqPos window = 0);
+                      TSeqPos window = 0,
+                      ESearchMode search_mode = eSearchByOverlap);
 
     CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
@@ -523,7 +529,10 @@ private:
         mutable CBamString m_CIGAR;
         mutable int m_Strand;
 
-        SAADBImpl(const CBamDb::SAADBImpl& db, AlignAccessAlignmentEnumerator* ptr);
+        SAADBImpl(const CBamDb::SAADBImpl& db,
+                  AlignAccessAlignmentEnumerator* ptr);
+        
+        TSeqPos GetRefSeqPos() const;
         
         void x_InvalidateBuffers();
     };
@@ -538,7 +547,8 @@ private:
         SRawImpl(CObjectFor<CBamRawDb>& db,
                  const string& ref_label,
                  TSeqPos ref_pos,
-                 TSeqPos window);
+                 TSeqPos window,
+                 ESearchMode search_mode);
         
         void x_InvalidateBuffers();
     };

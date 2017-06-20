@@ -107,6 +107,11 @@ private:
 
 struct SBamIndexDefs
 {
+    enum ESearchMode {
+        eSearchByOverlap,
+        eSearchByStart
+    };
+
     // BAM index structure contants
     enum {
         // bit shifts of sequence coordinates in BAM index
@@ -166,6 +171,18 @@ struct SBamIndexDefs
                 return level;
             }
         }
+    }
+    static EIndexLevel GetRangeIndexLevel(CRange<TSeqPos> range)
+    {
+        Uint1 level = kMinLevel;
+        TSeqPos pos1 = range.GetFrom() >> kLevel0BinShift;
+        TSeqPos pos2 = range.GetTo() >> kLevel0BinShift;
+        while ( pos1 != pos2 ) {
+            ++level;
+            pos1 >>= kLevelStepBinShift;
+            pos2 >>= kLevelStepBinShift;
+        }
+        return EIndexLevel(level);
     }
 };
 
@@ -442,7 +459,8 @@ class NCBI_BAMREAD_EXPORT CBamFileRangeSet : public SBamIndexDefs
 public:
     CBamFileRangeSet();
     CBamFileRangeSet(const CBamIndex& index,
-                     size_t ref_index, COpenRange<TSeqPos> ref_range);
+                     size_t ref_index, COpenRange<TSeqPos> ref_range,
+                     ESearchMode search_mode = eSearchByOverlap);
     ~CBamFileRangeSet();
 
     void Clear()
@@ -450,21 +468,27 @@ public:
             m_Ranges.clear();
         }
     void SetRanges(const CBamIndex& index,
-                   size_t ref_index, COpenRange<TSeqPos> ref_range);
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   ESearchMode search_mode = eSearchByOverlap);
     void AddRanges(const CBamIndex& index,
-                   size_t ref_index, COpenRange<TSeqPos> ref_range);
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   ESearchMode search_mode = eSearchByOverlap);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   EIndexLevel index_level);
+                   EIndexLevel index_level,
+                   ESearchMode search_mode = eSearchByOverlap);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   EIndexLevel index_level);
+                   EIndexLevel index_level,
+                   ESearchMode search_mode = eSearchByOverlap);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   EIndexLevel min_index_level, EIndexLevel max_index_level);
+                   EIndexLevel min_index_level, EIndexLevel max_index_level,
+                   ESearchMode search_mode = eSearchByOverlap);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   EIndexLevel min_index_level, EIndexLevel max_index_level);
+                   EIndexLevel min_index_level, EIndexLevel max_index_level,
+                   ESearchMode search_mode = eSearchByOverlap);
     void SetWhole(const CBamHeader& header);
     void AddWhole(const CBamHeader& header);
 
@@ -736,37 +760,41 @@ public:
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
-                         CRange<TSeqPos> ref_range)
+                         CRange<TSeqPos> ref_range,
+                         ESearchMode search_mode = eSearchByOverlap)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range);
+            Select(bam_db, ref_label, ref_range, search_mode);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
-                         EIndexLevel index_level)
+                         EIndexLevel index_level,
+                         ESearchMode search_mode = eSearchByOverlap)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, index_level);
+            Select(bam_db, ref_label, ref_range, index_level, search_mode);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
                          EIndexLevel min_index_level,
-                         EIndexLevel max_index_level)
+                         EIndexLevel max_index_level,
+                         ESearchMode search_mode = eSearchByOverlap)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level);
+            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          TSeqPos ref_pos,
-                         TSeqPos window = 0);
+                         TSeqPos window = 0,
+                         ESearchMode search_mode = eSearchByOverlap);
     ~CBamRawAlignIterator()
         {
         }
 
-    DECLARE_OPERATOR_BOOL(m_CurrentRangeEnd.GetVirtualPos() != 0);
+    DECLARE_OPERATOR_BOOL(m_CurrentRangeEnd);
 
     void Select(CBamRawDb& bam_db)
         {
@@ -774,40 +802,45 @@ public:
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
-                CRange<TSeqPos> ref_range)
+                CRange<TSeqPos> ref_range,
+                ESearchMode search_mode = eSearchByOverlap)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range);
+                     bam_db.GetRefIndex(ref_label), ref_range, search_mode);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
-                EIndexLevel index_level)
+                EIndexLevel index_level,
+                ESearchMode search_mode = eSearchByOverlap)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, index_level);
+                     bam_db.GetRefIndex(ref_label), ref_range, index_level, search_mode);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
                 EIndexLevel min_index_level,
-                EIndexLevel max_index_level)
+                EIndexLevel max_index_level,
+                ESearchMode search_mode = eSearchByOverlap)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level);
-        }
-    void Select(const CBamIndex& index,
-                size_t ref_index,
-                CRange<TSeqPos> ref_range)
-        {
-            x_Select(index, ref_index, ref_range);
+                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level, search_mode);
         }
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range,
-                EIndexLevel index_level)
+                ESearchMode search_mode = eSearchByOverlap)
         {
-            x_Select(index, ref_index, ref_range, index_level);
+            x_Select(index, ref_index, ref_range, search_mode);
+        }
+    void Select(const CBamIndex& index,
+                size_t ref_index,
+                CRange<TSeqPos> ref_range,
+                EIndexLevel index_level,
+                ESearchMode search_mode = eSearchByOverlap)
+        {
+            x_Select(index, ref_index, ref_range, index_level, search_mode);
         }
     void Next();
 
@@ -890,6 +923,15 @@ public:
             return m_AlignInfo.get_cigar();
         }
 
+    Uint2 GetIndexBin() const
+        {
+            return m_AlignInfo.get_bin();
+        }
+    EIndexLevel GetIndexLevel() const
+        {
+            return GetBinNumberIndexLevel(GetIndexBin());
+        }
+    
     Uint2 GetFlags() const
         {
             return m_AlignInfo.get_flag();
@@ -940,17 +982,20 @@ protected:
     void x_Select(const CBamHeader& header);
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
-                  EIndexLevel min_index_level, EIndexLevel max_index_level);
+                  EIndexLevel min_index_level, EIndexLevel max_index_level,
+                  ESearchMode search_mode);
     void x_Select(const CBamIndex& index,
-                  size_t ref_index, CRange<TSeqPos> ref_range)
+                  size_t ref_index, CRange<TSeqPos> ref_range,
+                  ESearchMode search_mode)
         {
-            x_Select(index, ref_index, ref_range, kMinLevel, kMaxLevel);
+            x_Select(index, ref_index, ref_range, kMinLevel, kMaxLevel, search_mode);
         }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
-                  EIndexLevel index_level)
+                  EIndexLevel index_level,
+                  ESearchMode search_mode)
         {
-            x_Select(index, ref_index, ref_range, index_level, index_level);
+            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode);
         }
     bool x_UpdateRange();
     bool x_NextAnnot()
@@ -969,6 +1014,7 @@ private:
     size_t m_RefIndex;
     COpenRange<TSeqPos> m_QueryRefRange;
     EIndexLevel m_MinIndexLevel, m_MaxIndexLevel;
+    ESearchMode m_SearchMode;
     SBamAlignInfo m_AlignInfo;
     COpenRange<TSeqPos> m_AlignRefRange;
     COpenRange<TSeqPos> m_AlignReadRange;

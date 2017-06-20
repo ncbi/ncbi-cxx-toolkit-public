@@ -50,6 +50,7 @@ USING_NCBI_SCOPE;
 #define BAM_DIR3 "/1kg_pilot_data/data"
 #define BAM_DIR4 "/1000genomes2/ftp/data"
 #define BAM_DIR5 "/1000genomes3/ftp/data"
+#define BAM_DIR6 "/1000genomes4/ftp/data"
     
 #define BAM_FILE1 "NA19240.mapped.SOLID.bfast.YRI.exome.20111114.bam"
 #define BAM_FILE2 "NA19240.chromMT.ILLUMINA.bwa.YRI.exon_targetted.20100311.bam"
@@ -100,6 +101,7 @@ void CBAMTestCommon::InitCommonArgs(CArgDescriptions& args,
     args.AddOptionalKey("q", "Queries",
                         "Query variants: chr1, chr1:123-432, separate queries by commas",
                         CArgDescriptions::eString);
+    args.AddFlag("by-start", "Search by alignment start position only");
     args.AddFlag("verbose", "Verbose program run");
             
     args.AddDefaultKey("o", "OutputFile",
@@ -138,6 +140,7 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
             subdirs.push_back(BAM_DIR3);
             subdirs.push_back(BAM_DIR4);
             subdirs.push_back(BAM_DIR5);
+            subdirs.push_back(BAM_DIR6);
             for ( auto& rep : reps ) {
                 for ( auto& subdir : subdirs ) {
                     string dir = CFile::MakePath(rep, subdir);
@@ -247,5 +250,6 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
         }
     }
     
+    by_start = args["by-start"];
     return true;
 }

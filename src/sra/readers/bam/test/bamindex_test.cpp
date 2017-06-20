@@ -86,6 +86,11 @@ void CBamIndexTestApp::Init(void)
                              "Level of BAM index to scan",
                              CArgDescriptions::eInteger);
     arg_desc->SetConstraint("l", new CArgAllow_Integers(CBamIndex::kMinLevel, CBamIndex::kMaxLevel));
+    
+    arg_desc->AddDefaultKey("min_quality", "MinQuality",
+                            "Minimal quality of alignments to check",
+                            CArgDescriptions::eInteger,
+                            "1");
 
     arg_desc->AddOptionalKey("title", "Title",
                              "Title of generated Seq-graph",
@@ -243,6 +248,8 @@ int CBamIndexTestApp::Run(void)
         }
         out << flush;
     }
+
+    CBamRawAlignIterator::ESearchMode search_mode = CBamRawAlignIterator::ESearchMode(by_start);
     
     if ( args["file-range"] ) {
         for ( auto& q : queries ) {
@@ -250,11 +257,11 @@ int CBamIndexTestApp::Run(void)
             if ( level1 != CBamIndex::kMinLevel || level2 != CBamIndex::kMaxLevel ) {
                 rs.AddRanges(bam_raw_db.GetIndex(),
                              bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range,
-                             level1, level2);
+                             level1, level2, search_mode);
             }
             else {
                 rs = CBamFileRangeSet(bam_raw_db.GetIndex(),
-                                      bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range);
+                                      bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range, search_mode);
             }
             for ( auto& c : rs ) {
                 cout << "Ref["<<q.refseq_id<<"] @"<<q.refseq_range<<": "
@@ -290,7 +297,7 @@ int CBamIndexTestApp::Run(void)
                   pos < q.refseq_range.GetToOpen() && pos < ref_len;
                   pos += bin_size ) {
                 TSeqPos actual_start = s_BinStart(pos, bin_size);
-                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size); it; ++it ) {
+                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, search_mode); it; ++it ) {
                     TSeqPos start = it.GetRefSeqPos();
                     actual_start = min(actual_start, s_BinStart(start, bin_size));
                 }
@@ -327,7 +334,7 @@ int CBamIndexTestApp::Run(void)
                   pos < q.refseq_range.GetToOpen() && pos < ref_len;
                   pos += bin_size ) {
                 TSeqPos actual_end = s_BinEnd(pos, bin_size);
-                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size); it; ++it ) {
+                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, search_mode); it; ++it ) {
                     TSeqPos end = it.GetRefSeqPos()+it.GetCIGARRefSize()-1;
                     actual_end = max(actual_end, s_BinEnd(end, bin_size));
                 }
@@ -356,8 +363,9 @@ int CBamIndexTestApp::Run(void)
         bam_db = CBamDb(mgr, path, index_path);
     }
     bool single_thread = args["ST"];
+    int min_quality = args["min_quality"].AsInteger();
 
-    Uint8 total_align_count = 0;
+    Uint8 total_align_count = 0, total_skipped_min_quality = 0;
     Uint8 total_wrong_level_count = 0, total_wrong_range_count = 0;
     const size_t NQ = queries.size();
     vector<thread> tt(NQ);
@@ -370,13 +378,19 @@ int CBamIndexTestApp::Run(void)
                        if ( single_thread ) {
                            guard.Guard(s_Mutex);
                        }
-                       Uint8 align_count = 0;
-                       Uint8 wrong_level_count = 0, wrong_range_count = 0;
+                       Uint8 align_count = 0, skipped_min_quality = 0;
+                       Uint8 wrong_level_count = 0, wrong_indexed_level_count = 0;
+                       Uint8 wrong_range_count = 0;
                        try {
                            if ( bam_db ) {
                                for ( CBamAlignIterator it(bam_db, q.refseq_id,
                                                           q.refseq_range.GetFrom(),
-                                                          q.refseq_range.GetLength()); it; ++it ) {
+                                                          q.refseq_range.GetLength(),
+                                                          CBamAlignIterator::ESearchMode(search_mode)); it; ++it ) {
+                                   if ( min_quality && it.GetMapQuality() < min_quality ) {
+                                       ++skipped_min_quality;
+                                       continue;
+                                   }
                                    TSeqPos ref_pos = it.GetRefSeqPos();
                                    TSeqPos ref_size = it.GetCIGARRefSize();
                                    TSeqPos ref_end = ref_pos + ref_size;
@@ -400,31 +414,43 @@ int CBamIndexTestApp::Run(void)
                            }
                            else {
                                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id,
-                                                             q.refseq_range, level1, level2); it; ++it ) {
+                                                             q.refseq_range, level1, level2, search_mode); it; ++it ) {
+                                   if ( min_quality && it.GetMapQuality() < min_quality ) {
+                                       ++skipped_min_quality;
+                                       continue;
+                                   }
                                    TSeqPos ref_pos = it.GetRefSeqPos();
                                    TSeqPos ref_size = it.GetCIGARRefSize();
                                    TSeqPos ref_end = ref_pos + ref_size;
-                                   uint32_t level = CBamIndex::kMinLevel;
-                                   if ( ref_size && (level1 != CBamIndex::kMinLevel || level2 != CBamIndex::kMaxLevel) ) {
+                                   unsigned pos_level = CBamIndex::kMinLevel;
+                                   if ( ref_size ) {
                                        TSeqPos pos1 = ref_pos >> CBamIndex::kLevel0BinShift;
                                        TSeqPos pos2 = (ref_end-1) >> CBamIndex::kLevel0BinShift;
                                        while ( pos1 != pos2 ) {
-                                           ++level;
+                                           ++pos_level;
                                            pos1 >>= CBamIndex::kLevelStepBinShift;
                                            pos2 >>= CBamIndex::kLevelStepBinShift;
                                        }
                                    }
+                                   unsigned got_level = it.GetIndexLevel();
                                    if ( verbose ||
-                                        level < level1 || level > level2 ||
+                                        got_level < level1 || got_level > level2 ||
+                                        got_level != pos_level ||
                                         ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
                                        cout << "Ref: " << q.refseq_id
                                             << " at [" << ref_pos
                                             << " - " << (ref_end-1)
                                             << "] = " << ref_size
+                                            << " " << it.GetCIGAR()
+                                            << " Q: " << int(it.GetMapQuality())
                                             << '\n';
-                                       if ( level < level1 || level > level2 ) {
-                                           cout << "Wrong index level: " << level << endl;
+                                       if ( got_level < level1 || got_level > level2 ) {
+                                           cout << "Wrong index level: " << got_level << endl;
                                            ++wrong_level_count;
+                                       }
+                                       if ( pos_level != got_level ) {
+                                           cout << "Alignment indexed in wrong level: " << got_level << " vs " << pos_level << endl;
+                                           ++wrong_indexed_level_count;
                                        }
                                        if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
                                            cout << "Wrong range" << endl;
@@ -447,10 +473,17 @@ int CBamIndexTestApp::Run(void)
                            if ( wrong_level_count ) {
                                LOG_POST("Run("<<q.refseq_id<<"): wrong level count "<<wrong_level_count);
                            }
+                           if ( wrong_indexed_level_count ) {
+                               LOG_POST("Run("<<q.refseq_id<<"): wrong indexed level count "<<wrong_indexed_level_count);
+                           }
                            if ( wrong_range_count ) {
                                LOG_POST("Run("<<q.refseq_id<<"): wrong range count "<<wrong_range_count);
                            }
+                           if ( skipped_min_quality ) {
+                               LOG_POST("Run("<<q.refseq_id<<"): skipped low quality count "<<skipped_min_quality);
+                           }
                            total_align_count += align_count;
+                           total_skipped_min_quality += skipped_min_quality;
                            total_wrong_level_count += wrong_level_count;
                            total_wrong_range_count += wrong_range_count;
                        }
@@ -468,6 +501,9 @@ int CBamIndexTestApp::Run(void)
     if ( total_wrong_range_count ) {
         cout << "Total wrong range count: "<<total_wrong_range_count<<endl;
         error_code = 1;
+    }
+    if ( total_skipped_min_quality ) {
+        cout << "Total skipped low quality count: "<<total_skipped_min_quality<<endl;
     }
 
     return error_code;

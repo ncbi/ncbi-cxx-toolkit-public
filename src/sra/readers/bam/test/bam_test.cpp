@@ -377,41 +377,67 @@ int LowLevelTest()
     InitializeCriticalSection(&sdk_mutex);
 #endif
 
-    const size_t kNumCursors = 8;
-    const size_t kNumThreads = 3;
-    SThreadInfo tinfo[kNumCursors];
-    const char* ids[kNumCursors] = {
-        "NT_113960",
-        "NT_113945",
-        "NT_113880",
-        "NT_113960",
-        "NT_113960",
-        "NT_113960",
-        "NT_113945",
-        "NT_113880"
-    };
-    for ( size_t i = 0; i < kNumThreads; ++i ) {
-        tinfo[i].init(i, bam, ids[i]);
+    if ( 1 ) {
+        if ( 0 ) {
+            AlignAccessAlignmentEnumerator* iter = 0;
+            CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 0, 0));
+            for ( int i = 0; i < 1000; ++i ) {
+                CALL(AlignAccessAlignmentEnumeratorNext(iter));
+            }
+            CALL(AlignAccessAlignmentEnumeratorRelease(iter));
+        }
+        if ( 1 ) {
+            AlignAccessAlignmentEnumerator* iter = 0;
+            CALL(AlignAccessDBWindowedAlignments(bam, &iter, "1", 24725086, 0));
+            for ( int i = 0; i < 10; ++i ) {
+                uint64_t refpos = 0, readpos = 0;
+                CALL(AlignAccessAlignmentEnumeratorGetRefSeqPos(iter, &refpos));
+                char cigar[999];
+                size_t cigarlen = 0;
+                CALL(AlignAccessAlignmentEnumeratorGetCIGAR(iter, &readpos, cigar, sizeof(cigar), &cigarlen));
+                cout << "ref @ "<<refpos<<" read @ "<<readpos<<" CIGAR: "<<cigar<<endl;
+                CALL(AlignAccessAlignmentEnumeratorNext(iter));
+            }
+            CALL(AlignAccessAlignmentEnumeratorRelease(iter));
+        }
     }
-    for ( size_t i = 0; i < kNumThreads; ++i ) {
-        cout << "Starting thread " << i << " for " << ids[i] << endl;
+    else {
+        const size_t kNumCursors = 8;
+        const size_t kNumThreads = 3;
+        SThreadInfo tinfo[kNumCursors];
+        const char* ids[kNumCursors] = {
+            "NT_113960",
+            "NT_113945",
+            "NT_113880",
+            "NT_113960",
+            "NT_113960",
+            "NT_113960",
+            "NT_113945",
+            "NT_113880"
+        };
+        for ( size_t i = 0; i < kNumThreads; ++i ) {
+            tinfo[i].init(i, bam, ids[i]);
+        }
+        for ( size_t i = 0; i < kNumThreads; ++i ) {
+            cout << "Starting thread " << i << " for " << ids[i] << endl;
 #ifdef _MSC_VER
-        tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
-                                            &tinfo[i], 0, NULL);
+            tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
+                                              &tinfo[i], 0, NULL);
 #else
-        pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
+            pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
 #endif
-    }
-    for ( size_t i = 0; i < kNumThreads; ++i ) {
-        cout << "Waiting for thread " << i << endl;
-        void* ret = 0;
+        }
+        for ( size_t i = 0; i < kNumThreads; ++i ) {
+            cout << "Waiting for thread " << i << endl;
+            void* ret = 0;
 #ifdef _MSC_VER
-        WaitForSingleObject(tinfo[i].thread_id, INFINITE);
-        CloseHandle(tinfo[i].thread_id);
+            WaitForSingleObject(tinfo[i].thread_id, INFINITE);
+            CloseHandle(tinfo[i].thread_id);
 #else
-        pthread_join(tinfo[i].thread_id, &ret);
+            pthread_join(tinfo[i].thread_id, &ret);
 #endif
-        cout << "Align count: " << tinfo[i].count << endl;
+            cout << "Align count: " << tinfo[i].count << endl;
+        }
     }
 
     CALL(AlignAccessDBRelease(bam));
@@ -514,7 +540,8 @@ int CBAMTestApp::Run(void)
                 collect_short = !args["no_short"];
                 it = CBamAlignIterator(bam_db, q.refseq_id,
                                        q.refseq_range.GetFrom(),
-                                       q.refseq_range.GetLength());
+                                       q.refseq_range.GetLength(),
+                                       CBamAlignIterator::ESearchMode(by_start));
             }
             else {
                 it = CBamAlignIterator(bam_db);
@@ -542,6 +569,10 @@ int CBAMTestApp::Run(void)
             size_t mismatch_unmapped_count = 0, mismatch_mapped_count = 0;
             for ( ; it; ++it ) {
                 if ( limit_count > 0 && count == limit_count ) break;
+                if ( min_quality && it.GetMapQuality() < min_quality ) {
+                    skipped_by_quality_count += 1;
+                    continue;
+                }
                 try {
                     ++count;
                     TSeqPos ref_pos;
@@ -823,11 +854,11 @@ int CBAMTestApp::Run(void)
                 }
                 out << "Sorted." << NcbiEndl;
             }
+            if ( skipped_by_quality_count ) {
+                out << "Skipped low quality: " << skipped_by_quality_count
+                    << endl;
+            }
             if ( !sv.empty() ) {
-                if ( skipped_by_quality_count ) {
-                    out << "Skipped low quality: " << skipped_by_quality_count
-                        << endl;
-                }
                 if ( perfect_match_count ) {
                     out << "Perfect matches: " << perfect_match_count << endl;
                 }

@@ -71,6 +71,7 @@ public:
         CRange<TSeqPos> refseq_range;
     };
     vector<SQuery> queries;
+    bool by_start;
 };
 
 #endif // BAM_TEST_COMMON__H

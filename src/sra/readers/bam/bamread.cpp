@@ -846,9 +846,10 @@ CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db)
 CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
                                       const string& ref_label,
                                       TSeqPos ref_pos,
-                                      TSeqPos window)
+                                      TSeqPos window,
+                                      CBamAlignIterator::ESearchMode search_mode)
     : m_RawDB(&db),
-      m_Iter(db, ref_label, ref_pos, window)
+      m_Iter(db, ref_label, ref_pos, window, CBamRawAlignIterator::ESearchMode(search_mode))
 {
     m_ShortSequence.reserve(256);
     m_CIGAR.reserve(32);
@@ -885,6 +886,21 @@ void CBamAlignIterator::SAADBImpl::x_InvalidateBuffers()
     m_ShortSequence.clear();
     m_CIGAR.clear();
     m_Strand = eStrand_not_read;
+}
+
+
+TSeqPos CBamAlignIterator::SAADBImpl::GetRefSeqPos() const
+{
+    uint64_t pos = 0;
+    if ( rc_t rc = AlignAccessAlignmentEnumeratorGetRefSeqPos(m_Iter, &pos) ) {
+        if ( GetRCObject(rc) == RCObject(rcData) &&
+             GetRCState(rc) == rcNotFound ) {
+            return kInvalidSeqPos;
+        }
+        NCBI_THROW2(CBamException, eNoData,
+                    "Cannot get RefSeqPos", rc);
+    }
+    return TSeqPos(pos);
 }
 
 
@@ -926,12 +942,13 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
 CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                      const string& ref_id,
                                      TSeqPos ref_pos,
-                                     TSeqPos window)
+                                     TSeqPos window,
+                                     ESearchMode search_mode)
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     if ( bam_db.UsesRawIndex() ) {
-        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window);
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, search_mode);
         if ( !m_RawImpl->m_Iter ) {
             m_RawImpl.Reset();
         }
@@ -946,10 +963,25 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                 NCBI_THROW2(CBamException, eNoData, "Cannot find first alignment", rc);
             }
             // no alignments
+            return;
         }
-        else {
-            // found first alignment
-            m_AADBImpl = new SAADBImpl(*bam_db.m_AADB, ptr);
+        // found first alignment
+        m_AADBImpl = new SAADBImpl(*bam_db.m_AADB, ptr);
+        if ( search_mode == eSearchByStart ) {
+            // skip alignments that start before the requested range
+            while ( m_AADBImpl->GetRefSeqPos() < ref_pos ) {
+                if ( rc_t rc = AlignAccessAlignmentEnumeratorNext(ptr) ) {
+                    m_AADBImpl.Reset();
+                    if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
+                        // error
+                        NCBI_THROW2(CBamException, eOtherError, "Cannot find first alignment", rc);
+                    }
+                    else {
+                        // no matching alignment found
+                        return;
+                    }
+                }
+            }
         }
     }
 }
@@ -1094,17 +1126,7 @@ TSeqPos CBamAlignIterator::GetRefSeqPos(void) const
         return m_RawImpl->m_Iter.GetRefSeqPos();
     }
     else {
-        x_CheckValid();
-        uint64_t pos = 0;
-        if ( rc_t rc = AlignAccessAlignmentEnumeratorGetRefSeqPos(m_AADBImpl->m_Iter, &pos) ) {
-            if ( GetRCObject(rc) == RCObject(rcData) &&
-                 GetRCState(rc) == rcNotFound ) {
-                return kInvalidSeqPos;
-            }
-            NCBI_THROW2(CBamException, eNoData,
-                        "Cannot get RefSeqPos", rc);
-        }
-        return TSeqPos(pos);
+        return m_AADBImpl->GetRefSeqPos();
     }
 }
 
