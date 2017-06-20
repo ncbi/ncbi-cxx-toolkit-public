@@ -506,6 +506,14 @@ const vector<string>& COrg_ref::GetTaxnameList()
 }
 
 
+void COrg_ref::CleanForGenBank()
+{
+    ResetSyn();
+    if (IsSetOrgname() && GetOrgname().IsSetAttrib()) {
+        SetOrgname().SetFormalNameFlag(false);
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

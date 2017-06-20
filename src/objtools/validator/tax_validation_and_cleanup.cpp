@@ -790,9 +790,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
             (*reply_it)->GetData().IsSetOrg()) {
             CRef<COrg_ref> cpy(new COrg_ref());
             cpy->Assign((*reply_it)->GetData().GetOrg());
-            if (cpy->IsSetSyn()) {
-                cpy->ResetSyn();
-            } 
+            cpy->CleanForGenBank();
             if (!cpy->Equals(**org_it)) {
                 (*org_it)->Assign(*cpy);
                 changed = true;

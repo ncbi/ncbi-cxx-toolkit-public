@@ -94,6 +94,8 @@ public:
     static const vector<string>& GetTaxnameList();
     bool UpdateFromTable();
 
+    void CleanForGenBank();
+
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);

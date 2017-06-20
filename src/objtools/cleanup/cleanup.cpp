@@ -1835,7 +1835,7 @@ bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
                     any_changes = true;
                     CSeqdesc* desc = const_cast<CSeqdesc*>(*desc_it);
                     desc->SetSource().SetOrg().Assign((*reply_it)->GetData().GetOrg());
-                    desc->SetSource().SetOrg().ResetSyn();
+                    desc->SetSource().SetOrg().CleanForGenBank();
                 }
                 ++reply_it;
                 ++desc_it;

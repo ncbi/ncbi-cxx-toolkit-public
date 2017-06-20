@@ -20912,7 +20912,6 @@ BOOST_AUTO_TEST_CASE(Test_TM_145)
 }
 
 
-
 #if 0
 // commented out for now
 BOOST_AUTO_TEST_CASE(Test_VR_723)

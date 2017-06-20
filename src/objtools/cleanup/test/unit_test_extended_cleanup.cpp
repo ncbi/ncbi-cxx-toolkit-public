@@ -59,6 +59,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -1381,3 +1382,23 @@ BOOST_AUTO_TEST_CASE(Test_MakeSmallGenomeSet)
     BOOST_CHECK_EQUAL(seh.GetSet().GetBioseq_setCore()->GetSeq_set().size(), 7);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4303)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTaxname(entry, "Linepithema humile");
+    SetTaxon(entry, 0);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::TaxonomyLookup(seh), true);
+    CSeqdesc_CI desc_ci(seh, CSeqdesc::e_Source);
+    const COrg_ref& org = desc_ci->GetSource().GetOrg();
+    BOOST_CHECK_EQUAL(org.GetOrgname().IsSetAttrib(), false);
+    BOOST_CHECK_EQUAL(org.IsSetSyn(), false);
+    BOOST_CHECK_EQUAL(org.GetTaxId(), 83485);
+
+}
+
