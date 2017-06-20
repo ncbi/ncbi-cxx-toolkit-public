@@ -135,7 +135,11 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     //static size_t count = 0;
     if (GetCurrentBiosource_count != m_Count_Bioseq) {
         GetCurrentBiosource_count = m_Count_Bioseq;
-        GetCurrentBiosource_biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
+        GetCurrentBiosource_biosrc = 0;
+        CConstRef<CBioseq> bs = GetCurrentBioseq();
+        if (bs) {
+            GetCurrentBiosource_biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*bs));
+        }
     }
     return GetCurrentBiosource_biosrc;
 }
