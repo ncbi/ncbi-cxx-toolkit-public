@@ -283,80 +283,45 @@ bool CGtfReader::x_UpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_feat > pFeature( new CSeq_feat );
+    string strType = gff.Type();
+
+    using TYPEHANDLER = bool (CGtfReader::*)(const CGff2Record&, CRef< CSeq_annot >);
+    using HANDLERMAP = map<string, TYPEHANDLER>;
+
+    HANDLERMAP typeHandlers = {
+        {"CDS",         &CGtfReader::x_UpdateAnnotCds},
+        {"start_codon", &CGtfReader::x_UpdateAnnotCds},
+        {"stop_codon",  &CGtfReader::x_UpdateAnnotCds},
+        {"5UTR",        &CGtfReader::x_UpdateAnnotTranscript},
+        {"3UTR",        &CGtfReader::x_UpdateAnnotTranscript},
+        {"exon",        &CGtfReader::x_UpdateAnnotTranscript},
+        {"initial",     &CGtfReader::x_UpdateAnnotTranscript},
+        {"internal",    &CGtfReader::x_UpdateAnnotTranscript},
+        {"terminal",    &CGtfReader::x_UpdateAnnotTranscript},
+        {"single",      &CGtfReader::x_UpdateAnnotTranscript},
+    };
 
     //
     // Handle officially recognized GTF types:
     //
-    string strType = gff.Type();
-    if ( strType == "CDS" ) {
-        //
-        // Observations:
-        // Location does not include the stop codon hence must be fixed up once
-        //  the stop codon is seen.
-        //
-        return x_UpdateAnnotCds( gff, pAnnot );
+    HANDLERMAP::iterator it = typeHandlers.find(strType);
+    if (it != typeHandlers.end()) {
+        TYPEHANDLER handler = it->second;
+        return (this->*handler)(gff, pAnnot);
     }
-    if ( strType == "start_codon" ) {
-        //
-        // Observation:
-        // Comes in up to three pieces (depending on splicing).
-        // Location _is_ included in CDS.
-        //
-        return x_UpdateAnnotStartCodon( gff, pAnnot );
-    }
-    if ( strType == "stop_codon" ) {
-        //
-        // Observation:
-        // Comes in up to three pieces (depending on splicing).
-        // Location not included in CDS hence must be used to fix up location of
-        //  the coding region.
-        //
-        return x_UpdateAnnotStopCodon( gff, pAnnot );
-    }
-    if ( strType == "5UTR" ) {
-        return x_UpdateAnnot5utr( gff, pAnnot );
-    }
-    if ( strType == "3UTR" ) {
-        return x_UpdateAnnot3utr( gff, pAnnot );
-    }
-    if ( strType == "inter" ) {
-        return x_UpdateAnnotInter( gff, pAnnot );
-    }
-    if ( strType == "inter_CNS" ) {
-        return x_UpdateAnnotInterCns( gff, pAnnot );
-    }
-    if ( strType == "intron_CNS" ) {
-        return x_UpdateAnnotIntronCns( gff, pAnnot );
-    }
-    if ( strType == "exon"  ||
-         strType == "initial"  ||
-         strType == "internal"  ||
-         strType == "terminal"  ||
-         strType == "single") {
-        return x_UpdateAnnotExon( gff, pAnnot );
-    }
-
+ 
     //
     //  Every other type is not officially sanctioned GTF, and per spec we are
     //  supposed to ignore it. In the spirit of being lenient on input we may
     //  try to salvage some of it anyway.
     //
     if ( strType == "gene" ) {
-        //
-        // Not an official GTF feature type but seen frequently. Hence we give
-        //  it some recognition.
-        //
-        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
-            return false;
-        }
+        return x_CreateParentGene(gff, pAnnot);
     }
     if (strType == "mRNA") {
-        if ( ! x_CreateParentMrna(gff, pAnnot) ) {
-            return false;
-        }
+        return x_CreateParentMrna(gff, pAnnot);
     }
-    return x_UpdateAnnotMiscFeature( gff, pAnnot );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -365,46 +330,55 @@ bool CGtfReader::x_UpdateAnnotCds(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    bool needXref = false;
+
+    //
+    // From the spec, the stop codon has _not_ been accounted for in any of the 
+    //  coding regions. Hence, we will treat (pieces of) the stop codon just
+    //  like (pieces of) CDS.
+    //
     //
     // If there is no gene feature to go with this CDS then make one. Otherwise,
     //  make sure the existing gene feature includes the location of the CDS.
     //
-    CRef< CSeq_feat > pGene;
-    if ( ! x_FindParentGene( gff, pGene ) ) {
-        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
+    CRef<CSeq_feat> pGene;
+    if (!x_FindParentGene(gff, pGene)) {
+        if (!x_CreateParentGene(gff, pAnnot)  ||  !x_FindParentGene(gff, pGene)) {
             return false;
         }
+        needXref = true;
     }
     else {
-        if ( ! x_MergeParentGene( gff, pGene ) ) {
+        if (!x_MergeParentGene(gff, pGene)) {
             return false;
         }
     }
-    
+
     //
     // If there is no CDS feature with this gene_id|transcript_id then make one.
     //  Otherwise, fix up the location of the existing one.
     //
-    CRef< CSeq_feat > pCds;
-    if ( ! x_FindParentCds( gff, pCds ) ) {
+    CRef<CSeq_feat> pCds;
+    if (!x_FindParentCds(gff, pCds)) {
         //
         // Create a brand new CDS feature:
         //
-        if ( ! x_CreateParentCds( gff, pAnnot ) ) {
+        if (!x_CreateParentCds(gff, pAnnot)  ||  !x_FindParentCds(gff, pCds)) {
             return false;
         }
-        x_FindParentCds( gff, pCds );
+        x_FindParentCds(gff, pCds);
+        needXref = true;
     }
     else {
         //
         // Update an already existing CDS features:
         //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, pCds ) ) {
+        if (!x_MergeFeatureLocationMultiInterval(gff, pCds)) {
             return false;
         }
-        if (!x_FeatureTrimQualifiers(gff, pCds)) {
-            return false;
-        }
+    }
+    if (needXref) {
+        //xSetXrefFromTo(*pCds, *pGene);
     }
 
     if ( x_CdsIsPartial( gff ) ) {
@@ -430,85 +404,7 @@ bool CGtfReader::x_UpdateAnnotCds(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotStartCodon(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    //  If this belongs to a partial feature then that feature has been given a
-    //  5' fuzz. Now that we see an actual start codon it is time to remove that
-    //  fuzz.
-    //
-    CRef< CSeq_feat > pCds;
-    if ( ! x_FindParentCds( gff, pCds ) ) {
-        if ( ! x_CreateParentCds( gff, pAnnot ) || ! x_FindParentCds( gff, pCds ) ) {
-            return false;
-        }
-    }
-    if ( ! pCds->IsSetPartial() || ! pCds->GetPartial() ) {
-        return true;
-    }
-    CSeq_loc& loc = pCds->SetLocation();
-    if ( loc.IsPartialStart( eExtreme_Positional ) ) {
-        loc.SetPartialStart( false, eExtreme_Positional );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotStopCodon(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    //
-    // From the spec, the stop codon has _not_ been accounted for in any of the 
-    //  coding regions. Hence, we will treat (pieces of) the stop codon just
-    //  like (pieces of) CDS.
-    //
-    //
-    // If there is no gene feature to go with this CDS then make one. Otherwise,
-    //  make sure the existing gene feature includes the location of the CDS.
-    //
-    CRef<CSeq_feat> pGene;
-    if (!x_FindParentGene(gff, pGene)) {
-        if (!x_CreateParentGene(gff, pAnnot)) {
-            return false;
-        }
-    }
-    else {
-        if (!x_MergeParentGene(gff, pGene)) {
-            return false;
-        }
-    }
-
-    //
-    // If there is no CDS feature with this gene_id|transcript_id then make one.
-    //  Otherwise, fix up the location of the existing one.
-    //
-    CRef<CSeq_feat> pCds;
-    if (!x_FindParentCds(gff, pCds)) {
-        //
-        // Create a brand new CDS feature:
-        //
-        if (!x_CreateParentCds(gff, pAnnot)) {
-            return false;
-        }
-        x_FindParentCds(gff, pCds);
-    }
-    else {
-        //
-        // Update an already existing CDS features:
-        //
-        if (!x_MergeFeatureLocationMultiInterval(gff, pCds)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnot5utr(
+bool CGtfReader::x_UpdateAnnotTranscript(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
@@ -525,133 +421,6 @@ bool CGtfReader::x_UpdateAnnot5utr(
     }
     else {
         if ( ! x_MergeParentGene( gff, pGene ) ) {
-            return false;
-        }
-    }
-
-    //
-    // If there is no mRNA feature with this gene_id|transcript_id then make one.
-    //  Otherwise, fix up the location of the existing one.
-    //
-    CRef< CSeq_feat > pMrna;
-    if ( ! x_FindParentMrna( gff, pMrna ) ) {
-        //
-        // Create a brand new CDS feature:
-        //
-        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
-            return false;
-        }
-    }
-    else {
-        //
-        // Update an already existing CDS features:
-        //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
-            return false;
-        }
-        //if (!x_FeatureTrimQualifiers(gff, pMrna)) {
-        //    return false;
-        //}
-    }
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnot3utr(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    //
-    // If there is no gene feature to go with this CDS then make one. Otherwise,
-    //  make sure the existing gene feature includes the location of the CDS.
-    //
-    CRef< CSeq_feat > pGene;
-    if ( ! x_FindParentGene( gff, pGene ) ) {
-        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
-            return false;
-        }
-    }
-    else {
-        if ( ! x_MergeParentGene( gff, pGene ) ) {
-            return false;
-        }
-    }
-
-    //
-    // If there is no mRNA feature with this gene_id|transcript_id then make one.
-    //  Otherwise, fix up the location of the existing one.
-    //
-    CRef< CSeq_feat > pMrna;
-    if ( ! x_FindParentMrna( gff, pMrna ) ) {
-        //
-        // Create a brand new CDS feature:
-        //
-        if ( ! x_CreateParentMrna( gff, pAnnot ) ) {
-            return false;
-        }
-    }
-    else {
-        //
-        // Update an already existing CDS features:
-        //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
-            return false;
-        }
-        //if (!x_FeatureTrimQualifiers(gff, pMrna)) {
-        //    return false;
-        //}
-    }
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotInter(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotInterCns(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotIntronCns(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotExon(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
-    //
-    // If there is no gene feature to go with this CDS then make one. Otherwise,
-    //  make sure the existing gene feature includes the location of the CDS.
-    //
-    CRef< CSeq_feat > pGene;
-    if ( ! x_FindParentGene( gff, pGene ) ) {
-        if ( ! x_CreateParentGene( gff, pAnnot ) ) {
-            return false;
-        }
-    }
-    else {
-        if (!x_MergeParentGene(gff, pGene)) {
             return false;
         }
         if (!x_FeatureTrimQualifiers(gff, pGene)) {
@@ -676,7 +445,7 @@ bool CGtfReader::x_UpdateAnnotExon(
         //
         // Update an already existing CDS features:
         //
-        if (!x_MergeFeatureLocationMultiInterval(gff, pMrna)) {
+        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
             return false;
         }
         if (!x_FeatureTrimQualifiers(gff, pMrna)) {
@@ -684,15 +453,6 @@ bool CGtfReader::x_UpdateAnnotExon(
         }
     }
 
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotMiscFeature(
-    const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
-//  ----------------------------------------------------------------------------
-{
     return true;
 }
 

@@ -2120,6 +2120,23 @@ void CGff2Reader::xSetAncestorXrefs(
 }
 
 //  ============================================================================
+void CGff2Reader::xSetXrefFromTo(
+    CSeq_feat& from,
+    CSeq_feat& to)
+//  ============================================================================
+{
+
+    //xref descendent->ancestor
+    if (!sFeatureHasXref(from, to.GetId())) {
+        CRef<CFeat_id> pToId(new CFeat_id);
+        pToId->Assign(to.GetId());
+        CRef<CSeqFeatXref> pToXref(new CSeqFeatXref);
+        pToXref->SetId(*pToId);
+        from.SetXref().push_back(pToXref);
+    }
+}
+
+//  ============================================================================
 bool CGff2Reader::IsAlignmentData(
     const string& line)
 //  ============================================================================

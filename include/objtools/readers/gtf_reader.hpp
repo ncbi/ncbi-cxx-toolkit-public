@@ -93,39 +93,7 @@ protected:
         const CGff2Record&,
         CRef< CSeq_annot > );
 
-    virtual bool x_UpdateAnnotStartCodon(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotStopCodon(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnot5utr(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnot3utr(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotInter(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotInterCns(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotIntronCns(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotExon(
-        const CGff2Record&,
-        CRef< CSeq_annot > );
-
-    virtual bool x_UpdateAnnotMiscFeature(
+    virtual bool x_UpdateAnnotTranscript(
         const CGff2Record&,
         CRef< CSeq_annot > );
 

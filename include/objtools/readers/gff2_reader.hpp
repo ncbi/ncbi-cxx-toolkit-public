@@ -400,6 +400,10 @@ protected:
         CSeq_feat&,
         CSeq_feat&);
 
+    void xSetXrefFromTo(
+        CSeq_feat&,
+        CSeq_feat&);
+
     //  data:
     //
 protected:
