@@ -597,11 +597,11 @@ const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
                 break;
             case CSeqMap::eSeqGap:
                 if (GetSeqSummary_ret.First) {
-                    GetSeqSummary_ret.StartsWithGap = true;
+                    //GetSeqSummary_ret.StartsWithGap = true;
                     GetSeqSummary_ret.First = false;
                 }
                 GetSeqSummary_ret.Gaps += seq_iter.GetLength();
-                GetSeqSummary_ret.EndsWithGap = true;
+                //GetSeqSummary_ret.EndsWithGap = true;
                 break;
             case CSeqMap::eSeqRef:
                 GetSeqSummary_ret.First = false;
