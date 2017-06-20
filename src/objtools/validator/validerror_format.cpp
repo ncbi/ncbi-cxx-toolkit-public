@@ -843,7 +843,7 @@ string CValidErrorFormat::GetFeatureLocationLabel(const CSeq_feat& ft, CRef<CSco
             loc_label = GetValidatorLocationLabel(ft.GetLocation(), *scope);
         }
         if (loc_label.size() > 800) {
-            loc_label.replace(796, NPOS, "...");
+            loc_label.replace(795, NPOS, "...");
         }
     }
     return loc_label;
