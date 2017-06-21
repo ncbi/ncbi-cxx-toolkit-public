@@ -1033,7 +1033,8 @@ void CMultiReaderApp::xProcessNewick(
 {
     while (!istr.eof()) {
         auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istr));
-        CRef<CBioTreeContainer> btc = MakeBioTreeContainer(pTree.get());
+        CRef<CBioTreeContainer> btc = MakeDistanceSensitiveBioTreeContainer(
+            pTree.get());
         xWriteObject(args, *btc, ostr);
     }
 }

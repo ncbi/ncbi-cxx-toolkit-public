@@ -138,6 +138,9 @@ private:
 /// Conversion from TPhyTreeNode to CBioTreeContainer
 NCBI_XALGOPHYTREE_EXPORT CRef<objects::CBioTreeContainer>
 MakeBioTreeContainer(const TPhyTreeNode *tree);
+/// Conversion from TPhyTreeNode to CBioTreeContainer, potentially without dist feature key
+NCBI_XALGOPHYTREE_EXPORT CRef<objects::CBioTreeContainer>
+MakeDistanceSensitiveBioTreeContainer(const TPhyTreeNode *tree);
 
 END_NCBI_SCOPE
 

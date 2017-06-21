@@ -618,6 +618,52 @@ CRef<CBioTreeContainer> MakeBioTreeContainer(const TPhyTreeNode *tree)
     return btc;
 }
 
+CRef<CBioTreeContainer> MakeDistanceSensitiveBioTreeContainer(const TPhyTreeNode *tree)
+{
+    const int label_fid = 0;
+    const int dist_fid = 1;
+
+    CRef<CBioTreeContainer> btc(new CBioTreeContainer);
+    CRef<CFeatureDescr> fdescr;
+
+    fdescr = new CFeatureDescr();
+    fdescr->SetId(label_fid);
+    fdescr->SetName("label");
+    btc->SetFdict().Set().push_back(fdescr);
+    
+    int next_uid = 0;
+    s_AddNodeToBtc(btc, tree, -1, next_uid);
+    // unset parent id of root node
+    btc->SetNodes().Set().front()->ResetParent();
+
+    bool at_least_one_node_has_distance = false;
+    const auto& nodes = btc->GetNodes().Get();
+    for ( auto it = nodes.begin(); it != nodes.end(); ++it) {
+        const auto& node = **it;
+        if (!node.IsSetFeatures() || !node.GetFeatures().CanGet()) {
+            continue;
+        }
+        const auto& features = node.GetFeatures().Get();
+        for (auto it1 = features.begin(); it1 != features.end(); ++it1) {
+            const auto& feature = **it1;
+            if (feature.IsSetFeatureid() && (dist_fid == feature.GetFeatureid())) {
+                at_least_one_node_has_distance = true;
+                break;
+            }
+        }
+        if (at_least_one_node_has_distance) {
+            break;
+        }
+    }
+    if (at_least_one_node_has_distance) {
+        fdescr = new CFeatureDescr();
+        fdescr->SetId(dist_fid);
+        fdescr->SetName("dist");
+        btc->SetFdict().Set().push_back(fdescr);
+    }
+    return btc;
+}
+
 bool CDistMethods::AllFinite(const TMatrix& mat)
 {
     ITERATE (TMatrix::TData, it, mat.GetData()) {
