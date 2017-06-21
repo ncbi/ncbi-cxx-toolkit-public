@@ -348,16 +348,16 @@ static EIO_Status s_FTPCommandEx(SFTPConnector* xxx,
         return eIO_Closed;
 
     cmdlen  = strlen(cmd);
-    arglen  = arg ? strlen(arg) : 0;
+    arglen  = arg  &&  *arg ? strlen(arg) : 0;
     linelen = cmdlen + 2;
-    if (arg)
+    if (arglen)
         linelen += 1 + arglen;
     line    = linelen < sizeof(x_buf) ? x_buf : (char*) malloc(linelen + 1);
 
     if (line) {
         ESwitch log = eDefault;
         memcpy(line, cmd, cmdlen);
-        if (arg) {
+        if (arglen) {
             line[cmdlen++] = ' ';
             memcpy(line + cmdlen, arg, arglen);
             cmdlen += arglen;
@@ -365,8 +365,9 @@ static EIO_Status s_FTPCommandEx(SFTPConnector* xxx,
         line[cmdlen++] = '\r';
         line[cmdlen++] = '\n';
         line[cmdlen]   = '\0';
+        assert(cmdlen == linelen);
         log = off ? SOCK_SetDataLogging(xxx->cntl, eOff) : eOff;
-        status = SOCK_Write(xxx->cntl, line, cmdlen, 0, eIO_WritePersist);
+        status = SOCK_Write(xxx->cntl, line, linelen, 0, eIO_WritePersist);
         if (off  &&  log != eOff) {
             SOCK_SetDataLogging(xxx->cntl, log);
             if (log == eOn  ||  SOCK_SetDataLoggingAPI(eDefault) == eOn) {
@@ -1140,7 +1141,7 @@ static EIO_Status x_FTPXfer(SFTPConnector*  xxx,
                 assert(xxx->data);
                 if (xxx->send) {
                     if (!(xxx->flag & fFTP_UncorkUpload))
-                        SOCK_SetCork(xxx->data, 1);
+                        SOCK_SetCork(xxx->data, 1/*true*/);
                     assert(xxx->open);
                     xxx->size = 0;
                 }
