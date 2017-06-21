@@ -2286,8 +2286,8 @@ dbSNPBuildID=132"
     {
       data variation {
         id {
-          db "local",
-          tag str "rs121908135"
+          db "dbSNP",
+          tag id 121908135
         },
         variant-prop {
           version 5,

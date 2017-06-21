@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CVcfData;
+class CDbtag;
 
 //  ----------------------------------------------------------------------------
 enum ESpecType
@@ -312,6 +313,12 @@ protected:
     //
     //  data:
     //
+private:
+    bool 
+    xAssigndbSNPTag(
+        const vector<string>& ids,
+        CRef<CDbtag> pDbtag) const;
+
 protected:
     CRef< CAnnotdesc > m_Meta;
     map<string,CVcfInfoSpec> m_InfoSpecs;

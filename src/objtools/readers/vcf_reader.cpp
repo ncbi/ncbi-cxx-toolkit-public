@@ -1230,6 +1230,32 @@ CVcfReader::xProcessFormat(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CVcfReader::xAssigndbSNPTag(
+    const vector<string>& ids, 
+    CRef<CDbtag> pDbtag) const
+//  ----------------------------------------------------------------------------
+{
+    for (const string& id : ids) {
+        if (NStr::StartsWith(id, "rs") ||
+            NStr::StartsWith(id, "ss") ) 
+        {
+            try { 
+                const int idval = NStr::StringToInt(id.substr(2));
+                pDbtag->SetDb("dbSNP");
+                pDbtag->SetTag().SetId(idval);
+            }
+            catch (...) { 
+                continue;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVariationIds(
@@ -1243,6 +1269,23 @@ CVcfReader::xAssignVariationIds(
     CVariation_ref& variation = pFeature->SetData().SetVariation();
 //    CVariation_ref::TVariant_prop& var_prop = variation.SetVariant_prop();
 //    var_prop.SetVersion( 5 );
+
+    auto it = data.m_Info.find("SOURCE");
+
+    if (data.m_Info.end() != it) {
+        vector<string> sources = it->second;
+        if (sources.size() > 0 && 
+            NStr::Equal(sources.front(), "dbsnp")) 
+        {
+            CRef<CDbtag> pDbtag = Ref(new CDbtag());
+            if (xAssigndbSNPTag(data.m_Ids, pDbtag)) {
+                variation.SetId(pDbtag.GetNCObject());
+                return true;
+            }
+        }
+    }
+
+
     if ( data.m_Info.find( "DB" ) != data.m_Info.end() ) {
         string id = data.m_Ids[0];
         NStr::ToLower(id);
@@ -1560,24 +1603,12 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
             NStr::Equal(sources.front(),"dbsnp")) 
         {
             bool valid_id=false;
-            for (const string& id : data.m_Ids) {
-                if (NStr::StartsWith(id, "rs") ||
-                    NStr::StartsWith(id, "ss") ) 
-                {
-                    CRef<CDbtag> pDbtag(new CDbtag());
-                    pDbtag->SetDb("dbSNP");
-                    try { 
-                        const int idval = NStr::StringToInt(id.substr(2));
-                        pDbtag->SetTag().SetId(idval);
-                   }
-                    catch (...) { 
-                        continue;
-                    }
-                    pFeat->SetDbxref().push_back(pDbtag);
-                    valid_id = true;
-                    break;
-                }
+            CRef<CDbtag> pDbtag(new CDbtag());
+            if (xAssigndbSNPTag(data.m_Ids, pDbtag)) {
+                pFeat->SetDbxref().push_back(pDbtag);
+                valid_id = true;
             }
+
             if (!valid_id) {
                 AutoPtr<CObjReaderLineException> pErr(
                     CObjReaderLineException::Create(
