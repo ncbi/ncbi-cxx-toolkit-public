@@ -673,7 +673,8 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
     TRefLock ref = GetRefSeqInfo(idh);
     if ( ref.first  ) {
         // refseq: annots and possibly ref sequence
-        if ( ref.first->m_File->m_RefIdType == CCSraDb::eRefId_gnl_NAME ) {
+        if ( (!m_FixedFiles.empty() && idh.Which() == CSeq_id::e_Local) ||
+             ref.first->m_File->m_RefIdType == CCSraDb::eRefId_gnl_NAME ) {
             // we have refseq+annot
             if ( need_align || need_graph ) {
                 CRef<CCSRABlobId> annot_blob_id = GetBlobId(ref, CCSRABlobId::eBlobType_annot);
@@ -1264,6 +1265,10 @@ CCSRARefSeqInfo::GetRefSeqIterator(void) const
 void CCSRARefSeqInfo::x_LoadRangesStat(void)
 {
     if ( kUseFullAlignCounts ) {
+        CStopWatch sw;
+        if ( GetDebugLevel() >= 1 ) {
+            sw.Start();
+        }
         TSeqPos segment_len = m_File->GetDb().GetRowSize();
         const size_t kAlignLimitCount = kAlignChunkSize;
         const size_t kGraphLimitCount = kGraphChunkSize;
@@ -1376,7 +1381,8 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
             LOG_POST_X(5, Info << "CCSRADataLoader:"
                        " align count: "<<total<<
                        " align chunks: "<<align_chunks<<
-                       " graph chunks: "<<graph_chunks);
+                       " graph chunks: "<<graph_chunks<<
+                       " time: "<<sw.Elapsed());
         }
         return;
     }
