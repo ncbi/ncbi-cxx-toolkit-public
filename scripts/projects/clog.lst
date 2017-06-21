@@ -1,0 +1,10 @@
+corelib$
+connect$
+./include/util/bitset$
+util$
+util/regexp$
+util/xregexp$
+misc$
+misc/clog
+misc/third_party
+misc/third_party_static
