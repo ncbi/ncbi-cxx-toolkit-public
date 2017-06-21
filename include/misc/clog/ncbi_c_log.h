@@ -929,6 +929,29 @@ extern void NcbiLog_Context_Destroy(TNcbiLog_Context ctx);
  *  NcbiLog posting functions
  */
 
+
+/** Application execution states shown in the std prefix
+ *
+ *  @sa NcbiLog_GetState
+ */
+typedef enum {
+    eNcbiLog_NotSet = 0,     /**< Reserved value, never used in messages */
+    eNcbiLog_AppBegin,       /**< PB  */
+    eNcbiLog_AppRun,         /**< P   */
+    eNcbiLog_AppEnd,         /**< PE  */
+    eNcbiLog_RequestBegin,   /**< RB  */
+    eNcbiLog_Request,        /**< R   */
+    eNcbiLog_RequestEnd      /**< RE  */
+} ENcbiLog_AppState;
+
+
+/** Get current logging execution state (context and thread specific).
+ *
+ *  @sa ENcbiLog_AppState
+ */
+extern ENcbiLog_AppState NcbiLog_GetState(void);
+
+
 /** Should be called as soon as possible during application initialization.
  *  Writes the 'start' line to the <appname>.log, including the command line.
  *  Calling this function early ensures that the start time of the application
@@ -1076,7 +1099,6 @@ extern void NcbiLog_Critical(const char* msg);
 extern void NcbiLog_Fatal(const char* msg);
 
 
-/* extern void NcbiLog_PostEx(ENcbiLog_Severity severity, const char* msg, const SNcbiLog_PostCtx* ctx); */
 
 #ifdef __cplusplus
 }  /* extern "C" */

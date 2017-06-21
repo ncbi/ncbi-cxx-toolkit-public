@@ -2928,6 +2928,21 @@ extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
 }
 
 
+extern ENcbiLog_AppState NcbiLog_GetState(void)
+{
+    ENcbiLog_AppState state = eNcbiLog_NotSet;
+    TNcbiLog_Context ctx = NULL;
+    if (sx_IsInit == 1) {
+        MT_LOCK_API;
+        ctx = s_GetContext();
+        /* Get application state (context-specific) */
+        state = (ctx->state == eNcbiLog_NotSet) ? sx_Info->state : ctx->state;
+        MT_UNLOCK;
+    }
+    return state;
+}
+
+
 /** Print "start" message. 
  *  We should print "start" message always, before any other message.
  *  The NcbiLog_AppStart() is just a wrapper for this with checks and MT locking.

@@ -81,19 +81,6 @@ extern "C" {
  *  Internal types and definitions
  */
 
-/** Application execution states shown in the std prefix
- */
-typedef enum {
-    eNcbiLog_NotSet = 0,     /**< Reserved value, never used in messages */
-    eNcbiLog_AppBegin,       /**< PB  */
-    eNcbiLog_AppRun,         /**< P   */
-    eNcbiLog_AppEnd,         /**< PE  */
-    eNcbiLog_RequestBegin,   /**< RB  */
-    eNcbiLog_Request,        /**< R   */
-    eNcbiLog_RequestEnd      /**< RE  */
-} ENcbiLog_AppState;
-
-
 /** Type of file for the output.
  *  Specialization for the file-based diagnostics.
  *  Splits output into four files: .err, .log, .trace, .perf.
