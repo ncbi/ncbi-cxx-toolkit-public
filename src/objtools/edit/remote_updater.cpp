@@ -454,6 +454,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, obj
             if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg())
             {
                 (*reply_it)->SetData().SetOrg().ResetSyn();
+                (*reply_it)->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
 
                 xUpdate(it->second.owner, (*reply_it)->SetData().SetOrg());
             }
