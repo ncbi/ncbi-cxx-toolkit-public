@@ -552,7 +552,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     if (!SENDMAIL_READ_RESPONSE(354, buffer))
         SENDMAIL_RETURN2(16, "Protocol error in DATA command", buffer);
 
-    (void) SOCK_SetCork(sock, eOn);
+    (void) SOCK_SetCork(sock, 1/*true*/);
 
     if (!(info->mx_options & fSendMail_NoMxHeader)) {
         if (!(info->mx_options & fSendMail_Old822Headers)) {
@@ -718,7 +718,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     } else if (!s_SockWrite(sock, "." MX_CRLF, sizeof(MX_CRLF)))
         SENDMAIL_RETURN(28, "Write error while finalizing message");
 
-    (void) SOCK_SetCork(sock, eOff);
+    (void) SOCK_SetCork(sock, 0/*false*/);
 
     if (!SENDMAIL_READ_RESPONSE(250, buffer))
         SENDMAIL_RETURN2(29, "Protocol error in sending message", buffer);
