@@ -1629,12 +1629,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
 
             readfeat_flags |= CFeature_table_reader::fCDSsMustBeInTheirGenes;
         }
-        expected_errors.push_back(
-            ILineError::eProblem_CreatedGeneFromMultipleFeats );
-        linesWithError.push_back(20);
-        expected_errors.push_back(
-            ILineError::eProblem_CreatedGeneFromMultipleFeats );
-        linesWithError.push_back(23);
+
         if( bCheckIfCDSInItsGene ) {
             expected_errors.push_back(
                 ILineError::eProblem_FeatMustBeInXrefdGene);
