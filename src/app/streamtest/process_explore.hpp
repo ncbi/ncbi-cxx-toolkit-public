@@ -167,6 +167,11 @@ public:
         }
 
 
+        // Get first part of underlying sequence
+        string subseq = bsx.GetSequence(0, 9);
+        *m_out << "First 10 bases '" << subseq << "'" << '\n';
+
+
         // IterateFeatures causes feature vector to be initialized by CFeat_CI, locations mapped to master
         int num_feats = bsx.IterateFeatures([this, &bsx](CFeatureIndex& sfx) {
 
