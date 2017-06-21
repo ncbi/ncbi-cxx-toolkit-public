@@ -60,23 +60,77 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
     if (lineage  &&  lineage->empty()  &&  IsSetLineage()) {
         *lineage = GetLineage();
     }
-
+    
     if ( !IsSetName() ) {
         return false;
     }
 
     const TName& name = GetName();
+    name_out.clear();
     switch (name.Which()) {
-    case C_Name::e_Binomial: case C_Name::e_Namedhybrid:
-    {
-        const CBinomialOrgName& bin = (name.IsBinomial() ? name.GetBinomial()
-                                       : name.GetNamedhybrid());
-        name_out = bin.GetGenus();
+    case C_Name::e_Namedhybrid: {
+	const CBinomialOrgName& bin = name.GetNamedhybrid();
+	name_out += bin.GetGenus();
+	if( bin.IsSetSpecies() ) {
+	    name_out += " x ";
+	    name_out += bin.GetSpecies();
+	}
+	return true;
+    }
+    case C_Name::e_Binomial:  {
+        const CBinomialOrgName& bin = name.GetBinomial();
         if (bin.IsSetSpecies()) {
-            name_out += ' ' + bin.GetSpecies();
-            if (bin.IsSetSubspecies()) {
-                name_out += ' ' + bin.GetSubspecies();
-            }
+	    string sSpecies = bin.GetSpecies();
+	    if( sSpecies.find(" ") != string::npos &&
+		!( NStr::StartsWith(sSpecies,"sp. ") ||
+		   NStr::StartsWith(sSpecies,"species ") ) ) {
+		// When species epithet is complex -- occurs when genus name doesn't coincide with beginning of species name
+		name_out += sSpecies;
+	    } else { // Simple case with single genus and species epithets
+		if (bin.IsSetSubspecies() && !NStr::TruncateSpaces(bin.GetSubspecies()).empty()) {
+		    string sSubspecies = NStr::TruncateSpaces(bin.GetSubspecies());
+		    bool bSubspIndicator = NStr::StartsWith(sSubspecies, "subsp. ") ||
+			NStr::StartsWith(sSubspecies, "ssp. ") ||
+			NStr::StartsWith(sSubspecies, "subspecies ");
+		    if( sSubspecies.find(" ") != string::npos && !bSubspIndicator ) { 
+			// When subspecies epithet is complex -- occurs when species name doesn't coincide with beginning of subspecies name
+			name_out += sSubspecies;
+		    } else { // Simple case with single sub-species epithet
+			name_out += bin.GetGenus();
+			name_out += ' ' + bin.GetSpecies();
+			if( !bSubspIndicator ) {
+			    string sLineage = lineage ? *lineage : IsSetLineage() ? GetLineage() : NcbiEmptyString;
+			    if( sLineage.find("Metazoa;") == string::npos ) {
+				name_out += " subsp.";
+			    }
+			}
+			name_out += ' ' + bin.GetSubspecies();
+		    }
+		} else { // No subspecies
+		    name_out += bin.GetGenus();
+		    name_out += ' ' + bin.GetSpecies();
+		}
+		if( IsSetMod() ) { // Add variety and forma to flat name -- those are valid classification categories
+		    ITERATE (COrgName::TMod, it, GetMod()) {
+			if( (*it)->GetSubtype() == COrgMod::eSubtype_variety ) {
+			    name_out += " var. ";
+			    name_out += (*it)->GetSubname();
+			    break;
+			}
+		    }
+		    ITERATE (COrgName::TMod, it, GetMod()) {
+			if( (*it)->GetSubtype() == COrgMod::eSubtype_forma ) {
+			    name_out += " f. ";
+			    name_out += (*it)->GetSubname();
+			    break;
+			} else if( (*it)->GetSubtype() == COrgMod::eSubtype_forma_specialis ) {
+			    name_out += " f.sp. ";
+			    name_out += (*it)->GetSubname();
+			    break;
+			}
+		    }
+		}
+	    }
         }
         return true;
     }
@@ -87,11 +141,26 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 
     case COrgName::C_Name::e_Hybrid:
     {
+	string tmp;
+	string delim;
+	string sLineage = lineage ? *lineage : IsSetLineage() ? GetLineage() : NcbiEmptyString;
         ITERATE (CMultiOrgName::Tdata, it, name.GetHybrid().Get()) {
-            if ((*it)->GetFlatName(name_out, lineage)) {
-                return true;
-            }
+	    tmp.clear();
+            if ((*it)->GetFlatName(tmp, &sLineage)) {
+		name_out += delim;
+		if( (*it)->IsSetName() && (*it)->GetName().IsHybrid() ) {
+		    name_out += '(';
+		    name_out += tmp;
+		    name_out += ')';
+		} else {
+		    name_out += tmp;
+		}
+		delim = " x ";
+            } else {
+		return false;
+	    }
         }
+	return true;
     }
 
     case COrgName::C_Name::e_Partial:
