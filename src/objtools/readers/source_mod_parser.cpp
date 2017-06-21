@@ -119,6 +119,7 @@ namespace
     STATIC_SMOD(rev_primer_seq);
     STATIC_SMOD(fwd_primer_name);
     STATIC_SMOD(rev_primer_name);
+    STATIC_SMOD(dbxref);
     STATIC_SMOD(db_xref);
     STATIC_SMOD(division);
     STATIC_SMOD(div);
@@ -852,7 +853,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }}
 
     // db_xref
-    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref.Get() );
+    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref.Get(), s_Mod_dbxref.Get() );
     for( TModsCI db_xref_iter = db_xref_mods_range.first; 
             db_xref_iter != db_xref_mods_range.second; 
             ++db_xref_iter ) {
@@ -1342,12 +1343,15 @@ CSourceModParser::FindAllMods(const CTempString& key)
 }
 
 CSourceModParser::TModsRange
-CSourceModParser::FindAllMods(const SMod & smod)
+CSourceModParser::FindAllMods(const SMod & smod, const SMod & alt_smod)
 {
     TModsRange r;
     r.first = m_Mods.lower_bound(smod);
+    if (r.first == m_Mods.end() || !EqualKeys(r.first->key, smod.key)) {
+        r.first = m_Mods.lower_bound(alt_smod);
+    }
     for (r.second = r.first;
-         r.second != m_Mods.end()  &&  EqualKeys(r.second->key, smod.key);
+         r.second != m_Mods.end()  &&  (EqualKeys(r.second->key, smod.key) || EqualKeys(r.second->key, alt_smod.key));
          ++r.second)
     {
         // set iterators are const since changing an object could affect

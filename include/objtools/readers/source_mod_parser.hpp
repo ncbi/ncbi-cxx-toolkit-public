@@ -194,7 +194,8 @@ public:
 
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
-    TModsRange FindAllMods(const SMod & smod);
+    TModsRange FindAllMods(const SMod & smod,
+                           const SMod & alt_smod = kEmptyMod.Get());
 
     /// Append a representation of the specified modifiers to s, with a space
     /// in between if s is not empty and doesn't already end with one.
