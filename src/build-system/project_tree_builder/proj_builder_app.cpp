@@ -1388,7 +1388,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                     continue;
                 }
             }
-            if (isLibrary && id.Type() == CProjKey::eLib) {
+            if (isLibrary) {
                 CollectLibToLibDependencies(projects_tree, lib_guid, visited, p, n);
                 continue;
             }
