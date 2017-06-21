@@ -750,16 +750,16 @@ bool CFastaReader::ParseIDs(
       CTempString check;
       size_t last = s.rfind('|');
       check = (last == CTempString::npos) ? s : s.substr(last + 1);
-      if (check.length() > m_MaxIDLength ) { 
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
-        CMessageListenerLenient dummy_err_container; // so we can ignore them
-        if( CreateWarningsForSeqDataInTitle(s, LineNumber(), &dummy_err_container) ) {
-            // it's actually seq data
-            return false;
-        }
+      CMessageListenerLenient dummy_err_container; // so we can ignore them
+      if( CreateWarningsForSeqDataInTitle(s, LineNumber(), &dummy_err_container) ) {
+          // it's actually seq data
+          return false;
+       }
 
+      if (check.length() > m_MaxIDLength ) { 
         FASTA_ERROR(LineNumber(),
             "CFastaReader: Near line " << LineNumber() 
             << ", the sequence ID is too long.  Its length is " << s.length()
