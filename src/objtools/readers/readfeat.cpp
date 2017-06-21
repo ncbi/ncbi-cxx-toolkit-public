@@ -2031,6 +2031,18 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
         // this CDS xrefs.  It should be somewhat uncommon for there
         // to be more than one matching gene.
         set<SFeatAndLineNum> matchingGenes;
+
+        const string locus = 
+            pGeneXrefOnCDS->IsSetLocus() ? 
+            pGeneXrefOnCDS->GetLocus() :
+            "";
+
+        const string locus_tag = 
+            pGeneXrefOnCDS->IsSetLocus_tag() ?
+            pGeneXrefOnCDS->GetLocus_tag() :
+            "";
+
+
         {{
             // all the code in this scope is all just for setting up matchingGenes
 
@@ -2038,25 +2050,39 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
             typedef pair<TStrToGeneCI, TStrToGeneCI> TStrToGeneEqualRange;
             set<SFeatAndLineNum> locusGeneMatches;
             // add the locus matches (if any) to genesAlreadyCreated
-            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus) ) {
+            if( !NStr::IsBlank(locus) ) {
                 TStrToGeneEqualRange locus_equal_range =
-                    locusToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus());
+                    locusToGeneAndLineMap.equal_range(locus);
                 for( TStrToGeneCI locus_gene_ci = locus_equal_range.first;
                     locus_gene_ci != locus_equal_range.second;
                     ++locus_gene_ci  ) 
                 {
+                    if (!NStr::IsBlank(locus_tag)) {
+                        auto gene_feat = locus_gene_ci->second.m_pFeat;
+                        if (gene_feat->GetData().GetGene().IsSetLocus_tag() &&
+                            gene_feat->GetData().GetGene().GetLocus_tag() != locus_tag) {
+                            continue;
+                        }
+                    }
                     locusGeneMatches.insert(locus_gene_ci->second);
                 }
             }
             // remove any that don't also match the locus-tag (if any)
             set<SFeatAndLineNum> locusTagGeneMatches;
-            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus_tag) ) {
+            if( !NStr::IsBlank(locus_tag) ) {
                 TStrToGeneEqualRange locus_tag_equal_range =
-                    locusTagToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus_tag());
+                    locusTagToGeneAndLineMap.equal_range(locus_tag);
                 for( TStrToGeneCI locus_tag_gene_ci = locus_tag_equal_range.first;
                      locus_tag_gene_ci != locus_tag_equal_range.second;
                      ++locus_tag_gene_ci )
                 {
+                    if (!NStr::IsBlank(locus)) {
+                        auto gene_feat = locus_tag_gene_ci->second.m_pFeat;
+                        if (gene_feat->GetData().GetGene().IsSetLocus() &&
+                            gene_feat->GetData().GetGene().GetLocus() != locus) {
+                            continue;
+                        }
+                    }
                     locusTagGeneMatches.insert(locus_tag_gene_ci->second);
                 }
             }
@@ -2082,16 +2108,6 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
             ITERATE(set<SFeatAndLineNum>, gene_feat_and_line_ci, matchingGenes) {
                 const CSeq_loc & gene_loc = gene_feat_and_line_ci->m_pFeat->GetLocation();
                 const TSeqPos gene_line_num = gene_feat_and_line_ci->m_uLineNum;
-
-                // check if we're attempting to create a gene we've already created
-                if( (flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 &&
-                    gene_line_num < 1 )
-                {
-                    x_ProcessMsg(
-                        cds_line_num,
-                        ILineError::eProblem_CreatedGeneFromMultipleFeats, eDiag_Error,
-                        kCdsFeatName );
-                }
 
                 if ((flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0) {
 
