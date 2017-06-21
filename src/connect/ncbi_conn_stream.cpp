@@ -81,7 +81,8 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
     : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(conn, close, timeout, buf_size, flgs, ptr, size));
+        csb(new CConn_Streambuf(conn, close,
+                                timeout, buf_size, flgs, ptr, size));
     if (conn) {
         SOCK s/*dummy*/;
         // NB: CONN_Write(0 bytes) could have caused the same effect as GetSOCK
