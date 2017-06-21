@@ -416,6 +416,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgSraAccession;
 /// Argument to specify not trimming of '.1' and '.2' at the end of read ids
 /// in SAM format for paired reads
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoReadIdTrim;
+/// Argument to enable SRA caching in local files
+NCBI_BLASTINPUT_EXPORT extern const string kArgEnableSraCache;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

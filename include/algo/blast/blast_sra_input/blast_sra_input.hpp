@@ -50,8 +50,12 @@ public:
     /// @param accessions SRA accessions or files [in]
     /// @param check_for_pairs If true, determine if reads are paired based on
     /// information in SRA [in]
+    /// @param cache_enabled Enable caching SRA data in local files (see
+    /// File Caching at
+    /// https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration) [in]
     CSraInputSource(const vector<string>& accessions,
-                    bool check_for_paires = true);
+                    bool check_for_paires = true,
+                    bool cache_enabled = false);
 
     virtual ~CSraInputSource() {}
 

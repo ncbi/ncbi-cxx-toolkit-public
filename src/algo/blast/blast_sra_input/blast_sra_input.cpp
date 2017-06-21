@@ -43,13 +43,16 @@
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 
+#include <vfs/resolver.h>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
 CSraInputSource::CSraInputSource(const vector<string>& accessions,
-                                 bool check_for_paires)
+                                 bool check_for_paires /* = true */,
+                                 bool cache_enabled /* = false */)
     : m_Accessions(accessions),
       m_IsPaired(check_for_paires)
 {
@@ -57,6 +60,13 @@ CSraInputSource::CSraInputSource(const vector<string>& accessions,
 
     // initialize SRA access
     CVDBMgr mgr;
+
+    // disable SRA cache
+    if (!cache_enabled) {
+        CVResolver resolver = CVResolver(CVFSManager(mgr));
+        VResolverCacheEnable(resolver.GetPointer(), vrAlwaysDisable);
+    }
+
     m_SraDb.reset(new CCSraDb(mgr, *m_ItAcc));
     m_It.reset(new CCSraShortReadIterator(*m_SraDb));
 }

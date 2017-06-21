@@ -807,7 +807,8 @@ public:
         : CQueryOptionsArgs(false),
           m_IsPaired(false),
           m_InputFormat(eFasta),
-          m_MateInputStream(NULL)
+          m_MateInputStream(NULL),
+          m_EnableSraCache(false)
     {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -832,6 +833,11 @@ public:
     const vector<string>& GetSraAccessions(void) const
     {return m_SraAccessions;}
 
+    /// Is SRA caching in local files enabled
+    /// (see File Caching at
+    /// https://github.com/ncbi/sra-tools/wiki/Toolkit-Configuration)
+    bool IsSraCacheEnabled(void) const {return m_EnableSraCache;}
+
 private:
     bool m_IsPaired;
     EInputFormat m_InputFormat;
@@ -839,6 +845,8 @@ private:
 
     CNcbiIstream* m_MateInputStream;
     auto_ptr<CDecompressIStream> m_DecompressIStream;
+
+    bool m_EnableSraCache;
 };
 
 

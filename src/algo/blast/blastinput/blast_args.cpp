@@ -1883,6 +1883,11 @@ CMapperQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "subject defline(s) be parsed?",
                            CArgDescriptions::eBoolean, "true");
 
+    arg_desc.AddFlag(kArgEnableSraCache, "Enable SRA caching in local files");
+    arg_desc.SetDependency(kArgEnableSraCache, CArgDescriptions::eRequires,
+                           kArgSraAccession);
+
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -1958,6 +1963,10 @@ CMapperQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
         // SRA database, this option will trigger checking for pairs
         opt.SetPaired(true);
         m_IsPaired = true;
+    }
+
+    if (args.Exist(kArgEnableSraCache) && args[kArgEnableSraCache]) {
+        m_EnableSraCache = true;
     }
 }
 

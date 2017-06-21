@@ -1444,7 +1444,8 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 
     case CMapperQueryOptionsArgs::eSra:
         retval.Reset(new CSraInputSource(query_opts->GetSraAccessions(),
-                                         query_opts->IsPaired()));
+                                         query_opts->IsPaired(),
+                                         query_opts->IsSraCacheEnabled()));
         break;
         
 
