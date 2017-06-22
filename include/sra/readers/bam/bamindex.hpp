@@ -121,6 +121,8 @@ struct SBamIndexDefs
     enum EIndexLevel : uint8_t {
         // number of index levels
         kMinLevel = 0,
+        kLevel0 = kMinLevel,
+        kLevel1 = kLevel0+1,
         kMaxLevel = 5,
         kNumLevels = kMaxLevel+1
     };
@@ -228,7 +230,8 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
     
     // return limits of data in file based on linear index
     // also adjusts argument ref_range to be within reference sequence
-    CBGZFRange GetLimitRange(COpenRange<TSeqPos>& ref_range) const;
+    CBGZFRange GetLimitRange(COpenRange<TSeqPos>& ref_range,
+                             ESearchMode search_mode) const;
     // add file ranges with alignments from specific index level
     void AddLevelFileRanges(vector<CBGZFRange>& ranges,
                             CBGZFRange limit_file_range,
@@ -461,6 +464,10 @@ public:
     CBamFileRangeSet(const CBamIndex& index,
                      size_t ref_index, COpenRange<TSeqPos> ref_range,
                      ESearchMode search_mode = eSearchByOverlap);
+    CBamFileRangeSet(const CBamIndex& index,
+                     size_t ref_index, COpenRange<TSeqPos> ref_range,
+                     EIndexLevel min_level, EIndexLevel max_level,
+                     ESearchMode search_mode = eSearchByOverlap);
     ~CBamFileRangeSet();
 
     void Clear()
@@ -507,6 +514,9 @@ public:
         {
             return m_Ranges.end();
         }
+
+    Uint8 GetFileSize(CBGZFRange range) const;
+    Uint8 GetFileSize() const;
 
 protected:
     void AddSortedRanges(const vector<CBGZFRange>& ranges);
@@ -789,6 +799,13 @@ public:
                          const string& ref_label,
                          TSeqPos ref_pos,
                          TSeqPos window = 0,
+                         ESearchMode search_mode = eSearchByOverlap);
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         TSeqPos ref_pos,
+                         TSeqPos window,
+                         EIndexLevel min_index_level,
+                         EIndexLevel max_index_level,
                          ESearchMode search_mode = eSearchByOverlap);
     ~CBamRawAlignIterator()
         {

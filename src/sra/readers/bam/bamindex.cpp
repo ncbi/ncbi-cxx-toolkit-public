@@ -266,9 +266,13 @@ SBamIndexRefIndex::GetLevelBins(EIndexLevel level) const
 }
 
 struct PByStartFilePos {
-    bool operator()(const CBGZFPos fp, const SBamIndexBinInfo& bin) const
+    bool operator()(const CBGZFPos p1, const SBamIndexBinInfo& p2) const
         {
-            return fp < bin.GetStartFilePos();
+            return p1 < p2.GetStartFilePos();
+        }
+    bool operator()(const SBamIndexBinInfo& p1, const CBGZFPos p2) const
+        {
+            return p1.GetStartFilePos() < p2;
         }
 };
 
@@ -326,6 +330,9 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in, int32_t ref_index)
     m_Intervals.resize(n_intv);
     for ( int32_t i = 0; i < n_intv; ++i ) {
         m_Intervals[i] = s_ReadFilePos(in);
+        if ( i && !m_Intervals[i] ) {
+            m_Intervals[i] = m_Intervals[i-1];
+        }
     }
     m_EstimatedLength = max(m_EstimatedLength, n_intv*kMinBinSize);
     _ASSERT(m_EstimatedLength >= kMinBinSize);
@@ -404,6 +411,69 @@ const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_e
 
 vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
 {
+#if 1
+    TSeqPos nBins = m_EstimatedLength >> kLevel0BinShift;
+    vector<TSeqPos> aln_over_starts(nBins);
+    for ( TSeqPos i = 0; i < nBins; ++i ) {
+        // set limits
+        COpenRange<TSeqPos> ref_range;
+        ref_range.SetFrom(i*kMinBinSize).SetLength(kMinBinSize);
+        CBGZFRange limit = GetLimitRange(ref_range, eSearchByOverlap);
+        CBGZFPos min_fp = CBGZFPos::GetInvalid();
+        for ( uint8_t k = kMinLevel; k <= kMaxLevel; ++k ) {
+            EIndexLevel level = EIndexLevel(k);
+            TBin bin = GetBinNumberBase(level) + (i>>(k*kLevelStepBinShift));
+            auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin);
+            if ( it != m_Bins.end() && it->m_Bin == bin ) {
+                for ( auto c : it->m_Chunks ) {
+                    if ( c.first >= min_fp ) {
+                        break;
+                    }
+                    if ( c.first >= limit.second ) {
+                        break;
+                    }
+                    if ( c.second <= limit.first ) {
+                        continue;
+                    }
+                    if ( c.first < limit.first ) {
+                        c.first = limit.first;
+                    }
+                    _ASSERT(c.first >= limit.first);
+                    _ASSERT(c.first < limit.second);
+                    _ASSERT(c.first < c.second);
+                    if ( c.first < min_fp ) {
+                        min_fp = c.first;
+                    }
+                    break;
+                }
+            }
+        }
+        TSeqPos min_aln_start;
+        if ( min_fp.IsInvalid() ) {
+            min_aln_start = ref_range.GetFrom();
+        }
+        else {
+            min_aln_start = 0;
+            for ( uint8_t k = kMinLevel; k <= kMaxLevel; ++k ) {
+                EIndexLevel level = EIndexLevel(k);
+                auto level_bins = GetLevelBins(level);
+                auto it = lower_bound(level_bins.first, level_bins.second, min_fp, PByStartFilePos());
+                if ( it == level_bins.first ) {
+                    continue;
+                }
+                --it;
+                min_aln_start = max(min_aln_start, it->GetSeqRange().GetFrom());
+                if ( it->GetEndFilePos() > min_fp ) {
+                    // found exact bin containing the alignment
+                    // since we start with the narrowest range there is no point to continue
+                    break;
+                }
+            }
+        }
+        aln_over_starts[i] = min_aln_start;
+    }
+    return aln_over_starts;
+#else
     size_t nBins = m_Intervals.size();
     vector<TSeqPos> aln_over_starts(nBins);
     // next_bin_it points to a low-level bin that starts after current position
@@ -454,6 +524,7 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts(void) const
         aln_over_starts[i] = min_aln_start;
     }
     return aln_over_starts;
+#endif
 }
 
 
@@ -506,7 +577,8 @@ Uint8 s_EstimatedSize(const CBGZFRange& range)
 }
 
 
-CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range) const
+CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range,
+                                            ESearchMode search_mode) const
 {
     CBGZFRange limit;
     if ( m_EstimatedLength < ref_range.GetToOpen() ) {
@@ -518,32 +590,41 @@ CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range) cons
     _ASSERT(ref_range.GetFrom() < kMaxBinSize);
     _ASSERT(ref_range.GetToOpen() <= kMaxBinSize);
 
-    SBamIndexBinInfo::TBin beg_bin_offset = GetBinNumberOffset(ref_range.GetFrom(), kMinLevel);
-    // start limit is from intervals and beg position
-    if ( beg_bin_offset < m_Intervals.size() ) {
-        limit.first = m_Intervals[beg_bin_offset];
-    }
-    if ( !limit.first ) {
-        // if no long alignments are overlapping with the first bin
-        // then we'll have to use start of the first bin (on different levels) that overlaps with
-        // the requested range
-        SBamIndexBinInfo::TBin beg_bin = GetBinNumberBase(kMinLevel) + beg_bin_offset;
-        auto beg_it = lower_bound(m_Bins.begin(), m_Bins.end(), beg_bin);
-        if ( beg_it != m_Bins.end() && beg_it->m_Bin == beg_bin ) {
-            // start of the first bin
-            limit.first = beg_it->GetStartFilePos();
-        }
-        else if ( beg_it != m_Bins.begin() && (--beg_it)->m_Bin >= GetBinNumberBase(kMinLevel) ) {
-            // end of previous non-empty bin
-            limit.first = beg_it->GetEndFilePos();
+    if ( search_mode == eSearchByOverlap ) {
+        if ( !m_Intervals.empty() ) {
+            TBin beg_bin_offset = GetBinNumberOffset(ref_range.GetFrom(), kMinLevel);
+            // start limit is from intervals and beg position
+            if ( beg_bin_offset < m_Intervals.size() ) {
+                limit.first = m_Intervals[beg_bin_offset];
+            }
+            else {
+                limit.first = m_Intervals.back();
+            }
         }
     }
-    // end limit is from low-level block after end position
+    else {
+        // start limit is determined by alignment start position
+        // for each level we'll take end position of previous existing bin
+        for ( uint8_t i = kMinLevel; i <= kMaxLevel; ++i ) {
+            EIndexLevel level = EIndexLevel(i);
+            TBin bin_num = GetBinNumber(ref_range.GetFrom(), level);
+            auto bins = GetLevelBins(level);
+            auto it = lower_bound(bins.first, bins.second, bin_num);
+            if ( it != bins.first ) {
+                limit.first = max(limit.first, prev(it)->GetEndFilePos());
+            }
+        }
+    }
     limit.second = CBGZFPos::GetInvalid();
-    SBamIndexBinInfo::TBin end_bin = GetBinNumber(ref_range.GetTo(), kMinLevel)+1;
-    auto end_it = lower_bound(m_Bins.begin(), m_Bins.end(), end_bin);
-    if ( end_it != m_Bins.end() ) {
-        limit.second = end_it->GetStartFilePos();
+    for ( uint8_t i = kMinLevel; i <= kMaxLevel; ++i ) {
+        EIndexLevel level = EIndexLevel(i);
+        // next bin on each level is clearly after the range
+        TBin bin_num = GetBinNumber(ref_range.GetTo(), level)+1;
+        auto bins = GetLevelBins(level);
+        auto it = lower_bound(bins.first, bins.second, bin_num);
+        if ( it != bins.second ) {
+            limit.second = min(limit.second, it->GetStartFilePos());
+        }
     }
     return limit;
 }
@@ -1205,6 +1286,16 @@ CBamFileRangeSet::CBamFileRangeSet(const CBamIndex& index,
 }
 
 
+CBamFileRangeSet::CBamFileRangeSet(const CBamIndex& index,
+                                   size_t ref_index,
+                                   COpenRange<TSeqPos> ref_range,
+                                   EIndexLevel min_level, EIndexLevel max_level,
+                                   ESearchMode search_mode)
+{
+    AddRanges(index, ref_index, ref_range, min_level, max_level, search_mode);
+}
+
+
 CBamFileRangeSet::~CBamFileRangeSet()
 {
 }
@@ -1239,17 +1330,17 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  size_t ref_index,
                                  COpenRange<TSeqPos> ref_range,
                                  EIndexLevel min_index_level,
-                                 EIndexLevel max_index_level,
+                                 EIndexLevel /*max_index_level*/,
                                  ESearchMode search_mode)
 {
     const SBamIndexRefIndex& ref = index.GetRef(ref_index);
     // set limits
-    CBGZFRange limit = ref.GetLimitRange(ref_range);
+    CBGZFRange limit = ref.GetLimitRange(ref_range, search_mode);
     if ( ref_range.Empty() ) {
         return;
     }
     vector<CBGZFRange> ranges;
-    for ( uint32_t k = min_index_level; k <= kMaxLevel && k <= max_index_level; ++k ) {
+    for ( uint32_t k = min_index_level; k <= kMaxLevel/* && k <= max_index_level*/; ++k ) {
         ref.AddLevelFileRanges(ranges, limit, ref_range, EIndexLevel(k));
     }
     gfx::timsort(ranges.begin(), ranges.end());
@@ -1320,6 +1411,22 @@ void CBamFileRangeSet::SetRanges(const CBamIndex& index,
                                  ESearchMode search_mode)
 {
     SetRanges(index, ref_index, ref_range, index_level, index_level, search_mode);
+}
+
+
+Uint8 CBamFileRangeSet::GetFileSize(CBGZFRange range) const
+{
+    return s_EstimatedSize(range);
+}
+
+
+Uint8 CBamFileRangeSet::GetFileSize() const
+{
+    Uint8 size = 0;
+    for ( auto& c : m_Ranges ) {
+        size += GetFileSize(c);
+    }
+    return size;
 }
 
 
@@ -1740,6 +1847,26 @@ CBamRawAlignIterator::CBamRawAlignIterator(CBamRawDb& bam_db,
         ref_range.SetToOpen(kInvalidSeqPos);
     }
     Select(bam_db, ref_label, ref_range, search_mode);
+}
+
+
+CBamRawAlignIterator::CBamRawAlignIterator(CBamRawDb& bam_db,
+                                           const string& ref_label,
+                                           TSeqPos ref_pos,
+                                           TSeqPos window,
+                                           EIndexLevel min_index_level,
+                                           EIndexLevel max_index_level,
+                                           ESearchMode search_mode)
+    : m_Reader(bam_db.GetFile())
+{
+    CRange<TSeqPos> ref_range(ref_pos, ref_pos);
+    if ( window && ref_pos < kInvalidSeqPos-window ) {
+        ref_range.SetToOpen(ref_pos+window);
+    }
+    else {
+        ref_range.SetToOpen(kInvalidSeqPos);
+    }
+    Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
 }
 
 
