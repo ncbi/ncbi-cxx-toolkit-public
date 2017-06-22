@@ -718,6 +718,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         case K_COMPLEXTYPE:
             ParseComplexType(node);
             break;
+        case K_SIMPLETYPE:
+            ParseSimpleType(node);
+            break;
         case K_SIMPLECONTENT:
             ParseSimpleContent(node);
             break;
@@ -726,6 +729,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             break;
         case K_RESTRICTION:
             ParseRestriction(node);
+            break;
+        case K_ENUMERATION:
+            ParseEnumeration(node);
             break;
         case K_ATTRIBUTE:
             ParseAttribute(node);
@@ -888,6 +894,19 @@ void XSDParser::ParseComplexType(DTDElement& node)
     }
 }
 
+void XSDParser::ParseSimpleType(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (node.GetName().empty() && GetAttribute("name")) {
+        node.SetNamespaceName(m_ValuePrefix.empty() ? m_TargetNamespace : m_PrefixToNamespace[m_ValuePrefix]);
+        node.SetName(m_Value);
+        node.SetNamed();
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
 void XSDParser::ParseSimpleContent(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
@@ -935,6 +954,32 @@ void XSDParser::ParseRestriction(DTDElement& node)
     }
     if (tok == K_CLOSING) {
         ParseContent(node,extended);
+    }
+}
+
+void XSDParser::ParseEnumeration(DTDElement& node)
+{
+    TToken tok;
+    if (DataTool().IsSetCodeGenerationStyle(CDataTool::eXmlElementEnums)) {
+        tok = GetRawAttributeSet();
+        if (node.GetType() == DTDElement::eInteger) {
+            node.ResetType(DTDElement::eUnknown);
+            node.SetType(DTDElement::eIntEnum);
+        } else if (node.GetType() == DTDElement::eString) {
+            node.ResetType(DTDElement::eUnknown);
+            node.SetType(DTDElement::eEnum);
+        } else if (node.GetType() != DTDElement::eIntEnum && node.GetType() != DTDElement::eEnum) {
+            ParseError("enum restriction not supported", "string or integer type");
+        }
+        if (GetAttribute("value")) {
+            node.AddContent(m_Value);
+        }
+        return;
+    }
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken())
+        ;
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
 }
 
@@ -1419,7 +1464,6 @@ void XSDParser::ProcessNamedTypes(void)
                         node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
                     } else {
                         if (m_MapElement.find(node.GetTypeName()) != m_MapElement.end()) {
-                            DTDElement& etype( m_MapElement[node.GetTypeName()]);
                             node.SetType(DTDElement::eAlias);
                         } else {
                             PushEntityLexer(node.GetTypeName());

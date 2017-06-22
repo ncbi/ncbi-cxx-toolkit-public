@@ -60,8 +60,9 @@ public:
 
 
     enum ECodeGenerationStyle {
-        eNoGlobalTypeClasses     = 1,
-        ePreserveNestedElements  = 2
+        eNoGlobalTypeClasses     = 1 << 0,
+        ePreserveNestedElements  = 1 << 1,
+        eXmlElementEnums         = 1 << 2
     };
     typedef Uint8 FCodeGenerationStyle;
     bool IsSetCodeGenerationStyle(ECodeGenerationStyle e) const {

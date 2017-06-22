@@ -393,8 +393,20 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             code.Methods(true) <<
                 "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
                 "        return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
-                "    }\n" <<
-                "    str >> obj.Set();\n" <<
+                "    }\n";
+            if (kind == eKindEnum && m_RefType->GetEnumName() == ref_name)
+            {
+                code.Methods(true) <<
+                    "    std::underlying_type<" << ref_name <<">::type v;\n" <<
+                    "    str >> v;\n" <<
+                    "    obj.Set((" << ref_name << ")v);\n";
+            }
+            else
+            {
+                code.Methods(true) <<
+                    "    str >> obj.Set();\n";
+            }
+            code.Methods(true) <<
                 "    return str;\n";
         } else {
             code.Methods(true) <<

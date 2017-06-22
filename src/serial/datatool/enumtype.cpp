@@ -127,6 +127,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
     string value("value");
     string form;
     bool inAttlist= false;
+    bool isGlobalType = IsGlobalType();
     list<string> opentag, closetag;
 
     if (GetEnforcedStdXml() &&
@@ -148,7 +149,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
             form = " form=\"qualified\"";
         }
     }
-    if (!inAttlist) {
+    if (!inAttlist && !isGlobalType) {
         const CDataMember* mem = GetDataMember();
         string tmp = "<xs:element name=\"" + tag + "\"";
         if (mem && mem->Optional()) {
@@ -190,7 +191,12 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
         opentag.push_back(tmp + ">");
         closetag.push_front("</xs:attribute>");
     }
-    opentag.push_back("<xs:simpleType>");
+    if (isGlobalType) {
+        string tmp = "<xs:simpleType name=\"" + tag + "\">";
+        opentag.push_back(tmp);
+    } else {
+        opentag.push_back("<xs:simpleType>");
+    }
     closetag.push_front("</xs:simpleType>");
     if (IsASNDataSpec() || !IsInteger()) {
         opentag.push_back("<xs:restriction base=\"xs:string\">");

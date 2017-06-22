@@ -579,6 +579,9 @@ string DTDParser::CreateEmbeddedName(const DTDElement& node, int depth) const
 
 void DTDParser::FixEmbeddedNames(DTDElement& node)
 {
+    if (node.GetType() == DTDElement::eEnum || node.GetType() == DTDElement::eIntEnum) {
+        return;
+    }
     const list<string>& refs = node.GetContent();
     list<string> fixed;
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {

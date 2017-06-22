@@ -91,9 +91,11 @@ protected:
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);
+    void ParseSimpleType(DTDElement& node);
     void ParseSimpleContent(DTDElement& node);
     void ParseExtension(DTDElement& node);
     void ParseRestriction(DTDElement& node);
+    void ParseEnumeration(DTDElement& node);
     void ParseAttribute(DTDElement& node);
     void ParseAttributeGroup(DTDElement& node);
     void ParseAttributeGroupRef(DTDElement& node);
