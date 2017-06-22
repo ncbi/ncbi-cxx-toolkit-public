@@ -636,6 +636,21 @@ void CValidError_imp::PostErr
         item->SetAccnver(accession);
     }
 
+    if (ft.IsSetData()) {
+        if (ft.GetData().IsGene()) {
+            if (ft.GetData().GetGene().IsSetLocus_tag() && 
+                !NStr::IsBlank(ft.GetData().GetGene().GetLocus_tag())) {
+                item->SetLocus_tag(ft.GetData().GetGene().GetLocus_tag());
+            }
+        } else {
+            CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
+            if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
+                !NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
+                item->SetLocus_tag(gene->GetData().GetGene().GetLocus_tag());
+            }
+        }
+    }
+
     item->SetFeatureObjDescFromFields();
     m_ErrRepository->AddValidErrItem(item);
 }

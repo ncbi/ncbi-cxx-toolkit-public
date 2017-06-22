@@ -12753,6 +12753,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus_tag("xyz");
+    AddFeat(gene, nuc);
+
     CRef<CCode_break> codebreak(new CCode_break());
     codebreak->SetLoc().SetInt().SetId().SetLocal().SetStr("nuc");
     codebreak->SetLoc().SetInt().SetFrom(4);
@@ -12767,6 +12772,28 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
                               "transl_except qual out of frame."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+
+    CValidErrorFormat format(*objmgr);
+    vector<string> expected;
+    expected.push_back("Range");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+    expected.push_back("");
+    expected.push_back("TranslExceptPhase");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+    expected.push_back("");
+    vector<string> seen;
+    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+    ITERATE(vector<string>, it, cat_list) {
+        vector<string> sublist;
+        NStr::Split(*it, "\n", sublist, 0);
+        ITERATE(vector<string>, sit, sublist) {
+            seen.push_back(*sit);
+        }
+    }
+
+    CheckStrings(seen, expected);
+
 
     CLEAR_ERRORS
 }

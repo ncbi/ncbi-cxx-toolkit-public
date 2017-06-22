@@ -256,6 +256,9 @@ string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem&
         if (error.IsSetLocation()) {
             obj_desc += "\t" + error.GetLocation();
         }
+        if (error.IsSetLocus_tag()) {
+            obj_desc += "\t" + error.GetLocus_tag();
+        }
 
     } else {
         RemovePrefix(obj_desc, "DESCRIPTOR: ");
