@@ -73,7 +73,7 @@ public:
         }
 
     // estimated number of alignments
-    size_t GetAlignCount(void) const
+    Uint8 GetAlignCount(void) const
         {
             return m_AlignCount;
         }
@@ -114,7 +114,7 @@ public:
 protected:
     friend class CBamRefSeqInfo;
 
-    size_t m_AlignCount; // 0 - graph only
+    Uint8 m_AlignCount; // 0 - graph only
     TRange m_RefSeqRange;
     TSeqPos m_MaxRefSeqFrom;
 };

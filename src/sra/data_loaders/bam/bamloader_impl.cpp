@@ -74,15 +74,20 @@ static const int kTSEId = 1;
 static const size_t kChunkSize = 500;
 //static const size_t kGraphScale = 1000;
 //static const size_t kGraphPoints = 20;
-static const int kChunkIdMul = 4;
+static const size_t kChunkDataSize = 250000;
 static const int kMainChunkId = CTSE_Chunk_Info::kDelayedMain_ChunkId;
 
 //#define SKIP_TOO_LONG_ALIGNMENTS
 
 enum EChunkIdType {
-    eChunk_align,
-    eChunk_short_seq,
-    eChunk_pileup_graph
+    eChunk_align, // all alignments starting in range
+    eChunk_align1, // alignments from the lowest BAM index level starting in range
+    eChunk_align2, // alignments from other BAM index levels starting in range
+    eChunk_short_seq, // reads corresponding to eChunk_align
+    eChunk_short_seq1, // reads corresponding to eChunk_align1
+    eChunk_short_seq2, // reads corresponding to eChunk_align2
+    eChunk_pileup_graph,
+    kChunkIdMul = 8
 };
 
 #define PILEUP_NAME_SUFFIX "pileup graphs"
@@ -848,7 +853,7 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
                                " exp: "<<cur_cnt);
                 }
                 CBamRefSeqChunkInfo chunk;
-                chunk.m_AlignCount = int(cur_cnt+1);
+                chunk.m_AlignCount = Uint8(cur_cnt+1);
                 chunk.m_RefSeqRange.SetFrom(cur_first*slot);
                 TSeqPos end = cur_last*slot+slot;
                 chunk.m_RefSeqRange.SetToOpen(end+max_align_len);
@@ -901,7 +906,6 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
         LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }
     static const TSeqPos kZeroBlocks = 8;
-    static const TSeqPos kChunkDataSize = 250000;
 
     m_Chunks.clear();
     TSeqPos last_pos = 0;
@@ -1228,7 +1232,13 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         }
     }
 
-    bool raw_index = m_File->GetBamDb().UsesRawIndex();
+    CBamRawDb* raw_db = 0;
+    Int4 refseq_index = -1;
+    if ( m_File->GetBamDb().UsesRawIndex() ) {
+        raw_db = &m_File->GetBamDb().GetRawDb();
+        refseq_index = raw_db->GetRefIndex(GetRefSeqId());
+    }
+    
     double load_seconds = 1e-9; // 1000 MB/s
     double decompress_seconds = 11e-9; // 90 MB/s
     double make_graph_seconds = 7.5e-9; // 133 MB/s
@@ -1237,40 +1247,106 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
     double align_seconds = load_seconds + decompress_seconds + make_align_seconds;
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
-        CRef<CTSE_Chunk_Info> chunk;
+        CRange<TSeqPos> range = GetChunkGraphRange(range_id);
+        CRange<TSeqPos> wide_range = m_Chunks[range_id].GetAlignRange();
+        
         int base_id = int(range_id*kChunkIdMul);
         if ( m_Chunks[range_id].GetAlignCount() ) {
-            chunk = new CTSE_Chunk_Info(base_id+eChunk_align);
-            chunk->x_AddAnnotType(name,
-                                  SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                                  GetRefSeq_id(),
-                                  m_Chunks[range_id].GetAlignRange());
-            if ( raw_index ) {
-                size_t bytes = m_Chunks[range_id].GetAlignCount();
-                double seconds = bytes*align_seconds;
-                chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                chunk->x_SetLoadSeconds(seconds);
+            if ( raw_db ) {
+                if ( m_Chunks[range_id].GetAlignCount() < 2*kChunkDataSize ) {
+                    // add single chunk for in-range and overlapping aligns
+                    Uint8 bytes = m_Chunks[range_id].GetAlignCount();
+                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
+                    double seconds = bytes*align_seconds;
+                    chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                    chunk->x_SetLoadSeconds(seconds);
+                    chunk->x_AddAnnotType(name,
+                                          SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                          GetRefSeq_id(),
+                                          wide_range);
+                    split_info.AddChunk(*chunk);
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   " with "<<bytes<<" bytes");
+                    }
+                }
+                else {
+                    // add two separate chunks for in-range and overlapping aligns
+                    if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
+                                                        CBamIndex::kLevel0, CBamIndex::kLevel0,
+                                                        CBamIndex::eSearchByStart).GetFileSize() ) {
+                        CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align1));
+                        double seconds = bytes*align_seconds;
+                        chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                        chunk->x_SetLoadSeconds(seconds);
+                        chunk->x_AddAnnotType(name,
+                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                              GetRefSeq_id(),
+                                              range);
+                        split_info.AddChunk(*chunk);
+                        if ( GetDebugLevel() >= 2 ) {
+                            LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                       "Align Chunk "<<chunk->GetChunkId()<<": "<<range<<
+                                       " with "<<bytes<<" bytes");
+                        }
+                    }
+                    if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
+                                                        CBamIndex::kLevel1, CBamIndex::kMaxLevel,
+                                                        CBamIndex::eSearchByStart).GetFileSize() ) {
+                        CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
+                        double seconds = bytes*align_seconds;
+                        chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                        chunk->x_SetLoadSeconds(seconds);
+                        chunk->x_AddAnnotType(name,
+                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                              GetRefSeq_id(),
+                                              wide_range);
+                        split_info.AddChunk(*chunk);
+                        if ( GetDebugLevel() >= 2 ) {
+                            LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                       "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
+                                       " with "<<bytes<<" bytes");
+                        }
+                    }
+                }
             }
-            split_info.AddChunk(*chunk);
-            if ( GetDebugLevel() >= 2 ) {
-                LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                           "Align Chunk "<<chunk->GetChunkId()<<": "<<m_Chunks[range_id].GetAlignRange()<<
-                           " with "<<m_Chunks[range_id].GetAlignCount()<<" aligns");
+            else {
+                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
+                chunk->x_AddAnnotType(name,
+                                      SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                      GetRefSeq_id(),
+                                      wide_range);
+                split_info.AddChunk(*chunk);
+                if ( GetDebugLevel() >= 2 ) {
+                    LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                               "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
+                               " with "<<m_Chunks[range_id].GetAlignCount()<<" aligns");
+                }
             }
         }
 
         if ( has_pileup ) {
-            chunk = new CTSE_Chunk_Info(base_id+eChunk_pileup_graph);
-            chunk->x_AddAnnotType(pileup_name,
-                                  CSeq_annot::C_Data::e_Graph,
-                                  GetRefSeq_id(),
-                                  GetChunkGraphRange(range_id));
-            if ( raw_index ) {
-                size_t bytes = m_Chunks[range_id].GetAlignCount();
+            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_pileup_graph));
+            if ( raw_db ) {
+                Uint8 bytes = m_Chunks[range_id].GetAlignCount();
+                if ( !bytes ) {
+                    // empty sequence span might load tails of previous alignmnets
+                    // get actual data size of the tails
+                    bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range).GetFileSize();
+                    if ( !bytes ) {
+                        // no overlapping alignments, pileup graph is empty
+                        continue;
+                    }
+                }
                 double seconds = bytes*graph_seconds;
                 chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
                 chunk->x_SetLoadSeconds(seconds);
             }
+            chunk->x_AddAnnotType(pileup_name,
+                                  CSeq_annot::C_Data::e_Graph,
+                                  GetRefSeq_id(),
+                                  range);
             split_info.AddChunk(*chunk);
             if ( GetDebugLevel() >= 2 ) {
                 LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
@@ -1289,9 +1365,13 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
     }
     switch ( chunk_info.GetChunkId() % kChunkIdMul ) {
     case eChunk_align:
+    case eChunk_align1:
+    case eChunk_align2:
         LoadAlignChunk(chunk_info);
         break;
     case eChunk_short_seq:
+    case eChunk_short_seq1:
+    case eChunk_short_seq2:
         LoadSeqChunk(chunk_info);
         break;
     case eChunk_pileup_graph:
@@ -1310,6 +1390,7 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     int range_id = chunk_info.GetChunkId()/kChunkIdMul;
+    int sub_chunk = chunk_info.GetChunkId() % kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
     auto start_range = chunk.GetAlignStartRange();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
@@ -1324,7 +1405,19 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
 #endif
-    CBamAlignIterator ait(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength());
+    CBamAlignIterator ait;
+    if ( sub_chunk == eChunk_align1 ) {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel0, CBamIndex::kLevel0, CBamAlignIterator::eSearchByStart);
+    }
+    else if ( sub_chunk == eChunk_align2 ) {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel1, CBamIndex::kMaxLevel, CBamAlignIterator::eSearchByStart);
+    }
+    else {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamAlignIterator::eSearchByStart);
+    }
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
@@ -1360,7 +1453,7 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     }
     {{
         CMutexGuard guard(m_File->GetMutex());
-        int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq;
+        int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq+(sub_chunk-eChunk_align);
         CRef<CTSE_Chunk_Info> seq_chunk;
         ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
             if ( !m_Seq2Chunk.insert(TSeq2Chunk::value_type(*it, seq_chunk_id)).second ) {
@@ -1395,6 +1488,7 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     }
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id/kChunkIdMul;
+    int sub_chunk = chunk_id%kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
     auto start_range = chunk.GetAlignStartRange();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
@@ -1406,7 +1500,19 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
 #endif
-    CBamAlignIterator ait(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength());
+    CBamAlignIterator ait;
+    if ( sub_chunk == eChunk_short_seq1 ) {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel0, CBamIndex::kLevel0, CBamAlignIterator::eSearchByStart);
+    }
+    else if ( sub_chunk == eChunk_short_seq2 ) {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel1, CBamIndex::kMaxLevel, CBamAlignIterator::eSearchByStart);
+    }
+    else {
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
+                                CBamAlignIterator::eSearchByStart);
+    }
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
