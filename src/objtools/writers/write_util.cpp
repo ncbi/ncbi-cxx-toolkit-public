@@ -1166,7 +1166,7 @@ bool CWriteUtil::GetStringsForGoMarkup(
     goMarkup.clear();
     for (const auto& field: fields) {
         if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
-                ||  !field->GetLabel().GetId() == 0) {
+                ||  field->GetLabel().GetId() != 0) {
             continue;
         }
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
@@ -1209,7 +1209,7 @@ bool CWriteUtil::GetListOfGoIds(
 {
     for (const auto& field: fields) {
         if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
-                ||  !field->GetLabel().GetId() == 0) {
+                ||  field->GetLabel().GetId() != 0) {
             continue;
         }
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
