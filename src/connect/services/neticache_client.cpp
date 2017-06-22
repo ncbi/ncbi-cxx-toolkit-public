@@ -664,21 +664,12 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
         const CNamedParameterList* optional)
 {
-    try {
-        CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
 
-        parameters.LoadNamedParameters(optional);
+    parameters.LoadNamedParameters(optional);
 
-        string response(m_Impl->ExecStdCmd("HASB", key, 0, subkey, &parameters));
-        return (response[0] == '1'|| NStr::StartsWith(response, "0, VER="));
-    }
-    // Workaround for a bug in NC v6.6.1 (CXX-4095)
-    // TODO: Throw away after all NC servers are upgraded to v6.6.2+
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return false;
-        throw;
-    }
+    string response(m_Impl->ExecStdCmd("HASB", key, 0, subkey, &parameters));
+    return (response[0] == '1'|| NStr::StartsWith(response, "0, VER="));
 }
 
 void CNetICacheClient::Purge(time_t access_timeout, EKeepVersions keep_last_version)

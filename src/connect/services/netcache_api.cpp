@@ -667,19 +667,10 @@ bool CNetCacheAPI::HasBlob(const string& blob_id,
 
     parameters.LoadNamedParameters(optional);
 
-    try {
-        return m_Impl->ExecMirrorAware(key,
-                m_Impl->MakeCmd("HASB ", key, &parameters),
-                false,
-                &parameters).response[0] == '1';
-    }
-    // Workaround for a bug in NC v6.6.1 (CXX-4095)
-    // TODO: Throw away after all NC servers are upgraded to v6.6.2+
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return false;
-        throw;
-    }
+    return m_Impl->ExecMirrorAware(key,
+            m_Impl->MakeCmd("HASB ", key, &parameters),
+            false,
+            &parameters).response[0] == '1';
 }
 
 
