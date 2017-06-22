@@ -265,7 +265,7 @@ int CBamIndexTestApp::Run(void)
             }
             for ( auto& c : rs ) {
                 cout << "Ref["<<q.refseq_id<<"] @"<<q.refseq_range<<": "
-                     << c.first<<" - "<<c.second
+                     << c.first<<" - "<<c.second << " " << (rs.GetFileSize(c)/(1024*1024.)) << " MB"
                      << endl;
             }
         }
@@ -366,7 +366,8 @@ int CBamIndexTestApp::Run(void)
     int min_quality = args["min_quality"].AsInteger();
 
     Uint8 total_align_count = 0, total_skipped_min_quality = 0;
-    Uint8 total_wrong_level_count = 0, total_wrong_range_count = 0;
+    Uint8 total_wrong_level_count = 0, total_wrong_indexed_level_count = 0;
+    Uint8 total_wrong_range_count = 0;
     const size_t NQ = queries.size();
     vector<thread> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
@@ -484,6 +485,7 @@ int CBamIndexTestApp::Run(void)
                            }
                            total_align_count += align_count;
                            total_skipped_min_quality += skipped_min_quality;
+                           total_wrong_indexed_level_count += wrong_indexed_level_count;
                            total_wrong_level_count += wrong_level_count;
                            total_wrong_range_count += wrong_range_count;
                        }
@@ -504,6 +506,9 @@ int CBamIndexTestApp::Run(void)
     }
     if ( total_skipped_min_quality ) {
         cout << "Total skipped low quality count: "<<total_skipped_min_quality<<endl;
+    }
+    if ( total_wrong_indexed_level_count ) {
+        cout << "Total wrong indexed level count: "<<total_wrong_indexed_level_count<<endl;
     }
 
     return error_code;
