@@ -856,6 +856,21 @@ CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
 }
 
 
+CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
+                                      const string& ref_label,
+                                      TSeqPos ref_pos,
+                                      TSeqPos window,
+                                      CBamIndex::EIndexLevel min_level,
+                                      CBamIndex::EIndexLevel max_level,
+                                      CBamAlignIterator::ESearchMode search_mode)
+    : m_RawDB(&db),
+      m_Iter(db, ref_label, ref_pos, window, min_level, max_level, CBamRawAlignIterator::ESearchMode(search_mode))
+{
+    m_ShortSequence.reserve(256);
+    m_CIGAR.reserve(32);
+}
+
+
 void CBamAlignIterator::SRawImpl::x_InvalidateBuffers()
 {
     m_ShortSequence.clear();
@@ -983,6 +998,28 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                 }
             }
         }
+    }
+}
+
+
+CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
+                                     const string& ref_id,
+                                     TSeqPos ref_pos,
+                                     TSeqPos window,
+                                     CBamIndex::EIndexLevel min_level,
+                                     CBamIndex::EIndexLevel max_level,
+                                     ESearchMode search_mode)
+    : m_DB(&bam_db),
+      m_BamFlagsAvailability(eBamFlags_NotTried)
+{
+    if ( bam_db.UsesRawIndex() ) {
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, min_level, max_level, search_mode);
+        if ( !m_RawImpl->m_Iter ) {
+            m_RawImpl.Reset();
+        }
+    }
+    else {
+        NCBI_THROW(CBamException, eInvalidArg, "BAM index levels are supported only in raw index mode");
     }
 }
 

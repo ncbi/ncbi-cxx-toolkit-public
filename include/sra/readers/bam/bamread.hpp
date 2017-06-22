@@ -400,6 +400,13 @@ public:
                       TSeqPos ref_pos,
                       TSeqPos window = 0,
                       ESearchMode search_mode = eSearchByOverlap);
+    CBamAlignIterator(const CBamDb& bam_db,
+                      const string& ref_id,
+                      TSeqPos ref_pos,
+                      TSeqPos window,
+                      CBamIndex::EIndexLevel min_level,
+                      CBamIndex::EIndexLevel max_level,
+                      ESearchMode search_mode = eSearchByOverlap);
 
     CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
@@ -548,6 +555,13 @@ private:
                  const string& ref_label,
                  TSeqPos ref_pos,
                  TSeqPos window,
+                 ESearchMode search_mode);
+        SRawImpl(CObjectFor<CBamRawDb>& db,
+                 const string& ref_label,
+                 TSeqPos ref_pos,
+                 TSeqPos window,
+                 CBamIndex::EIndexLevel min_level,
+                 CBamIndex::EIndexLevel max_level,
                  ESearchMode search_mode);
         
         void x_InvalidateBuffers();
