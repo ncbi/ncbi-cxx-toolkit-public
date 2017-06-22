@@ -100,11 +100,19 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 			name_out += ' ' + bin.GetSpecies();
 			if( !bSubspIndicator ) {
 			    string sLineage = lineage ? *lineage : IsSetLineage() ? GetLineage() : NcbiEmptyString;
-			    if( sLineage.find("Metazoa;") == string::npos ) {
+			    bool bZooCode = sLineage.find("Metazoa;") != string::npos ||
+				sLineage.find("Slopalinida;") != string::npos ||
+				sLineage.find("Blastocystis;") != string::npos;
+			    if( !bZooCode ) {
 				name_out += " subsp.";
+			    } else { // check if subspecies is well-specified
+				if( sSubspecies.find_first_not_of("abcdefghijklmnopqrstuvwxyz-") != string::npos ||
+				    sSubspecies[0] == '-' ) {
+				    name_out += " ssp.";
+				}
 			    }
 			}
-			name_out += ' ' + bin.GetSubspecies();
+			name_out += ' ' + sSubspecies;
 		    }
 		} else { // No subspecies
 		    name_out += bin.GetGenus();
