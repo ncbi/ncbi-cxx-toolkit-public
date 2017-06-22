@@ -788,34 +788,7 @@ bool s_GetMaxMin(const vector<char>& values, int& max, int& min)
 void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const
 //  --------------------------------------------------------------------------
 {
-    ostream << ">";
-
-    bool id_done = false;
-    for (const CRef<CSeq_id>& pId : bioseq.GetId()) {
-        if (pId->IsGenbank() ||
-            pId->IsDdbj() ||
-            pId->IsEmbl() ||
-            pId->IsSwissprot() ||
-            pId->IsOther() ||
-            pId->IsTpd() ||
-            pId->IsTpe() ||
-            pId->IsTpg()) {
-            pId->WriteAsFasta(ostream);
-            id_done = true;
-            break;
-        }
-    }
-
-    if (!id_done) {
-        CSeq_id::WriteAsFasta(ostream, bioseq);
-    }
-
-
-    TSeqPos length = 0;
-
-    if (bioseq.IsSetLength()) {
-        length = bioseq.GetLength();
-    }
+    const TSeqPos length = bioseq.IsSetLength() ? bioseq.GetLength() : 0;
 
     string header;
     if (!bioseq.IsSetAnnot()) {
@@ -827,7 +800,7 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     int min=256;
     int max=0;
     bool have_title = false;
-
+    bool has_byte_graph = false;
     for (const CRef<CSeq_annot>& pAnnot : bioseq.GetAnnot()) {
         if (!pAnnot->IsGraph()) {
             continue;
@@ -841,6 +814,8 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
             }
             const auto& graph_data = pGraph->GetGraph();
             if (graph_data.Which() == CSeq_graph::TGraph::e_Byte) {
+                has_byte_graph = true;
+
                 const CByte_graph& byte_graph = graph_data.GetByte();
 
                 int local_max;
@@ -852,6 +827,10 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
                 }
             }
         }
+    }
+
+    if (!has_byte_graph) { // Nothing to do
+        return;
     }
 
     score_header = graph_title;
@@ -872,6 +851,26 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     score_header += NStr::IntToString(max);
     score_header += ")";
 
+    ostream << ">";
+    bool id_done = false;
+    for (const CRef<CSeq_id>& pId : bioseq.GetId()) {
+        if (pId->IsGenbank() ||
+            pId->IsDdbj() ||
+            pId->IsEmbl() ||
+            pId->IsSwissprot() ||
+            pId->IsOther() ||
+            pId->IsTpd() ||
+            pId->IsTpe() ||
+            pId->IsTpg()) {
+            pId->WriteAsFasta(ostream);
+            id_done = true;
+            break;
+        }
+    }
+
+    if (!id_done) {
+        CSeq_id::WriteAsFasta(ostream, bioseq);
+    }
     ostream << " " << score_header << "\n";
 }
 
