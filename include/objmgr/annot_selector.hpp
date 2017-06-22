@@ -716,6 +716,20 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     /// Collect cost of loading requested data.
+    /// If cost collection is requested no actual annotations are returned
+    /// by iterator, only the cost estimation.
+    /// The resulting cost can be queried via methods GetCostOfLoadingInBytes()
+    /// and GetCostOfLoadingInSeconds() of actual annotation iterator (CFeat_CI,
+    /// CAlign_CI, etc).
+    /// The cost of loading is estimated in two units: number of bytes to load
+    /// and expected time for loading them in seconds.
+    /// The estimation is dependent on data source of requested annotations.
+    /// In some cases it can be quite rough if the data source doesn't provide
+    /// necessary information.
+    /// The cost includes only data not-yet-loaded. Any annotations already
+    /// loaded into memory are excluded from this cost.
+    ///  @sa CAnnotTypes_CI::GetCostOfLoadingInBytes()
+    ///  @sa CAnnotTypes_CI::GetCostOfLoadingInSeconds()
     SAnnotSelector& SetCollectCostOfLoading(bool value = true)
         {
             m_CollectCostOfLoading = value;

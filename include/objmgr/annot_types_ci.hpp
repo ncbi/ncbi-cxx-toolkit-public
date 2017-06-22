@@ -108,7 +108,11 @@ public:
     typedef set<CAnnotName> TAnnotNames;
     const TAnnotNames& GetAnnotNames(void) const;
 
+    /// Get collected cost of loading requested data in bytes.
+    ///  @sa SAnnotSelector::SetCollectCostOfLoading()
     Uint8 GetCostOfLoadingInBytes(void) const;
+    /// Get collected cost of loading requested data in seconds.
+    ///  @sa SAnnotSelector::SetCollectCostOfLoading()
     double GetCostOfLoadingInSeconds(void) const;
 
 protected:
