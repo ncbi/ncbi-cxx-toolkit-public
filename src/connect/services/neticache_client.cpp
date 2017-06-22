@@ -704,20 +704,8 @@ void CNetICacheClient::Purge(const string&    key,
         return RemoveBlob(key, 0, subkey);
     }
 
-    // TODO: Replace with a command from CXX-8948 when it is deployed everywhere
-    using namespace ncbi::grid::netcache::search;
-
-    // NB: 'size >= 0' condition is used to get all blobs
-    auto result = Search(key.empty() ? fields::size >= 0 : fields::key == key);
-
-    for (auto& blob_info : result) {
-        try {
-            RemoveBlob(blob_info[fields::key], 0, blob_info[fields::subkey]);
-        }
-        catch (CNetCacheException& e) {
-            if (e.GetErrCode() != CNetCacheException::eBlobNotFound) throw;
-        }
-    }
+    const auto cmd = m_Impl->MakeStdCmd("PURGE2", "'" + key + "'", &m_Impl->m_DefaultParameters);
+    m_Impl->ChooseServerAndExec(cmd, key, false, &m_Impl->m_DefaultParameters);
 }
 
 IReader* CNetICacheClient::GetReadStream(
