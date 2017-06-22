@@ -1345,7 +1345,7 @@ void CObjectIStreamXml::ReadWord(string& str, EStringType type)
 TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 {
     TEnumValueType value;
-    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() == EDataSpec::eJSON;
+    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() != EDataSpec::eASN;
     if (valueonly) {
         if (values.IsInteger()) {
             value = ReadInt4();
@@ -1966,8 +1966,16 @@ void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         TopFrame().SetNotag();
         m_SkipNextTag = false;
     } else {
+        TTypeInfo realtype = GetRealTypeInfo(namedTypeInfo);
+        if (realtype->GetTypeFamily() == eTypeFamilyPrimitive &&
+            GetStackDepth() > 2 &&
+            namedTypeInfo->GetDataSpec() != EDataSpec::eASN) {
+            TopFrame().SetNotag();
+            m_SkipNextTag = false;
+            return;
+        }
         const CClassTypeInfo* classType =
-            dynamic_cast<const CClassTypeInfo*>(GetRealTypeInfo(namedTypeInfo));
+            dynamic_cast<const CClassTypeInfo*>(realtype);
         if (classType) {
             CheckStdXml(classType);
         }
