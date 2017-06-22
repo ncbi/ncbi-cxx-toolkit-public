@@ -1,3 +1,37 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Eugene Vasilchenko
+ *
+ * File Description:
+ *   Randomly test safeguards that must prevent some bad code variants from
+ *   even compiling.
+ *
+ */
+
+
 //#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/ncbicfg.h>
@@ -7,9 +41,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#ifdef NCBI_OS_MSWIN
-#   include <ncbi_random_macro.h>
-#endif
+#include <ncbi_random_macro.h>
 
 #if !(defined(NCBI_STRICT_CTYPE_ARGS) && (defined(isalpha) || defined(NCBI_STRICT_CTYPE_ARGS_ACTIVE)))
 
@@ -56,43 +88,40 @@ public:
 
 int CTestApplication::Run(void)
 {
-    NcbiCout << "isupper(int('A')) = " << isupper(int('A')) << NcbiEndl;
-    NcbiCout << "isupper(Uchar('A')) = " << isupper(Uchar('A')) << NcbiEndl;
-    NcbiCout << "isupper('A') = " << isupper('A') << NcbiEndl;
-    _ASSERT(isupper(int('A')));
-    _ASSERT(isupper(Uchar('A')));
-    _ASSERT(isupper('A'));
-    _ASSERT(std::isupper(int('A')));
-    _ASSERT(std::isupper(Uchar('A')));
-    _ASSERT(std::isupper('A'));
-    _ASSERT(::isupper(int('A')));
-    _ASSERT(::isupper(Uchar('A')));
-    _ASSERT(::isupper('A'));
-    _ASSERT(toupper('A') == 'A');
-    _ASSERT(std::toupper('A') == 'A');
-    _ASSERT(::toupper('A') == 'A');
-#if (!defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_1 > 0x33333333) && defined NCBI_INT8_GI
-    // test only if CStrictGi is on
-    TGi gi;
-    //gi = 2;
-    const TIntId& id = gi;
-    gi = GI_CONST(id);
-    NcbiCout << "GI = " << gi << NcbiEndl;
+#if defined(NCBI_STRICT_GI)
+#  define NCBI_N_TESTS 6
+#else
+#  define NCBI_N_TESTS 5
 #endif
 
-#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_2 > 0x33333333
+#define NCBI_RANDOM_SLICE (NCBI_RANDOM_VALUE_MAX - NCBI_RANDOM_VALUE_MIN) / NCBI_N_TESTS
+#define NCBI_RANDOM_BOUNDARY(n)  (NCBI_RANDOM_VALUE_MIN + n * NCBI_RANDOM_SLICE)
+
+#if   NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(1)
     _ASSERT(toupper('A' == 'A'));
-#endif
 
-#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_3 > 0x33333333
+#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(2)
     toupper('A' == 'A');
-#endif
 
-#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_4 > 0x33333333
+#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(3)
     toupper(1.);
+
+#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(4)
+    toupper("string");
+
+#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(5)
+    toupper(nullptr);
+
+#elif defined(NCBI_STRICT_GI)
+    Int4 int4_gi = 123;
+    TGi gi = int4_gi;  // must fail in the "Strict GI" mode!
+
+#elif NCBI_RANDOM_BOUNDARY(5) <= NCBI_RANDOM_VALUE_1  &&  NCBI_RANDOM_VALUE_1 <= NCBI_RANDOM_VALUE_MAX
+    toupper("catch-all");  // catch the reminder
 #endif
 
-    NcbiCout << "Passed" << NcbiEndl;
+    NcbiCout << "Passed (BUT IT SHOULD NOT HAVE EVEN COMPILED. BAD!!!)"
+             << NcbiEndl;
     return 1;
 }
 
