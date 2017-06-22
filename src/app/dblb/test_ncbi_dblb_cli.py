@@ -242,7 +242,7 @@ def checkServiceAvailability():
 
     errors = 0
     for name in servicesToBeAlive:
-        if os.system( "/opt/machine/lbsm/bin/test_mghbn -du1 " + \
+        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " + \
                       name + " > /dev/null" ) != 0:
             print >> sys.stderr, "The service " + name + \
                                  " is not known to LBSMD. " \
@@ -250,7 +250,7 @@ def checkServiceAvailability():
             errors += 1
 
     for name in servicesToBeDead:
-        if os.system( "/opt/machine/lbsm/bin/test_mghbn -du1 " + \
+        if os.system( "/opt/machine/lbsm/bin/ncbi_mghbn -du1 " + \
                       name + " > /dev/null" ) == 0:
             print >> sys.stderr, "The service " + name + \
                                  " is known to LBSMD while it must not be. " \
