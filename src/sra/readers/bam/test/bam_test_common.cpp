@@ -130,11 +130,13 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
         }
         else {
             vector<string> reps;
+            reps.push_back(string(NCBI_GetTestDataPath()));
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
             reps.push_back(NCBI_TRACES02_PATH);
             reps.push_back(NCBI_TRACES04_PATH);
             vector<string> subdirs;
+            subdirs.push_back("");
             subdirs.push_back(BAM_DIR1);
             subdirs.push_back(BAM_DIR2);
             subdirs.push_back(BAM_DIR3);
