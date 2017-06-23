@@ -1411,7 +1411,7 @@ const CSeq_entry *ctx)
         // VR-723: taxname must match orgname.name if present
         // commented out for now
         if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetName()) {
-            ValidateTaxNameOrgname(taxname, orgref.GetOrgname().GetName(), obj, ctx);
+            ValidateTaxNameOrgname(taxname, orgref.GetOrgname(), obj, ctx);
         }
 #endif
     }
@@ -1519,34 +1519,34 @@ static string s_GetBinomialString(const CBinomialOrgName& binomial)
 }
 
 
-static bool s_MatchOrgname(const string& taxname, const COrgName::C_Name& orgname, string& mismatch)
+static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, string& mismatch)
 {
     mismatch = kEmptyStr;
     bool rval = false;
-    switch (orgname.Which()) {
-    case COrgName::C_Name::e_Binomial:
-        mismatch = s_GetBinomialString(orgname.GetBinomial());
-        rval = NStr::Equal(taxname, mismatch);
-        break;
+    if (!orgname.IsSetName()) {
+        return false;
+    }
+    orgname.GetFlatName(mismatch, NULL);
+    if (NStr::Equal(taxname, mismatch)) {
+        return true;
+    }
+    // special cases
+    switch (orgname.GetName().Which()) {
     case COrgName::C_Name::e_Hybrid:
-        ITERATE(CMultiOrgName::Tdata, it, orgname.GetHybrid().Get()) {
-            if ((*it)->IsSetName() && s_MatchOrgname(taxname, (*it)->GetName(), mismatch)) {
+        ITERATE(CMultiOrgName::Tdata, it, orgname.GetName().GetHybrid().Get()) {
+            if ((*it)->IsSetName() && s_MatchOrgname(taxname, **it, mismatch)) {
                 rval = true;
                 break;
             }
         }
-        if (!rval && orgname.GetHybrid().Get().size() > 1 &&
-            orgname.GetHybrid().Get().front()->IsSetName()) {
+        if (!rval && orgname.GetName().GetHybrid().Get().size() > 1 &&
+            orgname.GetName().GetHybrid().Get().front()->IsSetName()) {
             // use first element for error
-            s_MatchOrgname(taxname, orgname.GetHybrid().Get().front()->GetName(), mismatch);
+            s_MatchOrgname(taxname, *(orgname.GetName().GetHybrid().Get().front()), mismatch);
         }
         break;
-    case COrgName::C_Name::e_Namedhybrid:
-        mismatch = s_GetBinomialString(orgname.GetNamedhybrid());
-        rval = NStr::Equal(taxname, mismatch);
-        break;
     case COrgName::C_Name::e_Partial:
-        ITERATE(CPartialOrgName::Tdata, it, orgname.GetPartial().Get()) {
+        ITERATE(CPartialOrgName::Tdata, it, orgname.GetName().GetPartial().Get()) {
             if ((*it)->IsSetName()) {
                 mismatch = (*it)->GetName();
                 rval = NStr::Equal(taxname, mismatch);
@@ -1555,17 +1555,13 @@ static bool s_MatchOrgname(const string& taxname, const COrgName::C_Name& orgnam
                 }
             }
         }
-        if (!rval && orgname.GetPartial().Get().size() > 1 && 
-            orgname.GetPartial().Get().front()->IsSetName()) {
+        if (!rval && orgname.GetName().GetPartial().Get().size() > 1 && 
+            orgname.GetName().GetPartial().Get().front()->IsSetName()) {
             // use first element for error
-            mismatch = orgname.GetPartial().Get().front()->GetName();
+            mismatch = orgname.GetName().GetPartial().Get().front()->GetName();
         }
         break;
-    case COrgName::C_Name::e_Virus:
-        mismatch = orgname.GetVirus();
-        rval = NStr::Equal(taxname, mismatch);
-        break;
-    case COrgName::C_Name::e_not_set:
+    default:
         break;
     }
     return rval;
@@ -1574,7 +1570,7 @@ static bool s_MatchOrgname(const string& taxname, const COrgName::C_Name& orgnam
 
 void CValidError_imp::ValidateTaxNameOrgname
 (const string& taxname, 
- const COrgName::TName& orgname, 
+ const COrgName& orgname, 
  const CSerialObject& obj, 
  const CSeq_entry *ctx)
 {

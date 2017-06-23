@@ -20938,7 +20938,6 @@ BOOST_AUTO_TEST_CASE(Test_TM_145)
 
 }
 
-
 #if 0
 // commented out for now
 BOOST_AUTO_TEST_CASE(Test_VR_723)
@@ -20989,14 +20988,16 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
 
     // hybrid
     CRef<COrgName> org1(new COrgName());
+    org1->SetName().SetBinomial().SetSpecies("z");
     org1->SetName().SetBinomial().SetGenus("x");
     CRef<COrgName> org2(new COrgName());
     org2->SetName().SetBinomial().SetGenus("y");
+    org2->SetName().SetBinomial().SetSpecies("z");
     orgname.SetHybrid().Set().push_back(org1);
     orgname.SetHybrid().Set().push_back(org2);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "BioSourceInconsistency",
-        "Taxname does not match orgname ('Sebaea microphylla', 'x')"));
+        "Taxname does not match orgname ('Sebaea microphylla', 'x z')"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -21009,12 +21010,18 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
     // named hybrid
     orgname.SetNamedhybrid().SetGenus("Sebaea");
     orgname.SetNamedhybrid().SetSpecies("microphylla");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BioSourceInconsistency",
+        "Taxname does not match orgname ('Sebaea microphylla', 'Sebaea x microphylla')"));
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
     orgname.SetNamedhybrid().SetGenus("x");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "BioSourceInconsistency",
-        "Taxname does not match orgname ('Sebaea microphylla', 'x microphylla')"));
+        "Taxname does not match orgname ('Sebaea microphylla', 'x x microphylla')"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
