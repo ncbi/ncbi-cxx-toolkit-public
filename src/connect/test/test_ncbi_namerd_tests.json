@@ -9,7 +9,7 @@
     },
     "tests":   [
         {
-            "alias":            "bounce",
+            "alias":            "resolve service 'bounce'",
             "env_unset":        ["CONN_DTAB"],
             "service":          "bounce",
             "expect_hits":      [
@@ -97,7 +97,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.128\",\"port\":54321,\"meta\":{\"mock\":\"true\",\"rate\":17.87,\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.22.119\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":14.56,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:26_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.49\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.74,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:27_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.49\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.74,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:28_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.22.10\",\"port\":54321,\"meta\":{\"mock\":\"true\",\"rate\":7.1,\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:29_\",\"stateful\":false,\"mode\":\"L\"}},{\"ip\":\"130.14.18.113\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.08,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:30_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.19.201\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":13.47,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:31_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.18.113\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":12.08,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:32_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}},{\"ip\":\"130.14.22.119\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":14.56,\"serviceType\":\"HTTP\",\"expires\":\"__________+00:00:33_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"extra\":\"/Service/bounce.cgi\"}},{\"ip\":\"130.14.19.201\",\"port\":80,\"meta\":{\"mock\":\"true\",\"rate\":13.47,\"serviceType\":\"NCBID\",\"expires\":\"__________+00:00:34_\",\"stateful\":false,\"contentType\":\"x-ncbi-data/x-unknown\",\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
-            "alias":            "account",
+            "alias":            "resolve service 'account'",
             "env_unset":        ["CONN_DTAB"],
             "service":          "account",
             "expect_hits":      [
@@ -112,7 +112,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.11.66\",\"port\":29066,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-344.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "demo-project",
+            "alias":            "resolve service 'demo-project'",
             "env_unset":        ["CONN_DTAB"],
             "service":          "demo-project",
             "expect_hits":      [
@@ -127,7 +127,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "solr-fls_meta",
+            "alias":            "resolve service 'solr-fls_meta'",
             "env_unset":        ["CONN_DTAB"],
             "service":          "solr-fls_meta",
             "expect_hits":      [
@@ -142,7 +142,58 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.25.46\",\"port\":8389,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"solr-fls_meta.service.bethesda-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "bounce via valid env dtab",
+            "alias":            "resolve service 'demo-project' by requesting 'demo-project' with an unrelated dtab in the environment",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "demo-project",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "resolve service 'demo-project' by requesting 'demo-project' with an unrelated dtab in the user header",
+            "env_unset":        ["CONN_DTAB"],
+            "service":          "demo-project",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "resolve service 'demo-project' by requesting 'demo-project' with unrelated dtabs in the environment and user header",
+            "env_set":          [
+                {"CONN_DTAB":   "/service/bounce=>/service/account"}
+            ],
+            "service":          "demo-project",
+            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
+            "expect_hits":      [
+                {
+                    "type": "HTTP",
+                    "host": "10.50.10.133",
+                    "port": 14069,
+                    "loc":  "no",
+                    "priv": "no"
+                }
+            ],
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
+        },
+        {
+            "alias":            "resolve service 'account' by requesting 'bounce' with a valid dtab in the environment",
             "env_set":          [
                 {"CONN_DTAB":   "/service/bounce=>/service/account"}
             ],
@@ -159,24 +210,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.215\",\"port\":11164,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-357.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "demo-project via unrelated env dtab",
-            "env_set":          [
-                {"CONN_DTAB":   "/service/bounce=>/service/account"}
-            ],
-            "service":          "demo-project",
-            "expect_hits":      [
-                {
-                    "type": "HTTP",
-                    "host": "10.50.10.133",
-                    "port": 14069,
-                    "loc":  "no",
-                    "priv": "no"
-                }
-            ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
-        },
-        {
-            "alias":            "bounce via valid user header",
+            "alias":            "resolve service 'account' by requesting 'bounce' with a valid dtab in the user header",
             "env_unset":        ["CONN_DTAB"],
             "service":          "bounce",
             "http_user_header": "DTab-Local: /service/bounce=>/service/account",
@@ -192,41 +226,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.215\",\"port\":11164,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"account-357.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "demo-project via unrelated user header",
-            "env_unset":        ["CONN_DTAB"],
-            "service":          "demo-project",
-            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
-            "expect_hits":      [
-                {
-                    "type": "HTTP",
-                    "host": "10.50.10.133",
-                    "port": 14069,
-                    "loc":  "no",
-                    "priv": "no"
-                }
-            ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
-        },
-        {
-            "alias":            "demo-project via unrelated user header and env dtab",
-            "env_set":          [
-                {"CONN_DTAB":   "/service/bounce=>/service/account"}
-            ],
-            "service":          "demo-project",
-            "http_user_header": "DTab-Local: /service/bounce=>/service/account",
-            "expect_hits":      [
-                {
-                    "type": "HTTP",
-                    "host": "10.50.10.133",
-                    "port": 14069,
-                    "loc":  "no",
-                    "priv": "no"
-                }
-            ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
-        },
-        {
-            "alias":            "bounce via conflicting user header and env dtab (env takes precedence)",
+            "alias":            "resolve service 'account' by requesting 'bounce' with conflicting dtabs in the environment and user header (env takes precedence)",
             "env_set":          [
                 {"CONN_DTAB":   "/service/bounce=>/service/account"}
             ],
