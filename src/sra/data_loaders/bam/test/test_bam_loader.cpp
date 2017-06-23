@@ -699,7 +699,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
 
 
 typedef tuple<string, CRange<TSeqPos>, bool, size_t, size_t> TQuery;
-vector<TQuery> s_GetQueries()
+vector<TQuery> s_GetQueries1()
 {
     vector<TQuery> queries;
     queries.push_back(make_tuple("NT_113960", CRange<TSeqPos>(0, 100000), true, 5, 6));
@@ -722,7 +722,42 @@ vector<TQuery> s_GetQueries()
     return queries;
 }
 
-BOOST_AUTO_TEST_CASE(FetchSeqMT0)
+vector<TQuery> s_GetQueries2()
+{
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(0, 100000), true, 6, 7));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(0, 100000), false, 3, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(100000, 200000), true, 6, 7));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(200000, 300000), true, 6, 7));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(0, 400000), false, 53, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(1000000, 2000000), true, 18, 25));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(2000000, 3000000), true, 17, 19));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(2700000, 2800000), false, 0, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(11000000, 12000000), true, 18, 25));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(12000000, 13000000), true, 17, 13));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(11500000, 11600000), false, 4, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(21000000, 22000000), true, 18, 13));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(22000000, 23000000), true, 18, 13));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(21500000, 21600000), false, 575, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(31000000, 32000000), true, 18, 19));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(42000000, 43000000), true, 12, 25));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(21500000, 21600000), false, 575, 0));
+    return queries;
+}
+
+vector<TQuery> s_GetQueries2full()
+{
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(0, 248956422), false, 300552, 0));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(0, 248956422), true, 2736, 1639));
+    for ( int i = 0; i < 3; ++i ) {
+        queries.push_back(queries[0]);
+        queries.push_back(queries[1]);
+    }
+    return queries;
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeqST1)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(true);
 
@@ -746,7 +781,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT0)
     CScope scope(*om);
     scope.AddDefaults();
 
-    vector<TQuery> queries = s_GetQueries();
+    vector<TQuery> queries = s_GetQueries1();
     
     const size_t NQ = queries.size();
     
@@ -779,6 +814,68 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT0)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeqST2)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name = sx_GetPath("hs108_sra.fil_sort.chr1.bam", "bam");
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+    
+    SAnnotSelector sel;
+    sel.SetSearchUnresolved();
+    sel.AddNamedAnnots("hs108_sra.fil_sort.chr1");
+    sel.AddNamedAnnots("hs108_sra.fil_sort.chr1 pileup graphs");
+    
+    for ( int pass = 0; pass < 2; ++pass ) {
+        vector<TQuery> queries;
+        size_t NQ;
+        if ( pass == 0 ) {
+            queries = s_GetQueries2();
+            NQ = queries.size();
+        }
+        else {
+            queries = s_GetQueries2full();
+            NQ = min<size_t>(0, queries.size());
+        }
+    
+        for ( size_t i = 0; i < NQ; ++i ) {
+            const TQuery& query = queries[i];
+            CRef<CSeq_id> seqid(new CSeq_id(get<0>(query)));
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->SetInt().SetId(*seqid);
+            loc->SetInt().SetFrom(get<1>(query).GetFrom());
+            loc->SetInt().SetTo(get<1>(query).GetTo());
+            size_t count = 0;
+            if ( get<2>(query) ) {
+                for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                    ++count;
+                }
+            }
+            else {
+                for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                    ++count;
+                }
+            }
+            if ( !get<4>(query) || count != get<4>(query) ) {
+                BOOST_CHECK_EQUAL(count, get<3>(query));
+            }
+        }
+    }
+}
+
+
 #ifdef NCBI_THREADS
 BOOST_AUTO_TEST_CASE(FetchSeqMT1)
 {
@@ -804,7 +901,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT1)
     CScope scope(*om);
     scope.AddDefaults();
 
-    vector<TQuery> queries = s_GetQueries();
+    vector<TQuery> queries = s_GetQueries1();
     
     const size_t NQ = queries.size();
     
@@ -841,6 +938,76 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT1)
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeqMT2)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name = sx_GetPath("hs108_sra.fil_sort.chr1.bam", "bam");
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    SAnnotSelector sel;
+    sel.SetSearchUnresolved();
+    sel.AddNamedAnnots("hs108_sra.fil_sort.chr1");
+    sel.AddNamedAnnots("hs108_sra.fil_sort.chr1 pileup graphs");
+
+    for ( int pass = 0; pass < 2; ++pass ) {
+        vector<TQuery> queries;
+        size_t NQ;
+        if ( pass == 0 ) {
+            queries = s_GetQueries2();
+        }
+        else {
+            queries = s_GetQueries2full();
+            queries.clear();
+        }
+        NQ = queries.size();
+    
+        vector<thread> tt(NQ);
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i] =
+                thread([&]
+                       (const TQuery& query)
+                       {
+                           CRef<CSeq_id> seqid(new CSeq_id(get<0>(query)));
+                           CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+                           CRef<CSeq_loc> loc(new CSeq_loc);
+                           loc->SetInt().SetId(*seqid);
+                           loc->SetInt().SetFrom(get<1>(query).GetFrom());
+                           loc->SetInt().SetTo(get<1>(query).GetTo());
+                           size_t count = 0;
+                           if ( get<2>(query) ) {
+                               for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                                   ++count;
+                               }
+                           }
+                           else {
+                               for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                                   ++count;
+                               }
+                           }
+                           if ( !get<4>(query) || count != get<4>(query) ) {
+                               BOOST_CHECK_EQUAL(count, get<3>(query));
+                           }
+                       }, queries[i]);
+        }
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i].join();
+        }
     }
 }
 #endif
