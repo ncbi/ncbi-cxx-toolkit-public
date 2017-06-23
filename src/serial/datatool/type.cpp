@@ -741,6 +741,7 @@ TTypeInfo CDataType::GetAnyTypeInfo(void)
     TTypeInfo typeInfo = m_AnyTypeInfo.get();
     if ( !typeInfo ) {
         typeInfo = GetRealTypeInfo();
+        const_cast<CTypeInfo*>(typeInfo)->DataSpec( CDataType::GetSourceDataSpec());
         if ( NeedAutoPointer(typeInfo) ) {
             if (IsAlias() && !IsStdType()) {
                 CAliasTypeInfo *alias =

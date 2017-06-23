@@ -201,8 +201,8 @@ enum ENsQualifiedMode {
 };
 
 enum class EDataSpec {
-    eUnknown,
-    eASN,
+    eUnknown  = 0,
+    eASN      = 0,
     eDTD,
     eXSD,
     eJSON
