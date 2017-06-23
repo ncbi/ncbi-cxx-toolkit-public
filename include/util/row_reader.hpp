@@ -1628,7 +1628,7 @@ void CRowReader<TTraits>::x_ReadNextRow(void)
         try {
             if (x_OnEvent(eRR_Event_SourceBegin) == eRR_EventAction_Stop) {
                 x_ResetToEnd();
-                if (x_OnEvent(eRR_Event_SourceError) == eRR_EventAction_Stop) {
+                if (x_OnEvent(eRR_Event_SourceEnd) == eRR_EventAction_Stop) {
                     x_ResetToEnd();
                     return;
                 }
