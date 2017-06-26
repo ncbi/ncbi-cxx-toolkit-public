@@ -9,3 +9,4 @@ algo/cobalt
 -app/winmasker
 -app/dustmasker
 -app/segmasker
+connect/mbedtls
