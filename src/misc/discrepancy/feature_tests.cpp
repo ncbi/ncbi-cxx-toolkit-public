@@ -293,21 +293,7 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
                         }
                     }
                     if ((ref_gene_locus.empty() || ref_gene_locus == locus) && (ref_locus_tag.empty() || ref_locus_tag == locus_tag)) {
-                        bool exclude_for_partials = false;
-                        //bool location_appropriate = cmp == sequence::eSame || cmp == sequence::eContains;
-                        if (cmp == sequence::eSame) {
-                            // check partials
-                            if (!gene_partial_start && loc_f.IsPartialStart(eExtreme_Biological)) {
-                                exclude_for_partials = true;
-                            }
-                            else if (!gene_partial_stop && loc_f.IsPartialStop(eExtreme_Biological)) {
-                                exclude_for_partials = true;
-                            }
-                        }
-                        if (!exclude_for_partials) {
-                            found = true;
-                            break;
-                        }
+                        found = true;
                     }
                 }
             }
