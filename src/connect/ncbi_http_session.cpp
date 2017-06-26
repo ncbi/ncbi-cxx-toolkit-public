@@ -748,7 +748,8 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         NCBI_THROW(CHttpSessionException, eBadRequest,
             "An attempt to execute HTTP request already being executed");
     }
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create(
+        m_Url.IsService() ? m_Url.GetService().c_str() : 0);
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
         net_info->version = 1;
     }
