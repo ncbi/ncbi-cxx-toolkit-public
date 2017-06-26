@@ -85,17 +85,16 @@ struct SOptionInfo : public SOptionOrCommandInfo
     {
         string result(AddDashes(m_NameVariants.front()));
         if (m_NameVariants.size() > 1) {
-            result.append(" [");
+            result.append(", ");
             TNameVariantList::const_iterator name(m_NameVariants.begin());
             result.append(AddDashes(*++name));
             while (++name != m_NameVariants.end()) {
                 result.append(", ");
                 result.append(AddDashes(*name));
             }
-            result.push_back(']');
         }
         if (m_Type == CCommandLineParser::eOptionWithParameter)
-            result.append(" ARG");
+            result.append("=ARG");
         return result;
     }
 
