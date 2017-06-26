@@ -644,7 +644,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 22
+          id local id 16
         }
       },
       dbxref {
@@ -770,7 +770,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 23
+          id local id 17
         }
       },
       dbxref {
@@ -843,13 +843,60 @@ Seq-annot ::= {
       except TRUE,
       comment "The RefSeq transcript has 13 substitutions compared to this
  genomic sequence",
-      location int {
-        from 64312,
-        to 230751,
-        strand minus,
-        id other {
-          accession "NW_006763130",
-          version 1
+      location mix {
+        int {
+          from 230635,
+          to 230751,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 228546,
+          to 228626,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 227456,
+          to 227677,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 225444,
+          to 225586,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64312,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
         }
       },
       qual {
@@ -896,7 +943,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 22,
+      id local id 16,
       data cdregion {
         frame one,
         code-break {
@@ -1017,7 +1064,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 23,
+      id local id 17,
       data cdregion {
         frame one,
         code-break {
@@ -1147,7 +1194,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 24,
+      id local id 18,
       data imp {
         key "STS"
       },
@@ -1174,7 +1221,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 19,
       data imp {
         key "STS"
       },
@@ -1201,7 +1248,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 26,
+      id local id 20,
       data imp {
         key "STS"
       },
@@ -1228,7 +1275,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 27,
+      id local id 21,
       data gene {
         locus "LOC100862408"
       },
@@ -1264,7 +1311,7 @@ Seq-annot ::= {
       pseudo TRUE
     },
     {
-      id local id 28,
+      id local id 22,
       data imp {
         key "exon"
       },
@@ -1304,7 +1351,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 29,
+      id local id 23,
       data imp {
         key "STS"
       },
@@ -1331,7 +1378,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 30,
+      id local id 24,
       data imp {
         key "exon"
       },
@@ -1371,7 +1418,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 25,
       data imp {
         key "STS"
       },
@@ -1398,7 +1445,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local id 26,
       data imp {
         key "exon"
       },
@@ -1438,7 +1485,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 33,
+      id local id 27,
       data imp {
         key "exon"
       },
@@ -1478,7 +1525,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 28,
       data imp {
         key "exon"
       },
@@ -1518,7 +1565,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 35,
+      id local id 29,
       data imp {
         key "exon"
       },
@@ -1558,7 +1605,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 36,
+      id local id 30,
       data imp {
         key "STS"
       },
@@ -1585,7 +1632,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 31,
       data gene {
         locus "Klra16",
         desc "killer cell lectin-like receptor, subfamily A, member 16",
@@ -1631,7 +1678,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 38,
+      id local id 32,
       data rna {
         type mRNA
       },
@@ -1727,7 +1774,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 39
+          id local id 33
         }
       },
       dbxref {
@@ -1747,7 +1794,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 39,
+      id local id 33,
       data cdregion {
         frame one
       },
@@ -1834,7 +1881,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 38
+          id local id 32
         }
       },
       dbxref {
@@ -1854,7 +1901,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 40,
+      id local id 34,
       data imp {
         key "STS"
       },
@@ -1881,7 +1928,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 41,
+      id local id 35,
       data imp {
         key "STS"
       },
@@ -1908,7 +1955,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 42,
+      id local id 36,
       data gene {
         locus "Klra3",
         desc "killer cell lectin-like receptor, subfamily A, member 3",
@@ -1956,7 +2003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 37,
       data rna {
         type mRNA
       },
@@ -2053,7 +2100,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 44
+          id local id 38
         }
       },
       dbxref {
@@ -2073,7 +2120,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 44,
+      id local id 38,
       data cdregion {
         frame one
       },
@@ -2160,7 +2207,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 43
+          id local id 37
         }
       },
       dbxref {
@@ -2180,7 +2227,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 45,
+      id local id 39,
       data imp {
         key "STS"
       },
@@ -2207,7 +2254,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 40,
       data imp {
         key "STS"
       },
@@ -2234,7 +2281,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 47,
+      id local id 41,
       data imp {
         key "STS"
       },
@@ -2261,7 +2308,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 48,
+      id local id 42,
       data imp {
         key "STS"
       },
@@ -2288,7 +2335,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 43,
       data imp {
         key "STS"
       },
@@ -2315,7 +2362,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 50,
+      id local id 44,
       data gene {
         locus "Klra1",
         desc "killer cell lectin-like receptor, subfamily A, member 1",
@@ -2363,7 +2410,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 51,
+      id local id 45,
       data rna {
         type mRNA
       },
@@ -2477,7 +2524,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 52
+          id local id 46
         }
       },
       dbxref {
@@ -2497,7 +2544,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 52,
+      id local id 46,
       data cdregion {
         frame one
       },
@@ -2584,7 +2631,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 51
+          id local id 45
         }
       },
       dbxref {
@@ -2604,7 +2651,7 @@ Seq-annot ::= {
       except-text "annotated by transcript or proteomic data"
     },
     {
-      id local id 53,
+      id local id 47,
       data imp {
         key "STS"
       },
@@ -2631,7 +2678,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 54,
+      id local id 48,
       data imp {
         key "STS"
       },
@@ -2658,7 +2705,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 49,
       data imp {
         key "STS"
       },
@@ -2685,7 +2732,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 56,
+      id local id 50,
       data imp {
         key "STS"
       },
@@ -2712,7 +2759,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 57,
+      id local id 51,
       data imp {
         key "STS"
       },
@@ -2739,7 +2786,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 52,
       data imp {
         key "STS"
       },
@@ -2766,7 +2813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 59,
+      id local id 53,
       data imp {
         key "STS"
       },
@@ -2793,7 +2840,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 60,
+      id local id 54,
       data imp {
         key "STS"
       },
@@ -2820,7 +2867,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 55,
       data imp {
         key "STS"
       },
@@ -2847,7 +2894,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 62,
+      id local id 56,
       data gene {
         locus "Gm38706"
       },
@@ -2887,7 +2934,7 @@ Seq-annot ::= {
       pseudo TRUE
     },
     {
-      id local id 63,
+      id local id 57,
       data imp {
         key "exon"
       },
@@ -2930,7 +2977,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 58,
       data imp {
         key "exon"
       },
@@ -2973,7 +3020,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 65,
+      id local id 59,
       data imp {
         key "exon"
       },
@@ -3016,7 +3063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 66,
+      id local id 60,
       data imp {
         key "exon"
       },
@@ -3059,7 +3106,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 61,
       data imp {
         key "STS"
       },
@@ -3086,7 +3133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 68,
+      id local id 62,
       data imp {
         key "STS"
       },
@@ -3113,7 +3160,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 69,
+      id local id 63,
       data imp {
         key "STS"
       },
@@ -3140,7 +3187,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 64,
       data imp {
         key "STS"
       },
@@ -3167,7 +3214,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 71,
+      id local id 65,
       data gene {
         locus "Gm8816",
         desc "predicted gene 8816",
@@ -3211,7 +3258,7 @@ Seq-annot ::= {
       pseudo TRUE
     },
     {
-      id local id 72,
+      id local id 66,
       data imp {
         key "exon"
       },
@@ -3250,7 +3297,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 67,
       data imp {
         key "STS"
       },
@@ -3277,7 +3324,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 74,
+      id local id 68,
       data gene {
         locus "Gm20997"
       },
@@ -3325,7 +3372,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 75,
+      id local id 69,
       data rna {
         type mRNA
       },
@@ -3391,7 +3438,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 76
+          id local id 70
         }
       },
       dbxref {
@@ -3411,7 +3458,7 @@ Seq-annot ::= {
       except-text "unclassified transcription discrepancy"
     },
     {
-      id local id 76,
+      id local id 70,
       data cdregion {
         frame one
       },
@@ -3464,7 +3511,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 75
+          id local id 69
         }
       },
       dbxref {
@@ -3484,7 +3531,7 @@ Seq-annot ::= {
       except-text "unclassified translation discrepancy"
     },
     {
-      id local id 77,
+      id local id 71,
       data imp {
         key "STS"
       },
@@ -3511,7 +3558,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 78,
+      id local id 72,
       data imp {
         key "STS"
       },

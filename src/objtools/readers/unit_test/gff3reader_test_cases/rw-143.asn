@@ -2,29 +2,6 @@ Seq-annot ::= {
   id {
     local str "Scaffold7"
   },
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 1
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
       id local id 1,
@@ -67,7 +44,7 @@ Seq-annot ::= {
           id local id 2
         },
         {
-          id local id 4
+          id local id 3
         }
       },
       pseudo TRUE
@@ -120,7 +97,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 4
+          id local id 3
         },
         {
           id local id 1
@@ -129,7 +106,7 @@ Seq-annot ::= {
       pseudo TRUE
     },
     {
-      id local id 4,
+      id local id 3,
       data cdregion {
         frame one
       },

@@ -403,6 +403,9 @@ CGff2Reader::xParseFeature(
 
     //make sure we are interested:
     string ftype = pRecord->Type();
+    if (ftype == "exon") {
+        cerr << "";
+    }
     if (xIsIgnoredFeatureType(ftype)) {
         return true;
     }

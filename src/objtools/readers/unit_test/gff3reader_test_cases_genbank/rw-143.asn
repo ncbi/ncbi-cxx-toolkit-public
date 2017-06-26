@@ -89,13 +89,13 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 4
+          id local id 3
         }
       },
       pseudo TRUE
     },
     {
-      id local id 4,
+      id local id 3,
       data cdregion {
         frame one
       },

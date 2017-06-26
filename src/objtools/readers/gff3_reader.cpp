@@ -147,6 +147,10 @@ bool CGff3ReadRecord::AssignFromGff(
         m_Attributes["pseudo"] = "true";
         return true;
     }
+    if (m_strType == "transcript") {
+        m_strType = "misc_RNA";
+        return true;
+    }
     return true;
 }
 
@@ -261,6 +265,7 @@ bool CGff3Reader::xVerifyExonLocation(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    //return true;
     map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
     if (cit == mMrnaLocs.end()) {
         return false;
@@ -287,6 +292,9 @@ bool CGff3Reader::xUpdateAnnotExon(
 {
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {
+        if (!parents.empty()  &&  parents.front() == "ENST00000367927") {
+            cerr << "";
+        }
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
                 ++it) {
             const string& parentId = *it; 
@@ -296,9 +304,11 @@ bool CGff3Reader::xUpdateAnnotExon(
                     return false;
                 }
                 CRef<CSeq_feat> pParent;
-                if (!xGetParentFeature(*pFeature, pParent)  ||  
-                        !pParent->GetData().IsGene()) {
-//                if (!xGetParentFeature(*pFeature, pParent)) {
+                if (!xGetParentFeature(*pFeature, pParent)) {
+                //Note: The below does not quite cut it as there are types of RNA that come
+                // as Imps.
+                //if (!xGetParentFeature(*pFeature, pParent)  ||  
+                //        (!pParent->GetData().IsGene()  &&  !pParent->GetData().IsRna())) {
                     AutoPtr<CObjReaderLineException> pErr(
                         CObjReaderLineException::Create(
                         eDiag_Error,
@@ -582,7 +592,8 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
-    if (pFeature->GetData().IsRna()) {
+    auto st = pFeature->GetData().GetSubtype();
+    if (pFeature->GetData().IsRna()  ||  pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
         CRef<CSeq_interval> rnaLoc(new CSeq_interval);
         rnaLoc->Assign(pFeature->GetLocation().GetInt());
         mMrnaLocs[strId] = rnaLoc;
