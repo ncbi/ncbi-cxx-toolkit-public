@@ -506,7 +506,6 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
         // no additional changes - isolate and clone rule taken care of
     } else {
         bool use_isolate = false;
-        bool use_strain = false;
         if ( ! HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate
             && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferIsolate
             || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
@@ -520,7 +519,6 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
             !use_isolate) {
             if (extra_orgmods.find(COrgMod::eSubtype_strain) == extra_orgmods.end()) {
                 extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_strain, true));
-                use_strain = true;
             }
         }
         if (! HasSubSource(CSubSource::eSubtype_clone) && src_has_clone
