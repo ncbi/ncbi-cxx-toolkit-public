@@ -98,8 +98,8 @@ NCBI_PARAM_DEF_EX(int, BAM_LOADER, DEBUG, 0,
 
 static int GetDebugLevel(void)
 {
-    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, DEBUG)> s_Value;
-    return s_Value->Get();
+    static int value = NCBI_PARAM_TYPE(BAM_LOADER, DEBUG)::GetDefault();
+    return value;
 }
 
 
@@ -115,8 +115,7 @@ static string GetMapperFileName(void)
 
 
 NCBI_PARAM_DECL(bool, BAM_LOADER, PILEUP_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, BAM_LOADER, PILEUP_GRAPHS, true,
-                  eParam_NoThread, BAM_LOADER_PILEUP_GRAPHS);
+NCBI_PARAM_DEF(bool, BAM_LOADER, PILEUP_GRAPHS, true);
 
 bool CBAMDataLoader::GetPileupGraphsParamDefault(void)
 {
@@ -130,10 +129,30 @@ void CBAMDataLoader::SetPileupGraphsParamDefault(bool param)
 }
 
 
-static bool GetPileupGraphsParam(void)
+static inline bool GetPileupGraphsParam(void)
 {
-    NCBI_PARAM_TYPE(BAM_LOADER, PILEUP_GRAPHS) s_Value;
-    return s_Value.Get();
+    return CBAMDataLoader::GetPileupGraphsParamDefault();
+}
+
+
+NCBI_PARAM_DECL(bool, BAM_LOADER, SKIP_EMPTY_PILEUP_GRAPHS);
+NCBI_PARAM_DEF(bool, BAM_LOADER, SKIP_EMPTY_PILEUP_GRAPHS, true);
+
+bool CBAMDataLoader::GetSkipEmptyPileupGraphsParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, SKIP_EMPTY_PILEUP_GRAPHS)::GetDefault();
+}
+
+
+void CBAMDataLoader::SetSkipEmptyPileupGraphsParamDefault(bool param)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, SKIP_EMPTY_PILEUP_GRAPHS)::SetDefault(param);
+}
+
+
+static inline bool GetSkipEmptyPileupGraphsParam(void)
+{
+    return CBAMDataLoader::GetSkipEmptyPileupGraphsParamDefault();
 }
 
 
@@ -152,10 +171,9 @@ void CBAMDataLoader::SetEstimatedCoverageGraphParamDefault(bool param)
 }
 
 
-static bool GetEstimatedCoverageGraphParam(void)
+static inline bool GetEstimatedCoverageGraphParam(void)
 {
-    NCBI_PARAM_TYPE(BAM_LOADER, ESTIMATED_COVERAGE_GRAPH) s_Value;
-    return s_Value.Get();
+    return CBAMDataLoader::GetEstimatedCoverageGraphParamDefault();
 }
 
 
@@ -1238,13 +1256,12 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         raw_db = &m_File->GetBamDb().GetRawDb();
         refseq_index = raw_db->GetRefIndex(GetRefSeqId());
     }
-    
-    double load_seconds = 1e-9; // 1000 MB/s
-    double decompress_seconds = 11e-9; // 90 MB/s
+
+    double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
     double make_graph_seconds = 7.5e-9; // 133 MB/s
     double make_align_seconds = 80e-9; // 12 MB/s
-    double graph_seconds = load_seconds + decompress_seconds + make_graph_seconds;
-    double align_seconds = load_seconds + decompress_seconds + make_align_seconds;
+    double graph_seconds = get_data_seconds + make_graph_seconds;
+    double align_seconds = get_data_seconds + make_align_seconds;
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
         CRange<TSeqPos> range = GetChunkGraphRange(range_id);
@@ -1842,9 +1859,15 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     }
     CRef<CSeq_id> ref_id(SerialClone(*GetRefSeq_id().GetSeqId()));
     for ( int k = 0; k < SBaseStats::kNumStat; ++k ) {
-        if (k == SBaseStats::kStat_Match && c_max[k] == 0) {
-            // do not generate empty 'matches' graph
-            continue;
+        if ( c_max[k] == 0 ) {
+            if ( k == SBaseStats::kStat_Match ) {
+                // do not generate empty 'matches' graph
+                continue;
+            }
+            if ( GetSkipEmptyPileupGraphsParam() ) {
+                // do not generate empty graph (configurable)
+                continue;
+            }
         }
         CRef<CSeq_graph> graph(new CSeq_graph);
         static const char* const titles[SBaseStats::kNumStat] = {
