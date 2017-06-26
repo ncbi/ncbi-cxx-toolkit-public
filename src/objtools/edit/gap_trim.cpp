@@ -372,7 +372,6 @@ CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat
     prot_seq->SetInst().SetSeq_data().SetIupacaa().Set(prot);
     prot_seq->SetInst().SetLength(TSeqPos(prot.length()));
     prot_seq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
-    bool replaced = false;
     // fix sequence ID
     const CSeq_id& feat_prod = feat.GetProduct().GetWhole();
     if (!feat_prod.Equals(orig_cds.GetProduct().GetWhole())) {
