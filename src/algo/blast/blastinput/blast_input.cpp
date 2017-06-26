@@ -290,7 +290,12 @@ CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
 void
 CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)
 {
-    m_Source->GetNextSequenceBatch(bioseq_set, m_BatchSize);
+    CRef<CBioseq_set> one_set(new CBioseq_set);
+
+    int bases_added = 0;
+    while (bases_added < m_BatchSize && !m_Source->End()) {
+        bases_added += m_Source->GetNextSequence(bioseq_set);
+    }
 }
 
 CRef<CBioseq_set>

@@ -66,16 +66,19 @@ CASN1InputSourceOMF::CASN1InputSourceOMF(CNcbiIstream& infile1,
 {}
 
 
-void
-CASN1InputSourceOMF::GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                          TSeqPos batch_size)
+int
+CASN1InputSourceOMF::GetNextSequence(CBioseq_set& bioseq_set)
 {
+    m_BasesAdded = 0;
+
     if (m_SecondInputStream) {
-        x_ReadFromTwoFiles(bioseq_set, batch_size);
+        x_ReadFromTwoFiles(bioseq_set);
     }
     else {
-        x_ReadFromSingleFile(bioseq_set, batch_size);
+        x_ReadFromSingleFile(bioseq_set);
     }
+
+    return m_BasesAdded;
 }
 
 
@@ -119,8 +122,7 @@ CASN1InputSourceOMF::x_ReadOneSeq(CNcbiIstream& instream)
 
 
 bool
-CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set,
-                                          TSeqPos batch_size)
+CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 {
     // tags to indicate paired sequences
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
@@ -131,35 +133,32 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set,
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    m_BasesAdded = 0;
-    while (m_BasesAdded < batch_size && !m_InputStream->eof()) {
-        CRef<CSeq_entry> first;
-        CRef<CSeq_entry> second;
-        first = x_ReadOneSeq(*m_InputStream);
+    CRef<CSeq_entry> first;
+    CRef<CSeq_entry> second;
+    first = x_ReadOneSeq(*m_InputStream);
 
-        // if paired rest the next sequence and mark a pair
-        if (m_IsPaired) {
-            second = x_ReadOneSeq(*m_InputStream);
+    // if paired rest the next sequence and mark a pair
+    if (m_IsPaired) {
+        second = x_ReadOneSeq(*m_InputStream);
         
-            if (first.NotEmpty()) {
-                if (second.NotEmpty()) {
-                    first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
-                }
-                bioseq_set.SetSeq_set().push_back(first);
-            }
-
+        if (first.NotEmpty()) {
             if (second.NotEmpty()) {
-                if (first.NotEmpty()) {
-                    second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
-                }
-                bioseq_set.SetSeq_set().push_back(second);
+                first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
             }
+            bioseq_set.SetSeq_set().push_back(first);
         }
-        else {
-            // otherwise just add the read sequence
+
+        if (second.NotEmpty()) {
             if (first.NotEmpty()) {
-                bioseq_set.SetSeq_set().push_back(first);
+                second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
             }
+            bioseq_set.SetSeq_set().push_back(second);
+        }
+    }
+    else {
+        // otherwise just add the read sequence
+        if (first.NotEmpty()) {
+            bioseq_set.SetSeq_set().push_back(first);
         }
     }
 
@@ -168,8 +167,7 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set,
 
 
 bool
-CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
-                                        TSeqPos batch_size)
+CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
 {
     // tags to indicate paired sequences
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
@@ -180,30 +178,25 @@ CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    m_BasesAdded = 0;
-    while (m_BasesAdded < batch_size && !m_InputStream->eof() &&
-           !m_SecondInputStream->eof()) {
+    CRef<CSeq_entry> first = x_ReadOneSeq(*m_InputStream); 
+    CRef<CSeq_entry> second = x_ReadOneSeq(*m_SecondInputStream);
 
-        CRef<CSeq_entry> first = x_ReadOneSeq(*m_InputStream); 
-        CRef<CSeq_entry> second = x_ReadOneSeq(*m_SecondInputStream);
+    // if both sequences were read, the pair in the first one
+    if (first.NotEmpty() && second.NotEmpty()) {
+        first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+        second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
 
-        // if both sequences were read, the pair in the first one
-        if (first.NotEmpty() && second.NotEmpty()) {
-            first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
-            second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
-
+        bioseq_set.SetSeq_set().push_back(first);
+        bioseq_set.SetSeq_set().push_back(second);
+    }
+    else {
+        // otherwise mark incomplete pair for the sequence that was read
+        if (first.NotEmpty()) {
             bioseq_set.SetSeq_set().push_back(first);
-            bioseq_set.SetSeq_set().push_back(second);
         }
-        else {
-            // otherwise mark incomplete pair for the sequence that was read
-            if (first.NotEmpty()) {
-                bioseq_set.SetSeq_set().push_back(first);
-            }
 
-            if (second.NotEmpty()) {
-                bioseq_set.SetSeq_set().push_back(second);
-            }
+        if (second.NotEmpty()) {
+            bioseq_set.SetSeq_set().push_back(second);
         }
     }
 

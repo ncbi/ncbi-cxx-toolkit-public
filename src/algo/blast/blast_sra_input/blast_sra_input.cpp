@@ -73,27 +73,26 @@ CSraInputSource::CSraInputSource(const vector<string>& accessions,
 
 
 
-void
-CSraInputSource::GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                      TSeqPos batch_size)
+int
+CSraInputSource::GetNextSequence(CBioseq_set& bioseq_set)
 {
+    m_BasesAdded = 0;
+
     // read sequences
     if (m_IsPaired) {
-        x_ReadPairs(bioseq_set, batch_size);
+        x_ReadPairs(bioseq_set);
     }
     else {
-        m_BasesAdded = 0;
-        while (m_BasesAdded < batch_size && m_ItAcc != m_Accessions.end()) {
-
-            for (; *m_It && m_BasesAdded < batch_size; ++(*m_It)) {
-                x_ReadOneSeq(bioseq_set);
-            }
-
-            if (m_BasesAdded < batch_size) {
-                x_NextAccession();
-            }
+        if (!*m_It) {
+            x_NextAccession();
+        }
+        if (m_ItAcc != m_Accessions.end()) {
+            x_ReadOneSeq(bioseq_set);
+            ++(*m_It);
         }
     }
+
+    return m_BasesAdded;
 }
 
 
@@ -121,7 +120,7 @@ CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
 
 
 void
-CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size)
+CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
 {
     CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
     seqdesc_first->SetUser().SetType().SetStr("Mapping");
@@ -131,40 +130,36 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size)
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    m_BasesAdded = 0;
-    while (m_BasesAdded < batch_size && m_ItAcc != m_Accessions.end()) {
+    TVDBRowId spot = -1;
+    if (!*m_It) {
+        x_NextAccession();
+    }
 
-        TVDBRowId spot = -1;
-        while (*m_It && m_BasesAdded < batch_size) {
+    if (m_ItAcc == m_Accessions.end()) {
+        return;
+    }
 
-            // read one sequence and rember spot id
-            spot = m_It->GetSpotId();
-            CSeq_entry* first = x_ReadOneSeq(bioseq_set);
+    // read one sequence and rember spot id
+    spot = m_It->GetSpotId();
+    CSeq_entry* first = x_ReadOneSeq(bioseq_set);
 
-            // move to the next sequence
-            ++(*m_It);
-            if (!(*m_It)) {
-                break;
-            }
+    // move to the next sequence
+    ++(*m_It);
+    if (!(*m_It)) {
+        return;
+    }
         
-            // if the current sequence has the same spot id, read current
-            // sequence as a mate, otherwise continue the loop
-            if (m_It->GetSpotId() == spot) {
-                CSeq_entry* second = x_ReadOneSeq(bioseq_set);
-                // set pair information for sequences
-                if (first && second) {
+    // if the current sequence has the same spot id, read current
+    // sequence as a mate, otherwise continue the loop
+    if (m_It->GetSpotId() == spot) {
+        CSeq_entry* second = x_ReadOneSeq(bioseq_set);
+        // set pair information for sequences
+        if (first && second) {
 
-                    first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
-                    second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
-                }
-                ++(*m_It);
-            }
+            first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+            second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
         }
-
-        // advance to the next accession
-        if (m_BasesAdded < batch_size) {
-            x_NextAccession();
-        }
+        ++(*m_It);
     }
 }
 

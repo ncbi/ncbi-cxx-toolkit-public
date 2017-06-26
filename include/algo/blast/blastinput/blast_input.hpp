@@ -417,8 +417,11 @@ class NCBI_BLASTINPUT_EXPORT CBlastInputSourceOMF : public CObject
 {
 protected:
     virtual ~CBlastInputSourceOMF() {}
-    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                      TSeqPos batch_size) = 0;
+
+    /// Get one sequence (or a pair for NGS reads)
+    /// @param bioseq_set Read sequences will be appended there [in|out]
+    /// @return Number of bases read
+    virtual int GetNextSequence(CBioseq_set& bioseq_set) = 0;
 
     virtual bool End(void) = 0;
 

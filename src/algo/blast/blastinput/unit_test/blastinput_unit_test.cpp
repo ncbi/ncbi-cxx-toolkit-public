@@ -2822,12 +2822,15 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromFasta) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CShortReadFastaInputSource input_source(istr,
+    
+    CRef<CBlastInputSourceOMF> input_source(
+                               new CShortReadFastaInputSource(istr,
                                          CShortReadFastaInputSource::eFasta,
-                                         true);
+                                         true));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -2861,11 +2864,14 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastaFiles) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CShortReadFastaInputSource input_source(istr1, istr2,
-                                         CShortReadFastaInputSource::eFasta);
 
+    CRef<CBlastInputSourceOMF> input_source(
+                   new CShortReadFastaInputSource(istr1, istr2,
+                                     CShortReadFastaInputSource::eFasta));
+
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -2887,12 +2893,14 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastaFiles) {
 BOOST_AUTO_TEST_CASE(TestSingleReadsFromFasta) {
 
     CNcbiIfstream istr("data/paired_reads.fa");
-    CShortReadFastaInputSource input_source(istr,
-                                         CShortReadFastaInputSource::eFasta,
-                                         false);
+    CRef<CBlastInputSourceOMF> input_source(
+              new CShortReadFastaInputSource(istr,
+                                     CShortReadFastaInputSource::eFasta,
+                                     false));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -2928,12 +2936,14 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromFastQ) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CShortReadFastaInputSource input_source(istr,
-                                         CShortReadFastaInputSource::eFastq,
-                                         true);
+    CRef<CBlastInputSourceOMF> input_source(
+                       new CShortReadFastaInputSource(istr,
+                                     CShortReadFastaInputSource::eFastq,
+                                     true));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -2967,11 +2977,13 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastQFiles) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CShortReadFastaInputSource input_source(istr1, istr2,
-                                         CShortReadFastaInputSource::eFastq);
+    CRef<CBlastInputSourceOMF> input_source(
+                      new CShortReadFastaInputSource(istr1, istr2,
+                                      CShortReadFastaInputSource::eFastq));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -3004,10 +3016,13 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromASN1) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CASN1InputSourceOMF input_source(istr, false, true);
+    CRef<CBlastInputSourceOMF> input_source(new CASN1InputSourceOMF(istr,
+                                                                    false,
+                                                                    true));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
 
     size_t count = 0;
@@ -3041,10 +3056,13 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoASN1Files) {
         {"lcl|incomplete2.2", eLastSegment},
     };
     
-    CASN1InputSourceOMF input_source(istr1, istr2, false);
+    CRef<CBlastInputSourceOMF> input_source(new CASN1InputSourceOMF(istr1,
+                                                                    istr2,
+                                                                    false));
 
+    CBlastInputOMF input(input_source, 1000);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 1000);
+    input.GetNextSeqBatch(*queries);
     // input file contains six sequences, but two should have been rejected
     // in screening
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);

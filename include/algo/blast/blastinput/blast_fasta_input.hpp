@@ -132,8 +132,7 @@ public:
 
     virtual ~CShortReadFastaInputSource() {}
 
-    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                      TSeqPos num_seqs);
+    virtual int GetNextSequence(CBioseq_set& bioseq_set);
 
     virtual bool End(void) {return m_LineReader->AtEOF();}
 
@@ -145,7 +144,7 @@ private:
     CTempString x_ParseDefline(CTempString& line);
 
     /// Read sequences in FASTA or FASTQ format
-    void x_ReadFastaOrFastq(CBioseq_set& bioseq_set, TSeqPos batch_size);
+    void x_ReadFastaOrFastq(CBioseq_set& bioseq_set);
 
     /// Read one sequence from a FASTA file
     CRef<CSeq_entry> x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
@@ -154,12 +153,11 @@ private:
     CRef<CSeq_entry> x_ReadFastqOneSeq(CRef<ILineReader> line_reader);
 
     /// Read sequences from two FASTA or FASTQ files (for paired reads)
-    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, TSeqPos batch_size,
-                            EInputFormat format);
+    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, EInputFormat format);
 
     /// Read sequences in FASTC format: defline, new line, a pair of sequences
     /// on a single line separated by '><'
-    void x_ReadFastc(CBioseq_set& bioseq_set, TSeqPos batch_size);
+    void x_ReadFastc(CBioseq_set& bioseq_set);
 
     /// Number of bases added so far
     TSeqPos m_BasesAdded;

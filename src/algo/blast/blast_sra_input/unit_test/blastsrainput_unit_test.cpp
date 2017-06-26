@@ -84,7 +84,11 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
 {
     const bool kCheckForPairs = true;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, kCheckForPairs);
+
+    CRef<CBlastInputSourceOMF> input_source(
+                            new CSraInputSource(accessions, kCheckForPairs));
+
+    CBlastInputOMF input(input_source, 2);
 
     unordered_map<string, int> ref_flags = {
         {"gnl|SRA|SRR4423739.1.1", eFirstSegment},
@@ -92,7 +96,7 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
     };
 
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 2);
+    input.GetNextSeqBatch(*queries);
 
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 2u);
 
@@ -117,10 +121,12 @@ BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
 {
     const bool kCheckForPairs = false;
     vector<string> accessions = {"SRR4423739"};
-    CSraInputSource input_source(accessions, kCheckForPairs);
+    CRef<CBlastInputSourceOMF> input_source(
+                         new CSraInputSource(accessions, kCheckForPairs));
 
+    CBlastInputOMF input(input_source, 300);
     CRef<CBioseq_set> queries(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, 300);
+    input.GetNextSeqBatch(*queries);
 
     BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 2u);
 
@@ -146,10 +152,12 @@ BOOST_AUTO_TEST_CASE(MultipleAccessions)
     const int kBatchSize = 30000000;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CSraInputSource input_source(accessions);
+    CRef<CBlastInputSourceOMF> input_source(new CSraInputSource(accessions));
+    CBlastInputOMF input(input_source, kBatchSize);
+
     CRef<CBioseq_set> queries;
     queries.Reset(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, kBatchSize);
+    input.GetNextSeqBatch(*queries);
 
     // the first query must be from the first SRA accession
     const CSeq_id* fid = queries->GetSeq_set().front()->GetSeq().GetFirstId();
@@ -166,10 +174,13 @@ BOOST_AUTO_TEST_CASE(MultipleAccessionsForceSingle)
     const bool kCheckForPairs = false;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CSraInputSource input_source(accessions, kCheckForPairs);
+    CRef<CBlastInputSourceOMF> input_source(
+                              new CSraInputSource(accessions, kCheckForPairs));
+
+    CBlastInputOMF input(input_source, kBatchSize);
     CRef<CBioseq_set> queries;
     queries.Reset(new CBioseq_set);
-    input_source.GetNextSequenceBatch(*queries, kBatchSize);
+    input.GetNextSeqBatch(*queries);
 
     // the first query must be from the first SRA accession
     const CSeq_id* fid = queries->GetSeq_set().front()->GetSeq().GetFirstId();

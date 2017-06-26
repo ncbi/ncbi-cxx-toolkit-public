@@ -59,8 +59,7 @@ public:
 
     virtual ~CSraInputSource() {}
 
-    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                      TSeqPos batch_size);
+    virtual int GetNextSequence(CBioseq_set& bioseq_set);
 
     virtual bool End(void) {return m_ItAcc == m_Accessions.end();}
 
@@ -73,7 +72,7 @@ private:
     CSeq_entry* x_ReadOneSeq(CBioseq_set& bioseq_set);
 
     /// Read one batch of sequences and mark pairs
-    void x_ReadPairs(CBioseq_set& bioseq_set, TSeqPos batch_size);
+    void x_ReadPairs(CBioseq_set& bioseq_set);
 
     /// Advance to the next SRA accession
     void x_NextAccession(void);

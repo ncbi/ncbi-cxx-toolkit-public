@@ -65,8 +65,7 @@ public:
 
     virtual ~CASN1InputSourceOMF() {}
 
-    virtual void GetNextSequenceBatch(CBioseq_set& bioseq_set,
-                                      TSeqPos batch_size);
+    virtual int GetNextSequence(CBioseq_set& bioseq_set);
 
     virtual bool End(void) {return m_InputStream->eof();}
 
@@ -79,10 +78,10 @@ private:
     CRef<CSeq_entry> x_ReadOneSeq(CNcbiIstream& instream);
 
     /// Read sequences from one stream
-    bool x_ReadFromSingleFile(CBioseq_set& bioseq_set, TSeqPos batch_size);
+    bool x_ReadFromSingleFile(CBioseq_set& bioseq_set);
 
     /// Read sequences from two streams
-    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, TSeqPos batch_size);
+    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set);
 
     /// Number of bases added so far
     TSeqPos m_BasesAdded;
