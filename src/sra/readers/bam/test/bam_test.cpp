@@ -449,12 +449,40 @@ int LowLevelTest()
     cout << "Success." << endl;
     return 0;
 }
+
+
+int LowLevelTestFile()
+{
+    const char* url = "https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam.bai";
+    //const char* url = "http://ftp.ensembl.org/pub/current_data_files/homo_sapiens/GRCh38/rnaseq/GRCh38.illumina.ovary.1.bam.bai";
+    cout << "Running LowLevelTestFile()." << endl
+         << "URL: " << url << endl;
+    VFSManager* mgr;
+    CALL(VFSManagerMake(&mgr));
+    VPath* path;
+    CALL(VFSManagerMakePath(mgr, &path, url));
+    const KFile* file;
+    CALL(VFSManagerOpenFileRead(mgr, &file, path));
+    uint64_t size;
+    CALL(KFileSize(file, &size));
+    char* buffer = new char[size];
+    CStopWatch sw(CStopWatch::eStart);
+    CALL(KFileReadExactly(file, 0, buffer, size-(0<<20)));
+    cout << "Loaded in "<<sw.Elapsed()<<" seconds"<<endl;
+    delete[] buffer;
+    CALL(KFileRelease(file));
+    CALL(VPathRelease(path));
+    CALL(VFSManagerRelease(mgr));
+    cout << "Success." << endl;
+    return 0;
+}
 #endif
 
 int CBAMTestApp::Run(void)
 {
 #ifdef CALL
-    return LowLevelTest();
+    //return LowLevelTest();
+    return LowLevelTestFile();
 #endif
 
     // Get arguments
