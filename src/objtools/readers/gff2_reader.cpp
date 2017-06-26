@@ -91,7 +91,6 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
 #include <objtools/error_codes.hpp>
