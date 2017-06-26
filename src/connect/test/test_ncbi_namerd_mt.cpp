@@ -58,33 +58,40 @@ private:
     static string           sm_Service;
     static string           sm_ToPost;
     static string           sm_Expected;
+    static string           sm_ThreadsPassed;
+    static string           sm_ThreadsFailed;
     static CTimeout         sm_Timeout;
     static unsigned short   sm_Retries;
+    static int              sm_CompleteThreads;
 };
 
 
 string          CTestApp::sm_Service;
 string          CTestApp::sm_ToPost;
 string          CTestApp::sm_Expected;
+string          CTestApp::sm_ThreadsPassed;
+string          CTestApp::sm_ThreadsFailed;
 CTimeout        CTestApp::sm_Timeout;
 unsigned short  CTestApp::sm_Retries;
+int             CTestApp::sm_CompleteThreads;
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
 {
-    args.AddKey("svc", "Service", "Name of service to use for I/O",
+    args.AddKey("service", "Service", "Name of service to use for I/O",
                 CArgDescriptions::eString);
 
     args.AddDefaultKey("post", "ToPost", "The data to send via POST (if any)",
                        CArgDescriptions::eString, "");
 
-    args.AddDefaultKey("exp", "Expected", "The expected output",
+    args.AddDefaultKey("expected", "Expected", "The expected output "
+                       "(if empty, expected = posted)",
                        CArgDescriptions::eString, "");
 
-    args.AddDefaultKey("t", "Timeout", "Timeout",
+    args.AddDefaultKey("timeout", "Timeout", "Timeout",
                        CArgDescriptions::eDouble, "60.0");
 
-    args.AddDefaultKey("r", "Retries", "Max HTTP retries",
+    args.AddDefaultKey("retries", "Retries", "Max HTTP retries",
                        CArgDescriptions::eInteger, "0");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(), "NAMERD MT test");
@@ -95,22 +102,31 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
 bool CTestApp::TestApp_Init(void)
 {
-    sm_Service = GetArgs()["svc"].AsString();
+    /* Get args as passed in. */
+    sm_Service = GetArgs()["service"].AsString();
+    if (sm_Service.empty()) {
+        ERR_POST(Critical << "Missing service.");
+        return false;
+    }
+    sm_ToPost   = GetArgs()["post"].AsString();
+    sm_Expected = GetArgs()["expected"].AsString();
+    sm_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
+    sm_Timeout.Set(GetArgs()["timeout"].AsDouble());
+
+    /* Set expected=posted if not given in args. */
+    if (sm_Expected.empty()) {
+        sm_Expected = sm_ToPost;
+    }
+
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
-
-    sm_ToPost = GetArgs()["post"].AsString();
     ERR_POST(Info << "ToPost:   '" << sm_ToPost << "'");
-
-    sm_Expected = GetArgs()["exp"].AsString();
     ERR_POST(Info << "Expected: '" << sm_Expected << "'");
-
-    sm_Timeout.Set(GetArgs()["t"].AsDouble());
     ERR_POST(Info << "Timeout:  " << sm_Timeout.GetAsDouble());
-
-    sm_Retries = static_cast<unsigned short>(GetArgs()["r"].AsInteger());
     ERR_POST(Info << "Retries:  " << sm_Retries);
 
-    return ! sm_Service.empty()  &&  ! sm_Expected.empty();
+    sm_CompleteThreads = 0;
+
+    return true;
 }
 
 
@@ -160,6 +176,24 @@ bool CTestApp::Thread_Run(int idx)
     }
 
     PopDiagPostPrefix();
+
+    if (retval) {
+        if ( ! sm_ThreadsPassed.empty()) {
+            sm_ThreadsPassed += ",";
+        }
+        sm_ThreadsPassed += id;
+    } else {
+        if ( ! sm_ThreadsFailed.empty()) {
+            sm_ThreadsFailed += ",";
+        }
+        sm_ThreadsFailed += id;
+    }
+    ERR_POST(Info << "Progress:          " << ++sm_CompleteThreads
+                  << " out of " << s_NumThreads << " threads complete.");
+    ERR_POST(Info << "Passed thread IDs: "
+                  << (sm_ThreadsPassed.empty() ? "(none)" : sm_ThreadsPassed));
+    ERR_POST(Info << "Failed thread IDs: "
+                  << (sm_ThreadsFailed.empty() ? "(none)" : sm_ThreadsFailed));
 
     return retval;
 }
