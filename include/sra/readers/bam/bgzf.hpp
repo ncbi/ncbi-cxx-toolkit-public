@@ -99,9 +99,13 @@ public:
 
     TPage GetPage(TFilePos pos);
 
+    pair<Uint8, double> GetReadStatistics() const;
+
 private:
-    void x_ReadPage(CPagedFilePage& page, TFilePos file_pos);
+    void x_AddReadStatistics(Uint8 bytes, double seconds);
     
+    void x_ReadPage(CPagedFilePage& page, TFilePos file_pos);
+
     CFastMutex m_Mutex;
     
     // three variants: direct file IO, memory mapped file, or VDB KFile
@@ -111,6 +115,9 @@ private:
 
     // cache for loaded pages
     CRef<TPageCache> m_PageCache;
+
+    volatile Uint8 m_TotalReadBytes;
+    volatile double m_TotalReadSeconds;
 };
 
 
@@ -291,8 +298,17 @@ public:
     CBGZFFile(const string& file_name);
     ~CBGZFFile();
 
+    pair<Uint8, double> GetReadStatistics() const
+        {
+            return m_File->GetReadStatistics();
+        }
+
+    pair<Uint8, double> GetUncompressStatistics() const;
+
 protected:
     friend class CBGZFStream;
+
+    void x_AddUncompressStatistics(Uint8 bytes, double seconds);
 
     typedef CBGZFPos::TFileBlockPos TFileBlockPos;
     typedef CCacheWithLock<TFileBlockPos, CBGZFBlock> TBlockCache;
@@ -310,6 +326,11 @@ protected:
 private:
     CRef<CPagedFile> m_File;
     CRef<TBlockCache> m_BlockCache;
+
+    CFastMutex m_Mutex;
+    
+    volatile Uint8 m_TotalUncompressBytes;
+    volatile double m_TotalUncompressSeconds;
 };
 
 

@@ -51,14 +51,9 @@ NCBI_PARAM_DEF_EX(int, BGZF, DEBUG, 0, eParam_NoThread, BGZF_DEBUG);
 
 static int s_GetDebug(void)
 {
-    return NCBI_PARAM_TYPE(BGZF, DEBUG)::GetDefault();
+    static int value = NCBI_PARAM_TYPE(BGZF, DEBUG)::GetDefault();
+    return value;
 }
-
-
-static double s_ReadSize;
-static double s_ReadTime;
-static double s_UnzipSize;
-static double s_UnzipTime;
 
 
 enum EFileMode {
@@ -107,7 +102,9 @@ CPagedFilePage::~CPagedFilePage()
 
 
 CPagedFile::CPagedFile(const string& file_name)
-    : m_PageCache(new TPageCache(10))
+    : m_PageCache(new TPageCache(10)),
+      m_TotalReadBytes(0),
+      m_TotalReadSeconds(0)
 {
     switch ( kFileMode ) {
     case eUseFileIO:
@@ -127,11 +124,9 @@ CPagedFile::CPagedFile(const string& file_name)
 
 CPagedFile::~CPagedFile()
 {
-    if ( s_ReadSize ) {
-        LOG_POST("BGZF: Total read "<<s_ReadSize/(1<<20)<<" MB speed: "<<s_ReadSize/(s_ReadTime*(1<<20))<<" MB/s");
-    }
-    if ( s_UnzipSize ) {
-        LOG_POST("BGZF: Total decompressed "<<s_UnzipSize/(1<<20)<<" MB speed: "<<s_UnzipSize/(s_UnzipTime*(1<<20))<<" MB/s");
+    if ( s_GetDebug() >= 1 && m_TotalReadBytes ) {
+        LOG_POST("BGZF: Total read "<<m_TotalReadBytes/double(1<<20)<<" MB"
+                 " speed: "<<m_TotalReadBytes/(m_TotalReadSeconds*(1<<20))<<" MB/s");
     }
 }
 
@@ -151,6 +146,26 @@ CPagedFile::TPage CPagedFile::GetPage(TFilePos file_pos)
 }
 
 
+pair<Uint8, double> CPagedFile::GetReadStatistics() const
+{
+    Uint8 bytes;
+    double seconds;
+    do {
+        bytes = m_TotalReadBytes;
+        seconds = m_TotalReadSeconds;
+    } while ( bytes != m_TotalReadBytes );
+    return make_pair(bytes, seconds);
+}
+
+
+void CPagedFile::x_AddReadStatistics(Uint8 bytes, double seconds)
+{
+    CFastMutexGuard guard(m_Mutex);
+    m_TotalReadBytes += bytes;
+    m_TotalReadSeconds += seconds;
+}
+
+
 void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
 {
     size_t size = kSegmentSize;
@@ -163,11 +178,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
         char* dst = page.m_Buffer.data();
         size_t rem = size;
         {
-            bool trace = s_GetDebug() >= 1;
-            CStopWatch sw;
-            if (trace) {
-                sw.Start();
-            }
+            CStopWatch sw(CStopWatch::eStart);
             if ( m_VDBFile ) {
                 size_t cnt = m_VDBFile.ReadAll(file_pos, dst, rem);
                 rem -= cnt;
@@ -186,13 +197,13 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
                     dst += cnt;
                 }
             }
-            if (trace) {
-                double t = sw.Elapsed();
-                s_ReadSize += size-rem;
-                s_ReadTime += t;
+            double bytes = size-rem;
+            double seconds = sw.Elapsed();
+            x_AddReadStatistics(bytes, seconds);
+            if ( s_GetDebug() >= 5 ) {
                 LOG_POST(Info<<"BGZF: Read page "<<file_pos/kSegmentSize<<
-                         " @ "<<file_pos<<" in "<<t<<" sec"
-                         " speed: "<<(size-rem)/(t*(1<<20))<<" MB/s");
+                         " @ "<<file_pos<<" in "<<seconds<<" sec"
+                         " speed: "<<bytes/(seconds*(1<<20))<<" MB/s");
             }
         }
         if (rem) {
@@ -301,13 +312,19 @@ CBGZFBlock::~CBGZFBlock()
 
 CBGZFFile::CBGZFFile(const string& file_name)
     : m_File(new CPagedFile(file_name)),
-      m_BlockCache(new TBlockCache(10))
+      m_BlockCache(new TBlockCache(10)),
+      m_TotalUncompressBytes(0),
+      m_TotalUncompressSeconds(0)
 {
 }
 
 
 CBGZFFile::~CBGZFFile()
 {
+    if ( s_GetDebug() >= 1 && m_TotalUncompressBytes ) {
+        LOG_POST("BGZF: Total decompressed "<<m_TotalUncompressBytes/double(1<<20)<<" MB"
+                 " speed: "<<m_TotalUncompressBytes/(m_TotalUncompressSeconds*(1<<20))<<" MB/s");
+    }
 }
 
 
@@ -325,6 +342,26 @@ CBGZFFile::TBlock CBGZFFile::GetBlock(TFileBlockPos file_pos,
         }
     }
     return block;
+}
+
+
+pair<Uint8, double> CBGZFFile::GetUncompressStatistics() const
+{
+    Uint8 bytes;
+    double seconds;
+    do {
+        bytes = m_TotalUncompressBytes;
+        seconds = m_TotalUncompressSeconds;
+    } while ( bytes != m_TotalUncompressBytes );
+    return make_pair(bytes, seconds);
+}
+
+
+void CBGZFFile::x_AddUncompressStatistics(Uint8 bytes, double seconds)
+{
+    CFastMutexGuard guard(m_Mutex);
+    m_TotalUncompressBytes += bytes;
+    m_TotalUncompressSeconds += seconds;
 }
 
 
@@ -407,8 +444,6 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
     
     CBGZFPos::TFileBlockPos file_pos = file_pos0;
 
-    bool trace = s_GetDebug() >= 2;
-    
     // parse header
     char header_tmp[kFixedHeaderSize + kInitialExtraSize];
     const char* header =
@@ -482,10 +517,7 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
     // decompress data
     size_t decompressed_size = 0;
     {
-        CStopWatch sw;
-        if ( trace ) {
-            sw.Start();
-        }
+        CStopWatch sw(CStopWatch::eStart);
         
         const char* src = compressed_data;
         size_t src_size = compressed_size;
@@ -516,14 +548,13 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
             }
             inflateEnd(&stream);
         }
-        
-        if ( trace ) {
-            double t = sw.Elapsed();
-            s_UnzipSize += compressed_size;
-            s_UnzipTime += t;
+
+        double seconds = sw.Elapsed();
+        x_AddUncompressStatistics(compressed_size, seconds);
+        if ( s_GetDebug() >= 5 ) {
             LOG_POST(Info<<"BGZF: Decompressed block"
-                     " @ "<<file_pos0<<" in "<<t<<" sec"
-                     " speed: "<<compressed_size/(t*(1<<20))<<" MB/s");
+                     " @ "<<file_pos0<<" in "<<seconds<<" sec"
+                     " speed: "<<compressed_size/(seconds*(1<<20))<<" MB/s");
         }
     }
     

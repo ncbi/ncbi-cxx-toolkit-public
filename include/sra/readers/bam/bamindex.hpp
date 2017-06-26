@@ -363,9 +363,16 @@ public:
             return GetRef(ref_index).EstimateDataSizeByAlnStartPos();
         }
 
+    pair<Uint8, double> GetReadStatistics() const
+        {
+            return make_pair(m_TotalReadBytes, m_TotalReadSeconds);
+       }
+
 private:
     TRefs m_Refs;
     Uint8 m_UnmappedCount;
+    Uint8 m_TotalReadBytes;
+    double m_TotalReadSeconds;
 };
 
 
@@ -580,6 +587,8 @@ public:
             size_t ref_index = GetRefIndex(ref_label);
             return GetIndex().GetRef(ref_index).EstimateDataSizeByAlnStartPos(GetRefSeqLength(ref_index));
         }
+
+    double GetEstimatedSecondsPerByte() const;
     
 private:
     CRef<CBGZFFile> m_File;

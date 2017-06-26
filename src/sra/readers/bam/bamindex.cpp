@@ -58,6 +58,16 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
+NCBI_PARAM_DECL(int, BAM, DEBUG);
+NCBI_PARAM_DEF_EX(int, BAM, DEBUG, 0, eParam_NoThread, BAM_DEBUG);
+
+
+static int s_GetDebug(void)
+{
+    static int value = NCBI_PARAM_TYPE(BAM, DEBUG)::GetDefault();
+    return value;
+}
+
 
 static const float kEstimatedCompression = 0.25;
 
@@ -905,13 +915,17 @@ static size_t ReadVDBFile(AutoArray<char>& data, const string& path)
 
 
 CBamIndex::CBamIndex()
-    : m_UnmappedCount(0)
+    : m_UnmappedCount(0),
+      m_TotalReadBytes(0),
+      m_TotalReadSeconds(0)
 {
 }
 
 
 CBamIndex::CBamIndex(const string& index_file_name)
-    : m_UnmappedCount(0)
+    : m_UnmappedCount(0),
+      m_TotalReadBytes(0),
+      m_TotalReadSeconds(0)
 {
     Read(index_file_name);
 }
@@ -928,14 +942,15 @@ void CBamIndex::Read(const string& index_file_name)
     m_UnmappedCount = 0;
 
     AutoArray<char> data;
+    CStopWatch sw(CStopWatch::eStart);
     size_t size = ReadVDBFile(data, index_file_name);
-    if ( 1 ) {
-        Read(data.get(), size);
+    m_TotalReadBytes = size;
+    m_TotalReadSeconds = sw.Elapsed();
+    if ( s_GetDebug() >= 1 ) {
+        LOG_POST("BAM: read index "<<size/double(1<<20)<<" MB"
+                 " speed: "<<size/(m_TotalReadSeconds*(1<<20))<<" MB/s");
     }
-    else {
-        istrstream in(data.get(), size);
-        Read(in);
-    }
+    Read(data.get(), size);
 }
 
 
@@ -1454,6 +1469,34 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
     m_File = new CBGZFFile(bam_path);
     CBGZFStream stream(*m_File);
     m_Header.Read(stream);
+}
+
+
+double CBamRawDb::GetEstimatedSecondsPerByte() const
+{
+    // adjustments
+    const double index_read_weight = 10;
+    const Uint8 add_read_bytes = 100000; // 100KB
+    const double add_read_bytes_per_second = 80e6; // 80 MBps
+    const Uint8 add_unzip_bytes = 100000; // 100KB
+    const double add_unzip_bytes_per_second = 80e6; // 80 MBps
+    
+    pair<Uint8, double> index_read_stat = m_Index.GetReadStatistics();
+    pair<Uint8, double> data_read_stat = m_File->GetReadStatistics();
+    pair<Uint8, double> data_unzip_stat = m_File->GetUncompressStatistics();
+    Uint8 read_bytes =
+        index_read_stat.first*index_read_weight +
+        data_read_stat.first +
+        add_read_bytes;
+    double read_seconds =
+        index_read_stat.second*index_read_weight +
+        data_read_stat.second +
+        add_read_bytes/add_read_bytes_per_second;
+    
+    Uint8 unzip_bytes = data_unzip_stat.first + add_unzip_bytes;
+    double unzip_seconds = data_unzip_stat.second + add_unzip_bytes/add_unzip_bytes_per_second;
+
+    return read_seconds/read_bytes + unzip_seconds/unzip_bytes;
 }
 
 
