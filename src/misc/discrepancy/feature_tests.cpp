@@ -270,25 +270,29 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
         bool gene_partial_start = (*gene)->GetLocation().IsPartialStart(eExtreme_Biological);
         bool gene_partial_stop = (*gene)->GetLocation().IsPartialStop(eExtreme_Biological);
         const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
+        const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
         const CSeq_loc& loc = (*gene)->GetLocation();
         bool found = false;
         ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
             if ((*feat)->GetData().IsCdregion() || (*feat)->GetData().IsRna()) {
                 string ref_gene_locus;
+                string ref_locus_tag;
                 const CGene_ref* gene_ref = (*feat)->GetGeneXref();
                 const CSeq_loc& loc_f = (*feat)->GetLocation();
                 sequence::ECompare cmp = context.Compare(loc, loc_f);
                 if (cmp == sequence::eSame || cmp == sequence::eContains) {
                     if (gene_ref) {
                         ref_gene_locus = gene_ref->IsSetLocus() ? gene_ref->GetLocus() : kEmptyStr;
+                        ref_locus_tag = gene_ref->IsSetLocus_tag() ? gene_ref->GetLocus_tag() : kEmptyStr;
                     }
                     else {
                         CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
                         if (gene.NotEmpty()) {
                             ref_gene_locus = (gene->GetData().GetGene().CanGetLocus()) ? gene->GetData().GetGene().GetLocus() : kEmptyStr;
+                            ref_locus_tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
                         }
                     }
-                    if (ref_gene_locus.empty() || ref_gene_locus == locus) {
+                    if ((ref_gene_locus.empty() || ref_gene_locus == locus) && (ref_locus_tag.empty() || ref_locus_tag == locus_tag)) {
                         bool exclude_for_partials = false;
                         //bool location_appropriate = cmp == sequence::eSame || cmp == sequence::eContains;
                         if (cmp == sequence::eSame) {
