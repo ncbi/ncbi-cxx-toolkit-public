@@ -33,7 +33,7 @@ test_text="param1%3Dval1%26param2%3D%22line+1%0Aline+2%0A%22"
 
 : ${CHECK_TIMEOUT:=600}
 if test -n "$CHECK_EXEC"; then
-    $CHECK_EXEC test_ncbi_namerd_mt -t $CHECK_TIMEOUT -threads $nthreads -svc $svc -post "$test_text" -exp "$test_text"
+    $CHECK_EXEC test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text"
 else
-    ./test_ncbi_namerd_mt -t $CHECK_TIMEOUT -threads $nthreads -svc $svc -post "$test_text" -exp "$test_text"
+    ./test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text"
 fi
