@@ -29,6 +29,7 @@ html$
 connect$
 connect/services
 -connect/services/test
+connect/mbedtls
 connect/ext$
 util$
 util/creaders$
