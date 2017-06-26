@@ -66,6 +66,10 @@ CAliasTypeStrings::~CAliasTypeStrings(void)
 CAliasTypeStrings::EKind CAliasTypeStrings::GetKind(void) const
 {
     if (DataType() && DataType()->IsTypeAlias()) {
+        EKind kind = m_RefType->GetKind();
+        if (kind == eKindStd || kind == eKindEnum || kind == eKindString) {
+            return eKindClass;
+        }
         return eKindObject;
     }
     return eKindOther;
@@ -123,7 +127,13 @@ string CAliasTypeStrings::NewInstance(const string& init,
 
 string CAliasTypeStrings::GetInitializer(void) const
 {
-    return m_RefType->GetInitializer();
+    string r = m_RefType->GetInitializer();
+    CTypeStrings::EKind kind = m_RefType->GetKind();
+    if (!r.empty() && kind != eKindClass && kind != eKindObject)
+    {
+        r = GetClassName() + "(" + r + ")";
+    }
+    return r;
 }
 
 string CAliasTypeStrings::GetDestructionCode(const string& expr) const
@@ -236,14 +246,16 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "Invalid aliased type: " + ref_name);
     }
 
-
     if (m_Nested && type_alias && !mem_alias && !DataType()->HasTag() &&
         !DataType()->IsInUniSeq() &&
         DataType()->GetTagType() == CAsnBinaryDefs::eAutomatic)
     {
-        m_RefType->GenerateTypeCode(ctx);
-        code.SetEmptyClassCode();
-        return;
+        bool is_std = kind == eKindStd || kind == eKindEnum || kind == eKindString || kind == eKindOther;
+        if (!is_std) {
+            m_RefType->GenerateTypeCode(ctx);
+            code.SetEmptyClassCode();
+            return;
+        }
     }
 
     string parentNamespaceRef =
@@ -371,7 +383,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
                       kind == eKindString || kind == eKindPointer;
         code.MethodStart(true) <<
             "NCBI_NS_NCBI::CNcbiOstream& operator<<\n" <<
-            "(NCBI_NS_NCBI::CNcbiOstream& str, const " << className << "& obj)\n" <<
+            "(NCBI_NS_NCBI::CNcbiOstream& str, const " << (m_Nested ? classFullName : className) << "& obj)\n" <<
             "{\n";
         if (kindIO) {
             code.Methods(true) <<
@@ -387,7 +399,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         code.Methods(true) << "}\n\n";
         code.MethodStart(true) <<
             "NCBI_NS_NCBI::CNcbiIstream& operator>>\n" <<
-            "(NCBI_NS_NCBI::CNcbiIstream& str, " << className << "& obj)\n" <<
+            "(NCBI_NS_NCBI::CNcbiIstream& str, " << (m_Nested ? classFullName : className) << "& obj)\n" <<
             "{\n";
         if (kindIO) {
             code.Methods(true) <<
@@ -608,6 +620,12 @@ void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& /* out */) const
 
 void CAliasTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
+    if (DataType()->IsTypeAlias()) {
+        m_Nested = true;
+        GenerateCode(ctx);
+        m_Nested = false;
+        return;
+    }
     m_RefType->GenerateTypeCode(ctx);
 }
 

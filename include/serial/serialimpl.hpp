@@ -609,6 +609,11 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     NCBI_NAME2(ClassName,_Base), \
     SERIAL_ALIAS(RefType), RefCode)
 
+#define BEGIN_NESTED_ENUM_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
+    BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName, ClassName, \
+    ClassName, \
+    SERIAL_ALIAS(RefType), RefCode)
+
 #define SET_STD_ALIAS_DATA_PTR \
     info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(GetDataPtr(BASE_OBJECT())))
 #define SET_CLASS_ALIAS_DATA_PTR \
