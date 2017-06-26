@@ -222,10 +222,6 @@ public:
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
                             
-    virtual bool x_FeatureSetId(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
     bool x_FeatureSetQualifiers(
         const CGff2Record&,
         CRef< CSeq_feat > );
@@ -247,35 +243,6 @@ public:
         const CGff2Record&,
         CRef< CSeq_feat > );
     
-    bool x_FeatureSetGffInfo(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-    
-    bool x_FeatureSetData(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-    
-    virtual bool x_FeatureSetDataGene(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
-    virtual bool x_FeatureSetDataRna(
-        const CGff2Record&,
-        CRef< CSeq_feat >,
-        CSeqFeatData::ESubtype );
-
-    virtual bool x_FeatureSetDataCDS(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
-    bool x_FeatureSetDataExon(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
-    bool x_FeatureSetDataMiscFeature(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
     bool x_GetFeatureById(
         const string&,
         CRef< CSeq_feat >& );

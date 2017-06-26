@@ -154,6 +154,11 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
 
+    virtual bool x_FeatureSetDataRna(
+        const CGff2Record&,
+        CRef< CSeq_feat >,
+        CSeqFeatData::ESubtype );
+
     bool x_FeatureSetDataMRNA(
         const CGff2Record&,
         CRef< CSeq_feat > );

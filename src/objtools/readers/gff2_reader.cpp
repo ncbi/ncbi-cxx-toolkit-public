@@ -980,33 +980,7 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_feat > pFeature( new CSeq_feat );
-
-    if ( ! x_FeatureSetId( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetData( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetGffInfo( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
-        return false;
-    }
-    if (!xAddFeatureToAnnot( pFeature, pAnnot )) {
-        return false;
-    }
-    string strId;
-    if (gff.GetAttribute("ID", strId) ) {
-        if (m_MapIdToFeature.find(strId) == m_MapIdToFeature.end()) {
-            m_MapIdToFeature[strId] = pFeature;
-        }
-    }
-    return true;
+    return false;
 }
 
 
@@ -1552,19 +1526,6 @@ bool CGff2Reader::xAlignmentSetScore(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetId(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    string strId;
-    if ( record.GetAttribute( "ID", strId ) ) {
-        pFeature->SetId().SetLocal().SetStr( strId );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_FeatureSetLocation(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
@@ -1682,132 +1643,6 @@ bool CGff2Reader::xFeatureSetQualifier(
         return false;
     }
     pTargetFeature->AddOrReplaceQualifier(key, value);
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetGffInfo(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    CRef< CUser_object > pGffInfo( new CUser_object );
-    pGffInfo->SetType().SetStr( "gff-info" );    
-    pGffInfo->AddField( "gff-attributes", record.AttributesLiteral() );
-    pGffInfo->AddField( "gff-start", NStr::NumericToString( record.SeqStart() ) );
-    pGffInfo->AddField( "gff-stop", NStr::NumericToString( record.SeqStop() ) );
-    pGffInfo->AddField( "gff-cooked", string( "false" ) );
-
-    pFeature->SetExts().push_back( pGffInfo );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetData(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature)
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Do something with the phase information --- but only for CDS features!
-    //
-
-    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(
-        record.Type());
-
-    switch(iGenbankType) {
-    default:
-        return x_FeatureSetDataMiscFeature(record, pFeature);
-
-    case CSeqFeatData::eSubtype_cdregion:
-        return x_FeatureSetDataCDS(record, pFeature);
-    case CSeqFeatData::eSubtype_exon:
-        return x_FeatureSetDataExon(record, pFeature);
-    case CSeqFeatData::eSubtype_gene:
-        return x_FeatureSetDataGene(record, pFeature);
-    case CSeqFeatData::eSubtype_mRNA:
-    case CSeqFeatData::eSubtype_rRNA:
-    case CSeqFeatData::eSubtype_ncRNA:
-    case CSeqFeatData::eSubtype_preRNA:
-    case CSeqFeatData::eSubtype_scRNA:
-    case CSeqFeatData::eSubtype_snRNA:
-    case CSeqFeatData::eSubtype_snoRNA:
-    case CSeqFeatData::eSubtype_tRNA:
-    case CSeqFeatData::eSubtype_tmRNA:
-        return x_FeatureSetDataRna(record, pFeature, iGenbankType);
-    }    
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataGene(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    pFeature->SetData().SetGene();
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataRna(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature,
-    CSeqFeatData::ESubtype subType)
-//  ----------------------------------------------------------------------------
-{
-    CRNA_ref& rnaRef = pFeature->SetData().SetRna();
-    switch (subType){
-        default:
-            rnaRef.SetType(CRNA_ref::eType_miscRNA);
-            break;
-        case CSeqFeatData::eSubtype_mRNA:
-            rnaRef.SetType(CRNA_ref::eType_mRNA);
-            break;
-        case CSeqFeatData::eSubtype_rRNA:
-            rnaRef.SetType(CRNA_ref::eType_rRNA);
-            break;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataCDS(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    pFeature->SetData().SetCdregion();
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataExon(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    CSeqFeatData& data = pFeature->SetData();
-    data.SetImp().SetKey( "exon" );
-    
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureSetDataMiscFeature(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature )
-//  ----------------------------------------------------------------------------
-{
-    CSeqFeatData& data = pFeature->SetData();
-    data.SetImp().SetKey( "misc_feature" );
-    if ( record.IsSetPhase() ) {
-        CRef< CGb_qual > pQual( new CGb_qual );
-        pQual->SetQual( "gff_phase" );
-        pQual->SetVal( NStr::UIntToString( record.Phase() ) );
-        pFeature->SetQual().push_back( pQual );
-    }  
-    
     return true;
 }
 

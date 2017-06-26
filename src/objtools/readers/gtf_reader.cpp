@@ -813,10 +813,6 @@ bool CGtfReader::x_FeatureSetDataGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff2Reader::x_FeatureSetDataGene( record, pFeature ) ) {
-        return false;
-    }
-
     CGene_ref& gene = pFeature->SetData().SetGene();
 
     string strValue;
@@ -836,8 +832,7 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     CRef<CSeq_feat> pFeature)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff2Reader::x_FeatureSetDataRna( 
-            record, pFeature, CSeqFeatData::eSubtype_mRNA)) {
+    if ( !x_FeatureSetDataRna( record, pFeature, CSeqFeatData::eSubtype_mRNA)) {
         return false;
     }
     
@@ -852,15 +847,33 @@ bool CGtfReader::x_FeatureSetDataMRNA(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureSetDataRna(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature,
+    CSeqFeatData::ESubtype subType)
+//  ----------------------------------------------------------------------------
+{
+    CRNA_ref& rnaRef = pFeature->SetData().SetRna();
+    switch (subType){
+        default:
+            rnaRef.SetType(CRNA_ref::eType_miscRNA);
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            rnaRef.SetType(CRNA_ref::eType_mRNA);
+            break;
+        case CSeqFeatData::eSubtype_rRNA:
+            rnaRef.SetType(CRNA_ref::eType_rRNA);
+            break;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataCDS(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! CGff2Reader::x_FeatureSetDataCDS( record, pFeature ) ) {
-        return false;
-    }
-
     CCdregion& cdr = pFeature->SetData().SetCdregion();
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
