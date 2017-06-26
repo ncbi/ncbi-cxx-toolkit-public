@@ -287,8 +287,6 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
 {
     TErrorList errors;
 
-    CField_rule::TSeverity sev;
-
     CField_set::Tdata::const_iterator field_rule = GetFields().Get().begin();
     CUser_object::TData::const_iterator field = user.GetData().begin();
     while (field_rule != GetFields().Get().end()
