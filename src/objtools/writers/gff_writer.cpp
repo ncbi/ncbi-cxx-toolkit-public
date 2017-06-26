@@ -54,6 +54,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
@@ -169,6 +170,10 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     if (seh.IsSeq()) {
         return x_WriteBioseqHandle(seh.GetSeq());
     }
+
+    
+    const auto& display_range = GetRange();
+
     SAnnotSelector sel;
     sel.SetMaxSize(1);
     for (CAnnot_CI aci(seh, sel); aci; ++aci) {
@@ -181,9 +186,16 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
                 x_WriteSequenceHeader(currentId);
                 lastId = currentId;
             }
-            //HERE!
-            if ( ! xWriteFeature( fc, *fit ) ) {
-                return false;
+                
+            if (!display_range.IsWhole()) {
+                CMappedFeat mapped_feat = *fit;
+                if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
+                    return false;
+                }
+            } 
+            else 
+            if (!xWriteFeature(fc, *fit)) {
+                    return false;
             }
         }
     }
@@ -218,14 +230,26 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
-    auto range = GetRange();
+    const auto& range = GetRange();
     CFeat_CI feat_iter(bsh, range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
-    for (;  feat_iter; ++feat_iter) {
-        if (!xWriteFeature(fc, *feat_iter)) {
+
+    if (range.IsWhole()) {
+        for (;  feat_iter; ++feat_iter) {
+            if (!xWriteFeature(fc, *feat_iter)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Range not whole. Features may need to be trimmed
+    for (; feat_iter; ++feat_iter) {
+        CMappedFeat mapped_feat = *feat_iter;
+        if (!xTrimWriteFeature(fc, mapped_feat, range)) {
             return false;
         }
-    } 
+    }
     return true;
 }
 
@@ -264,8 +288,41 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
+
+    const auto& display_range = GetRange();
+    if (!display_range.IsWhole()) {
+        for(; feat_iter; ++feat_iter) {
+            CMappedFeat mapped_feat = *feat_iter;
+            if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! xWriteFeature( fc, *feat_iter ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xTrimWriteFeature(
+        CGffFeatureContext& fc, 
+        CMappedFeat& mapped_feat, 
+        const CRange<TSeqPos>& range) 
+//  ----------------------------------------------------------------------------
+{
+    if (mapped_feat.GetTotalRange().IntersectionWith(range).NotEmpty()) {
+        CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
+        CSeq_feat_EditHandle sfeh(sfh);
+        CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mapped_feat.GetOriginalSeq_feat(), range);
+        sfeh.Replace(*trimmed_feat);
+
+        if (!xWriteFeature(fc, mapped_feat)) {
             return false;
         }
     }

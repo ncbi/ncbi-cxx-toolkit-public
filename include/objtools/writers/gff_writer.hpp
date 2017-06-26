@@ -218,6 +218,11 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
+    bool xTrimWriteFeature(
+        CGffFeatureContext& context,
+        CMappedFeat& mapped_feat,
+        const CRange<TSeqPos>& range);
+
     virtual bool x_WriteAssemblyInfo(
         const string&,
         const string& );

@@ -83,19 +83,19 @@ protected:
         CFeat_CI feat_it) override;
 
     bool x_WriteFeature(
-        CMappedFeat );
+        const CMappedFeat& );
 
     bool x_WriteFeatureChrom(
-        CMappedFeat );
+        const CMappedFeat& );
         
     bool x_WriteFeaturePos(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int start,
         const int type
         );
         
     bool x_WriteFeatureId(
-        CMappedFeat );
+        const CMappedFeat& );
         
     bool x_WriteFeatureRef(
         const unsigned int start,
@@ -113,16 +113,16 @@ protected:
         );
         
     bool x_WriteFeatureQual(
-        CMappedFeat);
+        const CMappedFeat&);
         
     bool x_WriteFeatureFilter(
-        CMappedFeat );
+        const CMappedFeat& );
         
     bool x_WriteFeatureInfo(
-        CMappedFeat );
+        const CMappedFeat& );
         
     bool x_WriteFeatureGenotypeData(
-        CMappedFeat );
+        const CMappedFeat& );
 
     CScope& m_Scope;
     vector<string> m_GenotypeHeaders;

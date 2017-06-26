@@ -54,6 +54,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/variation/variation_utils.hpp>
 #include <objtools/writers/writer_exception.hpp>
@@ -123,6 +124,7 @@ bool CVcfWriter::WriteAnnot(
     annot->Assign(orig_annot);
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( *annot );
     SAnnotSelector sel = SetAnnotSelector();
+
     CFeat_CI mf(sah, sel);
     for ( ; mf; ++mf ) 
     {
@@ -281,9 +283,29 @@ bool CVcfWriter::x_WriteData(
 
     CFeat_CI fi(sah, sel);
 
-    for ( ; fi; ++fi ) {
-        if ( ! x_WriteFeature(*fi) ) {
-            return false;
+    const auto& range = GetRange();
+
+    if (range.IsWhole()) {
+        for ( ; fi; ++fi ) {
+            if ( ! x_WriteFeature(*fi) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    for (; fi; ++fi) {
+        CMappedFeat mapped_feat = *fi;
+        if (mapped_feat.GetTotalRange().IntersectionWith(range).NotEmpty()) { // This code should be moved into the writer base class
+            CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
+            CSeq_feat_EditHandle sfeh(sfh);
+            CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mapped_feat.GetOriginalSeq_feat(), range);
+            sfeh.Replace(*trimmed_feat);
+           
+            if (!x_WriteFeature(mapped_feat)) {
+                return false;
+            }
         }
     }
     return true;
@@ -338,7 +360,7 @@ bool CVcfWriter::xWriteFeature(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeature(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 { 
 
@@ -454,7 +476,7 @@ bool CVcfWriter::x_WriteFeature(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureChrom(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string id;
@@ -512,7 +534,7 @@ enum EType {
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeaturePos(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     unsigned int start,
     const int type
     )
@@ -529,7 +551,7 @@ bool CVcfWriter::x_WriteFeaturePos(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureId(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
@@ -642,7 +664,7 @@ bool CVcfWriter::x_WriteFeatureAlt(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureQual(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string score = ".";
@@ -666,7 +688,7 @@ bool CVcfWriter::x_WriteFeatureQual(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureFilter(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
@@ -693,7 +715,7 @@ bool CVcfWriter::x_WriteFeatureFilter(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureInfo(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     typedef CVariantProperties VP;
@@ -910,7 +932,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureGenotypeData(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (m_GenotypeHeaders.empty()) {

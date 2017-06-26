@@ -71,6 +71,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
@@ -79,7 +80,6 @@
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
-#include <objmgr/util/feature_edit.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -374,23 +374,19 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
 
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
-    for ( /*0*/; feat_iter; ++feat_iter ) {
 
-        if (!display_range.IsWhole()) {
-            // Put the range restriction here
+    if (!display_range.IsWhole()) {
+        for(; feat_iter; ++feat_iter) {
             CMappedFeat mapped_feat = *feat_iter;
-            if (mapped_feat.GetTotalRange().IntersectionWith(display_range).NotEmpty()) {
-                CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
-                CSeq_feat_EditHandle sfeh(sfh);
-                CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mapped_feat.GetOriginalSeq_feat(), display_range);
-                sfeh.Replace(*trimmed_feat);
-
-                if (!xWriteFeature(fc, mapped_feat)) {
-                    return false;
-                }
+            if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
+                return false;
             }
         }
-        else
+        return true;
+    }
+
+
+    for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! xWriteFeature( fc, *feat_iter ) ) {
             return false;
         }
@@ -1353,14 +1349,9 @@ bool CGff3Writer::x_WriteBioseqHandle(
     std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
-        if (!display_range.IsWhole() &&
-            mRoot.GetTotalRange().IntersectionWith(display_range).NotEmpty()) {
-            CSeq_feat_Handle sfh = mRoot.GetSeq_feat_Handle();
-            CSeq_feat_EditHandle sfeh(sfh);
-            CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mRoot.GetOriginalSeq_feat(), display_range);
-            sfeh.Replace(*trimmed_feat);
-        
-            if (!xWriteFeature(fc, mRoot)) {
+
+        if (!display_range.IsWhole()) {
+            if(!xTrimWriteFeature(fc, mRoot, display_range)) {
                 return false;
             }
         }
@@ -1412,15 +1403,8 @@ bool CGff3Writer::xWriteAllChildren(
     featTree.GetChildrenTo(mf, vChildren);
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
-        if (!display_range.IsWhole() &&
-            mChild.GetTotalRange().IntersectionWith(display_range).NotEmpty()) {
-
-            CSeq_feat_Handle sfh = mChild.GetSeq_feat_Handle();
-            CSeq_feat_EditHandle sfeh(sfh);
-            CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mChild.GetOriginalSeq_feat(), display_range);
-            sfeh.Replace(*trimmed_feat);
-
-            if (!xWriteFeature(fc, mChild)) {
+        if (!display_range.IsWhole()) {
+            if (!xTrimWriteFeature(fc, mChild, display_range)) {
                 return false;
             }
         }
