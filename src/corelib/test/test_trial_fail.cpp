@@ -88,40 +88,50 @@ public:
 
 int CTestApplication::Run(void)
 {
-#if defined(NCBI_STRICT_GI)
-#  define NCBI_N_TESTS 6
-#else
-#  define NCBI_N_TESTS 5
-#endif
+#if defined(NCBI_RANDOM_VALUE_1)
 
-#define NCBI_RANDOM_SLICE (NCBI_RANDOM_VALUE_MAX - NCBI_RANDOM_VALUE_MIN) / NCBI_N_TESTS
-#define NCBI_RANDOM_BOUNDARY(n)  (NCBI_RANDOM_VALUE_MIN + n * NCBI_RANDOM_SLICE)
+#  if defined(NCBI_STRICT_GI)
+#    define NCBI_N_TESTS 6
+#  else
+#    define NCBI_N_TESTS 5
+#  endif
 
-#if   NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(1)
+#  define NCBI_RANDOM_SLICE (NCBI_RANDOM_VALUE_MAX - NCBI_RANDOM_VALUE_MIN) / NCBI_N_TESTS
+#  define NCBI_RANDOM_BOUNDARY(n)  (NCBI_RANDOM_VALUE_MIN + n * NCBI_RANDOM_SLICE)
+
+#  if   NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(1)
     _ASSERT(toupper('A' == 'A'));
 
-#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(2)
+#  elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(2)
     toupper('A' == 'A');
 
-#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(3)
+#  elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(3)
     toupper(1.);
 
-#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(4)
+#  elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(4)
     toupper("string");
 
-#elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(5)
+#  elif NCBI_RANDOM_VALUE_1 < NCBI_RANDOM_BOUNDARY(5)
     toupper(nullptr);
 
-#elif defined(NCBI_STRICT_GI)
+#  elif defined(NCBI_STRICT_GI)
     Int4 int4_gi = 123;
     TGi gi = int4_gi;  // must fail in the "Strict GI" mode!
 
-#elif NCBI_RANDOM_BOUNDARY(5) <= NCBI_RANDOM_VALUE_1  &&  NCBI_RANDOM_VALUE_1 <= NCBI_RANDOM_VALUE_MAX
+#  elif NCBI_RANDOM_BOUNDARY(5) <= NCBI_RANDOM_VALUE_1  &&  NCBI_RANDOM_VALUE_1 <= NCBI_RANDOM_VALUE_MAX
     toupper("catch-all");  // catch the reminder
-#endif
+#  endif
 
-    NcbiCout << "Passed (BUT IT SHOULD NOT HAVE EVEN COMPILED. BAD!!!)"
+    NcbiCerr << "Passed (BUT IT SHOULD NOT HAVE EVEN COMPILED. BAD!!!) "
+             << NcbiEndl
+             << "NCBI_RANDOM_VALUE_1 = " << NCBI_RANDOM_VALUE_1
              << NcbiEndl;
+#else
+
+    NcbiCerr << "NCBI_RANDOM_VALUE_1 is undefined" << NcbiEndl;
+
+#endif  /* defined(NCBI_RANDOM_VALUE_1) */
+
     return 1;
 }
 
