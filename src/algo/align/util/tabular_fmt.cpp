@@ -467,18 +467,20 @@ void CTabularFormatter_PercentId::Print(CNcbiOstream& ostr,
 
 void CTabularFormatter_PercentCoverage::PrintHelpText(CNcbiOstream& ostr) const
 {
-    ostr << "Percent coverage of query in subject";
+    ostr << (m_Row == 0 ? "Percent coverage of query in subject"
+                        : "Percent coverage of subject in query");
 }
 
 void CTabularFormatter_PercentCoverage::PrintHeader(CNcbiOstream& ostr) const
 {
-    ostr << "pcov";
+    ostr << (m_Row == 0 ? "pcov" : "scov");
 }
 
 void CTabularFormatter_PercentCoverage::Print(CNcbiOstream& ostr,
                                               const CSeq_align& align)
 {
-    double pct_cov = m_Scores->GetScore(align, "pct_coverage");
+    double pct_cov = m_Scores->GetScore(align, m_Row == 0
+                   ? "pct_coverage" : "subject_coverage");
     if (pct_cov != 100) {
         pct_cov = min(pct_cov, 99.99);
     }
@@ -2217,7 +2219,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 
     formatter.RegisterField("pident", new CTabularFormatter_PercentId(true));
     formatter.RegisterField("pident_ungapped", new CTabularFormatter_PercentId(false));
-    formatter.RegisterField("pcov", new CTabularFormatter_PercentCoverage);
+    formatter.RegisterField("pcov", new CTabularFormatter_PercentCoverage(0));
+    formatter.RegisterField("qcov", new CTabularFormatter_PercentCoverage(0));
+    formatter.RegisterField("scov", new CTabularFormatter_PercentCoverage(1));
 
     formatter.RegisterField("gaps", new CTabularFormatter_GapBaseCount);
     formatter.RegisterField("gapopen", new CTabularFormatter_GapCount);

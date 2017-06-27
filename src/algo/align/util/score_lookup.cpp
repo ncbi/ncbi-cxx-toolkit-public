@@ -1195,6 +1195,42 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 
+class CScore_Coverage : public CScoreLookup::IScore
+{
+public:
+    CScore_Coverage(int row)
+    : m_Row(row)
+    {}
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << (m_Row == 0
+             ? "Percentage of query sequence aligned to subject (0.0-100.0)"
+             : "Percentage of subject sequence aligned to query (0.0-100.0)");
+    }
+
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        if (m_Row == 0) {
+            return CScoreBuilder().GetPercentCoverage(*scope, align);
+        }
+
+        /// Calculate coverage on subject
+        size_t covered_bases = align.GetAlignLength(false /* don't include gaps */);
+        size_t seq_len = scope->GetSequenceLength(align.GetSeq_id(1));
+        return covered_bases ? 100.0f * double(covered_bases) / double(seq_len)
+                             : 0.0;
+    }
+
+private:
+    int m_Row;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 class CScore_Taxid : public CScoreLookup::IScore
 {
 public:
@@ -1758,6 +1794,16 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("cds_pct_coverage",
           CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::ePercentCoverage))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_coverage",
+          CIRef<IScore>(new CScore_Coverage(0))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_coverage",
+          CIRef<IScore>(new CScore_Coverage(1))));
 
     m_Scores.insert
         (TScoreDictionary::value_type

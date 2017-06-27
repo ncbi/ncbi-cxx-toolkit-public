@@ -238,10 +238,17 @@ private:
 class CTabularFormatter_PercentCoverage : public CTabularFormatter::IFormatter
 {
 public:
+    CTabularFormatter_PercentCoverage(int row)
+    : m_Row(row)
+    {}
+
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
                const objects::CSeq_align& align);
+
+private:
+    int m_Row;
 };
 
 /////////////////////////////////////////////////////////////////////////////
