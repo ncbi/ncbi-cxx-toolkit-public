@@ -455,7 +455,9 @@ static unsigned short s_GetProxyPort()
 
 static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
 {
-    CORE_TRACE("s_RemoveCand() Removing endpoint.");
+    CORE_TRACEF(("s_RemoveCand() Removing info " FMT_SIZE_T ": %p",
+                 n, data->cand[n].info));
+
     assert(n >= 0  &&  n < data->n_cand);
     if (free_info)
         free((void*) data->cand[n].info);
@@ -502,7 +504,7 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     const char* name = SERV_NameOfInfo(info);
     size_t i;
 
-    /* First check that the new server info updates an existing one */
+    /* First check if the new server info updates an existing one */
     for (i = 0;  i < data->n_cand;  ++i) {
         if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info)) == 0
             &&  SERV_EqualInfo(info, data->cand[i].info))
@@ -537,8 +539,9 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     {{
         char hostbuf[40];
         SOCK_ntoa(info->host, hostbuf, sizeof(hostbuf));
-        CORE_TRACEF(("Added candidate %s:%hu with svc_type '%s'.",
-            hostbuf, info->port, SERV_TypeStr(info->type)));
+        CORE_TRACEF(("Added candidate " FMT_SIZE_T
+            ":   %s:%hu with svc_type '%s'.",
+            data->n_cand, hostbuf, info->port, SERV_TypeStr(info->type)));
     }}
 #endif
     data->cand[data->n_cand].info   = info;
@@ -1028,14 +1031,15 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 continue;
             }
             free(server_description);
+            CORE_TRACEF(("Created info: %p", info));
 
             /* Add new info to collection */
             if (s_AddServerInfo(data, info)) {
                 retval = 1; /* at least one info added */
-                /* Note: successful s_AddServerInfo() frees 'info' */
             } else {
                 CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                     "Unable to add server info.");
+                CORE_TRACEF(("Freeing info: %p", info));
                 free(info); /* not freed by failed s_AddServerInfo() */
                 goto out;
             }
@@ -1348,8 +1352,11 @@ static void s_Reset(SERV_ITER iter)
         if (data->cand) {
             size_t i;
             assert(data->n_cand <= data->a_cand);
-            for (i = 0;  i < data->n_cand;  ++i)
+            for (i = 0;  i < data->n_cand;  ++i) {
+                CORE_TRACEF(("Freeing available info " FMT_SIZE_T ": %p",
+                             i, data->cand[i].info));
                 free((void*) data->cand[i].info);
+            }
             data->n_cand = 0;
         }
     }
@@ -1364,11 +1371,8 @@ static void s_Close(SERV_ITER iter)
 
     TIN("s_Close()");
 
-    /* Make sure s_Reset() has been called. */
-    assert(data);
-    if (data->n_cand)
-        s_Reset(iter);
-    assert( ! data->n_cand); /* s_Reset() clears candidates count */
+    /* Make sure s_Reset() has been called - it frees info structs. */
+    s_Reset(iter);
 
     if (data->cand)
         free(data->cand);
