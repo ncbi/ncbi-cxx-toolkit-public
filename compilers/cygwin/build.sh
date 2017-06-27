@@ -8,18 +8,14 @@
 ########### Arguments
 
 script="$0"
-cfgs="${1:-Debug DebugMT Release ReleaseMT}"
+cfgs="${1:-DebugMT ReleaseMT}"
 arch=${2}
 
  
 ########### Global variables
 
-cmd_Debug='--with-debug --without-mt --without-dll CFLAGS=-g0 CXXFLAGS=-g0'
 cmd_DebugMT='--with-debug --with-mt  --without-dll CFLAGS=-g0 CXXFLAGS=-g0'
-##cmd_DebugDLL='--with-debug --with-mt --with-dll'
-cmd_Release='--without-debug --without-mt --without-dll'
 cmd_ReleaseMT='--without-debug --with-mt --without-dll'
-##cmd_ReleaseDLL='--without-debug --with-mt --with-dll'
 cmd_common='--without-internal'
 
 timer="date +'%H:%M'"
