@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = unit_test_string_constraint
+APP_PROJ = unit_test_string_constraint unit_test_location_constraint
 PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included

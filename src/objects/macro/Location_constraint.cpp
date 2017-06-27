@@ -162,39 +162,37 @@ bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CConstRef <CB
       return true;
   }
 
-  unsigned pos = loc.GetStop(eExtreme_Positional);
-  int pos2;
-  if (bioseq.NotEmpty()) {
-     pos2 = (bioseq->IsSetLength() ?  bioseq->GetLength() : 0) - pos - 1;
-  }
-
-  if (loc.GetStrand() == eNa_strand_minus) {
-    if (CanGetEnd5()) {
-      if (bioseq.Empty()) {
+  // pre-check to see if bioseq is required
+  if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+      if (IsSetEnd5() && !bioseq) {
           return false;
       }
-      else {
-        if (!GetEnd5().Match(pos2)) {
-           return false;
-        }
+  } else {
+      if (IsSetEnd3() && !bioseq) {
+          return false;
       }
-    }
-    if (CanGetEnd3()) {
-        return GetEnd3().Match(pos);
-    }
   }
-  else
-  {
-    if (CanGetEnd5() && !GetEnd5().Match(pos)) {
-        return false;
-    }
-    if (CanGetEnd3()) {
-      if (bioseq.Empty()) {
-         return false;
+
+  TSeqPos loc_upstream = loc.GetStart(eExtreme_Positional);
+  TSeqPos loc_downstream = loc.GetStop(eExtreme_Positional);
+  TSeqPos downstream_dist = bioseq->GetLength() - loc_downstream;
+
+  if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+      if (IsSetEnd5() && !GetEnd5().Match(downstream_dist)) {
+          return false;
       }
-      return GetEnd3().Match(pos2);
-    }
+      if (IsSetEnd3() && !GetEnd3().Match(loc_upstream)) {
+          return false; 
+      }
+  } else {
+      if (IsSetEnd5() && !GetEnd5().Match(loc_upstream)) {
+          return false;
+      }
+      if (IsSetEnd3() && !GetEnd3().Match(downstream_dist)) {
+          return false;
+      }
   }
+
   return true;
 };
 
