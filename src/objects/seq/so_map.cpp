@@ -1108,6 +1108,7 @@ bool CSoMap::xMapRepeatRegion(
     string rpt_type = feature.GetNamedQual("rpt_type");
     if (rpt_type.empty()) {
         so_type = "repeat_region";
+        return true;
     }
     auto cit = mapRptTypeToSoType.find(rpt_type);
     if (cit == mapRptTypeToSoType.end()) {
