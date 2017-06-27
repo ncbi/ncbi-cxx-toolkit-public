@@ -138,8 +138,10 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
                 }
             }
 
+            //range_len = ParseRange(substr(defline.data() + start, pos - start),
             range_len = ParseRange(defline.substr(start, pos - start),
                 rangeStart, rangeEnd, pMessageListener);
+            //has_id = ParseIDs(substr(defline.data() + start, pos - start - range_len), 
             has_id = ParseIDs(defline.substr(start, pos - start - range_len), 
                               info,
                               ignoredErrors,
@@ -161,7 +163,11 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
                 break;
             }
         }
-
+        if ( !has_id ) {
+            // no IDs after all, so take the whole line as a title
+            // (done now rather than earlier to avoid rescanning)
+            title_start = start;
+        }
         if (title_start < min(pos, len)) {
             // we parse the titles after we know what molecule this is
             seqTitles.push_back(
