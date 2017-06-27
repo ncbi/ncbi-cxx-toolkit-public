@@ -172,6 +172,7 @@ public:
     bool HasSubtype(CSubSource::TSubtype subtype) const;
 
     CRef<CBioSource> MakeCommon( const CBioSource& other) const;
+    CRef<CBioSource> MakeCommonExceptOrg(const CBioSource& other) const;
 
 private:
     // Prohibit copy constructor and assignment operator

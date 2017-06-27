@@ -111,6 +111,54 @@ bool RemoveTaxId( objects::CBioSource& src )
 }
 
 
+bool s_ProcessReply(const CT3Reply& reply, CRef<COrg_ref> org)
+{
+    if (reply.IsData()) {
+        org->Assign(reply.GetData().GetOrg());
+        return true;
+    } else if (reply.IsError() && reply.GetError().IsSetMessage()) {
+        ERR_POST(reply.GetError().GetMessage());
+        return false;
+    } else {
+        ERR_POST("Taxonomy service failure");
+        return false;
+    }
+}
+
+
+void AddMissingCommonOrgMods(const COrg_ref& o1, const COrg_ref& o2, COrg_ref& common)
+{
+    if (!o1.IsSetOrgMod() || !o2.IsSetOrgMod()) {
+        return;
+    }
+    ITERATE(COrgName::TMod, it1, o1.GetOrgname().GetMod()) {
+        bool found_in_both = false;
+        ITERATE(COrgName::TMod, it2, o2.GetOrgname().GetMod()) {
+            if ((*it1)->Equals(**it2)) {
+                found_in_both = true;
+                break;
+            }
+        }
+        if (found_in_both) {
+            bool already_in_common = false;
+            if (common.IsSetOrgMod()) {
+                ITERATE(COrgName::TMod, it3, common.GetOrgname().GetMod()) {
+                    if ((*it3)->Equals(**it1)) {
+                        already_in_common = true;
+                        break;
+                    }
+                }
+            }
+            if (!already_in_common) {
+                CRef<COrgMod> add(new COrgMod());
+                add->Assign(**it1);
+                common.SetOrgname().SetMod().push_back(add);
+            }
+        }
+    }
+}
+
+
 CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2)
 { 
     CRef<CBioSource> common(NULL);
@@ -118,35 +166,74 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
     if (!src1.IsSetOrg() || !src2.IsSetOrg()) {
         return common;
     }
-    int taxid1 = src1.GetOrg().GetTaxId();
-    int taxid2 = src2.GetOrg().GetTaxId();
-    if (taxid1 == 0 || taxid2 == 0) {
+
+    CTaxon3 taxon3;
+    taxon3.Init();
+
+    // do lookup before attempting to merge
+    vector<CRef<COrg_ref> > rq_list;
+    CRef<COrg_ref> o1(new COrg_ref());
+    o1->Assign(src1.GetOrg());
+    rq_list.push_back(o1);
+    CRef<COrg_ref> o2(new COrg_ref());
+    o2->Assign(src2.GetOrg());
+    rq_list.push_back(o2);
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(rq_list);
+    if (!reply || reply->GetReply().size() != 2) {
+        ERR_POST("Taxonomy service failure");
+        return CRef<CBioSource>(NULL);
+    }
+    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    if (!s_ProcessReply(*(reply->GetReply().front()), o1) ||
+        !s_ProcessReply(*(reply->GetReply().back()), o2)) {
+        return common;
+    }
+
+    int taxid1 = o1->GetTaxId();
+    int taxid2 = o2->GetTaxId();
+    if (taxid1 == 0) {
+        ERR_POST("No taxonomy ID for " + o1->GetTaxname());
+        return common;
+    } else if (taxid2 == 0) {
+        ERR_POST("No taxonomy ID for " + o2->GetTaxname());
         return common;
     } else if (taxid1 == taxid2) {
-        common = src1.MakeCommon(src2);
+        CRef<CBioSource> tmp1(new CBioSource());
+        tmp1->Assign(src1);
+        tmp1->SetOrg().Assign(*o1);
+        CRef<CBioSource> tmp2(new CBioSource());
+        tmp2->Assign(src2);
+        tmp2->SetOrg().Assign(*o2);
+        common = tmp1->MakeCommon(*tmp2);
     } else {
         CRef<CT3Request> rq(new CT3Request());
         rq->SetJoin().Set().push_back(taxid1);
         rq->SetJoin().Set().push_back(taxid2);
+        string err_nums = "(" + NStr::NumericToString(taxid1) + "," + NStr::NumericToString(taxid2) + ")";
         CTaxon3_request request;
         request.SetRequest().push_back(rq);
-        CTaxon3 taxon3;
-        taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
-        if (reply) {
-            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-            while (reply_it != reply->GetReply().end()) {
-                if ((*reply_it)->IsData() 
-                    && (*reply_it)->GetData().GetOrg().IsSetTaxname()) {
+        if (!reply || reply->GetReply().size() != 1) {
+            ERR_POST("Taxonomy service failure" + err_nums);
+            return CRef<CBioSource>(NULL);
+        }
+        const CT3Reply& join_reply = *(reply->GetReply().front());
+        if (join_reply.IsData()) {
+            if (join_reply.GetData().IsSetOrg()) {
+                if (join_reply.GetData().GetOrg().IsSetTaxname()) {
                     bool is_species_level = false, force_consult = false, has_nucleomorphs = false;
-                    (*reply_it)->GetData().GetTaxFlags (is_species_level, force_consult, has_nucleomorphs);
+                    join_reply.GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
                     if (is_species_level) {
-                        common.Reset(new CBioSource());
-                        common->SetOrg().Assign((*reply_it)->GetData().GetOrg());
+                        common = src1.MakeCommonExceptOrg(src2);
+                        common->SetOrg().Assign(join_reply.GetData().GetOrg());
+                    } else {
+                        ERR_POST("Taxonomy join reply is not species level" + err_nums);
                     }
-                    break;
+                } else {
+                    ERR_POST("Taxonomy join reply Org-ref does not contain taxname" + err_nums);
                 }
-                ++reply_it;
+            } else {
+                ERR_POST("Taxonomy join reply does not contain Org-ref" + err_nums);
             }
         }
     }
