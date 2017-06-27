@@ -8,8 +8,6 @@
        src/util/lmdbxx/lmdb++.h.orig 
 */
 
-#ifdef HAVE_LIBLMDB
-
 #ifndef LMDBXX_H
 #define LMDBXX_H
 
@@ -1982,5 +1980,3 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif /* LMDBXX_H */
-
-#endif /* HAVE_LIBLMDB */

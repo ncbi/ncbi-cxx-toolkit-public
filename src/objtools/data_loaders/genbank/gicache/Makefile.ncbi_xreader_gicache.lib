@@ -4,7 +4,7 @@ REQUIRES = unix
 
 SRC = reader_gicache gicache
 
-LIB = ncbi_xreader_gicache
+LIB = ncbi_xreader_gicache $(LMDB_LIB)
 
 # Build shared version when possible
 LIB_OR_DLL = both

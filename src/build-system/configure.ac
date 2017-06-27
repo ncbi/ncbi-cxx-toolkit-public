@@ -500,7 +500,7 @@ AC_ARG_WITH(lapack,
 AC_ARG_WITH(lmdb,
    [ --with-lmdb=DIR         use LMDB installation in DIR])
 AC_ARG_WITH(lmdb,
-   [ --without-lmdb          do not use LMDB])
+   [ --without-lmdb          use internal copy of LMDB])
 AC_ARG_WITH(libuv,
    [ --with-libuv=DIR        use libuv installation in DIR])
 AC_ARG_WITH(libuv,
@@ -7529,6 +7529,17 @@ NCBI_CHECK_THIRD_PARTY_LIB(lapack,
 NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
    [AC_LANG_PROGRAM([[#include <lmdb.h>]],
       [[MDB_env *env; return mdb_env_create(&env);]])])
+if test -z "$LMDB_LIBS"; then
+   lmdblocal=util/lmdb
+   AC_MSG_NOTICE([using local bzlib copy in $lmdblocal])
+   LMDB_PATH="<$lmdblocal>"
+   LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
+   # LMDB_LIBS="-llmdb"
+   LMDB_LIB="lmdb"
+   AC_DEFINE(USE_LOCAL_LMDB, 1, [Define to 1 if using a local copy of LMDB.])
+   NCBI_PACKAGE(LMDB)
+   NCBI_PACKAGE(LocalLMDB)
+fi
 
 # libuv
 case "$with_libuv" in
@@ -8390,6 +8401,7 @@ AC_SUBST(GSOAP_PATH)
 AC_SUBST(AVRO_STATIC_LIBS)
 AC_SUBST(CEREAL_INCLUDE)
 AC_SUBST(MONGODB_STATIC_LIBS)
+AC_SUBST(LMDB_LIB)
 AC_SUBST(LIBUV_STATIC_LIBS)
 AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)

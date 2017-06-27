@@ -1070,6 +1070,7 @@ GSOAP_PATH
 AVRO_STATIC_LIBS
 CEREAL_INCLUDE
 MONGODB_STATIC_LIBS
+LMDB_LIB
 LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
@@ -2038,7 +2039,7 @@ Optional Packages:
  --with-lapack=DIR       use LAPACK installation in DIR
  --without-lapack        do not use LAPACK
  --with-lmdb=DIR         use LMDB installation in DIR
- --without-lmdb          do not use LMDB
+ --without-lmdb          use internal copy of LMDB
  --with-libuv=DIR        use libuv installation in DIR
  --without-libuv         do not use libuv
  --with-libssh2=DIR      use libssh2 installation in DIR
@@ -46828,6 +46829,22 @@ _ACEOF
 
 
 
+if test -z "$LMDB_LIBS"; then
+   lmdblocal=util/lmdb
+   { echo "$as_me:$LINENO: using local bzlib copy in $lmdblocal" >&5
+echo "$as_me: using local bzlib copy in $lmdblocal" >&6;}
+   LMDB_PATH="<$lmdblocal>"
+   LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
+   # LMDB_LIBS="-llmdb"
+   LMDB_LIB="lmdb"
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_LOCAL_LMDB 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}LMDB"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LocalLMDB"; WithPackagesSep=" "
+fi
 
 # libuv
 case "$with_libuv" in
@@ -48410,7 +48427,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
+  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -48518,6 +48535,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -50115,6 +50133,7 @@ GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
+LMDB_LIB!$LMDB_LIB$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
@@ -50137,7 +50156,6 @@ IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
 IF_DEACTIVATING!$IF_DEACTIVATING$ac_delim
 configurables_mfname!$configurables_mfname$ac_delim
-CC_FILTER!$CC_FILTER$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50179,6 +50197,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CC_FILTER!$CC_FILTER$ac_delim
 CXX_FILTER!$CXX_FILTER$ac_delim
 AR_FILTER!$AR_FILTER$ac_delim
 LINK_FILTER!$LINK_FILTER$ac_delim
@@ -50205,7 +50224,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 25; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
