@@ -159,15 +159,20 @@ CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
+    const bool storage_set = IsOptionSet(eNetStorage) || IsOptionSet(eNetCache) || IsOptionSet(eFileTrackToken);
+
     if (IsOptionSet(eID) || IsOptionSet(eOptionalID)) {
         if (IsOptionSet(eUserKey)) {
-            return m_NetStorageByKey.Open(m_Opts.id);
+            if (storage_set) return m_NetStorageByKey.Open(m_Opts.id);
         } else {
             return m_NetStorage.Open(m_Opts.id);
         }
     } else {
-        return m_NetStorage.Create(m_Opts.netstorage_flags);
+        if (storage_set) return m_NetStorage.Create(m_Opts.netstorage_flags);
     }
+
+    NCBI_THROW(CArgException, eNoValue, "Either '--" NETSTORAGE_OPTION "', '--" NETCACHE_OPTION
+            "' or '--" FT_TOKEN_OPTION "' option is required.");
 }
 
 void CGridCommandLineInterfaceApp::NetStorage_PrintServerReply(

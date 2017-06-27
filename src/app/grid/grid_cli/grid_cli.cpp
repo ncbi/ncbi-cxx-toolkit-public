@@ -149,7 +149,7 @@ struct SOptionDefinition {
         OFFSET_OPTION, "Byte offset of the portion of data.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eSize),
-        SIZE_OPTION, "Length (in bytes) of the portion of data.", {-1}},
+        "size|" SIZE_OPTION, "Length (in bytes) of the portion of data.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eTTL),
         "ttl", "Override the default time-to-live value.", {-1}},
@@ -165,7 +165,7 @@ struct SOptionDefinition {
         "use-compound-id", "Return key in CompoundID format.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNetStorage),
-        NETSTORAGE_OPTION, "NetStorage service name "
+        "nst|" NETSTORAGE_OPTION, "NetStorage service name "
             "or server address.", {-1}},
 
     {OPT_DEF(eSwitch, eObjectKey),

@@ -46,10 +46,10 @@ BEGIN_NCBI_SCOPE
 
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
-        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity, bool require_queue)
 {
     if (api_class == eNetScheduleSubmitter)
-        SetUp_NetCacheCmd(false);
+        SetUp_NetCacheCmd(false, false, false);
 
     m_APIClass = api_class;
 
@@ -70,11 +70,16 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
             key.host.append(NStr::NumericToString(key.port));
             service = key.host;
         }
-    }
-
-    if (IsOptionSet(eWorkerNode)) {
+    } else if (IsOptionSet(eWorkerNode)) {
         m_NetScheduleAPI = CNetScheduleAPIExt::CreateWnCompat(
                 service, m_Opts.auth);
+
+    } else if (!IsOptionSet(eNetSchedule)) {
+        NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION "' option is required.");
+
+    } else if (!IsOptionSet(eQueue) && require_queue) {
+        NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION "' option is required.");
+
     } else {
         m_NetScheduleAPI = CNetScheduleAPIExt::CreateNoCfgLoad(
                 service, m_Opts.auth, queue);
@@ -1109,7 +1114,7 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 
 int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd, false);
 
     if (!IsOptionSet(eQueueClasses)) {
         if ((IsOptionSet(eQueueArg) ^ IsOptionSet(eAllQueues)) == 0) {
@@ -1160,7 +1165,7 @@ int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
 
 int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd, false);
 
     CNetScheduleAdmin::TQueueList queues;
 

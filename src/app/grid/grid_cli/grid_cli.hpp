@@ -70,7 +70,7 @@
 #define NETCACHE_OPTION "netcache"
 #define CACHE_OPTION "cache"
 #define TRY_ALL_SERVERS_OPTION "try-all-servers"
-#define NETSTORAGE_OPTION "nst|netstorage"
+#define NETSTORAGE_OPTION "netstorage"
 #define OBJECT_KEY_OPTION "object-key"
 #define USER_KEY_OPTION "user-key"
 #define NAMESPACE_OPTION "namespace"
@@ -119,7 +119,7 @@
 #define PROTOCOL_DUMP_OPTION "protocol-dump"
 #define PASSWORD_OPTION "password"
 #define OFFSET_OPTION "offset"
-#define SIZE_OPTION "size|length"
+#define SIZE_OPTION "length"
 #define FT_TOKEN_OPTION "ft-token"
 #define DIRECT_MODE_OPTION "direct"
 #define ATTR_VALUE_ARG "ATTR_VALUE"
@@ -550,14 +550,14 @@ private:
     int NetCacheSanityCheck();
     int NetScheduleSanityCheck();
     void SetUp_NetCache();
-    void SetUp_NetCacheCmd(bool icache_mode, bool require_version = true);
+    void SetUp_NetCacheCmd(bool icache_mode, bool require_version = true, bool require_service = true);
     void SetUp_NetCacheCmd() { SetUp_NetCacheCmd(IsOptionSet(eCache)); }
     void SetUp_NetCacheAdminCmd(EAdminCmdSeverity cmd_severity);
 
     static void PrintBlobMeta(const CNetCacheKey& key);
     void PrintServerAddress(CNetServer server);
     void SetUp_NetScheduleCmd(EAPIClass api_class,
-            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
+            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd, bool require_queue = true);
     void JobInfo_PrintStatus(CNetScheduleAPI::EJobStatus status);
     void PrintJobStatusNotification(
             CNetScheduleNotificationHandler& submit_job_handler,

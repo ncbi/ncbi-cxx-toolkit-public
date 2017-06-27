@@ -43,7 +43,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCache()
 }
 
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
-        bool require_version)
+        bool require_version, bool require_service)
 {
     SetUp_NetCache();
 
@@ -52,10 +52,17 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
     if (!icache_mode) {
         m_APIClass = eNetCacheAPI;
 
-        // If NetCache service is not provided, use server from blob ID
-        if (!IsOptionSet(eNetCache) && !m_Opts.ncid.key.empty()) {
-            CNetCacheKey key(m_Opts.ncid.key);
-            m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
+        if (!IsOptionSet(eNetCache)) {
+            if (m_Opts.ncid.key.empty()) {
+                if (require_service) {
+                    NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
+                        "option is required when ID is not provided.");
+                }
+            } else {
+                // If NetCache service is not provided, use server from blob ID
+                CNetCacheKey key(m_Opts.ncid.key);
+                m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
+            }
         }
 
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service,
