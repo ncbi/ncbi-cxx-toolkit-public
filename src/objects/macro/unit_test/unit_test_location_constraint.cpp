@@ -130,3 +130,49 @@ BOOST_AUTO_TEST_CASE(Test_Location_Distance_Constraint)
     BOOST_CHECK_EQUAL(loc_con->Match(*feat, CConstRef <CSeq_feat>(NULL), seq), false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_IsEmpty)
+{
+    CRef<CLocation_constraint> loc_con(new CLocation_constraint());
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetStrand(eStrand_constraint_any);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetStrand(eStrand_constraint_plus);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->SetStrand(eStrand_constraint_minus);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetStrand();
+
+    loc_con->SetSeq_type(eSeqtype_constraint_any);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetSeq_type(eSeqtype_constraint_nuc);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetSeq_type();
+
+    loc_con->SetPartial5(ePartial_constraint_either);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetPartial5(ePartial_constraint_partial);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetPartial5();
+
+    loc_con->SetPartial3(ePartial_constraint_either);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetPartial3(ePartial_constraint_partial);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetPartial3();
+
+    loc_con->SetLocation_type(eLocation_type_constraint_any);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), true);
+    loc_con->SetLocation_type(eLocation_type_constraint_joined);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetLocation_type();
+
+    loc_con->SetEnd5().SetDist_from_end(5);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetEnd5();
+    loc_con->SetEnd3().SetMax_dist_from_end(5);
+    BOOST_CHECK_EQUAL(loc_con->IsEmpty(), false);
+    loc_con->ResetEnd3();
+
+}

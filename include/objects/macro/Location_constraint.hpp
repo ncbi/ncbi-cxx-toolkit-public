@@ -62,13 +62,13 @@ public:
     ~CLocation_constraint(void);
 
     bool Match(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to, CConstRef <CBioseq> feat_bioseq) const;
+    bool IsEmpty() const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CLocation_constraint(const CLocation_constraint& value);
     CLocation_constraint& operator=(const CLocation_constraint& value);
 
-    bool x_IsLocationConstraintEmpty() const;
     bool x_DoesStrandMatchConstraint(const CSeq_loc& loc) const;
     bool x_DoesBioseqMatchSequenceType(CConstRef <CBioseq> bioseq,
                                    const ESeqtype_constraint& seq_type) const;

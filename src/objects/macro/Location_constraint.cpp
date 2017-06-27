@@ -57,17 +57,15 @@ CLocation_constraint::~CLocation_constraint(void)
 {
 }
 
-bool CLocation_constraint :: x_IsLocationConstraintEmpty() const
+bool CLocation_constraint :: IsEmpty() const
 {
-  if (GetStrand() != eStrand_constraint_any
-          || GetSeq_type() != eSeqtype_constraint_any
-          || GetPartial5() != ePartial_constraint_either
-          || GetPartial3() != ePartial_constraint_either
-          || GetLocation_type() != eLocation_type_constraint_any
-          || (CanGetEnd5()
-                && GetEnd5().Which() != CLocation_pos_constraint::e_not_set)
-          || (CanGetEnd3()
-                && GetEnd3().Which() != CLocation_pos_constraint::e_not_set)) {
+  if ((IsSetStrand() && GetStrand() != eStrand_constraint_any)
+       || (IsSetSeq_type() && GetSeq_type() != eSeqtype_constraint_any)
+       || (IsSetPartial5() && GetPartial5() != ePartial_constraint_either)
+       || (IsSetPartial3() && GetPartial3() != ePartial_constraint_either)
+       || (IsSetLocation_type() && GetLocation_type() != eLocation_type_constraint_any)
+       || (IsSetEnd5() && GetEnd5().Which() != CLocation_pos_constraint::e_not_set)
+       || (IsSetEnd3() && GetEnd3().Which() != CLocation_pos_constraint::e_not_set)) {
     return false;
   }
   return true;
@@ -198,7 +196,7 @@ bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CConstRef <CB
 
 bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to, CConstRef <CBioseq> feat_bioseq) const
 {
-  if (x_IsLocationConstraintEmpty()) {
+  if (IsEmpty()) {
      return true;
   }
  
@@ -238,6 +236,7 @@ bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CSeq_feat> 
 
   return true;
 };
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
