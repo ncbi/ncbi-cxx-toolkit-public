@@ -844,7 +844,7 @@
     iostream/sync_with_stdio
     Memcheck:Leak
     fun:_Znam
-    fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv
+    fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
     fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
     fun:_ZNSt8ios_base15sync_with_stdioEb
 }
