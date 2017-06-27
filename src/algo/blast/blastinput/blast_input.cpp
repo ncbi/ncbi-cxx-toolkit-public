@@ -40,7 +40,6 @@
 
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
-#include <corelib/ncbienv.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -284,16 +283,10 @@ CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
                                TSeqPos batch_size)
     : m_Source(source),
       m_BatchSize(batch_size),
-      m_MaxNumSequences(1000000),
+      m_MaxNumSequences(5000000),
       m_BioseqSet(new CBioseq_set)
     
-{
-    CNcbiEnvironment env;
-    string num_seqs = env.Get("BATCH_NUM_SEQS");
-    if (!num_seqs.empty()) {
-        m_MaxNumSequences = NStr::StringToInt(num_seqs);
-    }
-}
+{}
 
 void
 CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)

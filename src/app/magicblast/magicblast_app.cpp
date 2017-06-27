@@ -1592,6 +1592,13 @@ int CMagicBlastApp::Run(void)
         int num_query_threads = 1;
         int num_db_threads = 1;
         int batch_size = m_CmdLineArgs->GetQueryBatchSize();
+        int batch_num = 500000;
+
+        CNcbiEnvironment env;
+        string num_seqs_str = env.Get("BATCH_NUM_SEQS");
+        if (!num_seqs_str.empty()) {
+            batch_num = NStr::StringToInt(num_seqs_str);
+        }
 
         // we thread searches against smaller databases by queries and against
         // larger database by database
@@ -1607,12 +1614,14 @@ int CMagicBlastApp::Run(void)
         else {
             num_db_threads = m_CmdLineArgs->GetNumThreads();
             batch_size *= 2;
+            batch_num *= 2;
         }
 
         /*** Process the input ***/
         CRef<CBlastInputSourceOMF> fasta = s_CreateInputSource(query_opts,
                                                                m_CmdLineArgs);
         CBlastInputOMF input(fasta, batch_size);
+        input.SetMaxBatchNumSeqs(batch_num);
 
 
         int index;

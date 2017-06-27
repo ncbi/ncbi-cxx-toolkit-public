@@ -439,7 +439,10 @@ public:
     CRef<CBioseq_set> GetNextSeqBatch(void);
 
     void SetBatchSize(TSeqPos num) {m_BatchSize = num;}
-    TSeqPos GetBatchSize(void) {return m_BatchSize;}
+    TSeqPos GetBatchSize(void) const {return m_BatchSize;}
+
+    void SetMaxBatchNumSeqs(TSeqPos num) {m_MaxNumSequences = num;}
+    TSeqPos GetMaxBatchNumSeqs(void) const {return m_MaxNumSequences;}
 
     bool End(void) {return m_Source->End();}
 
