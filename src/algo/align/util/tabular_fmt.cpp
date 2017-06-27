@@ -437,7 +437,7 @@ void CTabularFormatter_PercentId::PrintHelpText(CNcbiOstream& ostr) const
 {
     ostr << "Percentage of identical matches";
     if (!m_Gapped) {
-        ostr << " excluding gaps";
+        ostr << " excluding gaps on either row";
     }
 }
 
