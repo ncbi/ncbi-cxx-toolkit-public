@@ -60,8 +60,11 @@ for cfg in $cfgs ; do
     echo "Build time: $start - `eval $timer`"
 
     # Build
-
-    dir=`find . -maxdepth 1 -name "*-$cfg*" | head -1 | sed 's|^.*/||g'`
+    
+    dir="$cfg"
+    if [ ! -d "$dir" ] ; then
+       dir=`find . -maxdepth 1 -name "*-$cfg*" | head -1 | sed 's|^.*/||g'`
+    fi
     if [ -z "$dir"  -o  ! -d "$dir" ] ; then
        error "Build directory for \"$cfg\" configuration not found"
     fi
