@@ -40,6 +40,7 @@
 
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
+#include <corelib/ncbienv.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -283,18 +284,32 @@ CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
                                TSeqPos batch_size)
     : m_Source(source),
       m_BatchSize(batch_size),
+      m_MaxNumSequences(1000000),
       m_BioseqSet(new CBioseq_set)
     
-{}
+{
+    CNcbiEnvironment env;
+    string num_seqs = env.Get("BATCH_NUM_SEQS");
+    if (!num_seqs.empty()) {
+        m_MaxNumSequences = NStr::StringToInt(num_seqs);
+    }
+}
 
 void
 CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)
 {
-    CRef<CBioseq_set> one_set(new CBioseq_set);
+    TSeqPos bases_added = 0;
+    TSeqPos num_sequences = 0;
+    while (bases_added < m_BatchSize && num_sequences < m_MaxNumSequences &&
+           !m_Source->End()) {
 
-    int bases_added = 0;
-    while (bases_added < m_BatchSize && !m_Source->End()) {
-        bases_added += m_Source->GetNextSequence(bioseq_set);
+        CBioseq_set one_seq;
+        bases_added += m_Source->GetNextSequence(one_seq);
+
+        for (auto it: one_seq.GetSeq_set()) {
+            num_sequences++;
+            bioseq_set.SetSeq_set().push_back(it);
+        }
     }
 }
 

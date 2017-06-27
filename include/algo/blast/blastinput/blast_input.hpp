@@ -449,6 +449,7 @@ private:
 
     CRef<CBlastInputSourceOMF> m_Source;
     TSeqPos m_BatchSize;
+    TSeqPos m_MaxNumSequences;
     CRef<CBioseq_set> m_BioseqSet;
 };
 
