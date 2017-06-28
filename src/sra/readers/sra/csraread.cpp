@@ -852,7 +852,7 @@ const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
                     TSeqPos pos = TSeqPos((row+1-info.m_RowFirst)*segment_len);
                     for ( size_t i = 0; i < 2 && i < vv.size(); ++i ) {
                         TSeqPos p = vv[i];
-                        if ( p && p < pos ) {
+                        if ( (p || row == info.m_RowFirst) && p < pos ) {
                             pos = p;
                         }
                     }
