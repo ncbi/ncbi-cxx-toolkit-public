@@ -588,6 +588,7 @@ private:
     int ShutdownNetStorageServer();
     int ReconfigureNetStorageServer();
     CNetStorageObject GetNetStorageObject();
+    void CheckNetStorageOptions() const;
 
     int Automation_PipeServer();
     int Automation_DebugConsole();

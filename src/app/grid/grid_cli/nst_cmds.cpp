@@ -159,17 +159,24 @@ CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    const bool storage_set = IsOptionSet(eNetStorage) || IsOptionSet(eNetCache) || IsOptionSet(eFileTrackToken);
-
     if (IsOptionSet(eID) || IsOptionSet(eOptionalID)) {
         if (IsOptionSet(eUserKey)) {
-            if (storage_set) return m_NetStorageByKey.Open(m_Opts.id);
+            CheckNetStorageOptions();
+            return m_NetStorageByKey.Open(m_Opts.id);
         } else {
             return m_NetStorage.Open(m_Opts.id);
         }
     } else {
-        if (storage_set) return m_NetStorage.Create(m_Opts.netstorage_flags);
+        CheckNetStorageOptions();
+        return m_NetStorage.Create(m_Opts.netstorage_flags);
     }
+}
+
+void CGridCommandLineInterfaceApp::CheckNetStorageOptions() const
+{
+    const bool storage_set = IsOptionSet(eNetStorage) || IsOptionSet(eNetCache) || IsOptionSet(eFileTrackToken);
+
+    if (storage_set) return;
 
     NCBI_THROW(CArgException, eNoValue, "Either '--" NETSTORAGE_OPTION "', '--" NETCACHE_OPTION
             "' or '--" FT_TOKEN_OPTION "' option is required.");
@@ -337,6 +344,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
     }
 
     if (IsOptionSet(eUserKey)) {
+        CheckNetStorageOptions();
         new_loc = m_NetStorageByKey.Relocate(m_Opts.id, m_Opts.netstorage_flags, 0, cb);
     } else {
         new_loc = m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags, cb);
@@ -361,6 +369,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     if (IsOptionSet(eUserKey)) {
+        CheckNetStorageOptions();
         m_NetStorageByKey.Remove(m_Opts.id);
     } else {
         m_NetStorage.Remove(m_Opts.id);
