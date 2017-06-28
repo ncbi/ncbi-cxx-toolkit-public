@@ -348,16 +348,18 @@ static EIO_Status s_FTPCommandEx(SFTPConnector* xxx,
         return eIO_Closed;
 
     cmdlen  = strlen(cmd);
-    arglen  = arg  &&  *arg ? strlen(arg) : 0;
     linelen = cmdlen + 2;
-    if (arglen)
+    if (arg) {
+        arglen = *arg ? strlen(arg) : 0;
         linelen += 1 + arglen;
-    line    = linelen < sizeof(x_buf) ? x_buf : (char*) malloc(linelen + 1);
+    } else
+        arglen = 0/*unused*/;
+    line = linelen < sizeof(x_buf) ? x_buf : (char*) malloc(linelen + 1);
 
     if (line) {
         ESwitch log = eDefault;
         memcpy(line, cmd, cmdlen);
-        if (arglen) {
+        if (arg) {
             line[cmdlen++] = ' ';
             memcpy(line + cmdlen, arg, arglen);
             cmdlen += arglen;
@@ -1076,6 +1078,8 @@ static EIO_Status x_FTPOpenData(SFTPConnector*  xxx,
              * still, better safe than sorry */
             return status;
         }
+        if (!xxx->cntl)
+            return status;
     }
     status = x_FTPActive(xxx, lsock, timeout);
     if (status != eIO_Success) {
@@ -1664,7 +1668,8 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
                 xxx->sync = 1/*true*/;
                 status = eIO_Closed;
             }
-        }
+        } else if (!xxx->cntl)
+            status  = eIO_Closed;
         if (status == eIO_Closed)
             break;
     }
