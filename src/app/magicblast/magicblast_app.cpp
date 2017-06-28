@@ -286,7 +286,7 @@ CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
     ostr << "left overhang" << sep;
     ostr << "right overhang" << sep;
     ostr << "mate reference" << sep;
-    ostr << "make ref. start" << sep;
+    ostr << "mate ref. start" << sep;
     ostr << "composite score";
 
     ostr << endl;
