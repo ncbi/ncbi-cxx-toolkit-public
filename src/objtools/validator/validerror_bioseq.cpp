@@ -711,9 +711,14 @@ void CValidError_bioseq::ValidateSeqIds
     bool is_wgs = false;
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
+    unsigned int lcl_count = 0;
+    bool needs_lcl_or_accn = true;
     FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
         const CTextseq_id* tsid = (*k)->GetTextseq_Id();
         switch ((**k).Which()) {
+        case CSeq_id::e_Local:
+            lcl_count++;
+            break;
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
@@ -768,7 +773,9 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Gi:
             gi_count++;
             break;
-
+        case CSeq_id::e_Pdb:
+            needs_lcl_or_accn = false;
+            break;
         default:
             break;
         }
@@ -841,6 +848,12 @@ void CValidError_bioseq::ValidateSeqIds
     if (gi_count > 0  &&  accn_count > 1) {
         PostErr(eDiag_Error, eErr_SEQ_INST_MultipleAccessions,
             "Multiple accessions on sequence with gi number", seq);
+    }
+
+    // VR-728 protein accessions must have either a local ID or an accession
+    if (seq.IsAa() && needs_lcl_or_accn && accn_count == 0 && lcl_count == 0) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ConflictingIdsOnBioseq,
+            "Protein bioseq needs either local ID or accession", seq);
     }
 
     if ( m_Imp.IsValidateIdSet() ) {

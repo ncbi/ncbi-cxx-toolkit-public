@@ -3848,14 +3848,24 @@ BOOST_AUTO_TEST_CASE(Test_WholeComponent)
 }
 
 
+void s_AddGeneralAndLocal(CBioseq& seq)
+{
+    CRef<CSeq_id> gnl(new CSeq_id());
+    gnl->SetGeneral().SetDb("a");
+    gnl->SetGeneral().SetTag().SetStr("b");
+    seq.SetId().front()->Assign(*gnl);
+    CRef<CSeq_id> lcl(new CSeq_id());
+    lcl->SetLocal().SetStr("x");
+    seq.SetId().push_back(lcl);
+    seq.SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().Assign(*gnl);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodProtSeq();
-    entry->SetSeq().SetId().front()->SetGeneral().SetDb("a");
-    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("b");
-    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetDb("a");
-    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetTag().SetStr("b");
+    s_AddGeneralAndLocal(entry->SetSeq());
 
     STANDARD_SETUP
 
@@ -3865,10 +3875,9 @@ BOOST_AUTO_TEST_CASE(Test_ProteinsHaveGeneralID)
     
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()->SetGeneral().SetDb("a");
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("b");
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetDb("a");
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGeneral().SetTag().SetStr("b");
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    s_AddGeneralAndLocal(prot->SetSeq());
+
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetProduct().SetWhole().SetGeneral().SetDb("a");
     cds->SetProduct().SetWhole().SetGeneral().SetTag().SetStr("b");
@@ -14561,11 +14570,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProductMismatch)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     CRef<CSeq_id> id(new CSeq_id());
     id->SetGeneral().SetDb("a");
     id->SetGeneral().SetTag().SetStr("good");
     unit_test_util::ChangeNucProtSetProteinId(entry, id);
+    CRef<CSeq_id> lcl_id(new CSeq_id());
+    lcl_id->SetLocal().SetStr("x");
+    prot->SetSeq().SetId().push_back(lcl_id);
 
     CRef<CSeq_id> ref_id = unit_test_util::BuildRefSeqId();
     unit_test_util::ChangeNucProtSetNucId (entry, ref_id);
