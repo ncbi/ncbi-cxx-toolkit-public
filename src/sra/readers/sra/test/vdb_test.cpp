@@ -133,6 +133,7 @@ void CCSRATestApp::Init(void)
                             "RefSeq end position",
                             CArgDescriptions::eInteger);
     
+    arg_desc->AddFlag("over-start", "Make overlap start positions");
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
                             "Number of cSRA entries to read (0 - unlimited)",
                             CArgDescriptions::eInteger,
@@ -763,6 +764,21 @@ int CCSRATestApp::Run(void)
             }
             out << "Scanned reftable in "<<sw.Elapsed()
                 << NcbiEndl;
+            sw.Restart();
+        }
+        
+        if ( query_idh && args["over-start"] ) {
+            sw.Restart();
+            CCSraRefSeqIterator ref_it(csra_db, query_idh);
+            TSeqPos step = csra_db.GetRowSize();
+            auto& vv = ref_it.GetAlnOverStarts();
+            out << "Got overlap array in "<<sw.Elapsed()
+                << NcbiEndl;
+            for ( size_t i = 0; i < vv.size(); ++i ) {
+                if ( vv[i]/step != i ) {
+                    out << "Overlap pos["<<i<<" / "<<(i*step)<<"] = "<<vv[i] <<" "<<int(vv[i]-i*step)<< endl;
+                }
+            }
             sw.Restart();
         }
         
