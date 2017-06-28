@@ -9,7 +9,7 @@ if (WIN32)
         set(CMAKE_BUILD_TYPE Debug)
     endif()
     if ("${BUILD_SHARED_LIBS}" STREQUAL "")
-        set(BUILD_SHARED_LIBS OFF:)
+        set(BUILD_SHARED_LIBS OFF)
     endif()
 endif()
 
