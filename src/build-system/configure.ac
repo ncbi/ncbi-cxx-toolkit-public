@@ -7534,7 +7534,11 @@ if test -z "$LMDB_LIBS"; then
    AC_MSG_NOTICE([using local bzlib copy in $lmdblocal])
    LMDB_PATH="<$lmdblocal>"
    LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
-   # LMDB_LIBS="-llmdb"
+   # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
+   # LMDB is always threaded, and may need explicit THREAD_LIBS when
+   # used statically.
+   LMDB_LIBS="$THREAD_LIBS"
+   # LMDB_LIBS="-llmdb $THREAD_LIBS"
    LMDB_LIB="lmdb"
    AC_DEFINE(USE_LOCAL_LMDB, 1, [Define to 1 if using a local copy of LMDB.])
    NCBI_PACKAGE(LMDB)

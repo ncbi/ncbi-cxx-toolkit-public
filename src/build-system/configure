@@ -46835,7 +46835,11 @@ if test -z "$LMDB_LIBS"; then
 echo "$as_me: using local bzlib copy in $lmdblocal" >&6;}
    LMDB_PATH="<$lmdblocal>"
    LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
-   # LMDB_LIBS="-llmdb"
+   # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
+   # LMDB is always threaded, and may need explicit THREAD_LIBS when
+   # used statically.
+   LMDB_LIBS="$THREAD_LIBS"
+   # LMDB_LIBS="-llmdb $THREAD_LIBS"
    LMDB_LIB="lmdb"
 
 cat >>confdefs.h <<\_ACEOF
