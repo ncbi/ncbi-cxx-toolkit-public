@@ -26,8 +26,8 @@ test_case() {
 test_case -in $data/simple_nuc.fsa
 test_case -in $data/simple_prot.fsa
 # fNoUserObjs
-test_case -in $data/id_normalization.fsa -inflags 0x4080000 \
-    -expected $data/id_normalization.fsa2
+#test_case -in $data/id_normalization.fsa -inflags 0x4080000 \
+#    -expected $data/id_normalization.fsa2
 # test_case -in $data/title_symbols.fsa -inflags 0x80000 \
 #     -expected $data/title_symbols.fsa2 # title descriptors differ too
 test_case -in $data/title_symbols.fsa -inflags 0x4000000 -outflags 16 # fKeepGTSigns
