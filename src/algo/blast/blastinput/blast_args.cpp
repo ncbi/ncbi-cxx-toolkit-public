@@ -1429,8 +1429,8 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey(kArgScore, "num", "Cutoff score for accepting a "
                             "single non-spliced alignment",
                             CArgDescriptions::eInteger);
-    arg_desc.AddOptionalKey(kArgSplice, "TF", "Search for spliced alignments",
-                            CArgDescriptions::eBoolean);
+    arg_desc.AddDefaultKey(kArgSplice, "TF", "Search for spliced alignments",
+                           CArgDescriptions::eBoolean, "true");
     arg_desc.AddDefaultKey(kArgRefType, "type", "Type of the reference: "
                            "genome or transcriptome",
                            CArgDescriptions::eString, "genome");
