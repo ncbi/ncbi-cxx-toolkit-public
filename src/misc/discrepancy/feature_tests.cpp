@@ -272,28 +272,33 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
         const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
         const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
         const CSeq_loc& loc = (*gene)->GetLocation();
+cout << "Gene\t" << locus << "\n";                        
         bool found = false;
         ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
             if ((*feat)->GetData().IsCdregion() || (*feat)->GetData().IsRna()) {
-                string ref_gene_locus;
-                string ref_locus_tag;
-                const CGene_ref* gene_ref = (*feat)->GetGeneXref();
                 const CSeq_loc& loc_f = (*feat)->GetLocation();
                 sequence::ECompare cmp = context.Compare(loc, loc_f);
                 if (cmp == sequence::eSame || cmp == sequence::eContains) {
+                    const CGene_ref* gene_ref = (*feat)->GetGeneXref();
                     if (gene_ref) {
-                        ref_gene_locus = gene_ref->IsSetLocus() ? gene_ref->GetLocus() : kEmptyStr;
-                        ref_locus_tag = gene_ref->IsSetLocus_tag() ? gene_ref->GetLocus_tag() : kEmptyStr;
-                    }
-                    else {
-                        CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
-                        if (gene.NotEmpty()) {
-                            ref_gene_locus = (gene->GetData().GetGene().CanGetLocus()) ? gene->GetData().GetGene().GetLocus() : kEmptyStr;
-                            ref_locus_tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
+                        if ((gene_ref->IsSetLocus() || gene_ref->IsSetLocus_tag())
+                            && (!gene_ref->IsSetLocus_tag() || gene_ref->GetLocus_tag() == locus_tag)
+                            && (gene_ref->IsSetLocus_tag() || locus_tag.empty())
+                            && (!gene_ref->IsSetLocus() || gene_ref->GetLocus() == locus)
+                            && (gene_ref->IsSetLocus() || locus.empty())) {
+                                found = true;
+                                break;
                         }
                     }
-                    if ((ref_gene_locus.empty() || ref_gene_locus == locus) && (ref_locus_tag.empty() || ref_locus_tag == locus_tag)) {
-                        found = true;
+                    else {
+                        CConstRef<CSeq_feat> best_gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
+                        if (best_gene.Empty()) {
+cout << "Best gene not found!\n";                        
+                        }
+                        if (best_gene.NotEmpty() && &*best_gene == &**gene) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
             }
