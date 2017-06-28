@@ -154,9 +154,10 @@ BEGIN
 
         -- the update did not change a record because it does not exist
         INSERT INTO Objects (object_id, object_key, object_loc,
-                             client_id, tm_expiration, read_count)
+                             client_id, tm_expiration,
+                             read_count, write_count)
         VALUES (NEXT VALUE FOR ObjectIdGenerator, @object_key, @object_loc,
-                @client_id, @object_exp_if_not_found, 0);
+                @client_id, @object_exp_if_not_found, 0, 0);
         SELECT @row_count = @@ROWCOUNT, @error = @@ERROR;
 
         IF @error != 0 OR @row_count = 0
