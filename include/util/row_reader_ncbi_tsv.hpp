@@ -48,22 +48,22 @@ BEGIN_NCBI_SCOPE
 ///   field names)
 /// - empty lines are skipped
 /// - lines which start with '##' are considered metadata and passed to the
-///   user approprietely
+///   user as rows of type eRR_Metadata
 /// - lines which start with '#':
 ///   - if it is a first non empty line then it is a comment line with field
 ///     names. The names are extracted and the line is not passed to the user
-///   - otherwise the line is treated as a comment one and passed to the user
+///   - otherwise the line is treated as a comment, and passed to the user
 /// - empty column names are allowed
 /// - empty values are allowed
 /// - the last line EOL is not enforced
 /// - the following translation is done:
-///   - '-' is translated to ''
+///   - '-' is translated to '' (empty string)
 ///   - 'na' is translated to Null value
 /// - validation depends on the mode:
 ///   - no field validation: only reads the source and does not enforce
 ///     anything
 ///   - field validation: reads the source and if the basic type information is
-///     supplied by the user then there is a try to convert the raw value to
+///     supplied by the user, then attempts to convert the raw value to
 ///     the required typed value. In case of problems an exception is
 ///     generated.
 ///     Note: a custom format could be supplied for the eRR_DateTime fields.
