@@ -57,7 +57,7 @@ GO
 
 
 -- NB: change it manually when applying
-IF 1 = 0
+IF 1 = 1
 BEGIN
     RAISERROR( 'Fix the condition manually before running the update script', 11, 1 )
     SET NOEXEC ON
@@ -99,7 +99,7 @@ BEGIN
 END
 IF @sp_version != 14
 BEGIN
-    RAISERROR( 'Unexpected stored procedure version. Expected version is 13.', 11, 1 )
+    RAISERROR( 'Unexpected stored procedure version. Expected version is 14.', 11, 1 )
     SET NOEXEC ON
 END
 GO
