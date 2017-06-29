@@ -1255,7 +1255,7 @@ fi
 case "$host_os:$compiler" in
   solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
   solaris*        ) : ${THREAD_LIBS:="-lpthread -lposix4"} ;;
-  freebsd*        ) ;; # -pthread already substitutes libc_r for libc
+  freebsd*        ) : ${THREAD_LIBS:="-pthread"} ;; # for LMDB in ST builds
   *               ) : ${THREAD_LIBS:="-lpthread"} ;;
 esac
 
@@ -7531,7 +7531,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
       [[MDB_env *env; return mdb_env_create(&env);]])])
 if test -z "$LMDB_LIBS"; then
    lmdblocal=util/lmdb
-   AC_MSG_NOTICE([using local bzlib copy in $lmdblocal])
+   AC_MSG_NOTICE([using local LMDB copy in $lmdblocal])
    LMDB_PATH="<$lmdblocal>"
    LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
    # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,

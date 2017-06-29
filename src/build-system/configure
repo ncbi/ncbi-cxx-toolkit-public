@@ -8042,7 +8042,7 @@ fi
 case "$host_os:$compiler" in
   solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
   solaris*        ) : ${THREAD_LIBS:="-lpthread -lposix4"} ;;
-  freebsd*        ) ;; # -pthread already substitutes libc_r for libc
+  freebsd*        ) : ${THREAD_LIBS:="-pthread"} ;; # for LMDB in ST builds
   *               ) : ${THREAD_LIBS:="-lpthread"} ;;
 esac
 
@@ -46831,8 +46831,8 @@ _ACEOF
 
 if test -z "$LMDB_LIBS"; then
    lmdblocal=util/lmdb
-   { echo "$as_me:$LINENO: using local bzlib copy in $lmdblocal" >&5
-echo "$as_me: using local bzlib copy in $lmdblocal" >&6;}
+   { echo "$as_me:$LINENO: using local LMDB copy in $lmdblocal" >&5
+echo "$as_me: using local LMDB copy in $lmdblocal" >&6;}
    LMDB_PATH="<$lmdblocal>"
    LMDB_INCLUDE="-I\$(includedir)/$lmdblocal -I\$(includedir0)/$lmdblocal"
    # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
