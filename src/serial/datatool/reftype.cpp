@@ -226,7 +226,7 @@ CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
         if (mem->Optional()) {
             memInfo->SetOptional();
         }
-        if (mem->NoPrefix()) {
+        if (!IsASNDataSpec()) {
             memInfo->SetNoPrefix();
         }
         if (IsNillable()) {

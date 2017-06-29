@@ -1557,9 +1557,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if (i->dataType && i->dataType->GetDataMember() && i->dataType->GetDataMember()->Optional()) {
                 methods << "->SetOptional()";
             }
+#if 0
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }
+#endif
             if (i->attlist) {
                 methods << "->SetAttlist()";
             }

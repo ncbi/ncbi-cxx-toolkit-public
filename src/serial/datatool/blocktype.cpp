@@ -652,7 +652,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
         if ( mem->Optional() || mem->GetDefault() || mem->Nillable() ) {
             memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
         }
-        if (mem->NoPrefix()) {
+        if (!IsASNDataSpec()) {
             memInfo->SetNoPrefix();
         }
         if (mem->Attlist()) {
@@ -743,7 +743,7 @@ AutoPtr<CTypeStrings> CDataContainerType::AddMembers(
                         (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
-                        (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
+                        !IsASNDataSpec(), (*i)->Attlist(), (*i)->Notag(),
                         (*i)->SimpleType(),(*i)->GetType(),false,
                         (*i)->Comments());
         (*i)->GetType()->SetTypeStr(&(*code));
@@ -1034,7 +1034,7 @@ void CDataMember::SetOptional(void)
 
 void CDataMember::SetNoPrefix(void)
 {
-    m_NoPrefix = true;
+//    m_NoPrefix = true;
 }
 
 void CDataMember::SetAttlist(void)

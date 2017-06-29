@@ -487,11 +487,11 @@ const string& CDataType::GlobalName(void) const
                 m = seq->GetDataMember();
             }
         }
-        if (m && m->NoPrefix() && !m->Attlist() && !m->Notag()) {
+        if (m && !IsASNDataSpec() && !m->Attlist() && !m->Notag()) {
             m = GetParentType()->GetDataMember();
             if (!m) {
                 return GetDataMember()->GetName();
-            } else if (m->NoPrefix() && !m->Attlist()) {
+            } else if (!IsASNDataSpec() && !m->Attlist()) {
                 if (IsInUniSeq()) {
                     return m->GetName();
                 } else {

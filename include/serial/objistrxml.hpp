@@ -207,7 +207,7 @@ protected:
     void BeginArrayElement(TTypeInfo elementType);
     void EndArrayElement(void);
 
-    void CheckStdXml(const CClassTypeInfoBase* classType);
+    void CheckStdXml(TTypeInfo classType);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);

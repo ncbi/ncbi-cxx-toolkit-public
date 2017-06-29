@@ -99,6 +99,7 @@ public:
     const CItemInfo* GetItemInfo(TMemberIndex index) const;
     void AddItem(CItemInfo* item);
     void AssignItemsTags(CAsnBinaryDefs::ETagType containerType);
+    void DataSpec(EDataSpec spec);
 
     // helping member iterator class (internal use)
     class CIterator

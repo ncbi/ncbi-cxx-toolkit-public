@@ -180,7 +180,7 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
             CMemberInfo* memInfo =
                 typeInfo->AddMember(member->GetName(),0,
                                     member->GetType()->GetTypeInfo());
-            if (member->NoPrefix()) {
+            if (!IsASNDataSpec()) {
                 memInfo->SetNoPrefix();
             }
             if (member->Attlist()) {
@@ -193,7 +193,7 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
             CVariantInfo* varInfo = 
                 typeInfo->AddVariant(member->GetName(), 0,
                                      member->GetType()->GetTypeInfo());
-            if (member->NoPrefix()) {
+            if (!IsASNDataSpec()) {
                 varInfo->SetNoPrefix();
             }
             if (member->Notag()) {
@@ -279,7 +279,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
             bool in_union = GetBoolVar((*i)->GetName()+"._in_union", true);
             code->AddVariant(external_name, member_name, varType, delayed, in_union,
                              (*i)->GetType()->GetTag(),
-                             (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
+                             !IsASNDataSpec(), (*i)->Attlist(), (*i)->Notag(),
                              (*i)->SimpleType(),(*i)->GetType(),
                              (*i)->Comments());
             (*i)->GetType()->SetTypeStr(&(*code));

@@ -81,6 +81,7 @@ public:
     const CItemsInfo& GetItems(void) const;
     const CItemInfo* GetItemInfo(const string& name) const;
     void AssignItemsTags(void);
+    void DataSpec(EDataSpec spec);
 
     const type_info& GetId(void) const;
 

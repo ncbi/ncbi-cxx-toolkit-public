@@ -103,6 +103,16 @@ void CItemsInfo::AssignItemsTags(CAsnBinaryDefs::ETagType containerType)
     }
  }
 
+void CItemsInfo::DataSpec(EDataSpec spec)
+{
+    if (spec != EDataSpec::eASN) {
+        for (auto& i : m_Items) {
+            i->GetId().SetNoPrefix();
+            i->UpdateFunctions();
+        }
+    }
+}
+
 DEFINE_STATIC_FAST_MUTEX(s_ItemsMapMutex);
 
 const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const

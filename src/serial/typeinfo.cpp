@@ -171,6 +171,11 @@ CTypeInfo* CTypeInfo::SetTag(
     return this;
 }
 
+void CTypeInfo::DataSpec(EDataSpec spec)
+{
+    m_DataSpec = spec;
+}
+
 bool CTypeInfo::HasNamespaceName(void) const
 {
     return m_InfoItem ? m_InfoItem->HasNamespaceName() : false;

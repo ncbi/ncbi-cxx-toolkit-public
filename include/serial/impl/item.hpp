@@ -87,6 +87,7 @@ public:
 
 private:
     friend class CItemsInfo;
+    virtual void UpdateFunctions(void) = 0;
 
     // member ID
     CMemberId m_Id;

@@ -123,6 +123,12 @@ void CClassTypeInfoBase::AssignItemsTags(void)
     GetItems().AssignItemsTags(GetTagType());
 }
 
+void CClassTypeInfoBase::DataSpec(EDataSpec spec)
+{
+    CParent::DataSpec(spec);
+    GetItems().DataSpec(spec);
+}
+
 void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)
 {
     m_Id = &id;

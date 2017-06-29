@@ -718,7 +718,7 @@ mem_simple = false;
                     "void "<<methodPrefix<<"SetDefault"<<mem_cName<<"(void)\n"
                     "{\n"
                     "    Reset"<<i->cName<<"();\n";
-                if ( i->haveFlag && i->noPrefix) {
+                if ( i->haveFlag && !CDataType::IsASNDataSpec()) {
                     code.Methods(inl) <<
                         "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                 }
@@ -1485,9 +1485,11 @@ mem_simple = false;
                 (wrapperClass && DataType() && DataType()->IsNillable())) {
                 methods << "->SetNillable()";
             }
+#if 0
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }
+#endif
             if (i->attlist) {
                 methods << "->SetAttlist()";
             }

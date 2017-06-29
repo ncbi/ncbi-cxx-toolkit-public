@@ -1345,7 +1345,7 @@ void CObjectIStreamXml::ReadWord(string& str, EStringType type)
 TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 {
     TEnumValueType value;
-    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() != EDataSpec::eASN;
+    bool valueonly = m_StdXml;
     if (valueonly) {
         if (values.IsInteger()) {
             value = ReadInt4();
@@ -1962,22 +1962,17 @@ void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
 
 void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
+    CheckStdXml(namedTypeInfo);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
     } else {
         TTypeInfo realtype = GetRealTypeInfo(namedTypeInfo);
         if (realtype->GetTypeFamily() == eTypeFamilyPrimitive &&
-            GetStackDepth() > 2 &&
-            namedTypeInfo->GetDataSpec() != EDataSpec::eASN) {
+            GetStackDepth() > 2 && m_StdXml) {
             TopFrame().SetNotag();
             m_SkipNextTag = false;
             return;
-        }
-        const CClassTypeInfo* classType =
-            dynamic_cast<const CClassTypeInfo*>(realtype);
-        if (classType) {
-            CheckStdXml(classType);
         }
         OpenTag(namedTypeInfo);
     }
@@ -2018,20 +2013,28 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 }
 #endif
 
-void CObjectIStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
+void CObjectIStreamXml::CheckStdXml(TTypeInfo typeinfo)
 {
-    TMemberIndex first = classType->GetItems().FirstIndex();
-    m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+    if (typeinfo->GetCodeVersion() > 21600) {
+        m_StdXml = typeinfo->GetDataSpec() != EDataSpec::eASN;
+    } else {
+        const CClassTypeInfo* classType =
+            dynamic_cast<const CClassTypeInfo*>(typeinfo);
+        if (classType) {
+            TMemberIndex first = classType->GetItems().FirstIndex();
+            m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+        }
+    }
 }
 
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
+    CheckStdXml(classInfo);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
         return;
     }
-    CheckStdXml(classInfo);
     if (x_IsStdXml()) {
         if (!m_Attlist) {
 // if class spec defines no attributes, but there are some - skip them
@@ -2336,12 +2339,12 @@ void CObjectIStreamXml::UndoClassMember(void)
 
 void CObjectIStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
+    CheckStdXml(choiceType);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
         return;
     }
-    CheckStdXml(choiceType);
     OpenTagIfNamed(choiceType);
 }
 void CObjectIStreamXml::EndChoice(void)

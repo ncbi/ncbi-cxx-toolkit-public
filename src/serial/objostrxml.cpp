@@ -416,7 +416,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 {
     bool skipname = valueName.empty() ||
                   (m_WriteNamedIntegersByValue && values.IsInteger());
-    bool valueonly = GetRecentTypeInfo() && GetRecentTypeInfo()->GetDataSpec() != EDataSpec::eASN;
+    bool valueonly = m_StdXml;
     if (valueonly) {
         if ( values.IsInteger() ) {
             m_Output.PutInt4(value);
@@ -1290,22 +1290,17 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
+    CheckStdXml(namedTypeInfo);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
     } else {
         TTypeInfo realtype = GetRealTypeInfo(namedTypeInfo);
         if (realtype->GetTypeFamily() == eTypeFamilyPrimitive &&
-            GetStackDepth() > 2 &&
-            namedTypeInfo->GetDataSpec() != EDataSpec::eASN) {
+            GetStackDepth() > 2 && m_StdXml) {
             TopFrame().SetNotag();
             m_SkipNextTag = false;
             return;
-        }
-        const CClassTypeInfo* classType =
-            dynamic_cast<const CClassTypeInfo*>(realtype);
-        if (classType) {
-            CheckStdXml(classType);
         }
         bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
         OpenTag(namedTypeInfo);
@@ -1364,20 +1359,28 @@ void CObjectOStreamXml::CopyNamedType(TTypeInfo namedTypeInfo,
 }
 #endif
 
-void CObjectOStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
+void CObjectOStreamXml::CheckStdXml(TTypeInfo typeinfo)
 {
-    TMemberIndex first = classType->GetItems().FirstIndex();
-    m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+    if (typeinfo->GetCodeVersion() > 21600) {
+        m_StdXml = typeinfo->GetDataSpec() != EDataSpec::eASN;
+    } else {
+        const CClassTypeInfo* classType =
+            dynamic_cast<const CClassTypeInfo*>(typeinfo);
+        if (classType) {
+            TMemberIndex first = classType->GetItems().FirstIndex();
+            m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+        }
+    }
 }
 
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
+    CheckStdXml(classInfo);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
         return;
     }
-    CheckStdXml(classInfo);
     bool needNs = x_ProcessTypeNamespace(classInfo);
     OpenTagIfNamed(classInfo);
     if (needNs) {
@@ -1537,12 +1540,12 @@ void CObjectOStreamXml::WriteClassMemberSpecialCase(const CMemberId& memberId,
 
 void CObjectOStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
+    CheckStdXml(choiceType);
     if (m_SkipNextTag) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
         return;
     }
-    CheckStdXml(choiceType);
     bool needNs = x_ProcessTypeNamespace(choiceType);
     OpenTagIfNamed(choiceType);
     if (needNs) {

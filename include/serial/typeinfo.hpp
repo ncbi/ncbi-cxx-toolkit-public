@@ -270,9 +270,7 @@ public:
     size_t GetCodeVersion(void) const {
         return m_CodeVer;
     }
-    void DataSpec(EDataSpec spec) {
-        m_DataSpec = spec;
-    }
+    void DataSpec(EDataSpec spec);
     EDataSpec GetDataSpec(void) const {
         return m_DataSpec;
     }
