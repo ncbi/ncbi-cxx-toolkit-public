@@ -8663,8 +8663,6 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                                 local_first_gap = false;
                                 local_last_gap = false;
                                 TSeqLength len = loc_it.GetRange().GetLength();
-                                TSeqPos start = loc_it.GetRange().GetFrom();
-                                TSeqPos stop = loc_it.GetRange().GetTo();
                                 ENa_strand strand = loc_it.GetStrand();
 
                                 int pos = 0;
