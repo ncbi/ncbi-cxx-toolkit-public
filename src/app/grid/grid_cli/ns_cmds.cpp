@@ -59,30 +59,30 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     const bool job_provided = IsOptionSet(eID) || IsOptionSet(eJobId);
     const bool service_provided = IsOptionExplicitlySet(eNetSchedule);
 
-    if (job_provided) {
-        CNetScheduleKey key(m_Opts.id, m_CompoundIDPool);
-
-        if (queue.empty())
-            queue = key.queue;
-
-        if (!service_provided) {
-            key.host.push_back(':');
-            key.host.append(NStr::NumericToString(key.port));
-            service = key.host;
-        }
-    } else if (IsOptionSet(eWorkerNode)) {
-        m_NetScheduleAPI = CNetScheduleAPIExt::CreateWnCompat(
-                service, m_Opts.auth);
-
-    } else if (!IsOptionSet(eNetSchedule)) {
-        NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION "' option is required.");
-
-    } else if (!IsOptionSet(eQueue) && require_queue) {
-        NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION "' option is required.");
+    if (IsOptionSet(eWorkerNode)) {
+        m_NetScheduleAPI = CNetScheduleAPIExt::CreateWnCompat(service, m_Opts.auth);
 
     } else {
-        m_NetScheduleAPI = CNetScheduleAPIExt::CreateNoCfgLoad(
-                service, m_Opts.auth, queue);
+        if (job_provided) {
+            CNetScheduleKey key(m_Opts.id, m_CompoundIDPool);
+
+            if (queue.empty())
+                queue = key.queue;
+
+            if (!service_provided) {
+                key.host.push_back(':');
+                key.host.append(NStr::NumericToString(key.port));
+                service = key.host;
+            }
+        } else if (!IsOptionSet(eNetSchedule)) {
+            NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION "' option is required.");
+
+        } else if (!IsOptionSet(eQueue) && require_queue) {
+            NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION "' option is required.");
+
+        }
+
+        m_NetScheduleAPI = CNetScheduleAPIExt::CreateNoCfgLoad(service, m_Opts.auth, queue);
     }
 
     if (job_provided && service_provided) {
