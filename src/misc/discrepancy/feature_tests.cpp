@@ -572,7 +572,8 @@ const string kPartialProblems = "[n] feature[s] [has] partial ends that do not a
 DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
 //  ----------------------------------------------------------------------------
 {
-    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+//    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+    if (context.IsEukaryotic() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
     //only examine coding regions
@@ -1254,6 +1255,38 @@ DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSma
 
 
 DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// RIBOSOMAL_SLIPPAGE
+
+DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, " Only a select number of proteins undergo programmed frameshifts due to ribosomal slippage")
+{
+    if (context.IsEukaryotic() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion() || !obj.IsSetExcept_text()) {
+        return;
+    }
+    if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
+        if (obj.GetExcept_text().find("ribosomal slippage") != string::npos) {
+            string product = GetProductForCDS(obj, context.GetScope()); // sema: may need to change when we start using CFeatTree
+            if (product.find("transposase") != string::npos) {
+                return;
+            }
+            static string no_problem[] = { "peptide chain release factor 2, programmed frameshift", "IS150 protein InsAB" };
+            static size_t len = sizeof(no_problem) / sizeof(no_problem[0]);
+            for (size_t n = 0; n < len; n++) {
+                if (product == no_problem[n]) {
+                    return;
+                }
+            }
+            m_Objs["[n] coding region[s] [has] unexpected ribosomal slippage"].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(RIBOSOMAL_SLIPPAGE)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
