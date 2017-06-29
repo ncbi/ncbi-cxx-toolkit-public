@@ -95,6 +95,18 @@ static int s_GetDiagHandler(void)
 
 
 
+NCBI_PARAM_DECL(int, VDB, DEBUG);
+NCBI_PARAM_DEF_EX(int, VDB, DEBUG, 0, eParam_NoThread, VDB_DEBUG);
+
+
+static int s_GetDebugLevel(void)
+{
+    static int value = NCBI_PARAM_TYPE(VDB, DEBUG)::GetDefault();
+    return value;
+}
+
+
+
 DEFINE_SRA_REF_TRAITS(VDBManager, const);
 DEFINE_SRA_REF_TRAITS(VDatabase, const);
 DEFINE_SRA_REF_TRAITS(VTable, const);
@@ -1108,6 +1120,40 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                         "Cannot read VDB value with non-zero bit offset: "<<
                         cursor<<column<<'['<<row<<"]: "<<bit_offset,
                         RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
+    }
+    if ( s_GetDebugLevel() >= 9 ) {
+        CNcbiOstrstream s;
+        if ( bit_length == 8 ) {
+            s << '"' << NStr::PrintableString(CTempString((const char*)m_Data, m_ElemCount)) << '"';
+        }
+        else if ( bit_length == 16 ) {
+            for ( uint32_t i = 0; i < m_ElemCount; ++i ) {
+                if ( i ) {
+                    s << ", ";
+                }
+                s << ((const int16_t*)m_Data)[i];
+            }
+        }
+        else if ( bit_length == 32 ) {
+            for ( uint32_t i = 0; i < m_ElemCount; ++i ) {
+                if ( i ) {
+                    s << ", ";
+                }
+                s << ((const int32_t*)m_Data)[i];
+            }
+        }
+        else if ( bit_length == 64 ) {
+            for ( uint32_t i = 0; i < m_ElemCount; ++i ) {
+                if ( i ) {
+                    s << ", ";
+                }
+                s << ((const int64_t*)m_Data)[i];
+            }
+        }
+        else {
+            s << "*** bad bit_length="<<bit_length;
+        }
+        LOG_POST(Info<<"VDB "<<cursor<<column<<'['<<row<<"]: "<<CNcbiOstrstreamToString(s));
     }
     m_Ref.Set(cursor, row, column);
 }
