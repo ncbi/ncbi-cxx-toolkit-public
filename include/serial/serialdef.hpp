@@ -155,7 +155,7 @@ enum EPrimitiveValueType {
     ePrimitiveValueOctetString,    ///< vector<(signed|unsigned)? char>
     ePrimitiveValueBitString,      //
 #ifdef NCBI_STRICT_GI
-    ePrimitiveValueGi,
+    //ePrimitiveValueGi,
 #endif
     ePrimitiveValueAny,
     ePrimitiveValueOther
