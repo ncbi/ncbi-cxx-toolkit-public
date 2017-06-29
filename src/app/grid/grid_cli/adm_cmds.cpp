@@ -51,7 +51,7 @@ void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
         return;
 
     case OPTION_N(1): // eNetSchedule
-        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity, false);
         return;
 
     case OPTION_N(2): // eWorkerNode
