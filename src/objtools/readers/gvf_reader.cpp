@@ -374,7 +374,7 @@ bool CGvfReader::x_SetLocationInterval(
     CRef<CSeq_loc> pLocation)
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
 
     pLocation->SetInt().SetId(*pId);
     pLocation->SetInt().SetFrom(record.SeqStart());
@@ -482,7 +482,7 @@ bool CGvfReader::x_SetLocationPoint(
     CRef<CSeq_loc> pLocation)
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
     pLocation->SetPnt().SetId(*pId);
     if (record.Type() == "insertion") {
         //for insertions, GVF uses insert-after logic while NCBI uses insert-before
@@ -564,7 +564,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId(*pId);
     pLocation->SetInt().SetFrom(record.SeqStart());
@@ -671,7 +671,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetPnt().SetId(*pId);
     if (record.Type() == "insertion") {

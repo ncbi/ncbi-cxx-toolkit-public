@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/read_util.hpp>
 #include "error_logger.hpp"
 
 #include <cstdio>
@@ -147,7 +148,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "Creating new test case from " << input << " ..." << endl;
 
     CErrorLogger logger(errors);
-    CGff3Reader reader(0);
+    CGff3Reader reader(0, "", "", CReadUtil::AsSeqId);
     CNcbiIfstream ifstr(input.c_str());
 
     typedef CGff2Reader::TAnnotList ANNOTS;

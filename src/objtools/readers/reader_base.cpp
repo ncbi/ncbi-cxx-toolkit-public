@@ -148,7 +148,8 @@ CReaderBase::GetReader(
 CReaderBase::CReaderBase(
     TReaderFlags flags,
     const string& annotName,
-    const string& annotTitle) :
+    const string& annotTitle,
+    SeqIdResolver seqidresolver) :
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
@@ -157,7 +158,8 @@ CReaderBase::CReaderBase(
     m_AnnotName(annotName),
     m_AnnotTitle(annotTitle),
     m_pReader(0),
-    m_pCanceler(0)
+    m_pCanceler(0),
+    mSeqIdResolve(seqidresolver)
 {
     m_pTrackDefaults = new CTrackData;
 }

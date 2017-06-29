@@ -86,7 +86,8 @@ public:
     CGff3Reader(
         unsigned int uFlags,
         const string& name = "",
-        const string& title = "" );
+        const string& title = "",
+        SeqIdResolver resolver = CReadUtil::AsSeqId);
 
     virtual ~CGff3Reader();
 

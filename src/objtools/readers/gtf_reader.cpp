@@ -199,9 +199,10 @@ string s_FeatureKey(
 CGtfReader::CGtfReader( 
     unsigned int uFlags,
     const string& strAnnotName,
-    const string& strAnnotTitle ):
+    const string& strAnnotTitle,
+    SeqIdResolver resolver ):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags, strAnnotName, strAnnotTitle )
+    CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver )
 {
 }
 
@@ -478,8 +479,8 @@ bool CGtfReader::x_CreateFeatureLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(
-        record.Id(), m_iFlags & fAllIdsAsLocal);
+    CRef<CSeq_id> pId = mSeqIdResolve(
+        record.Id(), m_iFlags & fAllIdsAsLocal, true);
 
     CSeq_interval& location = pFeature->SetLocation().SetInt();
     location.SetId( *pId );
@@ -597,8 +598,8 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(
-        record.Id(), m_iFlags & fAllIdsAsLocal);
+    CRef<CSeq_id> pId = mSeqIdResolve(
+        record.Id(), m_iFlags & fAllIdsAsLocal, true);
 
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
@@ -877,7 +878,7 @@ bool CGtfReader::x_FeatureSetDataCDS(
     CCdregion& cdr = pFeature->SetData().SetCdregion();
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
-        CRef<CSeq_id> pId = CReadUtil::AsSeqId(strValue,m_iFlags);
+        CRef<CSeq_id> pId = mSeqIdResolve(strValue,m_iFlags, true);
         if (pId->IsGenbank()) {
             pFeature->SetProduct().SetWhole(*pId);
         }

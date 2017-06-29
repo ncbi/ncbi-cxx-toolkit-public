@@ -84,7 +84,6 @@ void CReadUtil::Tokenize(
     }
 }
 
-
 //  -----------------------------------------------------------------
 CRef<CSeq_id> CReadUtil::AsSeqId(
     const string& givenId,
@@ -131,6 +130,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
     }
     return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, rawId));
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CReadUtil::GetTrackName(

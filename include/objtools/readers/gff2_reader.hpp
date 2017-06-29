@@ -79,7 +79,8 @@ public:
     CGff2Reader(
         int iFlags,
         const string& name = "",
-        const string& title = "" );
+        const string& title = "",
+        SeqIdResolver resolver = CReadUtil::AsSeqId);
 
     virtual ~CGff2Reader();
     
@@ -332,6 +333,9 @@ public:
         const CSeq_feat& );
 
     virtual bool xIsIgnoredFeatureType(
+        const string&);
+
+    virtual bool xIsIgnoredFeatureId(
         const string&);
 
     static bool IsExon(

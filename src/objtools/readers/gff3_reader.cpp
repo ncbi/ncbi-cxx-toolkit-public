@@ -198,9 +198,10 @@ string CGff3ReadRecord::x_NormalizedAttributeKey(
 CGff3Reader::CGff3Reader(
     unsigned int uFlags,
     const string& name,
-    const string& title ):
+    const string& title,
+    SeqIdResolver resolver ):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags, name, title )
+    CGff2Reader( uFlags, name, title, resolver )
 {
     CGff2Record::ResetId();
 }
@@ -271,7 +272,7 @@ bool CGff3Reader::xVerifyExonLocation(
         return false;
     }
     const CSeq_interval& containingInt = cit->second.GetObject();
-    const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags);
+    const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags, mSeqIdResolve);
     const CSeq_interval& containedInt = pContainedLoc->GetInt();
     if (containedInt.GetFrom() < containingInt.GetFrom()) {
         return false;
@@ -567,7 +568,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
 
         CRef<CCode_break> pCodeBreak(new CCode_break); 
         CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();        
-        CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+        CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
         cbLoc.SetId(*pId);
         cbLoc.SetFrom(record.SeqStart());
         cbLoc.SetTo(record.SeqStop());

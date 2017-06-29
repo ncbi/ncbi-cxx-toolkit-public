@@ -45,6 +45,8 @@ public:
     typedef map<string, string> TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
+
 
 public:
     CGff2Record();
@@ -107,9 +109,11 @@ public:
         return false;
     };
     CRef<CSeq_id> GetSeqId(
-        int ) const;
+        int,
+        SeqIdResolver = nullptr ) const;
     CRef<CSeq_loc> GetSeqLoc(
-        int ) const;
+        int,
+        SeqIdResolver seqidresolve = nullptr) const;
 
     const TAttributes& Attributes() const { 
         return m_Attributes; 
@@ -125,11 +129,13 @@ public:
 
     virtual bool InitializeFeature(
         int,
-        CRef<CSeq_feat> ) const; 
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const; 
 
     virtual bool UpdateFeature(
         int,
-        CRef<CSeq_feat> ) const;
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const;
 
     static void TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& line);
 protected:
@@ -162,15 +168,17 @@ protected:
 
     virtual bool x_InitFeatureLocation(
         int,
-        CRef<CSeq_feat> ) const;
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const;
 
     virtual bool xInitFeatureData(
         int,
-        CRef<CSeq_feat> ) const;
+        CRef<CSeq_feat>) const;
 
     virtual bool xUpdateFeatureData(
         int,
-        CRef<CSeq_feat>) const;
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const;
 
     virtual bool x_MigrateAttributesSubSource(
         int,

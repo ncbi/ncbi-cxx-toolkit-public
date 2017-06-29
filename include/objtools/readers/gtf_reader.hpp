@@ -65,7 +65,11 @@ public:
         fGenerateChildXrefs = 1<<8,
     };
 
-    CGtfReader( unsigned int =0, const string& = "", const string& = "" );
+    CGtfReader( 
+        unsigned int =0, 
+        const string& = "", 
+        const string& = "",
+        SeqIdResolver = CReadUtil::AsSeqId );
 
     virtual ~CGtfReader();
     

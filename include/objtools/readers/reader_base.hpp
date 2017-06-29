@@ -40,6 +40,7 @@
 #include <util/icanceled.hpp>
 #include <objtools/readers/track_data.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/read_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -83,12 +84,15 @@ public:
     typedef TAnnots::iterator TAnnotIt;
     typedef TAnnots::const_iterator TAnnotCit;
 
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
+
 protected:
     /// Protected constructor. Use GetReader() to get an actual reader object.
     CReaderBase(
         TReaderFlags flags = 0,     //flags
         const string& name = "",    //annot name
-        const string& title = "" ); //annot title
+        const string& title = "",   //annot title
+        SeqIdResolver seqresolver = CReadUtil::AsSeqId);
 
 
 public:
@@ -328,6 +332,7 @@ protected:
     CTrackData*  m_pTrackDefaults;
     ILineReader* m_pReader;
     ICanceled* m_pCanceler;
+    SeqIdResolver mSeqIdResolve;
 };
 
 END_objects_SCOPE

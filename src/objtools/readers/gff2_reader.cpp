@@ -133,9 +133,10 @@ const string* CGff2Reader::s_GetAnnotId(
 CGff2Reader::CGff2Reader(
     int iFlags,
     const string& name,
-    const string& title):
+    const string& title,
+    SeqIdResolver seqidresolve):
 //  ----------------------------------------------------------------------------
-    CReaderBase(iFlags, name, title),
+    CReaderBase(iFlags, name, title, seqidresolve),
     m_pErrors(0),
     mCurrentFeatureCount(0),
     mParsingAlignment(false)
@@ -401,11 +402,10 @@ CGff2Reader::xParseFeature(
     }
 
     //make sure we are interested:
-    string ftype = pRecord->Type();
-    if (ftype == "exon") {
-        cerr << "";
+    if (xIsIgnoredFeatureType(pRecord->Type())) {
+        return true;
     }
-    if (xIsIgnoredFeatureType(ftype)) {
+    if (xIsIgnoredFeatureId(pRecord->Id())) {
         return true;
     }
 
@@ -1312,10 +1312,10 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     else {
         spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
     }
-    CRef<CSeq_id> product_id = CReadUtil::AsSeqId(targetParts[0]);
+    CRef<CSeq_id> product_id = mSeqIdResolve(targetParts[0], 0, true);
     spliced_seg.SetProduct_id(*product_id);
 
-    CRef<CSeq_id> genomic_id = CReadUtil::AsSeqId(gff.Id());
+    CRef<CSeq_id> genomic_id = mSeqIdResolve(gff.Id(), 0, true);
     spliced_seg.SetGenomic_id(*genomic_id);
 
     if (targetParts[3] == "+") {
@@ -1422,9 +1422,9 @@ bool CGff2Reader::xAlignmentSetDenseg(
 
     //ids
     denseg.SetIds().push_back(
-        CReadUtil::AsSeqId(targetParts[0]));
+        mSeqIdResolve(targetParts[0], 0, true));
     denseg.SetIds().push_back(
-        CReadUtil::AsSeqId(gff.Id()));
+        mSeqIdResolve(gff.Id(), 0, true));
 
     const TSeqPos targetStart = NStr::StringToInt(targetParts[1])-1;
     const TSeqPos targetEnd   = NStr::StringToInt(targetParts[2])-1;
@@ -1530,7 +1530,7 @@ bool CGff2Reader::x_FeatureSetLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
     pLocation->SetInt().SetFrom( record.SeqStart() );
@@ -1992,6 +1992,14 @@ bool CGff2Reader::IsAlignmentData(
 
 //  ============================================================================
 bool CGff2Reader::xIsIgnoredFeatureType(
+    const string& type)
+//  ============================================================================
+{
+    return false;
+}
+
+//  ============================================================================
+bool CGff2Reader::xIsIgnoredFeatureId(
     const string& type)
 //  ============================================================================
 {
