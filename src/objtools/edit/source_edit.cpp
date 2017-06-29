@@ -183,7 +183,6 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
         ERR_POST("Taxonomy service failure");
         return CRef<CBioSource>(NULL);
     }
-    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
     if (!s_ProcessReply(*(reply->GetReply().front()), o1) ||
         !s_ProcessReply(*(reply->GetReply().back()), o2)) {
         return common;
