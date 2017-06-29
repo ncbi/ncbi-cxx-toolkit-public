@@ -133,7 +133,8 @@ void CCSRATestApp::Init(void)
                             "RefSeq end position",
                             CArgDescriptions::eInteger);
     
-    arg_desc->AddFlag("over-start", "Make overlap start positions");
+    arg_desc->AddFlag("over-start", "Dump overlap start positions");
+    arg_desc->AddFlag("over-start-verify", "Verify overlap start positions");
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
                             "Number of cSRA entries to read (0 - unlimited)",
                             CArgDescriptions::eInteger,
@@ -767,16 +768,49 @@ int CCSRATestApp::Run(void)
             sw.Restart();
         }
         
-        if ( query_idh && args["over-start"] ) {
+        if ( query_idh && (args["over-start"] || args["over-start-verify"]) ) {
             sw.Restart();
+            bool verify = args["over-start-verify"];
             CCSraRefSeqIterator ref_it(csra_db, query_idh);
             TSeqPos step = csra_db.GetRowSize();
-            auto& vv = ref_it.GetAlnOverStarts();
-            out << "Got overlap array in "<<sw.Elapsed()
-                << NcbiEndl;
+            TSeqPos ref_len = ref_it.GetSeqLength();
+            vector<TSeqPos> vv = ref_it.GetAlnOverStarts();
+            out << "Got overlap array in "<<sw.Elapsed() << endl;
+            vector<TSeqPos> vv_exp;
+            if ( verify ) {
+                for ( TSeqPos i = 0; i*step < ref_len; ++i ) {
+                    vv_exp.push_back((i+1)*step);
+                }
+                for ( CCSraAlignIterator it(csra_db, query_idh, 0, ref_len, CCSraAlignIterator::eSearchByStart); it; ++it ) {
+                    TSeqPos aln_beg = it.GetRefSeqPos();
+                    TSeqPos aln_len = it.GetRefSeqLen();
+                    _ASSERT(aln_beg+aln_len <= ref_len);
+                    TSeqPos slot_beg = aln_beg/step;
+                    TSeqPos slot_end = (aln_beg+aln_len)/step;
+                    for ( TSeqPos i = slot_beg; i <= slot_end; ++i ) {
+                        vv_exp[i] = min(vv_exp[i], aln_beg);
+                    }
+                }
+            }
             for ( size_t i = 0; i < vv.size(); ++i ) {
-                if ( vv[i]/step != i ) {
-                    out << "Overlap pos["<<i<<" / "<<(i*step)<<"] = "<<vv[i] <<" "<<int(vv[i]-i*step)<< endl;
+                if ( verify ) {
+                    if ( vv[i] >= i*step )
+                        vv[i] = (i+1)*step;
+                    if ( vv_exp[i] >= i*step )
+                        vv_exp[i] = (i+1)*step;
+                    if ( vv[i] != vv_exp[i] ) {
+                        out << "Overlap pos["<<i<<" / "<<(i*step)<<"]"
+                            << " = "<<vv[i] <<" "<<int(vv[i]-i*step)
+                            << " exp "<<vv_exp[i] <<" "<<int(vv_exp[i]-i*step)
+                            << endl;
+                    }
+                }
+                else {
+                    if ( vv[i]/step != i ) {
+                        out << "Overlap pos["<<i<<" / "<<(i*step)<<"]"
+                            << " = "<<vv[i] <<" "<<int(vv[i]-i*step)
+                            << endl;
+                    }
                 }
             }
             sw.Restart();
