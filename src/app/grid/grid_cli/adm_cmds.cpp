@@ -55,7 +55,7 @@ void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
         return;
 
     case OPTION_N(2): // eWorkerNode
-        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity, false);
         return;
 
     case OPTION_N(3): // eNetStorage
@@ -76,11 +76,11 @@ void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
         return;
 
     case OPTION_N(1): // eNetSchedule
-        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity, false);
         return;
 
     case OPTION_N(2): // eWorkerNode
-        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity, false);
         return;
 
     case OPTION_N(3): // eNetStorage
@@ -299,7 +299,7 @@ int CGridCommandLineInterfaceApp::NetScheduleSanityCheck()
         }
     }
 
-    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+    SetUp_NetScheduleCmd(eNetScheduleExecutor, eReadOnlyAdminCmd, false);
 
     const string input = "Hello ";
     const string output = "DONE ";
