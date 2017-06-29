@@ -551,8 +551,6 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
 void CCleanupApp::x_ProcessOneDirectory(const string& dirname, const string& suffix)
 {
-    const CArgs& args = GetArgs();
-
     CDir dir(dirname);
 
     string mask = "*" + suffix;
@@ -1162,7 +1160,7 @@ void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool 
             char buf[2];
             buf[1] = 0;
             buf[0] = CDirEntry::GetPathSeparator();
-            size_t pos = NStr::Find(base, buf, 0, base.length(), NStr::eLast);
+            size_t pos = NStr::Find(base, buf, NStr::eCase, NStr::eReverseSearch);
             if (pos != string::npos) {
                 base = base.substr(pos + 1);
             }
