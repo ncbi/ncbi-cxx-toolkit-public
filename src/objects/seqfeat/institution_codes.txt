@@ -2640,6 +2640,7 @@ IAL<BRA-SaoPaulo>	c	Secao de Colecao de Culturas
 IALCEL	c	Secao de Culturas Celulares		
 IALMIC	c	Micoteca do Insituto Adolfo Lutz		
 IAM	c	IAM Culture Collection, Center for Cellular and Molecular Research		
+IAM<RUS>	s	National Alliance of Shidlovskiy "Ice Age", Ice Age Museum		
 IAN	s	Embrapa Amazonia Oriental		
 IAPG	s	Institute of Animal Physiology and Genetics, Academy of Sciences of the Czech Republic		
 IARI	sb	Indian Agricultural Research Institute		
@@ -4127,6 +4128,7 @@ MNHM<USA-CO>	s	John May Museum of Natural History
 MNHN	s	Museum National d'Histoire Naturelle		
 MNHN:IC	s	Museum National d'Histoire Naturelle, Ichtyologie collection
 MNHN:IE	s	Museum National d'Histoire Naturelle, Echinoderm collection
+MNHN:IK	s	Museum National d'Histoire Naturelle,  Cnidarians Collection
 MNHN:IM	s	Museum National d'Histoire Naturelle, Marine Invertebrate Collection
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustacean collection
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal collection
