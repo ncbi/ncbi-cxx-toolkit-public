@@ -56,10 +56,17 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
     TSeqTitles& seqTitles, 
     ILineErrorListener* pMessageListener) 
 {
-    size_t start = 1, pos, len = defline.length(), title_start;
+    size_t start = 1, pos, len = defline.length(); 
+    size_t title_start = NPOS;
     size_t range_len = 0;
     const TFastaFlags& fFastaFlags = info.fFastaFlags;
     const TSeqPos& lineNumber = info.lineNumber;
+
+
+    if (len <= 1 || 
+        NStr::IsBlank(defline.substr(1))) {
+        return;
+    }
 
     // ignore spaces between '>' and the sequence ID
     for( ; start < len; ++start ) {
@@ -153,23 +160,22 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         }
     }
 
-    
-    for (pos = title_start + 1;  pos < len;  ++pos) {
-        if ((unsigned char) defline[pos] < ' ') {
+   
+    if (title_start < len) { 
+        for (pos = title_start + 1;  pos < len;  ++pos) {
+            if ((unsigned char) defline[pos] < ' ') {
             break;
+            }
         }
-    }
-
-    if (title_start < min(pos, len)) {
         // Parse the title elsewhere - after the molecule has been deduced
         seqTitles.push_back(
             SLineTextAndLoc(
             defline.substr(title_start, pos - title_start), lineNumber));
     }
 
-    ParseIDs(id_string, 
+
+    x_ProcessIDs(id_string,
         info,
-        ignoredErrors,
         ids, 
         pMessageListener);
 
@@ -233,7 +239,9 @@ void CFastaDeflineReader::x_ProcessIDs(
     if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
     {
         if (!x_IsValidLocalID(id_string, info.fFastaFlags)) {
-            // Throw an exception here
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "CFastaDeflineReader::x_ProcessIDs(): "
+                "ID is not a valid local ID", 0);
         }
         ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
         return;
@@ -252,7 +260,6 @@ void CFastaDeflineReader::x_ProcessIDs(
         if (id_string.find(',') != NPOS &&
             id_string.find('|') == NPOS) {
             
-
             const string err_message = 
                 "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
                 + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
@@ -273,7 +280,9 @@ void CFastaDeflineReader::x_ProcessIDs(
         }
     } 
     catch(...) { 
-        // Throw an exception here
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Could not construct seq-ids from string: " + id_string,
+            0);
     }
 
     // Convert anything that looks like a GI to a local id
@@ -281,12 +290,12 @@ void CFastaDeflineReader::x_ProcessIDs(
         x_ConvertNumericToLocal(ids);
     }
 
-
     for (const auto& id : ids) {
-
         if (id->IsLocal() &&
             !x_IsValidLocalID(*id, info.fFastaFlags)) {
-            // Throw an exception
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "CFastaDeflineReader::x_ProcessIDs(): "
+                "ID is not a valid local ID", 0);
         }
     }
 
