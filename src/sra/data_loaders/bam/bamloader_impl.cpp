@@ -367,6 +367,14 @@ void CBAMDataLoader_Impl::LoadChunk(const CBAMBlobId& blob_id,
 }
 
 
+double CBAMDataLoader_Impl::EstimateLoadSeconds(const CBAMBlobId& blob_id,
+                                                const CTSE_Chunk_Info& chunk,
+                                                Uint4 bytes)
+{
+    return GetRefSeqInfo(blob_id)->EstimateLoadSeconds(chunk, bytes);
+}
+
+
 CRef<CBAMBlobId>
 CBAMDataLoader_Impl::GetShortSeqBlobId(const CSeq_id_Handle& idh)
 {
@@ -1238,6 +1246,11 @@ void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
 }
 
 
+static const double k_make_graph_seconds = 7.5e-9; // 133 MB/s
+static const double k_make_align_seconds = 80e-9; // 12 MB/s
+static const double k_make_read_seconds = 80e-9; // 12 MB/s
+
+
 void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
 {
     bool has_pileup = GetPileupGraphsParam();
@@ -1257,11 +1270,9 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         refseq_index = raw_db->GetRefIndex(GetRefSeqId());
     }
 
-    double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
-    double make_graph_seconds = 7.5e-9; // 133 MB/s
-    double make_align_seconds = 80e-9; // 12 MB/s
-    double graph_seconds = get_data_seconds + make_graph_seconds;
-    double align_seconds = get_data_seconds + make_align_seconds;
+    //double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
+    //double graph_seconds = get_data_seconds + k_make_graph_seconds;
+    //double align_seconds = get_data_seconds + k_make_align_seconds;
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
         CRange<TSeqPos> range = GetChunkGraphRange(range_id);
@@ -1274,9 +1285,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                     // add single chunk for in-range and overlapping aligns
                     Uint8 bytes = m_Chunks[range_id].GetAlignCount();
                     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
-                    double seconds = bytes*align_seconds;
                     chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                    chunk->x_SetLoadSeconds(seconds);
+                    //chunk->x_SetLoadSeconds(bytes*align_seconds);
                     chunk->x_AddAnnotType(name,
                                           SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                                           GetRefSeq_id(),
@@ -1294,9 +1304,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                                         CBamIndex::kLevel0, CBamIndex::kLevel0,
                                                         CBamIndex::eSearchByStart).GetFileSize() ) {
                         CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align1));
-                        double seconds = bytes*align_seconds;
                         chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                        chunk->x_SetLoadSeconds(seconds);
+                        //chunk->x_SetLoadSeconds(bytes*align_seconds);
                         chunk->x_AddAnnotType(name,
                                               SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                                               GetRefSeq_id(),
@@ -1312,9 +1321,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                                                         CBamIndex::kLevel1, CBamIndex::kMaxLevel,
                                                         CBamIndex::eSearchByStart).GetFileSize() ) {
                         CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
-                        double seconds = bytes*align_seconds;
                         chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                        chunk->x_SetLoadSeconds(seconds);
+                        //chunk->x_SetLoadSeconds(bytes*align_seconds);
                         chunk->x_AddAnnotType(name,
                                               SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                                               GetRefSeq_id(),
@@ -1356,9 +1364,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                         continue;
                     }
                 }
-                double seconds = bytes*graph_seconds;
                 chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                chunk->x_SetLoadSeconds(seconds);
+                //chunk->x_SetLoadSeconds(bytes*graph_seconds);
             }
             chunk->x_AddAnnotType(pileup_name,
                                   CSeq_annot::C_Data::e_Graph,
@@ -1371,6 +1378,62 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
             }
         }
     }
+}
+
+
+double CBamRefSeqInfo::EstimateAlignLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                                Uint4 bytes) const
+{
+    CBamRawDb* raw_db = 0;
+    if ( m_File->GetBamDb().UsesRawIndex() ) {
+        raw_db = &m_File->GetBamDb().GetRawDb();
+    }
+    double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
+    return bytes*(get_data_seconds + k_make_align_seconds);
+}
+
+
+double CBamRefSeqInfo::EstimatePileupLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                                 Uint4 bytes) const
+{
+    CBamRawDb* raw_db = 0;
+    if ( m_File->GetBamDb().UsesRawIndex() ) {
+        raw_db = &m_File->GetBamDb().GetRawDb();
+    }
+    double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
+    return bytes*(get_data_seconds + k_make_graph_seconds);
+}
+
+
+double CBamRefSeqInfo::EstimateSeqLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                              Uint4 bytes) const
+{
+    CBamRawDb* raw_db = 0;
+    if ( m_File->GetBamDb().UsesRawIndex() ) {
+        raw_db = &m_File->GetBamDb().GetRawDb();
+    }
+    double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
+    return bytes*(get_data_seconds + k_make_read_seconds);
+}
+
+
+double CBamRefSeqInfo::EstimateLoadSeconds(const CTSE_Chunk_Info& chunk_info,
+                                           Uint4 bytes) const
+{
+    switch ( chunk_info.GetChunkId() % kChunkIdMul ) {
+    case eChunk_align:
+    case eChunk_align1:
+    case eChunk_align2:
+        return EstimateAlignLoadSeconds(chunk_info, bytes);
+        break;
+    case eChunk_short_seq:
+    case eChunk_short_seq1:
+    case eChunk_short_seq2:
+        return EstimateSeqLoadSeconds(chunk_info, bytes);
+    case eChunk_pileup_graph:
+        return EstimatePileupLoadSeconds(chunk_info, bytes);
+    }
+    return 0;
 }
 
 
@@ -1482,6 +1545,9 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             seq_chunk->x_AddBioseqId(*it);
         }
         if ( seq_chunk ) {
+            if ( m_File->GetBamDb().UsesRawIndex() ) {
+                seq_chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+            }
             seq_chunk->x_AddBioseqPlace(kTSEId);
             split_info.AddChunk(*seq_chunk);
         }

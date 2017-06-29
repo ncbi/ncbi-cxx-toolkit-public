@@ -269,6 +269,14 @@ CBAMDataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 
+double CBAMDataLoader::EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const
+{
+    TBlobId blob_id = chunk.GetBlobId();
+    const CBAMBlobId& bam_id = dynamic_cast<const CBAMBlobId&>(*blob_id);
+    return m_Impl.GetNCObject().EstimateLoadSeconds(bam_id, chunk, bytes);
+}
+
+
 void CBAMDataLoader::GetChunk(TChunk chunk)
 {
     TBlobId blob_id = chunk->GetBlobId();

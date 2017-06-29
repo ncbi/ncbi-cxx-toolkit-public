@@ -147,6 +147,14 @@ public:
     void LoadMainSplit(CTSE_LoadLock& load_lock);
     void LoadMainEntry(CTSE_LoadLock& load_lock);
     void CreateChunks(CTSE_Split_Info& split_info);
+    double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk,
+                               Uint4 bytes) const;
+    double EstimatePileupLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                     Uint4 bytes) const;
+    double EstimateAlignLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                    Uint4 bytes) const;
+    double EstimateSeqLoadSeconds(const CTSE_Chunk_Info& chunk,
+                                  Uint4 bytes) const;
     void LoadChunk(CTSE_Chunk_Info& chunk_info);
     void LoadMainChunk(CTSE_Chunk_Info& chunk_info);
     void LoadAlignChunk(CTSE_Chunk_Info& chunk_info);
@@ -261,6 +269,9 @@ public:
                       CTSE_LoadLock& load_lock);
     void LoadChunk(const CBAMBlobId& blob_id,
                    CTSE_Chunk_Info& chunk);
+    double EstimateLoadSeconds(const CBAMBlobId& blob_id,
+                               const CTSE_Chunk_Info& chunk,
+                               Uint4 bytes);
 
     CBAMDataLoader::TAnnotNames GetPossibleAnnotNames(void) const;
 
