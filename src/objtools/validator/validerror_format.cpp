@@ -195,17 +195,35 @@ string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValid
     }
     else if (NStr::Find(msg, "(GT) not found") != string::npos) {
         rval = "GT";
+    } else if (NStr::Find(msg, "(AT-AC) found instead of (GT-AG)") != string::npos) {
+        rval = "(AT-AC) instead of (GT-AG)";
+    } else if (NStr::Find(msg, "(GC-AG) found instead of (GT-AG)") != string::npos) {
+        rval = "(GC-AG) instead of (GT-AG)";
     }
     if (NStr::IsBlank(rval)) {
         return rval;
     }
 
-    size_t position_pos = NStr::Find(msg, "position ");
-    if (position_pos != string::npos) {
+    size_t position_pos = NStr::Find(msg, "ending at position ");
+    size_t other_clue = NStr::Find(msg, "and before exon");
+    if (position_pos == string::npos || other_clue == string::npos) {
+        position_pos = NStr::Find(msg, "position ");
+        if (position_pos != string::npos) {
+            string pos_str = msg.substr(position_pos);
+            long int pos;
+            if (sscanf(pos_str.c_str(), "position %ld of ", &pos) == 1) {
+                rval += " at " + NStr::NumericToString(pos);
+                size_t seq_pos = NStr::Find(pos_str, " of ");
+                if (seq_pos != string::npos) {
+                    rval = pos_str.substr(seq_pos + 4) + "\t" + rval;
+                }
+            }
+        }
+    } else {
         string pos_str = msg.substr(position_pos);
-        long int pos;
-        if (sscanf(pos_str.c_str(), "position %ld of ", &pos) == 1) {
-            rval += " at " + NStr::NumericToString(pos);
+        long int pos1, pos2;
+        if (sscanf(pos_str.c_str(), "ending at position %ld and before exon starting at position %ld of ", &pos1, &pos2) == 2) {
+            rval += " at " + NStr::NumericToString(pos1) + ", " + NStr::NumericToString(pos2);
             size_t seq_pos = NStr::Find(pos_str, " of ");
             if (seq_pos != string::npos) {
                 rval = pos_str.substr(seq_pos + 4) + "\t" + rval;

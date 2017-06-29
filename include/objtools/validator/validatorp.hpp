@@ -1495,6 +1495,7 @@ private:
     bool x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3);
 
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
+    void x_CheckGeneralIDs(const CBioseq& seq);
 
     //internal validators
     CValidError_annot m_AnnotValidator;

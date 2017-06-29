@@ -6617,15 +6617,16 @@ BOOST_AUTO_TEST_CASE(Test_Descr_FastaBracketTitle)
 
     // no error if TMSMART or BankIt
     scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetId().front()->SetGeneral().SetDb("TMSMART");
-    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("good");
+    CRef<CSeq_id> other(new CSeq_id());
+    other->SetGeneral().SetDb("TMSMART");
+    other->SetGeneral().SetTag().SetStr("good");
+    entry->SetSeq().SetId().push_back(other);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetId().front()->SetGeneral().SetDb("BankIt");
-    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("good");
+    other->SetGeneral().SetDb("BankIt");
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16351,6 +16352,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CValidErrorFormat format(*objmgr);
+    string formatted = format.FormatForSubmitterReport(*(eval->GetErrs()[0]), scope);
+    BOOST_CHECK_EQUAL(formatted, "CDS\tlcl|nuc\t(GC-AG) instead of (GT-AG) at 16, 47");
+
     scope.RemoveTopLevelSeqEntry(seh);
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -21058,3 +21063,43 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
 }
 #endif
 
+
+BOOST_AUTO_TEST_CASE(Test_VR_728)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGeneral().SetDb("NCBIFILE");
+    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("x");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("gnl|NCBIFILE|x", eDiag_Critical,
+        "NoIdOnBioseq",
+        "The only ids on this Bioseq will be stripped during ID load"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> other_id(new CSeq_id());
+    other_id->SetLocal().SetStr("x");
+    entry->SetSeq().SetId().push_back(other_id);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> bankit(new CSeq_id());
+    bankit->SetGeneral().SetDb("BankIt");
+    bankit->SetGeneral().SetTag().SetStr("x");
+    entry->SetSeq().SetId().push_back(bankit);
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetLocation().SetInt().SetId().Assign(*bankit);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|x", eDiag_Critical,
+        "BadSeqIdFormat",
+        "Feature locations should not use Seq-ids that will be stripped during ID load"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}

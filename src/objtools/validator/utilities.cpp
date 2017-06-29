@@ -2684,6 +2684,23 @@ bool IsNG(const CBioseq& seq)
 }
 
 
+// See VR-728. These Seq-ids are temporary and will be stripped
+// by the ID Load process, so they should not be the only Seq-id
+// on a Bioseq, and feature locations should not use these.
+bool IsTemporary(const CSeq_id& id)
+{
+    if (id.IsGeneral() && id.GetGeneral().IsSetDb()) {
+        const string& db = id.GetGeneral().GetDb();
+        if (NStr::EqualNocase(db, "TMSMART") ||
+            NStr::EqualNocase(db, "NCBIFILE") ||
+            NStr::EqualNocase(db, "BankIt")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

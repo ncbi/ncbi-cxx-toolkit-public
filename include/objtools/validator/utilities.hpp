@@ -248,6 +248,7 @@ bool IsNTNCNWACAccession(const CBioseq& seq);
 bool IsNG(const CSeq_id& id);
 bool IsNG(const CBioseq& seq);
 
+bool IsTemporary(const CSeq_id& id);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

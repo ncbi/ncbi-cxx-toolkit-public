@@ -3055,6 +3055,10 @@ void CValidError_imp::ValidateSeqLocIds
                     "different type", obj);
             }
         }
+        if (IsTemporary(id1)) {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                "Feature locations should not use Seq-ids that will be stripped during ID load", obj);
+        }
     } 
     if (BadMultipleSequenceLocation(loc, *m_Scope)) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_BadLocation, 

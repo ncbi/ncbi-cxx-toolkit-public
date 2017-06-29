@@ -622,6 +622,22 @@ static bool x_IsWgsSecondary (const CBioseq& seq)
     return false;
 }
 
+// VR-728
+// cannot have only seq-ids that will be stripped when loading to ID
+void CValidError_bioseq::x_CheckGeneralIDs(const CBioseq& seq)
+{
+    bool found_good = false;
+    ITERATE(CBioseq::TId, id_it, seq.GetId()) {
+        if (!IsTemporary(**id_it)) {
+            found_good = true;
+        }
+    }
+    if (!found_good) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_NoIdOnBioseq,
+            "The only ids on this Bioseq will be stripped during ID load", seq);
+    }
+}
+
 
 void CValidError_bioseq::ValidateSeqIds
 (const CBioseq& seq)
@@ -712,7 +728,6 @@ void CValidError_bioseq::ValidateSeqIds
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
     unsigned int lcl_count = 0;
-    bool needs_lcl_or_accn = true;
     FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
         const CTextseq_id* tsid = (*k)->GetTextseq_Id();
         switch ((**k).Which()) {
@@ -772,9 +787,6 @@ void CValidError_bioseq::ValidateSeqIds
         
         case CSeq_id::e_Gi:
             gi_count++;
-            break;
-        case CSeq_id::e_Pdb:
-            needs_lcl_or_accn = false;
             break;
         default:
             break;
@@ -850,11 +862,7 @@ void CValidError_bioseq::ValidateSeqIds
             "Multiple accessions on sequence with gi number", seq);
     }
 
-    // VR-728 protein accessions must have either a local ID or an accession
-    if (seq.IsAa() && needs_lcl_or_accn && accn_count == 0 && lcl_count == 0) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_ConflictingIdsOnBioseq,
-            "Protein bioseq needs either local ID or accession", seq);
-    }
+    x_CheckGeneralIDs(seq);
 
     if ( m_Imp.IsValidateIdSet() ) {
         ValidateIDSetAgainstDb(seq);
