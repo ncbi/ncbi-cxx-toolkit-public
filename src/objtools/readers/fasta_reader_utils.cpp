@@ -68,6 +68,7 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         }
     }
 
+    list<string> id_strings;
     do {
         if ((fFastaFlags & CFastaReader::fNoParseID)) {
             title_start = start;
@@ -139,11 +140,12 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
 
             range_len = ParseRange(defline.substr(start, pos - start),
                 rangeStart, rangeEnd, pMessageListener);
-            ParseIDs(defline.substr(start, pos - start - range_len), 
-                info,
-                ignoredErrors,
-                ids, 
-                pMessageListener);
+
+
+            const string id_string = defline.substr(start, pos - start - range_len);
+            if (!NStr::IsBlank(id_string)) {
+                id_strings.push_back(id_string);
+            }
 
             if ((fFastaFlags & CFastaReader::fAllSeqIds)  &&  defline[pos] == '\1') {
                 start = pos + 1;
@@ -172,6 +174,14 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
     } while ( (fFastaFlags & CFastaReader::fAllSeqIds)  &&  start < len  &&  defline[start - 1] == '\1'
              &&  !range_len);
 
+
+    for (const string& id_string : id_strings) {
+        ParseIDs(id_string, 
+            info,
+            ignoredErrors,
+            ids, 
+            pMessageListener);
+    }
     hasRange = (range_len>0);
 }
 
@@ -222,6 +232,90 @@ TSeqPos CFastaDeflineReader::ParseRange(
     return s.length() - pos;
 }
 
+
+void CFastaDeflineReader::x_ProcessIDs(
+    const string& id_string,
+    const SDeflineParseInfo& info,
+    list<CRef<CSeq_id>>& ids,
+    ILineErrorListener* pMessageListener)
+{
+    if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
+    {
+        if (!x_IsValidLocalID(id_string, info.fFastaFlags)) {
+            // Throw an exception here
+        }
+        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
+        return;
+    }
+
+    CSeq_id::TParseFlags flags = 
+        CSeq_id::fParse_PartialOK |
+        CSeq_id::fParse_AnyLocal;
+
+    if (info.fFastaFlags & CFastaReader::fParseRawID) {
+        flags |= CSeq_id::fParse_RawText;
+    }
+
+    try {
+        string local_id_string = id_string;
+        if (id_string.find(',') != NPOS &&
+            id_string.find('|') == NPOS) {
+            
+
+            const string err_message = 
+                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+                + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
+                + "symbol. Please correct the sequence id string.";
+
+            x_PostWarning(pMessageListener,
+                info.lineNumber,
+                err_message,
+                CObjReaderParseException::eFormat);
+            
+            local_id_string = NStr::Replace(id_string, ",", "_");
+        }
+
+        const auto num_ids = CSeq_id::ParseIDs(ids, local_id_string, flags);
+
+        if (num_ids == 0) {
+            // Throw an exception
+        }
+    } 
+    catch(...) { 
+        // Throw an exception here
+    }
+
+    // Convert anything that looks like a GI to a local id
+    if ( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
+        x_ConvertNumericToLocal(ids);
+    }
+
+
+    for (const auto& id : ids) {
+
+        if (id->IsLocal() &&
+            !x_IsValidLocalID(*id, info.fFastaFlags)) {
+            // Throw an exception
+        }
+    }
+
+    if (x_ExceedsMaxLength(id_string, info.maxIdLength)) {
+        const string err_message =
+            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(id_string.length())
+            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
+            + ".  Please find and correct all sequence IDs that are too long.";
+        
+        x_PostError(pMessageListener, 
+            info.lineNumber,
+            err_message,
+            CObjReaderParseException::eIDTooLong);
+    }
+
+    if (x_ExcessiveSeqDataInTitle(id_string, info.fFastaFlags)) {
+        // report an error message here as well
+    }
+}
 
 
 bool CFastaDeflineReader::ParseIDs(
@@ -281,6 +375,8 @@ bool CFastaDeflineReader::ParseIDs(
     } catch (CSeqIdException&) {
         // swap(ids, old_ids);
     }
+
+
     
     if ( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
         x_ConvertNumericToLocal(ids);

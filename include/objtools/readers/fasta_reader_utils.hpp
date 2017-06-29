@@ -94,6 +94,12 @@ public:
         ILineErrorListener* pMessageListener);
 
 private:
+    static void x_ProcessIDs(
+        const string& id_string,
+        const SDeflineParseInfo& info,
+        list<CRef<CSeq_id>>& ids,
+        ILineErrorListener* pMessageListener);
+
     static bool x_IsValidLocalID(const CSeq_id& id, 
         TFastaFlags fasta_flags);
 
