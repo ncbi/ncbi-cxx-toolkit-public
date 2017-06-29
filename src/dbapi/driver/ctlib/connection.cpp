@@ -185,10 +185,10 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 
     char hostname[256];
 
-    if(gethostname(hostname, 256)) {
+    if(gethostname(hostname, sizeof(hostname))) {
       strcpy(hostname, "UNKNOWN");
     } else {
-        hostname[255] = '\0';
+        hostname[sizeof(hostname) - 1] = '\0';
     }
 
 
