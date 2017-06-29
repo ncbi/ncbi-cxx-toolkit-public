@@ -33,8 +33,8 @@ test_case -in $data/simple_prot.fsa
 test_case -in $data/title_symbols.fsa -inflags 0x4000000 -outflags 16 # fKeepGTSigns
 test_case -in $data/reflow.fsa -expected $data/reflow.fsa2
 # fAllSeqIDs | fNoUserObjs
-test_case -in $data/merged_sequences.fsa -inflags 0x80040 \
-    -expected $data/merged_sequences.fsa2
+#test_case -in $data/merged_sequences.fsa -inflags 0x80040 \
+#    -expected $data/merged_sequences.fsa2
 # fDLOptional | fNoUserObjs
 test_case -in $data/no_defline.fsa -inflags 0x80200 \
     -expected $data/no_defline.fsa2
