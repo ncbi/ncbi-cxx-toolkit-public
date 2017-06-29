@@ -1205,14 +1205,15 @@ sync_next_key:
         draining ? NOOP (only update existing blobs, never get new ones)
     UPDATE:
         no restrictions
+        29jun17: changed to behave same as in SEND/GET
 */
-        if (m_NextTask == eSynEventSend || m_NextTask == eSynBlobSend) {
+        if (m_NextTask == eSynEventSend || m_NextTask == eSynBlobSend || m_NextTask == eSynBlobUpdatePeer) {
             if (m_MyTrust < m_TheirTrust) {
                 continue;
             }
         }
-        if (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet) {
-            if (m_MyTrust > m_TheirTrust || CNCBlobStorage::IsDraining()) {
+        if (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet || m_NextTask == eSynBlobUpdateOur) {
+            if (m_MyTrust > m_TheirTrust || (CNCBlobStorage::IsDraining() && m_NextTask != eSynBlobUpdateOur)) {
                 continue;
             }
         }

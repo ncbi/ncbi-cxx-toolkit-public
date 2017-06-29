@@ -724,7 +724,8 @@ CNCPeerControl::MirrorUpdate(const CNCBlobKeyLight& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        if (peer->AcceptsSyncUpdate()) {
+        if (CNCDistributionConf::GetSelfTrustLevel() >= peer->GetTrustLevel()
+            && peer->AcceptsSyncUpdate()) {
             SNCMirrorEvent* event = new SNCMirrorEvent(eSyncUpdate, slot, key, update_time);
             if (event) {
                 peer->x_ProcessUpdateEvent(event);
@@ -742,7 +743,8 @@ CNCPeerControl::MirrorRemove(const CNCBlobKeyLight& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        if (peer->AcceptsSyncRemove()) {
+        if (CNCDistributionConf::GetSelfTrustLevel() >= peer->GetTrustLevel()
+            && peer->AcceptsSyncRemove()) {
             SNCMirrorEvent* event = new SNCMirrorEvent(eSyncRemove, slot, key, update_time);
             if (event) {
                 peer->x_AddMirrorEvent(event, 0);
@@ -783,7 +785,8 @@ CNCPeerControl::MirrorProlong(const CNCBlobKeyLight& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
-        if (peer->AcceptsBlobKey(key)) {
+        if (CNCDistributionConf::GetSelfTrustLevel() >= peer->GetTrustLevel()
+            && peer->AcceptsBlobKey(key)) {
             SNCMirrorProlong* event = new SNCMirrorProlong(eSyncProlong, slot, key.PackedKey(),
                                                    orig_rec_no, orig_time, accessor);
             peer->x_AddMirrorEvent(event, 0);
