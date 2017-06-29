@@ -1061,6 +1061,8 @@ int main(int argc, const char* argv[])
 #endif
 
     s_StoreStartupParams(argc, argv);
+    CNCServer::GetHostRole();
+    CNCServer::GetHostLocation();
     if (!CTaskServer::Initialize(argc, argv)  ||  !s_ReadServerParams()) {
         cerr << "Failed to initialize: conffile: " << GetConfName() << ", logfile: " << GetLogFileName() << endl;
         CTaskServer::Finalize();
