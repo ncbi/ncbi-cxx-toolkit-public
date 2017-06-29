@@ -238,3 +238,7 @@ May 11, 2017
 version 6.14.1 (CXX-9271)
 Fixed calculation of blob coordinates.
 
+June 29, 2017
+version 6.14.2 (CXX-9380)
+Corrected logic of blob mirroring between servers with different trust level.
+
