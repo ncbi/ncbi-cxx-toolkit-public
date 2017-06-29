@@ -1503,22 +1503,6 @@ const CSeq_entry *ctx)
 }
 
 
-static string s_GetBinomialString(const CBinomialOrgName& binomial)
-{
-    string val = kEmptyStr;
-    if (binomial.IsSetGenus()) {
-        val = binomial.GetGenus();
-    }
-    if (binomial.IsSetSpecies()) {
-        val += " " + binomial.GetSpecies();
-    }
-    if (binomial.IsSetSubspecies()) {
-        val += " subsp. " + binomial.GetSubspecies();
-    }
-    return val;
-}
-
-
 static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, string& mismatch)
 {
     mismatch = kEmptyStr;
