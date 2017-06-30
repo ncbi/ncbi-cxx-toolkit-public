@@ -1237,24 +1237,73 @@ DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSma
     if (context.IsEukaryotic() || !obj.IsSetLocation()) {
         return;
     }
-
     if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
         if (obj.IsSetExcept_text()) {
             if (NStr::IsBlank(obj.GetExcept_text())) {
-                m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
             } else {
-                m_Objs[kJoinedFeatures][kJoinedFeaturesException + obj.GetExcept_text() + "'"].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                m_Objs[kJoinedFeatures][kJoinedFeaturesException + obj.GetExcept_text() + "'"].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
             }
         } else if (obj.IsSetExcept() && obj.GetExcept()) {
-            m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         } else {
-            m_Objs[kJoinedFeatures][kJoinedFeaturesNoException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kJoinedFeatures][kJoinedFeaturesNoException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// JOINED_FEATURES_NO_EXCEPTION
+
+DISCREPANCY_CASE(JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features on prokaryote without exception")
+{
+    if (context.IsEukaryotic() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+    if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
+        if ((obj.IsSetExcept_text() && !obj.GetExcept_text().empty()) || (obj.IsSetExcept() && obj.GetExcept())) {
+            return;
+        }
+        bool bad = true;
+        if (context.GetCurrentBioseq()->CanGetInst()) {
+            const CSeq_inst& inst = context.GetCurrentBioseq()->GetInst();
+            if (inst.GetTopology() == CSeq_inst::eTopology_circular) {
+                unsigned int len = inst.GetLength();
+                CSeq_loc_CI ci0(obj.GetLocation());
+                if (ci0) {
+                    CSeq_loc_CI ci1 = ci0;
+                    ++ci1;
+                    if (ci1) {
+                        CSeq_loc_CI ci2 = ci1;
+                        ++ci2;
+                        if (!ci2) { // location has exactly 2 intervals
+                            if (ci0.GetStrand() == eNa_strand_plus && ci1.GetStrand() == eNa_strand_plus) {
+                                if (ci0.GetRange().GetTo() == len - 1 && ci1.GetRange().GetFrom() == 0) {
+                                    bad = false;
+                                }
+                            }
+                            else if (ci0.GetStrand() == eNa_strand_minus && ci1.GetStrand() == eNa_strand_minus) {
+                                if (ci1.GetRange().GetTo() == len - 1 && ci0.GetRange().GetFrom() == 0) {
+                                    bad = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        m_Objs["[n] coding region[s] with joined location[s] [has] no exception[s]"][bad ? "[n] coding region[s] not over the origin of circular DNA" : "[n] coding region[s] over the origin of circular DNA"].Fatal(bad).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(JOINED_FEATURES_NO_EXCEPTION)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1280,7 +1329,7 @@ DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | e
                     return;
                 }
             }
-            m_Objs["[n] coding region[s] [has] unexpected ribosomal slippage"].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs["[n] coding region[s] [has] unexpected ribosomal slippage"].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
     }
 }
