@@ -2062,6 +2062,112 @@ static SIZE_TYPE s_TitleEndsInOrganism(
     return answer;
 }
 
+
+static SIZE_TYPE s_TitleEndsInOrganism(
+    const string & sTitle,
+    const COrgName::TName& orgname,
+    SIZE_TYPE &organelle_pos)
+{
+    SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
+    organelle_pos = NPOS;
+
+    if (orgname.IsBinomial() &&
+        orgname.GetBinomial().IsSetGenus() &&
+        !NStr::IsBlank(orgname.GetBinomial().GetGenus()) &&
+        orgname.GetBinomial().IsSetSpecies() &&
+        !NStr::IsBlank(orgname.GetBinomial().GetSpecies())) {
+        string binomial = orgname.GetBinomial().GetGenus() + " " + orgname.GetBinomial().GetSpecies();
+        suffixPos = s_TitleEndsInOrganism(sTitle, binomial, &organelle_pos);
+    }
+    return suffixPos;
+}
+
+
+bool IsCrossKingdom(const COrg_ref& org, string& first_kingdom, string& second_kingdom)
+{
+    bool is_cross_kingdom = false;
+    first_kingdom = kEmptyStr;
+    second_kingdom = kEmptyStr;
+    if (org.IsSetOrgname() && org.GetOrgname().IsSetName() &&
+        org.GetOrgname().GetName().IsPartial() &&
+        org.GetOrgname().GetName().GetPartial().IsSet()) {
+        ITERATE(CPartialOrgName::Tdata, it, org.GetOrgname().GetName().GetPartial().Get()) {
+            const CTaxElement& te = **it;
+            if (te.IsSetFixed_level() && te.GetFixed_level() == 0 &&
+                te.IsSetLevel() &&
+                NStr::EqualNocase(te.GetLevel(), "superkingdom") &&
+                te.IsSetName() && !NStr::IsBlank(te.GetName())) {
+                if (first_kingdom.empty()) {
+                    first_kingdom = te.GetName();
+                } else if (!NStr::EqualNocase(first_kingdom, te.GetName())) {
+                    is_cross_kingdom = true;
+                    second_kingdom = te.GetName();
+                    break;
+                }
+            }
+        }
+    }
+    return is_cross_kingdom;
+}
+
+
+bool IsCrossKingdom(const COrg_ref& org)
+{
+    string first_kingdom, second_kingdom;
+    return IsCrossKingdom(org, first_kingdom, second_kingdom);
+}
+
+
+static SIZE_TYPE s_TitleEndsInOrganism(
+    const string & sTitle,
+    const COrg_ref& org,
+    SIZE_TYPE &organelle_pos)
+{
+    SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
+    organelle_pos = NPOS;
+
+    // first, check to see if protein title matches old-name
+    if (org.IsSetOrgMod()) {
+        ITERATE(COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetSubname() &&
+                (*it)->GetSubtype() == COrgMod::eSubtype_old_name &&
+                !NStr::IsBlank((*it)->GetSubname())) {
+                suffixPos = s_TitleEndsInOrganism(sTitle, (*it)->GetSubname(), &organelle_pos);
+                if (suffixPos != NPOS) {
+                    return suffixPos;                    
+                }
+            }
+        }
+    }
+
+    // next, check to see if protein title matches taxname
+    if (org.IsSetTaxname() && !NStr::IsBlank(org.GetTaxname())) {
+        suffixPos = s_TitleEndsInOrganism(sTitle, org.GetTaxname(), &organelle_pos);
+        if (suffixPos != NPOS) {
+            return suffixPos;
+        }
+    }
+
+    // try binomial if preset
+    if (org.IsSetOrgname() && org.GetOrgname().IsSetName() &&
+        org.GetOrgname().GetName().IsBinomial()) {
+        suffixPos = s_TitleEndsInOrganism(sTitle, org.GetOrgname().GetName(), organelle_pos);
+        if (suffixPos != NPOS) {
+            return suffixPos;
+        }
+    }
+
+    // cross-kingdom?
+    if (IsCrossKingdom(org)) {
+        SIZE_TYPE sep = NStr::Find(sTitle, "][");
+        if (sep != string::npos) {
+            suffixPos = s_TitleEndsInOrganism(sTitle.substr(0, sep + 1), org.GetTaxname(), &organelle_pos);
+        }
+    }
+    return suffixPos;
+}
+
+
 static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
 
 {
@@ -2100,16 +2206,13 @@ static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
 bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
 {
     // Bail if not protein
-    if (!FIELD_CHAIN_OF_2_IS_SET(bioseq, Inst, Mol) ||
-        bioseq.GetInst().GetMol() != NCBI_SEQMOL(aa))
-    {
+    if (!bioseq.IsSetInst() || !bioseq.GetInst().IsSetMol() || !bioseq.GetInst().IsAa()) {
         return false;
     }
 
     // Bail if record is swissprot
     FOR_EACH_SEQID_ON_BIOSEQ(seqid_itr, bioseq) {
-        const CSeq_id& seqid = **seqid_itr;
-        if (FIELD_IS(seqid, Swissprot)) {
+        if ((*seqid_itr)->IsSwissprot()) {
             return false;
         }
     }
@@ -2117,18 +2220,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     // gather some info from the Seqdesc's on the bioseq, into
     // the following variables
     bool bPartial = false;
-    string sTaxname;
-    string sOldName;
-    string *psTitle = NULL;
     string organelle = kEmptyStr;
-
-    // iterate for title
-    EDIT_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
-        CSeqdesc &descr = **descr_iter;
-        if (descr.IsTitle()) {
-            psTitle = &GET_MUTABLE(descr, Title);
-        }
-    }
 
     // iterate Seqdescs from bottom to top
     // accumulate seqdescs into here
@@ -2165,6 +2257,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
         }
     }
 
+    CConstRef<COrg_ref> org(NULL);
     ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
         const CSeqdesc &descr = **descr_iter;
         if (descr.IsSource()) {
@@ -2183,36 +2276,39 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
                 organelle = CBioSource::GetOrganelleByGenome(genome);
             }
 
-            if (FIELD_IS_SET(descr.GetSource(), Org)) {
-                const COrg_ref & org = GET_FIELD(descr.GetSource(), Org);
-                if (!RAW_FIELD_IS_EMPTY_OR_UNSET(org, Taxname)) {
-                    sTaxname = GET_FIELD(org, Taxname);
-                }
-                if (NStr::StartsWith(sTaxname, organelle, NStr::eNocase)) {
-                    organelle = kEmptyStr;
-                }
-                FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
-                    const COrgMod & orgmod = **mod_iter;
-                    if (FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(old_name))) {
-                        sOldName = GET_FIELD(orgmod, Subname);
-                    }
-                }
+            if (descr.GetSource().IsSetOrg()) {
+                org.Reset(&(descr.GetSource().GetOrg()));
+            }
+            if (org && org->IsSetTaxname() && 
+                NStr::StartsWith(org->GetTaxname(), organelle, NStr::eNocase)) {
+                organelle = kEmptyStr;
             }
             // stop at first source
             break;
         }
     }
 
-    s_RemoveOrgFromEndOfProtein(bioseq, sTaxname);
-
-    // bail if no title
-    if ((NULL == psTitle) || psTitle->empty()) {
+    if (!org) {
         return false;
     }
+    if (org->IsSetTaxname() && !NStr::IsBlank(org->GetTaxname())) {
+        s_RemoveOrgFromEndOfProtein(bioseq, org->GetTaxname());
+    }
 
-    // put title into a reference,
-    // just because it's more convenient than a pointer
-    string & sTitle = *psTitle;
+    // find the title to edit
+    if (!bioseq.IsSetDescr()) {
+        return false;
+    }
+    CRef<CSeqdesc> title_desc(NULL);
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, bioseq.SetDescr().Set()) {
+        if ((*d)->IsTitle()) {
+            title_desc = *d;
+        }
+    }
+    if (!title_desc) {
+        return false;
+    }
+    string & sTitle = title_desc->SetTitle();
     // remember original so we can see if we changed it
     const string sOriginalTitle = sTitle;
 
@@ -2224,26 +2320,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
 
     // find oldname or taxname in brackets at end of protein title
     SIZE_TYPE penult = NPOS;
-    SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
-    if (!sOldName.empty() && !sTaxname.empty()) {
-        suffixPos = s_TitleEndsInOrganism(sTitle, sOldName, &penult);
-    }
-    if (suffixPos == NPOS && !sTaxname.empty()) {
-        suffixPos = s_TitleEndsInOrganism(sTitle, sTaxname, &penult);
-        if (suffixPos != NPOS) {
-            if (NStr::IsBlank(organelle) && penult != NPOS) {
-            } else if (!NStr::IsBlank(organelle) && penult == NPOS) {
-            } else if (penult != NPOS && sTitle.substr(penult) == organelle) {
-            } else {
-                // bail if no need to change partial text or [organism name]
-                if (bPartial && partialPos != NPOS) {
-                    return false;
-                } else if (!bPartial && partialPos == NPOS){
-                    return false;
-                }
-            }
-        }
-    }
+    SIZE_TYPE suffixPos = s_TitleEndsInOrganism(sTitle, *org, penult); // will point to " [${organism name}]" at end
     // do not change unless [genus species] was at the end
     if (suffixPos == NPOS) {
         return false;
@@ -2272,8 +2349,15 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     if (!NStr::IsBlank(organelle)) {
         sTitle += " (" + string(organelle) + ")";
     }
-    if (!sTaxname.empty()) {
-        sTitle += " [" + sTaxname + "]";
+    string first_kingdom, second_kingdom;
+    if (IsCrossKingdom(*org, first_kingdom, second_kingdom)) {
+        sTitle += " [" + first_kingdom + "][" + second_kingdom + "]";
+    } else {
+        sTitle += " [";
+        if (org->IsSetTaxname()) {
+            sTitle += org->GetTaxname();
+        }
+        sTitle += "]";
     }
 
     if (sTitle != sOriginalTitle) {

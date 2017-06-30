@@ -1172,3 +1172,102 @@ BOOST_AUTO_TEST_CASE(Test_FixProteinName)
 
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "abc [bar][Sebaea microphylla ]");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_AddPartialToProteinTitle)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CBioSource> src(NULL);
+    NON_CONST_ITERATE(CBioseq_set::TDescr::Tdata, d, entry->SetSet().SetDescr().Set()) {
+        if ((*d)->IsSource()) {
+            src.Reset(&((*d)->SetSource()));
+        }
+    }
+    CRef<CSeqdesc> title(NULL);
+    CRef<CSeqdesc> molinfo(NULL);
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, prot->SetSeq().SetDescr().Set()) {
+        if ((*d)->IsTitle()) {
+            title = *d;
+        } else if ((*d)->IsMolinfo()) {
+            molinfo = *d;
+        }
+    }
+    if (!title) {
+        title.Reset(new CSeqdesc());
+        title->SetTitle("abc [Sebaea microphylla]");
+        prot->SetSeq().SetDescr().Set().push_back(title);
+    }
+    if (!molinfo) {
+        molinfo.Reset(new CSeqdesc());
+        molinfo->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        prot->SetSeq().SetDescr().Set().push_back(molinfo);
+    }
+    entry->Parentize();
+
+    // should be all good to start
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), false);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla]");
+
+    // take off partial?
+    title->SetTitle("abc, partial [Sebaea microphylla]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla]");
+
+    // fix taxname if oldname
+    CRef<COrgMod> oldname(new COrgMod(COrgMod::eSubtype_old_name, "x y"));
+    src->SetOrg().SetOrgname().SetMod().push_back(oldname);
+    title->SetTitle("abc, partial [x y]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla]");
+
+    // fix taxname if binomial
+    src->SetOrg().SetOrgname().SetName().SetBinomial().SetGenus("yellow");
+    src->SetOrg().SetOrgname().SetName().SetBinomial().SetSpecies("banana");
+    title->SetTitle("abc, partial [yellow banana]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla]");
+
+    // fix superkingdom
+    CRef<CTaxElement> s1(new CTaxElement());
+    s1->SetLevel("superkingdom");
+    s1->SetName("Sebaea microphylla");
+    s1->SetFixed_level(CTaxElement::eFixed_level_other);
+    CRef<CTaxElement> s2(new CTaxElement());
+    s2->SetLevel("superkingdom");
+    s2->SetName("bicycle");
+    s2->SetFixed_level(CTaxElement::eFixed_level_other);
+    src->SetOrg().SetOrgname().SetName().SetPartial().Set().push_back(s1);
+    src->SetOrg().SetOrgname().SetName().SetPartial().Set().push_back(s2);
+    title->SetTitle("abc, partial [Sebaea microphylla][bicycle]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla][bicycle]");
+
+    // keep superkingdom
+    title->SetTitle("abc [Sebaea microphylla][bicycle]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), false);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla][bicycle]");
+
+    // remove bad organelle name
+    src->SetOrg().SetOrgname().ResetName();
+    title->SetTitle("abc (mitochondrion) [Sebaea microphylla]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc [Sebaea microphylla]");
+
+    // replace bad organelle name
+    src->SetGenome(CBioSource::eGenome_apicoplast);
+    title->SetTitle("abc (mitochondrion) [Sebaea microphylla]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc (apicoplast) [Sebaea microphylla]");
+
+    // insert good organelle name
+    title->SetTitle("abc [Sebaea microphylla]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc (apicoplast) [Sebaea microphylla]");
+
+    // add partial when needed
+    molinfo->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_left);
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "abc, partial (apicoplast) [Sebaea microphylla]");
+
+}
