@@ -472,7 +472,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
         (m_Mode == e_report_diffs || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
          (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
         string path = fname;
-        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
+        size_t pos = NStr::Find(path, ".", NStr::eCase, NStr::eReverseSearch);
         if (pos != string::npos) {
             path = path.substr(0, pos);
         }
@@ -492,7 +492,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     }
     if (!m_AsnOut && (m_Mode == e_push || m_Mode == e_take_from_biosample || m_Mode == e_take_from_biosample_force)) {
         string path = fname;
-        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
+        size_t pos = NStr::Find(path, ".", NStr::eCase, NStr::eReverseSearch);
         if (pos != string::npos) {
             path = path.substr(0, pos);
         }
