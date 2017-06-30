@@ -53,29 +53,29 @@ public:
 
         arg_desc.SetCurrentGroup("General search options");
 
-        arg_desc.AddOptionalKey(kArgWordSize, "int_value", "Word size for "
-                                "wordfinder algorithm (length of best perfect "
-                                "match)", CArgDescriptions::eInteger);
+        arg_desc.AddDefaultKey(kArgWordSize, "int_value", "Minimum number of "
+                               "consecutive bass matching exactly",
+                               CArgDescriptions::eInteger, "16");
 
         arg_desc.SetConstraint(kArgWordSize,
                                new CArgAllowValuesGreaterThanOrEqual(12));
 
 
         // gap open penalty
-        arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty",
-                                "Cost to open a gap",
-                                CArgDescriptions::eInteger);
+        arg_desc.AddDefaultKey(kArgGapOpen, "open_penalty",
+                               "Cost to open a gap",
+                               CArgDescriptions::eInteger, "0");
 
         // gap extend penalty
-        arg_desc.AddOptionalKey(kArgGapExtend, "extend_penalty",
+        arg_desc.AddDefaultKey(kArgGapExtend, "extend_penalty",
                                "Cost to extend a gap", 
-                               CArgDescriptions::eInteger);
+                               CArgDescriptions::eInteger, "8");
 
         // FIXME: not sure if this one is needed
         arg_desc.SetCurrentGroup("Restrict search or results");
-        arg_desc.AddOptionalKey(kArgPercentIdentity, "float_value",
-                                "Percent identity",
-                                CArgDescriptions::eDouble);
+        arg_desc.AddDefaultKey(kArgPercentIdentity, "float_value",
+                               "Percent identity",
+                               CArgDescriptions::eDouble, "0.0");
         arg_desc.SetConstraint(kArgPercentIdentity,
                                new CArgAllow_Doubles(0.0, 100.0));
     }
@@ -90,9 +90,9 @@ public:
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {
         arg_desc.SetCurrentGroup("General search options");
         // blastn mismatch penalty
-        arg_desc.AddOptionalKey(kArgMismatch, "penalty", 
-                                "Penalty for a nucleotide mismatch", 
-                                CArgDescriptions::eInteger);
+        arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
+                               "Penalty for a nucleotide mismatch", 
+                               CArgDescriptions::eInteger, "-8");
         arg_desc.SetConstraint(kArgMismatch, 
                                new CArgAllowValuesLessThanOrEqual(0));
         arg_desc.SetCurrentGroup("");

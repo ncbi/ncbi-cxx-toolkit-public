@@ -1438,9 +1438,9 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         &(*new CArgAllow_Strings, "genome", "transcriptome"));
 
     arg_desc.SetCurrentGroup("Query filtering options");
-    arg_desc.AddOptionalKey(kArgLimitLookup, "TF", "Remove word seeds with "
-                            "high frequency in the searched database",
-                            CArgDescriptions::eBoolean);
+    arg_desc.AddDefaultKey(kArgLimitLookup, "TF", "Remove word seeds with "
+                           "high frequency in the searched database",
+                           CArgDescriptions::eBoolean, "true");
     arg_desc.AddDefaultKey(kArgLookupStride, "num", "Number of words to skip "
 			    "after collecting one while creating a lookup table",
                  CArgDescriptions::eInteger, "0");
