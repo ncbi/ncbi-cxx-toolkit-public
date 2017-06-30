@@ -206,15 +206,6 @@ suppression = {
 	}
 }
 suppression = {
-	name = "gnutls_global_init() - memory leak"
-	stacks = {
-		allocation={
-			...;
-			func=gnutls_global_init;
-		}
-	}
-}
-suppression = {
 	name = "typename.cpp"
 	type = {reachable_memory_leak}
 	stacks = {
@@ -309,6 +300,25 @@ suppression = {
 	}
 }
 suppression = {
+	name = "gnutls_global_init() - memory leak"
+	stacks = {
+		allocation={
+			...;
+			func=gnutls_global_init;
+		}
+	}
+}
+suppression = {
+	name = "Invalid memory access in libgnutls"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation = {
+			...;
+			func=gnutls_pkcs12_export2;
+		}
+	}
+}
+suppression = {
 	name = "False positive in operator<<()"
 	type = {invalid_memory_access}
 	stacks = {
@@ -328,6 +338,16 @@ suppression = {
 			...;
 			mod=MSVCR120.dll,func=fclose;
 			func=close,src=fstream;
+		}
+	}
+}
+suppression = {
+	name = "False positive in gethostname()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			mod=WS2_32.dll,func=gethostname;
 		}
 	}
 }
