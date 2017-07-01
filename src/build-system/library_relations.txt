@@ -330,6 +330,7 @@ gc_schedule needs ncbi_xcache_netcache
 gc_utils needs gpipe_objutil
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
+gcedit needs idload_utils
 gcrypt needs3party $(ORIG_LIBS)
 gencoll_client needs $(COMPRESS_LIBS)
 gencoll_client needs genome_collection
