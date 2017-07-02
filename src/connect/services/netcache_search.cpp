@@ -475,23 +475,40 @@ size_t SBlobInfoImpl::operator[](SIZE)
 
 const string kSeparator = "\t";
 
+pair<CTempString, CTempString> s_GetField(const string& data, size_t& pos)
+{
+    size_t eq = data.find("=", pos);
+
+    if (eq == string::npos) {
+        NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse, "Invalid response '" << data << "'");
+    }
+
+    CTempString name(data, pos, eq - pos);
+
+    pos = data.find(kSeparator, ++eq);
+
+    if (pos == string::npos) pos = data.size();
+
+    CTempString value(data, eq, pos++ - eq);
+
+    return make_pair(name, value);
+}
+
 void SBlobInfoImpl::Parse()
 {
-    vector<CTempString> fields;
+    for (size_t pos = 0; pos < m_Data.size(); ) {
+        const auto field = s_GetField(m_Data, pos);
+        const auto& name = field.first;
+        const auto& value = field.second;
 
-    NStr::Split(m_Data, kSeparator, fields);
-
-    for (auto& field : fields) {
-        string name, value;
-        NStr::SplitInTwo(field, "=", name, value);
         if (name == "cr_time") {
-            m_Created = time_point(seconds(stoll(value)));
+            m_Created = time_point(seconds(NStr::StringToNumeric<seconds::rep>(value)));
         } else if (name == "exp") {
-            m_Expires = time_point(seconds(stoll(value)));
+            m_Expires = time_point(seconds(NStr::StringToNumeric<seconds::rep>(value)));
         } else if (name == "ver_dead") {
-            m_VersionExpires = time_point(seconds(stoll(value)));
+            m_VersionExpires = time_point(seconds(NStr::StringToNumeric<seconds::rep>(value)));
         } else if (name == "size") {
-            m_Size = stoull(value);
+            m_Size = NStr::StringToNumeric<size_t>(value);
         } else {
             NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
                 "Unknown field '" << name << "' in response '" << m_Data << "'");
