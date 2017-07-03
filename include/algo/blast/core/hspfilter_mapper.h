@@ -64,6 +64,7 @@ typedef struct BlastHSPMapperParams {
                                   part of search. */
    Boolean paired;           /**< mapping with paired reads */
    Boolean splice;           /**< mapping spliced reads (RNA-seq to a genome) */
+   Int4 longest_intron;      /**< max intron length */
 } BlastHSPMapperParams;
 
 /** Sets up parameter set for use by collector.

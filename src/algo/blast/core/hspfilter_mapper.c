@@ -3053,13 +3053,14 @@ s_FindSpliceJunctions(HSPChain* chains,
    a genome on a single strand, returns all top scoring chains */
 static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
                                 Int4 oid, Boolean is_spliced,
+                                Int4 longest_intron,
                                 const BLAST_SequenceBlk* query_blk,
                                 const BlastQueryInfo* query_info,
                                 const ScoringOptions* scoring_opts)
 {
     int i, k;
     Int4 best_score = 0;
-    const Int4 kMaxIntronLength = 900000;
+    const Int4 kMaxIntronLength = longest_intron;
     /* FIXME: use mismatch and/or gap extend penalty here */
     HSPChain* retval = NULL;
 
@@ -3949,6 +3950,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
     BlastHSPMapperParams* params = spl_data->params;
     const ScoringOptions* scoring_opts = &params->scoring_options;
     Boolean is_spliced  = params->splice;
+    const Int4 kLongestIntron = params->longest_intron;
     BLAST_SequenceBlk* query_blk = spl_data->query;
     BlastQueryInfo* query_info = spl_data->query_info;
     const Int4 kDefaultMaxHsps = 1000;
@@ -4065,7 +4067,8 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
                parts of the query and the subject */
             new_chains = s_FindBestPath(nodes, num_hsps, path,
                                         hsp_list->oid, is_spliced,
-                                        query_blk, query_info, scoring_opts);
+                                        kLongestIntron, query_blk,
+                                        query_info, scoring_opts);
 
             ASSERT(new_chains);
             HSPChainListInsert(&chain_array[(context - first_context) /
@@ -4203,6 +4206,7 @@ BlastHSPMapperParamsNew(const BlastHitSavingOptions* hit_options,
        retval->hitlist_size = MAX(hit_options->hitlist_size, 10);
        retval->paired = hit_options->paired;
        retval->splice = hit_options->splice;
+       retval->longest_intron = hit_options->longest_intron;
        retval->program = hit_options->program_number;
        retval->scoring_options.reward = scoring_options->reward;
        retval->scoring_options.penalty = scoring_options->penalty;
