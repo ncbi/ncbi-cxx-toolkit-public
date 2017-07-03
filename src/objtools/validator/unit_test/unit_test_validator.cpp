@@ -9070,14 +9070,12 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
     ITERATE(vector<string>, id_it, ids) {
         EDiagSev sev = eDiag_Warning;
-        EDiagSev sev2 = eDiag_Warning;
         scope.RemoveTopLevelSeqEntry(seh);
         if (NStr::StartsWith(*id_it, "NC_")) {
             entry->SetSeq().SetId().front()->SetOther().SetAccession(*id_it);
         } else {
             entry->SetSeq().SetId().front()->SetLocal().SetStr(*id_it);
             sev = eDiag_Critical;
-            sev2 = eDiag_Error;
         }
         seh = scope.AddTopLevelSeqEntry(*entry);
 

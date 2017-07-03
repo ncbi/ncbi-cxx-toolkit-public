@@ -8099,7 +8099,6 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
 void CValidError_bioseq::ValidateDupOrOverlapFeats(
     const CBioseq& bioseq)
 {
-#ifndef GOFAST
     if (!m_AllFeatIt) {
         return;
     }
@@ -8109,7 +8108,6 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
         bool fruit_fly = false;
         bool viral = false;
         bool htgs = false;
-        bool small_genome = m_Imp.IsSmallGenomeSet();
 
         CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Source);
         if ( di && di->GetSource().IsSetOrg()) {
@@ -8167,7 +8165,6 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                 e.what(), bioseq);
         }
     }
-#endif
 }
 
 void CValidError_bioseq::ValidateTwintrons(
