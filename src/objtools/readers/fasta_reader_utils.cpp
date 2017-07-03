@@ -156,7 +156,8 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
 
         id_string = defline.substr(start, pos - start - range_len);
         if (NStr::IsBlank(id_string)) {
-            // Throw an exception - the ID string cannot be blank
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "Unable to locate sequence id in definition line", 0);
         }
 
         title_start = pos;
@@ -167,7 +168,6 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         }
     }
 
-   
     if (title_start < len) { 
         for (pos = title_start + 1;  pos < len;  ++pos) {
             if ((unsigned char) defline[pos] < ' ') {
@@ -286,15 +286,13 @@ void CFastaDeflineReader::x_ProcessIDs(
         }
 
         const auto num_ids = CSeq_id::ParseIDs(ids, local_id_string, flags);
-
         if (num_ids == 0) {
-            // Throw an exception
+            NCBI_THROW(CException, eUnknown, "Zero seq-ids from string");
         }
     } 
     catch(...) { 
         NCBI_THROW2(CObjReaderParseException, eFormat,
-            "Could not construct seq-ids from string: " + id_string,
-            0);
+            "Could not construct seq-ids from string: " + id_string, 0);
     }
 
     // Convert anything that looks like a GI to a local id
