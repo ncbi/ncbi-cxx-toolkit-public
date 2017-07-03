@@ -74,7 +74,7 @@ public:
         // FIXME: not sure if this one is needed
         arg_desc.SetCurrentGroup("Restrict search or results");
         arg_desc.AddDefaultKey(kArgPercentIdentity, "float_value",
-                               "Percent identity",
+                               "Percent identity cutoff for alignments",
                                CArgDescriptions::eDouble, "0.0");
         arg_desc.SetConstraint(kArgPercentIdentity,
                                new CArgAllow_Doubles(0.0, 100.0));
