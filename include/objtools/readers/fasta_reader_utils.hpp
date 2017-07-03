@@ -112,6 +112,12 @@ private:
     static void x_PostWarning(ILineErrorListener* pMessageListener, 
         const TSeqPos lineNumber,
         const string& errMessage, 
+        const CObjReaderLineException::EProblem problem,
+        const CObjReaderParseException::EErrCode errCode);
+
+    static void x_PostWarning(ILineErrorListener* pMessageListener, 
+        const TSeqPos lineNumber,
+        const string& errMessage, 
         const CObjReaderParseException::EErrCode errCode);
 
     static void x_PostError(ILineErrorListener* pMessageListener, 
@@ -121,6 +127,11 @@ private:
 
     static bool x_ExcessiveSeqDataInTitle(const string& title, 
         TFastaFlags fasta_flags);
+
+    static void x_CheckForExcessiveSeqDataInID(
+        const string& id_string,
+        const SDeflineParseInfo& info,
+        ILineErrorListener* pMessageListener);
 
     static bool x_ExceedsMaxLength(const string& title, 
         TSeqPos max_length);
