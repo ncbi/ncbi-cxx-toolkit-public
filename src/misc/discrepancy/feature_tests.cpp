@@ -272,7 +272,7 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
         const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
         const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
         const CSeq_loc& loc = (*gene)->GetLocation();
-cout << "Gene\t" << locus << "\n";                        
+//cout << "Gene\t" << locus << "\n";
         bool found = false;
         ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
             if ((*feat)->GetData().IsCdregion() || (*feat)->GetData().IsRna()) {
@@ -292,9 +292,9 @@ cout << "Gene\t" << locus << "\n";
                     }
                     else {
                         CConstRef<CSeq_feat> best_gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
-                        if (best_gene.Empty()) {
-cout << "Best gene not found!\n";                        
-                        }
+//                        if (best_gene.Empty()) {
+//cout << "Best gene not found!\n";
+//                        }
                         if (best_gene.NotEmpty() && &*best_gene == &**gene) {
                             found = true;
                             break;
