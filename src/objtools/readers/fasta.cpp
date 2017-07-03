@@ -687,88 +687,14 @@ bool CFastaReader::ParseIDs(
 bool CFastaReader::ParseIDs(
     const TStr& s, ILineErrorListener * pMessageListener)
 {
-    // if user wants all ids to be purely local, no problem
-    if( m_iFlags & CReaderBase::fAllIdsAsLocal )
-    {
-        return new CSeq_id(CSeq_id::e_Local, s);
-    }
-    CBioseq::TId& ids = SetIDs();
-    // CBioseq::TId  old_ids = ids;
-    size_t count = 0;
-    // be generous overall, and give raw local IDs the benefit of the
-    // doubt for now
-    CSeq_id::TParseFlags flags
-        = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
-    if (TestFlag(fParseRawID)) {
-        flags |= CSeq_id::fParse_RawText;
-    }
 
-    try {
-        if (s.find(',') != TStr::npos && s.find('|') == TStr::npos)
-        {
-            string temp = NStr::Replace(s, ",", "_");
-            count = CSeq_id::ParseIDs(ids, temp, flags);
-            FASTA_WARNING(LineNumber(),
-                "CFastaReader: Near line " << LineNumber() 
-                << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
-                << "symbol. Please find and correct the sequence id.",
-                ILineError::eProblem_GeneralParsingError, "");
-        }
-        else
-        {
-            count = CSeq_id::ParseIDs(ids, s, flags);
-        }
-    } catch (CSeqIdException&) {
-        // swap(ids, old_ids);
-    }
+    SDefLineParseInfo info;
+    info.fBaseFlags = m_iFlags;
+    info.fFastaFlags = GetFlags();
+    info.maxIdLength = m_MaxIDLength;
+    info.lineNumber = LineNumber();
 
-    // numerics become local, if requested
-    if( m_iFlags & CReaderBase::fNumericIdsAsLocal ) {
-        NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {
-            CSeq_id & id = **id_it;
-            if( id.IsGi() ) {
-                const TGi gi = id.GetGi();
-                id.SetLocal().SetStr( NStr::NumericToString(gi) );
-            }
-        }
-    }
-    // recheck raw local IDs
-    if (count == 1  &&  ids.back()->IsLocal())
-    {
-        string temp;
-        ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!IsValidLocalID(temp))
-        {
-            //&&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
-            ids.clear();
-            return false;
-        }
-    }
-    // check if ID was too long, use only 
-    if( count == 1)
-    {
-      CTempString check;
-      size_t last = s.rfind('|');
-      check = (last == CTempString::npos) ? s : s.substr(last + 1);
-
-        // before throwing an ID-too-long error, check if what we
-        // think is a "sequence ID" is actually sequence data
-      CMessageListenerLenient dummy_err_container; // so we can ignore them
-      if( CreateWarningsForSeqDataInTitle(s, LineNumber(), &dummy_err_container) ) {
-          // it's actually seq data
-          return false;
-       }
-
-      if (check.length() > m_MaxIDLength ) { 
-        FASTA_ERROR(LineNumber(),
-            "CFastaReader: Near line " << LineNumber() 
-            << ", the sequence ID is too long.  Its length is " << s.length()
-            << " but the max length allowed is " << m_MaxIDLength 
-            << ".  Please find and correct all sequence IDs that are too long.",
-            CObjReaderParseException::eIDTooLong);
-      }
-    }
-    return count > 0;
+    return CFastaDeflineReader::ParseIDs(s, info, m_ignorable, SetIDs(), pMessageListener);
 }
 
 
