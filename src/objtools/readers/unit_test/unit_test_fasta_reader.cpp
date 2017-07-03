@@ -696,29 +696,6 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
         seqTitles.clear();
     }
 
-
-    // Check that the following is interpreted as a defline 
-    // modifier, not an ID.
-    {
-        static const string kFastaDefLine = 
-            ">[topology=linear]";
-        CFastaReader::ParseDefLine(kFastaDefLine, 
-                                   parseInfo,
-                                   noIgnoredErrors,
-                                   ids,
-                                   hasRange,
-                                   rangeStart,
-                                   rangeEnd,
-                                   seqTitles,
-                                   nullptr); 
-
-        BOOST_CHECK( ids.empty() );
-        BOOST_CHECK( !hasRange );
-        BOOST_CHECK( seqTitles.size() == 1 );
-
-        ids.clear();
-        seqTitles.clear();
-    }
 }
 
 
