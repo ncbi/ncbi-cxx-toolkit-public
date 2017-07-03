@@ -311,7 +311,7 @@ public:
     ~CSeqDBAtlas();
 
      
-    enum {e_MaxFileDescritors = 1000};
+    enum {e_MaxFileDescritors = 950};
     
     /// Check if file exists.
     ///
