@@ -3592,7 +3592,10 @@ bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds)
 
     if (!molinfo.IsSetCompleteness() || molinfo.GetCompleteness() != completeness)
     {
-        molinfo.SetCompleteness(completeness);
+        if (completeness == CMolInfo::eCompleteness_complete)
+            molinfo.SetDefaultCompleteness();
+        else
+            molinfo.SetCompleteness(completeness);
         rval = true;
     }
     return rval;

@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePartialSynchronization)
     BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(prot_feat->IsSetPartial(), false);
-    BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_complete);
+    BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_unknown);
 
 }
 
