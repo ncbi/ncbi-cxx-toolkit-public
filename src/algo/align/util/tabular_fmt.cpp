@@ -473,7 +473,7 @@ void CTabularFormatter_PercentCoverage::PrintHelpText(CNcbiOstream& ostr) const
 
 void CTabularFormatter_PercentCoverage::PrintHeader(CNcbiOstream& ostr) const
 {
-    ostr << (m_Row == 0 ? "pcov" : "scov");
+    ostr << m_Header;
 }
 
 void CTabularFormatter_PercentCoverage::Print(CNcbiOstream& ostr,
@@ -2219,9 +2219,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 
     formatter.RegisterField("pident", new CTabularFormatter_PercentId(true));
     formatter.RegisterField("pident_ungapped", new CTabularFormatter_PercentId(false));
-    formatter.RegisterField("pcov", new CTabularFormatter_PercentCoverage(0));
-    formatter.RegisterField("qcov", new CTabularFormatter_PercentCoverage(0));
-    formatter.RegisterField("scov", new CTabularFormatter_PercentCoverage(1));
+    formatter.RegisterField("pcov", new CTabularFormatter_PercentCoverage(0, "pcov"));
+    formatter.RegisterField("qcov", new CTabularFormatter_PercentCoverage(0, "qcov"));
+    formatter.RegisterField("scov", new CTabularFormatter_PercentCoverage(1, "scov"));
 
     formatter.RegisterField("gaps", new CTabularFormatter_GapBaseCount);
     formatter.RegisterField("gapopen", new CTabularFormatter_GapCount);
