@@ -1270,4 +1270,10 @@ BOOST_AUTO_TEST_CASE(Test_AddPartialToProteinTitle)
     BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
     BOOST_CHECK_EQUAL(title->GetTitle(), "abc, partial (apicoplast) [Sebaea microphylla]");
 
+    // always use last instance of organelle
+    prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().front() = "Chromosome (apicoplast) abc";
+    title->SetTitle("Chromosome (apicoplast) abc (apicoplast) [Sebaea microphylla]");
+    BOOST_CHECK_EQUAL(CCleanup::AddPartialToProteinTitle(prot->SetSeq()), true);
+    BOOST_CHECK_EQUAL(title->GetTitle(), "Chromosome (apicoplast) abc, partial (apicoplast) [Sebaea microphylla]");
+
 }

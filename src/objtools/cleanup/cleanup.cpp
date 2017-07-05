@@ -2012,11 +2012,9 @@ bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
 static SIZE_TYPE s_TitleEndsInOrganism(
     const string & sTitle,
     const string & sOrganism,
-    SIZE_TYPE * out_piOrganellePos)
+    SIZE_TYPE& OrganellePos)
 {
-    if (out_piOrganellePos) {
-        *out_piOrganellePos = NPOS;
-    }
+    OrganellePos = NPOS;
 
     SIZE_TYPE answer = NPOS;
 
@@ -2035,8 +2033,8 @@ static SIZE_TYPE s_TitleEndsInOrganism(
         }
     }
 
-    // find organelle prefix
-    if (out_piOrganellePos) {
+    if (answer != NPOS) {
+        // find organelle prefix
         for (unsigned int genome = CBioSource::eGenome_chloroplast;
             genome <= CBioSource::eGenome_chromatophore;
             genome++) {
@@ -2048,17 +2046,16 @@ static SIZE_TYPE s_TitleEndsInOrganism(
                 genome != CBioSource::eGenome_chromosome)
             {
                 string organelle = " (" + CBioSource::GetOrganelleByGenome(genome) + ")";
-                SIZE_TYPE possible_organelle_start_pos = NStr::Find(sTitle, organelle);
+                SIZE_TYPE possible_organelle_start_pos = NStr::Find(sTitle, organelle, NStr::eNocase, NStr::eReverseSearch);
                 if (possible_organelle_start_pos != NPOS &&
                     NStr::EndsWith(CTempString(sTitle, 0, answer), organelle)) {
-                    *out_piOrganellePos = possible_organelle_start_pos;
+                    OrganellePos = possible_organelle_start_pos;
                     break;
                 }
 
             }
         }
     }
-
     return answer;
 }
 
@@ -2077,7 +2074,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
         orgname.GetBinomial().IsSetSpecies() &&
         !NStr::IsBlank(orgname.GetBinomial().GetSpecies())) {
         string binomial = orgname.GetBinomial().GetGenus() + " " + orgname.GetBinomial().GetSpecies();
-        suffixPos = s_TitleEndsInOrganism(sTitle, binomial, &organelle_pos);
+        suffixPos = s_TitleEndsInOrganism(sTitle, binomial, organelle_pos);
     }
     return suffixPos;
 }
@@ -2132,7 +2129,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
             if ((*it)->IsSetSubtype() && (*it)->IsSetSubname() &&
                 (*it)->GetSubtype() == COrgMod::eSubtype_old_name &&
                 !NStr::IsBlank((*it)->GetSubname())) {
-                suffixPos = s_TitleEndsInOrganism(sTitle, (*it)->GetSubname(), &organelle_pos);
+                suffixPos = s_TitleEndsInOrganism(sTitle, (*it)->GetSubname(), organelle_pos);
                 if (suffixPos != NPOS) {
                     return suffixPos;                    
                 }
@@ -2142,7 +2139,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
 
     // next, check to see if protein title matches taxname
     if (org.IsSetTaxname() && !NStr::IsBlank(org.GetTaxname())) {
-        suffixPos = s_TitleEndsInOrganism(sTitle, org.GetTaxname(), &organelle_pos);
+        suffixPos = s_TitleEndsInOrganism(sTitle, org.GetTaxname(), organelle_pos);
         if (suffixPos != NPOS) {
             return suffixPos;
         }
@@ -2161,7 +2158,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
     if (IsCrossKingdom(org)) {
         SIZE_TYPE sep = NStr::Find(sTitle, "][");
         if (sep != string::npos) {
-            suffixPos = s_TitleEndsInOrganism(sTitle.substr(0, sep + 1), org.GetTaxname(), &organelle_pos);
+            suffixPos = s_TitleEndsInOrganism(sTitle.substr(0, sep + 1), org.GetTaxname(), organelle_pos);
         }
     }
     return suffixPos;
@@ -2222,27 +2219,42 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     bool bPartial = false;
     string organelle = kEmptyStr;
 
-    // iterate Seqdescs from bottom to top
-    // accumulate seqdescs into here
-    typedef vector< CConstRef<CSeqdesc> > TSeqdescVec;
-    TSeqdescVec vecSeqdesc;
-    {
-        FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
-            vecSeqdesc.push_back(CConstRef<CSeqdesc>(&**descr_iter));
+    CConstRef<CSeqdesc> molinfo_desc(NULL);
+    CConstRef<CSeqdesc> src_desc(NULL);
+    FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
+        if (!molinfo_desc && (*descr_iter)->IsMolinfo()) {
+            molinfo_desc = *descr_iter;
         }
+        if (!src_desc && (*descr_iter)->IsSource()) {
+            src_desc = *descr_iter;
+        }
+        if (molinfo_desc && src_desc) {
+            break;
+        }
+    }
+    if (!molinfo_desc || !src_desc) {
         // climb up to get parent Seqdescs
         CConstRef<CBioseq_set> bioseq_set(bioseq.GetParentSet());
         for (; bioseq_set; bioseq_set = bioseq_set->GetParentSet()) {
             FOR_EACH_SEQDESC_ON_SEQSET(descr_iter, *bioseq_set) {
-                vecSeqdesc.push_back(CConstRef<CSeqdesc>(&**descr_iter));
+                if (!molinfo_desc && (*descr_iter)->IsMolinfo()) {
+                    molinfo_desc = *descr_iter;
+                }
+                if (!src_desc && (*descr_iter)->IsSource()) {
+                    src_desc = *descr_iter;
+                }
+                if (molinfo_desc && src_desc) {
+                    break;
+                }
+            }
+            if (molinfo_desc && src_desc) {
+                break;
             }
         }
     }
 
-    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
-        const CSeqdesc &descr = **descr_iter;
-        if (descr.IsMolinfo() && FIELD_IS_SET(descr.GetMolinfo(), Completeness)) {
-            switch (GET_FIELD(descr.GetMolinfo(), Completeness)) {
+    if (molinfo_desc && molinfo_desc->GetMolinfo().IsSetCompleteness()) {
+        switch (molinfo_desc->GetMolinfo().GetCompleteness()) {
             case NCBI_COMPLETENESS(partial):
             case NCBI_COMPLETENESS(no_left):
             case NCBI_COMPLETENESS(no_right):
@@ -2251,40 +2263,27 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
                 break;
             default:
                 break;
-            }
-            // stop at first molinfo
-            break;
         }
     }
 
     CConstRef<COrg_ref> org(NULL);
-    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
-        const CSeqdesc &descr = **descr_iter;
-        if (descr.IsSource()) {
-            const TBIOSOURCE_GENOME genome = (descr.GetSource().CanGetGenome() ?
-                descr.GetSource().GetGenome() :
-                CBioSource::eGenome_unknown);
-            if (genome >= CBioSource::eGenome_chloroplast &&
-                genome <= CBioSource::eGenome_chromatophore &&
-                genome != CBioSource::eGenome_extrachrom &&
-                genome != CBioSource::eGenome_transposon &&
-                genome != CBioSource::eGenome_insertion_seq &&
-                genome != CBioSource::eGenome_proviral &&
-                genome != CBioSource::eGenome_virion &&
-                genome != CBioSource::eGenome_chromosome)
-            {
-                organelle = CBioSource::GetOrganelleByGenome(genome);
-            }
+    if (src_desc) {
+        const TBIOSOURCE_GENOME genome = (src_desc->GetSource().IsSetGenome() ?
+            src_desc->GetSource().GetGenome() : CBioSource::eGenome_unknown);
+        if (genome >= CBioSource::eGenome_chloroplast &&
+            genome <= CBioSource::eGenome_chromatophore &&
+            genome != CBioSource::eGenome_extrachrom &&
+            genome != CBioSource::eGenome_transposon &&
+            genome != CBioSource::eGenome_insertion_seq &&
+            genome != CBioSource::eGenome_proviral &&
+            genome != CBioSource::eGenome_virion &&
+            genome != CBioSource::eGenome_chromosome)
+        {
+            organelle = CBioSource::GetOrganelleByGenome(genome);
+        }
 
-            if (descr.GetSource().IsSetOrg()) {
-                org.Reset(&(descr.GetSource().GetOrg()));
-            }
-            if (org && org->IsSetTaxname() && 
-                NStr::StartsWith(org->GetTaxname(), organelle, NStr::eNocase)) {
-                organelle = kEmptyStr;
-            }
-            // stop at first source
-            break;
+        if (src_desc->GetSource().IsSetOrg()) {
+            org.Reset(&(src_desc->GetSource().GetOrg()));
         }
     }
 
