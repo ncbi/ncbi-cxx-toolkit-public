@@ -59,7 +59,7 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
     size_t range_len = 0;
     const TFastaFlags& fFastaFlags = info.fFastaFlags;
     const TSeqPos& lineNumber = info.lineNumber;
-    has_range = false;
+    hasRange = false;
 
     const size_t len = defline.length(); 
     if (len <= 1 || 
