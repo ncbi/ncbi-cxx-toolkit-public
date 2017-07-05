@@ -676,7 +676,7 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
         }
     }
 
-    if (!id[0] != '>') {
+    if (id[0] != '>') {
         NCBI_THROW(CInputException, eInvalidInput,
                    (string)"Missing defline before line: " +
                    NStr::IntToString(m_LineReader->GetLineNumber()));
