@@ -111,7 +111,7 @@ public:
                     "nucleotide sequence when linking multiple distinct "
                     "alignments",
                     CArgDescriptions::eInteger,
-                    NStr::IntToString(2000));
+                    NStr::IntToString(500000));
         arg_desc.SetConstraint(kArgMaxIntronLength,
                                new CArgAllowValuesGreaterThanOrEqual(0));
         arg_desc.SetCurrentGroup("");
