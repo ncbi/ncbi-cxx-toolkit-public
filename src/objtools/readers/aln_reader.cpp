@@ -508,10 +508,9 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
     for (auto i=0; i<m_Dim; ++i) {
         // Reconstruct original defline string from results 
         // returned by C code.
-        string fasta_defline = m_Ids[i];
+        string fasta_defline = ">" + m_Ids[i];
         if (!m_Deflines[i].empty()) {
             fasta_defline += " " + m_Deflines[i];
-            fasta_defline = ">" + fasta_defline;
         }
         ids[i] = GenerateID(fasta_defline, i, fasta_flags);
     }
