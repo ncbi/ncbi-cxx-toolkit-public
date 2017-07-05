@@ -565,7 +565,7 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
             "Fasta Reader: sequence id ends with " +
             NStr::NumericToString(numNucChars) +
             " valid nucleotide characters. " +
-            " Was the sequence accidently placed in the definition line?";    
+            " Was the sequence accidentally placed in the definition line?";    
         
             x_PostWarning(pMessageListener,
                 info.lineNumber,
@@ -594,7 +594,7 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
             "Fasta Reader: sequence id ends with " +
             NStr::NumericToString(numAaChars) +
             " valid amino-acid characters. " +
-            " Was the sequence accidently placed in the definition line?";    
+            " Was the sequence accidentally placed in the definition line?";    
         
             x_PostWarning(pMessageListener,
                 info.lineNumber,
