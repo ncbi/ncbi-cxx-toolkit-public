@@ -12,4 +12,6 @@ LIBS = $(LMDB_LIBS)
 CHECK_COPY = lmdb_test.sh
 CHECK_CMD  = lmdb_test.sh 5
 
+REQUIRES = -Cygwin
+
 WATCHERS = ivanov
