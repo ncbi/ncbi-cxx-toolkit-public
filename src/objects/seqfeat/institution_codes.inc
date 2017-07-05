@@ -902,7 +902,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCFVB\tc\tFacultat de Veterinaria, Universitat Autonoma de Barcelona\t\t",
 "CCG<CHN>\ts\tChengdu College of Geology\tCHG",
 "CCG<GHN>\ts\tUniversity of Cape Coast, Botany Department\t\t",
-"CCGB\tc\tCole(e7)o de Culturas do G(ea)ero Bacillus e G(ea)eros Correlatos\t\t",
+"CCGB\tc\tCulture Collection of Bacillus and Related Genera (Instituto Oswaldo Cruz)\t\t",
 "CCGVCC\tc\tChina Centre for General Viruses Culture Collection\t\t",
 "CCH\th\tUniversity of Arizona South, Agricultural Extension Service\t\t",
 "CCIAL\tc\tCultures Cells for Institute Adolfo Lutz\t\t",

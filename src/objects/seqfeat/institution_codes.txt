@@ -869,7 +869,7 @@ CCFL	s	Chad National Museum
 CCFVB	c	Facultat de Veterinaria, Universitat Autonoma de Barcelona		
 CCG<CHN>	s	Chengdu College of Geology	CHG
 CCG<GHN>	s	University of Cape Coast, Botany Department		
-CCGB	c	Cole(e7)o de Culturas do G(ea)ero Bacillus e G(ea)eros Correlatos		
+CCGB	c	Culture Collection of Bacillus and Related Genera (Instituto Oswaldo Cruz)		
 CCGVCC	c	China Centre for General Viruses Culture Collection		
 CCH	h	University of Arizona South, Agricultural Extension Service		
 CCIAL	c	Cultures Cells for Institute Adolfo Lutz		
