@@ -3382,6 +3382,22 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
     if (!alerts.empty())
         reply += "&" + alerts;
 
+    // Add an executable path, config file path and command line arguments:
+    // see CXX-9139
+    const CNcbiApplication* app = CNcbiApplication::Instance();
+    reply += "&exe_path=" + NStr::URLEncode(app->GetProgramExecutablePath());
+    reply += "&config_path=" + NStr::URLEncode(app->GetConfigPath());
+
+    const CNcbiArguments& arguments = app->GetArguments();
+    size_t args_size = arguments.Size();
+    string cmdline_args;
+    for (size_t index = 0; index < args_size; ++index) {
+        if (index != 0)
+            cmdline_args += " ";
+        cmdline_args += arguments[index];
+    }
+    reply += "&cmdline_args=" + NStr::URLEncode(cmdline_args);
+
     x_WriteMessage(reply + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
