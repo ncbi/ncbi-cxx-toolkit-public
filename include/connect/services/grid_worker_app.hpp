@@ -187,7 +187,14 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 #   define GRID_WORKER_APP_BUILD_TAG kEmptyStr
 #endif
 
-#define NCBI_WORKERNODE_MAIN_IMPL(TFactory, Version, SetListener)           \
+#ifdef NCBI_WORKERNODE_CLASS
+#error \
+    NCBI_WORKERNODE_CLASS is not supported anymore. \
+    Replace NCBI_WORKERNODE_* with corresponding NCBI_WORKERNODE_*_DERIVED providing app class. \
+    Please be aware that your app class is required to accept SBuildInfo and pass it to CGridWorkerApp.
+#endif
+
+#define NCBI_WORKERNODE_MAIN_IMPL(TFactory, CGridWorkerApp, Version, SetListener) \
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
@@ -199,20 +206,25 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     }
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
-    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
-    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, Version, )
+    NCBI_WORKERNODE_MAIN_DERIVED(TWorkerNodeJob, CGridWorkerApp, Version)
 
-#define NCBI_WORKERNODE_MAIN_WITH_LISTENER(TWorkerNodeJob, Version,         \
-                                           ListenerClass)                   \
+#define NCBI_WORKERNODE_MAIN_DERIVED(TWorkerNodeJob, CGridWorkerApp, Version) \
     NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
-    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, Version,             \
-            app.SetListener(new ListenerClass))
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, CGridWorkerApp, Version, )
 
-#define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob,                             \
-        TWorkerNodeIdleTask, Version)                                       \
-    NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
-            TWorkerNodeIdleTask, Version);                                  \
-    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##FactoryEx, Version, )
+#define NCBI_WORKERNODE_MAIN_WITH_LISTENER(TWorkerNodeJob, Version, ListenerClass) \
+    NCBI_WORKERNODE_MAIN_WITH_LISTENER_DERIVED(TWorkerNodeJob, CGridWorkerApp, Version, ListenerClass)
+
+#define NCBI_WORKERNODE_MAIN_WITH_LISTENER_DERIVED(TWorkerNodeJob, CGridWorkerApp, Version, ListenerClass) \
+    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, CGridWorkerApp, Version, app.SetListener(new ListenerClass))
+
+#define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version) \
+    NCBI_WORKERNODE_MAIN_EX_DERIVED(TWorkerNodeJob, TWorkerNodeIdleTask, CGridWorkerApp, Version)
+
+#define NCBI_WORKERNODE_MAIN_EX_DERIVED(TWorkerNodeJob, TWorkerNodeIdleTask, VCGridWorkerApp, ersion) \
+    NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##FactoryEx, CGridWorkerApp, Version, )
 
 #define NCBI_GRID_PKG_WORKER_NODE_MAIN(TWorkerNodeJob,                      \
         TWorkerNodeJobFactoryClass, ListenerClass)                          \
