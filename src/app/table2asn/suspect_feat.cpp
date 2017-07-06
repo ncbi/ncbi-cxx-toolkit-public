@@ -102,18 +102,14 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
 
 bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
 {
-    static const char hypotetic_protein_name[] = "hypothetical protein";
+    static const char hypotetic_protein_name[] = "hypothetical protein"; // sema: interesting optimization...
 
     bool modified = false;
-    if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
-    {
-        for (auto& name : feature.SetData().SetProt().SetName())
-        {
-            if (NStr::Compare(name, hypotetic_protein_name))
-            {
+    if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName()) {
+        for (auto& name : feature.SetData().SetProt().SetName()) {
+            if (NStr::Compare(name, hypotetic_protein_name)) {
                 string orig = name;
-                if (FixSuspectProductName(name))
-                {
+                while (FixSuspectProductName(name)) {
                     ReportFixedProduct(orig, name, feature.GetLocation(), kEmptyStr);
                     modified = true;
                 }
