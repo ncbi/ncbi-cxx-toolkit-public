@@ -1210,8 +1210,9 @@ w_wx needs3party $(WXWIDGETS_LIBS)
 we_cpp needs xser
 wgmlst needs xncbi
 wgmlst needs3party $(BOOST_SYSTEM_LIBS)
-wgmlst_genome_pairwise_distance needs $(COMPRESS_LIBS)
-wgmlst_genome_pairwise_distance needs wgmlst_store
+wgmlst_core needs $(COMPRESS_LIBS)
+wgmlst_core needs wgmlst_store
+wgmlst_distances needs wgmlst_store
 wgmlst_store needs $(SEQ_LIBS)
 wgmlst_store needs pub
 writedb needs $(OBJREAD_LIBS)
