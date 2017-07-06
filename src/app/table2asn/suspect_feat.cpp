@@ -63,23 +63,23 @@ void CFixSuspectProductName::SetFilename(const string& filename)
 
 bool CFixSuspectProductName::FixSuspectProductName(string& name)
 {
-    if (m_rules.Empty())
-    {
+    if (m_rules.Empty()) {
         bool found = false;
         const string& rules_env = CNcbiApplication::Instance()->GetEnvironment().Get("PRODUCT_RULES_LIST", &found);
-        if (found)
+        if (found) {
             m_rules_filename = rules_env.data();
-
+        }
         m_rules = CSuspect_rule_set::GetProductRules(m_rules_filename);
     }
 
-    if (m_rules.Empty() || m_rules->Get().empty())
+    if (m_rules.Empty() || m_rules->Get().empty()) {
         return false;
+    }
 
-    for (const auto& rule : m_rules->Get())
-    {
-        if (rule->ApplyToString(name))
+    for (const auto& rule : m_rules->Get()) {
+        if (rule->ApplyToString(name)) {
             return true;
+        }
     }
 
     return false;
