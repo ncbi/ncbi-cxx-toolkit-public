@@ -212,10 +212,6 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "");
 
-    to_fix = "01 14'17.6'' S 079 40'21.3'' W";
-    fixed = CSubSource::FixLatLonFormat(to_fix, true);
-    BOOST_CHECK_EQUAL(fixed, "");
-
     to_fix = "0031.02 N 00.01E";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "31.02 N 0.01 E");

@@ -1384,10 +1384,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
                 return kEmptyStr;
             }
             string num_str = token.substr(prev_start, pos - prev_start);
-            double this_val = NStr::StringToDouble(num_str, NStr::fConvErr_NoThrow);
-            if (errno != 0) {
-                return kEmptyStr;
-            }
+            double this_val = NStr::StringToDouble (num_str);
             if (token[pos + 1] == '\'') {
                 if (num_sep > 2) {
                     // already found seconds
