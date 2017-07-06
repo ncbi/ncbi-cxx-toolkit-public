@@ -72,11 +72,11 @@ extern "C" {
 #        endif /*__cplusplus*/
 static int gcry_user_mutex_init(void** lock)
 {
-    return !(*lock = MT_LOCK_AddRef(CORE_GetLOCK())) ? NCBI_NOTSUPPORTED : 0;
+    return !(*lock = MT_LOCK_AddRef(g_CORE_MT_Lock)) ? NCBI_NOTSUPPORTED : 0;
 }
 static int gcry_user_mutex_destroy(void** lock)
 {
-    MT_LOCK_Delete(*((MT_LOCK*) lock));
+    g_CORE_MT_Lock = MT_LOCK_Delete(*((MT_LOCK*) lock));
     *lock = 0;
     return 0;
 }
@@ -107,11 +107,11 @@ extern "C" {
 #    endif /*__cplusplus*/
 static int gtls_user_mutex_init(void** lock)
 {
-    return !(*lock = MT_LOCK_AddRef(CORE_GetLOCK())) ? NCBI_NOTSUPPORTED : 0;
+    return !(*lock = MT_LOCK_AddRef(g_CORE_MT_Lock)) ? NCBI_NOTSUPPORTED : 0;
 }
 static int gtls_user_mutex_deinit(void** lock)
 {
-    MT_LOCK_Delete((MT_LOCK)(*lock));
+    g_CORE_MT_Lock = MT_LOCK_Delete((MT_LOCK)(*lock));
     *lock = 0;
     return 0;
 }

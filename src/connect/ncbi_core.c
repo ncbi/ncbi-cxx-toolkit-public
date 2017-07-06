@@ -82,11 +82,11 @@ extern const char* IO_StatusStr(EIO_Status status)
 
 /* MT lock data and callbacks */
 struct MT_LOCK_tag {
-  unsigned int     count;        /* reference count                          */
-  void*            data;         /* for "handler()" and "cleanup()"          */
-  FMT_LOCK_Handler handler;      /* handler callback for locking / unlocking */
-  FMT_LOCK_Cleanup cleanup;      /* cleanup callback for "data"              */
-  unsigned int     magic;        /* used internally to make sure it's init'd */
+    volatile unsigned int count;    /* reference count                  */
+    void*                 data;     /* for "handler()" and "cleanup()"  */
+    FMT_LOCK_Handler      handler;  /* handler callback for [un]locking */
+    FMT_LOCK_Cleanup      cleanup;  /* cleanup callback for "data"      */
+    unsigned int          magic;    /* internal consistency assurance   */
 };
 #define kMT_LOCK_magic  0x7A96283F
 
@@ -98,6 +98,7 @@ struct MT_LOCK_tag {
 #  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
 #    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 #  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
+
 
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
@@ -113,24 +114,25 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
         ;
 
 #    ifndef NCBI_RECURSIVE_MUTEX_INIT
-    /* NB: Without a static initializer there is a
-           RACE CONDITION in sx_Mutex's INIT/USE! */
-    static void* /*bool*/ s_Once = 0/*false*/;
-    if (CORE_Once(&s_Once)) {
+    static void* /*bool*/ sx_Init   = 0/*false*/;
+    static int   /*bool*/ sx_Inited = 0/*false*/;
+    if (CORE_Once(&sx_Init)) {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&sx_Mutex, &attr);
         pthread_mutexattr_destroy(&attr);
-    }
+        sx_Inited = 1; /*go*/
+    } else while (!sx_Inited)
+        CORE_Msdelay(1/*ms*/); /*spin*/
 #    endif /*!NCBI_RECURSIVE_MUTEX_INIT*/
 
     switch (action) {
     case eMT_Lock:
     case eMT_LockRead:
-        return pthread_mutex_lock(&sx_Mutex)    == 0 ? 1/*ok*/ : 0/*fail*/;
+        return pthread_mutex_lock   (&sx_Mutex) == 0 ? 1/*ok*/ : 0/*fail*/;
     case eMT_Unlock:
-        return pthread_mutex_unlock(&sx_Mutex)  == 0 ? 1/*ok*/ : 0/*fail*/;
+        return pthread_mutex_unlock (&sx_Mutex) == 0 ? 1/*ok*/ : 0/*fail*/;
     case eMT_TryLock:
     case eMT_TryLockRead:
         return pthread_mutex_trylock(&sx_Mutex) == 0 ? 1/*ok*/ : 0/*fail*/;
@@ -140,15 +142,14 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  elif defined(NCBI_WIN32_THREADS)
 
     static CRITICAL_SECTION sx_Crit;
-    static LONG             sx_Init   = 0;
-    static int/*bool*/      sx_Inited = 0/*false*/;
+    static LONG /*bool*/    sx_Init   = 0/*false*/;
+    static int  /*bool*/    sx_Inited = 0/*false*/;
 
-    LONG init = InterlockedCompareExchange(&sx_Init, 1, 0);
-    if (!init) {
+    if (!InterlockedCompareExchange(&sx_Init, 1, 0)) {
         InitializeCriticalSection(&sx_Crit);
         sx_Inited = 1; /*go*/
     } else while (!sx_Inited)
-        Sleep(1/*ms*/); /*spin*/
+        CORE_Msdelay(1/*ms*/); /*spin*/
 
     switch (action) {
     case eMT_Lock:
@@ -167,8 +168,8 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 #  else
 
     if (g_CORE_Log) {
-        static void* /*bool*/ s_Once = 0/*false*/;
-        if (CORE_Once(&s_Once))
+        static void* /*bool*/ sx_Once = 0/*false*/;
+        if (CORE_Once(&sx_Once))
             CORE_LOG(eLOG_Critical, "Using uninitialized CORE MT-LOCK");
     }
     return -1/*not implemented*/;
@@ -214,8 +215,11 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 {
     if (lk) {
         MT_LOCK_VALID;
-        if (lk != &g_CORE_MT_Lock_default)
+        if (lk != &g_CORE_MT_Lock_default) {
+            MT_LOCK_Do(lk, eMT_Lock);
             lk->count++;
+            MT_LOCK_Do(lk, eMT_Unlock);
+        }
     }
     return lk;
 }
@@ -225,19 +229,21 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 {
     if (lk) {
         MT_LOCK_VALID;
-        if (lk != &g_CORE_MT_Lock_default  &&  !--lk->count) {
-            /* NB: may still be locked while being deleted */
-            if (lk->handler) {  /* weak extra protection */
+        if (lk != &g_CORE_MT_Lock_default) {
+            unsigned int count;
+            if (lk->handler)
                 verify(lk->handler(lk->data, eMT_Lock));
+            count = --lk->count;
+            if (lk->handler)
                 verify(lk->handler(lk->data, eMT_Unlock));
+            if (!count) {
+                if (lk->cleanup)
+                    lk->cleanup(lk->data);
+
+                lk->magic++;
+                free(lk);
+                lk = 0;
             }
-
-            if (lk->cleanup)
-                lk->cleanup(lk->data);
-
-            lk->magic++;
-            free(lk);
-            lk = 0;
         }
     }
     return lk;

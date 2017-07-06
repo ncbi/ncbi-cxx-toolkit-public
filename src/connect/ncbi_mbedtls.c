@@ -75,12 +75,12 @@
 static void mbtls_user_mutex_init(MT_LOCK* lock)
 {
     if (lock)
-        *lock = MT_LOCK_AddRef(CORE_GetLOCK());
+        *lock = MT_LOCK_AddRef(g_CORE_MT_Lock);
 }
 static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 {
     if (lock) {
-        MT_LOCK_Delete(*lock);
+        g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
         *lock = 0;
     }
 }
