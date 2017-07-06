@@ -29,6 +29,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/unicode.hpp>
+#include <util/static_set.hpp>
+#include <util/static_map.hpp>
+
 #include <objmgr/util/indexer.hpp>
 
 #include <objects/misc/sequence_macros.hpp>
@@ -44,50 +48,50 @@ BEGIN_SCOPE(objects)
 
 // Constructors take top-level object, create Seq-entry wrapper if necessary
 CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     topsep.Parentize();
-    m_tsep.Reset(&topsep);
+    m_Tsep.Reset(&topsep);
 
     x_Init();
 }
 
 CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     CSeq_entry* parent = seqset.GetParentEntry();
     if (parent) {
         parent->Parentize();
-        m_tsep.Reset(parent);
+        m_Tsep.Reset(parent);
     } else {
         CRef<CSeq_entry> sep(new CSeq_entry);
         sep->SetSet(seqset);
         sep->Parentize();
-        m_tsep.Reset(sep);
+        m_Tsep.Reset(sep);
     }
 
     x_Init();
 }
 
 CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     CSeq_entry* parent = bioseq.GetParentEntry();
     if (parent) {
         parent->Parentize();
-        m_tsep.Reset(parent);
+        m_Tsep.Reset(parent);
     } else {
         CRef<CSeq_entry> sep(new CSeq_entry);
         sep->SetSeq(bioseq);
         sep->Parentize();
-        m_tsep.Reset(sep);
+        m_Tsep.Reset(sep);
     }
 
     x_Init();
 }
 
 CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     _ASSERT(submit.CanGetData());
     _ASSERT(submit.CanGetSub());
@@ -96,36 +100,30 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
 
     CRef<CSeq_entry> sep = submit.GetData().GetEntrys().front();
     sep->Parentize();
-    m_tsep.Reset(sep);
-    m_sbtBlk.Reset(&submit.GetSub());
+    m_Tsep.Reset(sep);
+    m_SbtBlk.Reset(&submit.GetSub());
 
     x_Init();
 }
 
 CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     topsep.Parentize();
-    m_tsep.Reset(&topsep);
-    m_sbtBlk.Reset(&sblock);
+    m_Tsep.Reset(&topsep);
+    m_SbtBlk.Reset(&sblock);
 
     x_Init();
 }
 
 CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags)
-    : m_flags(flags)
+    : m_Flags(flags)
 {
     topsep.Parentize();
-    m_tsep.Reset(&topsep);
-    m_topDescr.Reset(&descr);
+    m_Tsep.Reset(&topsep);
+    m_TopDescr.Reset(&descr);
 
     x_Init();
-}
-
-// Destructor
-CSeqEntryIndex::~CSeqEntryIndex (void)
-
-{
 }
 
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
@@ -135,28 +133,28 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
     if (sep.IsSeq()) {
         // Is Bioseq
         const CBioseq& bsp = sep.GetSeq();
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(bsp);
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_tseh, m_scope, m_localFeatures, false));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, m_LocalFeatures, false));
 
             // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
-            m_bsxList.push_back(bsx);
+            m_BsxList.push_back(bsx);
 
             // map from accession string to CBioseqIndex object
             const string& accn = bsx->GetAccession();
-            m_accnIndexMap[accn] = bsx;
+            m_AccnIndexMap[accn] = bsx;
         }
     } else if (sep.IsSet()) {
         // Is Bioseq-set
         const CBioseq_set& bssp = sep.GetSet();
-        CBioseq_set_Handle ssh = m_scope->GetBioseq_setHandle(bssp);
+        CBioseq_set_Handle ssh = m_Scope->GetBioseq_setHandle(bssp);
         if (ssh) {
             // create CSeqsetIndex object for current Bioseq-set
             CRef<CSeqsetIndex> ssx(new CSeqsetIndex(ssh, bssp, prnt));
 
             // record CSeqsetIndex in vector
-            m_ssxList.push_back(ssx);
+            m_SsxList.push_back(ssx);
 
             if (bssp.CanGetSeq_set()) {
                 // recursively explore current Bioseq-set
@@ -173,45 +171,45 @@ void CSeqEntryIndex::x_Init (void)
 
 {
     try {
-        m_objmgr = CObjectManager::GetInstance();
-        if ( !m_objmgr ) {
+        m_Objmgr = CObjectManager::GetInstance();
+        if ( !m_Objmgr ) {
             /* raise hell */;
         }
 
-        m_scope.Reset( new CScope( *m_objmgr ) );
-        if ( !m_scope ) {
+        m_Scope.Reset( new CScope( *m_Objmgr ) );
+        if ( !m_Scope ) {
             /* raise hell */;
         }
 
         m_Counter.Set(0);
 
-        m_scope->AddDefaults();
+        m_Scope->AddDefaults();
 
-        m_tseh = m_scope->AddTopLevelSeqEntry( *m_tsep );
+        m_Tseh = m_Scope->AddTopLevelSeqEntry( *m_Tsep );
 
-        m_fetchFailure = false;
+        m_FetchFailure = false;
 
-        m_localFeatures = false;
-        if ((m_flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
-            m_localFeatures = true;
+        m_LocalFeatures = false;
+        if ((m_Flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
+            m_LocalFeatures = true;
         }
 
         // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
         CRef<CSeqsetIndex> noparent;
-        x_InitSeqs( *m_tsep, noparent );
+        x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CSeqEntryIndex::x_Init: " << e.what());
     }
 }
 
-CRef<CSeq_id> CSeqEntryIndex::MakeUniqueId(void)
+CRef<CSeq_id> CSeqEntryIndex::x_MakeUniqueId(void)
 {
     CRef<CSeq_id> id(new CSeq_id());
     bool good = false;
     while (!good) {
         id->SetLocal().SetStr("tmp_delta_subset_" + NStr::NumericToString(m_Counter.Add(1)));
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(*id);
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
         if (! bsh) {
             good = true;
         }
@@ -224,9 +222,9 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
 {
     try {
         // create delta sequence referring to location or range, using temporary local Seq-id
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
         CRef<CBioseq> delta(new CBioseq());
-        delta->SetId().push_back(MakeUniqueId());
+        delta->SetId().push_back(x_MakeUniqueId());
         delta->SetInst().Assign(bsh.GetInst());
         delta->SetInst().ResetSeq_data();
         delta->SetInst().ResetExt();
@@ -234,15 +232,15 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
         CRef<CDelta_seq> element(new CDelta_seq());
         element->SetLoc().Assign(loc);
         delta->SetInst().SetExt().SetDelta().Set().push_back(element);
-        delta->SetInst().SetLength(sequence::GetLength(loc, m_scope));
+        delta->SetInst().SetLength(sequence::GetLength(loc, m_Scope));
 
         // add to scope
-        CBioseq_Handle deltaBsh = m_scope->AddBioseq(*delta);
+        CBioseq_Handle deltaBsh = m_Scope->AddBioseq(*delta);
 
         if (deltaBsh) {
             // create CBioseqIndex object for delta Bioseq
             CRef<CSeqsetIndex> noparent;
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_tseh, m_scope, m_localFeatures, true));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_Tseh, m_Scope, m_LocalFeatures, true));
 
            return bsx;
         }
@@ -256,8 +254,8 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
 CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
 
 {
-    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
-    if (it != m_accnIndexMap.end()) {
+    TAccnIndexMap::iterator it = m_AccnIndexMap.find(accn);
+    if (it != m_AccnIndexMap.end()) {
         CRef<CBioseqIndex> bsx = it->second;
         for (const CRef<CSeq_id>& id : bsx->GetBioseq().GetId()) {
             switch (id->Which()) {
@@ -293,7 +291,7 @@ CConstRef<CSeq_loc> CSeqEntryIndex::x_SubRangeLoc(const string& accn, int from, 
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (void)
 
 {
-    for (auto& bsx : m_bsxList) {
+    for (auto& bsx : m_BsxList) {
         return bsx;
     }
     return CRef<CBioseqIndex> ();
@@ -303,7 +301,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (void)
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int n)
 
 {
-    for (auto& bsx : m_bsxList) {
+    for (auto& bsx : m_BsxList) {
         n--;
         if (n > 0) continue;
         return bsx;
@@ -315,8 +313,8 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int n)
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn)
 
 {
-    TAccnIndexMap::iterator it = m_accnIndexMap.find(accn);
-    if (it != m_accnIndexMap.end()) {
+    TAccnIndexMap::iterator it = m_AccnIndexMap.find(accn);
+    if (it != m_AccnIndexMap.end()) {
         CRef<CBioseqIndex> bsx = it->second;
         return bsx;
     }
@@ -366,7 +364,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int from, int to, bool rev_co
 const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
 
 {
-    return m_bsxList;
+    return m_BsxList;
 }
 
 
@@ -376,21 +374,15 @@ const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
 CSeqsetIndex::CSeqsetIndex (CBioseq_set_Handle ssh,
                             const CBioseq_set& bssp,
                             CRef<CSeqsetIndex> prnt)
-    : m_ssh(ssh),
-      m_bssp(bssp),
-      m_prnt(prnt)
+    : m_Ssh(ssh),
+      m_Bssp(bssp),
+      m_Prnt(prnt)
 {
-    m_class = CBioseq_set::eClass_not_set;
+    m_Class = CBioseq_set::eClass_not_set;
 
     if (ssh.IsSetClass()) {
-        m_class = ssh.GetClass();
+        m_Class = ssh.GetClass();
     }
-}
-
-// Destructor
-CSeqsetIndex::~CSeqsetIndex (void)
-
-{
 }
 
 
@@ -405,17 +397,17 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                             CRef<CScope> scope,
                             bool localFeatures,
                             bool surrogate)
-    : m_bsh(bsh),
-      m_bsp(bsp),
-      m_obsh(obsh),
-      m_prnt(prnt),
-      m_tseh(tseh),
-      m_scope(scope),
-      m_localFeatures(localFeatures),
-      m_surrogate(surrogate)
+    : m_Bsh(bsh),
+      m_Bsp(bsp),
+      m_OrigBsh(obsh),
+      m_Prnt(prnt),
+      m_Tseh(tseh),
+      m_Scope(scope),
+      m_LocalFeatures(localFeatures),
+      m_Surrogate(surrogate)
 {
-    m_descsInitialized = false;
-    m_featsInitialized = false;
+    m_DescsInitialized = false;
+    m_FeatsInitialized = false;
 
     m_Accession.clear();
 
@@ -441,53 +433,47 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
         }
     }
 
-    m_IsNA = m_bsh.IsNa();
-    m_IsAA = m_bsh.IsAa();
-    m_topology = CSeq_inst::eTopology_not_set;
-    m_length = 0;
+    m_IsNA = m_Bsh.IsNa();
+    m_IsAA = m_Bsh.IsAa();
+    m_Topology = CSeq_inst::eTopology_not_set;
+    m_Length = 0;
 
     m_IsDelta = false;
     m_IsVirtual = false;
     m_IsMap = false;
 
-    if (m_bsh.IsSetInst()) {
-        if (m_bsh.IsSetInst_Topology()) {
-            m_topology = m_bsh.GetInst_Topology();
+    if (m_Bsh.IsSetInst()) {
+        if (m_Bsh.IsSetInst_Topology()) {
+            m_Topology = m_Bsh.GetInst_Topology();
         }
 
-        if (m_bsh.IsSetInst_Length()) {
-            m_length = m_bsh.GetInst_Length();
+        if (m_Bsh.IsSetInst_Length()) {
+            m_Length = m_Bsh.GetInst_Length();
         } else {
-            m_length = m_bsh.GetBioseqLength();
+            m_Length = m_Bsh.GetBioseqLength();
         }
 
-        if (m_bsh.IsSetInst_Repr()) {
-            CBioseq_Handle::TInst_Repr repr = m_bsh.GetInst_Repr();
+        if (m_Bsh.IsSetInst_Repr()) {
+            CBioseq_Handle::TInst_Repr repr = m_Bsh.GetInst_Repr();
             m_IsDelta = (repr == CSeq_inst::eRepr_delta);
             m_IsVirtual = (repr == CSeq_inst::eRepr_virtual);
             m_IsMap = (repr == CSeq_inst::eRepr_map);
         }
     }
 
-    m_title.clear();
-    m_molInfo.Reset();
-    m_bioSource.Reset();
-    m_taxname.clear();
-    m_defline.clear();
-    m_dlflags = 0;
+    m_Title.clear();
+    m_MolInfo.Reset();
+    m_BioSource.Reset();
+    m_Taxname.clear();
+    m_Defline.clear();
+    m_Dlflags = 0;
 
-    m_biomol = CMolInfo::eBiomol_unknown;
-    m_tech = CMolInfo::eTech_unknown;
-    m_completeness = CMolInfo::eCompleteness_unknown;
+    m_Biomol = CMolInfo::eBiomol_unknown;
+    m_Tech = CMolInfo::eTech_unknown;
+    m_Completeness = CMolInfo::eCompleteness_unknown;
 
-    m_forceOnlyNearFeats = false;
-    m_onlyNearFeats = false;
-}
-
-// Destructor
-CBioseqIndex::~CBioseqIndex (void)
-
-{
+    m_ForceOnlyNearFeats = false;
+    m_OnlyNearFeats = false;
 }
 
 // Descriptor collection (delayed until needed)
@@ -495,28 +481,28 @@ void CBioseqIndex::x_InitDescs (void)
 
 {
     try {
-        if (m_descsInitialized) {
+        if (m_DescsInitialized) {
            return;
         }
 
-        m_descsInitialized = true;
+        m_DescsInitialized = true;
 
         // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
-        for (CSeqdesc_CI desc_it(m_obsh); desc_it; ++desc_it) {
+        for (CSeqdesc_CI desc_it(m_OrigBsh); desc_it; ++desc_it) {
             const CSeqdesc& sd = *desc_it;
             CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
-            m_sdxList.push_back(sdx);
+            m_SdxList.push_back(sdx);
 
             switch (sd.Which()) {
                 case CSeqdesc::e_Source:
                 {
-                    if (! m_bioSource) {
+                    if (! m_BioSource) {
                         const CBioSource& biosrc = sd.GetSource();
-                        m_bioSource.Reset (&biosrc);
+                        m_BioSource.Reset (&biosrc);
                         if (biosrc.IsSetOrgname()) {
                             const COrg_ref& org = biosrc.GetOrg();
                             if (org.CanGetTaxname()) {
-                                m_taxname = org.GetTaxname();
+                                m_Taxname = org.GetTaxname();
                             }
                         }
                     }
@@ -524,19 +510,19 @@ void CBioseqIndex::x_InitDescs (void)
                 }
                 case CSeqdesc::e_Molinfo:
                 {
-                    if (! m_molInfo) {
+                    if (! m_MolInfo) {
                         const CMolInfo& molinf = sd.GetMolinfo();
-                        m_molInfo.Reset (&molinf);
-                        m_biomol = molinf.GetBiomol();
-                        m_tech = molinf.GetTech();
-                        m_completeness = molinf.GetCompleteness();
+                        m_MolInfo.Reset (&molinf);
+                        m_Biomol = molinf.GetBiomol();
+                        m_Tech = molinf.GetTech();
+                        m_Completeness = molinf.GetCompleteness();
                     }
                     break;
                 }
                 case CSeqdesc::e_Title:
                 {
-                    if (m_title.empty()) {
-                        m_title = sd.GetTitle();
+                    if (m_Title.empty()) {
+                        m_Title = sd.GetTitle();
                     }
                     break;
                 }
@@ -556,7 +542,7 @@ void CBioseqIndex::x_InitDescs (void)
                                         if (fld.IsSetData() && fld.GetData().IsStr()) {
                                             const string& str = fld.GetData().GetStr();
                                             if (NStr::EqualNocase(str, "OnlyNearFeatures")) {
-                                                m_forceOnlyNearFeats = true;
+                                                m_ForceOnlyNearFeats = true;
                                             }
                                         }
                                     }
@@ -572,13 +558,13 @@ void CBioseqIndex::x_InitDescs (void)
         }
 
         // set policy flags for object manager feature exploration
-        if (m_forceOnlyNearFeats) {
-            m_onlyNearFeats = true;
+        if (m_ForceOnlyNearFeats) {
+            m_OnlyNearFeats = true;
         }
 
         // initialization option can also prevent far feature exploration
-        if (m_localFeatures) {
-            m_onlyNearFeats = true;
+        if (m_LocalFeatures) {
+            m_OnlyNearFeats = true;
         }
     }
     catch (CException& e) {
@@ -591,23 +577,23 @@ void CBioseqIndex::x_InitFeats (void)
 
 {
     try {
-        if (m_featsInitialized) {
+        if (m_FeatsInitialized) {
            return;
         }
 
-        if (! m_descsInitialized) {
-            // initialize descriptors first to get m_onlyNearFeats flag
+        if (! m_DescsInitialized) {
+            // initialize descriptors first to get m_OnlyNearFeats flag
             x_InitDescs();
         }
 
-        m_featsInitialized = true;
+        m_FeatsInitialized = true;
 
         SAnnotSelector sel;
 
         // handle far fetching policy, from user object or initializer argument
-        if (m_onlyNearFeats) {
-  
-            if (m_surrogate) {
+        if (m_OnlyNearFeats) {
+
+            if (m_Surrogate) {
                 // delta with sublocation needs to map features from original Bioseq
                 sel.SetResolveAll();
                 sel.SetResolveDepth(1);
@@ -627,7 +613,7 @@ void CBioseqIndex::x_InitFeats (void)
         }
 
         // iterate features on Bioseq
-        for (CFeat_CI feat_it(m_bsh, sel); feat_it; ++feat_it) {
+        for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
             const CMappedFeat mf = *feat_it;
             CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
@@ -635,12 +621,12 @@ void CBioseqIndex::x_InitFeats (void)
             CConstRef<CSeq_loc> fl(&mpd.GetLocation());
 
             CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
-            m_sfxList.push_back(sfx);
+            m_SfxList.push_back(sfx);
 
-            m_featTree.AddFeature(mf);
+            m_FeatTree.AddFeature(mf);
 
             // CFeatIndex from CMappedFeat for use with GetBestGene
-            m_featIndexMap[mf] = sfx;
+            m_FeatIndexMap[mf] = sfx;
         }
     }
     catch (CException& e) {
@@ -652,94 +638,94 @@ void CBioseqIndex::x_InitFeats (void)
 const string& CBioseqIndex::GetTitle (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_title;
+    return m_Title;
 }
 
 CConstRef<CMolInfo> CBioseqIndex::GetMolInfo (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_molInfo;
+    return m_MolInfo;
 }
 
 CMolInfo::TBiomol CBioseqIndex::GetBiomol (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_biomol;
+    return m_Biomol;
 }
 
 CMolInfo::TTech CBioseqIndex::GetTech (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_tech;
+    return m_Tech;
 }
 
 CMolInfo::TCompleteness CBioseqIndex::GetCompleteness (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_completeness;
+    return m_Completeness;
 }
 
 CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_bioSource;
+    return m_BioSource;
 }
 
 const string& CBioseqIndex::GetTaxname (void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_taxname;
+    return m_Taxname;
 }
 
 // Run defline generator
 const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags flags)
 
 {
-    if (! m_featsInitialized) {
+    if (! m_FeatsInitialized) {
         x_InitFeats();
     }
 
-    if (flags == m_dlflags && ! m_defline.empty()) {
+    if (flags == m_Dlflags && ! m_Defline.empty()) {
         // Return previous result if flags are the same
-        return m_defline;
+        return m_Defline;
     }
 
-    sequence::CDeflineGenerator gen (m_tseh);
+    sequence::CDeflineGenerator gen (m_Tseh);
 
     // Pass original target BioseqHandle if using Bioseq sublocation
-    m_defline = gen.GenerateDefline (m_obsh, m_featTree, flags);
+    m_Defline = gen.GenerateDefline (m_OrigBsh, m_FeatTree, flags);
 
-    m_dlflags = flags;
+    m_Dlflags = flags;
 
-    return m_defline;
+    return m_Defline;
 }
 
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
@@ -747,8 +733,8 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
 {
     CRef<CFeatureIndex> sfx;
 
-    TFeatIndexMap::iterator it = m_featIndexMap.find(mf);
-    if (it != m_featIndexMap.end()) {
+    TFeatIndexMap::iterator it = m_FeatIndexMap.find(mf);
+    if (it != m_FeatIndexMap.end()) {
         sfx = it->second;
     }
 
@@ -759,15 +745,15 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
 
 {
     try {
-        if (! m_sv) {
-            m_sv = new CSeqVector(m_bsh);
-            if (m_sv) {
-                m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+        if (! m_SeqVec) {
+            m_SeqVec = new CSeqVector(m_Bsh);
+            if (m_SeqVec) {
+                m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
             }
         }
 
-        if (m_sv) {
-            CSeqVector& vec = *m_sv;
+        if (m_SeqVec) {
+            CSeqVector& vec = *m_SeqVec;
             if (from < 0) {
                 from = 0;
             }
@@ -813,21 +799,21 @@ string CBioseqIndex::GetSequence (void)
 const vector<CRef<CDescriptorIndex>>& CBioseqIndex::GetDescriptorIndices(void)
 
 {
-    if (! m_descsInitialized) {
+    if (! m_DescsInitialized) {
         x_InitDescs();
     }
 
-    return m_sdxList;
+    return m_SdxList;
 }
 
 const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
 
 {
-    if (! m_featsInitialized) {
+    if (! m_FeatsInitialized) {
         x_InitFeats();
     }
 
-    return m_sfxList;
+    return m_SfxList;
 }
 
 
@@ -836,16 +822,10 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
 // Constructor
 CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd,
                                     CBioseqIndex& bsx)
-    : m_sd(sd),
-      m_bsx(&bsx)
+    : m_Sd(sd),
+      m_Bsx(&bsx)
 {
-    m_subtype = m_sd.Which();
-}
-
-// Destructor
-CDescriptorIndex::~CDescriptorIndex (void)
-
-{
+    m_Subtype = m_Sd.Which();
 }
 
 
@@ -856,18 +836,12 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
                               const CMappedFeat mf,
                               CConstRef<CSeq_loc> fl,
                               CBioseqIndex& bsx)
-    : m_sfh(sfh),
-      m_mf(mf),
-      m_fl(fl),
-      m_bsx(&bsx)
+    : m_Sfh(sfh),
+      m_Mf(mf),
+      m_Fl(fl),
+      m_Bsx(&bsx)
 {
-    m_subtype = m_mf.GetData().GetSubtype();
-}
-
-// Destructor
-CFeatureIndex::~CFeatureIndex (void)
-
-{
+    m_Subtype = m_Mf.GetData().GetSubtype();
 }
 
 // Find CFeatureIndex object for best gene using internal CFeatTree
@@ -879,7 +853,7 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
         CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
         auto bsxl = bsx.Lock();
         if (bsxl) {
-            best = feature::GetBestGeneForFeat(m_mf, &bsxl->GetFeatTree(), 0,
+            best = feature::GetBestGeneForFeat(m_Mf, &bsxl->GetFeatTree(), 0,
                                                feature::CFeatTree::eBestGene_AllowOverlapped);
             if (best) {
                 return bsxl->GetFeatIndex(best);
@@ -895,19 +869,19 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
 
 {
     try {
-        if (! m_sv) {
+        if (! m_SeqVec) {
             CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
             auto bsxl = bsx.Lock();
             if (bsxl) {
-                m_sv = new CSeqVector(*m_fl, *bsxl->GetScope());
-                if (m_sv) {
-                    m_sv->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                m_SeqVec = new CSeqVector(*m_Fl, *bsxl->GetScope());
+                if (m_SeqVec) {
+                    m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
                 }
             }
         }
 
-        if (m_sv) {
-            CSeqVector& vec = *m_sv;
+        if (m_SeqVec) {
+            CSeqVector& vec = *m_SeqVec;
             if (from < 0) {
                 from = 0;
             }
@@ -948,6 +922,438 @@ string CFeatureIndex::GetSequence (void)
     GetSequence(0, -1, buffer);
 
     return buffer;
+}
+
+
+// CWordPairIndexer
+
+// superscript and subscript code points not handled by UTF8ToAsciiString
+typedef SStaticPair        <utf8::TUnicode, char> TExtraTranslationPair;
+typedef CStaticPairArrayMap<utf8::TUnicode, char> TExtraTranslations;
+static const TExtraTranslationPair kExtraTranslations[] = {
+    { 0x00B2, '2' },
+    { 0x00B3, '3' },
+    { 0x00B9, '1' },
+    { 0x2070, '0' },
+    { 0x2071, '1' },
+    { 0x2074, '4' },
+    { 0x2075, '5' },
+    { 0x2076, '6' },
+    { 0x2077, '7' },
+    { 0x2078, '8' },
+    { 0x2079, '9' },
+    { 0x207A, '+' },
+    { 0x207B, '-' },
+    { 0x207C, '=' },
+    { 0x207D, '(' },
+    { 0x207E, ')' },
+    { 0x207F, 'n' },
+    { 0x2080, '0' },
+    { 0x2081, '1' },
+    { 0x2082, '2' },
+    { 0x2083, '3' },
+    { 0x2084, '4' },
+    { 0x2085, '5' },
+    { 0x2086, '6' },
+    { 0x2087, '7' },
+    { 0x2088, '8' },
+    { 0x2089, '9' },
+    { 0x208A, '+' },
+    { 0x208B, '-' },
+    { 0x208C, '=' },
+    { 0x208D, '(' },
+    { 0x208E, ')' }
+};
+DEFINE_STATIC_ARRAY_MAP(TExtraTranslations, sc_ExtraTranslations,
+                        kExtraTranslations);
+
+string CWordPairIndexer::ConvertUTF8ToAscii( const string& str )
+
+{
+    const char* src = str.c_str();
+    string dst;
+    while (*src) {
+        if (static_cast<unsigned char>(*src) < 128) { // no translation needed
+            dst += *src++;
+        } else {
+            utf8::TUnicode character;
+            size_t n = utf8::UTF8ToUnicode(src, &character);
+            src += n;
+            TExtraTranslations::const_iterator it
+                = sc_ExtraTranslations.find(character);
+            if (it != sc_ExtraTranslations.end()) {
+                dst += it->second;
+            } else {
+                const utf8::SUnicodeTranslation* translation =
+                    utf8::UnicodeToAscii(character);
+                if (translation != NULL  &&  translation->Type != utf8::eSkip) {
+                    _ASSERT(translation->Type == utf8::eString);
+                    if (translation->Subst != NULL) {
+                        dst += translation->Subst;
+                    }
+                }
+            }
+        }
+    }
+    return dst;
+}
+
+static const char* const idxStopWords[] = {
+    "+",
+    "-",
+    "a",
+    "about",
+    "again",
+    "all",
+    "almost",
+    "also",
+    "although",
+    "always",
+    "am",
+    "among",
+    "an",
+    "and",
+    "another",
+    "any",
+    "anybody",
+    "anyhow",
+    "anyone",
+    "anything",
+    "anyway",
+    "are",
+    "as",
+    "at",
+    "be",
+    "because",
+    "been",
+    "before",
+    "being",
+    "between",
+    "both",
+    "but",
+    "by",
+    "can",
+    "could",
+    "did",
+    "do",
+    "does",
+    "doing",
+    "done",
+    "due",
+    "during",
+    "each",
+    "either",
+    "enough",
+    "especially",
+    "etc",
+    "for",
+    "found",
+    "from",
+    "further",
+    "had",
+    "has",
+    "have",
+    "having",
+    "he",
+    "her",
+    "here",
+    "him",
+    "his",
+    "how",
+    "however",
+    "i",
+    "if",
+    "in",
+    "into",
+    "is",
+    "it",
+    "its",
+    "itself",
+    "just",
+    "kg",
+    "km",
+    "made",
+    "mainly",
+    "make",
+    "may",
+    "me",
+    "mg",
+    "might",
+    "ml",
+    "mm",
+    "most",
+    "mostly",
+    "must",
+    "my",
+    "myself",
+    "nearly",
+    "neither",
+    "no",
+    "none",
+    "nor",
+    "not",
+    "now",
+    "obtained",
+    "of",
+    "off",
+    "often",
+    "on",
+    "or",
+    "our",
+    "overall",
+    "perhaps",
+    "pmid",
+    "quite",
+    "rather",
+    "really",
+    "regarding",
+    "seem",
+    "seen",
+    "several",
+    "should",
+    "show",
+    "showed",
+    "shown",
+    "shows",
+    "significantly",
+    "since",
+    "so",
+    "some",
+    "such",
+    "than",
+    "that",
+    "the",
+    "their",
+    "theirs",
+    "them",
+    "then",
+    "there",
+    "therefore",
+    "these",
+    "they",
+    "this",
+    "those",
+    "through",
+    "thus",
+    "to",
+    "too",
+    "two",
+    "upon",
+    "use",
+    "used",
+    "using",
+    "various",
+    "very",
+    "was",
+    "we",
+    "went",
+    "were",
+    "what",
+    "whatever",
+    "whats",
+    "when",
+    "where",
+    "which",
+    "while",
+    "who",
+    "whom",
+    "whose",
+    "why",
+    "will",
+    "with",
+    "within",
+    "without",
+    "would",
+    "yet",
+    "you",
+    "your",
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TStopWords;
+DEFINE_STATIC_ARRAY_MAP(TStopWords, sc_StopWords, idxStopWords);
+
+bool CWordPairIndexer::IsStopWord(const string& str)
+
+{
+    TStopWords::const_iterator iter = sc_StopWords.find(str.c_str());
+    return (iter != sc_StopWords.end());
+}
+
+string CWordPairIndexer::TrimPunctuation (const string& str)
+
+{
+    string dst = str;
+
+    int max = dst.length();
+
+    for (; max > 0; max--) {
+        char ch = dst[0];
+        if (ch != '.' && ch != ',' && ch != ':' && ch != ';') {
+            break;
+        }
+        // trim leading period, comma, colon, and semicolon
+        dst.erase(0, 1);
+    }
+
+    for (; max > 0; max--) {
+        char ch = dst[max-1];
+        if (ch != '.' && ch != ',' && ch != ':' && ch != ';') {
+            break;
+        }
+        // // trim trailing period, comma, colon, and semicolon
+        dst.erase(max-1, 1);
+    }
+
+    if (max > 1) {
+        if (dst[0] == '(' && dst[max-1] == ')') {
+            // trim flanking parentheses
+            dst.erase(max-1, 1);
+            dst.erase(0, 1);
+            max -= 2;
+        }
+    }
+
+    if (max > 0) {
+        if (dst[0] == '(' && NStr::Find (dst, ")") == NPOS) {
+            // trim isolated left parentheses
+            dst.erase(0, 1);
+            max--;
+        }
+    }
+
+    if (max > 1) {
+        if (dst[max-1] == ')' && NStr::Find (dst, "(") == NPOS) {
+            // trim isolated right parentheses
+            dst.erase(max-1, 1);
+            // max--;
+        }
+    }
+
+    return dst;
+}
+
+static const char* const mixedTags[] = {
+    "<b>",
+    "<i>",
+    "<u>",
+    "<sup>",
+    "<sub>",
+    "</b>",
+    "</i>",
+    "</u>",
+    "</sup>",
+    "</sub>",
+    "<b/>",
+    "<i/>",
+    "<u/>",
+    "<sup/>",
+    "<sub/>",
+};
+
+static int SkipMixedContent ( const char* ptr )
+
+{
+    for (int i = 0; i < sizeof (mixedTags); i++) {
+        const char* tag = mixedTags[i];
+        const char* tmp = ptr;
+        int len = 0;
+        while (*tag && *tmp && *tag == *tmp) {
+            tag++;
+            tmp++;
+            len++;
+        }
+        if (! *tag) {
+            return len;
+        }
+    }
+    return 0;
+}
+
+string CWordPairIndexer::TrimMixedContent ( const string& str )
+
+{
+    const char* src = str.c_str();
+    string dst;
+    while (*src) {
+        if (*src == '<') {
+            int skip = SkipMixedContent (src);
+            if (skip > 0) {
+                src += skip;
+            } else {
+                dst += *src++;
+            }
+        } else {
+            dst += *src++;
+        }
+    }
+    return dst;
+}
+
+string CWordPairIndexer::x_AddToWordPairIndex (string item, string prev)
+
+{
+    if (IsStopWord(item)) {
+        return "";
+    }
+    // append item
+    m_Norm.push_back(item);
+    if (! prev.empty()) {
+        // append prev+" "+item
+        string pair = prev + " " + item;
+        m_Pair.push_back(pair);
+    }
+    return item;
+}
+
+void CWordPairIndexer::PopulateWordPairIndex (string str)
+
+{
+    m_Norm.clear();
+    m_Pair.clear();
+
+    str = ConvertUTF8ToAscii(str);
+    NStr::ToLower(str);
+
+    if (NStr::Find(str, "<") != NPOS) {
+        str = TrimMixedContent(str);
+    }
+
+    // split terms at spaces
+    list<string> terms;
+    NStr::Split( str, " ", terms, NStr::fSplit_Tokenize );
+    string prev = "";
+    ITERATE( list<string>, it, terms ) {
+        string curr = NStr::TruncateSpaces( *it );
+        // allow parentheses in chemical formula
+        curr = TrimPunctuation(curr);
+        prev = x_AddToWordPairIndex (curr, prev);
+    }
+
+    // convert non-alphanumeric punctuation to space
+    for (int i = 0; i < str.length(); i++) {
+        char ch = str[i];
+        if (ch >= 'A' && ch <= 'Z') {
+        } else if (ch >= 'a' && ch <= 'z') {
+        } else if (ch >= '0' && ch <= '9') {
+        } else {
+            str[i] = ' ';
+        }
+    }
+    // now splitting at all punctuation
+    list<string> words;
+    NStr::Split( str, " ", words, NStr::fSplit_Tokenize );
+    prev = "";
+    ITERATE( list<string>, it, words ) {
+        string curr = NStr::TruncateSpaces( *it );
+        prev = x_AddToWordPairIndex (curr, prev);
+    }
+
+    std::sort(m_Norm.begin(), m_Norm.end());
+    auto nit = std::unique(m_Norm.begin(), m_Norm.end());
+    m_Norm.erase(nit, m_Norm.end());
+
+    std::sort(m_Pair.begin(), m_Pair.end());
+    auto pit = std::unique(m_Pair.begin(), m_Pair.end());
+    m_Pair.erase(pit, m_Pair.end());
 }
 
 

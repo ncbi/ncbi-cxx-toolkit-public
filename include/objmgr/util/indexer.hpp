@@ -105,10 +105,6 @@ public:
     // Seq-descr chain obtained from top of Bioseq-set release file
     CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags = 0);
 
-
-    // Destructor
-    ~CSeqEntryIndex (void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CSeqEntryIndex (const CSeqEntryIndex&) = delete;
@@ -116,7 +112,7 @@ private:
 
 public:
     // Bioseq exploration iterator
-    template<typename _Pred> size_t IterateBioseqs (_Pred m);
+    template<typename Fnc> size_t IterateBioseqs (Fnc m);
 
     // Get first Bioseq index
     CRef<CBioseqIndex> GetBioseqIndex (void);
@@ -133,18 +129,18 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (int from, int to, bool rev_comp);
 
     // Getters
-    CRef<CObjectManager> GetObjectManager (void) const { return m_objmgr; }
-    CRef<CScope> GetScope (void) const { return m_scope; }
-    CSeq_entry_Handle GetTopSEH (void) const { return m_tseh; }
-    CConstRef<CSeq_entry> GetTopSEP (void) const { return m_tsep; }
-    CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_sbtBlk; }
-    CConstRef<CSeq_descr> GetTopDescr (void) const { return m_topDescr; }
-    TFlags GetFlags (void) const { return m_flags; }
+    CRef<CObjectManager> GetObjectManager (void) const { return m_Objmgr; }
+    CRef<CScope> GetScope (void) const { return m_Scope; }
+    CSeq_entry_Handle GetTopSEH (void) const { return m_Tseh; }
+    CConstRef<CSeq_entry> GetTopSEP (void) const { return m_Tsep; }
+    CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_SbtBlk; }
+    CConstRef<CSeq_descr> GetTopDescr (void) const { return m_TopDescr; }
+    TFlags GetFlags (void) const { return m_Flags; }
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
-    bool IsFetchFailure (void) const { return m_fetchFailure; }
+    bool IsFetchFailure (void) const { return m_FetchFailure; }
 
 private:
     // Common initialization function called by each Initialize variant
@@ -153,7 +149,7 @@ private:
     // Recursive exploration to populate vector of index objects for Bioseqs in Seq-entry
     void x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt);
 
-    CRef<CSeq_id> MakeUniqueId(void);
+    CRef<CSeq_id> x_MakeUniqueId(void);
 
     // Create delta sequence referring to location, using temporary local ID
     CRef<CBioseqIndex> x_DeltaIndex(const CSeq_loc& loc);
@@ -162,26 +158,26 @@ private:
     CConstRef<CSeq_loc> x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp);
 
 private:
-    CRef<CObjectManager> m_objmgr;
-    CRef<CScope> m_scope;
-    CSeq_entry_Handle m_tseh;
+    CRef<CObjectManager> m_Objmgr;
+    CRef<CScope> m_Scope;
+    CSeq_entry_Handle m_Tseh;
 
-    CConstRef<CSeq_entry> m_tsep;
-    CConstRef<CSubmit_block> m_sbtBlk;
-    CConstRef<CSeq_descr> m_topDescr;
+    CConstRef<CSeq_entry> m_Tsep;
+    CConstRef<CSubmit_block> m_SbtBlk;
+    CConstRef<CSeq_descr> m_TopDescr;
 
-    bool m_fetchFailure;
+    bool m_FetchFailure;
 
-    TFlags m_flags;
-    bool m_localFeatures;
+    TFlags m_Flags;
+    bool m_LocalFeatures;
 
-    vector<CRef<CBioseqIndex>> m_bsxList;
+    vector<CRef<CBioseqIndex>> m_BsxList;
 
     // map from accession string to CBioseqIndex object
     typedef map<string, CRef<CBioseqIndex> > TAccnIndexMap;
-    TAccnIndexMap m_accnIndexMap;
+    TAccnIndexMap m_AccnIndexMap;
 
-    vector<CRef<CSeqsetIndex>> m_ssxList;
+    vector<CRef<CSeqsetIndex>> m_SsxList;
 
     mutable CAtomicCounter m_Counter;
 };
@@ -198,9 +194,6 @@ public:
                   const CBioseq_set& bssp,
                   CRef<CSeqsetIndex> prnt);
 
-    // Destructor
-    ~CSeqsetIndex (void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CSeqsetIndex (const CSeqsetIndex&) = delete;
@@ -208,18 +201,18 @@ private:
 
 public:
     // Getters
-    CBioseq_set_Handle GetSeqsetHandle (void) const { return m_ssh; }
-    const CBioseq_set& GetSeqset (void) const { return m_bssp; }
-    CRef<CSeqsetIndex> GetParent (void) const { return m_prnt; }
+    CBioseq_set_Handle GetSeqsetHandle (void) const { return m_Ssh; }
+    const CBioseq_set& GetSeqset (void) const { return m_Bssp; }
+    CRef<CSeqsetIndex> GetParent (void) const { return m_Prnt; }
 
-    CBioseq_set::TClass GetClass (void) const { return m_class; }
+    CBioseq_set::TClass GetClass (void) const { return m_Class; }
 
 private:
-    CBioseq_set_Handle m_ssh;
-    const CBioseq_set& m_bssp;
-    CRef<CSeqsetIndex> m_prnt;
+    CBioseq_set_Handle m_Ssh;
+    const CBioseq_set& m_Bssp;
+    CRef<CSeqsetIndex> m_Prnt;
 
-    CBioseq_set::TClass m_class;
+    CBioseq_set::TClass m_Class;
 };
 
 
@@ -263,9 +256,6 @@ public:
                   bool localFeatures,
                   bool surrogate);
 
-    // Destructor
-    ~CBioseqIndex (void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CBioseqIndex (const CBioseqIndex&) = delete;
@@ -273,27 +263,27 @@ private:
 
 public:
     // Descriptor exploration iterator
-    template<typename _Pred> size_t IterateDescriptors (_Pred m);
+    template<typename Fnc> size_t IterateDescriptors (Fnc m);
 
     // Feature exploration iterator
-    template<typename _Pred> size_t IterateFeatures (_Pred m);
+    template<typename Fnc> size_t IterateFeatures (Fnc m);
 
     // Getters
-    CBioseq_Handle GetBioseqHandle (void) const { return m_bsh; }
-    const CBioseq& GetBioseq (void) const { return m_bsp; }
-    CBioseq_Handle GetOrigBioseqHandle (void) const { return m_obsh; }
-    CRef<CSeqsetIndex> GetParent (void) const { return m_prnt; }
-    CRef<CScope> GetScope (void) const { return m_scope; }
-    feature::CFeatTree& GetFeatTree (void) { return m_featTree; }
-    CRef<CSeqVector> GetSeqVector (void) const { return m_sv; }
+    CBioseq_Handle GetBioseqHandle (void) const { return m_Bsh; }
+    const CBioseq& GetBioseq (void) const { return m_Bsp; }
+    CBioseq_Handle GetOrigBioseqHandle (void) const { return m_OrigBsh; }
+    CRef<CSeqsetIndex> GetParent (void) const { return m_Prnt; }
+    CRef<CScope> GetScope (void) const { return m_Scope; }
+    feature::CFeatTree& GetFeatTree (void) { return m_FeatTree; }
+    CRef<CSeqVector> GetSeqVector (void) const { return m_SeqVec; }
 
     const string& GetAccession (void) const { return m_Accession; }
 
     // Seq-inst fields
     bool IsNA (void) const {  return m_IsNA; }
     bool IsAA (void) const { return m_IsAA; }
-    CSeq_inst::TTopology GetTopology (void) const { return m_topology; }
-    CSeq_inst::TLength GetLength (void) const { return m_length; }
+    CSeq_inst::TTopology GetTopology (void) const { return m_Topology; }
+    CSeq_inst::TLength GetLength (void) const { return m_Length; }
 
     bool IsDelta (void) const { return m_IsDelta; }
     bool IsVirtual (void) const { return m_IsVirtual; }
@@ -336,26 +326,26 @@ private:
     void x_InitFeats (void);
 
 private:
-    CBioseq_Handle m_bsh;
-    const CBioseq& m_bsp;
-    CBioseq_Handle m_obsh;
-    CRef<CSeqsetIndex> m_prnt;
-    CSeq_entry_Handle m_tseh;
-    CRef<CScope> m_scope;
-    bool m_localFeatures;
+    CBioseq_Handle m_Bsh;
+    const CBioseq& m_Bsp;
+    CBioseq_Handle m_OrigBsh;
+    CRef<CSeqsetIndex> m_Prnt;
+    CSeq_entry_Handle m_Tseh;
+    CRef<CScope> m_Scope;
+    bool m_LocalFeatures;
 
-    bool m_descsInitialized;
-    vector<CRef<CDescriptorIndex>> m_sdxList;
+    bool m_DescsInitialized;
+    vector<CRef<CDescriptorIndex>> m_SdxList;
 
-    bool m_featsInitialized;
-    vector<CRef<CFeatureIndex>> m_sfxList;
-    feature::CFeatTree m_featTree;
+    bool m_FeatsInitialized;
+    vector<CRef<CFeatureIndex>> m_SfxList;
+    feature::CFeatTree m_FeatTree;
 
     // CFeatIndex from CMappedFeat for use with GetBestGene
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
-    TFeatIndexMap m_featIndexMap;
+    TFeatIndexMap m_FeatIndexMap;
 
-    CRef<CSeqVector> m_sv;
+    CRef<CSeqVector> m_SeqVec;
 
 private:
     // Seq-id field
@@ -364,37 +354,37 @@ private:
     // Seq-inst fields
     bool m_IsNA;
     bool m_IsAA;
-    CSeq_inst::TTopology m_topology;
-    CSeq_inst::TLength m_length;
+    CSeq_inst::TTopology m_Topology;
+    CSeq_inst::TLength m_Length;
 
     bool m_IsDelta;
     bool m_IsVirtual;
     bool m_IsMap;
 
     // Instantiated title
-    string m_title;
+    string m_Title;
 
     // MolInfo fields
-    CConstRef<CMolInfo> m_molInfo;
-    CMolInfo::TBiomol m_biomol;
-    CMolInfo::TTech m_tech;
-    CMolInfo::TCompleteness m_completeness;
+    CConstRef<CMolInfo> m_MolInfo;
+    CMolInfo::TBiomol m_Biomol;
+    CMolInfo::TTech m_Tech;
+    CMolInfo::TCompleteness m_Completeness;
 
     // BioSource fields
-    CConstRef<CBioSource> m_bioSource;
-    string m_taxname;
+    CConstRef<CBioSource> m_BioSource;
+    string m_Taxname;
 
     // User object fields
-    bool m_forceOnlyNearFeats;
+    bool m_ForceOnlyNearFeats;
 
     // Derived policy flags
-    bool m_onlyNearFeats;
+    bool m_OnlyNearFeats;
 
-    bool m_surrogate;
+    bool m_Surrogate;
 
     // Generated definition line
-    string m_defline;
-    sequence::CDeflineGenerator::TUserFlags m_dlflags;
+    string m_Defline;
+    sequence::CDeflineGenerator::TUserFlags m_Dlflags;
 };
 
 
@@ -408,9 +398,6 @@ public:
     CDescriptorIndex (const CSeqdesc& sd,
                       CBioseqIndex& bsx);
 
-    // Destructor
-    ~CDescriptorIndex (void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CDescriptorIndex (const CDescriptorIndex&) = delete;
@@ -418,19 +405,19 @@ private:
 
 public:
     // Getters
-    const CSeqdesc& GetSeqDesc (void) const { return m_sd; }
+    const CSeqdesc& GetSeqDesc (void) const { return m_Sd; }
 
     // Get parent Bioseq index
-    CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_bsx; }
+    CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
 
     // Get descriptor subtype (e.g., CSeqdesc::e_Molinfo)
-    CSeqdesc::E_Choice GetSubtype (void) const { return m_subtype; }
+    CSeqdesc::E_Choice GetSubtype (void) const { return m_Subtype; }
 
 private:
-    const CSeqdesc& m_sd;
-    CWeakRef<CBioseqIndex> m_bsx;
+    const CSeqdesc& m_Sd;
+    CWeakRef<CBioseqIndex> m_Bsx;
 
-    CSeqdesc::E_Choice m_subtype;
+    CSeqdesc::E_Choice m_Subtype;
 };
 
 
@@ -446,9 +433,6 @@ public:
                    CConstRef<CSeq_loc> fl,
                    CBioseqIndex& bsx);
 
-    // Destructor
-    ~CFeatureIndex (void);
-
 private:
     // Prohibit copy constructor & assignment operator
     CFeatureIndex (const CFeatureIndex&) = delete;
@@ -456,16 +440,16 @@ private:
 
 public:
     // Getters
-    CSeq_feat_Handle GetSeqFeatHandle (void) const { return m_sfh; }
-    const CMappedFeat GetMappedFeat (void) const { return m_mf; }
-    CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_fl; }
-    CRef<CSeqVector> GetSeqVector (void) const { return m_sv; }
+    CSeq_feat_Handle GetSeqFeatHandle (void) const { return m_Sfh; }
+    const CMappedFeat GetMappedFeat (void) const { return m_Mf; }
+    CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_Fl; }
+    CRef<CSeqVector> GetSeqVector (void) const { return m_SeqVec; }
 
     // Get parent Bioseq index
-    CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_bsx; }
+    CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
 
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mrna)
-    CSeqFeatData::ESubtype GetSubtype (void) const { return m_subtype; }
+    CSeqFeatData::ESubtype GetSubtype (void) const { return m_Subtype; }
 
     // Get sequence letters under feature intervals
     string GetSequence (void);
@@ -478,26 +462,63 @@ public:
     CRef<CFeatureIndex> GetBestGene (void);
 
 private:
-    CSeq_feat_Handle m_sfh;
-    const CMappedFeat m_mf;
-    CConstRef<CSeq_loc> m_fl;
-    CRef<CSeqVector> m_sv;
-    CWeakRef<CBioseqIndex> m_bsx;
+    CSeq_feat_Handle m_Sfh;
+    const CMappedFeat m_Mf;
+    CConstRef<CSeq_loc> m_Fl;
+    CRef<CSeqVector> m_SeqVec;
+    CWeakRef<CBioseqIndex> m_Bsx;
 
-    CSeqFeatData::ESubtype m_subtype;
+    CSeqFeatData::ESubtype m_Subtype;
+};
+
+
+// CWordPairIndexer
+//
+// CWordPairIndexer generates normalized terms and adjacent word pairs for Entrez indexing
+class NCBI_XOBJUTIL_EXPORT CWordPairIndexer
+{
+public:
+    // Constructor
+    CWordPairIndexer (void) { }
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CWordPairIndexer (const CWordPairIndexer&) = delete;
+    CWordPairIndexer& operator= (const CWordPairIndexer&) = delete;
+
+public:
+    void PopulateWordPairIndex (string str);
+
+    template<typename Fnc> void IterateNorm (Fnc m);
+    template<typename Fnc> void IteratePair (Fnc m);
+
+public:
+    static string ConvertUTF8ToAscii(const string& str);
+    static string TrimPunctuation (const string& str);
+    static string TrimMixedContent (const string& str);
+    static bool IsStopWord(const string& str);
+
+    const vector<string>& GetNorm (void) const { return m_Norm; }
+    const vector<string>& GetPair (void) const { return m_Pair; }
+
+private:
+    string x_AddToWordPairIndex (string item, string prev);
+
+    vector<string> m_Norm;
+    vector<string> m_Pair;
 };
 
 
 // Inline lambda function implementations
 
 // Visit CBioseqIndex objects for all Bioseqs
-template<typename _Pred>
+template<typename Fnc>
 inline
-size_t CSeqEntryIndex::IterateBioseqs (_Pred m)
+size_t CSeqEntryIndex::IterateBioseqs (Fnc m)
 
 {
     int count = 0;
-    for (auto& bsx : m_bsxList) {
+    for (auto& bsx : m_BsxList) {
         m(*bsx);
         count++;
     }
@@ -505,19 +526,19 @@ size_t CSeqEntryIndex::IterateBioseqs (_Pred m)
 }
 
 // Visit CDescriptorIndex objects for all descriptors
-template<typename _Pred>
+template<typename Fnc>
 inline
-size_t CBioseqIndex::IterateDescriptors (_Pred m)
+size_t CBioseqIndex::IterateDescriptors (Fnc m)
 
 {
     int count = 0;
     try {
         // Delay descriptor collection until first request
-        if (! m_descsInitialized) {
+        if (! m_DescsInitialized) {
             x_InitDescs();
         }
 
-        for (auto& sdx : m_sdxList) {
+        for (auto& sdx : m_SdxList) {
             count++;
             m(*sdx);
         }
@@ -529,19 +550,19 @@ size_t CBioseqIndex::IterateDescriptors (_Pred m)
 }
 
 // Visit CFeatureIndex objects for all features
-template<typename _Pred>
+template<typename Fnc>
 inline
-size_t CBioseqIndex::IterateFeatures (_Pred m)
+size_t CBioseqIndex::IterateFeatures (Fnc m)
 
 {
     int count = 0;
     try {
         // Delay feature collection until first request
-        if (! m_featsInitialized) {
+        if (! m_FeatsInitialized) {
             x_InitFeats();
         }
 
-        for (auto& sfx : m_sfxList) {
+        for (auto& sfx : m_SfxList) {
             count++;
             m(*sfx);
         }
@@ -550,6 +571,26 @@ size_t CBioseqIndex::IterateFeatures (_Pred m)
         LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
+}
+
+template<typename Fnc>
+inline
+void CWordPairIndexer::IterateNorm (Fnc m)
+
+{
+    for (auto& str : m_Norm) {
+        m(str);
+    }
+}
+
+template<typename Fnc>
+inline
+void CWordPairIndexer::IteratePair (Fnc m)
+
+{
+    for (auto& str : m_Pair) {
+        m(str);
+    }
 }
 
 
