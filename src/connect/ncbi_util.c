@@ -53,8 +53,10 @@
 #    include <sys/user.h>
 #  endif /*NCBI_OS_LINUX*/
 #  include <pwd.h>
-#  include <unistd.h>
+#  include <sys/time.h>
+#  include <sys/types.h>
 #  include <sys/stat.h>
+#  include <unistd.h>
 #endif /*NCBI_OS_UNIX*/
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
 #  define WIN32_LEAN_AND_MEAN
@@ -930,6 +932,39 @@ extern size_t CORE_GetVMPageSize(void)
 #endif /*OS_TYPE*/
     }
     return s_PS;
+}
+
+
+
+/****************************************************************************
+ * CORE_Msdelay
+ */
+
+extern void CORE_Msdelay(unsigned long ms)
+{
+#if   defined(NCBI_OS_MSWIN)
+    Sleep(ms);
+#elif defined(NCBI_OS_UNIX)
+#  ifdef HAVE_USLEEP
+    if (usleep(ms * 1000) < 0  &&  errno == EINVAL) {
+#  endif /*HAVE_USLEEP*/
+#  if defined(HAVE_NANOSLEEP)
+    struct timespec ts;
+    ts.tv_sec  =  ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+    nanosleep(&ts, 0);
+#  else
+    struct timeval tv;
+    tv.tv_sec  =  ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    select(0, 0, 0, 0, &tv);
+#  endif /*HAVE_NANOSLEEP*/
+#  ifdef HAVE_USLEEP
+    }
+#  endif /*HAVE_USLEEP*/
+#else
+#  error "Unsupported platform."
+#endif /*NCBI_OS*/
 }
 
 

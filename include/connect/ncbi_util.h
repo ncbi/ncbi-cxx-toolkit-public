@@ -50,6 +50,7 @@
  *       CORE_GetPlatform()
  *       CORE_GetUsername[Ex]()
  *       CORE_GetVMPageSize()
+ *       CORE_Msdelay()
  *
  * 3. Checksumming support:
  *       UTIL_CRC32_Update()
@@ -462,6 +463,14 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
  *  0 if the page size cannot be determined.
  */
 extern NCBI_XCONNECT_EXPORT size_t CORE_GetVMPageSize(void);
+
+
+/** Delay execution of the current thread by the specified number of
+ *  milliseconds
+ * @return
+ *  0 if the page size cannot be determined.
+ */
+extern NCBI_XCONNECT_EXPORT void CORE_Msdelay(unsigned long ms);
 
 
 
