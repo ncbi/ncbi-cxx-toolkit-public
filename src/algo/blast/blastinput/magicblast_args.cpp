@@ -55,7 +55,8 @@ public:
 
         arg_desc.AddDefaultKey(kArgWordSize, "int_value", "Minimum number of "
                                "consecutive bass matching exactly",
-                               CArgDescriptions::eInteger, "16");
+                               CArgDescriptions::eInteger,
+                               NStr::IntToString(BLAST_WORDSIZE_MAPPER));
 
         arg_desc.SetConstraint(kArgWordSize,
                                new CArgAllowValuesGreaterThanOrEqual(12));
