@@ -393,6 +393,8 @@ static const char* const kECNum_ambiguous[] = {
     "2.1.3.n\tCarboxy- and carbamoyltransferases",
     "2.1.4.-\tAmidinotransferases",
     "2.1.4.n\tAmidinotransferases",
+    "2.1.5.-\tMethylenetransferases",
+    "2.1.5.n\tMethylenetransferases",
     "2.2.-.-\tTransferring aldehyde or ketonic groups",
     "2.2.n.n\tTransferring aldehyde or ketonic groups",
     "2.2.1.-\tTransketolases and transaldolases",

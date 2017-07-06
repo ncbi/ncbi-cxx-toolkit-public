@@ -360,6 +360,8 @@
 2.1.3.n	Carboxy- and carbamoyltransferases
 2.1.4.-	Amidinotransferases
 2.1.4.n	Amidinotransferases
+2.1.5.-	Methylenetransferases
+2.1.5.n	Methylenetransferases
 2.2.-.-	Transferring aldehyde or ketonic groups
 2.2.n.n	Transferring aldehyde or ketonic groups
 2.2.1.-	Transketolases and transaldolases
