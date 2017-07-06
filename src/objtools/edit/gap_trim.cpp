@@ -73,6 +73,7 @@ void CFeatGapInfo::CollectGaps(const CSeq_loc& feat_loc, CScope& scope)
     m_Start = feat_loc.GetStart(objects::eExtreme_Positional);
     m_Stop = feat_loc.GetStop(objects::eExtreme_Positional);
     CRef<CSeq_loc> total_loc = sequence::Seq_loc_Merge(feat_loc, CSeq_loc::fMerge_SingleRange, &scope);
+    if (total_loc->IsSetStrand()) total_loc->ResetStrand();
     CConstRef<objects::CSeqMap> seq_map = CSeqMap::GetSeqMapForSeq_loc(*total_loc, &scope);
 
     // use CSeqVector for finding Ns

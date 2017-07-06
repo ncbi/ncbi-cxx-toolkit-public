@@ -638,6 +638,9 @@ edit::TGappedFeatList TryMiscWithNs(TSeqPos start, TSeqPos stop, bool is_minus =
 
     misc->SetLocation().SetInt().SetFrom(start);
     misc->SetLocation().SetInt().SetTo(stop);
+    if (is_minus) {
+        misc->SetLocation().SetStrand(eNa_strand_minus);
+    }
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
@@ -663,6 +666,16 @@ BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
 
+    gapped_list = TryMiscWithNs(10, 12, true);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
     // feature ends in Ns
     gapped_list = TryMiscWithNs(8, 12);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
@@ -674,8 +687,28 @@ BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
 
+    gapped_list = TryMiscWithNs(8, 12, true);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+
+
     // feature starts in Ns
     gapped_list = TryMiscWithNs(0, 5);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    gapped_list = TryMiscWithNs(0, 5, true);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -687,6 +720,15 @@ BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
 
     // just first segment, Ns but no gaps
     gapped_list = TryMiscWithNs(0, 23);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+    gapped_list = TryMiscWithNs(0, 23, true);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
@@ -709,10 +751,33 @@ BOOST_AUTO_TEST_CASE(Test_NsAsGaps)
     BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
     BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    // minus
+    gapped_list = TryMiscWithNs(21, 30, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
 
 
     // whole sequence
     gapped_list = TryMiscWithNs(0, 79);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasNs(), true);
+    gapped_list.front()->CalculateRelevantIntervals(false, false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+    // minus
+    gapped_list = TryMiscWithNs(0, 79, true);
     BOOST_CHECK_EQUAL(gapped_list.size(), 1);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
     BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), true);
