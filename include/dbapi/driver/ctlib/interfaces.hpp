@@ -420,6 +420,8 @@ public:
         return m_Handle.IsOpen();
     }
 
+    void DeferTimeout(void);
+
 protected:
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query);
     virtual CDB_RPCCmd*      RPC         (const string&   rpc_name);
@@ -536,9 +538,7 @@ private:
     CFastMutex   m_AsyncCancelMutex;
     size_t       m_OrigTimeout;
     unsigned int m_BaseTimeout;
-#  if NCBI_FTDS_VERSION >= 95
     unsigned int m_TotalTimeout;
-#  endif
     bool         m_AsyncCancelAllowed;
     bool         m_AsyncCancelRequested;
 #endif
@@ -1117,6 +1117,8 @@ protected:
             NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
                                           122011, eDiag_Error, GetDbgInfo(),
                                           GetConnection(), GetLastParams());
+        } else {
+            m_Connect->DeferTimeout();
         }
     }
 

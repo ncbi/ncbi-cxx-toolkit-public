@@ -1417,6 +1417,7 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
 {
     CTL_Connection* ctl_conn = static_cast<CTL_Connection*>(param);
     CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
+    ctl_conn->m_TotalTimeout = total_timeout; // for use by DeferTimeout
     if (ctl_conn->m_AsyncCancelRequested) {
         return TDS_INT_CANCEL;
     } else if (ctl_conn->m_OrigTimeoutFunc != NULL  &&
@@ -1433,6 +1434,13 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
 #  endif
 #endif
 
+void CTL_Connection::DeferTimeout(void)
+{
+#ifdef FTDS_IN_USE
+    CFastMutexGuard LOCK(m_AsyncCancelMutex);
+    m_BaseTimeout = m_TotalTimeout;
+#endif
+}
 
 #undef NCBI_DATABASE_THROW
 #undef NCBI_DATABASE_RETHROW
