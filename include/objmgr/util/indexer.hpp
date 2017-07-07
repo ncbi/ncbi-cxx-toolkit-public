@@ -139,8 +139,8 @@ public:
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
-    // Flag to indicate failure to fetch remote sequence components or feature annotation
-    bool IsFetchFailure (void) const { return m_FetchFailure; }
+    // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
+    bool IsFetchFailure(void);
 
 private:
     // Common initialization function called by each Initialize variant
@@ -165,8 +165,6 @@ private:
     CConstRef<CSeq_entry> m_Tsep;
     CConstRef<CSubmit_block> m_SbtBlk;
     CConstRef<CSeq_descr> m_TopDescr;
-
-    bool m_FetchFailure;
 
     TFlags m_Flags;
     bool m_LocalFeatures;
@@ -318,6 +316,11 @@ public:
 
     const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
 
+    // Flag to indicate failure to fetch remote sequence components or feature annotation
+    bool IsFetchFailure (void) const { return m_FetchFailure; }
+
+    void SetFetchFailure (bool fails) { m_FetchFailure = fails; }
+
 private:
     // Common descriptor collection, delayed until actually needed
     void x_InitDescs (void);
@@ -346,6 +349,8 @@ private:
     TFeatIndexMap m_FeatIndexMap;
 
     CRef<CSeqVector> m_SeqVec;
+
+    bool m_FetchFailure;
 
 private:
     // Seq-id field
@@ -460,6 +465,9 @@ public:
 
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
     CRef<CFeatureIndex> GetBestGene (void);
+
+private:
+    void SetFetchFailure (bool fails);
 
 private:
     CSeq_feat_Handle m_Sfh;

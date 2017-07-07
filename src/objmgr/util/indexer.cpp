@@ -126,6 +126,18 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags fl
     x_Init();
 }
 
+// At end of program, poll all Bioseqs to check for far fetch failure flag
+bool CSeqEntryIndex::IsFetchFailure (void)
+
+{
+    for (auto& bsx : m_BsxList) {
+        if (bsx->IsFetchFailure()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
 void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 
@@ -186,8 +198,6 @@ void CSeqEntryIndex::x_Init (void)
         m_Scope->AddDefaults();
 
         m_Tseh = m_Scope->AddTopLevelSeqEntry( *m_Tsep );
-
-        m_FetchFailure = false;
 
         m_LocalFeatures = false;
         if ((m_Flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
@@ -406,6 +416,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
       m_LocalFeatures(localFeatures),
       m_Surrogate(surrogate)
 {
+    m_FetchFailure = false;
+
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
 
@@ -630,6 +642,7 @@ void CBioseqIndex::x_InitFeats (void)
         }
     }
     catch (CException& e) {
+        m_FetchFailure = true;
         LOG_POST(Error << "Error in CBioseqIndex::x_InitFeats: " << e.what());
     }
 }
@@ -762,6 +775,8 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
             }
             if (vec.CanGetRange(from, to)) {
                 vec.GetSeqData(from, to, buffer);
+            } else {
+                m_FetchFailure = true;
             }
         }
     }
@@ -865,6 +880,16 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
     return CRef<CFeatureIndex> ();
 }
 
+void CFeatureIndex::SetFetchFailure (bool fails)
+
+{
+    CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
+    auto bsxl = bsx.Lock();
+    if (bsxl) {
+        bsxl->SetFetchFailure(fails);
+    }
+}
+
 void CFeatureIndex::GetSequence (int from, int to, string& buffer)
 
 {
@@ -890,10 +915,13 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
             }
             if (vec.CanGetRange(from, to)) {
                 vec.GetSeqData(from, to, buffer);
+            } else {
+                SetFetchFailure(true);
             }
         }
     }
     catch (CException& e) {
+        SetFetchFailure(true);
         LOG_POST(Error << "Error in CFeatureIndex::GetSequence: " << e.what());
     }
 }
