@@ -222,7 +222,7 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 #define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version) \
     NCBI_WORKERNODE_MAIN_EX_DERIVED(TWorkerNodeJob, TWorkerNodeIdleTask, CGridWorkerApp, Version)
 
-#define NCBI_WORKERNODE_MAIN_EX_DERIVED(TWorkerNodeJob, TWorkerNodeIdleTask, VCGridWorkerApp, ersion) \
+#define NCBI_WORKERNODE_MAIN_EX_DERIVED(TWorkerNodeJob, TWorkerNodeIdleTask, CGridWorkerApp, Version) \
     NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
     NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##FactoryEx, CGridWorkerApp, Version, )
 
