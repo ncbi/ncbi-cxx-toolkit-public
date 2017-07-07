@@ -42,10 +42,10 @@ USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CTestEutilsClient::
+//  CTestEUtilsClientApp::
 
 
-class CTestEutilsClient : public CNcbiApplication
+class CTestEUtilsClientApp : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -58,7 +58,7 @@ private:
 //  Init test for all different types of arguments
 
 
-void CTestEutilsClient::Init(void)
+void CTestEUtilsClientApp::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -143,7 +143,7 @@ static void s_Print(CNcbiOstream& ostr, const vector<objects::CSeq_id_Handle>& u
     }
 }
 
-int CTestEutilsClient::Run(void)
+int CTestEUtilsClientApp::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -218,7 +218,7 @@ int CTestEutilsClient::Run(void)
 //  Cleanup
 
 
-void CTestEutilsClient::Exit(void)
+void CTestEUtilsClientApp::Exit(void)
 {
 }
 
@@ -230,5 +230,5 @@ void CTestEutilsClient::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTestEutilsClient().AppMain(argc, argv);
+    return CTestEUtilsClientApp().AppMain(argc, argv);
 }

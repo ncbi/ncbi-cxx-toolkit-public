@@ -45,10 +45,10 @@ USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CDemoApplication::
+//  CDemoScoreBuilderApp::
 
 
-class CDemoApplication : public CNcbiApplication
+class CDemoScoreBuilderApp : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -61,7 +61,7 @@ private:
 //  Init test for all different types of arguments
 
 
-void CDemoApplication::Init(void)
+void CDemoScoreBuilderApp::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -86,7 +86,7 @@ void CDemoApplication::Init(void)
 //  Run test (printout arguments obtained from command-line)
 
 
-int CDemoApplication::Run(void)
+int CDemoScoreBuilderApp::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -124,7 +124,7 @@ int CDemoApplication::Run(void)
 //  Cleanup
 
 
-void CDemoApplication::Exit(void)
+void CDemoScoreBuilderApp::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -137,5 +137,5 @@ void CDemoApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CDemoApplication().AppMain(argc, argv);
+    return CDemoScoreBuilderApp().AppMain(argc, argv);
 }
