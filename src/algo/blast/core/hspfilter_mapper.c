@@ -134,7 +134,7 @@ static Int4 HSPChainListInsert(HSPChain** list, HSPChain* chain,
 
 /* Remove from the list chains with scores lower than the best one by at least
    the given margin. The list must be sorted in descending order of scores. */
-static Int4 HSPChainListTrim(HSPChain* list, Int4 margin)
+static Int4 HSPChainListTrim(HSPChain* list, Int4 margin, Int4 cutoff_score)
 {
     HSPChain* ch = NULL;
     Int4 best_score;
@@ -145,7 +145,9 @@ static Int4 HSPChainListTrim(HSPChain* list, Int4 margin)
 
     best_score = list->score;
     ch = list;
-    while (ch->next && best_score - ch->next->score <= margin) {
+    while (ch->next && ch->next->score >= cutoff_score &&
+           best_score - ch->next->score <= margin) {
+
         ASSERT(best_score - ch->next->score >= 0);
         ch = ch->next;
     }
@@ -3054,6 +3056,7 @@ s_FindSpliceJunctions(HSPChain* chains,
 static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
                                 Int4 oid, Boolean is_spliced,
                                 Int4 longest_intron,
+                                Int4 cutoff_score,
                                 const BLAST_SequenceBlk* query_blk,
                                 const BlastQueryInfo* query_info,
                                 const ScoringOptions* scoring_opts)
@@ -3228,6 +3231,11 @@ static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
             if (!node) {
                 continue;
             }
+
+            if (path->score < cutoff_score) {
+                continue;
+            }
+
             ch->next = HSPChainNew((*node->hsp)->context);
             ASSERT(ch->next);
             if (!ch->next) {
@@ -3951,6 +3959,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
     const ScoringOptions* scoring_opts = &params->scoring_options;
     Boolean is_spliced  = params->splice;
     const Int4 kLongestIntron = params->longest_intron;
+    Int4 cutoff_score = params->cutoff_score;
     BLAST_SequenceBlk* query_blk = spl_data->query;
     BlastQueryInfo* query_info = spl_data->query_info;
     const Int4 kDefaultMaxHsps = 1000;
@@ -4067,8 +4076,8 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
                parts of the query and the subject */
             new_chains = s_FindBestPath(nodes, num_hsps, path,
                                         hsp_list->oid, is_spliced,
-                                        kLongestIntron, query_blk,
-                                        query_info, scoring_opts);
+                                        kLongestIntron, cutoff_score,
+                                        query_blk, query_info, scoring_opts);
 
             ASSERT(new_chains);
             HSPChainListInsert(&chain_array[(context - first_context) /
@@ -4116,11 +4125,11 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
            best score - kPairBonus */
         if (first) {
             HSPChainListInsert(&saved_chains[query_idx], first, TRUE);
-            HSPChainListTrim(saved_chains[query_idx], kPairBonus);
+            HSPChainListTrim(saved_chains[query_idx], kPairBonus, cutoff_score);
         }
         if (second) {
             HSPChainListInsert(&saved_chains[query_idx + 1], second, TRUE);
-            HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus);
+            HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus, cutoff_score);
         }
 
 #if _DEBUG
@@ -4207,6 +4216,7 @@ BlastHSPMapperParamsNew(const BlastHitSavingOptions* hit_options,
        retval->paired = hit_options->paired;
        retval->splice = hit_options->splice;
        retval->longest_intron = hit_options->longest_intron;
+       retval->cutoff_score = hit_options->cutoff_score;
        retval->program = hit_options->program_number;
        retval->scoring_options.reward = scoring_options->reward;
        retval->scoring_options.penalty = scoring_options->penalty;

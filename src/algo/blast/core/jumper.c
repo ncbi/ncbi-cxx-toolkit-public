@@ -2630,19 +2630,28 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
                         Int4 num_identical,
                         BlastContextInfo* context_info)
 {
+    Int4 align_len;
+    Int4 edit_distance;
     Int4 score = gap_align->score;
 
-    /* first check general score and coverage thresholds */
-    if (score < hit_params->options->cutoff_score) {
-        return FALSE;
-    }
+    align_len = MAX(gap_align->query_stop - gap_align->query_start,
+                    gap_align->subject_stop - gap_align->subject_start);
 
-    Int4 align_len = MAX(gap_align->query_stop - gap_align->query_start,
-                         gap_align->subject_stop - gap_align->subject_start);
-
+    /* check percent identity */
     if (100.0 * (double)num_identical / (double)align_len
         < hit_params->options->percent_identity) {
 
+        return FALSE;
+    }
+
+    /* for spliced alignments score threshold applies to the final spliced
+       alignment */
+    if (hit_params->options->splice) {
+        return TRUE;
+    }
+
+    /* for continuous alignments check score threshold here */
+    if (score < hit_params->options->cutoff_score) {
         return FALSE;
     }
 
