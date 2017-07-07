@@ -494,6 +494,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
 	LookupTableOptionsNew(eBlastTypeMapping, &lookup_options);
 	BLAST_FillLookupTableOptions(lookup_options, eBlastTypeMapping,
                                  FALSE, 0, 0);
+    lookup_options->word_size = 16;
 
     QuerySetUpOptions* query_options = NULL;
     BlastQuerySetUpOptionsNew(&query_options);
