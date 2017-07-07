@@ -138,6 +138,11 @@ public:
         if (! bsx) {
             LOG_POST(Error << "Unable to process Bioseq");
         }
+
+        // Report far fetch failure
+        if (idx.IsFetchFailure()) {
+            *m_out << "IsFetchFailure" << '\n';
+        }
     }
 
     //  ------------------------------------------------------------------------
@@ -250,6 +255,87 @@ protected:
     bool m_revcomp;
     // CSeqEntryIndex* m_explore;
 };
+
+
+//  ============================================================================
+class CWordPairProcess
+//  ============================================================================
+    : public CScopedProcess
+{
+public:
+    //  ------------------------------------------------------------------------
+    CWordPairProcess()
+    //  ------------------------------------------------------------------------
+        : CScopedProcess()
+        , m_out( 0 )
+    {};
+
+    //  ------------------------------------------------------------------------
+    ~CWordPairProcess()
+    //  ------------------------------------------------------------------------
+    {
+    };
+
+    //  ------------------------------------------------------------------------
+    void ProcessInitialize(
+        const CArgs& args )
+    //  ------------------------------------------------------------------------
+    {
+        CScopedProcess::ProcessInitialize( args );
+
+        m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+    };
+
+    //  ------------------------------------------------------------------------
+    void ProcessFinalize()
+    //  ------------------------------------------------------------------------
+    {
+        // delete m_out;
+    }
+
+    //  ------------------------------------------------------------------------
+    virtual void SeqEntryInitialize(
+        CRef<CSeq_entry>& se )
+    //  ------------------------------------------------------------------------
+    {
+        CScopedProcess::SeqEntryInitialize( se );
+    };
+
+    //  ------------------------------------------------------------------------
+    void SeqEntryProcess()
+    //  ------------------------------------------------------------------------
+    {
+        // Test word pair indexer
+        string ucode = "β-carotene 1¾ CO₂ H<sub>2</sub>O ç ł ä ß í č å Ł";
+        string phrase = "selective serotonin reuptake inhibitor and monoamine-oxidase inhibitor and ;((NH<sub>4</sub>+)3). hydroxide";
+
+        CWordPairIndexer wpi;
+        *m_out << "\nUcode: " << ucode << '\n';
+        string ascii = wpi.ConvertUTF8ToAscii(ucode);
+        *m_out << "Ascii: " << ascii << '\n';
+        string mixed = wpi.TrimMixedContent(ascii);
+        *m_out << "Mixed: " << mixed << '\n';
+
+        *m_out << "\nPhrase:\n" << phrase << '\n';
+        wpi.PopulateWordPairIndex(phrase);
+
+        *m_out << "\nNORM:\n";
+        wpi.IterateNorm([this](string& norm) {
+            *m_out << norm << '\n';
+        });
+
+        *m_out << "\nPAIR:\n";
+        wpi.IteratePair([this](string& pair) {
+            *m_out << pair << '\n';
+        });
+
+        *m_out << '\n';
+    }
+
+protected:
+    CNcbiOstream* m_out;
+};
+
 
 #endif
 

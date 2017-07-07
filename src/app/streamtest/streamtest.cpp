@@ -188,7 +188,8 @@ void CStreamTestApp::Init()
                                         "prosplign",
                                         "seqvector",
                                         "unindexed-defline",
-                                        "validate"));
+                                        "validate",
+                                        "word-pair"));
     
     arg_desc->AddDefaultKey( "options", 
         "Options",
@@ -376,6 +377,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "validate" ) {
         pProcess = new CValidateProcess;
+    }
+    if ( testcase == "word-pair" ) {
+        pProcess = new CWordPairProcess;
     }
     return pProcess;
 }
