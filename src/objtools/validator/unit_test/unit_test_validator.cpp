@@ -7268,6 +7268,11 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 {
 	string hostfix, host;
+
+    host = "homo sapiens";
+    hostfix = FixSpecificHost(host);
+    BOOST_CHECK_EQUAL(hostfix, "Homo sapiens");
+
 	host = "Homo supiens";
 	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);

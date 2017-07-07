@@ -933,7 +933,8 @@ const static THostFixMap s_hostFixupMap = {
     { "unknown", "unknown" },
     { "not available: to be reported later", "not available" },
     { "obscured", "obscured" },
-    { "human", "Homo sapiens" }
+    { "human", "Homo sapiens" },
+    { "homo sapiens", "Homo sapiens" }
 };
 
 string COrgMod::FixHost(const string& value)
