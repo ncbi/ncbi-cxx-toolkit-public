@@ -5307,7 +5307,7 @@ PPL	s	Agricultural Development and Advisory Service, Harpenden Laboratory
 PPNP	s	Point Pelee National Park		
 PPPO	s	Pusat Penelitian dan Pengembangan Oseanologi		
 PPPPB	c	ARC-Plant Protection Research Institute, Plant Pathogenic and Plant Protecting Bacteria		
-PPRI	c	ARC-Plant Protection Research Institute, National Collection of Fungi: Culture Collection		
+PPRI	c	South African National Collection of Fungi: Culture Collection		
 PPRL	h	USDA-ARS Poisonous Plant Research Lab		
 PPRZ	s	Plant Protection Research Institute		
 PPSIO	s	P. P. Shirshov Institute of Oceanology		
@@ -5318,7 +5318,7 @@ PRA	s	Institute of Botany, Academy of Sciences
 PRB	s	Prague Botanical Garden		
 PRC	s	Charles University, Botany Department		
 PRE	s	National Botanical Institute - Pretoria		
-PREM	s	Plant Protection Research Institute, Biosystematics Division, Mycology Unit		
+PREM	s	South African National Collection of Fungi Herbarium		
 PRF	s	South African Forestry Research Institute, Environment Affairs Department		
 PRG	s	Universidad Nacional Pedro Ruiz Gallo		
 PRH	s	Perthshire Society of Natural Science		
