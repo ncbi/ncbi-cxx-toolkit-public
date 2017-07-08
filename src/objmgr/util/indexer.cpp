@@ -1275,6 +1275,36 @@ static const char* const mixedTags[] = {
     "<u/>",
     "<sup/>",
     "<sub/>",
+    "&lt;i&gt;",
+    "&lt;/i&gt;",
+    "&lt;i/&gt;",
+    "&lt;b&gt;",
+    "&lt;/b&gt;",
+    "&lt;b/&gt;",
+    "&lt;u&gt;",
+    "&lt;/u&gt;",
+    "&lt;u/&gt;",
+    "&lt;sub&gt;",
+    "&lt;/sub&gt;",
+    "&lt;sub/&gt;",
+    "&lt;sup&gt;",
+    "&lt;/sup&gt;",
+    "&lt;sup/&gt;",
+    "&amp;lt;i&amp;gt;",
+    "&amp;lt;/i&amp;gt;",
+    "&amp;lt;i/&amp;gt;",
+    "&amp;lt;b&amp;gt;",
+    "&amp;lt;/b&amp;gt;",
+    "&amp;lt;b/&amp;gt;",
+    "&amp;lt;u&amp;gt;",
+    "&amp;lt;/u&amp;gt;",
+    "&amp;lt;u/&amp;gt;",
+    "&amp;lt;sub&amp;gt;",
+    "&amp;lt;/sub&amp;gt;",
+    "&amp;lt;sub/&amp;gt;",
+    "&amp;lt;sup&amp;gt;",
+    "&amp;lt;/sup&amp;gt;",
+    "&amp;lt;sup/&amp;gt;",
 };
 
 static int SkipMixedContent ( const char* ptr )
@@ -1302,7 +1332,7 @@ string CWordPairIndexer::TrimMixedContent ( const string& str )
     const char* src = str.c_str();
     string dst;
     while (*src) {
-        if (*src == '<') {
+        if (*src == '<' || *src == '&') {
             int skip = SkipMixedContent (src);
             if (skip > 0) {
                 src += skip;
@@ -1341,7 +1371,7 @@ void CWordPairIndexer::PopulateWordPairIndex (string str)
     str = ConvertUTF8ToAscii(str);
     NStr::ToLower(str);
 
-    if (NStr::Find(str, "<") != NPOS) {
+    if (NStr::Find(str, "<") != NPOS || NStr::Find(str, "&") != NPOS) {
         str = TrimMixedContent(str);
     }
 

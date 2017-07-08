@@ -306,15 +306,15 @@ public:
     //  ------------------------------------------------------------------------
     {
         // Test word pair indexer
-        string ucode = "β-carotene 1¾ CO₂ H<sub>2</sub>O ç ł ä ß í č å Ł";
-        string phrase = "selective serotonin reuptake inhibitor and monoamine-oxidase inhibitor and ;((NH<sub>4</sub>+)3). hydroxide";
+        string ucode = "β-carotene 1¾ CO₂ H<sub>2</sub>O NH&lt;sub&gt;3&lt;/sub&gt; Tn&amp;lt;i&amp;gt;3&amp;lt;/i&amp;gt; ç ł å ß í č";
+        string phrase = "selective serotonin reuptake inhibitor and monoamine-oxidase inhibitor and ((NH<sub>4</sub>+)3) hydroxide";
 
         CWordPairIndexer wpi;
         *m_out << "\nUcode: " << ucode << '\n';
         string ascii = wpi.ConvertUTF8ToAscii(ucode);
         *m_out << "Ascii: " << ascii << '\n';
         string mixed = wpi.TrimMixedContent(ascii);
-        *m_out << "Mixed: " << mixed << '\n';
+        *m_out << "Clean: " << mixed << '\n';
 
         *m_out << "\nPhrase:\n" << phrase << '\n';
         wpi.PopulateWordPairIndex(phrase);
