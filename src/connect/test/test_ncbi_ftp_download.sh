@@ -22,7 +22,16 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-case "`expr '(' $$ / 10 ')' '%' 3`" in
+# for netstat
+PATH=${PATH}:/sbin:/usr/sbin
+
+if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
+  n=2
+else
+  n=3
+fi
+
+case "`expr '(' $$ / 10 ')' '%' $n`" in
   0)
     file=
     ;;
