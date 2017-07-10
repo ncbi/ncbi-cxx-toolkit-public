@@ -36,7 +36,8 @@
 #include <objtools/data_loaders/asn_cache/asn_cache_export.h>
 #include <db/bdb/bdb_file.hpp>
 
-class CAsnCacheApplication;
+class CAsnSubCacheCreateApplication;
+class CAsnCacheTestApplication;
 
 BEGIN_NCBI_SCOPE
 
@@ -173,7 +174,8 @@ private:
     friend CNcbiOstream &operator<<(CNcbiOstream &ostr, const CAsnIndex::SIndexInfo &info);
 
     friend class CAsnCache;
-    friend class ::CAsnCacheApplication;
+    friend class ::CAsnSubCacheCreateApplication;
+    friend class ::CAsnCacheTestApplication;
     friend class objects::CAsnCache_DataLoader;
 };
 

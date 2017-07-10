@@ -150,7 +150,8 @@ private:
     CAsnCache& operator=(const CAsnCache&);
 
     friend class CAsnCacheStats;
-    friend class ::CAsnCacheApplication;
+    friend class ::CAsnSubCacheCreateApplication;
+    friend class ::CAsnCacheTestApplication;
     friend class objects::CAsnCache_DataLoader;
 };
 
