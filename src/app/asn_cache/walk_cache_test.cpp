@@ -51,10 +51,10 @@ USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CAsnCacheApplication::
+//  CWalkAsnCacheApplication::
 
 
-class CAsnCacheApplication : public CNcbiApplication
+class CWalkAsnCacheApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -67,7 +67,7 @@ private:
 //  Init test for all different types of arguments
 
 
-void CAsnCacheApplication::Init(void)
+void CWalkAsnCacheApplication::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -100,7 +100,7 @@ void CAsnCacheApplication::Init(void)
 
 
 
-int CAsnCacheApplication::Run(void)
+int CWalkAsnCacheApplication::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -160,7 +160,7 @@ int CAsnCacheApplication::Run(void)
 //  Cleanup
 
 
-void CAsnCacheApplication::Exit(void)
+void CWalkAsnCacheApplication::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -173,5 +173,5 @@ void CAsnCacheApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CAsnCacheApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CWalkAsnCacheApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

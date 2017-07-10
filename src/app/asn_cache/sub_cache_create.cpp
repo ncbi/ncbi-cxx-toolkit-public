@@ -574,13 +574,13 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CAsnCacheApplication::
+//  CAsnSubCacheCreateApplication::
 
 
-class CAsnCacheApplication : public CNcbiApplication
+class CAsnSubCacheCreateApplication : public CNcbiApplication
 {
 public:
-    CAsnCacheApplication()
+    CAsnSubCacheCreateApplication()
         : m_TotalRecords(0),
           m_RecordsNotInMainCache(0),
           m_RecordsInSubCache(0),
@@ -645,7 +645,7 @@ private:
 //  Init test for all different types of arguments
 
 
-void CAsnCacheApplication::Init(void)
+void CAsnSubCacheCreateApplication::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -781,7 +781,7 @@ static void s_ReadIdsFromFile(CNcbiIstream&  istr,
 
 
 
-int CAsnCacheApplication::Run(void)
+int CAsnSubCacheCreateApplication::Run(void)
 {
     const CArgs& args = GetArgs();
     {{
@@ -936,7 +936,7 @@ int CAsnCacheApplication::Run(void)
 }
 
 
-size_t CAsnCacheApplication::WriteBlobsInSubCache(const vector<CDir>& main_cache_roots,
+size_t CAsnSubCacheCreateApplication::WriteBlobsInSubCache(const vector<CDir>& main_cache_roots,
                                                   const CDir& subcache_root,
                                                   TIndexMapById& index_map,
                                                   TBlobLocationList& blob_locations,
@@ -1084,7 +1084,7 @@ size_t CAsnCacheApplication::WriteBlobsInSubCache(const vector<CDir>& main_cache
 //  Cleanup
 
 
-void CAsnCacheApplication::Exit(void)
+void CAsnSubCacheCreateApplication::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -1092,7 +1092,7 @@ void CAsnCacheApplication::Exit(void)
 
 
 void
-CAsnCacheApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
+CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                                  const TIndexRefList& ids_missing,
                                  TBlobLocationList& blob_locations,
                                  TIndexMapById&      extra_ids,
@@ -1182,7 +1182,7 @@ static bool s_ShouldFetchOneByOne(TIndexMapById& ids)
 }
 
 
-void CAsnCacheApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
+void CAsnSubCacheCreateApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
                                TIndexMapByBlob& index_map_by_blob,
                                const vector<CDir>& main_cache_roots,
                                TBlobLocationList& blob_locations,
@@ -1292,7 +1292,7 @@ void CAsnCacheApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
 
 
 void
-CAsnCacheApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index_map,
+CAsnSubCacheCreateApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index_map,
                                                    const string& cache_index)
 {
     if (CFile(cache_index).Exists()) {
@@ -1371,7 +1371,7 @@ CAsnCacheApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index_map,
     }
 }
 
-void CAsnCacheApplication::
+void CAsnSubCacheCreateApplication::
 IndexNewBlobsInSubCache(const TIndexMapById& index_map,
                         const CDir &    cache_root)
 {
@@ -1430,5 +1430,5 @@ IndexNewBlobsInSubCache(const TIndexMapById& index_map,
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CAsnCacheApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CAsnSubCacheCreateApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

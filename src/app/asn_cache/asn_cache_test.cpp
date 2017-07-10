@@ -91,10 +91,10 @@ static bool s_SameIds(const CBioseq::TId &ids1, const CBioseq::TId &ids2)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-//  CAsnCacheApplication::
+//  CAsnCacheTestApplication::
 
 
-class CAsnCacheApplication : public CNcbiApplication
+class CAsnCacheTestApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -113,7 +113,7 @@ private: //member functions
 //  Init test for all different types of arguments
 
 
-void CAsnCacheApplication::Init(void)
+void CAsnCacheTestApplication::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -178,7 +178,7 @@ void CAsnCacheApplication::Init(void)
 
 
 
-int CAsnCacheApplication::Run(void)
+int CAsnCacheTestApplication::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -457,7 +457,7 @@ int CAsnCacheApplication::Run(void)
     return count_failed;
 }
 
-bool CAsnCacheApplication::x_FindAnnotated(const CSeq_entry& entry)
+bool CAsnCacheTestApplication::x_FindAnnotated(const CSeq_entry& entry)
 {
     return 
        ( entry.IsSeq() && entry.GetSeq().IsSetAnnot() ) ||
@@ -469,7 +469,7 @@ bool CAsnCacheApplication::x_FindAnnotated(const CSeq_entry& entry)
 //  Cleanup
 
 
-void CAsnCacheApplication::Exit(void)
+void CAsnCacheTestApplication::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -482,5 +482,5 @@ void CAsnCacheApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CAsnCacheApplication().AppMain(argc, argv);
+    return CAsnCacheTestApplication().AppMain(argc, argv);
 }
