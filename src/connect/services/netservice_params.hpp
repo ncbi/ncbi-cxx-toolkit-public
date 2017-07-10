@@ -144,9 +144,9 @@ private:
     CRef<const IRegistry> m_Registry;
 };
 
-struct SRegSynonyms : vector<string>
+struct SRegSynonyms : vector<CTempString>
 {
-    using TBase = vector<string>;
+    using TBase = vector<CTempString>;
 
     SRegSynonyms(const char* v) : TBase({v}) {}
     SRegSynonyms(const string v) : TBase({v}) {}
