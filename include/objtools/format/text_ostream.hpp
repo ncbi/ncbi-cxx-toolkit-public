@@ -77,6 +77,8 @@ public:
         _TROUBLE;
     }
 
+    virtual void Flush(void) {}
+
     virtual ~IFlatTextOStream(void) {}
 };
 

@@ -42,6 +42,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/error_codes.hpp>
 #include <objtools/format/flat_expt.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -75,6 +76,7 @@
 #include <stdio.h>
 
 
+#define NCBI_USE_ERRCODE_X   Objtools_Fmt_Genbank
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -108,11 +110,27 @@ namespace {
             m_orig_text_os(orig_text_os),
             m_ctx(ctx),
             m_item(item) 
-        { 
+        {
+            m_Flushed = false;
         }
 
-        ~CWrapperForFlatTextOStream(void)
+        ~CWrapperForFlatTextOStream()
         {
+            if ( !m_Flushed ) {
+                try {
+                    Flush();
+                    ERR_POST_X(1, Warning << "Flatfile output left unflushed in "
+                               << CStackTrace());
+                } catch (CFlatException& e) {
+                    ERR_POST_X(2, "Missed flatfile output halt request in "
+                               << CStackTrace());
+                }
+            }
+        }
+
+        void Flush(void)
+        {
+            m_Flushed = true;
             CFlatFileConfig::CGenbankBlockCallback::EAction eAction =
                 m_block_callback->notify(m_block_text_str, *m_ctx, m_item);
             switch(eAction) {
@@ -164,6 +182,8 @@ namespace {
 
         // build the block text here
         string m_block_text_str;
+
+        bool m_Flushed;
     };
 
     template<class TFlatItemClass>
@@ -294,6 +314,8 @@ void CGenbankFormatter::EndSection
             0, IFlatTextOStream::eAddNewline_No );
     }
 
+    text_os.Flush();
+
     // New record, so reset
     m_FeatureKeyToLocMap.clear();
     m_bHavePrintedSourceFeatureJavascript = false;
@@ -408,6 +430,8 @@ void CGenbankFormatter::FormatLocus
     }
     
     text_os.AddParagraph(l, locus.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -430,6 +454,8 @@ void CGenbankFormatter::FormatDefline
     Wrap(l, "DEFINITION", defline_text);
     
     text_os.AddParagraph(l, defline.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -462,6 +488,8 @@ void CGenbankFormatter::FormatAccession
         Wrap(l, "ACCESSION", acc_line);
     }
     text_os.AddParagraph(l, acc.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -497,6 +525,8 @@ void CGenbankFormatter::FormatVersion
     }
 
     text_os.AddParagraph(l, version.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -555,6 +585,8 @@ void CGenbankFormatter::FormatGenomeProject(
     if( ! l.empty() ) {
         text_os.AddParagraph(l, gp.GetObject());
     }
+
+    text_os.Flush();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -589,6 +621,8 @@ void CGenbankFormatter::FormatKeywords
         TryToSanitizeHtmlList(l);
     }
     text_os.AddParagraph(l, keys.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -610,6 +644,8 @@ void CGenbankFormatter::FormatSegment
 
     Wrap(l, "SEGMENT", CNcbiOstrstreamToString(segment_line));
     text_os.AddParagraph(l, seg.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -630,6 +666,8 @@ void CGenbankFormatter::FormatSource
     x_FormatSourceLine(l, source);
     x_FormatOrganismLine(l, source);
     text_os.AddParagraph(l, source.GetObject());    
+
+    text_os.Flush();
 }
 
 
@@ -787,6 +825,8 @@ void CGenbankFormatter::FormatReference
     }
 
     text_os.AddParagraph(l, ref.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -1328,6 +1368,8 @@ void CGenbankFormatter::FormatComment
     //        s_FixLineBrokenWeblinks( l );
     //    }
     text_os.AddParagraph(l, comment.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -1349,6 +1391,8 @@ void CGenbankFormatter::FormatFeatHeader
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
 
     text_os.AddParagraph(l, NULL);
+
+    text_os.Flush();
 }
 
 //  ============================================================================
@@ -1643,6 +1687,8 @@ void CGenbankFormatter::FormatFeature
         // close the <span...>, without an endline
         text_os->AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
     }
+
+    text_os->Flush();
 }
 
 
@@ -1672,6 +1718,8 @@ void CGenbankFormatter::FormatBasecount
     }
     Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(bc_line));
     text_os.AddParagraph(l, bc.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -1966,6 +2014,8 @@ void CGenbankFormatter::FormatSequence
             }
         }        
     }
+
+    text_os.Flush();
 }
 
 
@@ -2001,6 +2051,8 @@ void CGenbankFormatter::FormatDBSource
             text_os.AddParagraph(l, dbs.GetObject());
         }
     }        
+
+    text_os.Flush();
 }
 
 
@@ -2086,6 +2138,8 @@ void CGenbankFormatter::FormatWGS
     Wrap( l, tag, wgs_line, ePara, bHtml );
 
     text_os.AddParagraph(l, wgs.GetObject());
+
+    text_os.Flush();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2133,6 +2187,8 @@ void CGenbankFormatter::FormatTSA
 
         text_os.AddParagraph(l, tsa.GetObject());
 
+        text_os.Flush();
+
         return;
     }
 
@@ -2167,6 +2223,8 @@ void CGenbankFormatter::FormatTSA
     Wrap(l, "TSA", id_range, ePara, bHtml);
 
     text_os.AddParagraph(l, tsa.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -2191,6 +2249,8 @@ void CGenbankFormatter::FormatPrimary
     Wrap(l, "PRIMARY", primary_str);
 
     text_os.AddParagraph(l, primary.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -2232,6 +2292,8 @@ void CGenbankFormatter::FormatContig
     Wrap(l, "CONTIG", assembly);
 
     text_os.AddParagraph(l, contig.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -2266,6 +2328,8 @@ void CGenbankFormatter::FormatOrigin
         Wrap( l, "ORIGIN", strOrigin );
     }
     text_os.AddParagraph( l, origin.GetObject() );
+
+    text_os.Flush();
 }
 
 
@@ -2341,6 +2405,8 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& orig_te
     }
 
     text_os.AddParagraph(l, gap.GetObject());
+
+    text_os.Flush();
 
     // gaps don't use the span stuff, but I'm leaving this code here
     // (but commented out) in case that changes in the future.
