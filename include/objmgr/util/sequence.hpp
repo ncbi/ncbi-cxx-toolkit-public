@@ -46,6 +46,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/seq_id_mapper.hpp>
 #include <util/strsearch.hpp>
+#include <util/range_coll.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/scope.hpp>
@@ -1325,10 +1326,13 @@ public:
     ///
     /// @param bioseq_handle
     ///   The bioseq to trim.
+    /// @param trimmed_ranges
+    ///   The ranges trimmed by DoTrim will be added to this.
     /// @return
     ///   This returns how the trimming went.  On error, an exception
     ///   is thrown and the bioseq may be in an undefined state.
-    virtual EResult DoTrim( CBioseq_Handle &bioseq_handle );
+    virtual EResult DoTrim( CBioseq_Handle &bioseq_handle,
+                            CRangeCollection<TSeqPos> *trimmed_ranges = nullptr);
 
 protected:
     /// This holds the current interpretation for "ambiguous".  For example,

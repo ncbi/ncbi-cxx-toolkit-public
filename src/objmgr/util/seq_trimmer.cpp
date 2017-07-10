@@ -210,7 +210,8 @@ CSequenceAmbigTrimmer::CSequenceAmbigTrimmer(
 }
 
 CSequenceAmbigTrimmer::EResult 
-CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle)
+CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle,
+                               CRangeCollection<TSeqPos> *trimmed_ranges )
 {
     _ASSERT( bioseq_handle );
 
@@ -231,6 +232,10 @@ CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle)
     }
     if( leftmost_good_base > rightmost_good_base ) {
         // trimming leaves nothing left
+        if( trimmed_ranges ) {
+            *trimmed_ranges += TSeqRange(0, bioseq_len - 1);
+            _ASSERT(bioseq_len == trimmed_ranges->GetCoveredLength());
+        }
         return x_TrimToNothing( bioseq_handle );
     }
     
@@ -242,6 +247,10 @@ CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle)
     }
     if( leftmost_good_base > rightmost_good_base ) {
         // trimming leaves nothing left
+        if( trimmed_ranges ) {
+            *trimmed_ranges += TSeqRange(0, bioseq_len - 1);
+            _ASSERT(bioseq_len == trimmed_ranges->GetCoveredLength());
+        }
         return x_TrimToNothing( bioseq_handle );
     }
 
@@ -252,10 +261,21 @@ CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle)
         return eResult_NoTrimNeeded;
     }
 
-    // do the actually slicing of the bioseq
+    // do the actual slicing of the bioseq
     x_SliceBioseq( 
         leftmost_good_base, rightmost_good_base,
         bioseq_handle );
+    if ( trimmed_ranges ) {
+        if( leftmost_good_base > 0 ) {
+            *trimmed_ranges += TSeqRange(0, leftmost_good_base - 1);
+        }
+        if( rightmost_good_base < bioseq_len - 1 ) {
+            *trimmed_ranges += TSeqRange(rightmost_good_base + 1,
+                                         bioseq_len - 1);
+        }
+        _ASSERT( bioseq_handle.GetBioseqLength() ==
+                 bioseq_len - trimmed_ranges->GetCoveredLength());
+    }
 
     return eResult_SuccessfullyTrimmed;
 }

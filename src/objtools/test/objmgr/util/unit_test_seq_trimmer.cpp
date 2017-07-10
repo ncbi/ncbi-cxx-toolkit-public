@@ -124,6 +124,41 @@ namespace
         return pNextId;
     }
 
+    void
+    s_CheckTrimmedRangesAreCorrect(
+        const string & sInput,
+        const string & sOutput,
+        const CRangeCollection<TSeqPos> & trimmed_ranges )
+    {
+        BOOST_REQUIRE_GE( sInput.size(), sOutput.size() );
+        const TSeqPos num_bases_trimmed = sInput.size() - sOutput.size();
+        BOOST_CHECK_EQUAL( num_bases_trimmed,
+                           trimmed_ranges.GetCoveredLength() );
+
+        // copy input and make sure our manipulations make it look like the
+        // output
+        string sExpectedOutput{sInput};
+        // remove from right to left because of how trimming adjusts indices
+        // of each base
+        for( auto range_rev_it = trimmed_ranges.rbegin();
+             range_rev_it != trimmed_ranges.rend(); ++range_rev_it)
+        {
+            string sNewExpectedOutput;
+            // copy the part before the trimmed section
+            copy( sExpectedOutput.begin(),
+                  sExpectedOutput.begin() + range_rev_it->GetFrom(),
+                  back_inserter(sNewExpectedOutput));
+            // and the part after the trimmed section
+            copy( sExpectedOutput.begin() + range_rev_it->GetToOpen(),
+                  sExpectedOutput.end(),
+                  back_inserter(sNewExpectedOutput));
+            // new replaces old for next iteration
+            sExpectedOutput = std::move(sNewExpectedOutput);
+        }
+
+        BOOST_CHECK_EQUAL(sExpectedOutput, sOutput);
+    }
+
 
     CBioseq_Handle s_FastaToBioseqHandle(
         const string & sFasta,
@@ -277,6 +312,7 @@ namespace
         ITERATE_BOTH_BOOL_VALUES(bDeltaSeqify) {
         ITERATE_BOTH_BOOL_VALUES(bTrimBeginning) {
         ITERATE_BOTH_BOOL_VALUES(bTrimEnd) {
+        ITERATE_BOTH_BOOL_VALUES(bCheckRangesTrimmed) {
 
             string sInputSeq = sInputSeq_arg;
             string sExpectedIfStartTrimmed = sExpectedIfStartTrimmed_arg;
@@ -356,9 +392,12 @@ namespace
             }}
 
             // BOOST_ERROR( "BEFORE DOTRIM: " << MSerial_AsnText << *bioseq_h.GetCompleteBioseq() );
+            CRangeCollection<TSeqPos> trimmed_ranges;
 
             CSequenceAmbigTrimmer::EResult eTrimResult =
-                trimmer.DoTrim( bioseq_h );
+                trimmer.DoTrim(
+                    bioseq_h,
+                    (bCheckRangesTrimmed ? &trimmed_ranges : nullptr));
             const string sResult = s_ExtractSeqFromBioseq(bioseq_h);
             switch( eTrimResult ) {
             case CSequenceAmbigTrimmer::eResult_SuccessfullyTrimmed:
@@ -371,6 +410,11 @@ namespace
                 BOOST_ERROR("unknown CSequenceAmbigTrimmer::EResult: "
                     << static_cast<int>(eTrimResult) );
                 break;
+            }
+
+            if( bCheckRangesTrimmed ) {
+                s_CheckTrimmedRangesAreCorrect( sInputSeq, sResult,
+                                                trimmed_ranges);
             }
 
             // BOOST_ERROR( "AFTER DOTRIM: " << MSerial_AsnText << *bioseq_h.GetCompleteBioseq() );
@@ -392,6 +436,7 @@ namespace
                     sExpected, 
                     sResult );
             }
+        } // end of checking the ranges trimmed output of DoTrim
         } // end of testing with and without delta-seqification
         } // end of testing with and without trimming at end
         } // end of testing with and without trimming at beginning
