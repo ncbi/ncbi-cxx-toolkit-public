@@ -41,10 +41,10 @@ USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CArgTestApplication::
+//  CArgTestSampleApplication::
 
 
-class CArgTestApplication : public CNcbiApplication
+class CArgTestSampleApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
@@ -57,7 +57,7 @@ private:
 //  Init test for all different types of arguments
 
 
-void CArgTestApplication::Init(void)
+void CArgTestSampleApplication::Init(void)
 {
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -142,7 +142,7 @@ void CArgTestApplication::Init(void)
 //  Run test (printout arguments obtained from command-line)
 
 
-int CArgTestApplication::Run(void)
+int CArgTestSampleApplication::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
@@ -230,7 +230,7 @@ int CArgTestApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-void CArgTestApplication::Exit(void)
+void CArgTestSampleApplication::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -241,5 +241,5 @@ void CArgTestApplication::Exit(void)
 
 int main(int argc, const char* argv[])
 {
-    return CArgTestApplication().AppMain(argc, argv);
+    return CArgTestSampleApplication().AppMain(argc, argv);
 }
