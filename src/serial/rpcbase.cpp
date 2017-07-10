@@ -44,7 +44,8 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
       m_RetryCount(0),
       m_RecursionCount(0),
       m_Service(service),
-      m_RetryLimit(retry_limit)
+      m_RetryLimit(retry_limit),
+      m_Canceler(0)
 {
 }
 
@@ -162,6 +163,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
     // Retry context can be either the default one (m_RetryCtx), or provided
     // through an exception.
     for (;;) {
+        if ( IsCanceled() ) {
+            NCBI_THROW(CRPCClientException, eFailed, "Request canceled");
+        }
         try {
             SetAffinity(x_GetAffinity(request));
             Connect(); // No-op if already connected
@@ -176,6 +180,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                 x_WriteRequest(*m_Out, request);
             }
             m_Stream->peek(); // send data, read response headers
+            if (!m_Stream->good()) {
+                NCBI_THROW(CRPCClientException, eFailed, "Connection stream is in bad state");
+            }
             if (m_RetryCtx.IsSetContentOverride()  &&
                 m_RetryCtx.GetContentOverride() == CHttpRetryContext::eFromResponse) {
                 // store response content to send it with the next retry

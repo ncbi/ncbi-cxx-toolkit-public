@@ -166,8 +166,12 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     x_extra.parse_header = sx_ParseHeader;
     x_extra.flags = fHTTP_NoAutoRetry;
 
-    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info,
-        &x_extra, m_Timeout));
+    auto_ptr<CConn_ServiceStream> stream(new CConn_ServiceStream(
+        m_Service, fSERV_Any, net_info, &x_extra, m_Timeout));
+    if ( m_Canceler ) {
+        stream->SetCanceledCallback(m_Canceler);
+    }
+    x_SetStream(stream.release());
     ConnNetInfo_Destroy(net_info);
 }
 
@@ -190,7 +194,7 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
                 "Error sending retry context arguments");
         }
     }
-    x_SetStream(new CConn_HttpStream(net_info,
+    auto_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info,
         kEmptyStr, // user_header
         sx_ParseHeader, // callback
         &m_RetryCtx,    // user data for the callback
@@ -198,6 +202,10 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
         0, // cleanup callback
         fHTTP_AutoReconnect | fHTTP_NoAutoRetry,
         m_Timeout));
+    if ( m_Canceler ) {
+        stream->SetCanceledCallback(m_Canceler);
+    }
+    x_SetStream(stream.release());
 }
 
 

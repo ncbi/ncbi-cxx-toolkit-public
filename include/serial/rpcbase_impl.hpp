@@ -81,6 +81,12 @@ public:
     const CTimeSpan GetRetryDelay(void) const          { return m_RetryDelay; }
     void            SetRetryDelay(const CTimeSpan& ts) { m_RetryDelay = ts; }
 
+    /// Set request canceler. The canceler is passed to CConn_IOStream and
+    /// must be be derived from CObject as its first superclass.
+    /// @sa CConn_IOStream::SetCanceledCallback
+    void SetCanceledCallback(const ICanceled* canceled) { m_Canceler = canceled; }
+    bool IsCanceled(void) const { return m_Canceler && m_Canceler->IsCanceled(); }
+
 protected:
     void SetAffinity(const string& affinity);
 
@@ -115,6 +121,7 @@ protected:
     string                   m_Affinity;
     unsigned int             m_RetryLimit;
     CHttpRetryContext        m_RetryCtx;
+    const ICanceled*         m_Canceler;
 
     // Retry policy; by default, just _TRACEs the event and returns
     // true.  May reset the connection (or do anything else, really),
