@@ -101,6 +101,7 @@ public:
         fPlaintextAllowed = 0x10000,///< @sa GetEncryptedString()
         fInSectionComments = 0x20000,/**< Indicates that we want in-section 
                                           comments from x_Enumerate */
+        fInternalChecked = 0x40000, ///< @internal
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore,
         fCaseFlags      = fSectionCase | fEntryCase

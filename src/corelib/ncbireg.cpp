@@ -262,8 +262,14 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 const string& IRegistry::Get(const string& section, const string& name,
                              TFlags flags) const
 {
+    if (flags & fInternalChecked) {
+        TReadGuard LOCK(*this);
+        return x_Get(section, name, flags);
+    }
+
     x_CheckFlags("IRegistry::Get", flags,
                  (TFlags)fLayerFlags | fInternalSpaces | fSectionlessEntries);
+
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -280,13 +286,18 @@ const string& IRegistry::Get(const string& section, const string& name,
         return kEmptyStr;
     }
     TReadGuard LOCK(*this);
-    return x_Get(clean_section, clean_name, flags);
+    return x_Get(clean_section, clean_name, flags | fInternalChecked);
 }
 
 
 bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
+    if (flags & fInternalChecked) {
+        TReadGuard LOCK(*this);
+        return x_HasEntry(section, name, flags);
+    }
+
     x_CheckFlags("IRegistry::HasEntry", flags,
                  (TFlags)fLayerFlags | fInternalSpaces | fCountCleared
                  | fSections | fSectionlessEntries);
@@ -309,7 +320,7 @@ bool IRegistry::HasEntry(const string& section, const string& name,
         return false;
     }
     TReadGuard LOCK(*this);
-    return x_HasEntry(clean_section, clean_name, flags);
+    return x_HasEntry(clean_section, clean_name, flags | fInternalChecked);
 }
 
 
