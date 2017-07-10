@@ -200,6 +200,20 @@ private:
 };
 
 
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+ostream& operator<<(ostream& out, const CRef<T>& obj)
+{
+    return out << *obj;
+}
+
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+ostream& operator<<(ostream& out, const CConstRef<T>& obj)
+{
+    return out << *obj;
+}
+
+
 inline
 string& operator<<(string& s, const CSerialObject& obj)
 {
@@ -207,6 +221,20 @@ string& operator<<(string& s, const CSerialObject& obj)
     out << MSerial_AsnText << obj;
     s.append(CNcbiOstrstreamToString(out));
     return s;
+}
+
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+string& operator<<(string& s, const CRef<T>& obj)
+{
+    return s << *obj;
+}
+
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+string& operator<<(string& s, const CConstRef<T>& obj)
+{
+    return s << *obj;
 }
 
 
