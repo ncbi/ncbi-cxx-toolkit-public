@@ -26,7 +26,7 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CWinMaskApplication class member and method definitions.
+ *   CWinMaskDemoApplication class member and method definitions.
  *
  */
 
@@ -62,10 +62,10 @@ USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
 const char * const 
-CWinMaskApplication::USAGE_LINE = "Window based sequence masker";
+CWinMaskDemoApplication::USAGE_LINE = "Window based sequence masker";
 
 //-------------------------------------------------------------------------
-void CWinMaskApplication::Init(void)
+void CWinMaskDemoApplication::Init(void)
 {
     auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
 
@@ -234,7 +234,7 @@ void CWinMaskApplication::Init(void)
 }
 
 //-------------------------------------------------------------------------
-int CWinMaskApplication::Run (void)
+int CWinMaskDemoApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 

@@ -26,7 +26,7 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Header file for CWinMaskApplication class.
+ *   Header file for CWinMaskDemoApplication class.
  *
  */
 
@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
  **\brief Window based masker main class.
  **
  **/
-class CWinMaskApplication : public CNcbiApplication
+class CWinMaskDemoApplication : public CNcbiApplication
 {
 public:
 
