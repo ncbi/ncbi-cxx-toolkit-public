@@ -81,90 +81,98 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         }
     }
 
+    string id_string;
+    size_t pos;
     size_t title_start = NPOS;
     if ((fFastaFlags & CFastaReader::fNoParseID)) {
         title_start = start;
-        return;
     }
-
-
-    string id_string;
-    size_t pos;
+    else 
+    {
     // This loop finds the end of the sequence ID
-    for ( pos = start;  pos < len;  ++pos) {
-        unsigned char c = defline[pos];
+        for ( pos = start;  pos < len;  ++pos) {
+            unsigned char c = defline[pos];
                 
-        if (c <= ' ' ) { // assumes ASCII
-            break;
-        } else if( c == '[' ) {
-
-        // see if this is part of a FASTA mod, which
-        // implies a pattern like "[key=value]".  We only check
-        // that it looks *roughly* like a FASTA mod and only before the '='
-        //
-        // It might be worth it to put the body of this "if" into its own function,
-        // for clarity if nothing else.
-
-        const size_t left_bracket_pos = pos;
-        ++pos;
-
-        // arbitrary, but shouldn't be too much bigger than the largest possible mod key for efficiency
-        const static size_t kMaxCharsToLookAt = 30; 
-        // we give up much sooner than the length of the string, if the string is long.
-        // also note that we give up *before* the end so even if pos
-        // reaches bracket_give_up_pos, we can still say defline[pos] without worrying
-        // about array-out-of-bounds issues.
-        const size_t bracket_give_up_pos = min(len - 1, kMaxCharsToLookAt);
-            // keep track of the first space we find, because that becomes the end of the seqid
-            // if this turns out not to be a FASTA mod.
-            size_t first_space_pos = kMax_UI4;
-
-            // find the end of the key
-            for( ; pos < bracket_give_up_pos ; ++pos ) {
-                const unsigned char c = defline[pos];
-                if( c == '=' ) {
-                    break;
-                } else if( c <= ' ' ) {
-                    first_space_pos = min(first_space_pos, pos);
-                    // keep going
-                } else if( isalnum(c) || c == '-' || c == '_' ) {
-                    // this is fine; keep going
-                } else {
-                    // bad character, so this is NOT a FASTA mod
-                    break;
-                }
-            }
-
-            if( defline[pos] == '=' ) {
-                // this seems to be a FASTA mod, so consider the left square bracket
-                // to be the end of the seqid
-                pos = left_bracket_pos;
+            if (c <= ' ' ) { // assumes ASCII
                 break;
-            } else {
-                // if we stopped on anything but an equal sign, this is NOT a 
-                // FASTA mod.
-                if( first_space_pos < len ) {
-                    // If we've found a space at any point, we consider that the end of the seq-id
-                    pos = first_space_pos;
-                    break;
+            } else if( c == '[' ) {
+
+            // see if this is part of a FASTA mod, which
+            // implies a pattern like "[key=value]".  We only check
+            // that it looks *roughly* like a FASTA mod and only before the '='
+            //
+            // It might be worth it to put the body of this "if" into its own function,
+            // for clarity if nothing else.
+
+            const size_t left_bracket_pos = pos;
+            ++pos;
+
+                // arbitrary, but shouldn't be too much bigger than the largest possible mod key for efficiency
+                const static size_t kMaxCharsToLookAt = 30; 
+                // we give up much sooner than the length of the string, if the string is long.
+                // also note that we give up *before* the end so even if pos
+                // reaches bracket_give_up_pos, we can still say defline[pos] without worrying
+                // about array-out-of-bounds issues.
+                const size_t bracket_give_up_pos = min(len - 1, kMaxCharsToLookAt);
+                // keep track of the first space we find, because that becomes the end of the seqid
+                // if this turns out not to be a FASTA mod.
+                size_t first_space_pos = kMax_UI4;
+
+                // find the end of the key
+                for( ; pos < bracket_give_up_pos ; ++pos ) {
+                    const unsigned char c = defline[pos];
+                    if( c == '=' ) {
+                        break;
+                    } else if( c <= ' ' ) {
+                        first_space_pos = min(first_space_pos, pos);
+                        // keep going
+                    } else if( isalnum(c) || c == '-' || c == '_' ) {
+                        // this is fine; keep going
+                    } else {
+                        // bad character, so this is NOT a FASTA mod
+                        break;
+                    }
                 }
 
-                // it's not a FASTA mod and we didn't find any spaces, so just
-                // keep going as normal, continuing from where we let off at "pos"
+                if( defline[pos] == '=' ) {
+                    // this seems to be a FASTA mod, so consider the left square bracket
+                    // to be the end of the seqid
+                    pos = left_bracket_pos;
+                    break;
+                } else {
+                    // if we stopped on anything but an equal sign, this is NOT a 
+                    // FASTA mod.
+                    if( first_space_pos < len ) {
+                        // If we've found a space at any point, we consider that the end of the seq-id
+                        pos = first_space_pos;
+                        break;
+                    }
+
+                    // it's not a FASTA mod and we didn't find any spaces, so just
+                    // keep going as normal, continuing from where we let off at "pos"
+                }
             }
         }
+
+        range_len = ParseRange(defline.substr(start, pos - start),
+            rangeStart, rangeEnd, pMessageListener);
+
+        id_string = defline.substr(start, pos - start - range_len);
+        if (NStr::IsBlank(id_string)) {
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "Unable to locate sequence id in definition line", 0);
+        }
+
+        title_start = pos;
+        x_ProcessIDs(id_string,
+            info,
+            ids, 
+            pMessageListener);
+
+        hasRange = (range_len>0);
     }
 
-    range_len = ParseRange(defline.substr(start, pos - start),
-        rangeStart, rangeEnd, pMessageListener);
-
-    id_string = defline.substr(start, pos - start - range_len);
-    if (NStr::IsBlank(id_string)) {
-        NCBI_THROW2(CObjReaderParseException, eFormat, 
-            "Unable to locate sequence id in definition line", 0);
-    }
-
-    title_start = pos;
+    
     // trim leading whitespace from title (is this appropriate?)
     while (title_start < len
         &&  isspace((unsigned char) defline[title_start])) {
@@ -182,13 +190,6 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
             SLineTextAndLoc(
             defline.substr(title_start, pos - title_start), lineNumber));
     }
-
-    x_ProcessIDs(id_string,
-        info,
-        ids, 
-        pMessageListener);
-
-    hasRange = (range_len>0);
 }
 
 
