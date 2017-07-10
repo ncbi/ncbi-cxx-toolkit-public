@@ -1210,6 +1210,11 @@ void CObjectOStreamXml::BeginArrayElement(TTypeInfo elementType)
             TopFrame().SetNotag();
             return;
         }
+        if (m_SkipNextTag && type.GetTypeFamily() == eTypeFamilyPrimitive) {
+            m_Output.PutChar(' ');
+            TopFrame().SetNotag();
+            return;
+        }
     }
     OpenStackTag(0);
 }
@@ -1397,7 +1402,11 @@ void CObjectOStreamXml::EndClass(void)
     if (!m_Attlist && m_LastTagAction != eTagSelfClosed) {
         EolIfEmptyTag();
     }
-    CloseTagIfNamed(TopFrame().GetTypeInfo());
+    if (m_LastTagAction == eTagSelfClosed) {
+        m_LastTagAction = eTagClose;
+    } else {
+        CloseTagIfNamed(TopFrame().GetTypeInfo());
+    }
     x_EndTypeNamespace();
 }
 
@@ -1522,10 +1531,8 @@ void CObjectOStreamXml::WriteClassMemberSpecialCase(const CMemberId& memberId,
         return;
     }
     m_SpecialCaseWrite = how;
-    if (memberId.HasNotag()) {
+    if (memberId.HasNotag() || m_SkipNextTag) {
         x_SpecialCaseWrite();
-        TopFrame().SetNotag();
-        m_LastTagAction = eTagClose;
     } else {
         BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
         OpenStackTag(0);

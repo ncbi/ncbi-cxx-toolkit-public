@@ -866,7 +866,13 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
             UndoClassMember();
             return last;
         }
+    } else {
+        if (classType->GetMembers().GetItemInfo(ind)->GetId().HasNotag()) {
+            TopFrame().SetNotag();
+            m_GotNameless = true;
+        }
     }
+
 /*
     skipping unknown members is not present here
     this method has to do with random order of members, for example in XML attribute list

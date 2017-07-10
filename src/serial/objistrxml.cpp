@@ -1748,7 +1748,9 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
         TTypeInfo type = GetRealTypeInfo(elementType);
         // this is to handle STL containers of primitive types
         if (GetRealTypeFamily(type) == eTypeFamilyPrimitive) {
-            if (!m_RejectedTag.empty()) {
+            if (m_SkipNextTag) {
+                return true;
+            } else if (!m_RejectedTag.empty()) {
                 m_LastPrimitive = m_RejectedTag;
                 return true;
             } else {
@@ -1863,6 +1865,10 @@ void CObjectIStreamXml::BeginArrayElement(TTypeInfo elementType)
         CObjectTypeInfo type(GetRealTypeInfo(elementType));
         if (type.GetTypeFamily() != eTypeFamilyPrimitive ||
             type.GetPrimitiveValueType() == ePrimitiveValueAny) {
+            TopFrame().SetNotag();
+            return;
+        }
+        if (m_SkipNextTag && type.GetTypeFamily() == eTypeFamilyPrimitive) {
             TopFrame().SetNotag();
             return;
         }
