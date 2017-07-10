@@ -35,18 +35,7 @@
 #define VALIDATOR___TAX_VALIDATION_AND_CLEANUP__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_autoinit.hpp>
 
-#include <objmgr/scope.hpp>
-
-#include <objtools/validator/validator.hpp>
-#include <objtools/validator/utilities.hpp>
-
-//#include <objtools/alnmgr/sparse_aln.hpp>
-
-//#include <objmgr/util/create_defline.hpp>
-
-//#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,7 +45,49 @@ class CValidError_imp;
 
 
 // For Taxonomy Lookups and Fixups
+//
+// For validation, we need to be able to look up an Org-ref and determine
+// whether the tax ID in the record is the same as what is returned by
+// the taxonomy service.
+// For cleanup, we want to look up an Org-ref and replace the existing Org-ref
+// in the record with what is returned by the taxonomy service.
+//
+// Several qualifiers other than Org-ref.taxname may also contain scientific names.
+// It is possible that the scientific name is merely a portion of the string.
+// 
+// In the case of specific host, we want to be able to identify names that are
+// mis-spelled or unrecognized. Unfortunately, common names are also 
+// acceptable for specific host, and it can be difficult to detect whether a
+// value is a scientific name or a common name. The current method looks for
+// the string to contain at least two words, the first of which must be capitalized.
+// Unfortunately, this fails for "Rhesus monkey", "Atlantic white-sided dolphin", 
+// and others, and fails to catch the obvious miscapitalization "homo sapiens".
+// See SQD-4325 for ongoing discussion.
+// For validation, these values are reported. For cleanup, we replace the
+// original value with a corrected value where possible.
+//
+// In the case of strain, scientific names should *not* be present in certain
+// situations. For validation, these values will be reported, once TM-725 is
+// resolved.
+// 
+// Often the same value will occur many, many times in the same record, and we
+// would like to avoid redundant lookups.
+// Taxonomy requests should be separated into manageable chunks.
+// In order for the undo commands to work correctly in Genome Workbench, we need
+// a method that allows Genome Workbench to control when the updates are made.
+//
+// Note that Org-refs can be found in both features and source descriptors.
+// It is necessary to record the parents of the Org-refs for which lookups are
+// made and for which lookups of qualifiers are made, in order to report 
+// and/or clean them.
+//
 
+// This base class represents a request for a qualifier value.
+// The same qualifier value will be found in multiple Org-refs, which will
+// be represented in the parents (m_Descs and m_Feats).
+// A single qualifier could have multiple strings to be sent to taxonomy
+// (try the whole value, try just the first two tokens, etc.). These will be
+// represented in m_ValuesToTry.
 class CQualifierRequest : public CObject
 {
 public:
@@ -85,6 +116,8 @@ protected:
     vector<CConstRef<CSeq_feat> > m_Feats;
 };
 
+// Specific host values can be classified as normal, ambiguous, or unrecognized.
+// We can also suggest a better value to use instead.
 class CSpecificHostRequest : public CQualifierRequest
 {
 public:
@@ -136,6 +169,10 @@ private:
 };
 
 
+// The map is used to eliminate duplicate taxonomy requests.
+// The keys used may depend on just the qualifier value or may
+// be a combination of the qualifier value and other values from
+// the Org-ref (in the case of strain, this is sometimes taxname).
 class CQualLookupMap
 {
 public:
@@ -143,18 +180,44 @@ public:
     virtual ~CQualLookupMap() {};
 
     bool IsPopulated() const { return m_Populated; };
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) { return kEmptyStr; };
-    virtual bool Check(const COrg_ref& org) { return true; };
-    virtual CRef<CQualifierRequest> MakeNewRequest(const string& orig_val, const COrg_ref& org) { return CRef<CQualifierRequest>(NULL); };
 
+    // GetKey gets a string key that is used to determine whether the lookup for two Org-refs
+    // will be the same.
+    // * For validating specific hosts, this would be the original value.
+    // * For fixing specific hosts, this would be the original value after default
+    //   fixes have been applied
+    // * For validating strain, this might be the original value or it might be the original
+    //   value plus the organism name.
+    virtual string GetKey(const string& orig_val, const COrg_ref& org) { return kEmptyStr; };
+
+    // Check indicates whether this Org-ref should be examined or ignored.
+    // strain values are ignored for some values of lineage or taxname
+    virtual bool Check(const COrg_ref& org) { return true; };
+
+    // used to add items to be looked up, when appropriate for this
+    // descriptor or feature
     void AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
     void AddFeat(CConstRef<CSeq_feat> feat);
 
+    // GetRequestList returns a list of Org-refs to be sent to taxonomy.
+    // Note that the number of requests may be greater than the number of
+    // values being checked.
     vector<CRef<COrg_ref> > GetRequestList();
+
+    // It is the responsibility of the calling program to chunk the request
+    // list and pass the input and reply to the map until all requests
+    // have responses
     string IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
+
+    // Indicates whether the map is waiting for more responses
     bool IsUpdateComplete() const;
+
+    // Posts errors to the validator based on responses
     void PostErrors(CValidError_imp& imp);
 
+    // Applies the change to an Org-ref. Note that there might be multiple
+    // qualifiers of the same subtype on the Org-ref, and we need to be sure
+    // to apply the change to the correct qualifier
     virtual bool ApplyToOrg(COrg_ref& org) const { return false; }
 
 protected:
@@ -165,6 +228,12 @@ protected:
     bool m_Populated;
 
     TQualifierRequests::iterator x_FindRequest(const string& val);
+
+    // x_MakeNewRequest creates a new CQualifierRequest object for the given pair of orig_val and org
+    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
+    {
+        return CRef<CQualifierRequest>(NULL);
+    };
 };
 
 
@@ -177,7 +246,8 @@ public:
     virtual string GetKey(const string& orig_val, const COrg_ref& org) { return orig_val; };
     virtual bool Check(const COrg_ref& org) { return true; };
 
-    virtual CRef<CQualifierRequest> MakeNewRequest(const string& orig_val, const COrg_ref& org);
+protected:
+    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
 };
 
 class CSpecificHostMapForFix : public CQualLookupMap
@@ -188,12 +258,11 @@ public:
 
     virtual string GetKey(const string& orig_val, const COrg_ref& org) { string host = orig_val; x_DefaultSpecificHostAdjustments(host); return host; };
     virtual bool Check(const COrg_ref& org) { return true; };
-    virtual CRef<CQualifierRequest> MakeNewRequest(const string& orig_val, const COrg_ref& org);
     virtual bool ApplyToOrg(COrg_ref& org) const;
 
 protected:
     static void x_DefaultSpecificHostAdjustments(string& host_val);
-
+    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
 };
 
 
@@ -205,12 +274,19 @@ public:
 
     virtual string GetKey(const string& orig_val, const COrg_ref& org) { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); };
     virtual bool Check(const COrg_ref& org) { return CStrainRequest::Check(org); };
-    virtual CRef<CQualifierRequest> MakeNewRequest(const string& orig_val, const COrg_ref& org);
+
+protected:
+    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
 
 };
 
 typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
 
+// This class handles complete org-ref lookups, specific-host lookups, 
+// and strain lookups.
+// These activities are bundled together in order to avoid doing a scan
+// of the record looking for source features and source descriptors
+// multiple times.
 class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
 {
 public:
@@ -218,11 +294,15 @@ public:
     ~CTaxValidationAndCleanup() {};
 
     void Init(const CSeq_entry& se);
+
+    // for complete Org-ref validation/replacement
     vector< CRef<COrg_ref> > GetTaxonomyLookupRequest() const;
     void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
     bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
                                          vector<CRef<COrg_ref> > org_refs, 
                                          string& error_message) const;
+
+    // for specific host validation/replacement
     vector<CRef<COrg_ref> > GetSpecificHostLookupRequest(bool for_fix);
 
     string IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
@@ -235,13 +315,16 @@ public:
                                             string& error_message);
     bool AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs);
 
+    // for strain validation
     vector<CRef<COrg_ref> > GetStrainLookupRequest();
     string IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
     bool IsStrainMapUpdateComplete() const;
     void ReportStrainErrors(CValidError_imp& imp);
 
+    // Used when reporting a problem contacting the taxonomy service
     CConstRef<CSeq_entry> GetTopReportObject() const;
 
+    // Genome Workbench uses these methods to update individual descriptors and features
     size_t NumDescs() const { return m_SrcDescs.size(); }
     size_t NumFeats() const { return m_SrcFeats.size(); }
 
@@ -262,6 +345,7 @@ protected:
     vector<CConstRef<CSeqdesc> > m_SrcDescs;
     vector<CConstRef<CSeq_entry> > m_DescCtxs;
     vector<CConstRef<CSeq_feat> > m_SrcFeats;
+
     TSpecificHostRequests m_SpecificHostRequests;
     bool m_SpecificHostRequestsBuilt;
     bool m_SpecificHostRequestsUpdated;

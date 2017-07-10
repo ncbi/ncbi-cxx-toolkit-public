@@ -33,14 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/validator/validatorp.hpp>
-#include <objtools/validator/utilities.hpp>
 
 #include <serial/iterator.hpp>
-#include <serial/enumvalues.hpp>
 
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -49,36 +46,15 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/feature.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objects/misc/sequence_macros.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
-
-#include <objtools/error_codes.hpp>
-#include <util/sgml_entity.hpp>
-#include <util/line_reader.hpp>
-#include <util/util_misc.hpp>
-
-#include <algorithm>
-#include <math.h>
-
-#include <serial/iterator.hpp>
 
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 
@@ -363,7 +339,7 @@ void CQualLookupMap::AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx
             string key = GetKey(qual, org);
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
-                m_Map[key] = MakeNewRequest(qual, org);
+                m_Map[key] = x_MakeNewRequest(qual, org);
                 m_Map[key]->AddParent(desc, ctx);
             } else {
                 find->second->AddParent(desc, ctx);
@@ -396,7 +372,7 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
             string key = GetKey(qual, feat->GetData().GetBiosrc().GetOrg());
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
-                m_Map[key] = MakeNewRequest(qual, feat->GetData().GetBiosrc().GetOrg());
+                m_Map[key] = x_MakeNewRequest(qual, feat->GetData().GetBiosrc().GetOrg());
                 m_Map[key]->AddParent(feat);
             } else {
                 find->second->AddParent(feat);
@@ -481,7 +457,7 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 }
 
 
-CRef<CQualifierRequest> CSpecificHostMap::MakeNewRequest(const string& orig_val, const COrg_ref& org)
+CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
     CRef<CQualifierRequest> rq(new CSpecificHostRequest());
     rq->Init(orig_val, org);
@@ -489,7 +465,7 @@ CRef<CQualifierRequest> CSpecificHostMap::MakeNewRequest(const string& orig_val,
 }
 
 
-CRef<CQualifierRequest> CSpecificHostMapForFix::MakeNewRequest(const string& orig_val, const COrg_ref& org)
+CRef<CQualifierRequest> CSpecificHostMapForFix::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
     CRef<CQualifierRequest> rq(new CSpecificHostRequest());
     rq->Init(orig_val, org);
@@ -536,7 +512,7 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 }
 
 
-CRef<CQualifierRequest> CStrainMap::MakeNewRequest(const string& orig_val, const COrg_ref& org)
+CRef<CQualifierRequest> CStrainMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
     CRef<CQualifierRequest> rq(new CStrainRequest());
     rq->Init(orig_val, org);
@@ -807,8 +783,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
     return changed;
 }
 
-#define USE_NEW_METHOD 1
-#ifdef USE_NEW_METHOD
+
 vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetSpecificHostLookupRequest(bool for_fix)
 {
     if (for_fix) {
@@ -823,73 +798,6 @@ vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetSpecificHostLookupRequest(b
         return m_HostMap.GetRequestList();
     }
 }
-#else
-vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetSpecificHostLookupRequest(bool for_fix)
-{
-    if (!m_SpecificHostRequestsBuilt) {
-        x_CreateSpecificHostMap(for_fix);
-    }
-    vector<CRef<COrg_ref> > org_rq_list;
-    ITERATE(TSpecificHostRequests, it, m_SpecificHostRequests) {
-        it->second.AddRequests(org_rq_list);
-    }
-    return org_rq_list;
-}
-
-
-void CTaxValidationAndCleanup::x_CreateSpecificHostMap(bool for_fix)
-{
-    //first do descriptors
-    vector<CConstRef<CSeqdesc> >::const_iterator desc_it = m_SrcDescs.begin();
-    vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = m_DescCtxs.begin();
-    while (desc_it != m_SrcDescs.end() && ctx_it != m_DescCtxs.end()) {
-        FOR_EACH_ORGMOD_ON_BIOSOURCE(mod_it, (*desc_it)->GetSource())
-        {
-            if ((*mod_it)->IsSetSubtype()
-                && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-                && (*mod_it)->IsSetSubname()) {
-                string host_val = (*mod_it)->GetSubname();
-                if (for_fix) {
-                    x_DefaultSpecificHostAdjustments(host_val);
-                }
-                TSpecificHostRequests::iterator find = m_SpecificHostRequests.find(host_val);
-                if (find == m_SpecificHostRequests.end()) {
-                    m_SpecificHostRequests[host_val].Init(host_val, (*desc_it)->GetSource().GetOrg());
-                    m_SpecificHostRequests[host_val].AddParent(*desc_it, *ctx_it);
-                } else {
-                    find->second.AddParent(*desc_it, *ctx_it);
-                }
-            }
-        }
-        ++desc_it;
-        ++ctx_it;
-    }
-    // collect features with specific hosts
-    vector<CConstRef<CSeq_feat> >::const_iterator feat_it = m_SrcFeats.begin();
-    while (feat_it != m_SrcFeats.end()) {
-        FOR_EACH_ORGMOD_ON_BIOSOURCE(mod_it, (*feat_it)->GetData().GetBiosrc())
-        {
-            if ((*mod_it)->IsSetSubtype()
-                && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-                && (*mod_it)->IsSetSubname()) {
-                string host_val = (*mod_it)->GetSubname();
-                if (for_fix) {
-                    x_DefaultSpecificHostAdjustments(host_val);
-                }
-                TSpecificHostRequests::iterator find = m_SpecificHostRequests.find(host_val);
-                if (find == m_SpecificHostRequests.end()) {
-                    m_SpecificHostRequests[host_val].Init(host_val, (*feat_it)->GetData().GetBiosrc().GetOrg());
-                    m_SpecificHostRequests[host_val].AddParent(*feat_it);
-                } else {
-                    find->second.AddParent(*feat_it);
-                }
-            }
-        }
-        ++feat_it;
-    }
-
-}
-#endif
 
 vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetStrainLookupRequest()
 {
@@ -927,7 +835,7 @@ void CTaxValidationAndCleanup::x_CreateStrainMap()
     m_StrainRequestsBuilt = true;
 }
 
-#ifdef USE_NEW_METHOD
+
 void CTaxValidationAndCleanup::ReportSpecificHostErrors(CValidError_imp& imp)
 {
     m_HostMap.PostErrors(imp);
@@ -973,56 +881,6 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_re
 }
 
 
-#else
-void CTaxValidationAndCleanup::ReportSpecificHostErrors(CValidError_imp& imp)
-{
-    TSpecificHostRequests::iterator rq_it = m_SpecificHostRequests.begin();
-    while (rq_it != m_SpecificHostRequests.end()) {
-        rq_it->second.PostErrors(imp);
-        ++rq_it;
-    }
-}
-
-
-void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp)
-{
-    string error_message;
-    if (!m_SpecificHostRequestsUpdated) {
-        x_UpdateSpecificHostMapWithReply(reply, error_message);
-        m_SpecificHostRequestsUpdated = true;
-    }
-    if (!NStr::IsBlank(error_message)) {
-        imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, error_message, *(GetTopReportObject()));
-        return;
-    }
-
-    ReportSpecificHostErrors(imp);
-}
-
-bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
-(const CTaxon3_reply& reply, 
- vector<CRef<COrg_ref> > org_refs, 
- string& error_message)
-{
-    if (!m_SpecificHostRequestsUpdated) {
-        x_UpdateSpecificHostMapWithReply(reply, error_message);
-        m_SpecificHostRequestsUpdated = true;
-    }
-    return AdjustOrgRefsForSpecificHosts(org_refs);
-}
-
-
-bool CTaxValidationAndCleanup::AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs)
-{
-    bool changed = false;
-    NON_CONST_ITERATE(vector<CRef<COrg_ref> >, org, org_refs) {
-        changed |= x_ApplySpecificHostMap(**org);
-    }
-    return changed;
-}
-#endif
-
-
 TSpecificHostRequests::iterator CTaxValidationAndCleanup::x_FindHostFixRequest(const string& val)
 {
     TSpecificHostRequests::iterator map_it = m_SpecificHostRequests.find(val);
@@ -1039,7 +897,7 @@ TSpecificHostRequests::iterator CTaxValidationAndCleanup::x_FindHostFixRequest(c
     return m_SpecificHostRequests.end();
 }
 
-#ifdef USE_NEW_METHOD
+
 string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
 {
     string error_message;
@@ -1065,47 +923,6 @@ bool CTaxValidationAndCleanup::IsSpecificHostMapUpdateComplete() const
         return false;
     }
 }
-#else
-string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
-{
-    string error_message = kEmptyStr;
-    CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
-    vector<CRef<COrg_ref> >::const_iterator rq_it = input.begin();
-
-    while (reply_it != reply.GetReply().end() && rq_it != input.end()) {
-        TSpecificHostRequests::iterator map_it = x_FindHostFixRequest((*rq_it)->GetTaxname());
-        if (map_it == m_SpecificHostRequests.end()) {
-            error_message = "Unexpected taxonomy response for " + (*rq_it)->GetTaxname();
-            return error_message;
-        }
-        map_it->second.AddReply(**reply_it);
-        ++rq_it;
-        ++reply_it;
-    }
-
-    if (reply_it != reply.GetReply().end()) {
-        error_message = "Unexpected taxonomy responses for specific host";
-    } else {
-        if (IsSpecificHostMapUpdateComplete()) {
-            m_SpecificHostRequestsUpdated = true;
-        }
-    }
-    return kEmptyStr;
-}
-
-bool CTaxValidationAndCleanup::IsSpecificHostMapUpdateComplete() const
-{
-    TSpecificHostRequests::const_iterator rq_it = m_SpecificHostRequests.cbegin();
-    while (rq_it != m_SpecificHostRequests.cend()) {
-        if (rq_it->second.NumRemainingReplies() > 0) {
-            return false;
-            break;
-        }
-        ++rq_it;
-    }
-    return true;
-}
-#endif
 
 
 void CTaxValidationAndCleanup::x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message)
