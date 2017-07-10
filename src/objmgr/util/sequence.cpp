@@ -1163,6 +1163,11 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
             // multi-accession location, can't do this check
             return CConstRef<CSeq_feat>(NULL);
         }
+        if (!bsh)
+        {
+            return CConstRef<CSeq_feat>(NULL);
+        }
+
         CTSE_Handle tse = bsh.GetTSE_Handle();
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
             if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
