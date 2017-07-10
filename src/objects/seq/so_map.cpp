@@ -955,7 +955,8 @@ bool CSoMap::xMapMiscRecomb(
     };
     string recomb_class = feature.GetNamedQual("recombination_class");
     if (recomb_class.empty()) {
-        return false;
+        so_type = "recombination_region";
+        return true;
     }
     auto cit = mapRecombClassToSoType.find(recomb_class);
     if (cit == mapRecombClassToSoType.end()) {
@@ -1008,7 +1009,8 @@ bool CSoMap::xMapNcRna(
         }
     }
     if (ncrna_class.empty()) {
-        return false;
+        ncrna_class = "ncRNA";
+        return true;
     }
     auto cit = mapNcRnaClassToSoType.find(ncrna_class);
     if (cit == mapNcRnaClassToSoType.end()) {
@@ -1037,7 +1039,8 @@ bool CSoMap::xMapRegulatory(
     };
     string regulatory_class = feature.GetNamedQual("regulatory_class");
     if (regulatory_class.empty()) {
-        return false;
+        so_type = "regulatory_region";
+        return true;
     }
     auto cit = mapRegulatoryClassToSoType.find(regulatory_class);
     if (cit == mapRegulatoryClassToSoType.end()) {
