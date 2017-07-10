@@ -409,7 +409,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     CNcbiOstream& methods = code.Methods();
     CNcbiOstream& inlineMethods = code.InlineMethods();
 
-#if 0
+#if 1
     if ( wrapperClass ) {
         const SMemberInfo& info = m_Members.front();
         if ( info.type->CanBeCopied() && !x_IsNullType(m_Members.begin()) ) {

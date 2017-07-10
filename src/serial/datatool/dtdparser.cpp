@@ -1059,9 +1059,13 @@ CDataType* DTDParser::x_Type(
                     }
                     base = b->second.GetTypeName();
                 }
-                type = new CReferenceDataType(base);
-                type->SetIsAlias(true);
-                type->SetIsTypeAlias(true);
+                if (node.IsNillable()) {
+                    type = NillableBlock(node,ignoreAttrib);
+                } else {
+                    type = new CReferenceDataType(base);
+                    type->SetIsAlias(true);
+                    type->SetIsTypeAlias(true);
+                }
             }
             break;
         case DTDElement::eEnum:
