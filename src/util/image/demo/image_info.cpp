@@ -43,7 +43,7 @@ USING_NCBI_SCOPE;
 
 
 
-class CImageTestApp : public CNcbiApplication
+class CImageDemoApp : public CNcbiApplication
 {
 public:
     virtual void Init(void);
@@ -57,7 +57,7 @@ public:
 //  Init test for all different types of arguments
 
 
-void CImageTestApp::Init(void)
+void CImageDemoApp::Init(void)
 {
     // Create command-line argument descriptions class
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -76,7 +76,7 @@ void CImageTestApp::Init(void)
 
 
 
-int CImageTestApp::Run(void)
+int CImageDemoApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
@@ -121,7 +121,7 @@ int CImageTestApp::Run(void)
 //  Cleanup
 
 
-void CImageTestApp::Exit(void)
+void CImageDemoApp::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -135,5 +135,5 @@ void CImageTestApp::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CImageTestApp().AppMain(argc, argv);
+    return CImageDemoApp().AppMain(argc, argv);
 }
