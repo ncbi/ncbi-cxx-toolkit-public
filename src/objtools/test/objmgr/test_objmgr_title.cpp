@@ -48,14 +48,14 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
-class CTitleTester : public CNcbiApplication
+class CObjmgrTitleTestApplication : public CNcbiApplication
 {
     virtual void Init(void);
     virtual int  Run(void);
 };
 
 
-void CTitleTester::Init(void)
+void CObjmgrTitleTestApplication::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -71,7 +71,7 @@ void CTitleTester::Init(void)
 }
 
 
-int CTitleTester::Run(void)
+int CObjmgrTitleTestApplication::Run(void)
 {
     const CArgs&   args = GetArgs();
     CObjectManager objmgr;
@@ -103,5 +103,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    return CTitleTester().AppMain(argc, argv);
+    return CObjmgrTitleTestApplication().AppMain(argc, argv);
 }
