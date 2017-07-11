@@ -36,6 +36,8 @@
 
 #include "netservice_params.hpp"
 
+#include <unordered_map>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -261,7 +263,7 @@ public:
     };
 
     using TValuePtr = shared_ptr<SValue>;
-    using TValues = map<string, map<string, TValuePtr>>;
+    using TValues = unordered_map<string, unordered_map<string, TValuePtr>>;
 
     bool Has(const SRegSynonyms& sections, SRegSynonyms names);
     TValuePtr Get(const SRegSynonyms& sections, SRegSynonyms names);
