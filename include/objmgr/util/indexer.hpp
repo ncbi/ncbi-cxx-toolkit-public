@@ -128,6 +128,9 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn, int from, int to, bool rev_comp);
     CRef<CBioseqIndex> GetBioseqIndex (int from, int to, bool rev_comp);
 
+    // Seqset exploration iterator
+    template<typename Fnc> size_t IterateSeqsets (Fnc m);
+
     // Getters
     CRef<CObjectManager> GetObjectManager (void) const { return m_Objmgr; }
     CRef<CScope> GetScope (void) const { return m_Scope; }
@@ -528,6 +531,20 @@ size_t CSeqEntryIndex::IterateBioseqs (Fnc m)
     int count = 0;
     for (auto& bsx : m_BsxList) {
         m(*bsx);
+        count++;
+    }
+    return count;
+}
+
+// Visit CSeqsetIndex objects for all Seqsets
+template<typename Fnc>
+inline
+size_t CSeqEntryIndex::IterateSeqsets (Fnc m)
+
+{
+    int count = 0;
+    for (auto& ssx : m_SsxList) {
+        m(*ssx);
         count++;
     }
     return count;
