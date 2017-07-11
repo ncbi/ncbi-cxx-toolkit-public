@@ -7108,21 +7108,32 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadAltitude",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadAltitude",
                               "bad altitude qualifier value 123"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // raise to error
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options | CValidator::eVal_genome_submission);
+    CheckErrors(*eval, expected_errors);
+
+
     CLEAR_ERRORS
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 ft.");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadAltitude",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadAltitude",
                               "bad altitude qualifier value 123 ft."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    // raise to error
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options | CValidator::eVal_genome_submission);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 

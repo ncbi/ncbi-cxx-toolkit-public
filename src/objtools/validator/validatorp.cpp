@@ -438,6 +438,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_BioSourceNeedsChromosome,
     eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
     eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
+    eErr_SEQ_DESCR_BadAltitude,
     eErr_GENERIC_MissingPubInfo,
     eErr_GENERIC_UnnecessaryPubEquiv,
     eErr_GENERIC_CollidingSerialNumbers,

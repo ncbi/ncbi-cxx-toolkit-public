@@ -619,7 +619,7 @@ const CSeq_entry *ctx)
                 if ((*ssit)->IsSetName()) {
                     val = (*ssit)->GetName();
                 }
-                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_BadAltitude,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadAltitude,
                     "bad altitude qualifier value " + val,
                     obj, ctx);
             }
