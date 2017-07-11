@@ -178,6 +178,16 @@ void GetPubTitleAndAuthors(const CPub& pub, string& title, string & authors)
                 authors = GetAuthorString(pub.GetPatent().GetAuthors());
             }
             break;
+        case CPub::e_Man:
+            if (pub.GetMan().IsSetCit()) {
+                if (pub.GetMan().GetCit().IsSetTitle()) {
+                    title = pub.GetMan().GetCit().GetTitle().GetTitle();
+                }
+                if (pub.GetMan().GetCit().IsSetAuthors()) {
+                    authors = GetAuthorString(pub.GetMan().GetCit().GetAuthors());
+                }
+            }
+            break;
         default:
             break;
     }
