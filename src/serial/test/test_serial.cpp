@@ -211,6 +211,8 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
             CObjectTypeInfo(type_info).SetPathWriteHook(
                 os.get(), "CTestSerialObject.*", new CWriteSerialObjectHook(&obj));
             *os << obj;
+            CObjectTypeInfo(type_info).SetPathWriteHook(
+                os.get(), "CTestSerialObject.*", NULL);
         }
 		data = CNcbiOstrstreamToString(ostrs);
 		buf = data.c_str();
