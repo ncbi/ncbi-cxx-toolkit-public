@@ -649,7 +649,11 @@ bool CReaderBase::xIsTrackTerminator(
     const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
-    return (NStr::TruncateSpaces(strLine) == "###");
+    auto line = NStr::TruncateSpaces(strLine);
+    if (NStr::StartsWith(line, "##sequence-region")) {
+        return true;
+    }
+    return (line == "###");
 }
 
 //  ----------------------------------------------------------------------------
@@ -666,6 +670,11 @@ bool CReaderBase::xGetLine(
     string& line)
 //  ----------------------------------------------------------------------------
 {
+    if (!m_PendingLine.empty()) {
+        line = m_PendingLine;
+        m_PendingLine.clear();
+        return true;
+    }
     CTempString temp;
     while (!lr.AtEOF()) {
         temp = *++lr;

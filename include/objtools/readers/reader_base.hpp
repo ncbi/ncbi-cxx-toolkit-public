@@ -328,6 +328,7 @@ protected:
     TReaderFlags       m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
+    string m_PendingLine;
 
     CTrackData*  m_pTrackDefaults;
     ILineReader* m_pReader;

@@ -181,7 +181,8 @@ CGff2Reader::ReadSeqAnnot(
             return pAnnot;
         }
         xReportProgress(pEC);
-        if ( xParseStructuredComment(line) ) {
+        if ( xParseStructuredComment(line)  
+                &&  !NStr::StartsWith(line, "##sequence-region") ) {
             continue;
         }
         if (xIsTrackLine(line)) {
@@ -189,9 +190,20 @@ CGff2Reader::ReadSeqAnnot(
                 xParseTrackLine(line, pEC);
                 continue;
             }
-            xUngetLine(lr);
+            m_PendingLine = line;
             break;
         }
+        if (xIsTrackTerminator(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine("track", pEC);
+                continue;
+            }
+            //if (line == "###") {
+            //    m_PendingLine = "track";
+            //}
+            break;
+        }
+
         if (xParseBrowserLine(line, pAnnot, pEC)) {
             continue;
         }
@@ -371,7 +383,10 @@ bool CGff2Reader::xParseStructuredComment(
     const string& strLine)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! NStr::StartsWith( strLine, "##" ) ) {
+    if (NStr::StartsWith(strLine, "###")) {
+        return false;
+    }
+    if (!NStr::StartsWith( strLine, "##")) {
         return false;
     }
     return true;
