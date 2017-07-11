@@ -597,9 +597,12 @@ saved_path="\$PATH"
 FEATURES="$x_features"
 export FEATURES
 
-# Redirect output for C++ diagnostic framework to stderr
-NCBI_CONFIG__LOG__FILE="-"
-export NCBI_CONFIG__LOG__FILE
+# Redirect output for C++ diagnostic framework to stderr,
+# except if using under 'export_project' tool.
+if test -z "\$NCBI_EXPORT_PROJECT"; then
+    NCBI_CONFIG__LOG__FILE="-"
+    export NCBI_CONFIG__LOG__FILE
+fi
 
 # Export bin and lib paths
 export CFG_BIN="\${build_dir}/\${build_tree}/bin/\${build_cfg}"

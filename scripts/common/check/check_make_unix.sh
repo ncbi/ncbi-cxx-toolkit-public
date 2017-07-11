@@ -342,9 +342,12 @@ export top_srcdir
 FEATURES="$x_features"
 export FEATURES
 
-# Redirect output for C++ diagnostic framework to stderr
-NCBI_CONFIG__LOG__FILE="-"
-export NCBI_CONFIG__LOG__FILE
+# Redirect output for C++ diagnostic framework to stderr,
+# except if using under 'export_project' tool.
+if test -z "\$NCBI_EXPORT_PROJECT"; then
+    NCBI_CONFIG__LOG__FILE="-"
+    export NCBI_CONFIG__LOG__FILE
+fi
 
 # Add additional necessaary directories to PATH: current, build, scripts, utility.
 PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\${PATH}"
