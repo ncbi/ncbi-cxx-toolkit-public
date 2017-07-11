@@ -22,7 +22,7 @@ ENDIF()
 
 if (APPLE)
   add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
-else (APPLE)
+elseif (UNIX)
   add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
 endif (APPLE)
 

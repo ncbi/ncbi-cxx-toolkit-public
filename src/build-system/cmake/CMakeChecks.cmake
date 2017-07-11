@@ -84,12 +84,13 @@ if(WIN32)
     set(ENV{FREETYPE_DIR} "${FREETYPE_ROOT}")
 
     set(FTGL_ROOT "${WIN32_PACKAGE_ROOT}/ftgl-2.1.3_rc5")
+    set(LZO_ROOT "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib")
 
     set(CMAKE_PREFIX_PATH
         ${CMAKE_PREFIX_PATH}
         "${PCRE_PKG_ROOT}"
         "${GNUTLS_ROOT}"
-        "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib"
+        "${LZO_ROOT}"
         "${GIF_ROOT}"
         "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32"
         "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32"

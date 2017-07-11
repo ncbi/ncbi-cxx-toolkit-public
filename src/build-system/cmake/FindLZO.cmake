@@ -16,14 +16,10 @@ else (LZO_INCLUDE_DIR AND LZO_LIBRARIES)
 	)
 
 	if(WIN32 AND MSVC)
-		FIND_LIBRARY(LZO_LIBRARIES NAMES lzo2
+		FIND_LIBRARY(LZO_LIBRARIES NAMES liblzo
 			PATHS
 			${CMAKE_PREFIX_PATH}
 			${LZO_ROOT}/lib
-			/usr/lib
-			/usr/local/lib
-			/sw/lib
-			/sw/local/lib
 		)
 	endif(WIN32 AND MSVC)
 
