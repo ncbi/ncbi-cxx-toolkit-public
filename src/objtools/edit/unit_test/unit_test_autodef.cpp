@@ -2222,5 +2222,21 @@ BOOST_AUTO_TEST_CASE(Test_HumanSTR)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_7071)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> intron = unit_test_util::AddMiscFeature(entry);
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetComment("group A");
+
+    string defline = "Sebaea microphylla intron.";
+    AddTitle(entry, defline);
+
+    CheckDeflineMatches(entry);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

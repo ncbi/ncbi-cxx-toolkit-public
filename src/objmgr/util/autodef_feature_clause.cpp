@@ -653,7 +653,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             product_name = comment;
             return true;
         }
-    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tmRNA) {
+    } else if (subtype == CSeqFeatData::eSubtype_tmRNA) {
         product_name = "tmRNA";
         return true;
     } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
@@ -662,9 +662,9 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             product_name = m_MainFeat.GetComment();
         }
         return true;
-    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_regulatory) {
+    } else if (subtype == CSeqFeatData::eSubtype_regulatory) {
         return true;
-    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_recomb) {
+    } else if (subtype == CSeqFeatData::eSubtype_misc_recomb) {
         if (m_MainFeat.IsSetQual()) {
             ITERATE(CSeq_feat::TQual, q, m_MainFeat.GetQual()) {
                 if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "recombination_class") &&
@@ -676,6 +676,8 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
         s_UseCommentBeforeSemicolon(m_MainFeat, product_name);
         return true;
+    } else if (subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_intron) {
+        return x_GetExonDescription(product_name);
     } else {
         string label;
         
@@ -691,11 +693,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         
         if (NStr::IsBlank(label)) {                    
             feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
-            if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
-                || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
-                || (subtype != CSeqFeatData::eSubtype_exon && subtype != CSeqFeatData::eSubtype_intron)) {
-                label = "";
-            }
         }
         if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
             || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
@@ -736,20 +733,8 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
             }
         }
     }
-
-    string label;
-    feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
-
-    if ((subtype == CSeqFeatData::eSubtype_exon && 
-         (NStr::Equal(label, "exon") || NStr::Equal(label, "[exon]")))
-        || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
-        || (subtype != CSeqFeatData::eSubtype_exon && subtype != CSeqFeatData::eSubtype_intron)) {
-        description = "";
-        return false;
-    } else {
-        description = label;
-        return true;
-    }
+    description = kEmptyStr;
+    return false;
 }
 
 
