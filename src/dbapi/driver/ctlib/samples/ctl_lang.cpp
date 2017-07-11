@@ -45,31 +45,31 @@
 USING_NCBI_SCOPE;
 
 
-class CDemoApp : public CDbapiDriverSampleApp
+class CCtlLibDemoAPp : public CDbapiDriverSampleApp
 {
 public:
-    CDemoApp(const string& server_name,
+    CCtlLibDemoAPp(const string& server_name,
               int tds_version = GetCtlibTdsVersion());
-    virtual ~CDemoApp(void);
+    virtual ~CCtlLibDemoAPp(void);
 
     virtual int RunSample(void);
 };
 
 
-CDemoApp::CDemoApp(const string& server_name, int tds_version) :
+CCtlLibDemoAPp::CCtlLibDemoAPp(const string& server_name, int tds_version) :
     CDbapiDriverSampleApp(server_name, tds_version)
 {
 }
 
 
-CDemoApp::~CDemoApp(void)
+CCtlLibDemoAPp::~CCtlLibDemoAPp(void)
 {
     return;
 }
 
 
 int
-CDemoApp::RunSample(void)
+CCtlLibDemoAPp::RunSample(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
@@ -126,6 +126,6 @@ CDemoApp::RunSample(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp("DBAPI_DEV3").AppMain(argc, argv);
+    return CCtlLibDemoAPp("DBAPI_DEV3").AppMain(argc, argv);
 }
 

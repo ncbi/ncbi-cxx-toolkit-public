@@ -41,10 +41,10 @@
 USING_NCBI_SCOPE;
 
 
-class CDemoApp : public CNcbiApplication
+class CMysqlDemoApp : public CNcbiApplication
 {
 public:
-    virtual ~CDemoApp(void) {}
+    virtual ~CMysqlDemoApp(void) {}
 
     virtual void Init(void);
     virtual int Run(void);
@@ -52,7 +52,7 @@ public:
 
 
 void
-CDemoApp::Init()
+CMysqlDemoApp::Init()
 {
     // Create command-line argument descriptions class
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -86,7 +86,7 @@ CDemoApp::Init()
 
 
 int
-CDemoApp::Run(void)
+CMysqlDemoApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
@@ -216,7 +216,7 @@ CDemoApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp().AppMain(argc, argv);
+    return CMysqlDemoApp().AppMain(argc, argv);
 }
 
 

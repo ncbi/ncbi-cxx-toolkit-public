@@ -41,16 +41,16 @@
 USING_NCBI_SCOPE;
 
 
-class CDemoApp : public CNcbiApplication
+class CDblibSpwhoDemoApp : public CNcbiApplication
 {
 public:
-    virtual ~CDemoApp(void) {}
+    virtual ~CDblibSpwhoDemoApp(void) {}
 
     virtual int Run(void);
 };
 
 int
-CDemoApp::Run(void)
+CDblibSpwhoDemoApp::Run(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
@@ -106,7 +106,7 @@ CDemoApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp().AppMain(argc, argv);
+    return CDblibSpwhoDemoApp().AppMain(argc, argv);
 }
 
 

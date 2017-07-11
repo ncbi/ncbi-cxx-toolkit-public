@@ -42,10 +42,10 @@
 USING_NCBI_SCOPE;
 
 
-class CNCBITestApp : public CNcbiApplication
+class CTestConnStreamPushbackApp : public CNcbiApplication
 {
 public:
-    CNCBITestApp(void);
+    CTestConnStreamPushbackApp(void);
 
 public:
     int Run(void);
@@ -55,7 +55,7 @@ private:
 };
 
 
-CNCBITestApp::CNCBITestApp(void)
+CTestConnStreamPushbackApp::CTestConnStreamPushbackApp(void)
 {
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -70,7 +70,7 @@ CNCBITestApp::CNCBITestApp(void)
 }
 
 
-int CNCBITestApp::Run(void)
+int CTestConnStreamPushbackApp::Run(void)
 {
     const CNcbiArguments& app_args = GetArguments();
     m_Seed = app_args.Size() > 1
@@ -94,5 +94,5 @@ int CNCBITestApp::Run(void)
 
 int main(int argc, char* argv[])
 {
-    return CNCBITestApp().AppMain(argc, argv);
+    return CTestConnStreamPushbackApp().AppMain(argc, argv);
 }

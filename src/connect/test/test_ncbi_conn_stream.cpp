@@ -58,6 +58,24 @@ static const size_t kBufferSize = 512 * 1024;
 USING_NCBI_SCOPE;
 
 
+static void s_CreateRegistry(void)
+{
+    CNcbiRegistry* reg = &CNcbiApplication::Instance()->GetConfig();
+
+    // Populate test registry
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "10.0");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+}
+
+
 static inline unsigned long udiff(unsigned long a, unsigned long b)
 {
     return a > b ? a - b : b - a;
@@ -84,18 +102,21 @@ static bool s_GetFtpCreds(string& user, string& pass)
 }
 
 
-class CNCBITestApp : public CNcbiApplication
+class CNCBITestConnStreamApp : public CNcbiApplication
 {
 public:
-    CNCBITestApp(void);
+    CNCBITestConnStreamApp(void);
 
 public:
     void Init(void);
     int  Run (void);
+
+private:
+    unsigned int m_Seed;
 };
 
 
-CNCBITestApp::CNCBITestApp(void)
+CNCBITestConnStreamApp::CNCBITestConnStreamApp(void)
 {
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -110,7 +131,7 @@ CNCBITestApp::CNCBITestApp(void)
 }
 
 
-void CNCBITestApp::Init(void)
+void CNCBITestConnStreamApp::Init(void)
 {
     // Init the library explicitly (this sets up the registry)
     {
@@ -118,24 +139,11 @@ void CNCBITestApp::Init(void)
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    
-    // Create and populate test registry
-    CNcbiRegistry& reg = GetRWConfig();
-
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "10.0");
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+    s_CreateRegistry();
 }
 
 
-int CNCBITestApp::Run(void)
+int CNCBITestConnStreamApp::Run(void)
 {
     TFTP_Flags flag = 0;
     SConnNetInfo* net_info;
@@ -366,8 +374,8 @@ int CNCBITestApp::Run(void)
         size = 0;
         while (size < (10<<20)  &&  upload.good()) {
             char buf[4096];
-            n = (size_t) rand() % sizeof(buf) + 1;
-            for (i = 0;  i < n;  i++)
+            size_t n = (size_t) rand() % sizeof(buf) + 1;
+            for (size_t i = 0;  i < n;  i++)
                 buf[i] = rand() & 0xFF;
             if (upload.write(buf, n))
                 size += n;
@@ -684,5 +692,5 @@ int CNCBITestApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CNCBITestApp().AppMain(argc, argv);
+    return CNCBITestConnStreamApp().AppMain(argc, argv);
 }

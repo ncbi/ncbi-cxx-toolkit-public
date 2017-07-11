@@ -179,7 +179,7 @@ void* CBDB_BVTestThread::Main(void)
 ///
 /// @internal
 ///
-class CBDB_TestThreads : public CNcbiApplication
+class CBDB_TestBVStore : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -187,7 +187,7 @@ public:
 };
 
 
-void CBDB_TestThreads::Init(void)
+void CBDB_TestBVStore::Init(void)
 {
     SetDiagTrace(eDT_Enable);
 
@@ -214,7 +214,7 @@ void CBDB_TestThreads::Init(void)
 }
 
 
-int CBDB_TestThreads::Run(void)
+int CBDB_TestBVStore::Run(void)
 {
     const CArgs& args = GetArgs();
 
@@ -361,5 +361,5 @@ int CBDB_TestThreads::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBDB_TestThreads().AppMain(argc, argv);
+    return CBDB_TestBVStore().AppMain(argc, argv);
 }

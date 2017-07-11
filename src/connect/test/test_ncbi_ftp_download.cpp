@@ -378,7 +378,7 @@ size_t CUntarProcessor::Run(void)
         return 0;
     }
 
-    unique_ptr<CTar::TEntries> filelist;
+    auto_ptr<CTar::TEntries> filelist;
     try {  // NB: CTar *loves* exceptions, for some weird reason :-/
         filelist = m_Tar->List();  // NB: can be tar.Extract() as well
     } NCBI_CATCH_ALL("TAR Error");
@@ -556,7 +556,8 @@ static void s_TryAskFtpFilesize(CNcbiIostream& ios, const char* filename)
 }
 
 
-static void s_InitiateFtpRetrieval(CConn_IOStream& ftp, const char* name)
+static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
+                                   const char*     name)
 {
     // RETR must be understood by all FTP implementations
     // LIST command obtains non-machine readable output
@@ -571,10 +572,10 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& ftp, const char* name)
 }
 
 
-class CNCBITestApp : public CNcbiApplication
+class CTestFTPDownloadAPp : public CNcbiApplication
 {
 public:
-    CNCBITestApp(void);
+    CTestFTPDownloadAPp(void);
 
 public:
     void Init(void);
@@ -582,7 +583,7 @@ public:
 };
 
 
-CNCBITestApp::CNCBITestApp(void)
+CTestFTPDownloadAPp::CTestFTPDownloadAPp(void)
 {
     // Setup error posting
     SetDiagTrace(eDT_Enable);
@@ -599,7 +600,7 @@ CNCBITestApp::CNCBITestApp(void)
 #if   defined(NCBI_OS_MSWIN)
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #elif defined(NCBI_OS_UNIX)
-    signal(SIGINT,  s_Interrupt);
+    signal(SIGINT, s_Interrupt);
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
@@ -608,7 +609,7 @@ CNCBITestApp::CNCBITestApp(void)
 }
 
 
-void CNCBITestApp::Init(void)
+void CTestFTPDownloadAPp::Init(void)
 {
     // Init the library explicitly (this sets up the registry)
     {
@@ -636,7 +637,7 @@ void CNCBITestApp::Init(void)
 }
 
 
-int CNCBITestApp::Run(void)
+int CTestFTPDownloadAPp::Run(void)
 {
     enum EProcessor {
         fProcessor_Null   = 0,  // Discard all read data
@@ -659,14 +660,11 @@ int CNCBITestApp::Run(void)
         }
     }
 
-    // Initialize all connection parameters for FTP
-    SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
+    // Initialize all connection parameters for FTP and log them out
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
-    if (net_info->http_referer) {
-        free((void*) net_info->http_referer);
-        net_info->http_referer = 0;
-    }
+    net_info->http_referer = 0;
     ConnNetInfo_SetUserHeader(net_info, 0);
 
     if (!ConnNetInfo_ParseURL(net_info, url)) {
@@ -813,7 +811,7 @@ int CNCBITestApp::Run(void)
     size_t files = processor->Run();
 
     // These should not matter, and can be issued in any order
-    // ...so do the "wrong" order on purpose for the proof of concept!
+    // ...so do the "wrong" order on purpose to prove it works!
     _VERIFY(ftp.Close() == eIO_Success);
     delete processor;
 
@@ -844,5 +842,5 @@ int CNCBITestApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CNCBITestApp().AppMain(argc, argv);
+    return CTestFTPDownloadAPp().AppMain(argc, argv);
 }
