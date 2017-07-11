@@ -440,7 +440,7 @@ struct SNetServerImpl::SConnectDeadline
 {
     SConnectDeadline(const STimeout& conn_timeout) :
         try_timeout(Min(conn_timeout , kMaxTryTimeout)),
-        deadline(CTimeout(try_timeout.sec, try_timeout.usec))
+        deadline(CTimeout(conn_timeout.sec, conn_timeout.usec))
     {}
 
     const STimeout* GetRemaining() const { return &try_timeout; }
@@ -452,6 +452,7 @@ struct SNetServerImpl::SConnectDeadline
         if (remaining.IsZero()) return true;
 
         remaining.Get(&try_timeout.sec, &try_timeout.usec);
+        try_timeout = Min(try_timeout, kMaxTryTimeout);
         return false;
     }
 
