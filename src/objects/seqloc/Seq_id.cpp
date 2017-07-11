@@ -2349,11 +2349,15 @@ int CSeq_id::BaseFastaNAScore(void) const
             db.compare("NCBIFILE") == 0 )
             return 240;
         else
-            return 50;
+            return 100;
         }
-    case e_Patent:                             return 40;
-    case e_Gibbsq: case e_Gibbmt: case e_Pdb:  return 30;
-    case e_Other:                              return 15;
+    case e_Patent:                 return 90;
+    case e_Pdb:                    return 80;
+//  see SQD-4175 ticket for priorities 
+    case e_Gibbsq:                 return 72;
+    case e_Gibbmt:                 return 71;
+    case e_Genbank:                return 70;
+    case e_Other:                  return 15;
     default: /* [third party] GB/EMBL/DDBJ */  return 20;
     }
 }
@@ -2378,7 +2382,10 @@ int CSeq_id::BaseFastaAAScore(void) const
     case e_Patent:                 return 80;
     case e_Prf:                    return 70;
     case e_Pdb:                    return 50;
-    case e_Gibbsq: case e_Gibbmt:  return 40;
+//  see SQD-4175 ticket for priorities 
+    case e_Gibbsq:                 return 42;
+    case e_Gibbmt:                 return 41;
+    case e_Genbank:                return 40;
     case e_Pir:                    return 30;
     case e_Swissprot:              return 20;
     case e_Other:                  return 15;
