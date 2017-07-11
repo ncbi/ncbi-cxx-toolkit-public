@@ -1176,7 +1176,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 server = NULL;
         }
 
-        if (!deadline.IsInfinite() &&
+        if (!blob_not_found && !deadline.IsInfinite() &&
                 deadline.GetRemainingTime().GetAsMilliSeconds() <= (server ? 0 : retry_delay)) {
             NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout, "Exceeded max_connection_time=" <<
                     max_total_time.GetAsMilliSeconds() << "; cmd=[" << cmd << "]");
