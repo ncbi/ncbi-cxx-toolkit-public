@@ -7,9 +7,12 @@
 # independent C++ toolkit library
 # These variables capture the split
 
-if (${UNIX})
+if (UNIX)
     set(os_src ${LOCAL_LBSM})
-endif(${UNIX})
+elseif (WIN32)
+    set(os_src ncbi_lbsmd_stub ncbi_strerror)
+endif()
+
 
 set(SRC_TLS ncbi_gnutls ncbi_mbedtls ncbi_tls
     mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse
