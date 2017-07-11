@@ -149,7 +149,7 @@ struct SRegSynonyms : vector<CTempString>
     using TBase = vector<CTempString>;
 
     SRegSynonyms(const char* v) : TBase({v}) {}
-    SRegSynonyms(const string v) : TBase({v}) {}
+    SRegSynonyms(const string& v) : TBase({v}) {}
 
     template <typename T>
     SRegSynonyms(initializer_list<T> l)
