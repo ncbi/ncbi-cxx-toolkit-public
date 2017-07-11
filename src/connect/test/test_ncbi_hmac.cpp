@@ -81,7 +81,7 @@ static const SHASH_Descriptor md5_hash = {
 };
 
 
-class CTestHMacApp : public CNcbiApplication
+class CTestHMACApp : public CNcbiApplication
 {
 public:
     int Run(void)
@@ -170,5 +170,5 @@ int main(int argc, char* argv[])
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-    return CTestHMacApp().AppMain(argc, argv);
+    return CTestHMACApp().AppMain(argc, argv);
 }
