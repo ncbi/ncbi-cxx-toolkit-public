@@ -126,6 +126,62 @@ CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
         : CRef<CTMgr_DisplayTrackReply>();
 }
 
+bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed_ids) noexcept
+{
+    using TStrIDs = vector<string>;
+
+    string delim[3] = {";", ":", ","};
+    TStrIDs vec1;
+
+    NStr::Split(external_id, delim[0], vec1, 0, NULL);
+    for (auto tok1 : vec1)
+    {
+        parsed_ids.push_back(SAlignIds());
+
+        int batch_id = NStr::StringToNumeric<int>(tok1, NStr::fConvErr_NoThrow, 10);
+        if (batch_id != 0) {
+            parsed_ids.back().batch_id = batch_id;
+            continue;
+        }
+
+        TStrIDs vec2;
+        NStr::Split(tok1, delim[1], vec2, 0, NULL);
+
+        int i = -1;
+        for (auto tok2 : vec2)
+        {
+            ++i;
+            if (i % 2 == 0)
+            {
+                int id = NStr::StringToNumeric<int>(tok2, NStr::fConvErr_NoThrow, 10);
+                if (id != 0) {
+                    parsed_ids.back().batch_id = id;
+                    continue;
+                }
+                else if (i % 2 == 0) {
+                    return false;
+                }
+            }
+
+            TStrIDs vec3;
+            NStr::Split(tok2, delim[2], vec3, 0, NULL);
+            for (auto tok3 : vec3)
+            {
+                int align_id = NStr::StringToNumeric<int>(tok3, NStr::fConvErr_NoThrow, 10);
+                if (align_id != 0)
+                {
+                    parsed_ids.back().align_ids.push_back(align_id);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+    }
+    return true;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
