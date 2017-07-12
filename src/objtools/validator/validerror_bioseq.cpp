@@ -5602,7 +5602,7 @@ void CValidError_bioseq::x_ReportInternalPartial(const CSeq_feat& feat)
     } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
         // ignore start/stop not at end in genomic gpipe sequence
     } else {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
             "PartialLocation: Internal partial intervals do not include first/last residue of sequence", feat);
     }
 }
@@ -5827,7 +5827,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     }
                 }
             } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                PostErr (j == 2 ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                     "PartialProduct: " + parterrs[j], *(feat.GetSeq_feat()));
             }
         }
