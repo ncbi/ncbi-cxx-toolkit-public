@@ -696,8 +696,114 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
         seqTitles.clear();
     }
 
+    // The following are examples taken from RW-429
+    {
+        static const string kFastaDefLine =
+            ">contig1AGCTTTTCATTCTGCTGCAATGGG";
+
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.empty() );
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    {
+        static const string kFastaDefLine =
+            ">contig1AGCTTTTCATTCTGCTGCAATGGG";
+
+
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.empty() );
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    {
+        static const string kFastaDefLine = 
+        ">contig1AGCTTTTCATTCTGCTGCAATGGGGGGGGGGGGGGGGGGGGGGG";
+
+        auto pMessageListener = Ref(new CMessageListenerLenient());
+         
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   pMessageListener.GetPointer()); 
+
+
+        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.empty() );
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
 }
 
+BOOST_AUTO_TEST_CASE(TestNoParseIDs) 
+{
+    CFastaReader::SDefLineParseInfo parseInfo;
+    parseInfo.maxIdLength = 40;
+    parseInfo.lineNumber = 0;
+    parseInfo.fFastaFlags = CFastaReader::fNoParseID;
+    parseInfo.fBaseFlags = 0;
+
+    CFastaReader::TIgnoredProblems noIgnoredErrors;
+    list<CRef<CSeq_id>> ids;
+    bool hasRange;
+    TSeqPos rangeStart, rangeEnd;
+    CFastaReader::TSeqTitles seqTitles;
+
+    {
+        static const string kFastaDefLine = 
+            ">seq\n";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK ( ids.size() == 0 );
+        BOOST_CHECK (seqTitles.size() == 1);
+        BOOST_CHECK (seqTitles.front().m_sLineText == "seq");
+        seqTitles.clear();
+    }
+}
 
 
 
@@ -1561,3 +1667,5 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
         BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
     }
 }
+
+
