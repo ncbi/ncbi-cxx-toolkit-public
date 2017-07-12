@@ -41,8 +41,6 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/ncbidbg.hpp> // for _ASSERT
 
-#include <array>
-
 BEGIN_NCBI_SCOPE
 
 
@@ -84,8 +82,9 @@ private:
     CTransmissionReader& operator=(const CTransmissionReader&);
 
 private:
-    struct SReadData : array<char, 256 * 1024>
+    struct SReadData : private vector<char>
     {
+        SReadData() { resize(256 * 1024); }
         template <typename TType = char> inline const TType* Data() const;
         inline size_t DataSize() const;
         inline char* Space();
