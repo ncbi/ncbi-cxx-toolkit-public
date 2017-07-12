@@ -350,6 +350,9 @@ while [ $# != 0 ]; do
         "--without-debug")
             BUILD_TYPE="Release";;
 
+        "--with-symbols")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_DEBUG_SYMBOLS=ON";;
+
         "--with-ccache")
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=ON";;
 

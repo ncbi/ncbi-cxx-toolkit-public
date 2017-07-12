@@ -17,6 +17,9 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     endif()
 ELSE()
     add_definitions(-DNDEBUG)
+    if (NOT "${CMAKE_DEBUG_SYMBOLS}" STREQUAL "")
+        add_definitions(-gdwarf-3)
+    endif()
 ENDIF()
 
 
