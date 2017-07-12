@@ -113,7 +113,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          int                     ofd,
                          size_t                  errbuf_size,
                          CCgiRequest::TFlags     flags)
-    : m_App(app),
+    : m_App(&app),
       m_Request(new CCgiRequest(args ? args : &app.GetArguments(),
                                 env  ? env  : &app.GetEnvironment(),
                                 inp, flags, ifd, errbuf_size)),
@@ -136,7 +136,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiIstream*           is,
                          CNcbiOstream*           os,
                          CCgiRequest::TFlags     flags)
-    : m_App(app),
+    : m_App(&app),
       m_Request(new CCgiRequest()),
       m_Response(os, -1),
       m_SecureMode(eSecure_NotSet),
@@ -148,10 +148,49 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 }
 
 
-void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
+CCgiContext::CCgiContext(ICgiSessionStorage*     session_storage,
+                         const CNcbiArguments*   args,
+                         const CNcbiEnvironment* env,
+                         CNcbiIstream*           inp,
+                         CNcbiOstream*           out,
+                         int                     ifd,
+                         int                     ofd,
+                         size_t                  errbuf_size,
+                         CCgiRequest::TFlags     flags)
+    : m_App(nullptr),
+      m_Request(new CCgiRequest(args, env, inp, flags, ifd, errbuf_size)),
+      m_Response(out, ofd),
+      m_SecureMode(eSecure_NotSet),
+      m_StatusCode(CCgiException::eStatusNotSet)
+{
+    m_Response.SetRequestMethod(m_Request->GetRequestMethod());
+    m_Response.SetCgiRequest(*m_Request);
+
+    if (flags & CCgiRequest::fDisableTrackingCookie) {
+        m_Response.DisableTrackingCookie();
+    }
+    x_InitSession(flags, session_storage);
+    return;
+}
+
+
+CCgiApplication& CCgiContext::x_GetApp(void) const
+{
+    if ( !m_App ) {
+        NCBI_THROW(CCgiAppException, eApp, "NULL CCgiApplication in CCgiContext");
+    }
+    return *m_App;
+}
+
+
+void CCgiContext::x_InitSession(CCgiRequest::TFlags flags,
+                                ICgiSessionStorage* session_storage)
 {
     CCgiSessionParameters params;
-    ICgiSessionStorage* impl = m_App.GetSessionStorage(params);
+    ICgiSessionStorage* impl = session_storage;
+    if (!session_storage  &&  m_App) {
+        impl = m_App->GetSessionStorage(params);
+    }
     m_Session.reset(new CCgiSession(*m_Request, 
                                     impl,
                                     params.m_ImplOwner,
@@ -202,25 +241,25 @@ CCgiContext::~CCgiContext(void)
 
 const CNcbiRegistry& CCgiContext::GetConfig(void) const
 {
-    return m_App.GetConfig();
+    return x_GetApp().GetConfig();
 }
 
 
 CNcbiRegistry& CCgiContext::GetConfig(void)
 {
-    return m_App.GetConfig();
+    return x_GetApp().GetConfig();
 }
 
 
 const CNcbiResource& CCgiContext::GetResource(void) const
 {
-    return m_App.GetResource();
+    return x_GetApp().GetResource();
 }
 
 
 CNcbiResource& CCgiContext::GetResource(void)
 {
-    return m_App.GetResource();
+    return x_GetApp().GetResource();
 }
 
 
@@ -228,7 +267,7 @@ CCgiServerContext& CCgiContext::x_GetServerContext(void) const
 {
     CCgiServerContext* context = m_ServerContext.get();
     if ( !context ) {
-        context = m_App.LoadServerContext(const_cast<CCgiContext&>(*this));
+        context = x_GetApp().LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
             ERR_POST_X(12, "CCgiContext::GetServerContext: no server context set");
             throw runtime_error("no server context set");

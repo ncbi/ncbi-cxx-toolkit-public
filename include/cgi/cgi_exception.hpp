@@ -368,6 +368,31 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiAppException --
+///
+///   Other CCgiApplication exceptions.
+
+class CCgiAppException : public CCgiException
+{
+public:
+    enum EErrCode {
+        eApp     //< Other error
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eApp:   return "CGI application error";
+        default:       return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CCgiAppException, CCgiException);
+};
+
+
 #define NCBI_CGI_THROW_WITH_STATUS(exception, err_code, message, status) \
     {                                                                    \
         NCBI_EXCEPTION_VAR(cgi_exception, exception, err_code, message); \

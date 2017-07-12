@@ -148,6 +148,17 @@ public:
                 CCgiRequest::TFlags     flags = 0
                 );
 
+    CCgiContext(ICgiSessionStorage*     session_storage,
+                const CNcbiArguments*   args = 0 /* D: app.GetArguments()   */,
+                const CNcbiEnvironment* env  = 0 /* D: app.GetEnvironment() */,
+                CNcbiIstream*           inp  = 0 /* see ::CCgiRequest(istr) */,
+                CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */,
+                int                     ifd  = -1,
+                int                     ofd  = -1,
+                size_t                  errbuf_size = 256, /* see CCgiRequest */
+                CCgiRequest::TFlags     flags = 0
+                );
+
     virtual ~CCgiContext(void);
 
     const CCgiApplication& GetApp(void) const;
@@ -239,8 +250,10 @@ public:
                                    CCgiResponse&      response);
 
 private:
+    CCgiApplication& x_GetApp(void) const;
     CCgiServerContext& x_GetServerContext(void) const;
-    void x_InitSession(CCgiRequest::TFlags flags);
+    void x_InitSession(CCgiRequest::TFlags flags,
+                       ICgiSessionStorage* session_storage = nullptr);
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
@@ -251,7 +264,7 @@ private:
         eSecure_On
     };
 
-    CCgiApplication&        m_App;
+    CCgiApplication*        m_App;
     unique_ptr<CCgiRequest> m_Request;  // CGI request  information
     CCgiResponse            m_Response; // CGI response information
     unique_ptr<CCgiSession> m_Session;  // CGI session
@@ -353,7 +366,7 @@ private:
 inline
 const CCgiApplication& CCgiContext::GetApp(void) const
 { 
-    return m_App;
+    return x_GetApp();
 }
     
 
