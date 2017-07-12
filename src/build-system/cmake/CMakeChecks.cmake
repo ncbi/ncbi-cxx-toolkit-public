@@ -707,7 +707,7 @@ else ()
 endif ()
 
 #LMBD
-find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18")
+find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18" EXTRALIBS pthread)
 
 find_external_library(libxlsxwriter
     INCLUDES xlsxwriter.h
