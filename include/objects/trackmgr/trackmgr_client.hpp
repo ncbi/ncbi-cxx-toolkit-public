@@ -49,6 +49,19 @@ public:
         TReply* reply = 0
     );
 
+    using TBatchId = Int8;
+    using TAlignId = Int8;
+
+    struct SAlignIds
+    {
+        TBatchId batch_id;
+        vector<TAlignId> align_ids;
+    };
+
+    using TAlignIDs = vector<SAlignIds>;
+
+    static bool ParseAlignId (const string& external_id, TAlignIDs& parsed_ids) noexcept;
+
 
     // looks at application ini file with a section constructed like
     //[TrackMgr]
