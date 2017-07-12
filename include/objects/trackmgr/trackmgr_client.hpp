@@ -60,7 +60,7 @@ public:
 
     using TAlignIDs = vector<SAlignIds>;
 
-    static bool ParseAlignId (const string& external_id, TAlignIDs& parsed_ids) noexcept;
+    static bool ParseAlignId (const string& external_id, TAlignIDs& parsed_ids);
 
 
     // looks at application ini file with a section constructed like

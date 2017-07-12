@@ -126,7 +126,7 @@ CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
         : CRef<CTMgr_DisplayTrackReply>();
 }
 
-bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed_ids) noexcept
+bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed_ids)
 {
     using TStrIDs = vector<string>;
 
