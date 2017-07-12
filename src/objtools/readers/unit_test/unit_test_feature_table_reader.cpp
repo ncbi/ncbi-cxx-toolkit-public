@@ -2085,3 +2085,21 @@ BOOST_AUTO_TEST_CASE(TestBadTranslTable)
     set<string> expected_quals;
     CheckExpectedQuals (ftable.front(), expected_quals);
 }
+
+// GB-7157
+static const char* sc_Table20 = 
+R"(>Feature gb|KY807921| )"
+R"(3200	3201	regulatory )"
+R"(			note	cobalamin riboswitch )"
+R"(			bound_moiety	cobalamin )"
+R"(			regulatory_class	riboswitch )";
+
+BOOST_AUTO_TEST_CASE(TestRiboswitch)
+{
+    TErrList expected_errors; // There are no expected errors
+
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString(
+            sc_Table20,
+            expected_errors);
+}
+
