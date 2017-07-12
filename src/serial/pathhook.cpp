@@ -73,6 +73,9 @@ bool CPathHook::SetHook(CObjectStack* stk, const string& path, CObject* hook)
         insert(pair<CObjectStack* const, pair<string, CRef<CObject> > >(
             stk,pair<string, CRef<CObject> >(path,CRef<CObject>(hook))));
         state = !state;
+        if (stk) {
+            stk->RegisterPathHook(this);
+        }
     }
     bool wildcard = path.find(s_One)  != string::npos ||
                     path.find(s_Many) != string::npos;

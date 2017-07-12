@@ -167,6 +167,11 @@ public:
     const string& GetStackPath(void) const;
 
     void WatchPathHooks(bool set=true);
+
+    void RegisterPathHook(CPathHook* h) {
+        m_PathHooks.insert(h);
+    }
+    void ResetPathHooks(void);
 protected:
     virtual void x_SetPathHooks(bool set) = 0;
     virtual void ResetState(void);
@@ -183,6 +188,7 @@ private:
     string  m_MemberPath;
     bool    m_WatchPathHooks;
     bool    m_PathValid;
+    set<CPathHook*> m_PathHooks;
 };
 
 #include <serial/impl/objstack.inl>

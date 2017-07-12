@@ -151,7 +151,7 @@ public:
     void SetPathHook(CObjectStack* stk, const string& path, THook* hook)
         {
             CParent::SetPathHook(stk, path, hook);
-            m_CurrentFunction = m_HookFunction;
+            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
         }
 
     void ResetLocalHook(TLocalHooks& key)

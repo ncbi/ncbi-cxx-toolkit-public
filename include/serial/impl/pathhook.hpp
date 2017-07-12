@@ -60,6 +60,9 @@ public:
 
     static bool Match(const string& mask, const string& path);
 
+    void  Erase(CObjectStack* stk) {
+        erase(stk);
+    }
 private:
     CObject* x_Get(CObjectStack& stk, const string& path) const;
     bool m_Empty;

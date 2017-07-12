@@ -505,6 +505,7 @@ void CObjectIStream::Open(CNcbiIstream& inStream, EOwnership deleteInStream)
 void CObjectIStream::ResetLocalHooks(void)
 {
     CMutexGuard guard(GetTypeInfoMutex());
+    ResetPathHooks();
     m_ObjectHookKey.Clear();
     m_ClassMemberHookKey.Clear();
     m_ChoiceVariantHookKey.Clear();

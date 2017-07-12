@@ -211,8 +211,8 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
             CObjectTypeInfo(type_info).SetPathWriteHook(
                 os.get(), "CTestSerialObject.*", new CWriteSerialObjectHook(&obj));
             *os << obj;
-            CObjectTypeInfo(type_info).SetPathWriteHook(
-                os.get(), "CTestSerialObject.*", NULL);
+//            CObjectTypeInfo(type_info).SetPathWriteHook(
+//                os.get(), "CTestSerialObject.*", NULL);
         }
 		data = CNcbiOstrstreamToString(ostrs);
 		buf = data.c_str();
@@ -226,8 +226,8 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
         CObjectTypeInfo(type_info).SetPathReadHook(
             is.get(), "CTestSerialObject.*", new CReadSerialObjectHook(&obj_copy));
         *is >> obj_copy;
-        CObjectTypeInfo(type_info).SetPathReadHook(
-            is.get(), "CTestSerialObject.*", NULL);
+//        CObjectTypeInfo(type_info).SetPathReadHook(
+//            is.get(), "CTestSerialObject.*", NULL);
 #ifndef HAVE_NCBI_C
         BOOST_CHECK(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif

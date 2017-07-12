@@ -59,6 +59,14 @@ void CObjectStack::ResetState(void)
     m_PathValid = false;
 }
 
+void CObjectStack::ResetPathHooks(void)
+{
+    for (auto& h : m_PathHooks) {
+        h->Erase(this);
+    }
+    m_PathHooks.clear();
+}
+
 void CObjectStack::UnendedFrame(void)
 {
 }

@@ -333,6 +333,7 @@ void CObjectOStream::Close(void)
                 m_Objects->Clear();
             ClearStack();
             m_Fail = fNotOpen;
+            ResetState();
         }
         catch (CException& exc) {
             if ( InGoodState() )
@@ -344,6 +345,7 @@ void CObjectOStream::Close(void)
 void CObjectOStream::ResetLocalHooks(void)
 {
     CMutexGuard guard(GetTypeInfoMutex());
+    ResetPathHooks();
     m_ObjectHookKey.Clear();
     m_ClassMemberHookKey.Clear();
     m_ChoiceVariantHookKey.Clear();
