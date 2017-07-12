@@ -1,0 +1,8 @@
+>Feature gb|KY807921|
+3200	3201	regulatory
+			note	cobalamin riboswitch
+			bound_moiety	cobalamin
+			regulatory_class	riboswitch
+3202	3250	ncRNA
+			ncRNA_class	RNase_P_RNA
+			product	RNase P RNA component

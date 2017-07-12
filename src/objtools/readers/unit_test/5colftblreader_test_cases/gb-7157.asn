@@ -1,0 +1,45 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "regulatory"
+      },
+      comment "cobalamin riboswitch",
+      location int {
+        from 3199,
+        to 3200,
+        strand plus,
+        id genbank {
+          accession "KY807921"
+        }
+      },
+      qual {
+        {
+          qual "bound_moiety",
+          val "cobalamin"
+        },
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "RNase_P_RNA",
+          product "RNase P RNA component"
+        }
+      },
+      location int {
+        from 3201,
+        to 3249,
+        strand plus,
+        id genbank {
+          accession "KY807921"
+        }
+      }
+    }
+  }
+}
