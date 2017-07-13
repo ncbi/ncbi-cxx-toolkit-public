@@ -121,7 +121,7 @@ namespace {
                     Flush();
                     ERR_POST_X(1, Warning << "Flatfile output left unflushed in "
                                << CStackTrace());
-                } catch (CFlatException& e) {
+                } catch (CFlatException& ) {
                     ERR_POST_X(2, "Missed flatfile output halt request in "
                                << CStackTrace());
                 }
