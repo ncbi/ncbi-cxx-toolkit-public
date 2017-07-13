@@ -302,7 +302,9 @@ typedef pair<TIdMap::iterator, bool> TIdInsert;
 
 inline bool sx_CanReassign(CSeq_id::E_Choice type)
 {
-    return type == CSeq_id::e_Local || type == CSeq_id::e_General;
+    return type == CSeq_id::e_Local || type == CSeq_id::e_General ||
+        type == CSeq_id::e_Ddbj || type == CSeq_id::e_Genbank ||
+        type == CSeq_id::e_Embl || type == CSeq_id::e_Other;
 }
 
 
@@ -320,6 +322,17 @@ CSeq_id_Handle sx_MakeUniqueId(const CSeq_id_Handle& idh, TIdMap& id_map)
     switch ( new_id->Which() ) {
     case CSeq_id::e_Local: obj_id = &new_id->SetLocal(); break;
     case CSeq_id::e_General: obj_id = &new_id->SetGeneral().SetTag(); break;
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Other:
+    {
+        string lcl = new_id->AsFastaString();
+        NStr::ReplaceInPlace(lcl, "|", "_");
+        new_id->SetLocal().SetStr(lcl);
+        obj_id = &new_id->SetLocal();
+        break;
+    }
     default:
         NCBI_THROW(CException, eUnknown,
                    "CSeq_entry::ReassignConflictingIds: "

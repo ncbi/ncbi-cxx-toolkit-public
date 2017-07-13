@@ -1502,6 +1502,94 @@ void BioseqSetDescriptorPropagateDown(
 }
 
 
+CSeq_id::E_Choice TypeFromLabel(const string& label)
+{
+    if (NStr::EqualNocase(label, "LocalId")) {
+        return CSeq_id::e_Local;
+    } else if (NStr::EqualNocase(label, "DDBJ")) {
+        return CSeq_id::e_Ddbj;
+    } else if (NStr::EqualNocase(label, "EMBL")) {
+        return CSeq_id::e_Embl;
+    } else if (NStr::EqualNocase(label, "GenBank")) {
+        return CSeq_id::e_Genbank;
+    } else if (NStr::EqualNocase(label, "RefSeq")) {
+        return CSeq_id::e_Other;
+    } else if (NStr::EqualNocase(label, "General")) {
+        return CSeq_id::e_General;
+    } else {
+        return CSeq_id::e_not_set;
+    }
+}
+
+
+string LabelFromType(CSeq_id::E_Choice choice)
+{
+    switch (choice) {
+    case CSeq_id::e_Local:
+        return "LocalId";
+        break;
+    case CSeq_id::e_Ddbj:
+        return "DDBJ";
+        break;
+    case CSeq_id::e_Embl:
+        return "EMBL";
+        break;
+    case CSeq_id::e_Genbank:
+        return "GenBank";
+        break;
+    case CSeq_id::e_Other:
+        return "RefSeq";
+        break;
+    case CSeq_id::e_General:
+        return "General";
+        break;
+    default:
+        return kEmptyStr;
+        break;
+    }
+}
+
+
+string MakeOriginalLabelForId(const CSeq_id& id)
+{
+    string val = kEmptyStr;
+    switch (id.Which()) {
+    case CSeq_id::e_Local:
+        if (id.GetLocal().IsStr()) {
+            val = id.GetLocal().GetStr();
+        } else if (id.GetLocal().IsId()) {
+            val = NStr::NumericToString(id.GetLocal().GetId());
+        }
+        break;
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Other:
+    case CSeq_id::e_General:
+        val = id.AsFastaString();
+        break;
+    default:
+        break;
+    }
+    return val;
+}
+
+
+CRef<CUser_field> MakeOriginalIdField(const CSeq_id& id)
+{
+    CRef<CUser_field> field(NULL);
+
+    string label = LabelFromType(id.Which());
+    string val = MakeOriginalLabelForId(id);
+    if (!NStr::IsBlank(label) && !NStr::IsBlank(val)) {
+        field = new CUser_field();
+        field->SetLabel().SetStr(label);
+        field->SetData().SetStr(val);
+    }
+    return field;
+}
+
+
 void AddLocalIdUserObjects(CSeq_entry& entry)
 {
     if (entry.IsSeq()) {
@@ -1520,19 +1608,9 @@ void AddLocalIdUserObjects(CSeq_entry& entry)
             CRef<CUser_object> obj(new CUser_object());
             obj->SetObjectType(CUser_object::eObjectType_OriginalId);
             ITERATE(CBioseq::TId, id, entry.GetSeq().GetId()) {
-                if ((*id)->IsLocal()) {
-                    string val = "";
-                    if ((*id)->GetLocal().IsStr()) {
-                        val = (*id)->GetLocal().GetStr();
-                    } else if ((*id)->GetLocal().IsId()) {
-                        val = NStr::NumericToString((*id)->GetLocal().GetId());
-                    }
-                    if (!NStr::IsBlank(val)) {
-                        CRef<CUser_field> field(new CUser_field());
-                        field->SetLabel().SetStr("LocalId");
-                        field->SetData().SetStr(val);
-                        obj->SetData().push_back(field);
-                    }
+                CRef<CUser_field> field = MakeOriginalIdField(**id);
+                if (field) {
+                    obj->SetData().push_back(field);
                 }
             }
             if (obj->IsSetData()) {
@@ -1549,34 +1627,62 @@ void AddLocalIdUserObjects(CSeq_entry& entry)
 }
 
 
+bool IsMatchingIdMissing(const CUser_field& field, const CBioseq::TId& ids)
+{
+    if (!field.IsSetLabel() || !field.GetLabel().IsStr() ||
+        NStr::IsBlank(field.GetLabel().GetStr()) ||
+        !field.IsSetData() || !field.GetData().IsStr() ||
+        NStr::IsBlank(field.GetData().GetStr())) {
+        return false;
+    }
+    bool found = false;
+    bool any_type = false;
+    bool found_mismatch = false;
+
+    CSeq_id::E_Choice choice = TypeFromLabel(field.GetLabel().GetStr());
+    if (choice == CSeq_id::e_not_set) {
+        return false;
+    }
+
+    ITERATE(CBioseq::TId, id_it, ids) {
+        string expected = MakeOriginalLabelForId(**id_it);
+        if ((*id_it)->Which() == choice) {
+            any_type = true;
+            if (NStr::Equal(field.GetData().GetStr(), expected)) {
+                found = true;
+                break;
+            }
+        } else if ((*id_it)->Which() == CSeq_id::e_Local) {
+            if (choice == CSeq_id::e_Ddbj && NStr::StartsWith(expected, "dbj_")) {
+                found_mismatch = true;
+            }
+            if (choice == CSeq_id::e_Embl && NStr::StartsWith(expected, "emb_")) {
+                found_mismatch = true;
+            }
+            if (choice == CSeq_id::e_Genbank && NStr::StartsWith(expected, "gb_")) {
+                found_mismatch = true;
+            }
+            if (choice == CSeq_id::e_Other && NStr::StartsWith(expected, "ref_")) {
+                found_mismatch = true;
+            }
+        }
+    }
+    if (!found && (any_type || found_mismatch)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool HasRepairedIDs(const CUser_object& user, const CBioseq::TId& ids)
 {
     bool rval = false;
     if (user.IsSetData()) {
         ITERATE(CUser_object::TData, it, user.GetData()) {
-            if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()
-                && NStr::EqualNocase((*it)->GetLabel().GetStr(), "LocalId")
-                && (*it)->IsSetData()
-                && (*it)->GetData().IsStr()) {
-                string orig_id = (*it)->GetData().GetStr();
-                bool found = false;
-                bool any_local = false;
-                ITERATE(CBioseq::TId, id_it, ids) {
-                    if ((*id_it)->IsLocal()) {
-                        any_local = true;
-                        if ((*id_it)->GetLocal().IsStr()
-                            && NStr::EqualNocase((*id_it)->GetLocal().GetStr(), orig_id)) {
-                            found = true;
-                        } else if ((*id_it)->GetLocal().IsId()
-                            && NStr::EqualNocase(NStr::NumericToString((*id_it)->GetLocal().GetId()), orig_id)) {
-                            found = true;
-                        }
-                    }
-                }
-                if (any_local && !found) {
-                    rval = true;
-                    break;
-                }
+            if (IsMatchingIdMissing(**it, ids)) {
+                rval = true;
+                break;
             }
         }
     }

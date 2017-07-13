@@ -325,6 +325,29 @@ void CheckLocalId(const CBioseq& seq, const string& expected)
 }
 
 
+void TestCollidingAccessionFixes(const CSeq_id& collide, const string& last)
+{
+    CRef<CSeq_entry> good_set = unit_test_util::BuildGoodEcoSet();
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, good_set->SetSet().SetSeq_set()) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(collide);
+        (*it)->SetSeq().SetId().push_back(id);
+    }
+    edit::AddLocalIdUserObjects(*good_set);
+    good_set->ReassignConflictingIds();
+    CConstRef<CSeq_id> last_id = good_set->GetSet().GetSeq_set().back()->GetSeq().GetId().back();
+    if (collide.IsGeneral()) {
+        BOOST_CHECK_EQUAL(last_id->Which(), CSeq_id::e_General);
+        BOOST_CHECK_EQUAL(last_id->GetGeneral().GetDb(), collide.GetGeneral().GetDb());
+        BOOST_CHECK_EQUAL(last_id->GetGeneral().GetTag().GetStr(), last);
+    } else {
+        BOOST_CHECK_EQUAL(last_id->Which(), CSeq_id::e_Local);
+        BOOST_CHECK_EQUAL(last_id->GetLocal().GetStr(), last);
+    }
+    BOOST_CHECK_EQUAL(true, edit::HasRepairedIDs(*good_set));
+}
+
+
 BOOST_AUTO_TEST_CASE(FixCollidingIds)
 {
     CRef<CSeq_entry> entry1 = unit_test_util::BuildGoodSeq();
@@ -361,6 +384,28 @@ BOOST_AUTO_TEST_CASE(FixCollidingIds)
     BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
     good_set->ReassignConflictingIds();
     BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
+
+    // fix DDBJ duplicates
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetDdbj().SetAccession("X");
+    TestCollidingAccessionFixes(*id, "dbj_X__2");
+
+    // fix EMBL duplicates
+    id->SetEmbl().SetAccession("X");
+    TestCollidingAccessionFixes(*id, "emb_X__2");
+
+    // fix GenBank duplicates
+    id->SetGenbank().SetAccession("X");
+    TestCollidingAccessionFixes(*id, "gb_X__2");
+
+    // fix RefSeq duplicates
+    id->SetOther().SetAccession("X");
+    TestCollidingAccessionFixes(*id, "ref_X__2");
+
+    // fix general duplicates
+    id->SetGeneral().SetDb("Y");
+    id->SetGeneral().SetTag().SetStr("X");
+    TestCollidingAccessionFixes(*id, "X_2");
 
 }
 
