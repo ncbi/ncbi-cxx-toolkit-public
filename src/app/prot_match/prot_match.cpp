@@ -218,8 +218,13 @@ int CProteinMatchApp::Run(void)
         out_dir = args["outdir"].AsString();
     }
 
+#ifdef NCBI_OS_MSWIN
+    CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn.exe");
+    CBinRunner compare_annots(bin_dir, "compare_annots.exe");
+#else
     CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn");
     CBinRunner compare_annots(bin_dir, "compare_annots");
+#endif
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *obj_mgr);
