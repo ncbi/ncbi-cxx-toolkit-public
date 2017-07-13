@@ -24,9 +24,11 @@ endif
 
 ### Protect against two MAKE processes running in the same dir
 
-#ifneq "" "$(CD_REPORTER)"
-  RUN_WITH_CD_REPORTER = $(build_root)/build/run_with_cd_reporter.py
-#endif
+ifneq "" "$(filter-out @*@, $(CD_REPORTER))"
+  ifneq "" "$(PYTHON3)"
+    RUN_WITH_CD_REPORTER = $(build_root)/build/run_with_cd_reporter.py
+  endif
+endif
 
 ifeq "$(wildcard $(build_root)/bin/run_with_lock)" ""
   RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
