@@ -142,7 +142,7 @@ void* CBlastKmerThread::Main(void)
 		CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*target_db));
 		CRef<CBlastFormat> formatter(new CBlastFormat(optsHndle->GetOptions(), *db_adapter,
                                         m_FormattingArgs->GetFormattedOutputChoice(),
-                                        false, m_OutFile, m_FormattingArgs->GetNumDescriptions(),
+                                        m_BelieveQuery, m_OutFile, m_FormattingArgs->GetNumDescriptions(),
                                         m_FormattingArgs->GetNumAlignments(), *scope, BLAST_DEFAULT_MATRIX,
                                         false, false,  BLAST_GENETIC_CODE,  BLAST_GENETIC_CODE, false, false, -1,
                                         m_FormattingArgs->GetCustomOutputFormatSpec()));

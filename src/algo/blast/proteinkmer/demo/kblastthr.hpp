@@ -68,13 +68,15 @@ public:
        CRef<CBlastpKmerOptionsHandle> opts_handle,
        CRef<CFormattingArgs> fmtArgs,
        CNcbiOstream& outfile,
-       CBlastAsyncFormatThread* formatThr)
+       CBlastAsyncFormatThread* formatThr,
+       Boolean believeQuery=false)
     : m_Input(input), 
       m_DbArgs(db_args),
       m_BlastOptsHandle(opts_handle),
       m_FormattingArgs(fmtArgs),
       m_OutFile(outfile),
-      m_FormattingThr(formatThr)
+      m_FormattingThr(formatThr),
+      m_BelieveQuery(believeQuery)
    {
 	
    }
@@ -96,6 +98,8 @@ private:
     CNcbiOstream& m_OutFile;
 
     CBlastAsyncFormatThread* m_FormattingThr;
+
+    Boolean m_BelieveQuery;
     // FIXME: needed?
     CFastMutex m_Guard;
 };

@@ -132,7 +132,8 @@ int CBlastKmerApplication::Run(void)
 
 	for (int i=0; i<numThreads; ++i)
 	{
-		thr[i] = new CBlastKmerThread(blast_input, db_args, kmerOptsHndle, fmt_args, m_CmdLineArgs->GetOutputStream(), formatThr);
+		thr[i] = new CBlastKmerThread(blast_input, db_args, kmerOptsHndle, fmt_args, m_CmdLineArgs->GetOutputStream(), 
+			formatThr, GetArgs()["parse_deflines"].AsBoolean());
 		thr[i]->Run();
 	}
 
