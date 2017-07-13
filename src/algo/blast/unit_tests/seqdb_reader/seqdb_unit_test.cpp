@@ -3770,9 +3770,8 @@ BOOST_AUTO_TEST_CASE(ProtTest)
     s_CheckIdLookup(db, "2202317B", 1, 628);
     s_CheckIdLookup(db, "tr|Q4QBU6|Q4QBU6_LEIMA", 1, 609);
     s_CheckIdLookup(db, "Q4QBU6", 1, 609);
-    s_CheckIdLookup(db, "15127771", 1, 341);
-    s_CheckIdLookup(db, "aaa15484", 1, 341);
-    s_CheckIdLookup(db, "bbm|301338", 1, 341);
+    s_CheckIdLookup(db, "15127771", 1, 345);
+    s_CheckIdLookup(db, "aaa15484", 1, 345);
 }
 
 BOOST_AUTO_TEST_CASE(NuclOldTest)
