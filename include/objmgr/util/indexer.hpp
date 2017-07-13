@@ -387,9 +387,6 @@ private:
     // User object fields
     bool m_ForceOnlyNearFeats;
 
-    // Derived policy flags
-    bool m_OnlyNearFeats;
-
     bool m_Surrogate;
 
     // Generated definition line

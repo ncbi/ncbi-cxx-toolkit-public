@@ -488,7 +488,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Completeness = CMolInfo::eCompleteness_unknown;
 
     m_ForceOnlyNearFeats = false;
-    m_OnlyNearFeats = false;
 }
 
 // Descriptor collection (delayed until needed)
@@ -571,16 +570,6 @@ void CBioseqIndex::x_InitDescs (void)
                     break;
             }
         }
-
-        // set policy flags for object manager feature exploration
-        if (m_ForceOnlyNearFeats) {
-            m_OnlyNearFeats = true;
-        }
-
-        // initialization option can also prevent far feature exploration
-        if (m_Policy == CSeqEntryIndex::fInternal) {
-            m_OnlyNearFeats = true;
-        }
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CBioseqIndex::x_InitDescs: " << e.what());
@@ -597,7 +586,7 @@ void CBioseqIndex::x_InitFeats (void)
         }
 
         if (! m_DescsInitialized) {
-            // initialize descriptors first to get m_OnlyNearFeats flag
+            // initialize descriptors first to get m_ForceOnlyNearFeats flag
             x_InitDescs();
         }
 
@@ -605,8 +594,15 @@ void CBioseqIndex::x_InitFeats (void)
 
         SAnnotSelector sel;
 
-        // handle far fetching policy, from user object or initializer argument
-        if (m_OnlyNearFeats) {
+        // handle far fetching policy, from initializer argument or  user object
+        if (m_Policy == CSeqEntryIndex::fExhaustive) {
+
+            sel.SetResolveAll();
+             // experimental flag forces collection of features from all levels
+            sel.SetResolveDepth(kMax_Int);
+            // also ignores RefSeq/INSD barrier, far fetch policy user object
+
+        } else if (m_Policy == CSeqEntryIndex::fInternal || m_ForceOnlyNearFeats) {
 
             if (m_Surrogate) {
                 // delta with sublocation needs to map features from original Bioseq
@@ -619,21 +615,18 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.SetExcludeExternal();
             }
 
+        } else if (m_Depth > -1) {
+
+            sel.SetResolveAll();
+            // explicit depth setting overrides adaptive depth (typically only needed for debugging)
+            sel.SetResolveDepth(m_Depth);
+
         } else {
 
             sel.SetResolveAll();
-
-            if (m_Policy == CSeqEntryIndex::fExhaustive) {
-                // experimental flag forces collection of features from all levels
-                sel.SetResolveDepth(kMax_Int);
-            } else if (m_Depth > -1) {
-                // explicit depth setting overrides adaptive depth
-                sel.SetResolveDepth(m_Depth);
-            } else {
-                // normal situation uses adaptive depth for feature collection,
-                // includes barrier between RefSeq and INSD accession types
-                sel.SetAdaptiveDepth(true);
-            }
+            // normal situation uses adaptive depth for feature collection,
+            // includes barrier between RefSeq and INSD accession types
+            sel.SetAdaptiveDepth(true);
         }
 
         // iterate features on Bioseq
