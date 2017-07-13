@@ -4987,6 +4987,9 @@ void CFeatureItem::x_AddFTableRnaQuals(
                               feature::fFGL_Content, &ctx.GetScope());
             x_AddFTableQual("product", label);
         }
+        else if ( ext.IsGen() && ext.GetGen().IsSetProduct()) {
+            x_AddFTableQual("product", ext.GetGen().GetProduct());
+        }
     }
 
     if ( feat.IsSetProduct() && !cfg.HideProteinID()) {
