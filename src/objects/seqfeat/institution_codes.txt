@@ -2358,7 +2358,7 @@ HEND	s	Henderson State University, Biology Department
 HENNU	s	Henan Normal University		
 HENU	s	Henan Normal University, Biology Department		
 HEPH	s	Jardim Botanico de Brasilia		
-HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses		
+HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses (Bacteriophage)		
 HER<ZAF>	s	Hermanus Botanical Society		
 HERBAM	h	Universidade do Estado de Mato Grosso		
 HERT	h	Fundacao Universidade Estadual do Ceara		
@@ -2716,7 +2716,7 @@ ICGC	s	Istituto Calasanzio
 ICHUM	s	Invertebrate Collection of the Hokkaido University Museum		
 ICIS	s	Idaho Museum of Natural History		
 ICM	s	Instituto de Ciencias del Mar	ICMD
-ICMP	c	International Collection of Micro-organisms from Plants		
+ICMP	c	International Collection of Microorganisms from Plants		
 ICN<BRA>	s	Universidade Federal do Rio Grande do Sul, Departamento de Botanica		
 ICN<COL>	s	Instituto de Ciencias Naturales, Museo de Historia Natural		
 ICP	s	Islamia College, University of Peshawar, Botany Department		
