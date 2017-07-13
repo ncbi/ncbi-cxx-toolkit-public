@@ -564,27 +564,34 @@ string CSubSource::FixDateFormat (const string& orig_date)
 // HH:MM
 // HH
 // Followed by either Z or +hh:mm to indicate an offset from Zulu
-bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec)
+bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec, bool require_time_zone)
 {
     int offset_hour = 0;
     int offset_min = 0;
     size_t suffix = NStr::Find(orig_time, "Z");
     if (suffix == NPOS) {
         suffix = NStr::Find(orig_time, "+");
-        if (suffix == NPOS ||
-            orig_time.substr(suffix).length() != 6 ||
-            !isdigit((unsigned char)orig_time[suffix + 1]) ||
-            !isdigit((unsigned char)orig_time[suffix + 2]) ||
-            orig_time[suffix + 3] != ':' ||
-            !isdigit((unsigned char)orig_time[suffix + 4]) ||
-            !isdigit((unsigned char)orig_time[suffix + 5])) {
-            return false;
-        }
-        try {
-            offset_hour = NStr::StringToInt(orig_time.substr(suffix + 1, 2));
-            offset_min = NStr::StringToInt(orig_time.substr(suffix + 4, 2));
-        } catch (...) {
-            return false;
+        if (suffix == NPOS) {
+            if (require_time_zone) {
+                return false;
+            } else {
+                suffix = orig_time.length();
+            }
+        } else {
+            if (orig_time.substr(suffix).length() != 6 ||
+                !isdigit((unsigned char)orig_time[suffix + 1]) ||
+                !isdigit((unsigned char)orig_time[suffix + 2]) ||
+                orig_time[suffix + 3] != ':' ||
+                !isdigit((unsigned char)orig_time[suffix + 4]) ||
+                !isdigit((unsigned char)orig_time[suffix + 5])) {
+                return false;
+            }
+            try {
+                offset_hour = NStr::StringToInt(orig_time.substr(suffix + 1, 2));
+                offset_min = NStr::StringToInt(orig_time.substr(suffix + 4, 2));
+            } catch (...) {
+                return false;
+            }
         }
     }
     if (suffix != 2 && suffix != 5 && suffix != 8) {
@@ -690,6 +697,44 @@ bool CSubSource::IsISOFormatDateOnly (const string& cpy)
     }
     return rval;
 }
+
+
+bool CSubSource::x_IsFixableIsoDate(const string& orig_date)
+{
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace(cpy);
+    size_t time_pos = NStr::Find(cpy, "T");
+    bool rval = false;
+    if (time_pos == NPOS) {
+        rval = false;
+    } else {
+        if (!IsISOFormatDateOnly(cpy.substr(0, time_pos))) {
+            rval = false;
+        } else {
+            int h, m, s;
+            if (IsISOFormatTime(cpy.substr(time_pos + 1), h, m, s, true)) {
+                // already fine, not fixable
+                rval = false;
+            } else {
+                rval = IsISOFormatTime(cpy.substr(time_pos + 1), h, m, s, false);
+            }
+        }
+    }
+    return rval;
+}
+
+
+string CSubSource::x_RemoveIsoTime(const string& orig_date)
+{
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace(cpy);
+    size_t time_pos = NStr::Find(cpy, "T");
+    if (time_pos != NPOS) {
+        cpy = cpy.substr(0, time_pos);
+    }
+    return cpy;
+}
+
 
 bool CSubSource::IsISOFormatDate(const string& orig_date)
 {
@@ -839,6 +884,8 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
 
     if (IsISOFormatDate(orig_date)) {
         return orig_date;
+    } else if (x_IsFixableIsoDate(orig_date)) {
+        return x_RemoveIsoTime(orig_date);
     }
 
     string reformatted_date;

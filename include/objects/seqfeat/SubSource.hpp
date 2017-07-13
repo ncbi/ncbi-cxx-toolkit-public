@@ -116,7 +116,7 @@ public:
     static bool IsCollectionDateAfterTime(const CDate& collection_date, time_t t);
     static bool IsCollectionDateAfterTime(const CDate& collection_date, CTime& ctime);
 
-    static bool IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec);
+    static bool IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec, bool require_time_zone = true);
     static bool IsISOFormatDateOnly(const string& date);
     static bool IsISOFormatDate (const string& orig_date);
     static CRef<CDate> GetDateFromISODate(const string& orig_date);
@@ -223,6 +223,8 @@ private:
     static string x_ParseDateRangeWithDelimiter(const string& orig_date, CTempString delim);
     static vector<string> x_GetDateTokens(const string& orig_date);
     static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
+    static bool x_IsFixableIsoDate(const string& orig_date);
+    static string x_RemoveIsoTime(const string& orig_date);
 
     static int x_GetPrecision(const string& num_str);
     static string x_FormatWithPrecision(double val, int precision);

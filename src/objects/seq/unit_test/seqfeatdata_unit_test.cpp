@@ -1859,3 +1859,23 @@ BOOST_AUTO_TEST_CASE(Test_IsTypeMaterialValid)
 
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_730)
+{
+    int hour, min, sec;
+    // succeed
+    BOOST_CHECK_EQUAL(CSubSource::IsISOFormatTime("11:13:00Z", hour, min, sec), true);
+    BOOST_CHECK_EQUAL(hour, 11);
+    BOOST_CHECK_EQUAL(min, 13);
+    BOOST_CHECK_EQUAL(sec, 0);
+    // fail because no time zone specified
+    BOOST_CHECK_EQUAL(CSubSource::IsISOFormatTime("11:13:00", hour, min, sec), false);
+    // succeed because time zone not required
+    BOOST_CHECK_EQUAL(CSubSource::IsISOFormatTime("11:13:00", hour, min, sec, false), true);
+    BOOST_CHECK_EQUAL(hour, 11);
+    BOOST_CHECK_EQUAL(min, 13);
+    BOOST_CHECK_EQUAL(sec, 0);
+
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2012-10-26T11:13:00"), "2012-10-26");
+}
