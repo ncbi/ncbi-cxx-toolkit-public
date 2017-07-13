@@ -42,6 +42,14 @@ public:
         if (args["revcomp"]) {
             m_revcomp = args["revcomp"];
         }
+        m_policy = 0;
+        if (args["policy"]) {
+            m_policy = args["policy"].AsInteger();
+        }
+        m_depth = -1;
+        if (args["depth"]) {
+            m_depth = args["depth"].AsInteger();
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -64,7 +72,7 @@ public:
     //  ------------------------------------------------------------------------
     {
         // Create master index variable on stack, initialize with top-level Seq-entry
-        CSeqEntryIndex idx( *m_entry, CSeqEntryIndex::fSkipRemoteFeatures );
+        CSeqEntryIndex idx( *m_entry, (CSeqEntryIndex::EPolicy) m_policy, m_depth );
 
 
         // IterateBioseqs visits each Bioseq in blob
@@ -253,6 +261,8 @@ protected:
     int m_from;
     int m_to;
     bool m_revcomp;
+    int m_policy;
+    int m_depth;
     // CSeqEntryIndex* m_explore;
 };
 

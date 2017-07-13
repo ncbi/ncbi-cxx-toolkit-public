@@ -60,9 +60,10 @@ class CFeatureIndex;
 // CSeqEntryIndex
 //
 // CSeqEntryIndex is the master, top-level Seq-entry exploration organizer.  A variable
-// is created, with optional control flags, and initialized with the top-level object:
+// is created, with an optional fetch policy, an optional feature exploration depth (for
+// the default adaptive fetch policy), and initialized with the top-level object:
 //
-//   CSeqEntryIndex idx(*m_entry, CSeqEntryIndex::fDefaultIndexing);
+//   CSeqEntryIndex idx(*m_entry, CSeqEntryIndex::fAdaptive);
 //
 // A Seq-entry wrapper is created if the top-level object is a Bioseq or Bioseq-set.
 // Bioseqs within the Seq-entry are then indexed and added to a vector of CBioseqIndex.
@@ -83,27 +84,26 @@ class NCBI_XOBJUTIL_EXPORT CSeqEntryIndex : public CObjectEx
 {
 public:
 
-    enum EFlags {
-        // general policy flags to use for all records
-        fDefaultIndexing = 0,
-        fSkipRemoteFeatures = 1
+    enum EPolicy {
+        // far feature fetch policy
+        fAdaptive = 0,
+        fInternal = 1,
+        fExhaustive = 2
     };
-
-    typedef unsigned int TFlags; // binary OR of "EFlags"
 
 public:
     // Constructors take the top-level object
-    CSeqEntryIndex (CSeq_entry& topsep, TFlags flags = 0);
-    CSeqEntryIndex (CBioseq_set& seqset, TFlags flags = 0);
-    CSeqEntryIndex (CBioseq& bioseq, TFlags flags = 0);
-    CSeqEntryIndex (CSeq_submit& submit, TFlags flags = 0);
+    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = fAdaptive, int depth = -1);
 
     // Specialized constructors for streaming through release files, one component at a time
 
     // Submit-block obtained from top of Seq-submit release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlags flags = 0);
+    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = fAdaptive, int depth = -1);
     // Seq-descr chain obtained from top of Bioseq-set release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags = 0);
+    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = fAdaptive, int depth = -1);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -138,7 +138,6 @@ public:
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_Tsep; }
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_SbtBlk; }
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_TopDescr; }
-    TFlags GetFlags (void) const { return m_Flags; }
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
@@ -169,8 +168,8 @@ private:
     CConstRef<CSubmit_block> m_SbtBlk;
     CConstRef<CSeq_descr> m_TopDescr;
 
-    TFlags m_Flags;
-    bool m_LocalFeatures;
+    EPolicy m_Policy;
+    int m_Depth;
 
     vector<CRef<CBioseqIndex>> m_BsxList;
 
@@ -254,7 +253,8 @@ public:
                   CRef<CSeqsetIndex> prnt,
                   CSeq_entry_Handle tseh,
                   CRef<CScope> scope,
-                  bool localFeatures,
+                  CSeqEntryIndex::EPolicy policy,
+                  int depth,
                   bool surrogate);
 
 private:
@@ -338,7 +338,6 @@ private:
     CRef<CSeqsetIndex> m_Prnt;
     CSeq_entry_Handle m_Tseh;
     CRef<CScope> m_Scope;
-    bool m_LocalFeatures;
 
     bool m_DescsInitialized;
     vector<CRef<CDescriptorIndex>> m_SdxList;
@@ -352,6 +351,9 @@ private:
     TFeatIndexMap m_FeatIndexMap;
 
     CRef<CSeqVector> m_SeqVec;
+
+    CSeqEntryIndex::EPolicy m_Policy;
+    int m_Depth;
 
     bool m_FetchFailure;
 

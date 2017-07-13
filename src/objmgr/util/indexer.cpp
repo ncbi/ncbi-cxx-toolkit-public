@@ -47,8 +47,9 @@ BEGIN_SCOPE(objects)
 // CSeqEntryIndex
 
 // Constructors take top-level object, create Seq-entry wrapper if necessary
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -56,8 +57,9 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, TFlags flags)
     x_Init();
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     CSeq_entry* parent = seqset.GetParentEntry();
     if (parent) {
@@ -73,8 +75,9 @@ CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, TFlags flags)
     x_Init();
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     CSeq_entry* parent = bioseq.GetParentEntry();
     if (parent) {
@@ -90,8 +93,9 @@ CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, TFlags flags)
     x_Init();
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     _ASSERT(submit.CanGetData());
     _ASSERT(submit.CanGetSub());
@@ -106,8 +110,9 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, TFlags flags)
     x_Init();
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -116,8 +121,9 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, TFlag
     x_Init();
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, TFlags flags)
-    : m_Flags(flags)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy, int depth)
+    : m_Policy(policy),
+      m_Depth(depth)
 {
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -148,7 +154,7 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, m_LocalFeatures, false));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, m_Policy, m_Depth, false));
 
             // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
             m_BsxList.push_back(bsx);
@@ -199,11 +205,6 @@ void CSeqEntryIndex::x_Init (void)
 
         m_Tseh = m_Scope->AddTopLevelSeqEntry( *m_Tsep );
 
-        m_LocalFeatures = false;
-        if ((m_Flags & CSeqEntryIndex::fSkipRemoteFeatures) != 0) {
-            m_LocalFeatures = true;
-        }
-
         // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
         CRef<CSeqsetIndex> noparent;
         x_InitSeqs( *m_Tsep, noparent );
@@ -250,7 +251,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::x_DeltaIndex(const CSeq_loc& loc)
         if (deltaBsh) {
             // create CBioseqIndex object for delta Bioseq
             CRef<CSeqsetIndex> noparent;
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_Tseh, m_Scope, m_LocalFeatures, true));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_Tseh, m_Scope, m_Policy, m_Depth, true));
 
            return bsx;
         }
@@ -405,7 +406,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                             CRef<CSeqsetIndex> prnt,
                             CSeq_entry_Handle tseh,
                             CRef<CScope> scope,
-                            bool localFeatures,
+                            CSeqEntryIndex::EPolicy policy,
+                            int depth,
                             bool surrogate)
     : m_Bsh(bsh),
       m_Bsp(bsp),
@@ -413,7 +415,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
       m_Prnt(prnt),
       m_Tseh(tseh),
       m_Scope(scope),
-      m_LocalFeatures(localFeatures),
+      m_Policy(policy),
+      m_Depth(depth),
       m_Surrogate(surrogate)
 {
     m_FetchFailure = false;
@@ -575,7 +578,7 @@ void CBioseqIndex::x_InitDescs (void)
         }
 
         // initialization option can also prevent far feature exploration
-        if (m_LocalFeatures) {
+        if (m_Policy == CSeqEntryIndex::fInternal) {
             m_OnlyNearFeats = true;
         }
     }
@@ -618,10 +621,19 @@ void CBioseqIndex::x_InitFeats (void)
 
         } else {
 
-            // normal situation allowing adaptive depth for feature collection
             sel.SetResolveAll();
-            sel.SetResolveDepth(kMax_Int);
-            sel.SetAdaptiveDepth(true);
+
+            if (m_Policy == CSeqEntryIndex::fExhaustive) {
+                // experimental flag forces collection of features from all levels
+                sel.SetResolveDepth(kMax_Int);
+            } else if (m_Depth > -1) {
+                // explicit depth setting overrides adaptive depth
+                sel.SetResolveDepth(m_Depth);
+            } else {
+                // normal situation uses adaptive depth for feature collection,
+                // includes barrier between RefSeq and INSD accession types
+                sel.SetAdaptiveDepth(true);
+            }
         }
 
         // iterate features on Bioseq

@@ -226,6 +226,16 @@ void CStreamTestApp::Init()
     arg_desc->AddFlag("revcomp",
         "Reverse complement");
 
+    arg_desc->AddOptionalKey("policy",
+        "Policy",
+        "Far fetch policy",
+        CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("depth",
+        "Depth",
+        "Resolve depth",
+        CArgDescriptions::eInteger);
+
 #ifdef HAVE_NCBI_VDB
     arg_desc->AddFlag("wgsload",
         "Use WGS data loader");
