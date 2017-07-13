@@ -59,7 +59,8 @@ public:
     };
 
     using TAlignIDs = vector<SAlignIds>;
-
+    
+    // returns false if unable to parse external_id, else true
     static bool ParseAlignId (const string& external_id, TAlignIDs& parsed_ids);
 
 
