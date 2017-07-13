@@ -5152,17 +5152,7 @@ void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
 
 void CNewCleanup_imp::x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes)
 {
-    NON_CONST_ITERATE(CBioSource::TSubtype, s, subtypes) {
-        if ((*s)->IsSetSubtype() &&
-            (*s)->GetSubtype() == CSubSource::eSubtype_lat_lon &&
-            (*s)->IsSetName()) {
-            string new_val = CSubSource::FixLatLonPrecision((*s)->GetName());
-            if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*s)->GetName())) {
-                (*s)->SetName(new_val);
-                ChangeMade(CCleanupChange::eChangeSubsource);
-            }
-        }
-    }
+    // no longer reducing precision per SQD-4332
 }
 
 

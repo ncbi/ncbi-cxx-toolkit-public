@@ -1104,11 +1104,9 @@ BOOST_AUTO_TEST_CASE(Test_LatLonTrimming)
 
     cleanup.SetScope(scope);
     changes = cleanup.ExtendedCleanup(*entry);
-    vector<string> changes_str = changes->GetAllDescriptions();
-    BOOST_CHECK_EQUAL(changes_str[1], "Change Subsource");
     ITERATE(CBioseq::TDescr::Tdata, d, entry->GetDescr().Get()) {
         if ((*d)->IsSource()) {
-            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.1252 N 2.5666 E");
+            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12516554 N 2.5665974512 E");
         }
     }
 
