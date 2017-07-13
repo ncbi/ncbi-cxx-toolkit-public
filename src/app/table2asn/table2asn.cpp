@@ -326,8 +326,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
-    arg_desc->AddFlag("type-aa", "Treat sequence as DNA");
-    arg_desc->AddFlag("type-nuc", "Treat sequence as Nukleotide");
+    arg_desc->AddFlag("type-aa", "Treat sequence as amino acid");
+    arg_desc->AddFlag("type-nuc", "Treat sequence as nucleotide");
     arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
