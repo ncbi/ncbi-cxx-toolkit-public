@@ -14,6 +14,7 @@ namespace objects
     class CBioseq;
     class CObject_id;
     class CSeq_entry;
+    class CSeq_id;
     class ILineErrorListener;
     class CSourceModParser;
 };
@@ -25,17 +26,25 @@ class ILineReader;
   Usage examples
 */
 
+typedef struct 
+{
+    CTempString m_unparsed;
+    vector<CTempString> m_parsed;
+    CRef<objects::CSeq_id> m_id;
+} TSrcQualParsed;
+
 class TSrcQuals
 {
 public:
-    typedef map<string, CTempString> TLineMap;
+    typedef map<string, TSrcQualParsed> TLineMap;
     TLineMap m_lines_map;
     size_t m_id_col;
     auto_ptr<CMemoryFileMap> m_filemap;
     vector<CTempString> m_cols;
+
     bool AddQualifiers(objects::CSourceModParser& mod, const objects::CBioseq& bioseq);
     bool AddQualifiers(objects::CSourceModParser& mod, const string& id);
-    void x_AddQualifiers(objects::CSourceModParser& mod, const vector<CTempString>& values);
+    void AddQualifiers(objects::CSourceModParser& mod, const vector<CTempString>& values);
 };
 
 class CTable2AsnContext;

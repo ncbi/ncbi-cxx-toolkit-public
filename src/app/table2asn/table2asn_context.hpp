@@ -105,6 +105,7 @@ public:
     bool   m_eukariote;
     bool   m_di_fasta;
     bool   m_allow_accession;
+    bool   m_verbose;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;

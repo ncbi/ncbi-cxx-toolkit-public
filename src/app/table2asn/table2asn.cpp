@@ -351,6 +351,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
+    arg_desc->AddFlag("verbose", "Be verbose on reporting");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
     arg_desc->AddFlag("fetchall", "Search data in all available databases");
@@ -376,6 +377,7 @@ int CTbl2AsnApp::Run(void)
         NCBI_THROW(CArgException, eConstraint,
             "-logfile cannot be used with -split-logs");
     }
+    m_context.m_verbose = args["verbose"].AsBoolean();
 
     m_logger.Reset(new CTable2AsnLogger);
     CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;

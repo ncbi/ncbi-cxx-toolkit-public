@@ -66,7 +66,7 @@ CSeq_descr& _ParentDescr(CBioseq& bioseq)
 
 };
 
-void TSrcQuals::x_AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
+void TSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
     for (size_t i = 1; i < values.size() && i < m_cols.size(); i++)
@@ -80,13 +80,14 @@ void TSrcQuals::x_AddQualifiers(CSourceModParser& mod, const vector<CTempString>
 
 bool TSrcQuals::AddQualifiers(objects::CSourceModParser& mod, const string& id)
 {
-    TLineMap::const_iterator it = m_lines_map.find(id);
+    TLineMap::iterator it = m_lines_map.find(id);
     if (it != m_lines_map.end())
     {
         vector<CTempString> values;
-        NStr::Split(it->second, "\t", values, 0);
+        NStr::Split(it->second.m_unparsed, "\t", values, 0);
 
-        x_AddQualifiers(mod, values);
+        AddQualifiers(mod, values);
+        m_lines_map.erase(it);
         return true;
     }
 
@@ -254,15 +255,19 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
 
                     if (opt_map_filename.empty())
                     {
-                        CSeq_id id(id_text, 
-                            m_context->m_allow_accession ? CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal : CSeq_id::fParse_AnyLocal);
-                        id_text = id.AsFastaString();
+                        CRef<CSeq_id> id(new CSeq_id(id_text, 
+                            m_context->m_allow_accession ? CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal : CSeq_id::fParse_AnyLocal));
+
+                        id_text = id->AsFastaString();
                         NStr::ToLower(id_text);
-                        quals.m_lines_map[id_text] = newline;
+                        TSrcQualParsed& ref = quals.m_lines_map[id_text];
+                        ref.m_id = id;
+                        ref.m_unparsed = newline;
                     }
                     else
                     {
-                        quals.m_lines_map[id_text] = newline;
+                        TSrcQualParsed& ref = quals.m_lines_map[id_text];
+                        ref.m_unparsed = newline;
                     }
                 }
             }
@@ -277,7 +282,6 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
 void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const string& opt_map_filename)
 {
     CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
 
     CSeq_entry_EditHandle h_entry = scope.AddTopLevelSeqEntry(entry).GetEditHandle();
 
@@ -305,7 +309,16 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
         if (!x_ApplyAllQualifiers(mod, *dest))
           NCBI_THROW(CArgException, eConstraint,
              "there are found unrecognised source modifiers");
-
+    }
+    if (m_context->m_verbose)
+    {
+        for (auto m : m_quals)
+            for (auto line : m.m_lines_map)
+            {
+                m_context->m_logger->PutError(*auto_ptr<CLineError>(
+                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+                    "File " + m_context->m_current_file + " doesn't contain sequence with id " + line.first)));
+            }
     }
 }
 

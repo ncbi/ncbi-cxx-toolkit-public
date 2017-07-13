@@ -141,6 +141,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_eukariote(false),
     m_di_fasta(false),
     m_allow_accession(false),
+    m_verbose(false),
     m_logger(0)
 {
 }
