@@ -326,7 +326,10 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     Tests->SetLineage(m_Lineage);
     typedef map<string, CRef<CSerialObject> > TStr2Obj;
     TStr2Obj objects;
+    int count = 0;
     ITERATE (vector<string>, fname, m_Files) {
+        ++count;
+        LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
         CRef<CSerialObject> obj = x_ReadFile(*fname);
         Tests->SetFile(*fname);
         if (m_AutoFix) {
@@ -505,7 +508,10 @@ int CDiscRepApp::Run(void)
     if (args["o"]) {
         x_ProcessAll(args["o"].AsString());
     } else {
+        int count = 0;
         ITERATE (vector<string>, f, m_Files) {
+            ++count;
+            LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
             x_ProcessFile(*f);
         }
     }
