@@ -131,8 +131,8 @@ bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed
     using TStrIDs = vector<string>;
 
     string delim[3] = {";", ":", ","};
-    TStrIDs vec1;
 
+    TStrIDs vec1;
     NStr::Split(external_id, delim[0], vec1, 0, NULL);
     for (auto tok1 : vec1)
     {
@@ -146,7 +146,6 @@ bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed
 
         TStrIDs vec2;
         NStr::Split(tok1, delim[1], vec2, 0, NULL);
-
         int i = -1;
         for (auto tok2 : vec2)
         {
