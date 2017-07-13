@@ -2138,7 +2138,8 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, COverlappingFeatures, eDisc | eOncaller | eSm
         const CSeq_loc& loc_i = cds[i]->GetLocation();
         for (size_t j = 0; j < mrnas.size(); j++) {
             const CSeq_loc& loc_j = mrnas[j]->GetLocation();
-            if (context.Compare(loc_j, loc_i) != sequence::eNoOverlap && IsProductMatch(prod, mrnas[j]->GetData().GetRna().GetRnaProductName())) {
+            sequence::ECompare compare = context.Compare(loc_j, loc_i);
+            if ((compare == sequence::eContains || compare == sequence::eSame) && IsProductMatch(prod, mrnas[j]->GetData().GetRna().GetRnaProductName())) {
                 found = true;
                 break;
             }
