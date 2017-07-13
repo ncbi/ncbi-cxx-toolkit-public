@@ -32,9 +32,16 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_align_util.hpp>
+#include <util/sequtil/sequtil_manip.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -69,6 +76,209 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     }
     CSeq_loc_Mapper mapper(src_loc, loc, scope);
     return mapper.Map(align, row);
+}
+
+
+class CProductStringBuilder
+{
+public:
+    CProductStringBuilder(const CSeq_align& align, CScope& scope);
+    const string& GetProductString(void);
+
+private:
+    void x_AddExon(const CSpliced_exon& ex);
+    void x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset);
+    void x_Match(TSeqPos gen_from, TSeqPos gen_to_open);
+    void x_Mismatch(TSeqPos mismatch_len);
+
+    const CSeq_align& m_Align;
+    CScope& m_Scope;
+    string m_MismatchedBases;
+    bool m_GenRev = false;
+    bool m_ProdRev = false;
+    CSeqVector m_GenVector;
+    string m_ExonData;
+    string m_Result;
+    TSeqPos m_ProdPos = 0;
+    size_t m_MismatchPos = 0;
+};
+
+
+CProductStringBuilder::CProductStringBuilder(const CSeq_align& align, CScope& scope)
+    : m_Align(align), m_Scope(scope)
+{
+}
+
+
+const string& CProductStringBuilder::GetProductString(void)
+{
+    m_Result.clear();
+    // Only spliced-segs are supported.
+    if (!m_Align.GetSegs().IsSpliced()) {
+        NCBI_THROW(CObjmgrUtilException, eBadAlignment,
+            "Only splised-seg alignments are supported");
+    }
+
+    const CSpliced_seg& spliced_seg = m_Align.GetSegs().GetSpliced();
+    // Only genomic alignments support MismatchedBases.
+    if (spliced_seg.GetProduct_type() != CSpliced_seg::eProduct_type_transcript) {
+        // ERROR: Non-transcript alignment.
+        NCBI_THROW(CObjmgrUtilException, eBadAlignment,
+            "Only transcript spliced-segs are supported");
+    }
+
+    const CSeq_id& gen_id = m_Align.GetSeq_id(1);
+
+    CBioseq_Handle gen_handle = m_Scope.GetBioseqHandle(gen_id);
+    if ( !gen_handle ) {
+        NCBI_THROW(CObjmgrUtilException, eBadAlignment,
+            "Failed to fetch genomic sequence data");
+    }
+
+    m_GenVector = CSeqVector(gen_handle, CBioseq_Handle::eCoding_Iupac);
+
+    if ( spliced_seg.IsSetProduct_length() ) {
+        m_Result.reserve(spliced_seg.GetProduct_length());
+    }
+    m_GenRev = IsReverse(m_Align.GetSeqStrand(1));
+    m_ProdRev = IsReverse(m_Align.GetSeqStrand(0));
+
+    // NOTE: Even if ext is not set or does not contain MismatchedBases entry it may
+    // still be possible to generate product sequence if the alignment is a perfect
+    // match (no indels, mismatches or unaligned ranges on product).
+
+    if ( m_Align.IsSetExt() ) {
+        // Find MismatchedBases entry in ext. If several entries are present, use
+        // the first one.
+        ITERATE(CSeq_align::TExt, ext_it, m_Align.GetExt()) {
+            const CUser_object& obj = **ext_it;
+            if (obj.GetType().IsStr() && obj.GetType().GetStr() == "MismatchedBases") {
+                ITERATE(CUser_object::TData, data_it, obj.GetData()) {
+                    const CUser_field& field = **data_it;
+                    if (field.GetLabel().IsStr() && field.GetLabel().GetStr() == "Bases"  &&
+                        field.GetData().IsStr()) {
+                        m_MismatchedBases = field.GetData().GetStr();
+                        break;
+                    }
+                }
+                if ( !m_MismatchedBases.empty() ) break;
+            }
+        }
+    }
+
+    if ((m_GenRev != m_ProdRev)  &&  !m_MismatchedBases.empty()) {
+        CSeqManip::ReverseComplement(m_MismatchedBases, CSeqUtil::e_Iupacna, 0, (TSeqPos)m_MismatchedBases.size());
+    }
+
+    const CSpliced_seg::TExons& exons = spliced_seg.GetExons();
+
+    if ( m_ProdRev ) {
+        REVERSE_ITERATE(CSpliced_seg::TExons, ex_it, exons) {
+            x_AddExon(**ex_it);
+        }
+    }
+    else {
+        ITERATE(CSpliced_seg::TExons, ex_it, exons) {
+            x_AddExon(**ex_it);
+        }
+    }
+    if (m_MismatchPos < m_MismatchedBases.size()) {
+        x_Mismatch(m_MismatchedBases.size() - m_MismatchPos);
+    }
+
+    return m_Result;
+}
+
+
+void CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
+{
+    TSeqPos gen_from = ex.GetGenomic_start();
+    TSeqPos gen_to = ex.GetGenomic_end() + 1; // open range
+    _ASSERT(ex.GetProduct_start().IsNucpos());
+    _ASSERT(ex.GetProduct_end().IsNucpos());
+
+    // The whole exon must be reverse-complemented.
+    m_GenVector.GetSeqData(gen_from, gen_to, m_ExonData);
+    if (m_GenRev != m_ProdRev) {
+        CSeqManip::ReverseComplement(m_ExonData, CSeqUtil::e_Iupacna, 0, gen_to - gen_from);
+    }
+
+    TSeqPos prod_from = ex.GetProduct_start().GetNucpos();
+    if (prod_from > m_ProdPos) {
+        x_Mismatch(prod_from - m_ProdPos);
+    }
+    _ASSERT(prod_from == m_ProdPos);
+
+    if ( ex.IsSetParts() ) {
+        // Iterate parts
+        TSeqPos gen_offset = 0;
+        if (m_ProdRev) {
+            REVERSE_ITERATE(CSpliced_exon::TParts, part_it, ex.GetParts()) {
+                x_AddExonPart(**part_it, gen_offset);
+            }
+        }
+        else {
+            ITERATE(CSpliced_exon::TParts, part_it, ex.GetParts()) {
+                x_AddExonPart(**part_it, gen_offset);
+            }
+        }
+    }
+    else {
+        // Use whole exon
+        x_Match(0, gen_to - gen_from);
+    }
+    _ASSERT(m_ProdPos == ex.GetProduct_end().GetNucpos() + 1);
+}
+
+
+void CProductStringBuilder::x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset)
+{
+    switch ( ch.Which() ) {
+    case CSpliced_exon_chunk::e_Match:
+        x_Match(gen_offset, gen_offset + ch.GetMatch());
+        gen_offset += ch.GetMatch();
+        break;
+    case CSpliced_exon_chunk::e_Mismatch:
+        x_Mismatch(ch.GetMismatch());
+        gen_offset += ch.GetMismatch();
+        break;
+    case CSpliced_exon_chunk::e_Product_ins:
+        x_Mismatch(ch.GetProduct_ins());
+        break;
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        gen_offset += ch.GetGenomic_ins();
+        break;
+    case CSpliced_exon_chunk::e_Diag:
+        // ERROR: It's not clear if diag is a match or a mismatch.
+    default:
+        // ERROR: Unexpected chunk type.
+        NCBI_THROW(CObjmgrUtilException, eBadAlignment,
+            "Unsupported chunk type");
+    }
+}
+
+
+inline
+void CProductStringBuilder::x_Match(TSeqPos gen_from, TSeqPos gen_to_open)
+{
+    m_Result.append(m_ExonData.substr(gen_from, gen_to_open - gen_from));
+    m_ProdPos += gen_to_open - gen_from;
+}
+
+
+inline
+void CProductStringBuilder::x_Mismatch(TSeqPos mismatch_len)
+{
+    m_Result.append(m_MismatchedBases.substr(m_MismatchPos, mismatch_len));
+    m_MismatchPos += mismatch_len;
+    m_ProdPos += mismatch_len;
+}
+
+
+string GetProductString(const CSeq_align& align, CScope& scope)
+{
+    CProductStringBuilder builder(align, scope);
+    return builder.GetProductString();
 }
 
 

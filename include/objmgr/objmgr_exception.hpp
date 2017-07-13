@@ -206,7 +206,8 @@ public:
         eNotUnique,
         eUnknownLength,
         eBadFeature,
-        eBadResidue
+        eBadResidue,
+        eBadAlignment
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);

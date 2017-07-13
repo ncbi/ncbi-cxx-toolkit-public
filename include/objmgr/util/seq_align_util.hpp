@@ -77,6 +77,13 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
                                  CScope*           scope = NULL);
 
 
+/// Given a spliced-seg alignment with MismatchedBases user object, compose
+/// product sequence data. Return empty string if the alignment is not a
+/// spliced-seg or if it does not contain MismatchedBases.
+NCBI_XOBJUTIL_EXPORT
+string GetProductString(const CSeq_align& align, CScope& scope);
+
+
 /* @} */
 
 

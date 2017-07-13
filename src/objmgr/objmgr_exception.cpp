@@ -139,6 +139,7 @@ const char* CObjmgrUtilException::GetErrCodeString(void) const
     case eUnknownLength:    return "eUnknownLength";
     case eBadResidue:       return "eBadResidue";
     case eBadFeature:       return "eBadFeature";
+    case eBadAlignment:     return "eBadAlignment";
     default:                return CException::GetErrCodeString();
     }
 }
