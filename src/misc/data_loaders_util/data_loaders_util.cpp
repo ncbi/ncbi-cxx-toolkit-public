@@ -91,14 +91,21 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
 
 
     // ID retrieval options
+    // -r enables all available loaders
+    if (((loaders & fGenbank) && (loaders & fGenbankOffByDefault)) ||
+        (loaders & fVDB) ||
+        (loaders & fSRA)) {
+        if (!arg_desc.Exist("r")) {
+            arg_desc.AddFlag("r",
+                "Enable remote data retrieval");
+        }
+    }
+
     if (loaders & fGenbank) {
         if (loaders & fGenbankOffByDefault) {
-            // VR-623:
-            // Compromise to be able to use this class for public ASN.1 tools
-            if ( !arg_desc.Exist("r")) {
-                arg_desc.AddFlag("r",
+            if ( !arg_desc.Exist("genbank")) {
+                arg_desc.AddFlag("genbank",
                                  "Enable remote data retrieval using the Genbank data loader");
-                arg_desc.AddAlias("genbank", "r");
             }
         }
         else {
@@ -157,9 +164,12 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
 {
     bool nogenbank = args.Exist("nogenbank") && args["nogenbank"];
     if (loaders & fGenbankOffByDefault) {
-        // VR-623:
-        // invert the meaning here, checking for a different flag
-        nogenbank = args.Exist("r")  &&  !args["r"];
+        if ((args.Exist("genbank") && args["genbank"]) ||
+            (args.Exist("r") && args["r"])) {
+            nogenbank = false;
+        } else {
+            nogenbank = true;
+        }
     }
 
     if ( ! nogenbank ) {
@@ -203,15 +213,15 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
             use_vdb_loader = true;
         }
     }
-    if (args.Exist("novdb") && args["novdb"]) {
-        use_vdb_loader = false;
+
+    if (!use_vdb_loader) {
+        if (args.Exist("r") && args["r"]) {
+            use_vdb_loader = true;
+        }
     }
 
-    if (loaders & fGenbankOffByDefault) {
-        if (args.Exist("r")  &&  !args["r"]  &&
-            args.Exist("vdb") && !args["vdb"]) {
-            use_vdb_loader = false;
-        }
+    if (args.Exist("novdb") && args["novdb"]) {
+        use_vdb_loader = false;
     }
 
     if (use_vdb_loader) {
@@ -238,7 +248,7 @@ void CDataLoadersUtil::x_SetupSRADataLoader(const CArgs& args,
                                             int& priority)
 {
 #ifdef HAVE_NCBI_VDB
-    if(args.Exist("sra") && args["sra"]) {
+    if ((args.Exist("sra") && args["sra"]) || (args.Exist("r") && args["r"])) {
         CCSRADataLoader::RegisterInObjectManager(obj_mgr,
                                                  CObjectManager::eDefault,
                                                  priority++);
