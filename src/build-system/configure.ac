@@ -2557,6 +2557,9 @@ if test -n "$LDD"; then
    fi
 fi
 
+AC_PATH_PROG(UUIDGEN, uuidgen)
+AC_PATH_PROG(CD_REPORTER, cd_reporter, [], [/am/ncbiapdata/bin:$PATH])
+
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
    build_root=${with_build_root}
@@ -8496,6 +8499,7 @@ dnl make all shell scripts *.sh be executable
 find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
+chmod a+x "$build_root/build/run_with_cd_reporter.py"
 
 dnl save cache and log files to the build tree dir "status/"
 dnl (alongside config.status, which is now directly created there to

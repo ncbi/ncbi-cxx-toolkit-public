@@ -708,6 +708,8 @@ GREP
 EGREP
 VALGRIND_PATH
 LDD
+UUIDGEN
+CD_REPORTER
 CXXCPP
 TCHECK_CL
 AMQ
@@ -11065,6 +11067,88 @@ echo "${ECHO_T}yes" >&6; }
 echo "${ECHO_T}no" >&6; }
    fi
 fi
+
+# Extract the first word of "uuidgen", so it can be a program name with args.
+set dummy uuidgen; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_UUIDGEN+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $UUIDGEN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UUIDGEN="$UUIDGEN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_UUIDGEN="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UUIDGEN=$ac_cv_path_UUIDGEN
+if test -n "$UUIDGEN"; then
+  { echo "$as_me:$LINENO: result: $UUIDGEN" >&5
+echo "${ECHO_T}$UUIDGEN" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+# Extract the first word of "cd_reporter", so it can be a program name with args.
+set dummy cd_reporter; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_CD_REPORTER+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $CD_REPORTER in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CD_REPORTER="$CD_REPORTER" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="/am/ncbiapdata/bin:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CD_REPORTER="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CD_REPORTER=$ac_cv_path_CD_REPORTER
+if test -n "$CD_REPORTER"; then
+  { echo "$as_me:$LINENO: result: $CD_REPORTER" >&5
+echo "${ECHO_T}$CD_REPORTER" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -49652,6 +49736,8 @@ for ac_last_try in false false false false false :; do
 EGREP!$EGREP$ac_delim
 VALGRIND_PATH!$VALGRIND_PATH$ac_delim
 LDD!$LDD$ac_delim
+UUIDGEN!$UUIDGEN$ac_delim
+CD_REPORTER!$CD_REPORTER$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 TCHECK_CL!$TCHECK_CL$ac_delim
 AMQ!$AMQ$ac_delim
@@ -49744,8 +49830,6 @@ SGE_LIBS!$SGE_LIBS$ac_delim
 MUPARSER_INCLUDE!$MUPARSER_INCLUDE$ac_delim
 MUPARSER_LIBS!$MUPARSER_LIBS$ac_delim
 HDF5_INCLUDE!$HDF5_INCLUDE$ac_delim
-HDF5_LIBS!$HDF5_LIBS$ac_delim
-JPEG_INCLUDE!$JPEG_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49787,6 +49871,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+HDF5_LIBS!$HDF5_LIBS$ac_delim
+JPEG_INCLUDE!$JPEG_INCLUDE$ac_delim
 JPEG_LIBS!$JPEG_LIBS$ac_delim
 PNG_INCLUDE!$PNG_INCLUDE$ac_delim
 PNG_LIBS!$PNG_LIBS$ac_delim
@@ -49882,8 +49968,6 @@ ncbi_crypt!$ncbi_crypt$ac_delim
 CONNEXT!$CONNEXT$ac_delim
 XCONNEXT!$XCONNEXT$ac_delim
 serial!$serial$ac_delim
-bdb!$bdb$ac_delim
-dbapi!$dbapi$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49925,6 +50009,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+bdb!$bdb$ac_delim
+dbapi!$dbapi$ac_delim
 objects!$objects$ac_delim
 gui!$gui$ac_delim
 algo!$algo$ac_delim
@@ -50020,8 +50106,6 @@ BOOST_TEST_PEM_STATIC_LIBS!$BOOST_TEST_PEM_STATIC_LIBS$ac_delim
 BOOST_TEST_TEM_LIBS!$BOOST_TEST_TEM_LIBS$ac_delim
 BOOST_TEST_TEM_STATIC_LIBS!$BOOST_TEST_TEM_STATIC_LIBS$ac_delim
 BOOST_TEST_UTF_LIBS!$BOOST_TEST_UTF_LIBS$ac_delim
-BOOST_TEST_UTF_STATIC_LIBS!$BOOST_TEST_UTF_STATIC_LIBS$ac_delim
-BOOST_THREAD_LIBS!$BOOST_THREAD_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50063,6 +50147,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_TEST_UTF_STATIC_LIBS!$BOOST_TEST_UTF_STATIC_LIBS$ac_delim
+BOOST_THREAD_LIBS!$BOOST_THREAD_LIBS$ac_delim
 BOOST_THREAD_STATIC_LIBS!$BOOST_THREAD_STATIC_LIBS$ac_delim
 NCBI_C_INCLUDE!$NCBI_C_INCLUDE$ac_delim
 NCBI_C_LIBPATH!$NCBI_C_LIBPATH$ac_delim
@@ -50158,8 +50244,6 @@ APP_NOCOPY!$APP_NOCOPY$ac_delim
 APP_OR_NULL!$APP_OR_NULL$ac_delim
 IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
-IF_DEACTIVATING!$IF_DEACTIVATING$ac_delim
-configurables_mfname!$configurables_mfname$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50201,6 +50285,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+IF_DEACTIVATING!$IF_DEACTIVATING$ac_delim
+configurables_mfname!$configurables_mfname$ac_delim
 CC_FILTER!$CC_FILTER$ac_delim
 CXX_FILTER!$CXX_FILTER$ac_delim
 AR_FILTER!$AR_FILTER$ac_delim
@@ -50228,7 +50314,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 25; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 27; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -50677,6 +50763,7 @@ echo "$as_me: executing $ac_file commands" >&6;}
 find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
+chmod a+x "$build_root/build/run_with_cd_reporter.py"
 
 if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"

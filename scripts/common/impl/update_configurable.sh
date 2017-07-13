@@ -87,7 +87,7 @@ case $output in
             src=./src/build-system/Makefile.mk.in "$builddir/Makefile.mk"
         ;;
 
-    *.sh)
+    *.sh | *.py )
         chmod +x $output
         ;;
 

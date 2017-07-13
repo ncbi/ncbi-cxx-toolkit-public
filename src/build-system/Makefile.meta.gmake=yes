@@ -29,6 +29,16 @@ ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
   endif
 endif
 
+ifeq "" "$(NCBI_BUILD_SESSION_ID)"
+  ifeq "" "$(filter-out @%@, $(UUIDGEN))"
+    UUIDGEN = uuidgen 2>/dev/null
+  endif
+  NCBI_BUILD_SESSION_ID := $(shell $(UUIDGEN))
+  export NCBI_BUILD_SESSION_ID
+endif
+
+abs_top_srcdir ?= $(top_srcdir)
+
 # Work around GNU Make's tendency to double its automatic
 # --jobserver-fds=* flag's usage with each level of recursion, by
 # constructing an alternate MFLAGS_NR variable that limits its

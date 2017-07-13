@@ -24,6 +24,10 @@ endif
 
 ### Protect against two MAKE processes running in the same dir
 
+#ifneq "" "$(CD_REPORTER)"
+  RUN_WITH_CD_REPORTER = $(build_root)/build/run_with_cd_reporter.py
+#endif
+
 ifeq "$(wildcard $(build_root)/bin/run_with_lock)" ""
   RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
 else
@@ -87,7 +91,8 @@ if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     if $(3) -q depend >/dev/null 2>&1 && $(3) -q $(4) >/dev/null 2>&1; then \
 	$(echo_unless_silent) "$(make_tag) (Makefile.$(1)$(5)): Nothing to be done for \`$(4)'."; \
     elif $(echo_unless_silent) $(3) $(4) && \
-      $(RWL) -base "make_$(1)" -log "make_$(1).log" $(2) ! $(3) $(4) ; then \
+      $(RWL) -base "make_$(1)" -log "make_$(1).log" $(2) \
+        ! $(RUN_WITH_CD_REPORTER) $(3) $(4) ; then \
         echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$(1)$(5)" ; \
 	$(6) ; \
         exit $(7) ; \

@@ -46,6 +46,8 @@ EGREP     = @EGREP@
 EGREP_Q   = @EGREP_Q@
 SED       = @SED@
 OSTYPE    = @OSTYPE@
+UUIDGEN   = @UUIDGEN@
+CD_REPORTER = @CD_REPORTER@
 
 deactivate = unlink
 @IF_DEACTIVATING@ deactivate = deactivate
