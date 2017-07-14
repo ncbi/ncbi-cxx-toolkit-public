@@ -594,18 +594,19 @@ void CBioseqIndex::x_InitFeats (void)
 
         SAnnotSelector sel;
 
-        // handle far fetching policy, from initializer argument or user object
+        if (m_Policy != CSeqEntryIndex::fExternal) {
+            // unless explicitly desired, exclude external annots
+            sel.ExcludeNamedAnnots("CDD")
+               .ExcludeNamedAnnots("SNP")
+               .ExcludeNamedAnnots("STS");
+        }
+
         if (m_Policy == CSeqEntryIndex::fExhaustive) {
 
             sel.SetResolveAll();
              // experimental flag forces collection of features from all levels
             sel.SetResolveDepth(kMax_Int);
             // also ignores RefSeq/INSD barrier, far fetch policy user object
-
-            // want to examine features from all component records, so exclude external annots
-            sel.ExcludeNamedAnnots("CDD")
-               .ExcludeNamedAnnots("SNP")
-               .ExcludeNamedAnnots("STS");
 
         } else if (m_Policy == CSeqEntryIndex::fExternal) {
 
@@ -615,6 +616,7 @@ void CBioseqIndex::x_InitFeats (void)
 
         } else if (m_Policy == CSeqEntryIndex::fInternal || m_ForceOnlyNearFeats) {
 
+            // do not fetch features from underlying sequence component records
             if (m_Surrogate) {
                 // delta with sublocation needs to map features from original Bioseq
                 sel.SetResolveAll();
@@ -625,10 +627,6 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.SetResolveDepth(0);
                 sel.SetExcludeExternal();
             }
-
-            sel.ExcludeNamedAnnots("CDD")
-               .ExcludeNamedAnnots("SNP")
-               .ExcludeNamedAnnots("STS");
 
         } else if (m_Depth > -1) {
 
@@ -642,18 +640,14 @@ void CBioseqIndex::x_InitFeats (void)
             // normal situation uses adaptive depth for feature collection,
             // includes barrier between RefSeq and INSD accession types
             sel.SetAdaptiveDepth(true);
-
-            sel.ExcludeNamedAnnots("CDD")
-               .ExcludeNamedAnnots("SNP")
-               .ExcludeNamedAnnots("STS");
-
-            // sel.ExcludeFeatType(CSeqFeatData::e_Variation);
         }
 
         // additional common settings
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
            .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
            .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+
+        // sel.ExcludeFeatType(CSeqFeatData::e_Variation);
 
         sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
