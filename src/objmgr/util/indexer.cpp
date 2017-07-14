@@ -594,13 +594,24 @@ void CBioseqIndex::x_InitFeats (void)
 
         SAnnotSelector sel;
 
-        // handle far fetching policy, from initializer argument or  user object
+        // handle far fetching policy, from initializer argument or user object
         if (m_Policy == CSeqEntryIndex::fExhaustive) {
 
             sel.SetResolveAll();
              // experimental flag forces collection of features from all levels
             sel.SetResolveDepth(kMax_Int);
             // also ignores RefSeq/INSD barrier, far fetch policy user object
+
+            // want to examine features from all component records, so exclude external annots
+            sel.ExcludeNamedAnnots("CDD")
+               .ExcludeNamedAnnots("SNP")
+               .ExcludeNamedAnnots("STS");
+
+        } else if (m_Policy == CSeqEntryIndex::fExternal) {
+
+            // same as fAdaptive, except also allows external annots
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
 
         } else if (m_Policy == CSeqEntryIndex::fInternal || m_ForceOnlyNearFeats) {
 
@@ -615,29 +626,43 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.SetExcludeExternal();
             }
 
+            sel.ExcludeNamedAnnots("CDD")
+               .ExcludeNamedAnnots("SNP")
+               .ExcludeNamedAnnots("STS");
+
         } else if (m_Depth > -1) {
 
             sel.SetResolveAll();
             // explicit depth setting overrides adaptive depth (typically only needed for debugging)
             sel.SetResolveDepth(m_Depth);
 
-        } else {
+        } else if (m_Policy == CSeqEntryIndex::fAdaptive) {
 
             sel.SetResolveAll();
             // normal situation uses adaptive depth for feature collection,
             // includes barrier between RefSeq and INSD accession types
             sel.SetAdaptiveDepth(true);
+
+            sel.ExcludeNamedAnnots("CDD")
+               .ExcludeNamedAnnots("SNP")
+               .ExcludeNamedAnnots("STS");
+
+            // sel.ExcludeFeatType(CSeqFeatData::e_Variation);
         }
+
+        // additional common settings
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+
+        sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
         // iterate features on Bioseq
         for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
             const CMappedFeat mf = *feat_it;
             CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
-            const CSeq_feat& mpd = mf.GetMappedFeature();
-            CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-
-            CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, fl, *this));
+            CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
             m_SfxList.push_back(sfx);
 
             m_FeatTree.AddFeature(mf);
@@ -854,14 +879,24 @@ CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd,
 // Constructor
 CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
                               const CMappedFeat mf,
-                              CConstRef<CSeq_loc> fl,
                               CBioseqIndex& bsx)
     : m_Sfh(sfh),
       m_Mf(mf),
-      m_Fl(fl),
       m_Bsx(&bsx)
 {
     m_Subtype = m_Mf.GetData().GetSubtype();
+}
+
+CConstRef<CSeq_loc> CFeatureIndex::GetMappedLocation(void)
+
+{
+    if (! m_Fl) {
+        const CSeq_feat& mpd = m_Mf.GetMappedFeature();
+        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
+        m_Fl = fl;
+    }
+
+    return m_Fl;
 }
 
 // Find CFeatureIndex object for best gene using internal CFeatTree

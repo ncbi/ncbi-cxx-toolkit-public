@@ -88,7 +88,8 @@ public:
         // far feature fetch policy
         fAdaptive = 0,
         fInternal = 1,
-        fExhaustive = 2
+        fExternal = 2,
+        fExhaustive = 3
     };
 
 public:
@@ -437,7 +438,6 @@ public:
     // Constructor
     CFeatureIndex (CSeq_feat_Handle sfh,
                    const CMappedFeat mf,
-                   CConstRef<CSeq_loc> fl,
                    CBioseqIndex& bsx);
 
 private:
@@ -449,8 +449,9 @@ public:
     // Getters
     CSeq_feat_Handle GetSeqFeatHandle (void) const { return m_Sfh; }
     const CMappedFeat GetMappedFeat (void) const { return m_Mf; }
-    CConstRef<CSeq_loc> GetMappedLocation (void) const { return m_Fl; }
     CRef<CSeqVector> GetSeqVector (void) const { return m_SeqVec; }
+
+    CConstRef<CSeq_loc> GetMappedLocation(void);
 
     // Get parent Bioseq index
     CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
