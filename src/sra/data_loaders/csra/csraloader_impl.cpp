@@ -69,7 +69,7 @@ class CDataLoader;
 
 // magic chunk ids
 static const int kTSEId = 1;
-static const int kMainChunkId = -1;
+static const int kMainChunkId = CTSE_Chunk_Info::kDelayedMain_ChunkId;
 
 // algirithm options
 static const bool kUseFullAlignCounts = true;
@@ -1554,6 +1554,13 @@ void CCSRARefSeqInfo::LoadAnnotMainSplit(CTSE_LoadLock& load_lock)
 }
 
 
+static const Uint8 k_align_bytes = 300;
+static const double k_read_byte_seconds = 7.5e-9; // 133 MB/s
+static const double k_make_graph_seconds = 20e-9; // 50 MB/s
+static const double k_make_align_seconds = 80e-9; // 12 MB/s
+static const double k_make_read_seconds = 80e-9; // 12 MB/s
+
+
 void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
 {
     if ( GetDebugLevel() >= 5 ) {
@@ -1621,6 +1628,10 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
                      range);
             }
             chunk->x_AddAnnotPlace(kTSEId);
+            Uint8 bytes = chunks[k].align_count*k_align_bytes;
+            double seconds = bytes*(k_read_byte_seconds+k_make_align_seconds);
+            chunk->x_SetLoadBytes(bytes);
+            chunk->x_SetLoadSeconds(seconds);
             split_info.AddChunk(*chunk);
         }
     }}
@@ -1652,6 +1663,10 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
                      range);
             }
             chunk->x_AddAnnotPlace(kTSEId);
+            Uint8 bytes = max<Uint8>(1, chunks[k].align_count*k_align_bytes);
+            double seconds = bytes*(k_read_byte_seconds+k_make_graph_seconds);
+            chunk->x_SetLoadBytes(bytes);
+            chunk->x_SetLoadSeconds(seconds);
             split_info.AddChunk(*chunk);
         }
     }
