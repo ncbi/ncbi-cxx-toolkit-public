@@ -504,6 +504,14 @@ public:
 
     static size_t MakeSmallGenomeSet(CSeq_entry_Handle entry);
 
+/// From SQD-4329
+/// For each sequence with a source that has an IRD db_xref, create a misc_feature
+/// across the entire span and move the IRD db_xref from the source to the misc_feature.
+/// Create a suppressing gene xref for the misc_feature.
+/// @param entry Seq-entry on which to search for sources and create features
+/// @return bool indicates changes were made
+    static bool MakeIRDFeatsFromSourceXrefs(CSeq_entry_Handle entry);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

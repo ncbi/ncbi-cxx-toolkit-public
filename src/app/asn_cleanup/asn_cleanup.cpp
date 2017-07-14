@@ -234,7 +234,8 @@ void CCleanupApp::Init(void)
             "\tr Regenerate Definition Lines\n"
             "\tb Batch Cleanup of Multireader Output\n"
             "\ta Remove Assembly Gaps\n"
-            "\ti Make Influenza Small Genome Sets\n",
+            "\ti Make Influenza Small Genome Sets\n"
+            "\tf Make IRD misc_feats\n",
             CArgDescriptions::eString);
 
         arg_desc->AddFlag("T", "TaxonomyLookup");
@@ -313,7 +314,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a' && *s != 'i') {
+            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a' && *s != 'i' && *s != 'f') {
                 unrecognized += *s;
             }
         }
@@ -814,6 +815,11 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
     }
     if (NStr::Find(opt, "i") != string::npos) {
         if (CCleanup::MakeSmallGenomeSet(seh) > 0) {
+            any_changes = true;
+        }
+    }
+    if (NStr::Find(opt, "f") != string::npos) {
+        if (CCleanup::MakeIRDFeatsFromSourceXrefs(seh)) {
             any_changes = true;
         }
     }

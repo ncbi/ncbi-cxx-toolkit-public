@@ -4439,5 +4439,72 @@ size_t CCleanup::MakeSmallGenomeSet(CSeq_entry_Handle entry)
     return added;
 }
 
+
+void AddIRDMiscFeature(CBioseq_Handle bh, const CDbtag& tag)
+{
+    CSeq_annot_Handle ftable;
+
+    CSeq_annot_CI annot_ci(bh);
+    for (; annot_ci; ++annot_ci) {
+        if ((*annot_ci).IsFtable()) {
+            ftable = *annot_ci;
+            break;
+        }
+    }
+
+    if (!ftable) {
+        CBioseq_EditHandle beh = bh.GetEditHandle();
+        CRef<CSeq_annot> new_annot(new CSeq_annot());
+        ftable = beh.AttachAnnot(*new_annot);
+    }
+
+    CSeq_annot_EditHandle aeh(ftable);
+
+    CRef<CSeq_feat> f(new CSeq_feat());
+    f->SetData().SetImp().SetKey("misc_feature");
+    f->SetLocation().SetInt().SetFrom(0);
+    f->SetLocation().SetInt().SetTo(bh.GetBioseqLength() - 1);
+    f->SetLocation().SetInt().SetId().Assign(*(bh.GetSeqId()));
+    CRef<CDbtag> xref(new CDbtag());
+    xref->Assign(tag);
+    f->SetDbxref().push_back(xref);
+    CRef<CSeqFeatXref> suppress(new CSeqFeatXref());
+    suppress->SetData().SetGene();
+    f->SetXref().push_back(suppress);
+    aeh.AddFeat(*f);
+}
+
+
+bool CCleanup::MakeIRDFeatsFromSourceXrefs(CSeq_entry_Handle entry)
+{
+    bool any = false;
+    CBioseq_CI bi(entry, CSeq_inst::eMol_na);
+    while (bi) {
+        CSeqdesc_CI src(*bi, CSeqdesc::e_Source);
+        while (src) {
+            if (src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetDb()) {
+                CRef<COrg_ref> org(const_cast<COrg_ref *>(&(src->GetSource().GetOrg())));
+                COrg_ref::TDb::iterator db = org->SetDb().begin();
+                while (db != org->SetDb().end()) {
+                    if ((*db)->IsSetDb() && NStr::Equal((*db)->GetDb(), "IRD")) {
+                        AddIRDMiscFeature(*bi, **db);
+                        db = org->SetDb().erase(db);
+                        any = true;
+                    } else {
+                        ++db;
+                    }
+                }
+                if (org->GetDb().size() == 0) {
+                    org->ResetDb();
+                }
+            }
+            ++src;
+        }
+        ++bi;
+    }
+    return any;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
