@@ -428,9 +428,6 @@ CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
 
 int CAsn2FlatApp::Run(void)
 {
-    static const CDataLoadersUtil::TLoaders default_loaders =
-        CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
-
     // initialize conn library
     CONNECT_Init(&GetConfig());
 
@@ -444,7 +441,9 @@ int CAsn2FlatApp::Run(void)
         NCBI_THROW(CException, eUnknown, "Could not create object manager");
     }
     if (args["gbload"]  ||  args["id"]  ||  args["ids"]) {
-       CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
+        static const CDataLoadersUtil::TLoaders default_loaders =
+            CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fSRA;
+        CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
     }
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
