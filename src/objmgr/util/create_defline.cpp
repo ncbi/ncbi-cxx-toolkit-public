@@ -2814,6 +2814,8 @@ string CDeflineGenerator::GenerateDefline (
         }
     }
 
+    m_Feat_Tree.Reset (NULL);
+
     return final;
 }
 
