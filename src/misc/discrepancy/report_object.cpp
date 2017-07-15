@@ -178,8 +178,8 @@ void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
      
      feature::GetLabel(seq_feat, &label, feature::fFGL_Content);
      size_t pos;
-     if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("-")) ) ) {
-          label = CTempString(label).substr(pos+1);
+     if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("RNA-")) ) ) {
+          label = CTempString(label).substr(pos+4);
      }
      string number = "/number=";
      if (!label.empty() 

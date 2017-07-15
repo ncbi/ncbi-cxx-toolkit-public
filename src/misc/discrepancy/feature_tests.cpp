@@ -2318,14 +2318,11 @@ DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 
 static const string kFeatureList = "Feature List";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
-//  ----------------------------------------------------------------------------
 {
+static int count = 0;
     if (obj.IsSetData()) {
-        
         CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
-
         if (subtype != CSeqFeatData::eSubtype_gap && subtype != CSeqFeatData::eSubtype_prot) {
             string subitem = "[n] " + obj.GetData().GetKey();
             subitem += " feature[s]";
@@ -2335,9 +2332,7 @@ DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(FEATURE_LIST)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
