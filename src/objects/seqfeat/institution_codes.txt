@@ -6683,6 +6683,7 @@ UFRG	s	Instituto de Biologia
 UFRGS	s	Universidade Federale do Rio Grande do Sul		
 UFRJ<herbarium>	sc	Herbario e Colecao Fitopathologica "Verlande Duarte Silveira"		
 UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro		
+UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection
 UFRJIM	c	Departamento de Microbiologia Medica		
 UFRN	s	Universidade Federal do Rio Grande do Norte		
 UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection
@@ -7518,6 +7519,7 @@ ZLSYU	s	Zoological Laboratory
 ZLVG	c	Culture collection of the Laboratory of Forest Protection at the Slovenian Forestry Institute		
 ZM	s	Zhejiang Museum of Natural History		
 ZMA	s	Universiteit van Amsterdam, Zoologisch Museum		
+ZMA:POR	s	Universiteit van Amsterdam, Zoologisch Museum, Porifera collection
 ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum		
 ZMAU	s	Zoological Museum Andhra University		
 ZMB	s	Zoologisches Museum der Humboldt-Universitaet zu Berlin		
