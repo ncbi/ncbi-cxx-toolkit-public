@@ -459,11 +459,9 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
-//  ----------------------------------------------------------------------------
 {
-    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+    if (context.IsEukaryotic() || context.IsOrganelle() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
     //only examine coding regions
@@ -523,21 +521,17 @@ DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
 }
 
 
-
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
 const string kBacterialPartialNonextendableException = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
-//  ----------------------------------------------------------------------------
 {
-    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+    if (context.IsEukaryotic() || context.IsOrganelle() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
     //only examine coding regions
@@ -559,21 +553,17 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ,
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
 const string kPartialProblems = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, but could be extended by 3 or fewer nucleotides to do so";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
-//  ----------------------------------------------------------------------------
 {
-//    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
-    if (context.IsEukaryotic() || context.GetCurrentBioseq()->IsAa()) {
+    if (context.IsEukaryotic() || context.IsOrganelle() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
     //only examine coding regions
@@ -609,9 +599,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(PARTIAL_PROBLEMS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
