@@ -513,10 +513,8 @@ CThread::TID CThread::GetSelf(void)
 
 bool CThread::IsMain(void)
 {
-    TID id = sx_ThreadId;
     if (!sm_MainThreadIdInitialized) {
         InitializeMainThreadId();
-        id = sx_ThreadId;
     }
     return sx_ThreadId == sx_GetMainThreadId();
 }
