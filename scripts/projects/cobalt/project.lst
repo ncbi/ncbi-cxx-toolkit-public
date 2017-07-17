@@ -10,3 +10,6 @@ algo/cobalt
 -app/dustmasker
 -app/segmasker
 connect/mbedtls
+algo/blast/proteinkmer
+-algo/blast/proteinkmer/demo
+
