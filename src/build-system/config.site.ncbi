@@ -66,6 +66,7 @@ try_local() {
         test -d "$d/include/mbedtls"       &&  : ${MBEDTLS_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
+        test -d "$d/include/mongocxx"      &&  : ${MONGODB3_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
@@ -209,6 +210,8 @@ esac
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
 : ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
+
+: ${MONGODB3_PATH=$NCBI/mongodb-3.1.1}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;

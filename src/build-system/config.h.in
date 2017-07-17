@@ -338,6 +338,9 @@
 /* Define to 1 if libmongoclient is available. */
 #undef HAVE_LIBMONGODB
 
+/* Define to 1 if libmongocxx is available. */
+#undef HAVE_LIBMONGODB3
+
 /* Define to 1 if libmuparser is available. */
 #undef HAVE_LIBMUPARSER
 

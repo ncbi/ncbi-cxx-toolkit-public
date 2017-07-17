@@ -833,6 +833,8 @@ SASL2_INCLUDE
 SASL2_LIBS
 MONGODB_INCLUDE
 MONGODB_LIBS
+MONGODB3_INCLUDE
+MONGODB3_LIBS
 GMOCK_INCLUDE
 GMOCK_LIBS
 LAPACK_INCLUDE
@@ -1649,7 +1651,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
+magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
 libuv libssh2 cassandra libxlsxwriter grpc 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -1720,7 +1722,8 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
+      | --with-avro=* | --with-cereal=* | --with-sasl2=* \
+      | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
       | --with-grpc=* )
@@ -2035,8 +2038,10 @@ Optional Packages:
  --without-cereal        do not use USC Cereal
  --with-sasl2=DIR        use SASL 2 installation in DIR
  --without-sasl2         do not use SASL 2
- --with-mongodb=DIR      use MongoDB installation in DIR
- --without-mongodb       do not use MongoDB
+ --with-mongodb=DIR      use legacy MongoDB installation in DIR
+ --without-mongodb       do not use legacy MongoDB
+ --with-mongodb3=DIR     use MongoDB 3 installation in DIR
+ --without-mongodb3      do not use MongoDB 3
  --with-gmock=DIR        use Google Mock installation in DIR
  --without-gmock         do not use Google Mock
  --with-lapack=DIR       use LAPACK installation in DIR
@@ -2595,6 +2600,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_mongodb=no
+         fi
+        if test "${with_mongodb3-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-mongodb3 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_mongodb3=no
          fi
         if test "${with_gmock-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gmock but --without-3psw" >&2
@@ -4120,6 +4131,18 @@ fi
 # Check whether --with-mongodb was given.
 if test "${with_mongodb+set}" = set; then
   withval=$with_mongodb;
+fi
+
+
+# Check whether --with-mongodb3 was given.
+if test "${with_mongodb3+set}" = set; then
+  withval=$with_mongodb3;
+fi
+
+
+# Check whether --with-mongodb3 was given.
+if test "${with_mongodb3+set}" = set; then
+  withval=$with_mongodb3;
 fi
 
 
@@ -45774,7 +45797,7 @@ _ACEOF
 
 
 
-# MongoDB
+# legacy MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
    *             ) MONGODB_PATH=$with_mongodb ;;
@@ -46013,6 +46036,245 @@ if test -n "$MONGODB_LIBS"; then
    MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $OPENSSL_LIBS $SASL2_LIBS"
 else
    MONGODB_STATIC_LIBS=
+fi
+
+
+# MongoDB 3.x
+case "$with_mongodb3" in
+   yes | no | '' ) ;;
+   *             ) MONGODB3_PATH=$with_mongodb3 ;;
+esac
+if test -d "$MONGODB3_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $MONGODB3_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $MONGODB3_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            MONGODB3_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$MONGODB3_PATH" in
+               /*) ;;
+               * ) MONGODB3_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) MONGODB3_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test -d $MONGODB3_PATH/lib${bit64_sfx}; then
+   MONGODB3_LIBDIR=$MONGODB3_PATH/lib${bit64_sfx}
+else
+   MONGODB3_LIBDIR=$MONGODB3_PATH/lib
+fi
+m3pc="env PKG_CONFIG_PATH=$MONGODB3_LIBDIR/pkgconfig pkg-config libmongocxx"
+if $m3pc --exists >/dev/null 2>&1; then
+   MONGODB3_FULL_INCLUDE=`$m3pc --cflags`
+   if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    MONGODB3_FULL_LIBS=`$m3pc --libs --static | sed -e "$no_usr_lib"`
+ else
+    MONGODB3_FULL_LIBS=
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$m3pc --libs --static | sed -e "$no_usr_lib"`; do
+       case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
+          -L*)
+             MONGODB3_FULL_LIBS="$MONGODB3_FULL_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             MONGODB3_FULL_LIBS="$MONGODB3_FULL_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    MONGODB3_FULL_LIBS="$MONGODB3_FULL_LIBS${ncbi_rp_R_flags}"
+ fi
+fi
+if test "$with_mongodb3" != "no"; then
+    case "$with_mongodb3" in
+       yes | "" ) ;;
+       *        ) MONGODB3_PATH=$with_mongodb3 ;;
+    esac
+    if test "$MONGODB3_PATH" != /usr -a -d "$MONGODB3_PATH"; then
+       in_path=" in $MONGODB3_PATH"
+       if test -z "$MONGODB3_INCLUDE" -a -d "$MONGODB3_PATH/include"; then
+          MONGODB3_INCLUDE="-I$MONGODB3_PATH/include"
+       fi
+       if test -n "$MONGODB3_LIBPATH"; then
+          :
+       elif test -d "$MONGODB3_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MONGODB3_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MONGODB3_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MONGODB3_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MONGODB3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$MONGODB3_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MONGODB3_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MONGODB3_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MONGODB3_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MONGODB3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       MONGODB3_LIBS="$MONGODB3_LIBPATH -lmongocxx "
+    else
+       MONGODB3_INCLUDE=""
+       MONGODB3_LIBS="-lmongocxx "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libmongocxx$in_path" >&5
+echo $ECHO_N "checking for libmongocxx$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_mongodb3+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$MONGODB3_FULL_INCLUDE $BOOST_INCLUDE $MONGODB3_INCLUDE $orig_CPPFLAGS"
+       LIBS="$MONGODB3_LIBS $MONGODB3_FULL_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <mongocxx/client.hpp>
+int
+main ()
+{
+mongocxx::client mongo_client;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_mongodb3=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_mongodb3=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_mongodb3" >&5
+echo "${ECHO_T}$ncbi_cv_lib_mongodb3" >&6; }
+    if test "$ncbi_cv_lib_mongodb3" = "no"; then
+       if test "${with_mongodb3:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mongodb3 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mongodb3 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_mongodb3" = "no"; then
+    MONGODB3_PATH="No_MONGODB3"
+    MONGODB3_INCLUDE=
+    MONGODB3_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}MONGODB3"; WithPackagesSep=" "
+    MONGODB3_INCLUDE="$MONGODB3_FULL_INCLUDE $BOOST_INCLUDE $MONGODB3_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBMONGODB3 1
+_ACEOF
+
+ fi
+
+
+
+if test -n "$MONGODB3_LIBS"; then
+   MONGODB3_INCLUDE=$MONGODB3_FULL_INCLUDE
+   MONGODB3_LIBS=$MONGODB3_FULL_LIBS
 fi
 
 
@@ -48517,7 +48779,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
+  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -49905,6 +50167,8 @@ SASL2_INCLUDE!$SASL2_INCLUDE$ac_delim
 SASL2_LIBS!$SASL2_LIBS$ac_delim
 MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
+MONGODB3_INCLUDE!$MONGODB3_INCLUDE$ac_delim
+MONGODB3_LIBS!$MONGODB3_LIBS$ac_delim
 GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
 GMOCK_LIBS!$GMOCK_LIBS$ac_delim
 LAPACK_INCLUDE!$LAPACK_INCLUDE$ac_delim
@@ -49969,8 +50233,6 @@ OPT_GROUPS!$OPT_GROUPS$ac_delim
 local_lbsm!$local_lbsm$ac_delim
 ncbi_crypt!$ncbi_crypt$ac_delim
 CONNEXT!$CONNEXT$ac_delim
-XCONNEXT!$XCONNEXT$ac_delim
-serial!$serial$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50012,6 +50274,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+XCONNEXT!$XCONNEXT$ac_delim
+serial!$serial$ac_delim
 bdb!$bdb$ac_delim
 dbapi!$dbapi$ac_delim
 objects!$objects$ac_delim
@@ -50107,8 +50371,6 @@ BOOST_SYSTEM_STATIC_LIBS!$BOOST_SYSTEM_STATIC_LIBS$ac_delim
 BOOST_TEST_PEM_LIBS!$BOOST_TEST_PEM_LIBS$ac_delim
 BOOST_TEST_PEM_STATIC_LIBS!$BOOST_TEST_PEM_STATIC_LIBS$ac_delim
 BOOST_TEST_TEM_LIBS!$BOOST_TEST_TEM_LIBS$ac_delim
-BOOST_TEST_TEM_STATIC_LIBS!$BOOST_TEST_TEM_STATIC_LIBS$ac_delim
-BOOST_TEST_UTF_LIBS!$BOOST_TEST_UTF_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50150,6 +50412,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_TEST_TEM_STATIC_LIBS!$BOOST_TEST_TEM_STATIC_LIBS$ac_delim
+BOOST_TEST_UTF_LIBS!$BOOST_TEST_UTF_LIBS$ac_delim
 BOOST_TEST_UTF_STATIC_LIBS!$BOOST_TEST_UTF_STATIC_LIBS$ac_delim
 BOOST_THREAD_LIBS!$BOOST_THREAD_LIBS$ac_delim
 BOOST_THREAD_STATIC_LIBS!$BOOST_THREAD_STATIC_LIBS$ac_delim
@@ -50245,8 +50509,6 @@ ncbi_java!$ncbi_java$ac_delim
 NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 BINCOPY!$BINCOPY$ac_delim
 APP_NOCOPY!$APP_NOCOPY$ac_delim
-APP_OR_NULL!$APP_OR_NULL$ac_delim
-IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50288,6 +50550,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_OR_NULL!$APP_OR_NULL$ac_delim
+IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
 IF_DEACTIVATING!$IF_DEACTIVATING$ac_delim
 configurables_mfname!$configurables_mfname$ac_delim
@@ -50318,7 +50582,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 28; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 30; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

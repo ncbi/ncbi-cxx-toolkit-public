@@ -72,7 +72,8 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
-                     curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack,
+                     curl, gsoap, avro, cereal, sasl2,
+                     mongodb, mongodb3, gmock, lapack,
                      libuv, libssh2, cassandra, libxlsxwriter, grpc],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
@@ -486,9 +487,13 @@ AC_ARG_WITH(sasl2,
 AC_ARG_WITH(sasl2,
    [ --without-sasl2         do not use SASL 2])
 AC_ARG_WITH(mongodb,
-   [ --with-mongodb=DIR      use MongoDB installation in DIR])
+   [ --with-mongodb=DIR      use legacy MongoDB installation in DIR])
 AC_ARG_WITH(mongodb,
-   [ --without-mongodb       do not use MongoDB])
+   [ --without-mongodb       do not use legacy MongoDB])
+AC_ARG_WITH(mongodb3,
+   [ --with-mongodb3=DIR     use MongoDB 3 installation in DIR])
+AC_ARG_WITH(mongodb3,
+   [ --without-mongodb3      do not use MongoDB 3])
 AC_ARG_WITH(gmock,
    [ --with-gmock=DIR        use Google Mock installation in DIR])
 AC_ARG_WITH(gmock,
@@ -583,7 +588,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
+magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
 libuv libssh2 cassandra libxlsxwriter grpc 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -653,7 +658,8 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
+      | --with-avro=* | --with-cereal=* | --with-sasl2=* \
+      | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
       | --with-grpc=* )
@@ -7442,7 +7448,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(sasl2,
    [[sasl_client_init(NULL);]])]])
 
 
-# MongoDB
+# legacy MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
    *             ) MONGODB_PATH=$with_mongodb ;;
@@ -7470,6 +7476,36 @@ if test -n "$MONGODB_LIBS"; then
    MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $OPENSSL_LIBS $SASL2_LIBS"
 else
    MONGODB_STATIC_LIBS=
+fi
+
+
+# MongoDB 3.x
+case "$with_mongodb3" in
+   yes | no | '' ) ;;
+   *             ) MONGODB3_PATH=$with_mongodb3 ;;
+esac
+if test -d "$MONGODB3_PATH"; then
+   NCBI_FIX_DIR(MONGODB3_PATH)
+fi
+if test -d $MONGODB3_PATH/lib${bit64_sfx}; then
+   MONGODB3_LIBDIR=$MONGODB3_PATH/lib${bit64_sfx}
+else
+   MONGODB3_LIBDIR=$MONGODB3_PATH/lib
+fi
+m3pc="env PKG_CONFIG_PATH=$MONGODB3_LIBDIR/pkgconfig pkg-config libmongocxx"
+if $m3pc --exists >/dev/null 2>&1; then
+   MONGODB3_FULL_INCLUDE=`$m3pc --cflags`
+   NCBI_RPATHIFY_OUTPUT(MONGODB3_FULL_LIBS, [$m3pc --libs --static],
+      [$no_usr_lib])
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb3, MONGODB3, mongocxx,
+   [AC_LANG_PROGRAM([#include <mongocxx/client.hpp>],
+      [mongocxx::client mongo_client;])],
+   [], [$MONGODB3_FULL_LIBS],
+   [$MONGODB3_FULL_INCLUDE $BOOST_INCLUDE])
+if test -n "$MONGODB3_LIBS"; then
+   MONGODB3_INCLUDE=$MONGODB3_FULL_INCLUDE
+   MONGODB3_LIBS=$MONGODB3_FULL_LIBS
 fi
 
 
