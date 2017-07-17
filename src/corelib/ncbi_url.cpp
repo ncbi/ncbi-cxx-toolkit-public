@@ -463,7 +463,14 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             }
             host.resize(pos);
         }
-        if (NStr::EqualNocase(m_Scheme, NCBI_SCHEME_SERVICE)) {
+        size_t scheme_svc_pos = NStr::Find(m_Scheme,
+                                           string("+") + NCBI_SCHEME_SERVICE,
+                                           NStr::eNocase, NStr::eReverseSearch);
+        if (scheme_svc_pos != NPOS  &&  scheme_svc_pos > 0) {
+            x_SetScheme(m_Scheme.substr(0, scheme_svc_pos), *encoder);
+            x_SetService(host);
+        }
+        else if (NStr::EqualNocase(m_Scheme, NCBI_SCHEME_SERVICE)) {
             x_SetService(host);
         }
         else {
@@ -576,6 +583,12 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
     static const int fPath_Mask = fPath_Replace | fPath_Append;
     static const int fFragment_Mask = fFragment_Replace | fFragment_ReplaceIfEmpty;
     static const int fArgs_Mask = fArgs_Replace | fArgs_Append | fArgs_Merge;
+
+    if ( !other.m_Scheme.empty() ) {
+        if (flags & fScheme_Replace) {
+            m_Scheme = other.m_Scheme;
+        }
+    }
 
     if ((flags & fUser_Mask) == fUser_Mask) {
         NCBI_THROW(CUrlException, eFlags, "Multiple fUser_* flags are set.");

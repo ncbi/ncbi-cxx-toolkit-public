@@ -441,8 +441,9 @@ public:
         fFragment_ReplaceIfEmpty = 0x0080, ///< Replace fragment only if not yet set
         fArgs_Replace            = 0x0100, ///< Discard all args, replace with args from 'other'
         fArgs_Append             = 0x0200, ///< Append args, allow duplicate names and values
-        fArgs_Merge              = 0x0400  ///< Append new args; replace values of existing args,
+        fArgs_Merge              = 0x0400, ///< Append new args; replace values of existing args,
                                            ///< do not allow to set multiple values with the same name
+        fScheme_Replace          = 0x0800  ///< Replace scheme if set in 'other'
     };
     typedef int TAdjustFlags;
 
