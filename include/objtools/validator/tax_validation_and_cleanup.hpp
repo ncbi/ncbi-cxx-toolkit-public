@@ -94,9 +94,6 @@ public:
     CQualifierRequest();
     virtual ~CQualifierRequest() {};
 
-    void Init();
-    virtual void Init(const string& val, const COrg_ref& org) {};
-
     void AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
     void AddParent(CConstRef<CSeq_feat> feat);
 
@@ -104,10 +101,12 @@ public:
     bool MatchTryValue(const string& val) const;
     size_t NumRemainingReplies() const { return m_ValuesToTry.size() - m_RepliesProcessed; }
 
-    virtual void AddReply(const CT3Reply& reply){};
-    virtual void PostErrors(CValidError_imp& imp){};
+    virtual void AddReply(const CT3Reply& reply) = 0;
+    virtual void PostErrors(CValidError_imp& imp) = 0;
 
 protected:
+    void x_Init();
+
     vector<string> m_ValuesToTry;
     size_t m_RepliesProcessed;
 
@@ -121,15 +120,13 @@ protected:
 class CSpecificHostRequest : public CQualifierRequest
 {
 public:
-    CSpecificHostRequest();
+    CSpecificHostRequest(const string& orig_val, const COrg_ref& org);
     ~CSpecificHostRequest() {};
-
-    virtual void Init(const string& host, const COrg_ref& org);
 
     enum EHostResponseFlags{
         eNormal = 0,
-        eAmbiguous = 1 << 0,
-        eUnrecognized = 1 << 1
+        eAmbiguous,
+        eUnrecognized
     };
     typedef int TResponseFlags;
 
@@ -149,10 +146,8 @@ private:
 class CStrainRequest : public CQualifierRequest
 {
 public:
-    CStrainRequest();
+    CStrainRequest(const string& strain, const COrg_ref& org);
     ~CStrainRequest() {};
-
-    virtual void Init(const string& strain, const COrg_ref& org);
 
     virtual void AddReply(const CT3Reply& reply);
     virtual void PostErrors(CValidError_imp& imp);
@@ -188,11 +183,11 @@ public:
     //   fixes have been applied
     // * For validating strain, this might be the original value or it might be the original
     //   value plus the organism name.
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) { return kEmptyStr; };
+    virtual string GetKey(const string& orig_val, const COrg_ref& org) const = 0;
 
     // Check indicates whether this Org-ref should be examined or ignored.
     // strain values are ignored for some values of lineage or taxname
-    virtual bool Check(const COrg_ref& org) { return true; };
+    virtual bool Check(const COrg_ref& org) const { return true; }
 
     // used to add items to be looked up, when appropriate for this
     // descriptor or feature
@@ -218,7 +213,7 @@ public:
     // Applies the change to an Org-ref. Note that there might be multiple
     // qualifiers of the same subtype on the Org-ref, and we need to be sure
     // to apply the change to the correct qualifier
-    virtual bool ApplyToOrg(COrg_ref& org) const { return false; }
+    virtual bool ApplyToOrg(COrg_ref& org) const = 0;
 
 protected:
     typedef map<string, CRef<CQualifierRequest> > TQualifierRequests;
@@ -230,10 +225,7 @@ protected:
     TQualifierRequests::iterator x_FindRequest(const string& val);
 
     // x_MakeNewRequest creates a new CQualifierRequest object for the given pair of orig_val and org
-    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
-    {
-        return CRef<CQualifierRequest>(NULL);
-    };
+    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org) = 0;
 };
 
 
@@ -243,8 +235,8 @@ public:
     CSpecificHostMap() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
     ~CSpecificHostMap() {};
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) { return orig_val; };
-    virtual bool Check(const COrg_ref& org) { return true; };
+    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return orig_val; };
+    virtual bool ApplyToOrg(COrg_ref& org) const { return false; };
 
 protected:
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
@@ -256,12 +248,11 @@ public:
     CSpecificHostMapForFix() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
     ~CSpecificHostMapForFix() {};
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) { string host = orig_val; x_DefaultSpecificHostAdjustments(host); return host; };
-    virtual bool Check(const COrg_ref& org) { return true; };
+    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return x_DefaultSpecificHostAdjustments(orig_val); };
     virtual bool ApplyToOrg(COrg_ref& org) const;
 
 protected:
-    static void x_DefaultSpecificHostAdjustments(string& host_val);
+    static string x_DefaultSpecificHostAdjustments(const string& host_val);
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
 };
 
@@ -272,8 +263,9 @@ public:
     CStrainMap() : CQualLookupMap(COrgMod::eSubtype_strain) {};
     ~CStrainMap() {};
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); };
-    virtual bool Check(const COrg_ref& org) { return CStrainRequest::Check(org); };
+    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); };
+    virtual bool Check(const COrg_ref& org) const { return CStrainRequest::Check(org); };
+    virtual bool ApplyToOrg(COrg_ref& org) const { return false; };
 
 protected:
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
@@ -336,7 +328,7 @@ protected:
     void x_CreateSpecificHostMap(bool for_fix);
     void x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message);
     bool x_ApplySpecificHostMap(COrg_ref& org_ref) const;
-    static void x_DefaultSpecificHostAdjustments(string& host_val);
+    static string x_DefaultSpecificHostAdjustments(const string& host_val);
     TSpecificHostRequests::iterator x_FindHostFixRequest(const string& val);
 
     void x_CreateStrainMap();

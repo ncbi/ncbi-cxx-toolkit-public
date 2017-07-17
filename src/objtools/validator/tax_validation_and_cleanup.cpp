@@ -70,11 +70,11 @@ const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
 
 CQualifierRequest::CQualifierRequest()
 {
-    Init();
+    x_Init();
 }
 
 
-void CQualifierRequest::Init()
+void CQualifierRequest::x_Init()
 {
     m_ValuesToTry.clear();
     m_RepliesProcessed = 0;
@@ -97,7 +97,7 @@ void CQualifierRequest::AddParent(CConstRef<CSeq_feat> feat)
 
 void CQualifierRequest::AddRequests(vector<CRef<COrg_ref> >& request_list) const
 {
-    ITERATE(vector<string>, it, m_ValuesToTry) {
+    for (auto it = m_ValuesToTry.begin(); it != m_ValuesToTry.end(); it++) {
         CRef<COrg_ref> rq(new COrg_ref);
         rq->SetTaxname(*it);
         request_list.push_back(rq);
@@ -107,7 +107,7 @@ void CQualifierRequest::AddRequests(vector<CRef<COrg_ref> >& request_list) const
 
 bool CQualifierRequest::MatchTryValue(const string& val) const
 {
-    ITERATE(vector<string>, it, m_ValuesToTry) {
+    for (auto it = m_ValuesToTry.begin(); it != m_ValuesToTry.end(); it++) {
         if (NStr::EqualNocase(val, *it)) {
             return true;
         }
@@ -116,16 +116,9 @@ bool CQualifierRequest::MatchTryValue(const string& val) const
 }
 
 
-CSpecificHostRequest::CSpecificHostRequest()
+CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org) :
+    CQualifierRequest(), m_Host(host), m_Response(eUnrecognized)
 {
-}
-
-
-void CSpecificHostRequest::Init(const string& host, const COrg_ref& org)
-{
-    CQualifierRequest::Init();
-    m_Host = host;
-    m_Response = eUnrecognized;
     string host_check = SpecificHostValueToCheck(host);
     if (NStr::IsBlank(host_check)) {
         m_Response = eNormal;
@@ -135,7 +128,7 @@ void CSpecificHostRequest::Init(const string& host, const COrg_ref& org)
     if (!NStr::Equal(host, host_check)) {
         m_ValuesToTry.push_back(host);
     }
-    m_SuggestedFix = kEmptyStr;
+    m_SuggestedFix.clear();
 }
 
 
@@ -146,7 +139,7 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         if (NStr::IsBlank(m_Error)) {
             m_Response = eNormal;
             m_SuggestedFix = m_Host;
-        } else if (NStr::Find(m_Error, "ambiguous") != string::npos) {
+        } else if (NStr::Find(m_Error, "ambiguous") != NPOS) {
             m_Response = eAmbiguous;
         } else {
             m_Response = eUnrecognized;
@@ -172,18 +165,18 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
         case eNormal:
             break;
         case eAmbiguous:
-            ITERATE(vector<TDescPair>, it, m_Descs) {
+            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
                 imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, *(it->first), it->second);
             }
-            ITERATE(vector < CConstRef<CSeq_feat> >, it, m_Feats) {
+            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
                 imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, **it);
             }
             break;
         case eUnrecognized:
-            ITERATE(vector<TDescPair>, it, m_Descs) {
+            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
                 imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, *(it->first), it->second);
             }
-            ITERATE(vector < CConstRef<CSeq_feat> >, it, m_Feats) {
+            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
                 imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
             }
             break;        
@@ -193,26 +186,16 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 
 const string& CSpecificHostRequest::SuggestFix() const
 {
-    if (m_ValuesToTry.size() == 0) {
-        return m_Host;
-    } else {
-        return m_SuggestedFix;
-    }
+    return m_ValuesToTry.empty() ? m_Host : m_SuggestedFix;
 }
 
 
-CStrainRequest::CStrainRequest()
-{
-}
-
-
-void CStrainRequest::Init(const string& strain, const COrg_ref& org)
-{
-    m_Strain = strain;
+CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQualifierRequest(), m_Strain(strain)
+{ 
     if (org.IsSetTaxname()) {
         m_Taxname = org.GetTaxname();
     } else {
-        m_Taxname = kEmptyStr;
+        m_Taxname.clear();
     }
 
     if (NStr::IsBlank(strain)) {
@@ -223,9 +206,7 @@ void CStrainRequest::Init(const string& strain, const COrg_ref& org)
 
     m_ValuesToTry.push_back(strain);
     size_t pos = 0;
-    string::const_iterator s = strain.begin();
-    while (s != strain.end() && isalpha(*s)) {
-        ++s;
+    while (strain[pos] != 0 && isalpha(strain[pos])) {
         ++pos;
     }
     if (pos < strain.length()) {
@@ -260,10 +241,10 @@ bool CStrainRequest::RequireTaxname(const string& taxname)
 
 bool CStrainRequest::x_IsUnwanted(const string& str)
 {
-    if (NStr::FindNoCase(str, "virus") != string::npos ||
-        NStr::FindNoCase(str, "viroid") != string::npos ||
-        NStr::FindNoCase(str, "vector") != string::npos ||
-        NStr::FindNoCase(str, "phage") != string::npos) {
+    if (NStr::FindNoCase(str, "virus") != NPOS ||
+        NStr::FindNoCase(str, "viroid") != NPOS ||
+        NStr::FindNoCase(str, "vector") != NPOS ||
+        NStr::FindNoCase(str, "phage") != NPOS) {
         return true;
     } else {
         return false;
@@ -289,10 +270,10 @@ bool CStrainRequest::Check(const COrg_ref& org)
 void CStrainRequest::PostErrors(CValidError_imp& imp)
 {
     if (m_IsInvalid) {
-        ITERATE(vector<TDescPair>, it, m_Descs) {
+        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
             imp.PostObjErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue, "Strain '" + m_Strain + "' contains taxonomic name information", *(it->first), it->second);
         }
-        ITERATE(vector < CConstRef<CSeq_feat> >, it, m_Feats) {
+        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
             imp.PostObjErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue, "Strain '" + m_Strain + "' contains taxonomic name information", **it);
         }
     }
@@ -330,8 +311,7 @@ void CQualLookupMap::AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx
     if (!Check(org)) {
         return;
     }
-    ITERATE(COrgName::TMod, mod_it, org.GetOrgname().GetMod())
-    {
+    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
         if ((*mod_it)->IsSetSubtype()
             && (*mod_it)->GetSubtype() == m_Subtype
             && (*mod_it)->IsSetSubname()) {
@@ -363,8 +343,7 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
     if (!Check(org)) {
         return;
     }
-    ITERATE(COrgName::TMod, mod_it, org.GetOrgname().GetMod())
-    {
+    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
         if ((*mod_it)->IsSetSubtype()
             && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
             && (*mod_it)->IsSetSubname()) {
@@ -385,7 +364,8 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
 vector<CRef<COrg_ref> > CQualLookupMap::GetRequestList()
 {
     vector<CRef<COrg_ref> > org_rq_list;
-    ITERATE(TQualifierRequests, it, m_Map) {
+    org_rq_list.reserve(m_Map.size());
+    for (auto it = m_Map.begin(); it != m_Map.end(); it++) {
         it->second->AddRequests(org_rq_list);
     }
     return org_rq_list;
@@ -459,24 +439,24 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 
 CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
-    CRef<CQualifierRequest> rq(new CSpecificHostRequest());
-    rq->Init(orig_val, org);
+    CRef<CQualifierRequest> rq(new CSpecificHostRequest(orig_val, org));
     return rq;
 }
 
 
 CRef<CQualifierRequest> CSpecificHostMapForFix::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
-    CRef<CQualifierRequest> rq(new CSpecificHostRequest());
-    rq->Init(orig_val, org);
+    CRef<CQualifierRequest> rq(new CSpecificHostRequest(orig_val, org));
     return rq;
 }
 
 
-void CSpecificHostMapForFix::x_DefaultSpecificHostAdjustments(string& host_val)
+string CSpecificHostMapForFix::x_DefaultSpecificHostAdjustments(const string& host_val)
 {
-    NStr::TruncateSpacesInPlace(host_val);
-    host_val = COrgMod::FixHost(host_val);
+    string adjusted = host_val;
+    NStr::TruncateSpacesInPlace(adjusted);
+    adjusted = COrgMod::FixHost(adjusted);
+    return adjusted;
 }
 
 
@@ -489,17 +469,15 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 
     bool changed = false;
 
-    NON_CONST_ITERATE(COrgName::TMod, m, org_ref.SetOrgname().SetMod()) {
+    for (auto m = org_ref.SetOrgname().SetMod().begin(); m != org_ref.SetOrgname().SetMod().end(); m++) {
         if ((*m)->IsSetSubtype() &&
             (*m)->GetSubtype() == COrgMod::eSubtype_nat_host &&
             (*m)->IsSetSubname()) {
-            string host_val = (*m)->GetSubname();
-            x_DefaultSpecificHostAdjustments(host_val);
+            string host_val = x_DefaultSpecificHostAdjustments((*m)->GetSubname());
             TQualifierRequests::const_iterator it = m_Map.find(host_val);
             if (it != m_Map.end()) {
                 const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest *>(it->second.GetPointer());
-                string new_val = rq->SuggestFix();
-                x_DefaultSpecificHostAdjustments(new_val);
+                string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
                 if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
                     (*m)->SetSubname(new_val);
                     changed = true;
@@ -514,8 +492,7 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 
 CRef<CQualifierRequest> CStrainMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
-    CRef<CQualifierRequest> rq(new CStrainRequest());
-    rq->Init(orig_val, org);
+    CRef<CQualifierRequest> rq(new CStrainRequest(orig_val, org));
     return rq;
 }
 
@@ -874,7 +851,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
 bool CTaxValidationAndCleanup::AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs)
 {
     bool changed = false;
-    NON_CONST_ITERATE(vector<CRef<COrg_ref> >, org, org_refs) {
+    for (auto org = org_refs.begin(); org != org_refs.end(); org++) {
         changed |= m_HostMapForFix.ApplyToOrg(**org);
     }
     return changed;
@@ -956,12 +933,11 @@ bool CTaxValidationAndCleanup::x_ApplySpecificHostMap(COrg_ref& org_ref) const
 
     bool changed = false;
 
-    NON_CONST_ITERATE(COrgName::TMod, m, org_ref.SetOrgname().SetMod()) {
+    for (auto m = org_ref.SetOrgname().SetMod().begin(); m != org_ref.SetOrgname().SetMod().end(); m++) {
         if ((*m)->IsSetSubtype() &&
             (*m)->GetSubtype() == COrgMod::eSubtype_nat_host &&
             (*m)->IsSetSubname()) {
-            string host_val = (*m)->GetSubname();
-            x_DefaultSpecificHostAdjustments(host_val);
+            string host_val = x_DefaultSpecificHostAdjustments((*m)->GetSubname());
             TSpecificHostRequests::const_iterator it = m_SpecificHostRequests.find(host_val);
             if (it != m_SpecificHostRequests.end()) {
                 const string& new_val = it->second.SuggestFix();
@@ -977,10 +953,12 @@ bool CTaxValidationAndCleanup::x_ApplySpecificHostMap(COrg_ref& org_ref) const
 }
 
 
-void CTaxValidationAndCleanup::x_DefaultSpecificHostAdjustments(string& host_val)
+string CTaxValidationAndCleanup::x_DefaultSpecificHostAdjustments(const string& host_val)
 {
-    NStr::TruncateSpacesInPlace(host_val);
-    host_val = COrgMod::FixHost(host_val);
+    string adjusted = host_val;
+    NStr::TruncateSpacesInPlace(adjusted);
+    adjusted = COrgMod::FixHost(adjusted);
+    return adjusted;
 }
 
 

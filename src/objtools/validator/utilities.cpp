@@ -1946,19 +1946,19 @@ string SpecificHostValueToCheck(const string& val)
     if (NStr::IsBlank(val)) {
         return val;
     } else if (! isupper (val.c_str()[0])) {
-        return "";
+        return kEmptyStr;
     }
 
     string host = val;
-    // ignore portion before semicolon
+    // ignore portion after semicolon
     size_t pos = NStr::Find(host, ";");
     if (pos != string::npos) {
         host = host.substr(0, pos);
     }
     // must have at least two words to check
-    pos = NStr::Find(host, " ");
+    pos = NStr::Find(host, " "); // combine with next line
     if (pos == string::npos) {
-        return "";
+        return kEmptyStr;
     }
 
     AdjustSpecificHostForTaxServer(host);
