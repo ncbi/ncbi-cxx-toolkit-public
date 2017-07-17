@@ -132,12 +132,12 @@ string CGridClient::Submit(const string& affinity)
     return job_key;
 }
 
-CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time, pair<bool*, CNcbiOstream*> receiver)
+CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
 {
     CloseStream();
     time_t job_exptime = 0;
     CNetScheduleAPI::EJobStatus status =
-        m_NetScheduleSubmitter->SubmitJobAndWait(m_Job, wait_time, &job_exptime, receiver);
+        m_NetScheduleSubmitter->SubmitJobAndWait(m_Job, wait_time, &job_exptime);
 
     return x_CheckAllJobBlobs(status, job_exptime);
 }

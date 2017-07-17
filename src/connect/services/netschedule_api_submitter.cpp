@@ -33,14 +33,9 @@
 #include <ncbi_pch.hpp>
 
 #include "netschedule_api_impl.hpp"
-#include "grid_rw.hpp"
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/util.hpp>
-
-#include <connect/ncbi_conn_reader_writer.hpp>
-
-#include <util/transmissionrw.hpp>
 
 #include <stdio.h>
 #include <cmath>
@@ -400,22 +395,16 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
 }
 
 bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
-        time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status, pair<bool*, CNcbiOstream*> receiver)
+        time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status)
 {
-    const char* const attr_names[] = {"job_key", "job_status", "worker_node_host", "worker_node_port"};
-    array<string, 4> attr_values;
+    const char* const attr_names[] = {"job_key", "job_status"};
+    array<string, 2> attr_values;
     const string& received_job_id = attr_values[0];
     const string& received_job_status = attr_values[1];
-    const string& worker_node_host = attr_values[2];
-    const string& worker_node_port = attr_values[3];
 
     g_ParseNSOutput(m_Message, attr_names, attr_values.data(), attr_values.size());
 
     if (received_job_id != job.job_id) return false;
-
-    const auto& timeout = ns_api->GetConfig().direct_output_connect_timeout;
-
-    if (ReadOutput(job_status, receiver, worker_node_host, worker_node_port, timeout)) return true;
 
     switch (CNetScheduleAPI::StringToStatus(received_job_status)) {
     case CNetScheduleAPI::eJobNotFound:
@@ -429,54 +418,6 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
     }
 }
 
-#ifdef NCBI_THREADS
-bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
-        pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
-        const STimeout& timeout)
-{
-    if (!receiver.first || !receiver.second) return false;
-
-    if (worker_node_host.empty() || worker_node_port.empty()) {
-        *receiver.first = false;
-        return false;
-    }
-
-    const auto host = static_cast<unsigned>(stoul(worker_node_host));
-    const auto port = static_cast<unsigned short>(stoul(worker_node_port));
-    unique_ptr<CSocket> socket;
-
-    try {
-        // There is no CSocket::Connect(unsigned host...) and no CSocket::CSocket(const CSocket&),
-        // have to create on heap.
-        socket.reset(new CSocket(host, port, &timeout));
-    }
-    catch (...) {
-        return false;
-    }
-
-    {
-        CSocketReaderWriter socket_reader(socket.get());
-        CTransmissionReader reader(&socket_reader);
-
-        SOutputCopy copy(reader, *receiver.second);
-    }
-
-    const STimeout close_timeout{0, 0};
-    socket->SetTimeout(eIO_Close, &close_timeout);
-    socket->Close();
-
-    job_status = CNetScheduleAPI::eDone;
-    *receiver.first = true;
-    return true;
-}
-#else
-bool CNetScheduleNotificationHandler::ReadOutput(CNetScheduleAPI::EJobStatus&,
-        pair<bool*, CNcbiOstream*>, const string&, const string&, const STimeout&)
-{
-    return false;
-}
-#endif
-
 CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time)
@@ -485,8 +426,7 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
 }
 
 CNetScheduleAPI::EJobStatus
-SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job,
-        unsigned wait_time, time_t* job_exptime, pair<bool*, CNcbiOstream*> receiver)
+SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job, unsigned wait_time, time_t* job_exptime)
 {
     CDeadline deadline(wait_time, 0);
 
@@ -494,8 +434,7 @@ SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job,
 
     submit_job_handler.SubmitJob(this, job, wait_time);
 
-    return submit_job_handler.WaitForJobCompletion(job,
-            deadline, m_API, job_exptime, receiver);
+    return submit_job_handler.WaitForJobCompletion(job, deadline, m_API, job_exptime);
 }
 
 CNetScheduleAPI::EJobStatus
@@ -516,8 +455,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
         CNetScheduleJob& job,
         CDeadline& deadline,
         CNetScheduleAPI ns_api,
-        time_t* job_exptime,
-        pair<bool*, CNcbiOstream*> receiver)
+        time_t* job_exptime)
 {
     CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::ePending;
 
@@ -533,7 +471,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
         }
 
         if (WaitForNotification(timeout)) {
-            if (CheckJobStatusNotification(ns_api, job, job_exptime, status, receiver)) return status;
+            if (CheckJobStatusNotification(ns_api, job, job_exptime, status)) return status;
         } else {
             // The wait has timed out - query the server directly.
 

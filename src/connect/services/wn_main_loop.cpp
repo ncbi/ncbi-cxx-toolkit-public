@@ -158,7 +158,7 @@ CNcbiIstream& CWorkerNodeJobContext::GetIStream()
 
 CNcbiOstream& SWorkerNodeJobContextImpl::GetOStream()
 {
-    return m_GridWrite(m_NetCacheAPI, m_WorkerNode->m_QueueEmbeddedOutputSize, m_WorkerNode->m_DirectOutput, m_Job);
+    return m_GridWrite(m_NetCacheAPI, m_WorkerNode->m_QueueEmbeddedOutputSize, m_Job.output);
 }
 
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()

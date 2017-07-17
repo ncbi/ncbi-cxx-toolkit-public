@@ -404,18 +404,8 @@ public:
     void InitAffinities(ISynRegistry& registry, const SRegSynonyms& sections);
     string MakeAuthString();
 
-    struct SConfig
-    {
-        STimeout direct_output_connect_timeout;
-
-        void Init(ISynRegistry& registry, SRegSynonyms& sections);
-    };
-
-    const SConfig& GetConfig() const { return m_Config; }
-
 private:
     const TMode m_Mode;
-    SConfig m_Config;
 
 public:
     CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
@@ -464,7 +454,7 @@ struct SNetScheduleSubmitterImpl : public CObject
         const string& error_message);
 
     CNetScheduleAPI::EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
-            unsigned wait_time, time_t* job_exptime = NULL, pair<bool*, CNcbiOstream*> = {});
+            unsigned wait_time, time_t* job_exptime = NULL);
 
     void AppendClientIPSessionIDHitID(string& cmd, const string& job_group);
 

@@ -37,7 +37,6 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_userhost.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
@@ -580,8 +579,6 @@ void SNetScheduleAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
         m_Service->GetClientName() + "::" +
         (user.empty() ? kEmptyStr : user + '@') +
         GetDiagContext().GetHost();
-
-    m_Config.Init(registry, sections);
 
     CNetScheduleConfigLoader loader(registry, sections);
 
@@ -1291,17 +1288,6 @@ void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, const SRegSynon
         affinity_step += affinity;
         m_AffinityLadder.emplace_back(affinity, affinity_step);
     }
-}
-
-void SNetScheduleAPIImpl::SConfig::Init(ISynRegistry& registry, SRegSynonyms& sections)
-{
-    const auto kDOCTimeoutDefault = 0.03;
-
-    double doc_timeout = registry.Get(sections, "direct_output_connect_timeout", kDOCTimeoutDefault);
-
-    if (doc_timeout <= 0) doc_timeout = kDOCTimeoutDefault;
-
-    g_CTimeoutToSTimeout(CTimeout(doc_timeout), direct_output_connect_timeout);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

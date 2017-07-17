@@ -258,7 +258,6 @@ struct SGridWorkerNodeImpl : public CObject
     bool m_ProgressLogRequested;
     size_t m_QueueEmbeddedOutputSize;
     unsigned m_ThreadPoolTimeout;
-    bool m_DirectOutput;
 
     /// Bookkeeping of jobs being executed (to prevent simultaneous runs of the same job)
     struct SJobsInProgress

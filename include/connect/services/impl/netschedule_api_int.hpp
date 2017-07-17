@@ -86,8 +86,7 @@ public:
 
     // This method requires calling SubmitJob prior with wait_time set
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
-            CDeadline& deadline, CNetScheduleAPI ns_api,
-            time_t* job_exptime = NULL, pair<bool*, CNcbiOstream*> = {});
+            CDeadline& deadline, CNetScheduleAPI ns_api, time_t* job_exptime = NULL);
 
     bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
             const string& job_id,
@@ -129,14 +128,9 @@ public:
     bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor,
                                      CNetServer* server);
 
-private:
-    static bool ReadOutput(CNetScheduleAPI::EJobStatus& job_status,
-            pair<bool*, CNcbiOstream*> receiver, const string& worker_node_host, const string& worker_node_port,
-            const STimeout& timeout);
-
 protected:
     bool CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
-            time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status, pair<bool*, CNcbiOstream*> = {});
+            time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status);
     CDatagramSocket m_UDPSocket;
     unsigned short m_UDPPort;
 
