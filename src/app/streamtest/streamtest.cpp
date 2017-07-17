@@ -231,6 +231,11 @@ void CStreamTestApp::Init()
         "Far fetch policy",
         CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("flags",
+        "Flags",
+        "Bit flags",
+        CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("depth",
         "Depth",
         "Resolve depth",

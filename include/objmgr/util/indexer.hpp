@@ -92,19 +92,30 @@ public:
         fExhaustive = 3
     };
 
+    enum EFlags {
+        fDefault =          0,
+        fHideImpFeats =     1,
+        fHideSNPFeats =     2,
+        fHideSTSFeats =     4,
+        fHideExonFeats =    8,
+        fHideIntronFeats = 16,
+        fHideMiscFeats =   32
+    };
+    typedef int TFlags; // Binary "OR" of EFlags
+
 public:
     // Constructors take the top-level object
-    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = fAdaptive, int depth = -1);
-    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = fAdaptive, int depth = -1);
-    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = fAdaptive, int depth = -1);
-    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
 
     // Specialized constructors for streaming through release files, one component at a time
 
     // Submit-block obtained from top of Seq-submit release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
     // Seq-descr chain obtained from top of Bioseq-set release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = fAdaptive, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -170,6 +181,7 @@ private:
     CConstRef<CSeq_descr> m_TopDescr;
 
     EPolicy m_Policy;
+    TFlags m_Flags;
     int m_Depth;
 
     vector<CRef<CBioseqIndex>> m_BsxList;
@@ -255,6 +267,7 @@ public:
                   CSeq_entry_Handle tseh,
                   CRef<CScope> scope,
                   CSeqEntryIndex::EPolicy policy,
+                  CSeqEntryIndex::TFlags flags,
                   int depth,
                   bool surrogate);
 
@@ -354,6 +367,7 @@ private:
     CRef<CSeqVector> m_SeqVec;
 
     CSeqEntryIndex::EPolicy m_Policy;
+    CSeqEntryIndex::TFlags m_Flags;
     int m_Depth;
 
     bool m_FetchFailure;
