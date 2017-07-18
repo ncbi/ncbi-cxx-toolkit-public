@@ -67,7 +67,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     string xsdk("element"), use, form;
     const CDataMember* mem = GetDataMember();
     bool optional = mem ? mem->Optional() : false;
-    bool isGlobalType = IsGlobalType();
+    bool isGlobalType = GetGlobalType() == CDataType::eType;
 
     if (isGlobalType) {
         xsdk = "complexType";
@@ -222,7 +222,7 @@ bool CNullDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const 
 {
 #if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
     if (!CStaticDataType::PrintXMLSchemaContents(out, indent, mem)) {
-        if (IsGlobalType()) {
+        if (GetGlobalType() != CDataType::eElement) {
             return false;
         }
         out << ">";

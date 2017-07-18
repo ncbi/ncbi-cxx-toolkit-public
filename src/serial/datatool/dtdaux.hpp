@@ -327,6 +327,12 @@ public:
     bool IsGlobalType(void) const {
         return m_GlobalType;
     }
+    void SetGlobalGroup(bool def) {
+        m_GlobalGroup = def;
+    }
+    bool IsGlobalGroup(void) const {
+        return m_GlobalGroup;
+    }
 
     CComments& Comments(void)
     {
@@ -360,7 +366,7 @@ private:
     bool m_Named;
     bool m_Qualified;
     bool m_Nillable;
-    bool m_GlobalType;
+    bool m_GlobalType, m_GlobalGroup;
     CComments m_Comments;
     CComments m_AttribComments;
 };

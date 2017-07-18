@@ -1536,6 +1536,7 @@ void XSDParser::ProcessNamedTypes(void)
                     } else {
                         if (m_MapElement.find(node.GetTypeName()) != m_MapElement.end()) {
                             node.SetType(DTDElement::eAlias);
+                            node.SetGlobalGroup(true);
                         } else {
                             PushEntityLexer(node.GetTypeName());
                             DTDElement item;
@@ -1545,17 +1546,19 @@ void XSDParser::ProcessNamedTypes(void)
                             } else {
                                 item.SetEmbedded(false);
                                 item.SetNamed(false);
-//                                item.SetGlobalType(true);
+                                item.SetGlobalGroup(true);
                                 m_MapElement[node.GetTypeName()] = item;
                                 DTDElement::EOccurrence occ = node.GetOccurrence();
                                 if (occ == DTDElement::eOne || occ == DTDElement::eZeroOrOne) {
                                     node.SetType(DTDElement::eAlias);
+                                    node.SetGlobalGroup(true);
                                 } else if (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore) {
                                     node.SetType(DTDElement::eSequence);
                                     node.SetName(item.GetName());
                                     node.SetOccurrence(occ == DTDElement::eZeroOrMore ? DTDElement::eZeroOrOne : DTDElement::eOne);
                                     string tmp2 = node.GetTypeName();
-                                    node.SetOccurrence(tmp2, DTDElement::eOneOrMore);
+                                    node.SetOccurrence(tmp2, occ);
+                                    node.SetGlobalGroup(true);
                                     AddElementContent(node, tmp2);
                                 }
                             }

@@ -335,10 +335,15 @@ public:
     {
         return m_IsNillable;
     }
-    void SetGlobalType(bool type) {
+    enum EGlobalType {
+        eElement = 0,
+        eType,
+        eGroup
+    };
+    void SetGlobalType(EGlobalType type) {
         m_GlobalType = type;
     }
-    bool IsGlobalType(void) const {
+    EGlobalType GetGlobalType(void) const {
         return m_GlobalType;
     }
     void SetEmptyExternalName(bool set) {
@@ -387,7 +392,7 @@ private:
     string m_Namespace;
     ENsQualifiedMode m_NsQualified;
     bool m_IsNillable;
-    bool m_GlobalType;
+    EGlobalType m_GlobalType;
     bool m_EmptyExternalName;
 
     CDataType(const CDataType&);

@@ -130,12 +130,13 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
     string tag(XmlTagName());
     string userType = typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
     bool isTypeAlias = typeElem->IsTypeAlias();
+    bool isGlobalGroup = typeElem->GetGlobalType() == CDataType::eGroup;
 
     if ( GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
         string type(typeStatic ? typeStatic->GetSchemaTypeString() : typeElem->GetSchemaTypeString());
         bool any = dynamic_cast<const CAnyContentDataType*>(typeStatic) != 0;
         PrintASNNewLine(out, indent++);
-        string xsdk("element");
+        string xsdk(isGlobalGroup ? "group" : "element");
         if (any) {
             xsdk = "any";
             out << "<xs:any processContents=\"lax\"";
@@ -144,11 +145,11 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 out << " namespace=\"" << ns << "\"";
             }
         } else {
-            out << "<xs:element ";
+            out << "<xs:" << xsdk;
             if (typeRef) {
-                out << "ref";
+                out << " ref";
             } else {
-                out << "name";
+                out << " name";
             }
             out << "=\"" << tag << "\"";
             if (typeStatic && !type.empty() && !hasAttlist) {

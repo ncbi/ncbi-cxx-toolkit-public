@@ -127,7 +127,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
     string value("value");
     string form;
     bool inAttlist= false;
-    bool isGlobalType = IsGlobalType();
+    bool isGlobalType = GetGlobalType() == CDataType::eType;
     list<string> opentag, closetag;
 
     if (GetEnforcedStdXml() &&

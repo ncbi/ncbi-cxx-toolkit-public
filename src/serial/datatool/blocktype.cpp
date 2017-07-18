@@ -129,7 +129,8 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
     bool isSimple= false, isSimpleSeq= false, isSeq= false, isMixed=false;
     bool isSimpleContainer= false, parent_isSeq= false;
     bool defineAsType = false;
-    bool isGlobalType = IsGlobalType();
+    bool isGlobalType  = GetGlobalType() == CDataType::eType;
+    bool isGlobalGroup = GetGlobalType() == CDataType::eGroup;
     string simpleType;
     list<string> opentag, closetag1, closetag2;
     CNcbiOstream* os = &out;
@@ -246,7 +247,7 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
         if (!hasNotag) {
             if (!contents_only) {
                 string tname;
-                if (isGlobalType) {
+                if (isGlobalType || isGlobalGroup) {
                     tname = tag;
                 } else {
                     tmp = "<xs:element name=\"" + tag + "\"";
@@ -279,45 +280,47 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                     }
                 }
 
-                tmp = "<xs:complexType";
+                tmp = isGlobalGroup ? "<xs:group" : "<xs:complexType";
                 if (isMixed) {
                     tmp += " mixed=\"true\"";
                 }
-                if (defineAsType || isGlobalType) {
+                if (defineAsType || isGlobalType || isGlobalGroup) {
                     tmp += " name=\"" + tname + "\"";
-                    if (!isGlobalType) {
+                    if (!isGlobalType && !isGlobalGroup) {
                         os = &otype;
                     }
                     indent = 0;
                 }
                 opentag.push_back(tmp + ">");
-                closetag2.push_front("</xs:complexType>");
+                closetag2.push_front(isGlobalGroup ? "</xs:group" : "</xs:complexType>");
             }
         }
-        if (!isSimple && !isSimpleContainer) {
-            if (!contents_only || hasNotag) {
-                if(NStr::CompareCase(asnk,"CHOICE")==0) {
-                    xsdk = "choice";
-                } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
-                    xsdk = "sequence";
-                } else if(NStr::CompareCase(asnk,"SET")==0) {
-                    xsdk = "all";
+        if (!isGlobalGroup) {
+            if (!isSimple && !isSimpleContainer) {
+                if (!contents_only || hasNotag) {
+                    if(NStr::CompareCase(asnk,"CHOICE")==0) {
+                        xsdk = "choice";
+                    } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
+                        xsdk = "sequence";
+                    } else if(NStr::CompareCase(asnk,"SET")==0) {
+                        xsdk = "all";
+                    }
+                    tmp = "<xs:" + xsdk;
+                    if (isOptionalContent || (hasNotag && isOptionalMember)) {
+                        tmp += " minOccurs=\"0\"";
+                    }
+                    if (isSeq) {
+                        tmp += " maxOccurs=\"unbounded\"";
+                    }
+                    opentag.push_back(tmp + ">");
+                    closetag1.push_front("</xs:" + xsdk + ">");
                 }
-                tmp = "<xs:" + xsdk;
-                if (isOptionalContent || (hasNotag && isOptionalMember)) {
-                    tmp += " minOccurs=\"0\"";
-                }
-                if (isSeq) {
-                    tmp += " maxOccurs=\"unbounded\"";
-                }
-                opentag.push_back(tmp + ">");
-                closetag1.push_front("</xs:" + xsdk + ">");
+            } else if (!simpleType.empty()) {
+                opentag.push_back("<xs:simpleContent>");
+                closetag2.push_front("</xs:simpleContent>");
+                opentag.push_back("<xs:extension base=\"" + simpleType + "\">");
+                closetag2.push_front("</xs:extension>");
             }
-        } else if (!simpleType.empty()) {
-            opentag.push_back("<xs:simpleContent>");
-            closetag2.push_front("</xs:simpleContent>");
-            opentag.push_back("<xs:extension base=\"" + simpleType + "\">");
-            closetag2.push_front("</xs:extension>");
         }
     }
     ITERATE ( list<string>, s, opentag ) {

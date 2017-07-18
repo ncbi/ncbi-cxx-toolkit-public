@@ -69,6 +69,7 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
     string tag(XmlTagName());
     string userType(UserTypeXmlTagName());
     bool isTypeAlias = IsTypeAlias();
+    bool isGlobalGroup = GetGlobalType() == CDataType::eGroup;
 
     if (tag == userType || (GetEnforcedStdXml() && contents_only)) {
 
@@ -93,7 +94,7 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
         }
 
         PrintASNNewLine(out,indent) <<
-            "<xs:element ref=\"" << userType << "\"";
+            (isGlobalGroup ? "<xs:group" : "<xs:element") << " ref=\"" << userType << "\"";
         if (GetDataMember()) {
             if (GetDataMember()->Optional()) {
                 out << " minOccurs=\"0\"";

@@ -1136,7 +1136,7 @@ CDataType* DTDParser::x_Type(
     type->SetSourceLine(node.GetSourceLine());
     type->SetNamespaceName( node.GetNamespaceName());
     type->SetNsQualified( node.IsQualified());
-    type->SetGlobalType( node.IsGlobalType());
+    type->SetGlobalType( node.IsGlobalType() ? CDataType::eType : (node.IsGlobalGroup() ? CDataType::eGroup : CDataType::eElement));
     if (node.IsNillable()) {
         type->SetNillable();
     }
