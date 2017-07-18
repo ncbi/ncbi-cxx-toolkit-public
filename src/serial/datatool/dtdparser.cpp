@@ -340,6 +340,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
         ConsumeElementContent(node);
         if (embedded) {
             node.SetEmbedded();
+            node.SetNamed(false);
             return;
         }
         break;
@@ -942,6 +943,7 @@ AutoPtr<CDataType> DTDParser::Type(
     AutoPtr<CDataType> type(x_Type(node, occ, fromInside, ignoreAttrib));
     if (m_SrcType != eDTD && !fromInside) {
         type->Comments() = node.GetComments();
+        type->SetEmptyExternalName( !node.IsNamed());
     }
     return type;
 }
@@ -1317,7 +1319,7 @@ CDataType* DTDParser::TypesBlock(
             (occ == DTDElement::eZeroOrMore)) {
             member->SetOptional();
         }
-        if (refNode.IsEmbedded() && !refNode.IsNamed()) {
+        if (!refNode.IsNamed()) {
             member->SetNotag();
         }
         if (!refNode.GetDefault().empty() && !refNode.HasAttributes()) {

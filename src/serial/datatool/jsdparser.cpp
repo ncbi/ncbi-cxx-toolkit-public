@@ -127,8 +127,8 @@ void JSDParser::ParseArrayContent(DTDElement& node)
     string node_id = NStr::Join(m_URI,"/");
     DTDElement& item = m_MapElement[node_id];
     item.SetOccurrence(DTDElement::eZeroOrMore);
-    ParseNode(item);
     item.SetEmbedded();
+    ParseNode(item);
 	AddElementContent(node,node_id);
 }
 
@@ -148,6 +148,7 @@ void JSDParser::ParseNode(DTDElement& node)
                 } else if (key == "title") {
                     if (!node.IsNamed()) {
                         node.SetName(Value());
+                        node.SetNamed();
                     }
                 } else if (key == "type") {
                     if (Value() == "string") {
@@ -298,8 +299,8 @@ void JSDParser::ParseDependencies(DTDElement& node)
                 string seq_id = NStr::Join(m_URI,"/") + "/" + NStr::NumericToString(i++);
                 DTDElement& seq = m_MapElement[seq_id];
                 seq.SetType(DTDElement::eSequence);
-                seq.SetName(seq_id);
                 seq.SetEmbedded();
+                seq.SetName(seq_id);
                 seq.SetOccurrence(occ);
                 seq.SetOccurrence(node_id, occ);
                 AddElementContent(seq, node_id);
@@ -425,6 +426,7 @@ void JSDParser::ParseOneOf(DTDElement& node)
             } else {
                 if (!c.IsNamed()) {
                     c.SetName(item_id);
+                    c.SetNamed();
                 }
                 m_MapElement[item_id] = c;
             }

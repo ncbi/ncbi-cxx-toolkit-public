@@ -88,7 +88,7 @@ CDataType::CDataType(void)
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
       m_TagType(CAsnBinaryDefs::eAutomatic),
       m_IsAlias(false), m_IsTypeAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false),
-      m_GlobalType(false)
+      m_GlobalType(false), m_EmptyExternalName(false)
 {
 }
 

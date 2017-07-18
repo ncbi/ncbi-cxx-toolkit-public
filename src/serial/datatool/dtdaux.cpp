@@ -336,6 +336,9 @@ int DTDElement::GetSourceLine(void) const
 void DTDElement::SetName(const string& name)
 {
     m_Name = name;
+    if (!IsEmbedded()) {
+        SetNamed();
+    }
 }
 const string& DTDElement::GetName(void) const
 {

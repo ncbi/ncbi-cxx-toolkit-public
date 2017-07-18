@@ -382,7 +382,25 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         code.ClassPublic() <<
                             "    typedef "<< name <<" "<< "C_E;\n";
                         ce_defined = true;
+                    } else if (m_Members.size() == 1) {
+                        const CReferenceDataType* reftype =
+                            dynamic_cast<const CReferenceDataType*>(mem->GetElementType());
+                        if (reftype) {
+                            const CDataType* resolved = reftype->Resolve();
+                            if (resolved && resolved != reftype) {
+                                string name;
+                                if (resolved->GetTypeStr()) {
+                                    name = resolved->GetTypeStr()->GetClassNameDT();
+                                    if (!name.empty()) {
+                                        code.ClassPublic() <<
+                                            "    typedef "<< name <<" "<< "C_E;\n";
+                                        ce_defined = true;
+                                    }
+                                }
+                            }
+                        }
                     }
+
                 }
             }
             string cType = i->type->GetCType(code.GetNamespace());

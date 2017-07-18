@@ -227,7 +227,6 @@ public:
         eChoice,   // (a|b|c)
         eSet,      // (a,b,c)
 
-        eAlias,
         eEnum,
         eIntEnum,
 
@@ -246,7 +245,9 @@ public:
         eWsdlInput,
         eWsdlHeaderOutput,
         eWsdlOutput,
-        eWsdlMessage
+        eWsdlMessage,
+
+        eAlias
     };
     enum EOccurrence {
         eZero,

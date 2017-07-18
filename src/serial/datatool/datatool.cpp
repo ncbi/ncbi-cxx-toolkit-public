@@ -270,6 +270,8 @@ bool CDataTool::ProcessModules(void)
                 break;
             } else if (NStr::CompareNocase(v,"no_globaltypes")==0) {
                 m_codestyle |= FCodeGenerationStyle(eNoGlobalTypeClasses);
+            } else if (NStr::CompareNocase(v,"no_globalgroups")==0) {
+                m_codestyle |= FCodeGenerationStyle(eNoGlobalGroupClasses);
             } else if (NStr::CompareNocase(v,"keep_nestedelem")==0) {
                 m_codestyle |= FCodeGenerationStyle(ePreserveNestedElements);
             } else if (NStr::CompareNocase(v,"xmlelem_enums")==0) {

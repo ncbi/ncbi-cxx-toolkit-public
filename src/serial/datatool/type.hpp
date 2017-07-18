@@ -341,6 +341,12 @@ public:
     bool IsGlobalType(void) const {
         return m_GlobalType;
     }
+    void SetEmptyExternalName(bool set) {
+        m_EmptyExternalName = set;
+    }
+    bool HasExternalName(void) const {
+        return !m_EmptyExternalName;
+    }
     string GetFullName(void) const;
 
 protected:
@@ -382,6 +388,7 @@ private:
     ENsQualifiedMode m_NsQualified;
     bool m_IsNillable;
     bool m_GlobalType;
+    bool m_EmptyExternalName;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

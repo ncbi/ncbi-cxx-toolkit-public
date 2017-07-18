@@ -35,6 +35,7 @@
 #include "typestr.hpp"
 #include <corelib/ncbiutil.hpp>
 #include "namespace.hpp"
+#include "type.hpp"
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -89,6 +90,9 @@ public:
 
     const string& GetExternalName(void) const
         {
+            if (DataType() && !DataType()->HasExternalName()) {
+                return kEmptyStr;
+            }
             return m_ExternalName;
         }
     // DT added to avoid conflict with the standard Windows interfaces

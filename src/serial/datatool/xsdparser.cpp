@@ -582,9 +582,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
             GetElementNamespace(m_ValuePrefix) == eSchemaNamespace) {
             name = CreateTmpEmbeddedName(owner->GetName(), emb);
             DTDElement& elem = m_MapElement[name];
+            elem.SetEmbedded();
             elem.SetName(m_Value);
             elem.SetSourceLine(Lexer().CurrentLine());
-            elem.SetEmbedded();
             elem.SetType(DTDElement::eAny);
             ref=false;
         } else {
@@ -685,6 +685,10 @@ void XSDParser::ParseGroupRef(DTDElement& node)
         ParseError("group");
     }
     TToken tok = GetRawAttributeSet();
+    if (node.GetName().empty() && GetAttribute("name")) {
+        node.SetNamespaceName(m_ValuePrefix.empty() ? m_TargetNamespace : m_PrefixToNamespace[m_ValuePrefix]);
+        node.SetName(m_Value);
+    }
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -744,9 +748,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
+                elem.SetEmbedded();
                 elem.SetName(name);
                 elem.SetSourceLine(Lexer().CurrentLine());
-                elem.SetEmbedded();
                 elem.SetType(DTDElement::eAny);
                 elem.SetQualified(node.IsQualified());
                 ParseAny(elem);
@@ -776,9 +780,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
+                elem.SetEmbedded();
                 elem.SetName(name);
                 elem.SetSourceLine(Lexer().CurrentLine());
-                elem.SetEmbedded();
                 elem.SetType(DTDElement::eSequence);
                 elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
@@ -798,9 +802,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
+                elem.SetEmbedded();
                 elem.SetName(name);
                 elem.SetSourceLine(Lexer().CurrentLine());
-                elem.SetEmbedded();
                 elem.SetType(DTDElement::eChoice);
                 elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
@@ -820,9 +824,9 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
+                elem.SetEmbedded();
                 elem.SetName(name);
                 elem.SetSourceLine(Lexer().CurrentLine());
-                elem.SetEmbedded();
                 elem.SetType(DTDElement::eSet);
                 elem.SetQualified(node.IsQualified());
                 ParseContainer(elem);
@@ -1522,10 +1526,40 @@ void XSDParser::ProcessNamedTypes(void)
                     }
                 } else if ( node.GetType() == DTDElement::eUnknownGroup) {
                     found = true;
-                    PushEntityLexer(node.GetTypeName());
-                    ParseGroupRef(node);
-                    if (node.GetType() == DTDElement::eUnknownGroup) {
-                        node.SetType(DTDElement::eEmpty);
+                    if (app.IsSetCodeGenerationStyle(CDataTool::eNoGlobalGroupClasses) ||
+                        node.GetOccurrence() == DTDElement::eZero) {
+                        PushEntityLexer(node.GetTypeName());
+                        ParseGroupRef(node);
+                        if (node.GetType() == DTDElement::eUnknownGroup) {
+                            node.SetType(DTDElement::eEmpty);
+                        }
+                    } else {
+                        if (m_MapElement.find(node.GetTypeName()) != m_MapElement.end()) {
+                            node.SetType(DTDElement::eAlias);
+                        } else {
+                            PushEntityLexer(node.GetTypeName());
+                            DTDElement item;
+                            ParseGroupRef(item);
+                            if (item.GetName().empty()) {
+                                ParseError("Anonymous group", "group name");
+                            } else {
+                                item.SetEmbedded(false);
+                                item.SetNamed(false);
+//                                item.SetGlobalType(true);
+                                m_MapElement[node.GetTypeName()] = item;
+                                DTDElement::EOccurrence occ = node.GetOccurrence();
+                                if (occ == DTDElement::eOne || occ == DTDElement::eZeroOrOne) {
+                                    node.SetType(DTDElement::eAlias);
+                                } else if (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore) {
+                                    node.SetType(DTDElement::eSequence);
+                                    node.SetName(item.GetName());
+                                    node.SetOccurrence(occ == DTDElement::eZeroOrMore ? DTDElement::eZeroOrOne : DTDElement::eOne);
+                                    string tmp2 = node.GetTypeName();
+                                    node.SetOccurrence(tmp2, DTDElement::eOneOrMore);
+                                    AddElementContent(node, tmp2);
+                                }
+                            }
+                        }
                     }
                 }
                 else if (processed.find(i->second.GetName() + i->second.GetNamespaceName())
