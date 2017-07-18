@@ -45,7 +45,7 @@ public:
     virtual ~CBinRunner(void);
 
     bool CheckBinary(void) const;
-    void Exec(const string& arguments);
+    void Exec(const vector<string>& arguments);
 
 private:
     unique_ptr<CFile> m_pBinary;

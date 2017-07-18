@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 #include "run_binary.hpp"
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
-#include <corelib/ncbiexec.hpp>
+#include <connect/ncbi_pipe.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -70,21 +70,37 @@ bool CBinRunner::CheckBinary(void) const
     return true;
 }
 
-
-void CBinRunner::Exec(const string& arguments) 
+void CBinRunner::Exec(const vector<string>& arg_vec) 
 {
-    string exec_str = m_pBinary->GetPath() + " " + arguments;
-    try {
-        CExec::System(exec_str.c_str());
-    } 
-    catch(CException&) {
+    CNcbiIstrstream empty_in("");
+
+    int exit_code;
+    CPipe::EFinish exec_fin = CPipe::ExecWait(
+            m_pBinary->GetPath(),
+            arg_vec,
+            empty_in,
+            cout,
+            cerr,
+            exit_code);
+
+
+    if ( exec_fin != CPipe::eDone ) {
         NCBI_THROW(CProteinMatchException,
             eExecutionError,
-            m_pBinary->GetPath() + " failed to execute");
+            m_pBinary->GetName() + ": execution canceled");
     }
+
+    if ( exit_code ) {
+        string msg = "exec failed: " + m_pBinary->GetName() 
+            + "Exit Code - " 
+            + NStr::NumericToString(exit_code); 
+        NCBI_THROW(CProteinMatchException,
+            eExecutionError,
+            msg);
+    }
+
     return;
 }
-
 
 END_NCBI_SCOPE
 
