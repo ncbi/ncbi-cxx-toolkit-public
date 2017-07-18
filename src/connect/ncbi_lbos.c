@@ -1885,7 +1885,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     char* new_name = NULL; /* if we need to add dbaf */
     const char* orig_serv_name = iter->name; /* we may modify name with dbaf */
 
-    CORE_LOG(eLOG_Warning, "LBOS is deprecated, consider using LBSMD instead.");
+    CORE_LOG(eLOG_Error, "LBOS is deprecated, consider using LBSMD instead.");
 
     if (!s_TurnOn()) {
         return NULL;
