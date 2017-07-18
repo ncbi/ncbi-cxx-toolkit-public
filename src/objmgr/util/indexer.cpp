@@ -168,6 +168,9 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
             // map from accession string to CBioseqIndex object
             const string& accn = bsx->GetAccession();
             m_AccnIndexMap[accn] = bsx;
+
+            // map from handle to CBioseqIndex object
+            m_BshIndexMap[bsh] = bsx;
         }
     } else if (sep.IsSet()) {
         // Is Bioseq-set
@@ -332,6 +335,18 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn)
 {
     TAccnIndexMap::iterator it = m_AccnIndexMap.find(accn);
     if (it != m_AccnIndexMap.end()) {
+        CRef<CBioseqIndex> bsx = it->second;
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Bioseq index by handle
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CBioseq_Handle bsh)
+
+{
+    TBshIndexMap::iterator it = m_BshIndexMap.find(bsh);
+    if (it != m_BshIndexMap.end()) {
         CRef<CBioseqIndex> bsx = it->second;
         return bsx;
     }

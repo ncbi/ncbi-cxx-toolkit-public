@@ -132,6 +132,8 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (int n);
     // Get Bioseq index by accession
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn);
+    // Get Bioseq index by handle
+    CRef<CBioseqIndex> GetBioseqIndex (CBioseq_Handle bsh);
 
     // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
     // Get Bioseq index by sublocation
@@ -189,6 +191,10 @@ private:
     // map from accession string to CBioseqIndex object
     typedef map<string, CRef<CBioseqIndex> > TAccnIndexMap;
     TAccnIndexMap m_AccnIndexMap;
+
+    // map from handle to CBioseqIndex object
+    typedef map<CBioseq_Handle, CRef<CBioseqIndex> > TBshIndexMap;
+    TBshIndexMap m_BshIndexMap;
 
     vector<CRef<CSeqsetIndex>> m_SsxList;
 
