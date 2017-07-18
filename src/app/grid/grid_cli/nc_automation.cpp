@@ -343,7 +343,9 @@ IReader* SNetCacheService::GetReader(const string& blob_key, size_t& blob_size)
 
 IReader* SNetCacheService::GetReader(const string& blob_key, int blob_version, const string& blob_subkey, size_t& blob_size)
 {
-    return m_NetICacheClient.GetReadStream(blob_key, blob_version, blob_subkey, &blob_size);
+    auto rv = m_NetICacheClient.GetReadStream(blob_key, blob_version, blob_subkey, &blob_size);
+    if (!rv) NCBI_THROW(CNetCacheException, eBlobNotFound, "BLOB not found");
+    return rv;
 }
 
 IEmbeddedStreamWriter* SNetCacheService::GetWriter(string& blob_key)
