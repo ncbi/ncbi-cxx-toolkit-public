@@ -295,7 +295,6 @@ protected:
     virtual void WriteOtherBegin(TTypeInfo typeInfo);
     virtual void WriteOtherEnd(TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
-    void WriteId(const string& str);
 
     void WriteNull(void);
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);

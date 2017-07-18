@@ -131,7 +131,7 @@ protected:
     virtual void WriteObjectReference(TObjectIndex index);
     virtual void WriteOtherBegin(TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
-    void WriteId(const string& str);
+    void WriteId(const string& str, bool checkCase = false);
 
     void WriteNull(void);
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);

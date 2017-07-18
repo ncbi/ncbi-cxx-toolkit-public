@@ -1047,6 +1047,7 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
             const CMemberInfo* memberInfo =
                 dynamic_cast<const CMemberInfo*>(
                     choiceType->GetVariants().GetItemInfo(index));
+            SetTopMemberId(memberInfo->GetId());
             BeginClassMember(memberInfo->GetId());
             memberInfo->CopyMember(copier);
             EndClassMember();

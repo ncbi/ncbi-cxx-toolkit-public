@@ -431,7 +431,7 @@ void CObjectOStreamAsn::CopyStringStore(CObjectIStream& in)
     WriteString(s.data(), s.size());
 }
 
-void CObjectOStreamAsn::WriteId(const string& str)
+void CObjectOStreamAsn::WriteId(const string& str, bool checkCase)
 {
     if ( str.find(' ') != NPOS || str.find('<') != NPOS ||
          str.find(':') != NPOS ) {
@@ -439,7 +439,12 @@ void CObjectOStreamAsn::WriteId(const string& str)
         m_Output.PutString(str);
         m_Output.PutChar(']');
     } else {
-        m_Output.PutString(str);
+        if (checkCase && !str.empty()) {
+            m_Output.PutChar((char)tolower((unsigned char)str[0]));
+            m_Output.PutString(str.data()+1, str.size()-1);
+        } else {
+            m_Output.PutString(str);
+        }
     }
 }
 
@@ -794,7 +799,12 @@ void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
         m_BlockStart = false;
     } else {
         NextElement();
-        WriteId(choiceType->GetName());
+        if (m_TypeAlias) {
+            WriteId(m_TypeAlias->GetName(), id.HaveNoPrefix());
+            m_TypeAlias = nullptr;
+        } else {
+            WriteId(choiceType->GetName(), id.HaveNoPrefix());
+        }
         m_Output.PutChar(' ');
     }
     WriteMemberId(id);
