@@ -8331,10 +8331,11 @@ extern void SOCK_SetupSSL(FSSLSetup setup)
 
     if (!setup)
         x_ShutdownSSL();
-    else if (s_SSLSetup != setup) {
+    else if (s_SSLSetup != setup  ||  s_SSL) {
         if (s_SSLSetup) {
             CORE_UNLOCK;
-            CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
+            CORE_LOG(s_SSL ? eLOG_Fatal : eLOG_Critical,
+                     "Cannot reset SSL while it is in use");
             return;
         }
         s_SSLSetup = s_Initialized < 0 ? 0 : setup;
