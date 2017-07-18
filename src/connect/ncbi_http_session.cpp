@@ -57,7 +57,8 @@ static const char* s_HttpHeaderNames[] = {
     "Range",
     "Referer",
     "Set-Cookie",
-    "User-Agent"
+    "User-Agent",
+    "Host"
 };
 
 

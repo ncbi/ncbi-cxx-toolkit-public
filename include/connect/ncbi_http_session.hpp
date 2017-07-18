@@ -142,7 +142,8 @@ public:
         eRange,
         eReferer,
         eSetCookie,
-        eUserAgent
+        eUserAgent,
+        eHost
     };
 
     /// Helper class allowing to use both strings and enums as header names.
