@@ -44,6 +44,7 @@
 
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/error_codes.hpp>
+#include <connect/services/impl/netcache_api_int.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
 
@@ -931,12 +932,12 @@ CNetService CNetCacheAPI::GetService()
     return m_Impl->m_Service;
 }
 
-CNetCacheAPI CNetCacheAPI::GetServer(CNetServer::TInstance server)
+CNetCacheAPIExt CNetCacheAPIExt::GetServer(CNetServer::TInstance server)
 {
     return new SNetCacheAPIImpl(server->m_ServerInPool, m_Impl);
 }
 
-void CNetCacheAPI::SetEventHandler(INetEventHandler* event_handler)
+void CNetCacheAPIExt::SetEventHandler(INetEventHandler* event_handler)
 {
     m_Impl->m_Service->SetEventHandler(event_handler);
 }

@@ -34,6 +34,8 @@
 
 #include "automation.hpp"
 
+#include <connect/services/impl/netcache_api_int.hpp>
+
 BEGIN_NCBI_SCOPE
 
 namespace NAutomation
@@ -73,11 +75,11 @@ struct SNetCacheService : public SNetService
 
 protected:
     SNetCacheService(CAutomationProc* automation_proc,
-            CNetCacheAPI nc_api, CNetService::EServiceType type);
+            CNetCacheAPIExt nc_api, CNetService::EServiceType type);
 
     static CCommand CallCommand(const string& name);
 
-    CNetCacheAPI m_NetCacheAPI;
+    CNetCacheAPIExt m_NetCacheAPI;
 
     friend struct SNetCacheBlob;
 
@@ -112,7 +114,7 @@ private:
 struct SNetCacheServer : public SNetCacheService
 {
     SNetCacheServer(CAutomationProc* automation_proc,
-            CNetCacheAPI nc_api, CNetServer::TInstance server);
+            CNetCacheAPIExt nc_api, CNetServer::TInstance server);
 
     virtual const string& GetType() const { return kName; }
 

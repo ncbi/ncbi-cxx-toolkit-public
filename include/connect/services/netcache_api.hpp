@@ -590,16 +590,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @see nc_cache_name
     typedef CNamedParameter<string, eNPT_CacheName> TCacheName;
 
-    /// Extract one of the servers comprising this service
-    /// as a separate CNetCacheAPI object.
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    CNetCacheAPI GetServer(CNetServer::TInstance server);
-
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    void SetEventHandler(INetEventHandler* event_handler);
-
     /// @internal
     CCompoundIDPool GetCompoundIDPool();
     /// @internal

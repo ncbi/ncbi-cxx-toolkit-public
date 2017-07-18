@@ -152,17 +152,17 @@ const void* SNetCacheService::GetImplPtr() const
 }
 
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
-        CNetCacheAPI nc_api, CNetService::EServiceType type) :
+        CNetCacheAPIExt nc_api, CNetService::EServiceType type) :
     SNetService(automation_proc, type),
     m_NetCacheAPI(nc_api)
 {
     m_Service = m_NetCacheAPI.GetService();
-    m_NetCacheAPI.SetEventHandler(
+    nc_api.SetEventHandler(
             new CEventHandler(automation_proc, m_NetCacheAPI));
 }
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
-        CNetCacheAPI nc_api, CNetServer::TInstance server) :
+        CNetCacheAPIExt nc_api, CNetServer::TInstance server) :
     SNetCacheService(automation_proc, nc_api.GetServer(server),
             CNetService::eSingleServerService),
     m_NetServer(server)
@@ -190,7 +190,7 @@ CAutomationObject* SNetCacheService::Create(
 
     const string service_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
-    CNetCacheAPI nc_api(service_name, client_name);
+    CNetCacheAPIExt nc_api(CNetCacheAPI(service_name, client_name));
     return new SNetCacheService(automation_proc, nc_api,
             CNetService::eLoadBalancedService);
 }
@@ -211,7 +211,7 @@ CAutomationObject* SNetCacheServer::Create(
 
     const string service_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
-    CNetCacheAPI nc_api(service_name, client_name);
+    CNetCacheAPIExt nc_api(CNetCacheAPI(service_name, client_name));
     CNetServer server = nc_api.GetService().Iterate().GetServer();
     return new SNetCacheServer(automation_proc, nc_api, server);
 }
