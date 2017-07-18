@@ -623,6 +623,7 @@ public:
     const CSeq_entry_Handle & GetTSEH(void) { return m_TSEH; }
     const CTSE_Handle & GetTSE_Handle(void) { return
             (m_TSEH ? m_TSEH.GetTSE_Handle() : CCacheImpl::kEmptyTSEHandle); }
+    const CConstRef<CSeq_annot>& GetSeqAnnot(void) { return m_SeqAnnot; }
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
@@ -745,6 +746,7 @@ private:
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
     CSeq_entry_Handle       m_TSEH;
+    CConstRef<CSeq_annot>   m_SeqAnnot;
 
     CCacheImpl              m_cache;
     CGeneCache              m_GeneCache;
@@ -1316,8 +1318,10 @@ public:
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
+
     bool GetTSANStretchErrors(const CBioseq& seq);
     bool GetTSAConflictingBiomolTechErrors(const CBioseq& seq);
+
     static bool IsSelfReferential(const CBioseq& seq);
     static bool IsAllNs(CBioseq_Handle bsh);
     static int PctNs(CBioseq_Handle bsh);

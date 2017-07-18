@@ -119,6 +119,7 @@
 
 #include <objtools/error_codes.hpp>
 #include <objtools/validator/validerror_format.hpp>
+#include <objtools/validator/utilities.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
@@ -240,6 +241,7 @@ void CValidError_imp::Reset(void)
     m_Scope = 0;
     m_TSE = 0;
     m_IsStandaloneAnnot = false;
+    m_SeqAnnot.Reset(NULL);
     m_NoPubs = false;
     m_NoCitSubPubs = false;
     m_NoBioSource = false;
@@ -1575,7 +1577,7 @@ void CValidError_imp::Validate(
             CValidError_feat feat_validator(*this);
             for (CFeat_CI fi (sah); fi; ++fi) {
                 const CSeq_feat& sf = fi->GetOriginalFeature();
-                feat_validator.ValidateSeqFeat(sf);
+                feat_validator.ValidateSeqFeat(sf);               
             }
         }
         break;
@@ -3023,6 +3025,7 @@ void CValidError_imp::Setup(const CSeq_annot_Handle& sah)
     if (! m_Scope) {
         m_Scope.Reset(& sah.GetScope());
     }
+    m_SeqAnnot = sah.GetCompleteSeq_annot();
     m_TSE.Reset(new CSeq_entry); // set a dummy Seq-entry
     m_TSEH = m_Scope->AddTopLevelSeqEntry(*m_TSE);
 }
@@ -3732,7 +3735,7 @@ CCacheImpl::GetBioseqHandleFromLocation(
     CScope *scope, const CSeq_loc& loc, const CTSE_Handle & tse)
 {
     _ASSERT(scope || tse);
-    if( ! tse ) {
+    if( ! tse  || (!tse.GetTopLevelEntry().IsSet() && !tse.GetTopLevelEntry().IsSeq())) {
         // fall back on old style
         return BioseqHandleFromLocation(scope, loc);
     }
