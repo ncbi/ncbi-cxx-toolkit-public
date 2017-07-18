@@ -253,6 +253,7 @@ elementFormDefault="qualified">
       </xs:complexContent>
     </xs:complexType>
   </xs:element>
+<!--  NCBI modification begin: removed
   <xs:element name="ResourceCompile" substitutionGroup="msb:Item">
     <xs:complexType>
       <xs:complexContent>
@@ -267,6 +268,7 @@ elementFormDefault="qualified">
       </xs:complexContent>
     </xs:complexType>
   </xs:element>
+ -->
   <xs:element name="PreLinkEvent" substitutionGroup="msb:Item">
     <xs:complexType>
       <xs:complexContent>
@@ -992,16 +994,8 @@ elementFormDefault="qualified">
     <xs:element name="PlatformFamilyName" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>    
     <xs:element name="PlatformID" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>    
     <xs:element name="PlatformTarget" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>
-    <xs:element name="PostBuildEvent" type="msb:StringPropertyType" substitutionGroup="msb:Property">
-        <xs:annotation>
-            <xs:documentation><!-- _locID_text="PostBuildEvent" _locComment="" -->Command line to be run at the end of build</xs:documentation>
-        </xs:annotation>
-    </xs:element>          
-    <xs:element name="PreBuildEvent" type="msb:StringPropertyType" substitutionGroup="msb:Property">
-        <xs:annotation>
-            <xs:documentation><!-- _locID_text="PreBuildEvent" _locComment="" -->Command line to be run at the start of build</xs:documentation>
-        </xs:annotation>
-    </xs:element>        
+<!-- ncbi: removed PostBuildEvent -->
+<!-- ncbi: removed PreBuildEvent -->
     <xs:element name="ProductName" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>
     <xs:element name="ProductVersion" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>
     <xs:element name="ProjectGuid" type="msb:StringPropertyType" substitutionGroup="msb:Property"/>
@@ -1284,6 +1278,7 @@ elementFormDefault="qualified">
             </xs:complexContent>
         </xs:complexType>
     </xs:element>
+<!--  NCBI modification begin REMOVED
     <xs:element name="Link" substitutionGroup="msb:Task">
         <xs:complexType>
             <xs:complexContent>
@@ -1403,6 +1398,7 @@ elementFormDefault="qualified">
             </xs:complexContent>
         </xs:complexType>
     </xs:element>
+-->
     <!-- ======================== NATIVE TASKS ==============================-->
 <!-- ncbi: removed BSCMake -->
     <xs:element name="CPPClean" substitutionGroup="msb:Task">
