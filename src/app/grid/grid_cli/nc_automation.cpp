@@ -86,10 +86,8 @@ bool SNetCacheBlob::Call(const string& method,
             NCBI_THROW(CAutomationException, eCommandProcessingError,
                     "Cannot write blob while it's being read");
         } else if (m_Writer.get() == NULL) {
-            bool return_key = m_BlobKey.empty();
-            m_Writer.reset(m_NetCacheObject->m_NetCacheAPI.PutData(&m_BlobKey));
-            if (return_key)
-                reply.AppendString(m_BlobKey);
+            SetWriter();
+            if (m_BlobKey.empty()) reply.AppendString(m_BlobKey);
         }
         m_Writer->Write(value.data(), value.length());
     } else if (method == "read") {
@@ -97,8 +95,7 @@ bool SNetCacheBlob::Call(const string& method,
             NCBI_THROW(CAutomationException, eCommandProcessingError,
                     "Cannot read blob while it's being written");
         } else if (m_Reader.get() == NULL)
-            m_Reader.reset(m_NetCacheObject->m_NetCacheAPI.GetReader(
-                    m_BlobKey, &m_BlobSize));
+            SetReader();
         size_t buf_size = (size_t) arg_array.NextInteger(-1);
         if (buf_size > m_BlobSize)
             buf_size = m_BlobSize;
@@ -132,38 +129,78 @@ bool SNetCacheBlob::Call(const string& method,
             m_Writer.reset();
         }
     } else if (method == "get_key") {
-        reply.AppendString(m_BlobKey);
+        GetKey(reply);
     } else
         return false;
 
     return true;
 }
 
+void SNetCacheBlob::SetWriter()
+{
+    m_Writer.reset(m_NetCacheObject->GetWriter(m_BlobKey));
+}
+
+void SNetCacheBlob::SetReader()
+{
+    m_Reader.reset(m_NetCacheObject->GetReader(m_BlobKey, m_BlobSize));
+}
+
+void SNetCacheBlob::GetKey(CJsonNode& reply)
+{
+    reply.AppendString(m_BlobKey);
+}
+
+SNetICacheBlob::SNetICacheBlob(SNetCacheService* nc_object,
+        const string& blob_key, int blob_version, const string& blob_subkey) :
+    SNetCacheBlob(nc_object, blob_key),
+    m_BlobVersion(blob_version),
+    m_BlobSubKey(blob_subkey)
+{
+}
+
+void SNetICacheBlob::SetWriter()
+{
+    m_Writer.reset(m_NetCacheObject->GetWriter(m_BlobKey, m_BlobVersion, m_BlobSubKey));
+}
+
+void SNetICacheBlob::SetReader()
+{
+    m_Reader.reset(m_NetCacheObject->GetReader(m_BlobKey, m_BlobVersion, m_BlobSubKey, m_BlobSize));
+}
+
+void SNetICacheBlob::GetKey(CJsonNode& reply)
+{
+    reply.AppendString(m_BlobKey);
+    reply.AppendInteger(m_BlobVersion);
+    reply.AppendString(m_BlobSubKey);
+}
+
 void SNetCacheService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
-            ReturnNetCacheServerObject(m_NetCacheAPI, server));
+            ReturnNetCacheServerObject(m_NetICacheClient, server));
 }
 
 const void* SNetCacheService::GetImplPtr() const
 {
-    return m_NetCacheAPI;
+    return m_NetICacheClient;
 }
 
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
-        CNetCacheAPIExt nc_api, CNetService::EServiceType type) :
+        CNetICacheClientExt ic_api, CNetService::EServiceType type) :
     SNetService(automation_proc, type),
-    m_NetCacheAPI(nc_api)
+    m_NetICacheClient(ic_api),
+    m_NetCacheAPI(ic_api.GetNetCacheAPI())
 {
-    m_Service = m_NetCacheAPI.GetService();
-    nc_api.SetEventHandler(
-            new CEventHandler(automation_proc, m_NetCacheAPI));
+    m_Service = m_NetICacheClient.GetService();
+    ic_api.SetEventHandler(new CEventHandler(automation_proc, m_NetICacheClient));
 }
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
-        CNetCacheAPIExt nc_api, CNetServer::TInstance server) :
-    SNetCacheService(automation_proc, nc_api.GetServer(server),
+        CNetICacheClientExt ic_api, CNetServer::TInstance server) :
+    SNetCacheService(automation_proc, ic_api.GetServer(server),
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
@@ -179,6 +216,7 @@ CCommand SNetCacheService::NewCommand()
     return CCommand(kName, {
             { "service_name", "", },
             { "client_name", "", },
+            { "cache_name", "", },
         });
 }
 
@@ -190,8 +228,9 @@ CAutomationObject* SNetCacheService::Create(
 
     const string service_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
-    CNetCacheAPIExt nc_api(CNetCacheAPI(service_name, client_name));
-    return new SNetCacheService(automation_proc, nc_api,
+    const string cache_name(arg_array.NextString(kEmptyStr));
+    CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
+    return new SNetCacheService(automation_proc, ic_api,
             CNetService::eLoadBalancedService);
 }
 
@@ -200,6 +239,7 @@ CCommand SNetCacheServer::NewCommand()
     return CCommand(kName, {
             { "service_name", "", },
             { "client_name", "", },
+            { "cache_name", "", },
         });
 }
 
@@ -211,9 +251,10 @@ CAutomationObject* SNetCacheServer::Create(
 
     const string service_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
-    CNetCacheAPIExt nc_api(CNetCacheAPI(service_name, client_name));
-    CNetServer server = nc_api.GetService().Iterate().GetServer();
-    return new SNetCacheServer(automation_proc, nc_api, server);
+    const string cache_name(arg_array.NextString(kEmptyStr));
+    CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
+    CNetServer server = ic_api.GetService().Iterate().GetServer();
+    return new SNetCacheServer(automation_proc, ic_api, server);
 }
 
 const void* SNetCacheServer::GetImplPtr() const
@@ -222,12 +263,12 @@ const void* SNetCacheServer::GetImplPtr() const
 }
 
 TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
-        CNetCacheAPI::TInstance ns_api,
+        CNetICacheClient::TInstance ic_api,
         CNetServer::TInstance server)
 {
     TAutomationObjectRef object(FindObjectByPtr(server));
     if (!object) {
-        object = new SNetCacheServer(this, ns_api, server);
+        object = new SNetCacheServer(this, ic_api, server);
         AddObject(object, server);
     }
     return object;
@@ -244,6 +285,8 @@ TCommands SNetCacheService::CallCommands()
     {
         { "get_blob", {
                 { "blob_key", "", },
+                { "blob_version", 0, },
+                { "blob_subkey", "", },
             }},
         { "get_servers", },
     };
@@ -258,15 +301,27 @@ bool SNetCacheService::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_blob") {
-        reply.AppendInteger(m_AutomationProc->AddObject(
-                TAutomationObjectRef(new SNetCacheBlob(this,
-                        arg_array.NextString(kEmptyStr)))));
+        const string blob_key(arg_array.NextString(kEmptyStr));
+        const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
+        const string blob_subkey(arg_array.NextString(kEmptyStr));
+
+        CNetCacheKey nc_key;
+        TAutomationObjectRef blob;
+
+        if (CNetCacheKey::ParseBlobKey(blob_key.c_str(), blob_key.length(), &nc_key)) {
+            blob.Reset(new SNetCacheBlob(this, blob_key));
+        } else {
+            blob.Reset(new SNetICacheBlob(this, blob_key, blob_version, blob_subkey));
+        }
+
+        reply.AppendInteger(m_AutomationProc->AddObject(blob));
+
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
-        for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate(
+        for (CNetServiceIterator it = m_NetICacheClient.GetService().Iterate(
                 CNetService::eIncludePenalized); it; ++it)
             object_ids.AppendInteger(m_AutomationProc->
-                    ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
+                    ReturnNetCacheServerObject(m_NetICacheClient, *it)->GetID());
         reply.Append(object_ids);
     } else
         return SNetService::Call(method, arg_array, reply);
@@ -278,4 +333,24 @@ bool SNetCacheServer::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     return SNetCacheService::Call(method, arg_array, reply);
+}
+
+IReader* SNetCacheService::GetReader(const string& blob_key, size_t& blob_size)
+{
+    return m_NetCacheAPI.GetReader(blob_key, &blob_size);
+}
+
+IReader* SNetCacheService::GetReader(const string& blob_key, int blob_version, const string& blob_subkey, size_t& blob_size)
+{
+    return m_NetICacheClient.GetReadStream(blob_key, blob_version, blob_subkey, &blob_size);
+}
+
+IEmbeddedStreamWriter* SNetCacheService::GetWriter(string& blob_key)
+{
+    return m_NetCacheAPI.PutData(&blob_key);
+}
+
+IEmbeddedStreamWriter* SNetCacheService::GetWriter(const string& blob_key, int blob_version, const string& blob_subkey)
+{
+    return m_NetICacheClient.GetNetCacheWriter(blob_key, blob_version, blob_subkey);
 }

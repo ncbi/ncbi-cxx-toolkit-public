@@ -339,10 +339,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 
     CNetService GetService();
 
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    void SetEventHandler(INetEventHandler* event_handler);
-
     /// @deprecated Use Search() instead
     NCBI_DEPRECATED list<string> GetSubkeyList(const string& key)
     {

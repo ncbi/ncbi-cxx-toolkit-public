@@ -141,6 +141,12 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
                 { section, "netcache_api", "netcache_client", kNetICacheDriverName });
     }
 
+    SNetICacheClientImpl(SNetServerInPool* server, SNetICacheClientImpl* parent) :
+        SNetCacheAPIImpl(server, parent),
+        m_CacheFlags(parent->m_CacheFlags)
+    {
+    }
+
     CNetServer::SExecResult ChooseServerAndExec(const string& cmd,
             const string& key,
             bool multiline_output,
@@ -996,7 +1002,12 @@ bool CNetICacheClient::SameCacheParams(const TCacheParams*) const
     return false;
 }
 
-void CNetICacheClient::SetEventHandler(INetEventHandler* event_handler)
+CNetICacheClientExt CNetICacheClientExt::GetServer(CNetServer::TInstance server)
+{
+    return new SNetICacheClientImpl(server->m_ServerInPool, m_Impl);
+}
+
+void CNetICacheClientExt::SetEventHandler(INetEventHandler* event_handler)
 {
     m_Impl->m_Service->SetEventHandler(event_handler);
 }
@@ -1049,6 +1060,15 @@ void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
     m_Impl->ChooseServerAndExec(cmd, key, false, &m_Impl->m_DefaultParameters);
 }
 
+SNetCacheAPIImpl* CNetICacheClientExt::GetNetCacheAPI()
+{
+    return m_Impl.GetPointer();
+}
+
+const SNetCacheAPIImpl* CNetICacheClientExt::GetNetCacheAPI() const
+{
+    return m_Impl.GetPointer();
+}
 
 /// Class factory for NetCache implementation of ICache
 ///

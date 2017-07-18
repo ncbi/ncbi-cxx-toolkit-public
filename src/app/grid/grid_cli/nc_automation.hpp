@@ -47,9 +47,9 @@ struct SNetCacheService : public SNetService
     {
     public:
         CEventHandler(CAutomationProc* automation_proc,
-                CNetCacheAPI::TInstance ns_api) :
+                CNetICacheClientExt::TInstance ic_api) :
             m_AutomationProc(automation_proc),
-            m_NetCacheAPI(ns_api)
+            m_NetICacheClient(ic_api)
         {
         }
 
@@ -57,7 +57,7 @@ struct SNetCacheService : public SNetService
 
     private:
         CAutomationProc* m_AutomationProc;
-        CNetCacheAPI::TInstance m_NetCacheAPI;
+        CNetICacheClientExt::TInstance m_NetICacheClient;
     };
 
     virtual const string& GetType() const { return kName; }
@@ -73,15 +73,20 @@ struct SNetCacheService : public SNetService
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
+    IReader* GetReader(const string& blob_key, size_t& blob_size);
+    IReader* GetReader(const string& blob_key, int blob_version, const string& blob_subkey, size_t& blob_size);
+
+    IEmbeddedStreamWriter* GetWriter(string& blob_key);
+    IEmbeddedStreamWriter* GetWriter(const string& blob_key, int blob_version, const string& blob_subkey);
+
 protected:
     SNetCacheService(CAutomationProc* automation_proc,
-            CNetCacheAPIExt nc_api, CNetService::EServiceType type);
+            CNetICacheClientExt ic_api, CNetService::EServiceType type);
 
     static CCommand CallCommand(const string& name);
 
-    CNetCacheAPIExt m_NetCacheAPI;
-
-    friend struct SNetCacheBlob;
+    CNetICacheClientExt m_NetICacheClient;
+    CNetCacheAPI m_NetCacheAPI;
 
 private:
     static const string kName;
@@ -108,13 +113,31 @@ struct SNetCacheBlob : public CAutomationObject
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
 
 private:
+    virtual void SetWriter();
+    virtual void SetReader();
+    virtual void GetKey(CJsonNode& reply);
+
     static const string kName;
+};
+
+struct SNetICacheBlob : SNetCacheBlob
+{
+    SNetICacheBlob(SNetCacheService* nc_object,
+            const string& blob_key, int blob_version, const string& blob_subkey);
+
+private:
+    void SetWriter() override;
+    void SetReader() override;
+    void GetKey(CJsonNode& reply) override;
+
+    int m_BlobVersion;
+    string m_BlobSubKey;
 };
 
 struct SNetCacheServer : public SNetCacheService
 {
     SNetCacheServer(CAutomationProc* automation_proc,
-            CNetCacheAPIExt nc_api, CNetServer::TInstance server);
+            CNetICacheClientExt ic_api, CNetServer::TInstance server);
 
     virtual const string& GetType() const { return kName; }
 

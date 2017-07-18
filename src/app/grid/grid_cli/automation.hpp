@@ -320,7 +320,7 @@ public:
     TAutomationObjectRef FindObjectByPtr(const void* impl_ptr) const;
 
     TAutomationObjectRef ReturnNetCacheServerObject(
-            CNetCacheAPI::TInstance ns_api,
+            CNetICacheClient::TInstance ic_api,
             CNetServer::TInstance server);
 
     TAutomationObjectRef ReturnNetScheduleServerObject(
