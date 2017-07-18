@@ -85,6 +85,7 @@ OmitFramePointers=true
 BasicRuntimeChecks=0
 BrowseInformation=0
 EnableFunctionLevelLinking=true
+AdditionalOptions=/MP
 
 [Compiler.release.ReleaseDLL]
 RuntimeLibrary=2
@@ -98,7 +99,6 @@ PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 [Compiler.900.release]
 Optimization=2
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
-AdditionalOptions=/MP
 
 
 
