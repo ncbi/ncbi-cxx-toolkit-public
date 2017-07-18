@@ -390,6 +390,9 @@ const char* SOCK_StringToHostPortEx(const char*     str,
                                     int/*bool*/     flag);
 
 
+void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /*__cplusplus*/

@@ -857,10 +857,10 @@ static EIO_Status s_InitAPI_(int secure)
         if (!s_SSL) {
             SOCKSSL ssl;
             if (!s_SSLSetup  ||  !(ssl = s_SSLSetup())) {
-                s_SSL = &kNoSSL;
+                s_SSL  = &kNoSSL;
                 status = eIO_NotSupported;
             } else {
-                s_SSL = ssl;
+                s_SSL  = ssl;
                 status = ssl->Init(s_Recv, s_Send);
             }
         } else
@@ -8325,19 +8325,21 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
  */
 
 
-extern void SOCK_SetupSSL(FSSLSetup setup)
+void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init)
 {
     CORE_LOCK_WRITE;
 
     if (!setup)
         x_ShutdownSSL();
-    else if (s_SSLSetup != setup  ||  s_SSL) {
+    else if (s_SSLSetup != setup  ||  (s_SSL  &&  init)) {
         if (s_SSLSetup) {
+            if (init)
+                s_SSL = 0;  /* NB: race / memory leak if was non-NULL ! */
             CORE_UNLOCK;
-            CORE_LOG(s_SSL ? eLOG_Fatal : eLOG_Critical,
-                     "Cannot reset SSL while it is in use");
+            CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
             return;
-        }
+        } else
+            assert(!s_SSL);
         s_SSLSetup = s_Initialized < 0 ? 0 : setup;
     }
     g_CORE_Set |= eCORE_SetSSL;
@@ -8346,9 +8348,15 @@ extern void SOCK_SetupSSL(FSSLSetup setup)
 }
 
 
+extern void SOCK_SetupSSL(FSSLSetup setup)
+{
+    SOCK_SetupSSLInternal(setup, 0/*false*/);
+}
+
+
 extern EIO_Status SOCK_SetupSSLEx(FSSLSetup setup)
 {
-    SOCK_SetupSSL(setup);
+    SOCK_SetupSSLInternal(setup, 0/*false*/);
     return setup ? s_InitAPI(1/*secure*/) : eIO_Success;
 }
 

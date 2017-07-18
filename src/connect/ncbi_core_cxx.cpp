@@ -36,6 +36,7 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include "ncbi_socketp.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
@@ -472,7 +473,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
         set |= eCORE_SetREG;
     }
     if (!(g_CORE_Set & eCORE_SetSSL)) {
-        SOCK_SetupSSL(ssl);
+        SOCK_SetupSSLInternal(ssl, 1/*init*/);
         set |= ssl ? eCORE_SetSSL : 0;
     }
     g_CORE_Set &= ~set;
