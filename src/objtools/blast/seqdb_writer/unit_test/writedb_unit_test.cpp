@@ -2521,9 +2521,10 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
 {
     CTmpFile tmpfile;
     CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
-    const string kOutput("/dev/null");
+    const string kOutput("/dev/FOO");
     CRef<CBuildDatabase> bd;
     // UGLY hack by TLM to figure out TC mac issue with exceptions.
+/*
     try {
         bd.Reset(new CBuildDatabase(kOutput, "foo", true,
                                     CWriteDB::eDefault, false, &log));
@@ -2533,12 +2534,11 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
 	std::cout << "Message: " << e.what() << "\n";
 	std::cout << "Type:    " << typeid(e).name() << "\n";
     }
-/*
+*/
     BOOST_REQUIRE_THROW(
         bd.Reset(new CBuildDatabase(kOutput, "foo", true,
                                     CWriteDB::eDefault, false, &log)),
         CMultisourceException);
-*/
     BOOST_REQUIRE(bd.Empty());
     CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
     BOOST_REQUIRE(f1.Exists() == false);
