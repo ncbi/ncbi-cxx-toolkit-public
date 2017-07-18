@@ -260,48 +260,6 @@ private:
 };
 
 
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
-istream& operator>>(istream& in, CRef<T>& obj)
-{
-    if ( !obj ) obj.Reset(new T);
-    return in >> *obj;
-}
-
-
-inline
-const char* operator>>(const char* s, CSerialObject& obj)
-{
-    CNcbiIstrstream in(s, strlen(s));
-    in >> MSerial_AsnText >> obj;
-    return s + in.tellg();
-}
-
-
-inline
-string operator>>(const string& s, CSerialObject& obj)
-{
-    CNcbiIstrstream in(s.c_str());
-    in >> MSerial_AsnText >> obj;
-    return s.substr(in.tellg());
-}
-
-
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
-const char* operator>>(const char* s, CRef<T>& obj)
-{
-    if ( !obj ) obj.Reset(new T);
-    return s >> *obj;
-}
-
-
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
-string operator>>(const string& s, CRef<T>& obj)
-{
-    if ( !obj ) obj.Reset(new T);
-    return s >> *obj;
-}
-
-
 /* @} */
 
 

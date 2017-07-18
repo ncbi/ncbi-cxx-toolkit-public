@@ -667,6 +667,78 @@ NCBI_XSERIAL_EXPORT CNcbiOstream& WriteObject(CNcbiOstream& str, TConstObjectPtr
 NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject( CNcbiIstream& str, TObjectPtr      ptr, TTypeInfo info);
 
 
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+istream& operator>>(istream& in, CRef<T>& obj)
+{
+    obj.Reset(new T);
+    return in >> *obj;
+}
+
+inline
+const char* operator>>(const char* s, CSerialObject& obj)
+{
+    CNcbiIstrstream in(s, strlen(s));
+    in >> MSerial_AsnText >> obj;
+    return s + in.tellg();
+}
+
+inline
+string operator>>(const string& s, CSerialObject& obj)
+{
+    CNcbiIstrstream in(s.c_str());
+    in >> MSerial_AsnText >> obj;
+    return s.substr(in.tellg());
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+const char* operator>>(const char* s, CRef<T>& obj)
+{
+    obj.Reset(new T);
+    return s >> *obj;
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+string operator>>(const string& s, CRef<T>& obj)
+{
+    obj.Reset(new T);
+    return s >> *obj;
+}
+
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+ostream& operator<<(ostream& out, const CRef<T>& obj)
+{
+    return out << *obj;
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+ostream& operator<<(ostream& out, const CConstRef<T>& obj)
+{
+    return out << *obj;
+}
+
+inline
+string& operator<<(string& s, const CSerialObject& obj)
+{
+    CNcbiOstrstream out;
+    out << MSerial_AsnText << obj;
+    s.append(CNcbiOstrstreamToString(out));
+    return s;
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+string& operator<<(string& s, const CRef<T>& obj)
+{
+    return s << *obj;
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+string& operator<<(string& s, const CConstRef<T>& obj)
+{
+    return s << *obj;
+}
+
+
 END_NCBI_SCOPE
 
 // these methods must be defined in root namespace so they have prefix NCBISER
