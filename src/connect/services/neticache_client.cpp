@@ -1062,12 +1062,12 @@ void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
 
 SNetCacheAPIImpl* CNetICacheClientExt::GetNetCacheAPI()
 {
-    return m_Impl.GetPointer();
+    return new SNetCacheAPIImpl(m_Impl.GetObject());
 }
 
 const SNetCacheAPIImpl* CNetICacheClientExt::GetNetCacheAPI() const
 {
-    return m_Impl.GetPointer();
+    return new SNetCacheAPIImpl(m_Impl.GetObject());
 }
 
 /// Class factory for NetCache implementation of ICache

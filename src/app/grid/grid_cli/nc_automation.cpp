@@ -86,8 +86,10 @@ bool SNetCacheBlob::Call(const string& method,
             NCBI_THROW(CAutomationException, eCommandProcessingError,
                     "Cannot write blob while it's being read");
         } else if (m_Writer.get() == NULL) {
+            // SetWriter() puts blob ID into m_BlobKey, so we have to check it before that
+            const bool return_blob_key = m_BlobKey.empty();
             SetWriter();
-            if (m_BlobKey.empty()) reply.AppendString(m_BlobKey);
+            if (return_blob_key) reply.AppendString(m_BlobKey);
         }
         m_Writer->Write(value.data(), value.length());
     } else if (method == "read") {
@@ -305,10 +307,9 @@ bool SNetCacheService::Call(const string& method,
         const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
         const string blob_subkey(arg_array.NextString(kEmptyStr));
 
-        CNetCacheKey nc_key;
         TAutomationObjectRef blob;
 
-        if (CNetCacheKey::ParseBlobKey(blob_key.c_str(), blob_key.length(), &nc_key)) {
+        if (blob_key.empty() || CNetCacheKey::IsValidKey(blob_key)) {
             blob.Reset(new SNetCacheBlob(this, blob_key));
         } else {
             blob.Reset(new SNetICacheBlob(this, blob_key, blob_version, blob_subkey));
