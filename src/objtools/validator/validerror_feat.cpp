@@ -6704,6 +6704,15 @@ void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq
 }
 
 
+bool s_HasId(const CSeq_feat& feat, const CSeqFeatXref::TId::TLocal& id)
+{
+    if (!feat.IsSetId() && feat.GetId().IsLocal()) {
+        return false;
+    }
+    return feat.GetId().GetLocal().Equals(id);
+}
+
+
 void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat)
 {
     if (!xref.IsSetId() && !xref.IsSetData()) {
@@ -6711,18 +6720,29 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                  "SeqFeatXref with no id or data field", feat);
     } else if (xref.IsSetId()) {
         if (xref.GetId().IsLocal()) {
-            CTSE_Handle::TSeq_feat_Handles far_feats =
-                m_Imp.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::eSubtype_any, xref.GetId().GetLocal());
+            vector<CConstRef<CSeq_feat> > far_feats;
+            if (m_Imp.IsStandaloneAnnot()) {
+                for (auto it = m_Imp.GetSeqAnnot()->GetData().GetFtable().begin(); it != m_Imp.GetSeqAnnot()->GetData().GetFtable().end(); it++) {
+                    if (s_HasId(**it, xref.GetId().GetLocal())) {
+                        far_feats.push_back(*it);
+                    }
+                }
+            } else {
+                CTSE_Handle::TSeq_feat_Handles far_handles = m_Imp.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::eSubtype_any, xref.GetId().GetLocal());
+                for (auto it = far_handles.begin(); it != far_handles.end(); it++) {
+                    far_feats.push_back(it->GetSeq_feat());
+                }
+            }
             if (far_feats.empty()) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
                     "Cross-referenced feature cannot be found",
                     feat);
             } else {
-                ITERATE(CTSE_Handle::TSeq_feat_Handles, ff, far_feats) {
-                    ValidateOneFeatXrefPair(feat, *(ff->GetSeq_feat()), xref);
+                for (auto ff = far_feats.begin(); ff != far_feats.end(); ff++) {
+                    ValidateOneFeatXrefPair(feat, **ff, xref);
                     if (xref.IsSetData()) {
                         // Check that feature with ID matches data
-                        if (xref.GetData().Which() != ff->GetData().Which()) {
+                        if (xref.GetData().Which() != (*ff)->GetData().Which()) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqFeatXrefProblem,
                                 "SeqFeatXref contains both id and data, data type conflicts with data on feature with id",
                                 feat);
