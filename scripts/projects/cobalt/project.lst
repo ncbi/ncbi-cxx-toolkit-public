@@ -11,5 +11,6 @@ algo/cobalt
 -app/segmasker
 connect/mbedtls
 algo/blast/proteinkmer
+algo/blast/proteinkmer$
 -algo/blast/proteinkmer/demo
 
