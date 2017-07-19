@@ -77,17 +77,18 @@ typedef const SSERV_Info* SSERV_InfoCPtr;
  */
 enum ESERV_TypeSpecial {
     fSERV_Any               = 0,
-    fSERV_All               = 0x0000FFFF,  /**< Server type mask          */
-    fSERV_Stateless         = 0x00100000,  /**< Stateless servers only    */
-    fSERV_Reserved          = 0x00400000,  /**< Reserved, MBZ             */
-    fSERV_ReverseDns        = 0x00800000,  /**< LB-DNS translation        */
-    /* The following allow to get currently inactive service instances    */
+    fSERV_All               = 0x0000FFFF,  /**< Server type mask             */
+    fSERV_Stateless         = 0x00100000,  /**< Stateless servers only       */
+    fSERV_Reserved          = 0x00400000,  /**< Reserved, MBZ                */
+    fSERV_ReverseDns        = 0x00800000,  /**< LB-DNS translation           */
+    /* The following allow to get currently inactive service instances       */
     fSERV_IncludeDown       = 0x08000000,
     fSERV_IncludeStandby    = 0x10000000,
-    fSERV_IncludeReserved   = 0x20000000,  /**< @note Not yet implemented */
+    fSERV_IncludeReserved   = 0x20000000,  /**< @note Not yet implemented    */
     fSERV_IncludeSuppressed = 0x40000000,
     fSERV_IncludeInactive   = 0x70000000,
-    fSERV_Promiscuous       = 0x78000000
+    fSERV_Promiscuous       = 0x78000000,
+    fSERV_DelayOpen         = 0x80000000   /**< Don't open service until use */
 };
 typedef unsigned int   TSERV_Type;      /**<Bitwise OR of ESERV_Type[Special]*/
 typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
