@@ -162,7 +162,7 @@ struct SRegSynonyms : vector<CTempString>
     SRegSynonyms(initializer_list<SRegSynonyms> src)
     {
         auto i = back_inserter(*this);
-        auto f = [&](const string& s) { return NotFound(s); };
+        auto f = [&](CTempString s) { return NotFound(s); };
 
         for (auto& s : src) {
             copy_if(s.begin(), s.end(), i, f);
@@ -170,7 +170,7 @@ struct SRegSynonyms : vector<CTempString>
     }
 
 private:
-    bool NotFound(string s) const { return find(begin(), end(), s) == end(); }
+    bool NotFound(CTempString s) const { return find(begin(), end(), s) == end(); }
 };
 
 class NCBI_XCONNECT_EXPORT ISynRegistry

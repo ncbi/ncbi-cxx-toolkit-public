@@ -372,7 +372,7 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
-string s_GetSection(bool ns_conf)
+CTempString s_GetSection(bool ns_conf)
 {
     return ns_conf ? "netschedule_conf_from_netschedule" : "netcache_conf_from_netschedule";
 }
