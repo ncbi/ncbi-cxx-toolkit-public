@@ -85,7 +85,7 @@ public:
     /// must be be derived from CObject as its first superclass.
     /// @sa CConn_IOStream::SetCanceledCallback
     void SetCanceledCallback(const ICanceled* canceled) { m_Canceler = canceled; }
-    bool IsCanceled(void) const { return m_Canceler && m_Canceler->IsCanceled(); }
+    bool IsCanceled(void) const { return m_Canceler.NotNull() && m_Canceler->IsCanceled(); }
 
 protected:
     void SetAffinity(const string& affinity);
@@ -121,7 +121,7 @@ protected:
     string                   m_Affinity;
     unsigned int             m_RetryLimit;
     CHttpRetryContext        m_RetryCtx;
-    const ICanceled*         m_Canceler;
+    CConstIRef<ICanceled>    m_Canceler;
 
     // Retry policy; by default, just _TRACEs the event and returns
     // true.  May reset the connection (or do anything else, really),

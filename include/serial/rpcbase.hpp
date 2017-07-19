@@ -168,8 +168,8 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 
     auto_ptr<CConn_ServiceStream> stream(new CConn_ServiceStream(
         m_Service, fSERV_Any, net_info, &x_extra, m_Timeout));
-    if ( m_Canceler ) {
-        stream->SetCanceledCallback(m_Canceler);
+    if ( m_Canceler.NotNull() ) {
+        stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
     }
     x_SetStream(stream.release());
     ConnNetInfo_Destroy(net_info);
@@ -202,8 +202,8 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
         0, // cleanup callback
         fHTTP_AutoReconnect | fHTTP_NoAutoRetry,
         m_Timeout));
-    if ( m_Canceler ) {
-        stream->SetCanceledCallback(m_Canceler);
+    if ( m_Canceler.NotNull() ) {
+        stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
     }
     x_SetStream(stream.release());
 }
