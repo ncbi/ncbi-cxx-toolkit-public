@@ -61,10 +61,15 @@ CConn_IOStream::CConn_IOStream(const TConn_Pair& connpair,
                                 timeout, buf_size, flgs, ptr, size));
     CONN conn = csb->GetCONN();
     if (conn) {
-        SOCK s/*dummy*/;
-        // NB: CONN_Write(0 bytes) could have caused the same effect as GetSOCK
-        (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
-        if (CONN_Status(conn, eIO_Open) == eIO_Success) {
+        EIO_Status status;
+        if (!(flgs & fConn_DelayOpen)) {
+            SOCK s/*dummy*/;
+            // NB: CONN_Write(0 bytes) could have caused the same effect
+            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
+            status  = CONN_Status(conn, eIO_Open);
+        } else
+            status  = eIO_Success;
+        if (status == eIO_Success) {
             init(csb.get());
             m_CSb = csb.release();
             return;
@@ -84,10 +89,15 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
         csb(new CConn_Streambuf(conn, close,
                                 timeout, buf_size, flgs, ptr, size));
     if (conn) {
-        SOCK s/*dummy*/;
-        // NB: CONN_Write(0 bytes) could have caused the same effect as GetSOCK
-        (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
-        if (CONN_Status(conn, eIO_Open) == eIO_Success) {
+        EIO_Status status;
+        if (!(flgs& fConn_DelayOpen)) {
+            SOCK s/*dummy*/;
+            // NB: CONN_Write(0 bytes) could have caused the same effect
+            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
+            status  = CONN_Status(conn, eIO_Open);
+        } else
+            status  = eIO_Success;
+        if (status == eIO_Success) {
             init(csb.get());
             m_CSb = csb.release();
             return;
@@ -769,7 +779,8 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                extra  &&  extra->get_next_info
                                                ? x_GetNextInfo : 0,
                                                timeout),
-                     timeout, buf_size)
+                     timeout, buf_size,
+                     types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
 {
     return;
 }
@@ -797,7 +808,8 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                extra  &&  extra->get_next_info
                                                ? x_GetNextInfo : 0,
                                                timeout),
-                     timeout, buf_size)
+                     timeout, buf_size,
+                     types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
 {
     return;
 }

@@ -1246,11 +1246,13 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         x_net_info->firewall = eFWMode_Adaptive;
     if (x_net_info->max_try < 1)
         x_net_info->max_try = 1;
-    if (!(types & fSERV_DelayOpen)  &&  !s_OpenDispatcher(xxx)) {
-        s_Destroy(ccc);
-        return 0;
+    if (!(types & fSERV_DelayOpen)) {
+        if (!s_OpenDispatcher(xxx)) {
+            s_Destroy(ccc);
+            return 0;
+        }
+        assert(xxx->iter);
     }
-    assert(xxx->iter);
 
     /* finally, store all callback extras */
     if (extra)

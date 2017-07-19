@@ -119,8 +119,9 @@ public:
     /// Must be compatible by values with TCONN_Flags.
     enum {
         fConn_Untie         = 1,  ///< do not flush before reading
-        fConn_ReadBuffered  = 2,  ///< read buffer is to be allocated
-        fConn_WriteBuffered = 4   ///< write buffer is to be allocated
+        fConn_DelayOpen     = 2,  ///< do not force CONN opened in ctor
+        fConn_ReadBuffered  = 4,  ///< read buffer is to be allocated
+        fConn_WriteBuffered = 8   ///< write buffer is to be allocated
     } EConn_Flag;
     typedef unsigned int TConn_Flags;  ///< bitwise OR of EConn_Flag
 
