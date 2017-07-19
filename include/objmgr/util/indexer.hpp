@@ -192,9 +192,9 @@ private:
     typedef map<string, CRef<CBioseqIndex> > TAccnIndexMap;
     TAccnIndexMap m_AccnIndexMap;
 
-    // map from handle to CBioseqIndex object
-    typedef map<CBioseq_Handle, CRef<CBioseqIndex> > TBshIndexMap;
-    TBshIndexMap m_BshIndexMap;
+    // map from handle to CBioseqIndex object via best Seq-id string
+    typedef map<string, CRef<CBioseqIndex> > TBestIdIndexMap;
+    TBestIdIndexMap m_BestIdIndexMap;
 
     vector<CRef<CSeqsetIndex>> m_SsxList;
 

@@ -150,6 +150,57 @@ bool CSeqEntryIndex::IsFetchFailure (void)
     return false;
 }
 
+// FindBestIdChoice modified from feature_item.cpp
+static int s_IdxSeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::Score(id_non_const);
+}
+
+static CSeq_id_Handle s_IdxFindBestIdChoice(const CBioseq_Handle::TId& ids)
+{
+    CBestChoiceTracker< CSeq_id_Handle, int (*)(const CSeq_id_Handle&) > 
+        tracker(s_IdxSeqIdHandle);
+
+    ITERATE( CBioseq_Handle::TId, it, ids ) {
+        switch( (*it).Which() ) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Gi:
+            case CSeq_id::e_Other:
+            case CSeq_id::e_General:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+            case CSeq_id::e_Gpipe:
+                tracker(*it);
+                break;
+            default:
+                break;
+        }
+    }
+    return tracker.GetBestChoice();
+}
+
+static string s_IdxGetBestIdString(CBioseq_Handle bsh)
+
+{
+    if (bsh) {
+        const CBioseq_Handle::TId& ids = bsh.GetId();
+        if (! ids.empty()) {
+            CSeq_id_Handle best = s_IdxFindBestIdChoice(ids);
+            if (best) {
+                return best.AsString();
+            }
+        }
+    }
+
+    return "";
+}
+
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
 void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
 
@@ -169,8 +220,9 @@ void CSeqEntryIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
             const string& accn = bsx->GetAccession();
             m_AccnIndexMap[accn] = bsx;
 
-            // map from handle to CBioseqIndex object
-            m_BshIndexMap[bsh] = bsx;
+            // map from handle to best Seq-id string to CBioseqIndex object
+            string bestid = s_IdxGetBestIdString(bsh);
+            m_BestIdIndexMap[bestid] = bsx;
         }
     } else if (sep.IsSet()) {
         // Is Bioseq-set
@@ -341,12 +393,13 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn)
     return CRef<CBioseqIndex> ();
 }
 
-// Get Bioseq index by handle
+// Get Bioseq index by handle via best Seq-id string
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CBioseq_Handle bsh)
 
 {
-    TBshIndexMap::iterator it = m_BshIndexMap.find(bsh);
-    if (it != m_BshIndexMap.end()) {
+    string bestid = s_IdxGetBestIdString(bsh);
+    TBestIdIndexMap::iterator it = m_BestIdIndexMap.find(bestid);
+    if (it != m_BestIdIndexMap.end()) {
         CRef<CBioseqIndex> bsx = it->second;
         return bsx;
     }
