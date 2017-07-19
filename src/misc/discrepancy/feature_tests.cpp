@@ -114,24 +114,19 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 }
 
 
-// DISC_SHORT_RRNA
+// SHORT_RRNA
 
 const string kShortRRNA = "[n] rRNA feature[s] [is] too short";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Short rRNA Features")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetPartial() && IsShortrRNA(obj, &(context.GetScope()))) {
-        m_Objs[kShortRRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
-            false).Fatal();
+        m_Objs[kShortRRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SHORT_RRNA)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

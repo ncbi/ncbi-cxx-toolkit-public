@@ -203,11 +203,12 @@ static const TRNALengthMap kTrnaLengthMap{
     { "25S", { 1000, false } },
     { "26S", { 1000, false } },
     { "28S", { 1000, false } },
-    { "28S", { 3300, false } },
     { "small", { 1000, false } },
     { "large", { 1000, false } },
     { "5.8S", { 130, true } },
     { "5S", { 90, true } } 
+    // possible problem: if it matches /25S/ it would also match /5S/
+    // luckily, if it fails the /5S/ rule it would fail the /25S/ rule
 };
 
 
@@ -216,22 +217,16 @@ bool IsShortrRNA(const CSeq_feat& f, CScope* scope) // used in feature_tests.cpp
     if (f.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return false;
     }
-
     bool is_bad = false;
-
     size_t len = sequence::GetLength(f.GetLocation(), scope);
-
     string rrna_name = f.GetData().GetRna().GetRnaProductName();
-
     ITERATE (TRNALengthMap, it, kTrnaLengthMap) {
-        if (NStr::FindNoCase(rrna_name, it->first) != string::npos &&
-            len < it->second.first &&
-            (!it->second.second || (f.IsSetPartial() && f.GetPartial())) ) {
+        SIZE_TYPE pos = NStr::FindNoCase(rrna_name, it->first);
+        if (pos != string::npos && len < it->second.first && !(it->second.second && f.IsSetPartial() && f.GetPartial()) ) {
             is_bad = true;
             break;
         }
     }
-
     return is_bad;
 }
 
