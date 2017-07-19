@@ -55,6 +55,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/taxon3/taxon3.hpp>
+#include <objects/taxon1/taxon1.hpp>
 //#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
@@ -2014,6 +2015,25 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
 }
 
 
+bool IsLikelyTaxname(const string& val)
+{
+    if (!isalpha(val[0])) {
+        return false;
+    }
+    size_t pos = NStr::Find(val, " ");
+    if (pos == NPOS) {
+        return false;
+    }
+    CTaxon1 taxon1;
+    taxon1.Init();
+    int taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
+    if (taxid > 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
     bool is_valid = true;
@@ -2053,7 +2073,11 @@ bool IsSpecificHostValid(const string& val, string& error_msg)
             error_msg = "Invalid value for specific host: " + host;
         }
     }
-    
+    if (NStr::StartsWith(error_msg, "Invalid value for specific host") && !IsLikelyTaxname(host)) {
+        is_valid = true;
+        error_msg = kEmptyStr;
+    }
+
     return is_valid;
 }
 

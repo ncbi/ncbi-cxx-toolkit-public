@@ -141,6 +141,9 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
             m_SuggestedFix = m_Host;
         } else if (NStr::Find(m_Error, "ambiguous") != NPOS) {
             m_Response = eAmbiguous;
+        } else if (NStr::StartsWith(m_Error, "Invalid value for specific host") && !IsLikelyTaxname(m_Host)) {
+            m_Response = eNormal;
+            m_SuggestedFix = m_Host;
         } else {
             m_Response = eUnrecognized;
             if (NStr::IsBlank(m_SuggestedFix) && reply.IsData()) {
