@@ -4987,8 +4987,21 @@ void CFeatureItem::x_AddFTableRnaQuals(
                               feature::fFGL_Content, &ctx.GetScope());
             x_AddFTableQual("product", label);
         }
-        else if ( ext.IsGen() && ext.GetGen().IsSetProduct()) {
-            x_AddFTableQual("product", ext.GetGen().GetProduct());
+        else if ( ext.IsGen() ) {
+            const CRNA_gen& gen = ext.GetGen();
+            if ( gen.IsSetClass() ) {
+                if ( gen.IsLegalClass()) {
+                    x_AddFTableQual("ncRNA_class", gen.GetClass());
+                } 
+                else {
+                    x_AddFTableQual("ncRNA_class", "other");
+                    x_AddFTableQual("note", gen.GetClass());
+                }
+            }
+
+            if ( gen.IsSetProduct() ) {
+                x_AddFTableQual("product", gen.GetProduct());
+            }
         }
     }
 
