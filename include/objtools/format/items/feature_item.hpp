@@ -252,6 +252,7 @@ protected:
     static string x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_local, bool giOK);
     void x_AddFTableCdregionQuals(const CMappedFeat& feat, CBioseqContext& ctx);
     void x_AddFTableProtQuals(const CMappedFeat& prot);
+    void x_AddFTableProtQuals(const CProt_ref& prot_ref);
     void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region);
     void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond);
     void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site);

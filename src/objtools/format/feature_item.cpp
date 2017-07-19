@@ -5107,6 +5107,12 @@ void CFeatureItem::x_AddFTableCdregionQuals(
     if ( feat.IsSetProduct() ) {
         prod = ctx.GetScope().GetBioseqHandle(feat.GetProductId());
     }
+
+    const CProt_ref* prot_xref = feat.GetProtXref();
+    if (prot_xref) {
+        x_AddFTableProtQuals(*prot_xref);
+    } 
+    else 
     if ( prod ) {
         CMappedFeat prot_ref = s_GetBestProtFeature(prod);
         if ( prot_ref ) {
@@ -5160,27 +5166,37 @@ void CFeatureItem::x_AddFTableProtQuals(
     if ( !prot.GetData().IsProt() ) {
         return;
     }
-    const CProt_ref& pref = prot.GetData().GetProt();
-    ITERATE (CProt_ref::TName, it, pref.GetName()) {
+    const CProt_ref& prot_ref = prot.GetData().GetProt();
+
+    x_AddFTableProtQuals(prot.GetData().GetProt());
+
+    if ( prot.IsSetComment()  &&  !prot.GetComment().empty() ) {
+        x_AddFTableQual("prot_note", prot.GetComment());
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddFTableProtQuals(
+    const CProt_ref& prot_ref) 
+//  ----------------------------------------------------------------------------
+{
+    ITERATE (CProt_ref::TName, it, prot_ref.GetName()) {
         if ( !it->empty() ) {
             x_AddFTableQual("product", *it);
         }
     }
-    if ( pref.IsSetDesc()  &&  !pref.GetDesc().empty() ) {
-        x_AddFTableQual("prot_desc", pref.GetDesc());
+    if ( prot_ref.IsSetDesc()  &&  !prot_ref.GetDesc().empty() ) {
+        x_AddFTableQual("prot_desc", prot_ref.GetDesc());
     }
-    ITERATE (CProt_ref::TActivity, it, pref.GetActivity()) {
+    ITERATE (CProt_ref::TActivity, it, prot_ref.GetActivity()) {
         if ( !it->empty() ) {
             x_AddFTableQual("function", *it);
         }
     }
-    ITERATE (CProt_ref::TEc, it, pref.GetEc()) {
+    ITERATE (CProt_ref::TEc, it, prot_ref.GetEc()) {
         if ( !it->empty() ) {
             x_AddFTableQual("EC_number", *it);
         }
-    }
-    if ( prot.IsSetComment()  &&  !prot.GetComment().empty() ) {
-        x_AddFTableQual("prot_note", prot.GetComment());
     }
 }
 
