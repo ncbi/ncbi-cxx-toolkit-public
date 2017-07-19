@@ -5557,27 +5557,28 @@ static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& sc
                 else if (rf.IsHaem_replace()) {
                     newtext = ReplaceNoCase(prot_name, "haem", "hem");
                 }
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*prot);
-                if (!newnote.empty()) {
-                    AddComment(*new_feat, newnote);
-                }
+                CRef<CSeq_feat> new_prot(new CSeq_feat());
+                new_prot->Assign(*prot);
                 if (!newtext.empty()) {
-                    *new_feat->SetData().SetProt().SetName().begin() = newtext;
+                    *new_prot->SetData().SetProt().SetName().begin() = newtext;
                 }
-                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*prot));
-                feh.Replace(*new_feat);
+                CSeq_feat_EditHandle prot_eh(scope.GetSeq_featHandle(*prot));
+                prot_eh.Replace(*new_prot);
                 if (mrna) {
-                    CRef<CSeq_feat> new_feat(new CSeq_feat());
-                    new_feat->Assign(*mrna);
-                    if (!newnote.empty()) {
-                        AddComment(*new_feat, newnote);
-                    }
+                    CRef<CSeq_feat> new_mrna(new CSeq_feat());
+                    new_mrna->Assign(*mrna);
                     if (!newtext.empty()) {
-                        new_feat->SetData().SetRna().SetExt().SetName() = newtext;
+                        new_mrna->SetData().SetRna().SetExt().SetName() = newtext;
                     }
-                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*mrna));
-                    feh.Replace(*new_feat);
+                    CSeq_feat_EditHandle mrna_eh(scope.GetSeq_featHandle(*mrna));
+                    mrna_eh.Replace(*new_mrna);
+                }
+                if (!newnote.empty()) {
+                    CRef<CSeq_feat> new_cds(new CSeq_feat());
+                    new_cds->Assign(*cds);
+                    AddComment(*new_cds, newnote);
+                    CSeq_feat_EditHandle cds_eh(scope.GetSeq_featHandle(*cds));
+                    cds_eh.Replace(*new_cds);
                 }
                 n++;
                 dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
