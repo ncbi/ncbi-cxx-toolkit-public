@@ -1269,6 +1269,65 @@ BOOST_AUTO_TEST_CASE(Test_FindFrame3)
 }
 
 
+const char* sc_TestSQD_4334_1 ="\
+Seq-entry ::= seq {\
+  id { local str \"nuc1\" } , \
+  inst { repr raw, mol dna, length 14,\
+    seq-data iupacna \"ATGGGGTTTATAAA\"\
+  },\
+  annot { { data ftable {\
+    {\
+      data cdregion { frame two, code { id 1 } },\
+      location int { from 0, to 14, id local str \"nuc1\" }\
+    }\
+  } } }\
+}";
+
+
+const char* sc_TestSQD_4334_2 ="\
+Seq-entry ::= seq {\
+  id { local str \"nuc1\" } , \
+  inst { repr raw, mol dna, length 14,\
+    seq-data iupacna \"ATGGGGTTTATAAA\"\
+  },\
+  annot { { data ftable {\
+    {\
+      data cdregion { frame two, code { id 1 } },\
+      location int { from 0, to 13, id local str \"nuc1\" }\
+    }\
+  } } }\
+}";
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4334)
+{
+    CSeq_entry entry;
+    // internal stop plus partial untranslatable codon at the end does not count
+    {{
+            CNcbiIstrstream istr(sc_TestSQD_4334_1);
+         istr >> MSerial_AsnText >> entry;
+    }}
+    CRef<CSeq_feat> cds = entry.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    bool ambiguous = false;
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope, ambiguous), CCdregion::eFrame_one);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+    scope.RemoveTopLevelSeqEntry(seh);
+
+    {{
+            CNcbiIstrstream istr(sc_TestSQD_4334_2);
+         istr >> MSerial_AsnText >> entry;
+    }}
+    cds = entry.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    seh = scope.AddTopLevelSeqEntry(entry);
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope, ambiguous), CCdregion::eFrame_one);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+
+}
+
+
+
 const char* sc_PickFrameWithEndStopIf3CompleteEntry = "\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \

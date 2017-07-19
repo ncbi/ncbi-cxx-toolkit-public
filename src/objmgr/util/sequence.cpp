@@ -4070,6 +4070,16 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
 }
 
 
+typedef struct {
+    bool has_final_stop;
+    bool has_internal_stop;
+    bool has_start_m;
+    size_t len;
+    size_t frame_offset;
+} SFrameInfo;
+
+typedef map<CCdregion::EFrame, SFrameInfo> TFrameInfoMap;
+
 CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& scope, bool& ambiguous)
 {
     ambiguous = false;
@@ -4085,61 +4095,91 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
 
     CRef<CSeq_feat> tmp_cds(new CSeq_feat());
     tmp_cds->Assign(cds);
-    vector<CCdregion::EFrame> frames;
-    frames.push_back(CCdregion::eFrame_one);
-    frames.push_back(CCdregion::eFrame_two);
-    frames.push_back(CCdregion::eFrame_three);
-    size_t best = 0;
-    CCdregion::EFrame best_frame = orig_frame;
-    bool is_complete = !tmp_cds->GetLocation().IsPartialStop(eExtreme_Biological);
-    CCdregion::EFrame with_end_stop = CCdregion::eFrame_not_set;
+    TFrameInfoMap frame_map;
+    frame_map[CCdregion::eFrame_one] = { false, false, false, NPOS, 0 };
+    frame_map[CCdregion::eFrame_two] = { false, false, false, NPOS, 1 };
+    frame_map[CCdregion::eFrame_three] = { false, false, false, NPOS, 2 };
 
-    ITERATE(vector<CCdregion::EFrame>, it, frames) {
-        tmp_cds->SetData().SetCdregion().SetFrame(*it);
+    bool is_3complete = !tmp_cds->GetLocation().IsPartialStop(eExtreme_Biological);
+    bool is_5complete = !tmp_cds->GetLocation().IsPartialStart(eExtreme_Biological);
+
+    size_t leftover = sequence::GetLength(tmp_cds->GetLocation(), &scope) % 3;
+
+    for (auto it = frame_map.begin(); it != frame_map.end(); it++) {
+        tmp_cds->SetData().SetCdregion().SetFrame(it->first);
         string prot;
         CSeqTranslator::Translate(*tmp_cds, scope, prot, true, false, NULL);
         size_t pos = NStr::Find(prot, "*");
+        it->second.len = prot.length();
 
-        // if the original frame has no internal stop codons and has a final
-        // stop codon, keep the original frame
-        if (*it == orig_frame) {
-            if (pos != string::npos && pos == prot.length() - 1) {
-                return orig_frame;
+        if ((pos == prot.length() - 1) && (leftover == it->second.frame_offset)) {
+            it->second.has_final_stop = true;
+        } else if (pos != NPOS) {
+            it->second.has_internal_stop = true;
+        }
+
+        if (NStr::StartsWith(prot, "M") && it->second.frame_offset == 0) {
+            it->second.has_start_m = true;
+        }
+    }
+
+    // if the original frame has no internal stop codons and has a final
+    // stop codon, keep the original frame
+    if (frame_map[orig_frame].has_final_stop) {
+        return orig_frame;
+    }
+
+    if (is_3complete && !is_5complete) {
+        // find a frame that has a stop codon
+        for (auto it = frame_map.begin(); it != frame_map.end(); it++) {
+            if (it->second.has_final_stop) {
+                return it->first;
             }
         }
-        // do not consider new frames that have internal stops
-        if (pos < prot.length() - 1) {
-            continue;
+    }
+
+    if (is_5complete && !is_3complete) {
+        // find a frame that has a start codon (could only be first frame)
+        if (frame_map[CCdregion::eFrame_one].has_start_m && !frame_map[CCdregion::eFrame_one].has_internal_stop) {
+            return CCdregion::eFrame_one;
         }
-        if (pos == string::npos) {
-            pos = prot.length();
-        } else if (is_complete) {
-            if (with_end_stop == CCdregion::eFrame_not_set) {
-                with_end_stop = *it;
-                ambiguous = false;
+    }
+
+    if (is_3complete) {
+        // find a frame that has a stop codon
+        for (auto it = frame_map.begin(); it != frame_map.end(); it++) {
+            if (it->second.has_final_stop) {
+                return it->first;
+            }
+        }
+    }
+
+    if (is_5complete) {
+        // find a frame that has a start codon (could only be first frame)
+        if (frame_map[CCdregion::eFrame_one].has_start_m && !frame_map[CCdregion::eFrame_one].has_internal_stop) {
+            return CCdregion::eFrame_one;
+        }
+    }
+
+    // otherwise, just looking for no internal stop codon
+    if (!frame_map[orig_frame].has_internal_stop) {
+        return orig_frame;
+    }
+
+    CCdregion::EFrame best_frame = CCdregion::eFrame_not_set;
+    for (auto it = frame_map.begin(); it != frame_map.end(); it++) {
+        if (!it->second.has_internal_stop) {
+            if (best_frame == CCdregion::eFrame_not_set) {
+                best_frame = it->first;
             } else {
                 ambiguous = true;
             }
         }
-        if (with_end_stop == CCdregion::eFrame_not_set) {
-            if (pos > best) {
-                best = pos;
-                best_frame = *it;
-                ambiguous = false;
-            } else if (pos == best) {
-                if (*it == orig_frame) {
-                    best = pos;
-                    best_frame = *it;
-                }
-                ambiguous = true;
-            }
-        }
     }
-    
-    if (with_end_stop != CCdregion::eFrame_not_set) {
-        return with_end_stop;
-    } else {
+    if (best_frame != CCdregion::eFrame_not_set) {
         return best_frame;
+    } else {
+        return orig_frame;
     }
 }
 
