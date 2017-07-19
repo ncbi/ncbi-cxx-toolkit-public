@@ -1244,8 +1244,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         x_net_info->stateless = 1/*true*/;
     if ((types & fSERV_Firewall)  &&  !x_net_info->firewall)
         x_net_info->firewall = eFWMode_Adaptive;
-    if (x_net_info->max_try < 1)
+    if (x_net_info->max_try < 1
+        ||  (extra  &&  (extra->flags & fHTTP_NoAutoRetry))) {
         x_net_info->max_try = 1;
+    }
     if (!(types & fSERV_DelayOpen)) {
         if (!s_OpenDispatcher(xxx)) {
             s_Destroy(ccc);
