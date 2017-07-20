@@ -35,6 +35,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbistr.hpp>
 #include <connect/ncbi_http_session.hpp>
 #include <stdlib.h>
 
@@ -756,6 +757,15 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     net_info->req_method = m_Method;
 
+    // Set scheme if given in URL (only if http(s) since this is CHttpRequest).
+    string url_scheme(m_Url.GetScheme());
+    if (NStr::EqualNocase(url_scheme, "https")) {
+        net_info->scheme = eURL_Https;
+    }
+    else if (NStr::EqualNocase(url_scheme, "http")) {
+        net_info->scheme = eURL_Http;
+    }
+
     // Save headers set automatically (e.g. from CONN_HTTP_USER_HEADER).
     if (net_info->http_user_header) {
         CHttpHeaders usr_hdr;
@@ -886,7 +896,9 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                 adjust = req->m_AdjustUrl->AdjustUrl(url);
             }
             else {
-                url.Adjust(req->m_Url, CUrl::fPath_Append | CUrl::fArgs_Merge);
+                url.Adjust(req->m_Url, CUrl::fScheme_Replace |
+                                       CUrl::fPath_Append    |
+                                       CUrl::fArgs_Merge);
             }
             if ( adjust ) {
                 ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
