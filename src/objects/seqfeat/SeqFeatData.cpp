@@ -535,13 +535,13 @@ CSeqFeatData::SubtypeNameToValue(const string & sName)
     return find_iter->second;
 }
 
-bool CSeqFeatdata::CanHaveGene(CSeqFeatData::ESubtype subtype) 
+bool CSeqFeatData::CanHaveGene(CSeqFeatData::ESubtype subtype) 
 {
     switch(subtype) {
     case eSubtype_cdregion:
-    case eSubtype_mrna:
-    case eSubtype_trna:
-    case eSubtype_rrna:
+    case eSubtype_mRNA:
+    case eSubtype_tRNA:
+    case eSubtype_rRNA:
     case eSubtype_otherRNA:
     case eSubtype_ncRNA:
     case eSubtype_tmRNA:
