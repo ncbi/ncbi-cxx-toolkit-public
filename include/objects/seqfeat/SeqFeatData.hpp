@@ -313,6 +313,9 @@ public:
     ///   eSubtype_bad on bad input
     static ESubtype SubtypeNameToValue(const string & sName);
 
+
+    static bool CanHaveGene(ESubtype subtype);
+
     /// List of available qualifiers for feature keys.
     /// For more information see: 
     ///   The DDBJ/EMBL/GenBank Feature Table: Definition

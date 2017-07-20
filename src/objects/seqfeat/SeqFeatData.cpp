@@ -535,6 +535,23 @@ CSeqFeatData::SubtypeNameToValue(const string & sName)
     return find_iter->second;
 }
 
+bool CSeqFeatdata::CanHaveGene(CSeqFeatData::ESubtype subtype) 
+{
+    switch(subtype) {
+    case eSubtype_cdregion:
+    case eSubtype_mrna:
+    case eSubtype_trna:
+    case eSubtype_rrna:
+    case eSubtype_otherRNA:
+    case eSubtype_ncRNA:
+    case eSubtype_tmRNA:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 typedef map<CSeqFeatData::ESubtype, string> TSubtypeValueToNameMap;
 static TSubtypeValueToNameMap* s_CreateSubtypeValueToNameMap(void)
 {
