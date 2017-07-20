@@ -10,7 +10,7 @@ SRC = asndisc
 
 LIB = xdiscrepancy xvalidate valerr \
       xmlwrapp xobjedit $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
-      tables macro xregexp $(PCRE_LIB) $(ncbi_xreader_pubseqos2) \
+      taxon1 tables macro xregexp $(PCRE_LIB) $(ncbi_xreader_pubseqos2) \
       ncbi_xdbapi_ftds dbapi $(OBJMGR_LIBS) $(FTDS_LIB)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
