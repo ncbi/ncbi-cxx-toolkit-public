@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
     CRef<CSeq_align_set> results = magicblast.Run();
 
-    const size_t kExpectedNumResults = 1;
+    const size_t kExpectedNumResults = 3;
     BOOST_REQUIRE_EQUAL(results->Get().size(), kExpectedNumResults);
 
     SExon exon;
@@ -344,7 +344,68 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     // expected HSPs
 
     int results_idx = 0;
+
     // HSP #1
+    expected_hits[results_idx].score = 68;
+    expected_hits[results_idx].prod_length = 75;
+
+    exon.prod_start = 0;
+    exon.prod_end = 67;
+    exon.gen_start = 9925;
+    exon.gen_end = 9992;
+    exon.prod_strand = eNa_strand_minus;
+    exon.gen_strand = eNa_strand_plus;
+    exon.acceptor = "";
+    exon.donor = "AG";
+    expected_hits[results_idx].exons.push_back(exon);
+
+    // HSP #2
+    results_idx++;
+    expected_hits[results_idx].score = 74;
+    expected_hits[results_idx].prod_length = 75;
+
+    exon.prod_start = 1;
+    exon.prod_end = 74;
+    exon.gen_start = 9842;
+    exon.gen_end = 9915;
+    exon.prod_strand = eNa_strand_plus;
+    exon.gen_strand = eNa_strand_plus;
+    exon.acceptor = "";
+    exon.donor = "";
+    expected_hits[results_idx].exons.push_back(exon);
+
+    // HSP #3
+    results_idx++;
+    expected_hits[results_idx].score = 68;
+    expected_hits[results_idx].prod_length = 75;
+
+    exon.prod_start = 0;
+    exon.prod_end = 67;
+    exon.gen_start = 20795;
+    exon.gen_end = 20862;
+    exon.prod_strand = eNa_strand_minus;
+    exon.gen_strand = eNa_strand_plus;
+    exon.acceptor = "";
+    exon.donor = "AG";
+    expected_hits[results_idx].exons.push_back(exon);
+
+    // HSP #4
+    results_idx++;
+    expected_hits[results_idx].score = 74;
+    expected_hits[results_idx].prod_length = 75;
+
+    exon.prod_start = 1;
+    exon.prod_end = 74;
+    exon.gen_start = 20712;
+    exon.gen_end = 20785;
+    exon.prod_strand = eNa_strand_plus;
+    exon.gen_strand = eNa_strand_plus;
+    exon.acceptor = "";
+    exon.donor = "";
+    expected_hits[results_idx].exons.push_back(exon);
+
+    // HSP #5
+    results_idx++;
     expected_hits[results_idx].score = 68;
     expected_hits[results_idx].prod_length = 75;
 
@@ -358,19 +419,19 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     exon.donor = "";
     expected_hits[results_idx].exons.push_back(exon);
 
-    // HSP #2
+    // HSP #6
     results_idx++;
-    expected_hits[results_idx].score = 71;
+    expected_hits[results_idx].score = 74;
     expected_hits[results_idx].prod_length = 75;
 
     exon.prod_start = 0;
-    exon.prod_end = 70;
+    exon.prod_end = 73;
     exon.gen_start = 2443337;
-    exon.gen_end = 2443407;
+    exon.gen_end = 2443410;
     exon.prod_strand = eNa_strand_minus;
     exon.gen_strand = eNa_strand_plus;
     exon.acceptor = "";
-    exon.donor = "CA";
+    exon.donor = "";
     expected_hits[results_idx].exons.push_back(exon);
 
     // compare computed HSPs with the expected ones
