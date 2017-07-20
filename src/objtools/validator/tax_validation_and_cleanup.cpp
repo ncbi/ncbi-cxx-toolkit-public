@@ -217,7 +217,7 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
     }
 
     if (RequireTaxname(m_Taxname)) {
-        m_ValuesToTry.push_back(MakeKey(m_Taxname, strain));
+        m_ValuesToTry.push_back(MakeKey(strain, m_Taxname));
     }
 }
 
@@ -225,7 +225,7 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
 string CStrainRequest::MakeKey(const string& strain, const string& taxname)
 {
     if (RequireTaxname(taxname)) {
-        return taxname + " " + strain;
+        return taxname.substr(0, taxname.length() - 3) + strain;
     } else {
         return strain;
     }

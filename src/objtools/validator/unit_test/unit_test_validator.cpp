@@ -20718,13 +20718,15 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InvalidQualifierValue",
             "Strain '" + strain + "' contains taxonomic name information"));
     }
-    if (NStr::Equal(taxname, "Bacillus sp.")) {
+    if (NStr::Equal(taxname, "Bacillus sp.") || NStr::Equal(taxname, "Acetobacter sp.")) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "OrganismIsUndefinedSpecies",
-            "Organism 'Bacillus sp.' is undefined species and does not have a specific identifier."));
+            "Organism '" + taxname + "' is undefined species and does not have a specific identifier."));
     }
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 
 }
 
@@ -20771,6 +20773,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 
     TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", false);
     TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", false);
+    TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", false);
 }
 
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
