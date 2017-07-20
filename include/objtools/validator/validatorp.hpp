@@ -1139,6 +1139,7 @@ private:
                            const string& label, bool report_errors, bool &has_errors, const CSeq_feat& feat, bool is_first);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
+    static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateFarProducts(const CSeq_feat& feat);
     void x_ValidateGeneId(const CSeq_feat& feat);

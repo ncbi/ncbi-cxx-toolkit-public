@@ -12859,18 +12859,20 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature (entry);
+    feat->SetData().SetGene().SetLocus("X");
     feat->SetLocation().SetInt().SetStrand(eNa_strand_both);
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BothStrands", 
-                      "Feature may not be on both (forward) strands"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BothStrands", 
+                      "gene may not be on both (forward) strands"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
     feat = unit_test_util::AddMiscFeature (entry);
+    feat->SetData().SetGene().SetLocus("X");
     feat->SetLocation().Assign(*unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front()));
     feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both);
     feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
@@ -12878,18 +12880,21 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetExcept(true);
     feat->SetExcept_text("trans-splicing");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Feature may not be on both (forward and reverse) strands");
+    expected_errors[0]->SetErrMsg("gene may not be on both (forward and reverse) strands");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
     feat = unit_test_util::AddMiscFeature (entry);
+    feat->SetData().SetGene().SetLocus("X");
     feat->SetLocation().Assign(*unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front()));
     feat->SetLocation().SetMix().Set().front()->SetInt().SetStrand(eNa_strand_both_rev);
     feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Feature may not be on both (reverse) strands");
+    expected_errors[0]->SetErrMsg("gene may not be on both (reverse) strands");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultiIntervalGene",
+        "Gene feature on non-segmented sequence should not have multiple intervals"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -21118,4 +21123,31 @@ BOOST_AUTO_TEST_CASE(Test_VR_728)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_733)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> f = AddMiscFeature(entry);
+    f->SetLocation().SetInt().SetStrand(eNa_strand_both);
+
+    STANDARD_SETUP
+
+    // expect no errors for misc_feat
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    f->SetData().SetImp().SetKey("exon");
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "BothStrands",
+        "exon may not be on both (forward) strands"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+
 }

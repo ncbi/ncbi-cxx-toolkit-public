@@ -5741,43 +5741,50 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 }
 
 
-void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
+void CValidError_feat::x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev)
 {
-    const CSeq_loc& location = feat.GetLocation ();
-    bool bothstrands = false, bothreverse = false;
-
-    for ( CSeq_loc_CI citer (location); citer; ++citer ) {
-        ENa_strand strand = citer.GetStrand();
-        if ( strand == eNa_strand_both ) {
-            bothstrands = true;
-        } else if (strand == eNa_strand_both_rev) {
-            bothreverse = true;
-        }
+    both = false;
+    both_rev = false;
+    if (!feat.IsSetLocation()) {
+        return;
     }
-    if (bothstrands || bothreverse) {
-        EDiagSev sev = eDiag_Warning;
-        string prefix = "Feature";
-        if (feat.IsSetData()) {
-            if (feat.GetData().IsCdregion()) {
-                prefix = "CDS";
-                sev = eDiag_Error;
-            } else if (feat.GetData().IsRna() && feat.GetData().GetRna().IsSetType()
-                       && feat.GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
-                prefix = "mRNA";
-                sev = eDiag_Error;
+    if (!CSeqFeatData::AllowStrandBoth(feat.GetData().GetSubtype())) {
+        for (CSeq_loc_CI it(feat.GetLocation()); it; ++it) {
+            if (it.IsSetStrand()) {
+                ENa_strand s = it.GetStrand();
+                if (s == eNa_strand_both && !both) {
+                    both = true;
+                } else if (s == eNa_strand_both_rev && !both_rev) {
+                    both_rev = true;
+                }
+            }
+            if (both && both_rev) {
+                break;
             }
         }
+    }
+
+}
+
+
+void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
+{
+    bool both, both_rev;
+    x_FeatLocHasBadStrandBoth(feat, both, both_rev);
+    if (both || both_rev) {
         string suffix = "";
-        if (bothstrands && bothreverse) {
+        if (both && both_rev) {
             suffix = "(forward and reverse)";
-        } else if (bothstrands) {
+        } else if (both) {
             suffix = "(forward)";
-        } else if (bothreverse) {
+        } else if (both_rev) {
             suffix = "(reverse)";
         }
 
-        PostErr (sev, eErr_SEQ_FEAT_BothStrands, 
-                prefix + " may not be on both " + suffix + " strands", feat);  
+        string label = CSeqFeatData::SubtypeValueToName(feat.GetData().GetSubtype());
+
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_BothStrands, 
+                label + " may not be on both " + suffix + " strands", feat);  
     }
 }
 
@@ -8548,6 +8555,7 @@ bool CGapCache::IsUnknownGap(size_t pos)
         return false;
     }
 }
+
 
 
 
