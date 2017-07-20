@@ -2700,7 +2700,8 @@ bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
                     CSeq_gap::TType gap_type = gap.IsSetType() ? gap.GetType() : CSeq_gap::eType_unknown;
 
                     if (gap_type != CSeq_gap::eType_centromere && gap_type != CSeq_gap::eType_heterochromatin &&
-                        gap_type != CSeq_gap::eType_short_arm && gap_type != CSeq_gap::eType_telomere) {
+                        gap_type != CSeq_gap::eType_short_arm && gap_type != CSeq_gap::eType_telomere &&
+                        gap_type != CSeq_gap::eType_contig) {
 
                         if (!gap.IsSetLinkage_evidence() || gap.GetLinkage_evidence().empty()) {
                             return true;
