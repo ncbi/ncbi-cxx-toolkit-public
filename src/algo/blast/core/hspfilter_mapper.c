@@ -107,8 +107,8 @@ static Int4 s_HSPChainListInsertOne(HSPChain** list, HSPChain* chain,
 /* Insert chains into the list so that the list is sorted in descending order
    of chain scores. If chain is a list, each element is added separately. The
    list must be sorted before adding chain */
-static Int4 HSPChainListInsert(HSPChain** list, HSPChain* chain,
-                               Boolean check_for_duplicates)
+static Int4 HSPChainListInsert(HSPChain** list, HSPChain** chain,
+                               Int4 cutoff_score, Boolean check_for_duplicates)
 {
     HSPChain* ch = NULL;
     Int4 status = 0;
@@ -117,11 +117,16 @@ static Int4 HSPChainListInsert(HSPChain** list, HSPChain* chain,
         return -1;
     }
 
-    ch = chain;
+    ch = *chain;
     while (ch) {
         HSPChain* next = ch->next;
         ch->next = NULL;
-        status = s_HSPChainListInsertOne(list, ch, check_for_duplicates);
+        if (ch->score >= cutoff_score) {
+            status = s_HSPChainListInsertOne(list, ch, check_for_duplicates);
+        }
+        else {
+            HSPChainFree(ch);
+        }
         if (status) {
             return status;
         }
@@ -129,12 +134,13 @@ static Int4 HSPChainListInsert(HSPChain** list, HSPChain* chain,
 
     }
 
+    *chain = NULL;
     return 0;
 }
 
 /* Remove from the list chains with scores lower than the best one by at least
    the given margin. The list must be sorted in descending order of scores. */
-static Int4 HSPChainListTrim(HSPChain* list, Int4 margin, Int4 cutoff_score)
+static Int4 HSPChainListTrim(HSPChain* list, Int4 margin)
 {
     HSPChain* ch = NULL;
     Int4 best_score;
@@ -145,9 +151,7 @@ static Int4 HSPChainListTrim(HSPChain* list, Int4 margin, Int4 cutoff_score)
 
     best_score = list->score;
     ch = list;
-    while (ch->next && ch->next->score >= cutoff_score &&
-           best_score - ch->next->score <= margin) {
-
+    while (ch->next && best_score - ch->next->score <= margin) {
         ASSERT(best_score - ch->next->score >= 0);
         ch = ch->next;
     }
@@ -1820,12 +1824,43 @@ static int s_RemoveOverlaps(HSPChain* chain, const ScoringOptions* score_opts,
     return 0;
 }
 
+
+/* Removes chains with scores below the cutoff */
+static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score)
+{
+    HSPChain* chain = *chains_ptr;
+
+    while (chain && chain->score < cutoff_score) {
+        HSPChain* next = chain->next;
+        chain->next = NULL;
+        HSPChainFree(chain);
+        chain = next;
+    }
+    *chains_ptr = chain;
+
+    if (chain) {
+        while (chain && chain->next) {
+            if (chain->next->score < cutoff_score) {
+                HSPChain* next = chain->next->next;
+                chain->next->next = NULL;
+                HSPChainFree(chain->next);
+                chain->next = next;
+            }
+            chain = chain->next;
+        }
+    }
+
+    return 0;
+}
+
+
 /* Populate HSP data and save final results */
 static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
                       const BlastQueryInfo* query_info,
                       const BLAST_SequenceBlk* query_blk,
                       const ScoringOptions* score_opts,
-                      Boolean is_paired)
+                      Boolean is_paired,
+                      Int4 cutoff_score)
 {
     Int4 query_idx;
     const Int4 kPairBonus = 21;
@@ -1848,6 +1883,11 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
        runs; sorting must be done here so that compartment numbers are stable */
     /* FIXME: this may not be needed */
     s_SortChains(saved, query_info->num_queries, s_CompareChainsByOid);
+
+    /* remove chains with score below cutoff */
+    for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
+        s_FilterChains(&saved[query_idx], cutoff_score);
+    }
 
     /* Compute number of results to store, and number of unique mappings for
        each query (some chains may be copied to create pairs) */
@@ -1914,7 +1954,8 @@ s_BlastHSPMapperFinal(void* data, void* mapping_results)
 
     if (spl_data->saved_chains) {
         s_Finalize(spl_data->saved_chains, results, spl_data->query_info,
-                   spl_data->query, &params->scoring_options, params->paired);
+                   spl_data->query, &params->scoring_options, params->paired,
+                   params->cutoff_score);
     }
 
     spl_data->saved_chains = NULL;
@@ -2183,6 +2224,9 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
         else {
             /* if the number of edits is the same we do not know how to
                divide the overlap */
+
+            first->map_info->right_edge &= ~MAPPER_SPLICE_SIGNAL;
+            second->map_info->left_edge &= ~MAPPER_SPLICE_SIGNAL;
             return 0;
         }
     }
@@ -2196,6 +2240,8 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
         || (second->map_info->edits->num_edits > 0 &&
             second->map_info->edits->edits[0].query_pos <= first->query.end)) {
 
+        first->map_info->right_edge &= ~MAPPER_SPLICE_SIGNAL;
+        second->map_info->left_edge &= ~MAPPER_SPLICE_SIGNAL;
         return 0;
     }
 
@@ -2743,18 +2789,19 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
 
 /* Record subject bases pre and post alignment in HSP as possible splice
    signals and set a flag for recognized signals */
+/* Not used
 static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
 {
     SequenceOverhangs* overhangs = NULL;
-    /* splice signals in the order of preference */
-    Uint1 signals[NUM_SINGLE_SIGNALS] = {2,  /* AG */
-                                         11, /* GT */
-                                         13, /* TC */
-                                         7,  /* CT */
-                                         1,  /* AC */
-                                         4,  /* CA */
-                                         8,  /* GA */
-                                         14  /* TG */};
+    /--* splice signals in the order of preference *--/
+    Uint1 signals[NUM_SINGLE_SIGNALS] = {2,  /--* AG *--/
+                                         11, /--* GT *--/
+                                         13, /--* TC *--/
+                                         7,  /--* CT *--/
+                                         1,  /--* AC *--/
+                                         4,  /--* CA *--/
+                                         8,  /--* GA *--/
+                                         14  /--* TG *--/};
 
     if (!hsp || !query) {
         return -1;
@@ -2767,10 +2814,10 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
         return -1;
     }
 
-    /* FIXME: check for polyA and adapters */
+    /--* FIXME: check for polyA and adapters *--/
 
-    /* search for a splice signal on the left edge, unless the query is aligned
-       from the beginning */
+    /--* search for a splice signal on the left edge, unless the query is aligned
+       from the beginning *--/
     if (hsp->query.offset == 0) {
         hsp->map_info->left_edge = MAPPER_EXON;
     }
@@ -2802,10 +2849,10 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
                     hsp->map_info->left_edge = signal;
                     hsp->map_info->left_edge |= MAPPER_SPLICE_SIGNAL;
 
-                    /* trim alignment */
+                    /--* trim alignment *--/
                     s_TrimHSP(hsp, 1, TRUE, TRUE, -8, 0, -8);
 
-                    /* update score at some point */
+                    /--* update score at some point *--/
                     found = TRUE;
                     break;
                 }
@@ -2819,7 +2866,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
                     hsp->map_info->left_edge = signal;
                     hsp->map_info->left_edge |= MAPPER_SPLICE_SIGNAL;
 
-                    /* trim alignment */
+                    /--* trim alignment *--/
                     s_TrimHSP(hsp, i + 2, TRUE, TRUE, -8, 0, -8);
 
                     found = TRUE;
@@ -2829,8 +2876,8 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
         }
     }
 
-    /* search for the splice signal on the right edge, unless the query is
-       aligned to the end */
+    /--* search for the splice signal on the right edge, unless the query is
+       aligned to the end *--/
     if (hsp->query.end == query_len) {
         hsp->map_info->right_edge = MAPPER_EXON;
     }
@@ -2861,10 +2908,10 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
                     hsp->map_info->right_edge = signal;
                     hsp->map_info->right_edge |= MAPPER_SPLICE_SIGNAL;
 
-                    /* update HSP */
+                    /--* update HSP *--/
                     s_TrimHSP(hsp, 1, TRUE, FALSE, -8, 0, -8);
 
-                    /* update score at some point */
+                    /--* update score at some point *--/
                     found = TRUE;
                     break;
                 }
@@ -2879,7 +2926,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
                     hsp->map_info->right_edge = signal;
                     hsp->map_info->right_edge |= MAPPER_SPLICE_SIGNAL;
 
-                    /* update HSP */
+                    /--* update HSP *--/
                     s_TrimHSP(hsp, hsp->query.end - i, TRUE, FALSE, -8, 0, -8);
 
                     found = TRUE;
@@ -2891,6 +2938,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
 
     return 0;
 }
+*/
 
 
 /* Search for splice signals between two HSPs in a chain. The HSPs in the
@@ -2921,15 +2969,6 @@ s_FindSpliceJunctions(HSPChain* chains,
         query = query_blk->sequence +
             query_info->contexts[context].query_offset;
         query_len = query_info->contexts[context].query_length;
-
-
-        /* FIXME: check the overhangs of the first and last HSP and try finding
-           splice signal within a few bases in the HSP */
-        if (!h->next) {
-
-            s_FindSpliceSignals(h->hsp, query, query_len);
-            searched = TRUE;
-        }
 
         while (h->next) {
             HSPContainer* next = h->next;
@@ -3796,7 +3835,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair->pair = ch;
             ch->pair_conf = pair->pair_conf = pair_info[i].conf;
             pair_info[i].valid_pair = TRUE;
-            HSPChainListInsert(second_list, pair, FALSE);
+            HSPChainListInsert(second_list, &pair, 0, FALSE);
         }
 
         for (ch = *second_list; ch; ch = ch->next) {
@@ -3826,7 +3865,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair->pair = ch;
             ch->pair_conf = pair->pair_conf = pair_info[i].conf;
             pair_info[i].valid_pair = TRUE;
-            HSPChainListInsert(first_list, pair, FALSE);
+            HSPChainListInsert(first_list, &pair, 0, FALSE);
         }
 
         /* trim the alignments that overextend beyond the pair */
@@ -3960,6 +3999,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
     Boolean is_spliced  = params->splice;
     const Int4 kLongestIntron = params->longest_intron;
     Int4 cutoff_score = params->cutoff_score;
+    Int4* cutoff_score_fun = params->cutoff_score_fun;
     BLAST_SequenceBlk* query_blk = spl_data->query;
     BlastQueryInfo* query_info = spl_data->query_info;
     const Int4 kDefaultMaxHsps = 1000;
@@ -4082,7 +4122,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             ASSERT(new_chains);
             HSPChainListInsert(&chain_array[(context - first_context) /
                                             NUM_STRANDS],
-                               new_chains, FALSE);
+                               &new_chains, cutoff_score, FALSE);
 
             /* skip HSPs for the same context if there are more then max
                allowed per context */
@@ -4121,20 +4161,33 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             ASSERT(s_TestChains(second));
         }
 
+        /* find cutoff score for the query */
+        if (cutoff_score_fun[1] != 0) {
+            Int4 query_len =
+                query_info->contexts[query_idx * NUM_STRANDS].query_length;
+            cutoff_score = cutoff_score_fun[0] +
+                cutoff_score_fun[1] * query_len;
+        }
+
         /* save all chains and remove ones with scores lower than 
            best score - kPairBonus */
         if (first) {
-            HSPChainListInsert(&saved_chains[query_idx], first, TRUE);
-            HSPChainListTrim(saved_chains[query_idx], kPairBonus, cutoff_score);
+            HSPChainListInsert(&saved_chains[query_idx], &first, cutoff_score,
+                               TRUE);
+            HSPChainListTrim(saved_chains[query_idx], kPairBonus);
         }
         if (second) {
-            HSPChainListInsert(&saved_chains[query_idx + 1], second, TRUE);
-            HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus, cutoff_score);
+            HSPChainListInsert(&saved_chains[query_idx + 1], &second,
+                               cutoff_score, TRUE);
+            HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus);
         }
 
 #if _DEBUG
-        ASSERT(!chain_array[0] || s_TestChainsSorted(saved_chains[query_idx]));
-        ASSERT(!chain_array[1] || s_TestChainsSorted(saved_chains[query_idx + 1]));
+        ASSERT(!saved_chains[query_idx] ||
+               s_TestChainsSorted(saved_chains[query_idx]));
+
+        ASSERT(!saved_chains[query_idx + 1] ||
+               s_TestChainsSorted(saved_chains[query_idx + 1]));
 #endif
 
         /* make temporary lists empty */
@@ -4217,6 +4270,8 @@ BlastHSPMapperParamsNew(const BlastHitSavingOptions* hit_options,
        retval->splice = hit_options->splice;
        retval->longest_intron = hit_options->longest_intron;
        retval->cutoff_score = hit_options->cutoff_score;
+       retval->cutoff_score_fun[0] = hit_options->cutoff_score_fun[0];
+       retval->cutoff_score_fun[1] = hit_options->cutoff_score_fun[1];
        retval->program = hit_options->program_number;
        retval->scoring_options.reward = scoring_options->reward;
        retval->scoring_options.penalty = scoring_options->penalty;

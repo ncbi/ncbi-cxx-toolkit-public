@@ -335,6 +335,11 @@ public:
     int GetCutoffScore() const;
     void SetCutoffScore(int s);
 
+    // Raw score cutoff as a linear function of query length
+    // x[0] + x[1] * length
+    vector<double> GetCutoffScoreCoeffs() const;
+    void SetCutoffScoreCoeffs(const vector<double>& c);
+
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 

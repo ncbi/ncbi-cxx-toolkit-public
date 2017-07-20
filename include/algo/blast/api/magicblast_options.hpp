@@ -169,6 +169,17 @@ public:
     /// @param s cutoff score [in]
     void SetCutoffScore(int s) { m_Opts->SetCutoffScore(s); }
 
+    /// Get coefficients for alignment cutoff score as a linear function of
+    /// query length: x[0] + x[1] * length
+    vector<double> GetCutoffScoreCoeffs()
+    { return m_Opts->GetCutoffScoreCoeffs(); }
+
+    /// Set coefficients for alignment cutoff score as a linear function of
+    /// query length: x[0] + x[1] * length
+    /// @param c function coefficients [in]
+    void SetCutoffScoreCoeffs(const vector<double>& c)
+    { m_Opts->SetCutoffScoreCoeffs(c); }
+
 
     /************************ Mapping options ************************/
 

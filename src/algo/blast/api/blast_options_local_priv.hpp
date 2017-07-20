@@ -225,6 +225,9 @@ public:
     int GetCutoffScore() const;
     void SetCutoffScore(int s);
 
+    vector<double> GetCutoffScoreCoeffs() const;
+    void SetCutoffScoreCoeffs(const vector<double>& c);
+
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
@@ -1382,6 +1385,22 @@ inline void
 CBlastOptionsLocal::SetCutoffScore(int s)
 {
     m_HitSaveOpts->cutoff_score = s;
+}
+
+inline vector<double>
+CBlastOptionsLocal::GetCutoffScoreCoeffs() const
+{
+    vector<double> retval(2);
+    retval[0] = (double)m_HitSaveOpts->cutoff_score_fun[0] / 100.0;
+    retval[1] = (double)m_HitSaveOpts->cutoff_score_fun[1] / 100.0;
+    return retval;
+}
+
+inline void
+CBlastOptionsLocal::SetCutoffScoreCoeffs(const vector<double>& c)
+{
+    m_HitSaveOpts->cutoff_score_fun[0] = (int)(c[0] * 100.0);
+    m_HitSaveOpts->cutoff_score_fun[1] = (int)(c[1] * 100.0);
 }
 
 inline double

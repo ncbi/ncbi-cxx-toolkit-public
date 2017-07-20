@@ -66,6 +66,8 @@ typedef struct BlastHSPMapperParams {
    Boolean splice;           /**< mapping spliced reads (RNA-seq to a genome) */
    Int4 longest_intron;      /**< max intron length */
    Int4 cutoff_score;        /**< min score to accept a chain alignment */
+   Int4 cutoff_score_fun[2]; /**< coefficients for cutoff score as a function
+                                  of query length: x[0] + x[1] * length */
 } BlastHSPMapperParams;
 
 /** Sets up parameter set for use by collector.

@@ -2631,7 +2631,7 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
                         BlastContextInfo* context_info)
 {
     Int4 align_len;
-    Int4 edit_distance;
+    Int4 cutoff_score;
     Int4 score = gap_align->score;
 
     align_len = MAX(gap_align->query_stop - gap_align->query_start,
@@ -2650,8 +2650,18 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
         return TRUE;
     }
 
+    cutoff_score = 0;
+    if (hit_params->options->cutoff_score_fun[1] != 0) {
+        cutoff_score = (hit_params->options->cutoff_score_fun[0] + 
+                        context_info->query_length *
+                        hit_params->options->cutoff_score_fun[1]) / 100;
+    }
+    else {
+        cutoff_score = hit_params->options->cutoff_score;
+    }
+
     /* for continuous alignments check score threshold here */
-    if (score < hit_params->options->cutoff_score) {
+    if (score < cutoff_score) {
         return FALSE;
     }
 

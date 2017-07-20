@@ -1870,6 +1870,23 @@ CBlastOptions::SetCutoffScore(int s)
     }
 }
 
+vector<double> 
+CBlastOptions::GetCutoffScoreCoeffs() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetCutoffScoreCoeffs() not available.");
+    }
+    return m_Local->GetCutoffScoreCoeffs();
+}
+void 
+CBlastOptions::SetCutoffScoreCoeffs(const vector<double>& c)
+{
+    if (!m_Local) {
+        x_Throwx("Error: SetCutoffScoreCoeffs() not available.");
+    }
+    m_Local->SetCutoffScoreCoeffs(c);
+}
+
 double 
 CBlastOptions::GetPercentIdentity() const
 {

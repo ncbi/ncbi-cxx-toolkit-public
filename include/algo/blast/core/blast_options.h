@@ -366,6 +366,9 @@ typedef struct BlastHitSavingOptions {
    double expect_value; /**< The expect value cut-off threshold for an HSP, or
                             a combined hit if sum statistics is used */
    Int4 cutoff_score; /**< The (raw) score cut-off threshold */
+   Int4 cutoff_score_fun[2]; /**< Coefficients x100 for the raw score cut-off
+                                 threshold as a function of query length:
+                                 x[0] + x[1] * query_length*/
    double percent_identity; /**< The percent identity cut-off threshold */
 
    Int4 hitlist_size;/**< Maximal number of database sequences to return

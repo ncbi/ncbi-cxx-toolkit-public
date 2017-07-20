@@ -1426,9 +1426,9 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 
     arg_desc.SetCurrentGroup("Mapping options");
-    arg_desc.AddOptionalKey(kArgScore, "num", "Cutoff score for accepting a "
+    arg_desc.AddDefaultKey(kArgScore, "num", "Cutoff score for accepting a "
                             "single non-spliced alignment",
-                            CArgDescriptions::eInteger);
+                           CArgDescriptions::eString, "20");
     arg_desc.AddDefaultKey(kArgSplice, "TF", "Search for spliced alignments",
                            CArgDescriptions::eBoolean, "true");
     arg_desc.AddDefaultKey(kArgRefType, "type", "Type of the reference: "
@@ -1454,7 +1454,48 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opt)
 {
     if (args.Exist(kArgScore) && args[kArgScore]) {
-        opt.SetCutoffScore(args[kArgScore].AsInteger());
+
+        string s = args[kArgScore].AsString();
+        // score cutoff may be defined as a liner function of query length:
+        // L,0.0,0.6 ...
+        if (s[0] == 'L') {
+            list<string> tokens;
+            NStr::Split(s, ",", tokens);
+            vector<double> coeffs;
+            if (tokens.size() < 3) {
+                NCBI_THROW(CInputException, eInvalidInput,
+                           (string)"Incorrectly formatted score function: " +
+                           s + ". It should be of the form 'L,b,a' for ax + b,"
+                           "a, b must be numbers");
+            }
+            auto it = tokens.begin();
+            ++it;
+            try {
+                for (; it != tokens.end(); ++it) {
+                    coeffs.push_back(NStr::StringToDouble(*it));
+                }
+            }
+            catch (CException& e) {
+                NCBI_THROW(CInputException, eInvalidInput,
+                           (string)"Incorrectly formatted score function: " +
+                           s + ". It should be of the form 'L,b,a' for ax + b,"
+                           " a, b must be real numbers");
+            }
+            opt.SetCutoffScoreCoeffs(coeffs);
+        }
+        else {
+            // ... or a numerical constant
+            try {
+                opt.SetCutoffScore(NStr::StringToInt(s));
+            }
+            catch (CException& e) {
+                NCBI_THROW(CInputException, eInvalidInput,
+                           (string)"Incorrectly formatted score threshold: " +
+                           s + ". It must be either an integer or a linear "
+                           "function in the form: L,b,a for ax + b, a and b "
+                           "must be real numbers");
+            }
+        }
     }
 
     if (args.Exist(kArgSplice) && args[kArgSplice]) {
