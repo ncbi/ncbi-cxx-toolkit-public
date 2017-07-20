@@ -179,6 +179,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                 x_WriteRequest(*m_Out, request);
             }
             m_Stream->peek(); // send data, read response headers
+            if (!m_Stream->good()  &&  !m_Stream->eof()) {
+                NCBI_THROW(CRPCClientException, eFailed, "Connection stream is in bad state");
+            }
             if (m_RetryCtx.IsSetContentOverride()  &&
                 m_RetryCtx.GetContentOverride() == CHttpRetryContext::eFromResponse) {
                 // store response content to send it with the next retry
@@ -225,7 +228,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             NCBI_THROW(CRPCClientException, eFailed,
                        "Failed to receive reply after " +
                        NStr::NumericToString(m_RetryCount) +
-                       (m_RetryCount == 1 ? "try" : " tries"));
+                       (m_RetryCount == 1 ? " try" : " tries"));
         }
         if ( m_RetryCtx.IsSetStop() ) {
             NCBI_THROW(CRPCClientException, eFailed,
