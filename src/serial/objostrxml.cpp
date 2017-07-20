@@ -1296,7 +1296,7 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
     CheckStdXml(namedTypeInfo);
-    if (m_SkipNextTag) {
+    if (m_SkipNextTag || namedTypeInfo->GetName().empty()) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
     } else {

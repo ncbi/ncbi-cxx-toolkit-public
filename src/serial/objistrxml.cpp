@@ -1769,6 +1769,9 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
             dynamic_cast<const CClassTypeInfoBase*>(type);
         const CAliasTypeInfo* aliasType = classType ? NULL :
             dynamic_cast<const CAliasTypeInfo*>(type);
+        if (aliasType && aliasType->IsFullAlias()) {
+            classType = dynamic_cast<const CClassTypeInfoBase*>(GetRealTypeInfo(aliasType));
+        }
         if (classType || aliasType) {
             if (m_RejectedTag.empty()) {
                 if (!NextIsTag()) {
@@ -1969,7 +1972,7 @@ void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
 void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
     CheckStdXml(namedTypeInfo);
-    if (m_SkipNextTag) {
+    if (m_SkipNextTag || namedTypeInfo->GetName().empty()) {
         TopFrame().SetNotag();
         m_SkipNextTag = false;
     } else {
