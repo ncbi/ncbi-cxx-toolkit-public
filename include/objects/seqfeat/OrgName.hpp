@@ -82,6 +82,12 @@ public:
 
     CRef<COrgName> MakeCommon(const COrgName& other) const;
 
+    // Nomenclature information stored in attrib field as string in following format:
+    // nomenclature=[BPVZ]*;
+    bool GetNomenclature( string& result ) const;
+    bool SetNomenclature( const string& nomenclature ); // False if value is unsupported
+    void ResetNomenclature();
+
 private:
     // Prohibit copy constructor and assignment operator
     COrgName(const COrgName& value);
@@ -89,9 +95,12 @@ private:
     // The proposed format for orgname flags: flagname1;[flagname2;]...
     // where flagnameX consists of ascii alphanum characters only. Each value of flagnameX is unique.
     // Presence of flag name in the strings means 'true' value for the flag.
-    void x_SetAttribFlag( const string& name );
-    void x_ResetAttribFlag( const string& name );
-    bool x_GetAttribFlag( const string& name ) const;
+    void x_SetAttribFlag( const string& name, bool bStartsWith = false );
+    void x_ResetAttribFlag( const string& name, bool bStartsWith = false );
+    bool x_GetAttribFlag( const string& name, bool bStartsWith = false ) const;
+    // Getting attribute value for pairs like attrname=value;
+    // value cannot contain ';'
+    bool x_GetAttribValue( const string& name, string& sValue ) const;
 };
 
 

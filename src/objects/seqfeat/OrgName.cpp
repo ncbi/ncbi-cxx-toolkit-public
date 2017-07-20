@@ -99,10 +99,16 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 			name_out += bin.GetGenus();
 			name_out += ' ' + bin.GetSpecies();
 			if( !bSubspIndicator ) {
-			    string sLineage = lineage ? *lineage : IsSetLineage() ? GetLineage() : NcbiEmptyString;
-			    bool bZooCode = sLineage.find("Metazoa;") != string::npos ||
-				sLineage.find("Slopalinida;") != string::npos ||
-				sLineage.find("Blastocystis;") != string::npos;
+			    string sNomenclature;
+			    bool bZooCode = false;
+			    if( GetNomenclature( sNomenclature ) ) {
+				bZooCode = sNomenclature == "Z";
+			    } else { // we still have to support old nomenclature-less orgnames
+				string sLineage = lineage ? *lineage : IsSetLineage() ? GetLineage() : NcbiEmptyString;
+				bZooCode = sLineage.find("Metazoa;") != string::npos ||
+				    sLineage.find("Slopalinida;") != string::npos ||
+				    sLineage.find("Blastocystis;") != string::npos;
+			    }
 			    if( !bZooCode ) {
 				name_out += " subsp.";
 			    } else { // check if subspecies is well-specified
@@ -191,9 +197,9 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 // Presence of flag name in the strings means 'true' value for the flag.
 const CTempString s_flagDelim = ";";
 
-void COrgName::x_SetAttribFlag( const string& name )
+void COrgName::x_SetAttribFlag( const string& name, bool bStartsWith )
 {
-    if( !x_GetAttribFlag( name ) ) {
+    if( !x_GetAttribFlag( name, bStartsWith ) ) {
 	if( IsSetAttrib() && !GetAttrib().empty() ) {
 	    SetAttrib().append(s_flagDelim).append(name);
 	} else {
@@ -202,7 +208,7 @@ void COrgName::x_SetAttribFlag( const string& name )
     }
 }
 
-void COrgName::x_ResetAttribFlag( const string& name )
+void COrgName::x_ResetAttribFlag( const string& name, bool bStartsWith )
 {
     if( !name.empty() && IsSetAttrib() ) {
         const string& attr = GetAttrib();
@@ -210,7 +216,8 @@ void COrgName::x_ResetAttribFlag( const string& name )
         NStr::Split(attr, s_flagDelim, lVals, NStr::fSplit_Tokenize);
         for( list< CTempString >::iterator i = lVals.begin(), li = lVals.end(); i != li; ) {
             NStr::TruncateSpacesInPlace( *i );
-            if( NStr::EqualNocase( *i, name ) ) {
+            if( (!bStartsWith && NStr::EqualNocase( *i, name )) ||
+		(bStartsWith && NStr::StartsWith( *i, name, NStr::eNocase )) ) {
                 i = lVals.erase( i );
             } else {
                 ++i;
@@ -223,7 +230,7 @@ void COrgName::x_ResetAttribFlag( const string& name )
     }
 }
 
-bool COrgName::x_GetAttribFlag( const string& name ) const
+bool COrgName::x_GetAttribFlag( const string& name, bool bStartsWith ) const
 {
     if( !name.empty() && IsSetAttrib() ) {
 	const string& attr = GetAttrib();
@@ -231,7 +238,28 @@ bool COrgName::x_GetAttribFlag( const string& name ) const
 	NStr::Split(attr, s_flagDelim, lVals, NStr::fSplit_Tokenize);
 	NON_CONST_ITERATE( list< CTempString >, i, lVals ) {
 	    NStr::TruncateSpacesInPlace( *i );
-	    if( NStr::EqualNocase( *i, name ) ) {
+	    if( (!bStartsWith && NStr::EqualNocase( *i, name )) ||
+		(bStartsWith && NStr::StartsWith( *i, name, NStr::eNocase )) ) {
+		return true;
+	    }
+	}
+    }
+    return false;
+}
+
+// Getting attribute value for pairs like attrname=value;
+// value cannot contain ';'
+bool COrgName::x_GetAttribValue( const string& name, string& sValue ) const
+{
+    if( !name.empty() && IsSetAttrib() ) {
+	const string& attr = GetAttrib();
+	list< CTempString > lVals;
+	NStr::Split(attr, s_flagDelim, lVals, NStr::fSplit_Tokenize);
+	NON_CONST_ITERATE( list< CTempString >, i, lVals ) {
+	    NStr::TruncateSpacesInPlace( *i );
+	    if( NStr::StartsWith( *i, name, NStr::eNocase ) &&
+		i->size() > name.size() && (*i)[name.size()] == '=' ) {
+		sValue.assign( i->substr(name.size()+1) );
 		return true;
 	    }
 	}
@@ -338,6 +366,52 @@ CRef<COrgName> COrgName::MakeCommon(const COrgName& other) const
     return common;
 }
 
+// Nomenclature information stored in attrib field as string in following format:
+// nomenclature=[BPVZ]*;
+bool COrgName::GetNomenclature( string& result ) const
+{
+    return x_GetAttribValue( "nomenclature", result );
+}
+
+// returns false if value is unsupported
+bool COrgName::SetNomenclature( const string& nomenclature )
+{
+    // Analyze value. Make sure it consists of [BPVZ]
+    char norm_nom[4];
+    memset( norm_nom, 0, sizeof(norm_nom) );
+    ITERATE( string, ci, nomenclature ) {
+	switch( *ci ) {
+	case 'b': case 'B': norm_nom[0] = 'B'; break;
+	case 'p': case 'P': norm_nom[1] = 'P'; break;
+	case 'v': case 'V': norm_nom[2] = 'V'; break;
+	case 'z': case 'Z': norm_nom[3] = 'Z'; break;
+	default: return false;
+	}
+    }
+    string sNewVal;
+    for( size_t i = 0; i < sizeof(norm_nom); ++i ) {
+	if( norm_nom[i] != 0 ) {
+	    sNewVal += norm_nom[i];
+	}
+    }
+	
+    string sOldVal;
+    if( GetNomenclature( sOldVal ) ) {
+	if( sOldVal == sNewVal ) {
+	    return true; // already set to this value
+	} else {
+	    ResetNomenclature();
+	}
+    }
+    x_SetAttribFlag( string("nomenclature=")+sNewVal );
+    return true;
+}
+
+// returns false if value is unsupported
+void COrgName::ResetNomenclature()
+{
+    x_ResetAttribFlag( "nomenclature=", true );
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
