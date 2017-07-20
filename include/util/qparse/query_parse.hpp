@@ -139,7 +139,7 @@ public:
     ///
     CQueryParseNode(const string& value, const string& orig_text, bool isIdent);
 
-    explicit CQueryParseNode(Int4   val, const string& orig_text);
+    explicit CQueryParseNode(Int8   val, const string& orig_text);
     explicit CQueryParseNode(bool   val, const string& orig_text);
     explicit CQueryParseNode(double val, const string& orig_text);
     explicit CQueryParseNode(EType op_type, const string& orig_text);
@@ -166,7 +166,7 @@ public:
     const string& GetStrValue() const;
     const string& GetIdent() const;
     const string& GetOriginalText() const { return m_OrigText; }
-    Int4 GetInt() const;
+    Int8 GetInt() const;
     bool GetBool() const;
     double GetDouble() const;
     
@@ -248,7 +248,7 @@ private:
 private:
     EType         m_Type;  
     union {
-        Int4         m_IntConst;
+        Int8         m_IntConst;
         bool         m_BoolConst;
         double       m_DoubleConst;
     };    
@@ -334,7 +334,7 @@ public:
     TNode* CreateNode(const string&  value, 
                       const string&  orig_text, 
                       bool           isIdent);
-    virtual TNode* CreateNode(Int4   value, const string&  orig_text);
+    virtual TNode* CreateNode(Int8   value, const string&  orig_text);
     virtual TNode* CreateNode(bool   value, const string&  orig_text);
     virtual TNode* CreateNode(double value, const string&  orig_text);
     virtual 

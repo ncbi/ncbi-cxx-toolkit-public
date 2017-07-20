@@ -192,7 +192,7 @@ public:
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
                                    bool& /* value */) { return false; }
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
-                                   int& /* value */) { return false; }
+                                   Int8& /* value */) { return false; }
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
                                    double& /* value */) { return false; }
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
@@ -201,7 +201,7 @@ public:
     virtual bool ResolveIdentifier(const TFieldID& /* id */,
                                     bool& /* value */) { return false; }
     virtual bool ResolveIdentifier(const TFieldID& /* id */,
-                                   int& /* value */) { return false; }
+                                   Int8& /* value */) { return false; }
     virtual bool ResolveIdentifier(const TFieldID& /* id */,
                                    double& /* value */) { return false; }
     virtual bool ResolveIdentifier(const TFieldID& /* id */,

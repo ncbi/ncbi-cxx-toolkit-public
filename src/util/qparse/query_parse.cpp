@@ -60,7 +60,7 @@ CQueryParseNode::CQueryParseNode(const string& value,
 {
 }
 
-CQueryParseNode::CQueryParseNode(Int4   val, const string& orig_text)
+CQueryParseNode::CQueryParseNode(Int8   val, const string& orig_text)
 : m_Type(eIntConst),
   m_IntConst(val),
   m_OrigText(orig_text),
@@ -110,7 +110,7 @@ const string& CQueryParseNode::GetStrValue() const
                "Incorrect query node type");
 }
 
-Int4 CQueryParseNode::GetInt() const
+Int8 CQueryParseNode::GetInt() const
 {
     if (m_Type != eIntConst) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
@@ -236,7 +236,7 @@ CQueryParseTree::CreateNode(const string&  value,
 }
 
 CQueryParseTree::TNode* 
-CQueryParseTree::CreateNode(Int4   value, const string&  orig_text)
+CQueryParseTree::CreateNode(Int8   value, const string&  orig_text)
 {
     CQueryParseTree::TNode* tn = 
         new TNode(CQueryParseNode(value, orig_text));

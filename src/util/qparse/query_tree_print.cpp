@@ -103,7 +103,7 @@ public:
             PrintElement('"' + qnode.GetStrValue() + '"', qnode);
             break;
         case CQueryParseNode::eIntConst:
-            PrintElement(NStr::IntToString(qnode.GetInt()) + "L", qnode);
+            PrintElement(NStr::Int8ToString(qnode.GetInt()) + "L", qnode);
             break;
         case CQueryParseNode::eFloatConst:
             PrintElement(NStr::DoubleToString(qnode.GetDouble()) + "F", qnode);

@@ -1020,8 +1020,8 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         token.find_first_not_of("0123456789");
     if (pos == string::npos) {  // all digits
         
-        Int4 i4 = NStr::StringToInt(token);
-        *lvalp = qnode = env->QTree().CreateNode(i4, token);
+        Int8 i8 = NStr::StringToInt8(token);
+        *lvalp = qnode = env->QTree().CreateNode(i8, token);
         env->AddNodeToPool(qnode);
 
     } else {
