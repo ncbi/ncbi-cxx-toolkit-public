@@ -440,7 +440,7 @@ string CSourceModParser::ParseTitle(const CTempString& title,
             }
             mod.pos = lb_pos;
             mod.used = false;
-            m_Mods.insert(mod);
+            m_Mods.emplace(mod);
             CTempString text = NStr::TruncateSpaces_Unsafe
                 (title.substr(pos, lb_pos - pos));
             if ( !stripped_title.empty()  &&  !text.empty() ) {
@@ -1290,6 +1290,8 @@ string CSourceModParser::CBadModError::x_CalculateErrorString(
 CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 {
     if (which == fAllMods) {
+        // if caller gave this they probably should prefer calling GetAllMods
+        // to avoid the struct copy.
         return m_Mods;
     } else {
         TMods ret;

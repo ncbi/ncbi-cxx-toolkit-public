@@ -179,8 +179,11 @@ public:
     /// constantly recreate an empty one.
     static CSafeStatic<CSourceModParser::SMod> kEmptyMod;
 
+    const TMods & GetAllMods(void) const { return m_Mods; }
+
     /// Return all modifiers matching the given criteria (if any) without
-    /// affecting their status (used vs. unused).
+    /// affecting their status (used vs. unused).  If you want all mods, if 
+    /// possible use GetAllMods since gives ref instead of copying underlying structure.
     TMods GetMods(TWhichMods which = fAllMods) const;
 
     /// If a modifier with either key is present, mark it as used and
