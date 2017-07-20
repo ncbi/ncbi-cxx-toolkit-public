@@ -51,6 +51,44 @@ class NCBI_SEQFEAT_EXPORT COrg_ref : public COrg_ref_Base
 {
     typedef COrg_ref_Base Tparent;
 public:
+    enum EOrgref_part {
+        eOrgref_nothing    = 0,
+        eOrgref_taxname    = 0x0010, // org-ref.taxname
+        eOrgref_common     = 0x0040, // org-ref.common
+        eOrgref_mod        = 0x0800, // org-ref.mod
+
+        eOrgref_db         = 0x2000, // org-ref.db
+        eOrgref_db_taxid   = 0x0001, // org-ref.db[@dbtag='taxon']
+        eOrgref_db_all     = (eOrgref_db | eOrgref_db_taxid),
+
+        eOrgref_syn        = 0x4000, // org-ref.syn
+
+        eOrgref_orgname    = 0x0008, // org-ref.orgname
+        eOrgref_on_name    = 0x0080, // org-ref.orgname.name
+          eOrgref_on_attr      = 0x1000, // org-ref.orgname.attrib
+          eOrgref_on_attr_spec = 0x00010000, // org-ref.orgname.attrib[.='specified']
+          eOrgref_on_attr_nom  = 0x00020000, // org-ref.orgname.attrib[.='nomenclature']
+          eOrgref_on_attr_nofwd= 0x00040000, // org-ref.orgname.attrib[.='nomodforward']
+          eOrgref_on_attr_all  = (eOrgref_on_attr | eOrgref_on_attr_spec | eOrgref_on_attr_nom | eOrgref_on_attr_nofwd),
+        eOrgref_on_mod     = 0x0200, // org-ref.orgname.mod
+        eOrgref_on_lin     = 0x0020, // org-ref.orgname.lineage
+        eOrgref_on_gc      = 0x0002, // org-ref.orgname.gcode
+        eOrgref_on_mgc     = 0x0004, // org-ref.orgname.mgcode
+        eOrgref_on_pgc     = 0x0400, // org-ref.orgname.pgcode
+        eOrgref_on_div     = 0x0100, // org-ref.orgname.div
+        eOrgref_on_all     = (eOrgref_orgname | eOrgref_on_name | eOrgref_on_attr_all | eOrgref_on_mod |
+                              eOrgref_on_lin | eOrgref_on_gc | eOrgref_on_mgc | eOrgref_on_pgc | eOrgref_on_div),
+
+        eOrgref_all        = (eOrgref_taxname | eOrgref_common | eOrgref_mod | eOrgref_db | eOrgref_syn |
+                              eOrgref_on_all),
+
+        eOrgref_all_but_syn  = (eOrgref_all ^ eOrgref_syn), // all but synonyms
+        eOrgref_all_but_spec = (eOrgref_all ^ eOrgref_on_attr_spec), // all but orgname's 'specified' attribute
+
+        eOrgref_default    = eOrgref_all
+    };
+    typedef unsigned int fOrgref_parts;
+
     // constructor
     COrg_ref(void);
     // destructor
@@ -96,6 +134,7 @@ public:
 
     void CleanForGenBank();
 
+    void FilterOutParts( fOrgref_parts to_remain );
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);
