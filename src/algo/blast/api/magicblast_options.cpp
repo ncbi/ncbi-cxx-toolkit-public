@@ -204,7 +204,9 @@ CMagicBlastOptionsHandle::SetHitSavingOptionsDefaults()
     m_Opts->SetMaxNumHspPerSequence(0); 
     m_Opts->SetMaxHspsPerSubject(0);
     SetCutoffScore(20);
-    SetLongestIntronLength(2000);
+    vector<double> coeffs = {0.0, 0.0};
+    SetCutoffScoreCoeffs(coeffs);
+    SetLongestIntronLength(500000);
 
     // do not compute each query's ungapped alignment score threshold to
     // trigger gapped alignment

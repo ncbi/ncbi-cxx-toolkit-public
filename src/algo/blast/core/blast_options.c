@@ -1400,7 +1400,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
        return BLASTERR_OPTION_VALUE_INVALID;
    }
 
-   if (options->db_filter && options->word_size < BLAST_WORDSIZE_MAPPER) {
+   if (options->db_filter && options->word_size < 16) {
        Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                           "The limit_lookup option can only be used with "
                           "word size >= 16");
