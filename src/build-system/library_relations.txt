@@ -1532,6 +1532,7 @@ xunittestutil needs xobjutil
 xutil needs xncbi
 xvalidate needs $(OBJEDIT_LIBS)
 xvalidate needs $(XFORMAT_LIBS)
+xvalidate needs taxon1
 xvalidate needs valerr
 xvalidate needs xalnmgr
 xxconnect includes connssl
