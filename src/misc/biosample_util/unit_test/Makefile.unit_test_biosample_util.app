@@ -11,7 +11,7 @@ SRC = unit_test_biosample_util
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = xunittestutil xbiosample_util xvalidate xobjedit \
-      $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr xalnmgr xobjutil tables \
+      $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr xalnmgr xobjutil taxon1 tables \
       macro xregexp xmlwrapp test_boost $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(PCRE_LIBS) \
