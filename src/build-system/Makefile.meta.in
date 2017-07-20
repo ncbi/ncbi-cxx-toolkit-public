@@ -48,6 +48,7 @@ SED       = @SED@
 OSTYPE    = @OSTYPE@
 UUIDGEN   = @UUIDGEN@
 CD_REPORTER = @CD_REPORTER@
+PYTHON3   = @PYTHON3@
 
 deactivate = unlink
 @IF_DEACTIVATING@ deactivate = deactivate
