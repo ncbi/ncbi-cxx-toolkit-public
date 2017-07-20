@@ -127,6 +127,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
             break;
         }
     } while (EStage(s++) < stage);
+
     if (status != eIO_Success  &&  status != eIO_Interrupt)
         ExtraCheckOnFailure();
     return status;
@@ -270,22 +271,15 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     } kTests[] = {
         // 0. NCBI default
         { eURL_Http,
-          "",                           0                      }, // NCBI
+          0,                            0                      }, // NCBI
         // 1. External server(s)
         { eURL_Https,
           "www.google.com",             0                      },
-        //    NB: Google's public DNS (@8.8.4.4/8.8), responds at :80 as well
-        { eURL_Http,
-          0,                            "www.google.com"       },
         // 2. NCBI servers, explicitly
         { eURL_Https,
           "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI main
         { eURL_Https,
-          "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI colo
-        { eURL_Https,
-          "130.14.29.110",              "www.ncbi.nlm.nih.gov" }, // NCBI main
-        { eURL_Https,
-          "165.112.7.20",               "www.ncbi.nlm.nih.gov" }  // NCBI colo
+          "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }  // NCBI colo
     };
 
     m_CheckPoint.clear();
@@ -314,17 +308,17 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     vector< AutoPtr<CConn_HttpStream> > http;
     for (n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
         char user_header[80];
-        net_info->scheme = kTests[n].scheme;
-        const char* host = kTests[n].host;
-        if (!host)
-            host = rand() & 1 ? "8.8.4.4" : "8.8.8.8";
-        if (*host) {
+        net_info->scheme  = kTests[n].scheme;
+        const char* host  = kTests[n].host;
+        const char* vhost = kTests[n].vhost;
+        if (host) {
             _ASSERT(::strlen(host) < sizeof(net_info->host) - 1);
-            ::strcpy(net_info->host, host);
+            unsigned int ip = vhost ? CSocketAPI::gethostbyname(host) : 0;
+            ::strcpy(net_info->host, ip ? CSocketAPI::ntoa(ip).c_str() : host);
         }
-        if (kTests[n].vhost) {
-            _ASSERT(::strlen(kTests[n].vhost) + 6 < sizeof(user_header) - 1);
-            ::sprintf(user_header, "Host: %s", kTests[n].vhost);
+        if (vhost) {
+            _ASSERT(::strlen(vhost) + 6 < sizeof(user_header) - 1);
+            ::sprintf(user_header, "Host: %s", vhost);
         } else
             *user_header = '\0';
         SAuxData* auxdata = new SAuxData(m_Canceled, 0);
