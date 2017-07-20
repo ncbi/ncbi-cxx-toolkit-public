@@ -23,16 +23,20 @@
  *
  * ===========================================================================
  *
- * Authors:  Ning Ma
+ * Authors:  Ning Ma, Jian Jee, Yury Merezhuk
  *
  */
 
-/** @file igblastn_app.cpp
- * IGBLASTN command line application
+/** @file xigblastn_app.cpp
+ * IGBLASTN command line multithreaded application
  */
+
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <serial/objostr.hpp>
+
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
@@ -41,283 +45,308 @@
 #include <algo/blast/format/blast_format.hpp>
 #include "../blast/blast_app_util.hpp"
 
+
+#include <stdlib.h>
+#include <unistd.h>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
-class CIgBlastnApp : public CNcbiApplication
+
+//DEFINE_CLASS_STATIC_FAST_MUTEX(s_XIG_Lock);
+
+#include "igblastn.hpp"
+
+// this is need for static CFastMutex CIgBlastnApp::m_Mutex;
+
+// WORKER .........................................
+void* CIgBlastnApp::CIgWorker::Main(void)
 {
-public:
-    /** @inheritDoc */
-    CIgBlastnApp() {
-        CRef<CVersion> version(new CVersion());
-        version->SetVersionInfo(new CIgBlastVersion());
-        SetFullVersion(version);
-    }
-private:
-    /** @inheritDoc */
-    virtual void Init();
-    /** @inheritDoc */
-    virtual int Run();
+    int current_batch_number = 0;
 
-    /// This application's command line args
-    CRef<CIgBlastnAppArgs> m_CmdLineArgs; 
-  
-
-
-    struct SCloneNuc {
-        string na;
-        string chain_type;
-        string v_gene;
-        string d_gene;
-        string j_gene;
-    };
-
-    struct SAaInfo {
-        string seqid;
-        int count;
-        string all_seqid;
-        double min_identity;
-        double max_identity;
-        double total_identity;
-    };
-
-    struct SAaStatus {
-        string aa;
-        string productive;
-    };
-
-    struct sort_order {
-        bool operator()(const SCloneNuc s1, const SCloneNuc s2) const
-        {
-            
-            if (s1.na != s2.na)
-                return s1.na < s2.na ? true : false;
-            
-            if (s1.chain_type != s2.chain_type)
-                return s1.chain_type < s2.chain_type ? true : false;
-
-            if (s1.v_gene != s2.v_gene)
-                return s1.v_gene < s2.v_gene ? true : false;
-            
-            if (s1.d_gene != s2.d_gene)
-                return s1.d_gene < s2.d_gene ? true : false;
-
-            if (s1.j_gene != s2.j_gene)
-                return s1.j_gene < s2.j_gene ? true : false;
-            
-            
-            return false;
-        }
-    };
-
-    struct sort_order_aa_status {
-        bool operator()(const SAaStatus s1, const SAaStatus s2) const
-        {
-            if (s1.aa != s2.aa)
-                return s1.aa < s2.aa ? true : false;
-            
-            if (s1.productive != s2.productive)
-                return s1.productive < s2.productive ? true : false;
-                                                                        
-            return false;
-        }
-    };
-
-    typedef map<SAaStatus, SAaInfo*, sort_order_aa_status> AaMap;
-    typedef map<SCloneNuc, AaMap*, sort_order> CloneInfo;
-    CloneInfo m_Clone;
-    
-    static bool x_SortByCount(const pair<const SCloneNuc*, AaMap*> *c1, const pair<const SCloneNuc*, AaMap*> *c2) {
-        
-        int c1_total = 0;
-        int c2_total = 0;
-        ITERATE(AaMap, iter, *(c1->second)){
-            c1_total += iter->second->count;
-        }
-        ITERATE(AaMap, iter, *(c2->second)){
-            c2_total += iter->second->count;
-        }
- 
-        
-        return c1_total > c2_total;
+    try{
+//===============================================================================================	
+    thm_tid = CThread::GetSelf();
+    { // increse running thread counter 
+      CFastMutexGuard g1(  thm_Mutex_Output  ); //It does not matter for startup. but thread sanitizer will be happy
+      thm_run_thread_count++;
+      thm_any_started = true;
     }
 
+    // main search cycle
+    thm_sw.Start();
+    int local_counter = 0;
+    bool done_fasta_input = false;
+    while( !done_fasta_input) {
+        //OK2 CRef<CIgBlastOptions> ig_opts(thm_ig_args->GetIgBlastOptions());
 
-};
+
+           CRef<CScope> scope;
+	   CRef<CIgBlastArgs>    l_ig_args;
+           CRef<CIgBlastOptions> l_ig_opts;
+	   CRef<CLocalDbAdapter> l_blastdb;
+	   CRef<CBlastOptionsHandle> l_opts_hndl;
+
+           //OK2 thm_ig_args->AddIgSequenceScope(scope);
+	   {
+	      CFastMutexGuard g1(  thm_Mutex_Global  );
+              scope.Reset(new CScope(*CObjectManager::GetInstance()));
+              _ASSERT(scope);
+	      l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());
+	      l_ig_args->AddIgSequenceScope(scope);
+
+              l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
+	      l_blastdb.Reset(&(*(l_ig_opts->m_Db[0])));
+	      l_opts_hndl.Reset(&*thm_CmdLineArgs->SetOptions(thm_args));
+	   }
 
 
 
-void CIgBlastnApp::Init()
-{
-    // formulate command line arguments
+          //CRef<CBlastQueryVector> query(m_input->GetNextSeqBatch(*scope));
+          CRef<CBlastQueryVector> query;
+	  {   // STEP #0 -- get access 
+	      CFastMutexGuard g1(  thm_Mutex_Input  );
+	      // STEP #1 -- if input finished, exit
+	      if( thm_input->End() ) {
+		  break; // other threads did all other chunks
+	      }
+	      // STEP #2.A -- next batch obtained from input
+	      query.Reset( thm_input->GetNextSeqBatch(*scope) );
+	      // STEP #2.B -- increase total number of batches in output
+	      current_batch_number = thm_max_batch;
+	      thm_max_batch++;
+	      // STEP #3   -- check if exit in next loop. NOT needed
+	      done_fasta_input = thm_input->End(); // will exit if nothing left 
+	  }
 
-    m_CmdLineArgs.Reset(new CIgBlastnAppArgs());
+	  // STEP #4 -- RUN SEARCH
+          CRef<CSearchResultSet> results;
+          {  // LOCAL BLAST ONLY FOR NOW
+                CIgBlast lcl_blast(query, l_blastdb, l_opts_hndl, l_ig_opts, scope);
+                //- CIgBlast lcl_blast(query, x_blastdb, l_opts_hndl, l_ig_opts, scope);
+                lcl_blast.SetNumberOfThreads( 1 /* one thread only */ );
 
-    // read the command line
+                results = lcl_blast.Run();
 
-    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
-    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
+          }
+
+	  // STEP #5 -- STORE RESULTS IN MAIN STORAGE
+
+	  CRef <CIgBlastContext> one_context( new CIgBlastContext );
+
+	  one_context->m_batch_number = current_batch_number;
+	  one_context->m_results = results ;
+	  one_context->m_queries = query ;
+	  one_context->m_scope   = scope ;
+
+	  {
+		// STEP #6.A -- NOTIFY FORMATTER FOR NEW RESULTS
+		CFastMutexGuard g2( thm_Mutex_Output  );
+	        thm_all_results[ current_batch_number ] = one_context;
+	  }
+
+	  {
+		// STEP #6.B -- NOTIFY FORMATTER FOR NEW RESULTS
+	  	//if( (local_counter++ % 2)  == 1 ) 
+	  	{
+		    CFastMutexGuard g2( thm_Mutex_Notify  );
+		    thm_new_batch_done.Post();
+	  	}
+	  }
+
+        } // done input
+
+    }
+    catch (const ncbi::CException& e) {
+	string msg = e.ReportThis(eDPF_ErrCodeExplanation);
+	const CStackTrace* stack_trace = e.GetStackTrace();
+	if (stack_trace) {
+	    CNcbiOstrstream os;
+	    os << '\n';
+	    stack_trace->Write(os);
+	}
+	fprintf(stderr,"WORKER: T%u BATCH # %d CEXCEPTION: %s\n",thm_tid,current_batch_number,msg.c_str());
+    } catch (const std::exception& e) {
+	fprintf(stderr,"WORKER: T%u BATCH # %d EXCEPTION: %s\n",thm_tid,current_batch_number,e.what());
+	raise( SIGSEGV );
+    } catch (...) {
+	fprintf(stderr,"WORKER: T%u BATCH # %d GENERAL EXCEPTION \n",thm_tid,current_batch_number);
+	raise( SIGSEGV );
+    }
+
+    int *ret_code = new int;
+    *ret_code = 0; // OK
+    return ret_code;
+}
+void CIgBlastnApp::CIgWorker::OnExit(void){
+      CFastMutexGuard g1(  thm_Mutex_Output  );
+      thm_run_thread_count--;
 }
 
-int CIgBlastnApp::Run(void)
+// FORMATTER .......................................
+void* CIgBlastnApp::CIgFormatter::Main(void)
 {
-    int status = BLAST_EXIT_SUCCESS;
+    thm_tid = CThread::GetSelf();
 
-    try {
+    int *ret_code = new int;
+    *ret_code = 0; // OK
+    int waiting_batch_number=0;
 
-        // Allow the fasta reader to complain on invalid sequence input
-        SetDiagPostLevel(eDiag_Warning);
+    try{
+    //bool workers_are_running = true;
+    std::map< int , CRef<CIgBlastContext> >::iterator results_ctx_it;
 
-        /*** Get the BLAST options ***/
-        const CArgs& args = GetArgs();
-        CRef<CBlastOptionsHandle> opts_hndl;
-        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
-           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
-        }
-        else {
-           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
-        }
-        const CBlastOptions& opt = opts_hndl->GetOptions();
+    bool next_batch_ready = false;
+    bool is_megablast = false;
 
-        /*** Get the query sequence(s) ***/
-        CRef<CQueryOptionsArgs> query_opts = 
-            m_CmdLineArgs->GetQueryOptionsArgs();
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
-        CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
-                                     query_opts->UseLowercaseMasks(),
-                                     query_opts->GetParseDeflines(),
-                                     query_opts->GetRange());
-        iconfig.SetQueryLocalIdMode();
-        CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
-        CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
-        /*** Initialize igblast database/subject and options ***/
-        CRef<CIgBlastArgs> ig_args(m_CmdLineArgs->GetIgBlastArgs());
-        CRef<CIgBlastOptions> ig_opts(ig_args->GetIgBlastOptions());
+    // INIT PART 
+        CRef<CFormattingArgs> l_fmt_args;
+        CRef<CLocalDbAdapter> l_blastdb_full;
+	CRef<CIgBlastArgs>    l_ig_args; 
+	CRef<CIgBlastOptions> l_ig_opts;
+	string                l_full_db_list;
+        CRef<CLocalDbAdapter> l_blastdb;
+        Int4 l_num_alignments = 0;
+        CRef<CQueryOptionsArgs>       l_query_opts;
+	{
+	    CFastMutexGuard g1(  thm_Mutex_Global  ); // GENERAL?
+	    if( thm_CmdLineArgs->GetTask() == "megablast" ) is_megablast = true;
+	    l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());
+            l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
+            l_fmt_args.Reset( thm_CmdLineArgs->GetFormattingArgs() );
+	    l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                    l_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                    l_ig_opts->m_Db[2]->GetDatabaseName() ;
 
-        /*** Initialize the database/subject ***/
-        bool db_is_remote = true;
-        CRef<CScope> scope;
-        CRef<CLocalDbAdapter> blastdb;
-        CRef<CLocalDbAdapter> blastdb_full;
-        
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        if (db_args->GetDatabaseName() == kEmptyStr && 
-            db_args->GetSubjects().Empty()) {
-            blastdb.Reset(&(*(ig_opts->m_Db[0])));
-            scope.Reset(new CScope(*CObjectManager::GetInstance()));
-            db_is_remote = false;
-            CSearchDatabase sdb(ig_opts->m_Db[0]->GetDatabaseName() + " " +
-                    ig_opts->m_Db[1]->GetDatabaseName() + " " +
-                    ig_opts->m_Db[2]->GetDatabaseName(), 
-                    CSearchDatabase::eBlastDbIsNucleotide);
-            blastdb_full.Reset(new CLocalDbAdapter(sdb));
-        } else {
-            InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                              blastdb, scope);
-            if (m_CmdLineArgs->ExecuteRemotely()) {
-                blastdb_full.Reset(&(*blastdb));
-            } else {
-                CSearchDatabase sdb(ig_opts->m_Db[0]->GetDatabaseName() + " " +
-                    ig_opts->m_Db[1]->GetDatabaseName() + " " +
-                    ig_opts->m_Db[2]->GetDatabaseName() + " " +
-                    blastdb->GetDatabaseName(), 
-                    CSearchDatabase::eBlastDbIsNucleotide);
-                blastdb_full.Reset(new CLocalDbAdapter(sdb));
-            }
-        }
-        _ASSERT(blastdb && scope);
+            CSearchDatabase l_sdb(l_full_db_list, CSearchDatabase::eBlastDbIsNucleotide );
+            l_blastdb_full.Reset(new CLocalDbAdapter(l_sdb));
+            l_blastdb.Reset(&(*(l_ig_opts->m_Db[0])));
+	    if( !thm_CmdLineArgs->GetBlastDatabaseArgs()->GetDatabaseName().empty() ){
+		l_num_alignments = l_fmt_args->GetNumAlignments();
+	    }
+            l_query_opts = thm_CmdLineArgs->GetQueryOptionsArgs();
+	}
+	CFormattingArgs::EOutputFormat l_fmt_output_choice = l_fmt_args->GetFormattedOutputChoice();
 
-        // TODO: whose priority is higher?
-        ig_args->AddIgSequenceScope(scope);
+    	if(     l_fmt_output_choice == CFormattingArgs::eFlatQueryAnchoredIdentities ||
+	    l_fmt_output_choice == CFormattingArgs::eFlatQueryAnchoredNoIdentities)
+    	{
+            if(l_blastdb_full->GetDatabaseName() != NcbiEmptyString){
+		CFastMutexGuard g1(  thm_Mutex_Global  ); // GENERAL
 
-        /*** Get the formatting options ***/
-        CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        Int4 num_alignments = (db_args->GetDatabaseName() == kEmptyStr) ? 
-                               0 : fmt_args->GetNumAlignments();
-        CBlastFormat formatter(opt, *blastdb_full,
-                               fmt_args->GetFormattedOutputChoice(),
-                               query_opts->GetParseDeflines(),
-                               m_CmdLineArgs->GetOutputStream(),
-                               fmt_args->GetNumDescriptions(),
-                               num_alignments,
-                               *scope,
-                               opt.GetMatrixName(),
-                               fmt_args->ShowGis(),
-                               fmt_args->DisplayHtmlOutput(),
-                               opt.GetQueryGeneticCode(),
-                               opt.GetDbGeneticCode(),
-                               opt.GetSumStatisticsMode(),
-                               false,
-                               blastdb->GetFilteringAlgorithm(),
-                               fmt_args->GetCustomOutputFormatSpec(),
-                               m_CmdLineArgs->GetTask() == "megablast",
-                               opt.GetMBIndexLoaded(),
-                               &*ig_opts);
-                               
-        
-        //formatter.PrintProlog();
-        if(fmt_args->GetFormattedOutputChoice() == 
-           CFormattingArgs::eFlatQueryAnchoredIdentities || 
-           fmt_args->GetFormattedOutputChoice() == 
-           CFormattingArgs::eFlatQueryAnchoredNoIdentities){
-            if(blastdb_full->GetDatabaseName() != NcbiEmptyString){
                 vector<CBlastFormatUtil::SDbInfo> db_info;
-                CBlastFormatUtil::GetBlastDbInfo(db_info, blastdb_full->GetDatabaseName(), 
-                                                 ig_opts->m_IsProtein, -1, false);
-                CBlastFormatUtil::PrintDbReport(db_info, 68, m_CmdLineArgs->GetOutputStream(), true);
+                CBlastFormatUtil::GetBlastDbInfo(db_info, l_full_db_list, l_ig_opts->m_IsProtein, -1, false);
+                CBlastFormatUtil::PrintDbReport(db_info, 68, thm_CmdLineArgs->GetOutputStream(), true);
             }
-        }
+    	}
+    	const CBlastOptions& l_opt = thm_opts_hndl->GetOptions();  // MUTEX NEEDED?
+    //  HEADER -  END
+    //
+    //
+    while( true ){
+	CRef <CIgBlastContext> local_results_context;
+	// STEP A try to get next ready batch from  IG_ResultsMap  &thm_all_results;  if possible
+	{
+	    CFastMutexGuard g1(  thm_Mutex_Output  );
+	    next_batch_ready  = false;
+	    results_ctx_it = thm_all_results.find( waiting_batch_number );
+	    if( results_ctx_it != thm_all_results.end() ) {
+		//.... some sanity/paranoid checking ..............
+	        if( results_ctx_it->second.Empty() ){
+		   fprintf(stderr,"MID-FORMAT:ERROR: INPROPER ITERATOR->SECOND: EMPTY. BATCH: %d\n",waiting_batch_number-1);
+		   exit(0);
+		}
+	        if( results_ctx_it->first != results_ctx_it->second->m_batch_number ){
+		   fprintf(stderr,"MID-FORMAT:ERROR: INPROPER ORDDER FOR BATCH: %d %d\n",results_ctx_it->first, results_ctx_it->second->m_batch_number);
+		   exit(0);
+	        }
+		//........................................
+		next_batch_ready = true;
+		// map iterator should be save, but let's get data from it
+		// batch is ready, store references object with reasult
+		local_results_context.Reset(  results_ctx_it->second ); 
+		thm_all_results.erase( results_ctx_it ) ; 
+	    }
+	    if( thm_any_started && !next_batch_ready && (thm_run_thread_count<=0) ) {
+		//workers are NOT running, no new batches
+		break; // exit run loop
+	    }
+	    //else {
+	    //	workers_are_running = true; 
+	    //}
+	    //if( thm_run_thread_count > 0 ) workers_are_running = true; else workers_are_running = false;
+	}
+	// STEP B
+	// IF NOT READY and 
+	//if( !next_batch_ready  && (waiting_batch_number!=0) ) 
+	if( !next_batch_ready  )
+	{
+	    // OK, some threads are rinning, wait on semaphore
+	    thm_new_batch_done.Wait();
+	    continue; // TO STEP A
+	}
+	waiting_batch_number++; // got a batch 
+	//============================================================
 
-        int total_input = 0;
-        
-        /*** Process the input ***/
-        for (; !input.End(); formatter.ResetScopeHistory()) {
-
-            CRef<CBlastQueryVector> query(input.GetNextSeqBatch(*scope));
-
-            //SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
+	//for( results_ctx_it = m_all_results.begin(); results_ctx_it != m_all_results.end(); results_ctx_it++)
+	{
+	    CRef<CScope> scope;
             CRef<CSearchResultSet> results;
+	    CRef<CBlastQueryVector> query;
 
-            if (m_CmdLineArgs->ExecuteRemotely() && db_is_remote) {
-                CIgBlast rmt_blast(query, 
-                                   db_args->GetSearchDatabase(), 
-                                   db_args->GetSubjects(),
-                                   opts_hndl, ig_opts,
-                                   NcbiEmptyString,
-                                   scope);
-                //TODO:          m_CmdLineArgs->ProduceDebugRemoteOutput(),
-                //TODO:          m_CmdLineArgs->GetClientId());
-                results = rmt_blast.Run();
-            } else {
-                CIgBlast lcl_blast(query, blastdb, opts_hndl, ig_opts, scope);
-                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
-                results = lcl_blast.Run();
-            }
+	    //scope.Reset( results_ctx_it->second->m_scope );
+	    //results.Reset( results_ctx_it->second->m_results );
+	    //query.Reset(  results_ctx_it->second->m_queries );
 
-            /* TODO should we support archive format?
-            if (fmt_args->ArchiveFormatRequested(args)) {
-                CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(*query));
-                formatter.WriteArchive(*qf, *opts_hndl, *results);
-            } else {
-            */
-            
-            BlastFormatter_PreFetchSequenceData(*results, scope,
-            									fmt_args->GetFormattedOutputChoice());
-            ITERATE(CSearchResultSet, result, *results) {
+
+	    scope.Reset(   local_results_context->m_scope );
+	    results.Reset( local_results_context->m_results );
+	    query.Reset(   local_results_context->m_queries );
+
+	    CRef <CBlastFormat> fmt;
+
+		fmt.Reset( new  CBlastFormat(l_opt, *l_blastdb_full,
+                               l_fmt_args->GetFormattedOutputChoice(),
+                               l_query_opts->GetParseDeflines(),
+                               thm_CmdLineArgs->GetOutputStream(),
+                               l_fmt_args->GetNumDescriptions(),
+                               l_num_alignments,
+                               *scope,
+                               l_opt.GetMatrixName(),
+                               l_fmt_args->ShowGis(),
+                               l_fmt_args->DisplayHtmlOutput(),
+                               l_opt.GetQueryGeneticCode(),
+                               l_opt.GetDbGeneticCode(),
+                               l_opt.GetSumStatisticsMode(),
+                               false,
+                               l_blastdb->GetFilteringAlgorithm(),
+                               l_fmt_args->GetCustomOutputFormatSpec(),
+                               is_megablast, //thm_CmdLineArgs->GetTask() == "megablast",
+                               l_opt.GetMBIndexLoaded(),
+                               &*l_ig_opts) );
+
+
+
+
+			BlastFormatter_PreFetchSequenceData(*results, scope, l_fmt_output_choice );
+
+            for( vector< CRef<CSearchResults> >::const_iterator result = results->begin(); result != results->end(); result ++) { //ITERATE(CSearchResultSet, result, *results) 
                 CBlastFormat::SClone clone_info;
                 SCloneNuc clone_nuc;
                 AaMap* aa_info = new AaMap;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
-                formatter.PrintOneResultSet(ig_result, query, clone_info, !(ig_opts->m_IsProtein));
-                total_input ++;
-                if (!(ig_opts->m_IsProtein) && clone_info.na != NcbiEmptyString && 
-                    clone_info.aa != NcbiEmptyString){
+                
+		    	fmt->PrintOneResultSet(ig_result, query, clone_info, true /* not protein */ ) ; 
+	
+                thm_total_input ++;
+                // if ( clone_info.na != NcbiEmptyString && clone_info.aa != NcbiEmptyString)
+                if ( !clone_info.na.empty() && !clone_info.aa.empty() ){
+
                     clone_nuc.na = clone_info.na;
                     clone_nuc.chain_type = clone_info.chain_type;
                     clone_nuc.v_gene = clone_info.v_gene;
@@ -335,8 +364,8 @@ int CIgBlastnApp::Run(void)
                     SAaStatus aa_status;
                     aa_status.aa = clone_info.aa;
                     aa_status.productive = clone_info.productive;
-                    CloneInfo::iterator iter = m_Clone.find(clone_nuc); 
-                    if (iter != m_Clone.end()) {
+                    CloneInfo::iterator iter = thm_Clone.find(clone_nuc); 
+                    if (iter != thm_Clone.end()) {
                         AaMap::iterator iter2 = iter->second->find(aa_status);
                         if (iter2 != (*iter->second).end()) {
                             if (info->min_identity < iter2->second->min_identity) {
@@ -354,15 +383,220 @@ int CIgBlastnApp::Run(void)
                         
                     } else {
                         (*aa_info)[aa_status] = info;
-                        m_Clone.insert(CloneInfo::value_type(clone_nuc, aa_info));
+                        thm_Clone.insert(CloneInfo::value_type(clone_nuc, aa_info));
                     }
                 }
-            }
+            } // cycle by results
+
+	}
+    } // while end
+    } // try end
+    catch (const ncbi::CException& e) {
+	string msg = e.ReportThis(eDPF_ErrCodeExplanation);
+	const CStackTrace* stack_trace = e.GetStackTrace();
+	if (stack_trace) {
+	    CNcbiOstrstream os;
+	    os << '\n';
+	    stack_trace->Write(os);
+	}
+	fprintf(stderr,"WORKER: T%u BATCH # %d CEXCEPTION: %s\n",thm_tid,waiting_batch_number,msg.c_str());
+	raise( SIGSEGV );
+    } catch (const std::exception& e) {
+	fprintf(stderr,"WORKER: T%u BATCH # %d EXCEPTION: %s\n",thm_tid, waiting_batch_number,e.what());
+	raise( SIGSEGV );
+    } catch (...) {
+	fprintf(stderr,"WORKER: T%u BATCH # %d GENERAL EXCEPTION \n",thm_tid, waiting_batch_number);
+	raise( SIGSEGV );
+    }
+
+
+    return ret_code;
+}
+void CIgBlastnApp::CIgFormatter::OnExit(void){
+}
+
+// ================================================================================================
+void CIgBlastnApp::Init_Worker_Threads( int thread_num )
+{
+    for( int thread_cnt = 0; thread_cnt < thread_num ; thread_cnt ++ ){
+	    // 
+	const CArgs& args = GetArgs(); 
+	CRef< CIgWorker > one_worker( new CIgWorker(args,
+		    				    m_CmdLineArgs,
+		    				    m_Mutex_Input,
+		    				    m_Mutex_Output,
+		    				    m_Mutex_Notify,
+		    				    m_Mutex_Global,
+		    			            m_all_results,    //global: where to store results
+						    m_max_batch,
+						    m_ig_args,        //global:
+						    m_opts_hndl,      //global
+						    m_blastdb,        // global
+						    m_input,          //global: where to get quiries to search
+						    m_run_thread_count, // global:
+						    m_new_batch_done,   // global: semaphore to notify
+						    m_any_started ) ); // global: any worker thread started
+	m_workers.push_back( one_worker );
+    }
+}
+void CIgBlastnApp::Init_Formatter_Thread(void){
+    // 
+    CRef < CIgFormatter > one_formatter( new CIgFormatter(m_CmdLineArgs,
+							  m_opts_hndl, 
+							  m_Mutex_Input,
+							  m_Mutex_Output,
+							  m_Mutex_Notify,
+							  m_Mutex_Global,
+							  m_all_results,
+							  m_total_input,
+							  m_max_batch,
+							  m_run_thread_count,
+							  m_new_batch_done,
+							  m_Clone,
+							  m_any_started) );
+    m_formatter.Reset( one_formatter ); 
+
+}
+
+void CIgBlastnApp::Run_Worker_Threads(bool is_detached){
+    for( size_t ndx = 0; ndx < m_workers.size(); ndx++ ){
+	m_workers[ndx]->Run();
+	if( is_detached) m_workers[ndx]->Detach();
+    }
+}
+void CIgBlastnApp::Join_Worker_Threads(void ){
+    for( size_t ndx = 0; ndx < m_workers.size(); ndx++ ){
+	m_workers[ndx]->Join();
+    }
+}
+void CIgBlastnApp::Run_Formatter_Threads(void){
+}
+
+
+// ================================================================================================
+void CIgBlastnApp::Init()
+{
+    // formulate command line arguments
+
+    m_CmdLineArgs.Reset(new CIgBlastnAppArgs());
+
+    // read the command line
+
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
+    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
+    m_run_thread_count = 0;
+    m_worker_thread_num =1;
+
+}
+unsigned int  CIgBlastnApp::x_CountUserBatches(CBlastInputSourceConfig &iconfig, int batch_size )
+{
+    unsigned int  l_batch_count=0;
+    CRef<CScope>  l_scope(new CScope(*CObjectManager::GetInstance()));
+    CRef<CBlastFastaInputSource>            l_fasta;
+    l_fasta.Reset( new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
+    CRef<CBlastInput> l_input;
+    l_input.Reset( new CBlastInput(l_fasta.GetPointer(), batch_size));
+
+    while( !l_input->End() ) {
+	l_batch_count++;
+	l_input->GetNextSeqBatch(*l_scope);
+    }
+    return  l_batch_count;
+}
+
+int CIgBlastnApp::Run(void)
+{
+    int status = BLAST_EXIT_SUCCESS;
+    m_any_started = false; // no threads are running
+    try {
+	//################ Main thread initalization part - start ##############################################
+        // Allow the fasta reader to complain on invalid sequence input
+        SetDiagPostLevel(eDiag_Warning);
+
+        /*** Get the BLAST options ***/
+        const CArgs& args = GetArgs();
+        //CRef<CBlastOptionsHandle> opts_hndl;
+        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
+           	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
         }
-         
-        //sort by clone abundance
+        else {
+           	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        }
+        const CBlastOptions& opt = m_opts_hndl->GetOptions();
+	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
+        /*** Get the query sequence(s) ***/
+        m_query_opts = m_CmdLineArgs->GetQueryOptionsArgs();
+        SDataLoaderConfig dlconfig(m_query_opts->QueryIsProtein());
+        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        CBlastInputSourceConfig iconfig(dlconfig, m_query_opts->GetStrand(),
+                                     m_query_opts->UseLowercaseMasks(),
+                                     m_query_opts->GetParseDeflines(),
+                                     m_query_opts->GetRange());
+        iconfig.SetQueryLocalIdMode();
+	//.......................................................
+        m_fasta.Reset( new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
+        // m_input.Reset( new CBlastInput(m_fasta.GetPointer(), m_CmdLineArgs->GetQueryBatchSize()));
+        m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 10000));
+        //DEBUG m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 4));
+	//
+	
+
+        /*** Initialize igblast database/subject and options ***/
+        //CRef<CIgBlastArgs> ig_args(m_CmdLineArgs->GetIgBlastArgs());
+        m_ig_args.Reset(m_CmdLineArgs->GetIgBlastArgs());
+        m_ig_opts =  m_ig_args->GetIgBlastOptions();
+
+        /*** Initialize the database/subject ***/
+        //bool db_is_remote = true;
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        Int4 num_alignments = (db_args->GetDatabaseName() == kEmptyStr) ? 
+                               0 : fmt_args->GetNumAlignments();
+	CFormattingArgs::EOutputFormat m_fmt_output_choice = fmt_args->GetFormattedOutputChoice();
+        //CRef<CLocalDbAdapter> blastdb_full;
+        //CRef<CLocalDbAdapter> blastdb;
+        CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                    m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                    m_ig_opts->m_Db[2]->GetDatabaseName(), 
+                    CSearchDatabase::eBlastDbIsNucleotide);
+        m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
+        m_blastdb.Reset(&(*(m_ig_opts->m_Db[0])));
+        _ASSERT(m_blastdb );
+
+        if (db_args->GetDatabaseName() != kEmptyStr || !db_args->GetSubjects().Empty()) {
+	    	cerr <<"TRAP: UNSUPPORTED MODE: "<<__FILE__<<":"<<__LINE__<<endl;
+	    	exit(0);
+	}
+
+        /*** Get the formatting options ***/
+	//################ Main thread:  initalization part - end ################################################
+ 
+        //formatter.PrintProlog();
+        m_total_input = 0;
+	//################ Main thread:  run worker & format threads - start #####################################
+	{
+	    Init_Worker_Threads( m_worker_thread_num );
+	    Init_Formatter_Thread();
+
+ 	    bool run_detach = false;
+
+	    Run_Worker_Threads( false /* run_detach */  ); // 
+	    m_formatter->Run();
+
+	    // join workers firs, formatter next
+	    if( !run_detach ) { 
+	    	Join_Worker_Threads();
+	    }
+	    m_formatter->Join();
+	}
+	//################ Main thread:  run worker & format threads - end  #####################################
+
         typedef vector<pair<const SCloneNuc*,  AaMap*> * > MapVec;
         MapVec map_vec; 
+	// POST FORMAT
+	{
+
+        //sort by clone abundance
         ITERATE(CloneInfo, iter, m_Clone) {
             pair<const SCloneNuc*, AaMap*> *data = new pair<const SCloneNuc*, AaMap* > (&(iter->first), iter->second); 
             map_vec.push_back(data); 
@@ -385,12 +619,12 @@ int CIgBlastnApp::Run(void)
         } else {
             outfile = &m_CmdLineArgs->GetOutputStream();
         }
-        *outfile << "\nTotal queries = " << total_input << endl;
+        *outfile << "\nTotal queries = " << m_total_input << endl;
         *outfile << "Total identifiable CDR3 = " << total_elements << endl;
         *outfile << "Total unique clonotypes = " << total_unique_clones << endl;
         *outfile << endl;
         
-        if (!(ig_opts->m_IsProtein) && total_elements > 1) {
+        if (!(m_ig_opts->m_IsProtein) && total_elements > 1) {
             *outfile << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements that have the same germline V(D)J gene segments, the same productive/non-productive status and the same CDR3 nucleotide as well as amino sequence (Those having the same CDR3 nucleotide but different amino acid sequence or productive/non-productive status due to frameshift in V or J gene are assigned to a different clonotype.  However, their clonotype identifers share the same prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, productive status, chain type, V gene, D gene, J gene\n" << endl;
             
             int count = 1; 
@@ -457,7 +691,11 @@ int CIgBlastnApp::Run(void)
                 count ++;
             }
         }
-        
+
+	} // post format 
+       
+	// deallocate
+	{
         ITERATE(CloneInfo, iter, m_Clone) {
             ITERATE(AaMap, iter2, *(iter->second)){
                 delete iter2->second;
@@ -468,11 +706,12 @@ int CIgBlastnApp::Run(void)
         ITERATE(MapVec, iter, map_vec) {
             delete *iter;
         }
-      
-        formatter.PrintEpilog(opt);
+     
+	}
+        //HACK TBC formatter.PrintEpilog(opt);
 
         if (m_CmdLineArgs->ProduceDebugOutput()) {
-            opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
+            m_opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
     } CATCH_ALL(status)
