@@ -2700,6 +2700,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IBIR\ts\tInstitutul Agronomic\t\t",
 "IBIW\ts\tI. D. Papanin Institute for Biology of Inland Waters\t\t",
 "IBK\ts\tGuangxi Institute of Botany\t\t",
+"IBL\ts\tForest Research Institute, Poland\t\t",
 "IBL<ISR>\ts\tIndependent Biological Laboratories\t\t",
 "IBL<PRT>\tc\tBotanical Institute, Lisbon Faculty of Sciences\t\t",
 "IBL<USA-MD>\tc\tInsect Biocontrol Laboratory (USDA-ARS, Beltsville)\t\t",
