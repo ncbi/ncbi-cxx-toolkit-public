@@ -878,9 +878,6 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
 void COStreamBuffer::Flush(void)
     THROWS1((CIOException))
 {
-    if (fail()) {
-        return;
-    }
     STemporarilyClearStreamState state(m_Output);
     FlushBuffer();
     if ( !m_Output.flush() ) {
