@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 
 # This script is based on "Autotools-style wrapper for CMake",
 # Modifications made:
