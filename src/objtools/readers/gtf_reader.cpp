@@ -252,6 +252,11 @@ CGtfReader::ReadSeqAnnots(
                 annots.push_back(pAnnot);
                 continue;
             }
+            if (xNeedsNewSeqAnnot(line)) {
+                CRef< CSeq_annot > pAnnot( new CSeq_annot );
+                annots.push_back(pAnnot);
+                continue;
+            }                
             if (x_ParseFeatureGff(line, annots, pEC)) {
                 continue;
             }
@@ -263,6 +268,23 @@ CGtfReader::ReadSeqAnnots(
     if (!annots.empty()) {
         xPostProcessAnnot(annots.back(), pEC);
     }
+}
+
+//  ---------------------------------------------------------------------------
+bool
+CGtfReader::xNeedsNewSeqAnnot(
+    const string& line)
+//  ---------------------------------------------------------------------------
+{
+    vector<string> columns;
+    NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
+    string seqId = columns[0];
+    if (m_CurrentSeqId == seqId) {
+        return false;
+    }
+    m_CurrentSeqId = seqId;
+    m_PendingLine = line;
+    return true;
 }
 
 //  --------------------------------------------------------------------------- 

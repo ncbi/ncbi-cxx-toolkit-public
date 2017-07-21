@@ -88,6 +88,9 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
 
+    bool xNeedsNewSeqAnnot(
+        const string&);
+
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
@@ -191,6 +194,7 @@ protected:
     bool x_CdsIsPartial(
         const CGff2Record& );
 
+    string m_CurrentSeqId;
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
     TIdToFeature m_CdsMap;
