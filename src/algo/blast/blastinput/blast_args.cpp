@@ -1426,8 +1426,10 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 
     arg_desc.SetCurrentGroup("Mapping options");
-    arg_desc.AddDefaultKey(kArgScore, "num", "Cutoff score for accepting a "
-                            "single non-spliced alignment",
+    arg_desc.AddDefaultKey(kArgScore, "num", "Cutoff score for accepting "
+                           "alignments. Can be expressed as a number or a "
+                           "function of read length: "
+                           "L,b,a for a * length + b.",
                            CArgDescriptions::eString, "20");
     arg_desc.AddDefaultKey(kArgSplice, "TF", "Search for spliced alignments",
                            CArgDescriptions::eBoolean, "true");
