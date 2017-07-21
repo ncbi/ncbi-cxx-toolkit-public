@@ -1513,9 +1513,7 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
         if ( iter == delta.end() ) {
             iter = delta.insert(iter, CDelta_ext::Tdata::value_type());
         }
-        if ( !*iter ) {
-            iter->Reset(new CDelta_seq);
-        }
+        iter->Reset(new CDelta_seq);
         CDelta_seq& dseq = **iter;
         ++iter;
         if ( seg.m_SegType == eSeqData ) {
