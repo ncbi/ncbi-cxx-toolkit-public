@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_signal.hpp>
 #include <serial/objostr.hpp>
 
 #include <algo/blast/api/local_blast.hpp>
@@ -44,10 +45,6 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "../blast/blast_app_util.hpp"
-
-
-#include <stdlib.h>
-#include <unistd.h>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -171,10 +168,10 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 	fprintf(stderr,"WORKER: T%u BATCH # %d CEXCEPTION: %s\n",thm_tid,current_batch_number,msg.c_str());
     } catch (const std::exception& e) {
 	fprintf(stderr,"WORKER: T%u BATCH # %d EXCEPTION: %s\n",thm_tid,current_batch_number,e.what());
-	raise( SIGSEGV );
+	CSignal::Raise( CSignal::eSignal_SEGV );
     } catch (...) {
 	fprintf(stderr,"WORKER: T%u BATCH # %d GENERAL EXCEPTION \n",thm_tid,current_batch_number);
-	raise( SIGSEGV );
+	CSignal::Raise( CSignal::eSignal_SEGV );
     }
 
     int *ret_code = new int;
@@ -400,13 +397,13 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	    stack_trace->Write(os);
 	}
 	fprintf(stderr,"WORKER: T%u BATCH # %d CEXCEPTION: %s\n",thm_tid,waiting_batch_number,msg.c_str());
-	raise( SIGSEGV );
+	CSignal::Raise( CSignal::eSignal_SEGV );
     } catch (const std::exception& e) {
 	fprintf(stderr,"WORKER: T%u BATCH # %d EXCEPTION: %s\n",thm_tid, waiting_batch_number,e.what());
-	raise( SIGSEGV );
+	CSignal::Raise( CSignal::eSignal_SEGV );
     } catch (...) {
 	fprintf(stderr,"WORKER: T%u BATCH # %d GENERAL EXCEPTION \n",thm_tid, waiting_batch_number);
-	raise( SIGSEGV );
+	CSignal::Raise( CSignal::eSignal_SEGV );
     }
 
 
