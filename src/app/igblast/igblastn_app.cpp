@@ -75,7 +75,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 
     // main search cycle
     thm_sw.Start();
-    int local_counter = 0;
+    //int local_counter = 0;
     bool done_fasta_input = false;
     while( !done_fasta_input) {
         //OK2 CRef<CIgBlastOptions> ig_opts(thm_ig_args->GetIgBlastOptions());
@@ -512,14 +512,13 @@ int CIgBlastnApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
-        //CRef<CBlastOptionsHandle> opts_hndl;
         if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
            	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
         }
         else {
            	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         }
-        const CBlastOptions& opt = m_opts_hndl->GetOptions();
+        //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
         /*** Get the query sequence(s) ***/
         m_query_opts = m_CmdLineArgs->GetQueryOptionsArgs();
@@ -532,26 +531,16 @@ int CIgBlastnApp::Run(void)
         iconfig.SetQueryLocalIdMode();
 	//.......................................................
         m_fasta.Reset( new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
-        // m_input.Reset( new CBlastInput(m_fasta.GetPointer(), m_CmdLineArgs->GetQueryBatchSize()));
         m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 10000));
-        //DEBUG m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 4));
-	//
 	
 
         /*** Initialize igblast database/subject and options ***/
-        //CRef<CIgBlastArgs> ig_args(m_CmdLineArgs->GetIgBlastArgs());
         m_ig_args.Reset(m_CmdLineArgs->GetIgBlastArgs());
         m_ig_opts =  m_ig_args->GetIgBlastOptions();
 
         /*** Initialize the database/subject ***/
-        //bool db_is_remote = true;
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        Int4 num_alignments = (db_args->GetDatabaseName() == kEmptyStr) ? 
-                               0 : fmt_args->GetNumAlignments();
-	CFormattingArgs::EOutputFormat m_fmt_output_choice = fmt_args->GetFormattedOutputChoice();
-        //CRef<CLocalDbAdapter> blastdb_full;
-        //CRef<CLocalDbAdapter> blastdb;
         CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
                     m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
                     m_ig_opts->m_Db[2]->GetDatabaseName(), 
@@ -580,7 +569,7 @@ int CIgBlastnApp::Run(void)
 	    Run_Worker_Threads( false /* run_detach */  ); // 
 	    m_formatter->Run();
 
-	    // join workers firs, formatter next
+	    // join workers first, formatter next
 	    if( !run_detach ) { 
 	    	Join_Worker_Threads();
 	    }

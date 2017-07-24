@@ -32,7 +32,6 @@
 
 
 #include "igblast_types.hpp"
-#include <limits.h>
 
 
 class CIgBlastnApp : public CNcbiApplication
