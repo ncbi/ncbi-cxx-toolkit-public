@@ -247,7 +247,7 @@ void CTable2AsnContext::UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) c
         submit->SetSub().SetReldate(*reldate);
     }
 
-    string toolname = CNcbiApplication::GetAppName() + " " + CNcbiApplication::Instance()->GetVersion().Print();
+    string toolname = "table2asn " + CNcbiApplication::Instance()->GetVersion().Print();
     submit->SetSub().SetSubtype(CSubmit_block::eSubtype_new);
     submit->SetSub().SetTool(toolname);
 }
