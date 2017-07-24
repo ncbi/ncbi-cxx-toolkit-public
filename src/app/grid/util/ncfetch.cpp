@@ -122,9 +122,6 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
         reply.out().write(buffer, bytes_read);
         total_bytes_written += bytes_read;
-
-        if (bytes_read < sizeof(buffer))
-            break;
     }
 
     netstorage_object.Close();
