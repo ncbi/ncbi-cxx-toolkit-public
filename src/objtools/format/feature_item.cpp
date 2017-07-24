@@ -5166,8 +5166,6 @@ void CFeatureItem::x_AddFTableProtQuals(
     if ( !prot.GetData().IsProt() ) {
         return;
     }
-    const CProt_ref& prot_ref = prot.GetData().GetProt();
-
     x_AddFTableProtQuals(prot.GetData().GetProt());
 
     if ( prot.IsSetComment()  &&  !prot.GetComment().empty() ) {
