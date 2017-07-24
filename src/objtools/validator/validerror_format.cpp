@@ -952,7 +952,7 @@ string CValidErrorFormat::GetDescriptorContent (const CSeqdesc& ds)
     content = first + content.substr(1);
     size_t colon_pos = NStr::Find(content, ":");
     if (colon_pos != string::npos) {
-        size_t dash_pos = NStr::Find(content, "-", 0, colon_pos);
+        size_t dash_pos = NStr::Find(content.substr(0, colon_pos), "-");
         if (dash_pos != string::npos) {
             string after_dash = content.substr(dash_pos + 1, 1);
             NStr::ToUpper (after_dash);
