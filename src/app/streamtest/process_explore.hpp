@@ -76,7 +76,7 @@ public:
     //  ------------------------------------------------------------------------
     {
         // Create master index variable on stack, initialize with top-level Seq-entry
-        CSeqEntryIndex idx( *m_entry, (CSeqEntryIndex::EPolicy) m_policy, (CSeqEntryIndex::TFlags) m_flags, m_depth );
+        CSeqEntryIndex idx( m_topseh, (CSeqEntryIndex::EPolicy) m_policy, (CSeqEntryIndex::TFlags) m_flags, m_depth );
 
 
         // IterateBioseqs visits each Bioseq in blob
@@ -168,9 +168,6 @@ public:
         // Title, MolInfo, and BioSource fields are saved when descriptors are indexed (on first request)
         *m_out << "Taxname: " << bsx.GetTaxname() << '\n';
         *m_out << "Title: " << bsx.GetTitle() << '\n';
-
-        // Passes Bioseq-specific CFeatTree to defline generator for efficiency
-        *m_out << "Defline: " << bsx.GetDefline(sequence::CDeflineGenerator::fIgnoreExisting) << '\n';
 
         *m_out << '\n';
 
