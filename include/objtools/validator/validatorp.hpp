@@ -51,6 +51,7 @@
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/valid/Comment_set.hpp>
 #include <objects/valid/Comment_rule.hpp>
+#include <objects/taxon3/taxon3.hpp>
 
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
@@ -106,6 +107,7 @@ class CInferencePrefixList;
 class CComment_set;
 class CTaxon3_reply;
 class ITaxon3;
+class CT3Error;
 
 BEGIN_SCOPE(validator)
 
