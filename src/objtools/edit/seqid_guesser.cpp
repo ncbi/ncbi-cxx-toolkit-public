@@ -96,7 +96,7 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                         // File ID are usually a filename plus a slash plus the original local ID
                         // add the filename as its own identifier, but only add the local ID if it hasn't 
                         // already been encountered
-                        size_t pos = NStr::Find(tag_str, "/", 0, string::npos, NStr::eLast);
+                        size_t pos = NStr::Find(tag_str, "/", NStr::eNocase, NStr::eReverseSearch);
                         if (pos != string::npos) {
                             string file = tag_str.substr(0, pos);
                             x_AddIdString(file, *id);
@@ -175,7 +175,7 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
                     // File ID are usually a filename plus a slash plus the original local ID
                     // add the filename as its own identifier, but only add the local ID if it hasn't 
                     // already been encountered
-                    size_t pos = NStr::Find(tag_str, "/", 0, string::npos, NStr::eLast);
+                    size_t pos = NStr::Find(tag_str, "/", NStr::eNocase, NStr::eReverseSearch);
                     if (pos != string::npos) {
                         string file = tag_str.substr(0, pos);
                         id_str.push_back(file);                       
