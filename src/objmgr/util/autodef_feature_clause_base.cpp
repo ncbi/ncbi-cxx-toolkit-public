@@ -2016,8 +2016,6 @@ vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string commen
 
 CAutoDefFeatureClause_Base * CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
 {
-    CAutoDefFeatureClause_Base *clause = NULL;
-
     if (NStr::Equal(phrase, "control region") ||
         NStr::Equal(phrase, "D-loop")) {
         // create a clause of the appropriate type
