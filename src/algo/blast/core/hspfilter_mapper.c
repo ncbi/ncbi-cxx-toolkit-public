@@ -4175,20 +4175,24 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             HSPChainListInsert(&saved_chains[query_idx], &first, cutoff_score,
                                TRUE);
             HSPChainListTrim(saved_chains[query_idx], kPairBonus);
+
+
+#if _DEBUG
+            ASSERT(!saved_chains[query_idx] ||
+                   s_TestChainsSorted(saved_chains[query_idx]));
+#endif
         }
         if (second) {
             HSPChainListInsert(&saved_chains[query_idx + 1], &second,
                                cutoff_score, TRUE);
             HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus);
-        }
+
 
 #if _DEBUG
-        ASSERT(!saved_chains[query_idx] ||
-               s_TestChainsSorted(saved_chains[query_idx]));
-
-        ASSERT(!saved_chains[query_idx + 1] ||
-               s_TestChainsSorted(saved_chains[query_idx + 1]));
+            ASSERT(!saved_chains[query_idx + 1] ||
+                   s_TestChainsSorted(saved_chains[query_idx + 1]));
 #endif
+        }
 
         /* make temporary lists empty */
         chain_array[0] = chain_array[1] = NULL;
