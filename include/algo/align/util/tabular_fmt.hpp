@@ -42,6 +42,9 @@
 #include <algo/align/util/score_lookup.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+    class CTaxon1;
+END_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -474,6 +477,30 @@ public:
 
 private:
     int m_Row;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// formatter for dumping organism names
+class CTabularFormatter_OrgName : public CTabularFormatter::IFormatter
+{
+public:
+    enum EField {
+        eFullTaxName,
+        eSpecies,
+        eGenus
+    };
+    CTabularFormatter_OrgName(int row, EField field = eFullTaxName);
+    ~CTabularFormatter_OrgName();
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    int m_Row;
+    EField m_Field;
+    std::unique_ptr<objects::CTaxon1> m_Taxon1;
 };
 
 /////////////////////////////////////////////////////////////////////////////

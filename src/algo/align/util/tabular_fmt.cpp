@@ -40,6 +40,7 @@
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -1387,6 +1388,108 @@ void CTabularFormatter_TaxId::Print(CNcbiOstream& ostr,
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+CTabularFormatter_OrgName::CTabularFormatter_OrgName(int row, EField field)
+    : m_Row(row)
+    , m_Field(field)
+{
+    m_Taxon1.reset(new CTaxon1);
+    m_Taxon1->Init(100000);
+}
+
+
+CTabularFormatter_OrgName::~CTabularFormatter_OrgName()
+{
+}
+
+
+void CTabularFormatter_OrgName::PrintHelpText(CNcbiOstream& ostr) const
+{
+    switch (m_Field) {
+    case eFullTaxName:
+        ostr << "Full taxname of the ";
+        break;
+
+    case eSpecies:
+        ostr << "Species name of the ";
+        break;
+
+    case eGenus:
+        ostr << "Genus name of the ";
+        break;
+    }
+
+    switch (m_Row) {
+    case 0:     ostr << "query";    break;
+    case 1:     ostr << "subject";  break;
+    default:
+                NCBI_THROW(CException, eUnknown,
+                           "only pairwise alignments are supported");
+    }
+    ostr << " sequence";
+}
+
+void CTabularFormatter_OrgName::PrintHeader(CNcbiOstream& ostr) const
+{
+    switch (m_Row) {
+    case 0:     ostr << "q";    break;
+    case 1:     ostr << "s";    break;
+    default:
+                NCBI_THROW(CException, eUnknown,
+                           "only pairwise alignments are supported");
+    }
+
+    switch (m_Field) {
+    case eFullTaxName:  ostr << "taxname";  break;
+    case eSpecies:      ostr << "species";  break;
+    case eGenus:        ostr << "genus";  break;
+    }
+}
+
+void CTabularFormatter_OrgName::Print(CNcbiOstream& ostr,
+                                    const CSeq_align& align)
+{
+    if (m_Row >= align.CheckNumRows()) {
+        NCBI_THROW(CException, eUnknown,
+                   "indexing past the end of available "
+                   "sequences in an alignment");
+    }
+
+    int taxid = 
+        (int)m_Scores->GetScore(align,
+                                m_Row == 0 ? "query_taxid"
+                                : "subject_taxid");
+
+    switch (m_Field) {
+    case eSpecies:
+        taxid = m_Taxon1->GetSpecies(taxid);
+        break;
+
+    case eGenus:
+        taxid = m_Taxon1->GetGenus(taxid);
+        break;
+
+    default:
+        break;
+    }
+
+    bool is_species = false;
+    bool is_uncultured = false;
+    string blast_name;
+    CConstRef<COrg_ref> org =
+        m_Taxon1->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+    if (org) {
+        string label;
+        org->GetLabel(&label);
+        ostr << label;
+    }
+    else {
+        ostr << "-";
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 CTabularFormatter_BiggestGapBases::CTabularFormatter_BiggestGapBases(int row)
 : m_Row(row)
 {
@@ -2247,6 +2350,26 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_TaxId(0));
     formatter.RegisterField("staxid",
             new CTabularFormatter_TaxId(1));
+
+    formatter.RegisterField("qtaxname",
+            new CTabularFormatter_OrgName
+            (0, CTabularFormatter_OrgName::eFullTaxName));
+    formatter.RegisterField("qspecies",
+            new CTabularFormatter_OrgName
+            (0, CTabularFormatter_OrgName::eSpecies));
+    formatter.RegisterField("qgenus",
+            new CTabularFormatter_OrgName
+            (0, CTabularFormatter_OrgName::eGenus));
+
+    formatter.RegisterField("staxname",
+            new CTabularFormatter_OrgName
+            (1, CTabularFormatter_OrgName::eFullTaxName));
+    formatter.RegisterField("sspecies",
+            new CTabularFormatter_OrgName
+            (1, CTabularFormatter_OrgName::eSpecies));
+    formatter.RegisterField("sgenus",
+            new CTabularFormatter_OrgName
+            (1, CTabularFormatter_OrgName::eGenus));
 
     formatter.RegisterField("align_id",
             new CTabularFormatter_AlignId());
