@@ -753,12 +753,12 @@ void CProteinMatchApp::x_ReadAlignmentFile(const string& filename,
 CObjectIStream* CProteinMatchApp::x_InitObjectIStream(const string& filename,
     const bool binary) const
 {
-    auto flags = ios::in;
+    IOS_BASE::openmode op_mode = IOS_BASE::in;
     if (binary) {
-        flags |= ios::binary;
+        op_mode |= IOS_BASE::binary;
     }
 
-    CNcbiIstream* pInStream = new CNcbiIfstream(filename.c_str(), flags);
+    CNcbiIstream* pInStream = new CNcbiIfstream(filename.c_str(), op_mode);
 
     if (pInStream->fail()) {
         NCBI_THROW(CProteinMatchException, 
