@@ -43,7 +43,6 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
-#include <objmgr/util/create_defline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -105,6 +104,7 @@ public:
 
 public:
     // Constructors take the top-level object
+    CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
     CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
     CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
     CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
@@ -134,6 +134,8 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn);
     // Get Bioseq index by handle
     CRef<CBioseqIndex> GetBioseqIndex (CBioseq_Handle bsh);
+    // Get Bioseq index by feature
+    CRef<CBioseqIndex> GetBioseqIndex (CMappedFeat mf);
 
     // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
     // Get Bioseq index by sublocation
@@ -277,6 +279,9 @@ public:
                   int depth,
                   bool surrogate);
 
+    // Destructor
+    ~CBioseqIndex (void);
+
 private:
     // Prohibit copy constructor & assignment operator
     CBioseqIndex (const CBioseqIndex&) = delete;
@@ -321,9 +326,6 @@ public:
 
     CConstRef<CBioSource> GetBioSource (void);
     const string& GetTaxname (void);
-
-    // Run definition line generator
-    const string& GetDefline (sequence::CDeflineGenerator::TUserFlags = 0);
 
     // Get sequence letters from Bioseq
     string GetSequence (void);
@@ -409,10 +411,6 @@ private:
     bool m_ForceOnlyNearFeats;
 
     bool m_Surrogate;
-
-    // Generated definition line
-    string m_Defline;
-    sequence::CDeflineGenerator::TUserFlags m_Dlflags;
 };
 
 

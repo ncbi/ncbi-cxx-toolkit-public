@@ -47,6 +47,34 @@ BEGIN_SCOPE(objects)
 // CSeqEntryIndex
 
 // Constructors take top-level object, create Seq-entry wrapper if necessary
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy, TFlags flags, int depth)
+    : m_Policy(policy),
+      m_Flags(flags),
+      m_Depth(depth)
+{
+    m_Tseh = topseh.GetTopLevelEntry();
+    CConstRef<CSeq_entry> tcsep = m_Tseh.GetCompleteSeq_entry();
+    CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
+    topsep.Parentize();
+    m_Tsep.Reset(&topsep);
+
+    try {
+        m_Scope.Reset( &m_Tseh.GetScope() );
+        if ( !m_Scope ) {
+            /* raise hell */;
+        }
+
+        m_Counter.Set(0);
+
+        // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
+        CRef<CSeqsetIndex> noparent;
+        x_InitSeqs( *m_Tsep, noparent );
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CSeqEntryIndex::x_Init: " << e.what());
+    }
+}
+
 CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy, TFlags flags, int depth)
     : m_Policy(policy),
       m_Flags(flags),
@@ -393,7 +421,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn)
     return CRef<CBioseqIndex> ();
 }
 
-// Get Bioseq index by handle via best Seq-id string
+// Get Bioseq index by handle (via best Seq-id string)
 CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CBioseq_Handle bsh)
 
 {
@@ -404,6 +432,15 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CBioseq_Handle bsh)
         return bsx;
     }
     return CRef<CBioseqIndex> ();
+}
+
+// // Get Bioseq index by feature
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CMappedFeat mf)
+
+{
+    CSeq_id_Handle idh = mf.GetLocationId();
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(idh);
+    return GetBioseqIndex(bsh);
 }
 
 // Get Bioseq index by sublocation
@@ -556,14 +593,25 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_MolInfo.Reset();
     m_BioSource.Reset();
     m_Taxname.clear();
-    m_Defline.clear();
-    m_Dlflags = 0;
 
     m_Biomol = CMolInfo::eBiomol_unknown;
     m_Tech = CMolInfo::eTech_unknown;
     m_Completeness = CMolInfo::eCompleteness_unknown;
 
     m_ForceOnlyNearFeats = false;
+}
+
+// Destructor
+CBioseqIndex::~CBioseqIndex (void)
+
+{
+    if (m_Surrogate) {
+        try {
+            m_Scope->RemoveBioseq(m_Bsh);
+        } catch (CException&) {
+            // presumably still in use; let it be
+        }
+    }
 }
 
 // Descriptor collection (delayed until needed)
@@ -835,29 +883,6 @@ const string& CBioseqIndex::GetTaxname (void)
     }
 
     return m_Taxname;
-}
-
-// Run defline generator
-const string& CBioseqIndex::GetDefline (sequence::CDeflineGenerator::TUserFlags flags)
-
-{
-    if (! m_FeatsInitialized) {
-        x_InitFeats();
-    }
-
-    if (flags == m_Dlflags && ! m_Defline.empty()) {
-        // Return previous result if flags are the same
-        return m_Defline;
-    }
-
-    sequence::CDeflineGenerator gen (m_Tseh);
-
-    // Pass original target BioseqHandle if using Bioseq sublocation
-    m_Defline = gen.GenerateDefline (m_OrigBsh, m_FeatTree, flags);
-
-    m_Dlflags = flags;
-
-    return m_Defline;
 }
 
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
