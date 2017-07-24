@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/taxon3/T3Data_.hpp>
 
+#include <objects/taxon3/itaxon3.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -62,6 +64,7 @@ public:
     void GetTaxFlags (bool& is_species_level, bool& force_consult, bool& has_nucleomorphs) const;
     bool HasPlastids (void) const;
 
+    void FilterOutDataParts( ITaxon3::fT3reply_parts to_remain );
 private:
     // Prohibit copy constructor and assignment operator
     CT3Data(const CT3Data& value);

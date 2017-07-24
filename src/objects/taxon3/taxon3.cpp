@@ -66,7 +66,7 @@ CTaxon3::~CTaxon3()
 void
 CTaxon3::Init(void)
 {
-    static const STimeout def_timeout = { 120, 0 };
+    static const STimeout def_timeout = { 20, 0 };
     CTaxon3::Init(&def_timeout);
 }
 
@@ -167,20 +167,69 @@ CTaxon3::SetLastError( const char* pchErr )
 }
 
 
-CRef<CTaxon3_reply> CTaxon3::SendOrgRefList(const vector<CRef< COrg_ref> >& list)
+CRef<CTaxon3_reply> CTaxon3::SendOrgRefList(const vector<CRef< COrg_ref> >& list,
+					    COrg_ref::fOrgref_parts result_parts,
+					    fT3reply_parts t3reply_parts)
 {
-    // Open connection to Taxonomy service
     CTaxon3_request request;
-	ITERATE (vector<CRef< COrg_ref> >, it, list) {
-        CRef<CT3Request> rq(new CT3Request);			
-		CRef<COrg_ref> org(new COrg_ref);
-		org->Assign(**it);
-		rq->SetOrg(*org);
-		request.SetRequest().push_back(rq);
-	}
-	return SendRequest (request);
+    if( result_parts != COrg_ref::eOrgref_default ||
+	t3reply_parts != eT3reply_default ) {
+	CRef<CT3Request> rq(new CT3Request);
+	rq->SetJoin().Set().push_back( -result_parts );
+        rq->SetJoin().Set().push_back( -t3reply_parts ); // set return parts
+	request.SetRequest().push_back(rq);
+    }
+    ITERATE (vector<CRef< COrg_ref> >, it, list) {
+        CRef<CT3Request> rq(new CT3Request);
+	CRef<COrg_ref> org(new COrg_ref);
+	org->Assign(**it);
+	rq->SetOrg(*org);
+	request.SetRequest().push_back(rq);
+    }
+    return SendRequest (request);
 }
 
+CRef< CTaxon3_reply >
+CTaxon3::SendNameList(const vector<std::string>& list,
+		      COrg_ref::fOrgref_parts result_parts,
+		      fT3reply_parts t3reply_parts)
+{
+    CTaxon3_request request;
+    if( result_parts != COrg_ref::eOrgref_default ||
+	t3reply_parts != eT3reply_default ) {
+	CRef<CT3Request> rq(new CT3Request);
+	rq->SetJoin().Set().push_back( -result_parts );
+        rq->SetJoin().Set().push_back( -t3reply_parts ); // set return parts
+	request.SetRequest().push_back(rq);
+    }
+    ITERATE (vector<std::string>, it, list) {
+        CRef<CT3Request> rq(new CT3Request);			
+	rq->SetName(*it);
+	request.SetRequest().push_back(rq);
+    }
+    return SendRequest (request);
+}
+
+CRef< CTaxon3_reply >
+CTaxon3::SendTaxidList(const vector<TTaxId>& list,
+		       COrg_ref::fOrgref_parts result_parts,
+		       fT3reply_parts t3reply_parts)
+{
+    CTaxon3_request request;
+    if( result_parts != COrg_ref::eOrgref_default ||
+	t3reply_parts != eT3reply_default ) {
+	CRef<CT3Request> rq(new CT3Request);
+	rq->SetJoin().Set().push_back( -result_parts );
+        rq->SetJoin().Set().push_back( -t3reply_parts ); // set return parts
+	request.SetRequest().push_back(rq);
+    }
+    ITERATE (vector<TTaxId>, it, list) {
+        CRef<CT3Request> rq(new CT3Request);			
+	rq->SetTaxid(*it);
+	request.SetRequest().push_back(rq);
+    }
+    return SendRequest (request);
+}
 
 
 END_objects_SCOPE
