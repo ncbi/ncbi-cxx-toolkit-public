@@ -13,6 +13,6 @@ add_dependencies(xvalidate
 )
 
 target_link_libraries(xvalidate
-    valerr xobjedit
+    valerr xobjedit taxon1
 )
 
