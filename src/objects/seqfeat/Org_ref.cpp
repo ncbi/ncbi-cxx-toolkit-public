@@ -510,9 +510,6 @@ const vector<string>& COrg_ref::GetTaxnameList()
 void COrg_ref::CleanForGenBank()
 {
     ResetSyn();
-    if (IsSetOrgname() && GetOrgname().IsSetAttrib()) {
-        SetOrgname().SetFormalNameFlag(false);
-    }
 }
 
 #define NO_FLAG(a,f) (( a & f ) == 0)
