@@ -2032,7 +2032,6 @@ DISCREPANCY_CASE(SUSPECT_PHRASES, CSeq_feat, eDisc | eSubmitter | eSmart, "Suspe
         return;
     }
 
-    bool found = false;
     for (size_t i = 0; i < sizeof(suspect_phrases) / sizeof(string); i++) {
         if (NStr::FindNoCase(check, suspect_phrases[i]) != string::npos) {
             m_Objs["[n] cds comment[s] or protein description[s] contain[S] suspect_phrase[s]"]
