@@ -1394,7 +1394,6 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4303)
     BOOST_CHECK_EQUAL(CCleanup::TaxonomyLookup(seh), true);
     CSeqdesc_CI desc_ci(seh, CSeqdesc::e_Source);
     const COrg_ref& org = desc_ci->GetSource().GetOrg();
-    BOOST_CHECK_EQUAL(org.GetOrgname().IsSetAttrib(), false);
     BOOST_CHECK_EQUAL(org.IsSetSyn(), false);
     BOOST_CHECK_EQUAL(org.GetTaxId(), 83485);
 
