@@ -148,6 +148,10 @@ public:
     /// Get JSON object contents of the node
     CJson_ConstObject GetObject(void) const;
 
+    /// Check if there is a node for JSON pointer
+    /// 
+    bool HasNode(const TKeyType& value);
+
     /// Get node by JSON pointer
     /// If node not found, method throws std::out_of_range exception
     CJson_ConstNode  GetNode(const TKeyType& value);
@@ -1226,6 +1230,9 @@ inline bool CJson_ConstNode::IsArray(void) const {
 }
 inline bool CJson_ConstNode::IsObject(void) const {
     return m_Impl->IsObject();
+}
+inline bool CJson_ConstNode::HasNode(const TKeyType& value) {
+    return rapidjson::Pointer(value.c_str()).Get(*m_Impl) != nullptr;
 }
 inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) {
     _Impl *v = rapidjson::Pointer(value.c_str()).Get(*m_Impl);

@@ -982,11 +982,13 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
 // --------------------------------------------------------------------------
 // JSON pointer
+    BOOST_CHECK(doc.HasNode("#/obj2/one"));
     CJson_ConstNode node = doc.GetNode("#/obj2/one");
     BOOST_CHECK(node.IsValue());
     BOOST_CHECK(node.GetValue().IsInt4());
     BOOST_CHECK(node.GetValue().GetInt4() == 1);
 
+    BOOST_CHECK(doc.HasNode("#/obj2/obj3/array/4/1"));
     node = doc.GetNode("#/obj2/obj3/array/4/1");
     BOOST_CHECK(node.IsValue());
     BOOST_CHECK(node.GetValue().IsString());
@@ -1004,6 +1006,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
     {
         CJson_Document testdoc(CJson_Node::eObject);
+        BOOST_CHECK(!doc.HasNode("/id"));
         testdoc.SetNode("/id").SetValue().SetInt4(1);
         testdoc.SetNode("/name").SetValue().SetString("objname");
 #if 0
@@ -1020,6 +1023,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     }
     {
         CJson_Document testdoc(CJson_Node::eObject);
+        BOOST_CHECK(!doc.HasNode("/id/one/int"));
         testdoc.SetNode("/id/one/int").SetValue().SetInt4(1);
         testdoc.SetNode("/id/one/name").SetValue().SetString("one");
         BOOST_CHECK(testdoc.GetNode("/id/one").IsObject());
