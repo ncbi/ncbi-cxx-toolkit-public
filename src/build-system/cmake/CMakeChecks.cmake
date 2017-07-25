@@ -772,7 +772,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_D
 
 ENABLE_TESTING()
 #include_directories(${CPP_INCLUDE_DIR} ${build_root}/inc)
-include_directories(${incdir} ${includedir0} ${incinternal})
+include_directories(SYSTEM ${incdir} ${includedir0} ${incinternal})
 
 #
 # Dump our final diagnostics
