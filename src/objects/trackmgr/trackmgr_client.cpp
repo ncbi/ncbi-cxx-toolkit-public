@@ -126,7 +126,8 @@ CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
         : CRef<CTMgr_DisplayTrackReply>();
 }
 
-bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed_ids)
+bool CTrackMgrClient::ParseAlignId (const string& external_id,
+                                    TAlignIDs& parsed_ids)
 {
     using TStrIDs = vector<string>;
 
@@ -138,7 +139,8 @@ bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed
     {
         parsed_ids.push_back(SAlignIds());
 
-        int batch_id = NStr::StringToNumeric<int>(tok1, NStr::fConvErr_NoThrow, 10);
+        int batch_id =
+            NStr::StringToNumeric<int>(tok1, NStr::fConvErr_NoThrow, 10);
         if (batch_id != 0) {
             parsed_ids.back().batch_id = batch_id;
             continue;
@@ -152,7 +154,9 @@ bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed
             ++i;
             if (i % 2 == 0)
             {
-                int id = NStr::StringToNumeric<int>(tok2, NStr::fConvErr_NoThrow, 10);
+                int id = NStr::StringToNumeric<int>(tok2,
+                                                    NStr::fConvErr_NoThrow,
+                                                    10);
                 if (id != 0) {
                     parsed_ids.back().batch_id = id;
                     continue;
@@ -166,7 +170,8 @@ bool CTrackMgrClient::ParseAlignId (const string& external_id, TAlignIDs& parsed
             NStr::Split(tok2, delim[2], vec3, 0, NULL);
             for (auto tok3 : vec3)
             {
-                int align_id = NStr::StringToNumeric<int>(tok3, NStr::fConvErr_NoThrow, 10);
+                int align_id = NStr::StringToNumeric<int>
+                 (tok3, NStr::fConvErr_NoThrow, 10);
                 if (align_id != 0)
                 {
                     parsed_ids.back().align_ids.push_back(align_id);
