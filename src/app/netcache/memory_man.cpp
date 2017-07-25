@@ -1602,6 +1602,13 @@ void free(void* mem_ptr)
 
 #endif //__NC_MEMMAN_USE_MALLOC_HOOK
 
+extern "C" {
+size_t malloc_usable_size(void* mem_ptr)
+{
+    return ncbi::GetMemSize(mem_ptr);
+}
+}
+
 #endif //__GLIBC__
 
 #endif //__NC_MEMMAN_USE_STD_MALLOC
