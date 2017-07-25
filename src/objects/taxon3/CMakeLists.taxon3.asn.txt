@@ -7,7 +7,7 @@ set(MODULE_IMPORT objects/seqfeat/seqfeat)
 set(MODULE_PATH objects/taxon3)
 
 set(MODULE_EXT "asn")
-add_library(taxon3 ${MODULE}__ ${MODULE}___ taxon3 cached_taxon3)
+add_library(taxon3 ${MODULE}__ ${MODULE}___ taxon3)
 
 RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
