@@ -98,10 +98,28 @@ public:
         return v;
     }
 
-    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list)
+    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list,
+                                               COrg_ref::fOrgref_parts result_parts = COrg_ref::eOrgref_default,
+                                               fT3reply_parts t3result_parts = eT3reply_default)
     {
         CRef<CTaxon3_reply> v = m_replies.front();
         m_replies.pop_front();
+        return v;
+    }
+    // Name list lookup all the names (including common names) regardless of their lookup flag
+    // By default returns scientific name and taxid in T3Data.org and old_name_class property with matched class name
+    virtual CRef< CTaxon3_reply > SendNameList(const vector<std::string>& list,
+                                               COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname | COrg_ref::eOrgref_db_taxid),
+                                               fT3reply_parts t3parts = (eT3reply_org|eT3reply_status) ) {
+        CRef<CTaxon3_reply> v = m_replies.front();
+        return v;
+    }
+    virtual CRef< CTaxon3_reply > SendTaxidList(const vector<TTaxId>& list,
+                                                COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
+                                                COrg_ref::eOrgref_db_taxid),
+                                                fT3reply_parts t3parts = eT3reply_org)
+    {
+        CRef<CTaxon3_reply> v = m_replies.front();
         return v;
     }
 };
