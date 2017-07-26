@@ -1052,9 +1052,12 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
             CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
             auto bsxl = bsx.Lock();
             if (bsxl) {
-                m_SeqVec = new CSeqVector(*m_Fl, *bsxl->GetScope());
-                if (m_SeqVec) {
-                    m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                CConstRef<CSeq_loc> lc = GetMappedLocation();
+                if (lc) {
+                    m_SeqVec = new CSeqVector(*lc, *bsxl->GetScope());
+                    if (m_SeqVec) {
+                        m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                    }
                 }
             }
         }
