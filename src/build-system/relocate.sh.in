@@ -48,6 +48,7 @@ fi
 
 files="\
 Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh new_module.sh"
+rwcdr=run_with_cd_reporter.py
 
 for f in $files ; do
    fff="$script_dir/$f"
@@ -76,9 +77,19 @@ for f in $files ; do
    fi
 done
 
-chmod +x "$script_dir"/*.sh.tmp
+sed '
+   s%^\(scriptdir *= *\).*%\1"'$src_tree/scripts'"%;
+   s%^\([# ]*outdir *= *\).*%\1"'$bld_tree/cd-reports'"%;
+   s%^\(status_dir *= *\).*%\1"'$status_dir'"%
+' $script_dir/$rwcdr > $script_dir/$rwcdr.tmp
+if test $? -ne 0 ; then
+   echo "[$script_name]  Error in processing file \"$rwcdr\"!" 
+   exit 2
+fi
 
-for f in $files ; do
+chmod +x "$script_dir"/*.sh.tmp "$script_dir"/*.py.tmp
+
+for f in $files run_with_cd_reporter.py ; do
    fff="$script_dir/$f"
    echo "  $f"
    test "$copy_times" = true  &&  touch -r "$fff.tmp" "$fff"
