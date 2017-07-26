@@ -302,17 +302,16 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         CMatchTabulate& match_tab)
 
 {
-    TEntryFilenameMap filename_map;
-    x_GetSeqEntryFileNames(out_stub, filename_map);
-    
-    TEntryOStreamMap ostream_map;
-    x_CreateSeqEntryOStreams(filename_map, ostream_map);
-
-    map<string, string> nuc_id_replacement_map; // Replacement app
-    map<string, list<string>> local_prot_ids;
-    map<string, list<string>> prot_accessions;
-
     try {
+        TEntryFilenameMap filename_map;
+        x_GetSeqEntryFileNames(out_stub, filename_map);
+    
+        TEntryOStreamMap ostream_map;
+        x_CreateSeqEntryOStreams(filename_map, ostream_map);
+
+        map<string, string> nuc_id_replacement_map; // Replacement app
+        map<string, list<string>> local_prot_ids;
+        map<string, list<string>> prot_accessions;
 
         for (const CBioseq_set& obj : 
             CObjectIStreamIterator<TRoot, CBioseq_set>(istr))
@@ -339,7 +338,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
 
         for ( auto& kv : ostream_map) {
             CObjectOStream& obj_ostream = *kv.second;
-            obj_ostream.Flush();
+            obj_ostream.Close();
         }
 
         const string alignment_file = out_stub + ".merged.asn";
@@ -390,6 +389,9 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             nuc_id_replacement_map,
             *align_istr_ptr,
             *annot_istr_ptr);
+
+        align_istr_ptr->Close();
+        annot_istr_ptr->Close();
 
         if (!keep_temps) {
             x_DeleteTempFiles();
