@@ -1,0 +1,6 @@
+# $Id$
+LIB = grpc_integration
+SRC = grpc_integration
+
+CPPFLAGS = $(GRPC_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS     = $(GRPC_LIBS) $(ORIG_LIBS)

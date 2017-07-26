@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile ("misc/grpc_integration" project)
+#################################################
+
+LIB_PROJ = grpc_integration
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+REQUIRES = GRPC
+WATCHERS = ucko
