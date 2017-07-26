@@ -42,7 +42,7 @@ BEGIN_SCOPE(blast)
 
 
 /// Class for reading sequences from SRA respository or SRA file
-class CSraInputSource : public CBlastInputSourceOMF
+class CSraInputSource : public CBlastInputSourceOMF, public CBlastInputSource
 {
 public:
 
@@ -63,12 +63,20 @@ public:
 
     virtual bool End(void) {return m_ItAcc == m_Accessions.end();}
 
+    virtual SSeqLoc GetNextSSeqLoc(CScope& scope);
+
+    virtual CRef<CBlastSearchQuery> GetNextSequence(CScope& scope);
+
 
 private:
     CSraInputSource(const CSraInputSource&);
     CSraInputSource& operator=(const CSraInputSource&);
 
     /// Read one sequence pointed by the iterator
+    CRef<CSeq_entry> x_ReadOneSeq(void);
+
+    /// Read one sequence pointed by the iterator and add it to the bioseq_set
+    /// object
     CSeq_entry* x_ReadOneSeq(CBioseq_set& bioseq_set);
 
     /// Read one batch of sequences and mark pairs
@@ -76,6 +84,9 @@ private:
 
     /// Advance to the next SRA accession
     void x_NextAccession(void);
+
+    /// Read the next sequence, add it to scope and return Seq-loc object
+    CRef<CSeq_loc> x_GetNextSeq_loc(CScope& scope);
 
     auto_ptr<CCSraDb> m_SraDb;
     auto_ptr<CCSraShortReadIterator> m_It;

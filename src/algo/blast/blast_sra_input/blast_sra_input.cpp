@@ -41,6 +41,7 @@
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <vfs/resolver.h>
@@ -96,12 +97,12 @@ CSraInputSource::GetNextSequence(CBioseq_set& bioseq_set)
 }
 
 
-CSeq_entry*
-CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
+CRef<CSeq_entry>
+CSraInputSource::x_ReadOneSeq(void)
 {
     _ASSERT(m_It.get() && *m_It);
     if (m_It->IsTechnicalRead()) {
-        return NULL;
+        return CRef<CSeq_entry>();
     }
     CTempString sequence = m_It->GetReadData();
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
@@ -112,9 +113,17 @@ CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
     bioseq.SetId().push_back(m_It->GetShortSeq_id());
     bioseq.SetInst().SetLength(sequence.length());
     bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna((string)sequence));
-    bioseq_set.SetSeq_set().push_back(seq_entry);
 
     m_BasesAdded += sequence.length();
+    return seq_entry;
+}
+
+
+CSeq_entry*
+CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
+{
+    CRef<CSeq_entry> seq_entry = x_ReadOneSeq();
+    bioseq_set.SetSeq_set().push_back(seq_entry);
     return bioseq_set.SetSeq_set().back().GetNonNullPointer();
 }
 
@@ -178,6 +187,56 @@ void CSraInputSource::x_NextAccession(void)
         m_It.reset(new CCSraShortReadIterator(*m_SraDb));
     }
 }
+
+
+CRef<CSeq_loc> CSraInputSource::x_GetNextSeq_loc(CScope& scope)
+{
+    m_BasesAdded = 0;
+    CRef<CSeq_entry> seq_entry;
+
+    // technical reads result in empty seq_entry
+    while (m_ItAcc != m_Accessions.end() && seq_entry.Empty()) {
+        if (!*m_It) {
+            x_NextAccession();
+        }
+        if (m_ItAcc != m_Accessions.end()) {
+            seq_entry = x_ReadOneSeq();
+            ++(*m_It);
+        }
+    }
+
+    if (seq_entry.Empty()) {
+        return CRef<CSeq_loc>();
+    }
+
+    scope.AddTopLevelSeqEntry(*seq_entry);
+
+    CRef<CSeq_loc> seqloc(new CSeq_loc());
+    seqloc->SetInt().SetStrand(eNa_strand_both);
+
+    seqloc->SetInt().SetFrom(0);
+    seqloc->SetInt().SetTo(seq_entry->GetSeq().GetInst().GetLength() - 1);
+    seqloc->SetInt().SetId().Assign(*seq_entry->GetSeq().GetFirstId());
+
+    return seqloc;
+}
+
+
+SSeqLoc CSraInputSource::GetNextSSeqLoc(CScope& scope)
+{
+    CRef<CSeq_loc> seqloc = x_GetNextSeq_loc(scope);
+    SSeqLoc retval(*seqloc, scope);
+
+    return retval;
+}
+
+CRef<CBlastSearchQuery> CSraInputSource::GetNextSequence(CScope& scope)
+{
+    CRef<CSeq_loc> seqloc = x_GetNextSeq_loc(scope);
+    CRef<CBlastSearchQuery> retval(new CBlastSearchQuery(*seqloc, scope));
+    return retval;
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
