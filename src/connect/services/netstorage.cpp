@@ -67,19 +67,23 @@ struct SIoStreamEmbeddedStreamReaderWriter : SEmbeddedStreamReaderWriter
     }
 };
 
-struct SNetStorageObjectRWStream : public CRWStream
+struct SNetStorageObjectRWStream : public CNcbiIostream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* impl, IEmbeddedStreamReaderWriter *rw) :
-        CRWStream(rw, rw, 0, nullptr, CRWStreambuf::fLeakExceptions),
-        m_Object(impl)
+        CNcbiIostream(0),
+        m_Object(impl),
+        m_Sb(rw, rw, 1, nullptr, CRWStreambuf::fLeakExceptions)
     {
         _ASSERT(impl);
+        _ASSERT(rw);
+        init(&m_Sb);
     }
 
-    virtual ~SNetStorageObjectRWStream() { flush(); m_Object->Close(); }
+    ~SNetStorageObjectRWStream() override { m_Object.Close(); }
 
 private:
     CNetStorageObject m_Object;
+    CRWStreambuf m_Sb;
 };
 
 ERW_Result SNetStorageObjectOState::Read(void*, size_t, size_t*)
