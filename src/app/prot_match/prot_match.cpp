@@ -154,15 +154,9 @@ private:
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
 
     void x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set);
-/*
-    SSeqEntryFilenames x_GenerateSeqEntryTempFiles(
-        const CBioseq_set& local_nuc_prot_set, // temporary
-        const CBioseq_set& db_nuc_prot_set,
-        const string& out_stub,
-        const unsigned int count);
-*/
+
     unique_ptr<CMatchSetup> m_pMatchSetup;
-    list<string> m_TempFiles;
+    set<string> m_TempFiles;
 };
 
 
@@ -889,7 +883,7 @@ void CProteinMatchApp::x_GetCompareAnnotsArgs(
 
 void CProteinMatchApp::x_LogTempFile(const string& filename)
 {   
-    m_TempFiles.push_back(filename);
+    m_TempFiles.insert(filename);
 }
 
 
