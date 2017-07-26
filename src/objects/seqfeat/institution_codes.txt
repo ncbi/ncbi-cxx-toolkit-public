@@ -7579,7 +7579,7 @@ ZMUO<NOR>	s	Universitetets I Oslo, Zoologisk Museum
 ZMUP	s	Zoological Museum of the University of Patras		
 ZMUT	s	University of Tokyo, Department of Zoology		
 ZMUU	s	Uppsala Universitet, Zoologiska Museet		
-ZMUZ	s	Zoologisches Museum der Universitaet Zuerich		
+ZMUZ	s	Zoologisches Museum der Universitat Zurich		
 ZNG	h	Bulent Ecevit University		
 ZNM	s	Zhejiang Natural Museum		
 ZNP	s	Zion National Park		

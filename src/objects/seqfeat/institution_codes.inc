@@ -7612,7 +7612,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZMUP\ts\tZoological Museum of the University of Patras\t\t",
 "ZMUT\ts\tUniversity of Tokyo, Department of Zoology\t\t",
 "ZMUU\ts\tUppsala Universitet, Zoologiska Museet\t\t",
-"ZMUZ\ts\tZoologisches Museum der Universitaet Zuerich\t\t",
+"ZMUZ\ts\tZoologisches Museum der Universitat Zurich\t\t",
 "ZNG\th\tBulent Ecevit University\t\t",
 "ZNM\ts\tZhejiang Natural Museum\t\t",
 "ZNP\ts\tZion National Park\t\t",
