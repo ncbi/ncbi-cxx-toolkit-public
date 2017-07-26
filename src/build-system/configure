@@ -37957,7 +37957,8 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
       fi
       glew_config="eval PKG_CONFIG_PATH=\"$GLEW_LIBDIR/pkgconfig\" pkg-config"
       if pkg-config --version >/dev/null 2>&1; then
-         if $glew_config glewmx --exists >/dev/null 2>&1 \
+         if test "$with_glew_mx" != no \
+           && $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
             glew_config="$glew_config glewmx"
          elif $glew_config glew --exists >/dev/null 2>&1 \
@@ -38134,8 +38135,8 @@ echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version 
                    WithPackages="$WithPackages${WithPackagesSep}GLEW"; WithPackagesSep=" "
          CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
          LIBS="$GLEW_LIBS $OPENGL_LIBS $orig_LIBS"
-         { echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support (recommended)" >&5
-echo $ECHO_N "checking for GLEW multi-context (MX) support (recommended)... $ECHO_C" >&6; }
+         { echo "$as_me:$LINENO: checking for GLEW multi-context (MX) support" >&5
+echo $ECHO_N "checking for GLEW multi-context (MX) support... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_glew_mx+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -38204,6 +38205,14 @@ fi
 echo "${ECHO_T}$ncbi_cv_lib_glew_mx" >&6; }
           if test $ncbi_cv_lib_glew_mx = yes; then
              GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+          elif test "$with_glew_mx" = no; then
+             GLEW_INCLUDE=
+             GLEW_LIBS=
+             if test "${with_glew:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-glew explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-glew explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
           else
              if test "${with_glew_mx:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew-mx explicitly specified, but no usable version found." >&5

@@ -6003,7 +6003,8 @@ else
       fi
       glew_config="eval PKG_CONFIG_PATH=\"$GLEW_LIBDIR/pkgconfig\" pkg-config"
       if pkg-config --version >/dev/null 2>&1; then
-         if $glew_config glewmx --exists >/dev/null 2>&1 \
+         if test "$with_glew_mx" != no \
+           && $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
             glew_config="$glew_config glewmx"
          elif $glew_config glew --exists >/dev/null 2>&1 \
@@ -6036,7 +6037,7 @@ else
          NCBI_PACKAGE(GLEW)
          CPPFLAGS="$orig_CPPFLAGS $GLEW_INCLUDE $OPENGL_INCLUDE"
          LIBS="$GLEW_LIBS $OPENGL_LIBS $orig_LIBS"
-         AC_CACHE_CHECK([for GLEW multi-context (MX) support (recommended)],
+         AC_CACHE_CHECK([for GLEW multi-context (MX) support],
             ncbi_cv_lib_glew_mx,
             [AC_LINK_IFELSE([AC_LANG_PROGRAM(
                [[#define GLEW_MX 1
@@ -6045,6 +6046,10 @@ else
              [ncbi_cv_lib_glew_mx=yes], [ncbi_cv_lib_glew_mx=no])])
           if test $ncbi_cv_lib_glew_mx = yes; then
              GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+          elif test "$with_glew_mx" = no; then
+             GLEW_INCLUDE=
+             GLEW_LIBS=
+             NCBI_MISSING_PACKAGE(glew)
           else
              NCBI_MISSING_PACKAGE(glew-mx)
           fi
