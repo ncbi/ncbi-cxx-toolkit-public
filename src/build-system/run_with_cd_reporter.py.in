@@ -7,7 +7,7 @@ cd_reporter = '@CD_REPORTER@'
 if not os.path.exists(cd_reporter):
     os.execv(sys.argv[1], sys.argv[1:])
 
-scriptdir   = os.path.join('@top_srcdir@', 'scripts')
+scriptdir   = os.path.join('@abs_top_srcdir@', 'scripts')
 # outdir      = os.path.join('@build_root@', 'cd-reports')
 status_dir  = '@status_dir@'
 wanted      = frozenset(('name', 'type', 'contact', 'start_time', 'end_time',
