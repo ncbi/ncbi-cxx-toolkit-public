@@ -2966,6 +2966,7 @@ CNCMessageHandler::x_StartReadingBlob(void)
     // Flushing the initial response line that client should receive before it
     // will start writing blob data.
     Flush();
+    m_BlobSize = 0;
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
     else
