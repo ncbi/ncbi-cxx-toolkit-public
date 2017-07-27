@@ -266,18 +266,18 @@ s_InitLogPrefix(SLogData* data, TSrvThreadNum thr_num)
     data->prefix.append(1, '/');
 }
 
-static inline void
+static inline bool
 s_CheckBufSize(SLogData* data, size_t need_size)
 {
     if (data->cur_ptr + need_size >= data->end_ptr)
         s_RotateLogBuf(data);
+    return data->buf != nullptr;
 }
 
 static inline void
 s_AddToLog(SLogData* data, const char* str, size_t size)
 {
-    s_CheckBufSize(data, size);
-    if (data->buf) {
+    if (s_CheckBufSize(data, size)) {
         memcpy(data->cur_ptr, str, size);
         data->cur_ptr += size;
     }
@@ -286,10 +286,11 @@ s_AddToLog(SLogData* data, const char* str, size_t size)
 static inline void
 s_AddToLogStripLF(SLogData* data, const char* str, size_t size)
 {
-    s_CheckBufSize(data, size);
-    for (; size != 0; --size, ++str) {
-        char c = *str;
-        *data->cur_ptr++ = c == '\n'? ';': c;
+    if (s_CheckBufSize(data, size)) {
+        for (; size != 0; --size, ++str) {
+            char c = *str;
+            *data->cur_ptr++ = c == '\n'? ';': c;
+        }
     }
 }
 
@@ -320,10 +321,11 @@ s_AddToLogStripLF(SLogData* data, const string& str)
 static inline void
 s_AddToLog(SLogData* data, const string& str, Uint1 min_chars)
 {
-    s_CheckBufSize(data, max(str.size(), size_t(min_chars)));
-    s_AddToLog(data, str.data(), str.size());
-    for (Uint1 i = min_chars; i > str.size(); --i)
-        *data->cur_ptr++ = ' ';
+    if (s_CheckBufSize(data, max(str.size(), size_t(min_chars)))) {
+        s_AddToLog(data, str.data(), str.size());
+        for (Uint1 i = min_chars; i > str.size(); --i)
+            *data->cur_ptr++ = ' ';
+    }
 }
 
 static inline void
@@ -350,10 +352,11 @@ static inline void
 s_AddToLog(SLogData* data, Uint8 num, Uint1 min_digs)
 {
     NStr::UInt8ToString(data->tmp_str, num);
-    s_CheckBufSize(data, max(data->tmp_str.size(), size_t(min_digs)));
-    for (Uint1 i = min_digs; i > data->tmp_str.size(); --i)
-        *data->cur_ptr++ = '0';
-    s_AddToLog(data, data->tmp_str);
+    if (s_CheckBufSize(data, max(data->tmp_str.size(), size_t(min_digs)))) {
+        for (Uint1 i = min_digs; i > data->tmp_str.size(); --i)
+            *data->cur_ptr++ = '0';
+        s_AddToLog(data, data->tmp_str);
+    }
 }
 
 static inline void
@@ -388,7 +391,9 @@ s_AddLogPrefix(SSrvThread* thr, SLogData* data, CRequestContext* diag_ctx = NULL
     *data->cur_ptr++ = ' ';
 
     CSrvTime cur_time = CSrvTime::Current();
-    s_CheckBufSize(data, 50);
+    if (!s_CheckBufSize(data, 50)) {
+        return;
+    }
     Uint1 len = cur_time.Print(data->cur_ptr, CSrvTime::eFmtLogging);
     data->cur_ptr += len;
     *data->cur_ptr++ = ' ';
@@ -415,7 +420,9 @@ s_AddLogPrefix(SSrvThread* thr, SLogData* data, CRequestContext* diag_ctx = NULL
 static void
 s_AddParamName(SLogData* data, CTempString name)
 {
-    s_CheckBufSize(data, name.size() + 2);
+    if (!s_CheckBufSize(data, name.size() + 2)) {
+        return;
+    }
     if (data->has_params)
         *data->cur_ptr++ = '&';
     else
@@ -1109,7 +1116,9 @@ void
 CSrvDiagMsg::Flush(void)
 {
     s_CheckBufSize(m_Data, 1);
-    *m_Data->cur_ptr++ = '\n';
+    if (m_Data->buf) {
+        *m_Data->cur_ptr++ = '\n';
+    }
     m_Data->cur_msg_ptr = m_Data->cur_ptr;
     if (m_Data->severity == SoftFatal) {
         switch (s_SoftFatal) {
