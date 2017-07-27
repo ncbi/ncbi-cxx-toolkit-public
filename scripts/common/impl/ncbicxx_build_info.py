@@ -21,7 +21,7 @@ class Collector(object):
 
         self.info    = { }
         start_time   = datetime.now(timezone.utc)
-        status       = subprocess.call(command)
+        status       = subprocess.call(command, close_fds = False)
         end_time     = datetime.now(timezone.utc)
         if os.fork() > 0:
             os._exit(0) # continue in background
