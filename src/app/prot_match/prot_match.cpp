@@ -305,40 +305,37 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
     try {
         TEntryFilenameMap filename_map;
         x_GetSeqEntryFileNames(out_stub, filename_map);
-    
-        TEntryOStreamMap ostream_map;
-        x_CreateSeqEntryOStreams(filename_map, ostream_map);
-
-        map<string, string> nuc_id_replacement_map; // Replacement app
+        
+        map<string, string> nuc_id_replacement_map; 
         map<string, list<string>> local_prot_ids;
         map<string, list<string>> prot_accessions;
+   
+        { 
+            TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
+            x_CreateSeqEntryOStreams(filename_map, ostream_map);
 
-        for (const CBioseq_set& obj : 
-            CObjectIStreamIterator<TRoot, CBioseq_set>(istr))
-        {
+            for (const CBioseq_set& obj : 
+                CObjectIStreamIterator<TRoot, CBioseq_set>(istr))
+            {
 
-            if (!obj.IsSetClass() ||
-                obj.GetClass() != CBioseq_set::eClass_nuc_prot) {
-                continue;
+                if (!obj.IsSetClass() ||
+                    obj.GetClass() != CBioseq_set::eClass_nuc_prot) {
+                    continue;
+                }
+
+                CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
+                CRef<CBioseq_set> bio_set = Ref(new CBioseq_set());
+                bio_set->Assign(obj);
+                seq_entry->SetSet(*bio_set);
+
+                x_ProcessSeqEntry(seq_entry,
+                    filename_map,
+                    ostream_map,
+                    nuc_id_replacement_map,
+                    local_prot_ids,
+                    prot_accessions,
+                    match_tab); 
             }
-
-            CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
-            CRef<CBioseq_set> bio_set = Ref(new CBioseq_set());
-            bio_set->Assign(obj);
-            seq_entry->SetSet(*bio_set);
-
-            x_ProcessSeqEntry(seq_entry,
-                filename_map,
-                ostream_map,
-                nuc_id_replacement_map,
-                local_prot_ids,
-                prot_accessions,
-                match_tab); 
-        }
-
-        for ( auto& kv : ostream_map) {
-            CObjectOStream& obj_ostream = *kv.second;
-            obj_ostream.Close();
         }
 
         const string alignment_file = out_stub + ".merged.asn";
