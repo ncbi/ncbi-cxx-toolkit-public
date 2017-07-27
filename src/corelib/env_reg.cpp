@@ -331,16 +331,71 @@ string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
     } else {
         result += "_" + section + "__" + name;
     }
-    return NStr::Replace(result, ".", "_DOT_");
+    if (result.find_first_of(".-/ ") != NPOS) {
+        NStr::ReplaceInPlace(result, ".", "_DOT_");
+        NStr::ReplaceInPlace(result, "-", "_HYPHEN_");
+        NStr::ReplaceInPlace(result, "/", "_SLASH_");
+        NStr::ReplaceInPlace(result, " ", "_SPACE_");
+    }
+    return result;
 }
 
 
-bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
+inline
+static char s_IdentifySubstitution(const CTempString& s) {
+    switch (s[0]) {
+    case 'D':
+        if (s.size() == 3  &&  s == "DOT") {
+            return '.';
+        }
+        break;
+    case 'H':
+        if (s.size() == 6  &&  s == "HYPHEN") {
+            return '-';
+        }
+        break;
+    case 'S':
+        if (s.size() == 5) {
+            if (s == "SLASH") {
+                return '/';
+            } else if (s == "SPACE") {
+                return ' ';
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return '\0';
+}
+
+
+bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
                                  string& name) const
 {
     static const SIZE_TYPE kPfxLen = strlen(sm_Prefix);
-    if (env.size() <= kPfxLen  ||  !NStr::StartsWith(env, sm_Prefix) ) {
+    if (env_in.size() <= kPfxLen  ||  !NStr::StartsWith(env_in, sm_Prefix) ) {
         return false;
+    }
+    vector<CTempString> v;
+    NStr::Split(env_in, "_", v);
+    string env;
+    env.reserve(env_in.size());
+    for (const auto& it : v) {
+        SIZE_TYPE l = env.size();
+        char c = '\0';
+        if (&it != &v.back()  &&  !env.empty()  &&  env[l - 1] == '_'
+            &&  !it.empty()) {
+            c = s_IdentifySubstitution(it);
+        }
+        if (c == '\0') {
+            env += it;
+            if (&it != &v.back()) {
+                env += '_';
+            }
+        } else {
+            env[l - 1] = c;
+        }
     }
     // Make an offset until the first symbol that could be section name
     // (alphanumeric character)
@@ -362,16 +417,14 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
         name[0] = '.';
         section = env.substr(uu_pos + 2);
     }
-    if (!IRegistry::IsNameSection(section, 0)) {
+    if (!IRegistry::IsNameSection(section, IRegistry::fInternalSpaces)) {
         LOG_POST(Info << "Invalid registry section name in environment "
                             "variable " << env);
     }
-    if (!IRegistry::IsNameEntry(name, 0)) {
+    if (!IRegistry::IsNameEntry(name, IRegistry::fInternalSpaces)) {
         LOG_POST(Info << "Invalid registry entry name in environment "
                             "variable " << env);
     }
-    NStr::ReplaceInPlace(section, "_DOT_", ".");
-    NStr::ReplaceInPlace(name,    "_DOT_", ".");
     return true;
 }
 

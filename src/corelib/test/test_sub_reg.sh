@@ -32,7 +32,7 @@ if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     export NCBI_CONFIG__ENVIRONMENT_DOT_INDIRECTENV__EX_IE=
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OB_E=env
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OBX_E=env
-    export NCBI_CONFIG__A_DOT_B__C_DOT_D=e.f
+    export NCBI_CONFIG__A_SLASH_B__C_DOT_D_HYPHEN_E=f.g
     $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.win.ini" \
                              -out test_sub_reg_1strun.out.ini
@@ -46,7 +46,7 @@ else
     export NCBI_CONFIG__environment_DOT_indirectenv__ex_ie=
     export NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
     export NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
-    export NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
+    export NCBI_CONFIG__a_SLASH_b__c_DOT_d_HYPHEN_e=f.g
     $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
                              -out test_sub_reg_1strun.out.ini

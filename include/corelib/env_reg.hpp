@@ -174,7 +174,9 @@ private:
 ///     [<section>].<name> <-> NCBI_CONFIG_<name>__<section> ;
 /// all other names get mapped as
 ///     [<section>]<name> <-> NCBI_CONFIG__<section>__<name>
-/// with _DOT_ corresponding to internal periods.
+/// modulo a few substitutions to ensure that environment variable names
+/// are always shell-friendly: '.' <-> _DOT_, '-' <-> _HYPHEN_,
+/// '/' <-> _SLASH_, and ' ' <-> _SPACE_ (valid in fInternalSpaces mode).
 
 class NCBI_XNCBI_EXPORT CNcbiEnvRegMapper : public IEnvRegMapper
 {
