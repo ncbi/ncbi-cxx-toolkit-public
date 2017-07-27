@@ -216,6 +216,9 @@ s_WriteLog(const char* buf, size_t size)
 static void
 s_QueueLogWrite(char* buf, size_t size)
 {
+    if (!buf) {
+        return;
+    }
     s_WriteQueueLock.Lock();
     bool need_signal = s_WriteQueue.empty();
     s_WriteQueue.push_back(CTempString(buf, size));
@@ -230,7 +233,7 @@ s_AllocNewBuf(SLogData* data, size_t buf_size)
 {
     data->buf = (char*)malloc(buf_size);
     data->cur_ptr = data->cur_msg_ptr = data->buf;
-    data->end_ptr = data->buf + buf_size - 8;
+    data->end_ptr = data->buf ? data->buf + buf_size - 8 : data->buf;
 }
 
 static void
@@ -240,7 +243,7 @@ s_RotateLogBuf(SLogData* data)
     char* old_msg_ptr = data->cur_msg_ptr;
     size_t old_msg_size = data->cur_ptr - data->cur_msg_ptr;
     s_AllocNewBuf(data, s_LogBufSize);
-    if (old_msg_size != 0) {
+    if (old_msg_size != 0 && data->buf) {
         memcpy(data->buf, old_msg_ptr, old_msg_size);
         data->cur_ptr += old_msg_size;
     }
@@ -271,8 +274,10 @@ static inline void
 s_AddToLog(SLogData* data, const char* str, size_t size)
 {
     s_CheckBufSize(data, size);
-    memcpy(data->cur_ptr, str, size);
-    data->cur_ptr += size;
+    if (data->buf) {
+        memcpy(data->cur_ptr, str, size);
+        data->cur_ptr += size;
+    }
 }
 
 static inline void
@@ -358,6 +363,9 @@ s_AddToLog(SLogData* data, double num)
 static void
 s_AddLogPrefix(SSrvThread* thr, SLogData* data, CRequestContext* diag_ctx = NULL)
 {
+    if (!data->buf) {
+        return;
+    }
     s_AddToLog(data, data->prefix);
     if (!diag_ctx  &&  thr  &&  thr->cur_task)
         diag_ctx = thr->cur_task->m_DiagCtx;
@@ -625,7 +633,7 @@ StopThreadLogging(SSrvThread* thr)
     SLogData* data = thr->log_data;
     if (data->cur_ptr != data->buf)
         s_QueueLogWrite(data->buf, data->cur_ptr - data->buf);
-    else
+    else if (data->buf)
         free(data->buf);
     delete data;
     s_CheckFatalAbort();
