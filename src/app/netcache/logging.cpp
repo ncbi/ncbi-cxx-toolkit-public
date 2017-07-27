@@ -199,6 +199,9 @@ s_OpenLogFile(void)
 static void
 s_WriteLog(const char* buf, size_t size)
 {
+    if (!buf) {
+        return;
+    }
     if (s_LogFd == -1) {
         s_OpenLogFile();
         if (s_LogFd == -1)
@@ -615,7 +618,7 @@ CheckLoggingFlush(SSrvThread* thr)
     if (cur_time - data->last_flush_time < s_MaxFlushPeriod)
         return;
 
-    if (data->cur_ptr == data->buf)
+    if (data->buf && data->cur_ptr == data->buf)
         data->last_flush_time = cur_time;
     else
         s_RotateLogBuf(data);
