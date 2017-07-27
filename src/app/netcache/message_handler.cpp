@@ -3244,7 +3244,8 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
             }
             SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
                             << CNCBlobStorage::GetMaxBlobSizeStore()
-                            << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
+                            << " (received " << m_BlobSize
+                            << ", next chunk " << m_ChunkLen << " bytes)");
             // I am not going to read it anyway
             m_BlobSize += m_ChunkLen;
             Flush();
