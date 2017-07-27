@@ -143,6 +143,7 @@ struct SSyncSlotSrv
     bool    is_by_blobs;
     bool    was_blobs_sync;
     bool    made_initial_sync;
+    Uint4   cnt_event_sync;
     Uint4   started_cmds;
     Uint8   next_sync_time;
     Uint8   last_active_time;

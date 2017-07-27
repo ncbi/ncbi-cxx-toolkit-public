@@ -178,6 +178,7 @@ s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, int hint)
     CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_data->slot, slot_srv->cnt_sync_ops, true);
     slot_srv->peer->ConnOk();
     slot_srv->was_blobs_sync = slot_srv->is_by_blobs;
+    slot_srv->cnt_event_sync = slot_srv->is_by_blobs ? 0 : (slot_srv->cnt_event_sync + 1);
     if (!slot_srv->made_initial_sync)
     {
         slot_srv->made_initial_sync = true;
@@ -272,6 +273,7 @@ SSyncSlotSrv::SSyncSlotSrv(CNCPeerControl* peer_)
       is_by_blobs(false),
       was_blobs_sync(false),
       made_initial_sync(false),
+      cnt_event_sync(0),
       started_cmds(0),
       next_sync_time(0),
       last_active_time(CSrvTime::Current().Sec()),
@@ -460,7 +462,8 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
         return eProceedWithBlobs;
     }
     if (records_available
-        ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
+//        ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
+        ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->cnt_event_sync < 8))
     {
         slot_srv->is_by_blobs = false;
         return eProceedWithEvents;
@@ -1597,6 +1600,7 @@ void CNCActiveSyncControl::PrintState(TNCBufferType& task, const CTempString& ma
             task.WriteText(eol).WriteText("is_passive"       ).WriteText(is ).WriteBool(   (*srv)->is_passive);
             task.WriteText(eol).WriteText("is_by_blobs"      ).WriteText(is ).WriteBool(   (*srv)->is_by_blobs);
             task.WriteText(eol).WriteText("was_blobs_sync"   ).WriteText(is ).WriteBool(   (*srv)->was_blobs_sync);
+            task.WriteText(eol).WriteText("cnt_event_sync"   ).WriteText(is ).WriteNumber( (*srv)->cnt_event_sync);
             task.WriteText(eol).WriteText("result"           ).WriteText(is ).WriteNumber( (int)(*srv)->result);
             task.WriteText(eol).WriteText("hint"             ).WriteText(is ).WriteNumber( (*srv)->hint);
             task.WriteText(eol).WriteText("made_initial_sync").WriteText(is ).WriteBool(   (*srv)->made_initial_sync);
