@@ -751,7 +751,7 @@ Uint8 CIStreamBuffer::GetUint8(void)
 
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
     THROWS1((bad_alloc))
-    : m_Output(out), m_DeleteOutput(deleteOut), m_Error(0),
+    : m_Output(out), m_DeleteOutput(deleteOut), m_Closed(false), m_Error(0),
       m_IndentLevel(0), m_BufferPos(0),
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
@@ -811,7 +811,8 @@ END_LOCAL_NAMESPACE;
 
 void COStreamBuffer::Close(void)
 {
-    if ( m_Output ) {
+    if ( !m_Closed && m_Output ) {
+        m_Closed = true;
         if ( m_DeleteOutput ) {
             Flush();
             delete &m_Output;

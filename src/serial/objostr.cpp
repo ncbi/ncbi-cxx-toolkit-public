@@ -334,6 +334,7 @@ void CObjectOStream::Close(void)
             ClearStack();
             m_Fail = fNotOpen;
             ResetState();
+            m_Output.Close();
         }
         catch (CException& exc) {
             if ( InGoodState() )

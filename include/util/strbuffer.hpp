@@ -315,6 +315,7 @@ public:
 private:
     CNcbiOstream& m_Output;
     bool m_DeleteOutput;
+    bool m_Closed;
 
     const char* m_Error;
 
