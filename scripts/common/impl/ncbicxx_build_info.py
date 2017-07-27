@@ -150,7 +150,7 @@ class Collector(object):
                     match_info = template_re.search(x)
                     if match_info is not None:
                         info['target_type'] = match_info.group(1)
-                        value_expected = False
+                value_expected = False
             elif len(x) == 2 and x[0] == '-' and x[1] in 'CIWfo':
                 value_expected = True
             elif irrelevant_re.match(x) is not None:
