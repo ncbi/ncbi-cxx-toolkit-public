@@ -231,6 +231,7 @@ class Collector(object):
         info = { 'vcs_type': 'svn' }
         with subprocess.Popen(['svn', 'info', os.path.join(srcdir, *rest)],
                               stdout = subprocess.PIPE,
+                              stderr = subprocess.DEVNULL,
                               universal_newlines = True) as svn:
             for l in svn.stdout:
                 (k, v) = l.rstrip('\n').split(': ', 1)
@@ -248,6 +249,15 @@ class Collector(object):
                             if match_info is not None:
                                 info['vcs_branch'] = match_info.group(1)
                     break
+        if 'vcs_path' not in info:
+            # Maybe controlled by git after all, in a hybrid layout?
+            if os.path.isdir(os.path.join(srcdir, '.git')):
+                return self.get_git_info(srcdir, rest)
+            while srcdir != '/':
+                (srcdir, child) = os.path.split(srcdir)
+                if os.path.isdir(os.path.join(srcdir, '.git')):
+                    return self.get_git_info(srcdir, (child,) + rest)
+            return None
         return info
 
     def get_git_info(self, srcdir, rest):
@@ -271,6 +281,15 @@ class Collector(object):
             info['vcs_branch'] = re.sub(r'^refs/(?:heads|tags)/', '', rev)
         except CalledProcessError:
             pass
+        if 'vcs_branch' not in info and info['vcs_path'].startswith('file://'):
+            # Maybe controlled by Subversion after all, in a hybrid layout?
+            # (No need to check for .svn at this level, because get_svn_info
+            # looks for it first.)
+            while srcdir != '/':
+                (srcdir, child) = os.path.split(srcdir)
+                if os.path.isdir(os.path.join(srcdir, '.svn')):
+                    return self.get_svn_info(srcdir, (child,) + rest)
+            return None
         return info
 
     def get_cvs_info(self, srcdir):
