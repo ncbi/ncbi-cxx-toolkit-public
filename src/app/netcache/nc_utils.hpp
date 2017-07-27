@@ -243,6 +243,7 @@ public:
         eDebugSyncAborted2,
         eDebugConnAdjusted1,
         eDebugConnAdjusted2,
+        eDebugDbFileNotFound,
 #endif
         eLastAlert
     };

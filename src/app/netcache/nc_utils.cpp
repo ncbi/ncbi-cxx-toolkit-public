@@ -272,6 +272,7 @@ static const AlertToId  s_alertToIdMap[] = {
     {CNCAlerts::eDebugSyncAborted2, "eDebugSyncAborted2"},
     {CNCAlerts::eDebugConnAdjusted1, "eDebugConnAdjusted1"},
     {CNCAlerts::eDebugConnAdjusted2, "eDebugConnAdjusted2"},
+    {CNCAlerts::eDebugDbFileNotFound, "eDebugDbFileNotFound"},
 #endif
     {CNCAlerts::eStartupConfigChanged, "StartupConfigChanged"},
     {CNCAlerts::ePidFileFailed,        "PidFileFailed"},

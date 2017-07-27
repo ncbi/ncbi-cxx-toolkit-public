@@ -969,6 +969,11 @@ s_GetDBFileTry(Uint4 file_id)
     TNCDBFilesMap::const_iterator it = s_DBFiles->find(file_id);
     CSrvRef<SNCDBFileInfo> file_info = (it != s_DBFiles->end()) ? it->second : CSrvRef<SNCDBFileInfo>(nullptr);
     s_DBFilesLock.Unlock();
+#ifdef _DEBUG
+    if (file_info.IsNull()) {
+        CNCAlerts::Register(CNCAlerts::eDebugDbFileNotFound, NStr::NumericToString(file_id));
+    }
+#endif
     return file_info;
 }
 
@@ -2328,7 +2333,10 @@ s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord, 
     if (coord.empty()) {
         return;
     }
-    CSrvRef<SNCDBFileInfo> file_info = need_lock ? s_GetDBFile(coord.file_id) : s_GetDBFileNoLock(coord.file_id);
+    CSrvRef<SNCDBFileInfo> file_info = need_lock ? s_GetDBFileTry(coord.file_id) : s_GetDBFileNoLock(coord.file_id);
+    if (file_info.IsNull()) {
+        return;
+    }
     SFileIndexRec* ind_rec = s_GetIndexRecTry(file_info, coord.rec_num);
     if (!ind_rec) {
         return;
@@ -3948,7 +3956,10 @@ CNCAlerts::Register(CNCAlerts::eDebugMoveRecord0,"s_GetNextWriteCoord");
     new_ind->chain_coord = chain_coord;
 
     if (!chain_coord.empty()) {
-        chain_file = s_GetDBFile(chain_coord.file_id);
+        chain_file = s_GetDBFileTry(chain_coord.file_id);
+        if (chain_file.IsNull()) {
+            goto wipe_new_record;
+        }
         chain_ind = s_GetIndOrDeleted(chain_file, chain_coord.rec_num);
         if (s_IsIndexDeleted(chain_file, chain_ind)
             ||  chain_file->cnt_unfinished.Get() != 0)
@@ -3977,7 +3988,10 @@ CNCAlerts::Register(CNCAlerts::eDebugMoveRecord0,"s_GetNextWriteCoord");
             cnt_downs = s_CalcCntMapDowns(new_ind->rec_size);
             for (Uint2 i = 0; i < cnt_downs; ++i) {
                 SNCDataCoord down_coord = map_rec->down_coords[i];
-                CSrvRef<SNCDBFileInfo> down_file = s_GetDBFile(down_coord.file_id);
+                CSrvRef<SNCDBFileInfo> down_file = s_GetDBFileTry(down_coord.file_id);
+                if (down_file.IsNull()) {
+                    goto wipe_new_record;
+                }
                 SFileIndexRec* down_ind = s_GetIndOrDeleted(down_file, down_coord.rec_num);
                 if (s_IsIndexDeleted(down_file, down_ind))
                     goto wipe_new_record;
@@ -4365,7 +4379,11 @@ CSpaceShrinker::x_FindMetaCoord(SNCDataCoord coord, Uint1 max_map_depth)
     if (max_map_depth == 0  ||  coord.empty())
         return coord;
 
-    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(coord.file_id);
+    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFileTry(coord.file_id);
+    if (file_info.IsNull()) {
+        coord.clear();
+        return coord;
+    }
     SFileIndexRec* ind_rec = s_GetIndOrDeleted(file_info, coord.rec_num);
     if (s_IsIndexDeleted(file_info, ind_rec)  ||  ind_rec->rec_type == eFileRecMeta)
         return coord;
