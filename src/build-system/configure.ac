@@ -6045,11 +6045,13 @@ else
                [[glewContextInit(NULL);]])],
              [ncbi_cv_lib_glew_mx=yes], [ncbi_cv_lib_glew_mx=no])])
           if test $ncbi_cv_lib_glew_mx = yes; then
-             GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
-          elif test "$with_glew_mx" = no; then
-             GLEW_INCLUDE=
-             GLEW_LIBS=
-             NCBI_MISSING_PACKAGE(glew)
+             if test "$with_glew_mx" = no; then
+                GLEW_INCLUDE=
+                GLEW_LIBS=
+                NCBI_MISSING_PACKAGE(glew)
+             else
+                GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+             fi
           else
              NCBI_MISSING_PACKAGE(glew-mx)
           fi

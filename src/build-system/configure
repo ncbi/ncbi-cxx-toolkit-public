@@ -38204,15 +38204,17 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_glew_mx" >&5
 echo "${ECHO_T}$ncbi_cv_lib_glew_mx" >&6; }
           if test $ncbi_cv_lib_glew_mx = yes; then
-             GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
-          elif test "$with_glew_mx" = no; then
-             GLEW_INCLUDE=
-             GLEW_LIBS=
-             if test "${with_glew:=no}" != no; then
+             if test "$with_glew_mx" = no; then
+                GLEW_INCLUDE=
+                GLEW_LIBS=
+                if test "${with_glew:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew explicitly specified, but no usable version found." >&5
 echo "$as_me: error: --with-glew explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
     fi
+             else
+                GLEW_INCLUDE="$GLEW_INCLUDE -DGLEW_MX"
+             fi
           else
              if test "${with_glew_mx:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew-mx explicitly specified, but no usable version found." >&5
