@@ -323,7 +323,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ASW\ts\tSouth Valley University, Botany Department\t\t",
 "ASW<AUT>\tc\tCulture Collection of Algae at the University of Vienna\t\t",
 "ATA\ts\tAtatuerk Ueniversitesi\t\t",
-"ATCC\tc\tAmerican Type Culture Collection\t\t",
+"ATCC\tcb\tAmerican Type Culture Collection\t\t",
 "ATH\ts\tGoulandris Natural History Museum\t\t",
 "ATHU\ts\tNational and Kapodistrian University of Athens, Biology Department\t\t",
 "ATHUM\tc\tATHUM Culture Collection of Fungi\t\t",
