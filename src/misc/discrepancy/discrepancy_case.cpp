@@ -515,43 +515,43 @@ DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
 
 DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Find RNAs without Products")
 {
-    if( ! obj.GetData().IsRna() ) {
+    if(!obj.GetData().IsRna() || context.IsPseudo(obj)) {
         return;
     }
 
     // for the given RNA subtype, see whether a product is required
     switch(obj.GetData().GetSubtype()) {
-    case CSeqFeatData::eSubtype_otherRNA: {
-        CTempString comment( obj.IsSetComment() ? obj.GetComment() : kEmptyStr);
-        if( NStr::StartsWith(comment, "contains ", NStr::eNocase) ||
-            NStr::StartsWith(comment, "may contain", NStr::eNocase) )
-        {
-            return;
-        }
-        break;
-    }
-    case CSeqFeatData::eSubtype_tmRNA:
-        // don't require products for tmRNA
-        return;
-    case CSeqFeatData::eSubtype_ncRNA: {
-        // if ncRNA has a class other than "other", don't need a product
-        const CRNA_ref & rna_ref = obj.GetData().GetRna();
-        if( ! FIELD_IS_SET_AND_IS(rna_ref, Ext, Gen) ) {
-            // no RNA-gen, so no class, so needs a product
+        case CSeqFeatData::eSubtype_otherRNA: {
+            CTempString comment( obj.IsSetComment() ? obj.GetComment() : kEmptyStr);
+            if( NStr::StartsWith(comment, "contains ", NStr::eNocase) ||
+                NStr::StartsWith(comment, "may contain", NStr::eNocase) )
+            {
+                return;
+            }
             break;
         }
-        const CTempString gen_class(
-            GET_STRING_FLD_OR_BLANK(rna_ref.GetExt().GetGen(), Class));
-        if( ! gen_class.empty() && ! NStr::EqualNocase(gen_class, "other") ) {
-            // product has a product other than "other", so no
-            // explicit product needed.
+        case CSeqFeatData::eSubtype_tmRNA:
+            // don't require products for tmRNA
             return;
+        case CSeqFeatData::eSubtype_ncRNA: {
+            // if ncRNA has a class other than "other", don't need a product
+            const CRNA_ref & rna_ref = obj.GetData().GetRna();
+            if( ! FIELD_IS_SET_AND_IS(rna_ref, Ext, Gen) ) {
+                // no RNA-gen, so no class, so needs a product
+                break;
+            }
+            const CTempString gen_class(
+                GET_STRING_FLD_OR_BLANK(rna_ref.GetExt().GetGen(), Class));
+            if( ! gen_class.empty() && ! NStr::EqualNocase(gen_class, "other") ) {
+                // product has a product other than "other", so no
+                // explicit product needed.
+                return;
+            }
+            break;
         }
-        break;
-    }
-    default:
-        // other kinds always need a product
-        break;
+        default:
+            // other kinds always need a product
+            break;
     }
 
     const CRNA_ref & rna_ref = obj.GetData().GetRna();
@@ -561,28 +561,28 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eDisc | eOncaller | eSubmitter | eSm
     } else {
         const CRNA_ref::TExt & rna_ext = rna_ref.GetExt();
         switch(rna_ext.Which()) {
-        case CRNA_ref::TExt::e_Name: {
-            const string & ext_name = rna_ref.GetExt().GetName();
-            if( ! ext_name.empty() &&
-                ! NStr::EqualNocase(ext_name, "ncRNA") &&
-                ! NStr::EqualNocase(ext_name, "tmRNA") &&
-                ! NStr::EqualNocase(ext_name, "misc_RNA") )
-            {
-                // ext.name can considered a product
-                return;
+            case CRNA_ref::TExt::e_Name: {
+                const string & ext_name = rna_ref.GetExt().GetName();
+                if( ! ext_name.empty() &&
+                    ! NStr::EqualNocase(ext_name, "ncRNA") &&
+                    ! NStr::EqualNocase(ext_name, "tmRNA") &&
+                    ! NStr::EqualNocase(ext_name, "misc_RNA") )
+                {
+                    // ext.name can considered a product
+                    return;
+                }
+                break;
             }
-            break;
-        }
-        case CRNA_ref::TExt::e_TRNA:
-        case CRNA_ref::TExt::e_Gen:
-            if( ! rna_ref.GetRnaProductName().empty() ) {
-                // found a product
-                return;
-            }
-            break;
-        default:
-            _TROUBLE;
-            break;
+            case CRNA_ref::TExt::e_TRNA:
+            case CRNA_ref::TExt::e_Gen:
+                if( ! rna_ref.GetRnaProductName().empty() ) {
+                    // found a product
+                    return;
+                }
+                break;
+            default:
+                _TROUBLE;
+                break;
         }
     }
 
