@@ -135,7 +135,7 @@ public:
     // Get Bioseq index by handle
     CRef<CBioseqIndex> GetBioseqIndex (CBioseq_Handle bsh);
     // Get Bioseq index by feature
-    CRef<CBioseqIndex> GetBioseqIndex (CMappedFeat mf);
+    CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
 
     // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
     // Get Bioseq index by sublocation
@@ -335,7 +335,7 @@ public:
     void GetSequence (int from, int to, string& buffer);
 
     // Map from GetBestGene result to CFeatureIndex object
-    CRef<CFeatureIndex> GetFeatIndex (CMappedFeat mf);
+    CRef<CFeatureIndex> GetFeatIndex (const CMappedFeat& mf);
 
     const vector<CRef<CDescriptorIndex>>& GetDescriptorIndices(void);
 

@@ -435,7 +435,7 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CBioseq_Handle bsh)
 }
 
 // // Get Bioseq index by feature
-CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (CMappedFeat mf)
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CMappedFeat& mf)
 
 {
     CSeq_id_Handle idh = mf.GetLocationId();
@@ -885,7 +885,7 @@ const string& CBioseqIndex::GetTaxname (void)
     return m_Taxname;
 }
 
-CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (CMappedFeat mf)
+CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (const CMappedFeat& mf)
 
 {
     CRef<CFeatureIndex> sfx;
