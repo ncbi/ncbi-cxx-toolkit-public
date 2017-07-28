@@ -513,6 +513,7 @@ gpxlib needs xgp_manifest
 grid_wrapper needs gpipe_common
 grid_wrapper needs gpipe_resource_req
 grid_wrapper needs3party $(SGE_LIBS)
+grpc_integration needs xutil
 gsoapssl++ needs $(Z_LIB)
 gsoapssl++ needs3party $(KRB5_LIBS)
 gsoapssl++ needs3party $(NETWORK_LIBS)
