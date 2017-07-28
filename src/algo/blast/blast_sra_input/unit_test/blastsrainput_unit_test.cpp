@@ -85,10 +85,8 @@ BOOST_AUTO_TEST_CASE(FlagsForPairedReads)
     const bool kCheckForPairs = true;
     vector<string> accessions = {"SRR4423739"};
 
-    CRef<CBlastInputSourceOMF> input_source(
-                            new CSraInputSource(accessions, kCheckForPairs));
-
-    CBlastInputOMF input(input_source, 2);
+    CSraInputSource input_source(accessions, kCheckForPairs);
+    CBlastInputOMF input(&input_source, 2);
 
     unordered_map<string, int> ref_flags = {
         {"gnl|SRA|SRR4423739.1.1", eFirstSegment},
@@ -121,10 +119,8 @@ BOOST_AUTO_TEST_CASE(FlagsForSingleReads)
 {
     const bool kCheckForPairs = false;
     vector<string> accessions = {"SRR4423739"};
-    CRef<CBlastInputSourceOMF> input_source(
-                         new CSraInputSource(accessions, kCheckForPairs));
-
-    CBlastInputOMF input(input_source, 300);
+    CSraInputSource input_source(accessions, kCheckForPairs);
+    CBlastInputOMF input(&input_source, 300);
     CRef<CBioseq_set> queries(new CBioseq_set);
     input.GetNextSeqBatch(*queries);
 
@@ -152,8 +148,8 @@ BOOST_AUTO_TEST_CASE(MultipleAccessions)
     const int kBatchSize = 30000000;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CRef<CBlastInputSourceOMF> input_source(new CSraInputSource(accessions));
-    CBlastInputOMF input(input_source, kBatchSize);
+    CSraInputSource input_source(accessions);
+    CBlastInputOMF input(&input_source, kBatchSize);
 
     CRef<CBioseq_set> queries;
     queries.Reset(new CBioseq_set);
@@ -174,10 +170,8 @@ BOOST_AUTO_TEST_CASE(MultipleAccessionsForceSingle)
     const bool kCheckForPairs = false;
     vector<string> accessions = {"SRR3720856", "SRR5196091"};
 
-    CRef<CBlastInputSourceOMF> input_source(
-                              new CSraInputSource(accessions, kCheckForPairs));
-
-    CBlastInputOMF input(input_source, kBatchSize);
+    CSraInputSource input_source(accessions, kCheckForPairs);
+    CBlastInputOMF input(&input_source, kBatchSize);
     CRef<CBioseq_set> queries;
     queries.Reset(new CBioseq_set);
     input.GetNextSeqBatch(*queries);

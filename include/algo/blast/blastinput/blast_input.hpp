@@ -413,11 +413,12 @@ private:
 };
 
 
-class NCBI_BLASTINPUT_EXPORT CBlastInputSourceOMF : public CObject
+class NCBI_BLASTINPUT_EXPORT CBlastInputSourceOMF
 {
-protected:
+public:
     virtual ~CBlastInputSourceOMF() {}
 
+protected:
     /// Get one sequence (or a pair for NGS reads)
     /// @param bioseq_set Read sequences will be appended there [in|out]
     /// @return Number of bases read
@@ -432,7 +433,7 @@ protected:
 class NCBI_BLASTINPUT_EXPORT CBlastInputOMF : public CObject
 {
 public:
-    CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
+    CBlastInputOMF(CBlastInputSourceOMF* source,
                    TSeqPos batch_size);
 
     void GetNextSeqBatch(CBioseq_set& bioseq_set);
@@ -450,7 +451,7 @@ private:
     CBlastInputOMF(const CBlastInputOMF& rhs);
     CBlastInputOMF& operator=(const CBlastInputOMF& rhs);
 
-    CRef<CBlastInputSourceOMF> m_Source;
+    CBlastInputSourceOMF* m_Source;
     TSeqPos m_BatchSize;
     TSeqPos m_MaxNumSequences;
     CRef<CBioseq_set> m_BioseqSet;

@@ -66,6 +66,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
+#include <memory>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -1398,11 +1399,11 @@ s_QueryOptsInFmtToFastaInFmt(CMapperQueryOptionsArgs::EInputFormat infmt)
 }
 
 // Create input source object for reading query sequences
-static CRef<CBlastInputSourceOMF>
+static CBlastInputSourceOMF*
 s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
                     CRef<CMagicBlastAppArgs> cmd_line_args)
 {
-    CRef<CBlastInputSourceOMF> retval;
+    CBlastInputSourceOMF* retval;
 
     CMapperQueryOptionsArgs::EInputFormat infmt = query_opts->GetInputFormat();
     
@@ -1412,16 +1413,16 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
     case CMapperQueryOptionsArgs::eFastq:
 
         if (query_opts->HasMateInputStream()) {
-            retval.Reset(new CShortReadFastaInputSource(
+            retval = new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
                     *query_opts->GetMateInputStream(),
-                    s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat())));
+                    s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()));
         }
         else {
-            retval.Reset(new CShortReadFastaInputSource(
+            retval = new CShortReadFastaInputSource(
                     cmd_line_args->GetInputStream(),
                     s_QueryOptsInFmtToFastaInFmt(query_opts->GetInputFormat()),
-                    query_opts->IsPaired()));
+                    query_opts->IsPaired());
         }
         break;
 
@@ -1429,23 +1430,23 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
     case CMapperQueryOptionsArgs::eASN1bin:
 
         if (query_opts->HasMateInputStream()) {
-            retval.Reset(new CASN1InputSourceOMF(
+            retval = new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
                                     *query_opts->GetMateInputStream(),
-                                    infmt == CMapperQueryOptionsArgs::eASN1bin));
+                                    infmt == CMapperQueryOptionsArgs::eASN1bin);
         }
         else {
-            retval.Reset(new CASN1InputSourceOMF(
+            retval = new CASN1InputSourceOMF(
                                     cmd_line_args->GetInputStream(),
                                     infmt == CMapperQueryOptionsArgs::eASN1bin,
-                                    query_opts->IsPaired()));
+                                    query_opts->IsPaired());
         }
         break;
 
     case CMapperQueryOptionsArgs::eSra:
-        retval.Reset(new CSraInputSource(query_opts->GetSraAccessions(),
+        retval = new CSraInputSource(query_opts->GetSraAccessions(),
                                          query_opts->IsPaired(),
-                                         query_opts->IsSraCacheEnabled()));
+                                         query_opts->IsSraCacheEnabled());
         break;
         
 
@@ -1618,9 +1619,9 @@ int CMagicBlastApp::Run(void)
         }
 
         /*** Process the input ***/
-        CRef<CBlastInputSourceOMF> fasta = s_CreateInputSource(query_opts,
-                                                               m_CmdLineArgs);
-        CBlastInputOMF input(fasta, batch_size);
+        unique_ptr<CBlastInputSourceOMF> fasta(s_CreateInputSource(query_opts,
+                                                               m_CmdLineArgs));
+        CBlastInputOMF input(fasta.get(), batch_size);
         input.SetMaxBatchNumSeqs(batch_num);
 
 

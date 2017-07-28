@@ -279,7 +279,7 @@ CBlastBioseqMaker::IsEmptyBioseq(const CBioseq& bioseq)
 
 }
 
-CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
+CBlastInputOMF::CBlastInputOMF(CBlastInputSourceOMF* source,
                                TSeqPos batch_size)
     : m_Source(source),
       m_BatchSize(batch_size),
