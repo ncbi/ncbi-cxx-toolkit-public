@@ -150,11 +150,11 @@ public:
 
     /// Check if there is a node for JSON pointer
     /// 
-    bool HasNode(const TKeyType& value);
+    bool HasNode(const TKeyType& value) const;
 
     /// Get node by JSON pointer
     /// If node not found, method throws std::out_of_range exception
-    CJson_ConstNode  GetNode(const TKeyType& value);
+    CJson_ConstNode  GetNode(const TKeyType& value) const;
 
     /// Convert the contents of the node into string
     std::string ToString(TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
@@ -1231,10 +1231,10 @@ inline bool CJson_ConstNode::IsArray(void) const {
 inline bool CJson_ConstNode::IsObject(void) const {
     return m_Impl->IsObject();
 }
-inline bool CJson_ConstNode::HasNode(const TKeyType& value) {
+inline bool CJson_ConstNode::HasNode(const TKeyType& value) const {
     return rapidjson::Pointer(value.c_str()).Get(*m_Impl) != nullptr;
 }
-inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) {
+inline CJson_ConstNode CJson_ConstNode::GetNode(const TKeyType& value) const {
     _Impl *v = rapidjson::Pointer(value.c_str()).Get(*m_Impl);
     if (!v) {
         throw std::out_of_range("node not found");
