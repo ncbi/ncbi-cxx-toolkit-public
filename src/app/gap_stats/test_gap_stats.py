@@ -129,6 +129,17 @@ class TestGapStats(unittest.TestCase):
                 './test_data/'
                 'delta_to_other_seqs.no_resolve.expected_stdout.txt'))
 
+    def test_dup_seq_id(self):
+        (returncode, stdout_str, stderr_str) = self._run_gap_stats(
+            ['-gap-types=all,seq-gaps,unknown-bases', '-out-format=xml',
+                './test_data/RW-449_dup_seq_id.asn'])
+        self.assertEqual(returncode, 1)
+        self.assertFalse(stderr_str)
+        self.assertEqual(
+            stdout_str,
+            self._file_contents(
+                './test_data/'
+                'RW-449_dup_seq_id.expected_stdout.txt'))
 
 if __name__ == '__main__':
     # make sure we get warnings even in Release mode
