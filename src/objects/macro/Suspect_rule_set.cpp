@@ -59,6 +59,7 @@ DEFINE_STATIC_FAST_MUTEX(s_OrganelleProductRulesMutex);
 static CRef<CSuspect_rule_set> s_OrganelleProductRules;
 
 static bool  s_ProductRulesInitialized = false;
+static string  s_ProductRulesFileName;
 DEFINE_STATIC_FAST_MUTEX(s_ProductRulesMutex);
 static CRef<CSuspect_rule_set> s_ProductRules;
 
@@ -103,10 +104,11 @@ static void s_InitializeOrganelleProductRules(const string& name)
 static void s_InitializeProductRules(const string& name)
 {
     CFastMutexGuard GUARD(s_ProductRulesMutex);
-    if (s_ProductRulesInitialized) {
+    if (s_ProductRulesInitialized && name == s_ProductRulesFileName) {
         return;
     }
     s_ProductRules.Reset(new CSuspect_rule_set());
+    s_ProductRulesFileName = name;
     string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
 
     if ( !file.empty() ) {
