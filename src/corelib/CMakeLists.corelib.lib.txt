@@ -28,7 +28,7 @@ target_link_libraries(xncbi
 )
 
 if (${HAVE_LIBUNWIND})
-    include_directories(${LIBUNWIND_INCLUDE})
+    include_directories(SYSTEM ${LIBUNWIND_INCLUDE})
     target_link_libraries(xncbi
         ${LIBUNWIND_LIBS}
     )

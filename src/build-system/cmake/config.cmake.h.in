@@ -780,7 +780,7 @@
 
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions that never return. */
-#define NCBI_NORETURN
+#cmakedefine NCBI_NORETURN
 
 /* Operating system name */
 #cmakedefine NCBI_OS "@NCBI_OS@"

@@ -1,7 +1,7 @@
 #
 #
 #
-include_directories(${BZ2_INCLUDE})
+include_directories(SYSTEM ${BZ2_INCLUDE})
 
 add_library(bz2
     blocksort huffman crctable randtable ncbi_bz2_compress decompress bzlib

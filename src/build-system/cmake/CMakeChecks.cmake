@@ -40,6 +40,10 @@ endif()
 
 set(top_src_dir     ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(abs_top_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+get_filename_component(top_src_dir     "${top_src_dir}"     ABSOLUTE)
+get_filename_component(abs_top_src_dir "${abs_top_src_dir}" ABSOLUTE)
+
 set(build_root      ${CMAKE_BINARY_DIR})
 set(builddir        ${CMAKE_BINARY_DIR})
 set(includedir0     ${top_src_dir}/include)
@@ -740,19 +744,19 @@ configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncb
 # OS-specific generated header configs
 if (UNIX)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
 endif(UNIX)
 
 if (WIN32)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_msvc.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
     message(STATUS "Generating ${includedir}/common/config/ncbiconf_msvc_site.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbiconf_msvc_site.h.in ${includedir}/common/config/ncbiconf_msvc_site.h)
 endif (WIN32)
 
 if (APPLE AND NOT UNIX) #XXX 
     message(STATUS "Generating ${build_root}/inc/ncbiconf_xcode.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
 endif (APPLE AND NOT UNIX)
 
 #
@@ -771,8 +775,7 @@ set(FEATURES "")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
 
 ENABLE_TESTING()
-#include_directories(${CPP_INCLUDE_DIR} ${build_root}/inc)
-include_directories(SYSTEM ${incdir} ${includedir0} ${incinternal})
+include_directories(${incdir} ${includedir0} ${incinternal})
 
 #
 # Dump our final diagnostics

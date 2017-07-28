@@ -3,8 +3,7 @@
 #
 
 add_definitions(-DHAVE_CONFIG_H=1 -DNEED_FREETDS_SRCDIR)
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 include_directories(SYSTEM ${BOOST_INCLUDE})
 
 # Include projects from this directory

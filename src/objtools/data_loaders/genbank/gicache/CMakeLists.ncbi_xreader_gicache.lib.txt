@@ -5,7 +5,8 @@ add_library(ncbi_xreader_gicache
     reader_gicache gicache
 )
 
-include_directories(${LMDB_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(SYSTEM ${LMDB_INCLUDE})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(ncbi_xreader_gicache
     ncbi_xreader ${LMDB_LIBS}
