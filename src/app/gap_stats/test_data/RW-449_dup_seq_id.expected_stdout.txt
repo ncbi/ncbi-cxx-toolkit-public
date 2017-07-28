@@ -1,5 +1,5 @@
 <result>
-<message file_or_accn="RW-449_dup_seq_id.sqn" severity="FATAL" code="eAddDataError">duplicate Bioseq id gnl|czeina-CMW25467|3g002320 present in
+<message file_or_accn="RW-449_dup_seq_id.asn" severity="ERROR" code="eAddDataError">duplicate Bioseq id gnl|czeina-CMW25467|3g002320 present in
   seq1: gnl|czeina-CMW25467|3g002320
   seq2: gnl|czeina-CMW25467|3g002320</message>
 <summary>

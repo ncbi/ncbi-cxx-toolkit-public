@@ -702,19 +702,32 @@ int CGapStatsApplication::RunNoCatch(void)
         const string sFileOrAccn = args[ii].AsString();
         try {
             x_ReadFileOrAccn(sFileOrAccn);
-        } catch(const SOutMessage & out_message) {
+        }
+        catch (const SOutMessage & out_message) {
             // a thrown SOutMessage indicates we give up on this file_or_accn.
             // (Note that a non-thrown SOutMessage would just be printed
             // but would not halt processing of the file_or_accn)
             x_PrintOutMessage(out_message, cerr);
             exit_code = 1;
-        } catch (const ncbi::CException& ex) {
+        }
+        catch (const ncbi::objects::CObjMgrException& ex) {
+            if (ex.GetErrCode() == ncbi::objects::CObjMgrException::eAddDataError
+                && ex.GetMsg().find("duplicate Bioseq id") == 0) {
+                SOutMessage out_message(
+                    sFileOrAccn, SOutMessage::kErrorStr,
+                    ex.GetErrCodeString(), ex.GetMsg());
+                x_PrintOutMessage(out_message, cerr);
+                exit_code = 1;
+            }
+        }
+        catch (const ncbi::CException& ex) {
             SOutMessage out_message(
                 sFileOrAccn, SOutMessage::kFatalStr,
                 ex.GetErrCodeString(), ex.GetMsg());
             x_PrintOutMessage(out_message, cerr);
             exit_code = 1;
-        } catch (...) {
+        }
+        catch (...) {
             // Unexpected exceptions make us give up without processing
             // further files-or-accns.
             
