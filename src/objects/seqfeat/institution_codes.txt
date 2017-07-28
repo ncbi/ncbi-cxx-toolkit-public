@@ -354,7 +354,7 @@ BAL	s	INTA, EEA Balcarce, Catedra de Botanica Agricola
 BALT	s	Towson University, Department of Biological Sciences		
 BAMU	s	Dr. Babasaheb Ambedkar Marathwada University		
 BAN	s	Banaras Hindu University, Botany Department		
-BANG	s	Universite de Bangui,		
+BANG	s	Universite de Bangui		
 BAP	s	Oxford Botanic Garden		
 BAR	s	University of the West Indies, Department of Biological and Chemical Sciences		
 BARC	s	Systematic Botany and Mycology Laboratory, USDA/ARS		
@@ -1282,6 +1282,7 @@ CRAF	s	University of Craiova, Phytopathology Department
 CRAI	s	University of Craiova		
 CRBF	c	Collection de genomes d'organismes symbiotiques		
 CRBK	s	Cranbrook School		
+CRBO	c	Centre de Ressource Biologique Oenologique		
 CRBY	s	Crosby Library		
 CRC	c	Chlamydomonas Resource Center		
 CRCA	s	Instituto dos Cereais		
