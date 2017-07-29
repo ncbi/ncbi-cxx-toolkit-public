@@ -3248,6 +3248,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KE\ts\tKent State University, Biological Sciences Department\t\t",
 "KEF\ts\tKunming Edible Fungi Institute\t\t",
 "KEI\ts\tUniversity of Transkei, Botany Department\t\t",
+"KEIB\ts\tKatedra Ekologii i Biogeografii\t\t",
 "KEIU\ts\tKorea University\t\t",
 "KEM\ts\tUniversity of Kemerovo, Department of Botany\t\t",
 "KEMC\tc\tKorea Environmental Microorganism Center, Kyonggi University\t\t",

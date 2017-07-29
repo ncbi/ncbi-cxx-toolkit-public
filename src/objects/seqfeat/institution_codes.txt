@@ -3215,6 +3215,7 @@ KDR	s	Bewdley Museum
 KE	s	Kent State University, Biological Sciences Department		
 KEF	s	Kunming Edible Fungi Institute		
 KEI	s	University of Transkei, Botany Department		
+KEIB	s	Katedra Ekologii i Biogeografii		
 KEIU	s	Korea University		
 KEM	s	University of Kemerovo, Department of Botany		
 KEMC	c	Korea Environmental Microorganism Center, Kyonggi University		
