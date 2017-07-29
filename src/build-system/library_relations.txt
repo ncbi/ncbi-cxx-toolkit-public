@@ -1215,7 +1215,8 @@ wgmlst needs xncbi
 wgmlst needs3party $(BOOST_SYSTEM_LIBS)
 wgmlst_core needs $(COMPRESS_LIBS)
 wgmlst_core needs wgmlst_store
-wgmlst_distances needs wgmlst_store
+wgmlst_distances needs wgmlst
+wgmlst_distances needs wgmlst_core
 wgmlst_store needs $(SEQ_LIBS)
 wgmlst_store needs pub
 writedb needs $(OBJREAD_LIBS)
