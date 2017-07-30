@@ -250,7 +250,7 @@ static mode_t s_TarToMode(TTarMode perm)
 #elif defined(S_IWRITE)
                    (perm & fTarUWrite   ? S_IWRITE : 0) |
 #endif
-#if   defined(S_IWUSR)
+#if   defined(S_IXUSR)
                    (perm & fTarUExecute ? S_IXUSR  : 0) |
 #elif defined(S_IEXEC)
                    (perm & fTarUExecute ? S_IEXEC  : 0) |
@@ -1799,7 +1799,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
                 return false;
             }
         }
-    }  // else (*p == '\n')
+    } // else (*p == '\n')
     *valp = val;
     return true;
 }
@@ -3070,7 +3070,7 @@ bool CTar::x_ProcessEntry(bool extract, Uint8 size,
                     errno = 0;
                     if (!tmp.Rename(pending->GetPath())  ||  dst->Exists()) {
                         // Security concern:  do not attempt data extraction
-                        // into special files etc., which can harm the system.
+                        // into special files etc, which can harm the system.
                         int x_errno = errno ? errno : EEXIST;
                         TAR_THROW(this, eWrite,
                                   "Cannot extract '" + dst->GetPath() + '\''
@@ -3082,7 +3082,7 @@ bool CTar::x_ProcessEntry(bool extract, Uint8 size,
         if (extract) {
 #ifdef NCBI_OS_UNIX
             mode_t u = umask(0);
-            umask(u & 077);
+            umask(u & ~(S_IRUSR | S_IWUSR | S_IXUSR));
             try {
 #endif //NCBI_OS_UNIX
                 extract = x_ExtractEntry(size, dst.get(), src.get());
@@ -3155,6 +3155,7 @@ void CTar::x_Skip(Uint8 blocks)
 }
 
 
+// NB: Clobbers umask, must be restored after the call
 bool CTar::x_ExtractEntry(Uint8& size,
                           const CDirEntry* dst, const CDirEntry* src)
 {
@@ -3162,6 +3163,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
     unique_ptr<CDirEntry> src_ptr;  // deleter
     bool result = true;  // assume best
 
+    _ASSERT(!dst->Exists());
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
         // Conform to POSIX-mandated behavior to extract as files
         type = CTarEntryInfo::eFile;
@@ -3198,8 +3200,6 @@ bool CTar::x_ExtractEntry(Uint8& size,
                 // Create the file
                 // FIXME:  Switch to CFileIO eventually to bypass
                 // ofstream obscurity w.r.t. errors, extra buffering etc.
-                // FIXME:  Should the file name match an existing device (or
-                // a terminal, in particular), things may go really ugly here.
                 CNcbiOfstream ofs(dst->GetPath().c_str(),
                                   IOS_BASE::trunc |
                                   IOS_BASE::out   |
@@ -3312,11 +3312,10 @@ bool CTar::x_ExtractEntry(Uint8& size,
         {{
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
-            mode_t u = umask(0);
-            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode()) != 0) {
+            umask(0);
+            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode())/*!= 0*/) {
                 result = false;
             }
-            umask(u);  // NB: always succeeds and does not change errno
             if (result) {
                 break;
             }
@@ -3335,14 +3334,12 @@ bool CTar::x_ExtractEntry(Uint8& size,
         {{
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
-            mode_t u = umask(0);
+            umask(0);
             mode_t m = (m_Current.GetMode() |
                         (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
             if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.st_rdev)) {
                 result = false;
-
             }
-            umask(u);  // NB: always succeeds and does not clobber errno
             if (result) {
                 break;
             }
@@ -3557,7 +3554,7 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
 
 
 unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
-                                        const TEntries* toc)
+                                          const TEntries* toc)
 {
     unique_ptr<TEntries>       entries(new TEntries);
     unique_ptr<CDir::TEntries> dir;
@@ -3758,7 +3755,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
 
 unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
-                                        CNcbiIstream& is)
+                                          CNcbiIstream& is)
 {
     unique_ptr<TEntries> entries(new TEntries);
 

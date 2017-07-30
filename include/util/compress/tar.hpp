@@ -408,7 +408,8 @@ public:
     ///   A list (containing one entry) with full acrhive info filled in
     /// @sa
     ///   Append
-    unique_ptr<TEntries> Append(const CTarUserEntryInfo& entry, CNcbiIstream& is);
+    unique_ptr<TEntries> Append(const CTarUserEntryInfo& entry,
+                                CNcbiIstream& is);
 
     /// Look whether more recent copies of archive members are available in
     /// the file system, and if so, append them to the archive:
@@ -685,7 +686,8 @@ private:
     unique_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
     // Append an entry from an istream to the archive.
-    unique_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry, CNcbiIstream& is);
+    unique_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry,
+                                  CNcbiIstream& is);
 
     // Append data from an istream to the archive.
     void x_AppendStream(const string& name, CNcbiIstream& is);
@@ -745,7 +747,8 @@ unique_ptr<CTar::TEntries> CTar::Append(const string& name)
 }
 
 inline
-unique_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry, CNcbiIstream& is)
+unique_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry,
+                                        CNcbiIstream& is)
 {
     x_Open(eAppend);
     return x_Append(entry, is);
