@@ -24,7 +24,9 @@ class Collector(object):
         status       = subprocess.call(command, close_fds = False)
         end_time     = datetime.now(timezone.utc)
         if os.fork() > 0:
-            os._exit(0) # continue in background
+            if status < 0:
+                status = 128 - status
+            os._exit(status) # continue in background
 
         target_type = command_info['target_type']
         mfname = 'Makefile.%s.%s' % (command_info['target_name'], target_type)
