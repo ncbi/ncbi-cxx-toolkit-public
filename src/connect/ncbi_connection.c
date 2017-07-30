@@ -426,7 +426,7 @@ extern EIO_Status CONN_CreateEx
         CONN_LOG(2, Create, eLOG_Error, "NULL connector");
     }
 
-    assert(!conn == (status != eIO_Success));
+    assert(!conn == !(status == eIO_Success));
     CONN_CALLTRACE(Create);
     *connection = conn;
     return status;
