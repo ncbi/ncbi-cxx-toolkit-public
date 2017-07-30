@@ -3163,7 +3163,6 @@ bool CTar::x_ExtractEntry(Uint8& size,
     unique_ptr<CDirEntry> src_ptr;  // deleter
     bool result = true;  // assume best
 
-    _ASSERT(!dst->Exists());
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
         // Conform to POSIX-mandated behavior to extract as files
         type = CTarEntryInfo::eFile;
@@ -3172,6 +3171,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
     case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
         {{
+            _ASSERT(!dst->Exists());
             // Create base directory
             CDir dir(dst->GetDir());
             if (!dir.CreatePath()) {
