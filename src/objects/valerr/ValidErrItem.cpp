@@ -678,6 +678,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_TitleNotAppropriateForSet,
     { "TitleNotAppropriateForSet",
     "Only population study, phylogenetic study, ecological sample study, and mutation sets should have title descriptors." } },
+    { eErr_SEQ_DESCR_StrainContainsTaxInfo,
+    { "StrainContainsTaxInfo",
+    "Strain contains taxonomic name information" } },
 
     /* SEQ_GENERIC */
 

@@ -20720,7 +20720,7 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
         "BioSource is missing taxon ID"));
     if (expect_err) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InvalidQualifierValue",
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrainContainsTaxInfo",
             "Strain '" + strain + "' contains taxonomic name information"));
     }
     if (NStr::Equal(taxname, "Bacillus sp.") || NStr::Equal(taxname, "Acetobacter sp.")) {

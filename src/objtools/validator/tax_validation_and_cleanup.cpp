@@ -274,10 +274,10 @@ void CStrainRequest::PostErrors(CValidError_imp& imp)
 {
     if (m_IsInvalid) {
         for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-            imp.PostObjErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue, "Strain '" + m_Strain + "' contains taxonomic name information", *(it->first), it->second);
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, "Strain '" + m_Strain + "' contains taxonomic name information", *(it->first), it->second);
         }
         for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-            imp.PostObjErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue, "Strain '" + m_Strain + "' contains taxonomic name information", **it);
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, "Strain '" + m_Strain + "' contains taxonomic name information", **it);
         }
     }
 }
