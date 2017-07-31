@@ -1074,6 +1074,7 @@ GSOAP_PATH
 AVRO_STATIC_LIBS
 CEREAL_INCLUDE
 MONGODB_STATIC_LIBS
+MONGODB3_STATIC_LIBS
 LMDB_LIB
 LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
@@ -46286,6 +46287,12 @@ _ACEOF
 if test -n "$MONGODB3_LIBS"; then
    MONGODB3_INCLUDE=$MONGODB3_FULL_INCLUDE
    MONGODB3_LIBS=$MONGODB3_FULL_LIBS
+   if test -f $MONGODB3_LIBDIR/libmongocxx-static.a; then
+      MONGODB3_STATIC_LIBS=`echo "$MONGODB3_LIBS" | \
+        sed -e 's/-lmongo[^ ]*/&-static/g; s/-lbson[^ ]*/&-static/g'`
+   else
+      MONGODB3_STATIC_LIBS=$MONGODB3_LIBS
+   fi
 fi
 
 
@@ -49194,6 +49201,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -50501,6 +50509,7 @@ GSOAP_PATH!$GSOAP_PATH$ac_delim
 AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
+MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
@@ -50519,7 +50528,6 @@ JDK_INCLUDE!$JDK_INCLUDE$ac_delim
 ncbi_java!$ncbi_java$ac_delim
 NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 BINCOPY!$BINCOPY$ac_delim
-APP_NOCOPY!$APP_NOCOPY$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50561,6 +50569,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_NOCOPY!$APP_NOCOPY$ac_delim
 APP_OR_NULL!$APP_OR_NULL$ac_delim
 IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
@@ -50593,7 +50602,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 30; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 31; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
