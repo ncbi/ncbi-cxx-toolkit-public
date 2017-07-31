@@ -429,7 +429,6 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_LatLonRange,
     eErr_SEQ_DESCR_LatLonValue,
     eErr_SEQ_DESCR_LatLonCountry,
-    eErr_SEQ_DESCR_BadInstitutionCode,
     eErr_SEQ_DESCR_BadCollectionCode,
     eErr_SEQ_DESCR_BadVoucherID,
     eErr_SEQ_DESCR_MultipleSourceQualifiers,
@@ -558,12 +557,25 @@ static const EErrType sc_ValidGenomeRaiseExceptEmblDdbj[] = {
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseExceptEmblDdbjArray, sc_ValidGenomeRaiseExceptEmblDdbj);
 
 
+static const EErrType sc_ValidGenomeRaiseExceptEmblDdbjRefSeq[] = {
+    eErr_SEQ_DESCR_BadInstitutionCode
+};
+
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseExceptEmblDdbjRefSeqArray, sc_ValidGenomeRaiseExceptEmblDdbjRefSeq);
+
 
 bool CValidError_imp::RaiseGenomeSeverity(
     EErrType et
 )
 
 {
+    if (sc_GenomeRaiseExceptEmblDdbjRefSeqArray.find(et) != sc_GenomeRaiseExceptEmblDdbjRefSeqArray.end()) {
+        if (IsEmbl() || IsDdbj() || IsRefSeq()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
     if (sc_GenomeRaiseExceptEmblDdbjArray.find(et) != sc_GenomeRaiseExceptEmblDdbjArray.end()) {
         if (IsEmbl() || IsDdbj()) {
             return false;
