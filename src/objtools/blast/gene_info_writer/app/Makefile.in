@@ -4,7 +4,6 @@
 #################################
 
 EXPENDABLE_APP_PROJ = gene_info_writer
-PROJ_TAG = app
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
