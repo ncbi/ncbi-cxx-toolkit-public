@@ -314,15 +314,24 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
             x_CreateSeqEntryOStreams(filename_map, ostream_map);
 
-            for (const CBioseq_set& obj : 
-                CObjectIStreamIterator<TRoot, CBioseq_set>(istr))
+            CObjectIStreamIterator<TRoot, CBioseq_set> it(istr, eNoOwnership,
+                CObjectIStreamIterator<CBioseq_set>::CParams().FilterByMember("class",
+                    [](const CObjectIStream& istr, 
+                    CBioseq_set& root,
+                    TMemberIndex mem_index, 
+                    CObjectInfo* objinfo_ptr,
+                    void* extra)->bool {
+
+                    if (!objinfo_ptr) {
+                        return false;
+                    }
+                    
+                    CBioseq_set::EClass e_class = *CTypeConverter<CBioseq_set::EClass>::SafeCast(objinfo_ptr->GetObjectPtr()); 
+                    return (e_class == CBioseq_set::eClass_nuc_prot);
+                }));
+
+            for (const CBioseq_set& obj : it) 
             {
-
-                if (!obj.IsSetClass() ||
-                    obj.GetClass() != CBioseq_set::eClass_nuc_prot) {
-                    continue;
-                }
-
                 CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
                 CRef<CBioseq_set> bio_set = Ref(new CBioseq_set());
                 bio_set->Assign(obj);
