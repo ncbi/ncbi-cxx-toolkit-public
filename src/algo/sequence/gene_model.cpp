@@ -731,10 +731,10 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
         }
         cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
-        const COrg_ref &org = sequence::GetOrg_ref(bsh);
-        if (org.IsSetGcode()) {
+	const COrg_ref *org = sequence::GetOrg_refOrNull(bsh);
+	if (org && org->IsSetGcode()) {
             CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
-            code->SetId(org.GetGcode());
+            code->SetId(org->GetGcode());
             cd_feat->SetData().SetCdregion().SetCode().Set().push_back(code);
         }
 
