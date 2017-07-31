@@ -62,7 +62,7 @@ public:
 
     virtual bool WriteHeader();
     virtual bool WriteHeader(
-        const CSeq_annot& );
+        const CSeq_annot& ) override;
 
 protected:
 

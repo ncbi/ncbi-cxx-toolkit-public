@@ -70,7 +70,7 @@ public:
 
     bool WriteHeader();
     virtual bool WriteHeader(
-        const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
+        const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
 
 protected:
     bool x_WriteRecord( 

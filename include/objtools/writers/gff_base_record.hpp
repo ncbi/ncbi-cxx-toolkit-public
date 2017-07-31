@@ -111,6 +111,9 @@ public:
     virtual string StrPhase() const;
     virtual string StrAttributes() const;
 
+    const CSeq_loc& GetLocation() const {
+        return *m_pLoc; };
+
 protected:
     string xEscapedValue(
         const string&,

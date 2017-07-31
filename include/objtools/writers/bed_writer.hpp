@@ -90,7 +90,7 @@ public:
     bool WriteAnnot( 
         const CSeq_annot&,
         const string& = "",
-        const string& = "");
+        const string& = "") override;
 
 //    virtual SAnnotSelector GetAnnotSelector();
 

@@ -83,7 +83,7 @@ public:
 
     virtual bool WriteHeader();
     virtual bool WriteHeader(
-        const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
+        const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
     bool WriteAlign(
         const CSeq_align&,
         const string& asmblyName="",

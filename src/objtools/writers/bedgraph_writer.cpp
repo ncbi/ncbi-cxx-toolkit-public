@@ -347,7 +347,6 @@ bool CBedGraphWriter::xWriteSingleGraphInt(
     const CSeq_loc& location = graph.GetLoc();
     string chromId;
     location.GetId()->GetLabel(&chromId);
-    size_t chromStart = 0;
     size_t chromStep = graph.GetComp();
     double scale = graph.GetA();
     double offset = graph.GetB();
@@ -380,7 +379,6 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
     const CSeq_loc& location = graph.GetLoc();
     string chromId;
     location.GetId()->GetLabel(&chromId);
-    size_t chromStart = 0;
     size_t chromStep = graph.GetComp();
     double scale = graph.GetA();
     double offset = graph.GetB();
@@ -414,7 +412,6 @@ bool CBedGraphWriter::xWriteSingleGraphReal(
     const CSeq_loc& location = graph.GetLoc();
     string chromId;
     location.GetId()->GetLabel(&chromId);
-    size_t chromStart = 0;
     size_t chromStep = graph.GetComp();
     double scale = graph.GetA();
     double offset = graph.GetB();
