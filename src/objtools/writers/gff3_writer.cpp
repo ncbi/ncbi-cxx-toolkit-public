@@ -1456,8 +1456,7 @@ bool CGff3Writer::xWriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
-    
+    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
         switch(subtype) {
@@ -2007,10 +2006,74 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetComment()  ||  mf.GetComment().empty()) {
-        return true;
+    string note;
+    CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
+
+    vector<string> acceptedClasses = {
+        "antisense_RNA",
+        "autocatalytically_spliced_intron",
+        "guide_RNA",
+        "hammerhead_ribozyme",
+        "lncRNA",
+        "miRNA",
+        "ncRNA",
+        "other",
+        "piRNA",
+        "rasiRNA",
+        "ribozyme",
+        "RNase_MRP_RNA",
+        "RNase_P_RNA",
+        "scRNA",
+        "siRNA",
+        "snoRNA",
+        "snRNA",
+        "SRP_RNA",
+        "stRNA",
+        "telomerase_RNA",
+        "vault_RNA",
+        "Y_RNA"};
+
+    if (st == CSeqFeatData::eSubtype_ncRNA) {
+        string ncrna_class = mf.GetNamedQual("ncRNA_class");
+        if (ncrna_class.empty()) {
+            if (mf.IsSetData()  &&
+                    mf.GetData().IsRna()  &&
+                    mf.GetData().GetRna().IsSetExt()  &&
+                    mf.GetData().GetRna().GetExt().IsGen()  &&
+                    mf.GetData().GetRna().GetExt().GetGen().IsSetClass()) {
+                ncrna_class = mf.GetData().GetRna().GetExt().GetGen().GetClass();
+                if (ncrna_class == "classRNA") {
+                    ncrna_class = "";
+                }
+            }
+        }
+        if (ncrna_class.empty()) {
+            if (mf.IsSetData()  &&
+                    mf.GetData().IsRna()  &&
+                    mf.GetData().GetRna().IsSetType()) {
+                auto ncrna_type = mf.GetData().GetRna().GetType();
+                ncrna_class = CRNA_ref::GetRnaTypeName(ncrna_type);
+            }
+        }
+        vector<string>::const_iterator cit = std::find(
+            acceptedClasses.begin(), acceptedClasses.end(), ncrna_class);
+        if (cit == acceptedClasses.end()) {
+            note += ncrna_class;
+        }
     }
-    record.SetAttribute("Note", mf.GetComment());
+    string comment;
+    if (mf.IsSetComment()) {
+        comment = mf.GetComment();
+    }
+    if (!note.empty()) {
+        if (!comment.empty()) {
+            note += "; " + comment;
+        }
+    }
+    else {
+        note = comment;
+    }
+    record.SetAttribute("Note", note);
     return true; 
 }
 
@@ -3271,7 +3334,16 @@ bool CGff3Writer::xWriteRecord(
 //        cerr << "";
 //        bDebugHere = true;
 //    }
-    m_Os << record.StrSeqId() << '\t';
+    auto id = record.StrSeqId();
+    if (id == ".") {
+        id = "";
+        const CSeq_loc& loc = record.GetLocation();
+        auto idh = sequence::GetIdHandle(loc, m_pScope);
+        if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
+            id = ".";
+        }
+    }
+    m_Os << id << '\t';
     m_Os << record.StrMethod() << '\t';
     m_Os << record.StrType() << '\t';
     m_Os << record.StrSeqStart() << '\t';

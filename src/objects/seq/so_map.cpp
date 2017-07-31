@@ -986,8 +986,25 @@ bool CSoMap::xMapNcRna(
 //  ----------------------------------------------------------------------------
 {
     map<string, string> mapNcRnaClassToSoType = {
+        {"antisense_RNA", "antisense_RNA"},
+        {"autocatalytically_spliced_intron", "autocatalytically_spliced_intron"},
+        {"guide_RNA", "guide_RNA"},
         {"lncRNA", "lnc_RNA"},
+        {"miRNA", "miRNA"},
         {"other", "ncRNA"},
+        {"piRNA", "piRNA"},
+        {"rasiRNA", "rasiRNA"},
+        {"ribozyme", "ribozyme"},
+        {"RNase_MRP_RNA", "RNase_MRP_RNA"},
+        {"RNase_P_RNA", "RNase_P_RNA"},
+        {"scRNA", "scRNA"},
+        {"siRNA", "siRNA"},
+        {"snoRNA", "snoRNA"},
+        {"SRP_RNA", "SRP_RNA"},
+        {"stRNA", "stRNA"},
+        {"telomerase_RNA", "telomerase_RNA"},
+        {"vault_RNA", "vault_RNA"},
+        {"Y_RNA", "Y_RNA"},
     };
     string ncrna_class = feature.GetNamedQual("ncRNA_class");
     if (ncrna_class.empty()) {
@@ -1016,7 +1033,7 @@ bool CSoMap::xMapNcRna(
     }
     auto cit = mapNcRnaClassToSoType.find(ncrna_class);
     if (cit == mapNcRnaClassToSoType.end()) {
-        so_type = ncrna_class;
+        so_type = "ncRNA";
         return true;
     }
     so_type = cit->second;
