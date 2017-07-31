@@ -188,7 +188,14 @@ public:
     string GetQueueConfig(void) const;
     string GetLinkedSectionConfig(void) const;
 
-    map< string, string >  GetLinkedSection(const string &  section_name) const;
+    map<string, string>  GetLinkedSection(const string &  section_name) const;
+
+    // map: queue name -> pause state (integer, CQueue::EPauseState)
+    // the only paused queues are reported
+    map<string, int> GetPauseQueues(void) const;
+    vector<string> GetRefuseSubmitQueues(void) const;
+    string GetDataPath(void) const
+    { return m_DataPath; }
 
 private:
     // No copy
@@ -331,6 +338,8 @@ private:
     void x_CreateSpaceReserveFile(void);
     bool x_RemoveSpaceReserveFile(void);
     string x_GetDumpSpaceFileName(void) const;
+    void x_RestorePauseState(const map<string, int> &  paused_queues);
+    void x_RestoreRefuseSubmitState(const vector<string> &  refuse_submit_queues);
 }; // CQueueDataBase
 
 

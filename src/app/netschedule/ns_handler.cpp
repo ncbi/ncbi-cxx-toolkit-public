@@ -40,6 +40,7 @@
 #include "ns_rollback.hpp"
 #include "queue_database.hpp"
 #include "ns_application.hpp"
+#include "ns_restore_state.hpp"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -4015,6 +4016,7 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
         // This is a whole server scope request
         m_Server->SetRefuseSubmits(m_CommandArguments.mode);
         x_WriteMessage(kOKCompleteResponse);
+        SerializeRefuseSubmitState(m_Server);
         x_PrintCmdRequestStop();
         return;
     }
@@ -4029,6 +4031,7 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
                        "disabled on the server level;" + kEndOfResponse);
     else
         x_WriteMessage(kOKCompleteResponse);
+    SerializeRefuseSubmitState(m_Server);
     x_PrintCmdRequestStop();
 }
 

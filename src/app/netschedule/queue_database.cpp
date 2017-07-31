@@ -50,6 +50,7 @@
 #include "ns_handler.hpp"
 #include "ns_db_dump.hpp"
 #include "ns_types.hpp"
+#include "ns_restore_state.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -147,11 +148,27 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
     // First, load the previous session start job IDs if file existed
     m_Server->LoadJobsStartIDs();
 
+    // Load the content of the queue state files
+    map<string, int>    paused_queues = DeserializePauseState(m_DataPath);
+    vector<string>      refuse_submit_queues =
+                                DeserializeRefuseSubmitState(m_DataPath);
+
     // Old instance bdb files are not needed (even if they survived)
     x_RemoveBDBFiles();
 
     // Creates the queues from the ini file and loads jobs from the dump
     x_Open(params, reinit);
+
+    // Restore the queue state
+    x_RestorePauseState(paused_queues);
+    x_RestoreRefuseSubmitState(refuse_submit_queues);
+
+    // The files with queue state could be broken or the queues may be removed
+    // from the configuration file so update the state files to keep them
+    // consistent with the up to date configuration
+    SerializePauseState(m_DataPath, GetPauseQueues());
+    SerializeRefuseSubmitState(m_DataPath, server->GetRefuseSubmits(),
+                               GetRefuseSubmitQueues());
 }
 
 
@@ -1451,15 +1468,46 @@ string CQueueDataBase::GetLinkedSectionConfig(void) const
 }
 
 
-map< string, string >
+map<string, string>
 CQueueDataBase::GetLinkedSection(const string &  section_name) const
 {
     CFastMutexGuard     guard(m_LinkedSectionsGuard);
-    map< string, map< string, string > >::const_iterator  found =
+    map< string, map<string, string> >::const_iterator  found =
         m_LinkedSections.find(section_name);
     if (found == m_LinkedSections.end())
-        return map< string, string >();
+        return map<string, string>();
     return found->second;
+}
+
+
+map<string, int>
+CQueueDataBase::GetPauseQueues(void) const
+{
+    map<string, int>    pause_states;
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        int  pause_state = k->second.second->GetPauseStatus();
+        if (pause_state != CQueue::eNoPause)
+            pause_states[k->first] = pause_state;
+    }
+    return pause_states;
+}
+
+
+vector<string>
+CQueueDataBase::GetRefuseSubmitQueues(void) const
+{
+    vector<string>      refuse_submit_queues;
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        if (k->second.second->GetRefuseSubmits())
+            refuse_submit_queues.push_back(k->first);
+    }
+    return refuse_submit_queues;
 }
 
 
@@ -2482,7 +2530,9 @@ void CQueueDataBase::x_RemoveBDBFiles(void)
             entryName == kNodeIDFileName ||
             entryName == kStartJobIDsFileName ||
             entryName == kCrashFlagFileName ||
-            entryName == kDumpErrorFlagFileName)
+            entryName == kDumpErrorFlagFileName ||
+            entryName == kPausedQueuesFilesName ||
+            entryName == kRefuseSubmitFileName)
             continue;
 
         CFile   f(m_DataPath + entryName);
@@ -3003,5 +3053,51 @@ void CQueueDataBase::x_CreateSpaceReserveFile(void)
 }
 
 
-END_NCBI_SCOPE
+void
+CQueueDataBase::x_RestorePauseState(const map<string, int> &  paused_queues)
+{
+    CFastMutexGuard     guard(m_ConfigureLock);
 
+    for (map<string, int>::const_iterator k = paused_queues.begin();
+         k != paused_queues.end(); ++k) {
+        string  queue_name = k->first;
+        int     pause_mode = k->second;
+
+
+        TQueueInfo::iterator  existing = m_Queues.find(queue_name);
+        if (existing == m_Queues.end()) {
+            ERR_POST("Cannot restore the pause state of the " <<
+                     queue_name << " queue. The queue is not configured.");
+        } else {
+            existing->second.second->RestorePauseStatus(pause_mode);
+        }
+    }
+}
+
+
+void
+CQueueDataBase::x_RestoreRefuseSubmitState(
+                                const vector<string> &  refuse_submit_queues)
+{
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    for (vector<string>::const_iterator k = refuse_submit_queues.begin();
+         k != refuse_submit_queues.end(); ++k) {
+        string  queue_name = *k;
+
+        if (NStr::CompareNocase(queue_name, "[server]") == 0) {
+            m_Server->SetRefuseSubmits(true);
+            continue;
+        }
+
+        TQueueInfo::iterator  existing = m_Queues.find(queue_name);
+        if (existing == m_Queues.end()) {
+            ERR_POST("Cannot restore the refuse submit state of the " <<
+                     queue_name << " queue. The queue is not configured.");
+        } else {
+            existing->second.second->SetRefuseSubmits(true);
+        }
+    }
+}
+
+END_NCBI_SCOPE

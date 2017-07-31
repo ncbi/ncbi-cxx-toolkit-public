@@ -804,3 +804,20 @@ void CNetScheduleServer::SetDiskConfigFileChecksum(const string &  checksum)
     m_DiskConfigFileChecksum = checksum;
 }
 
+
+map<string, int> CNetScheduleServer::GetPauseQueues(void) const
+{
+    return m_QueueDB->GetPauseQueues();
+}
+
+
+vector<string> CNetScheduleServer::GetRefuseSubmitQueues(void) const
+{
+    return m_QueueDB->GetRefuseSubmitQueues();
+}
+
+
+string CNetScheduleServer::GetDataPath(void) const
+{
+    return m_QueueDB->GetDataPath();
+}

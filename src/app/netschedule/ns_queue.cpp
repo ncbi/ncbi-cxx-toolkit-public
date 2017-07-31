@@ -43,6 +43,7 @@
 #include "ns_handler.hpp"
 #include "ns_ini_params.hpp"
 #include "ns_perf_logging.hpp"
+#include "ns_restore_state.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -4708,6 +4709,8 @@ void CQueue::SetPauseStatus(const CNSClientId &  client, TPauseStatus  status)
     m_PauseStatus = status;
     if (need_notifications)
         m_NotificationsList.onQueueResumed(m_StatusTracker.AnyPending());
+
+    SerializePauseState(m_Server);
 }
 
 

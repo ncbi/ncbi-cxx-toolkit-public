@@ -212,6 +212,9 @@ public:
     { return m_ReserveDumpSpace; }
     unsigned int GetWSTCacheSize(void) const
     { return m_WSTCacheSize; }
+    map<string, int> GetPauseQueues(void) const;
+    vector<string> GetRefuseSubmitQueues(void) const;
+    string GetDataPath(void) const;
 
 protected:
     virtual void Exit();

@@ -25,7 +25,7 @@
  *
  * Authors:  Sergey Satskiy
  *
- * File Description: NeSchedule affinity registry
+ * File Description: NetSchedule affinity registry
  *
  */
 #include <ncbi_pch.hpp>

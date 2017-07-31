@@ -77,6 +77,8 @@ const string    kStartJobIDsFileName("STARTJOBIDS");
 const string    kNodeIDFileName("NODE_ID");
 const string    kCrashFlagFileName("CRASH_FLAG");
 const string    kDumpErrorFlagFileName("DUMP_ERROR_FLAG");
+const string    kPausedQueuesFilesName("PAUSED_QUEUES");
+const string    kRefuseSubmitFileName("REFUSE_SUBMIT");
 const size_t    kDumpReservedSpaceFileBuffer = 1024 * 1024;
 
 // Various hex viewers show this magic in a different way.

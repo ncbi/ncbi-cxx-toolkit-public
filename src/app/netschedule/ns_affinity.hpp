@@ -29,7 +29,7 @@
  * Authors:  Anatoliy Kuznetsov
  *
  * File Description:
- *   Net schedule job status database.
+ *   NetSchedule job status database.
  *
  */
 

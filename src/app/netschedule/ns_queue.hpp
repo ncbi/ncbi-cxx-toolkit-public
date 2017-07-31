@@ -472,6 +472,10 @@ public:
     { return m_PauseStatus; }
     void SetPauseStatus(const CNSClientId &  client, TPauseStatus  status);
 
+    // Used by NS to restore a stored status after restart
+    void RestorePauseStatus(TPauseStatus  status)
+    { m_PauseStatus = status; }
+
     void RegisterQueueResumeNotification(unsigned int  address,
                                          unsigned short  port,
                                          bool  new_format);
