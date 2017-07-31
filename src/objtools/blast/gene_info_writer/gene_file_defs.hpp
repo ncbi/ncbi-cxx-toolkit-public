@@ -61,7 +61,7 @@
 /// Minimum valid length of a Gene Info line.
 #define GENE_INFO_LINE_MIN                  50
 /// Number of items on a valid Gene Info line.
-#define GENE_INFO_NUM_ITEMS                 15
+#define GENE_INFO_NUM_ITEMS                 16
 /// Index of the taxonomy ID item on a Gene Info line.
 #define GENE_INFO_TAX_ID_INDEX              0
 /// Index of the Gene ID item on a Gene Info line.
