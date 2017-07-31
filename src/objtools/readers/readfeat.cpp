@@ -2448,8 +2448,17 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                 case eQual_locus_tag:
                     {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        grp.SetLocus_tag (val);
+                        if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
+                            CGene_ref& grp = sfp->SetGeneXref ();
+                            grp.SetLocus_tag (val);
+                            return true;
+                        } 
+                        // else:
+                        string gene_comment = val;
+                        string comment = (sfp->CanGetComment()) ? 
+                            sfp->GetComment() + ";" + gene_comment :
+                            gene_comment;
+                        sfp->SetComment(comment);
                         return true;
                     }
                 case eQual_db_xref:
