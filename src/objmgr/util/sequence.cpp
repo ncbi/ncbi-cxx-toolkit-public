@@ -1170,8 +1170,8 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
 
         CTSE_Handle tse = bsh.GetTSE_Handle();
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
-            if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
-                CSeq_feat_Handle mrna_h = tse.GetFeatureWithId(CSeqFeatData::eSubtype_mRNA, (*it)->GetId().GetLocal().GetId());
+            if ((*it)->IsSetId() && (*it)->GetId().IsLocal()) {
+                CSeq_feat_Handle mrna_h = tse.GetFeatureWithId(CSeqFeatData::eSubtype_mRNA, (*it)->GetId().GetLocal());
                 if (mrna_h) {
                     mrna = mrna_h.GetSeq_feat();
                 }
