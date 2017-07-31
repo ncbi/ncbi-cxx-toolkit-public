@@ -646,14 +646,14 @@ BOOST_AUTO_TEST_CASE(TestCaseGetSynonyms)
     // Check default NCBI-Only synonyms
     Mapper.GetSynonyms(*OrigId, Synonyms);
 
-    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)5);
+    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)4);
 
 
     // Check all synonyms
     Synonyms.clear();
     Mapper.GetSynonyms(*OrigId, Synonyms, false);
     
-    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)7);
+    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)6);
 }
 
 
