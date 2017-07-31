@@ -167,8 +167,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
              xml::document doc(body.c_str(), body.size(), NULL);
              const xml::node& root = doc.get_root_node();
 
-             xml::node_set nodes = root.run_xpath_query("//PubmedArticle");
-             BOOST_CHECK ( 101 == nodes.size() );
+             BOOST_CHECK ( 101 == root.run_xpath_query("//PubmedArticle").size() + root.run_xpath_query("//PubmedBookArticle").size() );
          }}
     }
 }
