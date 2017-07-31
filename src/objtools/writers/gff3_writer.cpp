@@ -2055,12 +2055,33 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
                 ncrna_class = CRNA_ref::GetRnaTypeName(ncrna_type);
             }
         }
-        vector<string>::const_iterator cit = std::find(
+        const auto cit = std::find(
             acceptedClasses.begin(), acceptedClasses.end(), ncrna_class);
         if (cit == acceptedClasses.end()) {
-            note += ncrna_class;
+            note = ncrna_class;
         }
     }
+    if (st == CSeqFeatData::eSubtype_misc_recomb) {
+        string recomb_class = mf.GetNamedQual("recombination_class");
+        if (!recomb_class.empty()  &&  recomb_class != "other") {
+            auto validClasses = CSeqFeatData::GetRecombinationClassList();
+            auto cit = std::find(validClasses.begin(), validClasses.end(), recomb_class);
+            if (cit == validClasses.end()) {
+                note = recomb_class;
+            }
+        }
+    }
+    if (st == CSeqFeatData::eSubtype_regulatory) {
+        string regulatory_class = mf.GetNamedQual("regulatory_class");
+        if (!regulatory_class.empty()  && regulatory_class != "other") {
+            auto validClasses = CSeqFeatData::GetRegulatoryClassList();
+            auto cit = std::find(validClasses.begin(), validClasses.end(), regulatory_class);
+            if (cit == validClasses.end()) {
+                note = regulatory_class;
+            }
+        }
+    }        
+
     string comment;
     if (mf.IsSetComment()) {
         comment = mf.GetComment();

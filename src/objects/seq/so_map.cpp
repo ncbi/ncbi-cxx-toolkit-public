@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seq/so_map.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -962,7 +963,14 @@ bool CSoMap::xMapMiscRecomb(
     }
     auto cit = mapRecombClassToSoType.find(recomb_class);
     if (cit == mapRecombClassToSoType.end()) {
-        so_type = recomb_class;
+        auto validClasses = CSeqFeatData::GetRecombinationClassList();
+        auto valid = std::find(validClasses.begin(), validClasses.end(), recomb_class);
+        if (valid == validClasses.end()) {
+            so_type = "recombination_region";
+        }
+        else {
+            so_type = recomb_class;
+        }
         return true;
     }
     so_type = cit->second;
@@ -1056,6 +1064,7 @@ bool CSoMap::xMapRegulatory(
         {"response_element", "regulatory_region"},
         {"ribosome_binding_site", "ribosome_entry_site"},
     };
+
     string regulatory_class = feature.GetNamedQual("regulatory_class");
     if (regulatory_class.empty()) {
         so_type = "regulatory_region";
@@ -1063,7 +1072,15 @@ bool CSoMap::xMapRegulatory(
     }
     auto cit = mapRegulatoryClassToSoType.find(regulatory_class);
     if (cit == mapRegulatoryClassToSoType.end()) {
-        so_type = regulatory_class;
+        auto validClasses = CSeqFeatData::GetRegulatoryClassList();
+        auto valid = std::find(
+            validClasses.begin(), validClasses.end(), regulatory_class);
+        if (valid == validClasses.end()) {
+            so_type = "regulatory_region";
+        }
+        else {
+            so_type = regulatory_class;
+        }
         return true;
     }
     so_type = cit->second;
