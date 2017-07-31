@@ -226,7 +226,7 @@ void AgpRead(CNcbiIstream& is,
                     type = CSeq_gap::eType_contig;
                 } else if (type_string == "centromere") {
                     type = CSeq_gap::eType_centromere;
-                } else if (type_string == "short_arm") {
+                } else if (type_string == "short arm" || type_string == "short_arm") {
                     type = CSeq_gap::eType_short_arm;
                 } else if (type_string == "heterochromatin") {
                     type = CSeq_gap::eType_heterochromatin;
