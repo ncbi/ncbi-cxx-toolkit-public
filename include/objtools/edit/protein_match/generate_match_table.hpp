@@ -43,6 +43,7 @@ class CSeq_feat;
 class CSeq_align;
 class CUser_object;
 class CSeq_table;
+class CScope;
 
 class CMatchTabulate {
 
