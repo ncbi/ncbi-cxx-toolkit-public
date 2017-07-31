@@ -65,7 +65,7 @@ public:
         /// For any IScore subclasses that have an internal state, this
         /// function will be called to update it for any alignment that
         /// matches the filter
-        virtual void UpdateState(const objects::CSeq_align& align) {}
+        virtual void UpdateState(const objects::CSeq_align& /*align*/) {}
     };
 
     CScoreLookup() { x_Init(); }

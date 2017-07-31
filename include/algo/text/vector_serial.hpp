@@ -47,28 +47,28 @@ BEGIN_NCBI_SCOPE
 /// These throw an exception; we must implement serialization for each type
 ///
 template <class Key, class Score>
-void Serialize(CNcbiOstream& ostr, const CRawScoreVector<Key, Score>& vec)
+void Serialize(CNcbiOstream& /*ostr*/, const CRawScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Serialize(): Serialization type unknown");
 }
 
 template <class Key, class Score>
-void Deserialize(CNcbiIstream& istr, CRawScoreVector<Key, Score>& vec)
+void Deserialize(CNcbiIstream& istr, CRawScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Deserialize(): Deserialization type unknown");
 }
 
 template <class Key, class Score>
-void Serialize(CNcbiOstream& ostr, const CScoreVector<Key, Score>& vec)
+void Serialize(CNcbiOstream& /*ostr*/, const CScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Serialize(): Serialization type unknown");
 }
 
 template <class Key, class Score>
-void Deserialize(CNcbiIstream& istr, CScoreVector<Key, Score>& vec)
+void Deserialize(CNcbiIstream& istr, CScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Deserialize(): Deserialization type unknown");
@@ -77,78 +77,24 @@ void Deserialize(CNcbiIstream& istr, CScoreVector<Key, Score>& vec)
 
 
 template <class Key, class Score>
-void Encode(const CRawScoreVector<Key, Score>& vec,
-            vector<char>& data)
+void Encode(const CRawScoreVector<Key, Score>& /*vec*/,
+            vector<char>& /*data*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Encode(): Serialization type unknown");
 }
 
 template <class Key, class Score>
-void Encode(const CRawScoreVector<Key, Score>& vec,
-            vector<unsigned char>& data)
+void Encode(const CRawScoreVector<Key, Score>& /*vec*/,
+            vector<unsigned char>& /*data*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Encode(): Serialization type unknown");
 }
 
 template <class Key, class Score>
-void Encode(const CRawScoreVector<Key, Score>& vec,
-            CSimpleBuffer& data)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Encode(): Serialization type unknown");
-}
-
-
-template <class Key, class Score>
-void Decode(const vector<char>& data, CRawScoreVector<Key, Score>& vec)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Decode(): Deserialization type unknown");
-}
-
-template <class Key, class Score>
-void Decode(const vector<unsigned char>& data, CRawScoreVector<Key, Score>& vec)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Decode(): Deserialization type unknown");
-}
-
-template <class Key, class Score>
-void Decode(const CSimpleBuffer& data, CRawScoreVector<Key, Score>& vec)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Decode(): Deserialization type unknown");
-}
-
-template <class Key, class Score>
-void Decode(const void* data, size_t size, CRawScoreVector<Key, Score>& vec)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Decode(): Deserialization type unknown");
-}
-
-
-template <class Key, class Score>
-void Encode(const CScoreVector<Key, Score>& vec,
-            vector<char>& data)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Encode(): Serialization type unknown");
-}
-
-template <class Key, class Score>
-void Encode(const CScoreVector<Key, Score>& vec,
-            vector<unsigned char>& data)
-{
-    NCBI_THROW(CException, eUnknown,
-               "Encode(): Serialization type unknown");
-}
-
-template <class Key, class Score>
-void Encode(const CScoreVector<Key, Score>& vec,
-            CSimpleBuffer& data)
+void Encode(const CRawScoreVector<Key, Score>& /*vec*/,
+            CSimpleBuffer& /*data*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Encode(): Serialization type unknown");
@@ -156,28 +102,86 @@ void Encode(const CScoreVector<Key, Score>& vec,
 
 
 template <class Key, class Score>
-void Decode(const vector<char>& data, CScoreVector<Key, Score>& vec)
+void Decode(const vector<char>& /*data*/, CRawScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Decode(): Deserialization type unknown");
 }
 
 template <class Key, class Score>
-void Decode(const vector<unsigned char>& data, CScoreVector<Key, Score>& vec)
+void Decode(const vector<unsigned char>& /*data*/,
+            CRawScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Decode(): Deserialization type unknown");
 }
 
 template <class Key, class Score>
-void Decode(const CSimpleBuffer& data, CScoreVector<Key, Score>& vec)
+void Decode(const CSimpleBuffer& /*data*/,
+            CRawScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Decode(): Deserialization type unknown");
 }
 
 template <class Key, class Score>
-void Decode(const void* data, size_t size, CScoreVector<Key, Score>& vec)
+void Decode(const void* /*data*/,
+            size_t /*size*/,
+            CRawScoreVector<Key, Score>& /*vec*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+
+template <class Key, class Score>
+void Encode(const CScoreVector<Key, Score>& /*vec*/,
+            vector<char>& /*data*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Encode(): Serialization type unknown");
+}
+
+template <class Key, class Score>
+void Encode(const CScoreVector<Key, Score>& /*vec*/,
+            vector<unsigned char>& /*data*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Encode(): Serialization type unknown");
+}
+
+template <class Key, class Score>
+void Encode(const CScoreVector<Key, Score>& /*vec*/,
+            CSimpleBuffer& /*data*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Encode(): Serialization type unknown");
+}
+
+
+template <class Key, class Score>
+void Decode(const vector<char>& /*data*/, CScoreVector<Key, Score>& /*vec*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+template <class Key, class Score>
+void Decode(const vector<unsigned char>& /*data*/, CScoreVector<Key, Score>& /*vec*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+template <class Key, class Score>
+void Decode(const CSimpleBuffer& /*data*/, CScoreVector<Key, Score>& /*vec*/)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+template <class Key, class Score>
+void Decode(const void* /*data*/, size_t /*size*/, CScoreVector<Key, Score>& /*vec*/)
 {
     NCBI_THROW(CException, eUnknown,
                "Decode(): Deserialization type unknown");

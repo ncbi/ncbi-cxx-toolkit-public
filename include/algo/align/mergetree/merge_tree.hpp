@@ -83,8 +83,8 @@ public:
     void SetScoring(CMergeTree::SScoring Scoring) { m_Scoring = Scoring; }
    
     CMergeTree::TInterruptFnPtr 
-    SetInterruptCallback(CMergeTree::TInterruptFnPtr Callback, void* CallbackData) 
-        { this->Callback = Callback; this->CallbackData = CallbackData; return Callback; }
+    SetInterruptCallback(CMergeTree::TInterruptFnPtr callback, void* callback_data) 
+        { this->Callback = callback; this->CallbackData = callback_data; return callback; }
   
  
     // Calls Merge_Dist

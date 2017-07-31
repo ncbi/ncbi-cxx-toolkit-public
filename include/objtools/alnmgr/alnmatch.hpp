@@ -129,7 +129,7 @@ public:
           m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
     {}
     CAlnMixMatch(const CAlnMixMatch& match)
-        : m_Score(0), m_ChainScore(0),
+        : CObject(), m_Score(0), m_ChainScore(0),
           m_AlnSeq1(0), m_AlnSeq2(0),
           m_Start1(0), m_Start2(0),
           m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)

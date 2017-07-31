@@ -368,10 +368,10 @@ public:
         // this if you want only a single entry-point for
         // notifications.
         virtual EAction unified_notify( 
-            string & block_text,
-            const CBioseqContext& ctx, 
-            const IFlatItem & flat_item, 
-            FGenbankBlocks which_block ) { return eAction_Default; }
+            string & /*block_text*/,
+            const CBioseqContext& /*ctx*/, 
+            const IFlatItem & /*flat_item*/, 
+            FGenbankBlocks /*which_block*/ ) { return eAction_Default; }
     };
 
     // constructor
@@ -640,31 +640,56 @@ public:
     NCBI_DEPRECATED
     void SetGffGenerateIdTags (bool val = true)
     {
-        m_GffOptions |= fGffGenerateIdTags;
+        if (val) {
+            m_GffOptions |= fGffGenerateIdTags;
+        }
+        else {
+            m_GffOptions &= ~fGffGenerateIdTags;
+        }
     };
 
     NCBI_DEPRECATED
     void SetGffGTFCompat      (bool val = true)
     {
-        m_GffOptions |= fGffGTFCompat;
+        if (val) {
+            m_GffOptions |= fGffGTFCompat;
+        }
+        else {
+            m_GffOptions &= ~fGffGTFCompat;
+        }
     };
 
     NCBI_DEPRECATED
     void SetGffGTFOnly        (bool val = true)
     {
-        m_GffOptions |= fGffGTFOnly;
+        if (val) {
+            m_GffOptions |= fGffGTFOnly;
+        }
+        else {
+            m_GffOptions &= ~fGffGTFOnly;
+        }
     };
 
     NCBI_DEPRECATED
     void SetGffShowSeq        (bool val = true)
     {
-        m_GffOptions |= fGffShowSeq;
+        if (val) {
+            m_GffOptions |= fGffShowSeq;
+        }
+        else {
+            m_GffOptions &= ~fGffShowSeq;
+        }
     };
 
     NCBI_DEPRECATED
     void SetGffForFlybase     (bool val = true)
     {
-        m_GffOptions |= fGffForFlybase;
+        if (val) {
+            m_GffOptions |= fGffForFlybase;
+        }
+        else {
+            m_GffOptions &= ~fGffForFlybase;
+        }
     };
 
     void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks) 

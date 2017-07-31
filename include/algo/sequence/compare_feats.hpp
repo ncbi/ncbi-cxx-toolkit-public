@@ -436,8 +436,8 @@ public:
         if(!merged) {
             loc.GetLabel(&s);
         } else {
-            CRef<CSeq_loc> merged = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
-            merged->GetLabel(&s);
+            CRef<CSeq_loc> merged_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
+            merged_loc->GetLabel(&s);
         }
         return s;   
     }

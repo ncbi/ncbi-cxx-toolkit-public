@@ -1626,7 +1626,7 @@ void CRemoteBlast::SetVerbose(EDebugMode verb)
 }
 
 /// The default timeout is 3.5 hours.
-const int CRemoteBlast::x_DefaultTimeout(void)
+int CRemoteBlast::x_DefaultTimeout(void)
 {
     return int(3600*3.5);
 }

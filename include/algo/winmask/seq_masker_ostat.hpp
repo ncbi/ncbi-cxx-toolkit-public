@@ -153,9 +153,9 @@ protected:
     /**\name Methods used to delegate functionality to derived classes */
     /**@{*/
     virtual void doSetUnitSize( Uint4 us ) { unit_size = (Uint1)us; }
-    virtual void doSetUnitCount( Uint4 unit, Uint4 count ) = 0;
-    virtual void doSetComment( const string & msg ) {}
-    virtual void doSetParam( const string & name, Uint4 value );
+    virtual void doSetUnitCount( Uint4 /*unit*/, Uint4 /*count*/ ) = 0;
+    virtual void doSetComment( const string & /*msg*/ ) {}
+    virtual void doSetParam( const string & /*name*/, Uint4 /*value*/ );
     // virtual void doSetBlank() {}
     virtual void doFinalize() {}
     /**@}*/

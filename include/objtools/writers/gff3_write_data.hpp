@@ -81,7 +81,7 @@ public:
     CRef<CSeq_loc> GetCircularLocation() const { return m_pLoc; };
 
     virtual bool NeedsQuoting(
-        const string& str) const {return false;};
+        const string& /*str*/) const {return false;};
 
 protected:
     virtual bool x_AssignType(

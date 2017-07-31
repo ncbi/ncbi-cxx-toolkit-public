@@ -99,6 +99,19 @@ namespace {
     // Each SWarningTest has one SOneWarningsInfo for each
     // warning that might appear.
     struct SOneWarningsInfo {
+        SOneWarningsInfo()
+            : m_eType(ILineError::eProblem_Unset)
+            , m_iLineNumExpected(0)
+        {
+        }
+
+        SOneWarningsInfo(ILineError::EProblem t,
+                         const string& s,
+                         unsigned int i)
+            : m_eType(t), m_sFeatureName(s), m_iLineNumExpected(i)
+        {
+        }
+
         ILineError::EProblem m_eType;
         string   m_sFeatureName; // can be empty
         unsigned int m_iLineNumExpected; // might be zero for multiple-line errors

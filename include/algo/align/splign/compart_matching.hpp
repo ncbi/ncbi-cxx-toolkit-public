@@ -93,7 +93,7 @@ public:
         *buffer = &m_seq[0];
         return (int) vec.size();
     }
-    virtual void RetSequence(const char ** buffer) {}
+    virtual void RetSequence(const char ** /*buffer*/) {}
     virtual CConstRef<CSeq_id> GetSeqID(int idx) { return GetIds()[idx].GetSeqId(); }
     virtual CConstRef<CSeq_id> GetSeqID() { return GetSeqID(m_idx); }
 
@@ -126,7 +126,7 @@ public:
         return m_seqdb->CheckOrFindOID(m_idx);
     }
     virtual int GetSeqLength(int idx) { return  m_seqdb->GetSeqLength(idx); }
-    NCBI_DEPRECATED virtual void SetMemoryBound(Uint8 membound) { }
+    NCBI_DEPRECATED virtual void SetMemoryBound(Uint8 /*membound*/) { }
     virtual int GetSeq(int idx, const char ** buffer) {return m_seqdb->GetSequence(idx, buffer); }
     virtual void RetSequence(const char ** buffer) {  m_seqdb->RetSequence(buffer); }
     virtual CConstRef<CSeq_id> GetSeqID(int idx) { return m_seqdb->GetSeqIDs(idx).front(); }

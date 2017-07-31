@@ -150,7 +150,7 @@ private:
     CSeq_entry_Handle       m_Current;
     TFlags                  m_Flags;
     CSeq_entry::E_Choice    m_Filter;
-    auto_ptr<CSeq_entry_CI> m_SubIt;
+    unique_ptr<CSeq_entry_CI> m_SubIt;
 };
 
 
@@ -203,7 +203,7 @@ public:
     CSeq_entry_I& operator ++(void);
 
     const CSeq_entry_EditHandle operator*(void) const;
-    auto_ptr<const CSeq_entry_EditHandle> operator->(void) const;
+    unique_ptr<const CSeq_entry_EditHandle> operator->(void) const;
 
     CBioseq_set_EditHandle GetParentBioseq_set(void) const;
     
@@ -308,9 +308,9 @@ const CSeq_entry_EditHandle CSeq_entry_I::operator*(void) const
 
 
 inline
-auto_ptr<const CSeq_entry_EditHandle> CSeq_entry_I::operator->(void) const
+unique_ptr<const CSeq_entry_EditHandle> CSeq_entry_I::operator->(void) const
 {
-    auto_ptr<const CSeq_entry_EditHandle> rval( new CSeq_entry_EditHandle( CSeq_entry_CI::operator*() ) );
+    unique_ptr<const CSeq_entry_EditHandle> rval( new CSeq_entry_EditHandle( CSeq_entry_CI::operator*() ) );
     return rval;
 }
 

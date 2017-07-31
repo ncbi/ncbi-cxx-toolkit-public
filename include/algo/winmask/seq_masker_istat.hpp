@@ -132,7 +132,7 @@ public:
         **\brief Get the value of the unit used to represent an ambuguity.
         **\return ambiguity unit value
         **/
-    const CSeqMaskerWindow::TUnit AmbigUnit() const
+    CSeqMaskerWindow::TUnit AmbigUnit() const
     { return ambig_unit; }
 
     /**

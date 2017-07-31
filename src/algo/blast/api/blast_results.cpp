@@ -147,6 +147,19 @@ CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
     m_SearchSpace = effective_search_space;
 }
 
+CBlastAncillaryData::CBlastAncillaryData(const CBlastAncillaryData& rhs)
+{
+    do_copy(rhs);
+}
+
+/// Assignment operator
+CBlastAncillaryData& CBlastAncillaryData::operator=(const CBlastAncillaryData& rhs)
+{
+    do_copy(rhs);
+    return *this;
+} 
+
+
 CBlastAncillaryData::~CBlastAncillaryData()
 {
     Blast_KarlinBlkFree(m_UngappedKarlinBlk);

@@ -307,7 +307,7 @@ struct SIndexHeader
     @param fname        [I]   name of the index volume file
     @return the number of subjects in the index volume (from the volume header)
 */
-const size_t GetIdxVolNumOIDs( const std::string & fname );
+size_t GetIdxVolNumOIDs( const std::string & fname );
 
 /** A vector or pointer based sequence wrapper.
     Serves as either a std::vector wrapper or holds a constant size
@@ -797,7 +797,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
             @return Length of the sequence in bases.
         */
-        virtual TSeqPos GetSeqLen( TSeqNum oid ) const
+        virtual TSeqPos GetSeqLen( TSeqNum /*oid*/ ) const
         {
             NCBI_THROW( 
                     CDbIndex_Exception, eBadVersion,
@@ -811,7 +811,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
             @return Pointer to the sequence data.
         */
-        virtual const Uint1 * GetSeqData( TSeqNum oid ) const
+        virtual const Uint1 * GetSeqData( TSeqNum /*oid*/ ) const
         {
             NCBI_THROW( 
                     CDbIndex_Exception, eBadVersion,
@@ -1323,7 +1323,8 @@ class CSubjectMap
                     (TSeqPos)(loff - (*res - lid_start)*CR) );
         }
 
-        TSeqPos getSOff( TSeqNum sid, TSeqNum rcid, TSeqPos coff ) const
+        TSeqPos getSOff( TSeqNum _DEBUG_ARG(sid),
+                         TSeqNum rcid, TSeqPos coff ) const
         {
             ASSERT( sid < subjects_.size() - 1 );
             ASSERT( subjects_[sid] - 1 + rcid < chunks_.size() );

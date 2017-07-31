@@ -97,7 +97,7 @@ struct TransformFunction {
     void operator()(CGeneModel& a) { transform_model(a); }
     void operator()(CAlignModel& a) { transform_align(a); }
 
-    virtual void transform_model(CGeneModel& a) {}
+    virtual void transform_model(CGeneModel& /*a*/) {}
     virtual void transform_align(CAlignModel& a) { transform_model(a); }
 };
 struct Predicate {
@@ -106,7 +106,7 @@ struct Predicate {
     bool operator()(CGeneModel& a) { return  model_predicate(a); }
     bool operator()(CAlignModel& a) { return align_predicate(a); }
 
-    virtual bool model_predicate(CGeneModel& a) { return false; }
+    virtual bool model_predicate(CGeneModel& /*a*/) { return false; }
     virtual bool align_predicate(CAlignModel& a) { return model_predicate(a); }
 };
 
@@ -123,7 +123,7 @@ public:
 
     //for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
-    static TInDels GetGenomicGaps(const TGeneModelList& models) { return TInDels(); }
+    static TInDels GetGenomicGaps(const TGeneModelList& /*models*/) { return TInDels(); }
     NCBI_DEPRECATED
     void SetGenomic(const CSeq_id& seqid, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels, const TGeneModelList* models = 0) {
         if(models != 0 || contig_fix_indels == 0) {
@@ -196,9 +196,9 @@ public:
 
     // dummy functions for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
-    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust) { return; }
+    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& /*clust*/) { return; }
     NCBI_DEPRECATED
-    void ReplicateFrameShifts(TGeneModelList& models) { return; }
+    void ReplicateFrameShifts(TGeneModelList& /*models*/) { return; }
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -359,7 +359,7 @@ public:
     }
 
     template <class T>
-    const T GetKey(int index) const
+    T GetKey(int index) const
     {
         return m_GisOids[index].gi;
     }
@@ -456,7 +456,7 @@ inline int CSeqDBGiList::GetSize<TTi>() const
 }
 
 template < >
-inline const TTi CSeqDBGiList::GetKey<TTi>(int index) const
+inline TTi CSeqDBGiList::GetKey<TTi>(int index) const
 {
     return m_TisOids[index].ti;
 }
@@ -480,7 +480,7 @@ inline int CSeqDBGiList::GetSize<string>() const
 }
 
 template < >
-inline const string CSeqDBGiList::GetKey<string>(int index) const
+inline string CSeqDBGiList::GetKey<string>(int index) const
 {
     return m_SisOids[index].si;
 }

@@ -256,10 +256,10 @@ public:
                         bool nuc_prot_diag = (min_len == max_len / 3  ||
                                               min_len - 1 == max_len / 3 ?
                                               true : false);
-                        for (size_t i=0;  i< seg_lens.size();  ++i) {
+                        for (size_t i_lcl=0;  i_lcl< seg_lens.size();  ++i_lcl) {
                             if ( nuc_prot_diag ) {
-                                id_vec[i]->SetBaseWidth(
-                                    seg_lens[i] == min_len ? 3 : 1);
+                                id_vec[i_lcl]->SetBaseWidth(
+                                    seg_lens[i_lcl] == min_len ? 3 : 1);
                             }
                         }
                     }

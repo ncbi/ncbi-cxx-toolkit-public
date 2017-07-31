@@ -586,10 +586,10 @@ public:
     };
 
     struct SRef {
-        SRef(const CVDBCursor& cursor,
-             TVDBRowId row,
-             const CVDBColumn& column)
-            : cursor(cursor), column(column), row(row)
+        SRef(const CVDBCursor& cur,
+             TVDBRowId r,
+             const CVDBColumn& col)
+            : cursor(cur), column(col), row(r)
             {
             }
         
@@ -780,11 +780,11 @@ protected:
     void x_CheckRange(size_t pos, size_t len) const;
 
     CVDBValueFor4Bits(const CVDBValue::SSaveRef& ref,
-                      const char* raw_data, uint32_t offset, uint32_t size)
+                      const char* raw, uint32_t offset, uint32_t sz)
         : m_Ref(ref),
-          m_RawData(raw_data),
+          m_RawData(raw),
           m_ElemOffset(offset),
-          m_ElemCount(size)
+          m_ElemCount(sz)
         {
         }
 
@@ -879,11 +879,11 @@ protected:
     void x_CheckRange(size_t pos, size_t len) const;
 
     CVDBValueFor2Bits(const CVDBValue::SSaveRef& ref,
-                      const char* raw_data, uint32_t offset, uint32_t size)
+                      const char* raw, uint32_t offset, uint32_t sz)
         : m_Ref(ref),
-          m_RawData(raw_data),
+          m_RawData(raw),
           m_ElemOffset(offset),
-          m_ElemCount(size)
+          m_ElemCount(sz)
         {
         }
 

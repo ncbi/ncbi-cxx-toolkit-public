@@ -266,7 +266,7 @@ TSeqRange FindPolyARange(Iterator begin, Iterator end, TSeqPos max_following_bas
                 }
     
                 for(Iterator p = end - 1;
-                    p >= cleavageSite && (end - p) <= max_following_bases+1;
+                    p >= cleavageSite && TSeqPos(end - p) <= max_following_bases+1;
                     --p){
                     if (numOther + numA > 0  &&
                         ((double) numA / (numA+numOther)) > 0.95) {

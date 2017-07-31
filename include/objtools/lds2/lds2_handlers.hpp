@@ -61,16 +61,16 @@ public:
 
     /// Save information about chunks for the URL in the database.
     /// The default implementation does nothing.
-    virtual void SaveChunks(const SLDS2_File& file_info,
-                            CLDS2_Database&   db) {}
+    virtual void SaveChunks(const SLDS2_File& /*file_info*/,
+                            CLDS2_Database&   /*db*/) {}
 
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
     /// Database is provided so that the handler can fetch
     /// information about chunks.
-    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
-                                     Int8              stream_pos,
-                                     CLDS2_Database*   db) = 0;
+    virtual CNcbiIstream* OpenStream(const SLDS2_File& /*file_info*/,
+                                     Int8              /*stream_pos*/,
+                                     CLDS2_Database*   /*db*/) = 0;
 
 protected:
     /// Allow to change handler name by derived classes.

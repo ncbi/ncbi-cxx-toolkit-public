@@ -76,9 +76,9 @@ public:
     }
     
     template <typename TIterator>
-    void insert(TIterator begin, TIterator end)
+    void insert(TIterator b, TIterator e)
     {
-        for (TIterator i = begin; i != end; ++i)
+        for (TIterator i = b; i != e; ++i)
             insert(*i);
     }
     

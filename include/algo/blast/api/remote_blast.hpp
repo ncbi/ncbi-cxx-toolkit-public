@@ -546,7 +546,7 @@ private:
     };
     
     /// The default timeout is 3.5 hours.
-    const int x_DefaultTimeout(void);
+    int x_DefaultTimeout(void);
 
     /// Uses the file to populate results.
     /// The file may be text or binary ASN.1 or XML. type is automatically detected.

@@ -177,10 +177,10 @@ public:
     /// Get a set of ids that are aligned to a particular id
     const TIdVec& GetAlignedIds(const TAlnSeqIdIRef& id) const
     {
-        typename TAlignedIdsMap::const_iterator it = m_AlignedIdsMap.find(id);
-        if (it != m_AlignedIdsMap.end()) {
+        typename TAlignedIdsMap::const_iterator aln_it = m_AlignedIdsMap.find(id);
+        if (aln_it != m_AlignedIdsMap.end()) {
             // get from cache
-            return it->second;
+            return aln_it->second;
         }
         else {
             TIdMap::const_iterator it = m_IdMap.find(id);

@@ -391,10 +391,10 @@ public:
         
         
         /// Constructor        
-        SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    TGi gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
-                    : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
-                    queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
+        SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid_in,int qn, 
+                    TGi gi_in,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
+                    : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid_in), 
+                    queryNumber(qn), gi(gi_in), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
                     new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),
                     resourcesUrl(resUrl),useTemplates(useTmpl),advancedView(advView){}
 

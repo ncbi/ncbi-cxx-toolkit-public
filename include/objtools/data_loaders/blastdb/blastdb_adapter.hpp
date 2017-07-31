@@ -128,7 +128,7 @@ public:
     /// Retrieve the taxonomy ID for the requested sequence identifier
     /// @param idh The Seq-id for which to get the taxonomy ID
     /// @return taxonomy ID if found, otherwise kInvalidSeqPos
-    virtual int GetTaxId(const CSeq_id_Handle& idh) {
+    virtual int GetTaxId(const CSeq_id_Handle& /*idh*/) {
         return static_cast<int>(kInvalidSeqPos);
     }
 };

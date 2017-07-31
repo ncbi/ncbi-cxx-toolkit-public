@@ -190,7 +190,7 @@ class /*NCBI_XOBJUTIL_EXPORT*/ CFastaOstreamComp
 {
 public:
     CFastaOstreamComp(const string& dir, const string& filename_without_ext);
-    ~CFastaOstreamComp();
+    virtual ~CFastaOstreamComp();
 
     enum E_FileSection
     {

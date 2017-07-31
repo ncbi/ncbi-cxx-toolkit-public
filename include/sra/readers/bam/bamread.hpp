@@ -240,10 +240,10 @@ public:
         : m_Size(0), m_Capacity(0)
         {
         }
-    explicit CBamString(size_t capacity)
+    explicit CBamString(size_t cap)
         : m_Size(0)
         {
-            reserve(capacity);
+            reserve(cap);
         }
 
     void clear()
@@ -293,11 +293,11 @@ public:
         {
             return m_Buffer.get();
         }
-    void resize(size_t size)
+    void resize(size_t sz)
         {
-            _ASSERT(size+1 <= capacity());
-            m_Size = size;
-            data()[size] = '\0';
+            _ASSERT(sz+1 <= capacity());
+            m_Size = sz;
+            data()[sz] = '\0';
         }
 
 private:

@@ -366,7 +366,7 @@ struct NCBI_XBLAST_EXPORT SDatabaseScanData : public CObject
 inline void
 CThreadable::SetNumberOfThreads(size_t nthreads)
 {
-    m_NumThreads = nthreads == 0 ? kMinNumThreads : nthreads;
+    m_NumThreads = nthreads == 0 ? static_cast<size_t>(kMinNumThreads) : nthreads;
 }
 
 inline size_t

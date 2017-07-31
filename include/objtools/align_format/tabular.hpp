@@ -638,13 +638,13 @@ public:
                          const CConstRef<blast::CIgBlastOptions> &ig_opts);
 
     ///Getter
-    const void GetIgInfo (string& v, 
-                          string& d, 
-                          string& j,
-                          string& master_chain_to_show,
-                          string& cdr3_nuc,
-                          string& cdr3_aa,
-                          string& productive) const {
+    void GetIgInfo (string& v, 
+                    string& d, 
+                    string& j,
+                    string& master_chain_to_show,
+                    string& cdr3_nuc,
+                    string& cdr3_aa,
+                    string& productive) const {
         v = m_VGene.sid;
         d = m_DGene.sid;  
         j = m_JGene.sid;

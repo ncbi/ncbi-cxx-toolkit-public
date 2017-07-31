@@ -129,8 +129,8 @@ public:
     void ExpandExonLists();
     virtual void ReverseCDSClauseLists();
    
-    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
-    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
+    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base * /*parent_clause*/) { return false; }
+    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base * /*parent_clause*/, bool /*gene_cluster_opp_strand*/) { return false; }
     
     virtual void SuppressMobileElementAndInsertionSequenceSubfeatures();
     

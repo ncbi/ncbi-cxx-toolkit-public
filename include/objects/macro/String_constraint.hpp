@@ -69,7 +69,7 @@ public:
        for (it = ConstBegin(obj);  it;  ++it) {
           strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
        }
-    };
+    }
 
     bool Match(const string& str) const;
     bool Empty() const;

@@ -62,7 +62,7 @@ public:
         virtual ~IFormatter() {}
         void SetScoreLookup(objects::CScoreLookup *scores)
             { m_Scores = scores; }
-        virtual void SetGencoll(CConstRef<objects::CGC_Assembly> gencoll)
+        virtual void SetGencoll(CConstRef<objects::CGC_Assembly> /*gencoll*/)
             {}
         virtual void PrintHelpText(CNcbiOstream& ostr) const = 0;
         virtual void PrintHeader(CNcbiOstream& ostr) const = 0;

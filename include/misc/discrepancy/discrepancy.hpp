@@ -111,7 +111,7 @@ public:
         bool success = true;
         for_each(cont.begin(), cont.end(), [this, &success](const string& test_name) { success &= this->AddTest(test_name); });
         return success;
-    };
+    }
 
     virtual bool AddTest(const string& name) = 0;
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;

@@ -48,13 +48,13 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 
 template <class T>
-inline T InitialValue(T* t)
+inline T InitialValue(T* /*t*/)
 {
     return 0;
 }
 
 template<>
-inline string InitialValue<string>(string* t)
+inline string InitialValue<string>(string* /*t*/)
 {
     return kEmptyStr;
 }
@@ -105,6 +105,7 @@ CRawScoreVector<Key, Score>::CRawScoreVector(const CScoreVector<Key, Score>& oth
 template <class Key, class Score>
 inline
 CRawScoreVector<Key, Score>::CRawScoreVector(const CRawScoreVector<Key, Score>& other)
+    : CObject()
 {
     *this = other;
 }
@@ -178,9 +179,9 @@ size_t CRawScoreVector<Key, Score>::size() const
 
 template <class Key, class Score>
 inline
-void CRawScoreVector<Key, Score>::reserve(size_t size)
+void CRawScoreVector<Key, Score>::reserve(size_t s)
 {
-    m_Data.reserve(size);
+    m_Data.reserve(s);
 }
 
 
@@ -323,22 +324,23 @@ void CRawScoreVector<Key, Score>::Set(Key idx, Score weight)
 
 template <class Key, class Score>
 inline
-void CRawScoreVector<Key, Score>::Set(const_iterator begin, const_iterator end)
+void CRawScoreVector<Key, Score>::Set(const_iterator begin_in,
+                                      const_iterator end_in)
 {
-    size_t diff = end - begin;
+    size_t diff = end_in - begin_in;
     m_Data.reserve(m_Data.size() + diff);
     size_t orig_size = m_Data.size();
 
     bool need_sort = false;
-    for ( ;  begin != end;  ++begin) {
+    for ( ;  begin_in != end_in;  ++begin_in) {
         iterator iter =
             lower_bound(m_Data.begin(), m_Data.begin() + orig_size,
-                        *begin, SSortByFirst<Key, Score>());
-        if (iter == m_Data.end()  ||  iter->first != begin->first) {
-            m_Data.push_back(*begin);
+                        *begin_in, SSortByFirst<Key, Score>());
+        if (iter == m_Data.end()  ||  iter->first != begin_in->first) {
+            m_Data.push_back(*begin_in);
             need_sort = true;
         } else {
-            iter->second = begin->second;
+            iter->second = begin_in->second;
         }
     }
 
@@ -551,23 +553,23 @@ template <class Key, class Score>
 inline CRawScoreVector<Key, Score>&
 CRawScoreVector<Key, Score>::operator+=(const CRawScoreVector<Key, Score>& other)
 {
-    const_iterator begin = other.m_Data.begin();
-    const_iterator end   = other.m_Data.end();
-    size_t diff = end - begin;
+    const_iterator begin_in = other.m_Data.begin();
+    const_iterator end_in   = other.m_Data.end();
+    size_t diff = end_in - begin_in;
     size_t orig_size = m_Data.size();
     m_Data.reserve(m_Data.size() + diff);
 
     bool need_sort = false;
-    for ( ;  begin != end;  ++begin) {
+    for ( ;  begin_in != end_in;  ++begin_in) {
         iterator pseudo_end = m_Data.begin() + orig_size;
         iterator iter =
             lower_bound(m_Data.begin(), pseudo_end,
-                        *begin, SSortByFirst<Key, Score>());
-        if (iter == pseudo_end  ||  iter->first != begin->first) {
-            m_Data.push_back(*begin);
+                        *begin_in, SSortByFirst<Key, Score>());
+        if (iter == pseudo_end  ||  iter->first != begin_in->first) {
+            m_Data.push_back(*begin_in);
             need_sort = true;
         } else {
-            iter->second += begin->second;
+            iter->second += begin_in->second;
         }
     }
 
@@ -654,6 +656,7 @@ CRawScoreVector<Key, Score>::operator/=(Score val)
 template <class Key, class Score>
 inline
 CScoreVector<Key, Score>::CScoreVector()
+    : CObject()
 {
     m_Uid = InitialValue(&m_Uid);
 }
@@ -662,6 +665,7 @@ CScoreVector<Key, Score>::CScoreVector()
 template <class Key, class Score>
 inline
 CScoreVector<Key, Score>::CScoreVector(const CScoreVector<Key, Score>& other)
+    : CObject()
 {
     *this = other;
 }
@@ -670,6 +674,7 @@ CScoreVector<Key, Score>::CScoreVector(const CScoreVector<Key, Score>& other)
 template <class Key, class Score>
 inline
 CScoreVector<Key, Score>::CScoreVector(const CRawScoreVector<Key, Score>& other)
+    : CObject()
 {
     *this = other;
 }
@@ -1037,11 +1042,11 @@ void CScoreVector<Key, Score>::TrimLength(float trim_pct)
 
         trim_pct *= Length();
         Score sum = 0;
-        typename TInvVector::iterator iter = v.begin();
-        typename TInvVector::iterator end  = v.end();
+        typename TInvVector::iterator iter     = v.begin();
+        typename TInvVector::iterator iter_end = v.end();
 
         /// determine where the break point is
-        for ( ;  iter != end  &&  sqrt(sum) < trim_pct;  ++iter) {
+        for ( ;  iter != iter_end  &&  sqrt(sum) < trim_pct;  ++iter) {
             sum += iter->second * iter->second;
         }
 
@@ -1050,11 +1055,11 @@ void CScoreVector<Key, Score>::TrimLength(float trim_pct)
         if (prev != v.begin()) {
             --prev;
         }
-        for (;  iter != end  &&  prev->first == iter->first;  ++iter) {
+        for (;  iter != iter_end  &&  prev->first == iter->first;  ++iter) {
         }
 
         /// erase our words
-        for ( ;  iter != end;  ++iter) {
+        for ( ;  iter != iter_end;  ++iter) {
             Set().erase(iter->first);
         }
     }
@@ -1077,12 +1082,12 @@ void CScoreVector<Key, Score>::TrimCount(size_t max_words)
 
         typename TInvVector::iterator iter = v.begin() + max_words;
         typename TInvVector::iterator prev = iter - 1;
-        typename TInvVector::iterator end  = v.end();
-        for ( ;  iter != end  &&  prev->first == iter->first;  ++iter) {
+        typename TInvVector::iterator iter_end  = v.end();
+        for ( ;  iter != iter_end  &&  prev->first == iter->first;  ++iter) {
             prev = iter;
         }
 
-        for ( ; iter != end;  ++iter) {
+        for ( ; iter != iter_end;  ++iter) {
             m_Data.erase(iter->first);
         }
     }

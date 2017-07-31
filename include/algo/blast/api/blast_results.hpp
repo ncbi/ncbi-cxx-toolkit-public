@@ -83,15 +83,10 @@ public:
     ~CBlastAncillaryData();
 
     /// Copy-constructor
-    CBlastAncillaryData(const CBlastAncillaryData& rhs) {
-        do_copy(rhs);
-    }
+    CBlastAncillaryData(const CBlastAncillaryData& rhs);
 
     /// Assignment operator
-    CBlastAncillaryData& operator=(const CBlastAncillaryData& rhs) {
-        do_copy(rhs);
-        return *this;
-    }
+    CBlastAncillaryData& operator=(const CBlastAncillaryData& rhs);
 
     /// Retrieve gumbel parameters
     const Blast_GumbelBlk * GetGumbelBlk() const {

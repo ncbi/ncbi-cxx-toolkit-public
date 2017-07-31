@@ -87,9 +87,9 @@ public:
     ///   parameter describing the object. Handling will be format specific
     ///
     virtual bool WriteAnnot( 
-        const CSeq_annot& annot,
-        const string& name="",
-        const string& descr="" )
+        const CSeq_annot& /*annot*/,
+        const string& /*name*/ = "",
+        const string& /*descr*/ = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
@@ -107,8 +107,8 @@ public:
     ///
     virtual bool WriteAlign( 
         const CSeq_align&,
-        const string& name="",
-        const string& descr="" ) 
+        const string& /*name*/ = "",
+        const string& /*descr*/ = "" ) 
     {
         cerr << "Object type not supported!" << endl;
         return false;
@@ -125,7 +125,7 @@ public:
     ///   parameter describing the object. Handling will be format specific.
     ///
     virtual bool WriteSeqEntryHandle(
-        CSeq_entry_Handle seh,
+        CSeq_entry_Handle /*seh*/,
         const string& = "",
         const string& = "" )
     {
@@ -144,7 +144,7 @@ public:
     ///   parameter describing the object. Handling will be format specific.
     ///
     virtual bool WriteBioseqHandle(
-        CBioseq_Handle bsh,
+        CBioseq_Handle /*bsh*/,
         const string& = "",
         const string& = "" )
     {
@@ -163,7 +163,7 @@ public:
     ///   parameter describing the object. Handling will be format specific.
     ///
     virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle sah,
+        CSeq_annot_Handle /*sah*/,
         const string& = "",
         const string& = "" )
     {

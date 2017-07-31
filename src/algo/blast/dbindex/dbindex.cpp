@@ -252,7 +252,7 @@ void CIndexSuperHeader<
 }
 
 //-------------------------------------------------------------------------
-const size_t GetIdxVolNumOIDs( const std::string & fname )
+size_t GetIdxVolNumOIDs( const std::string & fname )
 {
     std::ifstream is( fname.c_str() );
     Uint4 t, start, end;

@@ -86,7 +86,7 @@ public:
     /// the opposite strand)
     ///
     /// NB: this is a no-op, as it is no longer necessary
-    NCBI_DEPRECATED void AllowTranslocations(bool b)    { ; }
+    NCBI_DEPRECATED void AllowTranslocations(bool /*b*/)    { ; }
 
     /// Assume that the alignments contains alignments of a sequence to itself
     void PreserveRows(bool b)    { m_PreserveRows = b; }

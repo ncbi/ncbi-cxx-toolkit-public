@@ -35,6 +35,8 @@
 /// @file bio_tree.hpp
 /// Things for bio tree convertions
 
+#include <algo/phy_tree/bio_tree.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup Tree
@@ -750,7 +752,7 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
 
     // Don't add duplicate ids:
     ITERATE(typename TContainerDict::Tdata, it, feat_list) {
-        if ( (*it)->GetId()==feature_id )
+        if ( (unsigned int)((*it)->GetId()) == feature_id )
             return;
     }
 

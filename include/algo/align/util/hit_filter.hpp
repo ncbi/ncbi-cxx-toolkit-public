@@ -429,32 +429,32 @@ public:
                     // special case: if X is zero, go left as long as it's the same id
                     if(phe_lo->m_X == 0) {
                         THitRef hitref (*(ii0->m_Ptr));
-                        const typename THit::TId& id (hitref->GetId(ii0->m_Point/2));
+                        const typename THit::TId& id_lcl (hitref->GetId(ii0->m_Point/2));
                         for(THitEndsIter ii_start(hit_ends.begin()); 
                             ii0 != ii_start; --ii0)
                         {
                             THitRef hr (*(ii0->m_Ptr));
                             const typename THit::TId & id2 (hr->GetId(ii0->m_Point/2));
-                            if(0 != id->CompareOrdered(*id2)) {
+                            if(0 != id_lcl->CompareOrdered(*id2)) {
                                 ++ii0;
                                 break;
                             }
                         }
                     }
 
-                    for(typename THitEnds::iterator ii (ii0); ii != ii1; ++ii) {
+                    for(typename THitEnds::iterator ii_lcl (ii0); ii_lcl != ii1; ++ii_lcl) {
                     
-                        const THitEnd& he = *ii;                   
+                        const THitEnd& he_lcl = *ii_lcl;                   
 
-                        const size_t hitrefidx = he.m_Ptr - hitref_firstptr;
+                        const size_t hitrefidx = he_lcl.m_Ptr - hitref_firstptr;
                         const bool alive       = skip[hitrefidx] == false;
-                        const bool self        = he.m_Ptr == &hc;
+                        const bool self        = he_lcl.m_Ptr == &hc;
 
                         if(alive && !self) {
                             
                             THitRef hit_new;
                             int newpos 
-                                = sx_Cleave(*he.m_Ptr, he.m_Point/2, 
+                                = sx_Cleave(*he_lcl.m_Ptr, he_lcl.m_Point/2, 
                                             cmin, cmax, min_hit_len, 
                                             min_hit_idty, & hit_new,
                                             retain_overlap);
@@ -465,17 +465,17 @@ public:
 
                             if(newpos >= 0) { // truncated or split
 
-                                const TCoord* box = (*he.m_Ptr)->GetBox();
+                                const TCoord* box = (*he_lcl.m_Ptr)->GetBox();
 
                                 THitEnd he2;
-                                he2.m_Point = he.m_Point;
-                                he2.m_Ptr = he.m_Ptr;
+                                he2.m_Point = he_lcl.m_Point;
+                                he2.m_Ptr = he_lcl.m_Ptr;
                                 he2.m_X = box[he2.m_Point];
                                 hit_ends.insert(he2);
 
                                 THitEnd he3;
-                                he3.m_Point = (he.m_Point + 2) % 4;
-                                he3.m_Ptr = he.m_Ptr;
+                                he3.m_Point = (he_lcl.m_Point + 2) % 4;
+                                he3.m_Ptr = he_lcl.m_Ptr;
                                 he3.m_X = box[he3.m_Point];
                                 hit_ends.insert(he3);
 
@@ -492,28 +492,28 @@ public:
                                     del.push_back(false);
                                     skip.push_back(false);
 
-                                    Uint1 point = he.m_Point;
-                                    Uint1 where = point / 2;
+                                    Uint1 point = he_lcl.m_Point;
+                                    Uint1 where_lcl = point / 2;
 
                                     // only two new ends to add
-                                    THitEnd he2;
-                                    he2.m_Point = point;
-                                    he2.m_Ptr = ptr;
-                                    he2.m_X = (box[point]== hit_new->GetStart(where))?
-                                        hit_new->GetStop(where): 
-                                        hit_new->GetStart(where);
-                                    hit_ends.insert(he2);
+                                    THitEnd he2_lcl;
+                                    he2_lcl.m_Point = point;
+                                    he2_lcl.m_Ptr = ptr;
+                                    he2_lcl.m_X = (box[point]== hit_new->GetStart(where_lcl))?
+                                        hit_new->GetStop(where_lcl): 
+                                        hit_new->GetStart(where_lcl);
+                                    hit_ends.insert(he2_lcl);
 
-                                    point = (he.m_Point + 2) % 4;
-                                    where = point / 2;
+                                    point = (he_lcl.m_Point + 2) % 4;
+                                    where_lcl = point / 2;
 
-                                    THitEnd he3;
-                                    he3.m_Point = point;
-                                    he3.m_Ptr = ptr;
-                                    he3.m_X = (box[point]==hit_new->GetStart(where))?
-                                        hit_new->GetStop(where):
-                                        hit_new->GetStart(where);
-                                    hit_ends.insert(he3);
+                                    THitEnd he3_lcl;
+                                    he3_lcl.m_Point = point;
+                                    he3_lcl.m_Ptr = ptr;
+                                    he3_lcl.m_X = (box[point]==hit_new->GetStart(where_lcl))?
+                                        hit_new->GetStop(where_lcl):
+                                        hit_new->GetStart(where_lcl);
+                                    hit_ends.insert(he3_lcl);
 
                                     // TODO: add midpoints for potential 
                                     // hot dogs as above
@@ -521,7 +521,7 @@ public:
                                 } // if(new_hit.NotEmpty())
                             } // if(newpos >= 0) 
                         } // if(alive && !self)
-                    } // for(ii ...
+                    } // for(ii_lcl ...
                 } // for(where ...
 
                 skip[&hc - hitref_firstptr] = true;
@@ -944,17 +944,17 @@ protected:
                                                 (*jj)->GetLength())
                                  + 0.5);
 
-                    for(THitEndsIter ii = ii0; ii != ii1; ++ii) {
+                    for(THitEndsIter ii_lcl = ii0; ii_lcl != ii1; ++ii_lcl) {
 
-                        const THitRef& h = *(ii->m_Ptr);
+                        const THitRef& h = *(ii_lcl->m_Ptr);
 
-                        TCoord cmin (h->GetMin(where2));
-                        if(cmin < he_ii.m_X) cmin = he_ii.m_X;
+                        TCoord cmin_lcl (h->GetMin(where2));
+                        if(cmin_lcl < he_ii.m_X) cmin_lcl = he_ii.m_X;
 
-                        TCoord cmax (h->GetMax(where2));
-                        if(cmax < he_jj.m_X) cmax = he_jj.m_X;
+                        TCoord cmax_lcl (h->GetMax(where2));
+                        if(cmax_lcl < he_jj.m_X) cmax_lcl = he_jj.m_X;
                         
-                        if(cmax - cmin + 1 > max_len) {
+                        if(cmax_lcl - cmin_lcl + 1 > max_len) {
                             can_merge = false;
                             break;
                         }

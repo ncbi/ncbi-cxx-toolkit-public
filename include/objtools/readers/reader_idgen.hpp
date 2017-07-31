@@ -138,7 +138,7 @@ public:
     TId GenerateId()
     {
         CRef<CFeat_id> id(new CFeat_id);
-        id->SetLocal().SetId(m_Id.Add(1) - 1);
+        id->SetLocal().SetId((int)(m_Id.Add(1) - 1));
         return id;
     }
 

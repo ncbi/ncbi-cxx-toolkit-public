@@ -187,7 +187,7 @@ public:
 
     // Check indicates whether this Org-ref should be examined or ignored.
     // strain values are ignored for some values of lineage or taxname
-    virtual bool Check(const COrg_ref& org) const { return true; }
+    virtual bool Check(const COrg_ref& /*org*/) const { return true; }
 
     // used to add items to be looked up, when appropriate for this
     // descriptor or feature
@@ -235,8 +235,8 @@ public:
     CSpecificHostMap() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
     ~CSpecificHostMap() {};
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return orig_val; };
-    virtual bool ApplyToOrg(COrg_ref& org) const { return false; };
+    virtual string GetKey(const string& orig_val, const COrg_ref& /*org*/) const { return orig_val; };
+    virtual bool ApplyToOrg(COrg_ref& /*org*/) const { return false; };
 
 protected:
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
@@ -248,7 +248,7 @@ public:
     CSpecificHostMapForFix() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
     ~CSpecificHostMapForFix() {};
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return x_DefaultSpecificHostAdjustments(orig_val); };
+    virtual string GetKey(const string& orig_val, const COrg_ref& /*org*/) const { return x_DefaultSpecificHostAdjustments(orig_val); };
     virtual bool ApplyToOrg(COrg_ref& org) const;
 
 protected:
@@ -265,7 +265,7 @@ public:
 
     virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); };
     virtual bool Check(const COrg_ref& org) const { return CStrainRequest::Check(org); };
-    virtual bool ApplyToOrg(COrg_ref& org) const { return false; };
+    virtual bool ApplyToOrg(COrg_ref& /*org*/) const { return false; };
 
 protected:
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);

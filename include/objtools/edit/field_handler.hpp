@@ -59,8 +59,8 @@ public:
     virtual bool IsEmpty(const CObject& object) const = 0;
     virtual void ClearVal(CObject& object) = 0;
     virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text) = 0;
-    virtual string IsValid(const string& val) { return ""; };
-    virtual vector<string> IsValid(const vector<string>& values) { vector<string> x; return x; };;
+    virtual string IsValid(const string& /*val*/) { return ""; };
+    virtual vector<string> IsValid(const vector<string>& /*values*/) { vector<string> x; return x; };
     virtual CSeqFeatData::ESubtype GetFeatureSubtype() = 0;
     virtual CSeqdesc::E_Choice GetDescriptorSubtype() = 0;
     virtual void SetConstraint(const string& field, CConstRef<CStringConstraint> string_constraint) = 0;

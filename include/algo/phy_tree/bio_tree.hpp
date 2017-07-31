@@ -394,7 +394,7 @@ public:
 
     /// Get new unique node id 
     /// (for cases when node id depends on the node's content
-    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& node) 
+    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& /*node*/) 
                                        { return m_NodeIdCounter++; }
 
     /// Assign new unique node id to the node

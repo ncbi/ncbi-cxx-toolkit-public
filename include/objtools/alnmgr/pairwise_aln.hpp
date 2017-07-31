@@ -273,7 +273,8 @@ public:
     /// NB: Copy constructor is deep on pairwise_alns so that
     /// pairwise_alns can be modified
     CAnchoredAln(const CAnchoredAln& c)
-        : m_AnchorRow(c.m_AnchorRow),
+        : CObject(),
+          m_AnchorRow(c.m_AnchorRow),
           m_Score(c.m_Score)
     {
         *this = c;

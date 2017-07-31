@@ -698,7 +698,7 @@ public:
     }
     
     /// Reset nullable to unassigned state.
-    CNullable& operator= (ENull  null_value)
+    CNullable& operator= (ENull  /*null_value*/)
     {
         m_IsNull = true;
         return *this;

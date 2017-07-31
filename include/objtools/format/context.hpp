@@ -236,7 +236,7 @@ public:
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);
     const CSeq_loc* GetMasterLocation(void) const;
-    const bool GetSGS(void) const;
+    bool GetSGS(void) const;
     bool IsGenbankFormat(void) const;
 
     bool HasOperon(void) const;
@@ -445,7 +445,7 @@ public:
     feature::CFeatTree* GetFeatTree(void) { return m_FeatTree; }
     void SetFeatTree(feature::CFeatTree* tree) { m_FeatTree.Reset(tree); }
     
-    const bool GetSGS(void) const { return m_SmallGenomeSet; }
+    bool GetSGS(void) const { return m_SmallGenomeSet; }
     void SetSGS(const bool sgs) { m_SmallGenomeSet = sgs; }
 
     void AddSection(TSection& section) { m_Sections.push_back(section); }
@@ -681,7 +681,7 @@ const CSeq_loc* CBioseqContext::GetMasterLocation(void) const
 
 
 inline
-const bool CBioseqContext::GetSGS(void) const
+bool CBioseqContext::GetSGS(void) const
 {
     return m_FFCtx.GetSGS();
 }

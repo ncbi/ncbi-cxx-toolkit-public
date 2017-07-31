@@ -1154,7 +1154,7 @@ public:
 
     virtual void ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt);
 
-    virtual bool ArchiveFormatRequested(const CArgs& args) const {
+    virtual bool ArchiveFormatRequested(const CArgs& /*args*/) const {
         return false;
     }
 
