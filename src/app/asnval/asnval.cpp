@@ -445,7 +445,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 }
             }
         } catch (CException &e) {
-            // Also log to XML?
+            CRef<CValidError> eval(new CValidError());
+            eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, e.what());
+            PrintValidError(eval, args);
             ERR_POST(e);
             ++m_Reported;
         }
