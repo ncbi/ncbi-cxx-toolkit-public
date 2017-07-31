@@ -551,8 +551,8 @@ public:
     /// Get value of the parameter.
     /// For eSP_In parameter value set to it will always be returned. For
     /// eSP_InOut parameter value set to it will be returned before stored
-    /// procedure execution and value returned from procedure after its
-    /// execution.
+    /// procedure execution and value returned from procedure after executing
+    /// it and reading its row results (or confirming that it produced none).
     const CField& GetParameter(CTempString name);
 
     /// Remove parameter with given name from parameter list.
@@ -604,7 +604,8 @@ public:
     /// one if reading of it was already started (begin() method was called).
     bool HasMoreResultSets(void);
 
-    /// Purge all remaining result sets.
+    /// Purge all remaining result sets; fill in all remaining parameter
+    /// results.
     void PurgeResults(void);
 
     /// Whether to consider just the current result set or all result
@@ -632,9 +633,10 @@ public:
     /// @param max_rows
     ///  Maximum valid row count.  (kMax_Auto for no limit.)
     void RequireRowCount(unsigned int min_rows, unsigned int max_rows);
-    /// Ensure that no unread rows remain, and that the total number of
-    /// rows satisfies any constraints specified by RequireRowCount.
-    /// Throw an exception (after purging any unread rows) if not.
+    /// Ensure that no unread rows or parameter results remain, and that
+    /// the total number of rows satisfies any constraints specified by
+    /// RequireRowCount.  Throw an exception (after purging any unread
+    /// rows) if not.
     void VerifyDone(EHowMuch how_much = eThisResultSet);
 
     /// Get total number of columns in the current result set
