@@ -7574,7 +7574,8 @@ NCBI_CHECK_THIRD_PARTY_LIB(lapack,
 # LMDB
 NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
    [AC_LANG_PROGRAM([[#include <lmdb.h>]],
-      [[MDB_env *env; return mdb_env_create(&env);]])])
+      [[MDB_env *env; return mdb_env_create(&env);]])],
+   [$THREAD_LIBS])
 if test -z "$LMDB_LIBS"; then
    lmdblocal=util/lmdb
    AC_MSG_NOTICE([using local LMDB copy in $lmdblocal])

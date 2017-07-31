@@ -47088,10 +47088,10 @@ if test "$with_lmdb" != "no"; then
     LMDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       LMDB_LIBS="$LMDB_LIBPATH -llmdb "
+       LMDB_LIBS="$LMDB_LIBPATH -llmdb $THREAD_LIBS"
     else
        LMDB_INCLUDE=""
-       LMDB_LIBS="-llmdb "
+       LMDB_LIBS="-llmdb $THREAD_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for liblmdb$in_path" >&5
