@@ -57,7 +57,7 @@ function(find_external_library)
         #set(LIBS "${${ARG_LIBNAME}_LIBS};${ARG_EXTRALIBS}")
         #string (REPLACE ";" " " LIBS_STR "${LIBS}")
         #set("${ARG_LIBNAME}_LIBS" "${LIBS}" PARENT_SCOPE)
-        set(TOOLKIT_MODULES_FOUND "${TOOLKIT_MODULES_FOUND} ${ARG_LIBNAME_ORIG}" PARENT_SCOPE)
+        list(APPEND NCBI_MODULES_FOUND "${ARG_LIBNAME_ORIG}")
     endif ()
 endfunction()
 

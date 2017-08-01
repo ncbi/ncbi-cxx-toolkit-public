@@ -575,13 +575,17 @@ if (MONGOCXX_FOUND)
 endif()
 message(STATUS "MongoCXX Includes: ${MONGOCXX_INCLUDE}")
 
-## find_external_library(MONGOCXX
-##     INCLUDES mongocxx/v_noabi/mongocxx/client.hpp
-##     LIBS mongocxx bsoncxx
-##     HINTS "${NCBI_TOOLS_ROOT}/mongodb-3.0.2/"
-##     EXTRALIBS ${OPENSSL_LIBS} ${SASL2_LIBS})
-## set(MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE} "${MONGOCXX_INCLUDE}/mongocxx/v_noabi" "${MONGOCXX_INCLUDE}/bsoncxx/v_noabi")
-## set(MONGOCXX_LIB ${MONGOCXX_LIBS})
+##############################################################################
+##
+## LevelDB
+
+find_package(LEVELDB
+             PATHS
+             /panfs/pan1/gpipe/ThirdParty/leveldb-1.20
+             /usr/local
+             /usr
+             NO_DEFAULT_PATH
+)
 
 
 # libmagic (file-format identification)
