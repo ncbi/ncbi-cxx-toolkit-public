@@ -183,14 +183,14 @@ class CArgument
 public:
     CArgument(string name, CJsonNode::ENodeType type) :
         m_Name(name), 
-        m_TypeOrValue(type),
+        m_TypeOrDefaultValue(type),
         m_Optional(false)
     {}
 
     template <typename TValue>
     CArgument(string name, const TValue& value) :
         m_Name(name), 
-        m_TypeOrValue(value),
+        m_TypeOrDefaultValue(value),
         m_Optional(true)
     {}
 
@@ -198,21 +198,21 @@ public:
 
 private:
     string m_Name;
-    CJsonNode m_TypeOrValue;
+    CJsonNode m_TypeOrDefaultValue;
     bool m_Optional;
 };
 
 struct SCommandImpl;
 class CCommand;
 
-typedef initializer_list<CArgument> TArguments;
+typedef initializer_list<CArgument> TArgsInit;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
 
 class CCommand
 {
 public:
-    CCommand(string name, TArguments args = TArguments());
+    CCommand(string name, TArgsInit args = TArgsInit());
     CCommand(string name, const char * const args);
     CCommand(string name, TCommandsGetter getter);
 

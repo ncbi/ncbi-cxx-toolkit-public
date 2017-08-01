@@ -64,7 +64,7 @@ struct NAutomation::SCommandImpl
 
 struct SSimpleCommandImpl : SCommandImpl
 {
-    SSimpleCommandImpl(TArguments args);
+    SSimpleCommandImpl(TArgsInit args);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
 
 private:
@@ -93,12 +93,12 @@ CJsonNode CArgument::Help()
 {
     CJsonNode help(CJsonNode::eObject);
     help.SetString("name", m_Name);
-    help.SetString("type", m_TypeOrValue.GetTypeName());
-    if (m_Optional) help.SetByKey("default", m_TypeOrValue);
+    help.SetString("type", m_TypeOrDefaultValue.GetTypeName());
+    if (m_Optional) help.SetByKey("default", m_TypeOrDefaultValue);
     return help;
 }
 
-SSimpleCommandImpl::SSimpleCommandImpl(TArguments args) :
+SSimpleCommandImpl::SSimpleCommandImpl(TArgsInit args) :
     m_Args(args)
 {
 }
@@ -164,7 +164,7 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
     return help;
 }
 
-CCommand::CCommand(string name, TArguments args) :
+CCommand::CCommand(string name, TArgsInit args) :
     m_Name(name),
     m_Impl(new SSimpleCommandImpl(args))
 {
