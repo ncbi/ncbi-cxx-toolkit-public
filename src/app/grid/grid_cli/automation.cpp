@@ -152,7 +152,6 @@ CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator&)
 bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
 {
     auto& input = io.input;
-    auto& reply = io.reply;
 
     for (auto& element : m_Args) {
         element.Exec(input);
@@ -164,7 +163,7 @@ bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
         cerr << "too many parameters" << endl;
     }
 
-    m_Exec(m_Args, reply, data);
+    m_Exec(m_Args, io, data);
     return true;
 }
 
@@ -186,14 +185,13 @@ CJsonNode SVariadicCommandImpl::Help(const string& name, CJsonIterator&)
 bool SVariadicCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
 {
     auto& input = io.input;
-    auto& reply = io.reply;
     TArguments args;
 
     for (; input; ++input) {
         args.emplace_back(input);
     }
 
-    m_Exec(args, reply, data);
+    m_Exec(args, io, data);
     return true;
 }
 
@@ -520,19 +518,22 @@ CCommand CAutomationProc::HelpCommand()
     return CCommand("help", CAutomationProc::Commands);
 }
 
-void CAutomationProc::ExecExit(const TArguments&, CJsonNode& reply, void*)
+void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
 {
+    auto& reply = io.reply;
     reply = CJsonNode();
 }
 
-void CAutomationProc::ExecVersion(const TArguments&, CJsonNode& reply, void*)
+void CAutomationProc::ExecVersion(const TArguments&, SInputOutput& io, void*)
 {
+    auto& reply = io.reply;
     reply.AppendString(GRID_APP_VERSION);
     reply.AppendString(__DATE__);
 }
 
-void CAutomationProc::ExecWhatIs(const TArguments& args, CJsonNode& reply, void*)
+void CAutomationProc::ExecWhatIs(const TArguments& args, SInputOutput& io, void*)
 {
+    auto& reply = io.reply;
     const auto id = args[0].Value().AsString();
     auto result = g_WhatIs(id);
 
@@ -543,12 +544,13 @@ void CAutomationProc::ExecWhatIs(const TArguments& args, CJsonNode& reply, void*
     reply.Append(result);
 }
 
-void CAutomationProc::ExecEcho(const TArguments& args, CJsonNode& reply, void*)
+void CAutomationProc::ExecEcho(const TArguments& args, SInputOutput& io, void*)
 {
+    auto& reply = io.reply;
     for (auto& arg: args) reply.Append(arg.Value());
 }
 
-void CAutomationProc::ExecAllowXSite(const TArguments&, CJsonNode&, void*)
+void CAutomationProc::ExecAllowXSite(const TArguments&, SInputOutput&, void*)
 {
     CNetService::AllowXSiteConnections();
 }

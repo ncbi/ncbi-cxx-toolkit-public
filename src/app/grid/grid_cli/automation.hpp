@@ -229,7 +229,7 @@ typedef initializer_list<CArgument> TArgsInit;
 typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
-typedef function<void(const TArguments&, CJsonNode&, void*)> TCommandExecutor;
+typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
 
 class CCommand
 {
@@ -371,11 +371,11 @@ private:
 
     static CCommand HelpCommand();
 
-    static void ExecExit(const TArguments& args, CJsonNode& reply, void* data);
-    static void ExecVersion(const TArguments& args, CJsonNode& reply, void* data);
-    static void ExecWhatIs(const TArguments& args, CJsonNode& reply, void* data);
-    static void ExecEcho(const TArguments& args, CJsonNode& reply, void* data);
-    static void ExecAllowXSite(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecExit(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecWhatIs(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecEcho(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecAllowXSite(const TArguments& args, SInputOutput& io, void* data);
 
     static TCommands Commands();
     static TCommands CallCommands();
