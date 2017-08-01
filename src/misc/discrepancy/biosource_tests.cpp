@@ -37,6 +37,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objects/macro/Source_qual.hpp>
 #include <objects/taxon3/taxon3.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -216,12 +217,60 @@ const string kInfluenzaDateMismatch = "[n] influenza strain[s] conflict with col
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Strain/Collection Date Mismatch")
 {
     if (DoInfluenzaStrainAndCollectionDateMisMatch(obj)) {
-        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj(), false).Fatal();
+        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj()).Fatal();
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// INFLUENZA_SEROTYPE
+
+DISCREPANCY_CASE(INFLUENZA_SEROTYPE, CBioSource, eOncaller, "Influenza A virus must have serotype")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetTaxname() || !NStr::StartsWith(obj.GetOrg().GetTaxname(), "Influenza A virus ")) {
+        return;
+    }
+    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype) {
+                return;
+            }
+        }
+    }
+    m_Objs["[n] Influenza A virus biosource[s] [does] not have serotype"].Add(*context.NewFeatOrDescObj()).Fatal();
+}
+
+
+DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// INFLUENZA_SEROTYPE_FORMAT
+
+DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, CBioSource, eOncaller, "Influenza A virus serotype must match /^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$/")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetTaxname() || !NStr::StartsWith(obj.GetOrg().GetTaxname(), "Influenza A virus ")) {
+        return;
+    }
+    static CRegexp rx("^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$");
+    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch((*it)->GetSubname())) {
+                m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.NewFeatOrDescObj()).Fatal();
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE_FORMAT)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
