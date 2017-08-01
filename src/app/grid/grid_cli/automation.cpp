@@ -457,11 +457,6 @@ TCommands CAutomationProc::Commands()
     return cmds;
 }
 
-CCommand CAutomationProc::HelpCommand()
-{
-    return CCommand("help", CAutomationProc::Commands());
-}
-
 void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
 {
     auto& reply = io.reply;
@@ -527,14 +522,14 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         return reply;
     }
 
-    // Help
-    if (CJsonNode help = HelpCommand().Help(input)) {
-        return help;
+    const string help = "help";
+    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands(), nullptr));
+
+    if (input.GetNode().AsString() == help) {
+        return all_cmds.Help(help, ++input);
     }
 
     reply.Append(m_OKNode);
-
-    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands(), nullptr));
 
     if (!all_cmds.Exec("", io, this)) {
         NCBI_THROW_FMT(CAutomationException, eInvalidInput, "unknown command");

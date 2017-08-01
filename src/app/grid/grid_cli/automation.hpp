@@ -287,8 +287,6 @@ private:
     CJsonNode m_ErrNode;
     CJsonNode m_WarnNode;
 
-    static CCommand HelpCommand();
-
     static void ExecExit(const TArguments& args, SInputOutput& io, void* data);
     static void ExecDel(const TArguments& args, SInputOutput& io, void* data);
     static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
