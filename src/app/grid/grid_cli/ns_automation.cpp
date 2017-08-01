@@ -231,7 +231,7 @@ vector<string> s_ExtractVectorOfStrings(CJsonNode& arg)
     return result;
 }
 
-void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, SInputOutput& io)
+void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 2);
 
@@ -299,7 +299,7 @@ TCommands SNetScheduleService::CallCommands()
     return cmds;
 }
 
-void SNetScheduleService::ExecSetClientType(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecSetClientType(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 1);
 
@@ -307,7 +307,7 @@ void SNetScheduleService::ExecSetClientType(const TArguments& args, SInputOutput
     m_NetScheduleAPI.SetClientType(client_type);
 }
 
-void SNetScheduleService::ExecSetNodeSession(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecSetNodeSession(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 2);
 
@@ -326,19 +326,19 @@ void SNetScheduleService::ExecQueueInfo(const TArguments& args, SInputOutput& io
     reply.Append(g_QueueInfoToJson(m_NetScheduleAPI, queue_name, m_ActualServiceType));
 }
 
-void SNetScheduleService::ExecQueueClassInfo(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecQueueClassInfo(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
     reply.Append(g_QueueClassInfoToJson(m_NetScheduleAPI, m_ActualServiceType));
 }
 
-void SNetScheduleService::ExecReconf(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecReconf(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
     reply.Append(g_ReconfAndReturnJson(m_NetScheduleAPI, m_ActualServiceType));
 }
 
-void SNetScheduleService::ExecSuspend(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecSuspend(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 1);
 
@@ -346,12 +346,12 @@ void SNetScheduleService::ExecSuspend(const TArguments& args, SInputOutput& io)
     g_SuspendNetSchedule(m_NetScheduleAPI, pullback_mode);
 }
 
-void SNetScheduleService::ExecResume(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecResume(const TArguments&, SInputOutput&)
 {
     g_ResumeNetSchedule(m_NetScheduleAPI);
 }
 
-void SNetScheduleService::ExecShutdown(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecShutdown(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 1);
 
@@ -400,7 +400,7 @@ void SNetScheduleService::ExecJobCounters(const TArguments& args, SInputOutput& 
     reply.Append(jobs_by_status);
 }
 
-void SNetScheduleService::ExecGetServers(const TArguments& args, SInputOutput& io)
+void SNetScheduleService::ExecGetServers(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
 

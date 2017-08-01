@@ -108,19 +108,19 @@ TCommands SWorkerNode::CallCommands()
     return cmds;
 }
 
-void SWorkerNode::ExecVersion(const TArguments& args, SInputOutput& io)
+void SWorkerNode::ExecVersion(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
     reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, false));
 }
 
-void SWorkerNode::ExecWnInfo(const TArguments& args, SInputOutput& io)
+void SWorkerNode::ExecWnInfo(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
     reply.Append(g_WorkerNodeInfoToJson(m_WorkerNode));
 }
 
-void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput& io)
+void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 2);
 
@@ -129,7 +129,7 @@ void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput& io)
     g_SuspendWorkerNode(m_WorkerNode, pullback_mode, timeout);
 }
 
-void SWorkerNode::ExecResume(const TArguments& args, SInputOutput& io)
+void SWorkerNode::ExecResume(const TArguments&, SInputOutput&)
 {
     g_ResumeWorkerNode(m_WorkerNode);
 }
@@ -145,7 +145,7 @@ CNetScheduleAdmin::EShutdownLevel s_GetWorkerNodeShutdownMode(Int8 level)
     }
 }
 
-void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput& io)
+void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput&)
 {
     _ASSERT(args.size() == 1);
 

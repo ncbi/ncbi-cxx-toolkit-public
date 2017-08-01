@@ -134,7 +134,7 @@ void CArgument::Exec(const string& name, CJsonIterator& input)
     }
 }
 
-bool SCommandImpl::Check(const string& name, SInputOutput& io, void*& data)
+bool SCommandImpl::Check(const string& name, SInputOutput& io, void*&)
 {
     auto& input = io.input;
 
@@ -205,7 +205,7 @@ CJsonNode SVariadicCommandImpl::Help(const string& name, CJsonIterator&)
     return help;
 }
 
-bool SVariadicCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
+bool SVariadicCommandImpl::Exec(const string&, SInputOutput& io, void* data)
 {
     auto& input = io.input;
     TArguments args;
@@ -256,7 +256,7 @@ bool SCommandGroupImpl::Check(const string& name, SInputOutput& io, void*& data)
     return SCommandImpl::Check(name, io, data);
 }
 
-bool SCommandGroupImpl::Exec(const string& name, SInputOutput& io, void* data)
+bool SCommandGroupImpl::Exec(const string&, SInputOutput& io, void* data)
 {
     if (m_Commands.empty()) return false;
 
@@ -463,7 +463,7 @@ void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
     reply = CJsonNode();
 }
 
-void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* data)
+void CAutomationProc::ExecDel(const TArguments& args, SInputOutput&, void* data)
 {
     _ASSERT(args.size() == 1);
     _ASSERT(data);
