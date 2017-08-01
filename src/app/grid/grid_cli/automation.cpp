@@ -107,22 +107,21 @@ CJsonNode CArgument::Help()
     return help;
 }
 
-void CArgument::Exec(CJsonIterator& input)
+void CArgument::Exec(const string& name, CJsonIterator& input)
 {
     if (input.IsValid()) {
         auto current = input.GetNode();
 
         if (current.GetNodeType() != m_TypeOrDefaultValue.GetNodeType()) {
-            // TODO: throw "invalid type"
-            cerr << "invalid type" << endl;
+            NCBI_THROW_FMT(CAutomationException, eInvalidInput, name <<
+                    ": invalid argument type (expected " << m_TypeOrDefaultValue.GetTypeName() << ")");
         }
 
         m_Value = current;
 
     } else {
         if (!m_Optional) {
-            // TODO: throw "missing required arg"
-            cerr << "missing required arg" << endl;
+            NCBI_THROW_FMT(CAutomationException, eInvalidInput, name << ": insufficient number of arguments");
         }
 
         m_Value = m_TypeOrDefaultValue;
@@ -134,8 +133,7 @@ bool SCommandImpl::Check(const string& name, SInputOutput& io, void*& data)
     auto& input = io.input;
 
     if (!input.IsValid()) {
-        // TODO: throw "missing command name"
-        cerr << "missing command name" << endl;
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput, name << ": insufficient number of arguments");
     }
 
     // Call to a different element
@@ -174,13 +172,12 @@ bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
     auto& input = io.input;
 
     for (auto& element : m_Args) {
-        element.Exec(input);
+        element.Exec(name, input);
         if (input) ++input;
     }
 
     if (input) {
-        // TODO: throw "too many parameters"
-        cerr << "too many parameters" << endl;
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput, name << ": too many arguments");
     }
 
     if (m_Exec) m_Exec(m_Args, io, data);
@@ -578,7 +575,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     arg_array.UpdateLocation(command);
 
     if (!all_cmds.Exec("", io, this)) {
-        arg_array.Exception("unknown command");
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput, "unknown command");
     }
 
     return reply;
@@ -840,6 +837,9 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
                     return 0;
 
                 dumper_and_sender.SendMessage(reply);
+            }
+            catch (CAutomationException& e) {
+                proc.SendError(e.GetMsg());
             }
             catch (CException& e) {
                 ostringstream os;

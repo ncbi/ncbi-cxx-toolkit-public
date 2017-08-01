@@ -222,13 +222,8 @@ vector<string> s_ExtractVectorOfStrings(CJsonNode& arg)
 
     if (!arg.IsNull()) {
         for (CJsonIterator it = arg.Iterate(); it; ++it) {
-            CJsonNode affinity = *it;
-
-            if (affinity.GetNodeType() != CJsonNode::eString) {
-                // TODO: throw "invalid type"
-                cerr << "invalid type" << endl;
-            }
-
+            CArgument affinity("affinity", CJsonNode::eString);
+            affinity.Exec("change_preferred_affinities", it);
             result.push_back(affinity.AsString());
         }
     }

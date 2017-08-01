@@ -212,7 +212,7 @@ public:
     {}
 
     CJsonNode Help();
-    void Exec(CJsonIterator& input);
+    void Exec(const string& name, CJsonIterator& input);
     CJsonNode Value() const { return m_Value; }
 
     // Shortcuts
@@ -430,8 +430,7 @@ bool CAutomationObject::CheckCall(const string& name, SInputOutput& io, void*& d
     auto& input = io.input;
 
     if (!input) {
-        // TODO: throw "missing required id"
-        cerr << "missing required id" << endl;
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput, name << ": insufficient number of arguments");
     }
 
     auto object_id = input.GetNode().AsInteger();
