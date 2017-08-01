@@ -229,7 +229,7 @@ typedef initializer_list<CArgument> TArgsInit;
 typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
-typedef function<void(const TArguments&, SInputOutput&, void*&)> TCommandExecutor;
+typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
 typedef pair<TCommandsGetter, TCommandExecutor> TCommandGroup;
 
 class CCommand
@@ -285,7 +285,7 @@ public:
     CAutomationProc* m_AutomationProc;
 
     template <class TDerived>
-    static void ExecNew(const TArguments& args, SInputOutput& io, void*& data);
+    static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
 
 protected:
     TObjectID m_Id;
@@ -401,7 +401,7 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
 }
 
 template <class TDerived>
-void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void*& data)
+void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void* data)
 {
     _ASSERT(data);
 

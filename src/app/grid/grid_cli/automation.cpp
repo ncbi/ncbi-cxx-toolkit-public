@@ -536,7 +536,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     reply.Append(m_OKNode);
 
-    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands, [](const TArguments&, SInputOutput&, void*&) {}));
+    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands, nullptr));
 
     string command(arg_array.NextString());
     arg_array.UpdateLocation(command);
