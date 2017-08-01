@@ -69,14 +69,15 @@ struct SNetCacheService : public SNetService
     static CCommand CallCommand() { return CallCommand(kName); }
     static TCommands CallCommands();
     static CCommand NewCommand();
-    static CAutomationObject* Create(CArgArray& arg_array,
-            const string& class_name, CAutomationProc* automation_proc);
+    static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
 
     IReader* GetReader(const string& blob_key, size_t& blob_size);
     IReader* GetReader(const string& blob_key, int blob_version, const string& blob_subkey, size_t& blob_size);
 
     IEmbeddedStreamWriter* GetWriter(string& blob_key);
     IEmbeddedStreamWriter* GetWriter(const string& blob_key, int blob_version, const string& blob_subkey);
+
+    static const string kName;
 
 protected:
     SNetCacheService(CAutomationProc* automation_proc,
@@ -86,9 +87,6 @@ protected:
 
     CNetICacheClientExt m_NetICacheClient;
     CNetCacheAPI m_NetCacheAPI;
-
-private:
-    static const string kName;
 };
 
 struct SNetCacheBlob : public CAutomationObject
@@ -110,12 +108,12 @@ struct SNetCacheBlob : public CAutomationObject
     auto_ptr<IReader> m_Reader;
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
 
+    static const string kName;
+
 private:
     virtual void SetWriter();
     virtual void SetReader();
     virtual void GetKey(CJsonNode& reply);
-
-    static const string kName;
 };
 
 struct SNetICacheBlob : SNetCacheBlob
@@ -145,14 +143,12 @@ struct SNetCacheServer : public SNetCacheService
 
     static CCommand CallCommand() { return SNetCacheService::CallCommand(kName); }
     static CCommand NewCommand();
-    static CAutomationObject* Create(CArgArray& arg_array,
-            const string& class_name, CAutomationProc* automation_proc);
+    static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
+
+    static const string kName;
 
 private:
     CNetServer m_NetServer;
-
-private:
-    static const string kName;
 };
 
 }

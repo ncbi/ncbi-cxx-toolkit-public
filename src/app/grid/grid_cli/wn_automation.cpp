@@ -63,14 +63,13 @@ CCommand SWorkerNode::NewCommand()
         });
 }
 
-CAutomationObject* SWorkerNode::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SWorkerNode::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
+    _ASSERT(args.size() == 2);
 
-    const string wn_address(arg_array.NextString());
-    const string client_name(arg_array.NextString(kEmptyStr));
+    const auto wn_address = args[0].Value().AsString();
+    const auto client_name  = args[1].Value().AsString();
+
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateWnCompat(
                 wn_address, client_name));
 

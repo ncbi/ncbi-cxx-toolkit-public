@@ -67,17 +67,15 @@ struct SNetScheduleService : public SNetService
     static CCommand CallCommand();
     static TCommands CallCommands();
     static CCommand NewCommand();
-    static CAutomationObject* Create(CArgArray& arg_array,
-            const string& class_name, CAutomationProc* automation_proc);
+    static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
+
+    static const string kName;
 
 protected:
     CNetScheduleAPIExt m_NetScheduleAPI;
 
     SNetScheduleService(CAutomationProc* automation_proc,
             CNetScheduleAPI ns_api, CNetService::EServiceType type);
-
-private:
-    static const string kName;
 };
 
 struct SNetScheduleServer : public SNetScheduleService
@@ -94,14 +92,12 @@ struct SNetScheduleServer : public SNetScheduleService
     static CCommand CallCommand();
     static TCommands CallCommands();
     static CCommand NewCommand();
-    static CAutomationObject* Create(CArgArray& arg_array,
-            const string& class_name, CAutomationProc* automation_proc);
+    static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
+
+    static const string kName;
 
 private:
     CNetServer m_NetServer;
-
-private:
-    static const string kName;
 };
 
 }

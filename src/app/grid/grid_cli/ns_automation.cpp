@@ -79,15 +79,14 @@ CCommand SNetScheduleService::NewCommand()
         });
 }
 
-CAutomationObject* SNetScheduleService::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetScheduleService::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
+    _ASSERT(args.size() == 3);
 
-    const string service_name(arg_array.NextString(kEmptyStr));
-    const string queue_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
+    const auto service_name = args[0].Value().AsString();
+    const auto queue_name   = args[1].Value().AsString();
+    const auto client_name  = args[2].Value().AsString();
+
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
                 service_name, client_name, queue_name));
 
@@ -104,15 +103,14 @@ CCommand SNetScheduleServer::NewCommand()
         });
 }
 
-CAutomationObject* SNetScheduleServer::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetScheduleServer::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
+    _ASSERT(args.size() == 3);
 
-    const string service_name(arg_array.NextString(kEmptyStr));
-    const string queue_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
+    const auto service_name = args[0].Value().AsString();
+    const auto queue_name   = args[1].Value().AsString();
+    const auto client_name  = args[2].Value().AsString();
+
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
                 service_name, client_name, queue_name));
 

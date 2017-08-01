@@ -406,20 +406,16 @@ void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void*&
     _ASSERT(data);
 
     auto that = static_cast<CAutomationProc*>(data);
-    auto& arg_array = io.arg_array;
     auto& reply = io.reply;
-
-    string class_name(arg_array.NextString());
-    arg_array.UpdateLocation(class_name);
 
     CRef<CAutomationObject> new_object;
 
     try {
-        new_object.Reset(TDerived::Create(arg_array, class_name, that));
+        new_object.Reset(TDerived::Create(args, that));
     }
     catch (CException& e) {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                "Error in '" << class_name << "' constructor: " << e.GetMsg());
+                "Error in '" << TDerived::kName << "' constructor: " << e.GetMsg());
     }
 
     auto id = that->AddObject(new_object, new_object->GetImplPtr());

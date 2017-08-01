@@ -155,10 +155,8 @@ bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
     auto& input = io.input;
 
     for (auto& element : m_Args) {
-        if (!input) break;
-
         element.Exec(input);
-        ++input;
+        if (input) ++input;
     }
 
     if (input) {
@@ -476,11 +474,11 @@ void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
 
 void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* data)
 {
+    _ASSERT(args.size() == 1);
     _ASSERT(data);
 
     auto that = static_cast<CAutomationProc*>(data);
-    auto& arg_array = io.arg_array;
-    TAutomationObjectRef& object(that->ObjectIdToRef((TObjectID) arg_array.NextInteger()));
+    TAutomationObjectRef& object(that->ObjectIdToRef(args[0].Value().AsInteger()));
     that->m_ObjectByPointer.erase(object->GetImplPtr());
     object = NULL;
 }

@@ -65,14 +65,17 @@ CCommand SNetStorageServer::NewCommand()
         });
 }
 
-string s_GetInitString(CArgArray& arg_array)
+string s_GetInitString(const TArguments& args)
 {
-    const string service_name(arg_array.NextString());
-    const string domain_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
-    const string metadata(arg_array.NextString(kEmptyStr));
-    const string ticket(arg_array.NextString(kEmptyStr));
-    const string hello_service(arg_array.NextString(kEmptyStr));
+    _ASSERT(args.size() == 6);
+
+    const auto service_name  = args[0].Value().AsString();
+    const auto domain_name   = args[1].Value().AsString();
+    const auto client_name   = args[2].Value().AsString();
+    const auto metadata      = args[3].Value().AsString();
+    const auto ticket        = args[4].Value().AsString();
+    const auto hello_service = args[5].Value().AsString();
+
     const string init_string(
             "nst=" + service_name + "&domain=" + domain_name +
             "&client=" + client_name + "&metadata=" + metadata +
@@ -81,25 +84,17 @@ string s_GetInitString(CArgArray& arg_array)
     return init_string;
 }
 
-CAutomationObject* SNetStorageService::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetStorageService::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
-
-    CNetStorage nst_api(s_GetInitString(arg_array));
+    CNetStorage nst_api(s_GetInitString(args));
     CNetStorageAdmin nst_api_admin(nst_api);
     return new SNetStorageService(automation_proc, nst_api_admin,
             CNetService::eLoadBalancedService);
 }
 
-CAutomationObject* SNetStorageServer::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetStorageServer::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
-
-    CNetStorage nst_api(s_GetInitString(arg_array));
+    CNetStorage nst_api(s_GetInitString(args));
     CNetStorageAdmin nst_api_admin(nst_api);
     CNetServer server = nst_api_admin.GetService().Iterate().GetServer();
     return new SNetStorageServer(automation_proc, nst_api_admin, server);

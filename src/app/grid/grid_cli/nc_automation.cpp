@@ -224,15 +224,14 @@ CCommand SNetCacheService::NewCommand()
         });
 }
 
-CAutomationObject* SNetCacheService::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetCacheService::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
+    _ASSERT(args.size() == 3);
 
-    const string service_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
-    const string cache_name(arg_array.NextString(kEmptyStr));
+    const auto service_name = args[0].Value().AsString();
+    const auto client_name  = args[1].Value().AsString();
+    const auto cache_name   = args[2].Value().AsString();
+
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     return new SNetCacheService(automation_proc, ic_api,
             CNetService::eLoadBalancedService);
@@ -247,15 +246,14 @@ CCommand SNetCacheServer::NewCommand()
         });
 }
 
-CAutomationObject* SNetCacheServer::Create(
-        CArgArray& arg_array, const string& class_name,
-        CAutomationProc* automation_proc)
+CAutomationObject* SNetCacheServer::Create(const TArguments& args, CAutomationProc* automation_proc)
 {
-    if (class_name != kName) return nullptr;
+    _ASSERT(args.size() == 3);
 
-    const string service_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
-    const string cache_name(arg_array.NextString(kEmptyStr));
+    const auto service_name = args[0].Value().AsString();
+    const auto client_name  = args[1].Value().AsString();
+    const auto cache_name   = args[2].Value().AsString();
+
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     CNetServer server = ic_api.GetService().Iterate().GetServer();
     return new SNetCacheServer(automation_proc, ic_api, server);
