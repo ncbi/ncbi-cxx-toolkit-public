@@ -342,24 +342,32 @@ TCommands SNetServiceBase::CallCommands()
     return cmds;
 }
 
-bool SNetServiceBase::Call(const string& method, SInputOutput& io)
+void SNetServiceBase::ExecGetName(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    reply.AppendString(m_Service.GetServiceName());
+}
+
+void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto which_part = (int) arg_array.NextInteger(0);
+    SServerAddressToJson server_address_proc(which_part);
+    reply.Append(g_ExecToJson(server_address_proc, m_Service, m_ActualServiceType));
+}
 
+bool SNetServiceBase::Call(const string& method, SInputOutput& io)
+{
     if (method == "get_name")
-        reply.AppendString(m_Service.GetServiceName());
+        ExecGetName(TArguments(), io);
     else if (method == "get_address") {
-        SServerAddressToJson server_address_proc(
-                (int) arg_array.NextInteger(0));
-
-        reply.Append(g_ExecToJson(server_address_proc,
-                m_Service, m_ActualServiceType));
+        ExecGetAddress(TArguments(), io);
     } else
 // TODO: Remove this after GRID Python module stops using it
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (method == "allow_xsite_connections")
-            CNetService::AllowXSiteConnections();
+            CAutomationProc::ExecAllowXSite(TArguments(), io, nullptr);
         else
 #endif
         return false;
@@ -384,16 +392,27 @@ TCommands SNetService::CallCommands()
     return cmds;
 }
 
-bool SNetService::Call(const string& method, SInputOutput& io)
+void SNetService::ExecServerInfo(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, true));
+}
+
+void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto command = arg_array.NextString();
+    auto multiline = arg_array.NextBoolean(false);
+    reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType, command, multiline));
+}
+
+bool SNetService::Call(const string& method, SInputOutput& io)
+{
     if (method == "server_info")
-        reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, true));
+        ExecServerInfo(TArguments(), io);
     else if (method == "exec") {
-        string command(arg_array.NextString());
-        reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
-                command, arg_array.NextBoolean(false)));
+        ExecExec(TArguments(), io);
     } else
         return SNetServiceBase::Call(method, io);
 

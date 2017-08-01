@@ -303,6 +303,8 @@ struct SNetServiceBase : public CAutomationObject
     }
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecGetName(const TArguments& args, SInputOutput& io);
+    void ExecGetAddress(const TArguments& args, SInputOutput& io);
 
     CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
@@ -321,6 +323,8 @@ struct SNetService : public SNetServiceBase
     }
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecServerInfo(const TArguments& args, SInputOutput& io);
+    void ExecExec(const TArguments& args, SInputOutput& io);
 
     static TCommands CallCommands();
 };
@@ -362,6 +366,9 @@ public:
     TAutomationObjectRef ReturnNetStorageServerObject(
             CNetStorageAdmin::TInstance nst_api,
             CNetServer::TInstance server);
+
+    static void ExecAllowXSite(const TArguments& args, SInputOutput& io, void* data);
+
 private:
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
@@ -382,7 +389,6 @@ private:
     static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
     static void ExecWhatIs(const TArguments& args, SInputOutput& io, void* data);
     static void ExecEcho(const TArguments& args, SInputOutput& io, void* data);
-    static void ExecAllowXSite(const TArguments& args, SInputOutput& io, void* data);
 
     static TCommands Commands();
     static TCommands CallCommands();
