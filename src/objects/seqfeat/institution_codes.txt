@@ -106,7 +106,7 @@ AHUC	s	University of California, Agronomy and Range Science Department
 AIB	s	Anhui Institute of Biology		
 AIBU	s	Abant Izzet Baysal Ueniversitesi, Biyoloji Boeluemue		
 AICH	s	Aichi Kyoiku University, Biology Department		
-AIM	s	Auckland Institute and Museum		
+AIM	s	Auckland Institute and Museum	AMNZ
 AIMS	s	Australian Institute of Marine Science		
 AIS	s	Academie imperial des Sciences		
 AISIY	s	Armenian Institute for the Scientific Investigation of Cattle Breeding and Veterinary, Department of Meadows and Pastures		
@@ -182,7 +182,7 @@ AMNH:FM	s	American Museum of Natural History, Fossil Mammal Collection
 AMNH:Herp	s	American Museum of Natural History, Herpetology collection
 AMNH:ORN	s	American Museum of Natural History, Ornithology Collection
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division		
-AMNZ	s	Auckland Institute and Museum		
+AMNZ	s	Auckland Institute and Museum	AIM
 AMO	s	Herbario AMO		
 AMP<AUS>	c	Australian Mycological Panel		
 AMP<GBR>	s	Ampleforth College		
