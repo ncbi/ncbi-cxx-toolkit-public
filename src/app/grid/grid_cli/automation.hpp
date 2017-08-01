@@ -229,7 +229,8 @@ typedef initializer_list<CArgument> TArgsInit;
 typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
-typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
+typedef function<void(const TArguments&, SInputOutput&, void*&)> TCommandExecutor;
+typedef pair<TCommandsGetter, TCommandExecutor> TCommandGroup;
 
 class CCommand
 {
@@ -237,7 +238,10 @@ public:
     CCommand(string name, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, const char * const args);
-    CCommand(string name, TCommandsGetter getter);
+    CCommand(string name, TCommandGroup group);
+
+    // TODO: Remove this after all commands are migrated to new parse system
+    CCommand(string name, TCommandsGetter getter) : CCommand(name, TCommandGroup(getter, nullptr)) {}
 
     CJsonNode Help(CJsonIterator& input);
     bool Exec(SInputOutput& io, void* data);
@@ -372,6 +376,8 @@ private:
     static CCommand HelpCommand();
 
     static void ExecExit(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecDel(const TArguments& args, SInputOutput& io, void* data);
     static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
     static void ExecWhatIs(const TArguments& args, SInputOutput& io, void* data);
     static void ExecEcho(const TArguments& args, SInputOutput& io, void* data);

@@ -87,12 +87,13 @@ private:
 
 struct SCommandGroupImpl : SCommandImpl
 {
-    SCommandGroupImpl(TCommandsGetter getter);
+    SCommandGroupImpl(TCommandGroup group);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
     bool Exec(const string& name, SInputOutput& io, void* data) override;
 
 private:
     TCommands m_Commands;
+    TCommandExecutor m_Exec;
 };
 
 CJsonNode CArgument::Help()
@@ -154,6 +155,8 @@ bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
     auto& input = io.input;
 
     for (auto& element : m_Args) {
+        if (!input) break;
+
         element.Exec(input);
         ++input;
     }
@@ -163,7 +166,7 @@ bool SSimpleCommandImpl::Exec(const string& name, SInputOutput& io, void* data)
         cerr << "too many parameters" << endl;
     }
 
-    m_Exec(m_Args, io, data);
+    if (m_Exec) m_Exec(m_Args, io, data);
     return true;
 }
 
@@ -191,12 +194,13 @@ bool SVariadicCommandImpl::Exec(const string& name, SInputOutput& io, void* data
         args.emplace_back(input);
     }
 
-    m_Exec(args, io, data);
+    if (m_Exec) m_Exec(args, io, data);
     return true;
 }
 
-SCommandGroupImpl::SCommandGroupImpl(TCommandsGetter getter) :
-    m_Commands(getter())
+SCommandGroupImpl::SCommandGroupImpl(TCommandGroup group) :
+    m_Commands(group.first()),
+    m_Exec(group.second)
 {
 }
 
@@ -229,6 +233,8 @@ bool SCommandGroupImpl::Exec(const string& name, SInputOutput& io, void* data)
 {
     if (m_Commands.empty()) return false;
 
+    if (m_Exec) m_Exec(TArguments(), io, data);
+
     for (auto& element : m_Commands) {
         if (element.Exec(io, data)) return true;
     }
@@ -254,9 +260,9 @@ CCommand::CCommand(string name, TCommandExecutor exec, const char * const args) 
 {
 }
 
-CCommand::CCommand(string name, TCommandsGetter getter) :
+CCommand::CCommand(string name, TCommandGroup group) :
     m_Name(name),
-    m_Impl(new SCommandGroupImpl(getter))
+    m_Impl(new SCommandGroupImpl(group))
 {
 }
 
@@ -496,8 +502,8 @@ TCommands CAutomationProc::Commands()
     {
         { "exit", ExecExit },
         { "call", CallCommands },
-        { "new", NewCommands },
-        { "del", {
+        { "new", TCommandGroup(NewCommands, ExecNew) },
+        { "del", ExecDel, {
                 { "object_id", CJsonNode::eInteger, },
             }},
         { "whatis", ExecWhatIs, {
@@ -522,6 +528,27 @@ void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
 {
     auto& reply = io.reply;
     reply = CJsonNode();
+}
+
+void CAutomationProc::ExecNew(const TArguments& args, SInputOutput& io, void* data)
+{
+    _ASSERT(data);
+
+    auto that = static_cast<CAutomationProc*>(data);
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+    reply.AppendInteger(that->CreateObject(arg_array));
+}
+
+void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* data)
+{
+    _ASSERT(data);
+
+    auto that = static_cast<CAutomationProc*>(data);
+    auto& arg_array = io.arg_array;
+    TAutomationObjectRef& object(that->ObjectIdToRef((TObjectID) arg_array.NextInteger()));
+    that->m_ObjectByPointer.erase(object->GetImplPtr());
+    object = NULL;
 }
 
 void CAutomationProc::ExecVersion(const TArguments&, SInputOutput& io, void*)
@@ -577,13 +604,9 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     reply.Append(m_OKNode);
 
-    SCommandGroupImpl all_cmds(CAutomationProc::Commands);
-
-    if (all_cmds.Exec("", io, nullptr)) return reply;
-
+    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands, [](const TArguments&, SInputOutput&, void*&) {}));
 
     string command(arg_array.NextString());
-
     arg_array.UpdateLocation(command);
 
     if (command == "call") {
@@ -596,15 +619,9 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                     "Unknown " << object_ref->GetType() <<
                             " method '" << method << "'");
         }
-    } else if (command == "new") {
-        reply.AppendInteger(CreateObject(arg_array));
-    } else if (command == "del") {
-        TAutomationObjectRef& object(ObjectIdToRef(
-                (TObjectID) arg_array.NextInteger()));
-        m_ObjectByPointer.erase(object->GetImplPtr());
-        object = NULL;
-    } else
+    } else if (!all_cmds.Exec("", io, this)) {
         arg_array.Exception("unknown command");
+    }
 
     return reply;
 }
