@@ -77,63 +77,81 @@ TCommands SNetCacheBlob::CallCommands()
     return cmds;
 }
 
-bool SNetCacheBlob::Call(const string& method, SInputOutput& io)
+void SNetCacheBlob::ExecWrite(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto value = arg_array.NextString();
 
+    if (m_Reader.get() != NULL) {
+        NCBI_THROW(CAutomationException, eCommandProcessingError,
+                "Cannot write blob while it's being read");
+    } else if (m_Writer.get() == NULL) {
+        // SetWriter() puts blob ID into m_BlobKey, so we have to check it before that
+        const bool return_blob_key = m_BlobKey.empty();
+        SetWriter();
+        if (return_blob_key) reply.AppendString(m_BlobKey);
+    }
+    m_Writer->Write(value.data(), value.length());
+}
+
+void SNetCacheBlob::ExecRead(const TArguments& args, SInputOutput& io)
+{
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+    auto buf_size = (size_t) arg_array.NextInteger(-1);
+
+    if (m_Writer.get() != NULL) {
+        NCBI_THROW(CAutomationException, eCommandProcessingError,
+                "Cannot read blob while it's being written");
+    } else if (m_Reader.get() == NULL)
+        SetReader();
+    if (buf_size > m_BlobSize)
+        buf_size = m_BlobSize;
+    string buffer(buf_size, 0);
+    char* buf_ptr = &buffer[0];
+    size_t bytes_read;
+    size_t total_bytes_read = 0;
+
+    while (buf_size > 0) {
+        ERW_Result rw_res = m_Reader->Read(buf_ptr, buf_size, &bytes_read);
+        if (rw_res == eRW_Success) {
+            total_bytes_read += bytes_read;
+            buf_ptr += bytes_read;
+            buf_size -= bytes_read;
+        } else if (rw_res == eRW_Eof) {
+            break;
+        } else {
+            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+                    "I/O error while reading " << m_BlobKey);
+        }
+    }
+    buffer.resize(total_bytes_read);
+    m_BlobSize -= total_bytes_read;
+
+    reply.AppendString(buffer);
+}
+
+void SNetCacheBlob::ExecClose(const TArguments&, SInputOutput&)
+{
+    if (m_Reader.get() != NULL)
+        m_Reader.reset();
+    else if (m_Writer.get() != NULL) {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
+}
+
+bool SNetCacheBlob::Call(const string& method, SInputOutput& io)
+{
     if (method == "write") {
-        string value(arg_array.NextString());
-        if (m_Reader.get() != NULL) {
-            NCBI_THROW(CAutomationException, eCommandProcessingError,
-                    "Cannot write blob while it's being read");
-        } else if (m_Writer.get() == NULL) {
-            // SetWriter() puts blob ID into m_BlobKey, so we have to check it before that
-            const bool return_blob_key = m_BlobKey.empty();
-            SetWriter();
-            if (return_blob_key) reply.AppendString(m_BlobKey);
-        }
-        m_Writer->Write(value.data(), value.length());
+        ExecWrite(TArguments(), io);
     } else if (method == "read") {
-        if (m_Writer.get() != NULL) {
-            NCBI_THROW(CAutomationException, eCommandProcessingError,
-                    "Cannot read blob while it's being written");
-        } else if (m_Reader.get() == NULL)
-            SetReader();
-        size_t buf_size = (size_t) arg_array.NextInteger(-1);
-        if (buf_size > m_BlobSize)
-            buf_size = m_BlobSize;
-        string buffer(buf_size, 0);
-        char* buf_ptr = &buffer[0];
-        size_t bytes_read;
-        size_t total_bytes_read = 0;
-
-        while (buf_size > 0) {
-            ERW_Result rw_res = m_Reader->Read(buf_ptr, buf_size, &bytes_read);
-            if (rw_res == eRW_Success) {
-                total_bytes_read += bytes_read;
-                buf_ptr += bytes_read;
-                buf_size -= bytes_read;
-            } else if (rw_res == eRW_Eof) {
-                break;
-            } else {
-                NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                        "I/O error while reading " << m_BlobKey);
-            }
-        }
-        buffer.resize(total_bytes_read);
-        m_BlobSize -= total_bytes_read;
-
-        reply.AppendString(buffer);
+        ExecRead(TArguments(), io);
     } else if (method == "close") {
-        if (m_Reader.get() != NULL)
-            m_Reader.reset();
-        else if (m_Writer.get() != NULL) {
-            m_Writer->Close();
-            m_Writer.reset();
-        }
+        ExecClose(TArguments(), io);
     } else if (method == "get_key") {
-        GetKey(reply);
+        ExecGetKey(TArguments(), io);
     } else
         return false;
 
@@ -150,8 +168,9 @@ void SNetCacheBlob::SetReader()
     m_Reader.reset(m_NetCacheObject->GetReader(m_BlobKey, m_BlobSize));
 }
 
-void SNetCacheBlob::GetKey(CJsonNode& reply)
+void SNetCacheBlob::ExecGetKey(const TArguments&, SInputOutput& io)
 {
+    auto& reply = io.reply;
     reply.AppendString(m_BlobKey);
 }
 
@@ -173,8 +192,9 @@ void SNetICacheBlob::SetReader()
     m_Reader.reset(m_NetCacheObject->GetReader(m_BlobKey, m_BlobVersion, m_BlobSubKey, m_BlobSize));
 }
 
-void SNetICacheBlob::GetKey(CJsonNode& reply)
+void SNetICacheBlob::ExecGetKey(const TArguments&, SInputOutput& io)
 {
+    auto& reply = io.reply;
     reply.AppendString(m_BlobKey);
     reply.AppendInteger(m_BlobVersion);
     reply.AppendString(m_BlobSubKey);
@@ -304,33 +324,43 @@ TCommands SNetCacheService::CallCommands()
     return cmds;
 }
 
-bool SNetCacheService::Call(const string& method, SInputOutput& io)
+void SNetCacheService::ExecGetBlob(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    const string blob_key(arg_array.NextString(kEmptyStr));
+    const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
+    const string blob_subkey(arg_array.NextString(kEmptyStr));
 
+    TAutomationObjectRef blob;
+
+    if (blob_key.empty() || CNetCacheKey::IsValidKey(blob_key)) {
+        blob.Reset(new SNetCacheBlob(this, blob_key));
+    } else {
+        blob.Reset(new SNetICacheBlob(this, blob_key, blob_version, blob_subkey));
+    }
+
+    reply.AppendInteger(m_AutomationProc->AddObject(blob));
+}
+
+void SNetCacheService::ExecGetServers(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+
+    CJsonNode object_ids(CJsonNode::NewArrayNode());
+    for (CNetServiceIterator it = m_NetICacheClient.GetService().Iterate(
+            CNetService::eIncludePenalized); it; ++it)
+        object_ids.AppendInteger(m_AutomationProc->
+                ReturnNetCacheServerObject(m_NetICacheClient, *it)->GetID());
+    reply.Append(object_ids);
+}
+
+bool SNetCacheService::Call(const string& method, SInputOutput& io)
+{
     if (method == "get_blob") {
-        const string blob_key(arg_array.NextString(kEmptyStr));
-        const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
-        const string blob_subkey(arg_array.NextString(kEmptyStr));
-
-        TAutomationObjectRef blob;
-
-        if (blob_key.empty() || CNetCacheKey::IsValidKey(blob_key)) {
-            blob.Reset(new SNetCacheBlob(this, blob_key));
-        } else {
-            blob.Reset(new SNetICacheBlob(this, blob_key, blob_version, blob_subkey));
-        }
-
-        reply.AppendInteger(m_AutomationProc->AddObject(blob));
-
+        ExecGetBlob(TArguments(), io);
     } else if (method == "get_servers") {
-        CJsonNode object_ids(CJsonNode::NewArrayNode());
-        for (CNetServiceIterator it = m_NetICacheClient.GetService().Iterate(
-                CNetService::eIncludePenalized); it; ++it)
-            object_ids.AppendInteger(m_AutomationProc->
-                    ReturnNetCacheServerObject(m_NetICacheClient, *it)->GetID());
-        reply.Append(object_ids);
+        ExecGetServers(TArguments(), io);
     } else
         return SNetService::Call(method, io);
 

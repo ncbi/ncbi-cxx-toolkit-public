@@ -67,6 +67,8 @@ struct SNetCacheService : public SNetService
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecGetBlob(const TArguments& args, SInputOutput& io);
+    void ExecGetServers(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -100,6 +102,9 @@ struct SNetCacheBlob : public CAutomationObject
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecWrite(const TArguments& args, SInputOutput& io);
+    void ExecRead(const TArguments& args, SInputOutput& io);
+    void ExecClose(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -115,7 +120,7 @@ struct SNetCacheBlob : public CAutomationObject
 private:
     virtual void SetWriter();
     virtual void SetReader();
-    virtual void GetKey(CJsonNode& reply);
+    virtual void ExecGetKey(const TArguments& args, SInputOutput& io);
 };
 
 struct SNetICacheBlob : SNetCacheBlob
@@ -126,7 +131,7 @@ struct SNetICacheBlob : SNetCacheBlob
 private:
     void SetWriter() override;
     void SetReader() override;
-    void GetKey(CJsonNode& reply) override;
+    void ExecGetKey(const TArguments& args, SInputOutput& io) override;
 
     int m_BlobVersion;
     string m_BlobSubKey;
