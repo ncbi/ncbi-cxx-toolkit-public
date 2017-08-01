@@ -406,7 +406,7 @@ COrgRefCache::InitNameClasses()
 TTaxDivision
 COrgRefCache::FindDivisionByCode( const char* pchCode )
 {
-    if( !InitDivisions() ) return -1;
+    if( !InitDivisions() || pchCode == 0 ) return -1;
     for( TDivisionMapCI ci = m_divStorage.begin();
          ci != m_divStorage.end();
          ++ci ) {
@@ -417,6 +417,19 @@ COrgRefCache::FindDivisionByCode( const char* pchCode )
     return -1;
 }
 
+TTaxDivision
+COrgRefCache::FindDivisionByName( const char* pchName )
+{
+    if( !InitDivisions() || pchName == 0 ) return -1;
+    for( TDivisionMapCI ci = m_divStorage.begin();
+         ci != m_divStorage.end();
+         ++ci ) {
+        const char* cp = ( ci->second.m_sName.c_str() );
+        if( strcmp( cp, pchName ) == 0 )
+            return ci->first;
+    }
+    return -1;
+}
 
 const char*
 COrgRefCache::GetDivisionCode( short div_id )

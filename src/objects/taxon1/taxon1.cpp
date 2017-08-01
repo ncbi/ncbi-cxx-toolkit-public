@@ -278,42 +278,47 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
 	    if( NStr::StartsWith( (*i)->GetDb(), "taxlookup" ) ) {
 		// convert taxlookup to status or refresh flags
 		if( NStr::EndsWith( (*i)->GetDb(), "-changed" ) ) { // refresh flag
-		    if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxid-changed" ) &&
-			(*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongTaxId;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxname-changed" ) &&
+		    if( NStr::Equal( (*i)->GetDb(), "taxlookup%status-changed" ) &&
+			(*i)->IsSetTag() && (*i)->GetTag().IsId() ) {
+			result = (*i)->GetTag().GetId();
+		    } else {
+			if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxid-changed" ) &&
+			    (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongTaxId;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?taxname-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongTaxname;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?common-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongCommonName;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgname-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongOrgname;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?division-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongDivision;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?lineage-changed" ) &&
 			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongTaxname;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?common-changed" ) &&
+			    result |= eStatus_WrongLineage;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?gc-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongGC;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?mgc-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongMGC;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgmod-changed" ) &&
 			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongCommonName;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgname-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongOrgname;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?division-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongDivision;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?lineage-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongLineage;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?gc-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongGC;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?mgc-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongMGC;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgmod-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongOrgmod;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?pgc-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongPGC;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgrefmod-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongOrgrefMod;
-		    } else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgnameattr-changed" ) &&
-			       (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
-			result |= eStatus_WrongOrgnameAttr;
+			    result |= eStatus_WrongOrgmod;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?pgc-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongPGC;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgrefmod-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongOrgrefMod;
+			} else if( NStr::Equal( (*i)->GetDb(), "taxlookup?orgnameattr-changed" ) &&
+				   (*i)->IsSetTag() && s_GetBoolValue((*i)->GetTag()) ) {
+			    result |= eStatus_WrongOrgnameAttr;
+			}
 		    }
 		} else { // status flag
 		    if( NStr::Equal( (*i)->GetDb(), "taxlookup?is_species_level" ) &&
@@ -1089,6 +1094,29 @@ CTaxon1::GetRankName(TTaxRank rank_id, string& rank_name_out )
 }
 
 //---------------------------------------------
+// Get taxonomic rank id by rank name
+// Returns: rank id
+//          -2 - in case of error
+///
+TTaxRank
+CTaxon1::GetRankIdByName(const string& rank_name)
+{
+    SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    TTaxRank id = m_plCache->FindRankByName( rank_name.c_str() );
+    if( id != -1000 ) {
+	return id;
+    } else {
+	// Error already set
+        return -2;
+    }
+}
+
+//---------------------------------------------
 // Get taxonomic division name by division id
 ///
 bool
@@ -1112,6 +1140,30 @@ CTaxon1::GetDivisionName(TTaxDivision div_id, string& div_name_out, string* div_
         SetLastError( "ERROR: GetDivisionName(): Division not found" );
         return false;
     }
+}
+
+//---------------------------------------------
+// Get taxonomic division id by division name (or code)
+// Returns: rank id
+//          -1 - in case of error
+///
+TTaxDivision
+CTaxon1::GetDivisionIdByName(const string& div_name)
+{
+    SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    TTaxDivision id = m_plCache->FindDivisionByName( div_name.c_str() );
+    if( id <= -1 ) {
+	id = m_plCache->FindDivisionByCode( div_name.c_str() );
+	if( id <= -1 ) {
+	    return -1;
+	}
+    }
+    return id;
 }
 
 //---------------------------------------------
@@ -2028,7 +2080,7 @@ ITreeIterator::TraverseAncestors(I4Each& cb)
 // (see above)
 ///
 bool
-CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
+CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out, string* psLog )
 {
     CDiagAutoPrefix( "Taxon1::CheckOrgRef" );
     SetLastError(NULL);
@@ -2046,6 +2098,10 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
     // Set version db tag
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "version", 2 );
     COrgrefProp::SetOrgrefProp( req.SetLookup(), "merge", true );
+    if( psLog ) {
+        COrgrefProp::SetOrgrefProp( req.SetLookup(), "log", true );
+    }
+
 
     if( SendRequest( req, resp ) ) {
         if( resp.IsLookup() ) {
@@ -2054,6 +2110,9 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 	    
             SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
 	    stat_out = x_ConvertOrgrefProps( *pData );
+            if( psLog ) {
+                pData->GetProperty( "log", *psLog );
+            }
 
 	    return true;
         } else { // Internal: wrong respond type

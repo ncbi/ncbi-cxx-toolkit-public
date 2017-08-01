@@ -141,7 +141,7 @@ private:
 
     bool          InitDivisions();
     TTaxDivision  FindDivisionByCode( const char* pchCode );
-
+    TTaxDivision  FindDivisionByName( const char* pchName );
     // forbidden
     COrgRefCache(const COrgRefCache&);
     COrgRefCache& operator=(const COrgRefCache&);

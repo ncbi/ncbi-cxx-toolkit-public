@@ -116,10 +116,11 @@ public:
     //
     // NOTE:
     // 1. These functions uses the following data from inp_orgRef to find
-    //    organism in taxonomy database. It uses taxname first. If no organism
-    //    was found (or multiple nodes found) then it tries to find organism
-    //    using common name. If nothing found, then it tries to find organism
-    //    using synonyms. Lookup never uses tax_id to find organism.
+    //    organism in taxonomy database. It uses old-name modifier from orgname.
+    //    If no organism was found (or multiple nodes found) then it tries to find organism
+    //    using taxname. If nothing found, then it tries to find organism
+    //    using synonyms. Lookup never uses tax_id to find organism (except when multiple
+    //    nodes found by name then resulting node is chosen by tax_id).
     // 2. LookupMerge function modifies given OrgRef to correspond to the
     //    found one and returns constant pointer to the Taxon2Data structure
     //    stored internally.
@@ -147,20 +148,23 @@ public:
     TTaxId GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
     enum EOrgRefStatus {
-        eStatus_Ok = 0,
-        eStatus_WrongTaxId      = 0x0001,
-        eStatus_WrongGC         = 0x0002,
-        eStatus_WrongMGC        = 0x0004,
-        eStatus_NoOrgname       = 0x0008,
-        eStatus_WrongTaxname    = 0x0010,
-        eStatus_WrongLineage    = 0x0020,
-        eStatus_WrongCommonName = 0x0040,
-        eStatus_WrongOrgname    = 0x0080,
-        eStatus_WrongDivision   = 0x0100,
-        eStatus_WrongOrgmod     = 0x0200,
-        eStatus_WrongPGC        = 0x0400,
-        eStatus_WrongOrgrefMod  = 0x0800,
-        eStatus_WrongOrgnameAttr= 0x1000
+        eStatus_Ok                = COrg_ref::eOrgref_nothing,
+        eStatus_WrongTaxId        = COrg_ref::eOrgref_db_taxid,
+        eStatus_WrongGC           = COrg_ref::eOrgref_on_gc,
+        eStatus_WrongMGC          = COrg_ref::eOrgref_on_mgc,
+        eStatus_NoOrgname         = COrg_ref::eOrgref_orgname,
+        eStatus_WrongTaxname      = COrg_ref::eOrgref_taxname,
+        eStatus_WrongLineage      = COrg_ref::eOrgref_on_lin,
+        eStatus_WrongCommonName   = COrg_ref::eOrgref_common,
+        eStatus_WrongOrgname      = COrg_ref::eOrgref_on_name,
+        eStatus_WrongDivision     = COrg_ref::eOrgref_on_div,
+        eStatus_WrongOrgmod       = COrg_ref::eOrgref_on_mod,
+        eStatus_WrongPGC          = COrg_ref::eOrgref_on_pgc,
+        eStatus_WrongOrgrefMod    = COrg_ref::eOrgref_mod,
+        eStatus_WrongOrgnameAttr  = COrg_ref::eOrgref_on_attr,
+	eStatus_WrongONASpecified = COrg_ref::eOrgref_on_attr_spec,
+	eStatus_WrongNomenclature = COrg_ref::eOrgref_on_attr_nom,
+	eStatus_WrongONANoModFwd  = COrg_ref::eOrgref_on_attr_nofwd
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
@@ -168,7 +172,7 @@ public:
     // Returns: false on any error, stat_out filled with status flags
     // (see above)
     ///
-    bool CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out );
+    bool CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out, string* psLog = 0 );
 
     enum ESearch {
         eSearch_Exact,
@@ -342,9 +346,23 @@ public:
     bool GetRankName(TTaxRank rank_id, string& rank_name_out );
 
     //---------------------------------------------
+    // Get taxonomic rank id by rank name
+    // Returns: rank id
+    //          -2 - in case of error
+    ///
+    TTaxRank GetRankIdByName(const string& rank_name);
+
+    //---------------------------------------------
     // Get taxonomic division name by division id
     ///
     bool GetDivisionName(TTaxDivision div_id, string& div_name_out, string* div_code_out = NULL );
+
+    //---------------------------------------------
+    // Get taxonomic division id by division name (or code)
+    // Returns: rank id
+    //          -1 - in case of error
+    ///
+    TTaxDivision GetDivisionIdByName(const string& div_name);
 
     //---------------------------------------------
     // Get taxonomic name class name by name class id
