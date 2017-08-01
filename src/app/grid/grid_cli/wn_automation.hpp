@@ -48,6 +48,11 @@ struct SWorkerNode : public SNetService
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecVersion(const TArguments& args, SInputOutput& io);
+    void ExecWnInfo(const TArguments& args, SInputOutput& io);
+    void ExecSuspend(const TArguments& args, SInputOutput& io);
+    void ExecResume(const TArguments& args, SInputOutput& io);
+    void ExecShutdown(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();

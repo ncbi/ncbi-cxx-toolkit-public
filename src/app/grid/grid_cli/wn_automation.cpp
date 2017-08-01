@@ -108,39 +108,61 @@ TCommands SWorkerNode::CallCommands()
     return cmds;
 }
 
-enum EWorkerNodeShutdownMode {
-    eNormalShutdown,
-    eShutdownNow,
-    eKillNode
-};
+void SWorkerNode::ExecVersion(const TArguments& args, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, false));
+}
 
-bool SWorkerNode::Call(const string& method, SInputOutput& io)
+void SWorkerNode::ExecWnInfo(const TArguments& args, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    reply.Append(g_WorkerNodeInfoToJson(m_WorkerNode));
+}
+
+void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
-    auto& reply = io.reply;
+    auto pullback_mode = arg_array.NextBoolean(false);
+    auto timeout = (unsigned int) arg_array.NextInteger(0);
+    g_SuspendWorkerNode(m_WorkerNode, pullback_mode, timeout);
+}
 
+void SWorkerNode::ExecResume(const TArguments& args, SInputOutput& io)
+{
+    g_ResumeWorkerNode(m_WorkerNode);
+}
+
+CNetScheduleAdmin::EShutdownLevel s_GetWorkerNodeShutdownMode(Int8 level)
+{
+    enum EWorkerNodeShutdownMode { eNormalShutdown, eShutdownNow, eKillNode };
+
+    switch (level) {
+    case eShutdownNow: return CNetScheduleAdmin::eShutdownImmediate;
+    case eKillNode:    return CNetScheduleAdmin::eDie;
+    default:           return CNetScheduleAdmin::eNormalShutdown;
+    }
+}
+
+void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput& io)
+{
+    auto& arg_array = io.arg_array;
+    auto level = arg_array.NextInteger(0);
+    m_NetScheduleAPI.GetAdmin().ShutdownServer(s_GetWorkerNodeShutdownMode(level));
+}
+     
+bool SWorkerNode::Call(const string& method, SInputOutput& io)
+{
     if (method == "version")
-        reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, false));
+        ExecVersion(TArguments(), io);
     else if (method == "wn_info")
-        reply.Append(g_WorkerNodeInfoToJson(m_WorkerNode));
+        ExecWnInfo(TArguments(), io);
     else if (method == "suspend") {
-        bool pullback_mode = arg_array.NextBoolean(false);
-        g_SuspendWorkerNode(m_WorkerNode,
-                pullback_mode, (unsigned int) arg_array.NextInteger(0));
+        ExecSuspend(TArguments(), io);
     } else if (method == "resume")
-        g_ResumeWorkerNode(m_WorkerNode);
+        ExecResume(TArguments(), io);
     else if (method == "shutdown")
-        switch (arg_array.NextInteger(0)) {
-        default: /* case eNormalShutdown */
-            m_NetScheduleAPI.GetAdmin().ShutdownServer();
-            break;
-        case eShutdownNow:
-            m_NetScheduleAPI.GetAdmin().ShutdownServer(
-                    CNetScheduleAdmin::eShutdownImmediate);
-            break;
-        case eKillNode:
-            m_NetScheduleAPI.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
-        }
+        ExecShutdown(TArguments(), io);
     else
         return SNetService::Call(method, io);
 
