@@ -65,7 +65,7 @@ struct NAutomation::SCommandImpl
 
 struct SSimpleCommandImpl : SCommandImpl
 {
-    SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec = TCommandExecutor());
+    SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
     bool Exec(const string& name, SInputOutput& io, void* data) override;
 
@@ -240,12 +240,6 @@ bool SCommandGroupImpl::Exec(const string& name, SInputOutput& io, void* data)
     return false;
 }
 
-CCommand::CCommand(string name, TArgsInit args) :
-    m_Name(name),
-    m_Impl(new SSimpleCommandImpl(args))
-{
-}
-
 CCommand::CCommand(string name, TCommandExecutor exec, TArgsInit args) :
     m_Name(name),
     m_Impl(new SSimpleCommandImpl(args, exec))
@@ -329,13 +323,13 @@ TCommands SNetServiceBase::CallCommands()
 {
     TCommands cmds =
     {
-        { "get_name", },
-        { "get_address", {
+        { "get_name",    ExecMethod<TSelf, &TSelf::ExecGetName>, },
+        { "get_address", ExecMethod<TSelf, &TSelf::ExecGetAddress>, {
                 { "which_part", 0, }
             }},
 // TODO: Remove this after GRID Python module stops using it
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        { "allow_xsite_connections", },
+        { "allow_xsite_connections", CAutomationProc::ExecAllowXSite, },
 #endif
     };
 
@@ -379,8 +373,8 @@ TCommands SNetService::CallCommands()
 {
     TCommands cmds =
     {
-        { "server_info", },
-        { "exec", {
+        { "server_info", ExecMethod<TSelf, &TSelf::ExecServerInfo>, },
+        { "exec",        ExecMethod<TSelf, &TSelf::ExecExec>, {
                 { "command", CJsonNode::eString, },
                 { "multiline", false, },
             }},

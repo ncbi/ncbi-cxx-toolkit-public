@@ -90,14 +90,14 @@ TCommands SWorkerNode::CallCommands()
 {
     TCommands cmds =
     {
-        { "version", },
-        { "wn_info", },
-        { "suspend", {
+        { "version",  ExecMethod<TSelf, &TSelf::ExecVersion>, },
+        { "wn_info",  ExecMethod<TSelf, &TSelf::ExecWnInfo>, },
+        { "suspend",  ExecMethod<TSelf, &TSelf::ExecSuspend>, {
                 { "pullback_mode", false, },
                 { "timeout", 0, },
             }},
-        { "resume", },
-        { "shutdown", {
+        { "resume",   ExecMethod<TSelf, &TSelf::ExecResume>, },
+        { "shutdown", ExecMethod<TSelf, &TSelf::ExecShutdown>, {
                 { "level", 0 },
             }},
     };

@@ -64,14 +64,14 @@ TCommands SNetCacheBlob::CallCommands()
 {
     TCommands cmds =
     {
-        { "write", {
+        { "write",   ExecMethod<TSelf, &TSelf::ExecWrite>, {
                 { "value", CJsonNode::eString, },
             }},
-        { "read", {
+        { "read",    ExecMethod<TSelf, &TSelf::ExecRead>, {
                 { "buf_size", -1, },
             }},
-        { "close", },
-        { "get_key", },
+        { "close",   ExecMethod<TSelf, &TSelf::ExecClose>, },
+        { "get_key", ExecMethod<TSelf, &TSelf::ExecGetKey>, },
     };
 
     return cmds;
@@ -310,12 +310,12 @@ TCommands SNetCacheService::CallCommands()
 {
     TCommands cmds =
     {
-        { "get_blob", {
+        { "get_blob",    ExecMethod<TSelf, &TSelf::ExecGetBlob>, {
                 { "blob_key", "", },
                 { "blob_version", 0, },
                 { "blob_subkey", "", },
             }},
-        { "get_servers", },
+        { "get_servers", ExecMethod<TSelf, &TSelf::ExecGetServers>, },
     };
 
     TCommands base_cmds = SNetService::CallCommands();

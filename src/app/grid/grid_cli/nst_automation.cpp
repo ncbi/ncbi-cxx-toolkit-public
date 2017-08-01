@@ -163,22 +163,22 @@ TCommands SNetStorageService::CallCommands()
 {
     TCommands cmds =
     {
-        { "clients_info", },
-        { "users_info", },
-        { "client_objects", {
+        { "clients_info",   ExecMethod<TSelf, &TSelf::ExecClientsInfo>, },
+        { "users_info",     ExecMethod<TSelf, &TSelf::ExecUsersInfo>, },
+        { "client_objects", ExecMethod<TSelf, &TSelf::ExecClientObjects>, {
                 { "client_name", CJsonNode::eString, },
                 { "limit", 0, },
             }},
-        { "user_objects", {
+        { "user_objects",   ExecMethod<TSelf, &TSelf::ExecUserObjects>, {
                 { "user_name", CJsonNode::eString, },
                 { "user_ns", "" },
                 { "limit", 0, },
             }},
-        { "open_object", {
+        { "open_object",    ExecMethod<TSelf, &TSelf::ExecOpenObject>, {
                 { "object_loc", CJsonNode::eString, },
             }},
-        { "server_info", },
-        { "get_servers", },
+        { "server_info",    ExecMethod<TSelf, &TSelf::ExecServerInfo>, },
+        { "get_servers",    ExecMethod<TSelf, &TSelf::ExecGetServers>, },
     };
 
     TCommands base_cmds = SNetServiceBase::CallCommands();
@@ -304,11 +304,11 @@ TCommands SNetStorageServer::CallCommands()
 {
     TCommands cmds =
     {
-        { "health", },
-        { "conf", },
-        { "metadata_info", },
-        { "reconf", },
-        { "ackalert", {
+        { "health",        ExecMethod<TSelf, &TSelf::ExecHealth>, },
+        { "conf",          ExecMethod<TSelf, &TSelf::ExecConf>, },
+        { "metadata_info", ExecMethod<TSelf, &TSelf::ExecMetadataInfo>, },
+        { "reconf",        ExecMethod<TSelf, &TSelf::ExecReconf>, },
+        { "ackalert",      ExecMethod<TSelf, &TSelf::ExecAckAlert>, {
                 { "name", CJsonNode::eString, },
                 { "user", CJsonNode::eString, },
             }},
@@ -395,9 +395,9 @@ TCommands SNetStorageObject::CallCommands()
 {
     TCommands cmds =
     {
-        { "info", },
-        { "attr_list", },
-        { "get_attr", {
+        { "info",      ExecMethod<TSelf, &TSelf::ExecInfo>, },
+        { "attr_list", ExecMethod<TSelf, &TSelf::ExecAttrList>, },
+        { "get_attr",  ExecMethod<TSelf, &TSelf::ExecGetAttr>, {
                 { "attr_name", CJsonNode::eString, },
             }},
     };

@@ -144,22 +144,22 @@ TCommands SNetScheduleServer::CallCommands()
 {
     TCommands cmds =
     {
-        { "server_status", {
+        { "server_status",               ExecMethod<TSelf, &TSelf::ExecServerStatus>, {
                 { "verbose", false, },
             }},
-        { "job_group_info", {
+        { "job_group_info",              ExecMethod<TSelf, &TSelf::ExecJobGroupInfo>, {
                 { "verbose", false, },
             }},
-        { "client_info", {
+        { "client_info",                 ExecMethod<TSelf, &TSelf::ExecClientInfo>, {
                 { "verbose", false, },
             }},
-        { "notification_info", {
+        { "notification_info",           ExecMethod<TSelf, &TSelf::ExecNotificationInfo>, {
                 { "verbose", false, },
             }},
-        { "affinity_info", {
+        { "affinity_info",               ExecMethod<TSelf, &TSelf::ExecAffinityInfo>, {
                 { "verbose", false, },
             }},
-        { "change_preferred_affinities", {
+        { "change_preferred_affinities", ExecMethod<TSelf, &TSelf::ExecChangePreferredAffinities>, {
                 { "affs_to_add", CJsonNode::eArray, },
                 { "affs_to_del", CJsonNode::eArray, },
             }},
@@ -279,37 +279,37 @@ TCommands SNetScheduleService::CallCommands()
 {
     TCommands cmds =
     {
-        { "set_client_type", {
+        { "set_client_type",  ExecMethod<TSelf, &TSelf::ExecSetClientType>, {
                 { "client_type", 0, },
             }},
-        { "set_node_session", {
+        { "set_node_session", ExecMethod<TSelf, &TSelf::ExecSetNodeSession>, {
                 { "node", "", },
                 { "session", "", },
             }},
-        { "queue_info", {
+        { "queue_info",       ExecMethod<TSelf, &TSelf::ExecQueueInfo>, {
                 { "queue_name", "", },
             }},
-        { "queue_class_info", },
-        { "reconf", },
-        { "suspend", {
+        { "queue_class_info", ExecMethod<TSelf, &TSelf::ExecQueueClassInfo>, },
+        { "reconf",           ExecMethod<TSelf, &TSelf::ExecReconf>, },
+        { "suspend",          ExecMethod<TSelf, &TSelf::ExecSuspend>, {
                 { "pullback_mode", false, },
             }},
-        { "resume", },
-        { "shutdown", {
+        { "resume",           ExecMethod<TSelf, &TSelf::ExecResume>, },
+        { "shutdown",         ExecMethod<TSelf, &TSelf::ExecShutdown>, {
                 { "do_not_drain", false, },
             }},
-        { "parse_key", {
+        { "parse_key",        ExecMethod<TSelf, &TSelf::ExecParseKey>, {
                 { "job_key", CJsonNode::eString, },
             }},
-        { "job_info", {
+        { "job_info",         ExecMethod<TSelf, &TSelf::ExecJobInfo>, {
                 { "job_key", CJsonNode::eString, },
                 { "verbose", true, },
             }},
-        { "job_counters", {
+        { "job_counters",     ExecMethod<TSelf, &TSelf::ExecJobCounters>, {
                 { " affinity", "", },
                 { " job_group", "", },
             }},
-        { "get_servers", },
+        { "get_servers",      ExecMethod<TSelf, &TSelf::ExecGetServers>, },
     };
 
     TCommands base_cmds = SNetService::CallCommands();

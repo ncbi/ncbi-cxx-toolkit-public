@@ -235,7 +235,6 @@ typedef pair<TCommandsGetter, TCommandExecutor> TCommandGroup;
 class CCommand
 {
 public:
-    CCommand(string name, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, const char * const args);
     CCommand(string name, TCommandGroup group);
@@ -286,6 +285,9 @@ public:
 
     template <class TDerived>
     static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
+
+    template <class TClass, void(TClass::*Method)(const TArguments&, SInputOutput& io)>
+    static void ExecMethod(const TArguments& args, SInputOutput& io, void* data);
 
 protected:
     TObjectID m_Id;
@@ -430,6 +432,15 @@ void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void* 
 
     auto id = that->AddObject(new_object, new_object->GetImplPtr());
     reply.AppendInteger(id);
+}
+
+template <class TClass, void(TClass::*Method)(const TArguments&, SInputOutput& io)>
+void CAutomationObject::ExecMethod(const TArguments& args, SInputOutput& io, void* data)
+{
+    _ASSERT(data);
+
+    auto that = static_cast<TClass*>(data);
+    (that->*Method)(args, io);
 }
 
 }
