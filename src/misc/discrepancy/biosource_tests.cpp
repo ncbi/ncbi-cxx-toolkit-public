@@ -217,12 +217,80 @@ const string kInfluenzaDateMismatch = "[n] influenza strain[s] conflict with col
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Strain/Collection Date Mismatch")
 {
     if (DoInfluenzaStrainAndCollectionDateMisMatch(obj)) {
-        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj()).Fatal();
+        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj());
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// INFLUENZA_QUALS
+
+DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have strain, host, isolation_source, country, collection_date")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetTaxname() || !NStr::StartsWith(obj.GetOrg().GetTaxname(), "Influenza ")) {
+        return;
+    }
+    bool found_strain = false;
+    bool found_host = false;
+    bool found_country = false;
+    bool found_isolation_source = false;
+    bool found_collection_date = false;
+
+    if (obj.IsSetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
+            if ((*it)->IsSetSubtype()) {
+                switch ((*it)->GetSubtype()) {
+                    case CSubSource::eSubtype_country:
+                        found_country = true;
+                        break;
+                    case CSubSource::eSubtype_isolation_source:
+                        found_isolation_source = true;
+                        break;
+                    case CSubSource::eSubtype_collection_date:
+                        found_collection_date = true;
+                        break;
+                }
+            }
+        }
+    }
+    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype()) {
+                switch ((*it)->GetSubtype()) {
+                    case COrgMod::eSubtype_strain:
+                        found_strain = true;
+                        break;
+                    case COrgMod::eSubtype_nat_host:
+                        found_host = true;
+                        break;
+                }
+            }
+        }
+    }
+    if (!found_strain) {
+        m_Objs["[n] Influenza biosource[s] [does] not have strain"].Add(*context.NewFeatOrDescObj());
+    }
+    if (!found_host) {
+        m_Objs["[n] Influenza biosource[s] [does] not have host"].Add(*context.NewFeatOrDescObj());
+    }
+    if (!found_country) {
+        m_Objs["[n] Influenza biosource[s] [does] not have country"].Add(*context.NewFeatOrDescObj());
+    }
+    if (!found_isolation_source) {
+        m_Objs["[n] Influenza biosource[s] [does] not have isolation-source"].Add(*context.NewFeatOrDescObj());
+    }
+    if (!found_collection_date) {
+        m_Objs["[n] Influenza biosource[s] [does] not have collection-date"].Add(*context.NewFeatOrDescObj());
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(INFLUENZA_QUALS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -242,7 +310,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE, CBioSource, eOncaller, "Influenza A virus m
             }
         }
     }
-    m_Objs["[n] Influenza A virus biosource[s] [does] not have serotype"].Add(*context.NewFeatOrDescObj()).Fatal();
+    m_Objs["[n] Influenza A virus biosource[s] [does] not have serotype"].Add(*context.NewFeatOrDescObj());
 }
 
 
@@ -263,7 +331,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, CBioSource, eOncaller, "Influenza A 
     if (obj.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch((*it)->GetSubname())) {
-                m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.NewFeatOrDescObj()).Fatal();
+                m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.NewFeatOrDescObj());
             }
         }
     }
