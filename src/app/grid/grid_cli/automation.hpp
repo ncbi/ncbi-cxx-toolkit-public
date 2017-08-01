@@ -293,6 +293,8 @@ protected:
 
 struct SNetServiceBase : public CAutomationObject
 {
+    using TSelf = SNetServiceBase;
+
     SNetServiceBase(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
         CAutomationObject(automation_proc),
@@ -310,6 +312,8 @@ struct SNetServiceBase : public CAutomationObject
 
 struct SNetService : public SNetServiceBase
 {
+    using TSelf = SNetService;
+
     SNetService(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
         SNetServiceBase(automation_proc, actual_service_type)

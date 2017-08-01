@@ -41,6 +41,8 @@ namespace NAutomation
 
 struct SNetScheduleService : public SNetService
 {
+    using TSelf = SNetScheduleService;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -80,6 +82,8 @@ protected:
 
 struct SNetScheduleServer : public SNetScheduleService
 {
+    using TSelf = SNetScheduleServer;
+
     SNetScheduleServer(CAutomationProc* automation_proc,
             CNetScheduleAPIExt ns_api, CNetServer::TInstance server);
 

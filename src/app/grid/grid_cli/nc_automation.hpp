@@ -43,6 +43,8 @@ namespace NAutomation
 
 struct SNetCacheService : public SNetService
 {
+    using TSelf = SNetCacheService;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -89,6 +91,8 @@ protected:
 
 struct SNetCacheBlob : public CAutomationObject
 {
+    using TSelf = SNetCacheBlob;
+
     SNetCacheBlob(SNetCacheService* nc_object, const string& blob_key);
 
     virtual const string& GetType() const { return kName; }
@@ -130,6 +134,8 @@ private:
 
 struct SNetCacheServer : public SNetCacheService
 {
+    using TSelf = SNetCacheServer;
+
     SNetCacheServer(CAutomationProc* automation_proc,
             CNetICacheClientExt ic_api, CNetServer::TInstance server);
 

@@ -41,6 +41,8 @@ namespace NAutomation
 
 struct SNetStorageService : public SNetServiceBase
 {
+    using TSelf = SNetStorageService;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -82,6 +84,8 @@ protected:
 
 struct SNetStorageServer : public SNetStorageService
 {
+    using TSelf = SNetStorageServer;
+
     SNetStorageServer(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetServer::TInstance server);
 
@@ -104,6 +108,8 @@ private:
 
 struct SNetStorageObject : public CAutomationObject
 {
+    using TSelf = SNetStorageObject;
+
     SNetStorageObject(CAutomationProc* automation_proc,
             CNetStorageObject::TInstance object);
 

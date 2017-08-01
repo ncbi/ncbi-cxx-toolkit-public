@@ -43,7 +43,7 @@ const string SNetStorageObject::kName = "nstobj";
 
 CCommand SNetStorageService::NewCommand()
 {
-    return CCommand(kName, ExecNew<SNetStorageService>, {
+    return CCommand(kName, ExecNew<TSelf>, {
             { "service_name", CJsonNode::eString, },
             { "domain_name", "", },
             { "client_name", "", },
@@ -55,7 +55,7 @@ CCommand SNetStorageService::NewCommand()
 
 CCommand SNetStorageServer::NewCommand()
 {
-    return CCommand(kName, ExecNew<SNetStorageServer>, {
+    return CCommand(kName, ExecNew<TSelf>, {
             { "service_name", CJsonNode::eString, },
             { "domain_name", "", },
             { "client_name", "", },

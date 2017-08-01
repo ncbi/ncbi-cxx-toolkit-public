@@ -57,7 +57,7 @@ SWorkerNode::SWorkerNode(
 
 CCommand SWorkerNode::NewCommand()
 {
-    return CCommand(kName, ExecNew<SWorkerNode>, {
+    return CCommand(kName, ExecNew<TSelf>, {
             { "wn_address", CJsonNode::eString, },
             { "client_name", "", },
         });
