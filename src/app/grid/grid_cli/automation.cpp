@@ -745,19 +745,12 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
                     message_sender->SendMessage(reply);
                 }
                 catch (CAutomationException& e) {
-                    switch (e.GetErrCode()) {
-                    case CAutomationException::eInvalidInput:
-                        proc.SendError(e.GetMsg());
-                        return 2;
-                    default:
-                        proc.SendError(e.GetMsg());
-                    }
+                    proc.SendError(e.ReportThis(eDPF_Log));
+
+                    if (e.GetErrCode() == CAutomationException::eInvalidInput) return 2;
                 }
                 catch (CException& e) {
-                    ostringstream os;
-                    os << e.GetMsg() << ": ";
-                    e.ReportExtra(os);
-                    proc.SendError(os.str());
+                    proc.SendError(e.ReportThis(eDPF_Log));
                 }
 
                 json_reader.Reset();
@@ -800,14 +793,8 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
 
                 dumper_and_sender.SendMessage(reply);
             }
-            catch (CAutomationException& e) {
-                proc.SendError(e.GetMsg());
-            }
             catch (CException& e) {
-                ostringstream os;
-                os << e.GetMsg() << ": ";
-                e.ReportExtra(os);
-                proc.SendError(os.str());
+                proc.SendError(e.ReportThis(eDPF_Log));
             }
         }
         catch (CStringException& e) {
