@@ -105,6 +105,8 @@ NCBITEST_INIT_TREE()
     NCBITEST_DEPENDS_ON(test_tax1_getAllNames, test_tax1_init);
     NCBITEST_DEPENDS_ON(test_tax1m_getBlastName, test_tax1_init);
     NCBITEST_DEPENDS_ON(test_tax1e_needUpdate, test_tax1_init);
+    NCBITEST_DEPENDS_ON(test_tax1m_getRankByName, test_tax1_init);
+    NCBITEST_DEPENDS_ON(test_tax1m_getDivByName, test_tax1_init);
 
     //    NCBITEST_DISABLE(AlwaysDisabled);
 }
@@ -641,6 +643,51 @@ BOOST_AUTO_TEST_CASE(test_tax1e_needUpdate)
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( (status&CTaxon1::eStatus_WrongLineage) != 0 );
     
+}
+    //---------------------------------------------
+    // Get taxonomic rank id by rank name
+    // Returns: rank id
+    //          -2 - in case of error
+    ///
+BOOST_AUTO_TEST_CASE(test_tax1m_getRankByName)
+{
+    string name = "species";
+    string genus = "genus";
+
+    TTaxRank r1 = tax1.GetRankIdByName(name);
+    BOOST_REQUIRE( r1 > 0 );
+    TTaxRank r2 = tax1.GetRankIdByName(genus);
+    BOOST_REQUIRE( r2 > 0 );
+
+    BOOST_REQUIRE( r2 < r1 );
+
+    TTaxRank re = tax1.GetRankIdByName("ksdflglksg");
+    BOOST_REQUIRE( re == -2 );
+}
+    //---------------------------------------------
+    // Get taxonomic division id by division name (or code)
+    // Returns: rank id
+    //          -1 - in case of error
+    ///
+    //---------------------------------------------
+    // Get taxonomic division name by division id
+    ///
+
+BOOST_AUTO_TEST_CASE(test_tax1m_getDivByName)
+{
+    string name = "Mammals";
+    TTaxDivision d = tax1.GetDivisionIdByName( name );
+    BOOST_REQUIRE( d > 0 );
+    TTaxDivision dd = tax1.GetDivisionIdByName( "MAM" );
+    BOOST_REQUIRE( dd > 0 );
+    BOOST_REQUIRE( d == dd );
+    string div_out;
+    bool b = tax1.GetDivisionName( d, div_out );
+    BOOST_REQUIRE( b );
+    BOOST_REQUIRE( div_out == name );
+
+    TTaxDivision de = tax1.GetDivisionIdByName( "kldjsjklshg" );
+    BOOST_REQUIRE( de < 0 );
 }
 
 BOOST_AUTO_TEST_SUITE_END();
