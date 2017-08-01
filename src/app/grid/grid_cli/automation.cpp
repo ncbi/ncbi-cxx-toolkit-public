@@ -505,7 +505,9 @@ void CAutomationProc::ExecEcho(const TArguments& args, SInputOutput& io, void*)
 
 void CAutomationProc::ExecAllowXSite(const TArguments&, SInputOutput&, void*)
 {
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     CNetService::AllowXSiteConnections();
+#endif
 }
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
