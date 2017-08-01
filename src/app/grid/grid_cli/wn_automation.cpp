@@ -67,8 +67,8 @@ CAutomationObject* SWorkerNode::Create(const TArguments& args, CAutomationProc* 
 {
     _ASSERT(args.size() == 2);
 
-    const auto wn_address = args[0].Value().AsString();
-    const auto client_name  = args[1].Value().AsString();
+    const auto wn_address  = args[0].AsString();
+    const auto client_name = args[1].AsString();
 
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateWnCompat(
                 wn_address, client_name));

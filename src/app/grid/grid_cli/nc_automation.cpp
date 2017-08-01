@@ -248,9 +248,9 @@ CAutomationObject* SNetCacheService::Create(const TArguments& args, CAutomationP
 {
     _ASSERT(args.size() == 3);
 
-    const auto service_name = args[0].Value().AsString();
-    const auto client_name  = args[1].Value().AsString();
-    const auto cache_name   = args[2].Value().AsString();
+    const auto service_name = args[0].AsString();
+    const auto client_name  = args[1].AsString();
+    const auto cache_name   = args[2].AsString();
 
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     return new SNetCacheService(automation_proc, ic_api,
@@ -270,9 +270,9 @@ CAutomationObject* SNetCacheServer::Create(const TArguments& args, CAutomationPr
 {
     _ASSERT(args.size() == 3);
 
-    const auto service_name = args[0].Value().AsString();
-    const auto client_name  = args[1].Value().AsString();
-    const auto cache_name   = args[2].Value().AsString();
+    const auto service_name = args[0].AsString();
+    const auto client_name  = args[1].AsString();
+    const auto cache_name   = args[2].AsString();
 
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     CNetServer server = ic_api.GetService().Iterate().GetServer();

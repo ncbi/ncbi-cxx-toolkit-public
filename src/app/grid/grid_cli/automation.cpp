@@ -491,7 +491,8 @@ void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* da
     _ASSERT(data);
 
     auto that = static_cast<CAutomationProc*>(data);
-    TAutomationObjectRef& object(that->ObjectIdToRef(args[0].Value().AsInteger()));
+    const auto object_id = args[0].AsInteger();
+    auto& object = that->ObjectIdToRef(object_id);
     that->m_ObjectByPointer.erase(object->GetImplPtr());
     object = NULL;
 }
@@ -505,8 +506,10 @@ void CAutomationProc::ExecVersion(const TArguments&, SInputOutput& io, void*)
 
 void CAutomationProc::ExecWhatIs(const TArguments& args, SInputOutput& io, void*)
 {
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    const auto id = args[0].Value().AsString();
+    const auto id = args[0].AsString();
     auto result = g_WhatIs(id);
 
     if (!result) {

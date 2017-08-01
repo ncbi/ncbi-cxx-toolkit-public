@@ -69,12 +69,12 @@ string s_GetInitString(const TArguments& args)
 {
     _ASSERT(args.size() == 6);
 
-    const auto service_name  = args[0].Value().AsString();
-    const auto domain_name   = args[1].Value().AsString();
-    const auto client_name   = args[2].Value().AsString();
-    const auto metadata      = args[3].Value().AsString();
-    const auto ticket        = args[4].Value().AsString();
-    const auto hello_service = args[5].Value().AsString();
+    const auto service_name  = args[0].AsString();
+    const auto domain_name   = args[1].AsString();
+    const auto client_name   = args[2].AsString();
+    const auto metadata      = args[3].AsString();
+    const auto ticket        = args[4].AsString();
+    const auto hello_service = args[5].AsString();
 
     const string init_string(
             "nst=" + service_name + "&domain=" + domain_name +

@@ -215,6 +215,13 @@ public:
     void Exec(CJsonIterator& input);
     CJsonNode Value() const { return m_Value; }
 
+    // Shortcuts
+    template <typename TInt = Int8>
+    TInt   AsInteger() const { return static_cast<TInt>(m_Value.AsInteger()); }
+    string AsString()  const { return                   m_Value.AsString();   }
+    double AsDouble()  const { return                   m_Value.AsDouble();   }
+    bool   AsBoolean() const { return                   m_Value.AsBoolean();  }
+
 private:
     string m_Name;
     CJsonNode m_TypeOrDefaultValue;
