@@ -431,6 +431,7 @@ private:
         const std::string & strFeatureName = kEmptyStr,
         const std::string & strQualifierName = kEmptyStr,
         const std::string & strQualifierValue = kEmptyStr,
+        const std::string & strErrorMessage = kEmptyStr,
         const ILineError::TVecOfLines & vecOfOtherLines =
             ILineError::TVecOfLines() );
 
@@ -441,6 +442,7 @@ private:
         const std::string & strFeatureName = kEmptyStr,
         const std::string & strQualifierName = kEmptyStr,
         const std::string & strQualifierValue = kEmptyStr,
+        const std::string & strErrorMessage = kEmptyStr,
         const ILineError::TVecOfLines & vecOfOtherLines =
         ILineError::TVecOfLines());
 
@@ -2137,7 +2139,7 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
                             cds_line_num,
                             ILineError::eProblem_FeatMustBeInXrefdGene, eDiag_Error,
                             kCdsFeatName, 
-                            kEmptyStr, kEmptyStr,
+                            kEmptyStr, kEmptyStr, kEmptyStr,
                             gene_lines );
                     }
                 }
@@ -2459,9 +2461,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             sfp->GetComment() + ";" + gene_comment :
                             gene_comment;
                         sfp->SetComment(comment);
+                        string error_message = 
+                            "locus_tag is not a valid qualifier for this feature. Converting to note."; 
                         x_ProcessMsg(                        
                             ILineError::eProblem_InvalidQualifier, eDiag_Warning,
-                            feat_name, qual);
+                            feat_name, qual, kEmptyStr, error_message);
                         return true;
                     }
                 case eQual_db_xref:
@@ -2830,13 +2834,20 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
 void CFeature_table_reader_imp::x_ProcessMsg(
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
-    const std::string & strFeatureName,
-    const std::string & strQualifierName,
-    const std::string & strQualifierValue,
+    const string& strFeatureName,
+    const string& strQualifierName,
+    const string& strQualifierValue,
+    const string& strErrorMessage,
     const ILineError::TVecOfLines & vecOfOtherLines)
 {
     x_ProcessMsg(m_reader ? m_reader->GetLineNumber() : m_line_num,
-        eProblem, eSeverity, strFeatureName, strQualifierName, strQualifierValue, vecOfOtherLines);
+        eProblem, 
+        eSeverity, 
+        strFeatureName, 
+        strQualifierName, 
+        strQualifierValue, 
+        strErrorMessage,
+        vecOfOtherLines);
 }
 
 
@@ -2844,9 +2855,10 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     int line_num,
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
-    const std::string & strFeatureName,
-    const std::string & strQualifierName,
-    const std::string & strQualifierValue,
+    const string & strFeatureName,
+    const string & strQualifierName,
+    const string & strQualifierValue,
+    const string& strErrorMessage,
     const ILineError::TVecOfLines & vecOfOtherLines )
 {
 
@@ -2856,7 +2868,7 @@ void CFeature_table_reader_imp::x_ProcessMsg(
 
     AutoPtr<CObjReaderLineException> pErr ( 
         CObjReaderLineException::Create(
-        eSeverity, line_num, "", eProblem, m_real_seqid, strFeatureName,
+        eSeverity, line_num, strErrorMessage, eProblem, m_real_seqid, strFeatureName,
         strQualifierName, strQualifierValue));
     ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
         pErr->AddOtherLine(*line_it);
