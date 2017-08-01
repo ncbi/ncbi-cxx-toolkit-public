@@ -60,21 +60,25 @@ struct NAutomation::SCommandImpl
 {
     virtual ~SCommandImpl() {}
     virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
+    virtual bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) = 0;
 };
 
 struct SSimpleCommandImpl : SCommandImpl
 {
-    SSimpleCommandImpl(TArgsInit args);
+    SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec = TCommandExecutor());
     CJsonNode Help(const string& name, CJsonIterator& input) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
 
 private:
     vector<CArgument> m_Args;
+    TCommandExecutor m_Exec;
 };
 
 struct SVariadicCommandImpl : SCommandImpl
 {
     SVariadicCommandImpl(string args);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
 
 private:
     const string m_Args;
@@ -84,6 +88,7 @@ struct SCommandGroupImpl : SCommandImpl
 {
     SCommandGroupImpl(TCommandsGetter getter);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
 
 private:
     TCommands m_Commands;
@@ -98,8 +103,31 @@ CJsonNode CArgument::Help()
     return help;
 }
 
-SSimpleCommandImpl::SSimpleCommandImpl(TArgsInit args) :
-    m_Args(args)
+void CArgument::Exec(CJsonIterator& input)
+{
+    if (input.IsValid()) {
+        auto current = input.GetNode();
+
+        if (current.GetNodeType() != m_TypeOrDefaultValue.GetNodeType()) {
+            // TODO: throw "invalid type"
+            cerr << "invalid type" << endl;
+        }
+
+        m_Value = current;
+
+    } else {
+        if (!m_Optional) {
+            // TODO: throw "missing required arg"
+            cerr << "missing required arg" << endl;
+        }
+
+        m_Value = m_TypeOrDefaultValue;
+    }
+}
+
+SSimpleCommandImpl::SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec) :
+    m_Args(args),
+    m_Exec(exec)
 {
 }
 
@@ -120,6 +148,22 @@ CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator&)
     return help;
 }
 
+bool SSimpleCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+{
+    for (auto& element : m_Args) {
+        element.Exec(input);
+        ++input;
+    }
+
+    if (input) {
+        // TODO: throw "too many parameters"
+        cerr << "too many parameters" << endl;
+    }
+
+    m_Exec(m_Args, reply);
+    return true;
+}
+
 SVariadicCommandImpl::SVariadicCommandImpl(string args) :
     m_Args(args)
 {
@@ -132,6 +176,21 @@ CJsonNode SVariadicCommandImpl::Help(const string& name, CJsonIterator&)
     help.SetString("command", name);
     help.SetString("arguments", m_Args);
     return help;
+}
+
+bool SVariadicCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+{
+    TArguments args;
+
+    while (input) {
+        CArgument arg;
+        arg.Exec(input);
+
+        args.push_back(arg);
+    }
+
+    // TODO: call executor
+    return true;
 }
 
 SCommandGroupImpl::SCommandGroupImpl(TCommandsGetter getter) :
@@ -164,9 +223,26 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
     return help;
 }
 
+bool SCommandGroupImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+{
+    if (m_Commands.empty()) return false;
+
+    for (auto& element : m_Commands) {
+        if (element.Exec(input, reply)) return true;
+    }
+
+    return false;
+}
+
 CCommand::CCommand(string name, TArgsInit args) :
     m_Name(name),
     m_Impl(new SSimpleCommandImpl(args))
+{
+}
+
+CCommand::CCommand(string name, TCommandExecutor exec, TArgsInit args) :
+    m_Name(name),
+    m_Impl(new SSimpleCommandImpl(args, exec))
 {
 }
 
@@ -195,6 +271,21 @@ CJsonNode CCommand::Help(CJsonIterator& input)
     }
 
     return m_Impl->Help(m_Name, ++input);
+}
+
+bool CCommand::Exec(CJsonIterator& input, CJsonNode& reply)
+{
+    if (!input.IsValid()) {
+        // TODO: throw "missing command name"
+    }
+
+    // Call to a different element
+    if (input.GetNode().AsString() != m_Name) {
+        return false;
+    }
+
+    m_Impl->Exec(m_Name, ++input, reply);
+    return true;
 }
 
 void CArgArray::Exception(const char* what)
@@ -395,19 +486,19 @@ TCommands CAutomationProc::Commands()
 {
     TCommands cmds =
     {
-        { "exit", },
+        { "exit", CAutomationProc::ExitCommand },
         { "call", CAutomationProc::CallCommands },
         { "new", CAutomationProc::NewCommands },
         { "del", {
                 { "object_id", CJsonNode::eInteger, },
             }},
-        { "whatis", {
+        { "whatis", CAutomationProc::WhatIsCommand, {
                 { "some_id", CJsonNode::eString, },
             }},
         { "echo", "any" },
-        { "version", },
+        { "version", CAutomationProc::VersionCommand },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        { "allow_xsite_connections", },
+        { "allow_xsite_connections", CAutomationProc::AllowXSiteCommand },
 #endif
     };
 
@@ -417,6 +508,34 @@ TCommands CAutomationProc::Commands()
 CCommand CAutomationProc::HelpCommand()
 {
     return CCommand("help", CAutomationProc::Commands);
+}
+
+void CAutomationProc::ExitCommand(const TArguments& args, CJsonNode& reply)
+{
+    reply = CJsonNode();
+}
+
+void CAutomationProc::VersionCommand(const TArguments& args, CJsonNode& reply)
+{
+    reply.AppendString(GRID_APP_VERSION);
+    reply.AppendString(__DATE__);
+}
+
+void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply)
+{
+    const auto id = args[0].Value().AsString();
+    auto result = g_WhatIs(id);
+
+    if (!result) {
+        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError, "Unable to recognize the specified token.");
+    }
+
+    reply.Append(result);
+}
+
+void CAutomationProc::AllowXSiteCommand(const TArguments& args, CJsonNode& reply)
+{
+    CNetService::AllowXSiteConnections();
 }
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
@@ -437,16 +556,17 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         return help;
     }
 
+    reply.Append(m_OKNode);
+
+    SCommandGroupImpl all_cmds(CAutomationProc::Commands);
+
+    if (all_cmds.Exec("", input, reply)) return reply;
+
     CArgArray arg_array(message);
 
     string command(arg_array.NextString());
 
     arg_array.UpdateLocation(command);
-
-    if (command == "exit")
-        return CJsonNode();
-
-    reply.Append(m_OKNode);
 
     if (command == "call") {
         TAutomationObjectRef object_ref(ObjectIdToRef(
@@ -465,28 +585,11 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         m_ObjectByPointer.erase(object->GetImplPtr());
         object = NULL;
-    } else if (command == "whatis") {
-        CJsonNode result(g_WhatIs(arg_array.NextString()));
-
-        if (result) {
-            reply.Append(result);
-        } else {
-            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                    "Unable to recognize the specified token.");
-        }
     } else if (command == "echo") {
         CJsonNode echo_reply(message);
         echo_reply.SetAt(0, CJsonNode::NewBooleanNode(true));
         return echo_reply;
-    } else if (command == "version") {
-        reply.AppendString(GRID_APP_VERSION);
-        reply.AppendString(__DATE__);
     } else
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (command == "allow_xsite_connections")
-            CNetService::AllowXSiteConnections();
-        else
-#endif
         arg_array.Exception("unknown command");
 
     return reply;

@@ -181,6 +181,10 @@ inline void CArgArray::UpdateLocation(const string& location)
 class CArgument
 {
 public:
+    CArgument() :
+        m_Optional(true)
+    {}
+
     CArgument(string name, CJsonNode::ENodeType type) :
         m_Name(name), 
         m_TypeOrDefaultValue(type),
@@ -195,10 +199,13 @@ public:
     {}
 
     CJsonNode Help();
+    void Exec(CJsonIterator& input);
+    CJsonNode Value() const { return m_Value; }
 
 private:
     string m_Name;
     CJsonNode m_TypeOrDefaultValue;
+    CJsonNode m_Value;
     bool m_Optional;
 };
 
@@ -206,17 +213,21 @@ struct SCommandImpl;
 class CCommand;
 
 typedef initializer_list<CArgument> TArgsInit;
+typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
+typedef function<void(const TArguments&, CJsonNode&)> TCommandExecutor;
 
 class CCommand
 {
 public:
     CCommand(string name, TArgsInit args = TArgsInit());
+    CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
     CCommand(string name, const char * const args);
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);
+    bool Exec(CJsonIterator& input, CJsonNode& reply);
 
 private:
     string m_Name;
@@ -349,6 +360,12 @@ private:
     CJsonNode m_WarnNode;
 
     static CCommand HelpCommand();
+
+    static void ExitCommand(const TArguments& args, CJsonNode& reply);
+    static void VersionCommand(const TArguments& args, CJsonNode& reply);
+    static void WhatIsCommand(const TArguments& args, CJsonNode& reply);
+    static void AllowXSiteCommand(const TArguments& args, CJsonNode& reply);
+
     static TCommands Commands();
     static TCommands CallCommands();
     static TCommands NewCommands();
