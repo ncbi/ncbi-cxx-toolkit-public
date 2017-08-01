@@ -181,8 +181,8 @@ inline void CArgArray::UpdateLocation(const string& location)
 class CArgument
 {
 public:
-    CArgument() :
-        m_Optional(true)
+    CArgument(CJsonIterator& input) :
+        m_Value(input.GetNode())
     {}
 
     CArgument(string name, CJsonNode::ENodeType type) :
@@ -223,7 +223,7 @@ class CCommand
 public:
     CCommand(string name, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
-    CCommand(string name, const char * const args);
+    CCommand(string name, TCommandExecutor exec, const char * const args);
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);
@@ -364,6 +364,7 @@ private:
     static void ExitCommand(const TArguments& args, CJsonNode& reply);
     static void VersionCommand(const TArguments& args, CJsonNode& reply);
     static void WhatIsCommand(const TArguments& args, CJsonNode& reply);
+    static void EchoCommand(const TArguments& args, CJsonNode& reply);
     static void AllowXSiteCommand(const TArguments& args, CJsonNode& reply);
 
     static TCommands Commands();

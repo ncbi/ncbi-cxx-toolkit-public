@@ -76,12 +76,13 @@ private:
 
 struct SVariadicCommandImpl : SCommandImpl
 {
-    SVariadicCommandImpl(string args);
+    SVariadicCommandImpl(string args, TCommandExecutor exec);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
     bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
 
 private:
     const string m_Args;
+    TCommandExecutor m_Exec;
 };
 
 struct SCommandGroupImpl : SCommandImpl
@@ -164,8 +165,9 @@ bool SSimpleCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNod
     return true;
 }
 
-SVariadicCommandImpl::SVariadicCommandImpl(string args) :
-    m_Args(args)
+SVariadicCommandImpl::SVariadicCommandImpl(string args, TCommandExecutor exec) :
+    m_Args(args),
+    m_Exec(exec)
 {
 }
 
@@ -182,14 +184,11 @@ bool SVariadicCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonN
 {
     TArguments args;
 
-    while (input) {
-        CArgument arg;
-        arg.Exec(input);
-
-        args.push_back(arg);
+    for (; input; ++input) {
+        args.emplace_back(input);
     }
 
-    // TODO: call executor
+    m_Exec(args, reply);
     return true;
 }
 
@@ -246,9 +245,9 @@ CCommand::CCommand(string name, TCommandExecutor exec, TArgsInit args) :
 {
 }
 
-CCommand::CCommand(string name, const char * const args) :
+CCommand::CCommand(string name, TCommandExecutor exec, const char * const args) :
     m_Name(name),
-    m_Impl(new SVariadicCommandImpl(args))
+    m_Impl(new SVariadicCommandImpl(args, exec))
 {
 }
 
@@ -495,7 +494,7 @@ TCommands CAutomationProc::Commands()
         { "whatis", CAutomationProc::WhatIsCommand, {
                 { "some_id", CJsonNode::eString, },
             }},
-        { "echo", "any" },
+        { "echo", CAutomationProc::EchoCommand, "any" },
         { "version", CAutomationProc::VersionCommand },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         { "allow_xsite_connections", CAutomationProc::AllowXSiteCommand },
@@ -531,6 +530,11 @@ void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply)
     }
 
     reply.Append(result);
+}
+
+void CAutomationProc::EchoCommand(const TArguments& args, CJsonNode& reply)
+{
+    for (auto& arg: args) reply.Append(arg.Value());
 }
 
 void CAutomationProc::AllowXSiteCommand(const TArguments& args, CJsonNode& reply)
@@ -585,10 +589,6 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         m_ObjectByPointer.erase(object->GetImplPtr());
         object = NULL;
-    } else if (command == "echo") {
-        CJsonNode echo_reply(message);
-        echo_reply.SetAt(0, CJsonNode::NewBooleanNode(true));
-        return echo_reply;
     } else
         arg_array.Exception("unknown command");
 
