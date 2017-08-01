@@ -371,11 +371,11 @@ private:
 
     static CCommand HelpCommand();
 
-    static void ExitCommand(const TArguments& args, CJsonNode& reply, void* data);
-    static void VersionCommand(const TArguments& args, CJsonNode& reply, void* data);
-    static void WhatIsCommand(const TArguments& args, CJsonNode& reply, void* data);
-    static void EchoCommand(const TArguments& args, CJsonNode& reply, void* data);
-    static void AllowXSiteCommand(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecExit(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecVersion(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecWhatIs(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecEcho(const TArguments& args, CJsonNode& reply, void* data);
+    static void ExecAllowXSite(const TArguments& args, CJsonNode& reply, void* data);
 
     static TCommands Commands();
     static TCommands CallCommands();

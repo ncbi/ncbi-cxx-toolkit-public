@@ -496,19 +496,19 @@ TCommands CAutomationProc::Commands()
 {
     TCommands cmds =
     {
-        { "exit", CAutomationProc::ExitCommand },
-        { "call", CAutomationProc::CallCommands },
-        { "new", CAutomationProc::NewCommands },
+        { "exit", ExecExit },
+        { "call", CallCommands },
+        { "new", NewCommands },
         { "del", {
                 { "object_id", CJsonNode::eInteger, },
             }},
-        { "whatis", CAutomationProc::WhatIsCommand, {
+        { "whatis", ExecWhatIs, {
                 { "some_id", CJsonNode::eString, },
             }},
-        { "echo", CAutomationProc::EchoCommand, "any" },
-        { "version", CAutomationProc::VersionCommand },
+        { "echo", ExecEcho, "any" },
+        { "version", ExecVersion },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        { "allow_xsite_connections", CAutomationProc::AllowXSiteCommand },
+        { "allow_xsite_connections", ExecAllowXSite },
 #endif
     };
 
@@ -520,18 +520,18 @@ CCommand CAutomationProc::HelpCommand()
     return CCommand("help", CAutomationProc::Commands);
 }
 
-void CAutomationProc::ExitCommand(const TArguments&, CJsonNode& reply, void*)
+void CAutomationProc::ExecExit(const TArguments&, CJsonNode& reply, void*)
 {
     reply = CJsonNode();
 }
 
-void CAutomationProc::VersionCommand(const TArguments&, CJsonNode& reply, void*)
+void CAutomationProc::ExecVersion(const TArguments&, CJsonNode& reply, void*)
 {
     reply.AppendString(GRID_APP_VERSION);
     reply.AppendString(__DATE__);
 }
 
-void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply, void*)
+void CAutomationProc::ExecWhatIs(const TArguments& args, CJsonNode& reply, void*)
 {
     const auto id = args[0].Value().AsString();
     auto result = g_WhatIs(id);
@@ -543,12 +543,12 @@ void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply, vo
     reply.Append(result);
 }
 
-void CAutomationProc::EchoCommand(const TArguments& args, CJsonNode& reply, void*)
+void CAutomationProc::ExecEcho(const TArguments& args, CJsonNode& reply, void*)
 {
     for (auto& arg: args) reply.Append(arg.Value());
 }
 
-void CAutomationProc::AllowXSiteCommand(const TArguments&, CJsonNode&, void*)
+void CAutomationProc::ExecAllowXSite(const TArguments&, CJsonNode&, void*)
 {
     CNetService::AllowXSiteConnections();
 }
