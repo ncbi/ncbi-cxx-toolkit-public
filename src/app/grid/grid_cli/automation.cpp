@@ -213,7 +213,7 @@ bool SVariadicCommandImpl::Exec(const string& name, SInputOutput& io, void* data
 }
 
 SCommandGroupImpl::SCommandGroupImpl(TCommandGroup group) :
-    m_Commands(group.first()),
+    m_Commands(group.first),
     m_Check(group.second)
 {
 }
@@ -273,8 +273,8 @@ CCommand::CCommand(string name, TCommandExecutor exec, const char * const args) 
 {
 }
 
-CCommand::CCommand(string name, TCommandsGetter getter) :
-    CCommand(name, TCommandGroup(getter, nullptr))
+CCommand::CCommand(string name, TCommands commands) :
+    CCommand(name, TCommandGroup(commands, nullptr))
 {
 }
 
@@ -433,8 +433,8 @@ TCommands CAutomationProc::Commands()
     TCommands cmds =
     {
         { "exit", ExecExit },
-        { "call", CallCommands },
-        { "new", NewCommands },
+        { "call", CallCommands() },
+        { "new", NewCommands() },
         { "del", ExecDel, {
                 { "object_id", CJsonNode::eInteger, },
             }},
@@ -453,7 +453,7 @@ TCommands CAutomationProc::Commands()
 
 CCommand CAutomationProc::HelpCommand()
 {
-    return CCommand("help", CAutomationProc::Commands);
+    return CCommand("help", CAutomationProc::Commands());
 }
 
 void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
@@ -528,7 +528,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     reply.Append(m_OKNode);
 
-    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands, nullptr));
+    SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands(), nullptr));
 
     if (!all_cmds.Exec("", io, this)) {
         NCBI_THROW_FMT(CAutomationException, eInvalidInput, "unknown command");

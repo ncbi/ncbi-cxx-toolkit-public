@@ -57,7 +57,7 @@ const void* SNetCacheBlob::GetImplPtr() const
 
 CCommand SNetCacheBlob::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 TCommands SNetCacheBlob::CallCommands()
@@ -284,12 +284,12 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
 
 CCommand SNetCacheService::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 CCommand SNetCacheServer::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 TCommands SNetCacheService::CallCommands()

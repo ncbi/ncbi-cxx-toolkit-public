@@ -83,7 +83,7 @@ const void* SWorkerNode::GetImplPtr() const
 
 CCommand SWorkerNode::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 TCommands SWorkerNode::CallCommands()

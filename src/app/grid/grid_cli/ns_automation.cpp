@@ -137,7 +137,7 @@ TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
 
 CCommand SNetScheduleServer::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 TCommands SNetScheduleServer::CallCommands()
@@ -253,7 +253,7 @@ void SNetScheduleService::CEventHandler::OnWarning(
 
 CCommand SNetScheduleService::CallCommand()
 {
-    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
+    return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
 }
 
 TCommands SNetScheduleService::CallCommands()

@@ -134,17 +134,16 @@ struct SCommandImpl;
 class CCommand;
 
 typedef vector<CCommand> TCommands;
-typedef function<TCommands()> TCommandsGetter;
 typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
 typedef function<bool(const string&, SInputOutput&, void*&)> TCommandChecker;
-typedef pair<TCommandsGetter, TCommandChecker> TCommandGroup;
+typedef pair<TCommands, TCommandChecker> TCommandGroup;
 
 class CCommand
 {
 public:
     CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, const char * const args);
-    CCommand(string name, TCommandsGetter getter);
+    CCommand(string name, TCommands commands);
     CCommand(string name, TCommandGroup group);
 
     CJsonNode Help(CJsonIterator& input);
