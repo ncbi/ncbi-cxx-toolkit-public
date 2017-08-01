@@ -237,17 +237,16 @@ typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
 typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
-typedef pair<TCommandsGetter, TCommandExecutor> TCommandGroup;
+typedef function<bool(const string&, SInputOutput&, void*&)> TCommandChecker;
+typedef pair<TCommandsGetter, TCommandChecker> TCommandGroup;
 
 class CCommand
 {
 public:
     CCommand(string name, TCommandExecutor exec, TArgsInit args = TArgsInit());
     CCommand(string name, TCommandExecutor exec, const char * const args);
+    CCommand(string name, TCommandsGetter getter);
     CCommand(string name, TCommandGroup group);
-
-    // TODO: Remove this after all commands are migrated to new parse system
-    CCommand(string name, TCommandsGetter getter) : CCommand(name, TCommandGroup(getter, nullptr)) {}
 
     CJsonNode Help(CJsonIterator& input);
     bool Exec(SInputOutput& io, void* data);
@@ -289,6 +288,9 @@ public:
     virtual bool Call(const string& method, const TArguments& args, SInputOutput& io) = 0;
 
     CAutomationProc* m_AutomationProc;
+
+    template <class TDerived>
+    static bool CheckCall(const string& name, SInputOutput& io, void*& data);
 
     template <class TDerived>
     static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
@@ -378,9 +380,9 @@ public:
 
     static void ExecAllowXSite(const TArguments& args, SInputOutput& io, void* data);
 
-private:
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
+private:
     IMessageSender* m_MessageSender;
 
     vector<TAutomationObjectRef> m_ObjectByIndex;
@@ -417,6 +419,29 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
 {
     m_ObjectByPointer[impl_ptr] = new_object;
     return AddObject(new_object);
+}
+
+template <class TDerived>
+bool CAutomationObject::CheckCall(const string& name, SInputOutput& io, void*& data)
+{
+    _ASSERT(data);
+
+    auto that = static_cast<CAutomationProc*>(data);
+    auto& input = io.input;
+
+    if (!input) {
+        // TODO: throw "missing required id"
+        cerr << "missing required id" << endl;
+    }
+
+    auto object_id = input.GetNode().AsInteger();
+    auto& object_ref = that->ObjectIdToRef(object_id);
+
+    if (name != object_ref->GetType()) return false;
+
+    data = object_ref.GetPointer();
+    ++input;
+    return true;
 }
 
 template <class TDerived>

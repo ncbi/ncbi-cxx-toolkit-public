@@ -156,7 +156,7 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
 
 CCommand SNetStorageService::CallCommand()
 {
-    return CCommand(kName, CallCommands);
+    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
 }
 
 TCommands SNetStorageService::CallCommands()
@@ -300,7 +300,7 @@ bool SNetStorageService::Call(const string& method, const TArguments& args, SInp
 
 CCommand SNetStorageServer::CallCommand()
 {
-    return CCommand(kName, CallCommands);
+    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
 }
 
 TCommands SNetStorageServer::CallCommands()
@@ -392,7 +392,7 @@ const void* SNetStorageObject::GetImplPtr() const
 
 CCommand SNetStorageObject::CallCommand()
 {
-    return CCommand(kName, CallCommands);
+    return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
 }
 
 TCommands SNetStorageObject::CallCommands()

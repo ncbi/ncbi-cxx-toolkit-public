@@ -60,6 +60,7 @@ struct NAutomation::SCommandImpl
 {
     virtual ~SCommandImpl() {}
     virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
+    virtual bool Check(const string& name, SInputOutput& io, void*& data);
     virtual bool Exec(const string& name, SInputOutput& io, void* data) = 0;
 };
 
@@ -89,11 +90,12 @@ struct SCommandGroupImpl : SCommandImpl
 {
     SCommandGroupImpl(TCommandGroup group);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
+    bool Check(const string& name, SInputOutput& io, void*& data) override;
     bool Exec(const string& name, SInputOutput& io, void* data) override;
 
 private:
     TCommands m_Commands;
-    TCommandExecutor m_Exec;
+    TCommandChecker m_Check;
 };
 
 CJsonNode CArgument::Help()
@@ -125,6 +127,23 @@ void CArgument::Exec(CJsonIterator& input)
 
         m_Value = m_TypeOrDefaultValue;
     }
+}
+
+bool SCommandImpl::Check(const string& name, SInputOutput& io, void*& data)
+{
+    auto& input = io.input;
+
+    if (!input.IsValid()) {
+        // TODO: throw "missing command name"
+        cerr << "missing command name" << endl;
+    }
+
+    // Call to a different element
+    auto current = input.GetNode().AsString();
+    if (current != name) return false;
+
+    ++input;
+    return true;
 }
 
 SSimpleCommandImpl::SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec) :
@@ -198,7 +217,7 @@ bool SVariadicCommandImpl::Exec(const string& name, SInputOutput& io, void* data
 
 SCommandGroupImpl::SCommandGroupImpl(TCommandGroup group) :
     m_Commands(group.first()),
-    m_Exec(group.second)
+    m_Check(group.second)
 {
 }
 
@@ -227,11 +246,16 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
     return help;
 }
 
+bool SCommandGroupImpl::Check(const string& name, SInputOutput& io, void*& data)
+{
+    if (m_Check) return m_Check(name, io, data);
+
+    return SCommandImpl::Check(name, io, data);
+}
+
 bool SCommandGroupImpl::Exec(const string& name, SInputOutput& io, void* data)
 {
     if (m_Commands.empty()) return false;
-
-    if (m_Exec) m_Exec(TArguments(), io, data);
 
     for (auto& element : m_Commands) {
         if (element.Exec(io, data)) return true;
@@ -249,6 +273,11 @@ CCommand::CCommand(string name, TCommandExecutor exec, TArgsInit args) :
 CCommand::CCommand(string name, TCommandExecutor exec, const char * const args) :
     m_Name(name),
     m_Impl(new SVariadicCommandImpl(args, exec))
+{
+}
+
+CCommand::CCommand(string name, TCommandsGetter getter) :
+    CCommand(name, TCommandGroup(getter, nullptr))
 {
 }
 
@@ -275,20 +304,9 @@ CJsonNode CCommand::Help(CJsonIterator& input)
 
 bool CCommand::Exec(SInputOutput& io, void* data)
 {
-    auto& input = io.input;
+    if (!m_Impl->Check(m_Name, io, data)) return false;
 
-    if (!input.IsValid()) {
-        // TODO: throw "missing command name"
-    }
-
-    // Call to a different element
-    if (input.GetNode().AsString() != m_Name) {
-        return false;
-    }
-
-    ++input;
-    m_Impl->Exec(m_Name, io, data);
-    return true;
+    return m_Impl->Exec(m_Name, io, data);
 }
 
 void CArgArray::Exception(const char* what)
@@ -559,21 +577,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     string command(arg_array.NextString());
     arg_array.UpdateLocation(command);
 
-    if (command == "call") {
-        TAutomationObjectRef object_ref(ObjectIdToRef(
-                (TObjectID) arg_array.NextInteger()));
-        string method(arg_array.NextString());
-        arg_array.UpdateLocation(method);
-
-        TArguments args;
-        for (++input, ++input; input; ++input) args.emplace_back(input);
-
-        if (!object_ref->Call(method, args, io)) {
-            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                    "Unknown " << object_ref->GetType() <<
-                            " method '" << method << "'");
-        }
-    } else if (!all_cmds.Exec("", io, this)) {
+    if (!all_cmds.Exec("", io, this)) {
         arg_array.Exception("unknown command");
     }
 
