@@ -121,103 +121,50 @@ DISCREPANCY_SUMMARIZE(MAP_CHROMOSOME_CONFLICT)
 
 
 // INFLUENZA_DATE_MISMATCH
-/* For Influenza A viruses, the year of the collection date should be
-* the last number before the second set of parentheses in the tax name.
-* For Influenza B viruses, the year should be the last token in the
-* tax name (tokens are separated by / characters).
-*/
-static int GetYearFromInfluenzaA(const string& taxname)
-{
-    size_t pos = NStr::Find(taxname, "(");
-    if (pos == string::npos) {
-        return 0;
-    }
-    pos = NStr::Find(taxname, "(", pos + 1);
-    if (pos == string::npos) {
-        return 0;
-    }
-    pos--;
-    while (pos > 0 && isspace(taxname.c_str()[pos])) {
-        pos--;
-    }
-    if (pos < 4 ||
-        !isdigit(taxname.c_str()[pos]) ||
-        !isdigit(taxname.c_str()[pos - 1]) ||
-        !isdigit(taxname.c_str()[pos - 2]) ||
-        !isdigit(taxname.c_str()[pos - 3])) {
-        return 0;
-    }
-    return NStr::StringToInt(taxname.substr(pos - 3, 4));
-}
 
-
-static int GetYearFromInfluenzaB(const string& taxname)
-{
-    size_t pos = taxname.rfind('/');
-    if (pos == string::npos) {
-        return 0;
-    }
-    ++pos;
-    while (isspace(taxname.c_str()[pos])) {
-        ++pos;
-    }
-    size_t len = 0;
-    while (isdigit(taxname.c_str()[pos + len])) {
-        len++;
-    }
-    if (len > 0) {
-        return NStr::StringToInt(taxname.substr(pos, len));
-    } else {
-        return 0;
-    }
-}
-
-
-static bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& src)
-{
-    if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname()) {
-        return false;
-    }
-    
-    int year = 0;
-    if (NStr::StartsWith(src.GetOrg().GetTaxname(), "Influenza A virus ")) {
-        year = GetYearFromInfluenzaA(src.GetOrg().GetTaxname());
-    } else if (NStr::StartsWith(src.GetOrg().GetTaxname(), "Influenza B virus ")) {
-        year = GetYearFromInfluenzaB(src.GetOrg().GetTaxname());
-    } else {
-        // not influenza A or B, no mismatch can be calculated
-        return false;
-    }
-
-    if (year > 0 && src.IsSetSubtype()) {
-        ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
-            if ((*it)->IsSetSubtype() &&
-                (*it)->GetSubtype() == CSubSource::eSubtype_collection_date &&
-                (*it)->IsSetName()) {
-                try {
-                    CRef<CDate> date = CSubSource::DateFromCollectionDate((*it)->GetName());
-                    if (date->IsStd() && date->GetStd().IsSetYear() && date->GetStd().GetYear() == year) {
-                        // match found, no mismatch
-                        return false;
-                    } else {
-                        return true;
-                    }
-                } catch (CException) {
-                    //unable to parse date, assume mismatch
-                    return true;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-
-const string kInfluenzaDateMismatch = "[n] influenza strain[s] conflict with collection date";
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Strain/Collection Date Mismatch")
 {
-    if (DoInfluenzaStrainAndCollectionDateMisMatch(obj)) {
-        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj());
+    if (!obj.IsSetOrg() || !obj.IsSetSubtype() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod() || !obj.GetOrg().IsSetTaxname() || !NStr::StartsWith(obj.GetOrg().GetTaxname(), "Influenza ")) {
+        return;
+    }
+    int strain_year = 0;
+    int collection_year = 0;
+    ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_strain) {
+            string s = (*it)->GetSubname();
+            size_t pos = s.rfind('/');
+            if (pos == string::npos) {
+                return;
+            }
+            ++pos;
+            while (isspace(s.c_str()[pos])) {
+                ++pos;
+            }
+            size_t len = 0;
+            while (isdigit(s.c_str()[pos + len])) {
+                len++;
+            }
+            if (!len > 0) {
+                return;
+            }
+            strain_year = NStr::StringToInt(s.substr(pos, len));
+            break;
+        }
+    }
+    ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_collection_date) {
+            try {
+                CRef<CDate> date = CSubSource::DateFromCollectionDate((*it)->GetName());
+                if (date->IsStd() && date->GetStd().IsSetYear()) {
+                    collection_year = date->GetStd().GetYear();
+                }
+            }
+            catch (...) {}
+            break;
+        }
+    }
+    if (strain_year != collection_year) {
+        m_Objs["[n] influenza strain[s] conflict with collection date"].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -258,7 +205,7 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have st
             }
         }
     }
-    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+    if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype()) {
                 switch ((*it)->GetSubtype()) {
@@ -303,7 +250,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE, CBioSource, eOncaller, "Influenza A virus m
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetTaxname() || !NStr::StartsWith(obj.GetOrg().GetTaxname(), "Influenza A virus ")) {
         return;
     }
-    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+    if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype) {
                 return;
@@ -328,7 +275,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, CBioSource, eOncaller, "Influenza A 
         return;
     }
     static CRegexp rx("^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$");
-    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+    if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch((*it)->GetSubname())) {
                 m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.NewFeatOrDescObj());
