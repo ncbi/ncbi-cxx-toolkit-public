@@ -66,7 +66,7 @@ struct SNetCacheService : public SNetService
 
     bool Call(const string& method, SInputOutput& io) override;
 
-    static CCommand CallCommand() { return CallCommand(kName); }
+    static CCommand CallCommand();
     static TCommands CallCommands();
     static CCommand NewCommand();
     static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
@@ -82,8 +82,6 @@ struct SNetCacheService : public SNetService
 protected:
     SNetCacheService(CAutomationProc* automation_proc,
             CNetICacheClientExt ic_api, CNetService::EServiceType type);
-
-    static CCommand CallCommand(const string& name);
 
     CNetICacheClientExt m_NetICacheClient;
     CNetCacheAPI m_NetCacheAPI;
@@ -141,7 +139,7 @@ struct SNetCacheServer : public SNetCacheService
 
     bool Call(const string& method, SInputOutput& io) override;
 
-    static CCommand CallCommand() { return SNetCacheService::CallCommand(kName); }
+    static CCommand CallCommand();
     static CCommand NewCommand();
     static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
 

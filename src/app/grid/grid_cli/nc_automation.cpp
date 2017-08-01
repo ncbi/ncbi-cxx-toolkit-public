@@ -276,9 +276,14 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
     return object;
 }
 
-CCommand SNetCacheService::CallCommand(const string& name)
+CCommand SNetCacheService::CallCommand()
 {
-    return CCommand(name, CallCommands);
+    return CCommand(kName, CallCommands);
+}
+
+CCommand SNetCacheServer::CallCommand()
+{
+    return CCommand(kName, CallCommands);
 }
 
 TCommands SNetCacheService::CallCommands()
