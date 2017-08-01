@@ -306,16 +306,6 @@ bool CCommand::Exec(SInputOutput& io, void* data)
     return m_Impl->Exec(m_Name, io, data);
 }
 
-void CArgArray::Exception(const char* what)
-{
-    if (m_Location.empty()) {
-        NCBI_THROW(CAutomationException, eInvalidInput, what);
-    } else {
-        NCBI_THROW_FMT(CAutomationException, eInvalidInput, m_Location <<
-                ": " << what);
-    }
-}
-
 TAutomationObjectRef CAutomationProc::FindObjectByPtr(const void* impl_ptr) const
 {
     TPtrToObjectRefMap::const_iterator it = m_ObjectByPointer.find(impl_ptr);
@@ -367,24 +357,6 @@ void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
     reply.Append(g_ExecToJson(server_address_proc, m_Service, m_ActualServiceType));
 }
 
-bool SNetServiceBase::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "get_name")
-        ExecGetName(args, io);
-    else if (method == "get_address") {
-        ExecGetAddress(args, io);
-    } else
-// TODO: Remove this after GRID Python module stops using it
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (method == "allow_xsite_connections")
-            CAutomationProc::ExecAllowXSite(args, io, nullptr);
-        else
-#endif
-        return false;
-
-    return true;
-}
-
 TCommands SNetService::CallCommands()
 {
     TCommands cmds =
@@ -416,18 +388,6 @@ void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
     const auto command   = args[0].AsString();
     const auto multiline = args[1].AsBoolean();
     reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType, command, multiline));
-}
-
-bool SNetService::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "server_info")
-        ExecServerInfo(args, io);
-    else if (method == "exec") {
-        ExecExec(args, io);
-    } else
-        return SNetServiceBase::Call(method, args, io);
-
-    return true;
 }
 
 CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
@@ -551,7 +511,6 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
     SInputOutput io(message);
     auto& input = io.input;
-    auto& arg_array = io.arg_array;
     auto& reply = io.reply;
 
     // Empty input (help)
@@ -570,9 +529,6 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     reply.Append(m_OKNode);
 
     SCommandGroupImpl all_cmds(TCommandGroup(CAutomationProc::Commands, nullptr));
-
-    string command(arg_array.NextString());
-    arg_array.UpdateLocation(command);
 
     if (!all_cmds.Exec("", io, this)) {
         NCBI_THROW_FMT(CAutomationException, eInvalidInput, "unknown command");

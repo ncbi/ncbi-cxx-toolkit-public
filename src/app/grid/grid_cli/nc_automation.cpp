@@ -144,22 +144,6 @@ void SNetCacheBlob::ExecClose(const TArguments&, SInputOutput&)
     }
 }
 
-bool SNetCacheBlob::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "write") {
-        ExecWrite(args, io);
-    } else if (method == "read") {
-        ExecRead(args, io);
-    } else if (method == "close") {
-        ExecClose(args, io);
-    } else if (method == "get_key") {
-        ExecGetKey(args, io);
-    } else
-        return false;
-
-    return true;
-}
-
 void SNetCacheBlob::SetWriter()
 {
     m_Writer.reset(m_NetCacheObject->GetWriter(m_BlobKey));
@@ -356,23 +340,6 @@ void SNetCacheService::ExecGetServers(const TArguments&, SInputOutput& io)
         object_ids.AppendInteger(m_AutomationProc->
                 ReturnNetCacheServerObject(m_NetICacheClient, *it)->GetID());
     reply.Append(object_ids);
-}
-
-bool SNetCacheService::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "get_blob") {
-        ExecGetBlob(args, io);
-    } else if (method == "get_servers") {
-        ExecGetServers(args, io);
-    } else
-        return SNetService::Call(method, args, io);
-
-    return true;
-}
-
-bool SNetCacheServer::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    return SNetCacheService::Call(method, args, io);
 }
 
 IReader* SNetCacheService::GetReader(const string& blob_key, size_t& blob_size)

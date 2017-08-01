@@ -66,7 +66,6 @@ struct SNetCacheService : public SNetService
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecGetBlob(const TArguments& args, SInputOutput& io);
     void ExecGetServers(const TArguments& args, SInputOutput& io);
 
@@ -101,7 +100,6 @@ struct SNetCacheBlob : public CAutomationObject
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecWrite(const TArguments& args, SInputOutput& io);
     void ExecRead(const TArguments& args, SInputOutput& io);
     void ExecClose(const TArguments& args, SInputOutput& io);
@@ -147,8 +145,6 @@ struct SNetCacheServer : public SNetCacheService
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
-
-    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
 
     static CCommand CallCommand();
     static CCommand NewCommand();

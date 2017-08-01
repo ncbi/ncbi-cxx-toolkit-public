@@ -244,26 +244,6 @@ void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, S
     m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(&to_add, &to_del);
 }
 
-bool SNetScheduleServer::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "server_status")
-        ExecServerStatus(args, io);
-    else if (method == "job_group_info")
-        ExecJobGroupInfo(args, io);
-    else if (method == "client_info")
-        ExecClientInfo(args, io);
-    else if (method == "notification_info")
-        ExecNotificationInfo(args, io);
-    else if (method == "affinity_info")
-        ExecAffinityInfo(args, io);
-    else if (method == "change_preferred_affinities") {
-        ExecChangePreferredAffinities(args, io);
-    } else
-        return SNetScheduleService::Call(method, args, io);
-
-    return true;
-}
-
 void SNetScheduleService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
@@ -431,36 +411,4 @@ void SNetScheduleService::ExecGetServers(const TArguments& args, SInputOutput& i
                 ReturnNetScheduleServerObject(m_NetScheduleAPI, *it)->
                 GetID());
     reply.Append(object_ids);
-}
-
-bool SNetScheduleService::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "set_client_type")
-        ExecSetClientType(args, io);
-    else if (method == "set_node_session") {
-        ExecSetNodeSession(args, io);
-    } else if (method == "queue_info")
-        ExecQueueInfo(args, io);
-    else if (method == "queue_class_info")
-        ExecQueueClassInfo(args, io);
-    else if (method == "reconf")
-        ExecReconf(args, io);
-    else if (method == "suspend")
-        ExecSuspend(args, io);
-    else if (method == "resume")
-        ExecResume(args, io);
-    else if (method == "shutdown")
-        ExecShutdown(args, io);
-    else if (method == "parse_key") {
-        ExecParseKey(args, io);
-    } else if (method == "job_info") {
-        ExecJobInfo(args, io);
-    } else if (method == "job_counters") {
-        ExecJobCounters(args, io);
-    } else if (method == "get_servers") {
-        ExecGetServers(args, io);
-    } else
-        return SNetService::Call(method, args, io);
-
-    return true;
 }

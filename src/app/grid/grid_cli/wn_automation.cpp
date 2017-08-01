@@ -152,21 +152,3 @@ void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput& io)
     const auto level = args[0].AsInteger();
     m_NetScheduleAPI.GetAdmin().ShutdownServer(s_GetWorkerNodeShutdownMode(level));
 }
-     
-bool SWorkerNode::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "version")
-        ExecVersion(args, io);
-    else if (method == "wn_info")
-        ExecWnInfo(args, io);
-    else if (method == "suspend") {
-        ExecSuspend(args, io);
-    } else if (method == "resume")
-        ExecResume(args, io);
-    else if (method == "shutdown")
-        ExecShutdown(args, io);
-    else
-        return SNetService::Call(method, args, io);
-
-    return true;
-}

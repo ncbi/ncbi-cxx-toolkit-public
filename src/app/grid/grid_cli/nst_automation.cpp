@@ -276,28 +276,6 @@ void SNetStorageService::ExecGetServers(const TArguments&, SInputOutput& io)
     reply.Append(object_ids);
 }
 
-bool SNetStorageService::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "clients_info") {
-        ExecClientsInfo(args, io);
-    } else if (method == "users_info") {
-        ExecUsersInfo(args, io);
-    } else if (method == "client_objects") {
-        ExecClientObjects(args, io);
-    } else if (method == "user_objects") {
-        ExecUserObjects(args, io);
-    } else if (method == "server_info") {
-        ExecServerInfo(args, io);
-    } else if (method == "open_object") {
-        ExecOpenObject(args, io);
-    } else if (method == "get_servers") {
-        ExecGetServers(args, io);
-    } else
-        return SNetServiceBase::Call(method, args, io);
-
-    return true;
-}
-
 CCommand SNetStorageServer::CallCommand()
 {
     return CCommand(kName, TCommandGroup(CallCommands, CheckCall<TSelf>));
@@ -360,24 +338,6 @@ void SNetStorageServer::ExecAckAlert(const TArguments& args, SInputOutput& io)
     reply.Append(response);
 }
 
-bool SNetStorageServer::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "health") {
-        ExecHealth(args, io);
-    } else if (method == "conf") {
-        ExecConf(args, io);
-    } else if (method == "metadata_info") {
-        ExecMetadataInfo(args, io);
-    } else if (method == "reconf") {
-        ExecReconf(args, io);
-    } else if (method == "ackalert") {
-        ExecAckAlert(args, io);
-    } else
-        return SNetStorageService::Call(method, args, io);
-
-    return true;
-}
-
 SNetStorageObject::SNetStorageObject(
         CAutomationProc* automation_proc, CNetStorageObject::TInstance object) :
     CAutomationObject(automation_proc),
@@ -434,19 +394,4 @@ void SNetStorageObject::ExecGetAttr(const TArguments& args, SInputOutput& io)
     const auto attr_name = args[0].AsString();
     CJsonNode response(m_Object.GetAttribute(attr_name));
     reply.Append(response);
-}
-
-bool SNetStorageObject::Call(const string& method, const TArguments& args, SInputOutput& io)
-{
-    if (method == "info") {
-        ExecInfo(args, io);
-    } else if (method == "attr_list") {
-        ExecAttrList(args, io);
-    } else if (method == "get_attr") {
-        ExecGetAttr(args, io);
-    } else {
-        return false;
-    }
-
-    return true;
 }

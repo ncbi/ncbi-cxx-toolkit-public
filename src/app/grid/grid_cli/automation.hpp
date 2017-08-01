@@ -63,130 +63,13 @@ public:
     NCBI_EXCEPTION_DEFAULT(CAutomationException, CException);
 };
 
-class CArgArray
-{
-public:
-    CArgArray(const CJsonNode& args);
-
-    CJsonNode NextNodeOrNull();
-    CJsonNode NextNode();
-
-    string GetString(const CJsonNode& node);
-    string NextString() {return GetString(NextNode());}
-    string NextString(const string& default_value);
-
-    Int8 GetInteger(const CJsonNode& node);
-    Int8 NextInteger() {return GetInteger(NextNode());}
-    Int8 NextInteger(Int8 default_value);
-
-    bool GetBoolean(const CJsonNode& node);
-    bool NextBoolean() {return GetBoolean(NextNode());}
-    bool NextBoolean(bool default_value);
-
-    CJsonNode GetArray(const CJsonNode& node);
-    CJsonNode NextArray() {return GetArray(NextNode());}
-
-    void UpdateLocation(const string& location);
-    void Exception(const char* what);
-
-private:
-    CJsonNode m_Args;
-    CJsonIterator m_Position;
-    string m_Location;
-};
-
-inline CArgArray::CArgArray(const CJsonNode& args) :
-    m_Args(args),
-    m_Position(args.Iterate())
-{
-}
-
-inline CJsonNode CArgArray::NextNodeOrNull()
-{
-    if (m_Position) {
-        if (!(*m_Position).IsNull()) {
-            CJsonNode result(*m_Position);
-            m_Position.Next();
-            return result;
-        }
-        m_Position.Next();
-    }
-    return CJsonNode();
-}
-
-inline CJsonNode CArgArray::NextNode()
-{
-    CJsonNode next_node(NextNodeOrNull());
-    if (!next_node)
-        Exception("insufficient number of arguments");
-    return next_node;
-}
-
-inline string CArgArray::GetString(const CJsonNode& node)
-{
-    if (!node.IsString())
-        Exception("invalid argument type (expected a string)");
-    return node.AsString();
-}
-
-inline string CArgArray::NextString(const string& default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetString(next_node) : default_value;
-}
-
-inline Int8 CArgArray::GetInteger(const CJsonNode& node)
-{
-    if (!node.IsInteger())
-        Exception("invalid argument type (expected an integer)");
-    return node.AsInteger();
-}
-
-inline Int8 CArgArray::NextInteger(Int8 default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetInteger(next_node) : default_value;
-}
-
-inline bool CArgArray::GetBoolean(const CJsonNode& node)
-{
-    if (!node.IsBoolean())
-        Exception("invalid argument type (expected a boolean)");
-    return node.AsBoolean();
-}
-
-inline bool CArgArray::NextBoolean(bool default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetBoolean(next_node) : default_value;
-}
-
-inline CJsonNode CArgArray::GetArray(const CJsonNode& node)
-{
-    if (!node.IsArray())
-        Exception("invalid argument type (expected an array)");
-    return node;
-}
-
-inline void CArgArray::UpdateLocation(const string& location)
-{
-    if (m_Location.empty())
-        m_Location = location;
-    else {
-        m_Location.push_back(' ');
-        m_Location.append(location);
-    }
-}
-
 struct SInputOutput
 {
     CJsonIterator input;
-    CArgArray arg_array; // TODO: Remove after all commands are migrated to new parse system
     CJsonNode reply;
 
     SInputOutput(const CJsonNode& message) :
         input(message.Iterate()),
-        arg_array(message),
         reply(CJsonNode::NewArrayNode())
     {}
 };
@@ -285,8 +168,6 @@ public:
 
     virtual const void* GetImplPtr() const = 0;
 
-    virtual bool Call(const string& method, const TArguments& args, SInputOutput& io) = 0;
-
     CAutomationProc* m_AutomationProc;
 
     template <class TDerived>
@@ -313,7 +194,6 @@ struct SNetServiceBase : public CAutomationObject
     {
     }
 
-    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecGetName(const TArguments& args, SInputOutput& io);
     void ExecGetAddress(const TArguments& args, SInputOutput& io);
 
@@ -333,7 +213,6 @@ struct SNetService : public SNetServiceBase
     {
     }
 
-    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecServerInfo(const TArguments& args, SInputOutput& io);
     void ExecExec(const TArguments& args, SInputOutput& io);
 
