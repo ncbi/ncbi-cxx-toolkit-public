@@ -99,6 +99,7 @@ namespace {
     // Each SWarningTest has one SOneWarningsInfo for each
     // warning that might appear.
     struct SOneWarningsInfo {
+
         SOneWarningsInfo()
             : m_eType(ILineError::eProblem_Unset)
             , m_iLineNumExpected(0)
@@ -111,6 +112,7 @@ namespace {
             : m_eType(t), m_sFeatureName(s), m_iLineNumExpected(i)
         {
         }
+
 
         ILineError::EProblem m_eType;
         string   m_sFeatureName; // can be empty
@@ -414,11 +416,9 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
         // load the warnings that were seen into warningsSeenFromThisTest
         ITERATE_0_IDX(ii, pMessageListener->Count() ) {
             const ILineError & line_error = pMessageListener->GetError(ii);
-            SOneWarningsInfo warning_info = {
-                line_error.Problem(),
+            SOneWarningsInfo warning_info(line_error.Problem(),
                 line_error.FeatureName(),
-                line_error.Line()
-            };
+                line_error.Line());
             setWarningsSeen.insert(warning_info);
         }
 
@@ -431,9 +431,14 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
                 warning_test.m_warnings_expected[warning_check_idx];
             const ILineError::EProblem eExpectedType = 
                 one_warning_info.m_eType;
-            if( static_cast<int>(eExpectedType) <= 0 ) {
+
+            if (eExpectedType == ILineError::eProblem_Unset) {
                 continue;
             }
+
+          //  if( static_cast<int>(eExpectedType) <= 1 ) {
+          //      continue;
+          //  }
             setExpectedWarnings.insert( one_warning_info );
         }
 
