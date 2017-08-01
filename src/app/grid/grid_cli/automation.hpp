@@ -178,6 +178,17 @@ inline void CArgArray::UpdateLocation(const string& location)
     }
 }
 
+struct SInputOutput
+{
+    CJsonIterator input;
+    CJsonNode reply;
+
+    SInputOutput(const CJsonNode& message) :
+        input(message.Iterate()),
+        reply(CJsonNode::NewArrayNode())
+    {}
+};
+
 class CArgument
 {
 public:
@@ -227,7 +238,7 @@ public:
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);
-    bool Exec(CJsonIterator& input, CJsonNode& reply, void* data);
+    bool Exec(SInputOutput& io, void* data);
 
 private:
     string m_Name;
