@@ -64,7 +64,7 @@ struct SNetScheduleService : public SNetService
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecSetClientType(const TArguments& args, SInputOutput& io);
     void ExecSetNodeSession(const TArguments& args, SInputOutput& io);
     void ExecQueueInfo(const TArguments& args, SInputOutput& io);
@@ -103,7 +103,7 @@ struct SNetScheduleServer : public SNetScheduleService
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecServerStatus(const TArguments& args, SInputOutput& io);
     void ExecJobGroupInfo(const TArguments& args, SInputOutput& io);
     void ExecClientInfo(const TArguments& args, SInputOutput& io);

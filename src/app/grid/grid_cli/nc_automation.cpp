@@ -142,16 +142,16 @@ void SNetCacheBlob::ExecClose(const TArguments&, SInputOutput&)
     }
 }
 
-bool SNetCacheBlob::Call(const string& method, SInputOutput& io)
+bool SNetCacheBlob::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "write") {
-        ExecWrite(TArguments(), io);
+        ExecWrite(args, io);
     } else if (method == "read") {
-        ExecRead(TArguments(), io);
+        ExecRead(args, io);
     } else if (method == "close") {
-        ExecClose(TArguments(), io);
+        ExecClose(args, io);
     } else if (method == "get_key") {
-        ExecGetKey(TArguments(), io);
+        ExecGetKey(args, io);
     } else
         return false;
 
@@ -355,21 +355,21 @@ void SNetCacheService::ExecGetServers(const TArguments&, SInputOutput& io)
     reply.Append(object_ids);
 }
 
-bool SNetCacheService::Call(const string& method, SInputOutput& io)
+bool SNetCacheService::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "get_blob") {
-        ExecGetBlob(TArguments(), io);
+        ExecGetBlob(args, io);
     } else if (method == "get_servers") {
-        ExecGetServers(TArguments(), io);
+        ExecGetServers(args, io);
     } else
-        return SNetService::Call(method, io);
+        return SNetService::Call(method, args, io);
 
     return true;
 }
 
-bool SNetCacheServer::Call(const string& method, SInputOutput& io)
+bool SNetCacheServer::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
-    return SNetCacheService::Call(method, io);
+    return SNetCacheService::Call(method, args, io);
 }
 
 IReader* SNetCacheService::GetReader(const string& blob_key, size_t& blob_size)

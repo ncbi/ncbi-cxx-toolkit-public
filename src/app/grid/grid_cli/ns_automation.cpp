@@ -243,22 +243,22 @@ void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, S
     m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(&to_add, &to_del);
 }
 
-bool SNetScheduleServer::Call(const string& method, SInputOutput& io)
+bool SNetScheduleServer::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "server_status")
-        ExecServerStatus(TArguments(), io);
+        ExecServerStatus(args, io);
     else if (method == "job_group_info")
-        ExecJobGroupInfo(TArguments(), io);
+        ExecJobGroupInfo(args, io);
     else if (method == "client_info")
-        ExecClientInfo(TArguments(), io);
+        ExecClientInfo(args, io);
     else if (method == "notification_info")
-        ExecNotificationInfo(TArguments(), io);
+        ExecNotificationInfo(args, io);
     else if (method == "affinity_info")
-        ExecAffinityInfo(TArguments(), io);
+        ExecAffinityInfo(args, io);
     else if (method == "change_preferred_affinities") {
-        ExecChangePreferredAffinities(TArguments(), io);
+        ExecChangePreferredAffinities(args, io);
     } else
-        return SNetScheduleService::Call(method, io);
+        return SNetScheduleService::Call(method, args, io);
 
     return true;
 }
@@ -424,34 +424,34 @@ void SNetScheduleService::ExecGetServers(const TArguments& args, SInputOutput& i
     reply.Append(object_ids);
 }
 
-bool SNetScheduleService::Call(const string& method, SInputOutput& io)
+bool SNetScheduleService::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "set_client_type")
-        ExecSetClientType(TArguments(), io);
+        ExecSetClientType(args, io);
     else if (method == "set_node_session") {
-        ExecSetNodeSession(TArguments(), io);
+        ExecSetNodeSession(args, io);
     } else if (method == "queue_info")
-        ExecQueueInfo(TArguments(), io);
+        ExecQueueInfo(args, io);
     else if (method == "queue_class_info")
-        ExecQueueClassInfo(TArguments(), io);
+        ExecQueueClassInfo(args, io);
     else if (method == "reconf")
-        ExecReconf(TArguments(), io);
+        ExecReconf(args, io);
     else if (method == "suspend")
-        ExecSuspend(TArguments(), io);
+        ExecSuspend(args, io);
     else if (method == "resume")
-        ExecResume(TArguments(), io);
+        ExecResume(args, io);
     else if (method == "shutdown")
-        ExecShutdown(TArguments(), io);
+        ExecShutdown(args, io);
     else if (method == "parse_key") {
-        ExecParseKey(TArguments(), io);
+        ExecParseKey(args, io);
     } else if (method == "job_info") {
-        ExecJobInfo(TArguments(), io);
+        ExecJobInfo(args, io);
     } else if (method == "job_counters") {
-        ExecJobCounters(TArguments(), io);
+        ExecJobCounters(args, io);
     } else if (method == "get_servers") {
-        ExecGetServers(TArguments(), io);
+        ExecGetServers(args, io);
     } else
-        return SNetService::Call(method, io);
+        return SNetService::Call(method, args, io);
 
     return true;
 }

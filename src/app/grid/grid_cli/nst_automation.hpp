@@ -66,7 +66,7 @@ struct SNetStorageService : public SNetServiceBase
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecClientsInfo(const TArguments& args, SInputOutput& io);
     void ExecUsersInfo(const TArguments& args, SInputOutput& io);
     void ExecClientObjects(const TArguments& args, SInputOutput& io);
@@ -102,7 +102,7 @@ struct SNetStorageServer : public SNetStorageService
 
     virtual const void* GetImplPtr() const;
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecHealth(const TArguments& args, SInputOutput& io);
     void ExecConf(const TArguments& args, SInputOutput& io);
     void ExecMetadataInfo(const TArguments& args, SInputOutput& io);
@@ -130,7 +130,7 @@ struct SNetStorageObject : public CAutomationObject
     virtual const string& GetType() const override { return kName; }
     virtual const void* GetImplPtr() const override;
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecInfo(const TArguments& args, SInputOutput& io);
     void ExecAttrList(const TArguments& args, SInputOutput& io);
     void ExecGetAttr(const TArguments& args, SInputOutput& io);

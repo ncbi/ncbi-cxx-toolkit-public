@@ -351,17 +351,17 @@ void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
     reply.Append(g_ExecToJson(server_address_proc, m_Service, m_ActualServiceType));
 }
 
-bool SNetServiceBase::Call(const string& method, SInputOutput& io)
+bool SNetServiceBase::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "get_name")
-        ExecGetName(TArguments(), io);
+        ExecGetName(args, io);
     else if (method == "get_address") {
-        ExecGetAddress(TArguments(), io);
+        ExecGetAddress(args, io);
     } else
 // TODO: Remove this after GRID Python module stops using it
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (method == "allow_xsite_connections")
-            CAutomationProc::ExecAllowXSite(TArguments(), io, nullptr);
+            CAutomationProc::ExecAllowXSite(args, io, nullptr);
         else
 #endif
         return false;
@@ -401,14 +401,14 @@ void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
     reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType, command, multiline));
 }
 
-bool SNetService::Call(const string& method, SInputOutput& io)
+bool SNetService::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "server_info")
-        ExecServerInfo(TArguments(), io);
+        ExecServerInfo(args, io);
     else if (method == "exec") {
-        ExecExec(TArguments(), io);
+        ExecExec(args, io);
     } else
-        return SNetServiceBase::Call(method, io);
+        return SNetServiceBase::Call(method, args, io);
 
     return true;
 }
@@ -562,7 +562,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        if (!object_ref->Call(method, io)) {
+        if (!object_ref->Call(method, TArguments(), io)) {
             NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                     "Unknown " << object_ref->GetType() <<
                             " method '" << method << "'");

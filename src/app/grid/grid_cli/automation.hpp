@@ -286,7 +286,7 @@ public:
 
     virtual const void* GetImplPtr() const = 0;
 
-    virtual bool Call(const string& method, SInputOutput& io) = 0;
+    virtual bool Call(const string& method, const TArguments& args, SInputOutput& io) = 0;
 
     CAutomationProc* m_AutomationProc;
 
@@ -311,7 +311,7 @@ struct SNetServiceBase : public CAutomationObject
     {
     }
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecGetName(const TArguments& args, SInputOutput& io);
     void ExecGetAddress(const TArguments& args, SInputOutput& io);
 
@@ -331,7 +331,7 @@ struct SNetService : public SNetServiceBase
     {
     }
 
-    bool Call(const string& method, SInputOutput& io) override;
+    bool Call(const string& method, const TArguments& args, SInputOutput& io) override;
     void ExecServerInfo(const TArguments& args, SInputOutput& io);
     void ExecExec(const TArguments& args, SInputOutput& io);
 

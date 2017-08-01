@@ -273,24 +273,24 @@ void SNetStorageService::ExecGetServers(const TArguments&, SInputOutput& io)
     reply.Append(object_ids);
 }
 
-bool SNetStorageService::Call(const string& method, SInputOutput& io)
+bool SNetStorageService::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "clients_info") {
-        ExecClientsInfo(TArguments(), io);
+        ExecClientsInfo(args, io);
     } else if (method == "users_info") {
-        ExecUsersInfo(TArguments(), io);
+        ExecUsersInfo(args, io);
     } else if (method == "client_objects") {
-        ExecClientObjects(TArguments(), io);
+        ExecClientObjects(args, io);
     } else if (method == "user_objects") {
-        ExecUserObjects(TArguments(), io);
+        ExecUserObjects(args, io);
     } else if (method == "server_info") {
-        ExecServerInfo(TArguments(), io);
+        ExecServerInfo(args, io);
     } else if (method == "open_object") {
-        ExecOpenObject(TArguments(), io);
+        ExecOpenObject(args, io);
     } else if (method == "get_servers") {
-        ExecGetServers(TArguments(), io);
+        ExecGetServers(args, io);
     } else
-        return SNetServiceBase::Call(method, io);
+        return SNetServiceBase::Call(method, args, io);
 
     return true;
 }
@@ -356,20 +356,20 @@ void SNetStorageServer::ExecAckAlert(const TArguments& args, SInputOutput& io)
     reply.Append(response);
 }
 
-bool SNetStorageServer::Call(const string& method, SInputOutput& io)
+bool SNetStorageServer::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "health") {
-        ExecHealth(TArguments(), io);
+        ExecHealth(args, io);
     } else if (method == "conf") {
-        ExecConf(TArguments(), io);
+        ExecConf(args, io);
     } else if (method == "metadata_info") {
-        ExecMetadataInfo(TArguments(), io);
+        ExecMetadataInfo(args, io);
     } else if (method == "reconf") {
-        ExecReconf(TArguments(), io);
+        ExecReconf(args, io);
     } else if (method == "ackalert") {
-        ExecAckAlert(TArguments(), io);
+        ExecAckAlert(args, io);
     } else
-        return SNetStorageService::Call(method, io);
+        return SNetStorageService::Call(method, args, io);
 
     return true;
 }
@@ -431,14 +431,14 @@ void SNetStorageObject::ExecGetAttr(const TArguments& args, SInputOutput& io)
     reply.Append(response);
 }
 
-bool SNetStorageObject::Call(const string& method, SInputOutput& io)
+bool SNetStorageObject::Call(const string& method, const TArguments& args, SInputOutput& io)
 {
     if (method == "info") {
-        ExecInfo(TArguments(), io);
+        ExecInfo(args, io);
     } else if (method == "attr_list") {
-        ExecAttrList(TArguments(), io);
+        ExecAttrList(args, io);
     } else if (method == "get_attr") {
-        ExecGetAttr(TArguments(), io);
+        ExecGetAttr(args, io);
     } else {
         return false;
     }
