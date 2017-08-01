@@ -2459,6 +2459,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             sfp->GetComment() + ";" + gene_comment :
                             gene_comment;
                         sfp->SetComment(comment);
+                        x_ProcessMsg(                        
+                            ILineError::eProblem_InvalidQualifier, eDiag_Warning,
+                            feat_name, qual);
                         return true;
                     }
                 case eQual_db_xref:
@@ -3122,14 +3125,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     }
                 }
 
-            } else if ((! qual.empty ()) && (! val.empty ())) {
-
+            } else if ((!qual.empty())) {
+                    
+              if (!val.empty()) {
                 // process qual - val qualifier line
 
                 // there should no more ranges for this feature
                 // (although there still can be ranges for quals, of course)
                 curr_feat_intervals_done = true;
-
                 if ( !sfp ) {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                         x_ProcessMsg( 
@@ -3152,7 +3155,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     }
                 }
 
-            } else if ((! qual.empty ()) && (val.empty ())) {
+            } else { // val.empty()
 
                 // there should no more ranges for this feature
                 // (although there still can be ranges for quals, of course)
@@ -3160,19 +3163,20 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // check for the few qualifiers that do not need a value
                 if ( !sfp ) {
-                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(
-                            ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
-                            kEmptyStr, qual );
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                            x_ProcessMsg(
+                                ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
+                                kEmptyStr, qual );
+                        }
+                    } else {
+                        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+                        if (s_iter != sc_SingleKeys.end ()) {
+                            x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags);
+                        }
                     }
-                } else {
-                    TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
-                    if (s_iter != sc_SingleKeys.end ()) {
-
-                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags);
-                    }
-                }
-            } else if (! feat.empty ()) {
+                } 
+            }   
+            else if (!feat.empty()) {
                 
                 // unrecognized location
 

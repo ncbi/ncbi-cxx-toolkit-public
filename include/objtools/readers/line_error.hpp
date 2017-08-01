@@ -87,6 +87,7 @@ public:
         eProblem_IgnoredResidue,
         eProblem_DiscouragedFeatureName,
         eProblem_DiscouragedQualifierName,
+        eProblem_InvalidQualifier,
 
         //vcf specific
         eProblem_BadInfoLine,
@@ -247,6 +248,8 @@ public:
             return "Feature had invalid length, but this was automatically corrected.";
         case eProblem_IgnoredResidue:
             return "An invalid residue has been ignored";
+        case eProblem_InvalidQualifier: 
+            return "Invalid qualifier for feature";
 
         case eProblem_BadInfoLine:
             return "Broken ##INFO line";
