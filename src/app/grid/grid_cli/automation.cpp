@@ -111,8 +111,14 @@ void CArgument::Exec(const string& name, CJsonIterator& input)
 {
     if (input.IsValid()) {
         auto current = input.GetNode();
+        auto current_type = current.GetNodeType();
 
-        if (current.GetNodeType() != m_TypeOrDefaultValue.GetNodeType()) {
+        if ((current_type == CJsonNode::eNull) && m_Optional) {
+            m_Value = m_TypeOrDefaultValue;
+            return;
+        }
+
+        if (current_type != m_TypeOrDefaultValue.GetNodeType()) {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput, name <<
                     ": invalid argument type (expected " << m_TypeOrDefaultValue.GetTypeName() << ")");
         }
