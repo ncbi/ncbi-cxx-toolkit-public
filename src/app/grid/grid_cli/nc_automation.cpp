@@ -217,7 +217,7 @@ SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
 
 CCommand SNetCacheService::NewCommand()
 {
-    return CCommand(kName, {
+    return CCommand(kName, ExecNew<SNetCacheService>, {
             { "service_name", "", },
             { "client_name", "", },
             { "cache_name", "", },
@@ -240,7 +240,7 @@ CAutomationObject* SNetCacheService::Create(
 
 CCommand SNetCacheServer::NewCommand()
 {
-    return CCommand(kName, {
+    return CCommand(kName, ExecNew<SNetCacheServer>, {
             { "service_name", "", },
             { "client_name", "", },
             { "cache_name", "", },

@@ -410,62 +410,6 @@ CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
 {
 }
 
-const int kFirstStep = 0;
-
-CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
-        CArgArray& arg_array, int step)
-{
-    switch (step) {
-    case kFirstStep:
-        return SNetCacheService::Create(arg_array, class_name, this);
-
-    case kFirstStep + 1:
-        return SNetCacheServer::Create(arg_array, class_name, this);
-
-    case kFirstStep + 2:
-        return SNetScheduleService::Create(arg_array, class_name, this);
-
-    case kFirstStep + 3:
-        return SNetScheduleServer::Create(arg_array, class_name, this);
-
-    case kFirstStep + 4:
-        return SWorkerNode::Create(arg_array, class_name, this);
-
-    case kFirstStep + 5:
-        return SNetStorageService::Create(arg_array, class_name, this);
-
-    case kFirstStep + 6:
-        return SNetStorageServer::Create(arg_array, class_name, this);
-
-    case kFirstStep + 7:
-        NCBI_THROW_FMT(CAutomationException, eInvalidInput,
-                "Unknown class '" << class_name << "'");
-        break; // Not reached
-    }
-
-    _TROUBLE;
-    return nullptr;
-}
-
-TObjectID CAutomationProc::CreateObject(CArgArray& arg_array)
-{
-    string class_name(arg_array.NextString());
-    arg_array.UpdateLocation(class_name);
-
-    TAutomationObjectRef new_object;
-
-    try {
-        for (int step = kFirstStep; !new_object; ++step) {
-            new_object.Reset(CreateObject(class_name, arg_array, step));
-        }
-    }
-    catch (CException& e) {
-        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                "Error in '" << class_name << "' constructor: " << e.GetMsg());
-    }
-    return AddObject(new_object, new_object->GetImplPtr());
-}
-
 TCommands CAutomationProc::CallCommands()
 {
     return TCommands
@@ -502,7 +446,7 @@ TCommands CAutomationProc::Commands()
     {
         { "exit", ExecExit },
         { "call", CallCommands },
-        { "new", TCommandGroup(NewCommands, ExecNew) },
+        { "new", NewCommands },
         { "del", ExecDel, {
                 { "object_id", CJsonNode::eInteger, },
             }},
@@ -528,16 +472,6 @@ void CAutomationProc::ExecExit(const TArguments&, SInputOutput& io, void*)
 {
     auto& reply = io.reply;
     reply = CJsonNode();
-}
-
-void CAutomationProc::ExecNew(const TArguments& args, SInputOutput& io, void* data)
-{
-    _ASSERT(data);
-
-    auto that = static_cast<CAutomationProc*>(data);
-    auto& arg_array = io.arg_array;
-    auto& reply = io.reply;
-    reply.AppendInteger(that->CreateObject(arg_array));
 }
 
 void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* data)

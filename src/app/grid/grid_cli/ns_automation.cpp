@@ -72,7 +72,7 @@ SNetScheduleServer::SNetScheduleServer(
 
 CCommand SNetScheduleService::NewCommand()
 {
-    return CCommand(kName, {
+    return CCommand(kName, ExecNew<SNetScheduleService>, {
             { "service_name", "", },
             { "queue_name", "", },
             { "client_name", "", },
@@ -97,7 +97,7 @@ CAutomationObject* SNetScheduleService::Create(
 
 CCommand SNetScheduleServer::NewCommand()
 {
-    return CCommand(kName, {
+    return CCommand(kName, ExecNew<SNetScheduleServer>, {
             { "service_name", "", },
             { "queue_name", "", },
             { "client_name", "", },

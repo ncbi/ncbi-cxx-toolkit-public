@@ -284,6 +284,9 @@ public:
 
     CAutomationProc* m_AutomationProc;
 
+    template <class TDerived>
+    static void ExecNew(const TArguments& args, SInputOutput& io, void*& data);
+
 protected:
     TObjectID m_Id;
 };
@@ -356,11 +359,6 @@ public:
             CNetStorageAdmin::TInstance nst_api,
             CNetServer::TInstance server);
 private:
-    CAutomationObject* CreateObject(const string& class_name,
-            CArgArray& arg_array, int step);
-
-    TObjectID CreateObject(CArgArray& arg_array);
-
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
     IMessageSender* m_MessageSender;
@@ -376,7 +374,6 @@ private:
     static CCommand HelpCommand();
 
     static void ExecExit(const TArguments& args, SInputOutput& io, void* data);
-    static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
     static void ExecDel(const TArguments& args, SInputOutput& io, void* data);
     static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
     static void ExecWhatIs(const TArguments& args, SInputOutput& io, void* data);
@@ -401,6 +398,32 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
 {
     m_ObjectByPointer[impl_ptr] = new_object;
     return AddObject(new_object);
+}
+
+template <class TDerived>
+void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void*& data)
+{
+    _ASSERT(data);
+
+    auto that = static_cast<CAutomationProc*>(data);
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
+    string class_name(arg_array.NextString());
+    arg_array.UpdateLocation(class_name);
+
+    CRef<CAutomationObject> new_object;
+
+    try {
+        new_object.Reset(TDerived::Create(arg_array, class_name, that));
+    }
+    catch (CException& e) {
+        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+                "Error in '" << class_name << "' constructor: " << e.GetMsg());
+    }
+
+    auto id = that->AddObject(new_object, new_object->GetImplPtr());
+    reply.AppendInteger(id);
 }
 
 }
