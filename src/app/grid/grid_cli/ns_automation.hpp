@@ -65,6 +65,18 @@ struct SNetScheduleService : public SNetService
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecSetClientType(const TArguments& args, SInputOutput& io);
+    void ExecSetNodeSession(const TArguments& args, SInputOutput& io);
+    void ExecQueueInfo(const TArguments& args, SInputOutput& io);
+    void ExecQueueClassInfo(const TArguments& args, SInputOutput& io);
+    void ExecReconf(const TArguments& args, SInputOutput& io);
+    void ExecSuspend(const TArguments& args, SInputOutput& io);
+    void ExecResume(const TArguments& args, SInputOutput& io);
+    void ExecShutdown(const TArguments& args, SInputOutput& io);
+    void ExecParseKey(const TArguments& args, SInputOutput& io);
+    void ExecJobInfo(const TArguments& args, SInputOutput& io);
+    void ExecJobCounters(const TArguments& args, SInputOutput& io);
+    void ExecGetServers(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -92,6 +104,12 @@ struct SNetScheduleServer : public SNetScheduleService
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecServerStatus(const TArguments& args, SInputOutput& io);
+    void ExecJobGroupInfo(const TArguments& args, SInputOutput& io);
+    void ExecClientInfo(const TArguments& args, SInputOutput& io);
+    void ExecNotificationInfo(const TArguments& args, SInputOutput& io);
+    void ExecAffinityInfo(const TArguments& args, SInputOutput& io);
+    void ExecChangePreferredAffinities(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
