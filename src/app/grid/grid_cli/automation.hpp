@@ -216,7 +216,7 @@ typedef initializer_list<CArgument> TArgsInit;
 typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
-typedef function<void(const TArguments&, CJsonNode&)> TCommandExecutor;
+typedef function<void(const TArguments&, CJsonNode&, void*)> TCommandExecutor;
 
 class CCommand
 {
@@ -227,7 +227,7 @@ public:
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);
-    bool Exec(CJsonIterator& input, CJsonNode& reply);
+    bool Exec(CJsonIterator& input, CJsonNode& reply, void* data);
 
 private:
     string m_Name;
@@ -361,11 +361,11 @@ private:
 
     static CCommand HelpCommand();
 
-    static void ExitCommand(const TArguments& args, CJsonNode& reply);
-    static void VersionCommand(const TArguments& args, CJsonNode& reply);
-    static void WhatIsCommand(const TArguments& args, CJsonNode& reply);
-    static void EchoCommand(const TArguments& args, CJsonNode& reply);
-    static void AllowXSiteCommand(const TArguments& args, CJsonNode& reply);
+    static void ExitCommand(const TArguments& args, CJsonNode& reply, void* data);
+    static void VersionCommand(const TArguments& args, CJsonNode& reply, void* data);
+    static void WhatIsCommand(const TArguments& args, CJsonNode& reply, void* data);
+    static void EchoCommand(const TArguments& args, CJsonNode& reply, void* data);
+    static void AllowXSiteCommand(const TArguments& args, CJsonNode& reply, void* data);
 
     static TCommands Commands();
     static TCommands CallCommands();

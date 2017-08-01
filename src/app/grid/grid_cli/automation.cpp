@@ -60,14 +60,14 @@ struct NAutomation::SCommandImpl
 {
     virtual ~SCommandImpl() {}
     virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
-    virtual bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) = 0;
+    virtual bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data) = 0;
 };
 
 struct SSimpleCommandImpl : SCommandImpl
 {
     SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec = TCommandExecutor());
     CJsonNode Help(const string& name, CJsonIterator& input) override;
-    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data) override;
 
 private:
     vector<CArgument> m_Args;
@@ -78,7 +78,7 @@ struct SVariadicCommandImpl : SCommandImpl
 {
     SVariadicCommandImpl(string args, TCommandExecutor exec);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
-    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data) override;
 
 private:
     const string m_Args;
@@ -89,7 +89,7 @@ struct SCommandGroupImpl : SCommandImpl
 {
     SCommandGroupImpl(TCommandsGetter getter);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
-    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply) override;
+    bool Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data) override;
 
 private:
     TCommands m_Commands;
@@ -149,7 +149,7 @@ CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator&)
     return help;
 }
 
-bool SSimpleCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+bool SSimpleCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data)
 {
     for (auto& element : m_Args) {
         element.Exec(input);
@@ -161,7 +161,7 @@ bool SSimpleCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNod
         cerr << "too many parameters" << endl;
     }
 
-    m_Exec(m_Args, reply);
+    m_Exec(m_Args, reply, data);
     return true;
 }
 
@@ -180,7 +180,7 @@ CJsonNode SVariadicCommandImpl::Help(const string& name, CJsonIterator&)
     return help;
 }
 
-bool SVariadicCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+bool SVariadicCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data)
 {
     TArguments args;
 
@@ -188,7 +188,7 @@ bool SVariadicCommandImpl::Exec(const string& name, CJsonIterator& input, CJsonN
         args.emplace_back(input);
     }
 
-    m_Exec(args, reply);
+    m_Exec(args, reply, data);
     return true;
 }
 
@@ -222,12 +222,12 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
     return help;
 }
 
-bool SCommandGroupImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply)
+bool SCommandGroupImpl::Exec(const string& name, CJsonIterator& input, CJsonNode& reply, void* data)
 {
     if (m_Commands.empty()) return false;
 
     for (auto& element : m_Commands) {
-        if (element.Exec(input, reply)) return true;
+        if (element.Exec(input, reply, data)) return true;
     }
 
     return false;
@@ -272,7 +272,7 @@ CJsonNode CCommand::Help(CJsonIterator& input)
     return m_Impl->Help(m_Name, ++input);
 }
 
-bool CCommand::Exec(CJsonIterator& input, CJsonNode& reply)
+bool CCommand::Exec(CJsonIterator& input, CJsonNode& reply, void* data)
 {
     if (!input.IsValid()) {
         // TODO: throw "missing command name"
@@ -283,7 +283,7 @@ bool CCommand::Exec(CJsonIterator& input, CJsonNode& reply)
         return false;
     }
 
-    m_Impl->Exec(m_Name, ++input, reply);
+    m_Impl->Exec(m_Name, ++input, reply, data);
     return true;
 }
 
@@ -509,18 +509,18 @@ CCommand CAutomationProc::HelpCommand()
     return CCommand("help", CAutomationProc::Commands);
 }
 
-void CAutomationProc::ExitCommand(const TArguments& args, CJsonNode& reply)
+void CAutomationProc::ExitCommand(const TArguments&, CJsonNode& reply, void*)
 {
     reply = CJsonNode();
 }
 
-void CAutomationProc::VersionCommand(const TArguments& args, CJsonNode& reply)
+void CAutomationProc::VersionCommand(const TArguments&, CJsonNode& reply, void*)
 {
     reply.AppendString(GRID_APP_VERSION);
     reply.AppendString(__DATE__);
 }
 
-void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply)
+void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply, void*)
 {
     const auto id = args[0].Value().AsString();
     auto result = g_WhatIs(id);
@@ -532,12 +532,12 @@ void CAutomationProc::WhatIsCommand(const TArguments& args, CJsonNode& reply)
     reply.Append(result);
 }
 
-void CAutomationProc::EchoCommand(const TArguments& args, CJsonNode& reply)
+void CAutomationProc::EchoCommand(const TArguments& args, CJsonNode& reply, void*)
 {
     for (auto& arg: args) reply.Append(arg.Value());
 }
 
-void CAutomationProc::AllowXSiteCommand(const TArguments& args, CJsonNode& reply)
+void CAutomationProc::AllowXSiteCommand(const TArguments&, CJsonNode&, void*)
 {
     CNetService::AllowXSiteConnections();
 }
@@ -564,7 +564,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     SCommandGroupImpl all_cmds(CAutomationProc::Commands);
 
-    if (all_cmds.Exec("", input, reply)) return reply;
+    if (all_cmds.Exec("", input, reply, nullptr)) return reply;
 
     CArgArray arg_array(message);
 
