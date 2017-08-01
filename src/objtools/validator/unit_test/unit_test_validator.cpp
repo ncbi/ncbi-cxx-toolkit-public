@@ -7654,7 +7654,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CNHM");
     ambig.push_back("NSM");
     ambig.push_back("IAL");
-    ambig.push_back("IBL");
     ambig.push_back("PCU");
     ambig.push_back("HM");
 
@@ -7739,7 +7738,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PPCC");
     ambig.push_back("CDA");
     ambig.push_back("IAL");
-    ambig.push_back("IBL");
     ambig.push_back("VI");
     ambig.push_back("CS");
     ambig.push_back("PCU");
