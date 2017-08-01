@@ -64,8 +64,7 @@ struct SNetStorageService : public SNetServiceBase
 
     virtual const void* GetImplPtr() const;
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+    bool Call(const string& method, SInputOutput& io) override;
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -94,8 +93,7 @@ struct SNetStorageServer : public SNetStorageService
 
     virtual const void* GetImplPtr() const;
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+    bool Call(const string& method, SInputOutput& io) override;
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -117,8 +115,7 @@ struct SNetStorageObject : public CAutomationObject
     virtual const string& GetType() const override { return kName; }
     virtual const void* GetImplPtr() const override;
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply) override;
+    bool Call(const string& method, SInputOutput& io) override;
 
     static CCommand CallCommand();
     static TCommands CallCommands();

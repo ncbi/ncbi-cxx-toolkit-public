@@ -181,10 +181,12 @@ inline void CArgArray::UpdateLocation(const string& location)
 struct SInputOutput
 {
     CJsonIterator input;
+    CArgArray arg_array; // TODO: Remove after all commands are migrated to new parse system
     CJsonNode reply;
 
     SInputOutput(const CJsonNode& message) :
         input(message.Iterate()),
+        arg_array(message),
         reply(CJsonNode::NewArrayNode())
     {}
 };
@@ -274,8 +276,7 @@ public:
 
     virtual const void* GetImplPtr() const = 0;
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply) = 0;
+    virtual bool Call(const string& method, SInputOutput& io) = 0;
 
     CAutomationProc* m_AutomationProc;
 
@@ -292,8 +293,7 @@ struct SNetServiceBase : public CAutomationObject
     {
     }
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+    bool Call(const string& method, SInputOutput& io) override;
 
     CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
@@ -309,8 +309,7 @@ struct SNetService : public SNetServiceBase
     {
     }
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+    bool Call(const string& method, SInputOutput& io) override;
 
     static TCommands CallCommands();
 };

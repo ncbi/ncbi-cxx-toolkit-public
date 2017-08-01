@@ -115,9 +115,11 @@ enum EWorkerNodeShutdownMode {
     eKillNode
 };
 
-bool SWorkerNode::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SWorkerNode::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "version")
         reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, false));
     else if (method == "wn_info")
@@ -141,7 +143,7 @@ bool SWorkerNode::Call(const string& method,
             m_NetScheduleAPI.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         }
     else
-        return SNetService::Call(method, arg_array, reply);
+        return SNetService::Call(method, io);
 
     return true;
 }

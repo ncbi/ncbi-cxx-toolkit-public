@@ -340,9 +340,11 @@ TCommands SNetServiceBase::CallCommands()
     return cmds;
 }
 
-bool SNetServiceBase::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetServiceBase::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "get_name")
         reply.AppendString(m_Service.GetServiceName());
     else if (method == "get_address") {
@@ -380,9 +382,10 @@ TCommands SNetService::CallCommands()
     return cmds;
 }
 
-bool SNetService::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetService::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
     if (method == "server_info")
         reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, true));
     else if (method == "exec") {
@@ -390,7 +393,7 @@ bool SNetService::Call(const string& method,
         reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
                 command, arg_array.NextBoolean(false)));
     } else
-        return SNetServiceBase::Call(method, arg_array, reply);
+        return SNetServiceBase::Call(method, io);
 
     return true;
 }
@@ -554,6 +557,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
     SInputOutput io(message);
     auto& input = io.input;
+    auto& arg_array = io.arg_array;
     auto& reply = io.reply;
 
     // Empty input (help)
@@ -575,7 +579,6 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     if (all_cmds.Exec("", io, nullptr)) return reply;
 
-    CArgArray arg_array(message);
 
     string command(arg_array.NextString());
 
@@ -586,7 +589,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        if (!object_ref->Call(method, arg_array, reply)) {
+        if (!object_ref->Call(method, io)) {
             NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                     "Unknown " << object_ref->GetType() <<
                             " method '" << method << "'");

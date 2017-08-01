@@ -180,9 +180,11 @@ TCommands SNetStorageService::CallCommands()
     return cmds;
 }
 
-bool SNetStorageService::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetStorageService::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     map<string, string> no_param_commands =
     {
         { "clients_info",   "GETCLIENTSINFO" },
@@ -243,7 +245,7 @@ bool SNetStorageService::Call(const string& method,
                     ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
         reply.Append(object_ids);
     } else
-        return SNetServiceBase::Call(method, arg_array, reply);
+        return SNetServiceBase::Call(method, io);
 
     return true;
 }
@@ -273,9 +275,11 @@ TCommands SNetStorageServer::CallCommands()
     return cmds;
 }
 
-bool SNetStorageServer::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetStorageServer::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     map<string, string> no_param_commands =
     {
         { "health",         "HEALTH" },
@@ -303,7 +307,7 @@ bool SNetStorageServer::Call(const string& method,
         NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else
-        return SNetStorageService::Call(method, arg_array, reply);
+        return SNetStorageService::Call(method, io);
 
     return true;
 }
@@ -339,9 +343,11 @@ TCommands SNetStorageObject::CallCommands()
     return cmds;
 }
 
-bool SNetStorageObject::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetStorageObject::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "info") {
         CNetStorageObjectInfo object_info(m_Object.GetInfo());
         CJsonNode response(object_info.ToJSON());

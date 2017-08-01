@@ -77,9 +77,11 @@ TCommands SNetCacheBlob::CallCommands()
     return cmds;
 }
 
-bool SNetCacheBlob::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetCacheBlob::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "write") {
         string value(arg_array.NextString());
         if (m_Reader.get() != NULL) {
@@ -299,9 +301,11 @@ TCommands SNetCacheService::CallCommands()
     return cmds;
 }
 
-bool SNetCacheService::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetCacheService::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "get_blob") {
         const string blob_key(arg_array.NextString(kEmptyStr));
         const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
@@ -325,15 +329,14 @@ bool SNetCacheService::Call(const string& method,
                     ReturnNetCacheServerObject(m_NetICacheClient, *it)->GetID());
         reply.Append(object_ids);
     } else
-        return SNetService::Call(method, arg_array, reply);
+        return SNetService::Call(method, io);
 
     return true;
 }
 
-bool SNetCacheServer::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetCacheServer::Call(const string& method, SInputOutput& io)
 {
-    return SNetCacheService::Call(method, arg_array, reply);
+    return SNetCacheService::Call(method, io);
 }
 
 IReader* SNetCacheService::GetReader(const string& blob_key, size_t& blob_size)

@@ -182,9 +182,11 @@ TCommands SNetScheduleServer::CallCommands()
     return cmds;
 }
 
-bool SNetScheduleServer::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetScheduleServer::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "server_status")
         reply.Append(g_LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
@@ -208,7 +210,7 @@ bool SNetScheduleServer::Call(const string& method,
         m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(
                 &affs_to_add, &affs_to_del);
     } else
-        return SNetScheduleService::Call(method, arg_array, reply);
+        return SNetScheduleService::Call(method, io);
 
     return true;
 }
@@ -268,9 +270,11 @@ TCommands SNetScheduleService::CallCommands()
     return cmds;
 }
 
-bool SNetScheduleService::Call(const string& method,
-        CArgArray& arg_array, CJsonNode& reply)
+bool SNetScheduleService::Call(const string& method, SInputOutput& io)
 {
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+
     if (method == "set_client_type")
         m_NetScheduleAPI.SetClientType(
                 (CNetScheduleAPI::EClientType) arg_array.NextInteger(0));
@@ -331,7 +335,7 @@ bool SNetScheduleService::Call(const string& method,
                     GetID());
         reply.Append(object_ids);
     } else
-        return SNetService::Call(method, arg_array, reply);
+        return SNetService::Call(method, io);
 
     return true;
 }

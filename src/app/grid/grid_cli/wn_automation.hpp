@@ -45,8 +45,7 @@ struct SWorkerNode : public SNetService
 
     virtual const void* GetImplPtr() const;
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+    bool Call(const string& method, SInputOutput& io) override;
 
     static CCommand CallCommand();
     static TCommands CallCommands();
