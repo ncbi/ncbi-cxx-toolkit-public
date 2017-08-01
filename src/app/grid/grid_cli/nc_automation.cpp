@@ -79,9 +79,10 @@ TCommands SNetCacheBlob::CallCommands()
 
 void SNetCacheBlob::ExecWrite(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto value = arg_array.NextString();
+    const auto value = args[0].AsString();
 
     if (m_Reader.get() != NULL) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -97,9 +98,10 @@ void SNetCacheBlob::ExecWrite(const TArguments& args, SInputOutput& io)
 
 void SNetCacheBlob::ExecRead(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto buf_size = (size_t) arg_array.NextInteger(-1);
+    auto buf_size = args[0].AsInteger<size_t>();
 
     if (m_Writer.get() != NULL) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -326,11 +328,12 @@ TCommands SNetCacheService::CallCommands()
 
 void SNetCacheService::ExecGetBlob(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 3);
+
     auto& reply = io.reply;
-    const string blob_key(arg_array.NextString(kEmptyStr));
-    const int blob_version(static_cast<int>(arg_array.NextInteger(0)));
-    const string blob_subkey(arg_array.NextString(kEmptyStr));
+    const auto blob_key     = args[0].AsString();
+    const auto blob_version = args[1].AsInteger<int>();
+    const auto blob_subkey  = args[2].AsString();
 
     TAutomationObjectRef blob;
 

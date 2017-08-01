@@ -173,41 +173,46 @@ TCommands SNetScheduleServer::CallCommands()
 
 void SNetScheduleServer::ExecServerStatus(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto verbose = arg_array.NextBoolean(false);
+    const auto verbose = args[0].AsBoolean();
     reply.Append(g_LegacyStatToJson(m_NetServer, verbose));
 }
 
 void SNetScheduleServer::ExecJobGroupInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto verbose = arg_array.NextBoolean(false);
+    const auto verbose = args[0].AsBoolean();
     reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatJobGroups, verbose));
 }
 
 void SNetScheduleServer::ExecClientInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto verbose = arg_array.NextBoolean(false);
+    const auto verbose = args[0].AsBoolean();
     reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatClients, verbose));
 }
 
 void SNetScheduleServer::ExecNotificationInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto verbose = arg_array.NextBoolean(false);
+    const auto verbose = args[0].AsBoolean();
     reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatNotifications, verbose));
 }
 
 void SNetScheduleServer::ExecAffinityInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto verbose = arg_array.NextBoolean(false);
+    const auto verbose = args[0].AsBoolean();
     reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatAffinities, verbose));
 }
 
@@ -233,9 +238,10 @@ vector<string> s_ExtractVectorOfStrings(CJsonNode& arg)
 
 void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto affs_to_add = arg_array.NextNode();
-    auto affs_to_del = arg_array.NextNode();
+    _ASSERT(args.size() == 2);
+
+    auto affs_to_add = args[0].Value();
+    auto affs_to_del = args[1].Value();
 
     auto to_add = s_ExtractVectorOfStrings(affs_to_add);
     auto to_del = s_ExtractVectorOfStrings(affs_to_del);
@@ -320,25 +326,28 @@ TCommands SNetScheduleService::CallCommands()
 
 void SNetScheduleService::ExecSetClientType(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto client_type = (CNetScheduleAPI::EClientType) arg_array.NextInteger(0);
+    _ASSERT(args.size() == 1);
+
+    const auto client_type = args[0].AsInteger<CNetScheduleAPI::EClientType>();
     m_NetScheduleAPI.SetClientType(client_type);
 }
 
 void SNetScheduleService::ExecSetNodeSession(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto node = arg_array.NextString(kEmptyStr);
-    auto session = arg_array.NextString(kEmptyStr);
+    _ASSERT(args.size() == 2);
+
+    const auto node    = args[0].AsString();
+    const auto session = args[1].AsString();
     m_NetScheduleAPI.ReSetClientNode(node);
     m_NetScheduleAPI.ReSetClientSession(session);
 }
 
 void SNetScheduleService::ExecQueueInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto queue_name = arg_array.NextString(kEmptyStr);
+    const auto queue_name = args[0].AsString();
     reply.Append(g_QueueInfoToJson(m_NetScheduleAPI, queue_name, m_ActualServiceType));
 }
 
@@ -356,8 +365,9 @@ void SNetScheduleService::ExecReconf(const TArguments& args, SInputOutput& io)
 
 void SNetScheduleService::ExecSuspend(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto pullback_mode = arg_array.NextBoolean(false);
+    _ASSERT(args.size() == 1);
+
+    const auto pullback_mode = args[0].AsBoolean();
     g_SuspendNetSchedule(m_NetScheduleAPI, pullback_mode);
 }
 
@@ -368,17 +378,19 @@ void SNetScheduleService::ExecResume(const TArguments& args, SInputOutput& io)
 
 void SNetScheduleService::ExecShutdown(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto do_not_drain = arg_array.NextBoolean(false);
+    _ASSERT(args.size() == 1);
+
+    const auto do_not_drain = args[0].AsBoolean();
     auto level = do_not_drain ? CNetScheduleAdmin::eNormalShutdown : CNetScheduleAdmin::eDrain;
     m_NetScheduleAPI.GetAdmin().ShutdownServer(level);
 }
 
 void SNetScheduleService::ExecParseKey(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto job_key = arg_array.NextString();
+    const auto job_key = args[0].AsString();
     CJobInfoToJSON job_key_to_json;
     job_key_to_json.ProcessJobMeta(CNetScheduleKey(job_key, m_NetScheduleAPI.GetCompoundIDPool()));
     reply.Append(job_key_to_json.GetRootNode());
@@ -386,10 +398,11 @@ void SNetScheduleService::ExecParseKey(const TArguments& args, SInputOutput& io)
 
 void SNetScheduleService::ExecJobInfo(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 2);
+
     auto& reply = io.reply;
-    auto job_key = arg_array.NextString();
-    auto verbose = arg_array.NextBoolean(true);
+    const auto job_key = args[0].AsString();
+    const auto verbose = args[1].AsBoolean();
     CJobInfoToJSON job_info_to_json;
     g_ProcessJobInfo(m_NetScheduleAPI, job_key, &job_info_to_json, verbose, m_NetScheduleAPI.GetCompoundIDPool());
     reply.Append(job_info_to_json.GetRootNode());
@@ -397,10 +410,11 @@ void SNetScheduleService::ExecJobInfo(const TArguments& args, SInputOutput& io)
 
 void SNetScheduleService::ExecJobCounters(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 2);
+
     auto& reply = io.reply;
-    auto affinity = arg_array.NextString(kEmptyStr);
-    auto job_group = arg_array.NextString(kEmptyStr);
+    const auto affinity  = args[0].AsString();
+    const auto job_group = args[1].AsString();
     CNetScheduleAdmin::TStatusMap status_map;
     m_NetScheduleAPI.GetAdmin().StatusSnapshot(status_map, affinity, job_group);
     CJsonNode jobs_by_status(CJsonNode::NewObjectNode());

@@ -208,10 +208,11 @@ void SNetStorageService::ExecUsersInfo(const TArguments&, SInputOutput& io)
 
 void SNetStorageService::ExecClientObjects(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 2);
+
     auto& reply = io.reply;
-    auto client_name = arg_array.NextString();
-    auto limit = arg_array.NextInteger(0);
+    const auto client_name = args[0].AsString();
+    const auto limit       = args[1].AsInteger();
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETCLIENTOBJECTS"));
     request.SetString("ClientName", client_name);
     if (limit) request.SetInteger("Limit", limit);
@@ -223,11 +224,12 @@ void SNetStorageService::ExecClientObjects(const TArguments& args, SInputOutput&
 
 void SNetStorageService::ExecUserObjects(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 3);
+
     auto& reply = io.reply;
-    auto user_name = arg_array.NextString();
-    auto user_ns = arg_array.NextString(kEmptyStr);
-    auto limit = arg_array.NextInteger(0);
+    const auto user_name = args[0].AsString();
+    const auto user_ns   = args[1].AsString();
+    const auto limit     = args[2].AsInteger();
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETUSEROBJECTS"));
     request.SetString("UserName", user_name);
     if (!user_ns.empty()) request.SetString("UserNamespace", user_ns);
@@ -251,9 +253,10 @@ void SNetStorageService::ExecServerInfo(const TArguments&, SInputOutput& io)
 
 void SNetStorageService::ExecOpenObject(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto object_loc = arg_array.NextString();
+    const auto object_loc = args[0].AsString();
     CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
     TAutomationObjectRef automation_object(
             new SNetStorageObject(m_AutomationProc, object));
@@ -342,10 +345,11 @@ void SNetStorageServer::ExecReconf(const TArguments&, SInputOutput& io)
 
 void SNetStorageServer::ExecAckAlert(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 2);
+
     auto& reply = io.reply;
-    auto name = arg_array.NextString();
-    auto user = arg_array.NextString();
+    const auto name = args[0].AsString();
+    const auto user = args[1].AsString();
 
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("ACKALERT"));
     request.SetString("Name", name);
@@ -424,9 +428,10 @@ void SNetStorageObject::ExecAttrList(const TArguments&, SInputOutput& io)
 
 void SNetStorageObject::ExecGetAttr(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto attr_name = arg_array.NextString();
+    const auto attr_name = args[0].AsString();
     CJsonNode response(m_Object.GetAttribute(attr_name));
     reply.Append(response);
 }

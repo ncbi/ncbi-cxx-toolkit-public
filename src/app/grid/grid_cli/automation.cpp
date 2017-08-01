@@ -344,9 +344,10 @@ void SNetServiceBase::ExecGetName(const TArguments&, SInputOutput& io)
 
 void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 1);
+
     auto& reply = io.reply;
-    auto which_part = (int) arg_array.NextInteger(0);
+    const auto which_part = args[0].AsInteger<int>();
     SServerAddressToJson server_address_proc(which_part);
     reply.Append(g_ExecToJson(server_address_proc, m_Service, m_ActualServiceType));
 }
@@ -394,10 +395,11 @@ void SNetService::ExecServerInfo(const TArguments&, SInputOutput& io)
 
 void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
+    _ASSERT(args.size() == 2);
+
     auto& reply = io.reply;
-    auto command = arg_array.NextString();
-    auto multiline = arg_array.NextBoolean(false);
+    const auto command   = args[0].AsString();
+    const auto multiline = args[1].AsBoolean();
     reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType, command, multiline));
 }
 
@@ -562,7 +564,11 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        if (!object_ref->Call(method, TArguments(), io)) {
+
+        TArguments args;
+        for (++input, ++input; input; ++input) args.emplace_back(input);
+
+        if (!object_ref->Call(method, args, io)) {
             NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                     "Unknown " << object_ref->GetType() <<
                             " method '" << method << "'");

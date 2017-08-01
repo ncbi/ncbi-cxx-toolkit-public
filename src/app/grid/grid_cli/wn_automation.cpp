@@ -122,9 +122,10 @@ void SWorkerNode::ExecWnInfo(const TArguments& args, SInputOutput& io)
 
 void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto pullback_mode = arg_array.NextBoolean(false);
-    auto timeout = (unsigned int) arg_array.NextInteger(0);
+    _ASSERT(args.size() == 2);
+
+    const auto pullback_mode = args[0].AsBoolean();
+    const auto timeout       = args[1].AsInteger<unsigned int>();
     g_SuspendWorkerNode(m_WorkerNode, pullback_mode, timeout);
 }
 
@@ -146,8 +147,9 @@ CNetScheduleAdmin::EShutdownLevel s_GetWorkerNodeShutdownMode(Int8 level)
 
 void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput& io)
 {
-    auto& arg_array = io.arg_array;
-    auto level = arg_array.NextInteger(0);
+    _ASSERT(args.size() == 1);
+
+    const auto level = args[0].AsInteger();
     m_NetScheduleAPI.GetAdmin().ShutdownServer(s_GetWorkerNodeShutdownMode(level));
 }
      
