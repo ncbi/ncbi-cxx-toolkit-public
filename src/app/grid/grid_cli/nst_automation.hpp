@@ -67,6 +67,13 @@ struct SNetStorageService : public SNetServiceBase
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecClientsInfo(const TArguments& args, SInputOutput& io);
+    void ExecUsersInfo(const TArguments& args, SInputOutput& io);
+    void ExecClientObjects(const TArguments& args, SInputOutput& io);
+    void ExecUserObjects(const TArguments& args, SInputOutput& io);
+    void ExecServerInfo(const TArguments& args, SInputOutput& io);
+    void ExecOpenObject(const TArguments& args, SInputOutput& io);
+    void ExecGetServers(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -76,6 +83,8 @@ struct SNetStorageService : public SNetServiceBase
     static const string kName;
 
 protected:
+    void ExecRequest(const string& request_type, SInputOutput& io);
+
     CNetStorageAdmin m_NetStorageAdmin;
 
     SNetStorageService(CAutomationProc* automation_proc,
@@ -94,6 +103,11 @@ struct SNetStorageServer : public SNetStorageService
     virtual const void* GetImplPtr() const;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecHealth(const TArguments& args, SInputOutput& io);
+    void ExecConf(const TArguments& args, SInputOutput& io);
+    void ExecMetadataInfo(const TArguments& args, SInputOutput& io);
+    void ExecReconf(const TArguments& args, SInputOutput& io);
+    void ExecAckAlert(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();
@@ -117,6 +131,9 @@ struct SNetStorageObject : public CAutomationObject
     virtual const void* GetImplPtr() const override;
 
     bool Call(const string& method, SInputOutput& io) override;
+    void ExecInfo(const TArguments& args, SInputOutput& io);
+    void ExecAttrList(const TArguments& args, SInputOutput& io);
+    void ExecGetAttr(const TArguments& args, SInputOutput& io);
 
     static CCommand CallCommand();
     static TCommands CallCommands();

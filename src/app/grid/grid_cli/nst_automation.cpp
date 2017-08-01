@@ -187,70 +187,108 @@ TCommands SNetStorageService::CallCommands()
     return cmds;
 }
 
-bool SNetStorageService::Call(const string& method, SInputOutput& io)
+void SNetStorageService::ExecRequest(const string& request_type, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(request_type));
+    CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+    NNetStorage::RemoveStdReplyFields(response);
+    reply.Append(response);
+}
+
+void SNetStorageService::ExecClientsInfo(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("GETCLIENTSINFO", io);
+}
+
+void SNetStorageService::ExecUsersInfo(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("GETUSERSINFO", io);
+}
+
+void SNetStorageService::ExecClientObjects(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto client_name = arg_array.NextString();
+    auto limit = arg_array.NextInteger(0);
+    CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETCLIENTOBJECTS"));
+    request.SetString("ClientName", client_name);
+    if (limit) request.SetInteger("Limit", limit);
 
-    map<string, string> no_param_commands =
-    {
-        { "clients_info",   "GETCLIENTSINFO" },
-        { "users_info",     "GETUSERSINFO" },
-    };
+    CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+    NNetStorage::RemoveStdReplyFields(response);
+    reply.Append(response);
+}
 
-    auto found = no_param_commands.find(method);
-    if (found != no_param_commands.end()) {
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
+void SNetStorageService::ExecUserObjects(const TArguments& args, SInputOutput& io)
+{
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+    auto user_name = arg_array.NextString();
+    auto user_ns = arg_array.NextString(kEmptyStr);
+    auto limit = arg_array.NextInteger(0);
+    CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETUSEROBJECTS"));
+    request.SetString("UserName", user_name);
+    if (!user_ns.empty()) request.SetString("UserNamespace", user_ns);
+    if (limit) request.SetInteger("Limit", limit);
 
-        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        NNetStorage::RemoveStdReplyFields(response);
-        reply.Append(response);
+    CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+    NNetStorage::RemoveStdReplyFields(response);
+    reply.Append(response);
+}
+
+void SNetStorageService::ExecServerInfo(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    NNetStorage::CExecToJson info_to_json(m_NetStorageAdmin, "INFO");
+    CNetService service(m_NetStorageAdmin.GetService());
+
+    CJsonNode response(g_ExecToJson(info_to_json, service,
+            m_ActualServiceType, CNetService::eIncludePenalized));
+    reply.Append(response);
+}
+
+void SNetStorageService::ExecOpenObject(const TArguments& args, SInputOutput& io)
+{
+    auto& arg_array = io.arg_array;
+    auto& reply = io.reply;
+    auto object_loc = arg_array.NextString();
+    CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
+    TAutomationObjectRef automation_object(
+            new SNetStorageObject(m_AutomationProc, object));
+
+    TObjectID response(m_AutomationProc->AddObject(automation_object));
+    reply.AppendInteger(response);
+}
+
+void SNetStorageService::ExecGetServers(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    CJsonNode object_ids(CJsonNode::NewArrayNode());
+    for (CNetServiceIterator it = m_NetStorageAdmin.GetService().Iterate(
+            CNetService::eIncludePenalized); it; ++it)
+        object_ids.AppendInteger(m_AutomationProc->
+                ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
+    reply.Append(object_ids);
+}
+
+bool SNetStorageService::Call(const string& method, SInputOutput& io)
+{
+    if (method == "clients_info") {
+        ExecClientsInfo(TArguments(), io);
+    } else if (method == "users_info") {
+        ExecUsersInfo(TArguments(), io);
     } else if (method == "client_objects") {
-        string client_name(arg_array.NextString());
-        Int8 limit(arg_array.NextInteger(0));
-
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETCLIENTOBJECTS"));
-        request.SetString("ClientName", client_name);
-        if (limit) request.SetInteger("Limit", limit);
-
-        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        NNetStorage::RemoveStdReplyFields(response);
-        reply.Append(response);
+        ExecClientObjects(TArguments(), io);
     } else if (method == "user_objects") {
-        string user_name(arg_array.NextString());
-        string user_ns(arg_array.NextString(kEmptyStr));
-        Int8 limit(arg_array.NextInteger(0));
-
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETUSEROBJECTS"));
-        request.SetString("UserName", user_name);
-        if (!user_ns.empty()) request.SetString("UserNamespace", user_ns);
-        if (limit) request.SetInteger("Limit", limit);
-
-        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        NNetStorage::RemoveStdReplyFields(response);
-        reply.Append(response);
+        ExecUserObjects(TArguments(), io);
     } else if (method == "server_info") {
-        NNetStorage::CExecToJson info_to_json(m_NetStorageAdmin, "INFO");
-        CNetService service(m_NetStorageAdmin.GetService());
-
-        CJsonNode response(g_ExecToJson(info_to_json, service,
-                m_ActualServiceType, CNetService::eIncludePenalized));
-        reply.Append(response);
+        ExecServerInfo(TArguments(), io);
     } else if (method == "open_object") {
-        const string object_loc(arg_array.NextString());
-        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
-        TAutomationObjectRef automation_object(
-                new SNetStorageObject(m_AutomationProc, object));
-
-        TObjectID response(m_AutomationProc->AddObject(automation_object));
-        reply.AppendInteger(response);
+        ExecOpenObject(TArguments(), io);
     } else if (method == "get_servers") {
-        CJsonNode object_ids(CJsonNode::NewArrayNode());
-        for (CNetServiceIterator it = m_NetStorageAdmin.GetService().Iterate(
-                CNetService::eIncludePenalized); it; ++it)
-            object_ids.AppendInteger(m_AutomationProc->
-                    ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
-        reply.Append(object_ids);
+        ExecGetServers(TArguments(), io);
     } else
         return SNetServiceBase::Call(method, io);
 
@@ -282,37 +320,54 @@ TCommands SNetStorageServer::CallCommands()
     return cmds;
 }
 
-bool SNetStorageServer::Call(const string& method, SInputOutput& io)
+void SNetStorageServer::ExecHealth(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("HEALTH", io);
+}
+
+void SNetStorageServer::ExecConf(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("CONFIGURATION", io);
+}
+
+void SNetStorageServer::ExecMetadataInfo(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("GETMETADATAINFO", io);
+}
+
+void SNetStorageServer::ExecReconf(const TArguments&, SInputOutput& io)
+{
+    ExecRequest("RECONFIGURE", io);
+}
+
+void SNetStorageServer::ExecAckAlert(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto name = arg_array.NextString();
+    auto user = arg_array.NextString();
 
-    map<string, string> no_param_commands =
-    {
-        { "health",         "HEALTH" },
-        { "conf",           "CONFIGURATION" },
-        { "metadata_info",  "GETMETADATAINFO" },
-        { "reconf",         "RECONFIGURE" },
-    };
+    CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("ACKALERT"));
+    request.SetString("Name", name);
+    request.SetString("User", user);
 
-    auto found = no_param_commands.find(method);
-    if (found != no_param_commands.end()) {
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
+    CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+    NNetStorage::RemoveStdReplyFields(response);
+    reply.Append(response);
+}
 
-        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        NNetStorage::RemoveStdReplyFields(response);
-        reply.Append(response);
+bool SNetStorageServer::Call(const string& method, SInputOutput& io)
+{
+    if (method == "health") {
+        ExecHealth(TArguments(), io);
+    } else if (method == "conf") {
+        ExecConf(TArguments(), io);
+    } else if (method == "metadata_info") {
+        ExecMetadataInfo(TArguments(), io);
+    } else if (method == "reconf") {
+        ExecReconf(TArguments(), io);
     } else if (method == "ackalert") {
-        string name(arg_array.NextString());
-        string user(arg_array.NextString());
-
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("ACKALERT"));
-        request.SetString("Name", name);
-        request.SetString("User", user);
-
-        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        NNetStorage::RemoveStdReplyFields(response);
-        reply.Append(response);
+        ExecAckAlert(TArguments(), io);
     } else
         return SNetStorageService::Call(method, io);
 
@@ -350,24 +405,40 @@ TCommands SNetStorageObject::CallCommands()
     return cmds;
 }
 
-bool SNetStorageObject::Call(const string& method, SInputOutput& io)
+void SNetStorageObject::ExecInfo(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    CNetStorageObjectInfo object_info(m_Object.GetInfo());
+    CJsonNode response(object_info.ToJSON());
+    reply.Append(response);
+}
+
+void SNetStorageObject::ExecAttrList(const TArguments&, SInputOutput& io)
+{
+    auto& reply = io.reply;
+    CNetStorageObject::TAttributeList attr_list(m_Object.GetAttributeList());
+    CJsonNode response(CJsonNode::eArray);
+    for (auto& attr : attr_list) response.AppendString(attr);
+    reply.Append(response);
+}
+
+void SNetStorageObject::ExecGetAttr(const TArguments& args, SInputOutput& io)
 {
     auto& arg_array = io.arg_array;
     auto& reply = io.reply;
+    auto attr_name = arg_array.NextString();
+    CJsonNode response(m_Object.GetAttribute(attr_name));
+    reply.Append(response);
+}
 
+bool SNetStorageObject::Call(const string& method, SInputOutput& io)
+{
     if (method == "info") {
-        CNetStorageObjectInfo object_info(m_Object.GetInfo());
-        CJsonNode response(object_info.ToJSON());
-        reply.Append(response);
+        ExecInfo(TArguments(), io);
     } else if (method == "attr_list") {
-        CNetStorageObject::TAttributeList attr_list(m_Object.GetAttributeList());
-        CJsonNode response(CJsonNode::eArray);
-        for (auto& attr : attr_list) response.AppendString(attr);
-        reply.Append(response);
+        ExecAttrList(TArguments(), io);
     } else if (method == "get_attr") {
-        const string attr_name(arg_array.NextString());
-        CJsonNode response(m_Object.GetAttribute(attr_name));
-        reply.Append(response);
+        ExecGetAttr(TArguments(), io);
     } else {
         return false;
     }
