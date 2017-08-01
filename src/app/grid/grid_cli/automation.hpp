@@ -96,6 +96,7 @@ public:
 
     CJsonNode Help();
     void Exec(const string& name, CJsonIterator& input);
+    string Name() const { return m_Name; }
     CJsonNode Value() const { return m_Value; }
 
     // Shortcuts
@@ -112,11 +113,26 @@ private:
     bool m_Optional;
 };
 
+typedef initializer_list<CArgument> TArgsInit;
+
+struct TArguments : vector<CArgument>
+{
+    TArguments() {}
+    TArguments(TArgsInit args) : vector<CArgument>(args) {}
+
+    const CArgument& operator[](const char* name) const
+    {
+        auto found = [&](const CArgument& arg) { return name == arg.Name(); };
+        const auto result = find_if(begin(), end(), found);
+
+        _ASSERT(result != end());
+        return *result;
+    }
+};
+
 struct SCommandImpl;
 class CCommand;
 
-typedef initializer_list<CArgument> TArgsInit;
-typedef vector<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
 typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;

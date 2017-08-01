@@ -71,7 +71,7 @@ struct SSimpleCommandImpl : SCommandImpl
     bool Exec(const string& name, SInputOutput& io, void* data) override;
 
 private:
-    vector<CArgument> m_Args;
+    TArguments m_Args;
     TCommandExecutor m_Exec;
 };
 
@@ -352,7 +352,7 @@ void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    const auto which_part = args[0].AsInteger<int>();
+    const auto which_part = args["which_part"].AsInteger<int>();
     SServerAddressToJson server_address_proc(which_part);
     reply.Append(g_ExecToJson(server_address_proc, m_Service, m_ActualServiceType));
 }
@@ -385,8 +385,8 @@ void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 2);
 
     auto& reply = io.reply;
-    const auto command   = args[0].AsString();
-    const auto multiline = args[1].AsBoolean();
+    const auto command   = args["command"].AsString();
+    const auto multiline = args["multiline"].AsBoolean();
     reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType, command, multiline));
 }
 
@@ -468,7 +468,7 @@ void CAutomationProc::ExecDel(const TArguments& args, SInputOutput& io, void* da
     _ASSERT(data);
 
     auto that = static_cast<CAutomationProc*>(data);
-    const auto object_id = args[0].AsInteger();
+    const auto object_id = args["object_id"].AsInteger();
     auto& object = that->ObjectIdToRef(object_id);
     that->m_ObjectByPointer.erase(object->GetImplPtr());
     object = NULL;
@@ -486,8 +486,8 @@ void CAutomationProc::ExecWhatIs(const TArguments& args, SInputOutput& io, void*
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    const auto id = args[0].AsString();
-    auto result = g_WhatIs(id);
+    const auto some_id = args["some_id"].AsString();
+    auto result = g_WhatIs(some_id);
 
     if (!result) {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError, "Unable to recognize the specified token.");

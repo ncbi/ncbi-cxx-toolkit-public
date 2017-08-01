@@ -67,8 +67,8 @@ CAutomationObject* SWorkerNode::Create(const TArguments& args, CAutomationProc* 
 {
     _ASSERT(args.size() == 2);
 
-    const auto wn_address  = args[0].AsString();
-    const auto client_name = args[1].AsString();
+    const auto wn_address  = args["wn_address"].AsString();
+    const auto client_name = args["client_name"].AsString();
 
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateWnCompat(
                 wn_address, client_name));
@@ -124,8 +124,8 @@ void SWorkerNode::ExecSuspend(const TArguments& args, SInputOutput& io)
 {
     _ASSERT(args.size() == 2);
 
-    const auto pullback_mode = args[0].AsBoolean();
-    const auto timeout       = args[1].AsInteger<unsigned int>();
+    const auto pullback_mode = args["pullback_mode"].AsBoolean();
+    const auto timeout       = args["timeout"].AsInteger<unsigned int>();
     g_SuspendWorkerNode(m_WorkerNode, pullback_mode, timeout);
 }
 
@@ -149,6 +149,6 @@ void SWorkerNode::ExecShutdown(const TArguments& args, SInputOutput& io)
 {
     _ASSERT(args.size() == 1);
 
-    const auto level = args[0].AsInteger();
+    const auto level = args["level"].AsInteger();
     m_NetScheduleAPI.GetAdmin().ShutdownServer(s_GetWorkerNodeShutdownMode(level));
 }

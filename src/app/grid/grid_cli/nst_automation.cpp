@@ -69,12 +69,12 @@ string s_GetInitString(const TArguments& args)
 {
     _ASSERT(args.size() == 6);
 
-    const auto service_name  = args[0].AsString();
-    const auto domain_name   = args[1].AsString();
-    const auto client_name   = args[2].AsString();
-    const auto metadata      = args[3].AsString();
-    const auto ticket        = args[4].AsString();
-    const auto hello_service = args[5].AsString();
+    const auto service_name  = args["service_name"].AsString();
+    const auto domain_name   = args["domain_name"].AsString();
+    const auto client_name   = args["client_name"].AsString();
+    const auto metadata      = args["metadata"].AsString();
+    const auto ticket        = args["ticket"].AsString();
+    const auto hello_service = args["hello_service"].AsString();
 
     const string init_string(
             "nst=" + service_name + "&domain=" + domain_name +
@@ -211,8 +211,8 @@ void SNetStorageService::ExecClientObjects(const TArguments& args, SInputOutput&
     _ASSERT(args.size() == 2);
 
     auto& reply = io.reply;
-    const auto client_name = args[0].AsString();
-    const auto limit       = args[1].AsInteger();
+    const auto client_name = args["client_name"].AsString();
+    const auto limit       = args["limit"].AsInteger();
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETCLIENTOBJECTS"));
     request.SetString("ClientName", client_name);
     if (limit) request.SetInteger("Limit", limit);
@@ -227,9 +227,9 @@ void SNetStorageService::ExecUserObjects(const TArguments& args, SInputOutput& i
     _ASSERT(args.size() == 3);
 
     auto& reply = io.reply;
-    const auto user_name = args[0].AsString();
-    const auto user_ns   = args[1].AsString();
-    const auto limit     = args[2].AsInteger();
+    const auto user_name = args["user_name"].AsString();
+    const auto user_ns   = args["user_ns"].AsString();
+    const auto limit     = args["limit"].AsInteger();
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETUSEROBJECTS"));
     request.SetString("UserName", user_name);
     if (!user_ns.empty()) request.SetString("UserNamespace", user_ns);
@@ -256,7 +256,7 @@ void SNetStorageService::ExecOpenObject(const TArguments& args, SInputOutput& io
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    const auto object_loc = args[0].AsString();
+    const auto object_loc = args["object_loc"].AsString();
     CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
     TAutomationObjectRef automation_object(
             new SNetStorageObject(m_AutomationProc, object));
@@ -326,8 +326,8 @@ void SNetStorageServer::ExecAckAlert(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 2);
 
     auto& reply = io.reply;
-    const auto name = args[0].AsString();
-    const auto user = args[1].AsString();
+    const auto name = args["name"].AsString();
+    const auto user = args["user"].AsString();
 
     CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("ACKALERT"));
     request.SetString("Name", name);
@@ -391,7 +391,7 @@ void SNetStorageObject::ExecGetAttr(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    const auto attr_name = args[0].AsString();
+    const auto attr_name = args["attr_name"].AsString();
     CJsonNode response(m_Object.GetAttribute(attr_name));
     reply.Append(response);
 }

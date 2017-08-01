@@ -82,7 +82,7 @@ void SNetCacheBlob::ExecWrite(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    const auto value = args[0].AsString();
+    const auto value = args["value"].AsString();
 
     if (m_Reader.get() != NULL) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -101,7 +101,7 @@ void SNetCacheBlob::ExecRead(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 1);
 
     auto& reply = io.reply;
-    auto buf_size = args[0].AsInteger<size_t>();
+    auto buf_size = args["buf_size"].AsInteger<size_t>();
 
     if (m_Writer.get() != NULL) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -234,9 +234,9 @@ CAutomationObject* SNetCacheService::Create(const TArguments& args, CAutomationP
 {
     _ASSERT(args.size() == 3);
 
-    const auto service_name = args[0].AsString();
-    const auto client_name  = args[1].AsString();
-    const auto cache_name   = args[2].AsString();
+    const auto service_name = args["service_name"].AsString();
+    const auto client_name  = args["client_name"].AsString();
+    const auto cache_name   = args["cache_name"].AsString();
 
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     return new SNetCacheService(automation_proc, ic_api,
@@ -256,9 +256,9 @@ CAutomationObject* SNetCacheServer::Create(const TArguments& args, CAutomationPr
 {
     _ASSERT(args.size() == 3);
 
-    const auto service_name = args[0].AsString();
-    const auto client_name  = args[1].AsString();
-    const auto cache_name   = args[2].AsString();
+    const auto service_name = args["service_name"].AsString();
+    const auto client_name  = args["client_name"].AsString();
+    const auto cache_name   = args["cache_name"].AsString();
 
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
     CNetServer server = ic_api.GetService().Iterate().GetServer();
@@ -315,9 +315,9 @@ void SNetCacheService::ExecGetBlob(const TArguments& args, SInputOutput& io)
     _ASSERT(args.size() == 3);
 
     auto& reply = io.reply;
-    const auto blob_key     = args[0].AsString();
-    const auto blob_version = args[1].AsInteger<int>();
-    const auto blob_subkey  = args[2].AsString();
+    const auto blob_key     = args["blob_key"].AsString();
+    const auto blob_version = args["blob_version"].AsInteger<int>();
+    const auto blob_subkey  = args["blob_subkey"].AsString();
 
     TAutomationObjectRef blob;
 
