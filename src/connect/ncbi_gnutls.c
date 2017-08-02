@@ -672,7 +672,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
-    val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
+    val = ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", buf, sizeof(buf), 0);
+    if (!val  ||  !*val)
+        val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
     CORE_LOCK_READ;
     if (!val  ||  !*val)
         val = getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */

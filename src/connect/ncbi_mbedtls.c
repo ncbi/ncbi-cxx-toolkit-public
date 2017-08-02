@@ -624,7 +624,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                 MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
 
-    val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
+    val = ConnNetInfo_GetValue(0, "MBEDTLS_LOGLEVEL", buf, sizeof(buf), 0);
+    if (!val  ||  !*val)
+        val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
     CORE_LOCK_READ;
     if (val  &&  *val) {
         ELOG_Level level;
@@ -638,8 +640,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
             level = eLOG_Trace;
         CORE_LOGF(level, ("%s V%s (LogLevel=%d)",
                           kMbedTls, version, s_MbedTlsLogLevel));
-	}
-	else
+	} else
         CORE_UNLOCK;
 
     if ((status = x_InitLocking()) != eIO_Success) {
