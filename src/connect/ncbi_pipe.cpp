@@ -474,7 +474,8 @@ void CPipeHandle::OpenSelf(void)
 
     NcbiCout.flush();
     ::fflush(stdout);
-    if ( !::FlushFileBuffers(m_ChildStdIn) ) {
+    if ( m_ChildStdIn != INVALID_HANDLE_VALUE
+         &&  !::FlushFileBuffers(m_ChildStdIn) ) {
         PIPE_THROW(::GetLastError(), "Failed FlushFileBuffers(stdout)");
     }
     if ((m_ChildStdIn = ::GetStdHandle(STD_OUTPUT_HANDLE))
