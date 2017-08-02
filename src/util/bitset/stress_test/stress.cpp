@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 //#define BM_SET_MMX_GUARD
 //#define BMSSE2OPT
 //#define BMSSE42OPT
-//#define BM64OPT
+#define BM64OPT
 //#define BMCOUNTOPT
 
 #include <ncbi_pch.hpp>
@@ -5743,7 +5743,7 @@ void SyntaxTest()
     cout << "----------------------------- Syntax test." << endl;
     bvect bv1;
     
-    bvect::allocator_type a = bv1.get_allocator();
+    //bvect::allocator_type a = bv1.get_allocator();
 
     bvect bv2(bv1);
     bvect bv3;
@@ -7242,7 +7242,7 @@ void BitBlockTransposeTest()
     
     PrintTMatrix(gte.tmatrix_, gte.eff_cols_, true);
     
-    bm::gap_word_t gap_head = *gapv.get_buf();
+    //bm::gap_word_t gap_head = *gapv.get_buf();
 //    gte.trestore(gap_head, gapv1.get_buf());//, block2);
 /*    
     if (gapv.compare(gapv1))
@@ -7285,7 +7285,7 @@ void BitBlockTransposeTest()
     unsigned glen = *(gapv.get_buf()) >> 3;
     cout << glen << endl;
 
-    bm::gap_word_t gap_head = *gapv.get_buf();
+    // bm::gap_word_t gap_head = *gapv.get_buf();
 //    gte.trestore(gap_head, gapv1.get_buf());
     
 /*

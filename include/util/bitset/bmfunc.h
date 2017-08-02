@@ -2879,7 +2879,7 @@ bm::id_t bit_block_calc_count_change(const bm::word_t* block,
     
     
 #ifdef BM64OPT
-    bm::id_t count = 1;
+    bm::id64_t count = 1;
     *bit_count = 0;
 
     // 64-bit optimized algorithm.
@@ -2922,7 +2922,7 @@ bm::id_t bit_block_calc_count_change(const bm::word_t* block,
             w_prev = (w0 >> w_shift);
         }
     } // for
-    return count;
+    return (bm::id_t) count;
 
 #else
     unsigned gap_count;

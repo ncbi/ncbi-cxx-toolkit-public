@@ -1382,8 +1382,20 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
         {
         	unsigned arr_len = this->read_id_list(dec, btype, this->id_array_);
             gap_temp_block_[0] = 0; // reset unused bits in gap header
-            //unsigned gap_len =
+            unsigned gap_len =
               gap_set_array(gap_temp_block_, this->id_array_, arr_len);
+
+              int level = gap_calc_level(gap_len, bman.glen());
+              if (level == -1)  // Too big to be GAP: convert to BIT block
+              {
+                  gap_convert_to_bitset(temp_block_, gap_temp_block_);
+                  bv.combine_operation_with_block(i,
+                                                  temp_block_,
+                                                  0,
+                                                  BM_OR);
+                  return;
+              }
+
             break;
         }
     case set_block_gap_egamma:            
