@@ -461,7 +461,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
 
     TCORE_Set set = 0;
     if (!(g_CORE_Set & eCORE_SetLOCK)) {
-        CORE_SetLOCK(MT_LOCK_cxx2c(lock, flag & eConnectInit_OwnLock));
+        CORE_SetLOCK(MT_LOCK_cxx2c(lock, !!(flag & eConnectInit_OwnLock)));
         set |= eCORE_SetLOCK;
     }
     if (!(g_CORE_Set & eCORE_SetLOG)) {
@@ -469,7 +469,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
         set |= eCORE_SetLOG;
     }
     if (!(g_CORE_Set & eCORE_SetREG)) {
-        CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
+        CORE_SetREG(REG_cxx2c(reg, !!(flag & eConnectInit_OwnRegistry)));
         set |= eCORE_SetREG;
     }
     if (!(g_CORE_Set & eCORE_SetSSL)) {
