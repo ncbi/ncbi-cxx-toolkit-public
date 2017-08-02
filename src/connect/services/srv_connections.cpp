@@ -38,6 +38,8 @@
 
 #include <corelib/ncbi_system.hpp>
 
+#include <sstream>
+
 #ifdef NCBI_OS_LINUX
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -440,7 +442,8 @@ struct SNetServerImpl::SConnectDeadline
 {
     SConnectDeadline(const STimeout& conn_timeout) :
         try_timeout(Min(conn_timeout , kMaxTryTimeout)),
-        deadline(CTimeout(conn_timeout.sec, conn_timeout.usec))
+        total_timeout(conn_timeout.sec, conn_timeout.usec),
+        deadline(total_timeout)
     {}
 
     const STimeout* GetRemaining() const { return &try_timeout; }
@@ -456,6 +459,8 @@ struct SNetServerImpl::SConnectDeadline
         return false;
     }
 
+    CTimeout GetTotal() const { return total_timeout; }
+
 private:
     static STimeout Min(const STimeout& t1, const STimeout& t2)
     {
@@ -466,6 +471,7 @@ private:
     }
 
     STimeout try_timeout;
+    CTimeout total_timeout;
     CDeadline deadline;
 
     static const STimeout kMaxTryTimeout;
@@ -520,9 +526,12 @@ void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
 
     socket.Close();
 
-    NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-        FORMAT(original.AsString() <<
-            ": Could not connect: " << IO_StatusStr(io_st)));
+    ostringstream os;
+    os << original.AsString() << ": Could not connect: " << IO_StatusStr(io_st);
+
+    if (io_st == eIO_Timeout) os << " (" << deadline.GetTotal().GetAsDouble() << "s)";
+
+    NCBI_THROW(CNetSrvConnException, eConnectionFailure, os.str());
 }
 
 void SNetServerImpl::TryExec(INetServerExecHandler& handler,
