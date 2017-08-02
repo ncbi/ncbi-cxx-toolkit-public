@@ -2254,7 +2254,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
         if (o_iter != sm_OrgRefKeys.end ()) {
             EOrgRef rtype = o_iter->second;
             if (x_AddQualifierToBioSrc (sfdata, feat_name, rtype, val)) return true;
-
         } else {
 
             TSubSrcMap::const_iterator s_iter = sm_SubSrcKeys.find (qual.c_str ());
@@ -2270,288 +2269,278 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
 
                     COrgMod::ESubtype  mtype = m_iter->second;
                     if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
-
                 }
             }
         }
+        return false;
+    } 
 
-    } else {
-        string lqual = s_FixQualCapitalization(qual);
-        TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
-        if (q_iter != sm_QualKeys.end ()) {
-            EQual qtype = q_iter->second;
-            switch (typ) {
-                case CSeqFeatData::e_Gene:
-                    if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfp, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Imp:
-                    if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
-                    break;
-                case CSeqFeatData::e_Region:
-                    if (qtype == eQual_region_name) {
-                        sfdata.SetRegion (val);
-                        return true;
-                    }
-                    break;
-                case CSeqFeatData::e_Bond:
-                    if (qtype == eQual_bond_type) {
-                        CSeqFeatData::EBond btyp = CSeqFeatData::eBond_other;
-                        if (CSeqFeatData::GetBondList()->IsBondName(val.c_str(), btyp)) {
-                            sfdata.SetBond (btyp);
-                            return true;
-                        }
-                    }
-                    break;
-                case CSeqFeatData::e_Site:
-                    if (qtype == eQual_site_type) {
-                        CSeqFeatData::ESite styp = CSeqFeatData::eSite_other;
-                        if (CSeqFeatData::GetSiteList()->IsSiteName( val.c_str(), styp)) {
-                            sfdata.SetSite (styp);
-                            return true;
-                        }
-                    }
-                    break;
-                case CSeqFeatData::e_Pub:
-                    if( qtype == eQual_PubMed ) {
-                        CRef<CPub> new_pub( new CPub );
-                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, feat_name, qual) ) );
-                        sfdata.SetPub().SetPub().Set().push_back( new_pub );
-                        return true;
-                    }
-                    break;
-                case CSeqFeatData::e_Prot:
-                    switch( qtype ) {
-                    case eQual_product:
-                        sfdata.SetProt().SetName().push_back( val );
-                        return true;
-                    case eQual_function:
-                        sfdata.SetProt().SetActivity().push_back( val );
-                        return true;
-                    case eQual_EC_number:
-                        sfdata.SetProt().SetEc().push_back( val );
-                        return true;
-                    default:
-                        break;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            switch (qtype) {
-                case eQual_pseudo:
-                    sfp->SetPseudo (true);
+
+    // else type != CSeqFeatData::e_Biosrc
+    string lqual = s_FixQualCapitalization(qual);
+    TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
+    if (q_iter != sm_QualKeys.end ()) {
+        EQual qtype = q_iter->second;
+        switch (typ) {
+            case CSeqFeatData::e_Gene:
+                if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
+                break;
+            case CSeqFeatData::e_Cdregion:
+                if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
+                break;
+            case CSeqFeatData::e_Rna:
+                if (x_AddQualifierToRna (sfp, qtype, val)) return true;
+                break;
+            case CSeqFeatData::e_Imp:
+                if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
+                break;
+            case CSeqFeatData::e_Region:
+                if (qtype == eQual_region_name) {
+                    sfdata.SetRegion (val);
                     return true;
-                case eQual_partial:
-                    sfp->SetPartial (true);
-                    return true;
-                case eQual_exception:
-                    sfp->SetExcept (true);
-                    sfp->SetExcept_text (val);
-                    return true;
-                case eQual_ribosomal_slippage:
-                    sfp->SetExcept (true);
-                    sfp->SetExcept_text (qual);
-                    return true;
-                case eQual_trans_splicing:
-                    sfp->SetExcept (true);
-                    sfp->SetExcept_text (qual);
-                    return true;
-                case eQual_evidence:
-                    if (val == "experimental") {
-                        sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
-                    } else if (val == "not_experimental" || val == "non_experimental" ||
-                               val == "not-experimental" || val == "non-experimental") {
-                        sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
-                    }
-                    return true;
-                case eQual_note:
-                    {
-                    /*
-                        if (sfp->CanGetComment ()) {
-                            const CSeq_feat::TComment& comment = sfp->GetComment ();
-                            CSeq_feat::TComment revised = comment + "; " + val;
-                            sfp->SetComment (revised);
-                        } else {
-                            sfp->SetComment (val);
-                        }
-                        */
-                        return x_AddNoteToFeature(sfp, val);
-                    }
-                case eQual_inference:
-                    {
-                        string prefix, remainder;
-                        CInferencePrefixList::GetPrefixAndRemainder(val, prefix, remainder);
-                        if (!NStr::IsBlank(prefix)) {
-                            x_AddGBQualToFeature(sfp, qual, val);
-                        }
-                        else {
-                            x_ProcessMsg(
-                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                                feat_name, qual, val);
-                        }
+                }
+                break;
+            case CSeqFeatData::e_Bond:
+                if (qtype == eQual_bond_type) {
+                    CSeqFeatData::EBond btyp = CSeqFeatData::eBond_other;
+                    if (CSeqFeatData::GetBondList()->IsBondName(val.c_str(), btyp)) {
+                        sfdata.SetBond (btyp);
                         return true;
                     }
-                case eQual_replace:
-                    {
-                        string val_copy = val;
-                        NStr::ToLower( val_copy );
-                        x_AddGBQualToFeature (sfp, qual, val_copy );
+                }
+                break;
+            case CSeqFeatData::e_Site:
+                if (qtype == eQual_site_type) {
+                    CSeqFeatData::ESite styp = CSeqFeatData::eSite_other;
+                    if (CSeqFeatData::GetSiteList()->IsSiteName( val.c_str(), styp)) {
+                        sfdata.SetSite (styp);
                         return true;
                     }
-                case eQual_allele:
-                case eQual_bound_moiety:
-                case eQual_clone:
-                case eQual_compare:
-                case eQual_cons_splice:
-                case eQual_direction:
-                case eQual_EC_number:
-                case eQual_estimated_length:
-                case eQual_experiment:
-                case eQual_frequency:
-                case eQual_function:
-                case eQual_gap_type:
-                case eQual_insertion_seq:
-                case eQual_label:
-                case eQual_linkage_evidence:
-                case eQual_map:
-                case eQual_ncRNA_class:
-                case eQual_number:
-                case eQual_old_locus_tag:
-                case eQual_operon:
-                case eQual_organism:
-                case eQual_PCR_conditions:
-                case eQual_phenotype:
+                }
+                break;
+            case CSeqFeatData::e_Pub:
+                if( qtype == eQual_PubMed ) {
+                    CRef<CPub> new_pub( new CPub );
+                    new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, feat_name, qual) ) );
+                    sfdata.SetPub().SetPub().Set().push_back( new_pub );
+                    return true;
+                }
+                break;
+            case CSeqFeatData::e_Prot:
+                switch( qtype ) {
                 case eQual_product:
-                case eQual_pseudogene:
-                case eQual_satellite:
-                case eQual_rpt_family:
-                case eQual_rpt_type:
-                case eQual_rpt_unit:
-                case eQual_rpt_unit_range:
-                case eQual_rpt_unit_seq:
-                case eQual_standard_name:
-                case eQual_tag_peptide:
-                case eQual_transcript_id:
-                case eQual_transposon:
-                case eQual_usedin:
-                case eQual_cyt_map:
-                case eQual_gen_map:
-                case eQual_rad_map:
-                case eQual_mobile_element_type:
-
-                    {
-                        x_AddGBQualToFeature (sfp, qual, val);
-                        return true;
-                    }
-                case eQual_gene:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        if (val == "-") {
-                            grp.SetLocus ("");
-                        } else {
-                            grp.SetLocus (val);
-                        }
-                        return true;
-                    }
-                case eQual_gene_desc:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        grp.SetDesc (val);
-                        return true;
-                    }
-                case eQual_gene_syn:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        CGene_ref::TSyn& syn = grp.SetSyn ();
-                        syn.push_back (val);
-                        return true;
-                    }
-                case eQual_locus_tag:
-                    {
-                        if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
-                            CGene_ref& grp = sfp->SetGeneXref ();
-                            grp.SetLocus_tag (val);
-                            return true;
-                        } 
-                        // else:
-                        if (x_AddNoteToFeature(sfp,val)) {
-                            string error_message = 
-                                qual + " is not a valid qualifier for this feature. Converting to note."; 
-                            x_ProcessMsg(                        
-                                ILineError::eProblem_InvalidQualifier, eDiag_Warning,
-                                feat_name, qual, kEmptyStr, error_message);
-                            return true;
-                        }
-                    }
-                case eQual_db_xref:
-                    {
-                        CTempString db, tag;
-                        if (NStr::SplitInTwo (val, ":", db, tag)) {
-                            CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
-                            CRef<CDbtag> dbt (new CDbtag);
-                            dbt->SetDb (db);
-                            CRef<CObject_id> oid (new CObject_id);
-                            static const char* digits = "0123456789";
-                            if (tag.find_first_not_of(digits) == string::npos)
-                                oid->SetId(NStr::StringToLong(tag));
-                            else
-                                oid->SetStr(tag);
-                            dbt->SetTag (*oid);
-                            dblist.push_back (dbt);
-                            return true;
-                        }
-                        return true;
-                    }
-                case eQual_nomenclature:
-                    {
-                        /* !!! need to implement !!! */
-                        return true;
-                    }
-                case eQual_go_component:
-                case eQual_go_function:
-                case eQual_go_process:
-                    if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
-                        return x_AddGeneOntologyToFeature(sfp, qual, val);
-                    }
-                    return false;
-                case eQual_protein_id:
-                    // see SQD-1535 and SQD-3496
-                    if (typ == CSeqFeatData::e_Cdregion ||
-                        (typ == CSeqFeatData::e_Rna &&
-                        sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA))
-                    try {
-                        CBioseq::TId ids;
-                        CSeq_id::ParseIDs(ids, val,                                
-                                 CSeq_id::fParse_ValidLocal
-                               | CSeq_id::fParse_PartialOK);
-                        if (ids.size()>0) {
-                            x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
-                            if (typ == CSeqFeatData::e_Cdregion) {
-                                CRef<CSeq_id> best = GetBestId(ids);
-                                if (!best.Empty())
-                                    sfp->SetProduct().SetWhole(*best);
-                            }
-                        }
-                        return true;
-                    } catch( CSeqIdException & ) {
-                        return false;
-                    }
-                case eQual_regulatory_class:
-                    // This should've been handled up in x_AddQualifierToImp
-                    // so it's always a bad value to be here
-                    x_ProcessMsg(                        
-                        ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                        feat_name, qual, val );
+                    sfdata.SetProt().SetName().push_back( val );
+                    return true;
+                case eQual_function:
+                    sfdata.SetProt().SetActivity().push_back( val );
+                    return true;
+                case eQual_EC_number:
+                    sfdata.SetProt().SetEc().push_back( val );
                     return true;
                 default:
                     break;
+                }
+                break;
+            default:
+                break;
             }
+
+        switch (qtype) {
+            case eQual_pseudo:
+                sfp->SetPseudo (true);
+                return true;
+            case eQual_partial:
+                sfp->SetPartial (true);
+                return true;
+            case eQual_exception:
+                sfp->SetExcept (true);
+                sfp->SetExcept_text (val);
+                return true;
+            case eQual_ribosomal_slippage:
+                sfp->SetExcept (true);
+                sfp->SetExcept_text (qual);
+                return true;
+            case eQual_trans_splicing:
+                sfp->SetExcept (true);
+                sfp->SetExcept_text (qual);
+                return true;
+            case eQual_evidence:
+                if (val == "experimental") {
+                    sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
+                } else if (val == "not_experimental" || val == "non_experimental" ||
+                           val == "not-experimental" || val == "non-experimental") {
+                    sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
+                }
+                return true;
+            case eQual_note:
+                    return x_AddNoteToFeature(sfp, val);
+            case eQual_inference:
+                {
+                    string prefix, remainder;
+                    CInferencePrefixList::GetPrefixAndRemainder(val, prefix, remainder);
+                    if (!NStr::IsBlank(prefix)) {
+                        x_AddGBQualToFeature(sfp, qual, val);
+                    }
+                    else {
+                        x_ProcessMsg(
+                            ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                            feat_name, qual, val);
+                    }
+                    return true;
+                }
+            case eQual_replace:
+                {
+                    string val_copy = val;
+                    NStr::ToLower( val_copy );
+                    x_AddGBQualToFeature (sfp, qual, val_copy );
+                    return true;
+                }
+            case eQual_allele:
+            case eQual_bound_moiety:
+            case eQual_clone:
+            case eQual_compare:
+            case eQual_cons_splice:
+            case eQual_direction:
+            case eQual_EC_number:
+            case eQual_estimated_length:
+            case eQual_experiment:
+            case eQual_frequency:
+            case eQual_function:
+            case eQual_gap_type:
+            case eQual_insertion_seq:
+            case eQual_label:
+            case eQual_linkage_evidence:
+            case eQual_map:
+            case eQual_ncRNA_class:
+            case eQual_number:
+            case eQual_old_locus_tag:
+            case eQual_operon:
+            case eQual_organism:
+            case eQual_PCR_conditions:
+            case eQual_phenotype:
+            case eQual_product:
+            case eQual_pseudogene:
+            case eQual_satellite:
+            case eQual_rpt_family:
+            case eQual_rpt_type:
+            case eQual_rpt_unit:
+            case eQual_rpt_unit_range:
+            case eQual_rpt_unit_seq:
+            case eQual_standard_name:
+            case eQual_tag_peptide:
+            case eQual_transcript_id:
+            case eQual_transposon:
+            case eQual_usedin:
+            case eQual_cyt_map:
+            case eQual_gen_map:
+            case eQual_rad_map:
+            case eQual_mobile_element_type:
+                {
+                    x_AddGBQualToFeature (sfp, qual, val);
+                    return true;
+                }
+            case eQual_gene:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    if (val == "-") {
+                        grp.SetLocus ("");
+                    } else {
+                        grp.SetLocus (val);
+                    }
+                    return true;
+                }
+            case eQual_gene_desc:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    grp.SetDesc (val);
+                    return true;
+                }
+            case eQual_gene_syn:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    CGene_ref::TSyn& syn = grp.SetSyn ();
+                    syn.push_back (val);
+                    return true;
+                }
+            case eQual_locus_tag:
+                {
+                    if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetLocus_tag (val);
+                        return true;
+                    } 
+                    // else:
+                    if (x_AddNoteToFeature(sfp,val)) {
+                        string error_message = 
+                            qual + " is not a valid qualifier for this feature. Converting to note."; 
+                        x_ProcessMsg(                        
+                            ILineError::eProblem_InvalidQualifier, eDiag_Warning,
+                            feat_name, qual, kEmptyStr, error_message);
+                        return true;
+                    }
+                }
+            case eQual_db_xref:
+                {
+                    CTempString db, tag;
+                    if (NStr::SplitInTwo (val, ":", db, tag)) {
+                        CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
+                        CRef<CDbtag> dbt (new CDbtag);
+                        dbt->SetDb (db);
+                        CRef<CObject_id> oid (new CObject_id);
+                        static const char* digits = "0123456789";
+                        if (tag.find_first_not_of(digits) == string::npos)
+                            oid->SetId(NStr::StringToLong(tag));
+                        else
+                            oid->SetStr(tag);
+                        dbt->SetTag (*oid);
+                        dblist.push_back (dbt);
+                        return true;
+                    }
+                    return true;
+                }
+            case eQual_nomenclature:
+                {
+                    /* !!! need to implement !!! */
+                    return true;
+                }
+            case eQual_go_component:
+            case eQual_go_function:
+            case eQual_go_process:
+                if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
+                    return x_AddGeneOntologyToFeature(sfp, qual, val);
+                }
+                return false;
+            case eQual_protein_id:
+                // see SQD-1535 and SQD-3496
+                if (typ == CSeqFeatData::e_Cdregion ||
+                    (typ == CSeqFeatData::e_Rna &&
+                    sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA))
+                try {
+                    CBioseq::TId ids;
+                    CSeq_id::ParseIDs(ids, val,                                
+                            CSeq_id::fParse_ValidLocal
+                            | CSeq_id::fParse_PartialOK);
+                    if (ids.size()>0) {
+                        x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
+                        if (typ == CSeqFeatData::e_Cdregion) {
+                            CRef<CSeq_id> best = GetBestId(ids);
+                            if (!best.Empty())
+                                sfp->SetProduct().SetWhole(*best);
+                        }
+                    }
+                    return true;
+                } catch( CSeqIdException & ) {
+                    return false;
+                }
+            case eQual_regulatory_class:
+                // This should've been handled up in x_AddQualifierToImp
+                // so it's always a bad value to be here
+                x_ProcessMsg(                        
+                    ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                    feat_name, qual, val );
+                return true;
+            default:
+                break;
         }
     }
     return false;
