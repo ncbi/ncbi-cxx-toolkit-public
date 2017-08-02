@@ -553,6 +553,9 @@ public:
     /// eSP_InOut parameter value set to it will be returned before stored
     /// procedure execution and value returned from procedure after executing
     /// it and reading its row results (or confirming that it produced none).
+    /// Throw an exception if no such parameter exists, or if it's an output
+    /// parameter but not yet available because the caller hasn't finished
+    /// processing results.
     const CField& GetParameter(CTempString name);
 
     /// Remove parameter with given name from parameter list.
