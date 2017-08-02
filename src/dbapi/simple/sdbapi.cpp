@@ -2633,7 +2633,14 @@ CQueryImpl::GetParameter(CTempString name)
         NCBI_THROW(CSDB_Exception, eNotExist,
                    "Parameter '" + string(name) + "' doesn't exist.  "
                    + x_GetContext());
+    } else if (static_cast<const CParamQFB&>(*it->second.m_Impl->m_Basis)
+               .GetParamType() == eSP_InOut
+               &&  !IsFinished(CQuery::eAllResultSets) ) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+                   "CQuery::GetParameter called with some results still"
+                   " unread.  " + x_GetContext());
     }
+
     return it->second;
 }
 
