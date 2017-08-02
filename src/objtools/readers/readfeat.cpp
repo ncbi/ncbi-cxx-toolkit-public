@@ -366,6 +366,8 @@ private:
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    COrgMod::ESubtype mtype, const string& val);
 
+    bool x_AddNoteToFeature(CRef<CSeq_feat> sfp, const string& note);
+
     bool x_AddGBQualToFeature    (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
 
@@ -2204,6 +2206,26 @@ static string s_FixQualCapitalization (const string& qual)
 }
 
 
+bool CFeature_table_reader_imp::x_AddNoteToFeature(
+        CRef<CSeq_feat> sfp,
+        const string& note)
+{
+    if (sfp.IsNull()) {
+        return false;
+    }
+
+    if (NStr::IsBlank(note)) { // Nothing to do
+        return true;
+    }
+
+    string comment = (sfp->CanGetComment()) ? 
+        sfp->GetComment() + "; " + note :
+        note;
+        sfp->SetComment(comment);
+    return true;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     CRef<CSeq_feat> sfp,
     const string &feat_name,
@@ -2350,6 +2372,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     return true;
                 case eQual_note:
                     {
+                    /*
                         if (sfp->CanGetComment ()) {
                             const CSeq_feat::TComment& comment = sfp->GetComment ();
                             CSeq_feat::TComment revised = comment + "; " + val;
@@ -2357,7 +2380,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         } else {
                             sfp->SetComment (val);
                         }
-                        return true;
+                        */
+                        return x_AddNoteToFeature(sfp, val);
                     }
                 case eQual_inference:
                     {
@@ -2456,17 +2480,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             return true;
                         } 
                         // else:
-                        string gene_comment = val;
-                        string comment = (sfp->CanGetComment()) ? 
-                            sfp->GetComment() + ";" + gene_comment :
-                            gene_comment;
-                        sfp->SetComment(comment);
-                        string error_message = 
-                            "locus_tag is not a valid qualifier for this feature. Converting to note."; 
-                        x_ProcessMsg(                        
-                            ILineError::eProblem_InvalidQualifier, eDiag_Warning,
-                            feat_name, qual, kEmptyStr, error_message);
-                        return true;
+                        if (x_AddNoteToFeature(sfp,val)) {
+                            string error_message = 
+                                qual + " is not a valid qualifier for this feature. Converting to note."; 
+                            x_ProcessMsg(                        
+                                ILineError::eProblem_InvalidQualifier, eDiag_Warning,
+                                feat_name, qual, kEmptyStr, error_message);
+                            return true;
+                        }
                     }
                 case eQual_db_xref:
                     {
