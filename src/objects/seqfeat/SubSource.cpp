@@ -1309,7 +1309,11 @@ static void s_RemoveLeadingZeros(string& token)
 
 bool s_AddTokenToVal(double& val, const string& num_str, size_t num_sep, size_t& prec)
 {
-    double this_val = NStr::StringToDouble(num_str);
+    double this_val = NStr::StringToDouble(num_str, NStr::fConvErr_NoThrow);
+    if (errno != 0) {
+        return false;
+    }
+    
     if (num_sep == 0) {
         val += this_val;
     } else if (num_sep == 1) {
