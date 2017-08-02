@@ -215,7 +215,8 @@ public:
         eDbtagType_BEI,
         eDbtagType_Araport,
         eDbtagType_VGNC,
-        eDbtagType_RNAcentral
+        eDbtagType_RNAcentral,
+        eDbtagType_PeptideAtlas
     };
 
     enum EDbtagGroup {

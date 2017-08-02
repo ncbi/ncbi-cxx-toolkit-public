@@ -195,6 +195,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "LRG", CDbtag::eDbtagType_LRG },
     { "NASONIABASE", CDbtag::eDbtagType_NASONIABASE },
     { "PBR", CDbtag::eDbtagType_PBR },
+    { "PeptideAtlas", CDbtag::eDbtagType_PeptideAtlas },
     { "REBASE", CDbtag::eDbtagType_REBASE },
     { "RefSeq", CDbtag::eDbtagType_RefSeq },
     { "SK-FST", CDbtag::eDbtagType_SK_FST },
@@ -696,6 +697,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Araport, "https://www.araport.org/locus/" },
     { CDbtag::eDbtagType_VGNC, "http://vertebrate.genenames.org/data/gene-symbol-report/#!/vgnc_id/VGNC:" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
+    { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/GetPeptide?searchWithinThis=Peptide%2bName&action=QUERY&searchForThis=" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
