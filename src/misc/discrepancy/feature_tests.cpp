@@ -1217,7 +1217,7 @@ const string& kJoinedFeaturesBlankException = "[n] feature[s] [has] joined locat
 
 DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features: on when non-eukaryote")
 {
-    if (context.IsEukaryotic() || !obj.IsSetLocation()) {
+    if (context.IsEukaryotic() || context.IsOrganelle() || !obj.IsSetLocation()) {
         return;
     }
     if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
