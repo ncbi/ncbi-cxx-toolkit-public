@@ -356,6 +356,7 @@ public:
         eAcc_ddbj_wgsm_nuc  = e_Ddbj | eAcc_wgs_master | fAcc_nuc,
         eAcc_ddbj_wgsm_prot = e_Ddbj | eAcc_wgs_master | fAcc_prot,
         eAcc_ddbj_mga       = e_Ddbj | eAcc_mga        | fAcc_nuc,  // AAAAA
+        eAcc_ddbj_targeted_nuc=e_Ddbj| eAcc_targeted   | fAcc_nuc,  // TAAA
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
