@@ -120,7 +120,7 @@ vector<string> CInputStreamSource::RecreateInputArgs(const CArgs& args, const st
 
 bool CInputStreamSource::HaveArgsForPrefix(const string &prefix)
 {
-    return s_InputStreamSourcePrefixes.count(prefix);
+    return s_InputStreamSourcePrefixes.count(prefix) ? true : false;
 }
 
 CInputStreamSource::CInputStreamSource()
