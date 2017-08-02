@@ -368,6 +368,11 @@ private:
 
     bool x_AddNoteToFeature(CRef<CSeq_feat> sfp, const string& note);
 
+    bool x_AddNoteToFeature(CRef<CSeq_feat> sfp,
+            const string& feat_name,
+            const string& qual,
+            const string& val);
+
     bool x_AddGBQualToFeature    (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
 
@@ -2226,6 +2231,26 @@ bool CFeature_table_reader_imp::x_AddNoteToFeature(
 }
 
 
+bool CFeature_table_reader_imp::x_AddNoteToFeature(
+    CRef<CSeq_feat> sfp,
+    const string& feat_name,
+    const string& qual,
+    const string& val) {
+
+    if (!x_AddNoteToFeature(sfp, val)) {
+        return false;
+    }
+    // Else convert qualifier to note and issue warning
+    if (qual != "note") {
+        string error_message = 
+            qual + " is not a valid qualifier for this feature. Converting to note."; 
+        x_ProcessMsg(                        
+        ILineError::eProblem_InvalidQualifier, eDiag_Warning,
+        feat_name, qual, kEmptyStr, error_message);
+    }
+    return true;
+}
+
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     CRef<CSeq_feat> sfp,
     const string &feat_name,
@@ -2441,26 +2466,38 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 }
             case eQual_gene:
                 {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    if (val == "-") {
+                    if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        if (val == "-") {
                         grp.SetLocus ("");
-                    } else {
-                        grp.SetLocus (val);
+                        } else {
+                            grp.SetLocus (val);
+                        }
+                        return true;
                     }
-                    return true;
+                    // else:
+                    return x_AddNoteToFeature(sfp, feat_name, qual, val);
                 }
             case eQual_gene_desc:
                 {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    grp.SetDesc (val);
-                    return true;
+                    if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetDesc (val);
+                        return true;
+                    }
+                    // else:
+                    return x_AddNoteToFeature(sfp, feat_name, qual, val);
                 }
             case eQual_gene_syn:
                 {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    CGene_ref::TSyn& syn = grp.SetSyn ();
-                    syn.push_back (val);
-                    return true;
+                    if (CSeqFeatData::CanHaveGene(sfdata.GetSubtype())) {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        CGene_ref::TSyn& syn = grp.SetSyn ();
+                        syn.push_back (val);
+                        return true;
+                    }
+                    // else:
+                    return x_AddNoteToFeature(sfp, feat_name, qual, val);
                 }
             case eQual_locus_tag:
                 {
@@ -2470,14 +2507,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         return true;
                     } 
                     // else:
-                    if (x_AddNoteToFeature(sfp,val)) {
-                        string error_message = 
-                            qual + " is not a valid qualifier for this feature. Converting to note."; 
-                        x_ProcessMsg(                        
-                            ILineError::eProblem_InvalidQualifier, eDiag_Warning,
-                            feat_name, qual, kEmptyStr, error_message);
-                        return true;
-                    }
+                    return x_AddNoteToFeature(sfp, feat_name, qual, val);
                 }
             case eQual_db_xref:
                 {
