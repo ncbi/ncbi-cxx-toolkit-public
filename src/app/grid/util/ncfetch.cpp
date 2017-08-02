@@ -81,17 +81,9 @@ void CNetCacheBlobFetchApp::Init()
             "netstorage", kEmptyStr));
 }
 
-int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
+void s_WriteHeader(const CCgiRequest& request, CCgiResponse& reply)
 {
-    const CCgiRequest& request = ctx.GetRequest();
-    CCgiResponse&      reply   = ctx.GetResponse();
-
     bool is_found;
-
-    string key = request.GetEntry("key", &is_found);
-    if (key.empty() || !is_found) {
-        NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
-    }
 
     string fmt = request.GetEntry("fmt", &is_found);
     if (fmt.empty() || !is_found)
@@ -108,17 +100,31 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     }
 
     reply.SetContentType(fmt);
-
     reply.WriteHeader();
+}
+
+int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
+{
+    const CCgiRequest& request = ctx.GetRequest();
+    CCgiResponse&      reply   = ctx.GetResponse();
+
+    bool is_found;
+
+    string key = request.GetEntry("key", &is_found);
+    if (key.empty() || !is_found) {
+        NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
+    }
 
     CNetStorageObject netstorage_object(m_NetStorage.Open(key));
 
     char buffer[NETSTORAGE_IO_BUFFER_SIZE];
-
     size_t total_bytes_written = 0;
 
     while (!netstorage_object.Eof()) {
         size_t bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
+
+        if (!bytes_read) continue;
+        if (!total_bytes_written) s_WriteHeader(request, reply);
 
         reply.out().write(buffer, bytes_read);
         total_bytes_written += bytes_read;
@@ -133,26 +139,21 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
 int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
 {
-    union {
-        CArgException* arg_exception;
-        CNetCacheException* nc_exception;
-    };
-
     string status_str;
     string message;
 
-    if ((arg_exception = dynamic_cast<CArgException*>(&e)) != NULL) {
+    if (auto arg_exception = dynamic_cast<CArgException*>(&e)) {
         status_str = "400 Bad Request";
         message = arg_exception->GetMsg();
         SetHTTPStatus(CRequestStatus::e400_BadRequest);
-    } else if ((nc_exception = dynamic_cast<CNetCacheException*>(&e)) != NULL) {
+    } else if (auto nc_exception = dynamic_cast<CNetStorageException*>(&e)) {
         switch (nc_exception->GetErrCode()) {
-        case CNetCacheException::eAccessDenied:
+        case CNetStorageException::eAuthError:
             status_str = "403 Forbidden";
             message = nc_exception->GetMsg();
             SetHTTPStatus(CRequestStatus::e403_Forbidden);
             break;
-        case CNetCacheException::eBlobNotFound:
+        case CNetStorageException::eNotExists:
             status_str = "404 Not Found";
             message = nc_exception->GetMsg();
             SetHTTPStatus(CRequestStatus::e404_NotFound);
