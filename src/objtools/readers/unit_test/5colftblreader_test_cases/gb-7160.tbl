@@ -1,0 +1,12 @@
+>Feature gb|KY807921|
+4000	4101	mobile_element
+            gene  gene is not a valid for this feature
+            gene_synonym gene_synonym is not a valid qualifier for this feature
+            gene_desc gene_desc is not a valid qualifier for this feature
+			locus_tag	BOC70_00025
+			mobile_element_type	insertion sequence:IS2
+4200	4201	regulatory
+			locus_tag BOC70_00030
+			note	cobalamin riboswitch
+			bound_moiety	cobalamin
+			regulatory_class	riboswitch

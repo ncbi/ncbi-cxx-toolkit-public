@@ -1,0 +1,20 @@
+Line No    : 3
+Severity   : Warning
+Message    : gene is not a valid qualifier for this feature. Converting to note.
+
+Line No    : 4
+Severity   : Warning
+Message    : gene_synonym is not a valid qualifier for this feature. Converting to note.
+
+Line No    : 5
+Severity   : Warning
+Message    : gene_desc is not a valid qualifier for this feature. Converting to note.
+
+Line No    : 6
+Severity   : Warning
+Message    : locus_tag is not a valid qualifier for this feature. Converting to note.
+
+Line No    : 9
+Severity   : Warning
+Message    : locus_tag is not a valid qualifier for this feature. Converting to note.
+

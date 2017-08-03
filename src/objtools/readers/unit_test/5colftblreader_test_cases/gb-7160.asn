@@ -1,0 +1,50 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "mobile_element"
+      },
+      comment "gene is not a valid for this feature; gene_synonym is not a
+ valid qualifier for this feature; gene_desc is not a valid qualifier for this
+ feature; BOC70_00025",
+      location int {
+        from 3999,
+        to 4100,
+        strand plus,
+        id genbank {
+          accession "KY807921"
+        }
+      },
+      qual {
+        {
+          qual "mobile_element_type",
+          val "insertion sequence:IS2"
+        }
+      }
+    },
+    {
+      data imp {
+        key "regulatory"
+      },
+      comment "BOC70_00030; cobalamin riboswitch",
+      location int {
+        from 4199,
+        to 4200,
+        strand plus,
+        id genbank {
+          accession "KY807921"
+        }
+      },
+      qual {
+        {
+          qual "bound_moiety",
+          val "cobalamin"
+        },
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        }
+      }
+    }
+  }
+}
