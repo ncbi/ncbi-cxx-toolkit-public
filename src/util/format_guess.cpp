@@ -1276,7 +1276,7 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, si
 
     // Check sequence data
     ESequenceType seqtype = 
-        SequenceType(seqdata.c_str(), seqdata.size(), eST_Strict);
+        SequenceType(seqdata.c_str(), static_cast<unsigned int>(seqdata.size()), eST_Strict);
 
     if (seqtype == eUndefined) {
         return false;
@@ -2043,7 +2043,7 @@ size_t s_GetPrecedingFslashCount(const string& input, const size_t pos)
         return 0;
     }
 
-    int current_pos = pos-1;
+    int current_pos = static_cast<int>(pos)-1; 
     size_t num_fslash = 0;
     while  ( current_pos >= 0 && input[current_pos] == '\\' ) {
         ++num_fslash;
