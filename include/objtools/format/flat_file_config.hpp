@@ -257,7 +257,7 @@ public:
     typedef EStyle          TStyle;
     typedef unsigned int    TFlags; // binary OR of "EFlags"
     typedef unsigned int    TView;
-    NCBI_DEPRECATED typedef unsigned int    TGffOptions;
+    typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
     typedef unsigned int    TCustom; // binary OR of "ECustom"
     
