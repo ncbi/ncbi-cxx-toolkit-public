@@ -272,7 +272,7 @@ class Collector(object):
             if len(rest) > 0:
                 url = url + '#' + os.path.join(*rest)
             info['vcs_path'] = url
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             info['vcs_path'] = 'file://' + os.path.join(srcdir, *rest)
         try:
             cmd = ['git', '-C', srcdir, 'rev-parse', '--symbolic-full-name',
@@ -281,7 +281,7 @@ class Collector(object):
                                           universal_newlines = True)
             rev = rev.rstrip('\n')
             info['vcs_branch'] = re.sub(r'^refs/(?:heads|tags)/', '', rev)
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             pass
         if 'vcs_branch' not in info and info['vcs_path'].startswith('file://'):
             # Maybe controlled by Subversion after all, in a hybrid layout?
