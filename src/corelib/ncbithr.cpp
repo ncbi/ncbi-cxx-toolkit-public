@@ -927,6 +927,31 @@ void CThread::SetCurrentThreadName(const CTempString&)
 #endif
 
 
+bool CThread::sm_IsExiting = false;
+CTimeout CThread::sm_WaitForThreadsTimeout = CTimeout(0.1);
+
+
+void CThread::SetWaitForAllThreadsTimeout(const CTimeout& timeout)
+{
+    sm_WaitForThreadsTimeout = timeout;
+}
+
+
+bool CThread::WaitForAllThreads(void)
+{
+    if (sm_ThreadsCount == 0) return true;
+    if ( !IsMain() ) return false;
+    CStopWatch sw(CStopWatch::eStart);
+    double to = sm_WaitForThreadsTimeout.IsInfinite() ?
+        numeric_limits<double>::max() : sm_WaitForThreadsTimeout.GetAsDouble();
+    if (to == 0) return false;
+    double q = min(to, 0.01);
+    while (sm_ThreadsCount > 0  &&  sw.Elapsed() < to) {
+        SleepMilliSec(q);
+    }
+}
+
+
 const char* CThreadException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

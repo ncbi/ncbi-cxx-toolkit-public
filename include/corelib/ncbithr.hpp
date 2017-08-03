@@ -590,6 +590,15 @@ public:
     /// native thread will return zero.
     static void InitializeMainThreadId(void);
 
+    /// Check if the application is exiting (entered the destructor).
+    /// Recommended to be used as while() condition by infinite threads
+    /// to stop them properly on exit.
+    /// @sa SetWaitForAllThreadsTimeout
+    static bool IsAppExiting(void) { return sm_IsExiting; }
+
+    /// Set timeout for stopping all threads on application exit.
+    static void SetWaitForAllThreadsTimeout(const CTimeout& timeout);
+
 protected:
     /// Derived (user-created) class must provide a real thread function.
     virtual void* Main(void) = 0;
@@ -615,6 +624,9 @@ private:
     CRef<CThread> m_SelfRef;       ///< "this" -- to avoid premature destruction
     void*         m_ExitData;      ///< as returned by Main() or passed to Exit()
 
+    static bool     sm_IsExiting;
+    static CTimeout sm_WaitForThreadsTimeout;
+
 #if defined NCBI_THREAD_PID_WORKAROUND
     friend class CProcess;
     TPid          m_ThreadPID;     ///< Cache thread PID to detect forks
@@ -631,6 +643,12 @@ private:
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
     friend TWrapperRes ThreadWrapperCaller(TWrapperArg arg);
+
+    // Wait for all threads to terminate. Note that the method does not request threads
+    // to stop, it just waits for the number of running threads to become zero.
+    // Return true if all threads have been stopped, false on timeout.
+    static bool WaitForAllThreads(void);
+    friend class CNcbiApplication;
 
     /// Prohibit copying and assigning
     CThread(const CThread&);

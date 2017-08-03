@@ -144,6 +144,12 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 
 CNcbiApplication::~CNcbiApplication(void)
 {
+    CThread::sm_IsExiting = true;
+
+#if defined(NCBI_THREADS)
+    CThread::WaitForAllThreads();
+#endif
+
     {
         CMutexGuard guard(GetInstanceMutex());
         m_Instance = 0;
