@@ -39,7 +39,8 @@ Taxon1-req ::= CHOICE {
         getproptypes    NULL,           -- get property types
         getorgprop      Taxon1-info,    -- get properties for organism
         searchname      Taxon1-info,    -- fancy search (token set, wild card)
-        dumpnames4class INTEGER}        -- all names of certain name class
+        dumpnames4class INTEGER,        -- all names of certain name class
+        getdomain       VisibleString}  -- get domain description and values
 
 Taxon1-resp ::= CHOICE {
 	error		Taxon1-error,	-- sent on any error
@@ -67,7 +68,8 @@ Taxon1-resp ::= CHOICE {
 	getproptypes    SET OF Taxon1-info,
         getorgprop      SET OF Taxon1-info,
         searchname      SET OF Taxon1-name,
-        dumpnames4class SET OF Taxon1-name}
+        dumpnames4class SET OF Taxon1-name,
+        getdomain       SEQUENCE OF Taxon1-info} -- [0]:id,nof_fields,name, [1..nof_fields]:field_no,val_type,field_name, [:nof_fields]:val_id,int_val or str_len(-1 for null),str_val
 
 Taxon1-info ::= SEQUENCE {
 	ival1	INTEGER,
