@@ -486,7 +486,8 @@ void CPipeHandle::OpenSelf(void)
         == INVALID_HANDLE_VALUE) {
         PIPE_THROW(::GetLastError(), "Failed GetStdHandle(stdin)");
     }
-    m_ProcHandle = ::GetCurrentProcess();
+    // NB: GetCurrentProcess() returns HANDLE(-1) which is INVALID_HANDLE_VALUE
+    m_ProcHandle = GetCurrentProcess();
 
     m_SelfHandles = true;
 }
@@ -579,7 +580,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE) {
+        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
             status = eIO_Closed;
             throw string("Pipe closed");
         }
@@ -662,7 +663,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE) {
+        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
             status = eIO_Closed;
             throw string("Pipe closed");
         }
@@ -729,7 +730,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
     CPipe::TChildPollMask poll = 0;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE) {
+        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
             throw string("Pipe closed");
         }
         if (m_ChildStdIn  == INVALID_HANDLE_VALUE  &&
