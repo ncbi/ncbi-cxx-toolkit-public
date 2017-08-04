@@ -694,8 +694,36 @@ int CIgBlastnApp::Run(void)
         }
      
 	}
-        //HACK TBC formatter.PrintEpilog(opt);
-
+        if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eFlatQueryAnchoredIdentities ||
+	    fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
+            CRef <CBlastFormat> print_fmt;
+            CRef<CScope> print_scope;
+            const CBlastOptions& opt = m_opts_hndl->GetOptions();
+            print_scope.Reset(new CScope(*CObjectManager::GetInstance()));
+            print_fmt.Reset( new  CBlastFormat(opt, *m_blastdb_full,
+                                               fmt_args->GetFormattedOutputChoice(),
+                                               true,
+                                               m_CmdLineArgs->GetOutputStream(),
+                                               fmt_args->GetNumDescriptions(),
+                                               fmt_args->GetNumAlignments(),
+                                               *print_scope,
+                                               opt.GetMatrixName(),
+                                               fmt_args->ShowGis(),
+                                               fmt_args->DisplayHtmlOutput(),
+                                               opt.GetQueryGeneticCode(),
+                                               opt.GetDbGeneticCode(),
+                                               opt.GetSumStatisticsMode(),
+                                               false,
+                                               m_blastdb->GetFilteringAlgorithm(),
+                                               fmt_args->GetCustomOutputFormatSpec(),
+                                               m_CmdLineArgs->GetTask() == "megablast",
+                                               opt.GetMBIndexLoaded(),
+                                               &*m_ig_opts));
+            print_fmt->PrintEpilog(opt);
+        } else {
+            m_CmdLineArgs->GetOutputStream() << "# BLAST processed " << m_total_input << " queries" << endl;
+        }
+        
         if (m_CmdLineArgs->ProduceDebugOutput()) {
             m_opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
