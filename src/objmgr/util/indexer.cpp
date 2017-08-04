@@ -992,6 +992,16 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatureForProduct (void)
             CFeat_CI fi(m_Bsh,
                         SAnnotSelector(CSeqFeatData::e_Cdregion)
                         .SetByProduct().SetLimitTSE(m_Bsh.GetTSE_Handle()));
+            if (! fi) {
+                fi = CFeat_CI(m_Bsh,
+                              SAnnotSelector(CSeqFeatData::e_Rna)
+                              .SetByProduct().SetLimitTSE(m_Bsh.GetTSE_Handle()));
+            }
+            if (! fi) {
+                fi = CFeat_CI(m_Bsh,
+                              SAnnotSelector(CSeqFeatData::e_Prot)
+                              .SetByProduct().SetLimitTSE(m_Bsh.GetTSE_Handle()));
+            }
             if (fi) {
                 CMappedFeat mf = *fi;
                 CSeq_id_Handle idh = mf.GetLocationId();
