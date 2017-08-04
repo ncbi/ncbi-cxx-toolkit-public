@@ -140,7 +140,16 @@ public:
 
         } else {
 
-            // Process first Bioseq
+            if (num_nucs == 1 && num_prots > 0) {
+                // Process second Bioseq (protein if nuc-prot set)
+                // (GetFeatureForProduct will find the relevant CDS and index nucleotide features)
+                bsx = idx.GetBioseqIndex(2);
+                if (bsx) {
+                    DoOneBioseq(*bsx);
+                }
+            }
+
+            // Process first Bioseq (nucleotide if nuc-prot set)
             bsx = idx.GetBioseqIndex();
             if (bsx) {
                 DoOneBioseq(*bsx);
@@ -162,6 +171,8 @@ public:
         CBioseqIndex& bsx )
     //  ------------------------------------------------------------------------
     {
+        *m_out << "\nBIOSEQ\n";
+
         *m_out << "Accession: " << bsx.GetAccession() << '\n';
         *m_out << "Length: " << bsx.GetLength() << '\n';
 
@@ -247,6 +258,19 @@ public:
                     // Print sequence under protein feature
                     string feat_seq = sfx.GetSequence();
                     *m_out << "Protein seq: " << feat_seq << '\n';
+                }
+
+                CRef<CFeatureIndex> sfxp = bsx.GetFeatureForProduct();
+                if (sfxp) {
+                    string locus;
+                    CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
+                    if (fsx) {
+                        const CGene_ref& gene = fsx->GetMappedFeat().GetData().GetGene();
+                        if (gene.IsSetLocus()) {
+                            locus = gene.GetLocus();
+                            *m_out << "CDS gene: " << locus << '\n';
+                        }
+                    }
                 }
 
                 *m_out << '\n';
