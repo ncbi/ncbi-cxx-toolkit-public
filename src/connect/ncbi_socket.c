@@ -1722,7 +1722,7 @@ static EIO_Status s_Select_(size_t                n,
                 ready = bad = 1/*true*/;
                 continue;
             }
-            count++;
+            ++count;
 #  endif /*NCBI_OS_MSWIN*/
         }
         assert(i >= n);
