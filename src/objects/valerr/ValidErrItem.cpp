@@ -788,9 +788,10 @@ static const TErrTypStrs sc_ErrStrs[] = {
 "Barcode test passes." } },
     { eErr_GENERIC_InvalidAsn,
     { "InvalidAsn",
-    "Invalid ASN.1" } },
-    { eErr_GENERIC_ServiceError,
-    { "ServiceError", "Service failure prevented complete validation" } },
+"Invalid ASN.1" } },
+    { eErr_GENERIC_DuplicateIDs,
+    { "DuplicateIDs",
+"Colliding sequence identifiers prevented loading into the object manager." } },
 
 /* SEQ_PKG */
 

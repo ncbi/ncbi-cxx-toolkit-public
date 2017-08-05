@@ -292,6 +292,7 @@ enum EErrType {
     eErr_GENERIC_BarcodeTestPasses,
     eErr_GENERIC_InvalidAsn,
     eErr_GENERIC_ServiceError,
+    eErr_GENERIC_DuplicateIDs,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
