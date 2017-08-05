@@ -445,11 +445,24 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 }
             }
         } catch (CException &e) {
-            CRef<CValidError> eval(new CValidError());
-            eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, e.what());
-            PrintValidError(eval, args);
-            ERR_POST(e);
-            ++m_Reported;
+            string errstr = e.what();
+            int pos = NStr::Find (errstr, "duplicate Bioseq id");
+            if (pos != NPOS && m_verbosity == eVerbosity_XML) {
+                CRef<CValidError> eval(new CValidError());
+                errstr.erase(0,pos);
+                errstr = NStr::Replace(errstr, "\n", " * ");
+                errstr = NStr::Replace(errstr, " *   ", " * ");
+                eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
+                PrintValidError(eval, args);
+                ERR_POST(e);
+                ++m_Reported;
+            } else {
+                CRef<CValidError> eval(new CValidError());
+                eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, e.what());
+                PrintValidError(eval, args);
+                ERR_POST(e);
+                ++m_Reported;
+            }
         }
     }
     m_NumFiles++;
@@ -1180,7 +1193,7 @@ void CAsnvalApp::DestroyOutputStreams()
     if (m_ostr_xml.get())
     {
         m_ostr_xml.reset();
-        *m_ValidErrorStream << endl << "</asnvalidate>" << endl;
+        *m_ValidErrorStream << "</asnvalidate>" << endl;
     }
 #endif
     m_ValidErrorStream = 0;
