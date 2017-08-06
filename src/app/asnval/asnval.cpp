@@ -446,7 +446,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             }
         } catch (CException &e) {
             string errstr = e.what();
-            int pos = NStr::Find (errstr, "duplicate Bioseq id");
+            size_t pos = NStr::Find (errstr, "duplicate Bioseq id");
             if (pos != NPOS && m_verbosity == eVerbosity_XML) {
                 CRef<CValidError> eval(new CValidError());
                 errstr.erase(0,pos);
