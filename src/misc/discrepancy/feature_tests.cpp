@@ -43,6 +43,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -251,6 +252,32 @@ const string kExtraGene = "[n] gene feature[s] [is] not associated with a CDS or
 const string kExtraPseudo = "[n] pseudo gene feature[s] [is] not associated with a CDS or RNA feature.";
 const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] are not associated with a CDS or RNA feature and [does] not have frameshift in the comment.";
 
+bool IsGeneInXref(const CSeq_feat& gene, const CSeq_feat& feat, bool& have_gene_ref)
+{
+    ITERATE (CSeq_feat::TXref, it, feat.GetXref ()) {
+        if ((*it)->IsSetId()) {
+            const CFeat_id& id = (*it)->GetId();
+            if (gene.CanGetId() && gene.GetId().Equals(id)) {
+                return true;
+            }
+        }
+        if ((*it)->IsSetData() && (*it)->GetData().IsGene ()) {
+            have_gene_ref = true;
+            const CGene_ref& gene_ref = (*it)->GetData().GetGene();
+            const string& locus = gene.GetData().GetGene().IsSetLocus() ? gene.GetData().GetGene().GetLocus() : kEmptyStr;
+            const string& locus_tag = gene.GetData().GetGene().IsSetLocus_tag() ? gene.GetData().GetGene().GetLocus_tag() : kEmptyStr;
+            if ((gene_ref.IsSetLocus() || gene_ref.IsSetLocus_tag())
+                && (!gene_ref.IsSetLocus_tag() || gene_ref.GetLocus_tag() == locus_tag)
+                && (gene_ref.IsSetLocus_tag() || locus_tag.empty())
+                && (!gene_ref.IsSetLocus() || gene_ref.GetLocus() == locus)
+                && (gene_ref.IsSetLocus() || locus.empty())) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 
 DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Extra Genes")
 {
@@ -267,29 +294,31 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
         const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
         const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
         const CSeq_loc& loc = (*gene)->GetLocation();
-//cout << "Gene\t" << locus << "\n";
+//cout << "GENE: " << CReportObject::GetTextObjectDescription(**gene, context.GetScope()) << "\n";
         bool found = false;
         ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
             if ((*feat)->GetData().IsCdregion() || (*feat)->GetData().IsRna()) {
                 const CSeq_loc& loc_f = (*feat)->GetLocation();
                 sequence::ECompare cmp = context.Compare(loc, loc_f);
                 if (cmp == sequence::eSame || cmp == sequence::eContains) {
-                    const CGene_ref* gene_ref = (*feat)->GetGeneXref();
-                    if (gene_ref) {
-                        if ((gene_ref->IsSetLocus() || gene_ref->IsSetLocus_tag())
-                            && (!gene_ref->IsSetLocus_tag() || gene_ref->GetLocus_tag() == locus_tag)
-                            && (gene_ref->IsSetLocus_tag() || locus_tag.empty())
-                            && (!gene_ref->IsSetLocus() || gene_ref->GetLocus() == locus)
-                            && (gene_ref->IsSetLocus() || locus.empty())) {
-                                found = true;
-                                break;
-                        }
+                    //const CGene_ref* gene_ref = (*feat)->GetGeneXref();
+                    //if (gene_ref) {
+                    //    if ((gene_ref->IsSetLocus() || gene_ref->IsSetLocus_tag())
+                    //        && (!gene_ref->IsSetLocus_tag() || gene_ref->GetLocus_tag() == locus_tag)
+                    //        && (gene_ref->IsSetLocus_tag() || locus_tag.empty())
+                    //        && (!gene_ref->IsSetLocus() || gene_ref->GetLocus() == locus)
+                    //        && (gene_ref->IsSetLocus() || locus.empty())) {
+                    //            found = true;
+                    //            break;
+                    //    }
+                    //}
+                    bool have_gene_ref = false;
+                    if (IsGeneInXref(**gene, **feat, have_gene_ref)) {
+                        found = true;
+                        break;
                     }
-                    else {
+                    else if (!have_gene_ref) {
                         CConstRef<CSeq_feat> best_gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
-//                        if (best_gene.Empty()) {
-//cout << "Best gene not found!\n";
-//                        }
                         if (best_gene.NotEmpty() && &*best_gene == &**gene) {
                             found = true;
                             break;
