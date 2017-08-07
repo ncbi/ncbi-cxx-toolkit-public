@@ -478,8 +478,8 @@ int CNCBITestConnStreamApp::Run(void)
                      "***\n");
         }
         ftp << "RETR "
-            << "\357\273\277\320\237\321\200\320"
-            << "\270\320\262\320\265\321\202" << NcbiEndl;
+            << "\320\237\321\200\320\270"
+            << "\320\262\320\265\321\202" << NcbiEndl;
         if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in RETR UTF-8");
         ftp << "STOR " << "../test_upload/" << ftpfile << ".0" << NcbiEndl;
