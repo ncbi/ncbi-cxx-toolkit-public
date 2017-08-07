@@ -2551,12 +2551,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             CSeq_id::fParse_ValidLocal
                             | CSeq_id::fParse_PartialOK);
                     if (ids.size()>0) {
-                        x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
                         if (typ == CSeqFeatData::e_Cdregion) {
                             CRef<CSeq_id> best = GetBestId(ids);
                             if (!best.Empty())
                                 sfp->SetProduct().SetWhole(*best);
-                        }
+                        } else {
+                            x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
+                        }                                          // This logic should be moved into cleanup or objtools/edit
                     }
                     return true;
                 } catch( CSeqIdException & ) {

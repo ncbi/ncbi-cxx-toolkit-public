@@ -47,12 +47,6 @@ Seq-annot ::= {
           accession "MF194022"
         }
       },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59264|"
-        }
-      },
       xref {
         {
           data prot {
@@ -150,10 +144,6 @@ Seq-annot ::= {
         {
           qual "transl_except",
           val "(pos:2834,aa:TERM)"
-        },
-        {
-          qual "protein_id",
-          val "gb|ARW59265|"
         }
       },
       xref {
@@ -223,10 +213,6 @@ Seq-annot ::= {
         {
           qual "transl_except",
           val "(pos:3587,aa:TERM)"
-        },
-        {
-          qual "protein_id",
-          val "gb|ARW59266|"
         }
       },
       xref {
@@ -303,12 +289,6 @@ Seq-annot ::= {
           accession "MF194022"
         }
       },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59267|"
-        }
-      },
       xref {
         {
           data prot {
@@ -347,12 +327,6 @@ Seq-annot ::= {
         strand plus,
         id genbank {
           accession "MF194022"
-        }
-      },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59268|"
         }
       },
       xref {
@@ -401,10 +375,6 @@ Seq-annot ::= {
         {
           qual "transl_except",
           val "(pos:5369..5370,aa:TERM)"
-        },
-        {
-          qual "protein_id",
-          val "gb|ARW59269|"
         }
       },
       xref {
@@ -470,10 +440,6 @@ Seq-annot ::= {
         {
           qual "transl_except",
           val "(pos:5789..5790,aa:TERM)"
-        },
-        {
-          qual "protein_id",
-          val "gb|ARW59270|"
         }
       },
       xref {
@@ -624,12 +590,6 @@ Seq-annot ::= {
           accession "MF194022"
         }
       },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59271|"
-        }
-      },
       xref {
         {
           data prot {
@@ -687,12 +647,6 @@ Seq-annot ::= {
           accession "MF194022"
         }
       },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59272|"
-        }
-      },
       xref {
         {
           data prot {
@@ -731,12 +685,6 @@ Seq-annot ::= {
         strand minus,
         id genbank {
           accession "MF194022"
-        }
-      },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59273|"
         }
       },
       xref {
@@ -813,12 +761,6 @@ Seq-annot ::= {
           accession "MF194022"
         }
       },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59274|"
-        }
-      },
       xref {
         {
           data prot {
@@ -865,10 +807,6 @@ Seq-annot ::= {
         {
           qual "transl_except",
           val "(pos:11457,aa:TERM)"
-        },
-        {
-          qual "protein_id",
-          val "gb|ARW59275|"
         }
       },
       xref {
@@ -932,12 +870,6 @@ Seq-annot ::= {
         strand minus,
         id genbank {
           accession "MF194022"
-        }
-      },
-      qual {
-        {
-          qual "protein_id",
-          val "gb|ARW59276|"
         }
       },
       xref {
