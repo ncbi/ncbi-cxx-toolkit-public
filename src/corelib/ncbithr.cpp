@@ -949,6 +949,7 @@ bool CThread::WaitForAllThreads(void)
     while (sm_ThreadsCount > 0  &&  sw.Elapsed() < to) {
         SleepMilliSec(q);
     }
+    return sm_ThreadsCount == 0;
 }
 
 
