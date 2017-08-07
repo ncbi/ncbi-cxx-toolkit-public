@@ -53,7 +53,7 @@ ACCC	c	Agricultural Culture Collection of China
 ACD	s	Alemaya University of Agriculture		
 ACE<CHN>	s	Anhui College of Education, Biology Department		
 ACE<EGY>	s	Arachnid Collection of Egypt		
-ACH	c	Mycology Culture Collection, Women's and Children's Hospital		
+ACH	c	National Mycology Reference Centre, SA Pathology		
 ACHE	s	Institute of Terrestrial Ecology		
 ACK	s	Agriculture and Agri-Food Canada		
 ACM	c	Australian Collection of Microorganisms		
@@ -205,7 +205,7 @@ ANG	s	Arboretum de la Maulevrie
 ANGU	s	Instituto Nacional de Tecnologia Agropecuaria		
 ANGUC	s	Universite Catholiques de l'Ouest		
 ANH	s	Andong National University, School of Bioresource Science		
-ANHC	s	Arkansas Natural Heritage Commission		
+ANHC	s	Arkansas Natural Heritage Commission Herbarium		
 ANIC	s	Australian National Insect Collection		
 ANK	s	Ankara Ueniversitesi, Biyoloji Boeluemue		
 ANKO	s	Forest Research Institute, Turkey		
@@ -396,7 +396,7 @@ BCCM/IHEM	c	The Belgian Co-ordinated Collections of Micro-organisms / IHEM Biome
 BCCM/ITM	c	The Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM
 BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / LMBP Plasmid Collection	LMBP
 BCCM/MUCL	c	The Belgian Co-ordinated Collections of Micro-organisms / MUCL (Agro)Industrial Fungi & Yeasts Collection	MUCL
-BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms / ULC Polar cyanobacteria	UCL
+BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms / ULC of cyanobacteria	UCL
 BCCN	c	Brucella Culture Collection		
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo		
 BCF	s	Universitat de Barcelona, Laboratori de Botanica		
@@ -966,7 +966,7 @@ CFBP	c	Collection Francaise des Bacteries Phytopathogenes
 CFCC	cb	China Forestry Culture Collection Center		
 CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA		
 CFIA	h	Canadian Food Inspection Agency		
-CFMR	sc	Center for Forest Mycology Research	FPL
+CFMR	sc	USDA Forest Service, Center for Forest Mycology Research	FPL
 CFN	s	Clifton College, Biology Department		
 CFNL	s	Universidad Autonoma de Nuevo Leon		
 CFQ	c	Cepario de la Facultad de Quimica		
@@ -1122,7 +1122,7 @@ CMC<NZ>	s	Canterbury Museum
 CMC<USA-MI>	s	Central Michigan University, Department of Biology		
 CMCC	c	National Center for Medical Culture Collections		
 CMCNA	s	Museo de Ciencias Naturales y Antropologicas "Prof. A. Serrano"		
-CMDM-PUJ	c	Coleccion Microorganismos Departamento Microbiologia		
+CMDM-PUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ
 CMEI	s	Clements' Museum of Exotic Insects		
 CMFRI	s	See FMRI		
 CMGP	s	Central Museum of Geological Prospecting		
@@ -1282,7 +1282,7 @@ CRAF	s	University of Craiova, Phytopathology Department
 CRAI	s	University of Craiova		
 CRBF	c	Collection de genomes d'organismes symbiotiques		
 CRBK	s	Cranbrook School		
-CRBO	c	Centre de Ressource Biologique Oenologique		
+CRBO	c	Centre de Ressource Biologique Oenologique	IOEB
 CRBY	s	Crosby Library		
 CRC	c	Chlamydomonas Resource Center		
 CRCA	s	Instituto dos Cereais		
@@ -1537,7 +1537,7 @@ DINO	s	Dinosaur National Monument
 DIS	s	Dinamation International Society		
 DISCA	s	Estacion Biologica de Rancho Grande, Ministerio del Ambiente y Recursos Naturales Renovables		
 DISKO	s	Danish Arctic Station		
-DiSTA<ITA>	s	Phytoplasma Collection University of Bologn		
+DiSTA<ITA>	s	Phytoplasma Collection University of Bologna	DiSTA
 DIX	s	Dixie College, Natural History Museum		
 DKG	s	Juniper Hall Field Centre		
 DLF	s	Stetson University, Biology Department		
@@ -1599,7 +1599,6 @@ DPC	c	Dairy Products Research Center Culture Collection Teagasc
 DPIC	s	Belo Horizonte, Instituto de Ciencias Biologicas		
 DPIH	s	Department of Primary Industry (formerly DAHT)		
 DPIQM	s	Department of Primary Industries		
-DPIWE-FHU	c	Fish Disease Culture Collection		
 DPMWA	s	Dorthy Page Museum of Wasilla		
 DPNC	s	Denison Pequotsepos Nature Center		
 DPPC	s	Department of Agriculture, Taiwan		
@@ -2908,7 +2907,7 @@ IO<PRT>	s	Instituto de Oceanografia da Universidade de Lisboa
 IOAN	s	Shirshov Institute of Oceanography		
 IOC	c	Colecao de Culturas de Fungos do Instituto Oswaldo Cruz		
 IOCAS	s	Institute of Oceanology, Chinese Academy of Scineces		
-IOEB	c	Bacterial Collection		
+IOEB	c	Centre de ressources biologiques oenologiques	CRBO
 IOH	s	Academia de Ciencias		
 IOM	s	Institute of Oceanology, Academy of Sciences		
 IOPM	s	Izu Oceanic Park Museum		
@@ -5297,7 +5296,7 @@ PPDD	s	Ministry of Agriculture
 PPFI	s	Pakistan Forest Institute		
 PPHM	s	Panhandle-Plains Historical Museum		
 PPI	s	National Pingtung University of Science and Technology, Department of Forestry		
-PPIHAS	c	Mycology Collection		
+PPIHAS	c	Plant Protection Institute, Centre for Agricultural Research, Hungarian Academy of Sciences	PPIHAS
 PPIU	s	M. Utemisov Western Kazakhstanian State University, V. V. Ivanov Department of Botany		
 PPKMI	c	Plant Production Technology Department, Faculty of Agricultural Technology		
 PPKU1	c	Department of Plant Pathology, Faculty of Agriculture, Thailand		
@@ -5310,7 +5309,7 @@ PPL	s	Agricultural Development and Advisory Service, Harpenden Laboratory
 PPNP	s	Point Pelee National Park		
 PPPO	s	Pusat Penelitian dan Pengembangan Oseanologi		
 PPPPB	c	ARC-Plant Protection Research Institute, Plant Pathogenic and Plant Protecting Bacteria		
-PPRI	c	South African National Collection of Fungi: Culture Collection		
+PPRI	c	ARC-Plant Protection Research, National Collection of Fungi: Culture Collection		
 PPRL	h	USDA-ARS Poisonous Plant Research Lab		
 PPRZ	s	Plant Protection Research Institute		
 PPSIO	s	P. P. Shirshov Institute of Oceanology		
@@ -5747,7 +5746,7 @@ SCL	s	St. Cloud State University, Department of Biological Sciences
 SCM	s	Sheffield City Museums		
 SCN	s	Sociedad de Ciencias Naturales "La Salle"		
 SCNHM	s	Southwestern College, Natural History Museum		
-SCNU	s	Sichuan Normal University, Biology Department		
+SCNU	s	Sichuan Normal University		
 SCP	h	Sociedad Cientifica del Paraguay		
 SCPS	s	Scarborough Philosophical and Archaeological Society Museum		
 SCR	s	Scripps Institution of Oceanography, Herbarium		
