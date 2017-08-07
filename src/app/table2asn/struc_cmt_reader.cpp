@@ -75,6 +75,9 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
 {
     VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
     {
+        if (!bioseq.IsNa())
+            return;
+
         if (comments.m_id.NotEmpty())
         {
             bool matched = false;
