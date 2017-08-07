@@ -3355,7 +3355,7 @@ CFastaOstream::GetGapModText(
             need_evidence = is_linkage;
             break;
         case CSeq_gap::eType_short_arm:
-            gap_type = "short_arm";
+            gap_type = "short arm";
             break;
         case CSeq_gap::eType_heterochromatin:
             gap_type = "heterochromatin";
