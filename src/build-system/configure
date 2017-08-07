@@ -48636,12 +48636,12 @@ else
 echo "$as_me: error: --with-internal:  Cannot build INTERNAL projects: missing $reason" >&2;}
    { (exit 1); exit 1; }; }
       else
-         { echo "$as_me:$LINENO: WARNING: --with-internal:  Cannot build all INTERNAL projects: missing $reason" >&5
-echo "$as_me: WARNING: --with-internal:  Cannot build all INTERNAL projects: missing $reason" >&2;}
+         { echo "$as_me:$LINENO: WARNING: --with-internal:  Cannot build some INTERNAL projects: missing $reason" >&5
+echo "$as_me: WARNING: --with-internal:  Cannot build some INTERNAL projects: missing $reason" >&2;}
          OPT_GROUPS="$OPT_GROUPS internal"
          internal="internal"
       fi
-   elif test -n "$reason"; then
+   elif test -n "$reason" -a -z "$with_projects"; then
       NoConfProjects="$NoConfProjects internal"
       internal=
    else

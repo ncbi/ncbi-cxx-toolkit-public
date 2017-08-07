@@ -7973,11 +7973,11 @@ else
       if test -z "$with_projects"; then
          AC_MSG_ERROR([--with-internal:  Cannot build INTERNAL projects: missing $reason])
       else
-         AC_MSG_WARN([--with-internal:  Cannot build all INTERNAL projects: missing $reason])
+         AC_MSG_WARN([--with-internal:  Cannot build some INTERNAL projects: missing $reason])
          OPT_GROUPS="$OPT_GROUPS internal"
          internal="internal"
       fi
-   elif test -n "$reason"; then
+   elif test -n "$reason" -a -z "$with_projects"; then
       NoConfProjects="$NoConfProjects internal"
       internal=
    else
