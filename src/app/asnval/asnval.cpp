@@ -445,24 +445,18 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 }
             }
         } catch (CException &e) {
-            string errstr = e.what();
-            size_t pos = NStr::Find (errstr, "duplicate Bioseq id");
-            if (pos != NPOS && m_verbosity == eVerbosity_XML) {
-                CRef<CValidError> eval(new CValidError());
-                errstr.erase(0,pos);
-                errstr = NStr::Replace(errstr, "\n", " * ");
-                errstr = NStr::Replace(errstr, " *   ", " * ");
+            string errstr = e.GetMsg();
+            errstr = NStr::Replace(errstr, "\n", " * ");
+            errstr = NStr::Replace(errstr, " *   ", " * ");
+            CRef<CValidError> eval(new CValidError());
+            if (NStr::StartsWith (errstr, "duplicate Bioseq id", NStr::eNocase)) {
                 eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
-                PrintValidError(eval, args);
-                ERR_POST(e);
-                ++m_Reported;
             } else {
-                CRef<CValidError> eval(new CValidError());
-                eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, e.what());
-                PrintValidError(eval, args);
-                ERR_POST(e);
-                ++m_Reported;
+                eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
             }
+            PrintValidError(eval, args);
+            ERR_POST(e);
+            ++m_Reported;
         }
     }
     m_NumFiles++;
