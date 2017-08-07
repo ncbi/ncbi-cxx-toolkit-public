@@ -404,7 +404,6 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_INST_FarFetchFailure,
     eErr_SEQ_INST_InternalGapsInSeqRaw,
     eErr_SEQ_INST_HighNContentStretch,
-    eErr_SEQ_INST_HighNContentPercent,
     eErr_SEQ_INST_SeqLitGapFuzzNot100,
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
