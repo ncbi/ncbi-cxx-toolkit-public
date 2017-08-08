@@ -905,7 +905,10 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewBioseqObj(CConstRef<CBioseq> ob
     const CSerialObject* ser = &*obj;
     if (m_TextMap.find(ser) == m_TextMap.end()) {
         D->SetText(*m_Scope);
-        string s = D->GetText() + info->GetStr();
+        string s = D->GetText();
+        if (info) {
+            s += info->GetStr();
+        }
         D->SetText(s);
         m_TextMap[ser] = s;
         m_TextMapShort[ser] = D->GetShort();
