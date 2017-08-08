@@ -86,21 +86,31 @@ void* CIgBlastnApp::CIgWorker::Main(void)
            CRef<CIgBlastOptions> l_ig_opts;
 	   CRef<CLocalDbAdapter> l_blastdb;
 	   CRef<CBlastOptionsHandle> l_opts_hndl;
-
+           CRef<CBlastDatabaseArgs> l_db_args(thm_CmdLineArgs->GetBlastDatabaseArgs());
+           bool db_is_remote = true;
+           
            //OK2 thm_ig_args->AddIgSequenceScope(scope);
 	   {
 	      CFastMutexGuard g1(  thm_Mutex_Global  );
               scope.Reset(new CScope(*CObjectManager::GetInstance()));
               _ASSERT(scope);
-	      l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());
-	      l_ig_args->AddIgSequenceScope(scope);
 
+              l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());              
               l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
-	      l_blastdb.Reset(&(*(l_ig_opts->m_Db[0])));
-	      l_opts_hndl.Reset(&*thm_CmdLineArgs->SetOptions(thm_args));
-	   }
-
-
+              l_opts_hndl.Reset(&*thm_CmdLineArgs->SetOptions(thm_args));
+              if (l_db_args->GetDatabaseName() == kEmptyStr && 
+                  l_db_args->GetSubjects().Empty()) {
+                  l_blastdb.Reset(&(*(l_ig_opts->m_Db[0])));
+                  bool db_is_remote = false;
+              } else {
+                  InitializeSubject(l_db_args, l_opts_hndl, 
+                                    thm_CmdLineArgs->ExecuteRemotely(),
+                                    l_blastdb, scope);
+              }
+              l_ig_args->AddIgSequenceScope(scope);
+                
+              
+           }
 
           //CRef<CBlastQueryVector> query(m_input->GetNextSeqBatch(*scope));
           CRef<CBlastQueryVector> query;
@@ -121,12 +131,22 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 
 	  // STEP #4 -- RUN SEARCH
           CRef<CSearchResultSet> results;
-          {  // LOCAL BLAST ONLY FOR NOW
-                CIgBlast lcl_blast(query, l_blastdb, l_opts_hndl, l_ig_opts, scope);
-                //- CIgBlast lcl_blast(query, x_blastdb, l_opts_hndl, l_ig_opts, scope);
-                lcl_blast.SetNumberOfThreads( 1 /* one thread only */ );
-
-                results = lcl_blast.Run();
+          {  
+              if (thm_CmdLineArgs->ExecuteRemotely() && db_is_remote) {
+                  CIgBlast rmt_blast(query, 
+                                     l_db_args->GetSearchDatabase(), 
+                                     l_db_args->GetSubjects(),
+                                     l_opts_hndl, l_ig_opts,
+                                     NcbiEmptyString,
+                                     scope);
+                  results = rmt_blast.Run();
+              } else {
+                  // LOCAL BLAST ONLY FOR NOW
+                  CIgBlast lcl_blast(query, l_blastdb, l_opts_hndl, l_ig_opts, scope);
+                  //- CIgBlast lcl_blast(query, x_blastdb, l_opts_hndl, l_ig_opts, scope);
+                  lcl_blast.SetNumberOfThreads( 1 /* one thread only */ );
+                  results = lcl_blast.Run();
+              }
 
           }
 
@@ -201,6 +221,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 
 
     // INIT PART 
+    CRef<CBlastDatabaseArgs> l_db_args(thm_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CFormattingArgs> l_fmt_args;
         CRef<CLocalDbAdapter> l_blastdb_full;
 	CRef<CIgBlastArgs>    l_ig_args; 
@@ -215,9 +236,24 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	    l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());
             l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
             l_fmt_args.Reset( thm_CmdLineArgs->GetFormattingArgs() );
-	    l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+
+            if (l_db_args->GetDatabaseName() == kEmptyStr && 
+                l_db_args->GetSubjects().Empty()) {
+                l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
                     l_ig_opts->m_Db[1]->GetDatabaseName() + " " +
                     l_ig_opts->m_Db[2]->GetDatabaseName() ;
+            } else {
+                 
+                if (thm_CmdLineArgs->ExecuteRemotely()) {
+                    l_full_db_list =  l_db_args->GetDatabaseName();
+                } else {
+                    l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                    l_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                        l_ig_opts->m_Db[2]->GetDatabaseName() + " " +
+                        l_db_args->GetDatabaseName();
+                }
+            }
+            
 
             CSearchDatabase l_sdb(l_full_db_list, CSearchDatabase::eBlastDbIsNucleotide );
             l_blastdb_full.Reset(new CLocalDbAdapter(l_sdb));
@@ -541,18 +577,32 @@ int CIgBlastnApp::Run(void)
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
-                    m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
-                    m_ig_opts->m_Db[2]->GetDatabaseName(), 
-                    CSearchDatabase::eBlastDbIsNucleotide);
-        m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
-        m_blastdb.Reset(&(*(m_ig_opts->m_Db[0])));
+        if (db_args->GetDatabaseName() == kEmptyStr && 
+            db_args->GetSubjects().Empty()) {
+            CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                                m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                                m_ig_opts->m_Db[2]->GetDatabaseName(), 
+                                CSearchDatabase::eBlastDbIsNucleotide);
+            m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
+            m_blastdb.Reset(&(*(m_ig_opts->m_Db[0])));
+        } else {
+            CRef<CScope> temp_scope(new CScope(*CObjectManager::GetInstance()));
+            InitializeSubject(db_args, m_opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                              m_blastdb, temp_scope);
+            if (m_CmdLineArgs->ExecuteRemotely()) {
+                m_blastdb_full.Reset(&(*m_blastdb));
+            } else {
+                CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                                    m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                                    m_ig_opts->m_Db[2]->GetDatabaseName() + " " +
+                                    m_blastdb->GetDatabaseName(), 
+                                    CSearchDatabase::eBlastDbIsNucleotide);
+                m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
+            }
+        }
         _ASSERT(m_blastdb );
 
-        if (db_args->GetDatabaseName() != kEmptyStr || !db_args->GetSubjects().Empty()) {
-	    	cerr <<"TRAP: UNSUPPORTED MODE: "<<__FILE__<<":"<<__LINE__<<endl;
-	    	exit(0);
-	}
+
 
         /*** Get the formatting options ***/
 	//################ Main thread:  initalization part - end ################################################
