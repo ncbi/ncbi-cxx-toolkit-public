@@ -39,6 +39,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/indexer.hpp>
 
 /** @addtogroup ObjUtilSequence
  *
@@ -98,7 +99,22 @@ public:
         TUserFlags flags = 0
     );
 
+     /// Main method
+    string GenerateDefline (
+        const CBioseq_Handle& bsh,
+        CSeqEntryIndex& idx,
+        TUserFlags flags = 0
+    );
+
     /// Main method
+    string GenerateDefline (
+        const CBioseq& bioseq,
+        CScope& scope,
+        CSeqEntryIndex& idx,
+        TUserFlags flags = 0
+    );
+
+   /// Main method
     string GenerateDefline (
         const CBioseq_Handle& bsh,
         feature::CFeatTree& ftree,
@@ -168,6 +184,9 @@ private:
     void x_SetTitleFromProtein (
         const CBioseq_Handle& bsh
     );
+    void x_SetTitleFromProteinIdx (
+        const CBioseq_Handle& bsh
+    );
     void x_SetTitleFromSegSeq (
         const CBioseq_Handle& bsh
     );
@@ -189,9 +208,12 @@ private:
 
     bool x_IsComplete() const;
 private:
+    /// index with feature tree for each Bioseq
+    CRef<CSeqEntryIndex> m_Idx;
+
     /// internal feature tree for parent mapping
-    CRef<feature::CFeatTree> m_Feat_Tree;
     CSeq_entry_Handle m_TopSEH;
+    CRef<feature::CFeatTree> m_Feat_Tree;
     bool m_ConstructedFeatTree;
     bool m_InitializedFeatTree;
 

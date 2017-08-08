@@ -1726,6 +1726,204 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
     return final;
 }
 
+void CDeflineGenerator::x_SetTitleFromProteinIdx (
+    const CBioseq_Handle& bsh
+)
+
+{
+    CConstRef<CSeq_feat>  cds_feat;
+    CConstRef<CProt_ref>  prot;
+    CConstRef<CSeq_feat>  prot_feat;
+    CConstRef<CGene_ref>  gene;
+    CConstRef<CBioSource> src;
+    CTempString           locus_tag;
+
+    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+    if (bsx) {
+        CRef<CFeatureIndex> prtx = bsx->GetBestProteinFeature();
+        if (prtx) {
+            const CMappedFeat mf = prtx->GetMappedFeat();
+            const CProt_ref& prp = mf.GetData().GetProt();
+
+            const char* prefix = "";
+            FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
+                const string& str = *prp_itr;
+                string trimmed = s_RemoveBracketedOrgFromEnd (str, m_Taxname);
+                m_MainTitle += prefix;
+                m_MainTitle += trimmed;
+                if (! m_AllProtNames) {
+                    break;
+                }
+                prefix = "; ";
+            }
+
+            if (! m_MainTitle.empty()) {
+                // strip trailing periods, commas, and spaces
+                SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
+                if (pos != NPOS) {
+                    m_MainTitle.erase (pos + 1);
+                }
+
+                int offset = 0;
+                int delta = 0;
+                string comma = "";
+                string isoform = "";
+                if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
+                    offset = 20;
+                } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
+                    offset = 23;
+                }
+                if (offset > 0 && offset < m_MainTitle.length()) {
+                    if (m_MainTitle [offset] == ',' && m_MainTitle [offset + 1] == ' ') {
+                        comma = ", isoform ";
+                        delta = 2;
+                    }
+                    if (m_MainTitle [offset] == ' ') {
+                        comma = " isoform ";
+                        delta = 1;
+                    }
+                    if (NStr::StartsWith (m_MainTitle.substr (offset + delta), "isoform ")) {
+                        isoform = m_MainTitle.substr (offset + delta + 8);
+                        // !!! check for single alphanumeric string
+                        m_MainTitle.erase (offset);
+                    }
+                }
+                if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
+                     NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
+                    /* &&  !m_LocalAnnotsOnly */ ) {
+                    CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+                    if (sfxp) {
+                        CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
+                        if (fsx) {
+                            const CGene_ref& grp = fsx->GetMappedFeat().GetData().GetGene();
+                            if (grp.IsSetLocus_tag()) {
+                                locus_tag = grp.GetLocus_tag();
+                            }
+                        }
+                    }
+                    if (! locus_tag.empty()) {
+                        m_MainTitle += " " + string(locus_tag) + string(comma) + string(isoform);
+                    }
+                }
+            }
+            if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+                if (prp.IsSetDesc()) {
+                    m_MainTitle = prp.GetDesc();
+                }
+            }
+            if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+                FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
+                    const string& str = *act_itr;
+                    m_MainTitle = str;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+        if (sfxp) {
+            CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
+            if (fsx) {
+                const CGene_ref& grp = fsx->GetMappedFeat().GetData().GetGene();
+                if (grp.IsSetLocus()) {
+                    m_MainTitle = grp.GetLocus();
+                }
+                if (m_MainTitle.empty()) {
+                    FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
+                        const string& str = *syn_itr;
+                        m_MainTitle = str;
+                        break;
+                    }
+                }
+                if (m_MainTitle.empty()) {
+                    if (grp.IsSetDesc()) {
+                        m_MainTitle = grp.GetDesc();
+                    }
+                }
+            }
+        }
+        if (! m_MainTitle.empty()) {
+            m_MainTitle += " gene product";
+        }
+    }
+
+    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+        m_MainTitle = "unnamed protein product";
+        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+        if (sfxp) {
+            CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
+            if (fsx) {
+                const CGene_ref& grp = fsx->GetMappedFeat().GetData().GetGene();
+                if (grp.IsSetLocus_tag()) {
+                    locus_tag = grp.GetLocus_tag();
+                }
+            }
+        }
+        if (! locus_tag.empty()) {
+            m_MainTitle += " " + string(locus_tag);
+        }
+    }
+
+
+    CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+    if (sfxp) {
+        const CMappedFeat mf = sfxp->GetMappedFeat();
+        const CSeq_feat& cds = mf.GetOriginalFeature();
+        if (x_CDShasLowQualityException (cds)) {
+          const string& low_qual = "LOW QUALITY PROTEIN: ";
+          if (NStr::FindNoCase (m_MainTitle, low_qual, 0) == NPOS) {
+              string tmp = m_MainTitle;
+              m_MainTitle = low_qual + tmp;
+          }
+        }
+    }
+
+    // strip trailing periods, commas, and spaces
+    SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
+    if (pos != NPOS) {
+        m_MainTitle.erase (pos + 1);
+    }
+
+    if (! x_IsComplete() /* && m_MainTitle.find(", partial") == NPOS */) {
+        m_MainTitle += ", partial";
+    }
+
+    if (m_OmitTaxonomicName) return;
+
+    CTempString taxname = m_Taxname;
+
+    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+        const char * organelle = s_proteinOrganellePrefix [m_Genome];
+        if ( organelle[0] != '\0'  &&  ! taxname.empty()
+            /* &&  NStr::Find (taxname, organelle) == NPOS */) {
+            m_MainTitle += " (";
+            m_MainTitle += organelle;
+            m_MainTitle += ")";
+        }
+    }
+
+    // check for special taxname, go to overlapping source feature
+    if ((taxname.empty()  ||
+         (!NStr::EqualNocase (taxname, "synthetic construct")  &&
+          !NStr::EqualNocase (taxname, "artificial sequence")  &&
+          taxname.find ("vector") == NPOS  &&
+          taxname.find ("Vector") == NPOS))  &&
+        !m_LocalAnnotsOnly) {
+        src = x_GetSourceFeatViaCDS (bsh);
+        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+            taxname = src->GetTaxname();
+        }
+    }
+
+    if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
+        m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
+    } else if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+        m_MainTitle += " [" + string(taxname) + "]";
+    }
+}
+
 void CDeflineGenerator::x_SetTitleFromProtein (
     const CBioseq_Handle& bsh
 )
@@ -2746,6 +2944,8 @@ string CDeflineGenerator::GenerateDefline (
                 x_SetTitleFromNM (bsh);
             } else if (m_IsNR) {
                 x_SetTitleFromNR (bsh);
+            } else if (m_IsAA && m_Idx) {
+                x_SetTitleFromProteinIdx (bsh);
             } else if (m_IsAA) {
                 x_SetTitleFromProtein (bsh);
             } else if (m_IsSeg && (! m_IsEST_STS_GSS)) {
@@ -2815,8 +3015,34 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     m_Feat_Tree.Reset (NULL);
+    m_Idx.Reset (NULL);
 
     return final;
+}
+
+string CDeflineGenerator::GenerateDefline (
+    const CBioseq_Handle& bsh,
+    CSeqEntryIndex& idx,
+    TUserFlags flags
+)
+
+{
+    m_Idx = &idx;
+
+    return GenerateDefline(bsh, flags);
+}
+
+string CDeflineGenerator::GenerateDefline (
+    const CBioseq& bioseq,
+    CScope& scope,
+    CSeqEntryIndex& idx,
+    TUserFlags flags
+)
+
+{
+    m_Idx = &idx;
+
+    return GenerateDefline(bioseq, scope, flags);
 }
 
 string CDeflineGenerator::GenerateDefline (
