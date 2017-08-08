@@ -1739,90 +1739,93 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
     CTempString           locus_tag;
 
     CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
-    if (bsx) {
-        CRef<CFeatureIndex> prtx = bsx->GetBestProteinFeature();
-        if (prtx) {
-            const CMappedFeat mf = prtx->GetMappedFeat();
-            const CProt_ref& prp = mf.GetData().GetProt();
+    if (! bsx) {
+        return;
+    }
 
-            const char* prefix = "";
-            FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
-                const string& str = *prp_itr;
-                string trimmed = s_RemoveBracketedOrgFromEnd (str, m_Taxname);
-                m_MainTitle += prefix;
-                m_MainTitle += trimmed;
-                if (! m_AllProtNames) {
-                    break;
-                }
-                prefix = "; ";
+    CRef<CFeatureIndex> prtx = bsx->GetBestProteinFeature();
+
+    CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+
+    if (prtx) {
+        const CMappedFeat mf = prtx->GetMappedFeat();
+        const CProt_ref& prp = mf.GetData().GetProt();
+
+        const char* prefix = "";
+        FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
+            const string& str = *prp_itr;
+            string trimmed = s_RemoveBracketedOrgFromEnd (str, m_Taxname);
+            m_MainTitle += prefix;
+            m_MainTitle += trimmed;
+            if (! m_AllProtNames) {
+                break;
+            }
+            prefix = "; ";
+        }
+
+        if (! m_MainTitle.empty()) {
+            // strip trailing periods, commas, and spaces
+            SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
+            if (pos != NPOS) {
+                m_MainTitle.erase (pos + 1);
             }
 
-            if (! m_MainTitle.empty()) {
-                // strip trailing periods, commas, and spaces
-                SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
-                if (pos != NPOS) {
-                    m_MainTitle.erase (pos + 1);
+            int offset = 0;
+            int delta = 0;
+            string comma = "";
+            string isoform = "";
+            if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
+                offset = 20;
+            } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
+                offset = 23;
+            }
+            if (offset > 0 && offset < m_MainTitle.length()) {
+                if (m_MainTitle [offset] == ',' && m_MainTitle [offset + 1] == ' ') {
+                    comma = ", isoform ";
+                    delta = 2;
                 }
-
-                int offset = 0;
-                int delta = 0;
-                string comma = "";
-                string isoform = "";
-                if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
-                    offset = 20;
-                } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
-                    offset = 23;
+                if (m_MainTitle [offset] == ' ') {
+                    comma = " isoform ";
+                    delta = 1;
                 }
-                if (offset > 0 && offset < m_MainTitle.length()) {
-                    if (m_MainTitle [offset] == ',' && m_MainTitle [offset + 1] == ' ') {
-                        comma = ", isoform ";
-                        delta = 2;
-                    }
-                    if (m_MainTitle [offset] == ' ') {
-                        comma = " isoform ";
-                        delta = 1;
-                    }
-                    if (NStr::StartsWith (m_MainTitle.substr (offset + delta), "isoform ")) {
-                        isoform = m_MainTitle.substr (offset + delta + 8);
-                        // !!! check for single alphanumeric string
-                        m_MainTitle.erase (offset);
-                    }
+                if (NStr::StartsWith (m_MainTitle.substr (offset + delta), "isoform ")) {
+                    isoform = m_MainTitle.substr (offset + delta + 8);
+                    // !!! check for single alphanumeric string
+                    m_MainTitle.erase (offset);
                 }
-                if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
-                     NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
-                    /* &&  !m_LocalAnnotsOnly */ ) {
-                    CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
-                    if (sfxp) {
-                        CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
-                        if (fsx) {
-                            const CGene_ref& grp = fsx->GetMappedFeat().GetData().GetGene();
-                            if (grp.IsSetLocus_tag()) {
-                                locus_tag = grp.GetLocus_tag();
-                            }
+            }
+            if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
+                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
+                /* &&  !m_LocalAnnotsOnly */ ) {
+                if (sfxp) {
+                    CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
+                    if (fsx) {
+                        const CGene_ref& grp = fsx->GetMappedFeat().GetData().GetGene();
+                        if (grp.IsSetLocus_tag()) {
+                            locus_tag = grp.GetLocus_tag();
                         }
                     }
-                    if (! locus_tag.empty()) {
-                        m_MainTitle += " " + string(locus_tag) + string(comma) + string(isoform);
-                    }
+                }
+                if (! locus_tag.empty()) {
+                    m_MainTitle += " " + string(locus_tag) + string(comma) + string(isoform);
                 }
             }
-            if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
-                if (prp.IsSetDesc()) {
-                    m_MainTitle = prp.GetDesc();
-                }
+        }
+        if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+            if (prp.IsSetDesc()) {
+                m_MainTitle = prp.GetDesc();
             }
-            if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
-                FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
-                    const string& str = *act_itr;
-                    m_MainTitle = str;
-                    break;
-                }
+        }
+        if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+            FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
+                const string& str = *act_itr;
+                m_MainTitle = str;
+                break;
             }
         }
     }
 
     if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
-        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
         if (sfxp) {
             CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
             if (fsx) {
@@ -1851,7 +1854,6 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
 
     if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
         m_MainTitle = "unnamed protein product";
-        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
         if (sfxp) {
             CRef<CFeatureIndex> fsx = sfxp->GetBestGene();
             if (fsx) {
@@ -1866,8 +1868,6 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
         }
     }
 
-
-    CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
     if (sfxp) {
         const CMappedFeat mf = sfxp->GetMappedFeat();
         const CSeq_feat& cds = mf.GetOriginalFeature();
