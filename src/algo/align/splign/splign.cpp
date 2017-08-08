@@ -2692,7 +2692,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     //check left
                     if( s.m_box[2] == 0 || x_IsInGap(s.m_box[2] - 1) ||
                         CSplignTrim::HasAbuttingExonOnLeft(m_segments, k0) ) {
-                        //abuting an exon or a sequence gap on the genome, do not cut    
+                        //abuting an exon or a contig border or a sequence gap on the genome, do not cut    
+                        first_exon = false;
                     } else {
                         if(first_exon) {
                             if( (int)s.m_box[0] >= kFlankExonProx ) {//gap on left
