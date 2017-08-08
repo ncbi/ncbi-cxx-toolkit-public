@@ -389,7 +389,6 @@ bool CGtfReader::x_UpdateAnnotCds(
         if (!x_CreateParentCds(gff, pAnnot)  ||  !x_FindParentCds(gff, pCds)) {
             return false;
         }
-        x_FindParentCds(gff, pCds);
         needXref = true;
     }
     else {
@@ -683,6 +682,9 @@ bool CGtfReader::xFeatureSetQualifiersGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
+    list<string> ignoredAttrs = {
+        "locus_tag", "transcript_id"
+    };
     //
     //  Create GB qualifiers for the record attributes:
     //
@@ -690,8 +692,72 @@ bool CGtfReader::xFeatureSetQualifiersGene(
     const CGff2Record::TAttributes& attrs = record.Attributes();
     CGff2Record::TAttrCit it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
-        // gtf genes don't get transcript_id
-        if (it->first == "transcript_id") {
+        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
+        if (cit != ignoredAttrs.end()) {
+            continue;
+        }
+        // special case some well-known attributes
+        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+            continue;
+        }
+
+        // turn everything else into a qualifier
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual(it->first);
+        pQual->SetVal(it->second);
+        pFeature->SetQual().push_back(pQual);
+    } 
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::xFeatureSetQualifiersRna(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    list<string> ignoredAttrs = {
+        "locus_tag"
+    };
+
+    CRef< CGb_qual > pQual(0);
+    const CGff2Record::TAttributes& attrs = record.Attributes();
+    CGff2Record::TAttrCit it = attrs.begin();
+    for (/*NOOP*/; it != attrs.end(); ++it) {
+        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
+        if (cit != ignoredAttrs.end()) {
+            continue;
+        }
+        // special case some well-known attributes
+        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+            continue;
+        }
+
+        // turn everything else into a qualifier
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual(it->first);
+        pQual->SetVal(it->second);
+        pFeature->SetQual().push_back(pQual);
+    } 
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::xFeatureSetQualifiersCds(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    list<string> ignoredAttrs = {
+        "locus_tag"
+    };
+
+    CRef< CGb_qual > pQual(0);
+    const CGff2Record::TAttributes& attrs = record.Attributes();
+    CGff2Record::TAttrCit it = attrs.begin();
+    for (/*NOOP*/; it != attrs.end(); ++it) {
+        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
+        if (cit != ignoredAttrs.end()) {
             continue;
         }
         // special case some well-known attributes
@@ -744,7 +810,7 @@ bool CGtfReader::x_CreateParentCds(
     if ( ! x_CreateMrnaXrefs( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+    if ( ! xFeatureSetQualifiersCds( gff, pFeature ) ) {
         return false;
     }
 
@@ -779,7 +845,7 @@ bool CGtfReader::x_CreateParentMrna(
     if ( ! x_CreateCdsXrefs( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+    if ( ! xFeatureSetQualifiersRna( gff, pFeature ) ) {
         return false;
     }
 
@@ -839,8 +905,11 @@ bool CGtfReader::x_FeatureSetDataGene(
     CGene_ref& gene = pFeature->SetData().SetGene();
 
     string strValue;
-    if ( record.GetAttribute( "gene_synonym", strValue ) ) {
+    if (record.GetAttribute( "gene_synonym", strValue)) {
         gene.SetSyn().push_back( strValue );
+    }
+    if (record.GetAttribute("locus_tag", strValue)) {
+        gene.SetLocus_tag(strValue);
     }
     //  mss-399: do -not- use gene_id for /gene_syn or /gene:
     //if ( record.GetAttribute( "gene_id", strValue ) ) {

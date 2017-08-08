@@ -145,6 +145,14 @@ protected:
         const CGff2Record& record,
         CRef<CSeq_feat>);
 
+    bool xFeatureSetQualifiersRna(
+        const CGff2Record& record,
+        CRef<CSeq_feat>);
+
+    bool xFeatureSetQualifiersCds(
+        const CGff2Record& record,
+        CRef<CSeq_feat>);
+
     bool x_CreateParentCds(
         const CGff2Record&,
         CRef< CSeq_annot > );
