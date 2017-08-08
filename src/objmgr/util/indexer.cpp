@@ -939,6 +939,11 @@ void CBioseqIndex::x_InitFeats (void)
 
         sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
+        // variables for setting m_BestProteinFeature
+        TSeqPos longest = 0;
+        CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
+        CProt_ref::EProcessed processed;
+
         // iterate features on Bioseq
         for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
             const CMappedFeat mf = *feat_it;
@@ -953,6 +958,32 @@ void CBioseqIndex::x_InitFeats (void)
             m_FeatIndexMap[mf] = sfx;
 
             CSeqFeatData::E_Choice type = sfx->GetType();
+
+            if (type == CSeqFeatData::e_Prot && IsAA()) {
+                if (! mf.IsSetData ()) continue;
+                const CSeqFeatData& sfdata = mf.GetData();
+                const CProt_ref& prp = sfdata.GetProt();
+                processed = CProt_ref::eProcessed_not_set;
+                if (prp.IsSetProcessed()) {
+                    processed = prp.GetProcessed();
+                }
+                const CSeq_loc& loc = mf.GetLocation ();
+                TSeqPos prot_length = sequence::GetLength(loc, m_Scope);
+                if (prot_length > longest) {
+                    m_BestProteinFeature = sfx;
+                    longest = prot_length;
+                    bestprocessed = processed;
+                } else if (prot_length == longest) {
+                    // unprocessed 0 > preprotein 1 > mat peptide 2
+                    if (processed < bestprocessed) {
+                        m_BestProteinFeature = sfx;
+                        longest = prot_length;
+                        bestprocessed = processed;
+                    }
+                }
+                continue;
+            }
+
             if (type == CSeqFeatData::e_Cdregion && IsNA()) {
             } else if (type == CSeqFeatData::e_Rna && IsAA()) {
             } else if (type == CSeqFeatData::e_Prot && IsNA()) {
@@ -970,7 +1001,7 @@ void CBioseqIndex::x_InitFeats (void)
                     if (idxl) {
                         CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
                         if (bsxp) {
-                            bsxp->SetFeatureForProduct(sfx);
+                            bsxp->m_FeatureForProduct = sfx;
                         }
                     }
                 }
@@ -1023,6 +1054,17 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatureForProduct (void)
     }
 
     return m_FeatureForProduct;
+}
+
+// GetBestProteinFeature indexes longest protein feature on protein Bioseq
+CRef<CFeatureIndex> CBioseqIndex::GetBestProteinFeature (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_BestProteinFeature;
 }
 
 // Common descriptor field getters

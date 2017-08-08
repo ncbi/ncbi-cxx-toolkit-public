@@ -424,7 +424,8 @@ public:
     // Get feature (CDS, mRNA, Prot) with product pointing to this Bioseq (protein, cDNA, peptide)
     CRef<CFeatureIndex> GetFeatureForProduct(void);
 
-    void SetFeatureForProduct(CRef<CFeatureIndex> sfx) { m_FeatureForProduct = sfx; }
+    // Get best (longest) protein feature on this protein Bioseq
+    CRef<CFeatureIndex> GetBestProteinFeature(void);
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure (void) const { return m_FetchFailure; }
@@ -456,6 +457,7 @@ private:
     feature::CFeatTree m_FeatTree;
 
     CRef<CFeatureIndex> m_FeatureForProduct;
+    CRef<CFeatureIndex> m_BestProteinFeature;
 
     // CFeatureIndex from CMappedFeat for use with GetBestGene
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;

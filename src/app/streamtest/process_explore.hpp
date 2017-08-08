@@ -197,6 +197,14 @@ public:
         *m_out << "First 10 bases '" << subseq << "'" << '\n';
 
 
+        if (bsx.IsAA()) {
+            CRef<CFeatureIndex> bestprot = bsx.GetBestProteinFeature();
+            if (bestprot) {
+                *m_out << "Best Protein subtype: " << bestprot->GetSubtype() << '\n';
+            }
+        }
+
+
         // IterateFeatures causes feature vector to be initialized by CFeat_CI, locations mapped to master
         int num_feats = bsx.IterateFeatures([this, &bsx](CFeatureIndex& sfx) {
 
