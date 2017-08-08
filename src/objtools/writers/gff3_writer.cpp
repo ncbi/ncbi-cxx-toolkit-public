@@ -3363,13 +3363,21 @@ bool CGff3Writer::xWriteRecord(
 //        bDebugHere = true;
 //    }
     auto id = record.StrSeqId();
-    if (id == "."  &&  record.CanGetLocation()) {
+    if (id == "."  &&  record.CanGetLocation()) {//one last desperate attempt--- 
         id = "";
         const CSeq_loc& loc = record.GetLocation();
         auto idh = sequence::GetIdHandle(loc, m_pScope);
         if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
             id = ".";
         }
+    }
+    if (id == ".") {//all hope gone here
+        NCBI_THROW(CObjWriterException, eBadInput, 
+            "CGff3Writer::xWriteRecord: GFF3 reord is missing mandatory SeqID assignment.\n"
+            "Identifying information:\n"
+            "    SeqStart: " + record.StrSeqStart() + "\n"
+            "    SeqStop : " + record.StrSeqStop() + "\n"
+            "    Gff3Type: " + record.StrType() + "\n\n");    
     }
     m_Os << id << '\t';
     m_Os << record.StrMethod() << '\t';

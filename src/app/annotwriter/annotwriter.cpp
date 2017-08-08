@@ -516,21 +516,21 @@ bool CAnnotWriterApp::xTryProcessSeqEntry(
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
-    CSeq_entry seq_entry;
+    CRef<CSeq_entry> pSe(new CSeq_entry);
     try {
-        istr.Read(ObjectInfo(seq_entry));
+        istr.Read(ObjectInfo(*pSe));
     }
     catch (CException&) {
         return false;
     }
 
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( seq_entry );
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*pSe);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
     m_pWriter->WriteSeqEntryHandle(seh, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
-    scope.RemoveEntry(seq_entry);
+    scope.RemoveEntry(*pSe);
     return true;
 }
 
