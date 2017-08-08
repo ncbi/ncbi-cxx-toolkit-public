@@ -111,6 +111,7 @@ public:
     virtual string StrPhase() const;
     virtual string StrAttributes() const;
 
+    bool CanGetLocation() const { return 0 != m_pLoc; };
     const CSeq_loc& GetLocation() const {
         return *m_pLoc; };
 

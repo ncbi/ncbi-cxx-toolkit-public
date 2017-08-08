@@ -2866,6 +2866,13 @@ bool CGff3Writer::xAssignSourceSeqId(
 
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if (!pId) {
+        auto ids = bsh.GetId();
+        if (!ids.empty()) {
+            auto id = ids.front();
+            CWriteUtil::GetBestId(id, bsh.GetScope(), bestId);
+            record.SetSeqId(bestId);
+            return true;
+        }
         record.SetSeqId(defaultId);
         return true;
     }
@@ -3356,7 +3363,7 @@ bool CGff3Writer::xWriteRecord(
 //        bDebugHere = true;
 //    }
     auto id = record.StrSeqId();
-    if (id == ".") {
+    if (id == "."  &&  record.CanGetLocation()) {
         id = "";
         const CSeq_loc& loc = record.GetLocation();
         auto idh = sequence::GetIdHandle(loc, m_pScope);
