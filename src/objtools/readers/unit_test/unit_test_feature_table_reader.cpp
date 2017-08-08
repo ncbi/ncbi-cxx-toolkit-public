@@ -446,12 +446,12 @@ BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
     CConstRef<CSeq_feat> cds = ftable.back();
     BOOST_REQUIRE(cds->IsSetData());
     BOOST_REQUIRE(cds->GetData().IsCdregion());
-    BOOST_CHECK_EQUAL(cds->GetQual().size(), 2); // Temporary - GB-7030
+    BOOST_CHECK_EQUAL(cds->GetQual().size(), 3); 
     NCBITEST_CHECK( cds->GetXref()[0]->GetData().IsGene() );
     set<string> expected_quals;
     expected_quals.insert("transcript_id");
     expected_quals.insert("transl_except");
- //   expected_quals.insert("protein_id"); Temporary - GB-7030
+    expected_quals.insert("protein_id");
     CheckExpectedQuals (cds, expected_quals);
 
     // check protein_ids
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
             BOOST_REQUIRE (prot.IsSetName());
             BOOST_REQUIRE (prot.GetName().size() == 1);
             set<string> expected_quals;
-        //   expected_quals.insert("protein_id"); Temporary - GB-7030
+            expected_quals.insert("protein_id"); 
         //    NCBITEST_CHECK( NStr::StartsWith( 
         //        (*feat)->GetProduct().GetWhole().GetOther().GetAccession(), "YP_0070247") );
             if (NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit II")
