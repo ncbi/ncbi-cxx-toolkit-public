@@ -1446,7 +1446,7 @@ DBAU	s	Universidade Santa Ursula
 DBC	s	University College, Botany Department		
 DBCUCH	s	Universidad de Chile, Departamento de Biologia Celular y Genetica		
 DBFFEUCS	s	Departamento de Biologia de la Faculdad de Filosofia y Educacion de la Universidad de Chile		
-DBG	s	Denver Botanic Gardens		
+DBG	s	Sam Mitchel Herbarium of Fungi, Denver Botanic Gardens		
 DBKKU1	c	Department of Biology, Faculty of Science		
 DBKKU2	c	Department of Biology, Faculty of Science		
 DBKKU3	c	Department of Biology, Faculty of Science		
@@ -3237,7 +3237,7 @@ KGU	s	Geology and Mineralogy Museum
 KGY	s	Cliffe Castle Art Gallery and Museum		
 KH	s	Korea National Arboretum		
 KHA	s	Institute for Water and Ecology Problems, Far East Branch, Russian Academy of Sciences, Laboratory of Plant Ecology		
-KHD	s	Denver Botanic Gardens		
+KHD	s	Kathryn Kalmbach Herbarium of Vascular Plants, Denver Botanic Gardens		
 KHER	s	Kherson Pedagogical University, Botany Department		
 KHF	s	Forest Research and Education Institute, Soba		
 KHMM	s	Kultur Historisches Museum		
