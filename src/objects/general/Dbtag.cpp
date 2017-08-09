@@ -138,6 +138,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "PIR", CDbtag::eDbtagType_PIR },
     { "PSEUDO", CDbtag::eDbtagType_PSEUDO },
     { "Pathema", CDbtag::eDbtagType_Pathema },
+    { "PeptideAtlas", CDbtag::eDbtagType_PeptideAtlas },
     { "Phytozome", CDbtag::eDbtagType_Phytozome },
     { "PomBase", CDbtag::eDbtagType_PomBase },
     { "PseudoCap", CDbtag::eDbtagType_PseudoCap },
