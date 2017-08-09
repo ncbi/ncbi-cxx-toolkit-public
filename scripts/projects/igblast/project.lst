@@ -22,7 +22,7 @@ cgi$
 cgi/impl$
 html$
 connect$
-connect/mbedtls$
+connect/mbedtls
 connect/services$
 connect/services/impl$
 connect/ext$
