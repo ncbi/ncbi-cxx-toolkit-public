@@ -247,6 +247,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     ILineErrorListener* pMessageListener)
 {
 
+
     x_CheckForExcessiveSeqDataInID(
             id_string,
             info,
@@ -271,34 +272,30 @@ void CFastaDeflineReader::x_ProcessIDs(
         flags |= CSeq_id::fParse_RawText;
     }
 
-    try {
-        string local_id_string = id_string;
-        if (id_string.find(',') != NPOS &&
-            id_string.find('|') == NPOS) {
+    string local_id_string = id_string;
+    if (id_string.find(',') != NPOS &&
+        id_string.find('|') == NPOS) {
             
-            const string err_message = 
-                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
-                + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
-                + "symbol. Please correct the sequence id string.";
+        const string err_message = 
+            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+            + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
+            + "symbol. Please correct the sequence id string.";
 
-            x_PostWarning(pMessageListener,
-                info.lineNumber,
-                err_message,
-                CObjReaderParseException::eFormat);
+        x_PostWarning(pMessageListener,
+            info.lineNumber,
+            err_message,
+            CObjReaderParseException::eFormat);
             
-            local_id_string = NStr::Replace(id_string, ",", "_");
-        }
-
-        const auto num_ids = CSeq_id::ParseIDs(ids, local_id_string, flags);
-        if (num_ids == 0) {
-            NCBI_THROW(CException, eUnknown, "Zero seq-ids from string");
-        }
-    } 
-    catch(...) { 
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "Could not construct seq-ids from string: " + id_string, 0);
+        local_id_string = NStr::Replace(id_string, ",", "_");
     }
 
+    CSeq_id::ParseIDs(ids, local_id_string, flags);
+    ids.remove_if([](CRef<CSeq_id> id_ref){ return NStr::IsBlank(id_ref->GetSeqIdString()); });
+    if (ids.empty()) {
+        NCBI_THROW2(CObjReaderParseException, eNoIDs,
+                "Could not construct seq-id from '" + id_string + "'",
+                0);
+    }
     // Convert anything that looks like a GI to a local id
     if ( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
         x_ConvertNumericToLocal(ids);
@@ -308,7 +305,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     for (const auto& id : ids) {
         if (id->IsLocal() &&
             !x_IsValidLocalID(*id, info.fFastaFlags)) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, 
+            NCBI_THROW2(CObjReaderParseException, eInvalidID, 
              "'" + id->GetLocal().GetStr() + "' is not a valid local ID", 0);
         }
     }

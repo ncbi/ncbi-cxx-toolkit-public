@@ -58,7 +58,8 @@ public:
         eUnusedMods,
         eIDTooLong,
         eNoResidues,
-        eWrongGap
+        eWrongGap,
+        eInvalidID
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -74,6 +75,7 @@ public:
         case eIDTooLong:   return "eIDTooLong";
         case eNoResidues:  return "eNoResidues";
         case eWrongGap:    return "eWrongGap";
+        case eInvalidID:   return "eInvalidID";
         default:           return CException::GetErrCodeString();
         }
     }
