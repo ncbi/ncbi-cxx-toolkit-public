@@ -888,7 +888,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
     tabinfo.SetParseLocalIds(m_BelieveQuery);
 
     string strProgVersion =
-                "IG" + NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
+        "IG" + NStr::ToUpper(m_Program);
     CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
 
     if (m_IsHTML) {
