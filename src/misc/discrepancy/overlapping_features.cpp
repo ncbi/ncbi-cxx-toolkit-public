@@ -202,7 +202,7 @@ static const TRNALengthMap kTrnaLengthMap{
     { "23S", { 2000, false } },
     { "25S", { 1000, false } },
     { "26S", { 1000, false } },
-    { "28S", { 1000, false } },
+    { "28S", { 3300, false } },
     { "small", { 1000, false } },
     { "large", { 1000, false } },
     { "5.8S", { 130, true } },
