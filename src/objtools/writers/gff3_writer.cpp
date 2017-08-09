@@ -1456,7 +1456,6 @@ bool CGff3Writer::xWriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
         switch(subtype) {
@@ -1900,6 +1899,12 @@ bool CGff3Writer::xAssignFeatureAttributeDbXref(
                 parent = fc.FeatTree().GetParent( mf );
             }
             catch(...) {
+            }
+            if (parent  &&  parent.IsSetData()  &&  parent.GetData().IsGene()) {
+                const auto& geneRef = mf.GetGeneXref();
+                if (geneRef  &&  geneRef->IsSuppressed()) {
+                    return true;
+                }
             }
             if (parent  &&  parent.IsSetDbxref()) {
                 const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
