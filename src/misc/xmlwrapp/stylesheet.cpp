@@ -653,25 +653,51 @@ xslt::stylesheet::register_extension_element (extension_element *  ee,
 }
 
 
+void xslt::stylesheet::destroy(void)
+{
+    if (pimpl_ != NULL) {
+        // Delete extension functions we owe
+        for (ext_funcs_map_type::iterator k = pimpl_->ext_functions_.begin();
+             k != pimpl_->ext_functions_.end(); ++k) {
+            if (k->second.second == xml::type_own)
+                delete k->second.first;
+        }
+
+        // Delete extension elements we owe
+        for (ext_elems_map_type::iterator k = pimpl_->ext_elements_.begin();
+             k != pimpl_->ext_elements_.end(); ++k) {
+            if (k->second.second == xml::type_own)
+                delete k->second.first;
+        }
+
+        if (pimpl_->ss_)
+            xslt::impl::destroy_stylesheet(pimpl_->ss_);
+        delete pimpl_;
+    }
+}
+
+
 xslt::stylesheet::~stylesheet()
 {
-    // Delete extension functions we owe
-    for (ext_funcs_map_type::iterator k = pimpl_->ext_functions_.begin();
-         k != pimpl_->ext_functions_.end(); ++k) {
-        if (k->second.second == xml::type_own)
-            delete k->second.first;
-    }
+    destroy();
+}
 
-    // Delete extension elements we owe
-    for (ext_elems_map_type::iterator k = pimpl_->ext_elements_.begin();
-         k != pimpl_->ext_elements_.end(); ++k) {
-        if (k->second.second == xml::type_own)
-            delete k->second.first;
-    }
 
-    if (pimpl_->ss_)
-        xslt::impl::destroy_stylesheet(pimpl_->ss_);
-    delete pimpl_;
+xslt::stylesheet::stylesheet (stylesheet &&  other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+
+
+xslt::stylesheet & xslt::stylesheet::operator= (stylesheet &&  other)
+{
+    if (this != &other) {
+        destroy();
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
 }
 
 

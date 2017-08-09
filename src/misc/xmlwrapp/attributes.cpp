@@ -117,7 +117,24 @@ void xml::attributes::swap (attributes &other) {
 }
 //####################################################################
 xml::attributes::~attributes (void) {
-    delete pimpl_;
+    if (pimpl_ != NULL)
+        delete pimpl_;
+}
+//####################################################################
+xml::attributes::attributes (attributes &&other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+//####################################################################
+xml::attributes &  xml::attributes::operator= (attributes &&other) {
+    if (this != &other) {
+        if (pimpl_ != NULL)
+            delete pimpl_;
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
 }
 //####################################################################
 void* xml::attributes::get_data (void) {

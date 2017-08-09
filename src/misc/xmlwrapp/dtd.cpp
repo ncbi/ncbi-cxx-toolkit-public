@@ -155,9 +155,31 @@ bool dtd::validate (const document& doc, error_messages* messages,
 }
 
 dtd::~dtd() {
-    if (pimpl_->owned_ && pimpl_->dtd_)
-        xmlFreeDtd(pimpl_->dtd_);
-    delete pimpl_;
+    if (pimpl_ != NULL) {
+        if (pimpl_->owned_ && pimpl_->dtd_)
+            xmlFreeDtd(pimpl_->dtd_);
+        delete pimpl_;
+    }
+}
+
+dtd::dtd(dtd &&other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+
+dtd& dtd::operator= (dtd &&other)
+{
+    if (this != &other) {
+        if (pimpl_ != NULL) {
+            if (pimpl_->owned_ && pimpl_->dtd_)
+                xmlFreeDtd(pimpl_->dtd_);
+            delete pimpl_;
+        }
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
 }
 
 void dtd::set_dtd_data (void *data) {

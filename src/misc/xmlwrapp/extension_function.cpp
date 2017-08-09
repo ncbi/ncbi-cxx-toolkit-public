@@ -126,7 +126,8 @@ namespace xslt {
 
     extension_function::~extension_function ()
     {
-        delete pimpl_;
+        if (pimpl_ != NULL)
+            delete pimpl_;
     }
 
     extension_function::extension_function (const extension_function &  other) :
@@ -140,6 +141,24 @@ namespace xslt {
     extension_function::operator= (const extension_function &  other)
     {
         pimpl_->xpath_parser_ctxt = other.pimpl_->xpath_parser_ctxt;
+        return *this;
+    }
+
+    extension_function::extension_function (extension_function &&  other) :
+        pimpl_(other.pimpl_)
+    {
+        other.pimpl_ = NULL;
+    }
+
+    extension_function &
+    extension_function::operator= (extension_function &&  other)
+    {
+        if (this != &other) {
+            if (pimpl_ != NULL)
+                delete pimpl_;
+            pimpl_ = other.pimpl_;
+            other.pimpl_ = NULL;
+        }
         return *this;
     }
 

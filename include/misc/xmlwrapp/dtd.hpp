@@ -76,7 +76,6 @@ public:
      *            only when there are errors.
      * @exception Throws xml::parser_exception in case of dtd parsing errors
      *            and std::exception in case of other problems.
-     * @author Sergey Satskiy, NCBI
     **/
     dtd (const char* filename, error_messages* messages,
          warnings_as_errors_type how = type_warnings_not_errors);
@@ -95,15 +94,12 @@ public:
      *            only when there are errors.
      * @return true if the document is valid, false otherwise.
      * @exception Throws std::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     bool validate (const document& doc, error_messages* messages,
                    warnings_as_errors_type how = type_warnings_are_errors) const;
 
     /**
      * Destroy the object.
-     *
-     * @author Sergey Satskiy, NCBI
     **/
     virtual ~dtd();
 
@@ -111,7 +107,6 @@ public:
      * Get the public ID.
      *
      * @return Public ID or NULL if not available
-     * @author Sergey Satskiy, NCBI
     **/
     const char* get_public_id (void) const;
 
@@ -119,7 +114,6 @@ public:
      * Get the system ID.
      *
      * @return System ID or NULL if not available
-     * @author Sergey Satskiy, NCBI
     **/
     const char* get_system_id (void) const;
 
@@ -127,9 +121,20 @@ public:
      * Get the name.
      *
      * @return Name or NULL if not available
-     * @author Sergey Satskiy, NCBI
     **/
     const char* get_name (void) const;
+
+    /**
+     * Moving constructor.
+     * @param other The other dtd.
+    **/
+    dtd (dtd &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other dtd.
+    **/
+    dtd& operator= (dtd &&other);
 
 private:
     impl::dtd_impl *pimpl_;

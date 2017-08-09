@@ -179,6 +179,18 @@ public:
     **/
     compile_type get_compile_type () const;
 
+    /**
+     * Moving constructor.
+     * @param other The other xpath expression.
+    **/
+    xpath_expression (xpath_expression &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other xpath expression.
+    **/
+    xpath_expression &  operator=(xpath_expression &&other);
+
 private:
     compile_type    compile_;               // compile flag
     std::string     expression_;            // xpath expression

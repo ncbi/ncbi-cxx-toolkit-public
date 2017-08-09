@@ -69,7 +69,26 @@ xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix 
 xml::ns::ns (void * rawLibXML2Namespace) : prefix_(), uri_(),
                                            unsafe_ns_(rawLibXML2Namespace),
                                            safety_(ns::type_unsafe_ns)
+{}
+
+
+xml::ns::ns (ns && other) :
+    prefix_(std::move(other.prefix_)),
+    uri_(std::move(other.uri_)),
+    unsafe_ns_(other.unsafe_ns_),
+    safety_(other.safety_)
+{}
+
+
+xml::ns & xml::ns::operator= (ns && other)
 {
+    if (this != &other) {
+        prefix_ = std::move(other.prefix_);
+        uri_ = std::move(other.uri_);
+        unsafe_ns_ = other.unsafe_ns_;
+        safety_ = other.safety_;
+    }
+    return *this;
 }
 
 

@@ -54,6 +54,18 @@ namespace xslt
     public:
         explicit exception(const std::string& msg) : xml::exception(msg)
         {}
+
+        exception (exception && other) :
+            xml::exception(std::move(other))
+        {}
+
+        exception &  operator= (exception && other)
+        {
+            if (this != &other) {
+                xml::exception::operator=(std::move(other));
+            }
+            return *this;
+        }
     };
 
 } // namespace xslt

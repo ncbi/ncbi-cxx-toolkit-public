@@ -109,6 +109,18 @@ public:
     //####################################################################
     attributes& operator= (const attributes &other);
 
+    /**
+     * Moving constructor.
+     * @param other The other attributes.
+    **/
+    attributes (attributes &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other attributes.
+    **/
+    attributes& operator= (attributes &&other);
+
     //####################################################################
     /**
      * Swap this xml::attributes object with another one.

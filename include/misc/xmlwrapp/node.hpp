@@ -372,7 +372,7 @@ public:
      * set_raw_content(...).
      *
      * @param content The content of the text node.
-     * @author Peter Jones, Sergey Satskiy
+     * @author Peter Jones
     **/
     //####################################################################
     void set_content (const char *content);
@@ -390,7 +390,6 @@ public:
      * content for this member.
      *
      * @param raw_content The raw content of the text node.
-     * @author Sergey Satskiy
     **/
     //####################################################################
     void set_raw_content (const char *raw_content);
@@ -465,7 +464,6 @@ public:
      * @return iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
-     * @author Sergey Satskiy, NCBI
     **/
     attributes::iterator find_attribute (const char* name,
                                          const ns* nspace = NULL);
@@ -489,7 +487,6 @@ public:
      * @return const iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
-     * @author Sergey Satskiy, NCBI
     **/
     attributes::const_iterator find_attribute (const char* name,
                                                const ns* nspace = NULL) const;
@@ -504,7 +501,6 @@ public:
      *  The namespace of this node. If the node has no namespace
      *  then return a "void" namespace object with empty prefix and URI
      *  (for which xml::ns::is_void() returns TRUE).
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     ns get_namespace (ns::ns_safety_type type = ns::type_safe_ns) const;
@@ -516,7 +512,6 @@ public:
       * @param type The required type of namespace objects (safe/unsafe).
       * @return The namespaces defined at this node.
       *         If no namespaces are defined then return an empty container.
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     ns_list_type get_namespace_definitions (ns::ns_safety_type type = ns::type_safe_ns) const;
@@ -535,7 +530,6 @@ public:
       *  exactly the same as erase_namespace() call.
       * @note There are no checks at all if an unsafe ns object is provided.
       * @return  Unsafe namespace
-      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     ns set_namespace (const ns& name_space);
@@ -550,7 +544,6 @@ public:
       * @param prefix
       *  Namespace prefix. For the default namespace use NULL or empty string.
       * @return  Unsafe namespace
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     ns set_namespace (const char* prefix);
@@ -572,7 +565,6 @@ public:
       *  What to do (replace or throw exception) when encountering a
       *  namespace definition with the same prefix.
       * @return  Unsafe namespace
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     ns add_namespace_definition (const ns&                 name_space,
@@ -589,7 +581,6 @@ public:
       * @param type
       *  What to do (replace or throw exception) when encountering a
       *  namespace definition with the same prefix.
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void add_namespace_definitions (const ns_list_type&       name_spaces,
@@ -606,7 +597,6 @@ public:
       *  If there is no such namespace definition, then do nothing.
       * @param how
       *  Specifies what to do if the given namespace is in use.
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void erase_namespace_definition (const char* prefix,
@@ -619,8 +609,6 @@ public:
       *
       * The hierarchy of nodes is searched up and if a default namespace is
       * found then it is used as a new node namespace.
-      *
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void erase_namespace (void);
@@ -640,7 +628,6 @@ public:
       *  Type of namespace object (safe/unsafe) to return.
       * @return
       *  Namespace object ("void" namespace if none found).
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     ns lookup_namespace (const char*        prefix,
@@ -652,8 +639,6 @@ public:
       *
       * Walks the nodes hierarchy down and erases dulicate namespace
       * definitions.
-      *
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void erase_duplicate_ns_defs (void);
@@ -664,8 +649,6 @@ public:
       *
       * Walks the nodes hierarchy down and erases unused namespace
       * definitions.
-      *
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void erase_unused_ns_defs (void);
@@ -676,7 +659,6 @@ public:
       *
       * @return node path
       * @exception throw an exception in case of errors
-      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     std::string get_path (void) const;
@@ -888,7 +870,6 @@ public:
      * Find out if this node is a root one, i.e. has no parent.
      *
      * @return true if the node is root.
-     * @author Sergey Satskiy
     **/
     //####################################################################
     bool is_root (void) const;
@@ -945,7 +926,7 @@ public:
      *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
      *
      * @see elements(const char*), find(const char*, iterator)
     **/
@@ -968,7 +949,7 @@ public:
      *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
      *
      * @see elements(const char*) const, find(const char*, const_iterator) const
     **/
@@ -993,7 +974,7 @@ public:
      *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
      *
      * @see elements(const char*)
     **/
@@ -1019,7 +1000,7 @@ public:
      *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
      *
      * @see elements(const char*) const
     **/
@@ -1033,7 +1014,14 @@ public:
      * @param expr
      *  XPath expression to run
      * @return
-     *  XPath query result nodes set
+     *  XPath query result node set
+     * @attention
+     *  The result node set is essentially a list of references to an XML
+     *  document. Thus the life time of the document must be wider than the
+     *  node set life time. It also means that the document modifications after
+     *  a result node set is received must be done carefully, e.g. node
+     *  removal. The removed node may be referenced in the node set and access
+     *  to it can cause problems.
      * @attention
      *  Expressions like "root/node" will result in 0 matches even if the
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
@@ -1051,7 +1039,6 @@ public:
      *  where TYPE is one of the following: boolean, number, or
      *  string depending on the result type. The VALUE is the actual result
      *  scalar value.
-     * @author Sergey Satskiy, NCBI
     **/
     node_set run_xpath_query (const xpath_expression& expr);
 
@@ -1061,7 +1048,14 @@ public:
      * @param expr
      *  XPath expression to run
      * @return
-     *  XPath query const result nodes set
+     *  XPath query const result node set
+     * @attention
+     *  The result node set is essentially a list of references to an XML
+     *  document. Thus the life time of the document must be wider than the
+     *  node set life time. It also means that the document modifications after
+     *  a result node set is received must be done carefully, e.g. node
+     *  removal. The removed node may be referenced in the node set and access
+     *  to it can cause problems.
      * @attention
      *  Expressions like "root/node" will result in 0 matches even if the
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
@@ -1079,7 +1073,6 @@ public:
      *  where TYPE is one of the following: boolean, number, or
      *  string depending on the result type. The VALUE is the actual result
      *  scalar value.
-     * @author Sergey Satskiy, NCBI
     **/
     const node_set run_xpath_query (const xpath_expression& expr) const;
 
@@ -1113,7 +1106,6 @@ public:
      *  where TYPE is one of the following: boolean, number, or
      *  string depending on the result type. The VALUE is the actual result
      *  scalar value.
-     * @author Sergey Satskiy, NCBI
     **/
     node_set run_xpath_query (const char *  expr);
 
@@ -1147,7 +1139,6 @@ public:
      *  where TYPE is one of the following: boolean, number, or
      *  string depending on the result type. The VALUE is the actual result
      *  scalar value.
-     * @author Sergey Satskiy, NCBI
     **/
     const node_set run_xpath_query (const char *  expr) const;
 
@@ -1287,7 +1278,6 @@ public:
      *        documents.
      * @see xml::save_option
      * @note compression part of the options is currently ignored.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     void save_to_string (std::string &xml,
@@ -1327,7 +1317,6 @@ public:
      *        documents.
      * @see xml::save_option
      * @note compression part of the options is currently ignored.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     void append_to_string (std::string &xml,
@@ -1379,6 +1368,18 @@ public:
     **/
     //####################################################################
     node& operator= (const node &other);
+
+    /**
+     * Moving constructor.
+     * @param other The other node.
+    **/
+    node (node &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other node.
+    **/
+    node& operator= (node &&other);
 
 private:
     impl::node_impl *pimpl_;

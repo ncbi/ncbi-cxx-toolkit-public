@@ -74,6 +74,24 @@ std::string error_message::get_filename (void) const {
     return filename_;
 }
 
+error_message::error_message(const error_message &&other) :
+    message_type_(other.message_type_),
+    message_(std::move(other.message_)),
+    line_(other.line_),
+    filename_(std::move(other.filename_))
+{}
+
+error_message& error_message::operator= (const error_message &&other)
+{
+    if (this != &other) {
+        message_type_ = other.message_type_;
+        message_ = std::move(other.message_);
+        line_ = other.line_;
+        filename_ = std::move(other.filename_);
+    }
+    return *this;
+}
+
 
 // xml::error_messages class implementation
 const error_messages::error_messages_type &
@@ -147,4 +165,3 @@ const char* parser_exception::what() const throw() {
 const error_messages& parser_exception::get_messages(void) const {
     return messages_;
 }
-

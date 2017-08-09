@@ -69,13 +69,11 @@ class extension_function
 public:
     /**
      * Create a new extension function.
-     * @author Sergey Satskiy, NCBI
     **/
     extension_function ();
 
     /**
      * Destroy extension function object and clean the memory up.
-     * @author Sergey Satskiy, NCBI
     **/
     virtual ~extension_function ();
 
@@ -84,7 +82,6 @@ public:
      *
      * @param other
      *  Another xslt::extension_function object.
-     * @author Sergey satskiy, NCBI
     **/
     extension_function (const extension_function &  other);
 
@@ -93,9 +90,20 @@ public:
      *
      * @param other
      *  Another xslt::extension_function object.
-     * @author Sergey Satskiy, NCBI
     **/
     extension_function &  operator= (const extension_function &  other);
+
+    /**
+     * Moving constructor.
+     * @param other The other extension function.
+    **/
+    extension_function (extension_function &&  other);
+
+    /**
+     * Moving assignment.
+     * @param other The other extension function.
+    **/
+    extension_function & operator= (extension_function &&  other);
 
 protected:
     /**
@@ -121,7 +129,6 @@ protected:
      *
      * @param error
      *  Error message to be reported.
-     * @author Sergey Satskiy, NCBI
     **/
     void report_error (const char *  error);
 
@@ -132,7 +139,6 @@ protected:
      *
      * @param error
      *  Error code to be reported
-     * @author Sergey Satskiy, NCBI
     **/
     void report_error (xpath_error  error);
 
@@ -143,7 +149,6 @@ protected:
      *
      * @param ret_val
      *  The extension function return value
-     * @author Sergey Satskiy, NCBI
     **/
     void set_return_value (const xpath_object &  ret_val);
 

@@ -118,7 +118,8 @@ namespace xslt {
 
     xpath_object::~xpath_object()
     {
-        pimpl_->dec_ref();
+        if (pimpl_ != NULL)
+            pimpl_->dec_ref();
     }
 
     xpath_object::xpath_object(const xpath_object&  other) :
@@ -129,9 +130,28 @@ namespace xslt {
 
     xpath_object& xpath_object::operator= (const xpath_object& other)
     {
-        pimpl_->dec_ref();
-        pimpl_ = other.pimpl_;
-        pimpl_->inc_ref();
+        if (this != &other) {
+            pimpl_->dec_ref();
+            pimpl_ = other.pimpl_;
+            pimpl_->inc_ref();
+        }
+        return *this;
+    }
+
+    xpath_object::xpath_object(xpath_object &&  other) :
+        pimpl_(other.pimpl_)
+    {
+        other.pimpl_ = NULL;
+    }
+
+    xpath_object &  xpath_object::operator= (xpath_object &&  other)
+    {
+        if (this != &other) {
+            if (pimpl_ != NULL)
+                pimpl_->dec_ref();
+            pimpl_ = other.pimpl_;
+            other.pimpl_ = NULL;
+        }
         return *this;
     }
 

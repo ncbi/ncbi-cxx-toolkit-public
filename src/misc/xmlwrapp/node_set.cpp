@@ -125,14 +125,35 @@ namespace xml
 
     node_set::~node_set()
     {
-        pimpl_->dec_ref();
+        if (pimpl_)
+            pimpl_->dec_ref();
     }
 
     node_set& node_set::operator=(const node_set& other)
     {
-        pimpl_->dec_ref();
-        pimpl_ = other.pimpl_;
-        pimpl_->inc_ref();
+        if (this != &other) {
+            pimpl_->dec_ref();
+            pimpl_ = other.pimpl_;
+            pimpl_->inc_ref();
+        }
+        return *this;
+    }
+
+    node_set::node_set(node_set && other) :
+        pimpl_(other.pimpl_)
+    {
+        other.pimpl_ = NULL;
+    }
+
+    node_set & node_set::operator=(node_set && other)
+    {
+        if (this != &other) {
+            if (pimpl_)
+                pimpl_->dec_ref();
+            pimpl_ = other.pimpl_;
+
+            other.pimpl_ = NULL;
+        }
         return *this;
     }
 

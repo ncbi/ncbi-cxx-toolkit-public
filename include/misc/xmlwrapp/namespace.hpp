@@ -23,7 +23,6 @@
  *
  * ===========================================================================
  *
- * Author:  Sergey Satskiy, NCBI
  * Credits: Denis Vakatov, NCBI (help with the original design)
  *
  */
@@ -78,10 +77,22 @@ public:
      *  The namespace prefix. Use NULL or empty string for default namespace.
      * @param uri
      *  The namespace URI.
-     * @author Sergey Satskiy, NCBI
     **/
     ns (const char* prefix, const char* uri);
 
+
+    /**
+     * Moving constructor.
+     * @param other The other namespace.
+    **/
+    ns (ns && other);
+
+
+    /**
+     * Moving assignment.
+     * @param other The other namespace.
+    **/
+    ns &  operator= (ns && other);
 
     /**
      * Get the namespace prefix.
@@ -91,7 +102,6 @@ public:
      *  The lifetime of the returned string is either the lifetime of the
      *  namespace object itself (if it's a "safe" object) or the lifetime
      *  of the underlying libxml2 document (if it's an "unsafe" object).
-     * @author Sergey Satskiy, NCBI
     **/
     const char* get_prefix (void) const;
 
@@ -104,7 +114,6 @@ public:
      *  The lifetime of the returned string is either the lifetime of the
      *  namespace object itself (if it's a "safe" object) or the lifetime
      *  of the underlying libxml2 document (if it's an "unsafe" object).
-     * @author Sergey Satskiy, NCBI
     **/
     const char* get_uri (void) const;
 
@@ -115,7 +124,6 @@ public:
      * method checks if the namespace is actually set.
      *
      * @return TRUE if the namespace is void
-     * @author Sergey Satskiy, NCBI
     **/
     bool is_void (void) const;
 
@@ -125,8 +133,6 @@ public:
      * hold copies of prefix and URI and will not be unsafely linked to
      * internal libxml2 structures).
      * If the object is safe already the function does nothing.
-     *
-     * @author Sergey Satskiy, NCBI
     **/
     void make_safe (void);
 
@@ -135,7 +141,6 @@ public:
      * Check if the object is safe i.e. holds its own copies of prefix and URI.
      *
      * @return TRUE if the object is safe
-     * @author Sergey Satskiy, NCBI
     **/
     bool is_safe (void) const;
 
@@ -145,7 +150,6 @@ public:
      *
      * @return TRUE if the namespaces have the equal URIs.
      * @note libxml2 compares namespaces basing on URIs so xmlwrapp does.
-     * @author Sergey Satskiy, NCBI
     **/
     bool operator==(const ns&  other) const;
 
@@ -155,7 +159,6 @@ public:
      *
      * @return TRUE if the namespaces URIs differ.
      * @note libxml2 compares namespaces basing on URIs so xmlwrapp does.
-     * @author Sergey Satskiy, NCBI
     **/
     bool operator!=(const ns&  other) const;
 
@@ -168,6 +171,8 @@ public:
     };
     explicit ns (enum  ns_type  type);
 
+    ns (const ns&  other) = default;
+    ns &  operator= (const ns&  other) = default;
 
 private:
     /**
@@ -182,7 +187,6 @@ private:
      * It is not checked that the pointer is valid.
      *
      * @param rawLibXML2Namespace The libxml2 xmlNs structure pointer.
-     * @author Sergey Satskiy, NCBI
     **/
     ns (void* rawLibXML2Namespace);
 

@@ -754,6 +754,18 @@ public:
     //####################################################################
     document& operator= (const document &other);
 
+    /**
+     * Moving constructor.
+     * @param other The other document.
+    **/
+    document (document &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other document.
+    **/
+    document& operator= (document &&other);
+
 private:
     impl::doc_impl *pimpl_;
     void set_doc_data (void *data);

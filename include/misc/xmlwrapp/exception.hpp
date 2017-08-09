@@ -65,6 +65,18 @@ namespace xml
     public:
         explicit exception(const std::string& msg) : std::runtime_error(msg)
         {}
+
+        exception (exception && other) :
+            std::runtime_error(std::move(other))
+        {}
+
+        exception &  operator= (exception && other)
+        {
+            if (this != &other) {
+                std::runtime_error::operator=(std::move(other));
+            }
+            return *this;
+        }
     };
 
 } // namespace xml

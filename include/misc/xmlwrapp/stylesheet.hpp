@@ -171,6 +171,18 @@ public:
     //####################################################################
     virtual ~stylesheet (void);
 
+    /**
+     * Moving constructor.
+     * @param other The other stylesheet.
+    **/
+    stylesheet (stylesheet &&  other);
+
+    /**
+     * Moving assignment.
+     * @param other The other stylesheet.
+    **/
+    stylesheet & operator= (stylesheet &&  other);
+
     //####################################################################
     /**
      * Apply this stylesheet to the given XML document. The results document
@@ -233,6 +245,7 @@ private:
     impl::stylesheet_impl *pimpl_;
 
     void attach_refcount (void);
+    void destroy (void);
 
     // an xslt::stylesheet cannot yet be copied or assigned to.
     stylesheet (const stylesheet&);

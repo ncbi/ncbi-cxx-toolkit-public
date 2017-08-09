@@ -284,8 +284,27 @@ xml::event_parser::event_parser (sax_handlers_mask mask) : parse_finished_(true)
 }
 //####################################################################
 xml::event_parser::~event_parser (void) {
-    delete pimpl_;
+    if (pimpl_ != NULL)
+        delete pimpl_;
 }
+
+xml::event_parser::event_parser (event_parser &&other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+
+xml::event_parser & xml::event_parser::operator= (event_parser &&other)
+{
+    if (this != &other) {
+        if (pimpl_ != NULL)
+            delete pimpl_;
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
+}
+
 //####################################################################
 bool event_parser::parse_file (const char *filename, error_messages* messages,
                                warnings_as_errors_type how) {

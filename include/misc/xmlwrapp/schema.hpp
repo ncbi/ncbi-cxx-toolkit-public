@@ -126,6 +126,18 @@ public:
     **/
     virtual ~schema();
 
+    /**
+     * Moving constructor.
+     * @param other The other schema.
+    **/
+    schema (schema &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other schema.
+    **/
+    schema& operator= (schema &&other);
+
 private:
     impl::schema_impl *pimpl_;
     void construct (const char* file_or_data, size_type size,

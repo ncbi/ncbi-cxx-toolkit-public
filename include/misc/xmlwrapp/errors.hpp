@@ -46,8 +46,6 @@ namespace xml {
 /**
  * The xml::error_message class is used to store a single error message
  * which may appear while parsing or validating an XML document.
- *
- * @author Sergey Satskiy, NCBI
 **/
 class error_message {
 public:
@@ -63,7 +61,6 @@ public:
      *
      * @param mt The error type.
      * @return The string representation of the error type.
-     * @author Sergey Satskiy, NCBI
     **/
     static std::string message_type_str(message_type mt);
 
@@ -74,7 +71,6 @@ public:
      * @param msg_type The error type.
      * @param line file line realting to error message. 0 if none.
      * @param filename file name if available or an empty string.
-     * @author Sergey Satskiy, NCBI
     **/
     error_message(const std::string& message,
                   message_type msg_type,
@@ -85,7 +81,6 @@ public:
      * Get the error message type.
      *
      * @return The error type.
-     * @author Sergey Satskiy, NCBI
     **/
     message_type get_message_type (void) const;
 
@@ -93,7 +88,6 @@ public:
      * Get the error message.
      *
      * @return The error message.
-     * @author Sergey satskiy, NCBI
     **/
     std::string  get_message      (void) const;
 
@@ -111,6 +105,21 @@ public:
     **/
     std::string  get_filename (void) const;
 
+    /**
+     * Moving constructor.
+     * @param other The other error_message.
+    **/
+    error_message (const error_message &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other error_message.
+    **/
+    error_message& operator=(const error_message &&other);
+
+    error_message (const error_message &other) = default;
+    error_message& operator=(const error_message &other) = default;
+
 private:
     message_type message_type_;
     std::string  message_;
@@ -123,8 +132,6 @@ private:
 /**
  * The xml::error_messages class is used to store all the error message
  * which are collected while parsing or validating an XML document.
- *
- * @author Sergey Satskiy, NCBI
 **/
 class error_messages
 {
@@ -136,7 +143,6 @@ public:
      * Get the error messages.
      *
      * @return The error messages.
-     * @author Sergey Satskiy, NCBI
     **/
     const error_messages_type& get_messages (void) const;
 
@@ -144,7 +150,6 @@ public:
      * Get the error messages.
      *
      * @return The error messages.
-     * @author Sergey Satskiy, NCBI
     **/
     error_messages_type& get_messages (void);
 
@@ -153,7 +158,6 @@ public:
      *
      * @return true if there is at least one warning in the error messages.
      *         It does not consider errors and fatal errors.
-     * @author Sergey Satskiy, NCBI
     **/
     bool has_warnings (void) const;
 
@@ -161,8 +165,7 @@ public:
      * Check if there are errors in the error messages.
      *
      * @return true if there is at least one error in the error messages.
-    *          It does not consider fatal errors.
-     * @author Sergey Satskiy, NCBI
+     *         It does not consider fatal errors.
     **/
     bool has_errors (void) const;
 
@@ -170,7 +173,6 @@ public:
      * Check if there are fatal errors in the error messages.
      *
      * @return true if there is at least one fatal error in the error messages.
-     * @author Sergey Satskiy, NCBI
     **/
     bool has_fatal_errors (void) const;
 
@@ -178,16 +180,19 @@ public:
      * Convert error messages into a single printable string.
      *
      * @return string representation of the errors list ('\n' separated)
-     * @author Sergey Satskiy, NCBI
     **/
     std::string print (void) const;
 
     /**
      * Appends the messages from the other container.
-     * @author Sergey Satskiy, NCBI
     **/
     void append_messages(const error_messages &  other);
 
+    error_messages() = default;
+    error_messages (const error_messages &other) = default;
+    error_messages (error_messages &&other) = default;
+    error_messages & operator=(const error_messages &other) = default;
+    error_messages & operator=(error_messages &&other) = default;
 
 private:
     error_messages_type error_messages_;
@@ -200,8 +205,6 @@ private:
 /**
  * The xml::parser_exception class is used to store parsing and validating
  * exception information.
- *
- * @author Sergey Satskiy, NCBI
 **/
 class parser_exception : public std::exception
 {
@@ -211,7 +214,6 @@ public:
      * Convert error messages into a printable C-style string.
      *
      * @return string representation of the errors list ('\n' separated).
-     * @author Sergey Satskiy, NCBI
     **/
     virtual const char* what() const throw ();
 
@@ -219,7 +221,6 @@ public:
      * Get error messages.
      *
      * @return The error messages.
-     * @author Sergey Satskiy, NCBI
     **/
     const error_messages& get_messages(void) const;
 
@@ -227,16 +228,18 @@ public:
      * Create a new object using the given list of error messages.
      *
      * @param msgs The error messages.
-     * @author Sergey Satskiy, NCBI
     **/
     parser_exception(const error_messages& msgs);
 
     /**
      * Destroy the object.
-     *
-     * @author Sergey Satskiy, NCBI
     **/
     virtual ~parser_exception() throw () {}
+
+    parser_exception (const parser_exception &other) = default;
+    parser_exception & operator=(const parser_exception &other) = default;
+    parser_exception (parser_exception &&other) = default;
+    parser_exception & operator=(parser_exception &&other) = default;
 
 private:
     error_messages          messages_;
@@ -253,4 +256,3 @@ enum warnings_as_errors_type {
 } // xml namespace
 
 #endif
-

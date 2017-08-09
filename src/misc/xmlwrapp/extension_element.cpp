@@ -98,7 +98,8 @@ namespace xslt {
 
     extension_element::~extension_element ()
     {
-        delete pimpl_;
+        if (pimpl_ != NULL)
+            delete pimpl_;
     }
 
     extension_element::extension_element (const extension_element &  other) :
@@ -112,6 +113,24 @@ namespace xslt {
     extension_element::operator= (const extension_element &  other)
     {
         pimpl_->xslt_ctxt = other.pimpl_->xslt_ctxt;
+        return *this;
+    }
+
+    extension_element::extension_element (extension_element &&  other) :
+        pimpl_(other.pimpl_)
+    {
+        other.pimpl_ = NULL;
+    }
+
+    extension_element &
+    extension_element::operator= (extension_element &&  other)
+    {
+        if (this != &other) {
+            if (pimpl_ != NULL)
+                delete pimpl_;
+            pimpl_ = other.pimpl_;
+            other.pimpl_ = NULL;
+        }
         return *this;
     }
 

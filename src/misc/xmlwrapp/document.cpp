@@ -510,12 +510,30 @@ xml::document& xml::document::assign (const document &other) {
     return *this;
 }
 //####################################################################
+xml::document::document (document &&other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+//####################################################################
+xml::document& xml::document::operator= (document &&other)
+{
+    if (this != &other) {
+        if (pimpl_ != NULL)
+            delete pimpl_;
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
+}
+//####################################################################
 void xml::document::swap (document &other) {
     std::swap(pimpl_, other.pimpl_);
 }
 //####################################################################
 xml::document::~document (void) {
-    delete pimpl_;
+    if (pimpl_ != NULL)
+        delete pimpl_;
 }
 //####################################################################
 const xml::node& xml::document::get_root_node (void) const {

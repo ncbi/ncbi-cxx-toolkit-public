@@ -80,13 +80,11 @@ public:
 
     /**
      * Create a new xslt::xpath_object object.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object ();
 
     /**
      * Destroy the object and clean up the memory.
-     * @author Sergey Satskiy, NCBI
     **/
     ~xpath_object ();
 
@@ -96,7 +94,6 @@ public:
      *
      * @param other
      *  Another xslt::xpath_object object.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (const xpath_object &  other);
 
@@ -106,16 +103,26 @@ public:
      *
      * @param other
      *  Another xslt::xpath_object object.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object & operator= (const xpath_object &  other);
+
+    /**
+     * Moving constructor.
+     * @param other The other xpath object.
+    **/
+    xpath_object (xpath_object &&  other);
+
+    /**
+     * Moving assignment.
+     * @param other The other xpath object.
+    **/
+    xpath_object & operator= (xpath_object &&  other);
 
     /**
      * Create a new xslt::xpath_object object of the string type.
      *
      * @param value
      *  String to be used as the xpath_object value.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (const char *  value);
 
@@ -124,7 +131,6 @@ public:
      *
      * @param value
      *  Boolean to be used as the xpath_object value.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (bool  value);
 
@@ -133,7 +139,6 @@ public:
      *
      * @param value
      *  Integer to be used as the xpath_object value.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (int  value);
 
@@ -142,7 +147,6 @@ public:
      *
      * @param value
      *  Double to be used as the xpath_object value.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (double  value);
 
@@ -151,7 +155,6 @@ public:
      *
      * @param value
      *  xml::node to be used as the xpath_object value.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (const xml::node &  value);
 
@@ -160,7 +163,6 @@ public:
      *
      * @param value
      *  xml::node_set to be used as a source of nodes.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (const xml::node_set &  value);
 
@@ -169,7 +171,6 @@ public:
      *
      * @param value
      *  container of nodes as a source of nodes.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object (const type_node_source &  value);
 
@@ -179,7 +180,6 @@ public:
      *
      * @return The stored or converted value.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     std::string get_as_string (void) const;
 
@@ -189,7 +189,6 @@ public:
      *
      * @return The stored or converted value.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     bool get_as_bool (void) const;
 
@@ -199,7 +198,6 @@ public:
      *
      * @return The stored or converted value.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     int get_as_int (void) const;
 
@@ -209,7 +207,6 @@ public:
      *
      * @return The stored or converted value.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     double get_as_float (void) const;
 
@@ -219,7 +216,6 @@ public:
      * @return A reference to a node. If there were many nodes in the result
      *         set then a reference to the first one is provided.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     xml::node &  get_as_node (void) const;
 
@@ -228,7 +224,6 @@ public:
      *
      * @return A set of nodes.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     xml::node_set  get_as_node_set (void) const;
 
@@ -237,7 +232,6 @@ public:
      *
      * @return The type of the stored value.
      * @exception Throws xslt::exception in case of problems.
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object_type get_type (void) const;
 

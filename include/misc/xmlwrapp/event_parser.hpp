@@ -131,7 +131,7 @@ public:
      *       converted even for those handlers which are not used in your
      *       code. So, to get the best performance, use an explicit mask for
      *       handlers which you are actually interested in.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
     **/
     //####################################################################
     event_parser (sax_handlers_mask mask = default_set);
@@ -144,6 +144,18 @@ public:
     **/
     //####################################################################
     virtual ~event_parser (void);
+
+    /**
+     * Moving constrctor.
+     * @param other The other event parser.
+    **/
+    event_parser (event_parser &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other event parser.
+    **/
+    event_parser & operator= (event_parser &&other);
 
     //####################################################################
     /**
@@ -160,7 +172,7 @@ public:
      *            only when there are errors.
      * @return True if the file was successfully parsed and was not interrupted
      *         by the user; false otherwise.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
     **/
     //####################################################################
     bool parse_file (const char *filename, error_messages* messages,
@@ -181,7 +193,7 @@ public:
      *            only when there are errors.
      * @return True if the stream was successfully parsed and was not
      *         interrupted by the user; false otherwise.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
     **/
     //####################################################################
     bool parse_stream (std::istream &stream, error_messages* messages,
@@ -209,7 +221,7 @@ public:
      *         by the user; false otherwise.
      * @exception Throws xml::exception in case if missed parse_finish call is
      *            detected.
-     * @author Peter Jones; Sergey Satskiy, NCBI
+     * @author Peter Jones
     **/
     //####################################################################
     bool parse_chunk (const char *chunk, size_type length,
@@ -295,7 +307,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool start_document ();
@@ -315,7 +326,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool end_document ();
@@ -508,7 +518,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool error (const std::string &message);
@@ -533,7 +542,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool notation_declaration (const std::string &name,
@@ -562,7 +570,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool entity_declaration (const std::string &name,
@@ -591,7 +598,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool unparsed_entity_declaration (const std::string &name,
@@ -618,7 +624,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool external_subset_declaration (const std::string &name,
@@ -644,7 +649,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool internal_subset_declaration (const std::string &name,
@@ -673,7 +677,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool attribute_declaration (const std::string &element_name,
@@ -702,7 +705,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool element_declaration (const std::string &name,
@@ -733,7 +735,6 @@ protected:
      *       - parsing of the document will be stopped.
      *       So check the completion status and the error messages after any
      *       usage of the parse*() family members.
-     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     virtual bool entity_reference (const std::string &name);

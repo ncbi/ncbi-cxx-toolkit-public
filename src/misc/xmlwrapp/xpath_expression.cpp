@@ -55,9 +55,10 @@ const char*  kDefaultNamespace = "default namespace cannot be registered";
 
 
 xpath_expression::xpath_expression (const char* xpath,
-                                    compile_type do_compile) : compile_(do_compile),
-                                                               expression_(xpath ? xpath : ""),
-                                                               compiled_expression_(NULL)
+                                    compile_type do_compile) :
+    compile_(do_compile),
+    expression_(xpath ? xpath : ""),
+    compiled_expression_(NULL)
 {
     if (expression_.empty())
         throw exception(kEmptyExpression);
@@ -67,9 +68,10 @@ xpath_expression::xpath_expression (const char* xpath,
 
 xpath_expression::xpath_expression (const char* xpath,
                                     const ns& nspace,
-                                    compile_type do_compile) : compile_(do_compile),
-                                                               expression_(xpath ? xpath : ""),
-                                                               compiled_expression_(NULL)
+                                    compile_type do_compile) :
+    compile_(do_compile),
+    expression_(xpath ? xpath : ""),
+    compiled_expression_(NULL)
 {
     if (expression_.empty())
         throw xml::exception(kEmptyExpression);
@@ -85,14 +87,16 @@ xpath_expression::xpath_expression (const char* xpath,
 
 xpath_expression::xpath_expression (const char* xpath,
                                     const ns_list_type& nspace_list,
-                                    compile_type do_compile) : compile_(do_compile),
-                                                               expression_(xpath ? xpath : ""),
-                                                               compiled_expression_(NULL)
+                                    compile_type do_compile) :
+    compile_(do_compile),
+    expression_(xpath ? xpath : ""),
+    compiled_expression_(NULL)
 {
     if (expression_.empty())
         throw xml::exception(kEmptyExpression);
 
-    for (ns_list_type::const_iterator  k(nspace_list.begin()); k != nspace_list.end(); ++k)
+    for (ns_list_type::const_iterator  k(nspace_list.begin());
+         k != nspace_list.end(); ++k)
         if (strlen(k->get_prefix()) == 0)
             throw xml::exception(kDefaultNamespace);
 
@@ -111,17 +115,18 @@ xpath_expression::xpath_expression (const xpath_expression&  other) :
 
 xpath_expression& xpath_expression::operator= (const xpath_expression& other)
 {
-    if (this == &other) return *this;
+    if (this != &other) {
+        compile_ = other.compile_;
+        expression_ = other.expression_;
+        nspace_list_ = other.nspace_list_;
 
-    compile_ = other.compile_;
-    expression_ = other.expression_;
-    nspace_list_ = other.nspace_list_;
-
-    if (compiled_expression_) {
-        xmlXPathFreeCompExpr(reinterpret_cast<xmlXPathCompExprPtr>(compiled_expression_));
-        compiled_expression_ = NULL;
+        if (compiled_expression_) {
+            xmlXPathFreeCompExpr(
+                reinterpret_cast<xmlXPathCompExprPtr>(compiled_expression_));
+            compiled_expression_ = NULL;
+        }
+        compile_expression();
     }
-    compile_expression();
     return *this;
 }
 
@@ -129,8 +134,36 @@ xpath_expression& xpath_expression::operator= (const xpath_expression& other)
 xpath_expression::~xpath_expression ()
 {
     if (compiled_expression_)
-        xmlXPathFreeCompExpr(reinterpret_cast<xmlXPathCompExprPtr>(compiled_expression_));
+        xmlXPathFreeCompExpr(
+            reinterpret_cast<xmlXPathCompExprPtr>(compiled_expression_));
     compiled_expression_ = NULL;
+}
+
+
+xpath_expression::xpath_expression(xpath_expression &&other) :
+    compile_(other.compile_),
+    expression_(std::move(other.expression_)),
+    nspace_list_(std::move(other.nspace_list_)),
+    compiled_expression_(other.compiled_expression_)
+{
+    other.compiled_expression_ = NULL;
+}
+
+
+xpath_expression &  xpath_expression::operator=(xpath_expression &&other)
+{
+    if (this != &other) {
+        if (compiled_expression_)
+            xmlXPathFreeCompExpr(
+                reinterpret_cast<xmlXPathCompExprPtr>(compiled_expression_));
+        compile_ = other.compile_;
+        expression_ = std::move(other.expression_);
+        nspace_list_ = std::move(other.nspace_list_);
+        compiled_expression_ = other.compiled_expression_;
+
+        other.compiled_expression_ = NULL;
+    }
+    return *this;
 }
 
 
@@ -171,7 +204,8 @@ void xpath_expression::compile_expression ()
 {
     if (compile_ == type_compile)
     {
-        compiled_expression_ = xmlXPathCompile(reinterpret_cast<const xmlChar*>(expression_.c_str()));
+        compiled_expression_ = xmlXPathCompile(
+            reinterpret_cast<const xmlChar*>(expression_.c_str()));
         if (!compiled_expression_) {
             xmlErrorPtr     last_error(xmlGetLastError());
             std::string     message("xpath expression compilation error");
@@ -184,4 +218,3 @@ void xpath_expression::compile_expression ()
 }
 
 } // namespace xml
-

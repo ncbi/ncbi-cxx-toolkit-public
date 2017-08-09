@@ -70,8 +70,6 @@ public:
 
     /**
      * Create a new empty xml::node_set object.
-     *
-     * @author Sergey Satskiy, NCBI
     **/
     node_set ();
 
@@ -81,14 +79,11 @@ public:
      *
      * @param other
      *  Another xml::node_set object.
-     * @author Sergey Satskiy, NCBI
     **/
     node_set (const node_set& other);
 
     /**
      * Destroy the object and clean up the memory.
-     *
-     * @author Sergey Satskiy, NCBI
     **/
     virtual ~node_set ();
 
@@ -98,9 +93,21 @@ public:
      *
      * @param other
      *  Another xml::node_set object.
-     * @author Sergey Satskiy, NCBI
     **/
     node_set& operator= (const node_set& other);
+
+    /**
+     * Moving constructor.
+     * @param other The other node_set.
+    **/
+    node_set(node_set &&other);
+
+    /**
+     * Moving assignment.
+     * @param other The other node_set.
+    **/
+    node_set &  operator=(node_set &&other);
+
 
     // forward declaration
     class const_iterator;
@@ -120,16 +127,12 @@ public:
 
         /**
          * Create a new uninitialised xml::node_set::iterator object.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         iterator () : parent_(NULL), current_index_(-1) {}
 
         /**
          * Create a new xml::node_set::iterator object using another one as a
          * template.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         iterator (const iterator& other);
 
@@ -138,14 +141,11 @@ public:
          *
          * @param other
          *  Another xml::node_set::iterator object
-         * @author Sergey Satskiy, NCBI
         **/
         iterator& operator= (const iterator& other);
 
         /**
          * Destroy the object.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         ~iterator () {}
 
@@ -154,7 +154,6 @@ public:
          *
          * @exception
          *  throws exception if the iterator is invalid
-         * @author Sergey Satskiy, NCBI
         **/
         reference operator* () const;
 
@@ -163,7 +162,6 @@ public:
          *
          * @exception
          *  throws exception if the iterator is invalid
-         * @author Sergey Satskiy, NCBI
         **/
         pointer   operator-> () const;
 
@@ -172,7 +170,6 @@ public:
          *
          * @exception
          *  Throws exception if the iterator is not initialised or out of range
-         * @author Sergey Satskiy, NCBI
         **/
         iterator& operator++ ();
 
@@ -181,7 +178,6 @@ public:
          *
          * @exception
          *  Throws exception if the iterator is not initialised or out of range
-         * @author Sergey Satskiy, NCBI
         **/
         iterator  operator++ (int);
 
@@ -192,7 +188,6 @@ public:
          *  Another iterator
          * @return
          *  True if the iterators are equal
-         * @author Sergey Satskiy, NCBI
         **/
         bool operator== (const iterator& other) const
         { return ((parent_ == other.parent_) &&
@@ -205,7 +200,6 @@ public:
          *  Another iterator
          * @return
          *  True if the iterators are not equal
-         * @author Sergey Satskiy, NCBI
         **/
         bool operator!= (const iterator& other) const
         { return !(*this == other); }
@@ -239,24 +233,18 @@ public:
 
         /**
          * Create a new uninitialised xml::node_set::const_iterator object.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator () : parent_(NULL), current_index_(-1) {}
 
         /**
          * Create a new xml::node_set::const_iterator object using another
          * one as a template.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator (const const_iterator& other);
 
         /**
          * Create a new xml::node_set::const_iterator object using another
          * one as a template.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator (const iterator& other);
 
@@ -265,7 +253,6 @@ public:
          *
          * @param other
          *  Another xml::node_set::const_iterator object
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator& operator= (const const_iterator& other);
 
@@ -274,14 +261,11 @@ public:
          *
          * @param other
          *  Another const xml::node_set::iterator object
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator& operator= (const iterator& other);
 
         /**
          * Destroy the object.
-         *
-         * @author Sergey Satskiy, NCBI
         **/
         ~const_iterator () {}
 
@@ -290,7 +274,6 @@ public:
          *
          * @exception
          *  throws exception if the iterator is invalid
-         * @author Sergey Satskiy, NCBI
         **/
         reference operator* () const;
 
@@ -299,7 +282,6 @@ public:
          *
          * @exception
          *  throws exception if the iterator is invalid
-         * @author Sergey Satskiy, NCBI
         **/
         pointer   operator-> () const;
 
@@ -308,7 +290,6 @@ public:
          *
          * @exception
          *  Throws exception if the iterator is not initialised or out of range
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator& operator++ ();
 
@@ -317,7 +298,6 @@ public:
          *
          * @exception
          *  Throws exception if the iterator is not initialised or out of range
-         * @author Sergey Satskiy, NCBI
         **/
         const_iterator  operator++ (int);
 
@@ -328,7 +308,6 @@ public:
          *  Another iterator
          * @return
          *  True if the iterators are equal
-         * @author Sergey Satskiy, NCBI
         **/
         bool operator== (const const_iterator& other) const
         { return ((parent_ == other.parent_) &&
@@ -341,7 +320,6 @@ public:
          *  Another iterator
          * @return
          *  True if the iterators are not equal
-         * @author Sergey Satskiy, NCBI
         **/
         bool operator!= (const const_iterator& other) const
         { return !(*this == other); }
@@ -365,7 +343,6 @@ public:
      *
      * @return
      *  An iterator that points to the beginning of the xpath query result set
-     * @author Sergey Satskiy, NCBI
     **/
     iterator begin ();
 
@@ -375,7 +352,6 @@ public:
      *
      * @return
      *  A const_iterator that points to the beginning of the xpath query result set
-     * @author Sergey Satskiy, NCBI
     **/
     const_iterator begin () const;
 
@@ -386,7 +362,6 @@ public:
      * @return
      *  An iterator that points one past the last node in the xpath query
      *  result node set.
-     * @author Sergey Satskiy, NCBI
     **/
     iterator end ();
 
@@ -397,7 +372,6 @@ public:
      * @return
      *  A const_iterator that points one past the last node in the xpath query
      *  result node set.
-     * @author Sergey Satskiy, NCBI
     **/
     const_iterator end () const;
 
@@ -406,7 +380,6 @@ public:
      *
      * @return
      *  true if the xpath query result node set is empty
-     * @author Sergey Satskiy, NCBI
     **/
     bool empty () const;
 
@@ -415,7 +388,6 @@ public:
      *
      * @return
      *  The number of nodes in the xpath query result node set
-     * @author Sergey Satskiy, NCBI
     **/
     size_t size() const;
 

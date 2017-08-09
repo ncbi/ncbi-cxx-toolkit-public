@@ -75,10 +75,46 @@ document_proxy::~document_proxy ()
     if (owner_)
         xmlFreeDoc(static_cast<xmlDocPtr>(result_));
 
-    xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
-    if (ss)
-        if (ss->_private)
-            xslt::impl::destroy_stylesheet(ss);
+    if (style_sheet_ != NULL) {
+        xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
+        if (ss)
+            if (ss->_private)
+                xslt::impl::destroy_stylesheet(ss);
+    }
+}
+
+document_proxy::document_proxy (document_proxy &&  other) :
+    owner_(other.owner_),
+    result_(other.result_),
+    style_sheet_(other.style_sheet_)
+{
+    other.owner_ = false;
+    other.result_ = NULL;
+    other.style_sheet_ = NULL;
+}
+
+document_proxy &  document_proxy::operator= (document_proxy &&  other)
+{
+    if (this != &other) {
+        if (owner_)
+            xmlFreeDoc(static_cast<xmlDocPtr>(result_));
+
+        if (style_sheet_ != NULL) {
+            xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
+            if (ss)
+                if (ss->_private)
+                    xslt::impl::destroy_stylesheet(ss);
+        }
+
+        owner_ = other.owner_;
+        result_ = other.result_;
+        style_sheet_ = other.style_sheet_;
+
+        other.owner_ = false;
+        other.result_ = NULL;
+        other.style_sheet_ = NULL;
+    }
+    return *this;
 }
 
 /* xml::document can grab the ownership */

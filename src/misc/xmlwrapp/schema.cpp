@@ -187,9 +187,33 @@ void schema::construct (const char* file_or_data, size_type size,
 }
 
 schema::~schema() {
-    if (pimpl_->schema_)
-        xmlSchemaFree(pimpl_->schema_);
-    delete pimpl_;
+    if (pimpl_ != NULL) {
+        if (pimpl_->schema_ != NULL) {
+            xmlSchemaFree(pimpl_->schema_);
+            delete pimpl_;
+        }
+    }
+}
+
+schema::schema(schema && other) :
+    pimpl_(other.pimpl_)
+{
+    other.pimpl_ = NULL;
+}
+
+schema & schema::operator=(schema && other)
+{
+    if (this != &other) {
+        if (pimpl_ != NULL) {
+            if (pimpl_->schema_ != NULL) {
+                xmlSchemaFree(pimpl_->schema_);
+                delete pimpl_;
+            }
+        }
+        pimpl_ = other.pimpl_;
+        other.pimpl_ = NULL;
+    }
+    return *this;
 }
 
 
@@ -234,4 +258,3 @@ namespace {
         register_error_helper(error_message::type_warning, v, temporary);
     }
 }
-

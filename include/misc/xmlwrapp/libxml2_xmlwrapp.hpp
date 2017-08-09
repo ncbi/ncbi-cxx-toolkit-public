@@ -182,6 +182,18 @@ class libxml2_document : public document
                                              type_warnings_not_errors);
 
         /**
+         * Moving constructor.
+         * @param other The other libxml2 document.
+        **/
+        libxml2_document (libxml2_document && other);
+
+        /**
+         * Moving assignment.
+         * @param other The other libxml2 document.
+        **/
+        libxml2_document &  operator= (libxml2_document && other);
+
+        /**
          * Provides a raw libxml2 document.
          *
          * @return

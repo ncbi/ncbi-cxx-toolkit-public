@@ -110,6 +110,20 @@ libxml2_document::libxml2_document(std::istream &    stream,
 }
 
 
+libxml2_document::libxml2_document(libxml2_document && other) :
+    document(std::move(other))
+{}
+
+
+libxml2_document &
+libxml2_document::operator=(libxml2_document && other)
+{
+    if (this != &other) {
+        document::operator=(std::move(other));
+    }
+    return *this;
+}
+
 xmlDoc *  libxml2_document::get_raw_doc(void)
 {
     return static_cast<xmlDoc *>(get_doc_data());

@@ -69,13 +69,11 @@ class extension_element
 public:
     /**
      * Create a new extension element.
-     * @author Sergey Satskiy, NCBI
     **/
     extension_element ();
 
     /**
      * Destroy extension element object and clean the memory up.
-     * @author Sergey Satskiy, NCBI
     **/
     virtual ~extension_element ();
 
@@ -84,7 +82,6 @@ public:
      *
      * @param other
      *  Another xslt::extension_element object.
-     * @author Sergey satskiy, NCBI
     **/
     extension_element (const extension_element &  other);
 
@@ -93,9 +90,20 @@ public:
      *
      * @param other
      *  Another xslt::extension_element object.
-     * @author Sergey Satskiy, NCBI
     **/
     extension_element &  operator= (const extension_element &  other);
+
+    /**
+     * Moving constructor.
+     * @param other The other extension element.
+    **/
+    extension_element (extension_element &&  other);
+
+    /**
+     * Moving assignment.
+     * @param other The other extension element.
+    **/
+    extension_element &  operator= (extension_element &&  other);
 
 protected:
     /**
@@ -123,7 +131,6 @@ protected:
      *
      * @param error
      *  Error message to be reported
-     * @author Sergey Satskiy, NCBI
     **/
     void report_error (const char *  error);
 
@@ -136,7 +143,6 @@ protected:
      *  XPath expression to evaluate
      * @param node
      *  Node for which the expression is evaluated
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object evaluate (const char *       xpath_expression,
                            const xml::node &  node);
@@ -147,7 +153,6 @@ protected:
      * @note It can be called only within execute(...) member.
      * @param xpath_expression
      *  XPath expression to evaluate
-     * @author Sergey Satskiy, NCBI
     **/
     xpath_object evaluate (const char *  xpath_expression);
 

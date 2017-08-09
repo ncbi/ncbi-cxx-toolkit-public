@@ -58,6 +58,9 @@ class document_proxy
 public:
     ~document_proxy ();
 
+    document_proxy (document_proxy &&  other);
+    document_proxy &  operator= (document_proxy &&  other);
+
 // Some compilers (GCC 4.4.2 and up) are clever enough to avoid using the
 // copy constructor, so for those compilers it is private.
 // MSVC behaves different depending on a case. E.g. in case of the '?'
