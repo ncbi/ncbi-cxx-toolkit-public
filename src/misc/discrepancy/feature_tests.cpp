@@ -629,32 +629,45 @@ DISCREPANCY_SUMMARIZE(PARTIAL_PROBLEMS)
 }
 
 
-static bool ExtendToGapsOrEnds(const CSeq_feat& sf, CScope& scope)
+static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
 {
     bool rval = false;
 
-    CBioseq_Handle bsh = scope.GetBioseqHandle(sf.GetLocation());
+    CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
     if (!bsh) {
         return rval;
     }
     CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
 
     CRef<CSeq_feat> new_feat(new CSeq_feat());
-    new_feat->Assign(sf);
+    new_feat->Assign(cds);
 
-    if (sf.GetLocation().IsPartialStart(eExtreme_Positional)) {
-        TSeqPos start = sf.GetLocation().GetStart(eExtreme_Positional);
+    if (cds.GetLocation().IsPartialStart(eExtreme_Positional)) {
+        TSeqPos start = cds.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &scope, extend_len) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
+                if (new_feat->GetData().GetCdregion().CanGetFrame()) {
+                    CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
+                    if (frame != CCdregion::eFrame_not_set) {
+                        //  eFrame_not_set = 0,  ///< not set, code uses one
+                        //  eFrame_one     = 1,
+                        //  eFrame_two     = 2,
+                        //  eFrame_three   = 3  ///< reading frame
+                        unsigned fr = (unsigned)frame - 1;
+                        fr = (fr + 3 - (extend_len % 3)) % 3;
+                        frame = (CCdregion::EFrame)(fr + 1);
+                        new_feat->SetData().SetCdregion().SetFrame() = frame;
+                    }
+                }
                 rval = true;
             }
         }
     }
 
-    if (sf.GetLocation().IsPartialStop(eExtreme_Positional)) {
-        TSeqPos stop = sf.GetLocation().GetStop(eExtreme_Positional);
+    if (cds.GetLocation().IsPartialStop(eExtreme_Positional)) {
+        TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Positional);
         if (stop > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &scope, extend_len) &&
@@ -665,7 +678,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& sf, CScope& scope)
     }
 
     if (rval) {
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(sf));
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
         feh.Replace(*new_feat);
         rval = true;
     }
@@ -679,8 +692,8 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
     unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         if ((*it)->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            if (sf && ExtendToGapsOrEnds(*sf, scope)) {
+            const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (cds && ExtendToGapsOrEnds(*cds, scope)) {
                 n++;
                 dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
             }
