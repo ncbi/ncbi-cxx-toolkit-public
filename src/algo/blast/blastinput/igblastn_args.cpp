@@ -52,14 +52,6 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    /*
-    static const string kDefaultTask = "blastn";
-    SetTask(kDefaultTask);
-    set<string> tasks
-        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
-    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
-    m_Args.push_back(arg); */
-
     m_IgBlastArgs.Reset(new CIgBlastArgs(false));
     arg.Reset(m_IgBlastArgs);
     m_Args.push_back(arg);    
@@ -79,13 +71,6 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(new CNuclArgs);
     m_Args.push_back(arg);
 
-    /*
-    arg.Reset(new CDiscontiguousMegablastArgs);
-    m_Args.push_back(arg);
-
-    arg.Reset(new CFilteringArgs(kQueryIsProtein));
-    m_Args.push_back(arg); */
-
     arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
 
@@ -99,9 +84,10 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(new COffDiagonalRangeArg);
     m_Args.push_back(arg);
 
-    /*
-    arg.Reset(new CMbIndexArgs);
-    m_Args.push_back(arg); */
+    // Remove the search strategy as it's not needed in IgBLAST
+    TBlastCmdLineArgs::iterator new_end = remove(m_Args.begin(), m_Args.end(), m_SearchStrategyArgs);
+    m_Args.erase(new_end, m_Args.end());
+    m_SearchStrategyArgs.Reset(new CSearchStrategyArgs);
 
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);

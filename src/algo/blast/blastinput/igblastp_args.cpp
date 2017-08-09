@@ -54,14 +54,6 @@ CIgBlastpAppArgs::CIgBlastpAppArgs()
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
-    /*
-    static const string kDefaultTask = "blastp";
-    SetTask(kDefaultTask);
-    set<string> tasks
-        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));
-    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
-    m_Args.push_back(arg); */
-
     m_IgBlastArgs.Reset(new CIgBlastArgs(true));
     arg.Reset(m_IgBlastArgs);
     m_Args.push_back(arg);    
@@ -77,6 +69,11 @@ CIgBlastpAppArgs::CIgBlastpAppArgs()
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true, false, true));
     m_Args.push_back(arg);
+
+    // Remove the search strategy as it's not needed in IgBLAST
+    TBlastCmdLineArgs::iterator new_end = remove(m_Args.begin(), m_Args.end(), m_SearchStrategyArgs);
+    m_Args.erase(new_end, m_Args.end());
+    m_SearchStrategyArgs.Reset(new CSearchStrategyArgs);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
