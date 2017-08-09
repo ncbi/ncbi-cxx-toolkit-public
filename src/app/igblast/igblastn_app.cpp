@@ -548,12 +548,9 @@ int CIgBlastnApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
-        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
-           	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
-        }
-        else {
-           	m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
-        }
+       
+        m_opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        
         //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
         /*** Get the query sequence(s) ***/
