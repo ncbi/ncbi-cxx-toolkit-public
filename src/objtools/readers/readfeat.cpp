@@ -1366,9 +1366,19 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const stri
         string::size_type pos_end = x_MatchingParenPos( str, 0 );
         if (pos_end != string::npos) {
             string pos_str = str.substr (5, pos_end - 5);
-            string::size_type aa_start = NStr::FindNoCase (pos_str, "aa:");
+            string::size_type aa_start = NStr::FindNoCase(pos_str, "aa:");
             if (aa_start != string::npos) {
-                string abbrev = pos_str.substr (aa_start + 3);
+                auto seq_start = NStr::FindNoCase(pos_str, ",seq:");
+                if (seq_start != string::npos &&
+                    seq_start < aa_start+3) {
+                    return false;
+                }
+                
+                size_t aa_length = (seq_start == NPOS) ?
+                                pos_str.size() - (aa_start+3) :
+                                seq_start - (aa_start+3);   
+
+                string abbrev = pos_str.substr (aa_start + 3, aa_length);
                 TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
                 if (t_iter == sm_TrnaKeys.end ()) {
                     // unable to parse
