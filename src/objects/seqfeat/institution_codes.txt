@@ -181,6 +181,7 @@ AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection
 AMNH:FM	s	American Museum of Natural History, Fossil Mammal Collection
 AMNH:Herp	s	American Museum of Natural History, Herpetology collection
 AMNH:ORN	s	American Museum of Natural History, Ornithology Collection
+AMNH:R	s	American Museum of Natural History, Reptile Collection
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division		
 AMNZ	s	Auckland Institute and Museum	AIM
 AMO	s	Herbario AMO		
@@ -2717,7 +2718,7 @@ ICGC	s	Istituto Calasanzio
 ICHUM	s	Invertebrate Collection of the Hokkaido University Museum		
 ICIS	s	Idaho Museum of Natural History		
 ICM	s	Instituto de Ciencias del Mar	ICMD
-ICMP	c	International Collection of Microorganisms from Plants		
+ICMP	c	International Collection of Microorganisms from Plants	PDDCC 
 ICN<BRA>	s	Universidade Federal do Rio Grande do Sul, Departamento de Botanica		
 ICN<COL>	s	Instituto de Ciencias Naturales, Museo de Historia Natural		
 ICP	s	Islamia College, University of Peshawar, Botany Department		
@@ -3191,6 +3192,7 @@ KASH	s	University of Kashmir
 KASSEL	s	Naturkundemuseum im Ottoneum		
 KATH	s	Department of Plant Resources		
 KATO	s	Karadeniz Technical University, Department of Forest Botany		
+KATO:Fungi	s	Karadeniz Technical University, Department of Forest Botany, Fungi collection
 KAUM	s	Kagoshima University Museum		
 KAUM:I	s	Kagoshima University Museum, Ichthyology Collection
 KAW	s	Kawanda Research Station, Department of Agriculture		
@@ -7005,8 +7007,8 @@ UTC	s	Utah State University, Biology Department
 UTCI	s	University of Tennessee at Chattanooga Insect Collection		
 UTD	s	University of Texas, Plant Resources Center		
 UTE	s	University of Tartu		
-UTEP	s	University of Texas at El Paso, Centennial Museum		
-UTEP:Herp	s	University of Texas at El Paso, Centennial Museum, Herpetology Collection
+UTEP	s	University of Texas at El Paso Biodiversity Collections		
+UTEP:Herp	s	University of Texas at El Paso Biodiversity Collections, Herpetology Collection
 UTEX	c	The Culture Collection of Algae at the University of Texas Austin		
 UTG	s	University of Tuebingen		
 UTGD	s	Geology Department, The University of Tasmania		
