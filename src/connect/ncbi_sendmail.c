@@ -484,7 +484,7 @@ extern const char* CORE_SendMailEx(const char*          to,
 
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
     if (info->magic != MX_SENDMAIL_MAGIC)
-        SENDMAIL_RETURN(6, "SSendMailInfo inited improperly: invalid magic");
+        SENDMAIL_RETURN(6, "SSendMailInfo inited improperly: Invalid magic");
 
     if ((!to         ||  !*to)        &&
         (!info->cc   ||  !*info->cc)  &&
