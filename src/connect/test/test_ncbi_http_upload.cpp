@@ -199,73 +199,92 @@ int CTestHttpUploadApp::Run(void)
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->version = 1;  /*HTTP/1.1*/
 
-    CConn_HttpStream http(kHttpUrl,
-                          net_info,
-                          user_header,
-                          x_ParseHttpHeader, 0, 0, 0,
-                          fHTTP_NoAutoRetry | fHTTP_WriteThru);
+    size_t s;
+    unsigned int ntry, max_try = net_info->max_try;
+    if (!max_try)
+        max_try = 1;
+    net_info->max_try = 1;
 
-    char* buf = new char[MAX_REC_SIZE];
-    size_t m = 0;
-    for (size_t i = 0, k = 0;  i < n;  i += k) {
-        k = rand() % (MAX_REC_SIZE << 1);
-        if (k == 0)
-            k = MAX_REC_SIZE;
-        if (k > n - i)
-            k = n - i;
-        if (k > MAX_REC_SIZE)
-            k = MAX_REC_SIZE;
-        for (size_t j = 0;  j < k;  ++j) 
-            buf[j] = (unsigned char) rand() & 0xFF;
-        // cout << "Record size: " << NStr::NumericToString(k) << endl;
-        if (!http.write(buf, k)) {
-            ERR_POST(Fatal << "Write error, offset "
-                     + NStr::NumericToString(i) + ", size "
-                     + NStr::NumericToString(k) + ", iteration "
-                     + NStr::NumericToString(m + 1));
+    for (ntry = 1;  ntry <= max_try;  ++ntry) {
+        CConn_HttpStream http(kHttpUrl, net_info, user_header,
+                              x_ParseHttpHeader, 0, 0, 0, fHTTP_WriteThru);
+
+        char* buf = new char[MAX_REC_SIZE];
+        size_t m = 0;
+        for (size_t i = 0, k = 0;  i < n;  i += k) {
+            k = rand() % (MAX_REC_SIZE << 1);
+            if (k == 0)
+                k = MAX_REC_SIZE;
+            if (k > n - i)
+                k = n - i;
+            if (k > MAX_REC_SIZE)
+                k = MAX_REC_SIZE;
+            for (size_t j = 0;  j < k;  ++j) 
+                buf[j] = (unsigned char) rand() & 0xFF;
+            // cout << "Record size: " << NStr::NumericToString(k) << endl;
+            if (!http.write(buf, k)) {
+                ERR_POST(Fatal << "Write error, offset "
+                         + NStr::NumericToString(i) + ", size "
+                         + NStr::NumericToString(k) + ", iteration "
+                         + NStr::NumericToString(m + 1));
+            }
+            ++m;
         }
-        ++m;
-    }
-    delete[] buf;
+        delete[] buf;
 
-    ERR_POST(Info << file + " (size " + NStr::NumericToString(n) + ")"
-             " sent in " + NStr::NumericToString(m) + " chunk(s)");
+        ERR_POST(Info << file + " (size " + NStr::NumericToString(n) + ")"
+                 " sent in " + NStr::NumericToString(m) + " chunk(s)");
 
-    string sub;
-    if (!NcbiStreamToString(&sub, http))
-        ERR_POST(Fatal << "Submission error");
-    http.Close();
+        string sub;
+        if (!NcbiStreamToString(&sub, http)) {
+            ERR_POST(Error << "Submission error");
+            continue;
+        }
+        http.Close();
 
-    ERR_POST(Info << "Submission info:\n" << sub);
+        ERR_POST(Info << "Submission info:\n" << sub);
 
-    size_t s = NStr::Find(sub, "\"size\":");
-    if (s == NPOS)
-        ERR_POST(Fatal << "No file size info found");
-    CTempString size(NStr::GetField_Unsafe(&sub[s + 7], 0, ','));
-    if (size.empty()
-        ||  !(s = NStr::StringToUInt8(size, NStr::fConvErr_NoThrow))) {
-        ERR_POST(Fatal << "File size unparsable");
-    }
-    if (n != s) {
+        if ((s = NStr::Find(sub, "\"size\":")) == NPOS) {
+            ERR_POST(Error << "No file size info found");
+            continue;
+        }
+
+        CTempString size(NStr::GetField_Unsafe(&sub[s + 7], 0, ','));
+        if (size.empty()
+            ||  !(s = NStr::StringToUInt8(size, NStr::fConvErr_NoThrow))) {
+            ERR_POST(Fatal << "File size unparsable");
+        }
+        if (n == s)
+            break;
         ERR_POST(Fatal << "File size mismatch: "
                  + NStr::NumericToString(n) + " uploaded != "
                  + NStr::NumericToString(s) + " reported");
     }
+    if (ntry >= max_try)
+        ERR_POST(Fatal << "Failed to upload after " << ntry << " attempt(s)");
+    ERR_POST(Info << "Upload complete (attempt " << ntry << ')');
 
-    s = 0;
-    CWStream null(new CNullCountingWriter(s), 0, 0, CRWStreambuf::fOwnWriter);
-    CConn_HttpStream down(kDownUrl + file + "/contents", net_info);
-    ConnNetInfo_Destroy(net_info);
+    for (ntry = 1;  ntry <= max_try;  ++ntry) {
+        s = 0;
+        CWStream null(new CNullCountingWriter(s), 0, 0,
+                      CRWStreambuf::fOwnWriter);
+        CConn_HttpStream down(kDownUrl + file + "/contents", net_info);
 
-    if (!NcbiStreamCopy(null, down))
-        ERR_POST(Fatal << "Read error from server");
-
-    if (n != s) {
+        if (!NcbiStreamCopy(null, down)) {
+            ERR_POST(Error << "Read error from server");
+            continue;
+        }
+        if (n == s)
+            break;
         ERR_POST(Fatal << "File size mismatch: "
                  + NStr::NumericToString(n) + " uploaded != "
                  + NStr::NumericToString(s) + " received");
     }
+    if (ntry >= max_try)
+        ERR_POST(Fatal << "Failed to verify after " << ntry << " attemp(s)");
+    ERR_POST(Info << "Upload verified (attempt " << ntry << ')');
 
+    ConnNetInfo_Destroy(net_info);
     ERR_POST(Info << "TEST COMPLETED SUCCESSFULLY");
     return 0/*okay*/;
 }
