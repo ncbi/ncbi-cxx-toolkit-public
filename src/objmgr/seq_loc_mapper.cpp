@@ -212,6 +212,30 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align&       map_align,
 }
 
 
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_id&          from_id,
+                                 const CSeq_id&          to_id,
+                                 const CSeq_align&       map_align,
+                                 CScope*                 scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+      m_Scope(scope)
+{
+    x_InitializeAlign(map_align, to_id, &from_id);
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                  from_row,
+                                 size_t                  to_row,
+                                 const CSeq_align&       map_align,
+                                 CScope*                 scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
+      m_Scope(scope)
+{
+    x_InitializeAlign(map_align, to_row, from_row);
+}
+
+
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
                                  CSeq_loc_Mapper_Options options)

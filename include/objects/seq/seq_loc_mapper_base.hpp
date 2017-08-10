@@ -420,6 +420,13 @@ public:
     CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
                          const CSeq_id&          to_id,
                          CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// Mapping through an alignment using specific source and target ids.
+    /// If the alignment is not one of dense-seg, dense-diag or packed-seg, the source
+    /// id is ignored.
+    CSeq_loc_Mapper_Base(const CSeq_id&          from_id,
+                         const CSeq_id&          to_id,
+                         const CSeq_align&       map_align,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
     /// @deprecated Use the version with CSeq_loc_Mapper_Options instead.
     NCBI_DEPRECATED
     CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
@@ -432,6 +439,13 @@ public:
     /// direction.
     CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
                          size_t                  to_row,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// Mapping through an alignment using specific source and target row numbers.
+    /// If the alignment is not one of dense-seg, dense-diag or packed-seg, the source
+    /// row is ignored.
+    CSeq_loc_Mapper_Base(size_t                  from_row,
+                         size_t                  to_row,
+                         const CSeq_align&       map_align,
                          CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
     /// @deprecated Use the version with CSeq_loc_Mapper_Options instead.
     NCBI_DEPRECATED
@@ -605,13 +619,16 @@ protected:
     // row containing the id and sets it as mapping target. All other
     // rows become mapping source.
     void x_InitializeAlign(const CSeq_align& map_align,
-                           const CSeq_id&    to_id);
+                           const CSeq_id&    to_id,
+                           const CSeq_id*    from_id = nullptr);
     // Recursive version of the above.
     void x_InitializeAlign(const CSeq_align& map_align,
-                           const TSynonyms&  to_ids);
+                           const TSynonyms&  to_ids,
+                           const TSynonyms*  from_ids = nullptr);
     // Initialize the mapper from an alignment, map to the specified row.
     void x_InitializeAlign(const CSeq_align& map_align,
-                           size_t            to_row);
+                           size_t            to_row,
+                           size_t            from_row = size_t(-1));
 
     // Create dummy mapping from the whole destination location to itself.
     // This will prevent truncation of ranges already on the target.
@@ -750,10 +767,10 @@ private:
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
 
     // Initialize the mapper from different alignment types.
-    void x_InitAlign(const CDense_diag& diag, size_t to_row);
-    void x_InitAlign(const CDense_seg& denseg, size_t to_row);
+    void x_InitAlign(const CDense_diag& diag, size_t to_row, size_t from_row);
+    void x_InitAlign(const CDense_seg& denseg, size_t to_row, size_t from_row);
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
-    void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
+    void x_InitAlign(const CPacked_seg& pseg, size_t to_row, size_t from_row);
     void x_InitSpliced(const CSpliced_seg& spliced,
                        const TSynonyms&    to_ids);
     void x_InitSpliced(const CSpliced_seg& spliced, ESplicedRow to_row);

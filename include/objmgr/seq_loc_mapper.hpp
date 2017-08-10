@@ -121,6 +121,22 @@ public:
                     size_t                  to_row,
                     CScope*                 scope = 0,
                     CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// Mapping through an alignment using specific source and target ids.
+    /// If the alignment is not one of dense-seg, dense-diag or packed-seg, the source
+    /// id is ignored.
+    CSeq_loc_Mapper(const CSeq_id&          from_id,
+                    const CSeq_id&          to_id,
+                    const CSeq_align&       map_align,
+                    CScope*                 scope = 0,
+                    CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// Mapping through an alignment using specific source and target row numbers.
+    /// If the alignment is not one of dense-seg, dense-diag or packed-seg, the source
+    /// row is ignored.
+    CSeq_loc_Mapper(size_t                  from_row,
+                    size_t                  to_row,
+                    const CSeq_align&       map_align,
+                    CScope*                 scope = 0,
+                    CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping between segments and the top level sequence.
     /// @param target_seq
