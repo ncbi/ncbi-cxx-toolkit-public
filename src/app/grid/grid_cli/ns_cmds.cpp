@@ -77,7 +77,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         } else if (!IsOptionSet(eNetSchedule)) {
             NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION "' option is required.");
 
-        } else if (!IsOptionSet(eQueue) && require_queue) {
+        } else if (!IsOptionSet(eQueue) && !IsOptionSet(eTargetQueueArg) && require_queue) {
             NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION "' option is required.");
 
         }
