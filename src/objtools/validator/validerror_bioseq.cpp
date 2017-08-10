@@ -1673,7 +1673,7 @@ void CValidError_bioseq::x_ValidateSourceFeatures(
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating source features. EXCEPTION: ") +
+                string("Exception while validating source features. EXCEPTION: ") +
                 e.what(), *(bsh.GetCompleteBioseq()));
         }
     }
@@ -1762,7 +1762,7 @@ void CValidError_bioseq::x_ValidatePubFeatures(
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating pub features. EXCEPTION: ") +
+                string("Exception while validating pub features. EXCEPTION: ") +
                 e.what(), *(bsh.GetCompleteBioseq()));
         }
     }
@@ -4816,7 +4816,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating multi-interval genes. EXCEPTION: ") +
+                string("Exception while validating multi-interval genes. EXCEPTION: ") +
                 e.what(), seq);
         }
     }
@@ -5039,7 +5039,7 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
         }
     } catch ( const exception& e ) {
         PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating bioseq MultipleGeneOverlap. EXCEPTION: ") +
+            string("Exception while validating bioseq MultipleGeneOverlap. EXCEPTION: ") +
             e.what(), *(bsh.GetCompleteBioseq()));
     }
 }
@@ -6412,7 +6412,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating Seqfeat Context. EXCEPTION: ") +
+                string("Exception while validating Seqfeat Context. EXCEPTION: ") +
                 e.what(), seq);
         }
     }
@@ -8162,7 +8162,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating duplicate/overlapping features. EXCEPTION: ") +     
+                string("Exception while validating duplicate/overlapping features. EXCEPTION: ") +     
                 e.what(), bioseq);
         }
     }
@@ -9827,7 +9827,7 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating colliding genes. EXCEPTION: ") +
+                string("Exception while validating colliding genes. EXCEPTION: ") +
                 e.what(), seq);
         }
     }

@@ -8734,9 +8734,11 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                                     ++pos;
                                 }
                             } catch (CException& ex) {
+                                /*
                                 PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                                    string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
+                                    string("Exception while checking for intervals in gaps. EXCEPTION: ") +
                                     ex.what(), feat);
+                                */
                             }
                         }
                         if (first) {
@@ -8790,7 +8792,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     }            
                 } catch (CException &e) {
                     PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                        string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
+                        string("Exception while checking for intervals in gaps. EXCEPTION: ") +
                         e.what(), feat);
                 } catch (std::exception ) {
                 }
