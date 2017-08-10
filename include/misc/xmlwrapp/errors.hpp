@@ -190,9 +190,13 @@ public:
 
     error_messages() = default;
     error_messages (const error_messages &other) = default;
-    error_messages (error_messages &&other) = default;
     error_messages & operator=(const error_messages &other) = default;
+
+    #if !(defined(_MSC_VER) && _MSC_VER < 1900)
+    // Visual studio 2013 does not support this
+    error_messages (error_messages &&other) = default;
     error_messages & operator=(error_messages &&other) = default;
+    #endif
 
 private:
     error_messages_type error_messages_;
@@ -238,8 +242,12 @@ public:
 
     parser_exception (const parser_exception &other) = default;
     parser_exception & operator=(const parser_exception &other) = default;
+
+    #if !(defined(_MSC_VER) && _MSC_VER < 1900)
+    // Visual studio 2013 does not support this
     parser_exception (parser_exception &&other) = default;
     parser_exception & operator=(parser_exception &&other) = default;
+    #endif
 
 private:
     error_messages          messages_;
