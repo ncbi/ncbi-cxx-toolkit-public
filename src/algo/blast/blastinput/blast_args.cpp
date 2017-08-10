@@ -1530,6 +1530,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     const static int df_num_align[3] = {3,3,3};
     int num_genes = (m_IsProtein) ? 1 : 3;
 
+
     for (int gene=0; gene<num_genes; ++gene) {
         // Subject sequence input
         /* TODO disabled for now
@@ -2890,7 +2891,16 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgQuery, "input_file", 
                      "Input file name",
                      CArgDescriptions::eInputFile, kDfltArgQuery);
-
+    // for now it's either -query or -sra
+    if( m_SRAaccessionEnabled ) {
+        arg_desc.AddOptionalKey(kArgSraAccession, "accession",
+                            "Comma-separated SRA accessions",
+                            CArgDescriptions::eString);
+	arg_desc.SetDependency(kArgSraAccession,
+			CArgDescriptions::eExcludes,
+			kArgQuery);
+    } 
+	
     arg_desc.SetCurrentGroup("General search options");
 
     // report output file

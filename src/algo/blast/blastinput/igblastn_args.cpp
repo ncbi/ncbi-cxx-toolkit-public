@@ -62,6 +62,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
+    m_StdCmdLineArgs->SetSRAaccessionEnabled(true); 
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 

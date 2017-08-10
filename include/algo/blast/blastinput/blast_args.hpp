@@ -111,7 +111,8 @@ class NCBI_BLASTINPUT_EXPORT CStdCmdLineArgs : public IBlastCmdLineArgs
 public:
     /** Default constructor */
     CStdCmdLineArgs() : m_InputStream(0), m_OutputStream(0),
-                        m_GzipEnabled(false) {};
+                        m_GzipEnabled(false),
+    			m_SRAaccessionEnabled(false){};
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -131,6 +132,11 @@ public:
      */
     void SetGzipEnabled(bool g) {m_GzipEnabled = g;}
 
+    /** enables sra accession flag 
+     * @param g If true "-sra" will be added (not compatible with "-query")
+     */
+    void SetSRAaccessionEnabled(bool g) {m_SRAaccessionEnabled = g;}
+
 private:
     CNcbiIstream* m_InputStream;    ///< Application's input stream
     CNcbiOstream* m_OutputStream;   ///< Application's output stream
@@ -144,6 +150,10 @@ private:
     /// If true input file will be decompressed with gzip if filename ends
     /// with ".gz"
     bool m_GzipEnabled;
+
+    /// If true, option to specify SRA runs will be presented  as possible
+    /// query input
+    bool m_SRAaccessionEnabled;
 };
 
 /** Argument class to populate an application's name and description */
