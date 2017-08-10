@@ -644,11 +644,12 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
 
     if (cds.GetLocation().IsPartialStart(eExtreme_Positional)) {
         TSeqPos start = cds.GetLocation().GetStart(eExtreme_Positional);
+        //if (cds.GetLocation().GetStrand() == eNa_strand_minus)
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &scope, extend_len) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
-                if (new_feat->GetData().GetCdregion().CanGetFrame()) {
+                if (new_feat->GetData().GetCdregion().CanGetFrame() && cds.GetLocation().GetStrand() != eNa_strand_minus) {
                     CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
                     if (frame != CCdregion::eFrame_not_set) {
                         //  eFrame_not_set = 0,  ///< not set, code uses one
@@ -672,6 +673,15 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &scope, extend_len) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
+                if (new_feat->GetData().GetCdregion().CanGetFrame() && cds.GetLocation().GetStrand() == eNa_strand_minus) {
+                    CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
+                    if (frame != CCdregion::eFrame_not_set) {
+                        unsigned fr = (unsigned)frame - 1;
+                        fr = (fr + 3 - (extend_len % 3)) % 3;
+                        frame = (CCdregion::EFrame)(fr + 1);
+                        new_feat->SetData().SetCdregion().SetFrame() = frame;
+                    }
+                }
                 rval = true;
             }
         }
