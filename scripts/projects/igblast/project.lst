@@ -12,6 +12,8 @@ algo/blast/blastinput
 algo/blast/composition_adjustment
 algo/blast/dbindex
 algo/blast/format
+algo/blast/proteinkmer
+-algo/blast/proteinkmer/demo
 algo/blast/igblast
 algo/dustmask$
 algo/winmask$
