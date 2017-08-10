@@ -41,15 +41,7 @@ def main():
     blast_version, installdir = args
     VERBOSE = options.VERBOSE
     
-    apps = [ "igblastn.exe", "igblastp.exe",
-             "libgcc_s_seh-1.dll",
-             "libgmp-10.dll",
-             "libgnutls-30.dll",
-             "libhogweed-4-2.dll",
-             "libnettle-6-2.dll",
-             "libp11-kit-0.dll",
-             "msvcp120.dll",
-             "msvcr120.dll"
+    apps = [ "igblastn.exe", "igblastp.exe"
             ]
     
     cwd = os.getcwd()
