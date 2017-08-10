@@ -956,10 +956,11 @@ CSDB_ConnectionParam::ComposeUrl(TComposeUrlFlags flags) const
              ||  (m_Url.GetPassword().empty()  &&  Get(ePasswordFile).empty())
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
     {
+        TComposeUrlFlags fl = (flags & ~fThrowIfIncomplete) | fHidePassword; 
         NCBI_THROW(CSDB_Exception, eURLFormat,
                    "Connection parameters miss at least one essential part"
                    " (host, user, password, or database [as \"path\"]): "
-                   + m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
+                   + ComposeUrl(fl));
     }
 
     if ((flags & fHidePassword) != 0  &&  !m_Url.GetPassword().empty()) {
