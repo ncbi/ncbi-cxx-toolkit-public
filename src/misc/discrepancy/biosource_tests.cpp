@@ -185,7 +185,6 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have st
     bool found_strain = false;
     bool found_host = false;
     bool found_country = false;
-    bool found_isolation_source = false;
     bool found_collection_date = false;
 
     if (obj.IsSetSubtype()) {
@@ -194,9 +193,6 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have st
                 switch ((*it)->GetSubtype()) {
                     case CSubSource::eSubtype_country:
                         found_country = true;
-                        break;
-                    case CSubSource::eSubtype_isolation_source:
-                        found_isolation_source = true;
                         break;
                     case CSubSource::eSubtype_collection_date:
                         found_collection_date = true;
@@ -227,9 +223,6 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have st
     }
     if (!found_country) {
         m_Objs["[n] Influenza biosource[s] [does] not have country"].Add(*context.NewFeatOrDescObj());
-    }
-    if (!found_isolation_source) {
-        m_Objs["[n] Influenza biosource[s] [does] not have isolation-source"].Add(*context.NewFeatOrDescObj());
     }
     if (!found_collection_date) {
         m_Objs["[n] Influenza biosource[s] [does] not have collection-date"].Add(*context.NewFeatOrDescObj());
