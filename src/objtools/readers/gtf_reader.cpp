@@ -181,6 +181,7 @@ string s_FeatureKey(
     const CGff2Record& gff )
 //  ----------------------------------------------------------------------------
 {
+    static unsigned int tidCounter(1);
     string strGeneId = s_GeneKey( gff );
     if ( gff.Type() == "gene" ) {
         return strGeneId;
@@ -188,8 +189,7 @@ string s_FeatureKey(
 
     string strTranscriptId;
     if ( ! gff.GetAttribute( "transcript_id", strTranscriptId ) ) {
-        cerr << "Unexpected: GTF feature without a transcript_id." << endl;
-        strTranscriptId = "transcript_id";
+        strTranscriptId = "t"+NStr::IntToString(tidCounter++);
     }
 
     return strGeneId + "|" + strTranscriptId;
@@ -720,7 +720,6 @@ bool CGtfReader::xFeatureSetQualifiersRna(
         "locus_tag"
     };
 
-    CRef< CGb_qual > pQual(0);
     const CGff2Record::TAttributes& attrs = record.Attributes();
     CGff2Record::TAttrCit it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
@@ -734,10 +733,7 @@ bool CGtfReader::xFeatureSetQualifiersRna(
         }
 
         // turn everything else into a qualifier
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(it->first);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
+        pFeature->AddQualifier(it->first, it->second);
     } 
     return true;
 }

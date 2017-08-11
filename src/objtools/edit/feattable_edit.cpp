@@ -48,6 +48,8 @@
 #include <objtools/edit/loc_edit.hpp>
 #include <objtools/edit/feattable_edit.hpp>
 
+#include <sstream>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
@@ -319,18 +321,11 @@ void CFeatTableEdit::EliminateBadQualifiers()
                     != specialQuals.end()) {
                 continue;
             }
-            if (qualKey == "transcript_id") {
-                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")) {
-                    badQuals.push_back(qualKey);
+            if (subtype == CSeqFeatData::eSubtype_cdregion  ||  
+                    subtype == CSeqFeatData::eSubtype_mRNA) {
+                if (qualKey == "protein_id"  ||  qualKey == "transcript_id") {
+                    continue;
                 }
-                continue;
-            }
-            if (qualKey == "protein_id") {
-                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")  &&
-                        !NStr::StartsWith((*qual)->GetVal(), "gb|")) {
-                    badQuals.push_back(qualKey);
-                }
-                continue;
             }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualKey);
             if (CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
@@ -350,14 +345,37 @@ void CFeatTableEdit::EliminateBadQualifiers()
 void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel;
-    //sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    sel.IncludeFeatType(CSeqFeatData::e_Rna);
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    for (CFeat_CI it(mHandle, sel); it; ++it){
+    SAnnotSelector sel1;
+    sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    for (CFeat_CI it(mHandle, sel1); it; ++it) {
         CMappedFeat mf = *it;
-        xFeatureAddProteinId(mf);
-        xFeatureAddTranscriptId(mf);
+        switch(mf.GetFeatSubtype()) {
+        default:
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            xFeatureAddTranscriptIdMrna(mf);
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            xFeatureAddProteinIdCds(mf);
+            break;
+        }
+    }
+    SAnnotSelector sel2;
+    for (CFeat_CI it(mHandle, sel2); it; ++it) {
+        CMappedFeat mf = *it;
+        switch(mf.GetFeatSubtype()) {
+        default:
+            xFeatureAddProteinIdDefault(mf);
+            xFeatureAddTranscriptIdDefault(mf);
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            xFeatureAddProteinIdMrna(mf);
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            xFeatureAddTranscriptIdCds(mf);
+            break;
+        }
     }
 }
 
@@ -448,82 +466,267 @@ CFeatTableEdit::xCreateMissingParentGene(
     return true;
 }
 
-
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::xFeatureAddProteinId(
+void CFeatTableEdit::xFeatureAddProteinIdMrna(
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
-    //mss-375:
-    // make sure we got a protein_id qualifier:
-    //  if we already got one from the GFF then keep it
-    //  otherwise if the parent/child got one then use that
-    //  otherwise generate one based on the gene locustag
+    //rw-451 rules for mRNA:
+    // no mRNA survives with an orig_protein_id
+    // almost all mRNA features should have protein_ids
+    // if one exists already then police it
+    // if none exists then if possible inherit it from the decendent CDS
 
-    string protein_id = mf.GetNamedQual("protein_id");
-    if (!protein_id.empty()) {
+    auto orig_tid = mf.GetNamedQual("orig_protein_id");
+    if (!orig_tid.empty()) {
+        xFeatureRemoveQualifier(mf, "orig_protein_id");
+    }
+    auto pid = mf.GetNamedQual("protein_id");
+    if (pid.empty()) {
+    // we need to upinherit the protein_id from the CDS:
+        CMappedFeat child = feature::GetBestCdsForMrna(mf, &mTree);
+        if (!child) {
+            // only permitted case of an mRNA without a protein_id
+            return;
+        }
+        auto pid = child.GetNamedQual("protein_id");
+        xFeatureAddQualifier(mf, "protein_id", pid);
         return;
     }
-    CMappedFeat associateFeat;
 
-    switch (mf.GetFeatSubtype()) {
-        default:
-            break;
-        case CSeqFeatData::eSubtype_mRNA:
-            associateFeat = feature::GetBestCdsForMrna(mf, &mTree);
-            break;
-        case CSeqFeatData::eSubtype_cdregion:
-            associateFeat = feature::GetBestMrnaForCds(mf, &mTree);
-            break;
+    // otherwise, we need to police the existing transcript_id:
+    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+        // already what we want
+        return;
     }
-    if (associateFeat) {
-        protein_id = associateFeat.GetNamedQual("protein_id");
+
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
+        return;
     }
-    if (protein_id.empty()) {
-        protein_id = xNextProteinId(mf);
-    }
-    if (!protein_id.empty()) {
-        xFeatureAddQualifier(mf, "protein_id", protein_id);
-    }
+    pid = string("gnl|") + locusTagPrefix + "|" + pid;
+    xFeatureSetQualifier(mf, "protein_id", pid);
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::xFeatureAddTranscriptId(
+void CFeatTableEdit::xFeatureAddProteinIdCds(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    //rw-451 rules for CDS:
+    // no CDS survives with an orig_protein_id
+    // all CDS features should have transcript_ids
+    // if one exists already then police it
+    // if it doen't have one then generate one following a strict set of rules
+
+    auto orig_pid = mf.GetNamedQual("orig_protein_id");
+    if (!orig_pid.empty()) {
+        xFeatureRemoveQualifier(mf, "orig_protein_id");
+    }
+
+    auto pid = mf.GetNamedQual("protein_id");
+    if (pid.empty()) {
+    // we need to create and assign a protein_id (based on locus_tag prefix):
+        auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+        auto featId = xGetIdStr(mf);
+        if (locusTagPrefix.empty()) {
+            xPutError(
+                ILineError::eProblem_InvalidQualifier,
+                "Feature " + featId + " does not have a usable protein_id.");
+            xFeatureAddQualifier(mf, "protein_id", "MISSING");
+            return;
+       }
+        auto oid = mf.GetNamedQual("ID"); 
+        if (oid.empty()) {
+            oid = featId;
+        }
+        auto pid = string("gnl|") + locusTagPrefix + "|" + oid;
+        xFeatureAddQualifier(mf, "protein_id", pid);
+        return;
+    }
+
+    // otherwise, we need to police the existing transcript_id:
+    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+        // already what we want
+        return;
+    }
+
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
+        return;
+    }
+    pid = string("gnl|") + locusTagPrefix + "|" + pid;
+    xFeatureSetQualifier(mf, "protein_id", pid);
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureAddProteinIdDefault(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    //rw-451 rules for non CDS, non mRNA:
+    // we won't touch orig_protein_id
+    // we don't generate any protein_ids
+    // if it comes with a protein_id then we add it to the "gnl|locus_tag|"
+    //  namespace if necessary.
+
+    auto pid = mf.GetNamedQual("protein_id");
+    if (pid.empty()) {
+        return;
+    }
+    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+        // already what we want
+        return;
+    }
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
+        return;
+    }
+    pid = string("gnl|") + locusTagPrefix + "|" + pid;
+    xFeatureSetQualifier(mf, "transcript_id", pid);
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
     CMappedFeat mf)
     //  ----------------------------------------------------------------------------
 {
-    //mss-375:
-    // make sure we got a transcript_id qualifier:
-    //  if we already got one from the GFF then keep it
-    //  otherwise if the parent/child got one then use that
-    //  otherwise generate one based on the gene locustag
+    //rw-451 rules for mRNA:
+    // no mRNA survives with an orig_transcript_id
+    // every mRNA must have a transcript_id.
+    // if it already got one then police it.
+    // if it doen't have one then generate one following a strict set of rules
 
-    string transcript_id = mf.GetNamedQual("transcript_id");
-    if (!transcript_id.empty()) {
+    auto orig_tid = mf.GetNamedQual("orig_transcript_id");
+    if (!orig_tid.empty()) {
+        xFeatureRemoveQualifier(mf, "orig_transcript_id");
+    }
+
+    auto tid = mf.GetNamedQual("transcript_id");
+    if (tid.empty()) {
+    // we need to create and assign a transcript_id (based on locus_tag prefix):
+        auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+        auto featId = xGetIdStr(mf);
+        if (locusTagPrefix.empty()) {
+            xPutError(
+                ILineError::eProblem_InvalidQualifier,
+                "Feature " + featId + " does not have a usable transcript_id.");
+            xFeatureAddQualifier(mf, "transcript_id", "MISSING");
+            return;
+       }
+        auto oid = mf.GetNamedQual("ID"); 
+        if (oid.empty()) {
+            oid = featId;
+        }
+        auto tid = string("gnl|") + locusTagPrefix + "|" + oid;
+        xFeatureAddQualifier(mf, "transcript_id", tid);
         return;
     }
-    CMappedFeat associateFeat;
 
-    switch (mf.GetFeatSubtype()) {
-    default:
-        break;
-    case CSeqFeatData::eSubtype_mRNA:
-        associateFeat = feature::GetBestCdsForMrna(mf, &mTree);
-        break;
-    case CSeqFeatData::eSubtype_cdregion:
-        associateFeat = feature::GetBestMrnaForCds(mf, &mTree);
-        break;
+    // otherwise, we need to police the existing transcript_id:
+    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+        // already what we want
+        return;
     }
-    if (associateFeat) {
-        transcript_id = associateFeat.GetNamedQual("transcript_id");
+
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
+        return;
     }
-    if (transcript_id.empty()) {
-        transcript_id = xNextTranscriptId(mf);
-    }
-    if (!transcript_id.empty()) {
-        xFeatureAddQualifier(mf, "transcript_id", transcript_id);
-    }
+    tid = string("gnl|") + locusTagPrefix + "|" + tid;
+    xFeatureSetQualifier(mf, "transcript_id", tid);
 }
+
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureAddTranscriptIdCds(
+    CMappedFeat mf)
+    //  ----------------------------------------------------------------------------
+{
+    //rw-451 rules for CDS:
+    // no CDS survives with an orig_transcript_id
+    // almost all CDS features should have transcript_ids
+    // if one exists already then police it
+    // if none exists then if possible inherit it from the parent mRNA
+
+    auto orig_tid = mf.GetNamedQual("orig_transcript_id");
+    if (!orig_tid.empty()) {
+        xFeatureRemoveQualifier(mf, "orig_transcript_id");
+    }
+
+    auto tid = mf.GetNamedQual("transcript_id");
+    if (tid.empty()) {
+    // we need to down inherit the transcript_id from the mRNA:
+        CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
+        if (!parent) {
+            // only permitted case of a CDS without a transcript_id
+            return;
+        }
+        auto tid = parent.GetNamedQual("transcript_id");
+        xFeatureAddQualifier(mf, "transcript_id", tid);
+        return;
+    }
+
+    // otherwise, we need to police the existing transcript_id:
+    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+        // already what we want
+        return;
+    }
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
+        return;
+    }
+    tid = string("gnl|") + locusTagPrefix + "|" + tid;
+    xFeatureSetQualifier(mf, "transcript_id", tid);
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
+    CMappedFeat mf)
+    //  ----------------------------------------------------------------------------
+{
+    //rw-451 rules for non CDS, non mRNA:
+    // we won't touch orig_transcript_id
+    // we don't generate any transcript_ids
+    // if it comes with a transcript_id then we add it to the "gnl|locus_tag|"
+    //  namespace if necessary.
+
+    auto tid = mf.GetNamedQual("transcript_id");
+    if (tid.empty()) {
+        return;
+    }
+    if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
+        // already what we want
+        return;
+    }
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
+        return;
+    }
+    tid = string("gnl|") + locusTagPrefix + "|" + tid;
+    xFeatureSetQualifier(mf, "transcript_id", tid);
+}
+
 
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateLocusIds()
@@ -613,7 +816,6 @@ void CFeatTableEdit::xGenerateLocusIdsUseExisting()
     for (CFeat_CI it(mHandle, sel); it; ++it) {
         //mss-362: every feature that needs them must come with a complete set
         // of locus_tag, protein_id, and transcript_id.
-        // we will generate orig_protein_id and orig_transcript_id as needed.
 
         CMappedFeat mf = *it;
         CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
@@ -778,6 +980,43 @@ void CFeatTableEdit::xFeatureAddQualifier(
     feh.Replace(*pEditedFeat);
 }
 
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureRemoveQualifier(
+    CMappedFeat mf,
+    const string& qualKey)
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_feat& origFeat = mf.GetOriginalFeature();
+    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+    pEditedFeat->Assign(origFeat);
+    pEditedFeat->RemoveQualifier(qualKey);
+    CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
+    feh.Replace(*pEditedFeat);
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureSetQualifier(
+    CMappedFeat mf,
+    const string& qualKey,
+    const string& qualVal)
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_feat& origFeat = mf.GetOriginalFeature();
+    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+    pEditedFeat->Assign(origFeat);
+    auto existing = pEditedFeat->GetNamedQual(qualKey);
+    if (!existing.empty()) {
+        pEditedFeat->RemoveQualifier(qualKey);
+    }
+    CRef<CGb_qual> pQual(new CGb_qual);
+    pQual->SetQual(qualKey);
+    pQual->SetVal(qualVal);
+    pEditedFeat->SetQual().push_back(pQual);
+    CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
+    feh.Replace(*pEditedFeat);
+}
+
 //  ----------------------------------------------------------------------------
 string CFeatTableEdit::xNextFeatId()
 //  ----------------------------------------------------------------------------
@@ -902,6 +1141,23 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
 
 //  ----------------------------------------------------------------------------
 void
+CFeatTableEdit::xPutError(
+    ILineError::EProblem problem,
+    const string& message)
+//  ----------------------------------------------------------------------------
+{
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        message,
+        problem));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
+}
+
+//  ----------------------------------------------------------------------------
+void
 CFeatTableEdit::xPutErrorMissingLocustag(
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
@@ -979,6 +1235,55 @@ CMappedFeat mf)
         ILineError::eProblem_Missing));
     pErr->SetLineNumber(0);
     mpMessageListener->PutError(*pErr);
+}
+
+//  ----------------------------------------------------------------------------
+string
+CFeatTableEdit::xGetIdStr(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    stringstream strstr;
+    auto& id = mf.GetId();
+    switch (id.Which()) {
+    default:
+        return "\"UNKNOWN ID\"";
+    case CFeat_id::e_Local:
+        id.GetLocal().AsString(strstr);
+        return strstr.str();
+    }
+}
+
+//  ----------------------------------------------------------------------------
+string
+CFeatTableEdit::xGetCurrentLocusTagPrefix(
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    if (!mLocusTagPrefix.empty()) {
+        return mLocusTagPrefix;
+    }
+    CMappedFeat geneFeature = mf;
+    if (geneFeature.GetFeatSubtype() != CSeqFeatData::eSubtype_gene) {
+        geneFeature = feature::GetBestGeneForFeat(mf, &mTree);
+    }
+    if (!geneFeature) {
+        return "";
+    }
+	const auto& geneRef = geneFeature.GetData().GetGene();
+    if (geneRef.IsSetLocus_tag()) {
+        const auto& locusTag = geneFeature.GetData().GetGene().GetLocus_tag();
+        string prefix, suffix;
+        NStr::SplitInTwo(locusTag, "_", prefix, suffix);
+        return prefix;
+    }
+    auto locusTagFromQualifier = geneFeature.GetNamedQual("locus_tag");
+    if (!locusTagFromQualifier.empty()) {
+        string prefix, suffix;
+        NStr::SplitInTwo(locusTagFromQualifier, "_", prefix, suffix);
+        return prefix;
+    }
+    return "";
 }
 
 END_SCOPE(edit)

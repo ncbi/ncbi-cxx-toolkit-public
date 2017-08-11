@@ -89,6 +89,9 @@ protected:
 	string xNextTranscriptId(
 		const CMappedFeat&);
 
+    void xPutError(
+        ILineError::EProblem,
+        const std::string&);
     void xPutErrorMissingLocustag(
         CMappedFeat);
     void xPutErrorMissingTranscriptId(
@@ -100,9 +103,26 @@ protected:
         CMappedFeat,
         const std::string&,                 // qual key
         const std::string&);                // qual value
-    void xFeatureAddProteinId(
+    void xFeatureRemoveQualifier(
+        CMappedFeat,                        // qual key
+        const std::string&);
+    void xFeatureSetQualifier(
+        CMappedFeat,
+        const std::string&,                 // qual key
+        const std::string&);                // qual value
+        
+    void xFeatureAddProteinIdMrna(
         CMappedFeat);
-    void xFeatureAddTranscriptId(
+    void xFeatureAddProteinIdCds(
+        CMappedFeat);
+    void xFeatureAddProteinIdDefault(
+        CMappedFeat);
+
+    void xFeatureAddTranscriptIdMrna(
+        CMappedFeat);
+    void xFeatureAddTranscriptIdCds(
+        CMappedFeat);
+    void xFeatureAddTranscriptIdDefault(
         CMappedFeat);
 
     CRef<CSeq_feat> xMakeGeneForFeature(
@@ -114,6 +134,11 @@ protected:
     bool xCreateMissingParentGene(
         CMappedFeat);
     bool xAdjustExistingParentGene(
+        CMappedFeat);
+
+    static std::string xGetIdStr(
+        CMappedFeat);
+    std::string xGetCurrentLocusTagPrefix(
         CMappedFeat);
 
     CSeq_annot& mAnnot;
