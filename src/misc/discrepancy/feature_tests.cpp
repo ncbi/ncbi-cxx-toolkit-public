@@ -638,17 +638,32 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         return rval;
     }
     CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+    CConstRef<CSeq_feat> gene;
+    for (CFeat_CI gene_it(bsh, CSeqFeatData::eSubtype_gene); gene_it; ++gene_it) {
+        if (gene_it->GetLocation().GetStart(eExtreme_Positional) == cds.GetLocation().GetStart(eExtreme_Positional) && gene_it->GetLocation().GetStop(eExtreme_Positional) == cds.GetLocation().GetStop(eExtreme_Positional)) {
+            gene.Reset(&gene_it->GetMappedFeature());
+            break;
+        }
+    }
 
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(cds);
 
+    CRef<CSeq_feat> new_gene;
+    if (gene) {
+        new_gene.Reset(new CSeq_feat());
+        new_gene->Assign(*gene);
+    }
+
     if (cds.GetLocation().IsPartialStart(eExtreme_Positional)) {
         TSeqPos start = cds.GetLocation().GetStart(eExtreme_Positional);
-        //if (cds.GetLocation().GetStrand() == eNa_strand_minus)
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &scope, extend_len) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
+                if (gene) {
+                    CCleanup::SeqLocExtend(new_gene->SetLocation(), start - extend_len, scope);
+                }
                 if (new_feat->GetData().GetCdregion().CanGetFrame() && cds.GetLocation().GetStrand() != eNa_strand_minus) {
                     CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
                     if (frame != CCdregion::eFrame_not_set) {
@@ -673,6 +688,9 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &scope, extend_len) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
+                if (gene) {
+                    CCleanup::SeqLocExtend(new_gene->SetLocation(), stop + extend_len, scope);
+                }
                 if (new_feat->GetData().GetCdregion().CanGetFrame() && cds.GetLocation().GetStrand() == eNa_strand_minus) {
                     CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
                     if (frame != CCdregion::eFrame_not_set) {
@@ -690,7 +708,10 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
     if (rval) {
         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
         feh.Replace(*new_feat);
-        rval = true;
+        if (gene) {
+            CSeq_feat_EditHandle geh(scope.GetSeq_featHandle(*gene));
+            geh.Replace(*new_gene);
+        }
     }
     return rval;
 }
