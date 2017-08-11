@@ -421,6 +421,30 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "\n";
     }
 
+    // member index
+    if (!wrapperClass)
+    {
+        code.ClassPublic() <<
+            "    // member index\n";
+        code.ClassPublic() <<
+            "    enum class E_memberIndex {\n" <<
+            "        e__allMandatory = 0";
+        int ind = 1;
+        ITERATE ( TMembers, i, m_Members ) {
+            code.ClassPublic() << ",\n        e_";
+            if (!i->externalName.empty()) {
+                code.ClassPublic() << Identifier(i->externalName,false);
+            } else {
+                code.ClassPublic() << ind;
+            }
+            ++ind;
+        }
+        code.ClassPublic() << 
+            "\n    };\n" <<
+            "    typedef Tparent::CMemberIndex<E_memberIndex, " << ind << "> TmemberIndex;\n" <<
+            "\n";
+    }
+
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
