@@ -226,8 +226,7 @@ pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
 void CObjectInfoMI::Erase(EEraseFlag flag)
 {
     const CMemberInfo* mInfo = GetMemberInfo();
-    if ( !(mInfo->Optional() || flag == eErase_Mandatory)
-        || mInfo->GetDefault() )
+    if ( !mInfo->Optional() && flag != eErase_Mandatory)
         NCBI_THROW(CSerialException,eIllegalCall, "cannot reset non OPTIONAL member");
     
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
@@ -237,10 +236,12 @@ void CObjectInfoMI::Erase(EEraseFlag flag)
         // member not set
         return;
     }
-
     // reset member
     mInfo->GetTypeInfo()->SetDefault(mInfo->GetMemberPtr(objectPtr));
-
+    // assign default
+    if (mInfo->GetDefault()) {
+        mInfo->GetTypeInfo()->Assign(mInfo->GetMemberPtr(objectPtr),mInfo->GetDefault());
+    }
     // update 'set' flag
     if ( haveSetFlag )
         mInfo->UpdateSetFlagNo(objectPtr);
