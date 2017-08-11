@@ -941,12 +941,16 @@ bool CThread::WaitForAllThreads(void)
 {
     if (sm_ThreadsCount == 0) return true;
     if ( !IsMain() ) return false;
+
     CStopWatch sw(CStopWatch::eStart);
-    double to = sm_WaitForThreadsTimeout.IsInfinite() ?
-        numeric_limits<double>::max() : sm_WaitForThreadsTimeout.GetAsDouble();
-    if (to == 0) return false;
-    double q = min(to, 0.01);
-    while (sm_ThreadsCount > 0  &&  sw.Elapsed() < to) {
+    bool infinite = sm_WaitForThreadsTimeout.IsInfinite();
+    unsigned long to = 0;
+    unsigned long q = 10;
+    if ( !infinite ) {
+        to = sm_WaitForThreadsTimeout.GetAsMilliSeconds();
+        if (to < q) q = to;
+    }
+    while (sm_ThreadsCount > 0  &&  (infinite || sw.Elapsed() < to)) {
         SleepMilliSec(q);
     }
     return sm_ThreadsCount == 0;
