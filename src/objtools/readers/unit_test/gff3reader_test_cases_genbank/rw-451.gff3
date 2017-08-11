@@ -1,0 +1,15 @@
+scaffold_944	JAMg	gene	32926	33084	.	-	.	ID=J14826;locus_tag=B5V51_14826
+scaffold_944	JAMg	mRNA	32926	33084	.	-	.	ID=J14826.1;Parent=J14826;transcript_id=gnl|B5V51|mrna.J14826.1;protein_id=gnl|B5V51|J14826.1
+scaffold_944	JAMg	exon	32926	33084	.	-	.	ID=J14826.1.exon1;Parent=J14826.1
+scaffold_944	JAMg	CDS	32926	33084	.	-	0	ID=cds.J14826.1;Parent=J14826.1;transcript_id=gnl|B5V51|mrna.J14826.1;protein_id=gnl|B5V51|J14826.1
+
+scaffold_944	JAMg	gene	32926	33084	.	-	.	ID=J24826;locus_tag=B5V51_24826
+scaffold_944	JAMg	mRNA	32926	33084	.	-	.	ID=J24826.1;Parent=J24826;transcript_id=mrna.J24826.1;protein_id=J24826.1
+scaffold_944	JAMg	exon	32926	33084	.	-	.	ID=J24826.1.exon1;Parent=J24826.1
+scaffold_944	JAMg	CDS	32926	33084	.	-	0	ID=cds.J24826.1;Parent=J24826.1;transcript_id=mrna.J24826.1;protein_id=J24826.1
+
+scaffold_944	JAMg	gene	32926	33084	.	-	.	ID=J34826;locus_tag=B5V51_24826
+scaffold_944	JAMg	mRNA	32926	33084	.	-	.	ID=J34826.1;Parent=J34826
+scaffold_944	JAMg	exon	32926	33084	.	-	.	ID=J34826.1.exon1;Parent=J34826.1
+scaffold_944	JAMg	CDS	32926	33084	.	-	0	ID=cds.J34826.1;Parent=J34826.1
+
