@@ -627,6 +627,21 @@ typename TObj::TmemberIndex Serial_GetAssignedMembers(TObj& obj) {
     return mi;
 }
 
+template <typename TObj>
+void Serial_ResetMembers(TObj& obj, typename TObj::TmemberIndex& mi) {
+    CObjectInfo oi(&obj, obj.GetThisTypeInfo());
+    if (oi.GetTypeFamily() == eTypeFamilyClass) {
+        bool allmandatory = mi.TObj::TmemberIndex::Tparent::test(0);
+        size_t i = kFirstMemberIndex;
+        for (CObjectInfoMI member = oi.BeginMembers(); member; ++member, ++i) {
+            if ((allmandatory && !member.GetItemInfo()->Optional()) ||
+                mi.TObj::TmemberIndex::Tparent::test(i)) {
+                member.Erase(CObjectInfoMI::eErase_Mandatory);
+            }
+        }
+    }
+}
+
 /* @} */
 
 
