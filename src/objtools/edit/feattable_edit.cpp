@@ -532,16 +532,16 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     // we need to create and assign a protein_id (based on locus_tag prefix):
         auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
         auto featId = xGetIdStr(mf);
-        if (locusTagPrefix.empty()) {
+        auto oid = mf.GetNamedQual("ID"); 
+        if (oid.empty()) {
+            oid = featId;
+        }
+        if (string::npos != oid.find("|")  ||  locusTagPrefix.empty()) {
             xPutError(
                 ILineError::eProblem_InvalidQualifier,
                 "Feature " + featId + " does not have a usable protein_id.");
             xFeatureAddQualifier(mf, "protein_id", "MISSING");
             return;
-       }
-        auto oid = mf.GetNamedQual("ID"); 
-        if (oid.empty()) {
-            oid = featId;
         }
         auto pid = string("gnl|") + locusTagPrefix + "|" + oid;
         xFeatureAddQualifier(mf, "protein_id", pid);
@@ -617,16 +617,16 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
     // we need to create and assign a transcript_id (based on locus_tag prefix):
         auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
         auto featId = xGetIdStr(mf);
-        if (locusTagPrefix.empty()) {
+        auto oid = mf.GetNamedQual("ID"); 
+        if (oid.empty()) {
+            oid = featId;
+        }
+        if (string::npos != oid.find("|")  || locusTagPrefix.empty()) {
             xPutError(
                 ILineError::eProblem_InvalidQualifier,
                 "Feature " + featId + " does not have a usable transcript_id.");
             xFeatureAddQualifier(mf, "transcript_id", "MISSING");
             return;
-       }
-        auto oid = mf.GetNamedQual("ID"); 
-        if (oid.empty()) {
-            oid = featId;
         }
         auto tid = string("gnl|") + locusTagPrefix + "|" + oid;
         xFeatureAddQualifier(mf, "transcript_id", tid);
