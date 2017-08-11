@@ -546,7 +546,7 @@ int CTbl2AsnApp::Run(void)
         }
         else
         {
-            if (a_arg == "s")
+            if (a_arg == "s" ||  a_arg == "z")
             {
                 m_context.m_HandleAsSet = true;
             }
