@@ -605,6 +605,28 @@ private:
 };
 
 
+template <typename TObj>
+typename TObj::TmemberIndex Serial_GetAssignedMembers(TObj& obj) {
+    typename TObj::TmemberIndex mi;
+    mi.TObj::TmemberIndex::Tparent::reset();
+    CConstObjectInfo oi(&obj, obj.GetThisTypeInfo());
+    if (oi.GetTypeFamily() == eTypeFamilyClass) {
+        bool allmandatory = true;
+        size_t i = kFirstMemberIndex;
+        for (CConstObjectInfoMI member = oi.BeginMembers(); member; ++member, ++i) {
+            if ( member.IsSet()) {
+                mi.TObj::TmemberIndex::Tparent::set(i);
+            } else if (!member.GetItemInfo()->Optional()) {
+                allmandatory = false;
+            }
+        }
+        mi.TObj::TmemberIndex::Tparent::set(kInvalidMember, allmandatory);
+    } else if (oi.GetTypeFamily() == eTypeFamilyChoice) {
+        mi.TObj::TmemberIndex::Tparent::set(oi.GetCurrentChoiceVariantIndex());
+    }
+    return mi;
+}
+
 /* @} */
 
 
