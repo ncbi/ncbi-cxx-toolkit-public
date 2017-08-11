@@ -282,6 +282,8 @@ void CTbl2AsnApp::Init(void)
       f Fix product names\n\
       s Add exception to short introns\n\
       w WGS cleanup\n\
+      d Correct Collection Dates (assume month first)\n\
+      D Correct Collection Dates(assume day first)\n\
       - avoid cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
@@ -347,6 +349,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("euk", "Assume eukariote");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
     arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
+    arg_desc->AddFlag("augustus-fix", "Special handling of unusual problems in Augustus annotations");
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
@@ -389,7 +392,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("-befws") != string::npos)
+        if (args["c"].AsString().find_first_not_of("-befwsdD") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
@@ -471,6 +474,7 @@ int CTbl2AsnApp::Run(void)
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
+    m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
 
     if (args["taxname"])
         m_context.m_OrganismName = args["taxname"].AsString();

@@ -106,6 +106,7 @@ public:
     bool   m_di_fasta;
     bool   m_allow_accession;
     bool   m_verbose;
+    bool   m_augustus_fix;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
@@ -144,6 +145,9 @@ public:
     void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
+    void CorrectCollectionDates(objects::CSeq_annot& annot);
+    void CorrectCollectionDates(objects::CBioseq& bioseq);
+    void CorrectCollectionDates(objects::CBioSource& source);
     void MakeGenomeCenterId(objects::CSeq_entry& entry);
     void RenameProteinIdsQuals(objects::CSeq_feat& feature);
     void RemoveProteinIdsQuals(objects::CSeq_feat& feature);

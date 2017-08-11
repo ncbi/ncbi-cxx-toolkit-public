@@ -921,6 +921,8 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
         CRef<CSeq_annot> annot_it;
         while ((annot_it = annot_loader.GetNextAnnot()).NotEmpty())
         {
+            m_context.CorrectCollectionDates(*annot_it);
+
             CRef<CSeq_id> annot_id;
             if (annot_it->IsSetId())
             {

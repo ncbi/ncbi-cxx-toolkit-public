@@ -134,6 +134,8 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     }
     mod.ApplyAllMods(bioseq);
 
+    m_context->CorrectCollectionDates(bioseq);
+
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
     for (auto mod: unused_mods)
     {

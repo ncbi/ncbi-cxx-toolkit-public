@@ -142,6 +142,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_di_fasta(false),
     m_allow_accession(false),
     m_verbose(false),
+    m_augustus_fix(false),
     m_logger(0)
 {
 }
@@ -716,6 +717,68 @@ bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id)
     {
         feature.SetId().SetLocal().SetId(id++);
         return false;
+    }
+}
+
+void CTable2AsnContext::CorrectCollectionDates(objects::CBioseq& bioseq)
+{
+    size_t p = m_cleanup.find_first_of('Dd');
+    if (p == string::npos)
+        return;
+
+    if (bioseq.IsSetDescr())
+    {
+        CRef<CSeqdesc> biosource = CAutoAddDesc::LocateDesc(bioseq.SetDescr(), CSeqdesc::e_Source);
+        if (biosource.NotEmpty())
+          CorrectCollectionDates(biosource->SetSource());
+    }
+}
+
+void CTable2AsnContext::CorrectCollectionDates(objects::CBioSource& source)
+{
+    if (!source.IsSetSubtype())
+        return;
+   
+    size_t p = m_cleanup.find_first_of('Dd');
+
+    for (auto subtype : source.SetSubtype())
+    {
+        if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_collection_date)
+        {
+            string& col_date = subtype->SetName();
+            try
+            {
+                switch (m_cleanup[p])
+                {
+                case 'd':
+                    col_date = CTime(col_date, "M-D-Y").AsString("D-b-Y");
+                    break;
+                case 'D':
+                    col_date = CTime(col_date, "D-M-Y").AsString("D-b-Y");
+                    break;
+                }
+            }
+            catch (CTimeException&) // masking these
+            {
+            }
+        }
+    }
+    
+}
+
+void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_annot& annot)
+{
+    size_t p = m_cleanup.find_first_of('Dd');
+    if (p == string::npos)
+        return;
+
+    if (!annot.IsFtable())
+        return;
+
+    for (auto feature : annot.SetData().SetFtable())
+    {
+        if (feature->IsSetData() && feature->GetData().IsBiosrc())
+            CorrectCollectionDates(feature->SetData().SetBiosrc());
     }
 }
 
