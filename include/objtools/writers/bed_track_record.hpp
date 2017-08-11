@@ -52,23 +52,17 @@ public:
     bool Assign(const CSeq_annot&);
     bool Write(CNcbiOstream&);
 
-    bool UseScore() const { return (m_strUseScore == "1"); };
-    string Name() const { return m_strName; };
-    string Title() const { return m_strTitle; };
-    string Color() const { return m_strColor; };
-    string Visibility() const { return m_strVisibility; };
-    bool ItemRgb() const { return (m_strItemRgb == "on"); };
+    bool UseScore() const;
 
 protected:
-    bool xImportTrackData(
+    bool xImportKeyValuePairs(
         const CUser_object&);
+    std::string xGetKeyValue(
+        const std::string&) const;
 
-    string m_strUseScore;
-    string m_strVisibility;
-    string m_strColor;
-    string m_strName;
-    string m_strTitle;
-    string m_strItemRgb;
+    string mName;
+    string mTitle;
+    std::map<std::string, std::string> mKeyValuePairs;
 };
 
 END_objects_SCOPE

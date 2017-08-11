@@ -1,4 +1,4 @@
-track name="ColorByStrandDemo" title="Color by strand demonstration"
+track name="ColorByStrandDemo" description="Color by strand demonstration" colorByStrand="255,0,0 0,0,255" visibility=2
 chr7	127471196	127472363	chr7	0	+
 chr7	127472363	127473530	chr7	0	+
 chr7	127473530	127474697	chr7	0	+

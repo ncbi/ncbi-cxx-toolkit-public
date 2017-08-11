@@ -57,102 +57,139 @@ bool CBedTrackRecord::Assign(
     if (!annot.IsSetDesc()) {
         return true; // results in a dummy track line without any directives
     }
-    list< CRef< CAnnotdesc > > fields = annot.GetDesc().Get();
-    list< CRef< CAnnotdesc > >::const_iterator it = fields.begin();
-    for ( ; it != fields.end(); ++it) {
-        if ((*it)->IsTitle()) {
-            m_strTitle = (*it)->GetTitle();
+    auto fields = annot.GetDesc().Get();
+    for (auto field: fields) {
+        switch(field->Which()) {
+        default:
             continue;
-        }
-        if ((*it)->IsName()) {
-            m_strName = (*it)->GetName();
+        case CAnnotdesc::e_Name:
+            mName = field->GetName();
             continue;
-        }
-        if ( (*it)->IsUser() ) {
-            const CUser_object& uo = (*it)->GetUser();
-            if (!uo.IsSetType() || !uo.GetType().IsStr() || 
-                    uo.GetType().GetStr() == "Track Data") {
-                if (!xImportTrackData(uo)) {
-                    return false;
+        case CAnnotdesc::e_Title:
+            mTitle = field->GetTitle();
+            continue;
+        case CAnnotdesc::e_User: {
+                const auto& uo = field->GetUser();
+                if (!uo.IsSetType()  ||  !uo.GetType().IsStr()  ||  
+                        uo.GetType().GetStr() != "Track Data") {
+                    continue;
                 }
+                xImportKeyValuePairs(uo);
             }
+            continue;
         }
     }
+    // synchronize top leven name/title with what's in the key/value pairs:
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedTrackRecord::xImportTrackData(
+bool CBedTrackRecord::xImportKeyValuePairs(
     const CUser_object& uo)
 //  ----------------------------------------------------------------------------
 {
-    const vector< CRef< CUser_field > >& fields = uo.GetData();
-    vector<CRef< CUser_field> >::const_iterator it = fields.begin();
-    for (; it != fields.end(); ++it) {
-        if (!(*it)->CanGetLabel() || ! (*it)->GetLabel().IsStr()) {
+    const auto& fields = uo.GetData();
+    for (auto field: fields) {
+        if (!field->CanGetLabel() || ! field->GetLabel().IsStr()) {
             continue;
         }
-        string strLabel = (*it)->GetLabel().GetStr();
-        if (strLabel == "useScore") {
-            if ((*it)->IsSetData() && (*it)->GetData().IsInt()) {
-                m_strUseScore = NStr::UIntToString( 
-                    (*it)->GetData().GetInt() );
-            }
+        if (!field->CanGetData()) {
             continue;
         }
-        if (strLabel == "color") {
-            if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
-                m_strColor = (*it)->GetData().GetStr();
-            }
-            continue;
-        }   
-        if (strLabel == "visibility") {
-            if ((*it)->IsSetData() && (*it)->GetData().IsInt()) {
-                m_strVisibility = NStr::UIntToString( 
-                    (*it)->GetData().GetInt());
-            }
+        auto key = field->GetLabel().GetStr();
+
+        const auto& value = field->GetData();
+        string valueStr;
+        switch (value.Which()) {
+        default:
+            break;
+        case CUser_field::C_Data::e_Str:
+            valueStr = value.GetStr();
+            break;
+        case CUser_field::C_Data::e_Int:
+            valueStr = NStr::IntToString(value.GetInt());
+            break;
+        case CUser_field::C_Data::e_Real:
+            valueStr = NStr::DoubleToString(value.GetReal());
+            break;
+        }
+        if (valueStr.empty()) {
             continue;
         }
-        if (strLabel == "itemRGB") {
-            if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
-                m_strColor = (*it)->GetData().GetStr();
-            }
-            continue;
-        } 
+        mKeyValuePairs[key] = valueStr;
     }  
     return true;
 }
 
 //  ----------------------------------------------------------------------------
+string
+CBedTrackRecord::xGetKeyValue(
+    const string& key) const
+//  ----------------------------------------------------------------------------
+{
+    auto val = mKeyValuePairs.find(key);
+    if (val == mKeyValuePairs.end()) {
+        return "";
+    }
+    return val->second;
+}
+
+    
+//  ----------------------------------------------------------------------------
 bool CBedTrackRecord::Write(
     CNcbiOstream& ostr )
 //  ----------------------------------------------------------------------------
 {
-    if (Name().empty()  &&  Title().empty()  &&  !UseScore()  &&  !ItemRgb()  &&  
-            Color().empty()  &&  Visibility().empty()) {
+    if (mName.empty()  &&  mTitle.empty()  && mKeyValuePairs.empty()) {
+        //nothing there to write
         return true;
     }
+    auto name = xGetKeyValue("name");
+    if (name.empty()) {
+        name = mName;
+    }
+    auto description = xGetKeyValue("description");
+    if (description.empty()) {
+        description = mTitle;
+    }
     ostr << "track";
-    if (!Name().empty()) {
-        ostr << " name=\"" << Name() << "\"";
+    if (!name.empty()) {
+        ostr << " name=\"" << name << "\"";
     }
-    if (!Title().empty()) {
-        ostr << " title=\"" << Title() << "\"";
+    if (!description.empty()) {
+        ostr << " description=\"" << description << "\"";
     }
-    if (UseScore()) {
-        ostr << " useScore=1";
+    for (auto pair: mKeyValuePairs) {
+        auto key = pair.first;
+        auto value = pair.second;
+        
+        if (key == "name") {
+            continue;
+        }
+        if (key == "description") {
+            continue;
+        }
+        string quotesym = "\"";
+        if (NStr::StartsWith(value, "\"")  ||  string::npos == value.find(" ")) {
+            quotesym = "";
+        }
+        ostr << " " << key << "=" << quotesym << value << quotesym;
     }
-    if (ItemRgb()) {
-        ostr << " itemRgb=\"on\"";
-    }
-    if (!Color().empty()) {
-        ostr << " color=\"" << Color() << "\"";
-    }
-    if (!Visibility().empty()) {
-        ostr << " visibility=" << Visibility();
-    }
-    ostr << '\n';
+    ostr << "\n";
     return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CBedTrackRecord::UseScore() const
+//  ----------------------------------------------------------------------------
+{
+    auto useScore = xGetKeyValue("useScore");
+    if (useScore.empty()) {
+        return false;
+    }
+    return (useScore == "1");
 }
 
 

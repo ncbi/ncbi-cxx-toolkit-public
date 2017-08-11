@@ -1,4 +1,4 @@
-track name="ItemRGBDemo" title="Item RGB demonstration"
+track name="ItemRGBDemo" description="Item RGB demonstration" itemRgb="On" visibility=2
 chr7	127471196	127472363	chr7	0	+	127471196	127472363	255,0,0
 chr7	127472363	127473530	chr7	0	+	127472363	127473530	255,0,0
 chr7	127473530	127474697	chr7	0	+	127473530	127474697	255,0,0
