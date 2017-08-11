@@ -38,6 +38,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/error_codes.hpp>
 #include <typeinfo>
+#include <bitset>
 
 #define BITSTRING_AS_VECTOR    0
 
@@ -190,6 +191,45 @@ public:
     bool HasNamespacePrefix(void) const;
     /// Get namespace prefix
     const string& GetNamespacePrefix(void) const;
+
+    template <typename Enum, size_t N>
+    class CMemberIndex : public bitset<N>
+    {
+    public:
+        typedef bitset<N> Tparent;
+        CMemberIndex(void) {
+        }
+        CMemberIndex(Enum e) {
+            set(e);
+        }
+        CMemberIndex(initializer_list<Enum> e) {
+            for(const auto& f : e) {
+                set(f);
+            }
+        }
+        CMemberIndex& flip(Enum e) {
+            Tparent::flip(x_Arg(e));
+            return *this;
+        }
+        bool operator[](Enum e) const {
+            return Tparent::operator[](x_Arg(e));
+        }
+        CMemberIndex& reset(Enum e) {
+            Tparent::reset(x_Arg(e));
+            return *this;
+        }
+        CMemberIndex& set(Enum e, bool val = true) {
+            Tparent::set(x_Arg(e), val);
+            return *this;
+        }
+        bool test(Enum e) const {
+            return Tparent::test(x_Arg(e));
+        }
+    protected:
+        static size_t x_Arg(Enum flag) {
+            return static_cast<size_t>(flag);
+        }
+    };
 
 private:
     static ESerialVerifyData x_GetVerifyData(void);
