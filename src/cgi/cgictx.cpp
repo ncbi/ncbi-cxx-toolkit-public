@@ -825,6 +825,11 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         string allow_headers = TCORS_AllowHeaders::GetDefault();
         allow_headers += kDefaultHeaders;
         if ( !allow_headers.empty() ) {
+            // Make comma-separated list.
+            TStringList allowed_list;
+            NStr::Split(allow_headers, ", ", allowed_list,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+            allow_headers = NStr::Join(allowed_list, ", ");
             response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
         }
         const string& max_age = TCORS_MaxAge::GetDefault();
