@@ -682,6 +682,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
 
+    m_HasSourceFeats = false;
+
     m_Accession.clear();
 
     for (CSeq_id_Handle sid : obsh.GetId()) {
@@ -939,6 +941,21 @@ void CBioseqIndex::x_InitFeats (void)
 
         sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
+        // request exception to capture fetch failure
+        sel.SetFailUnresolved();
+
+        // limit feature collection to immediate Bioseq-set parent
+        CRef<CSeqsetIndex> prnt = GetParent();
+        if (prnt) {
+            CBioseq_set_Handle bssh = prnt->GetSeqsetHandle();
+            if (bssh) {
+                CSeq_entry_Handle pseh = bssh.GetParentEntry();
+                if (pseh) {
+                    sel.SetLimitSeqEntry(pseh);
+                }
+            }
+        }
+
         // variables for setting m_BestProteinFeature
         TSeqPos longest = 0;
         CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
@@ -957,7 +974,13 @@ void CBioseqIndex::x_InitFeats (void)
             // CFeatureIndex from CMappedFeat for use with GetBestGene
             m_FeatIndexMap[mf] = sfx;
 
+            // set specific flags for various feature types
             CSeqFeatData::E_Choice type = sfx->GetType();
+
+            if (type == CSeqFeatData::e_Biosrc) {
+                m_HasSourceFeats = true;
+                continue;
+            }
 
             if (type == CSeqFeatData::e_Prot && IsAA()) {
                 if (! mf.IsSetData ()) continue;
@@ -1056,6 +1079,18 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatureForProduct (void)
     return m_FeatureForProduct;
 }
 
+// Get Bioseq index containing feature with product pointing to this Bioseq
+CWeakRef<CBioseqIndex> CBioseqIndex::GetBioseqForProduct (void)
+
+{
+	CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
+	if (sfxp) {
+		return sfxp->GetBioseqIndex();
+	}
+
+	return CWeakRef<CBioseqIndex> ();
+}
+
 // GetBestProteinFeature indexes longest protein feature on protein Bioseq
 CRef<CFeatureIndex> CBioseqIndex::GetBestProteinFeature (void)
 
@@ -1065,6 +1100,17 @@ CRef<CFeatureIndex> CBioseqIndex::GetBestProteinFeature (void)
     }
 
     return m_BestProteinFeature;
+}
+
+// HasSourceFeats reports whether Bioseq has BioSource features
+bool CBioseqIndex::HasSourceFeats (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_HasSourceFeats;
 }
 
 // Common descriptor field getters
