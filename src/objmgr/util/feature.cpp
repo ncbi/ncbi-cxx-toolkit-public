@@ -3833,15 +3833,17 @@ bool sGetFeatureGeneBiotypeWrapper(
     // except-text="rearrangement required for product" qualifier then 
     // gene_biotype qualifier is "protein_coding".
     //
-    for (MFSit it = vecCds.begin(); it != vecCds.end(); it++) {
-        if (it->IsSetPseudo() && it->GetPseudo()) {
-            continue;
+    if (!mf.IsSetPseudo()  ||  !mf.GetPseudo()) {
+        for (MFSit it = vecCds.begin(); it != vecCds.end(); it++) {
+            if (it->IsSetPseudo() && it->GetPseudo()) {
+                continue;
+            }
+            if (it->IsSetExcept_text() && (it->GetExcept_text() == strRearrange)) {
+                continue;
+            }
+            biotype = "protein_coding";
+            return true;
         }
-        if (it->IsSetExcept_text() && (it->GetExcept_text() == strRearrange)) {
-            continue;
-        }
-        biotype = "protein_coding";
-        return true;
     }
 
     vector<CMappedFeat> vecOthers;
