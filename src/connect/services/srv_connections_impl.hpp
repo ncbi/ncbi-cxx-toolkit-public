@@ -274,6 +274,13 @@ struct SNetServerImpl : public CObject
     static void ConnectImpl(CSocket&, SConnectDeadline&, const SServerAddress&,
             const SServerAddress&);
 
+    template <class TProperties>
+    CRef<TProperties> Get()
+    {
+        auto properties = m_ServerInPool->m_ServerProperties.GetPointerOrNull();
+        return CRef<TProperties>(static_cast<TProperties*>(properties));
+    }
+
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;
 

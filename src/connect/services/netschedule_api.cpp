@@ -534,28 +534,6 @@ string SNetScheduleAPIImpl::MakeAuthString()
     return auth;
 }
 
-bool CNetScheduleServerListener::NeedToSubmitAffinities(
-        SNetServerImpl* server_impl)
-{
-    return !x_GetServerProperties(server_impl)->affs_synced;
-}
-
-void CNetScheduleServerListener::SetAffinitiesSynced(
-        SNetServerImpl* server_impl, bool affs_synced)
-{
-    x_GetServerProperties(server_impl)->affs_synced = affs_synced;
-}
-
-CRef<SNetScheduleServerProperties>
-        CNetScheduleServerListener::x_GetServerProperties(
-                SNetServerImpl* server_impl)
-{
-    return CRef<SNetScheduleServerProperties>(
-            static_cast<SNetScheduleServerProperties*>(
-                    server_impl->m_ServerInPool->
-                            m_ServerProperties.GetPointerOrNull()));
-}
-
 CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
 {
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
@@ -639,8 +617,7 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 
         // Usually, all attributes come together, so no need to check version
         if (!ns_node.empty() && !ns_session.empty()) {
-            CRef<SNetScheduleServerProperties> server_props =
-                x_GetServerProperties(connection->m_Server);
+            auto server_props = connection->m_Server->Get<SNetScheduleServerProperties>();
 
             // Version cannot change without session, so no need to compare, too
             if (server_props->ns_node != ns_node ||

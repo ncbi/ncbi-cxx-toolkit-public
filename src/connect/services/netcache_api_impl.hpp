@@ -62,8 +62,7 @@ public:
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
 
-    static CRef<SNetCacheServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
-
+private:
     string m_Auth;
 };
 

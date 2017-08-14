@@ -211,11 +211,6 @@ public:
     void SetAuthString(const string& auth) { m_Auth = auth; }
     string& Scope() { return m_Scope; }
 
-    bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
-    void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
-
-    static CRef<SNetScheduleServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
-
     CRef<INetServerProperties> AllocServerProperties() override;
 
     void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;

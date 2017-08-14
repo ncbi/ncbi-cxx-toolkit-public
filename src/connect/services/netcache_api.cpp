@@ -156,8 +156,7 @@ void SNetCacheAPIImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections
 
 void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
 {
-    CRef<SNetCacheServerProperties> server_props(
-            x_GetServerProperties(connection->m_Server));
+    auto server_props = connection->m_Server->Get<SNetCacheServerProperties>();
 
     CFastMutexGuard guard(server_props->m_Mutex);
 
@@ -219,15 +218,6 @@ void CNetCacheServerListener::OnWarning(const string& warn_msg,
                 << server->m_ServerInPool->m_Address.AsString() <<
                 ": WARNING: " << warn_msg);
     }
-}
-
-CRef<SNetCacheServerProperties> CNetCacheServerListener::x_GetServerProperties(
-        SNetServerImpl* server_impl)
-{
-    return CRef<SNetCacheServerProperties>(
-            static_cast<SNetCacheServerProperties*>(
-                    server_impl->m_ServerInPool->
-                            m_ServerProperties.GetPointerOrNull()));
 }
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
@@ -595,8 +585,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
             case CNetCacheAPI::eMirroringEnabled:
                 break;
             default:
-                if (!CNetCacheServerListener::x_GetServerProperties(
-                        exec_result.conn->m_Server)->mirrored)
+                if (!exec_result.conn->m_Server->Get<SNetCacheServerProperties>()->mirrored)
                     key_flags |= CNetCacheKey::fNCKey_SingleServer;
             }
 
