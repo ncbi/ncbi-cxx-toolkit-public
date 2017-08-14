@@ -113,6 +113,7 @@ private:
     CEntrez2Client       m_E2Client;
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
+    bool                 m_ResetDiagStream = false;
 };
 
 
@@ -270,6 +271,7 @@ int CId1FetchApp::Run(void)
 
     // Setup and tune logging facilities
     if ( args["log"] ) {
+        m_ResetDiagStream = true;
         SetDiagStream( &args["log"].AsOutputFile() );
     }
 #ifdef _DEBUG
@@ -667,6 +669,9 @@ bool CId1FetchApp::LookUpGI(TGi gi)
 void CId1FetchApp::Exit(void)
 {
     SOCK_ShutdownAPI();
+    if ( m_ResetDiagStream ) {
+        SetDiagStream(0);
+    }
 }
 
 

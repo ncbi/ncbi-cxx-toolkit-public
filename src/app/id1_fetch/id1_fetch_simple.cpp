@@ -69,6 +69,8 @@ class CId1FetchApp : public CNcbiApplication
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
+private:
+    bool m_ResetDiagStream = false;
 };
 
 
@@ -141,6 +143,7 @@ int CId1FetchApp::Run(void)
 
     // Setup and tune logging facilities
     if ( args["log"] ) {
+        m_ResetDiagStream = true;
         SetDiagStream( &args["log"].AsOutputFile() );
     }
 #ifdef _DEBUG
@@ -242,6 +245,9 @@ int CId1FetchApp::Run(void)
 void CId1FetchApp::Exit(void)
 {
     SOCK_ShutdownAPI();
+    if ( m_ResetDiagStream ) {
+        SetDiagStream(0);
+    }
 }
 
 
