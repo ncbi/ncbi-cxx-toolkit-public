@@ -2033,7 +2033,6 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
         "snoRNA",
         "snRNA",
         "SRP_RNA",
-        "stRNA",
         "telomerase_RNA",
         "vault_RNA",
         "Y_RNA"};

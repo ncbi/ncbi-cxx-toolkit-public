@@ -1011,7 +1011,6 @@ bool CSoMap::xMapNcRna(
         {"snRNA", "snRNA"},
         {"snoRNA", "snoRNA"},
         {"SRP_RNA", "SRP_RNA"},
-        {"stRNA", "stRNA"},
         {"telomerase_RNA", "telomerase_RNA"},
         {"vault_RNA", "vault_RNA"},
         {"Y_RNA", "Y_RNA"},
