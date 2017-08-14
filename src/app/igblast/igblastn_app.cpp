@@ -101,7 +101,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
               if (l_db_args->GetDatabaseName() == kEmptyStr && 
                   l_db_args->GetSubjects().Empty()) {
                   l_blastdb.Reset(&(*(l_ig_opts->m_Db[0])));
-                  bool db_is_remote = false;
+                  db_is_remote = false;
               } else {
                   InitializeSubject(l_db_args, l_opts_hndl, 
                                     thm_CmdLineArgs->ExecuteRemotely(),
