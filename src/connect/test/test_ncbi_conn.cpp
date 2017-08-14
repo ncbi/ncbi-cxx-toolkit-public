@@ -286,7 +286,7 @@ int main(int argc, const char* argv[])
     try {
         CNcbiOfstream log(kLogfile, IOS_BASE::out | IOS_BASE::trunc);
         log.close();
-        log.open(kLogfile, IOS_BASE:: out | IOS_BASE::app);
+        log.open(kLogfile, IOS_BASE::out | IOS_BASE::app);
         if (log) {
             SetDiagStream(&log);
 
@@ -316,7 +316,7 @@ int main(int argc, const char* argv[])
     else if (s_Run) {
         NcbiCout << "Hit any key or program will bail out in 1 minute..."
                  << NcbiFlush;
-        for (int n = 0;  n < 120;  n++) {
+        for (int n = 0;  n < 120;  ++n) {
             if (_kbhit()) {
                 _getch();
                 break;
