@@ -1474,6 +1474,7 @@ CNetService g_DiscoverService(const string& service_name,
             return CRef<INetServerProperties>(new INetServerProperties);
         }
 
+        INetServerConnectionListener* Clone() override { return new SNoOpConnectionListener(*this); }
         void OnInit(CObject*, ISynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}
         void OnError(const string&, CNetServer&) override {}

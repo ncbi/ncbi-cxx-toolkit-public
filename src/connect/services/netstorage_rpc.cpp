@@ -434,6 +434,7 @@ public:
     }
 
     CRef<INetServerProperties> AllocServerProperties() override;
+    INetServerConnectionListener* Clone() override;
 
     void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
@@ -448,6 +449,11 @@ private:
 CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
 {
     return CRef<INetServerProperties>(new INetServerProperties);
+}
+
+INetServerConnectionListener* CNetStorageServerListener::Clone()
+{
+    return new CNetStorageServerListener(*this);
 }
 
 void CNetStorageServerListener::OnInit(CObject*, ISynRegistry&, SRegSynonyms&)

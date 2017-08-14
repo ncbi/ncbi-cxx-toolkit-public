@@ -539,6 +539,11 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
+INetServerConnectionListener* CNetScheduleServerListener::Clone()
+{
+    return new CNetScheduleServerListener(*this);
+}
+
 void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);

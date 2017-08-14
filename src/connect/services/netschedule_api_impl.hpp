@@ -219,6 +219,7 @@ public:
     string& Scope() { return m_Scope; }
 
     CRef<INetServerProperties> AllocServerProperties() override;
+    INetServerConnectionListener* Clone() override;
 
     void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;

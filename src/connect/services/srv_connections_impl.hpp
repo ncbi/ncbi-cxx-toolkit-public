@@ -74,6 +74,7 @@ class INetServerProperties : public CObject
 struct INetServerConnectionListener : CObject
 {
     virtual CRef<INetServerProperties> AllocServerProperties() = 0;
+    virtual INetServerConnectionListener* Clone() = 0;
 
     // Event handlers.
     virtual void OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name);

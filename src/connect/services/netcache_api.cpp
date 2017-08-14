@@ -88,6 +88,11 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
+INetServerConnectionListener* CNetCacheServerListener::Clone()
+{
+    return new CNetCacheServerListener(*this);
+}
+
 void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);

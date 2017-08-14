@@ -55,6 +55,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheServerListener : public INetServerConnection
 {
 public:
     CRef<INetServerProperties> AllocServerProperties() override;
+    INetServerConnectionListener* Clone() override;
 
     void OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
     void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;

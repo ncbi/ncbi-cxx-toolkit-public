@@ -304,7 +304,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     // Constructors for 'spawning'.
     SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype) :
-        m_Listener(prototype->m_Listener),
+        m_Listener(prototype->m_Listener->Clone()),
         m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(server->m_Address.AsString()),
         m_APIName(prototype->m_APIName),
@@ -317,7 +317,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         Construct(server);
     }
     SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype) :
-        m_Listener(prototype->m_Listener),
+        m_Listener(prototype->m_Listener->Clone()),
         m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(service_name),
         m_APIName(prototype->m_APIName),
