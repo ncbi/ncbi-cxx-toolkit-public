@@ -203,10 +203,17 @@ private:
     enum { eOff, eImplicit, eExplicit } m_Mode;
 };
 
+struct SNetScheduleSharedData;
+
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
-    CNetScheduleServerListener(bool non_wn) : m_NonWn(non_wn) {}
+    CNetScheduleServerListener(bool non_wn, SNetScheduleSharedData* shared_data) :
+        m_NonWn(non_wn),
+        m_SharedData(shared_data)
+    {
+        _ASSERT(shared_data);
+    }
 
     void SetAuthString(const string& auth) { m_Auth = auth; }
     string& Scope() { return m_Scope; }
@@ -220,8 +227,13 @@ public:
 
 private:
     string m_Auth;
+    const bool m_NonWn;
+    string m_Scope;
+    CRef<SNetScheduleSharedData> m_SharedData;
+};
 
-public:
+struct SNetScheduleSharedData : CObject
+{
     CFastMutex m_ServerByNodeMutex;
     typedef map<string, SNetServerInPool*> TServerByNode;
     TServerByNode m_ServerByNode;
@@ -229,10 +241,6 @@ public:
     // Make sure the worker node does not attempt to submit its
     // preferred affinities from two threads.
     CFastMutex m_AffinitySubmissionMutex;
-
-private:
-    const bool m_NonWn;
-    string m_Scope;
 };
 
 // Structure that governs NetSchedule server notifications.
@@ -404,6 +412,7 @@ private:
 
 public:
     CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
+    CRef<SNetScheduleSharedData> m_SharedData;
     CNetService m_Service;
 
     string m_Queue;

@@ -622,11 +622,11 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
             // Version cannot change without session, so no need to compare, too
             if (server_props->ns_node != ns_node ||
                     server_props->ns_session != ns_session) {
-                CFastMutexGuard guard(m_ServerByNodeMutex);
+                CFastMutexGuard guard(m_SharedData->m_ServerByNodeMutex);
                 server_props->ns_node = ns_node;
                 server_props->ns_session = ns_session;
                 server_props->version = version;
-                m_ServerByNode[ns_node] = connection->m_Server->m_ServerInPool;
+                m_SharedData->m_ServerByNode[ns_node] = connection->m_Server->m_ServerInPool;
                 server_props->affs_synced = false;
             }
         }
@@ -695,8 +695,9 @@ const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(SConfigOrRegistry conf_or_reg, const string& section) :
     m_Mode(GetMode(false, true)),
+    m_SharedData(new SNetScheduleSharedData),
     m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr, kEmptyStr,
-                new CNetScheduleServerListener(m_Mode & fNonWnCompatible)))
+                new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData)))
 {
     m_Service->Init(this, conf_or_reg, { section, kNetScheduleAPIDriverName });
 }
@@ -704,8 +705,9 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(SConfigOrRegistry conf_or_reg, const st
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,
         const string& queue_name, bool wn, bool try_config) :
     m_Mode(GetMode(wn, try_config)),
+    m_SharedData(new SNetScheduleSharedData),
     m_Service(new SNetServiceImpl("NetScheduleAPI", service_name, client_name,
-                new CNetScheduleServerListener(m_Mode & fNonWnCompatible))),
+                new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData))),
     m_Queue(queue_name)
 {
     m_Service->Init(this, nullptr, kNetScheduleAPIDriverName);
@@ -714,6 +716,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const strin
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         SNetServerInPool* server, SNetScheduleAPIImpl* parent) :
     m_Mode(parent->m_Mode),
+    m_SharedData(parent->m_SharedData),
     m_Service(new SNetServiceImpl(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),
@@ -1015,14 +1018,11 @@ bool SNetScheduleAPIImpl::GetServerByNode(const string& ns_node,
     SNetServerInPool* known_server; /* NCBI_FAKE_WARNING */
 
     {{
-        CNetScheduleServerListener* listener = GetListener();
+        CFastMutexGuard guard(m_SharedData->m_ServerByNodeMutex);
 
-        CFastMutexGuard guard(listener->m_ServerByNodeMutex);
+        auto server_props_it = m_SharedData->m_ServerByNode.find(ns_node);
 
-        CNetScheduleServerListener::TServerByNode::iterator
-            server_props_it(listener->m_ServerByNode.find(ns_node));
-
-        if (server_props_it == listener->m_ServerByNode.end())
+        if (server_props_it == m_SharedData->m_ServerByNode.end())
             return false;
 
         known_server = server_props_it->second;

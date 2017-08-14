@@ -191,9 +191,7 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
                         (*it).GetServerAddress() <<
                         " of a new affinity " << e);
 
-                CNetScheduleServerListener* listener = m_API->GetListener();
-
-                CFastMutexGuard sync_guard(listener->m_AffinitySubmissionMutex);
+                CFastMutexGuard sync_guard(m_API->m_SharedData->m_AffinitySubmissionMutex);
                 auto& affs_synced = it.GetServer()->Get<SNetScheduleServerProperties>()->affs_synced;
 
                 affs_synced = false;
@@ -234,9 +232,7 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
             throw;
 
         {
-            CNetScheduleServerListener* listener = m_API->GetListener();
-
-            CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
+            CFastMutexGuard guard(m_API->m_SharedData->m_AffinitySubmissionMutex);
             auto& affs_synced = server->Get<SNetScheduleServerProperties>()->affs_synced;
 
             affs_synced = false;
@@ -684,10 +680,7 @@ void CNetScheduleGETCmdListener::OnExec(
         {
             CNetServerConnection conn(conn_impl);
 
-            CNetScheduleServerListener* listener =
-                    m_Executor->m_API->GetListener();
-
-            CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
+            CFastMutexGuard guard(m_Executor->m_API->m_SharedData->m_AffinitySubmissionMutex);
             auto& affs_synced = conn->m_Server->Get<SNetScheduleServerProperties>()->affs_synced;
 
             if (!affs_synced) {
