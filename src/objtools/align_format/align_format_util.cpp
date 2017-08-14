@@ -3409,7 +3409,10 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
     string temp_class_info = kClassInfo; temp_class_info += " ";
 	string wgsProj;
 	string wgsAccession = seqUrlInfo->accession;
-	bool isWGS = CAlignFormatUtil::IsWGSAccession(wgsAccession, wgsProj);
+	bool isWGS = false;
+        if (!(wid->Which() == CSeq_id::e_Local || wid->Which() == CSeq_id::e_General)){
+            isWGS = CAlignFormatUtil::IsWGSAccession(wgsAccession, wgsProj);
+        }
 	if(isWGS && seqUrlInfo->useTemplates) {		
 		string wgsUrl = CAlignFormatUtil::GetURLFromRegistry("WGS");    
 		url_link = s_MapCommonUrlParams(wgsUrl, seqUrlInfo);
