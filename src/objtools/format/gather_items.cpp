@@ -2856,7 +2856,9 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
     }
 }
 
+//#define USE_DELTA
 
+#ifdef USE_DELTA
 DEFINE_STATIC_MUTEX(sx_UniqueIdMutex);
 static size_t s_UniqueIdOffset = 0;
 CRef<CSeq_id> s_MakeUniqueId(CScope& scope)
@@ -2914,6 +2916,7 @@ static CRef<CSeq_loc> s_FixId(const CSeq_loc& loc, const CSeq_id& orig, const CS
     }
     return new_loc;
 }
+#endif // USE_DELTA
 
 
 CRef<CSeq_loc_Mapper> s_MakeSliceMapper(const CSeq_loc& loc, CBioseqContext& ctx)
@@ -2935,7 +2938,6 @@ CRef<CSeq_loc_Mapper> s_MakeSliceMapper(const CSeq_loc& loc, CBioseqContext& ctx
 }
 
 
-#define USE_DELTA
 void CFlatGatherer::x_GatherFeaturesOnRange
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -2960,7 +2962,9 @@ void CFlatGatherer::x_GatherFeaturesOnRange
     CBioseq_Handle delta_bsh = scope.AddBioseq(*delta);
     CFeat_CI it(delta_bsh, sel_cpy);
 #else
-    CFeat_CI it(scope, loc, sel);
+    SAnnotSelector sel_cpy = sel;
+    sel_cpy.SetIgnoreStrand();
+    CFeat_CI it(scope, loc, sel_cpy);
 #endif
     ctx.GetFeatTree().AddFeatures(it);
     for ( ;  it;  ++it) {
@@ -3513,10 +3517,16 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         CMappedFeat mapped_feat = *it;
         if( slice_mapper && loc ) {
             CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
-            loc = slice_mapper->Map( *CFeatTrim::Apply(*loc, range) );
-            if( loc->IsNull() ) {
+            CRef<CSeq_loc> mapped_loc = slice_mapper->Map(*CFeatTrim::Apply(*loc, range));
+            if( mapped_loc->IsNull() ) {
                 continue;
             }
+            CRef<CSeq_feat> feat(new CSeq_feat());
+            feat->Assign(mapped_feat.GetMappedFeature());
+            feat->ResetLocation();
+            feat->SetLocation(*loc);
+            mapped_feat = s_GetTrimmedMappedFeat(*feat, range, scope);
+            loc = mapped_loc;
         }
 
         item = ConstRef( x_NewFeatureItem(*it, ctx, 
