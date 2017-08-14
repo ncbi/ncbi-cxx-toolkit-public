@@ -399,7 +399,6 @@ int CBlastDB_FastaFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCon
 	int status = -1;
 	CRef<CBioseq> bioseq = m_BlastDb.GetBioseq(oid);
 	if(target_id != kEmptyStr) {
-		CSeq_id seq_id(target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
 		Int8 num_id = NStr::StringToNumeric<Int8>(target_id, NStr::fConvErr_NoThrow);
 		if(errno) {
 			CSeq_id seq_id(target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
