@@ -801,8 +801,8 @@ void CBlastDBExtractor::SetConfig(TSeqRange range, objects::ENa_strand strand,
 static bool s_MatchPDBId(const CSeq_id & target_id, const CSeq_id & defline_id)
 {
 	if(defline_id.IsPdb()) {
-		if(target_id.GetPdb().IsSetChain_id()) {
-			if(defline_id.GetPdb().IsSetChain_id()) {
+		if(target_id.GetPdb().IsSetChain()) {
+			if(defline_id.GetPdb().IsSetChain()) {
 				return ((target_id.GetPdb().GetChain() == defline_id.GetPdb().GetChain())  &&
 				        PNocase().Equals(target_id.GetPdb().GetMol(), defline_id.GetPdb().GetMol()));
 			}
