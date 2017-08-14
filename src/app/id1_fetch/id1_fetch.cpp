@@ -667,7 +667,6 @@ bool CId1FetchApp::LookUpGI(TGi gi)
 void CId1FetchApp::Exit(void)
 {
     SOCK_ShutdownAPI();
-    SetDiagStream(0);
 }
 
 

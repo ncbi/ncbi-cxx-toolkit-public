@@ -242,7 +242,6 @@ int CId1FetchApp::Run(void)
 void CId1FetchApp::Exit(void)
 {
     SOCK_ShutdownAPI();
-    SetDiagStream(0);
 }
 
 
