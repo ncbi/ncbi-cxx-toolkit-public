@@ -61,7 +61,7 @@ public:
 
     virtual int GetNextSequence(CBioseq_set& bioseq_set);
 
-    virtual bool End(void) {return m_ItAcc == m_Accessions.end();}
+    virtual bool End(void);
 
     virtual SSeqLoc GetNextSSeqLoc(CScope& scope);
 

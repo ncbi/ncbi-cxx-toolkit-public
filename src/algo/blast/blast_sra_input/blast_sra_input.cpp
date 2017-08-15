@@ -73,6 +73,15 @@ CSraInputSource::CSraInputSource(const vector<string>& accessions,
 }
 
 
+bool
+CSraInputSource::End(void)
+{
+    if (!*m_It) {
+        x_NextAccession();
+    }
+    return m_ItAcc == m_Accessions.end();
+}
+
 
 int
 CSraInputSource::GetNextSequence(CBioseq_set& bioseq_set)
@@ -175,7 +184,6 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
 
 void CSraInputSource::x_NextAccession(void)
 {
-    _ASSERT(m_ItAcc != m_Accessions.end());
     if (m_ItAcc == m_Accessions.end()) {
         return;
     }
