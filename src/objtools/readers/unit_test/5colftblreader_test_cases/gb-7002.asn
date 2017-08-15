@@ -7,7 +7,6 @@ Seq-annot ::= {
           aa ncbieaa 77
         }
       },
-      comment "tRNA-Met",
       location int {
         from 0,
         to 68,
@@ -70,7 +69,6 @@ Seq-annot ::= {
           aa ncbieaa 87
         }
       },
-      comment "tRNA-Trp",
       location int {
         from 1095,
         to 1164,
@@ -87,7 +85,6 @@ Seq-annot ::= {
           aa ncbieaa 67
         }
       },
-      comment "tRNA-Cys",
       location int {
         from 1164,
         to 1230,
@@ -104,7 +101,6 @@ Seq-annot ::= {
           aa ncbieaa 89
         }
       },
-      comment "tRNA-Tyr",
       location int {
         from 1231,
         to 1298,
@@ -177,7 +173,6 @@ Seq-annot ::= {
           }
         }
       },
-      comment "tRNA-Leu",
       location int {
         from 2834,
         to 2900,
@@ -246,7 +241,6 @@ Seq-annot ::= {
           aa ncbieaa 75
         }
       },
-      comment "tRNA-Lys",
       location int {
         from 3587,
         to 3657,
@@ -263,7 +257,6 @@ Seq-annot ::= {
           aa ncbieaa 68
         }
       },
-      comment "tRNA-Asp",
       location int {
         from 3674,
         to 3742,
@@ -424,7 +417,6 @@ Seq-annot ::= {
           aa ncbieaa 71
         }
       },
-      comment "tRNA-Gly",
       location int {
         from 5370,
         to 5436,
@@ -493,7 +485,6 @@ Seq-annot ::= {
           aa ncbieaa 82
         }
       },
-      comment "tRNA-Arg",
       location int {
         from 5790,
         to 5849,
@@ -510,7 +501,6 @@ Seq-annot ::= {
           aa ncbieaa 65
         }
       },
-      comment "tRNA-Ala",
       location int {
         from 5854,
         to 5922,
@@ -527,7 +517,6 @@ Seq-annot ::= {
           aa ncbieaa 78
         }
       },
-      comment "tRNA-Asn",
       location int {
         from 5924,
         to 5993,
@@ -550,7 +539,6 @@ Seq-annot ::= {
           }
         }
       },
-      comment "tRNA-Ser",
       location int {
         from 5995,
         to 6061,
@@ -567,7 +555,6 @@ Seq-annot ::= {
           aa ncbieaa 69
         }
       },
-      comment "tRNA-Glu",
       location int {
         from 6074,
         to 6139,
@@ -584,7 +571,6 @@ Seq-annot ::= {
           aa ncbieaa 70
         }
       },
-      comment "tRNA-Phe",
       location int {
         from 6138,
         to 6204,
@@ -647,7 +633,6 @@ Seq-annot ::= {
           aa ncbieaa 72
         }
       },
-      comment "tRNA-His",
       location int {
         from 7955,
         to 8020,
@@ -756,7 +741,6 @@ Seq-annot ::= {
           aa ncbieaa 84
         }
       },
-      comment "tRNA-Thr",
       location int {
         from 9662,
         to 9727,
@@ -773,7 +757,6 @@ Seq-annot ::= {
           aa ncbieaa 80
         }
       },
-      comment "tRNA-Pro",
       location int {
         from 9728,
         to 9794,
@@ -894,7 +877,6 @@ Seq-annot ::= {
           }
         }
       },
-      comment "tRNA-Ser",
       location int {
         from 11457,
         to 11522,
@@ -963,7 +945,6 @@ Seq-annot ::= {
           }
         }
       },
-      comment "tRNA-Leu",
       location int {
         from 12497,
         to 12564,
@@ -995,7 +976,6 @@ Seq-annot ::= {
           aa ncbieaa 86
         }
       },
-      comment "tRNA-Val",
       location int {
         from 13900,
         to 13971,
@@ -1026,7 +1006,6 @@ Seq-annot ::= {
           aa ncbieaa 76
         }
       },
-      comment "tRNA-Leu",
       location int {
         from 14788,
         to 14839,
@@ -1043,7 +1022,6 @@ Seq-annot ::= {
           aa ncbieaa 73
         }
       },
-      comment "tRNA-Ile",
       location int {
         from 16607,
         to 16673,
@@ -1060,7 +1038,6 @@ Seq-annot ::= {
           aa ncbieaa 81
         }
       },
-      comment "tRNA-Gln",
       location int {
         from 16676,
         to 16744,

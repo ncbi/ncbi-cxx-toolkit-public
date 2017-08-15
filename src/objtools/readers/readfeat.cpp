@@ -1566,7 +1566,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                         if (rrp.IsSetExt() && rrp.GetExt().Which() == CRNA_ref::C_Ext::e_Name) 
                             return false;
 
-                        sfp->SetComment(val);
+                       // sfp->SetComment(val);
                         int aaval = x_ParseTrnaString(val);
                         if (aaval > 0) {
                             CRNA_ref::TExt& tex = rrp.SetExt ();
