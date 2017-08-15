@@ -950,7 +950,7 @@ bool CThread::WaitForAllThreads(void)
         to = sm_WaitForThreadsTimeout.GetAsMilliSeconds();
         if (to < q) q = to;
     }
-    while (sm_ThreadsCount > 0  &&  (infinite || sw.Elapsed() < to)) {
+    while (sm_ThreadsCount > 0  &&  (infinite || sw.Elapsed()*1000 < to)) {
         SleepMilliSec(q);
     }
     return sm_ThreadsCount == 0;
