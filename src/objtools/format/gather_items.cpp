@@ -2964,6 +2964,9 @@ void CFlatGatherer::x_GatherFeaturesOnRange
 #else
     SAnnotSelector sel_cpy = sel;
     sel_cpy.SetIgnoreStrand();
+    if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+        sel_cpy.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);
+    }
     CFeat_CI it(scope, loc, sel_cpy);
 #endif
     ctx.GetFeatTree().AddFeatures(it);
