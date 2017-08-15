@@ -124,7 +124,8 @@ private:
     void ProcessOneFile();
     void ProcessOneFile(CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
-    void ProcessSecretFiles(CSeq_entry& result);
+    void ProcessSecretFiles1Phase(CSeq_entry& result);
+    void ProcessSecretFiles2Phase(CSeq_entry& result);
     void ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
@@ -550,7 +551,7 @@ int CTbl2AsnApp::Run(void)
         }
         else
         {
-            if (a_arg == "s" ||  a_arg == "z")
+            if (a_arg == "s" || a_arg == "z")
             {
                 m_context.m_HandleAsSet = true;
             }
@@ -870,7 +871,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_reader->ApplyAdditionalProperties(*entry);
 
-    ProcessSecretFiles(*entry);
+    ProcessSecretFiles1Phase(*entry);
 
     CFeatureTableReader fr(m_context);
     // this may convert seq into seq-set
@@ -913,6 +914,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         // if create-date exists apply update date
         m_context.ApplyCreateUpdateDates(*entry);
     }
+
+    ProcessSecretFiles2Phase(*entry);
 
     // this methods do not remove entry nor change it. But create 'result' object which either
     // equal to 'entry' or contain reference to 'entry'.
@@ -1151,7 +1154,7 @@ tbl    5-column Feature Table
 .rna   Replacement mRNA sequences for RNA editing
 .prt    Proteins for suggest intervals
 */
-void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
+void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
 {
     string dir;
     string base;
@@ -1164,8 +1167,11 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
-    ProcessCMTFile(name + ".cmt", result, m_context.m_flipped_struc_cmt);
-    ProcessCMTFile(m_context.m_single_structure_cmt, result, m_context.m_flipped_struc_cmt);
+    if (!m_context.m_flipped_struc_cmt)
+    {
+        ProcessCMTFile(name + ".cmt", result, false);
+        ProcessCMTFile(m_context.m_single_structure_cmt, result, false);
+    }
     ProcessPEPFile(name + ".pep", result);
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
@@ -1181,6 +1187,22 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
         ProcessAnnotFile(name + ".gff3", result);
         ProcessAnnotFile(name + ".gff2", result);
         ProcessAnnotFile(name + ".gtf", result);
+    }
+}
+
+void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
+{
+    string dir;
+    string base;
+    string ext;
+    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
+
+    string name = dir + base;
+
+    if (m_context.m_flipped_struc_cmt)
+    {
+        ProcessCMTFile(name + ".cmt", result, true);
+        ProcessCMTFile(m_context.m_single_structure_cmt, result, true);
     }
 }
 

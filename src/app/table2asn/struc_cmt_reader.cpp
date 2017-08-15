@@ -71,6 +71,45 @@ void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& 
        _AddStructuredComments(entry, comment);
 }
 
+void CTable2AsnStructuredCommentsReader::AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments)
+{
+    for (const auto& new_desc : comments.m_descs)
+    {
+        bool append_desc = true;
+
+        const string& index = CStructComment::GetPrefix(*new_desc);
+        if (index.empty())
+            continue;
+
+        for (auto& desc : descr.Set()) // push to create setdescr
+        {
+            if (!desc->IsUser()) continue;
+
+            auto& user = desc->SetUser();
+
+            const string& other = CStructComment::GetPrefix(*desc);
+            if (other.empty())
+                continue;
+
+            if (NStr::Equal(other, index))
+            {
+                append_desc = false;
+                // Merge
+                for (const auto& field : new_desc->GetUser().GetData())
+                {
+                    user.SetFieldRef(field->GetLabel().GetStr())->SetValue(field->GetData().GetStr());
+                }
+            }
+        }
+        if (append_desc)
+        {
+            CRef<CSeqdesc> add_desc(new CSeqdesc);
+            add_desc->Assign(*new_desc);
+            descr.Set().push_back(add_desc);
+        }
+    }
+}
+
 void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments)
 {
     VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
@@ -93,41 +132,7 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
                 return;
         }
 
-        for (const auto& new_desc : comments.m_descs)
-        {
-           bool append_desc = true;
-
-            const string& index = CStructComment::GetPrefix(*new_desc);
-            if (index.empty())
-                continue;
-
-            for (auto& desc : bioseq.SetDescr().Set()) // push to create setdescr
-            {
-                if (!desc->IsUser()) continue;
-
-                auto& user = desc->SetUser();
-
-                const string& other = CStructComment::GetPrefix(*desc);
-                if (other.empty())
-                    continue;
-
-                if (NStr::Equal(other, index))
-                {
-                    append_desc = false;
-                    // Merge
-                    for (const auto& field : new_desc->GetUser().GetData())
-                    {
-                        user.SetFieldRef(field->GetLabel().GetStr())->SetValue(field->GetData().GetStr());
-                    }
-                }
-            }
-            if (append_desc)
-            {
-                CRef<CSeqdesc> add_desc(new CSeqdesc);
-                add_desc->Assign(*new_desc);
-                bioseq.SetDescr().Set().push_back(add_desc);
-            }
-        }
+        CTable2AsnStructuredCommentsReader::AddStructuredComments(bioseq.SetDescr(), comments);
     });
 }
 
@@ -135,7 +140,13 @@ void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& 
 {
     CStructComment comments;
     LoadCommentsByRow(reader, comments);
-    _AddStructuredComments(entry, comments);
+    VisitAllSeqDesc(entry, true, [comments](CBioseq* bioseq, CSeq_descr& descr)
+    {
+        if (bioseq && !bioseq->IsNa())
+            return;
+
+        CTable2AsnStructuredCommentsReader::AddStructuredComments(descr, comments);
+    });
 }
 
 END_NCBI_SCOPE

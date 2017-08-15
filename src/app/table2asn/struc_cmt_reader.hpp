@@ -55,6 +55,8 @@ public:
    // First collumn of the file is the name of the field
    // Second collumn of the file is the value of the field
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
+   static
+   void AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments);
 
 private:
     void _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
