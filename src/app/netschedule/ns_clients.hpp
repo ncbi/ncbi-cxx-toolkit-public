@@ -121,6 +121,9 @@ class CNSClientId
         void SetScope(const string &  scope)
         { m_Scope = scope; }
 
+        // See CXX-5324
+        string GetVirtualScope(void) const;
+
         // The admin check is done per connection so there is no need
         // to reset it when a queue is changed or when a queue is from a job
         // key.
@@ -510,6 +513,9 @@ class CNSClient
 
         void SetLastScope(const string &  scope)
         { m_LastScope = scope; }
+        string GetLastScope(void) const
+        { return m_LastScope; }
+        string GetVirtualScope(const string &  client_node) const;
 
     private:
         ENSClientState      m_State;          // Client state

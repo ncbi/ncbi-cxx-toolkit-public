@@ -198,6 +198,8 @@ class CNSClientsRegistry
                             const string &  client_node,
                             bool            is_log,
                             ECommandGroup   cmd_group);
+        void GetScopes(const string &  client_node,
+                       string &  scope, string &  virtual_scope);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients

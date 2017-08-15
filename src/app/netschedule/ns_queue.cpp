@@ -572,6 +572,7 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
+                                       m_ScopeRegistry,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eGet);
@@ -712,6 +713,7 @@ CQueue::SubmitBatch(const CNSClientId &             client,
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
+                                       m_ScopeRegistry,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eGet);
@@ -815,6 +817,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_GroupRegistry,
+                                   m_ScopeRegistry,
                                    m_NotifHifreqPeriod,
                                    m_HandicapTimeout,
                                    eRead);
@@ -1616,8 +1619,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         m_NotificationsList.Notify(job_id,
                                    job.GetAffinityId(), m_ClientsRegistry,
                                    m_AffinityRegistry, m_GroupRegistry,
-                                   m_NotifHifreqPeriod, m_HandicapTimeout,
-                                   eGet);
+                                   m_ScopeRegistry, m_NotifHifreqPeriod,
+                                   m_HandicapTimeout, eGet);
 
     return old_status;
 }
@@ -1748,8 +1751,8 @@ TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
         m_NotificationsList.Notify(job_id,
                                    job.GetAffinityId(), m_ClientsRegistry,
                                    m_AffinityRegistry, m_GroupRegistry,
-                                   m_NotifHifreqPeriod, m_HandicapTimeout,
-                                   eGet);
+                                   m_ScopeRegistry, m_NotifHifreqPeriod,
+                                   m_HandicapTimeout, eGet);
     return old_status;
 }
 
@@ -1817,8 +1820,8 @@ TJobStatus  CQueue::RedoJob(const CNSClientId &     client,
         m_NotificationsList.Notify(job_id,
                                    job.GetAffinityId(), m_ClientsRegistry,
                                    m_AffinityRegistry, m_GroupRegistry,
-                                   m_NotifHifreqPeriod, m_HandicapTimeout,
-                                   eGet);
+                                   m_ScopeRegistry, m_NotifHifreqPeriod,
+                                   m_HandicapTimeout, eGet);
     return old_status;
 }
 
@@ -1960,6 +1963,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
+                                       m_ScopeRegistry,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);
@@ -2088,6 +2092,7 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
+                                       m_ScopeRegistry,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);
@@ -2577,6 +2582,7 @@ TJobStatus  CQueue::RereadJob(const CNSClientId &     client,
                                m_ClientsRegistry,
                                m_AffinityRegistry,
                                m_GroupRegistry,
+                               m_ScopeRegistry,
                                m_NotifHifreqPeriod,
                                m_HandicapTimeout,
                                eRead);
@@ -2700,6 +2706,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_GroupRegistry,
+                                   m_ScopeRegistry,
                                    m_NotifHifreqPeriod,
                                    m_HandicapTimeout,
                                    eRead);
@@ -2785,11 +2792,48 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                         bool                          has_groups,
                         ECommandGroup                 cmd_group)
 {
+    string          scope = client.GetScope();
+    string          virtual_scope = client.GetVirtualScope();
+
+    if (!virtual_scope.empty()) {
+        // Try first this scope: see CXX-5324
+        x_SJobPick  job_pick = x_FindVacantJob(client, explicit_affs,
+                                               aff_ids, use_pref_affinity,
+                                               any_affinity,
+                                               exclusive_new_affinity,
+                                               prioritized_aff,
+                                               group_ids, has_groups,
+                                               cmd_group, virtual_scope);
+        if (job_pick.job_id != 0)
+            return job_pick;
+
+        // Fallback to a regular pick
+    }
+
+    return x_FindVacantJob(client, explicit_affs, aff_ids, use_pref_affinity,
+                           any_affinity, exclusive_new_affinity,
+                           prioritized_aff, group_ids, has_groups,
+                           cmd_group, scope);
+}
+
+
+CQueue::x_SJobPick
+CQueue::x_FindVacantJob(const CNSClientId  &          client,
+                        const TNSBitVector &          explicit_affs,
+                        const vector<unsigned int> &  aff_ids,
+                        bool                          use_pref_affinity,
+                        bool                          any_affinity,
+                        bool                          exclusive_new_affinity,
+                        bool                          prioritized_aff,
+                        const TNSBitVector &          group_ids,
+                        bool                          has_groups,
+                        ECommandGroup                 cmd_group,
+                        const string &                scope)
+{
     bool            explicit_aff = !aff_ids.empty();
     bool            effective_use_pref_affinity = use_pref_affinity;
     unsigned int    pref_aff_candidate_job_id = 0;
     unsigned int    exclusive_aff_candidate = 0;
-    string          scope = client.GetScope();
 
     TNSBitVector    pref_aff = m_ClientsRegistry.GetPreferredAffinities(
                                                     client, cmd_group);
@@ -2989,11 +3033,34 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
                                  unsigned int          picked_earlier,
                                  const TNSBitVector &  group_ids)
 {
-    x_SJobPick      job_pick = { 0, false, 0 };
-
     if (m_MaxPendingWaitTimeout == kTimeZero)
-        return job_pick;    // Not configured
+        return x_SJobPick();    // Not configured
 
+    string      scope = client.GetScope();
+    string      virtual_scope = client.GetVirtualScope();
+
+    if (!virtual_scope.empty()) {
+        // Try first this scope: see CXX-5324
+        x_SJobPick  job_pick = x_FindOutdatedPendingJob(client, picked_earlier,
+                                                        group_ids,
+                                                        virtual_scope);
+        if (job_pick.job_id != 0)
+            return job_pick;
+
+        // Fallback to a regular outdated pick
+    }
+
+    return x_FindOutdatedPendingJob(client, picked_earlier,
+                                    group_ids, scope);
+}
+
+
+CQueue::x_SJobPick
+CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
+                                 unsigned int          picked_earlier,
+                                 const TNSBitVector &  group_ids,
+                                 const string &        scope)
+{
     TNSBitVector    outdated_pending =
                         m_StatusTracker.GetOutdatedPendingJobs(
                                 m_MaxPendingWaitTimeout,
@@ -3003,7 +3070,6 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
 
     m_ClientsRegistry.SubtractBlacklistedJobs(client, eGet, outdated_pending);
 
-    string      scope = client.GetScope();
     if (scope.empty() || scope == kNoScopeOnly)
         outdated_pending -= m_ScopeRegistry.GetAllJobsInScopes();
     else
@@ -3013,8 +3079,10 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
         m_GroupRegistry.RestrictByGroup(group_ids, outdated_pending);
 
     if (!outdated_pending.any())
-        return job_pick;
+        return x_SJobPick();;
 
+
+    x_SJobPick      job_pick;
     job_pick.job_id = *outdated_pending.first();
     job_pick.aff_id = m_GCRegistry.GetAffinityID(job_pick.job_id);
     job_pick.exclusive = job_pick.aff_id != 0;
@@ -3030,6 +3098,32 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
     if (m_MaxPendingReadWaitTimeout == kTimeZero)
         return x_SJobPick();    // Not configured
 
+    string      scope = client.GetScope();
+    string      virtual_scope = client.GetVirtualScope();
+
+    if (!virtual_scope.empty()) {
+        // Try first this scope: see CXX-5324
+        x_SJobPick  job_pick = x_FindOutdatedJobForReading(client,
+                                                           picked_earlier,
+                                                           group_ids,
+                                                           virtual_scope);
+        if (job_pick.job_id != 0)
+            return job_pick;
+
+        // Fallback to a regular outdated pick
+    }
+
+    return x_FindOutdatedJobForReading(client, picked_earlier,
+                                       group_ids, scope);
+}
+
+
+CQueue::x_SJobPick
+CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
+                                    unsigned int  picked_earlier,
+                                    const TNSBitVector &  group_ids,
+                                    const string &        scope)
+{
     TNSBitVector    outdated_read_jobs =
                         m_StatusTracker.GetOutdatedReadVacantJobs(
                                 m_MaxPendingReadWaitTimeout,
@@ -3040,7 +3134,6 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
     m_ClientsRegistry.SubtractBlacklistedJobs(client, eRead,
                                               outdated_read_jobs);
 
-    string      scope = client.GetScope();
     if (scope.empty() || scope == kNoScopeOnly)
         outdated_read_jobs -= m_ScopeRegistry.GetAllJobsInScopes();
     else
@@ -3219,8 +3312,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
             m_NotificationsList.Notify(job_id,
                                        job.GetAffinityId(), m_ClientsRegistry,
                                        m_AffinityRegistry, m_GroupRegistry,
-                                       m_NotifHifreqPeriod, m_HandicapTimeout,
-                                       eGet);
+                                       m_ScopeRegistry, m_NotifHifreqPeriod,
+                                       m_HandicapTimeout, eGet);
 
         if (new_status == CNetScheduleAPI::eFailed)
             if (!m_ReadJobs.get_bit(job_id)) {
@@ -3229,6 +3322,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
                                            m_GroupRegistry,
+                                           m_ScopeRegistry,
                                            m_NotifHifreqPeriod,
                                            m_HandicapTimeout,
                                            eRead);
@@ -3571,8 +3665,8 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
             m_NotificationsList.Notify(job_id,
                                        job.GetAffinityId(), m_ClientsRegistry,
                                        m_AffinityRegistry, m_GroupRegistry,
-                                       m_NotifHifreqPeriod, m_HandicapTimeout,
-                                       eGet);
+                                       m_ScopeRegistry, m_NotifHifreqPeriod,
+                                       m_HandicapTimeout, eGet);
 
         if (new_status == CNetScheduleAPI::eDone ||
             new_status == CNetScheduleAPI::eFailed ||
@@ -3583,6 +3677,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
                                            m_GroupRegistry,
+                                           m_ScopeRegistry,
                                            m_NotifHifreqPeriod,
                                            m_HandicapTimeout,
                                            eRead);
@@ -4366,6 +4461,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_GroupRegistry,
+                                   m_ScopeRegistry,
                                    m_NotifHifreqPeriod,
                                    m_HandicapTimeout,
                                    eGet);
@@ -4379,6 +4475,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
+                                       m_ScopeRegistry,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);

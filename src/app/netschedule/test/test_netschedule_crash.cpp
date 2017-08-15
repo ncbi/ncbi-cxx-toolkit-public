@@ -97,6 +97,15 @@ public:
 
 private:
     int x_Run(void);
+    void x_PrintElapsed(double elapsed, const string &  op,
+                        const string &  job)
+    {
+        if (elapsed > 1.0) {
+            NcbiCerr << CTime(CTime::eCurrent) << " " << op
+                     << " command execution took too long: "
+                     << elapsed << " sec. <" << job << ">" << NcbiEndl;
+        }
+    }
 
 private:
     CNetScheduleKeyGenerator *  m_KeyGenerator;
@@ -209,7 +218,9 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
     jobs.reserve(jcount);
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
+    double          elapsed;
     CStopWatch      sw(CStopWatch::eStart);
+    CStopWatch      op_watch;
     for (unsigned i = 0; i < jcount; ++i) {
 
         if (nclients > 0) {
@@ -241,7 +252,19 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
             CNetScheduleJob         job(input);
             job.affinity = aff;
             job.group = group;
-            submitter.SubmitJob(job);
+
+
+            op_watch.Restart();
+            try {
+                submitter.SubmitJob(job);
+            } catch (...) {
+                elapsed = op_watch.Elapsed();
+                NcbiCerr << CTime(CTime::eCurrent)
+                         << " Exception while submitting... Took: "
+                         << elapsed << " sec." << NcbiEndl;
+                throw;
+            }
+            elapsed = op_watch.Elapsed();
 
             CNetScheduleKey     key( job.job_id,
                                      m_CompoundIDPool );
@@ -250,6 +273,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
                                                                key.port,
                                                                queue );
+            x_PrintElapsed(elapsed, "SUBMIT",
+                           m_KeyGenerator->Generate(key.id));
         }
         else {
             // back door - use manually formed command
@@ -262,7 +287,19 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
                 cmd += " aff=" + aff;
             if (group.empty() == false)
                 cmd += " group=" + group;
-            CNetServer::SExecResult     result = server.ExecWithRetry( cmd );
+
+            CNetServer::SExecResult     result;
+            op_watch.Restart();
+            try {
+                result = server.ExecWithRetry( cmd );
+            } catch (...) {
+                elapsed = op_watch.Elapsed();
+                NcbiCerr << CTime(CTime::eCurrent)
+                         << " Exception while submitting manually... Took: "
+                         << elapsed << " sec." << NcbiEndl;
+                throw;
+            }
+            elapsed = op_watch.Elapsed();
 
             // Dirty hack: 'OK:' need to be stripped
             CNetScheduleKey     key( result.response.c_str(),
@@ -272,6 +309,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
                                                                key.port,
                                                                queue );
+            x_PrintElapsed(elapsed, "MANUAL SUBMIT",
+                           m_KeyGenerator->Generate(key.id));
         }
 
         ++m_ProcessedJobs;
@@ -281,7 +320,7 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
         }
 
     }
-    double          elapsed = sw.Elapsed();
+    elapsed = sw.Elapsed();
     double          avg = elapsed / jcount;
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
@@ -303,19 +342,32 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecutor &        executor,
     //CNetScheduleAPI::EJobStatus         status;
     unsigned                            i = 0;
     CStopWatch                          sw(CStopWatch::eStart);
+    double                              elapsed;
+    CStopWatch                          op_watch;
 
     CNetScheduleJob job;
 
     ITERATE(vector<unsigned int>, it, jobs) {
         job.job_id = m_KeyGenerator->Generate(*it);
 
-        //status =
-        executor.GetJobStatus(job);
+        op_watch.Restart();
+        try {
+            //status =
+            executor.GetJobStatus(job);
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while getting a job status... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "GET STATUS", job.job_id);
+
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
         }
     }
-    double      elapsed = sw.Elapsed();
+    elapsed = sw.Elapsed();
     double      avg = elapsed / (double)jobs.size();
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
@@ -340,7 +392,9 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
     CNetScheduleExecutor    executor = clients[0].GetExecutor();
 
     unsigned        cnt = 0;
+    double          elapsed;
     CStopWatch      sw(CStopWatch::eStart);
+    CStopWatch      op_watch;
 
     for (; cnt < count; ++cnt) {
         if (nclients > 0) {
@@ -350,7 +404,19 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
         }
 
         CNetScheduleJob     job;
-        bool                job_exists = executor.GetJob(job);
+        bool                job_exists;
+
+        op_watch.Restart();
+        try {
+            job_exists = executor.GetJob(job);
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << "Exception while getting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "GET", job.job_id);
 
         if (!job_exists)
             continue;
@@ -363,14 +429,25 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
             CNetScheduleJob job;
             job.job_id = it->first;
             job.auth_token = it->second;
-            executor.ReturnJob(job);
+
+            op_watch.Restart();
+            try {
+                executor.ReturnJob(job);
+            } catch (...) {
+                elapsed = op_watch.Elapsed();
+                NcbiCerr << CTime(CTime::eCurrent)
+                         << " Exception while returning a job... Took: "
+                         << elapsed << " sec." << NcbiEndl;
+                throw;
+            }
+            x_PrintElapsed(op_watch.Elapsed(), "RETURN", job.job_id);
         }
         catch (CException& e)
         {
-            NcbiCout << e.what() << NcbiEndl;
+            NcbiCerr << CTime(CTime::eCurrent) << " " << e.what() << NcbiEndl;
         }
     }
-    double          elapsed = sw.Elapsed();
+    elapsed = sw.Elapsed();
 
     if (cnt > 0) {
         double          avg = elapsed / cnt;
@@ -384,8 +461,6 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
     }
     else
         NcbiCout << "Returned 0 jobs." << NcbiEndl;
-
-    return;
 }
 
 
@@ -403,6 +478,8 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI> &   clients,
 
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
 
+    double          elapsed;
+    CStopWatch      op_watch;
     CStopWatch      sw(CStopWatch::eStart);
     for (; 1; ++cnt) {
         if (nclients > 0) {
@@ -412,7 +489,20 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI> &   clients,
         }
 
         CNetScheduleJob     job;
-        bool                job_exists = executor.GetJob(job);
+        bool                job_exists;
+
+        op_watch.Restart();
+        try {
+            job_exists = executor.GetJob(job);
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while getting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "GET", job.job_id);
+
         if (!job_exists)
             break;
 
@@ -421,12 +511,23 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI> &   clients,
         jobs_processed.push_back( key.id );
 
         job.output = "JOB DONE ";
-        executor.PutResult(job);
+
+        op_watch.Restart();
+        try {
+            executor.PutResult(job);
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while putting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "PUT", job.job_id);
 
         if (cnt % 1000 == 0)
             NcbiCout << "." << flush;
     }
-    double      elapsed = sw.Elapsed();
+    elapsed = sw.Elapsed();
 
     if (cnt) {
         double      avg = elapsed / cnt;
@@ -452,23 +553,56 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
              << jcount << " jobs. Each dot denotes 1000 loops." << NcbiEndl;
 
     CNetScheduleJob         job( "SUBMIT->GET->PUT loop test input" );
-    string                  job_key;
 
+    double                  elapsed;
+    CStopWatch              op_watch;
     CStopWatch              sw( CStopWatch::eStart );
     for (m_ProcessedJobs = 0; m_ProcessedJobs < jcount; ++m_ProcessedJobs ) {
-        submitter.SubmitJob( job );
 
-        if ( ! executor.GetJob( job ) )
-            continue;
+        op_watch.Restart();
+        try {
+            submitter.SubmitJob( job );
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while submitting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "SUBMIT", job.job_id);
+
+        op_watch.Restart();
+        try {
+            if ( ! executor.GetJob( job ) )
+                continue;
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while getting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "GET", job.job_id);
 
         job.output = "JOB DONE";
-        executor.PutResult( job );
+
+        op_watch.Restart();
+        try {
+            executor.PutResult( job );
+        } catch (...) {
+            elapsed = op_watch.Elapsed();
+            NcbiCerr << CTime(CTime::eCurrent)
+                     << " Exception while putting a job... Took: "
+                     << elapsed << " sec." << NcbiEndl;
+            throw;
+        }
+        x_PrintElapsed(op_watch.Elapsed(), "PUT", job.job_id);
 
         if (m_ProcessedJobs % 1000 == 0) {
             NcbiCout << "." << flush;
         }
     }
-    double  elapsed = sw.Elapsed();
+    elapsed = sw.Elapsed();
 
     double  avg = elapsed / jcount;
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
@@ -485,10 +619,12 @@ int CTestNetScheduleCrash::Run(void)
     try {
         return x_Run();
     } catch (const exception &  exc) {
-        NcbiCerr << "Exception: " << exc.what()
+        NcbiCerr << CTime(CTime::eCurrent)
+                 << " Exception: " << exc.what()
                  << "\nAfter submitting " << m_ProcessedJobs << " jobs\n";
     } catch (...) {
-        NcbiCerr << "Unknown exception\n"
+        NcbiCerr << CTime(CTime::eCurrent)
+                 << " Unknown exception\n"
                     "After submitting " << m_ProcessedJobs << " jobs\n";
     }
     return 1;

@@ -51,6 +51,7 @@ class CNSClientsRegistry;
 class CNSAffinityRegistry;
 class CNSGroupsRegistry;
 class CQueueDataBase;
+class CNSScopeRegistry;
 
 
 
@@ -160,6 +161,7 @@ class CNSNotificationList
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
                     CNSGroupsRegistry &    group_registry,
+                    CNSScopeRegistry &     scope_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap,
                     ECommandGroup          cmd_group);
@@ -169,6 +171,7 @@ class CNSNotificationList
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
                     CNSGroupsRegistry &    group_registry,
+                    CNSScopeRegistry &     scope_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap,
                     ECommandGroup          cmd_group);

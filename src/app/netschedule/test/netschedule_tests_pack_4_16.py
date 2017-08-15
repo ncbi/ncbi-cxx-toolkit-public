@@ -992,7 +992,7 @@ class Scenario1111( TestBase ):
 
         output = execAny( ns_client, 'STAT ALERTS', isMultiline = True )
         if len( output ) != 0:
-            raise Exception( "Expected no alerts, received some:\n" + output )
+            raise Exception( "Expected no alerts, received some:\n" + str(output) )
 
         self.ns.kill( "SIGKILL" )
         time.sleep( 1 )

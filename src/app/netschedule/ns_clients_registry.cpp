@@ -611,6 +611,24 @@ CNSClientsRegistry::SubtractBlacklistedJobs(
 
 
 void
+CNSClientsRegistry::GetScopes(const string &  client_node,
+                              string &  scope, string &  virtual_scope)
+{
+    scope.clear();
+    virtual_scope.clear();
+
+    CMutexGuard                         guard(m_Lock);
+    map< string,
+         CNSClient >::const_iterator    found = m_Clients.find(client_node);
+
+    if (found != m_Clients.end()) {
+        scope = found->second.GetLastScope();
+        virtual_scope = found->second.GetVirtualScope(client_node);
+    }
+}
+
+
+void
 CNSClientsRegistry::AddBlacklistedJobs(
                                 const CNSClientId &  client,
                                 ECommandGroup        cmd_group,

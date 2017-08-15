@@ -529,13 +529,35 @@ private:
                     bool                          has_groups,
                     ECommandGroup                 cmd_group);
     x_SJobPick
+    x_FindVacantJob(const CNSClientId &           client,
+                    const TNSBitVector &          explicit_affs,
+                    const vector<unsigned int> &  aff_ids,
+                    bool                          use_pref_affinity,
+                    bool                          any_affinity,
+                    bool                          exclusive_new_affinity,
+                    bool                          prioritized_aff,
+                    const TNSBitVector &          group_ids,
+                    bool                          has_groups,
+                    ECommandGroup                 cmd_group,
+                    const string &                scope);
+    x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier,
                              const TNSBitVector & group_ids);
     x_SJobPick
+    x_FindOutdatedPendingJob(const CNSClientId &  client,
+                             unsigned int         picked_earlier,
+                             const TNSBitVector & group_ids,
+                             const string &       scope);
+    x_SJobPick
     x_FindOutdatedJobForReading(const CNSClientId &  client,
                                 unsigned int         picked_earlier,
                                 const TNSBitVector & group_ids);
+    x_SJobPick
+    x_FindOutdatedJobForReading(const CNSClientId &  client,
+                                unsigned int         picked_earlier,
+                                const TNSBitVector & group_ids,
+                                const string &       scope);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,

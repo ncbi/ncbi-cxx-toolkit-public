@@ -456,6 +456,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
                                  CNSGroupsRegistry &    group_registry,
+                                 CNSScopeRegistry &     scope_registry,
                                  const CNSPreciseTime & notif_highfreq_period,
                                  const CNSPreciseTime & notif_handicap,
                                  ECommandGroup          reason)
@@ -469,7 +470,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
     jobs.set_bit(job_id);
 
     Notify(jobs, aff_ids, aff_id == 0,
-           clients_registry, aff_registry, group_registry,
+           clients_registry, aff_registry, group_registry, scope_registry,
            notif_highfreq_period, notif_handicap, reason);
 }
 
@@ -483,6 +484,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             CNSClientsRegistry &   clients_registry,
                             CNSAffinityRegistry &  aff_registry,
                             CNSGroupsRegistry &    group_registry,
+                            CNSScopeRegistry &     scope_registry,
                             const CNSPreciseTime & notif_highfreq_period,
                             const CNSPreciseTime & notif_handicap,
                             ECommandGroup          reason)
@@ -533,6 +535,30 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                 continue;
             }
         }
+
+        string      scope;
+        string      virtual_scope;
+        clients_registry.GetScopes(k->m_ClientNode, scope, virtual_scope);
+
+        if (!virtual_scope.empty()) {
+            // The client was found in the client registry so the jobs need to
+            // be restricted
+            if (scope.empty() || scope == kNoScopeOnly) {
+                // no scope and virtual scope are suitable
+                candidates -= (scope_registry.GetAllJobsInScopes() -
+                               scope_registry.GetJobs(virtual_scope));
+            } else {
+                // scope and virtual scope are suitable
+                candidates &= (scope_registry.GetJobs(scope) |
+                               scope_registry.GetJobs(virtual_scope));
+            }
+
+            if (candidates.any() == false) {
+                ++k;
+                continue;
+            }
+        }
+
 
         if (k->m_AnyJob) {
             should_send = true;

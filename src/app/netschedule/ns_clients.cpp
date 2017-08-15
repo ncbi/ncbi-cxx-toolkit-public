@@ -48,6 +48,9 @@
 BEGIN_NCBI_SCOPE
 
 
+const string    kVirtualScopePrefix = "WN_SCOPE:::";
+
+
 // The CClientId serves two types of clients:
 // - old style clients; they have peer address only
 // - new style clients; they have all three pieces,
@@ -143,6 +146,15 @@ bool CNSClientId::IsComplete(void) const
     // It is gauranteed in the constructor that both
     // m_ClientNode and m_ClientSession are empty or not empty together.
     return !m_ClientNode.empty();
+}
+
+
+// See CXX-5324 for what virtual scope is
+string CNSClientId::GetVirtualScope(void) const
+{
+    if (IsComplete())
+        return kVirtualScopePrefix + m_ClientNode;
+    return "";
 }
 
 
@@ -904,6 +916,13 @@ int  CNSClient::SetClientData(const string &  data, int  data_version)
     if (m_ClientDataVersion < 0)
         m_ClientDataVersion = 0;
     return m_ClientDataVersion;
+}
+
+
+// See CXX-5324 for what virtual scope is
+string CNSClient::GetVirtualScope(const string &  client_node) const
+{
+    return kVirtualScopePrefix + client_node;
 }
 
 
