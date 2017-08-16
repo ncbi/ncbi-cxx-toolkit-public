@@ -4,7 +4,7 @@ Seq-annot ::= {
   },
   data ftable {
     {
-      id local str "gene|20",
+      id local str "gene_20",
       data gene {
       },
       location int {
@@ -21,7 +21,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna|21",
+      id local str "mrna_21",
       data rna {
         type mRNA
       },
@@ -51,15 +51,15 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene|20"
+          id local str "gene_20"
         },
         {
-          id local str "cds|22"
+          id local str "cds_22"
         }
       }
     },
     {
-      id local str "cds|22",
+      id local str "cds_22",
       data cdregion {
       },
       location mix {
@@ -88,12 +88,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene|20"
+          id local str "gene_20"
         }
       }
     },
     {
-      id local str "gene|23",
+      id local str "gene_23",
       data gene {
       },
       location int {
@@ -110,7 +110,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "cds|24",
+      id local str "cds_24",
       data cdregion {
       },
       location int {
@@ -131,12 +131,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene|23"
+          id local str "gene_23"
         }
       }
     },
     {
-      id local str "mrna|25",
+      id local str "mrna_25",
       data rna {
         type mRNA
       },
@@ -158,10 +158,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene|23"
+          id local str "gene_23"
         },
         {
-          id local str "cds|24"
+          id local str "cds_24"
         }
       }
     }

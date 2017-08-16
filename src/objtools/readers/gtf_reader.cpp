@@ -192,7 +192,7 @@ string s_FeatureKey(
         strTranscriptId = "t"+NStr::IntToString(tidCounter++);
     }
 
-    return strGeneId + "|" + strTranscriptId;
+    return strGeneId + "_" + strTranscriptId;
 }
 
 //  ----------------------------------------------------------------------------
@@ -488,7 +488,7 @@ bool CGtfReader::x_CreateFeatureId(
     if (strFeatureId.empty()) {
         strFeatureId = "id";
     }
-    strFeatureId += "|";
+    strFeatureId += "_";
     strFeatureId += NStr::IntToString(seqNum++);
     pFeature->SetId().SetLocal().SetStr( strFeatureId );
     return true;
