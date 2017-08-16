@@ -118,22 +118,21 @@ bool CConfigRegistry::x_Empty(TFlags flags) const
     return false; // Not reached
 }
 
-const unique_ptr<CConfig>& CConfigRegistry::GetSubConfig(const string& section) const
+CConfig* CConfigRegistry::GetSubConfig(const string& section) const
 {
     auto it = m_SubConfigs.find(section);
 
-    if (it != m_SubConfigs.end()) return it->second;
-
-    unique_ptr<CConfig> sub_config;
+    if (it != m_SubConfigs.end()) return it->second.get();
 
     if (const CConfig::TParamTree* tree = m_Config->GetTree()) {
         if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
-            sub_config.reset(new CConfig(sub_tree));
+            unique_ptr<CConfig> sub_config(new CConfig(sub_tree));
+            auto result = m_SubConfigs.emplace(section, move(sub_config));
+            return result.first->second.get();
         }
     }
 
-    auto result = m_SubConfigs.emplace(section, move(sub_config));
-    return result.first->second;
+    return m_Config;
 }
 
 const string& CConfigRegistry::x_Get(const string& section, const string& name, TFlags) const
