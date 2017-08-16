@@ -211,7 +211,9 @@ private:
 
 struct SRandomParam
 {
+    vector<string> sections_values;
     SRegSynonyms sections;
+    vector<string> names_values;
     SRegSynonyms names;
     SValueHolder value;
     SParamIndices indices;
@@ -427,7 +429,10 @@ SFixture::SFixture()
         sections_number = sections.size();
 
         while (sections_number--) {
-            if (generator.GetValue<bool>() || ! sections_number) param.sections.push_back(sections[sections_number]);
+            if (generator.GetValue<bool>() || ! sections_number) {
+                param.sections_values.push_back(sections[sections_number]);
+                param.sections.push_back(param.sections_values.back());
+            }
         }
 
         set<string> unique_names;
@@ -438,7 +443,11 @@ SFixture::SFixture()
         }
 
         if (IsUnique(param)) {
-            copy(unique_names.begin(), unique_names.end(), std::back_inserter(param.names));
+            for (auto unique_name : unique_names) {
+                param.names_values.push_back(unique_name);
+                param.names.push_back(param.names_values.back());
+            }
+
             random_params.push_back(param);
         }
     }
