@@ -351,7 +351,7 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
         return false;
     }
     ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
-        if ((*subSrcI)->GetSubtype() == st) {
+        if ((*subSrcI)->IsSetSubtype() && (*subSrcI)->GetSubtype() == st) {
             source_description += x_GetSubSourceLabel (st);
 
             string val = (*subSrcI)->GetName();
@@ -422,8 +422,12 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
     bool         used = false;
     string       val;
 
+    if (!bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetOrgname() || !bsrc.GetOrg().GetOrgname().IsSetMod()) {
+        return false;
+    }
+
     ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
-        if ((*modI)->GetSubtype() == st) {
+        if ((*modI)->IsSetSubtype() && (*modI)->GetSubtype() == st) {
 
             string val = (*modI)->GetSubname();
             // truncate value at first semicolon
