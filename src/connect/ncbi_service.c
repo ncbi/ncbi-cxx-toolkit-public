@@ -33,10 +33,10 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
-#include "ncbi_linkerd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
 #  include "ncbi_lbosp.h"
+#  include "ncbi_linkerd.h"
 #endif
 #include "ncbi_namerd.h"
 #include "ncbi_priv.h"
