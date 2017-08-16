@@ -77,7 +77,7 @@ struct SModelEvidance;
 // --- Flat File configuration class
 
 // NEW_HTML_FMT define enables new interceptor interface for HTML links generation
-//#define NEW_HTML_FMT
+#define NEW_HTML_FMT
 
 #ifdef NEW_HTML_FMT
 
