@@ -8170,19 +8170,19 @@ static bool s_IsNcrnaName (
 
 static bool s_StartsWithNcrnaName( 
     const string& name,
-    const string **out_ncrna_name = NULL )
+    string &out_ncrna_name)
 {
-    TNcrna::const_iterator suffix_finder = s_FindInSetAsPrefix<TNcrna>( name, sc_NcrnafNames );
-    if( suffix_finder == sc_NcrnafNames.end() ) {
-        if( NULL != out_ncrna_name ) {
-            *out_ncrna_name = NULL;
-        }
-        return false;
-    } else {
-        if( NULL != out_ncrna_name ) {
-            *out_ncrna_name = &*suffix_finder;
-        }
+    string tmp_name = name;
+    size_t pos = NStr::Find(name, " ");
+    if (pos != NPOS) {
+        tmp_name = name.substr(0, pos);
+    }
+    if (!NStr::EqualNocase(tmp_name, "other") && CRNA_gen::IsLegalClass(tmp_name)) {
+        out_ncrna_name = tmp_name;
+        CRNA_gen::FixncRNAClassValue(out_ncrna_name);
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -8306,20 +8306,17 @@ void CNewCleanup_imp::RnarefGenBC(CRNA_ref& rr)
         FIELD_IS_SET(gen, Product) &&
         !FIELD_IS_SET(gen, Class)) {
         string & product = GET_MUTABLE(gen, Product);
-        const string *ncrna_name = NULL;
-        if (s_StartsWithNcrnaName(product, &ncrna_name)) {
-            _ASSERT(NULL != ncrna_name);
-            if (product.length() > (ncrna_name->length() + 1) &&
-                product[ncrna_name->length()] == ' ') {
-                SET_FIELD(gen, Class, *ncrna_name);
-                SET_FIELD(gen, Product, product.substr(ncrna_name->length() + 1));
+        string ncrna_name = kEmptyStr;
+        if (s_StartsWithNcrnaName(product, ncrna_name)) {
+            if (product.length() > (ncrna_name.length() + 1) &&
+                product[ncrna_name.length()] == ' ') {
+                SET_FIELD(gen, Class, ncrna_name);
+                SET_FIELD(gen, Product, product.substr(ncrna_name.length() + 1));
                 TRUNCATE_SPACES(gen, Class);
                 TRUNCATE_SPACES(gen, Product);
                 SET_FIELD(rr, Type, NCBI_RNAREF(ncRNA));
                 ChangeMade(CCleanupChange::eChangeRNAref);
             }
-            // no need to erase ncrna_name because it points to 
-            // global memory.
         }
     }
 

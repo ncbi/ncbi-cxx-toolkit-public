@@ -1277,3 +1277,35 @@ BOOST_AUTO_TEST_CASE(Test_AddPartialToProteinTitle)
     BOOST_CHECK_EQUAL(title->GetTitle(), "Chromosome (apicoplast) abc, partial (apicoplast) [Sebaea microphylla]");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4360)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> rna = AddMiscFeature(entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    rna->SetData().SetRna().SetExt().SetGen().SetProduct("stRNA");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+
+    cleanup.SetScope(scope);
+    cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetProduct(), "stRNA");
+    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().IsSetClass(), false);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodSeq();
+    rna = AddMiscFeature(entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    rna->SetData().SetRna().SetExt().SetGen().SetProduct("Vault_RNA fakeproduct");
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+    cleanup.BasicCleanup(*entry);
+    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetProduct(), "fakeproduct");
+    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetClass(), "vault_RNA");
+}
