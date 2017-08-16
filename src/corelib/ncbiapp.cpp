@@ -145,7 +145,8 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 CNcbiApplication::~CNcbiApplication(void)
 {
     CThread::sm_IsExiting = true;
-
+    // Execute exit actions before waiting for all threads to stop.
+    m_OnExitActions.ExecuteActions();
 #if defined(NCBI_THREADS)
     CThread::WaitForAllThreads();
 #endif
