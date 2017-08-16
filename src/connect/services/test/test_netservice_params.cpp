@@ -489,11 +489,41 @@ BOOST_AUTO_TEST_CASE(ConfigRegistry)
         param.SetValue(memory_registry);
     }
 
+
+    // Testing config containing all set sections
+
     CConfig config(memory_registry);
     CConfigRegistry config_registry(&config);
 
     for (auto& param : random_params) {
         param.CheckValue(config_registry);
+    }
+
+
+    // Testing sub-configs (one per set section)
+
+    map<string, vector<SRandomParam>> params_by_sections;
+
+    for (auto& param : random_params) {
+        if (!param.indices.GetPriority()) continue;
+
+        const auto& section = param.sections.front();
+        params_by_sections[section].push_back(param);
+    }
+
+    for (auto& section_params : params_by_sections) {
+        const CConfig::TParamTree* tree = config.GetTree();
+        BOOST_CHECK(tree);
+
+        const CConfig::TParamTree* sub_tree = tree->FindSubNode(section_params.first);
+        BOOST_CHECK(sub_tree);
+
+        CConfig sub_config(sub_tree);
+        CConfigRegistry sub_config_registry(&config);
+
+        for (auto& param : section_params.second) {
+            param.CheckValue(sub_config_registry);
+        }
     }
 }
 
