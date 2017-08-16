@@ -86,10 +86,10 @@ public:
     const string& GetProductString(void);
 
 private:
-    void x_AddExon(const CSpliced_exon& ex);
-    void x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset);
+    bool x_AddExon(const CSpliced_exon& ex);
+    bool x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset);
     void x_Match(TSeqPos gen_from, TSeqPos gen_to_open);
-    void x_Mismatch(TSeqPos mismatch_len);
+    bool x_Mismatch(TSeqPos mismatch_len);
 
     const CSeq_align& m_Align;
     CScope& m_Scope;
@@ -174,12 +174,12 @@ const string& CProductStringBuilder::GetProductString(void)
 
     if ( m_ProdRev ) {
         REVERSE_ITERATE(CSpliced_seg::TExons, ex_it, exons) {
-            x_AddExon(**ex_it);
+            if ( !x_AddExon(**ex_it) ) return kEmptyStr;
         }
     }
     else {
         ITERATE(CSpliced_seg::TExons, ex_it, exons) {
-            x_AddExon(**ex_it);
+            if ( !x_AddExon(**ex_it) ) return kEmptyStr;
         }
     }
     if (m_MismatchPos < m_MismatchedBases.size()) {
@@ -190,7 +190,7 @@ const string& CProductStringBuilder::GetProductString(void)
 }
 
 
-void CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
+bool CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
 {
     TSeqPos gen_from = ex.GetGenomic_start();
     TSeqPos gen_to = ex.GetGenomic_end() + 1; // open range
@@ -205,7 +205,7 @@ void CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
 
     TSeqPos prod_from = ex.GetProduct_start().GetNucpos();
     if (prod_from > m_ProdPos) {
-        x_Mismatch(prod_from - m_ProdPos);
+        if ( !x_Mismatch(prod_from - m_ProdPos) ) return false;
     }
     _ASSERT(prod_from == m_ProdPos);
 
@@ -214,12 +214,12 @@ void CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
         TSeqPos gen_offset = 0;
         if (m_ProdRev) {
             REVERSE_ITERATE(CSpliced_exon::TParts, part_it, ex.GetParts()) {
-                x_AddExonPart(**part_it, gen_offset);
+                if ( !x_AddExonPart(**part_it, gen_offset) ) return false;
             }
         }
         else {
             ITERATE(CSpliced_exon::TParts, part_it, ex.GetParts()) {
-                x_AddExonPart(**part_it, gen_offset);
+                if ( !x_AddExonPart(**part_it, gen_offset) ) return false;
             }
         }
     }
@@ -228,10 +228,11 @@ void CProductStringBuilder::x_AddExon(const CSpliced_exon& ex)
         x_Match(0, gen_to - gen_from);
     }
     _ASSERT(m_ProdPos == ex.GetProduct_end().GetNucpos() + 1);
+    return true;
 }
 
 
-void CProductStringBuilder::x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset)
+bool CProductStringBuilder::x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos& gen_offset)
 {
     switch ( ch.Which() ) {
     case CSpliced_exon_chunk::e_Match:
@@ -239,7 +240,7 @@ void CProductStringBuilder::x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos
         gen_offset += ch.GetMatch();
         break;
     case CSpliced_exon_chunk::e_Mismatch:
-        x_Mismatch(ch.GetMismatch());
+        if ( !x_Mismatch(ch.GetMismatch()) ) return false;
         gen_offset += ch.GetMismatch();
         break;
     case CSpliced_exon_chunk::e_Product_ins:
@@ -255,6 +256,7 @@ void CProductStringBuilder::x_AddExonPart(const CSpliced_exon_chunk& ch, TSeqPos
         NCBI_THROW(CObjmgrUtilException, eBadAlignment,
             "Unsupported chunk type");
     }
+    return true;
 }
 
 
@@ -267,11 +269,13 @@ void CProductStringBuilder::x_Match(TSeqPos gen_from, TSeqPos gen_to_open)
 
 
 inline
-void CProductStringBuilder::x_Mismatch(TSeqPos mismatch_len)
+bool CProductStringBuilder::x_Mismatch(TSeqPos mismatch_len)
 {
+    if (m_MismatchedBases.size() < mismatch_len) return false;
     m_Result.append(m_MismatchedBases.substr(m_MismatchPos, mismatch_len));
     m_MismatchPos += mismatch_len;
     m_ProdPos += mismatch_len;
+    return true;
 }
 
 
