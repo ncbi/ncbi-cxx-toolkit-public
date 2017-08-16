@@ -273,12 +273,14 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER     0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
-#define REG_CONN_SERVICE_NAME     "SERVICE_NAME"
-#define REG_CONN_LOCAL_ENABLE     "LOCAL_ENABLE"
-#define REG_CONN_LBSMD_DISABLE    "LBSMD_DISABLE"
-#define REG_CONN_LBOS_ENABLE      "LBOS_ENABLE"
-#define REG_CONN_NAMERD_ENABLE    "NAMERD_ENABLE"
-#define REG_CONN_DISPD_DISABLE    "DISPD_DISABLE"
+#define REG_CONN_SERVICE_NAME               "SERVICE_NAME"
+#define REG_CONN_LOCAL_ENABLE               "LOCAL_ENABLE"
+#define REG_CONN_LBSMD_DISABLE              "LBSMD_DISABLE"
+#define REG_CONN_LBOS_ENABLE                "LBOS_ENABLE"
+#define REG_CONN_LINKERD_ENABLE             "LINKERD_ENABLE"
+#define REG_CONN_NAMERD_FOR_LINKERD_ENABLE  "NAMERD_FOR_LINKERD_ENABLE"
+#define REG_CONN_NAMERD_ENABLE              "NAMERD_ENABLE"
+#define REG_CONN_DISPD_DISABLE              "DISPD_DISABLE"
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES   "LOCAL_SERVICES"

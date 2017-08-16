@@ -1,5 +1,5 @@
 ##############################################################################
-# 
+#
 #
 
 #
@@ -66,7 +66,8 @@ set(SRC_C
     ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service
     ncbi_host_info ncbi_dispd ncbi_service_connector ncbi_sendmail
     ncbi_ftp_connector ncbi_lb ncbi_local ncbi_base64 ncbi_version
-    ncbi_lbos ncbi_namerd parson ncbi_ipv6 ncbi_iprange ncbi_localip
+    ncbi_lbos ncbi_linkerd ncbi_namerd parson ncbi_ipv6
+    ncbi_iprange ncbi_localip
     ${os_src}
     )
 
