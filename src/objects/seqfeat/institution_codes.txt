@@ -30,7 +30,7 @@ ABO	s	Aboyne Castle
 ABRC	b	Arabidopsis Biological Resource Center		
 ABRIICC	c	ABRIICC Agricultural Biotechnology Research Institute of Iran Culture collection		
 ABRN	s	Centre for Ecology and Hydrology		
-ABS<UK>	sc	University of Wales, Botany Department		
+ABS<UK>	sc	Aberystwyth University, Institute of Biological. Environmental and Rural Sciences		
 ABS<USA>	s	Archbold Biological Station		
 ABSH	s	Southern Illinois Universitiy, Department of Plant Biology		
 ABSL	s	University of Minnesota, American Bryological and Lichenological Society		
@@ -358,7 +358,7 @@ BAN	s	Banaras Hindu University, Botany Department
 BANG	s	Universite de Bangui		
 BAP	s	Oxford Botanic Garden		
 BAR	s	University of the West Indies, Department of Biological and Chemical Sciences		
-BARC	s	Systematic Botany and Mycology Laboratory, USDA/ARS		
+BARC	s	Beltsville Agricultural Research Center		
 BARO	s	Maharaja Sayajirao University of Baroda, Botany Department		
 BART	s	Bartlett Arboretum		
 BAS<BGR>	s	Bulgarian Academy of Science		
@@ -6792,6 +6792,7 @@ UMRC	c	University of Minnesota Rhizobium Collection
 UMRM	s	W.R. Enns Entomology Museum		
 UMS	s	Universiti Malaysia Sabah		
 UMSA	s	Instituto de Ecologia		
+UMSNH	s	Ichthyology Collection of the Laboratory of Aquatic Biology, Michoacan University of San Nicolas de Hidalgo		
 UMSP	s	University of Minnesota		
 UMSS	s	Universidad Mayor de San Simon, Facultad de Ciencias y Tecnologia, Centro de Biodiversidad, Zoologia,Laboratorio de Ictiologia		
 UMT	s	Mutare Museum		
@@ -7008,7 +7009,14 @@ UTCI	s	University of Tennessee at Chattanooga Insect Collection
 UTD	s	University of Texas, Plant Resources Center		
 UTE	s	University of Tartu		
 UTEP	s	University of Texas at El Paso Biodiversity Collections		
+UTEP:Bird	s	University of Texas at El Paso Biodiversity Collections, Ornithology Collection
+UTEP:Ento	s	University of Texas at El Paso Biodiversity Collections, Entomology Collection
+UTEP:ES	s	University of Texas at El Paso Biodiversity Collections, Earth Science  fossils Collections
+UTEP:Fish	s	University of Texas at El Paso Biodiversity Collections, Ichthyology collection
+UTEP:Herb	s	University of Texas at El Paso Biodiversity Collections, Herbarium
 UTEP:Herp	s	University of Texas at El Paso Biodiversity Collections, Herpetology Collection
+UTEP:INV	s	University of Texas at El Paso Biodiversity Collections, Invertebrates - Molluscs Collections
+UTEP:Zoo	s	University of Texas at El Paso Biodiversity Collections, Zooplankton collections
 UTEX	c	The Culture Collection of Algae at the University of Texas Austin		
 UTG	s	University of Tuebingen		
 UTGD	s	Geology Department, The University of Tasmania		
