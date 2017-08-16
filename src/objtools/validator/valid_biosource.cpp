@@ -345,6 +345,9 @@ bool CValidError_imp::IsOrganelle(int genome)
 
 bool CValidError_imp::IsOrganelle(CBioseq_Handle seq)
 {
+    if (!seq) {
+        return false;
+    }
     bool rval = false;
     CSeqdesc_CI sd(seq, CSeqdesc::e_Source);
     if (sd && sd->GetSource().IsSetGenome() && IsOrganelle(sd->GetSource().GetGenome())) {

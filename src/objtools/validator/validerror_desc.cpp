@@ -34,7 +34,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_desc.hpp>
+#include <objtools/validator/validerror_descr.hpp>
+#include <objtools/validator/validerror_annot.hpp>
+#include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <objects/general/User_object.hpp>

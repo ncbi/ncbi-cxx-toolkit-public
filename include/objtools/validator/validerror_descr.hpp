@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef VALIDATOR___VALIDATORP__HPP
-#define VALIDATOR___VALIDATORP__HPP
+#ifndef VALIDATOR___VALIDERROR_DESCR__HPP
+#define VALIDATOR___VALIDERROR_DESCR__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_autoinit.hpp>
@@ -54,19 +54,16 @@
 #include <objects/taxon3/taxon3.hpp>
 
 #include <objtools/validator/validator.hpp>
-#include <objtools/validator/tax_validation_and_cleanup.hpp>
-#include <objtools/validator/utilities.hpp>
-#include <objtools/validator/feature_match.hpp>
-#include <objtools/validator/gene_cache.hpp>
 #include <objtools/validator/validerror_imp.hpp>
 #include <objtools/validator/validerror_base.hpp>
 #include <objtools/validator/validerror_feat.hpp>
+//#include <objtools/validator/validerror_align.hpp>
 
-#include <objtools/alnmgr/sparse_aln.hpp>
+//#include <objtools/alnmgr/sparse_aln.hpp>
 
-#include <objmgr/util/create_defline.hpp>
+//#include <objmgr/util/create_defline.hpp>
 
-#include <objmgr/util/feature.hpp>
+//#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -115,74 +112,25 @@ class CT3Error;
 
 BEGIN_SCOPE(validator)
 
-class CTaxValidationAndCleanup;
-class CGeneCache;
-class CValidError_base;
-class CValidError_bioseq;
-
-// =============================================================================
-//                            Caching classes
-// =============================================================================
-
-// for convenience
-typedef CValidator::CCache CCache;
+// ============================  Validate SeqDescr  ============================
 
 
-// =============================================================================
-//                         Specific validation classes
-// =============================================================================
-
-
-
-
-// ===========================  for handling PCR primer subtypes on BioSource ==
-
-class CPCRSet
+class CValidError_descr : private CValidError_base
 {
 public:
-    CPCRSet(size_t pos);
-    virtual ~CPCRSet(void);
+    CValidError_descr(CValidError_imp& imp);
+    virtual ~CValidError_descr(void);
 
-    string GetFwdName(void)            const { return m_FwdName; }
-    string GetFwdSeq(void)             const { return m_FwdSeq; }
-    string GetRevName(void)            const { return m_RevName; }
-    string GetRevSeq(void)             const { return m_RevSeq; }
-    size_t GetOrigPos(void)            const { return m_OrigPos; }
-
-    void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
-    void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
-    void SetRevName(string rev_name) { m_RevName = rev_name; }
-    void SetRevSeq(string rev_seq)   { m_RevSeq = rev_seq; }
-
+    void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
+    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report);
 private:
-    string m_FwdName;
-    string m_FwdSeq;
-    string m_RevName;
-    string m_RevSeq;
-    size_t m_OrigPos;
+
+    CValidError_desc m_DescValidator;
 };
-
-class CPCRSetList
-{
-public:
-    CPCRSetList(void);
-    ~CPCRSetList(void);
-
-    void AddFwdName (string name);
-    void AddRevName (string name);
-    void AddFwdSeq (string name);
-    void AddRevSeq (string name);
-
-    bool AreSetsUnique(void);
-
-private:
-    vector <CPCRSet *> m_SetList;
-};
-
 
 
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* VALIDATOR___VALIDATORP__HPP */
+#endif  /* VALIDATOR___VALIDERROR_DESCR__HPP */

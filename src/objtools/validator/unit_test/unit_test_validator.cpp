@@ -13796,7 +13796,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RnaProductMismatch)
     rna_seq->SetSeq().SetId().front()->SetLocal().SetStr("rna");
     
     CRef<CSeq_entry> entry(new CSeq_entry());
-    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    entry->SetSet().SetClass(CBioseq_set::eClass_gen_prod_set);
     entry->SetSet().SetSeq_set().push_back (nuc);
     entry->SetSet().SetSeq_set().push_back (rna_seq);
 
@@ -14045,12 +14045,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UTRdoesNotAbutCDS)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
 
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ExceptionProblem", "Exception explanation text is also found in feature comment"));
 
-    CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
     feat->SetExcept(true);
 
     // look for exception in comment

@@ -37,6 +37,10 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_autoinit.hpp>
 
+#include <objtools/validator/validerror_desc.hpp>
+#include <objtools/validator/validerror_descr.hpp>
+#include <objtools/validator/validerror_annot.hpp>
+#include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
@@ -219,6 +223,16 @@ void CValidError_bioseq::ValidateBioseq (
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
 
+        CSeq_entry_Handle appropriate_parent = GetAppropriateXrefParent(m_CurrentHandle.GetSeq_entry_Handle());
+        if (appropriate_parent) {
+            CRef<CScope> tmp_scope(new CScope(*(CObjectManager::GetInstance())));
+            tmp_scope->AddDefaults();
+            CSeq_entry_Handle this_seh = tmp_scope->AddTopLevelSeqEntry(*(appropriate_parent.GetCompleteSeq_entry()));
+            m_FeatValidator.SetScope(*tmp_scope);
+            m_FeatValidator.SetTSE(this_seh);
+        }
+        
+
         try {
             CCacheImpl::SFeatKey gene_key(
                 CSeqFeatData::e_Gene, CCacheImpl::kAnyFeatSubtype,
@@ -254,6 +268,10 @@ void CValidError_bioseq::ValidateBioseq (
         }
         if (IsWGSMaster(seq, m_CurrentHandle.GetScope())) {
             ValidateWGSMaster(m_CurrentHandle);
+        }
+        if (appropriate_parent) {
+            m_FeatValidator.SetScope(*m_Scope);
+            m_FeatValidator.SetTSE(m_Imp.GetTSEH());
         }
 
     } catch ( const exception& e ) {

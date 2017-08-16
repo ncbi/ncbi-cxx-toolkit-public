@@ -53,7 +53,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_align.hpp>
 #include <objtools/validator/utilities.hpp>
 
 

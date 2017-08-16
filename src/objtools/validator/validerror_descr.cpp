@@ -32,7 +32,9 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validator.hpp>
+#include <objtools/validator/validerror_desc.hpp>
+#include <objtools/validator/validerror_descr.hpp>
 
 #include <serial/iterator.hpp>
 

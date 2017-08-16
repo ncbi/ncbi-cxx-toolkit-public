@@ -37,6 +37,11 @@
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_desc.hpp>
+#include <objtools/validator/validerror_descr.hpp>
+#include <objtools/validator/validerror_annot.hpp>
+#include <objtools/validator/validerror_bioseq.hpp>
+#include <objtools/validator/validerror_bioseqset.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validator_barcode.hpp>
 #include <objtools/cleanup/cleanup.hpp>
@@ -657,6 +662,7 @@ void CValidError_imp::PostErr
                 item->SetLocus_tag(ft.GetData().GetGene().GetLocus_tag());
             }
         } else {
+            // TODO: this should be part of post-processing
             CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
             if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
                 !NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
@@ -850,7 +856,6 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
-#if 0
     CConstRef<CSeq_id> id = GetReportableSeqIdForAlignment(align, *m_Scope);
     if (id) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
@@ -859,7 +864,6 @@ void CValidError_imp::PostErr
             return;
         }
     }
-#endif
 
     // Can't get bioseq for reporting, use other Alignment label
     string desc = "ALIGNMENT: ";
@@ -1640,6 +1644,9 @@ void CValidError_imp::Validate(const CSeq_feat& feat, CScope* scope)
     }
 
     CValidError_feat feat_validator(*this);
+    feat_validator.SetScope(*m_Scope);
+    CSeq_entry_Handle empty;
+    feat_validator.SetTSE(empty);
     feat_validator.ValidateSeqFeat(feat);
     if (feat.IsSetData() && feat.GetData().IsBiosrc()) {
         const CBioSource& src = feat.GetData().GetBiosrc();
@@ -2789,15 +2796,21 @@ static bool s_SeqLocHasGI (const CSeq_loc& loc)
 }
 
 
+void CValidError_imp::SetTSE(const CSeq_entry_Handle& seh)
+{
+    m_TSEH = seh;
+    m_TSE = m_TSEH.GetCompleteSeq_entry();
+    m_GeneCache.Clear();
+}
+
+
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
-    m_TSEH = seh;
+    SetTSE(seh);
 
     m_Scope.Reset(&m_TSEH.GetScope());
-    
-    m_TSE = m_TSEH.GetCompleteSeq_entry();
-    
+        
     // If no Pubs/BioSource in CSeq_entry, post only one error
     CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
     m_NoPubs = !pub;
@@ -3334,7 +3347,7 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TFeat ft)
+ const CSeq_feat& ft)
 {
     m_Imp.PostErr(sv, et, msg, ft);
 }
@@ -3344,7 +3357,7 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TBioseq sq)
+ const CBioseq& sq)
 {
     m_Imp.PostErr(sv, et, msg, sq);
 }
@@ -3354,50 +3367,28 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TEntry ctx,
- TDesc ds)
+ const CSeq_entry& ctx,
+ const CSeqdesc& ds)
 {
     m_Imp.PostErr(sv, et, msg, ctx, ds);
 }
-
-
-//void CValidError_base::PostErr
-//(EDiagSev sv,
-// EErrType et,
-// const string& msg,
-// TBioseq sq,
-// TDesc ds)
-//{
-//    m_Imp.PostErr(sv, et, msg, sq, ds);
-//}
 
 
 void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg, 
- TSet set)
+ const CBioseq_set& set)
 {
     m_Imp.PostErr(sv, et, msg, set);
 }
-
-
-//void CValidError_base::PostErr
-//(EDiagSev sv, 
-// EErrType et, 
-// const string& msg, 
-// TSet set,
-// TDesc ds)
-//{
-//    m_Imp.PostErr(sv, et, msg, set, ds);
-//}
 
 
 void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TAnnot annot)
+ const CSeq_annot& annot)
 {
     m_Imp.PostErr(sv, et, msg, annot);
 }
@@ -3406,7 +3397,7 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TGraph graph)
+ const CSeq_graph& graph)
 {
     m_Imp.PostErr(sv, et, msg, graph);
 }
@@ -3416,8 +3407,8 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TBioseq sq,
- TGraph graph)
+ const CBioseq& sq,
+ const CSeq_graph& graph)
 {
     m_Imp.PostErr(sv, et, msg, sq, graph);
 }
@@ -3427,7 +3418,7 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TAlign align)
+ const CSeq_align& align)
 {
     m_Imp.PostErr(sv, et, msg, align);
 }
@@ -3437,7 +3428,7 @@ void CValidError_base::PostErr
 (EDiagSev sv,
  EErrType et,
  const string& msg,
- TEntry entry)
+ const CSeq_entry& entry)
 {
     m_Imp.PostErr(sv, et, msg, entry);
 }
@@ -3447,6 +3438,46 @@ CValidError_base::GetCache(void)
 {
     return m_Imp.GetCache();
 }
+
+
+CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle seh)
+{
+    CSeq_entry_Handle appropriate_parent;
+
+    CSeq_entry_Handle np;
+    CSeq_entry_Handle gps;
+    if (seh.IsSet() && seh.GetSet().IsSetClass()) {
+        if (seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+            np = seh;
+        } else if (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            gps = seh;
+        }
+    } else if (seh.IsSeq()) {
+        CSeq_entry_Handle p = seh.GetParentEntry();
+        if (p && p.IsSet() && p.GetSet().IsSetClass()) {
+            if (p.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+                np = p;
+            } else if (p.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+                gps = p;
+            }
+        }
+    }
+    if (gps) {
+        appropriate_parent = gps;
+    } else if (np) {
+        CSeq_entry_Handle gp = np.GetParentEntry();
+        if (gp && gp.IsSet() && gp.GetSet().IsSetClass() &&
+            gp.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            appropriate_parent = gp;
+        } else {
+            appropriate_parent = np;
+        }
+    } else {
+        appropriate_parent = seh;
+    }
+    return appropriate_parent;
+}
+
 
 const CCacheImpl::CPubdescInfo &
 CCacheImpl::GetPubdescToInfo(
@@ -3769,73 +3800,13 @@ CCacheImpl::GetBioseqHandleFromLocation(
 }
 
 
-CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(CBioseq_Handle bsh)
+void CCacheImpl::Clear()
 {
-    TSeqTreeMap::iterator smit = m_SeqTreeMap.find(bsh);
-    if (smit == m_SeqTreeMap.end()) {
-        CFeat_CI f(bsh);
-        CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
-        m_SeqTreeMap[bsh] = tr;
-        return tr;
-    } else  {
-        return smit->second;
-    }
-}
-
-
-CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope)
-{
-    CBioseq_Handle bsh;
-    try {
-        bsh = scope.GetBioseqHandle(loc);
-    } catch (CException&) {
-        CSeq_loc_CI li(loc);
-        while (li && !bsh) {
-            bsh = scope.GetBioseqHandle(li.GetSeq_id());
-            ++li;
-        }
-    }
-
-    if (bsh) {
-        return GetFeatTreeFromCache(bsh);
-    } else {
-        return (CRef<feature::CFeatTree>(NULL));
-    }
-}
-
-
-CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope)
-{
-    return GetFeatTreeFromCache(feat.GetLocation(), scope);
-}
-
-
-CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope& scope)
-{
-    if (!feat) {
-        return CConstRef<CSeq_feat>(NULL);
-    }
-    CConstRef<CSeq_feat> gene;
-    TFeatGeneMap::iterator it = m_FeatGeneMap.find(feat);
-    if (it == m_FeatGeneMap.end()) {
-        try {
-            CSeq_feat_Handle fh = scope.GetSeq_featHandle(*feat);
-            CRef<feature::CFeatTree> tr = GetFeatTreeFromCache(*feat, scope);
-            if (!tr) {
-                return CConstRef<CSeq_feat>(NULL);
-            }
-            CMappedFeat mf = tr->GetBestGene(fh);
-            if (mf) {
-                gene = mf.GetSeq_feat();
-            }
-        } catch (CException&) {
-            gene = sequence::GetGeneForFeature(*feat, scope);
-        }
-        m_FeatGeneMap[feat] = gene;
-        return gene;
-    } else {
-        return it->second;
-    }
+    m_pubdescCache.clear();
+    m_featCache.clear();
+    m_featStrKeyToFeatsCache.clear();
+    m_featToBioseqCache.clear();
+    m_IdToBioseqCache.clear();
 }
 
 

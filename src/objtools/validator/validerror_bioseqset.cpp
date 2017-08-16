@@ -32,7 +32,12 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_desc.hpp>
+#include <objtools/validator/validerror_descr.hpp>
+#include <objtools/validator/validerror_annot.hpp>
+#include <objtools/validator/validerror_bioseq.hpp>
+#include <objtools/validator/validerror_bioseqset.hpp>
+#include <objtools/validator/validerror_base.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <objmgr/util/sequence.hpp>
@@ -111,12 +116,10 @@ void CValidError_bioseqset::ValidateBioseqSet(
             ValidateBioseqSet (set);
         } else if (se.IsSeq()) {
             const CBioseq& seq = se.GetSeq();
-
             // Validate Member Seq
             m_BioseqValidator.ValidateBioseq(seq);
         }
     }
-
     // note - need to do this with an iterator, so that we count sequences in subsets
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {

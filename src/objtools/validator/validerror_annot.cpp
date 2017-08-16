@@ -32,7 +32,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_annot.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <objects/general/User_object.hpp>
@@ -43,6 +43,8 @@
 #include <objects/seq/Annot_descr.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/object_manager.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -130,8 +132,31 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
             m_GraphValidator.ValidateSeqGraph(**graph);
         }
     } else if ( annot.IsFtable() ) {
-        FOR_EACH_FEATURE_ON_ANNOT (feat, annot) {
-            m_FeatValidator.ValidateSeqFeat(**feat);
+        CSeq_entry_Handle appropriate_parent;
+        if (m_Scope) {
+            CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(annot);
+            if (ah) {
+                CSeq_entry_Handle seh = ah.GetParentEntry();
+                if (seh) {
+                    appropriate_parent = GetAppropriateXrefParent(seh);
+                }
+            }
+        }
+        if (appropriate_parent) {
+            CRef<CScope> tmp_scope(new CScope(*(CObjectManager::GetInstance())));
+            tmp_scope->AddDefaults();
+            CSeq_entry_Handle this_seh = tmp_scope->AddTopLevelSeqEntry(*(appropriate_parent.GetCompleteSeq_entry()));
+            m_FeatValidator.SetScope(*tmp_scope);
+            m_FeatValidator.SetTSE(this_seh);
+            FOR_EACH_FEATURE_ON_ANNOT(feat, annot) {
+                m_FeatValidator.ValidateSeqFeat(**feat);
+            }
+            m_FeatValidator.SetScope(*m_Scope);
+            m_FeatValidator.SetTSE(m_Imp.GetTSEH());
+        } else {
+            FOR_EACH_FEATURE_ON_ANNOT(feat, annot) {
+                m_FeatValidator.ValidateSeqFeat(**feat);
+            }
         }
     }
 }

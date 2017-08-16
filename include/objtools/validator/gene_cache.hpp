@@ -23,16 +23,16 @@
  *
  * ===========================================================================
  *`
- * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
+ * Author:  Colleen Bollin
  *
  * File Description:
- *   Privae classes and definition for the validator
+ *   Gene cache for validating features
  *   .......
  *
  */
 
-#ifndef VALIDATOR___VALIDATORP__HPP
-#define VALIDATOR___VALIDATORP__HPP
+#ifndef VALIDATOR___GENE_CACHE__HPP
+#define VALIDATOR___GENE_CACHE__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_autoinit.hpp>
@@ -57,10 +57,6 @@
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/feature_match.hpp>
-#include <objtools/validator/gene_cache.hpp>
-#include <objtools/validator/validerror_imp.hpp>
-#include <objtools/validator/validerror_base.hpp>
-#include <objtools/validator/validerror_feat.hpp>
 
 #include <objtools/alnmgr/sparse_aln.hpp>
 
@@ -115,69 +111,29 @@ class CT3Error;
 
 BEGIN_SCOPE(validator)
 
-class CTaxValidationAndCleanup;
-class CGeneCache;
-class CValidError_base;
-class CValidError_bioseq;
 
-// =============================================================================
-//                            Caching classes
-// =============================================================================
-
-// for convenience
-typedef CValidator::CCache CCache;
-
-
-// =============================================================================
-//                         Specific validation classes
-// =============================================================================
-
-
-
-
-// ===========================  for handling PCR primer subtypes on BioSource ==
-
-class CPCRSet
-{
+class CGeneCache {
 public:
-    CPCRSet(size_t pos);
-    virtual ~CPCRSet(void);
+    CGeneCache() {};
+    ~CGeneCache() {};
 
-    string GetFwdName(void)            const { return m_FwdName; }
-    string GetFwdSeq(void)             const { return m_FwdSeq; }
-    string GetRevName(void)            const { return m_RevName; }
-    string GetRevSeq(void)             const { return m_RevSeq; }
-    size_t GetOrigPos(void)            const { return m_OrigPos; }
-
-    void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
-    void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
-    void SetRevName(string rev_name) { m_RevName = rev_name; }
-    void SetRevSeq(string rev_seq)   { m_RevSeq = rev_seq; }
+    CConstRef<CSeq_feat> GetGeneFromCache(const CSeq_feat* feat, CScope& scope);
+    CConstRef<CSeq_feat> GetmRNAFromCache(const CSeq_feat* feat, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_loc& loc, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope);
+    CRef<feature::CFeatTree> GetFeatTreeFromCache(CBioseq_Handle bh);
+    void Clear() { m_FeatGeneMap.clear(); m_SeqTreeMap.clear(); }
 
 private:
-    string m_FwdName;
-    string m_FwdSeq;
-    string m_RevName;
-    string m_RevSeq;
-    size_t m_OrigPos;
+
+    typedef map<const CSeq_feat*, CConstRef<CSeq_feat> > TFeatGeneMap;
+    TFeatGeneMap            m_FeatGeneMap;
+    
+    typedef map<CBioseq_Handle, CRef<feature::CFeatTree> > TSeqTreeMap;
+    TSeqTreeMap m_SeqTreeMap;
+
 };
 
-class CPCRSetList
-{
-public:
-    CPCRSetList(void);
-    ~CPCRSetList(void);
-
-    void AddFwdName (string name);
-    void AddRevName (string name);
-    void AddFwdSeq (string name);
-    void AddRevSeq (string name);
-
-    bool AreSetsUnique(void);
-
-private:
-    vector <CPCRSet *> m_SetList;
-};
 
 
 
@@ -185,4 +141,4 @@ END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* VALIDATOR___VALIDATORP__HPP */
+#endif  /* VALIDATOR___GENE_CACHE__HPP */

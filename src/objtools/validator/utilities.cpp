@@ -56,7 +56,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon1/taxon1.hpp>
-//#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <vector>

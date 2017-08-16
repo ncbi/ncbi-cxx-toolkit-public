@@ -649,6 +649,7 @@ public:
 
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
+    void SetContext(CConstRef<CSeq_entry> ctx) { m_Ctx = ctx; }
     
     // use previously populated fields to construct the "standard" description
     void SetFeatureObjDescFromFields();
