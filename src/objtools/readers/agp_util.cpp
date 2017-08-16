@@ -244,7 +244,7 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
 
     "contig",
     "centromere",
-    "short arm",
+    "short_arm",
     "heterochromatin",
     "telomere"
 };
