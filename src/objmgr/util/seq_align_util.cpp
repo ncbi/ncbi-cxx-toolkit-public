@@ -183,7 +183,7 @@ const string& CProductStringBuilder::GetProductString(void)
         }
     }
     if (m_MismatchPos < m_MismatchedBases.size()) {
-        x_Mismatch(m_MismatchedBases.size() - m_MismatchPos);
+        x_Mismatch(TSeqPos(m_MismatchedBases.size() - m_MismatchPos));
     }
 
     return m_Result;
