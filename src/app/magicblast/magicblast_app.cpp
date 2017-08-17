@@ -1287,7 +1287,7 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     ostr << "0" << sep;
     
     // mapping quality
-    ostr << "255" << sep;
+    ostr << "0" << sep;
 
     // CIGAR
     ostr << "*" << sep;
