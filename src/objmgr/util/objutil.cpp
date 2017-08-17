@@ -1616,37 +1616,37 @@ EResolveOrder GetResolveOrder(CScope& scope,
 //  ============================================================================
 //  Link locations:
 //  ============================================================================
-const string strLinkBaseNuc( 
-    "https://www.ncbi.nlm.nih.gov/nuccore/" );
-const string strLinkBaseProt( 
-    "https://www.ncbi.nlm.nih.gov/protein/" );
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseNuc =
+    "https://www.ncbi.nlm.nih.gov/nuccore/";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseProt =
+    "https://www.ncbi.nlm.nih.gov/protein/";
 
-const string strLinkBaseEntrezViewer(
-    "https://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" ); // https forwarded to http
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseEntrezViewer =
+    "https://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val="; // https forwarded to http
 
-const string strLinkBaseTaxonomy( 
-    "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
-const string strLinkBaseTransTable(
-    "https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG" );
-const string strLinkBasePubmed(
-    "https://www.ncbi.nlm.nih.gov/pubmed/" );
-const string strLinkBaseExpasy(
-    "http://www.expasy.org/enzyme/" ); // not government site
-const string strLinkBaseNucSearch(
-    "https://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
-const string strLinkBaseGenomePrj(
-    "https://www.ncbi.nlm.nih.gov/bioproject/" );
-const string strLinkBaseLatLon(
-    "https://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
-const string strLinkBaseGeneOntology (
-    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" ); // not government site
-const string strLinkBaseGeneOntologyRef (
-    "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:" ); // not government site
-const string strLinkBaseUSPTO(
-    "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=" );
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseTaxonomy  =
+    "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseTransTable =
+    "https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c#SG";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBasePubmed =
+    "https://www.ncbi.nlm.nih.gov/pubmed/";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseExpasy =
+    "http://www.expasy.org/enzyme/"; // not government site
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseNucSearch =
+    "https://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGenomePrj =
+    "https://www.ncbi.nlm.nih.gov/bioproject/";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseLatLon =
+    "https://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html";
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntology =
+    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"; // not government site
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef =
+    "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:"; // not government site
+NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO =
+    "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=";
 
-const string strDocLink(
-    "https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/" );
+NCBI_XOBJEDIT_EXPORT const char* strDocLink =
+    "https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/";
 
 namespace {
     // make sure we're not "double-sanitizing"

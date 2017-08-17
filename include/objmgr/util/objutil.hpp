@@ -158,23 +158,23 @@ EResolveOrder GetResolveOrder(CScope& scope,
 //  ============================================================================
 //  Link locations:
 //  ============================================================================
-extern const string strLinkBaseNuc;
-extern const string strLinkBaseProt;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseNuc;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseProt;
 
-extern const string strLinkBaseEntrezViewer;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseEntrezViewer;
 
-extern const string strLinkBaseTaxonomy;
-extern const string strLinkBaseTransTable;
-extern const string strLinkBasePubmed;
-extern const string strLinkBaseExpasy;
-extern const string strLinkBaseNucSearch;
-extern const string strLinkBaseGenomePrj;
-extern const string strLinkBaseLatLon;
-extern const string strLinkBaseGeneOntology;
-extern const string strLinkBaseGeneOntologyRef;
-extern const string strLinkBaseUSPTO;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseTaxonomy;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseTransTable;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBasePubmed;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseExpasy;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseNucSearch;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGenomePrj;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseLatLon;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntology;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO;
 
-extern const string strDocLink;
+extern NCBI_XOBJEDIT_EXPORT const char* strDocLink;
 
 template <typename T>
 void NcbiId(CNcbiOstream& os, const T& id, bool html = false)

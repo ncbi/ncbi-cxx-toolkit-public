@@ -147,7 +147,8 @@ static string s_GetGOText(
         if (go_id != NULL) {
             go_text = string( "GO:" );
             if( is_html ) {
-                go_text += "<a href=\"" + strLinkBaseGeneOntology + *go_id + "\">";
+                go_text += "<a href=\"";
+                go_text += strLinkBaseGeneOntology + *go_id + "\">";
             }
             go_text += *go_id;
             if( is_html ) {
@@ -162,7 +163,8 @@ static string s_GetGOText(
               go_text += string( " - " );
             }
             if( is_html && go_id != NULL ) {
-                go_text += "<a href=\"" + strLinkBaseGeneOntology + *go_id + "\">";
+                go_text += "<a href=\"";
+                go_text += strLinkBaseGeneOntology + *go_id + "\">";
             }
             // NO, we NO LONGER have the dash here even if there's no go_id (RETAIN compatibility with CHANGE in C)
             go_text += *text_string;
@@ -178,7 +180,8 @@ static string s_GetGOText(
 
             go_text += " [PMID ";
             if( is_html && go_id != NULL ) {
-                go_text += "<a href=\"" + strLinkBasePubmed + pmid_str + "\">";
+                go_text += "<a href=\"";
+                go_text += strLinkBasePubmed + pmid_str + "\">";
             }
             go_text += pmid_str;
             if( is_html && go_id != NULL ) {
@@ -189,7 +192,8 @@ static string s_GetGOText(
         if ( go_ref != 0 ) {
             go_text += " [GO Ref ";
             if( is_html ) {
-                go_text += "<a href=\"" + strLinkBaseGeneOntologyRef + *go_ref + "\">";
+                go_text += "<a href=\"";
+                go_text += strLinkBaseGeneOntologyRef + *go_ref + "\">";
             }
             go_text += *go_ref;
             if( is_html ) {
@@ -978,7 +982,8 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
                 if( (*ref_iter)->GetPMID() > 0 && bHtml ) {
                     // create a link
                     const int pmid = (*ref_iter)->GetPMID();
-                    value = "[<a href=\"" + strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + 
+                    value  = "[<a href=\"";
+                    value += strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + 
                         NStr::IntToString((*ref_iter)->GetSerial()) + 
                         "</a>]";
                 } else {

@@ -116,7 +116,8 @@ void CHTMLFormatterEx::FormatProteinId(string& str, const CSeq_id& seq_id, const
 
 void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const
 {
-    str = "<a href=\"" + strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
+    str = "<a href=\"";
+    str += strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
 }
 
 void CHTMLFormatterEx::FormatTaxid(string& str, const int taxid, const string& taxname) const

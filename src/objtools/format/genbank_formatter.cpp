@@ -472,7 +472,8 @@ void CGenbankFormatter::FormatAccession
 
     string acc_line = x_FormatAccession(acc, ' ');
     if( acc.GetContext()->Config().DoHTML() && ! acc.GetContext()->GetLocation().IsWhole() ) {
-        acc_line = "<a href=\"" + strLinkBaseEntrezViewer + acc_line + "\">" + acc_line + "</a>";
+        acc_line = "<a href=\"";
+        acc_line += strLinkBaseEntrezViewer + acc_line + "\">" + acc_line + "</a>";
     }
     if ( acc.IsSetRegion() ) {
         acc_line += " REGION: ";
