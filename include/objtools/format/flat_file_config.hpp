@@ -79,9 +79,7 @@ struct SModelEvidance;
 // NEW_HTML_FMT define enables new interceptor interface for HTML links generation
 #define NEW_HTML_FMT
 
-#ifdef NEW_HTML_FMT
-
-class IHTMLFormatter: public CObject
+class NCBI_FORMAT_EXPORT IHTMLFormatter: public CObject
 {
 public:
     virtual ~IHTMLFormatter() {};
@@ -96,7 +94,7 @@ public:
     virtual void FormatGeneralId(CNcbiOstream& os, const string& id) const = 0;
 };
 
-class CHTMLEmptyFormatter : public IHTMLFormatter
+class NCBI_FORMAT_EXPORT CHTMLEmptyFormatter : public IHTMLFormatter
 {
 public:
     virtual ~CHTMLEmptyFormatter() {};
@@ -110,7 +108,6 @@ public:
     void FormatTranscript(string& str, const string& name) const;
     void FormatGeneralId(CNcbiOstream& os, const string& id) const;
 };
-#endif
 
 class NCBI_FORMAT_EXPORT CFlatFileConfig
 {
