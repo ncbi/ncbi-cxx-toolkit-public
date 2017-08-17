@@ -541,7 +541,9 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
 
 string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
 {
+#ifndef NEW_HTML_FMT
     const bool is_html = ( GetContext()->Config().DoHTML() );
+#endif
 
     CConstRef<CSeq_id> id;
     if (idh) {
