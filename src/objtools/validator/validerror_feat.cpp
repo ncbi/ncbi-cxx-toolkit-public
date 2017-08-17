@@ -7266,7 +7266,7 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
         if  (!m_Imp.IsStandaloneAnnot()) {
             if (translation_length > 6) {
                 bool is_nt, is_ng, is_nw, is_nc;
-                s_LocIdType(feat.GetLocation(), *m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nw, is_nc);
+                s_LocIdType(feat.GetLocation(), *m_Scope, *(m_TSE.GetCompleteSeq_entry()), is_nt, is_ng, is_nw, is_nc);
                 if (!(is_nt || is_ng || is_nw)) {
                     EDiagSev sev = eDiag_Error;
                     if (IsDeltaOrFarSeg(feat.GetLocation(), m_Scope)) {
@@ -7274,7 +7274,7 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
                     }
                     if (is_nc) {
                         sev = eDiag_Warning;
-                        if ( m_Imp.GetTSE().IsSeq()) {
+                        if ( m_TSE.IsSeq()) {
                             sev = eDiag_Info;
                         }
                     }
