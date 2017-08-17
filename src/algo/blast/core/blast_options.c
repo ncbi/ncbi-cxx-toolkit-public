@@ -1453,6 +1453,8 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
 
    (*options)->hsp_filt_opt = NULL;
 
+   (*options)->max_edit_distance = INT4_MAX;
+
    return 0;
 
 }
@@ -1474,6 +1476,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->min_diag_separation = min_diag_separation;
    options->culling_limit = culling_limit;
    options->hsp_filt_opt = NULL;
+   options->max_edit_distance = INT4_MAX;
 
    return 0;
 

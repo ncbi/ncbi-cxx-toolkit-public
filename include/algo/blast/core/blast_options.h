@@ -371,6 +371,8 @@ typedef struct BlastHitSavingOptions {
                                  x[0] + x[1] * query_length*/
    double percent_identity; /**< The percent identity cut-off threshold */
 
+   Int4 max_edit_distance; /**< Maximum number of mismatches and gaps */
+
    Int4 hitlist_size;/**< Maximal number of database sequences to return
                         results for */
    Int4 hsp_num_max; /**< Maximal number of HSPs to save for one database 

@@ -180,6 +180,9 @@ public:
     void SetCutoffScoreCoeffs(const vector<double>& c)
     { m_Opts->SetCutoffScoreCoeffs(c); }
 
+    int GetMaxEditDistance() const { return m_Opts->GetMaxEditDistance(); }
+    void SetMaxEditDistance(int e) { m_Opts->SetMaxEditDistance(e); }
+
 
     /************************ Mapping options ************************/
 

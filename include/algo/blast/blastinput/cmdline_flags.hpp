@@ -392,7 +392,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgLineLength;
 // Mapper arguments
 /// Argument to specify whether mapped reads are paired
 NCBI_BLASTINPUT_EXPORT extern const string kArgPaired;
-/// Argument to specify cutoff score for accepting non-spliced alignment
+/// Argument to specify cutoff score for accepting a spliced alignment
 NCBI_BLASTINPUT_EXPORT extern const string kArgScore;
 /// Argument to specify filtering lookup tables words by frequency in the
 /// searched database
@@ -418,6 +418,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgSraAccession;
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoReadIdTrim;
 /// Argument to enable SRA caching in local files
 NCBI_BLASTINPUT_EXPORT extern const string kArgEnableSraCache;
+/// Argument to specify a cutoff edit distance fot an alignment
+NCBI_BLASTINPUT_EXPORT extern const string kArgMaxEditDist;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

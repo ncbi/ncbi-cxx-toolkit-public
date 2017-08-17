@@ -1906,6 +1906,25 @@ CBlastOptions::SetPercentIdentity(double p)
     }
 }
 
+int 
+CBlastOptions::GetMaxEditDistance() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMaxEditDistance() not available.");
+    }
+    return m_Local->GetMaxEditDistance();
+}
+void 
+CBlastOptions::SetMaxEditDistance(int e)
+{
+    if (m_Local) {
+        m_Local->SetMaxEditDistance(e);
+    }
+    if (m_Remote) {
+        x_Throwx("Error: SetMaxEditDistance() not available.");
+    }
+}
+
 double
 CBlastOptions::GetQueryCovHspPerc() const
 {

@@ -68,6 +68,8 @@ typedef struct BlastHSPMapperParams {
    Int4 cutoff_score;        /**< min score to accept a chain alignment */
    Int4 cutoff_score_fun[2]; /**< coefficients for cutoff score as a function
                                   of query length: x[0] + x[1] * length */
+   Int4 cutoff_edit_dist;    /**< max edit distance to accept a chain
+                                 alignment */
 } BlastHSPMapperParams;
 
 /** Sets up parameter set for use by collector.

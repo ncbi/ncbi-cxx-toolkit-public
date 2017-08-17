@@ -104,11 +104,49 @@ static Int4 s_HSPChainListInsertOne(HSPChain** list, HSPChain* chain,
     return 0;
 }
 
+
+static Boolean s_TestCutoffs(HSPChain* chain, Int4 cutoff_score,
+                             Int4 cutoff_edit_dist)
+{
+    if (!chain) {
+        return FALSE;
+    }
+
+    if (chain->score >= cutoff_score) {
+
+        Int4 align_len = 0;
+        Int4 num_identical = 0;
+        HSPContainer* h = chain->hsps;
+
+        if (cutoff_edit_dist < 0) {
+            return TRUE;
+        }
+
+        for (; h; h = h->next) {
+            align_len += MAX(h->hsp->query.end - h->hsp->query.offset,
+                             h->hsp->subject.end - h->hsp->subject.offset);
+
+            num_identical += h->hsp->num_ident;
+
+            ASSERT(h->hsp->num_ident <=
+                   MAX(h->hsp->query.end - h->hsp->query.offset,
+                       h->hsp->subject.end - h->hsp->subject.offset));
+        }
+
+        if (align_len - num_identical <= cutoff_edit_dist) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 /* Insert chains into the list so that the list is sorted in descending order
    of chain scores. If chain is a list, each element is added separately. The
    list must be sorted before adding chain */
 static Int4 HSPChainListInsert(HSPChain** list, HSPChain** chain,
-                               Int4 cutoff_score, Boolean check_for_duplicates)
+                               Int4 cutoff_score, Int4 cutoff_edit_dist,
+                               Boolean check_for_duplicates)
 {
     HSPChain* ch = NULL;
     Int4 status = 0;
@@ -328,6 +366,7 @@ static Int4 s_ComputeAlignmentScore(BlastHSP* hsp, Int4 mismatch_score,
     Int4 last_pos = hsp->query.offset;
     Int4 score = 0;
     const Int4 kGap = 15;
+    Int4 num_identical = 0;
 
     for (i = 0;i < hsp->map_info->edits->num_edits;i++) {
         JumperEdit* e = &(hsp->map_info->edits->edits[i]);
@@ -335,6 +374,7 @@ static Int4 s_ComputeAlignmentScore(BlastHSP* hsp, Int4 mismatch_score,
         ASSERT(num_matches >= 0);
         last_pos = e->query_pos;
         score += num_matches;
+        num_identical += num_matches;
 
         if (e->query_base == kGap) {
             ASSERT(e->subject_base != kGap);
@@ -363,6 +403,8 @@ static Int4 s_ComputeAlignmentScore(BlastHSP* hsp, Int4 mismatch_score,
     }
 
     score += hsp->query.end - last_pos;
+    num_identical += hsp->query.end - last_pos;
+    hsp->num_ident = num_identical;
     return score;
 }
 
@@ -1394,7 +1436,6 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
                                                 score_opts->penalty,
                                                 score_opts->gap_open,
                                                 score_opts->gap_extend);
-    merged_hsp->num_ident += hsp->num_ident;
 
     merged_hsp->map_info->right_edge = hsp->map_info->right_edge;
     if (!merged_hsp->map_info->subject_overhangs) {
@@ -1826,11 +1867,13 @@ static int s_RemoveOverlaps(HSPChain* chain, const ScoringOptions* score_opts,
 
 
 /* Removes chains with scores below the cutoff */
-static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score)
+static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score, 
+                          Int4 cutoff_edit_distance)
 {
     HSPChain* chain = *chains_ptr;
 
-    while (chain && chain->score < cutoff_score) {
+    while (chain && !s_TestCutoffs(chain, cutoff_score, cutoff_edit_distance)
+           /*chain->score < cutoff_score*/) {
         HSPChain* next = chain->next;
         chain->next = NULL;
         HSPChainFree(chain);
@@ -1840,13 +1883,16 @@ static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score)
 
     if (chain) {
         while (chain && chain->next) {
-            if (chain->next->score < cutoff_score) {
+            if (!s_TestCutoffs(chain->next, cutoff_score, cutoff_edit_distance)
+                /*chain->next->score < cutoff_score*/) {
                 HSPChain* next = chain->next->next;
                 chain->next->next = NULL;
                 HSPChainFree(chain->next);
                 chain->next = next;
             }
-            chain = chain->next;
+            else {
+                chain = chain->next;
+            }
         }
     }
 
@@ -1860,7 +1906,8 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
                       const BLAST_SequenceBlk* query_blk,
                       const ScoringOptions* score_opts,
                       Boolean is_paired,
-                      Int4 cutoff_score)
+                      Int4 cutoff_score,
+                      Int4 cutoff_edit_dist)
 {
     Int4 query_idx;
     const Int4 kPairBonus = 21;
@@ -1884,9 +1931,29 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
     /* FIXME: this may not be needed */
     s_SortChains(saved, query_info->num_queries, s_CompareChainsByOid);
 
+
+    /* separate HSPs that overlap on the query into different chains */
+    if (getenv("MAPPER_NO_OVERLAPPED_HSP_MERGE")) {
+        for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
+            HSPChain* chain = saved[query_idx];
+            Int4 query_len;
+
+            if (!chain) {
+                continue;
+            }
+
+            query_len = query_info->contexts[chain->context].query_length;
+            for (; chain; chain = chain->next) {
+                s_RemoveOverlaps(chain, score_opts, query_len);
+            }
+
+        }
+    }
+
+
     /* remove chains with score below cutoff */
     for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
-        s_FilterChains(&saved[query_idx], cutoff_score);
+        s_FilterChains(&saved[query_idx], cutoff_score, cutoff_edit_dist);
     }
 
     /* Compute number of results to store, and number of unique mappings for
@@ -1917,23 +1984,6 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
         }
     }
 
-    /* separate HSPs that overlap on the query into different chains */
-    if (getenv("MAPPER_NO_OVERLAPPED_HSP_MERGE")) {
-        for (query_idx = 0; query_idx < query_info->num_queries; query_idx++) {
-            HSPChain* chain = saved[query_idx];
-            Int4 query_len;
-
-            if (!chain) {
-                continue;
-            }
-
-            query_len = query_info->contexts[chain->context].query_length;
-            for (; chain; chain = chain->next) {
-                s_RemoveOverlaps(chain, score_opts, query_len);
-            }
-
-        }
-    }
 
     results->chain_array = saved;
     results->num_queries = query_info->num_queries;
@@ -1955,7 +2005,7 @@ s_BlastHSPMapperFinal(void* data, void* mapping_results)
     if (spl_data->saved_chains) {
         s_Finalize(spl_data->saved_chains, results, spl_data->query_info,
                    spl_data->query, &params->scoring_options, params->paired,
-                   params->cutoff_score);
+                   params->cutoff_score, params->cutoff_edit_dist);
     }
 
     spl_data->saved_chains = NULL;
@@ -2276,6 +2326,7 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 first->subject.end -= d;
                 first->gap_info->num[first->gap_info->size - 1] -= d;
                 first->score -= d;
+                first->num_ident -= d;
                 first->map_info->right_edge = (seq & 0xf0) >> 4;
                 first->map_info->right_edge |= MAPPER_SPLICE_SIGNAL;
 
@@ -2284,6 +2335,7 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 second->subject.offset += d;
                 second->gap_info->num[0] -= d;
                 second->score -= d;
+                second->num_ident -= d;
                 second->map_info->left_edge = seq & 0xf;
                 second->map_info->left_edge |= MAPPER_SPLICE_SIGNAL;
 
@@ -3835,7 +3887,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair->pair = ch;
             ch->pair_conf = pair->pair_conf = pair_info[i].conf;
             pair_info[i].valid_pair = TRUE;
-            HSPChainListInsert(second_list, &pair, 0, FALSE);
+            HSPChainListInsert(second_list, &pair, 0, -1, FALSE);
         }
 
         for (ch = *second_list; ch; ch = ch->next) {
@@ -3865,7 +3917,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair->pair = ch;
             ch->pair_conf = pair->pair_conf = pair_info[i].conf;
             pair_info[i].valid_pair = TRUE;
-            HSPChainListInsert(first_list, &pair, 0, FALSE);
+            HSPChainListInsert(first_list, &pair, 0, -1, FALSE);
         }
 
         /* trim the alignments that overextend beyond the pair */
@@ -4000,6 +4052,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
     const Int4 kLongestIntron = params->longest_intron;
     Int4 cutoff_score = params->cutoff_score;
     Int4* cutoff_score_fun = params->cutoff_score_fun;
+    Int4 cutoff_edit_dist = params->cutoff_edit_dist;
     BLAST_SequenceBlk* query_blk = spl_data->query;
     BlastQueryInfo* query_info = spl_data->query_info;
     const Int4 kDefaultMaxHsps = 1000;
@@ -4122,7 +4175,8 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             ASSERT(new_chains);
             HSPChainListInsert(&chain_array[(context - first_context) /
                                             NUM_STRANDS],
-                               &new_chains, cutoff_score, FALSE);
+                               &new_chains, cutoff_score, cutoff_edit_dist,
+                               FALSE);
 
             /* skip HSPs for the same context if there are more then max
                allowed per context */
@@ -4173,7 +4227,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
            best score - kPairBonus */
         if (first) {
             HSPChainListInsert(&saved_chains[query_idx], &first, cutoff_score,
-                               TRUE);
+                               cutoff_edit_dist, TRUE);
             HSPChainListTrim(saved_chains[query_idx], kPairBonus);
 
 
@@ -4184,7 +4238,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         }
         if (second) {
             HSPChainListInsert(&saved_chains[query_idx + 1], &second,
-                               cutoff_score, TRUE);
+                               cutoff_score, cutoff_edit_dist, TRUE);
             HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus);
 
 
@@ -4276,6 +4330,7 @@ BlastHSPMapperParamsNew(const BlastHitSavingOptions* hit_options,
        retval->cutoff_score = hit_options->cutoff_score;
        retval->cutoff_score_fun[0] = hit_options->cutoff_score_fun[0];
        retval->cutoff_score_fun[1] = hit_options->cutoff_score_fun[1];
+       retval->cutoff_edit_dist = hit_options->max_edit_distance;
        retval->program = hit_options->program_number;
        retval->scoring_options.reward = scoring_options->reward;
        retval->scoring_options.penalty = scoring_options->penalty;

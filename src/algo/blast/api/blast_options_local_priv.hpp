@@ -231,6 +231,9 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    int GetMaxEditDistance() const;
+    void SetMaxEditDistance(int e);
+
     double GetQueryCovHspPerc() const;
     void SetQueryCovHspPerc(double p);
 
@@ -1413,6 +1416,18 @@ inline void
 CBlastOptionsLocal::SetPercentIdentity(double p)
 {
     m_HitSaveOpts->percent_identity = p;
+}
+
+inline int
+CBlastOptionsLocal::GetMaxEditDistance() const
+{
+    return m_HitSaveOpts->max_edit_distance;
+}
+
+inline void
+CBlastOptionsLocal::SetMaxEditDistance(int e)
+{
+    m_HitSaveOpts->max_edit_distance = e;
 }
 
 inline double

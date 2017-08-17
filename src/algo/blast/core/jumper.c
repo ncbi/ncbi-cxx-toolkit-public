@@ -2632,6 +2632,7 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
 {
     Int4 align_len;
     Int4 cutoff_score;
+    Int4 edit_dist;
     Int4 score = gap_align->score;
 
     align_len = MAX(gap_align->query_stop - gap_align->query_start,
@@ -2644,7 +2645,7 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
         return FALSE;
     }
 
-    /* for spliced alignments score threshold applies to the final spliced
+    /* for spliced alignments thresholds apply to the final spliced
        alignment */
     if (hit_params->options->splice) {
         return TRUE;
@@ -2662,6 +2663,11 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
 
     /* for continuous alignments check score threshold here */
     if (score < cutoff_score) {
+        return FALSE;
+    }
+
+    edit_dist = align_len - num_identical;
+    if (edit_dist > hit_params->options->max_edit_distance) {
         return FALSE;
     }
 

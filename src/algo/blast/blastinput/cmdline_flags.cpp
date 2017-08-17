@@ -241,6 +241,7 @@ const string kArgOutputGzip("gzo");
 const string kArgSraAccession("sra");
 const string kArgNoReadIdTrim("no_query_id_trim");
 const string kArgEnableSraCache("sra_cache");
+const string kArgMaxEditDist("max_edit_dist");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

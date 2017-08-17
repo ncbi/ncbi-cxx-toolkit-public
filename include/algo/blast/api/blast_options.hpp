@@ -343,6 +343,10 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    // Set max edit distance for mapping NGS sequences
+    int GetMaxEditDistance() const;
+    void SetMaxEditDistance(int e);
+
     double GetQueryCovHspPerc() const;
     void SetQueryCovHspPerc(double p);
 

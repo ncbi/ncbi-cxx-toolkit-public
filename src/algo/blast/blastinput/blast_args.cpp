@@ -1431,6 +1431,9 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "function of read length: "
                            "L,b,a for a * length + b.",
                            CArgDescriptions::eString, "20");
+    arg_desc.AddOptionalKey(kArgMaxEditDist, "num", "Cutoff edit distance for "
+                            "accepting an alignment\nDefault = unlimited",
+                            CArgDescriptions::eInteger);
     arg_desc.AddDefaultKey(kArgSplice, "TF", "Search for spliced alignments",
                            CArgDescriptions::eBoolean, "true");
     arg_desc.AddDefaultKey(kArgRefType, "type", "Type of the reference: "
@@ -1498,6 +1501,10 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
                            "must be real numbers");
             }
         }
+    }
+
+    if (args.Exist(kArgMaxEditDist) && args[kArgMaxEditDist]) {
+        opt.SetMaxEditDistance(args[kArgMaxEditDist].AsInteger());
     }
 
     if (args.Exist(kArgSplice) && args[kArgSplice]) {

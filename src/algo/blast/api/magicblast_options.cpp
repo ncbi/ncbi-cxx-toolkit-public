@@ -206,6 +206,7 @@ CMagicBlastOptionsHandle::SetHitSavingOptionsDefaults()
     SetCutoffScore(20);
     vector<double> coeffs = {0.0, 0.0};
     SetCutoffScoreCoeffs(coeffs);
+    SetMaxEditDistance(INT4_MAX);
     SetLongestIntronLength(500000);
 
     // do not compute each query's ungapped alignment score threshold to
