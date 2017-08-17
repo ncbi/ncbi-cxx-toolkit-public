@@ -9873,9 +9873,16 @@ void CNewCleanup_imp::x_ClearEmptyDescr( CBioseq& bioseq )
 static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
 {
     bool ret = false;
-    if (bio_src && bio_src->IsSetLineage() && NStr::FindNoCase(bio_src->GetLineage(), "virus", 0) == NPOS) {
-        ret = inst.IsSetStrand() && inst.GetStrand() == CSeq_inst::eStrand_ss &&
-            inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna;
+    if (inst.IsSetStrand() && inst.GetStrand() == CSeq_inst::eStrand_ss &&
+        inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna) {
+        if (bio_src && bio_src->IsSetLineage()) {
+            ret = true;
+            if (NStr::FindNoCase(bio_src->GetLineage(), "virus", 0) != NPOS) {
+                ret = false;
+            } else if (bio_src->IsSetDivision() && NStr::EqualNocase(bio_src->GetDivision(), "SYN")) {
+                ret = false;
+            }
+        }
     }
 
     return ret;

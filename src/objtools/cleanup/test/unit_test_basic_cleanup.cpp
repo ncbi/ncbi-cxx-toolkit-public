@@ -1309,3 +1309,56 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4360)
     BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetProduct(), "fakeproduct");
     BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetClass(), "vault_RNA");
 }
+
+
+void TestSSToDS(const COrg_ref& org, bool expect_reset)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ss);
+    for (auto it = entry->SetSeq().SetDescr().Set().begin();
+        it != entry->SetSeq().SetDescr().Set().end();
+        it++) {
+        if ((*it)->IsSource()) {
+            (*it)->SetSource().SetOrg().Assign(org);
+        }
+    }
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+
+    cleanup.SetScope(scope);
+    cleanup.BasicCleanup(*entry);
+    if (expect_reset) {
+        BOOST_CHECK_EQUAL(entry->GetSeq().GetInst().IsSetStrand(), false);
+    } else {
+        BOOST_CHECK_EQUAL(entry->GetSeq().GetInst().IsSetStrand(), true);
+        BOOST_CHECK_EQUAL(entry->GetSeq().GetInst().GetStrand(), CSeq_inst::eStrand_ss);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4356)
+{
+    CRef<COrg_ref> org(new COrg_ref());
+    org->SetTaxname("Sebaea microphylla");
+
+    // no lineage? no change
+    TestSSToDS(*org, false);
+
+    // lineage is set, will reset
+    org->SetOrgname().SetLineage("some lineage");
+    TestSSToDS(*org, true);
+
+    // but not if synthetic
+    org->SetOrgname().SetDiv("SYN");
+    TestSSToDS(*org, false);
+
+    // or if virus
+    org->SetOrgname().ResetDiv();
+    org->SetOrgname().SetLineage("virus");
+    TestSSToDS(*org, false);
+
+
+}
