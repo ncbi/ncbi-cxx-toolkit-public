@@ -1311,6 +1311,13 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base 
     if (parent_clause == NULL) {
         return false;
     }
+
+    if (m_HasGene && parent_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_gene) {
+        // genes must match to be parents
+        if (!NStr::Equal(m_GeneName, parent_clause->GetGeneName())) {
+            return false;
+        }
+    }
     
     if (m_Biomol == CMolInfo::eBiomol_mRNA) {
         return true;
