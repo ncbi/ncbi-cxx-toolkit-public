@@ -1740,7 +1740,7 @@ int CMagicBlastApp::Run(void)
                                  *results,
                                  *query_batch,
                                  query_data->GetQueryInfo(),
-                                 batch_number,
+                                 thread_batch_number,
                                  kTrimReadIdForSAM);
                     }
 

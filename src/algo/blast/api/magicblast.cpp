@@ -324,14 +324,14 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
 }
 
 CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
-                                           HSPChain* chains,
+                                           const HSPChain* chains,
                                            CRef<ILocalQueryData> qdata,
                                            CRef<IBlastSeqInfoSrc> seqinfo_src)
 {
     CRef<CSeq_align_set> seq_aligns = CreateEmptySeq_align_set();
 
     // single spliced alignment
-    for (HSPChain* chain = chains; chain; chain = chain->next) {
+    for (const HSPChain* chain = chains; chain; chain = chain->next) {
 
         // mate pairs are processed together when the first one is
         // encountered, so skip the second of the pair

@@ -102,7 +102,7 @@ protected:
 
     
     /// Create results
-    static CRef<CSeq_align_set> x_CreateSeqAlignSet(HSPChain* results,
+    static CRef<CSeq_align_set> x_CreateSeqAlignSet(const HSPChain* results,
                                            CRef<ILocalQueryData> qdata,
                                            CRef<IBlastSeqInfoSrc> seqinfo_src);
 
