@@ -5930,6 +5930,20 @@ void CValidError_feat::ValidateFarProducts(const CSeq_feat& feat)
 }
 
 
+void CValidError_feat::x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat)
+{
+    if (m_Imp.IsSmallGenomeSet()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+            "Protein product not packaged in nuc-prot set with nucleotide in small genome set",
+            feat);
+    } else {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+            "Protein product not packaged in nuc-prot set with nucleotide",
+            feat);
+    }
+}
+
+
 // Precondition: feat is a coding region
 void CValidError_feat::ValidateCommonCDSProduct
 (const CSeq_feat& feat)
@@ -5975,9 +5989,15 @@ void CValidError_feat::ValidateCommonCDSProduct
             return;
         }
 
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
-            "Unable to find product Bioseq from CDS feature", feat);
-        return;
+        // or it might be packaged in the wrong set
+        prod = m_Imp.GetScope()->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE());
+        if (prod) {
+            x_ReportMisplacedCodingRegionProduct(feat);
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+                "Unable to find product Bioseq from CDS feature", feat);
+            return;
+        }
     }
     CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
     if ( nuc ) {
@@ -5998,15 +6018,7 @@ void CValidError_feat::ValidateCommonCDSProduct
                 }
 
                 if ( ! prod_nps || ! nuc_nps || prod_nps != nuc_nps ) {
-                    if (m_Imp.IsSmallGenomeSet()) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-                            "Protein product not packaged in nuc-prot set with nucleotide in small genome set", 
-                            feat);
-                    } else {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-                            "Protein product not packaged in nuc-prot set with nucleotide", 
-                            feat);
-                    }
+                    x_ReportMisplacedCodingRegionProduct(feat);
                 }
             }
         }

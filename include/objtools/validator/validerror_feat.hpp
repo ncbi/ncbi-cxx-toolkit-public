@@ -329,6 +329,8 @@ private:
     bool x_IsNTNCNWACAccession(const CSeq_loc& loc);
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
     bool x_LocIsNmAccession(const CSeq_loc& loc);
+    void x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat);
+
 };
 
 
