@@ -109,7 +109,7 @@ SValueGenerator::SValueGenerator() :
     m_String(10, 100), // Range for length of a string value
     m_Bool(0.5),
     m_Int(numeric_limits<int>::min()),
-    m_Double(numeric_limits<double>::min(), numeric_limits<double>::max())
+    m_Double(numeric_limits<float>::min(), numeric_limits<float>::max()) // Cannot use whole double range, comparison would fail
 {
 }
 
@@ -211,19 +211,35 @@ private:
 
 struct SRandomParam
 {
+private:
     vector<string> sections_values;
-    SRegSynonyms sections;
     vector<string> names_values;
+
+public:
+    SRegSynonyms sections;
     SRegSynonyms names;
     SValueHolder value;
     SParamIndices indices;
 
-    SRandomParam(SRandomGenerator& generator) :
-        sections({}),
-        names({}),
+    SRandomParam(SRandomGenerator& generator, vector<string> sv, vector<string> nv) :
+        sections_values(move(sv)),
+        names_values(move(nv)),
+        sections(sections_values.front()),
+        names(names_values.front()),
         indices(generator.GetRandom())
     {
         Init(generator);
+    }
+
+    SRandomParam(const SRandomParam& src) :
+        sections_values(src.sections_values),
+        names_values(src.names_values),
+        sections(sections_values.front()),
+        names(names_values.front()),
+        value(src.value),
+        indices(src.indices)
+    {
+        Init();
     }
 
     set<pair<string, string>> GetCartesianProduct() const;
@@ -256,6 +272,37 @@ private:
         BOOST_CHECK(registry.Get(sub_sections, sub_names, TType{}) == value);
     }
 
+
+    // Doubles cannot be compared with operator==, so these overloads added
+
+    void CompareValue(IRegistry& registry, double value) const
+    {
+        const auto& section = sections.front();
+        const auto& name = names.front();
+
+        const auto read_value = registry.GetValue(section, name, 0.0);
+        const auto epsilon = numeric_limits<double>::epsilon();
+
+        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+    }
+
+    void CompareValue(ISynRegistry& registry, double value) const
+    {
+        const auto read_value = registry.Get(sections, names, 0.0);
+        const auto epsilon = numeric_limits<double>::epsilon();
+
+        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+    }
+
+    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, double value) const
+    {
+        const auto read_value = registry.Get(sub_sections, sub_names, 0.0);
+        const auto epsilon = numeric_limits<double>::epsilon();
+
+        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+    }
+
+    void Init();
     void Init(SRandomGenerator& generator);
 };
 
@@ -385,8 +432,23 @@ void SRandomParam::CheckCachedValue(CCachedSynRegistry& registry) const
     }
 }
 
+void SRandomParam::Init()
+{
+    // This strange initialization of sections/names is added to avoid
+    // introducing special SRegSynonyms ctors for testing only
+    if (sections_values.size() > 1) {
+        copy(++sections_values.begin(), sections_values.end(), back_inserter(sections));
+    }
+
+    if (names_values.size() > 1) {
+        copy(++names_values.begin(), names_values.end(), back_inserter(names));
+    }
+}
+
 void SRandomParam::Init(SRandomGenerator& generator)
 {
+    Init();
+
     const size_t type = indices.GetType();
     switch (type) {
         case 0:  value.Set(generator.GetValue<TTypes::GetType<0>>()); break;
@@ -424,14 +486,13 @@ SFixture::SFixture()
     random_params.reserve(params_number);
 
     while (params_number--) {
-        SRandomParam param(generator);
+        vector<string> sections_values;
 
         sections_number = sections.size();
 
         while (sections_number--) {
             if (generator.GetValue<bool>() || ! sections_number) {
-                param.sections_values.push_back(sections[sections_number]);
-                param.sections.push_back(param.sections_values.back());
+                sections_values.push_back(sections[sections_number]);
             }
         }
 
@@ -442,13 +503,16 @@ SFixture::SFixture()
             if (generator.GetValue<bool>() || !names_number) unique_names.insert(generator.GetName());
         }
 
-        if (IsUnique(param)) {
-            for (auto unique_name : unique_names) {
-                param.names_values.push_back(unique_name);
-                param.names.push_back(param.names_values.back());
-            }
+        vector<string> names_values;
 
-            random_params.push_back(param);
+        for (auto unique_name : unique_names) {
+            names_values.push_back(unique_name);
+        }
+
+        SRandomParam param(generator, move(sections_values), move(names_values));
+
+        if (IsUnique(param)) {
+            random_params.push_back(move(param));
         }
     }
 }
