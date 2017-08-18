@@ -54,13 +54,19 @@ enum ETildeStyle {
 void ExpandTildes(string& s, ETildeStyle style);
 
 // convert " to '
+NCBI_XOBJEDIT_EXPORT
 void ConvertQuotes(string& str);
+
+NCBI_XOBJEDIT_EXPORT
 string ConvertQuotes(const string& str);
 
+NCBI_XOBJEDIT_EXPORT
 void JoinString(string& to, 
                 const string& prefix, 
                 const string& str, 
                 bool noRedundancy=true);
+
+NCBI_XOBJEDIT_EXPORT
 string JoinString(const list<string>& l, 
                   const string& delim, 
                   bool noRedundancy=true);
@@ -68,13 +74,21 @@ string JoinString(const list<string>& l,
 // Strips all spaces in string in following manner. If the function
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ')'
+NCBI_XOBJEDIT_EXPORT
 void StripSpaces(string& str);
+NCBI_XOBJEDIT_EXPORT
 bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
+NCBI_XOBJEDIT_EXPORT
 void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allow_ellipsis = false);
+NCBI_XOBJEDIT_EXPORT
 void TrimSpaces(string& str, size_t indent = 0);
+NCBI_XOBJEDIT_EXPORT
 void CleanAndCompress (string& dest, const CTempString& instr);
+NCBI_XOBJEDIT_EXPORT
 string &CompressSpaces( string& str, const bool trim_beginning = true, const bool trim_end = true );
+NCBI_XOBJEDIT_EXPORT
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
+NCBI_XOBJEDIT_EXPORT
 void AddPeriod(string& str);
 
 enum EAccValFlag
@@ -82,17 +96,19 @@ enum EAccValFlag
     eValidateAcc,
     eValidateAccDotVer
 };
-
+NCBI_XOBJEDIT_EXPORT
 bool IsValidAccession(const string& accn, EAccValFlag flag = eValidateAcc);
+
 // example: "10-SEP-2010"
 enum EDateToString {
     eDateToString_regular = 1,
     eDateToString_cit_sub,
     eDateToString_patent
 };
+NCBI_XOBJEDIT_EXPORT
 void DateToString(const CDate& date, string& str, EDateToString format_choice = eDateToString_regular );
 
-struct SDeltaSeqSummary
+struct NCBI_XOBJEDIT_EXPORT SDeltaSeqSummary
 {
     string text;
     size_t num_segs;        // total number of segments
@@ -108,12 +124,14 @@ struct SDeltaSeqSummary
     {}
 };
 
+NCBI_XOBJEDIT_EXPORT
 void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary);
 
+NCBI_XOBJEDIT_EXPORT
 const string& GetTechString(int tech);
 
 
-struct SModelEvidance
+struct NCBI_XOBJEDIT_EXPORT SModelEvidance
 {
     typedef std::pair<Int8, Int8> TSpanType;
 
@@ -130,9 +148,10 @@ struct SModelEvidance
     {}
 };
 
+NCBI_XOBJEDIT_EXPORT
 bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me);
 
-
+NCBI_XOBJEDIT_EXPORT
 const char* GetAAName(unsigned char aa, bool is_ascii);
 
 //////////////////////////////////////////////////////////////////////////////
@@ -144,7 +163,7 @@ enum EResolveOrder
     eResolve_ProtFirst
 };
 
-
+NCBI_XOBJEDIT_EXPORT
 EResolveOrder GetResolveOrder(CScope& scope,
                               const CSeq_id_Handle& mrna,
                               const CSeq_id_Handle& prot,
@@ -189,15 +208,21 @@ void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
 
 // Like ConvertQuotes, but skips characters inside HTML tags
 // Returns true if it made any changes.
+NCBI_XOBJEDIT_EXPORT
 bool ConvertQuotesNotInHTMLTags( string &str );
 
 // We use the word "try" in the name because this is NOT airtight security,
 // but rather a net that catches the majority of cases.
+NCBI_XOBJEDIT_EXPORT
 void TryToSanitizeHtml( std::string &str );
+NCBI_XOBJEDIT_EXPORT
 void TryToSanitizeHtml(std::string &result, const CTempString& str);
+NCBI_XOBJEDIT_EXPORT
 void TryToSanitizeHtmlList(std::list<std::string> &strs);
-
+NCBI_XOBJEDIT_EXPORT
 bool CommentHasSuspiciousHtml( const string &str );
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
