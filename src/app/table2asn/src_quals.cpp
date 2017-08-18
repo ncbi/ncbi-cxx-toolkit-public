@@ -53,19 +53,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-namespace
-{
-
-CSeq_descr& _ParentDescr(CBioseq& bioseq)
-{
-    if (bioseq.GetParentSet())
-        return ((CBioseq_set*)(bioseq.GetParentSet().GetPointerOrNull()))->SetDescr();
-    else
-        return bioseq.SetDescr();
-}
-
-};
-
 void TSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
@@ -133,8 +120,6 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
         }
     }
     mod.ApplyAllMods(bioseq);
-
-    m_context->CorrectCollectionDates(bioseq);
 
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
     for (auto mod: unused_mods)
@@ -331,7 +316,7 @@ void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const strin
 
     vector<CTempString> cols;
 
-    size_t filename_id = string::npos;
+    //size_t filename_id = string::npos;
     while (!reader->AtEOF())
     {
         reader->ReadLine();

@@ -145,9 +145,8 @@ public:
     void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
-    void CorrectCollectionDates(objects::CSeq_annot& annot);
-    void CorrectCollectionDates(objects::CBioseq& bioseq);
-    void CorrectCollectionDates(objects::CBioSource& source);
+    void CorrectCollectionDates(objects::CSeq_entry& entry);
+
     void MakeGenomeCenterId(objects::CSeq_entry& entry);
     void RenameProteinIdsQuals(objects::CSeq_feat& feature);
     void RemoveProteinIdsQuals(objects::CSeq_feat& feature);

@@ -107,6 +107,67 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
 }
 
 
+void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CBioSource& source)
+{
+    static CTimeFormat in_formats[2] = { "M-D-Y", "D-M-Y" };
+    static CTimeFormat out_format("D-b-Y");
+
+    if (!source.IsSetSubtype())
+        return;
+
+    size_t p = context.m_cleanup.find_first_of("Dd");
+
+    for (auto subtype : source.SetSubtype())
+    {
+        if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_collection_date)
+        {
+            string& col_date = subtype->SetName();
+            if (CTime::ValidateString(col_date, in_formats[p]))
+            {
+                col_date = CTime(col_date, in_formats[p]).AsString(out_format);
+            }
+        }
+    }
+
+}
+
+void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CSeq_annot& annot)
+{
+    size_t p = context.m_cleanup.find_first_of("Dd");
+    if (p == string::npos)
+        return;
+
+    if (!annot.IsFtable())
+        return;
+
+    for (auto feature : annot.SetData().SetFtable())
+    {
+        if (feature->IsSetData() && feature->GetData().IsBiosrc())
+            x_CorrectCollectionDates(context, feature->SetData().SetBiosrc());
+    }
+}
+
+template<class _T>
+void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
+{
+    size_t p = context.m_cleanup.find_first_of("Dd");
+    if (p == string::npos)
+        return;
+
+    if (seq_or_set.IsSetDescr())
+    {
+        CRef<CSeqdesc> biosource = CAutoAddDesc::LocateDesc(seq_or_set.SetDescr(), CSeqdesc::e_Source);
+        if (biosource.NotEmpty())
+            x_CorrectCollectionDates(context, biosource->SetSource());
+    }
+
+    if (seq_or_set.IsSetAnnot())
+    {
+        for (auto annot : seq_or_set.SetAnnot())
+            x_CorrectCollectionDates(context, *annot);
+    }
+}
+
 };
 
 
@@ -537,7 +598,7 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
             else
                 if (qual_name == "protein_id")
                 {
-                    if (feature.IsSetData() && feature.GetData().IsCdregion() ||
+                    if ((feature.IsSetData() && feature.GetData().IsCdregion()) ||
                         NStr::MatchesMask(qual_value, mask_protein))
                         it = quals.erase(it);
                     else
@@ -720,66 +781,24 @@ bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id)
     }
 }
 
-void CTable2AsnContext::CorrectCollectionDates(objects::CBioseq& bioseq)
+void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
 {
-    size_t p = m_cleanup.find_first_of('Dd');
+    size_t p = m_cleanup.find_first_of("Dd");
     if (p == string::npos)
         return;
 
-    if (bioseq.IsSetDescr())
-    {
-        CRef<CSeqdesc> biosource = CAutoAddDesc::LocateDesc(bioseq.SetDescr(), CSeqdesc::e_Source);
-        if (biosource.NotEmpty())
-          CorrectCollectionDates(biosource->SetSource());
-    }
-}
 
-void CTable2AsnContext::CorrectCollectionDates(objects::CBioSource& source)
-{
-    if (!source.IsSetSubtype())
-        return;
-   
-    size_t p = m_cleanup.find_first_of('Dd');
-
-    for (auto subtype : source.SetSubtype())
-    {
-        if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_collection_date)
+    VisitAllSetandSeq(entry, 
+        [this](CBioseq_set& bioseq_set)
         {
-            string& col_date = subtype->SetName();
-            try
-            {
-                switch (m_cleanup[p])
-                {
-                case 'd':
-                    col_date = CTime(col_date, "M-D-Y").AsString("D-b-Y");
-                    break;
-                case 'D':
-                    col_date = CTime(col_date, "D-M-Y").AsString("D-b-Y");
-                    break;
-                }
-            }
-            catch (CTimeException&) // masking these
-            {
-            }
+            x_CorrectCollectionDates(*this, bioseq_set);
+        },
+        [this](CBioseq& bioseq)
+        {
+            x_CorrectCollectionDates(*this, bioseq);
         }
-    }
-    
+    );
 }
 
-void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_annot& annot)
-{
-    size_t p = m_cleanup.find_first_of('Dd');
-    if (p == string::npos)
-        return;
-
-    if (!annot.IsFtable())
-        return;
-
-    for (auto feature : annot.SetData().SetFtable())
-    {
-        if (feature->IsSetData() && feature->GetData().IsBiosrc())
-            CorrectCollectionDates(feature->SetData().SetBiosrc());
-    }
-}
 
 END_NCBI_SCOPE

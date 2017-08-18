@@ -892,7 +892,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
        fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
-    
+
+    m_context.CorrectCollectionDates(*entry);
+
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
 

@@ -55,6 +55,24 @@ namespace objects
             }
     };
 
+    template<typename _Mset, typename _Mseq>
+    void VisitAllSetandSeq(objects::CSeq_entry& entry, _Mset mset, _Mseq mseq)
+    {
+        if (entry.IsSeq())
+        {
+            mseq(entry.SetSeq());
+        }
+        else
+            if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
+            {
+                mset(entry.SetSet());
+                for (auto se : entry.SetSet().SetSeq_set())
+                {
+                    VisitAllSetandSeq(*se, mset, mseq);
+                }
+            }
+    };
+
     template<typename _M>
     void VisitAllBioseqs(objects::CSeq_entry& entry, _M m)
     {
