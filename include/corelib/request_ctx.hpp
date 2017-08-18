@@ -115,6 +115,10 @@ private:
 };
 
 
+class CMask;
+class CMaskFileName;
+
+
 class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 {
 public:
@@ -315,6 +319,9 @@ public:
     /// commas and optional spaces, ignore UNK_SESSION value.
     static string SelectLastSessionID(const string& session_ids);
 
+    /// Add pass-through value if it matches a pattern from NCBI_CONTEXT_FIELDS.
+    void AddPassThroughProperty(const string& name, const string& value);
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -372,6 +379,12 @@ private:
     // Copy std properties from pass-through data to CRequestContext.
     void x_UpdateStdContextProp(CTempString name) const;
 
+    static const CMask& sx_GetContextFieldsMask(void);
+    static string sx_NormalizeContextPropertyName(const string& name);
+
+    // Load environment values matching NCBI_CONTEXT_FIELDS.
+    void x_LoadEnvContextProperties(void);
+
     TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
@@ -395,10 +408,19 @@ private:
     // TID of the thread currently using this context or -1.
     Uint8          m_OwnerTID;
 
+    // Name/value map for properties to be passed between requests.
+    // @sa CRequestContext_PassThrough
+    typedef map<string, string, PNocase> TPassThroughProperties;
+
     // Access to passable properties.
     friend class CRequestContext_PassThrough;
-    typedef map<string, string, PNocase> TPassThroughProperties;
     mutable TPassThroughProperties m_PassThroughProperties;
+
+    // Patterns from NCBI_CONTEXT_FIELDS variable.
+    static unique_ptr<CMaskFileName> sm_ContextFields;
+
+    // Context values loaded from the global environment.
+    static unique_ptr<TPassThroughProperties> sm_EnvContextProperties;
 };
 
 

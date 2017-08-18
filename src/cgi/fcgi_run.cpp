@@ -553,6 +553,15 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         try {
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
+
+            // Propagate environment values to PassThroughProperties.
+            CRequestContext& rctx = CDiagContext::GetRequestContext();
+            list<string> names;
+            env.Enumerate(names);
+            ITERATE(list<string>, it, names) {
+                rctx.AddPassThroughProperty(*it, env.Get(*it));
+            }
+
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
 
             CCgiObuffer       obuf(pfout);

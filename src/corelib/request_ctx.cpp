@@ -37,6 +37,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_strings.h>
 #include <corelib/error_codes.hpp>
+#include <corelib/ncbi_mask.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
@@ -48,6 +49,7 @@ static const char* kPassThrough_Sid = "ncbi_sid";
 static const char* kPassThrough_Phid = "ncbi_phid";
 static const char* kPassThrough_ClientIp = "ncbi_client_ip";
 static const char* kPassThrough_Dtab = "ncbi_dtab";
+
 
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
@@ -63,6 +65,7 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_Flags(flags),
       m_OwnerTID(-1)
 {
+    x_LoadEnvContextProperties();
 }
 
 
@@ -160,6 +163,7 @@ void CRequestContext::Reset(void)
     UnsetBytesWr();
     m_ReqTimer.Reset();
     m_PassThroughProperties.clear();
+    x_LoadEnvContextProperties();
 }
 
 
@@ -208,6 +212,7 @@ void CRequestContext::SetClientIP(const string& client)
 
 void CRequestContext::StartRequest(void)
 {
+    x_LoadEnvContextProperties();
     if (m_Flags & fResetOnStart) {
         UnsetRequestStatus();
         SetBytesRd(0);
@@ -683,6 +688,87 @@ void CRequestContext::x_UpdateStdContextProp(CTempString name) const
         }
         // Explicit name provided - skip other checks.
         if ( match ) return;
+    }
+}
+
+
+NCBI_PARAM_DECL(string, Context, Fields);
+NCBI_PARAM_DEF_EX(string, Context, Fields, kEmptyStr,
+                  eParam_NoThread,
+                  NCBI_CONTEXT_FIELDS);
+typedef NCBI_PARAM_TYPE(Context, Fields) TNcbiContextFields;
+
+DEFINE_STATIC_MUTEX(s_ContextFieldsMutex);
+unique_ptr<CMaskFileName> CRequestContext::sm_ContextFields;
+unique_ptr<CRequestContext::TPassThroughProperties> CRequestContext::sm_EnvContextProperties;
+
+
+const CMask& CRequestContext::sx_GetContextFieldsMask(void)
+{
+    if ( !sm_ContextFields.get() ) {
+        CMutexGuard guard(s_ContextFieldsMutex);
+        if ( !sm_ContextFields.get() ) {
+            sm_ContextFields.reset(new CMaskFileName());
+            string fields_var = TNcbiContextFields::GetDefault();
+            if ( !fields_var.empty() ) {
+                list<string> fields;
+                NStr::Split(fields_var, " ", fields, NStr::fSplit_MergeDelimiters);
+                ITERATE(list<string>, field, fields) {
+                    string norm_field = sx_NormalizeContextPropertyName(*field);
+                    sm_ContextFields->Add(norm_field);
+                }
+            }
+        }
+    }
+    return *sm_ContextFields;
+}
+
+
+string CRequestContext::sx_NormalizeContextPropertyName(const string& name)
+{
+    return NStr::Replace(name, "_", "-");
+}
+
+
+void CRequestContext::x_LoadEnvContextProperties(void)
+{
+    // Parse environment only once.
+    if ( !sm_EnvContextProperties.get() ) {
+        TPassThroughProperties props;
+        {
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if ( !app ) return;
+            const CNcbiEnvironment& env = app->GetEnvironment();
+            list<string> names;
+            env.Enumerate(names);
+            ITERATE(list<string>, it, names) {
+                props[*it] = env.Get(*it);
+            }
+        }
+
+        CMutexGuard guard(s_ContextFieldsMutex);
+        if ( !sm_EnvContextProperties.get() ) {
+            sm_EnvContextProperties.reset(new TPassThroughProperties);
+            const CMask& mask = sx_GetContextFieldsMask();
+            ITERATE(TPassThroughProperties, it, props) {
+                string norm_prop = sx_NormalizeContextPropertyName(it->first);
+                if ( mask.Match(norm_prop, NStr::eNocase) ) {
+                    (*sm_EnvContextProperties)[norm_prop] = it->second;
+                }
+            }
+        }
+    }
+    m_PassThroughProperties.insert(sm_EnvContextProperties->begin(), sm_EnvContextProperties->end());
+}
+
+
+void CRequestContext::AddPassThroughProperty(const string& name, const string& value)
+{
+    const CMask& mask = sx_GetContextFieldsMask();
+    string norm_prop = sx_NormalizeContextPropertyName(name);
+    if ( mask.Match(norm_prop, NStr::eNocase) ) {
+        m_PassThroughProperties[norm_prop] = value;
     }
 }
 
