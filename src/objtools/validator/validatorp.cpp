@@ -3440,6 +3440,16 @@ CValidError_base::GetCache(void)
 }
 
 
+bool s_IsGoodTopSetClass(CBioseq_set::EClass set_class)
+{
+    if (set_class == CBioseq_set::eClass_gen_prod_set || set_class == CBioseq_set::eClass_small_genome_set) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle seh)
 {
     CSeq_entry_Handle appropriate_parent;
@@ -3449,7 +3459,7 @@ CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle s
     if (seh.IsSet() && seh.GetSet().IsSetClass()) {
         if (seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
             np = seh;
-        } else if (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+        } else if (s_IsGoodTopSetClass(seh.GetSet().GetClass())) {
             gps = seh;
         }
     } else if (seh.IsSeq()) {
@@ -3457,7 +3467,7 @@ CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle s
         if (p && p.IsSet() && p.GetSet().IsSetClass()) {
             if (p.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
                 np = p;
-            } else if (p.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            } else if (s_IsGoodTopSetClass(p.GetSet().GetClass())) {
                 gps = p;
             }
         }
@@ -3467,7 +3477,7 @@ CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle s
     } else if (np) {
         CSeq_entry_Handle gp = np.GetParentEntry();
         if (gp && gp.IsSet() && gp.GetSet().IsSetClass() &&
-            gp.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            s_IsGoodTopSetClass(gp.GetSet().GetClass())) {
             appropriate_parent = gp;
         } else {
             appropriate_parent = np;
