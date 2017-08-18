@@ -3113,6 +3113,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_culture_collection, "culture_collection" },
     { CSeqFeatData::eQual_cyanelle, "cyanelle" },
     { CSeqFeatData::eQual_db_xref, "db_xref" },
+    { CSeqFeatData::eQual_derived_from, "derived_from" },
     { CSeqFeatData::eQual_dev_stage, "dev_stage" },
     { CSeqFeatData::eQual_direction, "direction" },
     { CSeqFeatData::eQual_EC_number, "EC_number" },
@@ -3132,6 +3133,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_germline, "germline" },
     { CSeqFeatData::eQual_haplogroup, "haplogroup" },
     { CSeqFeatData::eQual_haplotype, "haplotype" },
+    { CSeqFeatData::eQual_heterogen, "heterogen" },
     { CSeqFeatData::eQual_host, "host" },
     { CSeqFeatData::eQual_identified_by, "identified_by" },
     { CSeqFeatData::eQual_inference, "inference" },
@@ -3155,6 +3157,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_mod_base, "mod_base" },
     { CSeqFeatData::eQual_mol_type, "mol_type" },
     { CSeqFeatData::eQual_name, "name" },
+    { CSeqFeatData::eQual_nomenclature, "nomenclature" },
     { CSeqFeatData::eQual_ncRNA_class, "ncRNA_class" },
     { CSeqFeatData::eQual_note, "note" },
     { CSeqFeatData::eQual_number, "number" },
@@ -3185,6 +3188,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_rpt_unit_range, "rpt_unit_range"  },
     { CSeqFeatData::eQual_rpt_unit_seq, "rpt_unit_seq"  },
     { CSeqFeatData::eQual_satellite, "satellite" },
+    { CSeqFeatData::eQual_sec_str_type, "sec_str_type" },
     { CSeqFeatData::eQual_segment, "segment" },
     { CSeqFeatData::eQual_sequenced_mol, "sequenced_mol" },
     { CSeqFeatData::eQual_serotype, "serotype" },
@@ -3211,7 +3215,8 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_UniProtKB_evidence, "UniProtKB_evidence" },
     { CSeqFeatData::eQual_usedin, "usedin" },
     { CSeqFeatData::eQual_variety, "variety" },
-    { CSeqFeatData::eQual_virion, "virion" }
+    { CSeqFeatData::eQual_virion, "virion" },
+    { CSeqFeatData::eQual_whole_replicon, "whole_replicon" }
 };
 
 typedef CStaticPairArrayMap<CSeqFeatData::EQualifier, const char*> TQualsMap;
