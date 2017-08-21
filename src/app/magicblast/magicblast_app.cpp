@@ -622,11 +622,15 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            const CMagicBlastResults& results,
                            const TQueryMap& queries,
                            bool is_paired, int batch_number,
-                           int& compartment)
+                           int& compartment, bool print_unaligned)
 {
     for (auto it: results.GetSeqAlign()->Get()) {
         PrintTabular(ostr, *it, queries, is_paired, batch_number, compartment++);
         ostr << endl;
+    }
+
+    if (!print_unaligned) {
+        return ostr;
     }
 
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
@@ -648,7 +652,8 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            const CMagicBlastResultSet& results,
                            const CBioseq_set& query_batch,
-                           bool is_paired, int batch_number)
+                           bool is_paired, int batch_number,
+                           bool print_unaligned)
 {
     TQueryMap queries;
     s_CreateQueryMap(query_batch, queries);
@@ -656,7 +661,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
     int compartment = 0;
     for (auto it: results) {
         PrintTabular(ostr, *it, queries, is_paired, batch_number,
-                     compartment);
+                     compartment, print_unaligned);
     }
 
     return ostr;
@@ -1330,7 +1335,7 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info, int batch_number,
-                       bool trim_read_id)
+                       bool trim_read_id, bool print_unaligned)
 {
     bool first_secondary = false;
     bool last_secondary = false;
@@ -1339,6 +1344,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
         PrintSAM(ostr, *it, queries, query_info, batch_number, first_secondary,
                  last_secondary, trim_read_id);
         ostr << endl;
+    }
+
+    if (!print_unaligned) {
+        return ostr;
     }
 
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
@@ -1360,13 +1369,15 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        const CBioseq_set& query_batch,
                        const BlastQueryInfo* query_info,
                        int batch_number,
-                       bool trim_read_id)
+                       bool trim_read_id,
+                       bool print_unaligned)
 {
     TQueryMap bioseqs;
     s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
-        PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id);
+        PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id,
+                 print_unaligned);
     }
 
     return ostr;
@@ -1632,6 +1643,8 @@ int CMagicBlastApp::Run(void)
         const bool kTrimReadIdForSAM =
             query_opts->IsPaired() && fmt_args->TrimReadIds();
 
+        const bool kPrintUnaligned = fmt_args->PrintUnaligned();
+
         while (!input.End()) {
 
             // scope should not be shared, but it is only used with a
@@ -1713,7 +1726,8 @@ int CMagicBlastApp::Run(void)
                                      *results,
                                      *query_batch,
                                      magic_opts->GetPaired(),
-                                     thread_batch_number);
+                                     thread_batch_number,
+                                     kPrintUnaligned);
                     }
                     else if (fmt_args->GetFormattedOutputChoice() ==
                              CFormattingArgs::eAsnText) {
@@ -1741,7 +1755,8 @@ int CMagicBlastApp::Run(void)
                                  *query_batch,
                                  query_data->GetQueryInfo(),
                                  thread_batch_number,
-                                 kTrimReadIdForSAM);
+                                 kTrimReadIdForSAM,
+                                 kPrintUnaligned);
                     }
 
 

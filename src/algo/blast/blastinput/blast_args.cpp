@@ -2582,6 +2582,8 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      "or '/2' at the end of read ids for SAM format and" \
                      "paired runs");
 
+    arg_desc.AddFlag(kArgNoUnaligned, "Do report unaligned reads");
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -2612,6 +2614,10 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args.Exist(kArgNoReadIdTrim) && args[kArgNoReadIdTrim]) {
         m_TrimReadIds = false;
+    }
+
+    if (args.Exist(kArgNoUnaligned) && args[kArgNoUnaligned]) {
+        m_PrintUnaligned = false;
     }
 
     // only the fast tabular format is able to show merged HSPs with

@@ -1158,7 +1158,8 @@ class NCBI_BLASTINPUT_EXPORT CMapperFormattingArgs : public CFormattingArgs
 {
 public:
 
-    CMapperFormattingArgs(void) : CFormattingArgs(), m_TrimReadIds(true) {}
+    CMapperFormattingArgs(void) : CFormattingArgs(), m_TrimReadIds(true),
+                                  m_PrintUnaligned(true) {}
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
@@ -1172,8 +1173,12 @@ public:
     /// for paired mapping
     bool TrimReadIds(void) const {return m_TrimReadIds;}
 
+    /// Should unaligned reads be reported
+    bool PrintUnaligned(void) const {return m_PrintUnaligned;}
+
 private:
     bool m_TrimReadIds;
+    bool m_PrintUnaligned;
 };
 
 /// Argument class to collect multi-threaded arguments

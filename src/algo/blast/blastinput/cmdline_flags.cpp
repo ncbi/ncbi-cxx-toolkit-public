@@ -240,6 +240,7 @@ const string kArgRefType("reftype");
 const string kArgOutputGzip("gzo");
 const string kArgSraAccession("sra");
 const string kArgNoReadIdTrim("no_query_id_trim");
+const string kArgNoUnaligned("no_unaligned");
 const string kArgEnableSraCache("sra_cache");
 const string kArgMaxEditDist("max_edit_dist");
 
