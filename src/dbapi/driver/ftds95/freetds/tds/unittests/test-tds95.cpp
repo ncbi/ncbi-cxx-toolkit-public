@@ -46,7 +46,6 @@ static const char* kServers[] = {
     "MSDEV1",
     "DBAPI_DEV3",
     "DBAPI_DEV16",
-    "DBAPI_DEV16_SP03",
     NULL
 };
 

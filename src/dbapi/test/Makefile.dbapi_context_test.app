@@ -35,8 +35,5 @@ CHECK_CMD = dbapi_context_test -dr ftds95     -S Sybase
 CHECK_CMD = dbapi_context_test -dr ctlib      -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_context_test -dr ftds64     -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_context_test -dr ftds95     -S DBAPI_SYB160_TEST
-CHECK_CMD = dbapi_context_test -dr ctlib      -S DBAPI_SYB160_SP03_TEST
-CHECK_CMD = dbapi_context_test -dr ftds64     -S DBAPI_SYB160_SP03_TEST
-CHECK_CMD = dbapi_context_test -dr ftds95     -S DBAPI_SYB160_SP03_TEST
 
 WATCHERS = ucko

@@ -14,6 +14,5 @@ CHECK_REQUIRES = connext in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_sp_databases /CHECK_NAME=ctl_sp_databases
 CHECK_CMD = run_sybase_app.sh ctl_sp_databases -S DBAPI_SYB155_TEST /CHECK_NAME=ctl_sp_databases-SYB155
 CHECK_CMD = run_sybase_app.sh ctl_sp_databases -S DBAPI_SYB160_TEST /CHECK_NAME=ctl_sp_databases-SYB160
-CHECK_CMD = run_sybase_app.sh ctl_sp_databases -S DBAPI_SYB160_SP03_TEST /CHECK_NAME=ctl_sp_databases-SYB160_SP03
 
 WATCHERS = ucko
