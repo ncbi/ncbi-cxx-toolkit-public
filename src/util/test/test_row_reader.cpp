@@ -1736,6 +1736,141 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_EXCEPTION_STREAM_EVENT)
 }
 
 
+BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_VALIDATE_OK)
+{
+    TTabDelimitedStream     src_stream;
+    string                  data = "1\tone\t111\r\n"
+                                   "2\ttwo\t222\n"
+                                   "3\tthree\t333";
+    CNcbiIstrstream         data_stream(data.c_str());
+
+    src_stream.SetDataSource(&data_stream, "");
+    src_stream.Validate();
+
+    BOOST_CHECK(src_stream.GetCurrentRowPos() == 0);
+    BOOST_CHECK(src_stream.GetCurrentLineNo() == 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_VALIDATE_FAILURE)
+{
+    TTabDelimitedStream     src_stream;
+
+    try {
+        src_stream.Validate();
+        BOOST_FAIL("Expected Validate() exception");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("stream has not been provided") == string::npos)
+            BOOST_FAIL("Expected 'Invalid data source' exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_ITERATE_OK)
+{
+    TTabDelimitedStream     src_stream;
+    string                  data = "11\t12\t13\t14\r\n"
+                                   "21\t22\t23\t\t\r\n"
+                                   "31\t\r\n"
+                                   "41\t\t\t";
+    CNcbiIstrstream         data_stream(data.c_str());
+
+    src_stream.SetDataSource(&data_stream, "data");
+
+    int     line_no = 0;
+    for (auto &  row : src_stream) {
+        switch (line_no) {
+            case 0:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("11\t12\t13\t14"));
+                BOOST_CHECK(row[0].Get<int>() == 11);
+                BOOST_CHECK(row[1].Get<int>() == 12);
+                BOOST_CHECK(row[2].Get<int>() == 13);
+                BOOST_CHECK(row[3].Get<int>() == 14);
+                break;
+            case 1:
+                BOOST_CHECK(row.GetNumberOfFields() == 5);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("21\t22\t23\t\t"));
+                BOOST_CHECK(row[0].Get<int>() == 21);
+                BOOST_CHECK(row[1].Get<int>() == 22);
+                BOOST_CHECK(row[2].Get<int>() == 23);
+                BOOST_CHECK(row[3].GetOriginalData() == string(""));
+                BOOST_CHECK(row[4].GetOriginalData() == string(""));
+                break;
+            case 2:
+                BOOST_CHECK(row.GetNumberOfFields() == 2);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("31\t"));
+                BOOST_CHECK(row[0].Get<int>() == 31);
+                BOOST_CHECK(row[1].GetOriginalData() == string(""));
+                break;
+            case 3:
+                BOOST_CHECK(row.GetNumberOfFields() == 4);
+                BOOST_CHECK(row.GetType() == eRR_Data);
+                BOOST_CHECK(row.GetOriginalData() == string("41\t\t\t"));
+                BOOST_CHECK(row[0].Get<int>() == 41);
+                BOOST_CHECK(row[1].GetOriginalData() == string(""));
+                BOOST_CHECK(row[2].GetOriginalData() == string(""));
+                BOOST_CHECK(row[3].GetOriginalData() == string(""));
+                break;
+        }
+        ++line_no;
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_ITERATE_FAILURE)
+{
+    TTabDelimitedStream     src_stream;
+
+    try {
+        for (auto &  row : src_stream) {
+            if (row.GetNumberOfFields() >= 1000000)
+                std::cout << "Should never see" << std::endl;
+        }
+        BOOST_FAIL("Expected iterate exception");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("stream has not been provided") == string::npos)
+            BOOST_FAIL("Expected 'Invalid data source' exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_SET_NULL_DATA_SOURCE)
+{
+    string                  data = "";
+    CNcbiIstrstream         data_stream(data.c_str());
+    TTabDelimitedStream     src_stream(&data_stream, "");
+
+    try {
+        src_stream.SetDataSource(nullptr, "");
+        BOOST_FAIL("Expected SetDataSource() exception");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("nvalid data source") == string::npos)
+            BOOST_FAIL("Expected 'Invalid data source' exception");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(RR_CONSTRUCT_NULL_DATA_SOURCE)
+{
+    try {
+        TTabDelimitedStream     src_stream(nullptr, "");
+        BOOST_FAIL("Expected construction exception");
+    } catch (const std::exception &  exc) {
+        string  what = exc.what();
+        if (what.find("nvalid data source") == string::npos)
+            BOOST_FAIL("Expected 'Invalid data source' exception");
+    }
+}
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 END_NCBI_SCOPE

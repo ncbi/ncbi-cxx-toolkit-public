@@ -360,6 +360,12 @@ public:
     typedef CRR_Field<TTraits> CField;
     typedef CRR_Row<TTraits>   CRow;
 
+    /// Construct a row reader.
+    /// @note
+    ///  If a row reader is constructed this way then the SetDataSource(...)
+    ///  must be called before the first read from a source. Otherwise an
+    ///  exception will be generated.
+    CRowReader();
 
     /// Construct a row reader
     /// @param is
@@ -1196,6 +1202,17 @@ TFieldNo CRR_Row<TTraits>::x_GetFieldIndex(CTempString  field) const
 
 
 // Begin of the CRowReader implementation
+template <typename TTraits>
+CRowReader<TTraits>::CRowReader() :
+    m_AtEnd(false), m_LinesAlreadyRead(false),
+    m_RawDataAvailable(false), m_CurrentLineNo(0),
+    m_PreviousPhysLinesRead(0), m_CurrentRowPos(0),
+    m_Validation(false), m_NeedOnSourceBegin(true), m_NeedOnSourceEnd(false)
+{
+    m_Traits.x_SetMyStream(this);
+    m_CurrentRow.m_RowReader = this;
+}
+
 
 template <typename TTraits>
 CRowReader<TTraits>::CRowReader(
@@ -1207,6 +1224,10 @@ CRowReader<TTraits>::CRowReader(
     m_CurrentLineNo(0), m_PreviousPhysLinesRead(0),
     m_Validation(false), m_NeedOnSourceBegin(true), m_NeedOnSourceEnd(false)
 {
+    if (is == nullptr)
+        NCBI_THROW2(CRowReaderException, eInvalidStream,
+                    "Invalid data source stream", nullptr);
+
     m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
     m_Traits.x_SetMyStream(this);
     m_CurrentRow.m_RowReader = this;
@@ -1240,6 +1261,10 @@ void CRowReader<TTraits>::SetDataSource(
             const string& sourcename,
             EOwnership    ownership)
 {
+    if (is == nullptr)
+        NCBI_THROW2(CRowReaderException, eInvalidStream,
+                    "Invalid data source stream", nullptr);
+
     m_NextDataSource.Clear();
     m_NextDataSource.m_Stream = is;
     m_NextDataSource.m_Sourcename = sourcename;
@@ -1263,11 +1288,21 @@ void CRowReader<TTraits>::Validate(
         typename TTraits::ERR_ValidationMode validation_mode,
         ERR_FieldValidationMode field_validation_mode)
 {
+    if (m_DataSource.m_Stream == nullptr &&
+        m_NextDataSource.m_Stream == nullptr)
+        NCBI_THROW2(CRowReaderException, eValidating,
+                    "Data source stream has not been provided", nullptr);
+
     ERR_Action action = eRR_Interrupt;
     size_t     phys_lines_read;
 
     x_ResetToEnd();
-    m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
+    if (m_DataSource.m_Stream != nullptr)
+        m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
+    else
+        // The stream is going to be switched anyway so this is just for
+        // consistency
+        m_CurrentRowPos = 0;
 
     try {
         m_Traits.SetValidationMode(validation_mode);
@@ -1579,6 +1614,10 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
         m_RawDataAvailable = false;
         m_CurrentRow.x_OnFreshRead();
 
+        // Note: there is no need to check that there is a stream set. The
+        //       check that at least one of the streams (current or next) is
+        //       set is done in an upper level code.
+
         if (m_DataSource.m_Stream->bad() ||
             (m_DataSource.m_Stream->fail() && !m_DataSource.m_Stream->eof())) {
             switch ( x_OnEvent(eRR_Event_SourceError) ) {
@@ -1622,8 +1661,18 @@ bool CRowReader<TTraits>::x_GetRowData(size_t* phys_lines_read)
 template <typename TTraits>
 void CRowReader<TTraits>::x_ReadNextRow(void)
 {
+    if (m_DataSource.m_Stream == nullptr &&
+        m_NextDataSource.m_Stream == nullptr)
+            NCBI_THROW2(CRowReaderException, eInvalidStream,
+                        "Data source stream has not been provided prior "
+                        "to the first read", nullptr);
+
     if (m_NeedOnSourceBegin && m_NextDataSource.m_Stream == nullptr) {
-        m_CurrentRowPos = NcbiStreamposToInt8(m_DataSource.m_Stream->tellg());
+        if (m_DataSource.m_Stream != nullptr)
+            m_CurrentRowPos = NcbiStreamposToInt8(
+                                            m_DataSource.m_Stream->tellg());
+        else
+            m_CurrentRowPos = 0;
 
         try {
             if (x_OnEvent(eRR_Event_SourceBegin) == eRR_EventAction_Stop) {
@@ -1853,6 +1902,12 @@ ERR_EventAction CRowReader<TTraits>::x_OnEvent(ERR_Event event)
             m_NeedOnSourceBegin = true;
             break;
         default: ;
+    }
+
+    if (m_DataSource.m_Stream == nullptr) {
+        // There is no need in event notifications (like begin/end) for a not
+        // initialized stream.
+        return eRR_EventAction_Default;
     }
 
     try {

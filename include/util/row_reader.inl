@@ -228,7 +228,8 @@ public:
         eIteratorWhileValidating,
         eRowDataReading,
         eTraitsOnEvent,
-        eFieldValueValidation
+        eFieldValueValidation,
+        eInvalidStream
     };
 
     CRowReaderException(
@@ -289,6 +290,8 @@ public:
                 return "eTraitsOnEvent";
             case eFieldValueValidation:
                 return "eFieldValueValidation";
+            case eInvalidStream:
+                return "eInvalidStream";
             default:
                 return CException::GetErrCodeString();
         }
@@ -748,7 +751,7 @@ struct SRR_SourceInfo
 
     void Clear(void)
     {
-        if (m_StreamOwner)
+        if (m_StreamOwner && m_Stream != nullptr)
             delete m_Stream;
 
         m_Stream = nullptr;
