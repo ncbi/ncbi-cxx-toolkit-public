@@ -52,6 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CAuth_list;
+class CPerson_id;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_BIBLIO_EXPORT CAuthor : public CAuthor_Base, public ICitationBase
@@ -63,6 +64,9 @@ public:
     // destructor
     ~CAuthor(void);
 
+
+    static void ConvertMlToStandard(CRef<CAuthor> author,
+                                    bool normalize_suffix=false);
 protected:
     bool GetLabelV1(string* label, TLabelFlags flags) const;
     bool GetLabelV2(string* label, TLabelFlags flags) const;
@@ -75,6 +79,15 @@ private:
     static bool x_GetLabelV2(string* label, TLabelFlags flags, CTempString name,
                              CTempString initials = kEmptyStr,
                              CTempString suffix = kEmptyStr);
+
+    static bool x_IsAllCaps(const string& str);
+
+    static string x_GetInitials(vector<string>& tokens);
+
+    static void x_NormalizeSuffix(string& suffix);
+
+    static CRef<CPerson_id> x_ConvertMlToStandard(const string& name,
+                                                  bool normalize_suffix=false);
 
     friend class CAuth_list;
 };

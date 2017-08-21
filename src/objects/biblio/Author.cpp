@@ -123,6 +123,114 @@ bool CAuthor::x_GetLabelV2(string* label, TLabelFlags flags, CTempString name,
     return true;
 }
 
+bool CAuthor::x_IsAllCaps(const string& str)
+{
+    for(const char c  : str) {
+        if (!isalpha(c) || !isupper(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+string CAuthor::x_GetInitials(vector<string>& tokens) 
+{
+    string init = "";
+    while (tokens.size() > 1) {
+        string val = tokens.back();
+        if (!s_IsAllCaps(val)) {
+            break;
+        }
+        init += val;
+        tokens.pop_back();
+    }
+    return init;
+}
+
+
+void CAuthor::x_NormalizeSuffix(string& suffix) 
+{
+    static const map<string, string> smap = {
+                                {"1d",  "I"  },
+                                {"1st", "I"  },
+                                {"2d",  "II" },
+                                {"2nd", "II" },
+                                {"3d",  "III"},
+                                {"3rd", "III"},
+                                {"4th", "IV" },
+                                {"5th", "V"  },
+                                {"6th", "VI" },
+                                {"Jr",  "Jr."},
+                                {"Sr",  "Sr."}};
+
+    auto search = smap.find(suffix);
+    if (search != smap.end()) {
+        suffix = search->second;  
+    } 
+}
+
+
+CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool normalize_suffix) 
+{
+    CRef<CPerson_id> person_id(new CPerson_id());
+
+    if (!NStr::IsBlank(name)) {
+        vector<string> tokens;
+        NStr::Split(name, " ", tokens, NStr::fSplit_Tokenize);
+        // Check for suffix
+        const size_t num_tokens = tokens.size();
+        string suffix = "";
+        if (num_tokens >= 3 && 
+            !x_IsAllCaps(tokens.back()) &&
+            x_IsAllCaps(tokens[num_tokens-2])) {
+            suffix = tokens.back();
+            tokens.pop_back();
+        }
+
+        const string init = x_GetInitials(tokens);
+        const string last = NStr::Join(tokens, " ");
+        person_id->SetName().SetLast(last);
+
+
+        if (!NStr::IsBlank(suffix)) {
+            if (normalize_suffix) {
+                x_NormalizeSuffix(suffix);
+            }
+            person_id->SetName().SetSuffix(suffix);
+        }
+
+        if (!NStr::IsBlank(init)) {
+            string initials = "";
+            for (const char& c : init) {
+                initials += c + ".";
+            }
+            person_id->SetName().SetInitials(initials);
+        }
+    }
+    return person_id;
+}
+
+
+void CAuthor::ConvertMlToStandard(CRef<CAuthor> author, const bool normalize_suffix) 
+{
+    if ( author.IsNull() ||
+         !author->IsSetName() || 
+         !author->GetName().IsMl()) {
+    }
+
+    const string ml_name = author->GetName().GetMl();
+    CRef<CPerson_id> std_name = x_ConvertMlToStandard(ml_name, normalize_suffix);
+
+    if (std_name.IsNull() ||
+        !std_name->IsName()) {
+    }
+
+    author->ResetName();
+    author->SetName(*std_name);
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
