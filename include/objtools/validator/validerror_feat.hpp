@@ -198,6 +198,7 @@ private:
          string& farstr,
          bool& has_errors,
          bool& other_than_mismatch);
+    CBioseq_Handle x_GetCDSProduct(const CSeq_feat& feat, bool& is_far);
 
     size_t x_CountTerminalXs(const string& transl_prot, bool skip_stop);
     size_t x_CountTerminalXs(const CSeqVector& prot_vec);

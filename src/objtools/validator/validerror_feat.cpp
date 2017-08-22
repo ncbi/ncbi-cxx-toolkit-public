@@ -6194,7 +6194,8 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
         return;
     }
 
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetProduct());
+    bool is_far;
+    CBioseq_Handle bsh = x_GetCDSProduct(feat, is_far);
     if ( !bsh ) {
         return;
     }
@@ -6865,8 +6866,9 @@ void CValidError_feat::ReportCdTransErrors
  bool report_errors,
  bool& has_errors)
 {
-    bool no_beg, no_end;
-    FeatureHasEnds(feat, m_Scope, no_beg, no_end);
+    bool no_beg, no_end, is_far;
+    CBioseq_Handle bsh = x_GetCDSProduct(feat, is_far);
+    FeatureHasEnds(feat, bsh ? &(bsh.GetScope()) : m_Scope, no_beg, no_end);
     if (show_stop) {
         if (!got_stop  && !no_end) {
             has_errors = true;
@@ -7238,6 +7240,38 @@ void CValidError_feat::x_CheckCDSFrame
 }
 
 
+CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is_far)
+{
+    CBioseq_Handle prot_handle;
+    is_far = false;
+    if (!feat.IsSetProduct()) {
+        return prot_handle;
+    }
+    const CSeq_id* protid = NULL;
+    try {
+        protid = &sequence::GetId(feat.GetProduct(), m_Scope);
+    } catch (CException&) {}
+
+    if (!protid) {
+        return prot_handle;
+    }
+
+    // try "local" scope
+    prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_TSE);
+    if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
+        prot_handle = m_Scope->GetBioseqHandle(*protid);
+        is_far = true;
+    }
+    if (!prot_handle) {
+        // it might be packaged in the wrong set
+        // which will be reported in ValidateCommonCDSProduct
+        prot_handle = m_Imp.GetScope()->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
+    }
+
+    return prot_handle;
+}
+
+
 CBioseq_Handle CValidError_feat::x_GetCDSProduct
 (const CSeq_feat& feat,
  bool report_errors,
@@ -7247,8 +7281,8 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
  bool& other_than_mismatch)
 {
     bool is_far = false;
-    CBioseq_Handle prot_handle = GetCDSProductSequence(feat, m_Scope,
-        m_TSE.GetTSE_Handle(), m_Imp.IsFarFetchCDSproducts(), is_far);
+
+    CBioseq_Handle prot_handle = x_GetCDSProduct(feat, is_far);
 
     if (is_far) {
         farstr = "(far) ";
@@ -7257,12 +7291,6 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
     try {
         protid = &GetId(feat.GetProduct(), m_Scope);
     } catch (CException&) {}
-
-    // it might be packaged in the wrong set
-    // which will be reported in ValidateCommonCDSProduct
-    if (protid && !prot_handle) {
-        prot_handle = m_Imp.GetScope()->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
-    }
 
     if (protid != NULL) {
         if (!prot_handle) {
@@ -7418,7 +7446,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             if (prot_vec.size() > 0 && transl_prot.length() > 0 &&
                 prot_vec[0] != transl_prot[0]) {
                 bool no_beg, no_end;
-                FeatureHasEnds(feat, m_Scope, no_beg, no_end);
+                FeatureHasEnds(feat, &(prot_handle.GetScope()), no_beg, no_end);
                 if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
                     if (report_errors) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
@@ -7432,7 +7460,7 @@ void CValidError_feat::x_CheckTranslationMismatches
                     has_errors = true;
                 }
             }
-            mismatches = GetMismatches(feat, m_Scope, prot_handle, transl_prot);
+            mismatches = GetMismatches(feat, prot_handle, transl_prot);
             if (mismatches.size() > 0) {
                 has_errors = true;
             }
@@ -7512,7 +7540,7 @@ void CValidError_feat::x_CheckTranslationMismatches
         if (feat.CanGetPartial()  &&  feat.GetPartial()  &&
             num_mismatches == 0) {
             bool no_beg, no_end;
-            FeatureHasEnds(feat, m_Scope, no_beg, no_end);
+            FeatureHasEnds(feat, &(prot_handle.GetScope()), no_beg, no_end);
             if (!no_beg  && !no_end) {
                 if (report_errors) {
                     if (m_Imp.IsGpipe () && m_Imp.IsGenomic()) {

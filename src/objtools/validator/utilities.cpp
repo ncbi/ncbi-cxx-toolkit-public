@@ -2517,7 +2517,7 @@ CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const
 }
 
 
-vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CScope* scope, CBioseq_Handle prot_handle, const string& transl_prot)
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle, const string& transl_prot)
 {
     vector<TSeqPos> mismatches;
     // can't check for mismatches unless there is a product
@@ -2559,7 +2559,7 @@ vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CScope* scope, CBioseq_Hand
             if (t_res != p_res) {
                 if (i == 0) {
                     bool no_beg, no_end;
-                    FeatureHasEnds(feat, scope, no_beg, no_end);
+                    FeatureHasEnds(feat, &(prot_handle.GetScope()), no_beg, no_end);
                     if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
                     } else if (t_res == '-') {
                     } else {
@@ -2602,7 +2602,7 @@ bool HasNoStop(const CSeq_feat& feat, CScope* scope)
             bool is_far = false;
             prot_handle = GetCDSProductSequence(feat, scope, tse, true, is_far);
             if (prot_handle) {
-                vector<TSeqPos> mismatches = GetMismatches(feat, scope, prot_handle, transl_prot);
+                vector<TSeqPos> mismatches = GetMismatches(feat, prot_handle, transl_prot);
                 if (mismatches.size() == 0) {
                     show_stop = false;
                 }
