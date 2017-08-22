@@ -156,6 +156,8 @@ public:
 
     virtual CObjectManager::TPriority GetDefaultPriority(void) const;
 
+    virtual unsigned GetDefaultBlobCacheSizeLimit() const;
+
 private:
     typedef CParamLoaderMaker<CCSRADataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CCSRADataLoader, SLoaderParams>;

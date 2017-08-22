@@ -1752,6 +1752,7 @@ void CCSRARefSeqInfo::LoadRefSeqChunk(CTSE_Chunk_Info& chunk_info)
     CCSraRefSeqIterator(*m_File, GetRefSeqId()).GetRefLiterals(data, range);
     _ASSERT(!data.empty());
     chunk_info.x_LoadSequence(place, range.GetFrom(), data);
+    chunk_info.x_AddUsedMemory(chunk_data_size/4); // 2na
     chunk_info.SetLoaded();
 }
 
@@ -2012,6 +2013,8 @@ void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
                    pos<<"-"<<(end-1)<<": "<<
                    count<<" skipped: "<<skipped);
     }
+    // estimated memory usage
+    chunk_info.x_AddUsedMemory(count*1000);
     chunk_info.SetLoaded();
 }
 
@@ -2181,6 +2184,7 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                    "Loaded pileup "<<GetRefSeqId()<<" @ "<<
                    pos<<"-"<<(end-1)<<": "<<total_bytes<<" bytes");
     }
+    chunk_info.x_AddUsedMemory(total_bytes);
     chunk_info.SetLoaded();
 }
 

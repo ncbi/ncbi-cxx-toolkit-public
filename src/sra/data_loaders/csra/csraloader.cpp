@@ -455,6 +455,13 @@ CObjectManager::TPriority CCSRADataLoader::GetDefaultPriority(void) const
 }
 
 
+unsigned CCSRADataLoader::GetDefaultBlobCacheSizeLimit() const
+{
+    // do not cache released BAM TSEs
+    return 0;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================
