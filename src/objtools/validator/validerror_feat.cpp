@@ -7258,6 +7258,12 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
         protid = &GetId(feat.GetProduct(), m_Scope);
     } catch (CException&) {}
 
+    // it might be packaged in the wrong set
+    // which will be reported in ValidateCommonCDSProduct
+    if (protid && !prot_handle) {
+        prot_handle = m_Imp.GetScope()->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
+    }
+
     if (protid != NULL) {
         if (!prot_handle) {
             if (!m_Imp.IsFarFetchCDSproducts()) {
