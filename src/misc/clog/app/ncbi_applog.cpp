@@ -73,10 +73,9 @@
     ncbi_applog url           <token> [-appname] [-host] [-pid] [-sid] [-phid] [-maxtime TIME] [-maxtime-delay TIMESPAN]
 
   Special commands (must be used without <token> parameter):
-    ncbi_applog raw           -file <applog_formatted_logs_for_a_single_app.txt> [-logsite SITE] 
-                                      [-nl NUM] [-nr NUM]
-    ncbi_applog raw           -file - [-logsite SITE]
-                                      [-nl NUM] [-nr NUM] [-timeout SEC]
+    ncbi_applog raw           -file <path_to_file_with_applog_formatted_logs> 
+                                      [-appname NAME] [-logsite SITE] [-nl NUM] [-nr NUM]
+    ncbi_applog raw           -file - [-appname NAME] [-logsite SITE] [-nl NUM] [-nr NUM] [-timeout SEC]
     ncbi_applog generate      -phid -sid
     ncbi_applog health        [-logsite SITE]
 
@@ -131,7 +130,7 @@ const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 const char* kDefaultCGI = "https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
-/// NOTE: we need subpattern for application name only!
+/// NOTE: we need sub-pattern for application name only!
 const char* kApplogRegexp = 
     "^\\d{5,}/\\d{3,}/\\d{4,}/[NSPRBE ]{3}[0-9A-Z]{16} "     // <pid>/<tid>/<rid>/<state> <guid>
     "\\d{4,}/\\d{4,} "                                       // <psn>/<tsn> 
@@ -235,9 +234,8 @@ public:
     int Cmd_Health();
 
 private:
-    // Get location of 1st subpattern for kApplogRegexp
-    // from the last match with additional checks.
-    const int* GetRegexpResults(CRegexp& re, bool check_appname = false);
+    // Get location of the application name and its position in the log string
+    void GetRawAppName(CRegexp& re, string* appname, size_t* pos = nullptr, size_t* len = nullptr);
 
 private:
     bool           m_IsRemoteLogging;  ///< TRUE if mode == "cgi"
@@ -552,6 +550,10 @@ void CNcbiApplogApp::Init(void)
             ("file", "filename", "Name of the file with log lines. Use '-' to read from the standard input.",
             CArgDescriptions::eString);
         arg->AddDefaultKey
+            ("appname", "NAME", "Name of the application (optional). If empty, an application name from "
+            "the first RAW line will be used. This parameter affects the name of the created log file only.",
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr);
 
@@ -578,9 +580,6 @@ void CNcbiApplogApp::Init(void)
 
         // Used for 'raw' incremental logging via CGI only
         arg->AddDefaultKey
-            ("appname", "NAME", "Name of the application.",
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
-        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         cmd->AddCommand("raw", arg.release());
@@ -601,6 +600,11 @@ void CNcbiApplogApp::Init(void)
         arg->AddFlag
             ("sid",
             "Generate and return Session ID (SID) to use in the user script.");
+        arg->AddDefaultKey
+            ("format", "FORMAT", "Output format for generated values.", 
+            CArgDescriptions::eString, "value");
+        arg->SetConstraint
+            ("format", &(*new CArgAllow_Strings, "value", "shell", "shell-export"));
         cmd->AddCommand("generate", arg.release());
     }}
 
@@ -900,8 +904,9 @@ int CNcbiApplogApp::Redirect()
             case eRAW_NumRequests:
                 {
                     // Check on "stop-request"
-                    size_t namepos = GetRegexpResults(re)[0];
-                    CTempString cmdstr(CTempString(m_Raw_line), namepos + m_Info.appname.size() + 1);
+                    size_t namepos, namelen;
+                    GetRawAppName(re, 0, &namepos, &namelen);
+                    CTempString cmdstr(CTempString(m_Raw_line), namepos + namelen + 1);
                     if (NStr::StartsWith(cmdstr, "request-stop")) {
                         ++n_sent_requests;
                         need_split = (n_sent_requests % criterion_count == 0);
@@ -970,17 +975,22 @@ int CNcbiApplogApp::ReadCgiResponse(CConn_HttpStream& cgi)
 }
 
 
-const int* CNcbiApplogApp::GetRegexpResults(CRegexp& re, bool check_appname)
+void CNcbiApplogApp::GetRawAppName(CRegexp& re, string* appname, size_t* from, size_t* len)
 {
     const int* apos = re.GetResults(1);
     if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
         throw "Error processing input raw log, line has wrong format";
     }
-    if (check_appname  &&  
-        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), apos[0] /*namepos*/), m_Info.appname)) {
-        throw "Error processing input raw log, line has wrong format";
+    if (from) {
+        *from = (size_t)apos[0];
     }
-    return apos;
+    if (len) {
+        *len = (size_t)(apos[1] - apos[0]);
+    }
+    if (appname) {
+        *appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
+    }
+    return;
 }
 
 
@@ -1287,30 +1297,51 @@ void CNcbiApplogApp::Error(const string& msg)
 
 int CNcbiApplogApp::Cmd_Generate()
 {
-    TNcbiLog_UInt8 uid = NcbiLogP_GenerateUID();
+    static const char* kPHID = "NCBI_LOG_HIT_ID";
+    static const char* kSID  = "NCBI_LOG_SESSION_ID";
+
+    const TNcbiLog_UInt8 uid = NcbiLogP_GenerateUID();
+    const string fmt = GetArgs()["format"].AsString();
+
+    size_t bufsize = max(NCBILOG_HITID_MAX, NCBILOG_SESSION_MAX) + 1;
+    char* buf = new char[bufsize];
+    bool newline = false;
 
     // Generate in the order they passed in the command line
     CNcbiArguments raw_args = GetArguments();
     for (size_t i = 1; i < raw_args.Size(); ++i) {
         string arg = raw_args[i];
-        bool newline = (i > 2);
+        const char* env = nullptr;
 
-        if ( newline ) cout << endl;
-        // Generate PHID
         if (arg == "-phid") {
-            char buf[NCBILOG_HITID_MAX + 1];
-            if (NcbiLogP_GenerateHitID(buf, NCBILOG_HITID_MAX + 1, uid)) {
-                cout << buf;
+            if (!NcbiLogP_GenerateHitID(buf, bufsize, uid)) {
+                buf[0] = '\0';
             }
-        // Generate SID
+            env = kPHID;
         } else if (arg == "-sid") {
-            char buf[NCBILOG_SESSION_MAX + 1];
-            if (NcbiLogP_GenerateSID(buf, NCBILOG_SESSION_MAX + 1, uid)) {
-                cout << buf;
+            if (!NcbiLogP_GenerateSID(buf, bufsize, uid)) {
+                buf[0] = '\0';
+            }
+            env = kSID;
+        }
+        if ( env ) {
+            if (newline) {
+                cout << endl;
+            }
+            if (fmt == "shell" || fmt == "shell-export") {
+                cout << env << "=";
+            }
+            cout << buf;
+            if (fmt == "shell-export") {
+                cout << "\nexport " << env << endl;
+            }
+            else {
+                newline = true;
             }
         }
-        if (newline) cout << endl;
     }
+    delete[] buf;
+
     return 0;
 }
 
@@ -1462,27 +1493,25 @@ int CNcbiApplogApp::Run()
             m_Raw_is = &m_Raw_ifs;
         }
 
-        // Check if an application name has passed via arguments (for CGI mode).
-        // If not, try to get it from the first line, it will be used for processing
-        // all following lines in the stream.
+        // Check if an application name has passed via arguments.
+        // If not, try to get it from the first line.
 
         m_Info.appname = args["appname"].AsString();
         if ( m_Info.appname.empty() ) {
-            // Find first line in applog format and hash it for the following processing
+            // Find first line in applog format and hash it for the following processing (m_Raw_line)
             CRegexp re(kApplogRegexp);
-            bool found=false;
+            bool found = false;
             while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line)) {
                 if (re.IsMatch(m_Raw_line)) {
                     found = true;
                     break;
                 }
             }
-            if ( !found || (m_Raw_line.length() < NCBILOG_ENTRY_MIN) ) {
+            if (!found || (m_Raw_line.length() < NCBILOG_ENTRY_MIN)) {
                 throw "Error processing input raw log, cannot find any line in applog format";
             }
             // Get application name
-            const int* apos = GetRegexpResults(re);
-            m_Info.appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
+            GetRawAppName(re, &m_Info.appname);
         }
     
     } else
@@ -1828,26 +1857,29 @@ int CNcbiApplogApp::Run()
     } else  
 
     // -----  raw  -----------------------------------------------------------
-    // ncbi_applog raw -file <applog_formatted_logs.txt> [-logsite SITE]
-    // ncbi_applog raw -file -                           [-logsite SITE]
+    // ncbi_applog raw -file <applog_formatted_logs.txt> [-appname NAME] [-logsite SITE] 
+    // ncbi_applog raw -file -                           [-appname NAME] [-logsite SITE]
 
     if ( m_IsRaw ) {
         // We already can have first line in m_Raw_line,
         // process it and all remaining lines.
         CRegexp re(kApplogRegexp);
         bool no_logsite = (m_Info.logsite.empty() || m_Info.logsite == m_Info.appname);
-        string orig_appname;
-        if ( !no_logsite ) {
-            orig_appname = "orig_appname=" + m_Info.appname;
-        }
         do {
             if (!m_Raw_line.empty()  &&  re.IsMatch(m_Raw_line)) {
                 if ( no_logsite ) {
                     NcbiLogP_Raw2(m_Raw_line.c_str(), m_Raw_line.length());
                 } else {
-                    // Use logsite name instead of appname
-                    size_t namepos = GetRegexpResults(re, true)[0];
-                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, namepos, 1);
+                    string app, orig_appname;
+                    size_t namepos, namelen;
+                    GetRawAppName(re, &app, &namepos, &namelen);
+                    orig_appname = "orig_appname=" + app;
+
+                    // Substitute application name with a logsite name.
+                    // Original application name will be written as extra after 'app-start',
+                    // and as a separate parameter in the 'request-start' (see below).
+
+                    m_Raw_line = m_Raw_line.substr(0, namepos) + m_Info.logsite + m_Raw_line.substr(namepos + namelen);
                     size_t parampos = namepos + m_Info.logsite.size() + kParamsOffset;
 
                     // Command type for original name to logsite substitution
