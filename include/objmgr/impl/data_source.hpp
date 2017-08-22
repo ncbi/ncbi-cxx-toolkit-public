@@ -283,6 +283,8 @@ public:
     TPriority GetDefaultPriority(void) const;
     void SetDefaultPriority(TPriority priority);
 
+    static unsigned GetDefaultBlobCacheSizeLimit();
+
     // get locks
     enum FLockFlags {
         fLockNoHistory = 1<<0,
@@ -483,7 +485,8 @@ private:
 
     TBlob_Map             m_Blob_Map;       // TBlobId -> CTSE_Info
     mutable TBlob_Cache   m_Blob_Cache;     // unlocked blobs
-    mutable size_t        m_Blob_Cache_Size;// list<>::size() is slow
+    mutable unsigned      m_Blob_Cache_Size;// list<>::size() is slow
+    unsigned              m_Blob_Cache_Size_Limit;
 
     // Prefetching thread and lock, used when initializing the thread
     CRef<CPrefetchThreadOld> m_PrefetchThread;

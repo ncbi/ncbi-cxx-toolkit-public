@@ -98,6 +98,9 @@ public:
     TBlobId GetBlobId(void) const;
     CDataLoader* GetDataLoader(void) const;
 
+    /// return estimated memory size occupied by this TSE
+    size_t GetUsedMemory(void) const;
+
     bool Blob_IsSuppressed(void) const;
     bool Blob_IsSuppressedTemp(void) const;
     bool Blob_IsSuppressedPerm(void) const;

@@ -578,6 +578,15 @@ void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
 }
 
 
+void CTSE_Split_Info::x_AddUsedMemory(size_t size)
+{
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        tse.AddUsedMemory(size);
+    }
+}
+
+
 void CTSE_Split_Info::x_SetBioseqUpdater(CRef<CBioseqUpdater> updater)
 {
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {

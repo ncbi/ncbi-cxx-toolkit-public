@@ -214,6 +214,9 @@ public:
 
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
+    // update in-memory size
+    void x_AddUsedMemory(size_t size);
+
     //////////////////////////////////////////////////////////////////
     // methods to find out what information is needed to be loaded
     //////////////////////////////////////////////////////////////////

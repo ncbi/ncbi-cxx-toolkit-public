@@ -337,6 +337,12 @@ void CTSE_Info::SetUsedMemory(size_t size)
 }
 
 
+void CTSE_Info::AddUsedMemory(size_t size)
+{
+    m_UsedMemory += size;
+}
+
+
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
 {
     if ( m_Which != CSeq_entry::e_not_set ) {
@@ -1078,10 +1084,10 @@ SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
                                         const CSeq_id_Handle& id)
 {
     // repeat for more generic types of selector
-    TAnnotObjs::iterator it = objs.lower_bound(id);
-    if ( it == objs.end() || it->first != id ) {
+    TAnnotObjs::iterator it = objs.find(id);
+    if ( it == objs.end() ) {
         // new id
-        it = objs.insert(it, TAnnotObjs::value_type(id, SIdAnnotObjs()));
+        it = objs.insert(TAnnotObjs::value_type(id, SIdAnnotObjs())).first;
         x_IndexAnnotTSE(name, id);
     }
     _ASSERT(it != objs.end() && it->first == id);
@@ -1099,8 +1105,8 @@ SIdAnnotObjs& CTSE_Info::x_SetIdObjects(const CAnnotName& name,
 const SIdAnnotObjs* CTSE_Info::x_GetIdObjects(const TAnnotObjs& objs,
                                               const CSeq_id_Handle& idh) const
 {
-    TAnnotObjs::const_iterator it = objs.lower_bound(idh);
-    if ( it == objs.end() || it->first != idh ) {
+    TAnnotObjs::const_iterator it = objs.find(idh);
+    if ( it == objs.end() ) {
         return 0;
     }
     return &it->second;

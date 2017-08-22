@@ -777,6 +777,13 @@ void CTSE_Chunk_Info::x_LoadSeq_entry(CSeq_entry& entry,
 }
 
 
+void CTSE_Chunk_Info::x_AddUsedMemory(size_t size)
+{
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_AddUsedMemory(size);
+}
+
+
 void CTSE_Chunk_Info::x_SetLoadBytes(Uint4 bytes)
 {
     m_LoadBytes = bytes;

@@ -136,6 +136,12 @@ bool CTSE_Handle::IsValid(void) const
 }
 
 
+size_t CTSE_Handle::GetUsedMemory(void) const
+{
+    return x_GetTSE_Info().GetUsedMemory();
+}
+
+
 bool CTSE_Handle::OrderedBefore(const CTSE_Handle& tse) const
 {
     if ( *this == tse ) {

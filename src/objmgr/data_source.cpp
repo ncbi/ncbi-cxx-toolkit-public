@@ -87,9 +87,23 @@ NCBI_DEFINE_ERR_SUBCODE_X(3);
 
 BEGIN_SCOPE(objects)
 
+class CSeq_entry;
+
+NCBI_PARAM_DECL(unsigned, OBJMGR, BLOB_CACHE);
+NCBI_PARAM_DEF_EX(unsigned, OBJMGR, BLOB_CACHE, 10,
+                  eParam_NoThread, OBJMGR_BLOB_CACHE);
+
+unsigned CDataSource::GetDefaultBlobCacheSizeLimit(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, BLOB_CACHE)> sx_Value;
+    return sx_Value->Get();
+}
+
+
 CDataSource::CDataSource(void)
     : m_DefaultPriority(CObjectManager::kPriority_Entry),
-      m_Blob_Cache_Size(0)
+      m_Blob_Cache_Size(0),
+      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit())
 {
 }
 
@@ -97,7 +111,9 @@ CDataSource::CDataSource(void)
 CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader),
       m_DefaultPriority(loader.GetDefaultPriority()),
-      m_Blob_Cache_Size(0)
+      m_Blob_Cache_Size(0),
+      m_Blob_Cache_Size_Limit(min(GetDefaultBlobCacheSizeLimit(),
+                                  loader.GetDefaultBlobCacheSizeLimit()))
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -106,7 +122,8 @@ CDataSource::CDataSource(CDataLoader& loader)
 CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
     : m_SharedObject(&shared_object),
       m_DefaultPriority(CObjectManager::kPriority_Entry),
-      m_Blob_Cache_Size(0)
+      m_Blob_Cache_Size(0),
+      m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit())
 {
     CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));
     m_StaticBlobs.PutLock(tse_lock);
@@ -298,8 +315,7 @@ bool CDataSource::DropTSE(CTSE_Info& info)
         _TRACE("DropTSE: DS="<<this<<" TSE_Info="<<&info<<" already dropped");
         return false; // Not really dropped, although found
     }
-    _ASSERT(info.m_UsedMemory == 0 &&& info.GetDataSource() == this);
-    info.m_UsedMemory = 1;
+    _ASSERT(&info.GetDataSource() == this);
     _ASSERT(!info.IsLocked());
     x_DropTSE(ref);
     _ASSERT(!info.IsLocked());
@@ -1737,17 +1753,6 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
 }
 
 
-NCBI_PARAM_DECL(unsigned, OBJMGR, BLOB_CACHE);
-NCBI_PARAM_DEF_EX(unsigned, OBJMGR, BLOB_CACHE, 10,
-                  eParam_NoThread, OBJMGR_BLOB_CACHE);
-
-static unsigned s_GetCacheSize(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, BLOB_CACHE)> sx_Value;
-    return sx_Value->Get();
-}
-
-
 void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
 {
     if ( !m_Loader ) {
@@ -1782,7 +1787,7 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
                 find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         _ASSERT(m_Blob_Cache_Size == m_Blob_Cache.size());
         
-        unsigned cache_size = s_GetCacheSize();
+        unsigned cache_size = m_Blob_Cache_Size_Limit;
         while ( m_Blob_Cache_Size > cache_size ) {
             CRef<CTSE_Info> del_tse = m_Blob_Cache.front();
             m_Blob_Cache.pop_front();

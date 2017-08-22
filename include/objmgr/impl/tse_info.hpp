@@ -253,6 +253,7 @@ public:
 
     size_t GetUsedMemory(void) const;
     void SetUsedMemory(size_t size);
+    void AddUsedMemory(size_t size);
 
     // Annot index access
     bool HasAnnot(const CAnnotName& name) const;

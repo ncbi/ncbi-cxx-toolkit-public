@@ -155,6 +155,9 @@ public:
                         const TAssembly& assembly);
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
+    // update in-memory size
+    void x_AddUsedMemory(size_t size);
+
     void x_SetBioseqUpdater(CRef<CBioseqUpdater> updater);
 
 protected:

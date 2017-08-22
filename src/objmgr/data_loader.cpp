@@ -855,6 +855,12 @@ double CDataLoader::EstimateLoadSeconds(const CTSE_Chunk_Info& /*chunk*/, Uint4 
 }
 
 
+unsigned CDataLoader::GetDefaultBlobCacheSizeLimit(void) const
+{
+    return kMax_UInt;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBlobId
 
