@@ -9,7 +9,6 @@ from __future__ import print_function
 import os, sys, os.path
 from optparse import OptionParser
 import blast_utils
-import shutil
 
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -21,11 +20,11 @@ def main(): #IGNORE:R0911
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 5:
+    if len(args) != 4:
         parser.error("Incorrect number of arguments")
         return 1
 
-    blast_version, platform, installdir, srctarball, libdir = args
+    blast_version, platform, installdir, srctarball = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
@@ -34,28 +33,8 @@ def main(): #IGNORE:R0911
         print("Platform:", platform)
         print("Installation directory:", installdir)
         print("Source tarball:", srctarball)
-        print("Lib directory:", libdir)
 
     if platform.startswith("Win"):
-        import glob
-        print("Files in libdir " + libdir + ":")
-        for dll in glob.glob(libdir + "/*"):
-            print(dll)
-        print("Files in install dir " + installdir + ":")
-        for dll in glob.glob(installdir + "/*"):
-            print(dll)
-
-
-    if platform.startswith("Win"):
-        # copy MSVC runtime libraries
-        shutil.copy(libdir + "libgcc_s_seh-1.dll", installdir + "bin")
-        shutil.copy(libdir + "libgmp-10.dll", installdir + "bin")
-        shutil.copy(libdir + "libgnutls-30.dll", installdir + "bin")
-        shutil.copy(libdir + "libhogweed-4-2.dll", installdir + "bin")
-        shutil.copy(libdir + "libnettle-6-2.dll", installdir + "bin")
-        shutil.copy(libdir + "libp11-kit-0.dll", installdir + "bin")
-        shutil.copy(libdir + "msvcp120.dll", installdir + "bin")
-        shutil.copy(libdir + "msvcr120.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)
     if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version, srctarball)
