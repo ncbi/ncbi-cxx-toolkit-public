@@ -13,6 +13,6 @@ LDFLAGS  = $(FAST_LDFLAGS:ppc=i386)
 
 LIBS = $(VDB_STATIC_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = VDB objects -Cygwin
 
 WATCHERS = camacho madden maning fongah2
