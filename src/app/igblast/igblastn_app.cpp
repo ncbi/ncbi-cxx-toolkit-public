@@ -44,6 +44,8 @@
 #include <algo/blast/blastinput/igblastn_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include "../blast/blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -88,7 +90,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 	   CRef<CBlastOptionsHandle> l_opts_hndl;
            CRef<CBlastDatabaseArgs> l_db_args(thm_CmdLineArgs->GetBlastDatabaseArgs());
            bool db_is_remote = true;
-           
+
            //OK2 thm_ig_args->AddIgSequenceScope(scope);
 	   {
 	      CFastMutexGuard g1(  thm_Mutex_Global  );
@@ -96,6 +98,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
               _ASSERT(scope);
 
               l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());              
+
               l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
               l_opts_hndl.Reset(&*thm_CmdLineArgs->SetOptions(thm_args));
               if (l_db_args->GetDatabaseName() == kEmptyStr && 
@@ -124,6 +127,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 	      query.Reset( thm_input->GetNextSeqBatch(*scope) );
 	      // STEP #2.B -- increase total number of batches in output
 	      current_batch_number = thm_max_batch;
+	     
 	      thm_max_batch++;
 	      // STEP #3   -- check if exit in next loop. NOT needed
 	      done_fasta_input = thm_input->End(); // will exit if nothing left 
@@ -315,7 +319,6 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	}
 	// STEP B
 	// IF NOT READY and 
-	//if( !next_batch_ready  && (waiting_batch_number!=0) ) 
 	if( !next_batch_ready  )
 	{
 	    // OK, some threads are rinning, wait on semaphore
@@ -505,21 +508,22 @@ void CIgBlastnApp::Join_Worker_Threads(void ){
 void CIgBlastnApp::Run_Formatter_Threads(void){
 }
 
-
 // ================================================================================================
 void CIgBlastnApp::Init()
 {
     // formulate command line arguments
-
+    
     m_CmdLineArgs.Reset(new CIgBlastnAppArgs());
 
     // read the command line
-
+    
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
+    
     m_run_thread_count = 0;
     m_worker_thread_num =1;
-
+    m_sra_src = NULL;
+    
 }
 unsigned int  CIgBlastnApp::x_CountUserBatches(CBlastInputSourceConfig &iconfig, int batch_size )
 {
@@ -563,8 +567,46 @@ int CIgBlastnApp::Run(void)
                                      m_query_opts->GetRange());
         iconfig.SetQueryLocalIdMode();
 	//.......................................................
-        m_fasta.Reset( new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
-        m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 10000));
+	// construct input source from file or SRA accession
+	if( args[kArgSraAccession] && (args[kArgSraAccession].AsString() != "") ) {
+	    // assuming SRA SUN accessions
+	    vector < string >  all_sra_runs;
+	    string sra_run_accessions = args[kArgSraAccession].AsString();
+	    vector<string> run_arr;
+	    string delim = ", ";
+	    NStr::Split( sra_run_accessions, delim, run_arr );
+
+	    for( int ndx=0; ndx<run_arr.size(); ndx ++){
+		string one_run = NStr::TruncateSpaces( run_arr[ndx]);
+		all_sra_runs.push_back( one_run );
+	    }
+	    try
+	    { 
+		m_sra_src.Reset(new CSraInputSource( all_sra_runs ) ) ;
+	    }
+	    catch (const CException& e) {
+		ERR_POST(e);
+		cout << "Error: "<<e.what() << endl;
+		cout <<"Error: invalid SRA accession(s): "<<sra_run_accessions<< endl;
+		return -1;
+	    }
+	    catch(...){
+		cout <<"Error: invalid SRA accessions: "<<sra_run_accessions<< endl;
+		return -1;
+	    }
+	    if( m_sra_src.Empty() ){
+		cout <<"Error: invalid SRA accession "<<sra_run_accessions<<endl;
+		return -1;
+	    }
+	    //
+	    m_input.Reset( new CBlastInput( m_sra_src, 10000));
+	} // end if SRA run accession provided
+	else 
+	{   
+	    m_fasta.Reset( new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
+	    m_input.Reset( new CBlastInput(m_fasta.GetPointer(), 10000));
+	}
+
 	
 
         /*** Initialize igblast database/subject and options ***/
@@ -598,7 +640,6 @@ int CIgBlastnApp::Run(void)
             }
         }
         _ASSERT(m_blastdb );
-
 
 
         /*** Get the formatting options ***/

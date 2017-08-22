@@ -34,6 +34,7 @@
 #include "igblast_types.hpp"
 
 
+
 class CIgBlastnApp : public CNcbiApplication
 {
 public:
@@ -231,6 +232,7 @@ private:
     vector< CRef < CIgWorker >  >           m_workers;
     CRef < CIgFormatter  >                  m_formatter;
     size_t				    m_worker_thread_num;
+    CRef <CSraInputSource>                  m_sra_src;
 
 };
 
