@@ -253,6 +253,9 @@ CGtfReader::ReadSeqAnnots(
                 continue;
             }
             if (xNeedsNewSeqAnnot(line)) {
+                if (!annots.empty()) {
+                    xPostProcessAnnot(annots.back(), pEC);
+                }
                 CRef< CSeq_annot > pAnnot( new CSeq_annot );
                 annots.push_back(pAnnot);
                 continue;
