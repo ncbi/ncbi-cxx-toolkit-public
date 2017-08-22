@@ -190,7 +190,7 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
 
     /* Fetch the linkerd info */
     if ( ! iter) {
-        CORE_LOG(eLOG_Error, "SERV_GetNextInfo failed.");
+        CORE_LOG(eLOG_Error, "SERV_OpenP failed.");
         errors = 1;
     } else {
         info = SERV_GetNextInfo(iter);
@@ -208,24 +208,29 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
             if (info_str)
                 free(info_str);
             /* linkerd must return only 1 hit */
-            assert( ! SERV_GetNextInfo(iter));
+            info = SERV_GetNextInfo(iter);
+            if (info) {
+                CORE_LOG(eLOG_Error, "linkerd unexpectedly returned a hit.");
+                errors = 1;
+            } else {
 
-            /* Make sure endpoint data can be repopulated and reset */
-            if (repop) {
-                /* repopulate */
-                CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
-                if ( ! SERV_GetNextInfo(iter)) {
-                    CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
-                    errors = 1;
+                /* Make sure endpoint data can be repopulated and reset */
+                if (repop) {
+                    /* repopulate */
+                    CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
+                    if ( ! SERV_GetNextInfo(iter)) {
+                        CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
+                        errors = 1;
+                    }
                 }
-            }
-            if (reset) {
-                /* reset */
-                CORE_LOG(eLOG_Trace, "Resetting the service mapper.");
-                SERV_Reset(iter);
-                if ( ! SERV_GetNextInfo(iter)) {
-                    CORE_LOG(eLOG_Error, "No services found after reset.");
-                    errors = 1;
+                if (reset) {
+                    /* reset */
+                    CORE_LOG(eLOG_Trace, "Resetting the service mapper.");
+                    SERV_Reset(iter);
+                    if ( ! SERV_GetNextInfo(iter)) {
+                        CORE_LOG(eLOG_Error, "No services found after reset.");
+                        errors = 1;
+                    }
                 }
             }
 
@@ -249,6 +254,37 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
         (success ? "FAIL (success when error expected)" : "FAIL")));
 
     return retval == -1 ? (success != exp_err ? 1 : 0) : retval;
+}
+
+
+/* wrapper around x_json_object_dotget_string() to support platform-specific
+   overrides */
+static const char * p_json_object_dotget_string(x_JSON_Object *obj,
+                                                const char *path)
+{
+#define PLATFORM_BUFLEN 200
+    char        platform_buf[PLATFORM_BUFLEN+1];
+    const char  *platform = NULL;
+    const char  *val;
+
+#if defined(NCBI_OS_MSWIN)
+    platform = "win";
+#elif defined(NCBI_OS_UNIX)
+    platform = "nix";
+#endif
+    if (platform) {
+        if (strlen(path) + strlen(platform) + 1 > PLATFORM_BUFLEN) {
+            strncpy(platform_buf, path, PLATFORM_BUFLEN);
+            platform_buf[PLATFORM_BUFLEN] = NIL;
+            CORE_LOGF(eLOG_Error, ("Overlong path: '%s'...", platform_buf));
+        }
+        sprintf(platform_buf, "%s_%s", path, platform);
+        val = x_json_object_dotget_string(obj, platform_buf);
+        if (val)
+            return val;
+    }
+    return x_json_object_dotget_string(obj, path);
+#undef PLATFORM_BUFLEN
 }
 
 
@@ -282,15 +318,15 @@ static int run_tests(const char *test_nums)
         all_enabled = 1;
     }
 
-    cmn_svc  = x_json_object_dotget_string(root_obj, "common.service");
-    cmn_sch  = x_json_object_dotget_string(root_obj, "common.scheme");
-    cmn_user = x_json_object_dotget_string(root_obj, "common.user");
-    cmn_pass = x_json_object_dotget_string(root_obj, "common.pass");
-    cmn_path = x_json_object_dotget_string(root_obj, "common.path");
-    cmn_args = x_json_object_dotget_string(root_obj, "common.args");
+    cmn_svc  = p_json_object_dotget_string(root_obj, "common.service");
+    cmn_sch  = p_json_object_dotget_string(root_obj, "common.scheme");
+    cmn_user = p_json_object_dotget_string(root_obj, "common.user");
+    cmn_pass = p_json_object_dotget_string(root_obj, "common.pass");
+    cmn_path = p_json_object_dotget_string(root_obj, "common.path");
+    cmn_args = p_json_object_dotget_string(root_obj, "common.args");
 
-    cmn_exp_host = x_json_object_dotget_string(root_obj, "common.expect.host");
-    cmn_exp_hdr  = x_json_object_dotget_string(root_obj,
+    cmn_exp_host = p_json_object_dotget_string(root_obj, "common.expect.host");
+    cmn_exp_hdr  = p_json_object_dotget_string(root_obj,
                         "common.expect.host_hdr");
     cmn_exp_port = (unsigned short)x_json_object_dotget_number(root_obj,
                         "common.expect.port");
@@ -360,8 +396,8 @@ static int run_tests(const char *test_nums)
         path = x_json_object_get_string(test_obj, "path");
         args = x_json_object_get_string(test_obj, "args");
 
-        exp_host = x_json_object_dotget_string(test_obj, "expect.host");
-        exp_hdr  = x_json_object_dotget_string(test_obj, "expect.hdr");
+        exp_host = p_json_object_dotget_string(test_obj, "expect.host");
+        exp_hdr  = p_json_object_dotget_string(test_obj, "expect.hdr");
         exp_port = (unsigned short)x_json_object_dotget_number(test_obj,
                         "expect.port");
 

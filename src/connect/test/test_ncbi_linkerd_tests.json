@@ -3,7 +3,8 @@
     "common":   {
         "service":          "bouncehttp",
         "expect":           {
-            "host":             "130.14.191.21",
+            "host_nix":         "130.14.191.21",
+            "host_win":         "130.14.191.13",
             "port":             4140,
             "host_hdr":         "Host: bouncehttp.linkerd.ncbi.nlm.nih.gov"
         },
