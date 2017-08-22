@@ -845,17 +845,13 @@ void CFastaReader::ParseDataLine(
     {
         // copy until comment char or end of line
         size_t pos = 0;
-        while (pos < s_len) {
-            if (s[pos] == ';') {
-                break;
-            }
-            m_SeqData.push_back(s[pos]);
-            ++pos;
+        char c = '\0';
+        for( ; pos < s_len && (c = s[pos]) != ';'; ++pos) {
+            m_SeqData.push_back(c);
         }
         m_CurrentPos += pos;
         return;
     }
-
 
     // we're stricter with nucs, so try to determine if we should
     // assume this is a nuc
@@ -1123,21 +1119,19 @@ void CFastaReader::x_CloseGap(
     }
 }
 
-void CFastaReader::OpenMask(void)
+void CFastaReader::x_OpenMask(void)
 {
-    if (m_MaskRangeStart == kInvalidSeqPos && m_CurrentMask.NotEmpty()) {
-        m_MaskRangeStart = GetCurrentPos(ePosWithGapsAndSegs);
-    }
+    _ASSERT(m_MaskRangeStart == kInvalidSeqPos);
+    m_MaskRangeStart = GetCurrentPos(ePosWithGapsAndSegs);
 }
 
-void CFastaReader::CloseMask(void)
+void CFastaReader::x_CloseMask(void)
 {
-    if (m_MaskRangeStart != kInvalidSeqPos) {
-        m_CurrentMask->SetPacked_int().AddInterval
-            (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1,
-            eNa_strand_plus);
-            m_MaskRangeStart = kInvalidSeqPos;
-    }
+    _ASSERT(m_MaskRangeStart != kInvalidSeqPos);
+    m_CurrentMask->SetPacked_int().AddInterval
+        (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1,
+         eNa_strand_plus);
+    m_MaskRangeStart = kInvalidSeqPos;
 }
 
 bool CFastaReader::ParseGapLine(

@@ -243,6 +243,8 @@ protected:
     virtual void   ParseDataLine (const TStr& s, ILineErrorListener * pMessageListener);
     virtual void   CheckDataLine (const TStr& s, ILineErrorListener * pMessageListener);
     virtual void   x_CloseGap    (TSeqPos len, bool atStartOfLine, ILineErrorListener * pMessageListener);
+    virtual void   x_OpenMask    (void);
+    virtual void   x_CloseMask   (void);
     virtual bool   ParseGapLine  (const TStr& s, ILineErrorListener * pMessageListener);
     virtual void   AssembleSeq   (ILineErrorListener * pMessageListener);
     virtual void   AssignMolType (ILineErrorListener * pMessageListener);
@@ -278,7 +280,8 @@ protected:
         }
     }
     void OpenMask(void);
-    void CloseMask(void);
+    void CloseMask(void)
+        { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
     Int8 StreamPosition(void) const
         { return NcbiStreamposToInt8(m_LineReader->GetPosition()); }
     unsigned int LineNumber(void) const
@@ -475,6 +478,14 @@ void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
 
 /////////////////// CFastaReader inline methods
 
+
+inline
+void CFastaReader::OpenMask()
+{
+    if (m_MaskRangeStart == kInvalidSeqPos  &&  m_CurrentMask.NotEmpty()) {
+        x_OpenMask();
+    }
+}
 
 inline
 TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
