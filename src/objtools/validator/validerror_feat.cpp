@@ -5962,6 +5962,7 @@ void CValidError_feat::ValidateCommonCDSProduct
         return;
     }
 
+    bool product_is_misplaced = false;
     CBioseq_Handle prod;
     const CSeq_id * sid = feat.GetProduct().GetId();
     if (sid) {
@@ -5992,36 +5993,42 @@ void CValidError_feat::ValidateCommonCDSProduct
         // or it might be packaged in the wrong set
         prod = m_Imp.GetScope()->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE());
         if (prod) {
-            x_ReportMisplacedCodingRegionProduct(feat);
+            product_is_misplaced = true;
         } else {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
                 "Unable to find product Bioseq from CDS feature", feat);
             return;
         }
     }
-    CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
-    if ( nuc ) {
-        bool is_nt = s_BioseqHasRefSeqThatStartsWithPrefix (nuc, "NT_");
-        if (!is_nt) {
-            CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel (CBioseq_set::eClass_gen_prod_set);
-            if (!wgs) {
-                CSeq_entry_Handle prod_nps = 
-                    prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                CSeq_entry_Handle nuc_nps = 
-                    nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                if (!nuc_nps) {
-                    for (CSeq_loc_CI loc_i(feat.GetLocation()); loc_i && !nuc_nps; ++loc_i) {
-                        nuc = m_Scope->GetBioseqHandle(loc_i.GetSeq_id());
-                        nuc_nps =
-                            nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                    }
-                }
 
-                if ( ! prod_nps || ! nuc_nps || prod_nps != nuc_nps ) {
-                    x_ReportMisplacedCodingRegionProduct(feat);
+    CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
+    if (!product_is_misplaced) {
+        if (nuc) {
+            bool is_nt = s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_");
+            if (!is_nt) {
+                CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+                if (!wgs) {
+                    CSeq_entry_Handle prod_nps =
+                        prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+                    CSeq_entry_Handle nuc_nps =
+                        nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+                    if (!nuc_nps) {
+                        for (CSeq_loc_CI loc_i(feat.GetLocation()); loc_i && !nuc_nps; ++loc_i) {
+                            nuc = m_Scope->GetBioseqHandle(loc_i.GetSeq_id());
+                            nuc_nps =
+                                nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+                        }
+                    }
+
+                    if (!prod_nps || !nuc_nps || prod_nps != nuc_nps) {
+                        product_is_misplaced = true;
+                    }
                 }
             }
         }
+    }
+    if (product_is_misplaced) {
+        x_ReportMisplacedCodingRegionProduct(feat);
     }
 
     const CSeq_feat* sfp = GetCDSForProduct(prod);
