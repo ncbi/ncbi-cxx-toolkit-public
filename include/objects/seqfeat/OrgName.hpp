@@ -40,7 +40,7 @@
 
 // generated includes
 #include <objects/seqfeat/OrgName_.hpp>
-
+#include <objects/seqfeat/OrgMod.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -87,6 +87,10 @@ public:
     bool GetNomenclature( string& result ) const;
     bool SetNomenclature( const string& nomenclature ); // False if value is unsupported
     void ResetNomenclature();
+
+    // Modifier convenience functions
+    // returns number of removed modifiers
+    unsigned int RemoveModBySubtype( COrgMod::ESubtype to_remove );
 
 private:
     // Prohibit copy constructor and assignment operator

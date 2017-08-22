@@ -413,6 +413,23 @@ void COrgName::ResetNomenclature()
     x_ResetAttribFlag( "nomenclature=", true );
 }
 
+unsigned int // returns number of removed modifiers
+COrgName::RemoveModBySubtype( COrgMod::ESubtype to_remove )
+{
+    unsigned result = 0;
+    if( IsSetMod() ) {
+	for( TMod::iterator i = SetMod().begin(); i != SetMod().end(); ) {
+	    if( (*i)->GetSubtype() == to_remove ) {
+		i = SetMod().erase(i);
+		++result;
+	    } else {
+		++i;
+	    }
+	}
+    }
+    return result;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
