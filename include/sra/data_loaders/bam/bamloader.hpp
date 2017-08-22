@@ -139,6 +139,8 @@ public:
 
     virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
     
+    virtual unsigned GetDefaultBlobCacheSizeLimit() const;
+
 private:
     typedef CParamLoaderMaker<CBAMDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CBAMDataLoader, SLoaderParams>;

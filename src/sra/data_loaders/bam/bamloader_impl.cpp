@@ -1530,6 +1530,7 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     }
     if ( annot ) {
         chunk_info.x_LoadAnnot(place, *annot);
+        chunk_info.x_AddUsedMemory(count*2500+10000);
     }
     {{
         CMutexGuard guard(m_File->GetMutex());
@@ -1923,6 +1924,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         desc->SetName(name);
         annot->SetDesc().Set().push_back(desc);
     }
+    size_t total_bytes = 0;
     CRef<CSeq_id> ref_id(SerialClone(*GetRefSeq_id().GetSeqId()));
     for ( int k = 0; k < SBaseStats::kNumStat; ++k ) {
         if ( c_max[k] == 0 ) {
@@ -1957,6 +1959,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             data.SetMin(0);
             data.SetMax(c_max[k]);
             data.SetAxis(0);
+            total_bytes += graph_range.GetLength()*sizeof(data.GetValues()[0])+10000;
         }
         else {
             CInt_graph& data = graph->SetGraph().SetInt();
@@ -1964,10 +1967,12 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             data.SetMin(0);
             data.SetMax(c_max[k]);
             data.SetAxis(0);
+            total_bytes += graph_range.GetLength()*sizeof(data.GetValues()[0])+10000;
         }
         annot->SetData().SetGraph().push_back(graph);
     }
     chunk_info.x_LoadAnnot(place, *annot);
+    chunk_info.x_AddUsedMemory(total_bytes);
 
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "

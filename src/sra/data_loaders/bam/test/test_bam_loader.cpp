@@ -698,6 +698,105 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
 }
 
 
+BOOST_AUTO_TEST_CASE(MemoryTest)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name, id, annot_name, pileup_name;
+
+    CSeq_id_Handle main_idh;
+    {
+        bam_name = "HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20111114.bam";
+        params.m_DirPath =
+            sx_GetPath("/1000genomes/ftp/data/HG00096/alignment");
+        if ( !CDirEntry(params.m_DirPath+"/"+bam_name).Exists() ) {
+            params.m_DirPath = 
+                sx_GetPath("/1000genomes2/ftp/data/HG00096/alignment");
+        }
+        if ( !CDirEntry(params.m_DirPath+"/"+bam_name).Exists() ) {
+            params.m_DirPath = 
+                sx_GetPath("/1000genomes2/ftp/phase1/data/HG00096/alignment");
+        }
+        if ( !CDirEntry(params.m_DirPath+"/"+bam_name).Exists() ) {
+            params.m_DirPath = 
+                sx_GetPath("/1000genomes4/ftp/data/HG00096/alignment");
+        }
+        CNcbiIfstream mapfile("mapfile");
+        BOOST_CHECK(mapfile);
+        AutoPtr<CIdMapperConfig> mapper
+            (new CIdMapperConfig(mapfile, "", false));
+        mapper->AddMapping(CSeq_id_Handle::GetHandle(20),
+                           main_idh = CSeq_id_Handle::GetHandle(51511747));
+        params.m_IdMapper.reset(mapper.release());
+        id = "NC_000020.9";
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    string gbloader_name =
+        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    
+    CRef<CScope> scope_ref(new CScope(*om));
+    CScope& scope = *scope_ref;
+    scope.AddDefaults();
+    scope.AddDataLoader(loader_name);
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    if ( !main_idh ) {
+        main_idh = idh;
+    }
+
+#ifdef _DEBUG
+    const TSeqPos kRangeStep = 100000;
+#else
+    const TSeqPos kRangeStep = 1000000;
+#endif
+    const TSeqPos kRangeCount = 10;
+    for ( TSeqPos i = 0; i < kRangeCount; ++i ) {
+        TSeqPos from = i*kRangeStep;
+        TSeqPos to = from+kRangeStep;
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetInt().SetId(*seqid);
+        loc->SetInt().SetFrom(from);
+        loc->SetInt().SetTo(to);
+        if ( annot_name.empty() ) {
+            annot_name = CDirEntry(bam_name).GetBase();
+        }
+        pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+        SAnnotSelector sel;
+        sel.SetSearchUnresolved();
+        
+        cout << "Scan range "<<from<<"-"<<to<<":"<<endl;
+        CTSE_Handle tseh;
+
+        CGraph_CI git(scope, *loc, sel);
+        if ( git ) {
+            cout << "Loaded "<<git.GetSize()<<" graphs"<<endl;
+            tseh = git.GetAnnot().GetTSE_Handle();
+        }
+        
+        CAlign_CI ait(scope, *loc, sel);
+        if ( ait ) {
+            cout << "Loaded "<<ait.GetSize()<<" alignments"<<endl;
+            tseh = ait.GetAnnot().GetTSE_Handle();
+        }
+        
+        if ( tseh ) {
+            cout << "BAM TSE memory: "<<tseh.GetUsedMemory()<<endl;
+            scope.RemoveFromHistory(tseh);
+        }
+    }
+}
+
+
 typedef tuple<string, CRange<TSeqPos>, bool, size_t, size_t> TQuery;
 vector<TQuery> s_GetQueries1()
 {

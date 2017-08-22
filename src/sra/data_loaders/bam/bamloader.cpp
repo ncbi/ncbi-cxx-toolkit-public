@@ -344,6 +344,13 @@ int CBAMDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+unsigned CBAMDataLoader::GetDefaultBlobCacheSizeLimit() const
+{
+    // do not cache released BAM TSEs
+    return 0;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================
