@@ -5968,6 +5968,14 @@ void CValidError_feat::ValidateCommonCDSProduct
     if (sid) {
         prod = m_Scope->GetBioseqHandleFromTSE(*sid, m_TSE);
     }
+    // it might be packaged in the wrong set
+    if (!prod) {
+        prod = m_Imp.GetScope()->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE());
+        if (prod) {
+            product_is_misplaced = true;
+        }
+    }
+
     if ( !prod ) {
         const CSeq_id* sid = 0;
         try {
@@ -5975,7 +5983,7 @@ void CValidError_feat::ValidateCommonCDSProduct
         } catch (const CObjmgrUtilException&) {}
 
         // okay to have far RefSeq product, but only if genomic product set
-        if ( sid == 0  ||  !sid->IsOther() ) {
+        if ( sid != 0  &&  sid->IsOther() ) {
             if ( m_Imp.IsGPS() ) {
                 return;
             }
@@ -5990,15 +5998,9 @@ void CValidError_feat::ValidateCommonCDSProduct
             return;
         }
 
-        // or it might be packaged in the wrong set
-        prod = m_Imp.GetScope()->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE());
-        if (prod) {
-            product_is_misplaced = true;
-        } else {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
-                "Unable to find product Bioseq from CDS feature", feat);
-            return;
-        }
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+            "Unable to find product Bioseq from CDS feature", feat);
+        return;
     }
 
     CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
