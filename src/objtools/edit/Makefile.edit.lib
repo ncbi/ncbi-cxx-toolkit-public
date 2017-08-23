@@ -12,7 +12,7 @@ SRC = gene_utils seq_entry_edit promote autodef_with_tax \
 
 LIB    = xobjedit
 
-DLL_LIB = xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
+DLL_LIB = xobjutil xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid
 
