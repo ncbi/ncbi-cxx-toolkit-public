@@ -44,8 +44,6 @@ x_delim_internal="~"
 x_tmp="/var/tmp"
 
 x_date_format="%m/%d/%Y %H:%M:%S"
-x_date_format_prec="%s.%N"
-
 
 x_list=$1
 x_signature=$2
@@ -616,8 +614,7 @@ RunTest()
 
                 # Run check
                 start_time="\`date +'$x_date_format'\`"
-                start_time_prec="\`date +'$x_date_format_prec'\`"
-                       
+                        
                 # Use separate shell to run test.
                 # This will allow to know execution time for applications with timeout.
                 # Also, process guard works better if used after "time -p".
@@ -629,7 +626,6 @@ EOF_launch
                 chmod a+x \$launch_sh
                 \$launch_sh >\$x_log 2>&1
                 result=\$?
-                stop_time_prec="\`date +'$x_date_format_prec'\`"
                 stop_time="\`date +'$x_date_format'\`"
                 load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
                 rm \$launch_sh
@@ -732,14 +728,12 @@ EOF_launch
                 fi
 
                 if test -n "\$NCBI_AUTOMATED_BUILD"; then
-                    echo "\$start_time"      >> "\$x_test_rep"
-                    echo "\$result"          >> "\$x_test_rep"
-                    echo "\$exec_time"       >> "\$x_test_rep"
-                    echo "\$x_authors"       >> "\$x_test_rep"
-                    echo "\$load_avg"        >> "\$x_test_rep"
-                    echo "\$runid"           >> "\$x_test_rep"
-                    echo "\$start_time_prec" >> "\$x_test_rep"
-                    echo "\$stop_time_prec"  >> "\$x_test_rep"
+                    echo "\$start_time" >> "\$x_test_rep"
+                    echo "\$result"     >> "\$x_test_rep"
+                    echo "\$exec_time"  >> "\$x_test_rep"
+                    echo "\$x_authors"  >> "\$x_test_rep"
+                    echo "\$load_avg"   >> "\$x_test_rep"
+                    echo "\$runid"      >> "\$x_test_rep"
                 fi
 
             else  # Run test if it exist
