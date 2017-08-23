@@ -12,7 +12,7 @@ SRC = gene_utils seq_entry_edit promote autodef_with_tax \
 
 LIB    = xobjedit
 
-DLL_LIB = $(XFORMAT_LIBS) xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
+DLL_LIB = xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid
 
@@ -20,4 +20,4 @@ WATCHERS = bollin gotvyans foleyjp
 
 
 USES_LIBRARIES =  \
-    taxon3 xformat xobjread xobjutil
+    taxon3 xobjread xobjutil
