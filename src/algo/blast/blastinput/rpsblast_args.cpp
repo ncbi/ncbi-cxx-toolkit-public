@@ -41,6 +41,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+void
+CRPSBlastMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Miscellaneous options");
+#ifdef NCBI_THREADS
+    const int kDfltRpsThreadingMode = 1;
+    arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
+                           "Number of threads to use in RPS BLAST search:\n "
+                           "0 (auto = num of databases)\n "
+                           "1 (disable)\n max number of threads = num of databases",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(kDfltRpsThreadingMode));
+    arg_desc.SetConstraint(kArgNumThreads, 
+                           new CArgAllowValuesGreaterThanOrEqual(0));
+#endif
+    arg_desc.SetCurrentGroup("");
+}
+
 CRPSBlastAppArgs::CRPSBlastAppArgs()
 {
     const bool kQueryIsProtein = true;
@@ -86,7 +104,7 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs(true));
+    m_MTArgs.Reset(new CRPSBlastMTArgs());
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 

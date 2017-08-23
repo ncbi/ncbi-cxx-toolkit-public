@@ -39,6 +39,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+class NCBI_BLASTINPUT_EXPORT CRPSBlastMTArgs : public CMTArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+};
+
 /// Handles command line arguments for blastp binary
 class NCBI_BLASTINPUT_EXPORT CRPSBlastAppArgs : public CBlastAppArgs
 {

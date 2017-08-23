@@ -69,6 +69,7 @@ const string kArgDbGeneticCode("db_gencode");
 
 const string kArgRemote("remote");
 const string kArgNumThreads("num_threads");
+const size_t kDfltIgBlastNumThreads = 4;
 
 const string kArgMatrixName("matrix");
 

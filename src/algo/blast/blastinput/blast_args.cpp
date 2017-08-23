@@ -2632,26 +2632,19 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 void
 CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
-
-
 {
-	if(m_IsRpsBlast)
-	{
-		x_SetArgumentDescriptionsRpsBlast(arg_desc);
-		return;
-	}
-
-
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
 #ifdef NCBI_THREADS
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
-    const unsigned int kMaxValue = static_cast<int>(GetCpuCount());
+    const int kMaxValue = static_cast<int>(GetCpuCount());
+    const int kDfltValue = m_NumThreads != CThreadable::kMinNumThreads
+        ? std::min<int>(m_NumThreads, kMaxValue) : kMinValue;
 
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",
                            CArgDescriptions::eInteger, 
-                           NStr::IntToString(kMinValue));
+                           NStr::IntToString(kDfltValue));
     arg_desc.SetConstraint(kArgNumThreads, 
                            new CArgAllowValuesBetween(kMinValue, kMaxValue, true));
     arg_desc.SetDependency(kArgNumThreads,
@@ -2667,39 +2660,8 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CMTArgs::x_SetArgumentDescriptionsRpsBlast(CArgDescriptions& arg_desc)
-{
-    // number of threads
-    arg_desc.SetCurrentGroup("Miscellaneous options");
-#ifdef NCBI_THREADS
-    arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
-                           "Number of threads to use in RPS BLAST search:\n "
-                           "0 (auto = num of databases)\n "
-                           "1 (disable)\n max number of threads = num of databases",
-                           CArgDescriptions::eInteger,
-                           NStr::IntToString(kDefaultRpsNumThreads));
-    arg_desc.SetConstraint(kArgNumThreads,
-                           new CArgAllowValuesGreaterThanOrEqual(0));
-    arg_desc.SetDependency(kArgNumThreads,
-                           CArgDescriptions::eExcludes,
-                           kArgRemote);
-    /*
-    arg_desc.SetDependency(kArgNumThreads,
-                           CArgDescriptions::eExcludes,
-                           kArgUseIndex);
-    */
-#endif
-    arg_desc.SetCurrentGroup("");
-}
-
-void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-	if(m_IsRpsBlast)
-	{
-		x_ExtractAlgorithmOptionsRpsBlast(args);
-		return;
-	}
     if (args.Exist(kArgNumThreads) &&
         args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
         m_NumThreads = args[kArgNumThreads].AsInteger();
@@ -2711,16 +2673,6 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
             LOG_POST(Warning << "'" << kArgNumThreads << "' is currently "
                      << "ignored when '" << kArgSubject << "' is specified.");
         }
-    }
-}
-
-void
-CMTArgs::x_ExtractAlgorithmOptionsRpsBlast(const CArgs& args)
-{
-    if (args.Exist(kArgNumThreads) &&
-        args[kArgNumThreads].HasValue())
-    {
-        m_NumThreads = args[kArgNumThreads].AsInteger();
     }
 }
 

@@ -96,6 +96,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgRemote;
 
 /// Argument to determine the number of threads to use when running BLAST
 NCBI_BLASTINPUT_EXPORT extern const string kArgNumThreads;
+/// Default number of threads for IgBLAST command line tools
+NCBI_BLASTINPUT_EXPORT extern const size_t kDfltIgBlastNumThreads;
 
 /// Argument for scoring matrix
 NCBI_BLASTINPUT_EXPORT extern const string kArgMatrixName;
