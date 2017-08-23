@@ -498,17 +498,15 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
 
     QuerySetUpOptions* query_options = NULL;
     BlastQuerySetUpOptionsNew(&query_options);
-	LookupTableWrap* lookup_wrap_ptr;
- 	BOOST_REQUIRE_EQUAL((int)LookupTableWrapInit(query_blk, 
-                             lookup_options, query_options, lookup_segments, 
-                             0, &lookup_wrap_ptr, NULL, NULL, NULL), 0);
+
+    BlastNaHashLookupTable* lookup = NULL;
+    BOOST_REQUIRE_EQUAL((int)BlastNaHashLookupTableNew(query_blk,
+                              lookup_segments, &lookup, lookup_options,
+                              query_options, NULL, 1), 0);
+
     query_options = BlastQuerySetUpOptionsFree(query_options);
     BOOST_REQUIRE(query_options == NULL);
-	BOOST_REQUIRE_EQUAL(eNaHashLookupTable,
-                        (ELookupTableType)lookup_wrap_ptr->lut_type);
 
-	BlastNaHashLookupTable* lookup =
-        (BlastNaHashLookupTable*)lookup_wrap_ptr->lut;
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->lut_word_length); 
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
 	BOOST_REQUIRE_EQUAL(11, lookup->longest_chain);
@@ -544,8 +542,8 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
     // ... at position zero
     BOOST_REQUIRE_EQUAL(0, lookup->thick_backbone[hashed_word].offsets[0]);
 
-	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
-        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
+    lookup = BlastNaHashLookupTableDestruct(lookup);
+        BOOST_REQUIRE(lookup == NULL);
 	lookup_options = LookupTableOptionsFree(lookup_options);
         BOOST_REQUIRE(lookup_options == NULL);
 }
