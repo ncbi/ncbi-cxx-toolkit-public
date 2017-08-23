@@ -30,6 +30,7 @@
 # Field delimiters in the list (this symbols used directly in the "sed" command)
 x_tmp="/tmp"
 x_date_format="%m/%d/%Y %H:%M:%S"
+x_date_format_prec="%s.%N"
 
 # Arguments
 x_compiler=$1
@@ -490,9 +491,12 @@ RunTest() {
            # Run check
            rm -f check_exec.pid > /dev/null 2>&1
            start_time="\`date +'$x_date_format'\`"
+           start_time_prec="\`date +'$x_date_format_prec'\`"
+           
            check_exec="\$root_dir/scripts/common/check/check_exec.sh"
            \$check_exec $x_time \`eval echo \$xx_run\` > \$x_test_out.\$\$ 2>&1
            result=\$?
+           start_time_prec="\`date +'$x_date_format_prec'\`"
            stop_time="\`date +'$x_date_format'\`"
            load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
 
@@ -567,13 +571,15 @@ RunTest() {
            fi
    
            if test -n "\$NCBI_AUTOMATED_BUILD"; then
-              echo "\$start_time" >> "\$x_test_rep"
-              echo "\$result"     >> "\$x_test_rep"
-              echo "\$exec_time"  >> "\$x_test_rep"
-              echo "\$x_authors"  >> "\$x_test_rep"
-              echo "\$load_avg"   >> "\$x_test_rep"
-              echo "\$runid"      >> "\$x_test_rep"
-           fi
+              echo "\$start_time"      >> "\$x_test_rep"
+              echo "\$result"          >> "\$x_test_rep"
+              echo "\$exec_time"       >> "\$x_test_rep"
+              echo "\$x_authors"       >> "\$x_test_rep"
+              echo "\$load_avg"        >> "\$x_test_rep"
+              echo "\$runid"           >> "\$x_test_rep"
+              echo "\$start_time_prec" >> "\$x_test_rep"
+              echo "\$stop_time_prec"  >> "\$x_test_rep"
+          fi
 
         else  # Check existence of the test's application directory
            # Test application is absent
