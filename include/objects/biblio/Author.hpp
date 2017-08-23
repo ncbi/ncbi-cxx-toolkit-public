@@ -65,7 +65,9 @@ public:
     ~CAuthor(void);
 
 
-    static void ConvertMlToStandard(CRef<CAuthor> author,
+    static CRef<CAuthor> ConvertMlToStandard(const CAuthor& author,
+                                    bool normalize_suffix=false);
+    static CRef<CAuthor> ConvertMlToStandard(const string& ml_name,
                                     bool normalize_suffix=false);
 protected:
     bool GetLabelV1(string* label, TLabelFlags flags) const;

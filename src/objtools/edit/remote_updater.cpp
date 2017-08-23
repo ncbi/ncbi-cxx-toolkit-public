@@ -103,7 +103,6 @@ void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
             if (new_pub->IsSetAuthors())
                CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
 
-
             arr.clear();
             CRef<CPub> new_pmid(new CPub);
             new_pmid->SetPmid().Set(id);
@@ -547,7 +546,7 @@ void FixMedLineList(CAuth_list& auth_list)
     auth_list.SetNames().SetStd().insert(auth_list.SetNames().SetStd().begin(), standard_names.begin(), standard_names.end());
 }
 
-
+ 
 }
 
 void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
@@ -555,7 +554,27 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
     if (!auth_list.IsSetNames()) {
         return;
     }
-    
+/*
+    const bool fix_suffix = false;
+    if (auth_list.GetNames().IsMl()) {
+        list<CRef<CAuthor>> new_authors;
+        for (const string& ml_name : auth_list.GetNames().GetMl()) {
+            new_authors.push_back(CAuthor::ConvertMlToStandard(ml_name, fix_suffix));
+        }
+        auth_list.SetNames().Reset();
+        auth_list.SetNames().SetStd().insert(auth_list.SetNames().SetStd().begin(), new_authors.begin(), new_authors.end());
+        return;
+    }
+
+    if (auth_list.GetNames().IsStd()) {
+        for (CRef<CAuthor> author : auth_list.SetNames().SetStd()) {
+            if (author->GetName().IsMl()) {
+                CRef<CAuthor> new_author = CAuthor::ConvertMlToStandard(*author, fix_suffix);
+                author->Assign(*new_author);
+            }
+        }
+    }
+*/
     if (auth_list.GetNames().IsMl()) {
         FixMedLineList(auth_list);
         return;
@@ -568,6 +587,7 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
         }
     }
 }
+
 
 void CRemoteUpdater::PostProcessPubs(CSeq_entry& obj)
 {

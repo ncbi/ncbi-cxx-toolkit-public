@@ -200,9 +200,11 @@ CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool n
         }
 
         if (!NStr::IsBlank(init)) {
+            person_id->SetName().SetFirst(init.substr(0,1));
             string initials = "";
             for (const char& c : init) {
-                initials += c + ".";
+                initials.push_back(c);
+                initials.push_back('.');
             }
             person_id->SetName().SetInitials(initials);
         }
@@ -211,22 +213,30 @@ CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool n
 }
 
 
-void CAuthor::ConvertMlToStandard(CRef<CAuthor> author, const bool normalize_suffix) 
+CRef<CAuthor> CAuthor::ConvertMlToStandard(const string& ml_name, const bool normalize_suffix)
 {
-    if ( author.IsNull() ||
-         !author->IsSetName() || 
-         !author->GetName().IsMl()) {
+    CRef<CAuthor> new_author(new CAuthor());
+    if (!NStr::IsBlank(ml_name)) {
+        CRef<CPerson_id> std_name = x_ConvertMlToStandard(ml_name, normalize_suffix);
+        new_author->SetName(*std_name);
     }
+    return new_author;
+}
 
-    const string ml_name = author->GetName().GetMl();
-    CRef<CPerson_id> std_name = x_ConvertMlToStandard(ml_name, normalize_suffix);
 
-    if (std_name.IsNull() ||
-        !std_name->IsName()) {
+CRef<CAuthor> CAuthor::ConvertMlToStandard(const CAuthor& author, const bool normalize_suffix) 
+{
+    CRef<CAuthor> new_author(new CAuthor());
+    new_author->Assign(author);
+
+    if (new_author->IsSetName() &&
+        new_author->GetName().IsMl()) {
+        const string ml_name = new_author->GetName().GetMl();
+        CRef<CPerson_id> std_name = x_ConvertMlToStandard(ml_name, normalize_suffix);
+        new_author->ResetName();
+        new_author->SetName(*std_name);
     }
-
-    author->ResetName();
-    author->SetName(*std_name);
+    return new_author;
 }
 
 
