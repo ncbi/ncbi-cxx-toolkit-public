@@ -1159,38 +1159,46 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     CTime  time(CTime::eCurrent, CTime::eLocal);
     time_t seed = time.GetTimeT();
 
-    char buf[(1 << 10) + (8 + 1)];
-    sprintf(buf, "%08X", (unsigned int) seed);
-    size_t size = rnd(2, (sizeof(buf) - (8 + 1)) >> 3);
+    char send[(1 << 10) + (8 + 1)];
+    char recv[sizeof(send)];
+    sprintf(send, "%08X", (unsigned int) seed);
+    size_t size = rnd(2, (sizeof(send) - (8 + 1)) >> 3);
 
     size_t i;
     for (i = 1;  i < size;  ++i)
-        sprintf(buf + (i << 3), "%08X", (unsigned int) rand());
-    memset(&buf[size <<= 3], 0, 8);
-    size += 8;
+        sprintf(send + (i << 3), "%08X", (unsigned int) rand());
+    memset(&send[size <<= 3], 0, 8);
+    send[size += 8] = '\0';
 
     CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0/*xtra*/, m_Timeout);
     echo.SetCanceledCallback(m_Canceled);
 
     streamsize n = 0;
-    bool iofail = !echo.write(buf, size)  ||  !echo.flush()
-        ||  !(n = CStreamUtils::Readsome(echo, buf, size));
+    bool iofail = !echo.write(send, size)  ||  !echo.flush()
+        ||  !(n = CStreamUtils::Readsome(echo, recv, size));
     if (!iofail) {
         if (n < (streamsize) size) {
-            if (!echo.read(buf + n, (streamsize) size - n))
+            if (!echo.read(recv + n, (streamsize) size - n))
                 iofail = true;
             else
                 n += echo.gcount();
         }
         if (n == (streamsize) size) {
-            time_t now = (time_t) NStr::StringToNumeric<unsigned int>
-                (CTempString(buf, 8), NStr::fConvErr_NoThrow, 16/*radix*/);
-            time.SetTimeT(now);
+            for (i = 8;  i < size;  ++i) {
+                if (send[i] != recv[i])
+                    break;
+            }
+            if (i >= size) {
+                time_t now = (time_t) NStr::StringToNumeric<unsigned int>
+                    (CTempString(recv,8), NStr::fConvErr_NoThrow, 16/*radix*/);
+                time.SetTimeT(now);
+            } else
+                iofail = true;
         } else
             iofail = true;
     }
     EIO_Status status = ConnStatus(iofail, &echo);
-    buf[n] = '\0';
+    recv[n] = '\0';
 
     string temp;
     if (status == eIO_Interrupt)
@@ -1249,7 +1257,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             }
         } else if (!str) {
             if (n  &&  net_info  &&  net_info->http_proxy_port
-                &&  NStr::strncasecmp(buf, kFWSign, (size_t) n) == 0) {
+                &&  NStr::strncasecmp(recv, kFWSign, (size_t) n) == 0) {
                 temp += "NCBI Firewall";
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";
