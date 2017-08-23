@@ -557,8 +557,20 @@ void COrg_ref::FilterOutParts( fOrgref_parts to_remain )
 		if( NO_FLAG( to_remain, eOrgref_on_name ) && on.IsSetName() ) {
 		    on.ResetName();
 		}
-		if( NO_FLAG( to_remain, eOrgref_on_mod ) && on.IsSetMod() ) {
-		    on.ResetMod();
+		if( on.IsSetMod() ) {
+		    if( NO_FLAG( to_remain, eOrgref_on_mod ) && on.IsSetMod() ) {
+			on.ResetMod();
+		    } else { // Filter out the rest mods
+			if( NO_FLAG( to_remain, eOrgref_on_mod_nom ) ) {
+			    on.ResetNomenclature();
+			}
+			if( NO_FLAG( to_remain, eOrgref_on_mod_oldname ) ) {
+			    on.RemoveModBySubtype( COrgMod::eSubtype_old_name );
+			}
+			if( NO_FLAG( to_remain, eOrgref_on_mod_tm ) ) {
+			    on.RemoveModBySubtype( COrgMod::eSubtype_type_material );
+			}
+		    }
 		}
 		if( on.IsSetAttrib() ) {
 		    if( NO_FLAG( to_remain, eOrgref_on_attr_all ) ) {
@@ -566,9 +578,6 @@ void COrg_ref::FilterOutParts( fOrgref_parts to_remain )
 		    } else {
 			if( NO_FLAG( to_remain, eOrgref_on_attr_nofwd ) && on.IsModifierForwardingDisabled() ) {
 			    on.EnableModifierForwarding();
-			}
-			if( NO_FLAG( to_remain, eOrgref_on_attr_nom ) ) {
-			    on.ResetNomenclature();
 			}
 		    }
 		}

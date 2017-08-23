@@ -65,21 +65,25 @@ public:
 
         eOrgref_orgname    = 0x0008, // org-ref.orgname
         eOrgref_on_name    = 0x0080, // org-ref.orgname.name
-          eOrgref_on_attr      = 0x1000, // org-ref.orgname.attrib
-          eOrgref_on_attr_spec = 0x00010000, // org-ref.orgname.attrib[.='specified']
-          eOrgref_on_attr_nom  = 0x00020000, // org-ref.orgname.attrib[.='nomenclature']
-          eOrgref_on_attr_nofwd= 0x00040000, // org-ref.orgname.attrib[.='nomodforward']
-          eOrgref_on_attr_all  = (eOrgref_on_attr | eOrgref_on_attr_spec | eOrgref_on_attr_nom | eOrgref_on_attr_nofwd),
+          eOrgref_on_attr       = 0x1000, // org-ref.orgname.attrib
+          eOrgref_on_attr_spec  = 0x00010000, // org-ref.orgname.attrib[.='specified']
+          eOrgref_on_attr_nofwd = 0x00040000, // org-ref.orgname.attrib[.='nomodforward']
+          eOrgref_on_attr_uncult= 0x00080000, // org-ref.orgname.attrib[.='uncultured']
+          eOrgref_on_attr_all   = (eOrgref_on_attr | eOrgref_on_attr_spec | eOrgref_on_attr_nofwd | eOrgref_on_attr_uncult),
         eOrgref_on_mod     = 0x0200, // org-ref.orgname.mod
+          eOrgref_on_mod_nom    = 0x00020000, // org-ref.orgname.mod[subtype=nomenclature]
+          eOrgref_on_mod_oldname= 0x00100000, // org-ref.orgname.mod[subtype=old-name]
+          eOrgref_on_mod_tm     = 0x00200000, // org-ref.orgname.mod[subtype=type-material]
+	  eOrgref_on_mod_all    = (eOrgref_on_mod | eOrgref_on_mod_nom | eOrgref_on_mod_oldname | eOrgref_on_mod_tm),
         eOrgref_on_lin     = 0x0020, // org-ref.orgname.lineage
         eOrgref_on_gc      = 0x0002, // org-ref.orgname.gcode
         eOrgref_on_mgc     = 0x0004, // org-ref.orgname.mgcode
         eOrgref_on_pgc     = 0x0400, // org-ref.orgname.pgcode
         eOrgref_on_div     = 0x0100, // org-ref.orgname.div
-        eOrgref_on_all     = (eOrgref_orgname | eOrgref_on_name | eOrgref_on_attr_all | eOrgref_on_mod |
+        eOrgref_on_all     = (eOrgref_orgname | eOrgref_on_name | eOrgref_on_attr_all | eOrgref_on_mod_all |
                               eOrgref_on_lin | eOrgref_on_gc | eOrgref_on_mgc | eOrgref_on_pgc | eOrgref_on_div),
 
-        eOrgref_all        = (eOrgref_taxname | eOrgref_common | eOrgref_mod | eOrgref_db | eOrgref_syn |
+        eOrgref_all        = (eOrgref_taxname | eOrgref_common | eOrgref_mod | eOrgref_db_all | eOrgref_syn |
                               eOrgref_on_all),
 
         eOrgref_all_but_syn  = (eOrgref_all ^ eOrgref_syn), // all but synonyms
