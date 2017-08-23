@@ -148,23 +148,26 @@ public:
     TTaxId GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
     enum EOrgRefStatus {
-        eStatus_Ok                = COrg_ref::eOrgref_nothing,
-        eStatus_WrongTaxId        = COrg_ref::eOrgref_db_taxid,
-        eStatus_WrongGC           = COrg_ref::eOrgref_on_gc,
-        eStatus_WrongMGC          = COrg_ref::eOrgref_on_mgc,
-        eStatus_NoOrgname         = COrg_ref::eOrgref_orgname,
-        eStatus_WrongTaxname      = COrg_ref::eOrgref_taxname,
-        eStatus_WrongLineage      = COrg_ref::eOrgref_on_lin,
-        eStatus_WrongCommonName   = COrg_ref::eOrgref_common,
-        eStatus_WrongOrgname      = COrg_ref::eOrgref_on_name,
-        eStatus_WrongDivision     = COrg_ref::eOrgref_on_div,
-        eStatus_WrongOrgmod       = COrg_ref::eOrgref_on_mod,
-        eStatus_WrongPGC          = COrg_ref::eOrgref_on_pgc,
-        eStatus_WrongOrgrefMod    = COrg_ref::eOrgref_mod,
-        eStatus_WrongOrgnameAttr  = COrg_ref::eOrgref_on_attr,
-	eStatus_WrongONASpecified = COrg_ref::eOrgref_on_attr_spec,
-	eStatus_WrongNomenclature = COrg_ref::eOrgref_on_attr_nom,
-	eStatus_WrongONANoModFwd  = COrg_ref::eOrgref_on_attr_nofwd
+        eStatus_Ok                   = COrg_ref::eOrgref_nothing,
+        eStatus_WrongTaxId           = COrg_ref::eOrgref_db_taxid,
+        eStatus_NoOrgname            = COrg_ref::eOrgref_orgname,
+        eStatus_WrongTaxname         = COrg_ref::eOrgref_taxname,
+        eStatus_WrongOrgrefMod       = COrg_ref::eOrgref_mod,
+        eStatus_WrongCommonName      = COrg_ref::eOrgref_common,
+        eStatus_WrongOrgname         = COrg_ref::eOrgref_on_name,
+        eStatus_WrongOrgmod          = COrg_ref::eOrgref_on_mod,
+        eStatus_WrongLineage         = COrg_ref::eOrgref_on_lin,
+        eStatus_WrongDivision        = COrg_ref::eOrgref_on_div,
+        eStatus_WrongGC              = COrg_ref::eOrgref_on_gc,
+        eStatus_WrongMGC             = COrg_ref::eOrgref_on_mgc,
+        eStatus_WrongPGC             = COrg_ref::eOrgref_on_pgc,
+        eStatus_WrongOrgnameAttr     = COrg_ref::eOrgref_on_attr,
+	eStatus_WrongONASpecified    = COrg_ref::eOrgref_on_attr_spec,
+	eStatus_WrongONANoModFwd     = COrg_ref::eOrgref_on_attr_nofwd,
+	eStatus_WrongONAUncultured   = COrg_ref::eOrgref_on_attr_uncult,
+	eStatus_WrongNomenclature    = COrg_ref::eOrgref_on_mod_nom,
+	eStatus_WrongModOldname      = COrg_ref::eOrgref_on_mod_oldname,
+	eStatus_WrongModTypeMaterial = COrg_ref::eOrgref_on_mod_tm
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
