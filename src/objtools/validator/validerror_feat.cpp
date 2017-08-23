@@ -1120,8 +1120,10 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 
     bool is_partial = feat.IsSetPartial()  &&  feat.GetPartial();
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
-    if (feat.CanGetProduct ()) {
-        partial_prod = SeqLocPartialCheck(feat.GetProduct (), m_Scope );
+    bool is_far;
+    CBioseq_Handle prod = x_GetCDSProduct(feat, is_far);
+    if (prod) {
+        partial_prod = SeqLocPartialCheck(feat.GetProduct(), &(prod.GetScope()));
     }
     
     if ( (partial_loc  != eSeqlocPartial_Complete)  ||
@@ -1162,15 +1164,10 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             // if not local bioseq product, lower severity
             EDiagSev sev = eDiag_Warning;
             bool is_far_fail = false;
-            if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
-                const CSeq_id& prod_id = GetId(feat.GetProduct(), m_Scope);
-                CBioseq_Handle prod =
-                    m_Scope->GetBioseqHandleFromTSE(prod_id, m_TSE);
-                if ( !prod ) {
-                    sev = eDiag_Info;
-                    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
-                        is_far_fail = true;
-                    }                        
+            if ( !prod ) {
+                sev = eDiag_Info;
+                if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+                    is_far_fail = true;                
                 }
             }
                         
