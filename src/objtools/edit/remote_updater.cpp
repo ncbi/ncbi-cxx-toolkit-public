@@ -37,10 +37,10 @@
 #include <objects/mla/mla_client.hpp>
 
 #include <objtools/readers/message_listener.hpp>
-#include <objtools/format/items/reference_item.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/seq/Pubdesc.hpp>
 
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/submit/Seq_submit.hpp>
@@ -99,7 +99,6 @@ void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
         {
             // authors come back in a weird format that we need
             // to convert to ISO
-            CReferenceItem::ChangeMedlineAuthorsToISO(new_pub);
             if (new_pub->IsSetAuthors())
                CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
 
@@ -618,7 +617,6 @@ void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
 
     NON_CONST_ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.SetPub().Set())
     {
-        CReferenceItem::ChangeMedlineAuthorsToISO(*it);
         if ((**it).IsSetAuthors())
         {
             ConvertToStandardAuthors((CAuth_list&)(**it).GetAuthors());
