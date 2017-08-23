@@ -68,10 +68,10 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
 
    /* always use megablast lookup table and word size 16 for mapping */
    if (Blast_ProgramIsMapping(lookup_options->program_number) &&
-       lookup_options->word_size >= 16) {
+       lookup_options->word_size >= 16 && lookup_options->db_filter) {
 
        *lut_width = 16;
-       return eMBLookupTable;
+       return eNaHashLookupTable;
    }
 
    switch(lookup_options->word_size) {

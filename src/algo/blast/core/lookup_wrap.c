@@ -117,6 +117,7 @@ Int2 LookupTableWrapInit_MT(BLAST_SequenceBlk* query,
    case eSmallNaLookupTable:
    case eNaLookupTable:
    case eMBLookupTable:
+   case eNaHashLookupTable:
       {
           Int4 lut_width;
           Int4 max_q_off;
@@ -146,6 +147,13 @@ Int2 LookupTableWrapInit_MT(BLAST_SequenceBlk* query,
                              lookup_options, query_options, lut_width);
              }
           }
+          else if (lookup_wrap->lut_type == eNaHashLookupTable) {
+              status = BlastNaHashLookupTableNew(query, lookup_segments,
+                             (BlastNaHashLookupTable**) &(lookup_wrap->lut), 
+                             lookup_options, query_options, seqsrc,
+                             num_threads);
+
+          }
           else {
              BlastNaLookupTableNew(query, lookup_segments,
                             (BlastNaLookupTable* *) &(lookup_wrap->lut), 
@@ -154,13 +162,6 @@ Int2 LookupTableWrapInit_MT(BLAST_SequenceBlk* query,
       }
       ASSERT( lookup_wrap->lut_type != eMixedMBLookupTable );
       break;
-
-   case eNaHashLookupTable:
-           status = BlastNaHashLookupTableNew(query, lookup_segments,
-                             (BlastNaHashLookupTable**) &(lookup_wrap->lut), 
-                             lookup_options, query_options, seqsrc,
-                             num_threads);
-       break;
 
 
    case ePhiLookupTable: case ePhiNaLookupTable:
