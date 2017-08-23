@@ -170,6 +170,17 @@ void CAuthor::x_NormalizeSuffix(string& suffix)
 }
 
 
+bool CAuthor::x_IsPossibleSuffix(const string& str) {    
+    if (!x_IsAllCaps(str)) {
+        return true;
+    }
+    static set<string> suffixes = {"II", "III", "IV", "VI"}; 
+    auto search = suffixes.find(str);
+
+    return (search != suffixes.end());
+}
+
+
 CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool normalize_suffix) 
 {
     CRef<CPerson_id> person_id(new CPerson_id());
@@ -181,7 +192,7 @@ CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool n
         const size_t num_tokens = tokens.size();
         string suffix = "";
         if (num_tokens >= 3 && 
-            !x_IsAllCaps(tokens.back()) &&
+            !x_IsPossibleSuffix(tokens.back()) &&
             x_IsAllCaps(tokens[num_tokens-2])) {
             suffix = tokens.back();
             tokens.pop_back();
