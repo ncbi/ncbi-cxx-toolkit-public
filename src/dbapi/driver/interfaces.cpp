@@ -241,6 +241,13 @@ I_CursorCmd::~I_CursorCmd(void)
     return;
 }
 
+bool I_CursorCmd::UpdateTextImage(unsigned int item_num,
+                                  CDB_Stream& data,
+                                  bool log_it)
+{
+    return UpdateBlob(item_num, data, log_it);
+}
+
 I_SendDataCmd::I_SendDataCmd(void)
 {
 }
@@ -262,6 +269,11 @@ I_Result::I_Result(void)
 I_Result::~I_Result(void)
 {
     return;
+}
+
+I_BlobDescriptor* I_Result::GetImageOrTextDescriptor(void)
+{
+    return GetBlobDescriptor();
 }
 
 

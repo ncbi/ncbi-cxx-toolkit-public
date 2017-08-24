@@ -61,27 +61,29 @@ public:
 
     virtual IResultSet* Open();
 
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     CNcbiOstream& GetBlobOStream(unsigned int col,
                             size_t blob_size, 
                             TBlobOStreamFlags flags,
                             size_t buf_size);
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     CNcbiOstream& GetBlobOStream(unsigned int col,
                             size_t blob_size, 
                             EAllowLog log_it,
-                            size_t buf_size)
-    {
-        return ICursor::GetBlobOStream(col, blob_size, log_it, buf_size);
-    }
+                            size_t buf_size);
 
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     virtual IWriter* GetBlobWriter(unsigned int col,
-                                            size_t blob_size, 
+                                            size_t blob_size,
                                             TBlobOStreamFlags flags);
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     virtual IWriter* GetBlobWriter(unsigned int col,
-                                            size_t blob_size, 
-                                            EAllowLog log_it)
-    {
-        return ICursor::GetBlobWriter(col, blob_size, log_it);
-    }
+                                            size_t blob_size,
+                                            EAllowLog log_it);
 
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);

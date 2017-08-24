@@ -546,15 +546,25 @@ protected:
     /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query) = 0;
 
+    /// @deprecated
+    ///   Please use I_Connection::SendData instead.
+    /// @sa
+    ///   I_Connection::SendData
+    NCBI_DEPRECATED
     virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
                             bool log_it = true) = 0;
-    bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                         bool log_it = true)
-        { return UpdateBlob(item_num, data, log_it); }
 
-    /// @brief 
+    /// @deprecated
+    ///   Please use I_Connection::SendData instead.
+    /// @sa
+    ///   I_Connection::SendData
+    NCBI_DEPRECATED
+    bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
+                         bool log_it = true);
+
+    /// @brief
     ///   Create send-data command.
-    /// 
+    ///
     /// @param item_num 
     ///   Column number to rewrite.
     /// @param size 
@@ -564,9 +574,14 @@ protected:
     /// @param discard_results
     ///   Discard all resultsets that might be returned from server
     ///   if this value is set to true.
-    /// 
+    ///
     /// @return 
     ///   Newly created send-data object.
+    /// @deprecated
+    ///   Please use I_Connection::SendDataCmd instead.
+    /// @sa
+    ///   I_Connection::SendDataCmd
+    NCBI_DEPRECATED
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool discard_results = true) = 0;
@@ -730,19 +745,28 @@ public:
     virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0) = 0;
 
-    /// @brief 
+    /// @brief
     ///   Get a descriptor for a BLOB column (for SendData).
-    /// 
-    /// @return 
+    ///
+    /// @return
     ///   Return NULL if this result doesn't (or can't) have a BLOB descriptor.
     ///
     /// @note
     ///   You need to call ReadItem (maybe even with buffer_size == 0)
     ///   before calling this method!
+    /// @deprecated
+    ///   Please use CDB_BlobDescriptor instead.
+    /// @sa
+    ///   CDB_BlobDescriptor
+    NCBI_DEPRECATED
     virtual I_BlobDescriptor* GetBlobDescriptor(void) = 0;
 
-    I_BlobDescriptor* GetImageOrTextDescriptor(void)
-        { return GetBlobDescriptor(); }
+    /// @deprecated
+    ///   Please use CDB_BlobDescriptor instead.
+    /// @sa
+    ///   CDB_BlobDescriptor
+    NCBI_DEPRECATED
+    I_BlobDescriptor* GetImageOrTextDescriptor(void);
 
     /// @brief 
     /// Skip result item

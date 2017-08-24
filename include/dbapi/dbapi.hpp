@@ -261,10 +261,16 @@ public:
     ///    @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
+    /// @deprecated
+    ///   Please use IStatement::GetBlobOStream instead.
+    /// @sa
+    ///   IStatement::GetBlobOStream
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
                                          TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
 
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
                                          EAllowLog log_it,
                                          size_t buf_size = 0);
@@ -280,11 +286,17 @@ public:
     ///    @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
+    /// @deprecated
+    ///   Please use IStatement::GetBlobOStream instead.
+    /// @sa
+    ///   IStatement::GetBlobOStream
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
                                          size_t blob_size,
                                          TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
 
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
                                          size_t blob_size,
                                          EAllowLog log_it,
@@ -576,11 +588,17 @@ public:
     ///   @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
+    /// @deprecated
+    ///   Please use IStatement::GetBlobOStream instead.
+    /// @sa
+    ///   IStatement::GetBlobOStream
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(unsigned int col,
                                          size_t blob_size,
                                          TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
 
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(unsigned int col,
                                          size_t blob_size,
                                          EAllowLog log_it,
@@ -595,10 +613,16 @@ public:
     ///   blob_size is the size of the BLOB to be written.
     /// @param flags
     ///   @see EBlobOStreamFlags.
+    /// @deprecated
+    ///   Please use IStatement::GetBlobWriter instead.
+    /// @sa
+    ///   IStatement::GetBlobWriter
+    NCBI_DEPRECATED
     virtual IWriter* GetBlobWriter(unsigned int col,
                                    size_t blob_size,
                                    TBlobOStreamFlags flags = 0) = 0;
 
+    NCBI_DEPRECATED
     virtual IWriter* GetBlobWriter(unsigned int col,
                                    size_t blob_size,
                                    EAllowLog log_it);

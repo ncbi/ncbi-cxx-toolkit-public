@@ -501,15 +501,20 @@ public:
     virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0);
 
-    /// @brief 
+    /// @brief
     ///   Get a descriptor for a BLOB column (for SendData).
-    /// 
-    /// @return 
+    ///
+    /// @return
     ///   Return NULL if this result doesn't (or can't) have a BLOB descriptor.
     ///
     /// @note
     ///   You need to call ReadItem (maybe even with buffer_size == 0)
     ///   before calling this method!
+    /// @deprecated
+    ///   Please use CDB_BlobDescriptor instead.
+    /// @sa
+    ///   CDB_BlobDescriptor
+    NCBI_DEPRECATED
     virtual I_BlobDescriptor* GetBlobDescriptor();
 
     /// @brief 
@@ -811,7 +816,7 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_CursorCmd : public I_CursorCmd
 {
 public:
-    /// Get meta-information about parameters. 
+    /// Get meta-information about parameters.
     virtual CDBParams& GetBindParams(void);
     virtual CDBParams& GetDefineParams(void);
 
@@ -821,7 +826,7 @@ public:
         GetBindParams().Bind(name, value);
         return true;
     }
-        
+
     /// Open the cursor.
     /// Return NULL if cursor resulted in no data.
     /// Throw exception on error.
@@ -830,24 +835,35 @@ public:
     /// Update the last fetched row.
     /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
+
+    /// @deprecated
+    ///   Please use CDB_Connection::SendData instead.
+    /// @sa
+    ///   CDB_Connection::SendData
+    NCBI_DEPRECATED
     virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
                             bool log_it = true);
     /// Make "send-data" command
-    /// @brief 
+    /// @brief
     ///   Create send-data command.
-    /// 
-    /// @param item_num 
+    ///
+    /// @param item_num
     ///   Column number to rewrite.
-    /// @param size 
+    /// @param size
     ///   Maximal data size.
-    /// @param log_it 
+    /// @param log_it
     ///   Log LOB operation if this value is set to true.
     /// @param discard_results
     ///   Discard all resultsets that might be returned from server
     ///   if this value is set to true.
-    /// 
-    /// @return 
+    ///
+    /// @return
     ///   Newly created send-data object.
+    /// @deprecated
+    ///   Please use CDB_Connection::SendDataCmd instead.
+    /// @sa
+    ///   CDB_Connection::SendDataCmd
+    NCBI_DEPRECATED
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool discard_results = true);

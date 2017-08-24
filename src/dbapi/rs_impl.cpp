@@ -322,6 +322,21 @@ CNcbiIstream& CResultSet::GetBlobIStream(size_t buf_size)
     return *m_istr;
 }
 
+CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size)
+{
+    return IResultSet::GetBlobOStream(blob_size, log_it, buf_size);
+}
+
+CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn,
+                                         size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size)
+{
+    return IResultSet::GetBlobOStream(conn, blob_size, log_it, buf_size);
+}
+
 IReader* CResultSet::GetBlobReader()
 {
     delete m_rd;

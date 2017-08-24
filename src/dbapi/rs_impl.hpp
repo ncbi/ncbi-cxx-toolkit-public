@@ -56,7 +56,7 @@ public:
     CResultSet(class CConnection* conn, CDB_Result *rs);
 
     virtual ~CResultSet();
-  
+
     void Init();
     virtual EDB_ResType GetResultType();
 
@@ -66,7 +66,7 @@ public:
 
     virtual void DisableBind(bool b);
     virtual void BindBlobToVariant(bool b);
-  
+
     virtual size_t Read(void* buf, size_t size);
     virtual bool WasNull();
     virtual int GetColumnNo();
@@ -77,29 +77,29 @@ public:
 
     virtual CNcbiIstream& GetBlobIStream(size_t buf_size);
 
-    virtual CNcbiOstream& GetBlobOStream(size_t blob_size, 
+    // Please use CStatement instead
+    NCBI_DEPRECATED
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
                                          TBlobOStreamFlags flags,
                                          size_t buf_size);
-    virtual CNcbiOstream& GetBlobOStream(size_t blob_size, 
+    // Please use CStatement instead
+    NCBI_DEPRECATED
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
                                          EAllowLog log_it,
-                                         size_t buf_size)
-    {
-        return IResultSet::GetBlobOStream(blob_size, log_it, buf_size);
-    }
-
+                                         size_t buf_size);
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
-                                         size_t blob_size, 
+                                         size_t blob_size,
                                          TBlobOStreamFlags flags,
                                          size_t buf_size);
+    // Please use CStatement instead
+    NCBI_DEPRECATED
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
-                                         size_t blob_size, 
+                                         size_t blob_size,
                                          EAllowLog log_it,
-                                         size_t buf_size)
-    {
-        return IResultSet::GetBlobOStream(conn, blob_size, log_it, buf_size);
-    }
-
-	virtual IReader* GetBlobReader();
+                                         size_t buf_size);
+    virtual IReader* GetBlobReader();
 
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);

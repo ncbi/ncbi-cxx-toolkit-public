@@ -121,6 +121,14 @@ CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
     return *m_ostr;
 }
 
+CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
+                                      size_t blob_size,
+                                      EAllowLog log_it,
+                                      size_t buf_size)
+{
+    return ICursor::GetBlobOStream(col, blob_size, log_it, buf_size);
+}
+
 IWriter* CCursor::GetBlobWriter(unsigned int col,
                                 size_t blob_size, 
                                 TBlobOStreamFlags flags)
@@ -134,6 +142,13 @@ IWriter* CCursor::GetBlobWriter(unsigned int col,
                             blob_size,
                             flags);
     return m_wr;
+}
+
+IWriter* CCursor::GetBlobWriter(unsigned int col,
+                                size_t blob_size,
+                                EAllowLog log_it)
+{
+    return ICursor::GetBlobWriter(col, blob_size, log_it);
 }
 
 void CCursor::Cancel()

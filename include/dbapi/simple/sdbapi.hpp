@@ -220,7 +220,7 @@ public:
     };
 
     class CRow;
-    
+
     /// Class representing value in result set or output parameter of stored
     /// procedure.
     class CField
@@ -307,13 +307,19 @@ public:
         /// @param log_it
         ///    Enables transaction log for BLOB (enabled by default).
         ///    Make sure you have enough log segment space, or disable it.
+        ///
+        /// @deprecated Please use CBlobBookmark::GetOStream instead.
+        ///
+        /// @sa CBlobBookmark::GetOStream
+        NCBI_DEPRECATED
         CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags = 0)
             const;
+        NCBI_DEPRECATED
         CNcbiOstream& GetOStream(size_t blob_size, EAllowLog log_it) const;
 
         /// Get bookmark for the blob. This bookmark can be used to change
         /// blob data later when all results from this query are processed.
-        /// 
+        ///
         /// NOTE: You won't be able to write a blob using this method if its
         /// value is set to NULL in the database. To use this method you should
         /// pre-set blob value to empty string or anything else of your choice.
@@ -321,7 +327,10 @@ public:
         /// should return non-NULL value. Setting non-NULL value after query
         /// execution won't work.
         ///
+        /// @deprecated Please use CDatabase::NewBookmark instead.
+        ///
         /// @sa CDatabase::NewBookmark
+        NCBI_DEPRECATED
         CBlobBookmark GetBookmark(void) const;
 
     private:
@@ -427,7 +436,7 @@ public:
 
         /// Get the full row.  (The caller is welcome to keep a copy.)
         const CRow& operator*(void) const;
-        
+
     private:
         friend class CQuery;
 
@@ -444,10 +453,10 @@ public:
         /// pointer to some particular row.
         bool             m_IsEnd;
     };
-    
+
     typedef CRowIterator iterator; 
     typedef CRowIterator const_iterator; 
-    
+
 
     /// Assign string value to the parameter.
     /// If data type requested is not string then attempt to do conversion
