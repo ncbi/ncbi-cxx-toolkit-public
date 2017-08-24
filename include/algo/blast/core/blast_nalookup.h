@@ -668,7 +668,7 @@ typedef struct BlastNaHashLookupTable {
 #define NA_WORDS_PER_HASH 3
 #define NA_OFFSETS_PER_HASH 9
 
-
+NCBI_XBLAST_EXPORT
 Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                BlastSeqLoc* locations,
                                BlastNaHashLookupTable** lut,
@@ -682,6 +682,7 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
  *  @param lookup The lookup table structure to be freed
  *  @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastNaHashLookupTable*
 BlastNaHashLookupTableDestruct(BlastNaHashLookupTable* lookup);
 
