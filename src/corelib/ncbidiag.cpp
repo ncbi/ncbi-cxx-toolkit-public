@@ -45,6 +45,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stack>
+#include <atomic>
+#include <thread>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -4742,11 +4744,52 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 }
 
 
+struct SThreadsInSTBuild
+{
+    static void Check();
+
+private:
+    static atomic<thread::id> sm_ThreadID;
+    static atomic<bool> sm_Reported;
+};
+
+
+atomic<thread::id> SThreadsInSTBuild::sm_ThreadID;
+atomic<bool> SThreadsInSTBuild::sm_Reported;
+
+
+void SThreadsInSTBuild::Check()
+{
+#ifndef NCBI_THREADS
+    thread::id stored_thread_id;
+    thread::id this_thread_id = this_thread::get_id();
+
+    // If this thread has just initialized sm_ThreadID
+    if (sm_ThreadID.compare_exchange_strong(stored_thread_id, this_thread_id)) return;
+
+    // If sm_ThreadID contains some other thread ID
+    if (stored_thread_id != this_thread_id) {
+
+        bool not_reported = false;
+
+        // If some other thread has already reported this
+        if (!sm_Reported.compare_exchange_strong(not_reported, true)) return;
+
+        ERR_POST(Critical << "Detected different threads using C++ Toolkit built in single thread mode.");
+        _TROUBLE;
+    }
+#endif
+}
+
+
 CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
                                   TDiagWriteFlags flags) const
 {
+    SThreadsInSTBuild::Check();
+
     CNcbiOstream& res =
         x_IsSetOldFormat() ? x_OldWrite(os, flags) : x_NewWrite(os, flags);
+
     return res;
 }
 
