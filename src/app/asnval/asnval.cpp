@@ -141,7 +141,11 @@ private:
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
 
-    CRef<CValidError> ReportReadFailure(void);
+    /// @param p_exception
+    ///   Pointer to the exception with more info on the read failure or nullptr if not available
+    /// @return
+    ///   The error(s) to add to describe the read failure
+    CRef<CValidError> ReportReadFailure(const CException *p_exception);
 
     CRef<CScope> BuildScope(void);
 
@@ -406,7 +410,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
 
     m_In = OpenFile(fname);
     if (m_In.get() == 0) {
-        PrintValidError(ReportReadFailure(), args);
+        PrintValidError(ReportReadFailure(nullptr), args);
         if (close_error_stream) {
             DestroyOutputStreams();
         }
@@ -669,10 +673,34 @@ void CAsnvalApp::ProcessReleaseFile
     *m_In >> *seqset;
 }
 
-CRef<CValidError> CAsnvalApp::ReportReadFailure(void)
+CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
 {
     CRef<CValidError> errors(new CValidError());
-    errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, "Unable to read invalid ASN.1");
+    
+    CNcbiOstrstream os;
+    os << "Unable to read invalid ASN.1";
+    
+    const CSerialException *p_serial_exception = dynamic_cast<const CSerialException*>(p_exception);
+    if( p_serial_exception ) {
+        if( m_In.get() ) {
+            os << ": " << m_In->GetPosition();
+        }
+        if( p_serial_exception->GetErrCode() == CSerialException::eEOF ) {
+            os << ": unexpected end of file";
+        } else {
+            // manually call ReportAll(0) because what() includes a lot of info
+            // that's not of interest to the submitter such as stacktraces and
+            // GetMsg() doesn't include enough info.
+            os << ": " + p_exception->ReportAll(0);
+        }
+    }
+    
+    string errstr = CNcbiOstrstreamToString(os);
+    // newlines don't play well with XML
+    errstr = NStr::Replace(errstr, "\n", " * ");
+    errstr = NStr::Replace(errstr, " *   ", " * ");
+
+    errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, errstr);
     return errors;
 }
 
@@ -704,7 +732,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
             }
             catch (const CException& e) {
                 ERR_POST(Error << e);
-                return ReportReadFailure();
+                return ReportReadFailure(&e);
             }
             try {
                 CConstRef<CValidError> eval = ProcessSeqEntry(*se);
@@ -730,7 +758,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        return ReportReadFailure();
+        return ReportReadFailure(&e);
     }
 
     return CConstRef<CValidError>();
@@ -770,7 +798,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        return ReportReadFailure();
+        return ReportReadFailure(&e);
     }
 
     try
@@ -899,7 +927,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     }
     catch (CException& e) {
         ERR_POST(Error << e);
-        return ReportReadFailure();
+        return ReportReadFailure(&e);
     }
 
     // Validae Seq-submit
