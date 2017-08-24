@@ -301,6 +301,22 @@ protected:
         CGffSourceRecord&,
         const CBioSource&);
 
+    // begin mss-158
+    bool xAssignFeatureType(
+        CGffFeatureRecord& record,
+        const CSeq_feat& feature);
+
+    string xNextGenericId(void);
+
+    string xNextGenericId(
+        const CSeq_feat& feature);
+    string xNextGeneId(
+        const CSeq_feat& feature);
+    string xNextCdsId(
+        const CSeq_feat& feature);
+    string xNextTrnaId(
+        const CSeq_feat& feature);
+
 
     //begin mss-234//
     bool xAssignFeature(
@@ -439,7 +455,7 @@ protected:
         CGffFeatureRecord&,
         const CMappedFeat&);
     string xNextGenericId(
-        const CMappedFeat& = CMappedFeat());
+        const CMappedFeat& mf);
     string xNextGeneId(
         const CMappedFeat&);
     string xNextCdsId(
