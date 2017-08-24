@@ -557,6 +557,11 @@ int CIgBlastnApp::Run(void)
         
         //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
+
+        //do not allow multi-threading for remote blast
+        if (m_CmdLineArgs->ExecuteRemotely()){
+            m_worker_thread_num = 1;
+        }
         /*** Get the query sequence(s) ***/
         m_query_opts = m_CmdLineArgs->GetQueryOptionsArgs();
         SDataLoaderConfig dlconfig(m_query_opts->QueryIsProtein());
