@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __OBJTOOLS_WRITERS_AGP_WRITE_HPP__
-#define __OBJTOOLS_WRITERS_AGP_WRITE_HPP__
+#ifndef __OBJTOOLS_WRITERS_FASTA_WRITER_HPP__
+#define __OBJTOOLS_WRITERS_FASTA_WRITER_HPP__
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/util/sequence.hpp>
