@@ -66,7 +66,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#ifdef NEW_HTML_FMT
 class CHTMLFormatterEx : public IHTMLFormatter
 {
 public:
@@ -242,8 +241,6 @@ void CHTMLFormatterEx::FormatGeneralId(CNcbiOstream& os, const string& id) const
 {
     os << "<a href=\"" << strLinkBaseNuc << id << "\">" << id << "</a>";
 }
-
-#endif
 
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
@@ -961,18 +958,11 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     m_do_cleanup = ( ! args["nocleanup"]);
     cfg.BasicCleanup(false);
 
-#ifdef NEW_HTML_FMT
     if (args["html"])
     {
         CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(m_Scope));
         cfg.SetHTMLFormatter(html_fmt);
     }
-    else
-    {
-        CRef<IHTMLFormatter> html_fmt(new CHTMLEmptyFormatter);
-        cfg.SetHTMLFormatter(html_fmt);        
-    }
-#endif
 
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 

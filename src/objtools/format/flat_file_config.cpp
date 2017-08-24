@@ -320,6 +320,7 @@ CFlatFileConfig::CFlatFileConfig(
     if (m_Format == eFormat_FTable) {
         m_Style = eStyle_Master;
     }
+    m_html_formatter.Reset(new CHTMLEmptyFormatter);
 }
 
 
@@ -342,6 +343,7 @@ CFlatFileConfig::CFlatFileConfig(
     if (m_Format == eFormat_FTable) {
         m_Style = eStyle_Master;
     }
+    m_html_formatter.Reset(new CHTMLEmptyFormatter);
 }
 
 
