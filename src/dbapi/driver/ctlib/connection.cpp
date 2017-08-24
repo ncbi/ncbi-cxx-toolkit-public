@@ -116,6 +116,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #  endif
 , m_OrigTimeout(0)
 , m_BaseTimeout(0)
+, m_TotalTimeout(0)
 , m_AsyncCancelAllowed(false)
 , m_AsyncCancelRequested(false)
 #endif
