@@ -1120,8 +1120,8 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 
     bool is_partial = feat.IsSetPartial()  &&  feat.GetPartial();
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
-    bool is_far;
-    CBioseq_Handle prod = x_GetCDSProduct(feat, is_far);
+    bool is_far = false, is_misplaced = false;
+    CBioseq_Handle prod = x_GetFeatureProduct(feat, is_far, is_misplaced);
     if (prod) {
         partial_prod = SeqLocPartialCheck(feat.GetProduct(), &(prod.GetScope()));
     }
@@ -2817,22 +2817,27 @@ void CValidError_feat::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_H
             CBioseq_Handle bsh_head = x_GetCachedBsh(*head.GetRangeAsSeq_loc());
             CBioseq_Handle bsh_tail = x_GetCachedBsh(*tail.GetRangeAsSeq_loc());
             if (bsh_head && bsh_tail) {
-                CSeqVector vec_head = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-                CSeqVector vec_tail = bsh_tail.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-                string label_head = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+                try {
+                    CSeqVector vec_head = bsh_head.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                    CSeqVector vec_tail = bsh_tail.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                    string label_head = GetBioseqIdLabel(*(bsh_head.GetCompleteBioseq()), true);
 
-                if (strand == eNa_strand_minus) {
-                    start = range_tail.GetTo();
-                    stop  = range_head.GetFrom();
-                } else {
-                    start = range_tail.GetFrom();
-                    stop = range_head.GetTo();
+                    if (strand == eNa_strand_minus) {
+                        start = range_tail.GetTo();
+                        stop = range_head.GetFrom();
+                    } else {
+                        start = range_tail.GetFrom();
+                        stop = range_head.GetTo();
+                    }
+                    ValidateDonorAcceptorPair(strand,
+                        stop, vec_head, bsh_head.GetInst_Length(),
+                        start, vec_tail, bsh_tail.GetInst_Length(),
+                        rare_consensus_not_expected,
+                        label_head, report_errors, has_errors, feat);
+                } catch (CSeqVectorException& e) {
+                    PostErr(eDiag_Error, eErr_INTERNAL_Exception, 
+                        "Error getting sequence while checking donor/acceptor sites", feat);
                 }
-                ValidateDonorAcceptorPair (strand, 
-                                            stop, vec_head, bsh_head.GetInst_Length(), 
-                                            start, vec_tail, bsh_tail.GetInst_Length(),
-                                            rare_consensus_not_expected,
-                                            label_head, report_errors, has_errors, feat);
             }
         }
     }
@@ -2874,8 +2879,9 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
         CSeq_loc::TRange range = head.GetRange();
         CBioseq_Handle bsh_head = x_GetCachedBsh(*head.GetRangeAsSeq_loc());
         if (bsh_head) {
-                CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-                string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+            try {
+                CSeqVector vec = bsh_head.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                string label = GetBioseqIdLabel(*(bsh_head.GetCompleteBioseq()), true);
                 bool is_sequence_end = false;
                 if (strand == eNa_strand_minus) {
                     start = range.GetTo();
@@ -2889,9 +2895,12 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                     }
                 }
                 if (part.IsPartialStart(eExtreme_Biological)) {
-                    ValidateAcceptor (strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
+                    ValidateAcceptor(strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
                         label, report_errors, has_errors, feat, is_sequence_end);
                 }
+            } catch (CSeqVectorException& e) {
+                PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+            }
         }
 
         CSeq_loc_CI tail(loc);
@@ -2906,6 +2915,7 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
             CBioseq_Handle bsh_head = x_GetCachedBsh(*head.GetRangeAsSeq_loc());
             CBioseq_Handle bsh_tail = x_GetCachedBsh(*tail.GetRangeAsSeq_loc());
             if (bsh_head && bsh_tail) {
+                try {
                     CSeqVector vec_head = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                     CSeqVector vec_tail = bsh_tail.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                     string label_head = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
@@ -2923,6 +2933,9 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                                                start, vec_tail, bsh_tail.GetInst_Length(),
                                                rare_consensus_not_expected,
                                                label_head, report_errors, has_errors, feat);
+                } catch (CSeqVectorException& e) {
+                    PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+                }
             }
         }
     }
@@ -2933,6 +2946,7 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
         CSeq_loc::TRange range = head.GetRange();
         CBioseq_Handle bsh_head = x_GetCachedBsh(*head.GetRangeAsSeq_loc());
         if (bsh_head) {
+            try {
                 CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                 string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
 
@@ -2945,6 +2959,9 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                     ValidateDonor (strand, stop, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
                                     label, report_errors, has_errors, feat, true);
                 }
+            } catch (CSeqVectorException& e) {
+                PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+            }
         }
     }
 }
@@ -3700,7 +3717,8 @@ void CValidError_feat::ValidateRnaProductType
 (const CRNA_ref& rna,
  const CSeq_feat& feat)
 {
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetProduct());
+    bool is_far;
+    CBioseq_Handle bsh = x_GetCDSProduct(feat, is_far);
     if ( !bsh ) {
         return;
     }
@@ -5549,25 +5567,19 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     // note - exception will be thrown when creating CSeqVector if wrong type set for bioseq seq-data
     try {
         if (nuc) {
-            
-            CBioseq_Handle rna = m_Scope->GetBioseqHandleFromTSE(*product_id, nuc);
+            bool is_far;
+            CBioseq_Handle rna = x_GetRNAProduct(feat, is_far);
+            // if not local bioseq product, lower severity (with the exception of Refseq)
+            if (is_far && !is_refseq) {
+                sev = eDiag_Warning;
+            }
             if (!rna) {
-                // if not local bioseq product, lower severity (with the exception of Refseq)
-                if (!is_refseq) {
-                    sev = eDiag_Warning;
-                }
-
-                if (m_Imp.IsFarFetchMRNAproducts()) {
-                    rna = x_GetCachedBsh(feat.GetProduct());
-                    if (!rna) {
-                        string label = product_id->AsFastaString();
-                        PostErr (eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
-                                 "Unable to fetch mRNA transcript '" + label + "'", feat);
-                    }
-                }
-                if (!rna) {
-                    return;
-                }
+                string label = product_id->AsFastaString();
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
+                            "Unable to fetch mRNA transcript '" + label + "'", feat);
+                return;
+            }
+            if (is_far) {
                 farstr = "(far) ";
                 if (feat.IsSetPartial() 
                     && !s_IsBioseqPartial(rna) 
@@ -5584,8 +5596,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         
             CSeqVector nuc_vec(feat.GetLocation(), *m_Scope,
                                CBioseq_Handle::eCoding_Iupac);
-            CSeqVector rna_vec(feat.GetProduct(), *m_Scope,
-                               CBioseq_Handle::eCoding_Iupac);
+            CSeqVector rna_vec(rna, CBioseq_Handle::eCoding_Iupac);
 
             size_t nuc_len = nuc_vec.size();
             size_t rna_len = rna_vec.size();
@@ -5705,7 +5716,8 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
         return;
     }
 
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetProduct());
+    bool is_far;
+    CBioseq_Handle bsh = x_GetCDSProduct(feat, is_far);
     if ( !bsh ) {
         bsh = x_GetCachedBsh(feat.GetLocation());
         if (bsh) {
@@ -5959,21 +5971,11 @@ void CValidError_feat::ValidateCommonCDSProduct
         return;
     }
 
+    bool is_far = false;
     bool product_is_misplaced = false;
-    CBioseq_Handle prod;
-    const CSeq_id * sid = feat.GetProduct().GetId();
-    if (sid) {
-        prod = m_Scope->GetBioseqHandleFromTSE(*sid, m_TSE);
-    }
-    // it might be packaged in the wrong set
-    if (!prod) {
-        prod = m_Imp.GetScope()->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE());
-        if (prod) {
-            product_is_misplaced = true;
-        }
-    }
+    CBioseq_Handle prod = x_GetFeatureProduct(feat, is_far, product_is_misplaced);
 
-    if ( !prod ) {
+    if ( !prod  || is_far) {
         const CSeq_id* sid = 0;
         try {
             sid = &(GetId(feat.GetProduct(), m_Scope));
@@ -7239,10 +7241,11 @@ void CValidError_feat::x_CheckCDSFrame
 }
 
 
-CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is_far)
+CBioseq_Handle CValidError_feat::x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced)
 {
     CBioseq_Handle prot_handle;
     is_far = false;
+    is_misplaced = false;
     if (!feat.IsSetProduct()) {
         return prot_handle;
     }
@@ -7257,17 +7260,52 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is
 
     // try "local" scope
     prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_TSE);
-    if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
+    if (!prot_handle  &&  look_far) {
         prot_handle = m_Scope->GetBioseqHandle(*protid);
-        is_far = true;
+        if (prot_handle) {
+            is_far = true;
+        }
     }
     if (!prot_handle) {
         // it might be packaged in the wrong set
         // which will be reported in ValidateCommonCDSProduct
         prot_handle = m_Imp.GetScope()->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
+        if (prot_handle) {
+            is_misplaced = true;
+        }
     }
 
     return prot_handle;
+}
+
+
+CBioseq_Handle CValidError_feat::x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced)
+{
+    bool look_far = false;
+
+    if (feat.IsSetData()) {
+        if (feat.GetData().IsCdregion()) {
+            look_far = m_Imp.IsFarFetchCDSproducts();
+        } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+            look_far = m_Imp.IsFarFetchMRNAproducts();
+        }
+    }
+
+    return x_GetFeatureProduct(feat, look_far, is_far, is_misplaced);
+}
+
+
+CBioseq_Handle CValidError_feat::x_GetRNAProduct(const CSeq_feat& feat, bool& is_far)
+{
+    bool is_misplaced = false;
+    return x_GetFeatureProduct(feat, m_Imp.IsFarFetchMRNAproducts(), is_far, is_misplaced);
+}
+
+
+CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is_far)
+{
+    bool is_misplaced = false;
+    return x_GetFeatureProduct(feat, m_Imp.IsFarFetchCDSproducts(), is_far, is_misplaced);
 }
 
 
