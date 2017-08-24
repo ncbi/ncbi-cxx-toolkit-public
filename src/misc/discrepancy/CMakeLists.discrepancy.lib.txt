@@ -8,6 +8,6 @@ add_library(xdiscrepancy
     sequence_tests pub_tests biosource_tests spell_check 
 )
 target_link_libraries(xdiscrepancy
-    macro xobjedit
+    macro xcleanup xobjedit
 )
 

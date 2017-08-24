@@ -9,6 +9,6 @@ add_dependencies(xbiosample_util
 )
 
 target_link_libraries(xbiosample_util
-    xmlwrapp xobjedit xxconnect
+    xmlwrapp xobjedit
 )
 

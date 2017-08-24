@@ -11,6 +11,7 @@ add_library(xobjedit
 )
 
 target_link_libraries(xobjedit
-    xformat xobjread
+    mlacli taxon3 valid
+    xobjread xobjutil
 )
 

@@ -8,6 +8,7 @@ add_executable(multireader-app
 set_target_properties(multireader-app PROPERTIES OUTPUT_NAME multireader)
 
 target_link_libraries(multireader-app
-    xalgophytree xobjedit xobjreadex
+    xalgophytree xcleanup xobjedit
+    xobjreadex
 )
 

@@ -8,6 +8,6 @@ add_executable(igblastn-app
 set_target_properties(igblastn-app PROPERTIES OUTPUT_NAME igblastn)
 
 target_link_libraries(igblastn-app
-    blast_app_util igblast
+    blast_app_util blast_sra_input igblast
 )
 
