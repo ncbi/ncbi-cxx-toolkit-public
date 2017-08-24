@@ -1944,9 +1944,7 @@ void CNewCleanup_imp::OrgrefModBC (string& str)
     }
 }
 
-void CNewCleanup_imp::OrgrefBC (
-    COrg_ref& org
-)
+void CNewCleanup_imp::OrgrefBC (COrg_ref& org)
 
 {
     CLEAN_STRING_MEMBER (org, Taxname);
@@ -9890,6 +9888,18 @@ static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
 
 void CNewCleanup_imp::x_RemoveSingleStrand(CBioseq& bioseq)
 {
+    // do not remove single-strandedness for patent sequences
+    bool is_patent = false;
+    for (auto id = bioseq.GetId().begin(); id != bioseq.GetId().end(); id++) {
+        if ((*id)->IsPatent()) {
+            is_patent = true;
+            break;
+        }
+    }
+    if (is_patent) {
+        return;
+    }
+
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
 
     if (bioseq.IsSetInst() && IsBadSeqInstStrand(bioseq.GetInst(), sequence::GetBioSource(bsh))) {

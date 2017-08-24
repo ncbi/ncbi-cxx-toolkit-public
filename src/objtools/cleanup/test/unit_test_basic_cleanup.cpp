@@ -1311,7 +1311,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4360)
 }
 
 
-void TestSSToDS(const COrg_ref& org, bool expect_reset)
+void TestSSToDS(const COrg_ref& org, bool is_patent, bool expect_reset)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ss);
@@ -1321,6 +1321,13 @@ void TestSSToDS(const COrg_ref& org, bool expect_reset)
         if ((*it)->IsSource()) {
             (*it)->SetSource().SetOrg().Assign(org);
         }
+    }
+    if (is_patent) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->SetPatent().SetSeqid(123);
+        id->SetPatent().SetCit().SetCountry("USA");
+        id->SetPatent().SetCit().SetId().SetNumber("X23");
+        entry->SetSeq().SetId().push_back(id);
     }
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
@@ -1345,20 +1352,22 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4356)
     org->SetTaxname("Sebaea microphylla");
 
     // no lineage? no change
-    TestSSToDS(*org, false);
+    TestSSToDS(*org, false, false);
 
     // lineage is set, will reset
     org->SetOrgname().SetLineage("some lineage");
-    TestSSToDS(*org, true);
+    TestSSToDS(*org, false, true);
+
+    // but not if patent
+    TestSSToDS(*org, true, false);
 
     // but not if synthetic
     org->SetOrgname().SetDiv("SYN");
-    TestSSToDS(*org, false);
+    TestSSToDS(*org, false, false);
 
     // or if virus
     org->SetOrgname().ResetDiv();
     org->SetOrgname().SetLineage("virus");
-    TestSSToDS(*org, false);
-
+    TestSSToDS(*org, false, false);
 
 }
