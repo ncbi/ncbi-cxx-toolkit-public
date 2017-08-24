@@ -156,6 +156,16 @@ static inline bool GetSkipEmptyPileupGraphsParam(void)
 }
 
 
+NCBI_PARAM_DECL(int, BAM_LOADER, GAP_TO_INTRON_THRESHOLD);
+NCBI_PARAM_DEF(int, BAM_LOADER, GAP_TO_INTRON_THRESHOLD, -1);
+
+static TSeqPos s_GetGapToIntronThreshold(void)
+{
+    static TSeqPos value = NCBI_PARAM_TYPE(BAM_LOADER, GAP_TO_INTRON_THRESHOLD)::GetDefault();
+    return value;
+}
+
+
 NCBI_PARAM_DECL(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH);
 NCBI_PARAM_DEF(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH, true);
 
@@ -1825,9 +1835,15 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                 case SBamAlignInfo::kCIGAR_S: // S
                     read_pos += seglen;
                     break;
-                case SBamAlignInfo::kCIGAR_D: // D
                 case SBamAlignInfo::kCIGAR_N: // N
-                    ss.add_gap(ss_pos, seglen);
+                    // intron
+                    ss_pos += seglen;
+                    break;
+                case SBamAlignInfo::kCIGAR_D: // D
+                    // gap or intron
+                    if ( seglen < s_GetGapToIntronThreshold() ) {
+                        ss.add_gap(ss_pos, seglen);
+                    }
                     ss_pos += seglen;
                     break;
                 default: // P
@@ -1898,9 +1914,15 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     }
                     read_pos += seglen;
                 }
-                else if ( type == 'D' || type == 'N' ) {
-                    // gap
-                    ss.add_gap(ss_pos, seglen);
+                else if ( type == 'N' ) {
+                    // intron
+                    ss_pos += seglen;
+                }
+                else if ( type == 'D' ) {
+                    // gap or intron
+                    if ( seglen <= s_GetGapToIntronThreshold() ) {
+                        ss.add_gap(ss_pos, seglen);
+                    }
                     ss_pos += seglen;
                 }
                 else if ( type != 'P' ) {
