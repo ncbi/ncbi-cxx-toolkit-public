@@ -62,6 +62,14 @@ CGenomicCollectionsService::CGenomicCollectionsService()
 {
     SetTimeout(&kTimeout);
     SetRetryLimit(20);
+
+    // it's a backward-compatibility fix for old versions of server (no much harm to leave it - only little data overhead is expected)
+    // always send request and get response in ASN text format so that server can properly parse request
+    // For binary ASN request: client\server versions of ASN request must be exactly the same (compiled using one ASN definition - strong typing)
+    // For text ASN request: client\server versions of ASN request can be different (use different ASN definitions - duck typing)
+    SetFormat(eSerial_AsnText);
+    // SetFormat() - sets both Request and Response encoding, so we put "fo=text" as well (though not needed now it may be usefull in the future for the client back-compatibility)
+    SetArgs("fi=text&fo=text");
 }
 
 template<typename TReq>
