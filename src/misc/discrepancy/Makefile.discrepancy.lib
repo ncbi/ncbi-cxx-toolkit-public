@@ -10,7 +10,7 @@ SRC = discrepancy_core report_object discrepancy_context utils text_output \
 
 LIB = xdiscrepancy
 
-DLL_LIB = xmlwrapp
+DLL_LIB = xmlwrapp xcleanup $(OBJEDIT_LIBS)
 LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS)
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
