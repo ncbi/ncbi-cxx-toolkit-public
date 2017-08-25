@@ -18,7 +18,6 @@ IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
 GCClientRequest ::= CHOICE {
     get-assembly GCClient-GetAssemblyRequest,
     get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
-    get-best-assembly GCClient-FindBestAssemblyRequest,
     get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest,
     get-assembly-blob GCClient-GetAssemblyBlobRequest,
     get-assembly-by-sequence GCClient-GetAssemblyBySequenceRequest
@@ -28,7 +27,6 @@ GCClientRequest ::= CHOICE {
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
     get-chrtype-valid  VisibleString,
-    get-best-assembly GCClient-AssembliesForSequences,
     get-equivalent-assemblies GCClient-EquivalentAssemblies,
     
     --  errors encountered at the server side.
@@ -146,32 +144,6 @@ GCClient-ValidateChrTypeLocResponse ::= SEQUENCE {
     result  VisibleString
 }
 
-
-GCClient-FindBestAssemblyFilter ::= INTEGER {
-    any(0),
-    latest-major-annotated(0),
-    latest(1),
-    major(2),
-    annotated(3),
-    all(4)
-}
-
-GCClient-FindBestAssemblySort ::= INTEGER {
-    default(0),
-    latest(1),
-    major(2),
-    annotated(3)
-}
-
-GCClient-FindBestAssemblyRequest ::= SEQUENCE {
-    seq-id-acc SET OF VisibleString,
-
-    filter GCClient-FindBestAssemblyFilter DEFAULT latest-major-annotated,
-
-    sort GCClient-FindBestAssemblySort DEFAULT default,
-
-    assembly-return-limit INTEGER OPTIONAL
-}
 
 -- This is a bitfield.  All values are powers of two.
 GCClient-GetAssemblyBySequenceFilter ::= INTEGER {

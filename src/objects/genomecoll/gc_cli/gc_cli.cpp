@@ -44,7 +44,6 @@
 #include <objects/genomecoll/GC_AssemblyUnit.hpp>
 #include <objects/genomecoll/GC_AssemblyDesc.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
-#include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
 #include <objects/genomecoll/GCClient_AssemblySequenceI.hpp>
 #include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
