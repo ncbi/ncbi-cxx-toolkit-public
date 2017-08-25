@@ -600,7 +600,7 @@ CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
+    status = NcbiSys_spawnvpe(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, a_args, a_envs);
 #endif
