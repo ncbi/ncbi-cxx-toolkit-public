@@ -143,6 +143,11 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
         options |= CValidator::eVal_refseq_conventions;
     }
 
+    if (args["r"]) {
+        options |= CValidator::eVal_far_fetch_cds_products;
+        options |= CValidator::eVal_far_fetch_mrna_products;
+    }
+
     return options;
 }
 

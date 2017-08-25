@@ -1164,9 +1164,9 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             // if not local bioseq product, lower severity
             EDiagSev sev = eDiag_Warning;
             bool is_far_fail = false;
-            if ( !prod ) {
+            if ( !prod || is_far ) {
                 sev = eDiag_Info;
-                if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+                if (!prod && m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
                     is_far_fail = true;                
                 }
             }
