@@ -7,7 +7,7 @@ SRC = biosample_util struc_table_column
 
 LIB = xbiosample_util
 
-DLL_LIB = 
+DLL_LIB = $(OBJEDIT_LIBS)
 LIBS = 
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
