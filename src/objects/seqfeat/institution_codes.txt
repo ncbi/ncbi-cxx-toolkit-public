@@ -4341,6 +4341,7 @@ MU<USA-TX>	s	Midwestern University
 MUACC	c	Murdoch University Algal Culture Collection		
 MUAF	c	Culture collection of Mendel University of Agriculture and Forestry in Brno		
 MUB	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica		
+MUBI		Museo de Biodiversidad del Peru, Cusco		
 MUCC	c	Murdoch University Culture Collection		
 MUCC<JPN>	c	Mie University Culture Collection (Culture Collection, Laboratory of Plant Pathology)		
 MUCL	c	Mycotheque de l'Universite Catholique de Louvain	BCCM/MUCL

@@ -4374,6 +4374,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUACC\tc\tMurdoch University Algal Culture Collection\t\t",
 "MUAF\tc\tCulture collection of Mendel University of Agriculture and Forestry in Brno\t\t",
 "MUB\ts\tUniversidad de Murcia, Departamento de Biologia Vegetal, Botanica\t\t",
+"MUBI\t\tMuseo de Biodiversidad del Peru, Cusco\t\t",
 "MUCC\tc\tMurdoch University Culture Collection\t\t",
 "MUCC<JPN>\tc\tMie University Culture Collection (Culture Collection, Laboratory of Plant Pathology)\t\t",
 "MUCL\tc\tMycotheque de l'Universite Catholique de Louvain\tBCCM/MUCL",
