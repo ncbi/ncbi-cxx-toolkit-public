@@ -511,6 +511,8 @@ public:
     { return SDummyConfig(); }
     CNcbiEnvironment& SetEnvironment(void)
     { return *(CNcbiEnvironment*)Instance(); }
+    const CNcbiEnvironment& GetEnvironment(void) const
+    { return *(CNcbiEnvironment*)Instance(); }
     const CNcbiArguments& GetArguments(void)
     { return *(CNcbiArguments*)Instance(); }
 
