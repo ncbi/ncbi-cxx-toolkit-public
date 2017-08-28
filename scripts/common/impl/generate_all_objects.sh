@@ -49,6 +49,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/gpipe/gpinit/src/asn_config/objects/gpinit_obj.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
   src/internal/peptides/objects/unimod/unimod.xsd \
+  src/internal/variation/lib/objects/*/*.asn \
   src/internal/variation/snp/objects/rsm/rsm.asn; do
     if test -f "$spec"; then
         case $spec in
