@@ -521,8 +521,12 @@ public:
                                 ///< - may not be supported and will be
                                 ///< ignored on some platforms
         fRunNice     = 0x40,    ///< Run thread with low priority (MS-Win only)
-        fRunAllowST  = 0x100    ///< Allow threads to run in single thread
+        fRunAllowST  = 0x100,   ///< Allow threads to run in single thread
                                 ///< builds
+
+        fRunCloneRequestContext = 0x200  ///< Clone parent's request context and pass it to the
+                                         ///< new thread. The flag can be used when processing
+                                         ///< the same request in multiple child threads.
     };
 
     /// Bitwise OR'd flags for thread creation passed to Run().
@@ -623,6 +627,7 @@ private:
     bool          m_IsTerminated;  ///< if Exit() was called for the thread
     CRef<CThread> m_SelfRef;       ///< "this" -- to avoid premature destruction
     void*         m_ExitData;      ///< as returned by Main() or passed to Exit()
+    CRef<CRequestContext> m_ParentRequestContext;
 
     static bool     sm_IsExiting;
     static CTimeout sm_WaitForThreadsTimeout;

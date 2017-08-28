@@ -43,6 +43,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/error_codes.hpp>
 #ifdef NCBI_POSIX_THREADS
@@ -544,6 +545,11 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
 
     bool catch_all = TParamThreadCatchExceptions::GetDefault();
 
+    // Check if parent request context should be used.
+    if ( thread_obj->m_ParentRequestContext ) {
+        CDiagContext::SetRequestContext(thread_obj->m_ParentRequestContext);
+    }
+
     // Run user-provided thread main function here
     if ( catch_all ) {
         try {
@@ -714,6 +720,10 @@ bool CThread::Run(TRunMode flags)
     // Thread will run - increment counter under mutex
     ++sm_ThreadsCount;
     try {
+
+        if (flags & fRunCloneRequestContext) {
+            m_ParentRequestContext = CDiagContext::GetRequestContext().Clone();
+        }
 
 #if defined(NCBI_WIN32_THREADS)
         // We need this parameter in WinNT - can not use NULL instead!
