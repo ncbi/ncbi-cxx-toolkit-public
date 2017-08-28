@@ -3573,71 +3573,6 @@ CDiagBuffer::~CDiagBuffer(void)
     m_Stream = 0;
 }
 
-struct SThreadsInSTBuild
-{
-    static bool Check();
-    static SDiagMessage GetMessageAndChangeSeverity(EDiagSev& sev);
-
-private:
-    static atomic<thread::id> sm_ThreadID;
-    static atomic<bool> sm_Reported;
-    static string sm_ErrorMessage;
-};
-
-
-atomic<thread::id> SThreadsInSTBuild::sm_ThreadID;
-atomic<bool> SThreadsInSTBuild::sm_Reported;
-string SThreadsInSTBuild::sm_ErrorMessage = "Detected different threads using C++ Toolkit built in single thread mode.";
-
-
-bool SThreadsInSTBuild::Check()
-{
-#ifndef NCBI_THREADS
-    thread::id stored_thread_id;
-    thread::id this_thread_id = this_thread::get_id();
-
-    // If this thread has just initialized sm_ThreadID
-    if (sm_ThreadID.compare_exchange_strong(stored_thread_id, this_thread_id)) return false;
-
-    // If sm_ThreadID contains same thread ID
-    if (stored_thread_id == this_thread_id) return false;
-
-    bool reported = false;
-
-    // Whether to report this (or it has already been reported)
-    if (sm_Reported.compare_exchange_strong(reported, true)) return true;
-#endif
-
-    return false;
-}
-
-
-SDiagMessage SThreadsInSTBuild::GetMessageAndChangeSeverity(EDiagSev& sev)
-{
-#ifdef _DEBUG
-    sev = eDiag_Fatal;
-#else
-    sev = eDiag_Critical;
-#endif
-
-    const CNcbiDiag diag(DIAG_COMPILE_INFO);
-    return SDiagMessage(
-            sev,
-            sm_ErrorMessage.c_str(),
-            sm_ErrorMessage.length(),
-            diag.GetFile(),
-            diag.GetLine(),
-            diag.GetPostFlags(),
-            nullptr,
-            0,
-            0,
-            nullptr,
-            diag.GetModule(),
-            diag.GetClass(),
-            diag.GetFunction());
-}
-
-
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
     bool is_console = (mess.m_Flags & eDPF_IsConsole) > 0;
@@ -3783,6 +3718,71 @@ public:
 private:
     bool& m_Flag;
 };
+
+
+struct SThreadsInSTBuild
+{
+    static bool Check();
+    static SDiagMessage GetMessageAndChangeSeverity(EDiagSev& sev);
+
+private:
+    static atomic<thread::id> sm_ThreadID;
+    static atomic<bool> sm_Reported;
+    static string sm_ErrorMessage;
+};
+
+
+atomic<thread::id> SThreadsInSTBuild::sm_ThreadID;
+atomic<bool> SThreadsInSTBuild::sm_Reported;
+string SThreadsInSTBuild::sm_ErrorMessage = "Detected different threads using C++ Toolkit built in single thread mode.";
+
+
+bool SThreadsInSTBuild::Check()
+{
+#ifndef NCBI_THREADS
+    thread::id stored_thread_id;
+    thread::id this_thread_id = this_thread::get_id();
+
+    // If this thread has just initialized sm_ThreadID
+    if (sm_ThreadID.compare_exchange_strong(stored_thread_id, this_thread_id)) return false;
+
+    // If sm_ThreadID contains same thread ID
+    if (stored_thread_id == this_thread_id) return false;
+
+    bool reported = false;
+
+    // Whether to report this (or it has already been reported)
+    if (sm_Reported.compare_exchange_strong(reported, true)) return true;
+#endif
+
+    return false;
+}
+
+
+SDiagMessage SThreadsInSTBuild::GetMessageAndChangeSeverity(EDiagSev& sev)
+{
+#ifdef _DEBUG
+    sev = eDiag_Fatal;
+#else
+    sev = eDiag_Critical;
+#endif
+
+    const CNcbiDiag diag(DIAG_COMPILE_INFO);
+    return SDiagMessage(
+            sev,
+            sm_ErrorMessage.c_str(),
+            sm_ErrorMessage.length(),
+            diag.GetFile(),
+            diag.GetLine(),
+            diag.GetPostFlags(),
+            nullptr,
+            0,
+            0,
+            nullptr,
+            diag.GetModule(),
+            diag.GetClass(),
+            diag.GetFunction());
+}
 
 
 void CDiagBuffer::Flush(void)
