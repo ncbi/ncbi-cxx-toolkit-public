@@ -100,7 +100,7 @@ public:
     /// available work in next call to ExecuteSlice().
     /// This method is thread-safe and can be called from any thread and any
     /// context.
-    void SetRunnable(void);
+    void SetRunnable(bool boost = false);
     /// This call is basically equivalent to SetRunnable() but with guarantee
     /// that task will be scheduled for execution no earlier than delay_sec
     /// later (approximately, can be up to a second less if measured in

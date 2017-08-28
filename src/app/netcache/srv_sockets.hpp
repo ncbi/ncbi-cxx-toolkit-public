@@ -221,7 +221,7 @@ public:
     /// central epoll. Until this method is called TaskServer won't make this
     /// task runnable and won't check if it's readable or writable -- any
     /// Read/Write operation will be unsuccessful (processing 0 bytes).
-    bool StartProcessing(TSrvThreadNum thread_num = 0);
+    bool StartProcessing(TSrvThreadNum thread_num = 0, bool boost = false);
     /// Close the socket gracefully, i.e. if any socket's data is still in
     /// kernel's buffers and didn't make it to wire it will be sent later. But
     /// internal task's write buffers won't be flushed.

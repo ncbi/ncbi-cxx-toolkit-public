@@ -613,7 +613,7 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
                             task->m_PeerAddr, task->m_PeerPort);
         s_Threads[thread_num]->stat->SockOpenPassive();
         AtomicAdd(s_TotalSockets, 1);
-        if (!task->StartProcessing(thread_num))
+        if (!task->StartProcessing(thread_num, true))
             task->Terminate();
 #endif
     }
@@ -1472,7 +1472,7 @@ error_return:
 }
 
 bool
-CSrvSocketTask::StartProcessing(TSrvThreadNum thread_num /* = 0 */)
+CSrvSocketTask::StartProcessing(TSrvThreadNum thread_num /* = 0 */, bool boost /*= false*/)
 {
     s_SaveSocket(this);
     m_LastThread = (thread_num? thread_num: GetCurThread()->thread_num);
@@ -1488,7 +1488,7 @@ CSrvSocketTask::StartProcessing(TSrvThreadNum thread_num /* = 0 */)
     }
 #endif
 
-    SetRunnable();
+    SetRunnable(boost);
     return true;
 }
 

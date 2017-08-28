@@ -127,7 +127,7 @@ s_GetExecQueue(TPrtyExecMap& prty_map, Uint1 priority)
 }
 
 static void
-s_AddTaskToQueue(SSrvThread* thr, CSrvTask* task)
+s_AddTaskToQueue(SSrvThread* thr, CSrvTask* task, bool boost = false)
 {
     SSchedInfo* sched = thr->sched;
     sched->tasks_lock.Lock();
@@ -145,7 +145,15 @@ s_AddTaskToQueue(SSrvThread* thr, CSrvTask* task)
 
     SPrtyExecQueue* exec_queue = s_GetExecQueue(sched->tasks_map,
                                                 task->GetPriority());
-    exec_queue->tasks.push_back(*task);
+#if 1
+    if (boost) {
+        exec_queue->tasks.push_front(*task);
+    } else {
+        exec_queue->tasks.push_back(*task);
+    }
+#else
+        exec_queue->tasks.push_back(*task);
+#endif
     int signal_val = sched->cnt_signal.GetValue();
     sched->cnt_signal.SetValueNonAtomic(signal_val + 1);
     sched->tasks_lock.Unlock();
@@ -598,7 +606,7 @@ CSrvTask::Terminate(void)
 }
 
 void
-CSrvTask::SetRunnable(void)
+CSrvTask::SetRunnable(bool boost)
 {
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
@@ -633,7 +641,7 @@ retry:
     SSrvThread* cur_thr = GetCurThread();
     TSrvThreadNum prefer_num = m_LastThread? m_LastThread: 1;
     SSrvThread* queue_thr = s_FindQueueThread(prefer_num, cur_thr);
-    s_AddTaskToQueue(queue_thr, this);
+    s_AddTaskToQueue(queue_thr, this, boost);
 }
 
 
