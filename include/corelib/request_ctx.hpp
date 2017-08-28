@@ -556,9 +556,12 @@ void CRequestContext::UnsetClientIP(void)
 inline
 string CRequestContext::GetSessionID(void) const
 {
-    return x_IsSetProp(eProp_SessionID) ?
-        m_SessionID.GetOriginalString()
-        : GetDiagContext().GetDefaultSessionID();
+    if ( x_IsSetProp(eProp_SessionID) ) {
+        return m_SessionID.GetOriginalString();
+    }
+    string def_sid = GetDiagContext().GetDefaultSessionID();
+    if ( !def_sid.empty() ) return def_sid;
+    return const_cast<CRequestContext*>(this)->SetSessionID();
 }
 
 inline
