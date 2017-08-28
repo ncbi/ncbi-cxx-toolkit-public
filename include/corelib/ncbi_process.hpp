@@ -63,10 +63,14 @@ BEGIN_NCBI_SCOPE
 /// Infinite timeout in milliseconds.
 const unsigned long kInfiniteTimeoutMs = kMax_ULong;
 
+// This workaround is obsolete now. LinuxThreads library has been replaced by NPTL
+// which does not need it.
+/*
 /// Turn on/off workaround for linux PID and PPID
 #if defined(NCBI_OS_LINUX)
 #  define NCBI_THREAD_PID_WORKAROUND
 #endif
+*/
 
 /// Process identifier (PID) and process handle.
 #if defined(NCBI_OS_UNIX)
