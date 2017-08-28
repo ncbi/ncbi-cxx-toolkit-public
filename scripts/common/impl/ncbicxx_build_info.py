@@ -30,7 +30,7 @@ class Collector(object):
 
         target_type = command_info['target_type']
         mfname = 'Makefile.%s.%s' % (command_info['target_name'], target_type)
-        srcdir = os.path.abspath(self.get_srcdir(command_info, mfname))
+        srcdir = os.path.realpath(self.get_srcdir(command_info, mfname))
         mf = self.read_makefile(os.path.join(srcdir, mfname),
                                 command_info['target_name'], target_type)
         target_name = expand_makefile_vars('$(%s)' % target_type.upper(), mf)
