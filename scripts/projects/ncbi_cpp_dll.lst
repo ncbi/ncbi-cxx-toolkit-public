@@ -18,6 +18,7 @@ internal/test/corelib
 internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
 internal/ctoolkit
+internal/util/flat2asn
 misc
 objects
 objmgr
