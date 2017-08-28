@@ -362,7 +362,6 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     CSeq_annot_Handle sah )
 //  ----------------------------------------------------------------------------
 {
-    const auto& display_range = GetRange();
     CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
 
     if ( pAnnot->IsAlign() ) {
@@ -1442,6 +1441,13 @@ bool CGff3Writer::xWriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    // Skip feature if it lies outside the display interval - RW-158
+    if (!GetRange().IsWhole() &&
+        mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
+        return true;
+    }
+
+
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
         switch(subtype) {
@@ -2822,8 +2828,17 @@ bool CGff3Writer::xAssignFeature(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> pLoc(new CSeq_loc(CSeq_loc::e_Mix));
-    pLoc->Add(mf.GetLocation());
+    const CRange<TSeqPos>& display_range = GetRange();
+    if (display_range.IsWhole()) {
+        pLoc->Add(mf.GetLocation());
+    } 
+    else  { // Trim the feature
+        pLoc->Add(*sequence::CFeatTrim::Apply(mf.GetLocation(), display_range));
+    }
+ 
+
     CWriteUtil::ChangeToPackedInt(*pLoc);
+
 
     CBioseq_Handle bsh = fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
@@ -3147,9 +3162,14 @@ bool CGff3Writer::xWriteFeatureCds(
         &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
     int /*CCdregion::EFrame*/ iPhase = 0;
     if (feature.GetData().GetCdregion().IsSetFrame()) {
-
-        
-        iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
+        const CRange<TSeqPos>& display_range = GetRange();
+        if (display_range.IsWhole())  {
+            iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
+        }
+        else { 
+            iPhase = sequence::CFeatTrim::GetCdsFrame(feature, display_range);
+            iPhase = max(0, iPhase);
+        }
     }
     int iTotSize = -iPhase;
     if (bStrandAdjust && iPhase) {
