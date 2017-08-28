@@ -2899,7 +2899,7 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                         label, report_errors, has_errors, feat, is_sequence_end);
                 }
             } catch (CSeqVectorException& e) {
-                PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+                //PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
             }
         }
 
@@ -2934,7 +2934,7 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                                                rare_consensus_not_expected,
                                                label_head, report_errors, has_errors, feat);
                 } catch (CSeqVectorException& e) {
-                    PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+                    //PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
                 }
             }
         }
@@ -2960,7 +2960,7 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
                                     label, report_errors, has_errors, feat, true);
                 }
             } catch (CSeqVectorException& e) {
-                PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
+                //PostErr(eDiag_Error, eErr_INTERNAL_Exception, "Failed to get sequence while validating splice sites", feat);
             }
         }
     }
