@@ -436,6 +436,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean Org-ref",
     "Trim Internal Semicolons",
     "Add SeqFeatXref",
+    "Convert Unstructured Org-ref Modifier",
 
     // set when any other change is made.
     "Change Other", 

@@ -160,6 +160,7 @@ public:
         eCleanOrgref,
         eTrimInternalSemicolons,
         eAddSeqFeatXref,
+        eConvertUnstructuredOrgrefModifier,
 
         // set when any other change is made.
         eChangeOther,

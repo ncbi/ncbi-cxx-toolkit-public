@@ -1857,6 +1857,7 @@ void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
             ADD_SUBSOURCE_TO_BIOSOURCE (biosrc, sbs);
             ERASE_MOD_ON_ORGREF (it, org);
             ChangeMade (CCleanupChange::eChangeSubsource);
+            ChangeMade(CCleanupChange::eConvertUnstructuredOrgrefModifier);
         }
 
         if( MOD_ON_ORGREF_IS_EMPTY(org) ) {
@@ -1903,6 +1904,7 @@ void CNewCleanup_imp::x_ConvertOrgref_modToOrgMod(COrg_ref& org)
         ADD_ORGMOD_TO_ORGREF(org, omd);
         ERASE_MOD_ON_ORGREF(it, org);
         ChangeMade(CCleanupChange::eChangeOrgmod);
+        ChangeMade(CCleanupChange::eConvertUnstructuredOrgrefModifier);
     }
     if (RAW_FIELD_IS_EMPTY(org, Mod)) {
         RESET_FIELD(org, Mod);
