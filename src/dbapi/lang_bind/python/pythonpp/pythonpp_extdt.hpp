@@ -193,7 +193,7 @@ class CModule : public CObject
 
 public:
     CModule(const char* name)
-    : CObject(PyModule_New(const_cast<char*>(name)), false)
+    : CObject(PyModule_New(const_cast<char*>(name)) /*, false */)
     {
     }
     CModule(PyObject* obj, EOwnership ownership = eAcquireOwnership)
@@ -212,7 +212,7 @@ public:
     }
     CModule(const std::string& name)
     // !!! This is strange .....
-    : CObject(PyImport_AddModule( const_cast<char *>(name.c_str()) ), true)
+    : CObject(PyImport_AddModule( const_cast<char *>(name.c_str()) ) /* , true */)
     {
     }
 
@@ -226,14 +226,14 @@ public:
     {
         const char* tmp_str = PyModule_GetName(Get());
 
-        CError::check(tmp_str);
+        CError::Check(tmp_str);
         return tmp_str;
     }
     string GetFileName(void) const
     {
         const char* tmp_str = PyModule_GetFilename(Get());
 
-        CError::check(tmp_str);
+        CError::Check(tmp_str);
         return tmp_str;
     }
 
