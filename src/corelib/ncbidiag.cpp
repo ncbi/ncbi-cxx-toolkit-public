@@ -3723,7 +3723,7 @@ private:
 struct SThreadsInSTBuild
 {
     static bool Check();
-    static SDiagMessage GetMessageAndChangeSeverity(EDiagSev& sev);
+    static SDiagMessage Report(EDiagSev& sev);
 
 private:
     static atomic<thread::id> sm_ThreadID;
@@ -3759,7 +3759,7 @@ bool SThreadsInSTBuild::Check()
 }
 
 
-SDiagMessage SThreadsInSTBuild::GetMessageAndChangeSeverity(EDiagSev& sev)
+SDiagMessage SThreadsInSTBuild::Report(EDiagSev& sev)
 {
 #ifdef _DEBUG
     sev = eDiag_Fatal;
@@ -3834,7 +3834,8 @@ void CDiagBuffer::Flush(void)
     }
 
     if (SThreadsInSTBuild::Check()) {
-        SDiagMessage mess(SThreadsInSTBuild::GetMessageAndChangeSeverity(sev));
+        // Change severity and print error message
+        auto mess = SThreadsInSTBuild::Report(sev);
         PrintMessage(mess, *m_Diag);
     }
 
