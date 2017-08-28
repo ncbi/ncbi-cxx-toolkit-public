@@ -244,6 +244,18 @@ extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, uns
 extern unsigned int NcbiLogP_SetServerPort(unsigned int server_port);
 
 
+/** Should be called immediately prior to the application exit. 
+ *  Logs the 'stop' line to the <appname>.log files.
+ *  Allow to set the application runtime directly, not based on a start and end time,
+ *  if execution_time >= 0.
+ *
+ *  Used in ncbi_applog.
+ *
+ *  @sa NcbiLog_AppStop, NcbiLog_AppStopSignal
+ */
+extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_time);
+
+
 /** Variant of NcbiLog_ReqStart, that use already prepared string with
  *  parameters. Both, key and value in pairs 'key=value' should be 
  *  URL-encoded and separated with '&'.

@@ -60,7 +60,7 @@
  Command lines:
     ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID]
                                       [-logsite SITE] [-timestamp TIME]  // -> app_token
-    ncbi_applog stop_app      <token> -status STATUS [-timestamp TIME]
+    ncbi_applog stop_app      <token> -status STATUS [-timestamp TIME] [-exectime TIMESPAN]
     ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP]
                                       [-param PAIRS] [-timestamp TIME]  // -> request_token
     ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]
@@ -300,6 +300,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments ---
         arg->AddDefaultKey
             ("hostrole", "ROLE", "Host role (will be used automatically for 'redirect' mode)",
@@ -327,6 +328,11 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+        arg->AddOptionalKey
+            ("exectime", "TIMESPAN", "Application execution time. If not specified, calculates on base "
+             "of -timestamp parameters for start/stop commands, or current time.", 
+            CArgDescriptions::eDouble);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
@@ -389,6 +395,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
@@ -419,6 +426,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
@@ -440,6 +448,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
@@ -465,6 +474,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
@@ -621,6 +631,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr);
+
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
@@ -1745,12 +1756,17 @@ int CNcbiApplogApp::Run()
     } else 
 
     // -----  stop_app  ------------------------------------------------------
-    // ncbi_applog stop_app <token> -status STATUS
+    // ncbi_applog stop_app <token> -status STATUS [-exectime TIMESPAN]
+
 
     if (cmd == "stop_app") {
         int status = args["status"].AsInteger();
+        double exectime = 0;
+        if (args["exectime"].HasValue()) {
+            exectime = args["exectime"].AsDouble();
+        }
         SetInfo();
-        NcbiLog_AppStop(status);
+        NcbiLogP_AppStop(status, 0, exectime);
     } else  
 
     // -----  start_request  -------------------------------------------------

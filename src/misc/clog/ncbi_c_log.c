@@ -3046,16 +3046,21 @@ extern void NcbiLog_AppRun(void)
 
 extern void NcbiLog_AppStop(int exit_status)
 {
-    NcbiLog_AppStopSignal(exit_status, 0);
+    NcbiLogP_AppStop(exit_status, 0, -1);
 }
 
 
 extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 {
+    NcbiLogP_AppStop(exit_status, exit_signal, -1);
+}
+
+
+extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_time)
+{
     TNcbiLog_Context ctx = NULL;
     int    n;
     size_t pos;
-    double timespan;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -3065,14 +3070,17 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
-    /* We already have current time in sx_Info->post_time */
-    timespan = s_DiffTime(sx_Info->app_start_time, sx_Info->post_time);
+
+    if (execution_time < 0) {
+        /* We already have current time in sx_Info->post_time */
+        execution_time = s_DiffTime(sx_Info->app_start_time, sx_Info->post_time);
+    }
     if ( exit_signal ) {
         n = sprintf(sx_Info->message + pos, "%-13s %d %.3f SIG=%d",
-                    "stop", exit_status, timespan, exit_signal);
+                    "stop", exit_status, execution_time, exit_signal);
     } else {
         n = sprintf(sx_Info->message + pos, "%-13s %d %.3f",
-                    "stop", exit_status, timespan);
+                    "stop", exit_status, execution_time);
     }
     VERIFY(n > 0);
     /* Post a message */
@@ -3080,6 +3088,7 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 
     MT_UNLOCK;
 }
+
 
 
 static size_t s_ReqStart(TNcbiLog_Context ctx)
