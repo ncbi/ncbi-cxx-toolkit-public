@@ -5574,9 +5574,11 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 sev = eDiag_Warning;
             }
             if (!rna) {
-                string label = product_id->AsFastaString();
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
-                            "Unable to fetch mRNA transcript '" + label + "'", feat);
+                if (m_Imp.IsFarFetchMRNAproducts()) {
+                    string label = product_id->AsFastaString();
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
+                        "Unable to fetch mRNA transcript '" + label + "'", feat);
+                }
                 return;
             }
             if (is_far) {
