@@ -172,8 +172,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     }
 
     
-    const auto& display_range = GetRange();
-
     SAnnotSelector sel;
     sel.SetMaxSize(1);
     for (CAnnot_CI aci(seh, sel); aci; ++aci) {
@@ -187,13 +185,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
                 lastId = currentId;
             }
                 
-            if (!display_range.IsWhole()) {
-                CMappedFeat mapped_feat = *fit;
-                if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
-                    return false;
-                }
-            } 
-            else 
             if (!xWriteFeature(fc, *fit)) {
                     return false;
             }
@@ -230,27 +221,17 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
-    const auto& range = GetRange();
-    CFeat_CI feat_iter(bsh, range, sel);
+    const auto& display_range = GetRange();
+    CFeat_CI feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
 
-    if (range.IsWhole()) {
-        for (;  feat_iter; ++feat_iter) {
-            if (!xWriteFeature(fc, *feat_iter)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // Range not whole. Features may need to be trimmed
-    for (; feat_iter; ++feat_iter) {
-        CMappedFeat mapped_feat = *feat_iter;
-        if (!xTrimWriteFeature(fc, mapped_feat, range)) {
+    for (;  feat_iter; ++feat_iter) {
+        if (!xWriteFeature(fc, *feat_iter)) {
             return false;
         }
     }
     return true;
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -289,18 +270,6 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
 
-    const auto& display_range = GetRange();
-    if (!display_range.IsWhole()) {
-        for(; feat_iter; ++feat_iter) {
-            CMappedFeat mapped_feat = *feat_iter;
-            if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! xWriteFeature( fc, *feat_iter ) ) {
             return false;
@@ -309,6 +278,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     return true;
 }
 
+/*
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xTrimWriteFeature(
         CGffFeatureContext& fc, 
@@ -328,13 +298,17 @@ bool CGff2Writer::xTrimWriteFeature(
     }
     return true;
 }
-
+*/
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+
+   
+
+
     CRef<CGffWriteRecordFeature> pParent(new CGffWriteRecordFeature(context));
     if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;

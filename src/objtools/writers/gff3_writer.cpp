@@ -384,17 +384,6 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
 
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
 
-    if (!display_range.IsWhole()) {
-        for(; feat_iter; ++feat_iter) {
-            CMappedFeat mapped_feat = *feat_iter;
-            if (!xTrimWriteFeature(fc, mapped_feat, display_range)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! xWriteFeature( fc, *feat_iter ) ) {
             return false;
@@ -1359,12 +1348,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
 
-        if (!display_range.IsWhole()) {
-            if(!xTrimWriteFeature(fc, mRoot, display_range)) {
-                return false;
-            }
-        }
-        else 
         if (!xWriteFeature(fc, mRoot)) {
             return false;
         }
@@ -1412,12 +1395,6 @@ bool CGff3Writer::xWriteAllChildren(
     featTree.GetChildrenTo(mf, vChildren);
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
-        if (!display_range.IsWhole()) {
-            if (!xTrimWriteFeature(fc, mChild, display_range)) {
-                return false;
-            }
-        }
-        else 
         if (!xWriteFeature(fc, mChild)) {
             return false;
         }
@@ -2515,6 +2492,15 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
     else if (!mf.IsMapped() &&
         mf.GetSeq_feat()->IsSetPartial()) {
         partial = mf.GetSeq_feat()->GetPartial();
+    } 
+    else {
+        const CRange<TSeqPos>& display_range = GetRange();
+        const CRange<TSeqPos>& feat_range = mf.GetLocation().GetTotalRange();
+        if (display_range.IntersectionWith(feat_range).NotEmpty() &&
+            (display_range.GetFrom() > feat_range.GetFrom() ||
+             display_range.GetTo() < feat_range.GetTo())) {
+            partial = true;
+        }
     }
 
     if (partial) {
@@ -2576,7 +2562,22 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
     if (!cds.IsSetCode_break()) {
         return true;
     }
+
     const list<CRef<CCode_break> >& code_breaks = cds.GetCode_break();
+
+    const CRange<TSeqPos>& display_range = GetRange();
+    if (!display_range.IsWhole()) { // Trim the code breaks before writing
+        for (CRef<CCode_break> code_break : code_breaks) {
+            string cbString;
+            CRef<CCode_break> trimmed_cb = sequence::CFeatTrim::Apply(*code_break, display_range);
+            if (trimmed_cb.NotEmpty() && 
+                CWriteUtil::GetCodeBreak(*trimmed_cb, cbString)) {
+                record.AddAttribute("transl_except", cbString);
+            }
+        }
+        return true;
+    } 
+
     list<CRef<CCode_break> >::const_iterator it = code_breaks.begin();
     for (; it != code_breaks.end(); ++it) {
         string cbString;
@@ -2642,7 +2643,12 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
 
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
-                const CTrna_ext& trna = rna.GetExt().GetTRNA();
+
+                const CRange<TSeqPos>& display_range = GetRange();
+                const CTrna_ext& trna = display_range.IsWhole() ? 
+                    rna.GetExt().GetTRNA() :
+                    *sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
+
                 string anticodon;
                 if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
                     record.SetAttribute("anticodon", anticodon);
@@ -3134,12 +3140,16 @@ bool CGff3Writer::xWriteFeatureCds(
         return false;
     }
 
+    const CSeq_feat& feature = mf.GetMappedFeature();
+
     const CSeq_loc& PackedInt = pCds->Location();
     bool bStrandAdjust = PackedInt.IsSetStrand()  
         &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
     int /*CCdregion::EFrame*/ iPhase = 0;
-    if (mf.GetData().GetCdregion().IsSetFrame()) {
-        iPhase = max(mf.GetData().GetCdregion().GetFrame()-1, 0);
+    if (feature.GetData().GetCdregion().IsSetFrame()) {
+
+        
+        iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
     }
     int iTotSize = -iPhase;
     if (bStrandAdjust && iPhase) {
@@ -3148,7 +3158,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
-        string cdsId = xNextCdsId(mf);
+        string cdsId = xNextCdsId(feature);
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pExon(

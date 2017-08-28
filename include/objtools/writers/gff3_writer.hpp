@@ -338,9 +338,9 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
     bool xAssignFeatureEndpoints(
-        CGffFeatureRecord&,
+        CGffFeatureRecord& record,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat& mapped_feat);
     bool xAssignFeatureScore(
         CGffFeatureRecord&,
         const CMappedFeat&);
