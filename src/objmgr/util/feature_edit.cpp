@@ -46,24 +46,58 @@ BEGIN_SCOPE(sequence)
 
 struct SOutsideRange
 {
-    SOutsideRange(TSeqPos from, TSeqPos to) 
-        : m_From(from), m_To(to) {}
+    SOutsideRange(const CRange<TSeqPos>& range) : m_Range(range) {}
 
     bool operator()(const CRef<CCode_break>& code_break) {
         CRange<TSeqPos> cb_range = code_break->GetLoc().GetTotalRange();
-        const auto strand = code_break->GetLoc().GetStrand();
-        if (strand != eNa_strand_minus) {
-            const TSeqPos cb_from = cb_range.GetFrom();
-            return ((cb_from < m_From) || (m_To < cb_from)); 
-        } 
-        // eNa_strand_minus
-        const TSeqPos cb_to = cb_range.GetTo();
-        return ((cb_to > m_To) || (m_From > cb_to)); 
+        return cb_range.IntersectionWith(m_Range).Empty();
     }
-
-    TSeqPos m_From;
-    TSeqPos m_To;  
+    CRange<TSeqPos> m_Range;
 };
+
+
+CRef<CCode_break> CFeatTrim::Apply(const CCode_break& code_break,
+    const CRange<TSeqPos>& range) 
+{
+    CRef<CCode_break> trimmed_cb;
+   
+    if (code_break.GetLoc().GetTotalRange().IntersectionWith(range).NotEmpty())
+    {
+        trimmed_cb = Ref(new CCode_break());
+        trimmed_cb->Assign(code_break);
+        const auto strand = code_break.GetLoc().GetStrand();
+        // Trim the 3' end - RW-301
+        if (strand != eNa_strand_minus) {
+            const TSeqPos to = range.GetTo();
+            const TSeqPos cb_to = code_break.GetLoc().GetTotalRange().GetTo();
+            if (cb_to > to) {
+                x_TrimCodeBreak(0, to, *trimmed_cb);
+            }
+            
+        }
+        else { // strand == eNa_strand_minus
+            const TSeqPos from = range.GetFrom();
+            const TSeqPos cb_from = code_break.GetLoc().GetTotalRange().GetFrom();
+            if (cb_from < from) {
+                x_TrimCodeBreak(from, kMax_UInt, *trimmed_cb);
+            }
+        } 
+    }
+    return trimmed_cb;
+}
+
+
+CRef<CTrna_ext> CFeatTrim::Apply(const CTrna_ext& trna_ext,
+    const CRange<TSeqPos>& range)
+{
+    CRef<CTrna_ext> trimmed_ext;
+    if (trna_ext.GetAnticodon().GetTotalRange().IntersectionWith(range).NotEmpty()) 
+    {
+        trimmed_ext->Assign(trna_ext);
+        x_TrimTrnaExt(range.GetFrom(), range.GetTo(), *trimmed_ext);
+    }
+    return trimmed_ext;
+}
 
 
 CRef<CSeq_loc> CFeatTrim::Apply(const CSeq_loc& loc, 
@@ -117,18 +151,19 @@ CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
         if (new_sf->SetData().SetCdregion().IsSetCode_break()) {
             // iterate over code breaks and remove if they fall outside the range
             list<CRef<CCode_break>>& code_breaks = new_sf->SetData().SetCdregion().SetCode_break();
-            code_breaks.remove_if(SOutsideRange(from,to));
+            //code_breaks.remove_if(SOutsideRange(from,to));
+            code_breaks.remove_if(SOutsideRange(range));
             if (code_breaks.empty()) {
                 new_sf->SetData().SetCdregion().ResetCode_break();
             }
             else {
                 const auto strand = loc->GetStrand();
-                // Trim the 3' end
+                // Trim the 3' end - RW-301
                 if (strand != eNa_strand_minus) {
                     for (auto code_break : code_breaks) {
                         const TSeqPos cb_to = code_break->GetLoc().GetTotalRange().GetTo();
                         if (cb_to > to) {
-                            x_TrimCodeBreak(from, to, *code_break);
+                            x_TrimCodeBreak(0, to, *code_break);
                         }
                     }
                 }
@@ -136,7 +171,7 @@ CRef<CSeq_feat> CFeatTrim::Apply(const CSeq_feat& feat,
                     for (auto code_break : code_breaks) {
                         const TSeqPos cb_from = code_break->GetLoc().GetTotalRange().GetFrom();
                         if (cb_from < from) {
-                            x_TrimCodeBreak(from, to, *code_break);
+                            x_TrimCodeBreak(from, kMax_UInt, *code_break);
                         }
                     }
                 } 
@@ -288,6 +323,34 @@ TSeqPos CFeatTrim::x_GetFrame(const CCdregion& cds)
 }
 
 
+CCdregion::EFrame CFeatTrim::GetCdsFrame(const CSeq_feat& cds_feature, const CRange<TSeqPos>& range)
+{
+    const TSeqPos offset = x_GetStartOffset(cds_feature, range.GetFrom(), range.GetTo());
+
+    return x_GetNewFrame(offset, cds_feature.GetData().GetCdregion());
+}
+
+
+CCdregion::EFrame CFeatTrim::x_GetNewFrame(const TSeqPos offset, const CCdregion& cdregion)
+{
+
+    const TSeqPos frame_change = offset%3;
+    if (!frame_change) {
+        return cdregion.GetFrame();
+    }
+
+    const TSeqPos old_frame = x_GetFrame(cdregion);
+    const TSeqPos new_frame = (old_frame + frame_change)%3;
+    if (new_frame == 1) {
+        return CCdregion::eFrame_two;
+    }
+    if (new_frame == 2) {
+        return CCdregion::eFrame_three;
+    }
+    return CCdregion::eFrame_one;
+}
+
+
 void CFeatTrim::x_UpdateFrame(const TSeqPos offset, CCdregion& cdregion)
 {
     const TSeqPos frame_change = offset%3;
@@ -295,22 +358,8 @@ void CFeatTrim::x_UpdateFrame(const TSeqPos offset, CCdregion& cdregion)
         return;
     }
 
-    const TSeqPos old_frame = x_GetFrame(cdregion);
-    const TSeqPos new_frame = (old_frame + frame_change)%3; 
-
-    CCdregion::EFrame frame = CCdregion::eFrame_one;
-    switch(new_frame) {
-    case 1:
-        frame = CCdregion::eFrame_two;
-        break;
-    case 2:
-        frame = CCdregion::eFrame_three;
-        break;
-    default:
-        break;
-    }
     cdregion.ResetFrame();
-    cdregion.SetFrame(frame);
+    cdregion.SetFrame(x_GetNewFrame(offset, cdregion));
 }
 
 

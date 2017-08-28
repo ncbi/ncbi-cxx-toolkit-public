@@ -55,6 +55,19 @@ public:
         const CSeq_loc& loc,
         const CRange<TSeqPos>& range);
 
+    static CRef<CCode_break> Apply(
+        const CCode_break& code_break,
+        const CRange<TSeqPos>& range);
+
+    static CRef<CTrna_ext> Apply(
+        const CTrna_ext& trna_ext,
+        const CRange<TSeqPos>& range);
+
+    static CCdregion::EFrame GetCdsFrame(
+            const CSeq_feat& cds_feature,
+            const CRange<TSeqPos>& range);
+
+
 private:
     static void x_TrimLocation(TSeqPos from, TSeqPos to, 
         bool set_partial,
@@ -62,6 +75,8 @@ private:
     static TSeqPos x_GetStartOffset(const CSeq_feat& feat,
         TSeqPos from, TSeqPos to);
     static TSeqPos x_GetFrame(const CCdregion& cdregion);
+    static CCdregion::EFrame x_GetNewFrame(TSeqPos offset, const CCdregion& region);
+
     static void x_UpdateFrame(TSeqPos offset, CCdregion& cdregion);
     static void x_TrimTrnaExt(TSeqPos from, TSeqPos to, CTrna_ext& ext);
     static void x_TrimCodeBreak(TSeqPos from, TSeqPos to, CCode_break& cod_break);
