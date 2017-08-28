@@ -10,7 +10,7 @@ LIB = eutils_client xmlwrapp $(SEQ_LIBS) pub medline biblio general xser \
 
 LIBS = $(LIBXSLT_STATIC_LIBS) \
 	   $(LIBXML_STATIC_LIBS) \
-	   $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+	   $(NETWORK_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included LIBXML LIBXSLT
 
