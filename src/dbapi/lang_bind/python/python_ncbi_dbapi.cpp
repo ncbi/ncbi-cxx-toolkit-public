@@ -39,9 +39,11 @@
 #if PY_VERSION_HEX >= 0x02040000
 #  include "pythonpp/pythonpp_date.hpp"
 #endif
+#include "pythonpp/pythonpp_extdt.hpp"
 #include <structmember.h>
 
 #include <common/ncbi_package_ver.h>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <util/static_map.hpp>
@@ -50,11 +52,16 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include "../../ds_impl.hpp"
 
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
+
 #if defined(NCBI_OS_CYGWIN)
 #include <corelib/ncbicfg.h>
 #elif !defined(NCBI_OS_MSWIN)
 #include <dlfcn.h>
 #endif
+#include <cstdlib>
 
 //////////////////////////////////////////////////////////////////////////////
 // Compatibility macros
@@ -4377,9 +4384,118 @@ DatabaseErrorExt_dealloc(PyDatabaseErrorExtObject *self)
 // static PyObject* PyExc_DatabaseErrorExt = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
+class CPythonDiagHandler : public CDiagHandler
+{
+public:
+    CPythonDiagHandler();
+    void Post(const SDiagMessage& mess) override;
+
+private:
+    pythonpp::CModule          m_LoggingModule;
+    vector<pythonpp::CCalable> m_LoggingFunctions;
+};
+
+CPythonDiagHandler::CPythonDiagHandler()
+    : m_LoggingModule(PyImport_ImportModule("logging"))
+{
+    pythonpp::CDict d = m_LoggingModule.GetDict();
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Info);
+    pythonpp::CObject info = d.GetItem("info");
+    pythonpp::IncRefCount(info.Get());
+    m_LoggingFunctions.emplace_back(info);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Warning);
+    pythonpp::CObject warning = d.GetItem("warning");
+    pythonpp::IncRefCount(warning.Get());
+    m_LoggingFunctions.emplace_back(warning);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Error);
+    pythonpp::CObject error = d.GetItem("error");
+    pythonpp::IncRefCount(error.Get());
+    m_LoggingFunctions.emplace_back(error);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Critical);
+    pythonpp::CObject critical = d.GetItem("critical");
+    pythonpp::IncRefCount(critical.Get());
+    m_LoggingFunctions.emplace_back(critical);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Fatal);
+    m_LoggingFunctions.emplace_back(critical);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiag_Trace);
+    pythonpp::CObject debug = d.GetItem("debug");
+    pythonpp::IncRefCount(debug.Get());
+    m_LoggingFunctions.emplace_back(debug);
+
+    _ASSERT(m_LoggingFunctions.size() == eDiagSevMax + 1);
+}
+
+void CPythonDiagHandler::Post(const SDiagMessage& mess)
+{
+    pythonpp::CTuple args(2);
+    pythonpp::CString format("%s", 2);
+    pythonpp::CString buffer(mess.m_Buffer, mess.m_BufferLen);
+    if (mess.m_BufferLen > 0) {
+        string s;
+        mess.Write(s, SDiagMessage::fNoPrefix | SDiagMessage::fNoEndl);
+        // Don't duplicate severity/event.
+        s.erase(0, s.find_first_not_of(" ", s.find_first_of(" ") + 1));
+        // The applog module already reformats multiline messages, and will
+        // otherwise escape \v.  Raw logging does neither, but tolerates
+        // internal newlines, so always translate \v back rather than
+        // attempting to determine whether applog is in use.
+        buffer = NStr::Replace(s, "\v", "\n");
+    }
+    args.SetItem(0, format);
+    args.SetItem(1, buffer);
+    if (mess.m_ExtraArgs.empty()) {
+        m_LoggingFunctions[mess.m_Severity].Apply(args);
+    } else {
+        pythonpp::CDict kwargs, extra;
+        for (const auto& it : mess.m_ExtraArgs) {
+            extra.SetItem(pythonpp::CString(it.first),
+                          pythonpp::CString(it.second));
+        }
+        kwargs.SetItem(pythonpp::CString("extra", 5), extra);
+        if (mess.m_BufferLen == 0  &&  0) {
+            buffer = "-";
+        }
+        m_LoggingFunctions[mess.m_Severity].Apply(args, kwargs);        
+    }
+}
+
+static CDiagHandler* s_OrigDiagHandler;
+static bool          s_WasUsingOldPostFormat;
+void s_RestoreOrigDiagHandler(void)
+{
+    if (s_OrigDiagHandler != NULL) {
+        CDiagContext::SetOldPostFormat(s_WasUsingOldPostFormat);
+        SetDiagHandler(s_OrigDiagHandler, false);
+        s_OrigDiagHandler = NULL;
+    }
+}
+
 static
 PyObject* init_common(const string& module_name)
 {
+    if (CNcbiApplication::Instance() == NULL) {
+        s_OrigDiagHandler = GetDiagHandler(true);
+        SetDiagHandler(new CPythonDiagHandler);
+        // We use some of the C++ Toolkit's formatting code, and regardless
+        // need to ensure that "extra" lines actually go through.
+        s_WasUsingOldPostFormat = CDiagContext::IsSetOldPostFormat();
+        CDiagContext::SetOldPostFormat(false);
+#ifdef HAVE_LIBCONNEXT
+        // Kludge to avoid crashes at shutdown from logging within
+        // xconnect's atexit hooks, which can otherwise run before ours but
+        // after it has (quietly) become unsafe to call back into Python.
+        CDBLB_ServiceMapper dblb;
+        dblb.GetServer("localhost");
+#endif
+        atexit(s_RestoreOrigDiagHandler);
+    }
+    
     DBLB_INSTALL_DEFAULT();
 
     const char* rev_str = "$Revision$";
