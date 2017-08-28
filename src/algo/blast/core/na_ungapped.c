@@ -220,13 +220,16 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
     sum = 0;
     base = 3 - (s_off % COMPRESSION_RATIO);
 
+    /* X_current is used to break out of loop if score goes negative */
+    Int4 X_current=X;
     while (s < sf || (s == sf && base > remainder)) {
         ch = *s;
         if ((sum += matrix[*q++][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
             q_end = q;
             score += sum;
+	    X_current = (-score > X) ? -score : X;
             sum = 0;
-        } else if (sum < X)
+        } else if (sum < X_current)
             break;
         if (base == 0) {
             base = 3;
