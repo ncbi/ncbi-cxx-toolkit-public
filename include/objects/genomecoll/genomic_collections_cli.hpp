@@ -40,8 +40,6 @@
 #define INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GENOMIC_COLLECTIONS_CLI_HPP
 
 #include <objects/genomecoll/genomic_collections_cli_.hpp>
-#include <objects/genomecoll/GCClient_AttributeFlags.hpp>
-#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyBySequ.hpp>
 #include <objects/genomecoll/cached_assembly.hpp>
 
