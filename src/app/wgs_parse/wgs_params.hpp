@@ -52,7 +52,7 @@ namespace wgsparse
 
 enum EUpdateMode
 {
-    eNoUpdate,
+    eUpdateNew,
     eUpdatePartial,
     eUpdateAssembly,
     eUpdateScaffoldsNew,
@@ -123,6 +123,7 @@ public:
     bool IsKeepRefs() const;
     bool IsAccessionsSortedInFile() const;
     bool IsUpdateScaffoldsMode() const;
+    bool IsTaxonomyLookup() const;
 
     int GetFixTech() const;
 
@@ -138,7 +139,7 @@ public:
 
     char GetMajorAssemblyVersion() const;
     char GetMinorAssemblyVersion() const;
-    size_t GetAssemblyVersion() const;
+    int GetAssemblyVersion() const;
 
     const CDate_std& GetSubmissionDate() const;
 

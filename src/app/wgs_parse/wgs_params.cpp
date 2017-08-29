@@ -124,7 +124,7 @@ struct CParams_imp
         m_dblink_override(false),
         m_medline_lookup(false),
         m_enforce_new(false),
-        m_update_mode(eNoUpdate),
+        m_update_mode(eUpdateNew),
         m_scaffold_type(eRegularGenomic),
         m_sort_order(eUnsorted),
         m_input_type(eSeqSubmit),
@@ -277,6 +277,11 @@ bool CParams::IsUpdateScaffoldsMode() const
     return GetUpdateMode() == eUpdateScaffoldsNew || GetUpdateMode() == eUpdateScaffoldsUpd;
 }
 
+bool CParams::IsTaxonomyLookup() const
+{
+    return m_imp->m_taxonomy_lookup;
+}
+
 int CParams::GetFixTech() const
 {
     return m_imp->m_fix_tech;
@@ -364,7 +369,7 @@ char CParams::GetMinorAssemblyVersion() const
     return m_imp->m_accession[MINOR_VERSION_POS];
 }
 
-size_t CParams::GetAssemblyVersion() const
+int CParams::GetAssemblyVersion() const
 {
     return (GetMajorAssemblyVersion() - '0') * 10 + (GetMinorAssemblyVersion() - '0');
 }
@@ -805,7 +810,7 @@ bool SetParams(const CArgs& args)
                     "\", regardless of what is (or is not) currently in ID. Hopefully you have a very good reason to do this!");
     }
     else {
-        if (params->GetUpdateMode() == eNoUpdate && params->GetAssemblyVersion() != 1) {
+        if (params->GetUpdateMode() == eUpdateNew && params->GetAssemblyVersion() != 1) {
             ERR_POST_EX(0, 0, "Incorrect accession version provided on input: \"" << params_imp.m_accession << "\". Must be \"01\" for brand new projects.");
             return false;
         }
@@ -906,7 +911,7 @@ bool SetParams(const CArgs& args)
     params_imp.m_replace_dbname = args["r"].AsBoolean();
 
     params_imp.m_vdb_mode = args["U"].AsBoolean();
-    if (params_imp.m_vdb_mode && params_imp.m_update_mode != eUpdateAssembly && params_imp.m_update_mode != eNoUpdate) {
+    if (params_imp.m_vdb_mode && params_imp.m_update_mode != eUpdateAssembly && params_imp.m_update_mode != eUpdateNew) {
         ERR_POST_EX(0, 0, "VDB parsing mode (\"-U T\") can be used for brand new projects (\"-u 0\") or reassemblies (\"-u 2\") only.");
         return false;
     }

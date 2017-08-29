@@ -143,4 +143,30 @@ bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot)
     return ret;
 }
 
+TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice)
+{
+    // The map below links an id type with a text id setter
+    static const map<CSeq_id::E_Choice, TSetSeqIdFunc> SET_TEXT_ID = {
+        { CSeq_id::e_Ddbj, &CSeq_id::SetDdbj },
+        { CSeq_id::e_Embl, &CSeq_id::SetEmbl },
+        { CSeq_id::e_Genbank, &CSeq_id::SetGenbank },
+        { CSeq_id::e_Tpd, &CSeq_id::SetTpd },
+        { CSeq_id::e_Tpg, &CSeq_id::SetTpg },
+        { CSeq_id::e_Other, &CSeq_id::SetOther }
+    };
+
+    auto& set_fun = SET_TEXT_ID.find(choice);
+    if (set_fun == SET_TEXT_ID.end()) {
+        return nullptr;
+    }
+
+    return set_fun->second;
+
+}
+
+bool HasLineage(const string& lineage_str, const string& lineage)
+{
+    return NStr::FindCase(lineage_str, lineage) != NPOS;
+}
+
 }

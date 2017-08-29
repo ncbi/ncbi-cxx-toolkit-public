@@ -43,12 +43,16 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Auth_list.hpp>
 
 #include "wgs_params.hpp"
 #include "wgs_master.hpp"
@@ -56,6 +60,7 @@
 #include "wgs_asn.hpp"
 #include "wgs_tax.hpp"
 #include "wgs_seqentryinfo.hpp"
+#include "wgs_med.hpp"
 
 
 namespace wgsparse
@@ -125,12 +130,7 @@ static CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type)
     return ret;
 }
 
-struct CPubDescription
-{
-    list<CRef<CPubdesc>> m_pubs;
-};
-
-static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescription>& common_pubs)
+static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs)
 {
     const CSeq_descr* descrs = nullptr;
     if (!GetDescr(entry, descrs)) {
@@ -169,12 +169,20 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
 
     if (common_pubs.empty()) {
 
-        common_pubs.push_front(CPubDescription());
-        common_pubs.front().m_pubs.swap(pubs);
+        for (auto& pub : pubs) {
+            common_pubs.push_front(CPubDescriptionInfo());
+            CPubDescriptionInfo& pubdescr_info = common_pubs.front();
+
+            pubdescr_info.m_pubdescr_synonyms.push_back(pub);
+            pubdescr_info.m_pubdescr_lookup = pub;
+
+            if (!IsPubdescContainsSub(*pub)) {
+                pubdescr_info.m_pmid = SinglePubLookup(pubdescr_info.m_pubdescr_lookup);
+            }
+        }
 
         // TODO
     }
-
     else {
         // TODO
     }
@@ -213,68 +221,6 @@ static void ProcessComment(const CSeqdesc& descr, set<string>& comments)
         comments.insert(descr.GetComment());
     }
 }
-
-
-enum EDBLinkProblem
-{
-    eDblinkNoProblem,
-    eDblinkNoDblink = 1 << 0,
-    eDblinkDifferentDblink = 1 << 1,
-    eDblinkAllProblems = eDblinkNoDblink | eDblinkDifferentDblink
-};
-
-struct CMasterInfo
-{
-    size_t m_num_of_pubs = 0;
-
-    bool m_common_comments_not_set;
-    bool m_common_structured_comments_not_set;
-    bool m_has_targeted_keyword;
-    bool m_has_gmi_keyword;
-    bool m_has_genome_project_id;
-
-    list<CPubDescription> m_common_pubs;
-    set<string> m_common_comments;
-    set<string> m_common_structured_comments;
-    CRef<CBioSource> m_biosource;
-    list<CRef<COrg_ref>> m_org_refs;
-
-    pair<string, string> m_dblink_empty_info; // filename and bioseq ID of the first sequence with lack of DBLink
-    pair<string, string> m_dblink_diff_info;  // filename and bioseq ID of the first sequence with different DBLink
-    CRef<CUser_object> m_dblink;
-    int m_dblink_state;
-
-    int m_num_of_entries;
-
-    CMasterInfo() :
-        m_num_of_pubs(0),
-        m_common_comments_not_set(true),
-        m_common_structured_comments_not_set(true),
-        m_has_targeted_keyword(false),
-        m_has_gmi_keyword(false),
-        m_has_genome_project_id(false),
-        m_dblink_state(eDblinkNoProblem),
-        m_num_of_entries(0)
-    {}
-
-    void SetDblinkEmpty(const string& file, const string& id)
-    {
-        m_dblink_state |= eDblinkNoDblink;
-        if (m_dblink_empty_info.first.empty()) {
-            m_dblink_empty_info.first = file;
-            m_dblink_empty_info.second = id;
-        }
-    }
-
-    void SetDblinkDifferent(const string& file, const string& id)
-    {
-        m_dblink_state |= eDblinkDifferentDblink;
-        if (m_dblink_diff_info.first.empty()) {
-            m_dblink_diff_info.first = file;
-            m_dblink_diff_info.second = id;
-        }
-    }
-};
 
 
 static void CheckComments(const CSeq_entry& entry, CMasterInfo& info)
@@ -500,19 +446,381 @@ static bool SubmissionDiffers(const string& file, bool same_submit)
     return same_submit;
 }
 
+static void SortOrgRef(COrg_ref& org_ref)
+{
+    if (org_ref.IsSetDb()) {
+
+        COrg_ref::TDb& db_tags = org_ref.SetDb();
+        sort(db_tags.begin(), db_tags.end(), [](const CRef<CDbtag>& tag1, const CRef<CDbtag>& tag2)
+            {
+                if (tag1.Empty() || !tag1->IsSetDb()) {
+                    return true;
+                }
+
+                if (tag2.Empty() || !tag2->IsSetDb()) {
+                    return false;
+                }
+
+                return tag1->GetDb() < tag2->GetDb();
+            });
+    }
+
+    if (org_ref.IsSetMod()) {
+        COrg_ref::TMod& mods = org_ref.SetMod();
+        mods.sort();
+    }
+}
+
+static bool CheckSameOrgRefs(list<COrgRefInfo>& org_refs)
+{
+    if (org_refs.empty()) {
+        return true;
+    }
+
+    auto& cur_org_ref = org_refs.begin();
+    CRef<COrg_ref>& first_org_ref = cur_org_ref->m_org_ref;
+    SortOrgRef(*first_org_ref);
+
+    for (++cur_org_ref; cur_org_ref != org_refs.end(); ++cur_org_ref) {
+        CRef<COrg_ref>& next_org_ref = cur_org_ref->m_org_ref;
+        SortOrgRef(*next_org_ref);
+
+        if (!first_org_ref->Equals(*next_org_ref)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool DBLinkProblemReport(const CMasterInfo& info)
+{
+    bool reject = false;
+    if (info.m_dblink.NotEmpty() && info.m_dblink_state != eDblinkNoProblem) {
+        if (info.m_dblink_state & eDblinkDifferentDblink) {
+            ERR_POST_EX(0, 0, Critical << "The files being processed contain DBLink User-objects that are not identical in content. The first difference was encountered at sequence \"" <<
+                        info.m_dblink_diff_info.first << "\" of input file \"" << info.m_dblink_diff_info.second << "\".");
+            reject = true;
+        }
+        if (info.m_dblink_state & eDblinkNoDblink) {
+            string err_msg = "The files being processed contain some records that lack DBLink User-objects. The first record that lacks a DBLink was encountered at sequence \"" +
+                info.m_dblink_empty_info.first + "\" of input file \"" + info.m_dblink_empty_info.second + "\". ";
+
+            if (GetParams().IsDblinkOverride()) {
+                ERR_POST_EX(0, 0, Warning << err_msg << "Continue anyway.");
+            }
+            else {
+                ERR_POST_EX(0, 0, Critical << err_msg << "Rejecting the whole project.");
+                reject = true;
+            }
+        }
+    }
+    return reject;
+}
+
+static void CheckMasterDblink(const CMasterInfo& info)
+{
+    // TODO
+}
+
+static const size_t LENGTH_NOT_SET = -1;
+static const size_t MAX_SEVEN_DIGITS_NUM = 9999999;
+static const size_t MAX_SIX_DIGITS_NUM = 999999;
+
+static size_t GetMaxAccessionLen(int accession_num)
+{
+    size_t max_accession_len = 6;
+    if (accession_num > MAX_SEVEN_DIGITS_NUM) {
+        max_accession_len = 8;
+    }
+    else if (accession_num > MAX_SIX_DIGITS_NUM) {
+        max_accession_len = 7;
+    }
+
+    return max_accession_len;
+}
+
+static string GetAccessionValue(size_t val_len, int val)
+{
+    CNcbiOstrstream sstream;
+    sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << '\0';
+    return sstream.str();
+}
+
+static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_len)
+{
+    size_t max_accession_len = GetMaxAccessionLen(last_accession_num);
+
+    if (accession_len == LENGTH_NOT_SET) {
+        accession_len = max_accession_len;
+    }
+
+    CRef<CSeq_id> ret;
+    if (accession_len != max_accession_len) {
+
+        CNcbiStrstream msg;
+        msg << "Incorrect format for accessions, given the total number of contigs in the project: \"N+2+" << accession_len << "\" was used, but only \"N+2+" << max_accession_len << "\" is needed.";
+
+        if (GetParams().GetSource() == eNCBI) {
+            ERR_POST_EX(0, 0, Critical << msg.str());
+            return ret;
+        }
+
+        ERR_POST_EX(0, 0, Info << msg.str());
+    }
+
+    string id_num(accession_len + 2, '0');
+
+    CRef<CTextseq_id> text_id(new CTextseq_id);
+    text_id->SetAccession(GetParams().GetIdPrefix() + id_num);
+
+    id_num = GetAccessionValue(accession_len, 0);
+    text_id->SetName(GetParams().GetIdPrefix() + id_num);
+
+    text_id->SetVersion(GetParams().GetAssemblyVersion());
+
+    auto set_fun = FindSetTextSeqIdFunc(GetParams().GetIdChoice());
+    _ASSERT(set_fun != nullptr && "There should be a valid SetTextId function. Validate the ID choice.");
+
+    if (set_fun == nullptr) {
+        return ret;
+    }
+
+    ret.Reset(new CSeq_id);
+    (ret->*set_fun)(*text_id);
+
+    return ret;
+}
+
+static void SetMolInfo(CBioseq& bioseq)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    CMolInfo& mol_info = descr->SetMolinfo();
+
+    if (GetParams().IsTsa()) {
+
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
+        // TODO
+    }
+    else {
+
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
+
+        CMolInfo::ETech tech = GetParams().IsTls() ? CMolInfo::eTech_targeted : CMolInfo::eTech_wgs;
+        mol_info.SetTech(tech);
+        mol_info.SetBiomol(CMolInfo::eBiomol_genomic);
+    }
+
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static void CreateCitSub(CBioseq& bioseq, CCit_sub& cit_sub)
+{
+    CRef<CPub> pub(new CPub);
+    pub->SetSub().Assign(cit_sub);
+
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    CPubdesc& pubdescr = descr->SetPub();
+    pubdescr.SetPub().Set().push_back(pub);
+
+    descr->SetPub().Assign(pubdescr);
+    bioseq.SetDescr().Set().push_back(descr);
+
+    if (cit_sub.IsSetImp()) {
+        if (!cit_sub.IsSetDate() && cit_sub.GetImp().IsSetDate()) {
+            cit_sub.SetDate().Assign(cit_sub.GetImp().GetDate());
+        }
+        cit_sub.ResetImp();
+    }
+}
+
+static void AddContactInfo(CCit_sub& cit_sub, const CContact_info& contact_info)
+{
+    if (cit_sub.IsSetAuthors() && cit_sub.GetAuthors().IsSetAffil()) {
+        return;
+    }
+
+    // TODO
+}
+
+static void CreatePub(CBioseq& bioseq, const CPubdesc& pubdescr)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    descr->SetPub().Assign(pubdescr);
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static bool IsResetGenome()
+{
+    return GetParams().GetSource() == eNCBI ||
+        GetParams().GetUpdateMode() != eUpdateAssembly &&
+        GetParams().GetUpdateMode() != eUpdateNew &&
+        GetParams().GetUpdateMode() != eUpdateFull;
+}
+
+static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<COrgRefInfo>& org_refs)
+{
+
+    bool is_tax_lookup = GetParams().IsTaxonomyLookup();
+    if (!PerformTaxLookup(biosource, org_refs, is_tax_lookup) && is_tax_lookup) {
+        ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed on Master Bioseq. Cannot proceed.");
+        return false;
+    }
+
+    if (IsResetGenome()) {
+        biosource.ResetGenome();
+    }
+
+    // TODO
+
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    descr->SetSource().Assign(biosource);
+    bioseq.SetDescr().Set().push_back(descr);
+
+    return true;
+}
+
+static void AddField(CUser_object& user_obj, const string& label, const string& val)
+{
+    CRef<CUser_field> field(new CUser_field);
+    field->SetLabel().SetStr(label);
+    field->SetString(val);
+
+    user_obj.SetData().push_back(field);
+}
+
+static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
+{
+    CRef<CUser_object> user_obj(new CUser_object);
+
+    // TODO update_extra_contigs
+
+    CObject_id& obj_id = user_obj->SetType();
+
+    static const string ACCESSION_FIRST("_accession_first");
+    static const string ACCESSION_LAST("_accession_last");
+
+    string accession_first_label,
+        accession_last_label,
+        accession_first_val,
+        accession_last_val;
+
+    int first = 1,
+        last = info.m_num_of_entries;
+
+    if (GetParams().IsTsa()) {
+        obj_id.SetStr("TSA-RNA-List");
+        accession_first_label = "TSA";
+        accession_last_label = "TSA";
+    }
+    else if (GetParams().IsTls()) {
+        obj_id.SetStr("TLSProjects");
+        accession_first_label = "TLS";
+        accession_last_label = "TLS";
+    }
+    else {
+        obj_id.SetStr("WGSProjects");
+        accession_first_label = "WGS";
+        accession_last_label = "WGS";
+    }
+
+    accession_first_label += ACCESSION_FIRST;
+    accession_last_label += ACCESSION_LAST;
+
+    size_t max_accession_len = GetMaxAccessionLen(last);
+    accession_first_val = GetAccessionValue(max_accession_len, first);
+    accession_last_val = GetAccessionValue(max_accession_len, last);
+
+    AddField(*user_obj, accession_first_label, GetParams().GetIdPrefix() + accession_first_val);
+    AddField(*user_obj, accession_last_label, GetParams().GetIdPrefix() + accession_last_val);
+
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    descr->SetUser().Assign(*user_obj);
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info)
+{
+    CRef<CBioseq> bioseq(new CBioseq);
+    CRef<CSeq_entry> ret;
+
+    int last_accession_num = info.m_num_of_entries;
+    size_t accession_len = LENGTH_NOT_SET;
+
+    CRef<CSeq_id> id = CreateAccession(last_accession_num, accession_len);
+    if (id.Empty()) {
+        return ret;
+    }
+
+    bioseq->SetId().push_back(id);
+    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
+    bioseq->SetInst().SetLength(info.m_num_of_entries);
+
+    SetMolInfo(*bioseq);
+
+    // TODO
+
+    if (cit_sub.NotEmpty()) {
+        CreateCitSub(*bioseq, *cit_sub);
+        if (contact_info.NotEmpty()) {
+            AddContactInfo(*cit_sub, *contact_info);
+        }
+    }
+
+    // TODO
+
+    for (auto& pubdescr : info.m_common_pubs) {
+        CreatePub(*bioseq, *pubdescr.m_pubdescr_lookup);
+    }
+
+    // TODO
+    if (info.m_biosource.NotEmpty()) {
+        if (!CreateBiosource(*bioseq, *info.m_biosource, info.m_org_refs)) {
+            return ret;
+        }
+    }
+
+    // TODO dates
+
+    if (info.m_num_of_entries) {
+        CreateUserObject(info, *bioseq);
+    }
+
+    // TODO dblink
+
+    ret.Reset(new CSeq_entry);
+    ret->SetSeq(*bioseq);
+    return ret;
+}
+
+static bool IsDupIds(const list<string>& ids)
+{
+    set<string> unique_ids;
+    for (auto& id : ids) {
+        if (!unique_ids.insert(id).second) {
+
+            ERR_POST_EX(0, 0, Error << "Found duplicated general or local id: \"" << id << "\".");
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static bool NeedToGetAccessionPrefix() {
 
     return GetParams().IsUpdateScaffoldsMode() && GetParams().IsAccessionAssigned() && GetParams().GetScaffoldPrefix().empty();
 }
 
-bool CreateMasterBioseqWithChecks()
+bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
 
     bool ret = true,
          same_submit = true;
 
-    CMasterInfo master_info;
     CRef<CContact_info> master_contact_info;
     CRef<CCit_sub> master_cit_sub;
 
@@ -622,7 +930,7 @@ bool CreateMasterBioseqWithChecks()
 
                     CSeqEntryInfo info;
                     if (!CheckSeqEntry(*entry, file, info, common_info)) {
-                        // TODO reject ///////widp->reject = TRUE;
+                        master_info.m_reject = true;
                     }
                     else if (GetParams().IsTsa() && GetParams().GetFixTech() == eNoFix && info.m_biomol != CMolInfo::eBiomol_transcribed_RNA) {
 
@@ -656,7 +964,7 @@ bool CreateMasterBioseqWithChecks()
                     }
 
                     if (!CheckBioSource(*entry, master_info, file)) {
-                        ;// TODO widp->reject = TRUE;
+                        master_info.m_reject = true;
                     }
 
                     if (master_info.m_dblink_state != eDblinkAllProblems) {
@@ -720,6 +1028,8 @@ bool CreateMasterBioseqWithChecks()
                     if (GetParams().IsUpdateScaffoldsMode()) {
                         // TODO
                     }
+
+                    master_info.m_object_ids.splice(master_info.m_object_ids.end(), info.m_object_ids);
                 }
             }
         }
@@ -729,6 +1039,48 @@ bool CreateMasterBioseqWithChecks()
         }
     }
 
+    if (GetParams().IsTaxonomyLookup()) {
+        LookupCommonOrgRefs(master_info.m_org_refs);
+    }
+    else {
+        for (auto& org_ref_info : master_info.m_org_refs) {
+            org_ref_info.m_org_ref_after_lookup = org_ref_info.m_org_ref;
+        }
+    }
+
+    master_info.m_same_org = CheckSameOrgRefs(master_info.m_org_refs);
+
+    if (same_submit /*&&TODO*/) {
+        //TODO
+    }
+
+    master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
+
+    if (GetParams().IsAccessionAssigned()) {
+        // TODO
+    }
+
+    if (IsDupIds(master_info.m_object_ids)) {
+        master_info.m_reject = true;
+    }
+
+    // TODO lens ids
+
+    // TODO some complicated error condition
+
+    // TODO...
+
+    CheckMasterDblink(master_info);
+
+    // TODO ...
+
+    if (GetParams().IsUpdateScaffoldsMode()) {
+    }
+    else {
+        master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info);
+
+        // TODO strip authors
+    }
 
     return ret;
 }

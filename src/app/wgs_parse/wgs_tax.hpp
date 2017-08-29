@@ -53,7 +53,11 @@ END_NCBI_NAMESPACE;
 namespace wgsparse
 {
 
-void CollectOrgRefs(const CSeq_entry& entry, list<CRef<COrg_ref>>& org_refs);
+struct COrgRefInfo;
+
+void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs);
+void LookupCommonOrgRefs(list<COrgRefInfo>& org_refs);
+bool PerformTaxLookup(CBioSource& biosource, const list<COrgRefInfo>& org_refs, bool is_tax_lookup);
 
 }
 

@@ -41,7 +41,6 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
@@ -486,11 +485,6 @@ bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first)
     }
 
     return ret;
-}
-
-static bool HasLineage(const string& lineage_str, const string& lineage)
-{
-    return NStr::FindCase(lineage_str, lineage) != NPOS;
 }
 
 static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)

@@ -35,6 +35,10 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/User_object.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -141,7 +145,98 @@ struct CSeqEntryCommonInfo
         m_nuc_warn(false),
         m_prot_warn(false)
     {}
+
+    bool IsReplaceDbname() const
+    {
+        return !m_nuc_warn && !m_prot_warn;
+    }
 };
+
+enum EDBLinkProblem
+{
+    eDblinkNoProblem,
+    eDblinkNoDblink = 1 << 0,
+    eDblinkDifferentDblink = 1 << 1,
+    eDblinkAllProblems = eDblinkNoDblink | eDblinkDifferentDblink
+};
+
+struct CPubDescriptionInfo
+{
+    list<CRef<CPubdesc>> m_pubdescr_synonyms;
+    CRef<CPubdesc> m_pubdescr_lookup;
+    int m_pmid;
+
+    CPubDescriptionInfo() :
+        m_pmid(0)
+    {}
+};
+
+struct COrgRefInfo
+{
+    CRef<COrg_ref> m_org_ref,
+        m_org_ref_after_lookup;
+};
+
+struct CMasterInfo
+{
+    size_t m_num_of_pubs;
+
+    bool m_common_comments_not_set;
+    bool m_common_structured_comments_not_set;
+    bool m_has_targeted_keyword;
+    bool m_has_gmi_keyword;
+    bool m_has_genome_project_id;
+    bool m_same_org;
+    bool m_reject;
+
+    list<CPubDescriptionInfo> m_common_pubs;
+    set<string> m_common_comments;
+    set<string> m_common_structured_comments;
+    CRef<CBioSource> m_biosource;
+    list<COrgRefInfo> m_org_refs;
+    list<string> m_object_ids;
+
+    pair<string, string> m_dblink_empty_info; // filename and bioseq ID of the first sequence with lack of DBLink
+    pair<string, string> m_dblink_diff_info;  // filename and bioseq ID of the first sequence with different DBLink
+    CRef<CUser_object> m_dblink;
+    int m_dblink_state;
+
+    CRef<CSeq_entry> m_master_bioseq;
+
+    int m_num_of_entries;
+
+    CMasterInfo() :
+        m_num_of_pubs(0),
+        m_common_comments_not_set(true),
+        m_common_structured_comments_not_set(true),
+        m_has_targeted_keyword(false),
+        m_has_gmi_keyword(false),
+        m_has_genome_project_id(false),
+        m_same_org(false),
+        m_reject(false),
+        m_dblink_state(eDblinkNoProblem),
+        m_num_of_entries(0)
+    {}
+
+    void SetDblinkEmpty(const string& file, const string& id)
+    {
+        m_dblink_state |= eDblinkNoDblink;
+        if (m_dblink_empty_info.first.empty()) {
+            m_dblink_empty_info.first = file;
+            m_dblink_empty_info.second = id;
+        }
+    }
+
+    void SetDblinkDifferent(const string& file, const string& id)
+    {
+        m_dblink_state |= eDblinkDifferentDblink;
+        if (m_dblink_diff_info.first.empty()) {
+            m_dblink_diff_info.first = file;
+            m_dblink_diff_info.second = id;
+        }
+    }
+};
+
 
 }
 

@@ -36,7 +36,8 @@
 namespace wgsparse
 {
 
-bool CreateMasterBioseqWithChecks();
+struct CMasterInfo;
+bool CreateMasterBioseqWithChecks(CMasterInfo& master_info);
 
 }
 

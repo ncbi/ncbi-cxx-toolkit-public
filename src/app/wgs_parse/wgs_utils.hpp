@@ -44,6 +44,9 @@ USING_SCOPE(objects);
 namespace wgsparse
 {
 
+typedef void (CSeq_id::*TSetSeqIdFunc)(CTextseq_id&);
+TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice);
+
 enum EInputType
 {
     eSeqSubmit,
@@ -61,6 +64,9 @@ string GetSeqIdStr(const CBioseq& bioseq);
 
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs);
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot);
+
+bool HasLineage(const string& lineage_str, const string& lineage);
+
 
 CScope& GetScope();
 

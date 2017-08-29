@@ -36,6 +36,7 @@
 #include <objects/seq/Seq_inst.hpp>
 
 #include "wgs_id1.hpp"
+#include "wgs_utils.hpp"
 
 namespace wgsparse
 {
@@ -49,24 +50,13 @@ CRef<CSeq_entry> GetMasterEntryById(const string& prefix, CSeq_id::E_Choice choi
     CTextseq_id text_id;
     text_id.SetAccession(accession);
 
-    // The map below links an id type with a text id setter
-    static const map<CSeq_id::E_Choice, void (CSeq_id::*)(CTextseq_id&)> SET_TEXT_ID = {
-        { CSeq_id::e_Ddbj, &CSeq_id::SetDdbj },
-        { CSeq_id::e_Embl, &CSeq_id::SetEmbl },
-        { CSeq_id::e_Genbank, &CSeq_id::SetGenbank },
-        { CSeq_id::e_Tpd, &CSeq_id::SetTpd },
-        { CSeq_id::e_Tpg, &CSeq_id::SetTpg },
-        { CSeq_id::e_Other, &CSeq_id::SetOther }
-    };
-
-    CSeq_id id;
-
-    auto& set_fun = SET_TEXT_ID.find(choice);
-    if (set_fun == SET_TEXT_ID.end()) {
+    auto set_fun = FindSetTextSeqIdFunc(choice);
+    if (set_fun == nullptr) {
         return ret;
     }
 
-    (id.*set_fun->second)(text_id);
+    CSeq_id id;
+    (id.*set_fun)(text_id);
 
     CID1Client id1;
 

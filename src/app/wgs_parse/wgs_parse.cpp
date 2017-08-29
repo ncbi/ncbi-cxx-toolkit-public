@@ -35,10 +35,15 @@
 
 #include <corelib/ncbiapp.hpp>
 
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "wgs_params.hpp"
 #include "wgs_id1.hpp"
 #include "wgs_master.hpp"
+#include "wgs_seqentryinfo.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -179,6 +184,71 @@ CRef<CSeq_entry> CWGSParseApp::GetMasterEntry() const
     return ret;
 }
 
+static bool GetPmid(const CPubdesc& pubdescr, int& pmid)
+{
+    if (pubdescr.IsSetPub()) {
+
+        for (auto& pub : pubdescr.GetPub().Get()) {
+            if (pub->IsPmid()) {
+                pmid = pub->GetPmid();
+                return true;;
+            }
+        }
+    }
+    return false;
+}
+
+static void RemoveDupPubs(CSeq_descr& descrs)
+{
+    if (descrs.IsSet()) {
+
+        // Removes pubs with the same pmid
+        set<int> pmids;
+        CSeq_descr::Tdata& descr_list = descrs.Set();
+        for (auto& descr = descr_list.begin(); descr != descr_list.end();) {
+
+            bool increment = true;
+            if ((*descr)->IsPub()) {
+
+                int pmid = 0;
+                if (GetPmid((*descr)->GetPub(), pmid)) {
+                    if (!pmids.insert(pmid).second) {
+                        descr = descr_list.erase(descr);
+                        increment = false;
+                    }
+                }
+            }
+            
+            if (increment) {
+                ++descr;
+            }
+        }
+
+        // Remove duplicate pubs
+        CSeq_descr::Tdata pubs;
+        for (auto& descr = descr_list.begin(); descr != descr_list.end();) {
+
+            bool increment = true;
+            if ((*descr)->IsPub()) {
+
+                auto& dup = find_if(pubs.begin(), pubs.end(), [&descr](const CRef<CSeqdesc>& cur_pub) { return cur_pub->Equals(**descr); });
+                if (dup != pubs.end()) {
+
+                    descr = descr_list.erase(descr);
+                    increment = false;
+                }
+                else {
+                    pubs.push_back(*descr);
+                }
+            }
+
+            if (increment) {
+                ++descr;
+            }
+        }
+    }
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -187,7 +257,7 @@ int CWGSParseApp::Run(void)
     if (SetParams(GetArgs())) {
 
         CRef<CSeq_entry> master_entry = GetMasterEntry();
-        if (GetParams().GetUpdateMode() == eNoUpdate) {
+        if (GetParams().GetUpdateMode() == eUpdateNew) {
             if (master_entry.NotEmpty()) {
                 if (!GetParams().EnforceNew()) {
                     ERR_POST_EX(0, 0, "Incorrect parsing mode set in command line: this is not a brand new project.");
@@ -200,8 +270,8 @@ int CWGSParseApp::Run(void)
             // TODO - CR put some error 
         }
 
-
-        if (!CreateMasterBioseqWithChecks()) {
+        CMasterInfo master_info;
+        if (!CreateMasterBioseqWithChecks(master_info)) {
 
             switch (GetParams().GetUpdateMode()) {
                 case eUpdatePartial:
@@ -218,6 +288,16 @@ int CWGSParseApp::Run(void)
             return ERROR_RET;
         }
 
+        // TODO ...
+
+        CCleanup cleanup;
+        cleanup.ExtendedCleanup(*master_info.m_master_bioseq);
+
+        // TODO ...
+
+        if (!master_info.m_master_bioseq->GetSeq().IsNa()) {
+            RemoveDupPubs(master_info.m_master_bioseq->SetDescr());
+        }
     }
 
     return 0;
