@@ -862,14 +862,19 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
             pId->IsTpd() ||
             pId->IsTpe() ||
             pId->IsTpg()) {
-            pId->WriteAsFasta(ostream);
+            //pId->WriteAsFasta(ostream);
+            ostream << pId->GetSeqIdString(true);
+
             id_done = true;
             break;
         }
     }
 
     if (!id_done) {
-        CSeq_id::WriteAsFasta(ostream, bioseq);
+        CSeq_id_Handle idh = sequence::GetId(bioseq, sequence::eGetId_Best);
+        if (idh) {
+            ostream << idh.GetSeqId()->GetSeqIdString(true);
+        }
     }
     ostream << " " << score_header << "\n";
 }
