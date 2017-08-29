@@ -2774,18 +2774,30 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+
+    static set<string> gff3_attributes = 
+    {"ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
+     "Note", "Dbxref", "Ontology_term", "Is_circular"};
+    
+
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     const CSeq_feat::TQual& quals = mf.GetQual();
     for (const auto& qual: quals) {
         if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
             continue;
         }
-        const string& key = qual->GetQual();
+        string key = qual->GetQual();
         if (key == "SO_type") { // RW-469
             continue;
         }
+
+        if (isupper(key.front()) && 
+            gff3_attributes.find(key) == gff3_attributes.end()) {
+            NStr::ToLower(key);
+        }
+
         const string& value = qual->GetVal();
-        CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
+        //CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
         //for now, retain all random junk:
         //if (!CSeqFeatData::IsLegalQualifier(subtype, equal)) {
         //    continue;
