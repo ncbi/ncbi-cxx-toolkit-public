@@ -746,10 +746,10 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
         }
 
         {{
-            cerr << "Unique IDs: " << QueryIDH.AsString() << " and " << SubjtIDH.AsString() << endl;
+            //cerr << "Unique IDs: " << QueryIDH.AsString() << " and " << SubjtIDH.AsString() << endl;
             TAlignVec Unique, Other;
             x_SplitGlobalUnique(Aligns, Unique, Other);
-            cerr << " Unique Split: " << Aligns.size() << " into " << Unique.size() << " and " << Other.size() << endl;
+            //cerr << " Unique Split: " << Aligns.size() << " into " << Unique.size() << " and " << Other.size() << endl;
             // Merge the Uniques
             // Then add the result to Others, 
             // Replace the Input , proceed
@@ -757,7 +757,7 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
                 list<CRef<CSeq_align> > Ins, Outs;
                 Ins.insert(Ins.end(), Unique.begin(), Unique.end());
                 Merge_AllAtOnce(Ins, Outs);
-                cerr << "  Unique Merged " << Ins.size() << " to " << Outs.size() << endl;
+                //cerr << "  Unique Merged " << Ins.size() << " to " << Outs.size() << endl;
                 ITERATE(list<CRef<CSeq_align> >, OutIter, Outs) {
                     Other.push_back(*OutIter);
                 }
