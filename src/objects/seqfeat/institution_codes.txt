@@ -3363,6 +3363,7 @@ KUBL	s	Yoshida College, Biological Laboratory
 KUEC	s	Kyushu University Entomology Collection		
 KUEL	s	Kyushu University, Entomology Laboratory		
 KUFC	c	Kasetsart University Fungus Collection		
+KUFF	s	Department of Forest Biology, Faculty of Forestry at Kasetsart University		
 KUFS	h	Kabul University		
 KUH	s	University of Karachi, Botany Department		
 KUHE	s	Kyoto University, Graduate School of Human and Environmental Studies		

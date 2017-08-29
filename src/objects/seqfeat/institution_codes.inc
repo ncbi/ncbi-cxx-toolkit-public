@@ -3396,6 +3396,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KUEC\ts\tKyushu University Entomology Collection\t\t",
 "KUEL\ts\tKyushu University, Entomology Laboratory\t\t",
 "KUFC\tc\tKasetsart University Fungus Collection\t\t",
+"KUFF\ts\tDepartment of Forest Biology, Faculty of Forestry at Kasetsart University\t\t",
 "KUFS\th\tKabul University\t\t",
 "KUH\ts\tUniversity of Karachi, Botany Department\t\t",
 "KUHE\ts\tKyoto University, Graduate School of Human and Environmental Studies\t\t",
