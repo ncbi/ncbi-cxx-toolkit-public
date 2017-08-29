@@ -1539,17 +1539,6 @@ bool CGff3Writer::xAssignFeatureType(
 {
     //rw-340: attempt to use so_map API:
     const CSeq_feat& feature = mf.GetOriginalFeature();
-
-    return xAssignFeatureType(record, feature);
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureType(
-        CGffFeatureRecord& record,
-        const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
     string so_type;
     if (CSoMap::FeatureToSoType(feature, so_type)) {
         record.SetType(so_type);
@@ -3178,7 +3167,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
-        string cdsId = xNextCdsId(feature);
+        string cdsId = xNextCdsId(mf);
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pExon(
@@ -3459,53 +3448,23 @@ string CGff3Writer::xNextGenericId(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    return xNextGenericId(mf.GetMappedFeature());
-/*
     if (mf) {
         string retainedId = mf.GetNamedQual("ID");
         if (!retainedId.empty()) {
             return retainedId;
         }
     }
-    return string("id") + NStr::UIntToString(m_uPendingGenericId++);
-    */
-}
-
-
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextGenericId(
-    const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
-    string retainedId = feature.GetNamedQual("ID");
-    if (!NStr::IsBlank(retainedId)) {
-        return retainedId;
-    }
     return xNextGenericId();
 }
+
 
 //  ----------------------------------------------------------------------------
 string CGff3Writer::xNextGeneId(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    return xNextGeneId(mf.GetMappedFeature());
-/*
     string retainedId = mf.GetNamedQual("ID");
     if (!retainedId.empty()) {
-        return retainedId;
-    }
-    return (string("gene") + NStr::UIntToString(m_uPendingGeneId++));
-    */
-}
-
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextGeneId(
-    const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
-    string retainedId = feature.GetNamedQual("ID");
-    if (!NStr::IsBlank(retainedId)) {
         return retainedId;
     }
     return (string("gene") + NStr::UIntToString(m_uPendingGeneId++));
@@ -3519,32 +3478,19 @@ string CGff3Writer::xNextAlignId()
     return string("aln") + NStr::UIntToString(m_uPendingAlignId++);
 }
 
+
 //  ----------------------------------------------------------------------------
 string CGff3Writer::xNextCdsId(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    return xNextCdsId(mf.GetMappedFeature());
-/*
     string retainedId = mf.GetNamedQual("ID");
     if (!retainedId.empty()) {
         return retainedId;
     }
     return (string("cds") + NStr::UIntToString(m_uPendingCdsId++));
-*/
 }
 
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextCdsId(
-    const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
-    string retainedId = feature.GetNamedQual("ID");
-    if (!NStr::IsBlank(retainedId)) {
-        return retainedId;
-    }
-    return (string("cds") + NStr::UIntToString(m_uPendingCdsId++));
-}
 
 //  ----------------------------------------------------------------------------
 string CGff3Writer::xNextTrnaId(
@@ -3552,27 +3498,13 @@ string CGff3Writer::xNextTrnaId(
 //  ----------------------------------------------------------------------------
 {
 
-    return xNextTrnaId(mf.GetMappedFeature());
-/*
     string retainedId = mf.GetNamedQual("ID");
     if (!retainedId.empty()) {
         return retainedId;
     }
     return (string("rna") + NStr::UIntToString(m_uPendingTrnaId++));
-    */
 }
 
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextTrnaId(
-    const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
-    string retainedId = feature.GetNamedQual("ID");
-    if (!NStr::IsBlank(retainedId)) {
-        return retainedId;
-    }
-    return (string("rna") + NStr::UIntToString(m_uPendingTrnaId++));
-}
 
 END_NCBI_SCOPE
 
