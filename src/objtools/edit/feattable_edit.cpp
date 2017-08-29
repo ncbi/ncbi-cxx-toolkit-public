@@ -105,11 +105,12 @@ CFeatTableEdit::CFeatTableEdit(
     CSeq_annot& annot,
     const string& locusTagPrefix,
     unsigned int locusTagNumber,
+    unsigned int startingFeatId,
     ILineErrorListener* pMessageListener) :
     //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
-    mNextFeatId(1),
+    mNextFeatId(startingFeatId),
     mLocusTagNumber(locusTagNumber),
     mLocusTagPrefix(locusTagPrefix)
 {

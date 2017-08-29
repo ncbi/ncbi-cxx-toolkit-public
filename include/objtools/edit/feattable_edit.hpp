@@ -55,7 +55,8 @@ public:
     CFeatTableEdit(
         CSeq_annot&,
 		const string& = "",
-        unsigned int = 1,
+        unsigned int = 1, //starting locus tag
+        unsigned int = 1, //starting feature id
         ILineErrorListener* =0);
     ~CFeatTableEdit();
 
@@ -77,6 +78,10 @@ public:
     unsigned int PendingLocusTagNumber() const {
         return mLocusTagNumber;
     }
+    unsigned int PendingFeatureId() const {
+        return mNextFeatId;
+    }
+
 
 protected:
     void xGenerateLocusIdsUseExisting();

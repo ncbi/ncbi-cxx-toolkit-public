@@ -1287,6 +1287,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 {
     static unsigned int startingLocusTagNumber = 1;
+    static unsigned int startingFeatureId = 1;
 
     if (!args["genbank"].AsBoolean()) {
 		return;
@@ -1310,7 +1311,8 @@ void CMultiReaderApp::xPostProcessAnnot(
         prefix = args["locus-tag"].AsString();
     }
 
-    edit::CFeatTableEdit fte(annot, prefix, startingLocusTagNumber, m_pErrors);
+    edit::CFeatTableEdit fte(
+        annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors);
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
     fte.EliminateBadQualifiers();
@@ -1319,6 +1321,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.SubmitFixProducts();
 
     startingLocusTagNumber = fte.PendingLocusTagNumber();
+    startingFeatureId = fte.PendingFeatureId();
 
     CCleanup cleanup;
     CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
