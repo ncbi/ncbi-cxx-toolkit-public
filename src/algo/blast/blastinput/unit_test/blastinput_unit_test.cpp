@@ -118,6 +118,7 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchNuclProt)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadAccession_MismatchProtNucl)
@@ -144,6 +145,7 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchProtNucl)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadGi_MismatchNuclProt)
@@ -170,6 +172,7 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchNuclProt)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadGi_MismatchProtNucl)
@@ -196,6 +199,7 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchProtNucl)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 struct SDubiousShortSequence
@@ -262,6 +266,7 @@ BOOST_AUTO_TEST_CASE(TestSmallDubiousSequences)
 
         TSeqPos length = sequence::GetLength(*ssl.seqloc, ssl.scope);
         BOOST_REQUIRE_EQUAL(itr->GetLength(), length);
+        scope.GetObjectManager().RevokeAllDataLoaders();        
     }
 
     // Now check that these sequences will be rejected as being the wrong
@@ -294,7 +299,9 @@ BOOST_AUTO_TEST_CASE(TestSmallDubiousSequences)
         }
         BOOST_REQUIRE(caught_exception == true);
         BOOST_REQUIRE(source->End() == true);
+        scope.GetObjectManager().RevokeAllDataLoaders();        
     }
+    
 }
 
 BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchProtNucl)
@@ -317,6 +324,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchProtNucl)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchNuclProt)
@@ -339,6 +347,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchNuclProt)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProtein_Single)
@@ -370,6 +379,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProtein_Single)
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
     BOOST_REQUIRE(!ssl.mask);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RawFastaWithSpaces)
@@ -402,6 +412,7 @@ BOOST_AUTO_TEST_CASE(RawFastaWithSpaces)
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
     BOOST_REQUIRE(!ssl.mask);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
@@ -445,6 +456,7 @@ BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
     for (size_t i = 0; i < seq.size(); i++) {
         BOOST_CHECK_NE('-', (char)seq[i]);
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
@@ -480,6 +492,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
     BOOST_REQUIRE(bioseqs.NotEmpty());
 
     BOOST_REQUIRE(!ssl.mask);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN_ReadDeltaSeq)
@@ -504,6 +517,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN_ReadDeltaSeq)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
           == CSeq_inst::eRepr_delta);
+    s.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 
@@ -547,6 +561,7 @@ BOOST_AUTO_TEST_CASE(ReadGenbankReport)
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
     BOOST_REQUIRE(!ssl.mask);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadInvalidGi)
@@ -571,6 +586,7 @@ BOOST_AUTO_TEST_CASE(ReadInvalidGi)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadInvalidSeqId)
@@ -594,6 +610,7 @@ BOOST_AUTO_TEST_CASE(ReadInvalidSeqId)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadBadUserInput)
@@ -629,7 +646,7 @@ BOOST_AUTO_TEST_CASE(ReadBadUserInput)
                             CObjReaderParseException);
         BOOST_REQUIRE(query_vector.Empty());
     }
-
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 /// This unit test proves that if one input is bad, all of them are rejected.
@@ -655,6 +672,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis_WithBadInput)
     blast::TSeqLocVector seqs;
     BOOST_REQUIRE_THROW(seqs = source->GetAllSeqLocs(scope),
                         CObjReaderParseException);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)
@@ -700,6 +718,7 @@ BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)
         }
         BOOST_REQUIRE(caught_exception);
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 // Basic test case to ensure CFastaReader changes don't break basic
@@ -729,7 +748,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleFasta_WithTitle)
         }
     }
     BOOST_REQUIRE_EQUAL(kExpectedTitle, title);
-
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 static
@@ -804,6 +823,7 @@ void s_ReadAndTestQueryFromString(const string& input, TSeqPos expected_length,
         string msg = CNcbiOstrstreamToString(oss);
         BOOST_REQUIRE_MESSAGE(input[input_pos] == (*sv)[pos],  msg);
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(SingleSequenceString_NoNewLineAfterSeq)
@@ -918,6 +938,7 @@ BOOST_AUTO_TEST_CASE(ReadEmptyUserInput_OnlyTitle)
         }
         BOOST_REQUIRE(caught_exception);
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSingleAccession)
@@ -966,6 +987,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
@@ -1042,6 +1064,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_delta, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(kStop+1, b.GetInst().GetLength());
+    scope->GetObjectManager().RevokeAllDataLoaders();        
 }
 #ifdef _DEBUG
 const int kTimeOutLargeSeq = 60;
@@ -1102,6 +1125,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     const TSeqPos length(248956422);
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope->GetObjectManager().RevokeAllDataLoaders();        
 }
 #ifdef _DEBUG
 const int kTimeOutLargeSeqWithRange = 60;
@@ -1170,6 +1194,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
     /// Validate the data that would be retrieved by blast.cgi
     CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     BOOST_REQUIRE_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 // This test was created to test issues in jira/browse/CXX-82
@@ -1231,6 +1256,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
     /// Validate the data that would be retrieved by blast.cgi
     CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     BOOST_REQUIRE_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSingleGi)
@@ -1278,6 +1304,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleGi)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleGis)
@@ -1339,6 +1366,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
         BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
         BOOST_REQUIRE_EQUAL((long)gi_length[i].second, (long)b.GetInst().GetLength());
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 // This input file contains very short sequences (1-3 bases) which were product
@@ -1357,6 +1385,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencer)
     blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     BOOST_REQUIRE_EQUAL(kNumQueries, query_vector.size());
     BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencerParseLocalIds)
@@ -1379,6 +1408,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencerParseLocalIds)
     BOOST_REQUIRE_EQUAL(query_vector[0].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A03_564_c_T3+40.ab1"));
     BOOST_REQUIRE_EQUAL(query_vector[1].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A01_564_a_T3+40.ab1"));
     BOOST_REQUIRE_EQUAL(query_vector[2].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A02_564_b_T3+40.ab1"));
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSequenceWithlclID)
@@ -1395,6 +1425,7 @@ BOOST_AUTO_TEST_CASE(ReadSequenceWithlclID)
     BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
     // Check that the local ID went through.
     BOOST_REQUIRE_EQUAL(query_vector[0].seqloc->GetId()->AsFastaString(), string("lcl|mylocalID555"));
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 // This input file contains several sequences in FASTA format, but one of them
@@ -1433,6 +1464,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
     CheckForEmptySequences(bioseqs, warnings);
     BOOST_REQUIRE(warnings.find("following sequences had no sequence data:")
                   != NPOS);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleTis)
@@ -1485,6 +1517,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
     /// Validate the data that would be retrieved by blast.cgi
     CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     BOOST_REQUIRE_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSingleTi)
@@ -1537,6 +1570,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
@@ -1622,6 +1656,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     /// Validate the data that would be retrieved by blast.cgi
     CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     BOOST_REQUIRE_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 static string*
@@ -1688,6 +1723,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 
 }
 
@@ -1761,6 +1797,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 
 }
 
@@ -1834,7 +1871,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
-
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
@@ -1880,6 +1917,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_aa, b.GetInst().GetMol());
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 
 }
 
@@ -1901,6 +1939,7 @@ BOOST_AUTO_TEST_CASE(RangeBoth)
     BOOST_REQUIRE_EQUAL(stop, ssl.seqloc->GetInt().GetTo());
     BOOST_REQUIRE_EQUAL(start, ssl.seqloc->GetStart(eExtreme_Positional));
     BOOST_REQUIRE_EQUAL(stop, ssl.seqloc->GetStop(eExtreme_Positional));
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RangeStartOnly)
@@ -1920,6 +1959,7 @@ BOOST_AUTO_TEST_CASE(RangeStartOnly)
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
     BOOST_REQUIRE_EQUAL(start, ssl.seqloc->GetStart(eExtreme_Positional));
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanTo)
@@ -1940,6 +1980,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanTo)
         return;
     }
     BOOST_REQUIRE(false); // should never get here
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanSequenceLength)
@@ -1959,6 +2000,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanSequenceLength)
         return;
     }
     BOOST_REQUIRE(false); // should never get here
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RangeInvalid_ToEqualThanSequenceLength)
@@ -1984,6 +2026,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_ToEqualThanSequenceLength)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(RangeInvalid_ToGreaterThanSequenceLength)
@@ -2009,6 +2052,7 @@ BOOST_AUTO_TEST_CASE(RangeInvalid_ToGreaterThanSequenceLength)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ParseDefline)
@@ -2043,6 +2087,7 @@ BOOST_AUTO_TEST_CASE(ParseDefline)
         BOOST_REQUIRE_EQUAL(accession, ssl.seqloc->GetInt().GetId().GetSwissprot().GetAccession());
         BOOST_REQUIRE_EQUAL(release, ssl.seqloc->GetInt().GetId().GetSwissprot().GetRelease());
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(BadProtStrand)
@@ -2065,6 +2110,7 @@ BOOST_AUTO_TEST_CASE(BadProtStrand)
     }
     BOOST_REQUIRE(caught_exception);
     BOOST_REQUIRE(source->End() == true);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
@@ -2105,6 +2151,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
     BOOST_REQUIRE(!ssl.mask);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(NuclStrand)
@@ -2145,6 +2192,7 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
             BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
         }
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(NuclLcaseMask_TSeqLocVector)
@@ -2182,6 +2230,7 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask_TSeqLocVector)
     ssl = *++itr;
     BOOST_REQUIRE(ssl.mask);
     BOOST_REQUIRE(ssl.mask->IsNull());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(NuclLcaseMask_BlastQueryVector)
@@ -2233,6 +2282,7 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask_BlastQueryVector)
 
     query = (*seqs)[1];
     BOOST_REQUIRE(query->GetMaskedRegions().empty());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(MultiSeq)
@@ -2246,6 +2296,7 @@ BOOST_AUTO_TEST_CASE(MultiSeq)
     blast::TSeqLocVector v = source->GetAllSeqLocs(scope);
     BOOST_REQUIRE(source->End());
     BOOST_REQUIRE_EQUAL((size_t)19, v.size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(MultiRange)
@@ -2266,6 +2317,7 @@ BOOST_AUTO_TEST_CASE(MultiRange)
         BOOST_REQUIRE_EQUAL(start, itr->seqloc->GetInt().GetFrom());
         BOOST_REQUIRE_EQUAL(stop, itr->seqloc->GetInt().GetTo());
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(MultiBatch)
@@ -2356,6 +2408,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     }
 
     BOOST_REQUIRE(source->End());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(NoDeflineExpected)
@@ -2369,6 +2422,7 @@ BOOST_AUTO_TEST_CASE(NoDeflineExpected)
     blast::TSeqLocVector v = source->GetAllSeqLocs(scope);
     BOOST_REQUIRE(source->End());
     BOOST_REQUIRE_EQUAL((size_t)1, v.size());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(NoDeflineUnexpected)
@@ -2381,6 +2435,7 @@ BOOST_AUTO_TEST_CASE(NoDeflineUnexpected)
     CScope scope(*CObjectManager::GetInstance());
 
     BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CException);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 BOOST_AUTO_TEST_CASE(wb325_1) {
     string input("gb|ABZI01000088\ngb|ABZN01000067");
@@ -2397,6 +2452,7 @@ BOOST_AUTO_TEST_CASE(wb325_1) {
     BOOST_REQUIRE(source->End() == true);
     BOOST_REQUIRE_EQUAL(2u, seqs.size());
     //blast::SSeqLoc ssl = seqs.front();
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(wb325_2)
@@ -2415,6 +2471,7 @@ BOOST_AUTO_TEST_CASE(wb325_2)
     BOOST_REQUIRE(source->End() == true);
     BOOST_REQUIRE_EQUAL(2u, seqs.size());
     //blast::SSeqLoc ssl = seqs.front();
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(wb325_single1)
@@ -2434,6 +2491,7 @@ BOOST_AUTO_TEST_CASE(wb325_single1)
     BOOST_REQUIRE(source->End() == true);
     BOOST_REQUIRE_EQUAL(1u, seqs.size());
     //blast::SSeqLoc ssl = seqs.front();
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(wb325_single2)
@@ -2453,6 +2511,7 @@ BOOST_AUTO_TEST_CASE(wb325_single2)
     BOOST_REQUIRE(source->End() == true);
     BOOST_REQUIRE_EQUAL(1u, seqs.size());
     //blast::SSeqLoc ssl = seqs.front();
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSinglePdb)
@@ -2504,6 +2563,7 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb)
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(! CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ThrowOnEmptySequence)
@@ -2517,6 +2577,7 @@ BOOST_AUTO_TEST_CASE(ThrowOnEmptySequence)
     CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
     CScope scope(*CObjectManager::GetInstance());
     BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(FetchSraID)
@@ -2582,6 +2643,7 @@ BOOST_AUTO_TEST_CASE(FetchSraID)
         BOOST_CHECK_MESSAGE((char)sv[i] == kSeqData[i], msg);
         BOOST_CHECK_NE('-', (char)seq[i]);
     }
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
@@ -2641,7 +2703,9 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
         BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
         BOOST_REQUIRE(! CSeq_inst::IsNa(b.GetInst().GetMol()));
         BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
+        scope.GetObjectManager().RevokeAllDataLoaders();        
     }
+    
 }
 
 BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
@@ -2684,7 +2748,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw,
                 bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr());
-
+    scope.GetObjectManager().RevokeAllDataLoaders();        
 }
 
 template <typename T>
@@ -2736,7 +2800,7 @@ BOOST_AUTO_TEST_CASE(ParseSequenceRange_1BasedRange) {
     TSeqRange r = ParseSequenceRange("1-10");
     BOOST_REQUIRE_EQUAL(0U, r.GetFrom());
     BOOST_REQUIRE_EQUAL(9U, r.GetTo());
-    BOOST_REQUIRE_EQUAL(10U, r.GetToOpen());
+    BOOST_REQUIRE_EQUAL(10U, r.GetToOpen());    
 }
 
 BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
@@ -2774,7 +2838,9 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
             BOOST_CHECK_MESSAGE(fasta_id == fasta_query,
                 "Failed using " + config->second + " data loader");
         }
+        scope->GetObjectManager().RevokeAllDataLoaders();        
     }
+    
 }
 
 
