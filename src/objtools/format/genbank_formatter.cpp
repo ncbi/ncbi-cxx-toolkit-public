@@ -1513,10 +1513,15 @@ public:
 	{
 		Append(CTempString(s));
 	}
-	virtual void Append(const CTempString& s)
-	{
-		m_text_os.AddLine(NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_End));
-	}
+    virtual void Append(const CTempString& s)
+    {
+        CTempString t = NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_End);
+        if (t.find_first_not_of(" ") == NPOS  &&  s.size() == 22) {
+            t = s;
+            t.erase(21);
+        }
+        m_text_os.AddLine(t);
+    }
 };
 
 void CGenbankFormatter::x_SmartWrapQuals(const CFeatureItemBase& feat, const CFlatFeature& ff, IFlatTextOStream& text_os)
