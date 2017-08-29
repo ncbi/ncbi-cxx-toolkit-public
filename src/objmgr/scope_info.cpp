@@ -968,6 +968,10 @@ void CTSE_ScopeInfo::ReleaseUsedTSEs(void)
         it->second->m_UsedByTSE = 0;
     }
     m_UsedTSE_Set.swap(used);
+    if ( m_UsedByTSE ) {
+        m_UsedByTSE->m_UsedTSE_Set.erase(ConstRef(this));
+        m_UsedByTSE = 0;
+    }
 }
 
 
