@@ -108,7 +108,8 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
             if (i > 1) {
                 break;
             }
-        }
+        }        
+        scope->GetObjectManager().RevokeAllDataLoaders();        
     }
 
     static void TestData(CShowBlastDefline::SDeflineInfo* dl, 

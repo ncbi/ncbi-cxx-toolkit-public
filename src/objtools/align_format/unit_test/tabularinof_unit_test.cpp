@@ -99,6 +99,7 @@ BOOST_AUTO_TEST_CASE(StandardOutput) {
     BOOST_REQUIRE(output.find("AE000111.1	AE000111.1	100.000	10596	0	0	1	10596") != NPOS);
     BOOST_REQUIRE(output.find("AE000111.1	AE000188.1	97.059	34	1	0	5567	5600	1088") != NPOS);
     BOOST_REQUIRE(output.find("# BLAST processed 1 queries") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_CASE(QuerySubjectScoreOutput) {
@@ -132,6 +133,7 @@ BOOST_AUTO_TEST_CASE(QuerySubjectScoreOutput) {
     // but some windows binaires print the bit score as 1.957e+004.  Hence, we drop the exponent.
     BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1786181|gb|AE000111.1|AE000111	19568") != NPOS);
     BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1788899|gb|AE000341.1|AE000341	91.6") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentScoreOutput) {
@@ -166,6 +168,7 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentScoreOutput) {
     BOOST_REQUIRE(output.find("AE000111	AE000111	100.000	19568") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000310	94.595	56.5") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000509	80.508	76.8") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentBTOPOutput) {
@@ -199,6 +202,7 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentBTOPOutput) {
     BOOST_REQUIRE(output.find("AE000111	AE000447	57	89.412	15T-TA2TA2-T6AG8CT1GT4CA10AC28") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000116	48	98.039	12GA38") != NPOS);
     BOOST_REQUIRE(output.find("AE000111	AE000183	36	82.022	14G-TATGAG2-A3-G4-C1A-4-AGA3C-6CATATC7C-1-C28") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
@@ -264,6 +268,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
     		}
     	}
     }
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
@@ -342,6 +347,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
     	}
     }
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 // SB-1177
@@ -377,6 +383,7 @@ BOOST_AUTO_TEST_CASE(ExtractCorrectSeqIdWhenThereIsSourceObjectInDescription) {
     string output = CNcbiOstrstreamToString(output_stream);
     BOOST_REQUIRE(NStr::StartsWith(output, "Query_1"));
     BOOST_REQUIRE(output.find("Macaca") == NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 BOOST_AUTO_TEST_SUITE_END()

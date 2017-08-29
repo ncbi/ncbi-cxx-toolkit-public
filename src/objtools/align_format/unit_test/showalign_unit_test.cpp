@@ -72,6 +72,7 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
     CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
     CNcbiOfstream dumpster("/dev/null");  // we don't care about the output
     ds.DisplaySeqalign(dumpster);
+    scope->GetObjectManager().RevokeAllDataLoaders();        
 }
 #ifdef _DEBUG
 const int kPerformanceTimeout = 120;
@@ -111,6 +112,7 @@ BOOST_AUTO_TEST_CASE(TestTGIConversion)
     BOOST_REQUIRE(output.find("gi|212900") != NPOS);
     BOOST_REQUIRE(output.find("gi|385145537") != NPOS);
     BOOST_REQUIRE(output.find("gi|385145539") != NPOS);        
+    scope->GetObjectManager().RevokeAllDataLoaders();            
 }
 
 BOOST_AUTO_TEST_CASE(TestTGIConversionExt)
@@ -146,6 +148,7 @@ BOOST_AUTO_TEST_CASE(TestTGIConversionExt)
     BOOST_REQUIRE(output.find("gi|385145539") != NPOS);
     BOOST_REQUIRE(output.find("gi|129296") != NPOS);
     BOOST_REQUIRE(output.find("gi|71897377") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
 bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
@@ -192,9 +195,9 @@ bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
     BOOST_REQUIRE(output.find(" Score = 54.7 bits (29),  Expect = 2e-0") 
-                  != NPOS);
+                  != NPOS);    
     }}
-    tmp_data_loader.RevokeBlastDbDataLoader();
+    tmp_data_loader.RevokeBlastDbDataLoader();            
     return true;
 }
 

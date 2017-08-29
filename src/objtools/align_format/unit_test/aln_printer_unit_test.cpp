@@ -65,6 +65,9 @@ public:
     CRef<CScope> m_Scope;
     string kNuclSeqs;
     string kProtSeqs;
+    // input file names
+    string kProtein_seqalign;
+    string kNucleotide_seqalign;
 
     void x_InitScope(void)
     {
@@ -99,15 +102,23 @@ public:
         }
     }
 
+    void x_Init(bool isNuc)
+    {
+        string seqInputData = (isNuc) ? kNuclSeqs : kProtSeqs;        
+        bool parse_id  = (isNuc) ? false : true;
+
+
+        x_LoadSequences(seqInputData, parse_id);
+    }
 
     CAlnPrinterFixture(void)
     {
         kNuclSeqs = "data/nucleotide.fa";
         kProtSeqs = "data/protein.fa";
-
+        kNucleotide_seqalign = "data/multialign_nucleotide.asn";
+        kProtein_seqalign = "data/multialign.asn";
+        
         x_InitScope();
-        x_LoadSequences(kNuclSeqs, false);
-        x_LoadSequences(kProtSeqs, true);
     }
 
 
@@ -119,10 +130,13 @@ public:
 
     // Print alignment for a given Seq-align
     string PrintAlignment(CMultiAlnPrinter::EFormat format,
-                          const string& seqalign_file,
+                          bool isNuc,
                           CMultiAlnPrinter::EAlignType type
                           = CMultiAlnPrinter::eNotSet)
     {
+        x_Init(isNuc);
+        string seqalign_file  = (isNuc) ? kNucleotide_seqalign : kProtein_seqalign;
+
         CSeq_align seqalign;
         CNcbiIfstream istr(seqalign_file.c_str());
         istr >> MSerial_AsnText >> seqalign;
@@ -134,7 +148,7 @@ public:
         CNcbiOstrstream output_stream;
         printer.Print(output_stream);
         string output = CNcbiOstrstreamToString(output_stream);
-        
+        m_Scope->GetObjectManager().RevokeAllDataLoaders();
         return output;
     }
 
@@ -143,15 +157,15 @@ public:
 BOOST_FIXTURE_TEST_SUITE(aln_printer, CAlnPrinterFixture)
 
 // input file names
-const string protein_seqalign = "data/multialign.asn";
-const string nucleotide_seqalign = "data/multialign_nucleotide.asn";
+//const string protein_seqalign = "data/multialign.asn";
+//const string nucleotide_seqalign = "data/multialign_nucleotide.asn";
 
 
 BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
-                                   protein_seqalign);
+                                   false);
 
     BOOST_REQUIRE(output.find(">gi|129295|sp|P01013.1|OVALX_CHICK RecName: "
                               "Full=Ovalbumin-related protein X; AltName: "
@@ -165,7 +179,7 @@ BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
-                            nucleotide_seqalign);
+                            true);
 
     BOOST_REQUIRE(output.find(">lcl|1 gi|405832|gb|U00001.1|HSCDC27 Human "
                               "homologue of S. pombe nuc2+ and A. nidulans "
@@ -184,7 +198,7 @@ BOOST_AUTO_TEST_CASE(TestClustalW)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::eClustal,
-                                   protein_seqalign);
+                                   false);
 
     BOOST_REQUIRE(output.find("gi|189500654                  M----------------"
                               "------------------------RII-IYNR---------------"
@@ -199,7 +213,7 @@ BOOST_AUTO_TEST_CASE(TestClustalW)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eClustal,
-                            nucleotide_seqalign);
+                            true);
 
     BOOST_REQUIRE(output.find("lcl|2                         ------CCGCTACAGG"
                               "GGGGGCCTGAGGCACTGCAGAAAGTGGGCCTGAGCCTCGAGGATGA"
@@ -219,7 +233,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipSequential)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential,
-                                   protein_seqalign);
+                                   false);
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
@@ -234,7 +248,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipSequential)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential,
-                            nucleotide_seqalign);
+                            true);
 
     BOOST_REQUIRE(output.find("  10   2634") != NPOS);
 
@@ -251,7 +265,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved,
-                                   protein_seqalign);
+                                   false);
 
     BOOST_REQUIRE(output.find("  100   749") != NPOS);
 
@@ -268,7 +282,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved,
-                            nucleotide_seqalign);
+                            true);
 
     BOOST_REQUIRE(output.find("  10   2634") != NPOS);
 
@@ -285,7 +299,7 @@ BOOST_AUTO_TEST_CASE(TestNexus)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                                   protein_seqalign,
+                                   false,
                                    CMultiAlnPrinter::eProtein);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
@@ -317,7 +331,7 @@ BOOST_AUTO_TEST_CASE(TestNexus)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                            nucleotide_seqalign,
+                            true,
                             CMultiAlnPrinter::eNucleotide);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
@@ -347,7 +361,7 @@ BOOST_AUTO_TEST_CASE(TestRejectNexusWithNoAlignType)
     // verify that formatting nexus alignment with m_AlignType == eNotSet
     // throws the exception
     BOOST_REQUIRE_THROW(PrintAlignment(CMultiAlnPrinter::eNexus,
-                                       protein_seqalign,
+                                       false,
                                        CMultiAlnPrinter::eNotSet),
                         CException);    
 }
