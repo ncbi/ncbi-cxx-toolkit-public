@@ -47,7 +47,12 @@ class ExceptionInDestructor
         ExceptionInDestructor()
         {}
 
-        ~ExceptionInDestructor() noexcept(false)
+        ~ExceptionInDestructor()
+        #if !(defined(_MSC_VER) && _MSC_VER < 1900)
+            // Visual studio 2013 does not support this while works as needed.
+            // The other compilers must have noexcept(false) to work properly.
+            noexcept(false)
+        #endif
         {
             if (std::uncaught_exception()) {
                 flag = true;
