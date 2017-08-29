@@ -2781,6 +2781,9 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
             continue;
         }
         const string& key = qual->GetQual();
+        if (key == "SO_type") { // RW-469
+            continue;
+        }
         const string& value = qual->GetVal();
         CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
         //for now, retain all random junk:
