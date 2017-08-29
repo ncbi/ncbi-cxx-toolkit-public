@@ -851,6 +851,7 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     score_header += NStr::IntToString(max);
     score_header += ")";
 
+/*
     ostream << ">";
     bool id_done = false;
     for (const CRef<CSeq_id>& pId : bioseq.GetId()) {
@@ -876,7 +877,25 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
             ostream << idh.GetSeqId()->GetSeqIdString(true);
         }
     }
-    ostream << " " << score_header << "\n";
+    */
+
+    unique_ptr<CFastaOstreamEx> fasta_os(new CAsn2FastaAppOstream(ostream));
+
+    fasta_os->SetAllFlags(        
+        CFastaOstreamEx::fInstantiateGaps |
+        CFastaOstreamEx::fAssembleParts |
+        CFastaOstreamEx::fNoDupCheck |
+        CFastaOstreamEx::fKeepGTSigns |
+        CFastaOstreamEx::fNoExpensiveOps |
+        CFastaOstreamEx::fHideGenBankPrefix );
+
+    if (GetArgs()["enable-gi"])
+    {
+        fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
+    }
+
+    fasta_os->WriteTitle(bioseq, 0, false, score_header);
+    //ostream << " " << score_header << "\n";
 }
 
 
