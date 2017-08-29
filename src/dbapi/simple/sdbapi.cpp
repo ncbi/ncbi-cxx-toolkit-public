@@ -2699,7 +2699,7 @@ CQueryImpl::x_Close(void)
         try {
             VerifyDone(CQuery::eAllResultSets);
         } catch (CSDB_Exception& e) {
-            ERR_POST_X(14, Warning << e);
+            ERR_POST_X(14, Error << e);
         }
         if (m_CurRSNo != 0) {
             _TRACE(m_CurRowNo << " row(s) from query.");
