@@ -211,12 +211,20 @@ CWiggleReader::xReadSeqAnnotGraph(
         if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
+            if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadFixedStepData(fixedStepInfo, lr, pMessageListener);
             haveData = true;
         }
         else if ( s == "variableStep" ) {
             SVarStepInfo varStepInfo;
             xGetVarStepInfo(varStepInfo, pMessageListener);
+            if (!m_ChromId.empty() && varStepInfo.mChrom != m_ChromId) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadVariableStepData(varStepInfo, lr, pMessageListener);
             haveData = true;
         }
@@ -273,12 +281,20 @@ CWiggleReader::xReadSeqAnnotTable(
         if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
+            if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadFixedStepData(fixedStepInfo, lr, pMessageListener);
             haveData = true;
         }
         else if ( s == "variableStep" ) {
             SVarStepInfo varStepInfo;
             xGetVarStepInfo(varStepInfo, pMessageListener);
+            if (!m_ChromId.empty() && varStepInfo.mChrom != m_ChromId) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadVariableStepData(varStepInfo, lr, pMessageListener);
             haveData = true;
         }
