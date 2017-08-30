@@ -3503,7 +3503,6 @@ s_AfrpInitLineData(
 
     if (s_IsASN1 (linestring)) {
         s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
-        s_AlignFileRawFree (afrp);
         return eFalse;
     }
 
