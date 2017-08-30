@@ -859,9 +859,9 @@ static EIO_Status s_InitAPI_(int secure)
             if (!s_SSLSetup  ||  !(ssl = s_SSLSetup())) {
                 s_SSL  = &kNoSSL;
                 status = eIO_NotSupported;
-            } else {
-                s_SSL  = ssl;
-                status = ssl->Init(s_Recv, s_Send);
+            } else{
+                s_SSL  = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
+                          ? ssl : kNoSSL);
             }
         } else
             status = s_SSL == &kNoSSL ? eIO_NotSupported : eIO_Success;
