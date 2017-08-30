@@ -4076,7 +4076,11 @@ CNCAlerts::Register(CNCAlerts::eDebugMoveRecord1,"eFileRecMeta");
 CNCAlerts::Register(CNCAlerts::eDebugMoveRecord2,"eFileRecChunkMap");
 #endif
         if (!s_UpdateUpCoords(map_rec, new_ind, new_coord)) {
-            goto unlock_and_wipe;
+            if (!m_CurVer) {
+                goto unlock_and_wipe;
+            } else {
+                goto wipe_new_record;
+            }
         }
         if (m_CurVer)
             ++m_CurVer->map_move_counter;
