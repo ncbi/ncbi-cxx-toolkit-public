@@ -894,11 +894,15 @@ static Int2 s_RemovePolyAWords(BlastMBLookupTable* mb_lt)
     Int8 word;
     Int4 i, k;
 
-    ASSERT(word_size == 16);
-
     /* remove As and Ts */
     mb_lt->hashtable[0] = 0;
-    mb_lt->hashtable[(Int8)0xffffffff] = 0;
+    mb_lt->hashtable[(Int8)((1 << (2 * word_size)) - 1)] = 0;
+
+    if (word_size < 16) {
+        return 0;
+    }
+
+    ASSERT(word_size == 16);
 
     /* remove As with a single error */
     for (i = 1;i < 4;i++) {
@@ -1082,9 +1086,7 @@ s_FillContigMBTable(BLAST_SequenceBlk* query,
       }
    }
 
-   /* FIXME: should this be done only for spliced reads? */
-   if (Blast_ProgramIsMapping(lookup_options->program_number) &&
-       mb_lt->lut_word_length == 16) {
+   if (Blast_ProgramIsMapping(lookup_options->program_number)) {
        s_RemovePolyAWords(mb_lt);
    }
 
