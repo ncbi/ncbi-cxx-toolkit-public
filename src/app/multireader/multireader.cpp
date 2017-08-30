@@ -1315,9 +1315,9 @@ void CMultiReaderApp::xPostProcessAnnot(
         annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors);
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
-    fte.EliminateBadQualifiers();
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
+    fte.EliminateBadQualifiers();
     fte.SubmitFixProducts();
 
     startingLocusTagNumber = fte.PendingLocusTagNumber();

@@ -732,9 +732,9 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
             **it, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         fte.InferPartials();
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
-        fte.EliminateBadQualifiers();
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
+        fte.EliminateBadQualifiers();
         fte.SubmitFixProducts();
 
         startingLocusTagNumber = fte.PendingLocusTagNumber();
