@@ -836,7 +836,7 @@ vector<TQuery> s_GetQueries2()
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(12000000, 13000000), true, 12, 13));
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(11500000, 11600000), false, 4, 0));
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(21000000, 22000000), true, 18, 13));
-    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(22000000, 23000000), true, 18, 13));
+    queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(22000000, 23000000), true, 17, 13));
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(21500000, 21600000), false, 575, 0));
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(31000000, 32000000), true, 18, 19));
     queries.push_back(make_tuple("NC_000001.11", CRange<TSeqPos>(42000000, 43000000), true, 12, 25));
