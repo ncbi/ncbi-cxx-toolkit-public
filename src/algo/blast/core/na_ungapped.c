@@ -2064,7 +2064,7 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
                        necessary, because depending on extension more
                        word hits can be discarded. */
                     if (last_p != 0 && last_d == diag &&
-                        s_off - last_p < lut_word_length + 3) {
+                        s_off - last_p < lut_word_length + 1) {
 
                         continue;
                     }
