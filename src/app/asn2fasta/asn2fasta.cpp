@@ -851,42 +851,9 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     score_header += NStr::IntToString(max);
     score_header += ")";
 
-/*
-    ostream << ">";
-    bool id_done = false;
-    for (const CRef<CSeq_id>& pId : bioseq.GetId()) {
-        if (pId->IsGenbank() ||
-            pId->IsDdbj() ||
-            pId->IsEmbl() ||
-            pId->IsSwissprot() ||
-            pId->IsOther() ||
-            pId->IsTpd() ||
-            pId->IsTpe() ||
-            pId->IsTpg()) {
-            //pId->WriteAsFasta(ostream);
-            ostream << pId->GetSeqIdString(true);
-
-            id_done = true;
-            break;
-        }
-    }
-
-    if (!id_done) {
-        CSeq_id_Handle idh = sequence::GetId(bioseq, sequence::eGetId_Best);
-        if (idh) {
-            ostream << idh.GetSeqId()->GetSeqIdString(true);
-        }
-    }
-    */
-
     unique_ptr<CFastaOstreamEx> fasta_os(new CAsn2FastaAppOstream(ostream));
 
     fasta_os->SetAllFlags(        
-        CFastaOstreamEx::fInstantiateGaps |
-        CFastaOstreamEx::fAssembleParts |
-        CFastaOstreamEx::fNoDupCheck |
-        CFastaOstreamEx::fKeepGTSigns |
-        CFastaOstreamEx::fNoExpensiveOps |
         CFastaOstreamEx::fHideGenBankPrefix );
 
     if (GetArgs()["enable-gi"])
@@ -895,7 +862,6 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     }
 
     fasta_os->WriteTitle(bioseq, 0, false, score_header);
-    //ostream << " " << score_header << "\n";
 }
 
 
