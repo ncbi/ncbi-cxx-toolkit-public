@@ -590,7 +590,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             if (tsid == NULL) {
                 return kEmptyStr;
             }
-            string s, sep, comma;
+            string s, sep, comma, ht;
             switch (choice) {
             case CSeq_id::e_Embl:       s = "embl ";        comma = ",";  break;
             case CSeq_id::e_Other:      s = "REFSEQ: ";                   break;
@@ -612,8 +612,8 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
 #ifdef NEW_HTML_FMT
-                s += comma + sep + "accession ";
-                GetContext()->Config().GetHTMLFormatter().FormatNucId(s, *idh.GetSeqId(), GetContext()->GetScope().GetGi(idh), acc);
+                GetContext()->Config().GetHTMLFormatter().FormatNucId(ht, *idh.GetSeqId(), GetContext()->GetScope().GetGi(idh), acc);
+                s += comma + sep + "accession " + ht;
 #else
                 if (is_html) {
                     const TIntId gi = GetContext()->GetScope().GetGi(idh);
