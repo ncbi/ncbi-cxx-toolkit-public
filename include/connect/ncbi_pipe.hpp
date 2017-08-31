@@ -140,11 +140,11 @@ public:
     /// @param current_dir
     ///   Current working directory for the new process if specified.
     /// @param env
-    ///   Pointer to vector with environment variables which will be used
-    ///   instead of current environment. Last value in an array must be NULL.
-    ///   If not specified, the parent's process environment will be used.
-    ///   Note that new environment replaces the parent's environment 
-    ///   used by default for the child process, an not just add/modify some values.
+    ///   An optional pointer to a vector with environment variables to use
+    ///   in the child process.  If not speficied, a copy of the parent's
+    ///   process environment is used.  Note that a new environment completely
+    ///   replaces the default environment otherwise inherited from the parent
+    ///   process, and so it does not just add / modify some values.
     /// @sa
     ///   Open
     CPipe(const string&         cmd,
@@ -186,11 +186,11 @@ public:
     ///   also contain a drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
-    ///   Pointer to vector with environment variables which will be used
-    ///   instead of current environment. Last value in an array must be NULL.
-    ///   If not specified, the parent's process environment will be used.
-    ///   Note that new environment replaces the parent's environment 
-    ///   used by default for the child process, an not just add/modify some values.
+    ///   An optional pointer to a vector with environment variables to use
+    ///   in the child process.  If not speficied, a copy of the parent's
+    ///   process environment is used.  Note that a new environment completely
+    ///   replaces the default environment otherwise inherited from the parent
+    ///   process, and so it does not just add / modify some values.
     /// @return 
     ///   Completion status.
     /// @sa
@@ -455,11 +455,11 @@ public:
     ///   also contain a drive letter.  If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
-    ///   Pointer to a vector with environment variables, which will be used
-    ///   instead of the current environment.  Last element in the array must
-    ///   be NULL. If not specified, the parent's process environment will be used.
-    ///   Note that new environment replaces the parent's environment 
-    ///   used by default for the child process, an not just add/modify some values.
+    ///   An optional pointer to a vector with environment variables to use
+    ///   in the child process.  If not speficied, a copy of the parent's
+    ///   process environment is used.  Note that a new environment completely
+    ///   replaces the default environment otherwise inherited from the parent
+    ///   process, and so it does not just add / modify some values.
     /// @param watcher
     ///   Call back object to monitor the child process execution status
     /// @param kill_timeout
