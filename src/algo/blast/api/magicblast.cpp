@@ -276,7 +276,8 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
 
 static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
                                          CRef<ILocalQueryData>& qdata,
-                                         CRef<IBlastSeqInfoSrc>& seqinfo_src)
+                                         CRef<IBlastSeqInfoSrc>& seqinfo_src,
+                                         const BlastQueryInfo* query_info)
 {
     CRef<CSeq_align> align(new CSeq_align);
     align->SetType(CSeq_align::eType_partial);
@@ -320,13 +321,19 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
     align->SetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped,
                          perc_id);
 
+    // to diffierentiate between the first and last segment of a paired read
+    // if sequence ids cannot be trusted
+    user_object->AddField("segment",
+                          query_info->contexts[chain->context].segment_flags);
+
     return align;
 }
 
 CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
                                            const HSPChain* chains,
                                            CRef<ILocalQueryData> qdata,
-                                           CRef<IBlastSeqInfoSrc> seqinfo_src)
+                                           CRef<IBlastSeqInfoSrc> seqinfo_src,
+                                           const BlastQueryInfo* query_info)
 {
     CRef<CSeq_align_set> seq_aligns = CreateEmptySeq_align_set();
 
@@ -349,12 +356,13 @@ CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
             align->SetDim(2);
 
             CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
-            disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src));
+            disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src,
+                                                  query_info));
             disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
-                                                  seqinfo_src));
+                                                  seqinfo_src, query_info));
         }
         else {
-            align = s_CreateSeqAlign(chain, qdata, seqinfo_src);
+            align = s_CreateSeqAlign(chain, qdata, seqinfo_src, query_info);
         }
 
         seq_aligns->Set().push_back(align);
@@ -374,6 +382,7 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
     query_ids.reserve(results->num_queries);
 
     CRef<ILocalQueryData> query_data = m_Queries->MakeLocalQueryData(m_Options);
+    BlastQueryInfo* query_info = m_InternalData->m_QueryInfo;
     CRef<IBlastSeqInfoSrc> seqinfo_src;
     seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
     _ASSERT(seqinfo_src);
@@ -384,7 +393,8 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
     for (int index=0;index < results->num_queries;index++) {
         HSPChain* chains = results->chain_array[index];
         CRef<CSeq_align_set> seq_aligns(x_CreateSeqAlignSet(chains, query_data,
-                                                            seqinfo_src));
+                                                            seqinfo_src,
+                                                            query_info));
 
         for (auto it: seq_aligns->Get()) {
             retval->Set().push_back(it);
@@ -422,7 +432,8 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
         HSPChain* chains = results->chain_array[index];
         CConstRef<CSeq_id> query_id(query_data->GetSeq_loc(index)->GetId());
         CRef<CSeq_align_set> aligns(x_CreateSeqAlignSet(chains, query_data,
-                                                        seqinfo_src));
+                                                        seqinfo_src,
+                                                        query_info));
 
         int query_length =
             query_info->contexts[index * NUM_STRANDS].query_length;
@@ -442,7 +453,9 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
 
             chains = results->chain_array[index + 1];
             CRef<CSeq_align_set> mate_aligns(x_CreateSeqAlignSet(chains,
-                                                    query_data, seqinfo_src));
+                                                                 query_data,
+                                                                 seqinfo_src,
+                                                                 query_info));
 
             for (auto it: mate_aligns->Get()) {
                 aligns->Set().push_back(it);
