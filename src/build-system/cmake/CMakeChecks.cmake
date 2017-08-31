@@ -23,7 +23,7 @@ cmake_policy(SET CMP0054 OLD)
 if (WIN32)
     #set(HUNTER_STATUS_DEBUG TRUE)
     hunter_add_package(wxWidgets)
-    hunter_add_package(Boost COMPONENTS filesystem regex system)
+    hunter_add_package(Boost COMPONENTS filesystem regex system test)
     hunter_add_package(ZLIB)
     hunter_add_package(BZip2)
     hunter_add_package(Jpeg)
@@ -101,7 +101,10 @@ if(WIN32)
         "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32"
         "${FREETYPE_ROOT}"
         "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
+        "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
         "${FTGL_ROOT}"
+        "${WIN32_PACKAGE_ROOT}/sqlite3-3.8.10.1"
+        "${WIN32_PACKAGE_ROOT}/db-4.6.21"
         )
 endif()
 
@@ -226,16 +229,12 @@ if (WIN32)
     set(KSTAT_LIBS    "")
     set(RPCSVC_LIBS   "")
     set(DEMANGLE_LIBS "")
-    set(ICONV_LIBS    "")
     set(UUID_LIBS      "")
     set(NETWORK_LIBS  "ws2_32.lib")
     set(RT_LIBS          "")
     set(MATH_LIBS      "")
     set(CURL_LIBS      "")
-    set(BERKELEYDB_INCLUDE      "")
     set(MYSQL_INCLUDE_DIR      "")
-    set(SQLITE3_INCLUDE_DIR "")
-    set(SQLITE3_LIBRARY "")
 endif()
 
 find_library(UUID_LIBS NAMES uuid)
@@ -391,14 +390,28 @@ endif ()
 if (EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
     set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
     set(NCBI_C_LIBPATH  "-L${NCBI_CTOOLKIT_PATH}/lib64")
-    set(NCBI_C_ncbi     "${NCBI_C_LIBPATH} -lncbi")
+    set(NCBI_C_ncbi     "ncbi")
     if (APPLE)
         set(NCBI_C_ncbi ${NCBI_C_ncbi} -Wl,-framework,ApplicationServices)
     endif ()
     set(HAVE_NCBI_C true)
+elseif (WIN32)
+    set(NCBI_CTOOLKIT_WIN32 "//snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2015.64/c.current")
+    if (EXISTS "${NCBI_CTOOLKIT_WIN32}")
+        set(NCBI_C_INCLUDE "${NCBI_CTOOLKIT_WIN32}/include")
+        set(NCBI_C_LIBPATH "${NCBI_CTOOLKIT_WIN32}/lib")
+        set(NCBI_C_ncbi    "ncbi.lib")
+        set(HAVE_NCBI_C true)
+    else()
+        set(HAVE_NCBI_C false)
+    endif()
 else ()
     set(HAVE_NCBI_C false)
 endif ()
+
+message(STATUS "HAVE_NCBI_C = ${HAVE_NCBI_C}")
+message(STATUS "NCBI_C_INCLUDE = ${NCBI_C_INCLUDE}")
+message(STATUS "NCBI_C_LIBPATH = ${NCBI_C_LIBPATH}")
 
 ############################################################################
 #
@@ -492,8 +505,6 @@ find_external_library(ICU
 ##
 find_library(GCRYPT_LIBS NAMES gcrypt HINTS "$ENV{NCBI}/libgcrypt/${CMAKE_BUILD_TYPE}/lib")
 find_library(GPG_ERROR_LIBS NAMES gpg-error HINTS "$ENV{NCBI}/libgpg-error/${CMAKE_BUILD_TYPE}/lib")
-message(STATUS "GCrypt = ${GCRYPT_LIBS}")
-message(STATUS "GPG error = ${GPG_ERROR_LIBS}")
 if (NOT GCRYPT_LIBS STREQUAL "GCRYPT_LIBS-NOTFOUND")
     set(GCRYPT_FOUND True)
     set(GCRYPT_LIBS ${GCRYPT_LIBS} ${GPG_ERROR_LIBS})
@@ -501,10 +512,22 @@ else()
     set(GCRYPT_FOUND False)
 endif()
 
+# ICONV
+# Windows requires special handling for this
+if (WIN32)
+    find_external_library(iconv
+        INCLUDES iconv.h
+        LIBS iconv)
+endif()
+
 find_package(LibXml2)
 if (LIBXML2_FOUND)
     set(LIBXML_INCLUDE ${LIBXML2_INCLUDE_DIR})
     set(LIBXML_LIBS    ${LIBXML2_LIBRARIES})
+    if (WIN32)
+        set(LIBXML_INCLUDE ${LIBXML_INCLUDE} ${ICONV_INCLUDE})
+        set(LIBXML_LIBS ${LIBXML_LIBS} ${ICONV_LIBS})
+    endif()
 endif()
 
 find_package(LibXslt)
