@@ -317,7 +317,7 @@ public:
     }
 };
 
-
+#if 0 // Uses calls retired in Python 3, and not needed anyway.
 class CCObject : public CObject
 {
 // PyObject* PyCObject_FromVoidPtr(    void* cobj, void (*destr)(void *))
@@ -337,6 +337,7 @@ public:
         return PyCObject_Check(obj);
     }
 };
+#endif
 
 class CWeakRef : public CObject
 {
@@ -410,6 +411,7 @@ public:
     }
 };
 
+#if 0 // Uses calls retired in Python 3, and not needed anyway.
 class CInstance : public CObject
 {
 // PyObject* PyInstance_New(   PyObject *class, PyObject *arg, PyObject *kw)
@@ -426,6 +428,7 @@ public:
         return PyInstance_Check(obj);
     }
 };
+#endif
 
 }                                       // namespace pythonpp
 
