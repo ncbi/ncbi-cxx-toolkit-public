@@ -3945,6 +3945,10 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
                 stat->PrintState(*this);
             }
             CNCPeerControl::PrintState(*this);
+#ifdef _DEBUG
+        } else if (section == "syncstat") {
+            CNCPeerControl::PrintSyncStat(*this);
+#endif
 #if __NC_TASKS_MONITOR
         } else if (section == "tasks") {
             CSrvTask::PrintState(*this);

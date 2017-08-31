@@ -147,6 +147,9 @@ s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay, E
     slot_srv->peer->RegisterSyncStop(slot_srv->is_passive,
                                      slot_srv->next_sync_time,
                                      next_delay);
+#ifdef _DEBUG
+    slot_srv->peer->RegisterSyncStat(slot_srv->is_passive, slot_srv->is_by_blobs, result, hint);
+#endif
     slot_srv->sync_started = false;
     slot_srv->started_cmds = 0;
     slot_srv->is_passive = true;

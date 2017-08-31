@@ -1287,6 +1287,7 @@ CNCActiveHandler::State
 CNCActiveHandler::x_ProcessPeerError(void)
 {
     m_ErrMsg = m_Response;
+    SRV_LOG(Warning, "PeerError: " << m_ErrMsg);
     m_CmdSuccess = true;
     x_FinishSyncCmd(eSynAborted, NC_SYNC_HINT);
     GetDiagCtx()->SetRequestStatus(eStatus_OK);

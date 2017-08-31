@@ -1017,6 +1017,70 @@ CNCPeerControl::RegisterSyncStop(bool is_passive,
         --m_CntActiveSyncs;
 }
 
+#ifdef _DEBUG
+void CNCPeerControl::RegisterSyncStat(bool is_passive, bool is_by_blobs, int result,  int hint)
+{
+    size_t key = (is_passive ? 2 : 0) | (is_by_blobs ? 1 : 0);
+    key <<= 8;
+    key = key | (result & 0xFF);
+    key <<= 16;
+    key = key | (hint & 0xFFFF);
+    CMiniMutexGuard guard(m_ObjLock);
+    ++m_SyncStat[key];
+}
+
+void CNCPeerControl::PrintSyncStat(CSrvSocketTask& task)
+{
+    s_MapLock.Lock();
+    TControlMap ctrl = s_Controls;
+    s_MapLock.Unlock();
+
+    string is("\": "), iss("\": \""), eol(",\n\""),  qt("\"");
+
+    task.WriteText(eol).WriteText("peers").WriteText(is).WriteText("\n[");
+    for(TControlMap::const_iterator it = ctrl.begin(); it != ctrl.end(); ++it) {
+        if (it != ctrl.begin()) {
+            task.WriteText(",");
+        }
+        task.WriteText("{\n");
+        CNCPeerControl* peer = it->second;
+        map<size_t, size_t> syncStat;
+        {
+            CMiniMutexGuard guard(peer->m_ObjLock);
+            syncStat = peer->m_SyncStat;
+        }
+        task.WriteText(qt).WriteText("hostname").WriteText(iss).WriteText(
+                    CNCDistributionConf::GetPeerName(peer->GetSrvId())).WriteText(qt);
+        task.WriteText(eol).WriteText("stat").WriteText(is);
+        
+        bool first = true;
+        for (map<size_t, size_t>::const_iterator i = syncStat.begin(); i != syncStat.end(); ++i) {
+            if (first) {
+                first = false;
+            } else {
+                task.WriteText(",");
+            }
+            task.WriteText("[\n");
+            size_t key = i->first;
+            size_t hint = key & 0xFFFF;
+            key >>= 16;
+            size_t result = key & 0xFF;
+            key >>= 8;
+            bool by_blobs = (key & 1) != 0;
+            bool passive =  (key & 2) != 0;
+            task.WriteText(qt).WriteText("passive").WriteText(is).WriteBool(passive);
+            task.WriteText(eol).WriteText("by_blobs").WriteText(is).WriteBool(by_blobs);
+            task.WriteText(eol).WriteText("result").WriteText(is).WriteNumber(result);
+            task.WriteText(eol).WriteText("hint").WriteText(is).WriteNumber(hint);
+            task.WriteText(eol).WriteText("count").WriteText(is).WriteNumber(i->second);
+            task.WriteText("\n]");
+        }
+        task.WriteText("\n}");
+    }
+    task.WriteText("]");
+}
+#endif
+
 void CNCPeerControl::AbortInitialSync(void)
 {
     m_FirstNWErrTime = 1;

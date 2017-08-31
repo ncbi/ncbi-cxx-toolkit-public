@@ -140,6 +140,10 @@ public:
     void RegisterSyncStop(bool is_passive,
                           Uint8& next_sync_time,
                           Uint8 next_sync_delay);
+#ifdef _DEBUG
+    void RegisterSyncStat(bool is_passive, bool is_by_blobs, int result,  int hint);
+    static void PrintSyncStat(CSrvSocketTask& task);
+#endif
     Uint8 GetNextSyncTime(void);
 
     Uint8 GetSrvId(void) const;
@@ -234,6 +238,9 @@ private:
     TNCMirrorQueue m_BigMirror;
     TNCActiveSyncList m_SyncList;
     TNCActiveSyncListIt m_NextTaskSync;
+#ifdef _DEBUG
+    map<size_t, size_t> m_SyncStat;
+#endif
 };
 
 
