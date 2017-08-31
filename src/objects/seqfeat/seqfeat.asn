@@ -1121,6 +1121,7 @@ OrgMod ::= SEQUENCE {
         bio-material (36) ,
         metagenome-source (37) ,
         type-material (38) ,
+        nomenclature (39) ,     -- code of nomenclature in subname (B,P,V,Z or combination)
         old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
