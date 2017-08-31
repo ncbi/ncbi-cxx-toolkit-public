@@ -29,7 +29,7 @@ endif()
 #include(FindBoost)
 #set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
-             COMPONENTS filesystem regex system
+             COMPONENTS filesystem regex system unit_test_framework
              REQUIRED)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
