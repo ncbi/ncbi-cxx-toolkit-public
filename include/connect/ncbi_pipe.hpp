@@ -141,7 +141,10 @@ public:
     ///   Current working directory for the new process if specified.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
-    ///   instead of current environment.  Last value in an array must be NULL.
+    ///   instead of current environment. Last value in an array must be NULL.
+    ///   If not specified, the parent's process environment will be used.
+    ///   Note that new environment replaces the parent's environment 
+    ///   used by default for the child process, an not just add/modify some values.
     /// @sa
     ///   Open
     CPipe(const string&         cmd,
@@ -185,6 +188,9 @@ public:
     /// @param env
     ///   Pointer to vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
+    ///   If not specified, the parent's process environment will be used.
+    ///   Note that new environment replaces the parent's environment 
+    ///   used by default for the child process, an not just add/modify some values.
     /// @return 
     ///   Completion status.
     /// @sa
@@ -206,7 +212,7 @@ public:
     ///
     /// @sa
     ///   Read, Write, Close
-    void       OpenSelf(void);
+    void OpenSelf(void);
 
     /// Close pipe.
     ///
@@ -451,7 +457,9 @@ public:
     /// @param env
     ///   Pointer to a vector with environment variables, which will be used
     ///   instead of the current environment.  Last element in the array must
-    ///   be NULL.
+    ///   be NULL. If not specified, the parent's process environment will be used.
+    ///   Note that new environment replaces the parent's environment 
+    ///   used by default for the child process, an not just add/modify some values.
     /// @param watcher
     ///   Call back object to monitor the child process execution status
     /// @param kill_timeout
@@ -464,7 +472,7 @@ public:
     ///   eDone if process has finished normally, or eCanceled if a watcher 
     ///   decided to stop it.
     ///
-    /// @sa IProcessWatcher
+    /// @sa IProcessWatcher, Open
     static EFinish ExecWait(const string&         cmd,
                             const vector<string>& args,
                             CNcbiIstream&         in,
