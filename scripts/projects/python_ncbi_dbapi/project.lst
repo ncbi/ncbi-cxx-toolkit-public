@@ -3,6 +3,7 @@ util$
 util/bitset$
 connect$
 connect/ext$
+connect/mbedtls
 dll
 dbapi$
 dbapi/driver$
