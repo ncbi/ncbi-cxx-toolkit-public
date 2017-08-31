@@ -5191,131 +5191,7 @@ static string GetFieldValue(const CDiscrepancyContext& context, const CCGPSetDat
 }
 
 
-static bool DoesFeatureMatchCGPQualConstraint(const CDiscrepancyContext& context, const CCDSGeneProt_qual_constraint& cons)
-{
-    CRef<CCGPSetData> cgp_set(new CCGPSetData);
-    const CSeqFeatData& feat_dt = context.GetCurrentSeq_feat()->GetData();
-    if (feat_dt.IsCdregion() || feat_dt.IsProt()) {
-        if (feat_dt.IsProt()) {
-            cgp_set->cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq(), &context.GetScope());
-        }
-        else {
-            cgp_set->cds = context.GetCurrentSeq_feat();
-        }
 
-        cgp_set->gene = GetGeneForFeature(context, *(cgp_set->cds)).GetPointer(); // ??why return ref
-        cgp_set->mrna = sequence::GetBestMrnaForCds(*(cgp_set->cds), context.GetScope());
-
-        GetProtFromCodingRegion(context, cgp_set, *(cgp_set->cds));
-    }
-    else if (feat_dt.IsGene()) {
-        cgp_set->gene = context.GetCurrentSeq_feat();
-    }
-    else if (feat_dt.IsRna() && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-        // c = BuildCGPSetFrommRNA (feat);
-        cgp_set->mrna = context.GetCurrentSeq_feat();
-        cgp_set->gene = GetGeneForFeature(context, *context.GetCurrentSeq_feat()).GetPointer();
-    }
-    if (!cgp_set->cds && !cgp_set->gene && !cgp_set->mrna && cgp_set->prot.Empty() && cgp_set->mat_peptide_list.empty()) {
-        return false;
-    }
-    bool rval = DoesCGPSetMatchQualConstraint(context, *cgp_set, cons);
-    bool has_field1_dt = (cons.CanGetField1() && cons.GetField1().IsField());
-    bool has_field2_dt = (cons.CanGetField2() && cons.GetField2().IsField());
-    string str1, str2;
-    const CString_constraint* str_cons = cons.CanGetConstraint() ? &(cons.GetConstraint()) : 0;
-    if (rval && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mat_peptide_aa) {
-        if (has_field1_dt) {
-            str1 = GetFieldValue(context, *cgp_set, *context.GetCurrentSeq_feat(), cons.GetField1().GetField(), str_cons);
-            if (str1.empty()) {
-                rval = false;
-            }
-        }
-        if (has_field2_dt) {
-            str2 = GetFieldValue(context, *cgp_set, *context.GetCurrentSeq_feat(), cons.GetField2().GetField(), str_cons);
-            if (str2.empty()) {
-                rval = false;
-            }
-        }
-        if (rval && cons.CanGetField1() && cons.CanGetField2() && str1 != str2) {
-            rval = false;
-        }
-    }
-    return rval;
-}
-
-
-static bool DoesObjectMatchConstraint(const CDiscrepancyContext& context, const vector <string>& strs, const CConstraint_choice& cons)
-{
-    switch (cons.Which()) {
-        case CConstraint_choice::e_String :
-            return DoesObjectMatchStringConstraint(context, *context.GetCurrentSeq_feat(), strs, cons.GetString());
-        case CConstraint_choice::e_Location :
-            return DoesFeatureMatchLocationConstraint(context, cons.GetLocation());
-        case CConstraint_choice::e_Field :
-            return DoesObjectMatchFieldConstraint(context, *context.GetCurrentSeq_feat(), cons.GetField());
-        case CConstraint_choice::e_Source :
-            if (context.GetCurrentSeq_feat()->GetData().IsBiosrc()) {
-                return DoesBiosourceMatchConstraint(context.GetCurrentSeq_feat()->GetData().GetBiosrc(), cons.GetSource());
-            }
-            else {
-                //CBioseq_Handle seq_hl = sequence::GetBioseqFromSeqLoc(context.GetCurrentSeq_feat()->GetLocation(), context.GetScope());
-                //const CBioSource* src = GetBioSource(seq_hl);
-                if (context.GetCurrentBioseq()) {
-                    return DoesBiosourceMatchConstraint(*sequence::GetBioSource(*context.GetCurrentBioseq()), cons.GetSource());        // sema: consider optimizing this call
-                }
-                else {
-                    return false;
-                }
-            }
-            break;
-        case CConstraint_choice::e_Cdsgeneprot_qual :
-            return DoesFeatureMatchCGPQualConstraint(context, cons.GetCdsgeneprot_qual());
-        case CConstraint_choice::e_Cdsgeneprot_pseudo :
-            return DoesFeatureMatchCGPPseudoConstraint(context, cons.GetCdsgeneprot_pseudo());
-        case CConstraint_choice::e_Sequence :
-            if (context.GetCurrentBioseq()) {
-                return DoesSequenceMatchSequenceConstraint(context, cons.GetSequence());
-            }
-            break;
-        case CConstraint_choice::e_Pub:
-            if (context.GetCurrentSeq_feat()->GetData().IsPub()) {
-                return DoesPubMatchPublicationConstraint(context.GetCurrentSeq_feat()->GetData().GetPub(), cons.GetPub());
-            }
-            break;
-        case CConstraint_choice::e_Molinfo:
-            return DoesObjectMatchMolinfoFieldConstraint(context, cons.GetMolinfo());
-        case CConstraint_choice::e_Field_missing:
-            return GetConstraintFieldFromObject(context, *context.GetCurrentSeq_feat(), cons.GetField_missing()).empty();
-        case CConstraint_choice::e_Translation:
-            // must be coding region or protein feature
-            if (context.GetCurrentSeq_feat()->GetData().IsProt()) {
-                const CSeq_feat* cds = sequence::GetCDSForProduct(*context.GetCurrentBioseq(), &context.GetScope());
-                if (cds) {
-                    return DoesCodingRegionMatchTranslationConstraint(context, *cds, cons.GetTranslation());
-                }
-            }
-            else if (context.GetCurrentSeq_feat()->GetData().IsCdregion()) {
-                return DoesCodingRegionMatchTranslationConstraint(context, *context.GetCurrentSeq_feat(), cons.GetTranslation());
-            }
-        default: break;
-    }
-    return true;
-}
-
-/*
-static bool DoesObjectMatchConstraintChoiceSet(const CDiscrepancyContext& context, const CConstraint_choice_set& c_set)
-{
-    vector <string> strs_in_feat;
-    GetStringsFromObject(*context.GetCurrentSeq_feat(), strs_in_feat);  // sema: may need optimization
-    ITERATE (list<CRef<CConstraint_choice> >, sit, c_set.Get()) {
-        if (!DoesObjectMatchConstraint(context, strs_in_feat, **sit)) {
-            return false;
-        }
-    }
-    return true;
-}
-*/
 
 static bool DoesStringMatchStringConstraint(const string& str, const CString_constraint& str_cons)
 {
@@ -5447,19 +5323,8 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
             ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
                 string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
                 rule_num++;
-                const CSearch_func& find = (*rule)->GetFind();
-                if (!MatchesSearchFunc(prot_name, find)) {
+                if (!(*rule)->StringMatchesSuspectProductRule(prot_name)) {
                     continue;
-                }
-                if ((*rule)->CanGetExcept()) {
-                    const CSearch_func& except = (*rule)->GetExcept();
-                    if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
-                        continue;
-                    }
-                }
-                if ((*rule)->CanGetFeat_constraint()) {
-                    const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-                    if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
                 }
                 size_t rule_type = (*rule)->GetRule_type();
                 string rule_num = "[*";
@@ -5625,22 +5490,9 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
 
     if (prot.IsSetName() && !prot.GetName().empty()) {
         string prot_name = *(prot.GetName().begin());
-
         ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-            const CSearch_func& find = (*rule)->GetFind();
-            if (!MatchesSearchFunc(prot_name, find)) {
+            if (!(*rule)->StringMatchesSuspectProductRule(prot_name)) {
                 continue;
-            }
-            if ((*rule)->CanGetExcept()) {
-                const CSearch_func& except = (*rule)->GetExcept();
-                if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
-                    continue;
-                }
-            }
-            if ((*rule)->CanGetFeat_constraint()) {
-                const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-                //if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
-                if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
             }
             m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
         }
