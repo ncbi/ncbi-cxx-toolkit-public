@@ -19,4 +19,7 @@ add_subdirectory_optional(netstorage)
 add_subdirectory_optional(jsonwrapp)
 add_subdirectory_optional(biosample_util)
 add_subdirectory_optional(data_loaders_util)
-add_subdirectory_optional(lapackwrapp)
+
+if (LAPACK_FOUND)
+    add_subdirectory_optional(lapackwrapp)
+endif()
