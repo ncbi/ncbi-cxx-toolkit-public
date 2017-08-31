@@ -1487,6 +1487,10 @@ bool s_AreGBQualsIdentical(const CSeq_feat_Handle& feat1, const CSeq_feat_Handle
 
 bool s_AreFeatureLabelsSame(const CSeq_feat_Handle& feat, const CSeq_feat_Handle& prev, bool case_sensitive)
 {
+    if (!feat.GetData().Equals(prev.GetData())) {
+        return false;
+    }
+
     // compare labels and comments
     bool same_label = true;
     const string& curr_comment =

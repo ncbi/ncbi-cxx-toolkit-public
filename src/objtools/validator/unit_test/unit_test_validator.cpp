@@ -13603,8 +13603,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CollidingGeneNames)
     gene2->SetLocation().SetInt().SetFrom(0);
     gene2->SetLocation().SetInt().SetTo(7);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatContentDup",
-           "Duplicate feature"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateFeat",
+           "Features have identical intervals, but labels differ"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "MultiplyAnnotatedGenes", 
           "Colliding names (with different capitalization) in gene features, but feature locations are identical"));
     eval = validator.Validate(seh, options);
@@ -17419,8 +17419,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiplyAnnotatedGenes)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     gene2->SetData().SetGene().SetLocus("GENE1");
-    expected_errors[1]->SetErrMsg("Colliding names (with different capitalization) in gene features, but feature locations are identical");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateFeat",
+        "Features have identical intervals, but labels differ"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "MultiplyAnnotatedGenes",
+        "Colliding names (with different capitalization) in gene features, but feature locations are identical"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
