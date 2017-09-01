@@ -35,6 +35,14 @@
 #include <corelib/plugin_manager.hpp>
 #include <dbapi/driver/interfaces.hpp>
 
+
+// Visual Studio 2013 overreacts on deprecated methods
+#if defined(_MSC_VER) && _MSC_VER < 1900
+    #pragma warning(push)
+    #pragma warning(disable : 4996)
+#endif
+
+
 /** @addtogroup DbPubInterfaces
  *
  * @{
@@ -1090,6 +1098,10 @@ END_NCBI_SCOPE
 
 
 /* @} */
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+    #pragma warning(pop)
+#endif
 
 
 #endif  /* DBAPI_DRIVER___PUBLIC__HPP */
