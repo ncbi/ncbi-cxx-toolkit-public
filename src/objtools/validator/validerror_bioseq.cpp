@@ -304,12 +304,28 @@ static bool s_IsSkippableDbtag (const CDbtag& dbt)
     }
 }
 
+// FROM VR-748: may contain only the following characters: 
+// letters, digits, hyphens , underscores (_), periods (.), colons (:),
+// asterisks , and number signs(#).
+bool s_IsLegalSeqIdChar(const char ch)
+{
+    if (isalpha(ch) || isdigit(ch)) {
+        return true;
+    } else if (ch == '-' || ch == '_' || ch == '.' || ch == ':' ||
+        ch == '*' || ch == '#') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 static char CheckForBadSeqIdChars (const string id)
 
 {
     FOR_EACH_CHAR_IN_STRING(itr, id) {
         const char& ch = *itr;
-        if (ch == '|' || ch == ',') return ch;
+        if (!s_IsLegalSeqIdChar(ch)) return ch;
     }
     return '\0';
 }
