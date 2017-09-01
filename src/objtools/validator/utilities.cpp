@@ -1626,6 +1626,7 @@ bool s_AreDifferentVariations(CSeq_feat_Handle f1, CSeq_feat_Handle f2)
 }
 
 
+typedef vector<CConstRef<CObject_id> > TFeatIdVec;
 static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CSeqFeatData::ESubtype s1, CSeqFeatData::ESubtype s2)
 {
     bool rval = false;
@@ -1636,36 +1637,36 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
         CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
         if (bsh) {
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
-            vector<int> mrna1_id;
-            vector<int> mrna2_id;
+            TFeatIdVec mrna1_id;
+            TFeatIdVec mrna2_id;
             list<CSeq_feat_Handle> mrna1;
             list<CSeq_feat_Handle> mrna2;
 
             FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f1.GetSeq_feat())) {
-                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
-                    && (*itx)->GetId().GetLocal().IsId()) {
-                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal()) {
+                    const CObject_id& feat_id = (*itx)->GetId().GetLocal();
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
                             && feat_it->GetData().GetSubtype() == s2) {
                             mrna1.push_back(*feat_it);
-                            mrna1_id.push_back (feat_id);
+                            CConstRef<CObject_id> f(&feat_id);
+                            mrna1_id.push_back (f);
                             break;
                         }
                     }
                 }
             }
             FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f2.GetSeq_feat())) {
-                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
-                    && (*itx)->GetId().GetLocal().IsId()) {
-                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal()) {
+                    const CObject_id& feat_id = (*itx)->GetId().GetLocal();
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
                             && feat_it->GetData().GetSubtype() == s2) {
                             mrna2.push_back(*feat_it);
-                            mrna2_id.push_back (feat_id);
+                            CConstRef<CObject_id> f(&feat_id);
+                            mrna2_id.push_back (f);
                         }
                     }
                 }
@@ -1673,9 +1674,9 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
 
             if (mrna1_id.size() > 0 && mrna2_id.size() > 0) {
                 rval = true;
-                ITERATE (vector<int>, i1, mrna1_id) {
-                    ITERATE (vector<int>, i2, mrna2_id) {
-                        if (*i1 == *i2) {
+                for (auto i1 = mrna1_id.begin(); i1 != mrna1_id.end(); i1++) {
+                    for (auto i2 = mrna2_id.begin(); i2 != mrna2_id.end(); i2++) {
+                        if ((*i1)->Equals(**i2)) {
                             rval = false;
                             break;
                         }
