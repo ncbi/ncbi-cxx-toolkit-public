@@ -320,12 +320,22 @@ bool s_IsLegalSeqIdChar(const char ch)
 }
 
 
-static char CheckForBadSeqIdChars (const string id)
+static char CheckForBadSeqIdChars (const string& id)
 
 {
     FOR_EACH_CHAR_IN_STRING(itr, id) {
         const char& ch = *itr;
         if (!s_IsLegalSeqIdChar(ch)) return ch;
+    }
+    return '\0';
+}
+
+
+static char CheckForBadFileIDSeqIdChars(const string& id)
+{
+    FOR_EACH_CHAR_IN_STRING(itr, id) {
+        const char& ch = *itr;
+        if (ch == '|' || ch == ',') return ch;
     }
     return '\0';
 }
@@ -567,7 +577,12 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 }
                 if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                     const string& acc = dbt.GetTag().GetStr();
-                    const char badch = CheckForBadSeqIdChars (acc);
+                    char badch;
+                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "NCBIFILE")) {
+                        badch = CheckForBadFileIDSeqIdChars(acc);
+                    } else {
+                        badch = CheckForBadSeqIdChars(acc);
+                    }
                     if (badch != '\0') {
                         PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
                                 "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
