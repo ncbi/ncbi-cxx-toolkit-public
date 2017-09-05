@@ -22,7 +22,8 @@ else
 fi
 
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-PATH="${CFG_BIN}${CFG_BIN:+:}.:${PATH}"
+# make sure /usr/bin comes first (crucial for Cygwin diff)
+PATH="${CFG_BIN}${CFG_BIN:+:}.:/usr/bin:${PATH}"
 test_tar=${test_conn_tar:-test_tar}${exe}
 $test_tar -help >/dev/null 2>&1  ||  {
   echo "Test binary $test_tar not found.  Stop."
