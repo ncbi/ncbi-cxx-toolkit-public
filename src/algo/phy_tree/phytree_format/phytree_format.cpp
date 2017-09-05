@@ -1135,7 +1135,7 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
 
                     pair<CNode*, CSeq_id_Handle> p;
                     p.first = node->GetNonNullPointer();
-                    CSeq_id sid((*node_feature)->GetValue());
+                    CSeq_id sid((*node_feature)->GetValue(),CSeq_id::fParse_Default);
                     p.second = CSeq_id_Handle::GetHandle(sid);
                     nodes.push_back(p);
                 }
