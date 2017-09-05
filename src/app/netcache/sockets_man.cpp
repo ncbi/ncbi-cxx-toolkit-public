@@ -582,7 +582,7 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
         Uint8 len_usec = cmd_len.AsUSec();
         cmd_start = CSrvTime::Current();
         if (cmd_len > s_AcceptDelay) {
-            SRV_LOG(Warning, "socket accept takes: " << len_usec << "mks");
+            SRV_LOG(Warning, "socket accept takes: " << len_usec << "us");
         }
         if (new_sock == -1) {
             int x_errno = errno;
