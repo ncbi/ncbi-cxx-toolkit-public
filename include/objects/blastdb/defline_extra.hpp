@@ -55,6 +55,7 @@ enum LinkoutTypes {
                                      ///< and transcript sequences separately.
   eBioAssay               = (1<<8),  ///< Add Linkout for BioAssay (structure group resource)
   eReprMicrobialGenomes   = (1<<9)   ///< Linkout for the representative microbial genomes
+  eGenomeDataViewer       = (1<<10)  ///< Linkout for Genome Data Viewer (GDV)
 };
 
 /// Defines a pair of LinkoutTypes and its string representation
