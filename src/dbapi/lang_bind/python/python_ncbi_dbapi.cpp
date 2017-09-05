@@ -4467,6 +4467,7 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
 
 static CDiagHandler* s_OrigDiagHandler;
 static bool          s_WasUsingOldPostFormat;
+static
 void s_RestoreOrigDiagHandler(void)
 {
     if (s_OrigDiagHandler != NULL) {
