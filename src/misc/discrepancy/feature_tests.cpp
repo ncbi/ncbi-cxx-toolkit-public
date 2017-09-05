@@ -2042,7 +2042,7 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, COverlappingFeatures, eDisc | eSubmi
             ENa_strand feat_strand = (*feat)->GetLocation().GetStrand();
             const CGene_ref* gx = (*feat)->GetGeneXref();
             const CSeq_feat* gene = context.GetGeneForFeature(**feat);
-            if (!gene || (gx && !GeneRefMatch(*gx, gene->GetData().GetGene()))) {
+            if (!gene || (gx && !gx->IsSuppressed() && !GeneRefMatch(*gx, gene->GetData().GetGene()))) {
                 if ((*feat)->GetGeneXref()) {
                     string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
                     if ((*feat)->GetData().IsCdregion()) {
