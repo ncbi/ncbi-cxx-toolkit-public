@@ -4478,6 +4478,13 @@ void s_RestoreOrigDiagHandler(void)
 }
 
 static
+int s_OnClear(PyObject*)
+{
+    s_RestoreOrigDiagHandler();
+    return 0;
+}
+
+static
 PyObject* init_common(const string& module_name)
 {
     if (CNcbiApplication::Instance() == NULL) {
@@ -4508,7 +4515,8 @@ PyObject* init_common(const string& module_name)
     CDriverManager::GetInstance().AddDllSearchPath(module_dir);
 
 
-    pythonpp::CModuleExt::Declare(module_name, python_ncbi_dbapi_methods);
+    pythonpp::CModuleExt::Declare(module_name, python_ncbi_dbapi_methods,
+                                  s_OnClear);
 
     // Define module attributes ...
     pythonpp::CModuleExt::AddConst("apilevel", "2.0");

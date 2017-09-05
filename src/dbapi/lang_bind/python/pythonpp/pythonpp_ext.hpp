@@ -834,7 +834,8 @@ template <class T> typename CExtModule<T>::TMethodList CExtModule<T>::sm_MethodL
 class CModuleExt
 {
 public:
-    static void Declare(const string& name, PyMethodDef* methods);
+    static void Declare(const string& name, PyMethodDef* methods,
+                        inquiry cleanup_hook = NULL);
 
 public:
     static const string& GetName(void)
@@ -875,13 +876,15 @@ struct PyModuleDef CModuleExt::m_ModuleDef = {
 #endif
 
 void
-CModuleExt::Declare(const string& name, PyMethodDef* methods)
+CModuleExt::Declare(const string& name, PyMethodDef* methods,
+                    inquiry cleanup_hook)
 {
     _ASSERT( m_Module == NULL );
 
 #if PY_MAJOR_VERSION >= 3
     m_ModuleDef.m_name = strdup(name.c_str());
     m_ModuleDef.m_methods = methods;
+    m_ModuleDef.m_clear = cleanup_hook;
     m_Module = PyModule_Create(&m_ModuleDef);
 #else
     m_Name = name;
