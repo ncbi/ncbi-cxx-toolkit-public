@@ -618,20 +618,25 @@ s_BlastHSPCullingRun(void* data, BlastHSPList* hsp_list)
    BlastHSPCullingData * cull_data = data;
    BlastHSPCullingParams* params = cull_data->params;
    CTreeNode **c_tree = cull_data->c_tree;
-
+   Boolean isBlastn = (params->program == eBlastTypeBlastn);
    if (!hsp_list) return 0;
 
    for (i=0; i<hsp_list->hspcnt; ++i) {
-
       /* wrap the hsp with a LinkedHSP structure */
       A.hsp   = hsp_list->hsp_array[i];                                  
-      A.cid   = A.hsp->context;
+      A.cid   = isBlastn ? (A.hsp->context  - A.hsp->context % NUM_STRANDS) : A.hsp->context;
       A.sid   = hsp_list->oid;
       A.merit = params->culling_max;
-      A.begin = A.hsp->query.offset;
-      A.end   = A.hsp->query.end;
+      qlen    = cull_data->query_info->contexts[A.hsp->context].query_length;
+      if(isBlastn && (A.hsp->context % NUM_STRANDS)) {
+    	  A.begin = qlen - A.hsp->query.end;
+    	  A.end   = qlen -  A.hsp->query.offset;
+      }
+      else {
+    	  A.begin = A.hsp->query.offset;
+    	  A.end   = A.hsp->query.end;
+      }
       A.next  = NULL;
-      qlen    = cull_data->query_info->contexts[A.cid].query_length;
 
       if (! c_tree[A.cid]) {
          c_tree[A.cid] = s_CTreeNew(qlen);
