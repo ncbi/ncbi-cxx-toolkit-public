@@ -578,7 +578,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                     const string& acc = dbt.GetTag().GetStr();
                     char badch;
-                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "NCBIFILE")) {
+                    if (dbt.IsSetDb() && (NStr::Equal(dbt.GetDb(), "NCBIFILE") || NStr::Equal(dbt.GetDb(), "BankIt"))) {
                         badch = CheckForBadFileIDSeqIdChars(acc);
                     } else {
                         badch = CheckForBadSeqIdChars(acc);
