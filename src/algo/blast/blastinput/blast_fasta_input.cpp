@@ -481,7 +481,9 @@ CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile,
     : m_SeqBuffLen(550),
       m_LineReader(new CStreamLineReader(infile)),
       m_IsPaired(paired),
-      m_Format(format)
+      m_Format(format),
+      m_Id(1),
+      m_ParseSeqIds(false)
 {
     // allocate sequence buffer
     m_Sequence.reserve(m_SeqBuffLen + 1);
@@ -507,7 +509,9 @@ CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile1,
       m_LineReader(new CStreamLineReader(infile1)),
       m_SecondLineReader(new CStreamLineReader(infile2)),
       m_IsPaired(true),
-      m_Format(format)
+      m_Format(format),
+      m_Id(1),
+      m_ParseSeqIds(false)
 {
     if (m_Format == eFastc) {
         m_LineReader.Reset();
@@ -708,15 +712,21 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
     size_t second_len = m_Line.length() - p - 2;
 
     {{
-            CRef<CSeq_id> seqid(new CSeq_id);
-            seqid->Set(CSeq_id::e_Local, id + ".1");
-
             CRef<CSeq_entry> seq_entry(new CSeq_entry);
             CBioseq& bioseq = seq_entry->SetSeq();
+            bioseq.SetId().clear();
+            if (m_ParseSeqIds) {
+                CRef<CSeq_id> seqid(new CSeq_id(id + ".1"));
+                bioseq.SetId().push_back(seqid);
+            }
+            else {
+                CRef<CSeqdesc> title(new CSeqdesc);
+                title->SetTitle(id + ".1");
+                bioseq.SetDescr().Set().push_back(title);
+                bioseq.SetId().push_back(x_GetNextSeqId());
+            }
             bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
             bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            bioseq.SetId().clear();
-            bioseq.SetId().push_back(seqid);
             bioseq.SetInst().SetLength(first_len);
             first[first_len] = 0;
             bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
@@ -727,15 +737,21 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
     }}
     
     {{
-            CRef<CSeq_id> seqid(new CSeq_id);
-            seqid->Set(CSeq_id::e_Local, id + ".2");
-
             CRef<CSeq_entry> seq_entry(new CSeq_entry);
             CBioseq& bioseq = seq_entry->SetSeq();
+            bioseq.SetId().clear();
+            if (m_ParseSeqIds) {
+                CRef<CSeq_id> seqid(new CSeq_id(id + ".2"));
+                bioseq.SetId().push_back(seqid);
+            }
+            else {
+                CRef<CSeqdesc> title(new CSeqdesc);
+                title->SetTitle(id + ".2");
+                bioseq.SetDescr().Set().push_back(title);
+                bioseq.SetId().push_back(x_GetNextSeqId());
+            }
             bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
             bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            bioseq.SetId().clear();
-            bioseq.SetId().push_back(seqid);
             bioseq.SetInst().SetLength(second_len);
             second[second_len] = 0;
             bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
@@ -755,9 +771,7 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
     int start = 0;
     // parse the last read defline
     CTempString line = **line_reader;
-    CTempString id = x_ParseDefline(line);
-    CRef<CSeq_id> seqid(new CSeq_id);
-    seqid->Set(CSeq_id::e_Local, id);
+    string defline_id = x_ParseDefline(line);
     ++(*line_reader);
     line = **line_reader;
     while (line[0] != '>') {
@@ -794,14 +808,23 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
     if (start > 0) {
         CRef<CSeq_entry> seq_entry(new CSeq_entry);
         CBioseq& bioseq = seq_entry->SetSeq();
+        bioseq.SetId().clear();
+        if (m_ParseSeqIds) {
+            CRef<CSeq_id> seqid(new CSeq_id(defline_id));
+            bioseq.SetId().push_back(seqid);
+            bioseq.SetDescr();
+        }
+        else {
+            CRef<CSeqdesc> title(new CSeqdesc);
+            title->SetTitle(defline_id);
+            bioseq.SetDescr().Set().push_back(title);
+            bioseq.SetId().push_back(x_GetNextSeqId());
+        }
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
         bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-        bioseq.SetId().clear();
-        bioseq.SetId().push_back(seqid);
         bioseq.SetInst().SetLength(start);
         m_Sequence[start] = 0;
         bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(&m_Sequence[0]));
-        bioseq.SetDescr();
 
         m_BasesAdded += start;
         return seq_entry;
@@ -815,7 +838,7 @@ CRef<CSeq_entry>
 CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
 {
     CTempString line;
-    CTempString id;
+    string defline_id;
     CRef<CSeq_entry> retval;
 
     // first read defline
@@ -834,9 +857,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
                    NStr::IntToString(line_reader->GetLineNumber()));
     }
 
-    id = x_ParseDefline(line);
-    CRef<CSeq_id> seqid(new CSeq_id);
-    seqid->Set(CSeq_id::e_Local, id);
+    defline_id = x_ParseDefline(line);
 
     // read sequence
     ++(*line_reader);
@@ -851,13 +872,22 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     if (line.length() > 0) {
         CRef<CSeq_entry> seq_entry(new CSeq_entry);
         CBioseq& bioseq = seq_entry->SetSeq();
+        bioseq.SetId().clear();
+        if (m_ParseSeqIds) {
+            CRef<CSeq_id> seqid(new CSeq_id(defline_id));
+            bioseq.SetId().push_back(seqid);
+            bioseq.SetDescr();
+        }
+        else {
+            CRef<CSeqdesc> title(new CSeqdesc);
+            title->SetTitle(defline_id);
+            bioseq.SetDescr().Set().push_back(title);
+            bioseq.SetId().push_back(x_GetNextSeqId());
+        }
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
         bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-        bioseq.SetId().clear();
-        bioseq.SetId().push_back(seqid);
         bioseq.SetInst().SetLength(line.length());
         bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
-        bioseq.SetDescr();
 
         m_BasesAdded += line.length();
         retval = seq_entry;
@@ -949,6 +979,15 @@ CTempString CShortReadFastaInputSource::x_ParseDefline(CTempString& line)
     return id;
 }
 
+
+CRef<CSeq_id> CShortReadFastaInputSource::x_GetNextSeqId(void)
+{
+    CRef<CSeq_id> seqid(new CSeq_id);
+    seqid->Set(CSeq_id::e_Local, NStr::IntToString(m_Id));
+    m_Id++;
+
+    return seqid;
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

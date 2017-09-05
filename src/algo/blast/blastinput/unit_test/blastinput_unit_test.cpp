@@ -2874,6 +2874,26 @@ static int s_GetSegmentFlags(const CBioseq& bioseq)
     return retval;
 }
 
+static string s_GetSequenceId(const CBioseq& bioseq)
+{
+    string retval;
+    if (bioseq.IsSetDescr()) {
+        for (auto it: bioseq.GetDescr().Get()) {
+            if (it->IsTitle()) {
+                vector<string> tokens;
+                NStr::Split(it->GetTitle(), " ", tokens);
+                retval = (string)"lcl|" + tokens[0];
+            }
+        }
+    }
+
+    if (retval.empty()) {
+        retval = bioseq.GetFirstId()->AsFastaString();
+    }
+
+    return retval;
+}
+
 
 BOOST_AUTO_TEST_CASE(TestPairedReadsFromFasta) {
 
@@ -2900,7 +2920,7 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromFasta) {
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
-        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        string id = s_GetSequenceId(it->GetSeq());
         int flags = s_GetSegmentFlags(it->GetSeq());
         int expected = ref_flags.at(id);
 
@@ -2940,7 +2960,7 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastaFiles) {
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
-        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        string id = s_GetSequenceId(it->GetSeq());
         int flags = s_GetSegmentFlags(it->GetSeq());
         int expected = ref_flags.at(id);
 
@@ -2970,7 +2990,7 @@ BOOST_AUTO_TEST_CASE(TestSingleReadsFromFasta) {
     for (auto it : queries->GetSeq_set()) {
         if (it->GetSeq().IsSetDescr()) {
 
-            string id = it->GetSeq().GetFirstId()->AsFastaString();
+            string id = s_GetSequenceId(it->GetSeq());
             int flags = s_GetSegmentFlags(it->GetSeq());
             int expected = 0;
 
@@ -3010,7 +3030,7 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromFastQ) {
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
-        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        string id = s_GetSequenceId(it->GetSeq());
         int flags = s_GetSegmentFlags(it->GetSeq());
         int expected = ref_flags.at(id);
 
@@ -3049,7 +3069,7 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoFastQFiles) {
 
     size_t count = 0;
     for (auto it : queries->GetSeq_set()) {
-        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        string id = s_GetSequenceId(it->GetSeq());
         int flags = s_GetSegmentFlags(it->GetSeq());
         int expected = ref_flags.at(id);
 

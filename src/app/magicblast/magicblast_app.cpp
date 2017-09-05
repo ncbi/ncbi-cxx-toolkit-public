@@ -180,7 +180,28 @@ static string s_GetBareId(const CSeq_id& id)
     return retval;
 }
 
-/* NOT USED
+
+static string s_GetSequenceId(const CBioseq& bioseq)
+{
+    string retval;
+    if (bioseq.IsSetDescr()) {
+        for (auto it: bioseq.GetDescr().Get()) {
+            if (it->IsTitle()) {
+                vector<string> tokens;
+                NStr::Split(it->GetTitle(), " ", tokens);
+                retval = tokens[0];
+            }
+        }
+    }
+
+    if (retval.empty()) {
+        retval = s_GetBareId(*bioseq.GetFirstId());
+    }
+
+    return retval;
+}
+
+
 typedef unordered_map<string, CRef<CSeq_entry> > TQueryMap;
 
 static void s_CreateQueryMap(const CBioseq_set& query_batch,
@@ -200,68 +221,21 @@ static void s_CreateQueryMap(const CBioseq_set& query_batch,
 }
 
 
-static int s_GetQuerySequence_OLD(const TQueryMap& queries,
-                              const CSeq_loc& seq_loc,
-                              bool reverse_complement,
-                              string& sequence)
+static const CBioseq& s_GetQueryBioseq(const TQueryMap& queries,
+                                       const CSeq_id& seqid)
 {
-    const CSeq_id* seqid = seq_loc.GetId();
-    _ASSERT(seqid);
-    TQueryMap::const_iterator it = queries.find(seqid->GetSeqIdString());
+    TQueryMap::const_iterator it = queries.find(seqid.GetSeqIdString());
     _ASSERT(it != queries.end());
     if (it == queries.end()) {
-        return 1;
+        NCBI_THROW(CException, eInvalid, (string)"Query Bioseq not found for "
+                   "id: " + s_GetBareId(seqid));
     }
-    CSeq_loc::TRange range = seq_loc.GetTotalRange();
-    const CSeq_data& seq_data = it->second->GetSeq().GetInst().GetSeq_data();
-    switch (seq_data.Which()) {
-    case CSeq_data::e_Iupacna:
-        sequence = seq_data.GetIupacna().Get();
-        if (seq_loc.Which() != CSeq_loc::e_Whole) {
-            sequence = sequence.substr(range.GetFrom(), range.GetLength());
-        }
-        break;
-
-    case CSeq_data::e_Ncbi2na:
-        CSeqConvert::Convert(seq_data.GetNcbi2na().Get(),
-                             CSeqUtil::e_Ncbi2na, range.GetFrom(),
-                             range.GetLength(),
-                             sequence, CSeqUtil::e_Iupacna);
-        break;
-    case CSeq_data::e_Ncbi4na:
-        CSeqConvert::Convert(seq_data.GetNcbi4na().Get(),
-                             CSeqUtil::e_Ncbi4na, range.GetFrom(),
-                             range.GetLength(),
-                             sequence, CSeqUtil::e_Iupacna);
-        break;
-
-    case CSeq_data::e_Ncbi8na:
-        CSeqConvert::Convert(seq_data.GetNcbi8na().Get(),
-                             CSeqUtil::e_Ncbi8na, range.GetFrom(),
-                             range.GetLength(),
-                             sequence, CSeqUtil::e_Iupacna);
-        break;
-
-    default:
-        NCBI_THROW(CException, eInvalid, "Unexpected query sequence "
-                   "encoding");
-    };
-
-
-    if (reverse_complement) {
-        string tmp(sequence);
-        CSeqManip::ReverseComplement(tmp, CSeqUtil::e_Iupacna, 0, tmp.length(),
-                                     sequence);
-    }
-
-    return 0;
+    
+    return it->second->GetSeq();
 }
-*/
-
-typedef CRange<TSeqPos> TRange;
 
 static int s_GetQuerySequence(const CBioseq& bioseq,
-                              const TRange& range,
+                              const CRange<TSeqPos>& range,
                               bool reverse_complement,
                               string& sequence)
 {
@@ -309,7 +283,6 @@ static int s_GetQuerySequence(const CBioseq& bioseq,
     return 0;
 }
 
-
 CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
                                  const string& cmd_line_args)
 {
@@ -352,7 +325,7 @@ CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
 
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
-                           const CBioseq_set::TSeq_set::const_iterator& query_it,
+                           const TQueryMap& queries,
                            bool is_paired, int batch_number, int compartment,
                            const CSeq_align* mate = NULL)
 {
@@ -368,18 +341,19 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        PrintTabular(ostr, **first, query_it, is_paired, batch_number,
+        PrintTabular(ostr, **first, queries, is_paired, batch_number,
                      compartment, second->GetNonNullPointer());
         ostr << endl;
 
-        PrintTabular(ostr, **second, query_it, is_paired, batch_number,
+        PrintTabular(ostr, **second, queries, is_paired, batch_number,
                      compartment, first->GetNonNullPointer());
 
         return ostr;
     }
 
     string sep = "\t";
-    ostr << s_GetBareId(align.GetSeq_id(0)) << sep;
+    const CBioseq& bioseq = s_GetQueryBioseq(queries, align.GetSeq_id(0));
+    ostr << s_GetSequenceId(bioseq) << sep;
 
     ostr << s_GetBareId(align.GetSeq_id(1)) << sep;
 
@@ -445,7 +419,6 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
     Int4 num_hits = 0;
     Int4 pair_start = 0;
     Int4 fragment_score = 0;
-    int segment_info = 0;
 
     CConstRef<CUser_object> ext = align.FindExt("Mapper Info");
     if (ext.NotEmpty()) {
@@ -464,11 +437,6 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
                      (*it)->GetData().IsInt()) {
 
                 num_hits = (*it)->GetInt();
-            }
-            else if ((*it)->GetLabel().GetStr() == "segment" &&
-                     (*it)->GetData().IsInt()) {
-
-                segment_info = (*it)->GetInt();
             }
         }
     }
@@ -517,11 +485,10 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
     string left_overhang = "-";
     string right_overhang = "-";
     if (query_len <= 0) {
-        query_len = (*query_it)->GetSeq().GetLength();
+        query_len = bioseq.GetInst().GetLength();
     }
 
-
-    TRange range = align.GetSeqRange(0);
+    CRange<TSeqPos> range = align.GetSeqRange(0);
     int from = range.GetFrom();
     int to = range.GetToOpen();
     if (align.GetSeqStrand(0) == eNa_strand_minus) {
@@ -529,23 +496,18 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         to = query_len - range.GetFrom();
     }
 
-    auto q_it(query_it);
-    if ((segment_info & fLastSegmentFlag) != 0) {
-        ++q_it;
-    }
-
     // reverse complemented 5' end
     if (from > 0) {
+        CRange<TSeqPos> r(MAX(0, from - 30), from - 1);
         left_overhang.clear();
-        TRange r(MAX(0, from - 30), from - 1);
-        s_GetQuerySequence((*q_it)->GetSeq(), r, true, left_overhang);
+        s_GetQuerySequence(bioseq, r, true, left_overhang);
     }
         
     // 3' end
     if (to < query_len) {
-        TRange r(to, MIN(to + 30 - 1, query_len - 1));
+        CRange<TSeqPos> r(to, MIN(to + 30 - 1, query_len - 1));
         right_overhang.clear();
-        s_GetQuerySequence((*q_it)->GetSeq(), r, false, right_overhang);
+        s_GetQuerySequence(bioseq, r, false, right_overhang);
     }
 
     ostr << sep << query_len
@@ -590,7 +552,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 
 CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
                                     const CMagicBlastResults& results,
-                                    const CBioseq& query,
+                                    const TQueryMap& queries,
                                     bool first_seg)
 {
     string sep = "\t";
@@ -601,9 +563,10 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
     else {
         id.Set(results.GetLastId().AsFastaString());
     }
+    const CBioseq& bioseq = s_GetQueryBioseq(queries, id);
 
     // query
-    ostr << s_GetBareId(id) << sep;
+    ostr << s_GetSequenceId(bioseq) << sep;
 
     // subject
     ostr << "-" << sep;
@@ -630,7 +593,8 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
     ostr << "-" << sep << "-" << sep;
 
     // query length
-    int query_len = query.GetInst().GetLength();
+    int query_len = bioseq.GetInst().GetLength();
+
     ostr << query_len << sep;
 
     // btop string
@@ -672,12 +636,12 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            const CMagicBlastResults& results,
-                           const CBioseq_set::TSeq_set::const_iterator& query_it,
+                           const TQueryMap& queries,
                            bool is_paired, int batch_number,
                            int& compartment, bool print_unaligned)
 {
     for (auto it: results.GetSeqAlign()->Get()) {
-        PrintTabular(ostr, *it, query_it, is_paired, batch_number, compartment++);
+        PrintTabular(ostr, *it, queries, is_paired, batch_number, compartment++);
         ostr << endl;
     }
 
@@ -686,17 +650,14 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
     }
 
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
-        PrintTabularUnaligned(ostr, results, (*query_it)->GetSeq(), true);
+        PrintTabularUnaligned(ostr, results, queries, true);
         ostr << endl;
     }
 
     if (results.IsPaired() &&
         (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
 
-        auto next_query(query_it);
-        ++next_query;
-
-        PrintTabularUnaligned(ostr, results, (*next_query)->GetSeq(), false);
+        PrintTabularUnaligned(ostr, results, queries, false);
         ostr << endl;
     }
 
@@ -710,17 +671,13 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            bool is_paired, int batch_number,
                            bool print_unaligned)
 {
-    auto query_it = query_batch.GetSeq_set().begin();
+    TQueryMap queries;
+    s_CreateQueryMap(query_batch, queries);
 
     int compartment = 0;
     for (auto it: results) {
-        PrintTabular(ostr, *it, query_it, is_paired, batch_number,
+        PrintTabular(ostr, *it, queries, is_paired, batch_number,
                      compartment, print_unaligned);
-
-        ++query_it;
-        if (it->IsPaired()) {
-            ++query_it;
-        }
     }
 
     return ostr;
@@ -884,7 +841,7 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
 #define SAM_FLAG_SECONDARY      0x100
 
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
-                       const CBioseq_set::TSeq_set::const_iterator& query_it,
+                       const TQueryMap& queries,
                        const BlastQueryInfo* query_info,
                        int batch_number, bool& first_secondary, 
                        bool& last_secondary, bool trim_read_ids,
@@ -910,12 +867,12 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        PrintSAM(ostr, **first, query_it, query_info, batch_number,
+        PrintSAM(ostr, **first, queries, query_info, batch_number,
                  first_secondary, last_secondary,
                  trim_read_ids, second->GetNonNullPointer());
         ostr << endl;
 
-        PrintSAM(ostr, **second, query_it, query_info, batch_number,
+        PrintSAM(ostr, **second, queries, query_info, batch_number,
                  first_secondary, last_secondary,
                  trim_read_ids, first->GetNonNullPointer());
 
@@ -1021,7 +978,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     // read id
-    string read_id = s_GetBareId(align.GetSeq_id(0));
+    const CBioseq& bioseq = s_GetQueryBioseq(queries, align.GetSeq_id(0));
+    string read_id = s_GetSequenceId(bioseq);
     if (trim_read_ids &&
         (NStr::EndsWith(read_id, ".1") || NStr::EndsWith(read_id, ".2") ||
          NStr::EndsWith(read_id, "/1") || NStr::EndsWith(read_id, "/2"))) {
@@ -1037,7 +995,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     ostr << s_GetBareId(align.GetSeq_id(1)) << sep;
 
     // mapping position
-    TRange range = align.GetSeqRange(1);
+    CRange<TSeqPos> range = align.GetSeqRange(1);
     ostr << range.GetFrom() + 1 << sep;
     
     // mapping quality
@@ -1238,20 +1196,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
     // read sequence
     string sequence;
-    TRange empty_range;
-    int status = 0;
-    if (((sam_flags & SAM_FLAG_MULTI_SEGMENTS) == 0) ||
-        ((sam_flags & SAM_FLAG_FIRST_SEGMENT) != 0)) {
-
-        status = s_GetQuerySequence((*query_it)->GetSeq(), empty_range,
+    CRange<TSeqPos> r;
+    int status = s_GetQuerySequence(bioseq, r,
                            (sam_flags & SAM_FLAG_SEQ_REVCOMP) != 0, sequence);
-    }
-    else {
-        auto next_query(query_it);
-        ++next_query;
-        status = s_GetQuerySequence((*next_query)->GetSeq(), empty_range,
-                           (sam_flags & SAM_FLAG_SEQ_REVCOMP) != 0, sequence);
-    }
 
     if (!status) {
         ostr << sequence << sep;
@@ -1310,7 +1257,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
 CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
                                 const CMagicBlastResults& results,
-                                const CBioseq& query,
+                                const TQueryMap& queries,
                                 bool first_seg,
                                 bool trim_read_ids)
 {
@@ -1325,7 +1272,8 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     }
 
     // read id
-    string read_id = s_GetBareId(id);
+    const CBioseq& bioseq = s_GetQueryBioseq(queries, id);
+    string read_id = s_GetSequenceId(bioseq);
     if (trim_read_ids &&
         (NStr::EndsWith(read_id, ".1") || NStr::EndsWith(read_id, ".2") ||
          NStr::EndsWith(read_id, "/1") || NStr::EndsWith(read_id, "/2"))) {
@@ -1376,8 +1324,8 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 
     // sequence
     string sequence;
-    TRange range;
-    int status = s_GetQuerySequence(query, range, false, sequence);
+    CRange<TSeqPos> range;
+    int status = s_GetQuerySequence(bioseq, range, false, sequence);
     if (status) {
         ostr << "*" << sep;
     }
@@ -1400,7 +1348,7 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 
 
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
-                       const CBioseq_set::TSeq_set::const_iterator& query_it,
+                       const TQueryMap& queries,
                        const BlastQueryInfo* query_info, int batch_number,
                        bool trim_read_id, bool print_unaligned)
 {
@@ -1408,7 +1356,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
     bool last_secondary = false;
 
     for (auto it: results.GetSeqAlign()->Get()) {
-        PrintSAM(ostr, *it, query_it, query_info, batch_number, first_secondary,
+        PrintSAM(ostr, *it, queries, query_info, batch_number, first_secondary,
                  last_secondary, trim_read_id);
         ostr << endl;
     }
@@ -1418,18 +1366,13 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
     }
 
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
-        PrintSAMUnaligned(ostr, results, (*query_it)->GetSeq(), true,
-                          trim_read_id);
+        PrintSAMUnaligned(ostr, results, queries, true, trim_read_id);
         ostr << endl;
     }
 
     if (results.IsPaired() &&
         (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
-        auto next_query(query_it);
-        ++next_query;
-
-        PrintSAMUnaligned(ostr, results, (*next_query)->GetSeq(), false,
-                          trim_read_id);
+        PrintSAMUnaligned(ostr, results, queries, false, trim_read_id);
         ostr << endl;
     }
 
@@ -1444,20 +1387,50 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        bool trim_read_id,
                        bool print_unaligned)
 {
-    auto qit = query_batch.GetSeq_set().begin();
+    TQueryMap bioseqs;
+    s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
-        PrintSAM(ostr, *it, qit, query_info, batch_number, trim_read_id,
+        PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id,
                  print_unaligned);
-
-        ++qit;
-        if (it->IsPaired()) {
-            ++qit;
-        }
     }
 
     return ostr;
 }                       
+
+
+CNcbiOstream& PrintASN1(CNcbiOstream& ostr, const CBioseq_set& query_batch,
+                        CSeq_align_set& aligns)
+{
+    TQueryMap queries;
+    s_CreateQueryMap(query_batch, queries);
+
+    for (auto it: aligns.Set()) {
+        if (it->GetSegs().Which() != CSeq_align::TSegs::e_Spliced) {
+            continue;
+        }
+
+        const CBioseq& bioseq = s_GetQueryBioseq(queries, it->GetSeq_id(0));
+        CRef<CSeq_id> seqid;
+        if (bioseq.IsSetDescr()) {
+            for (auto it: bioseq.GetDescr().Get()) {
+                if (it->IsTitle()) {
+                    vector<string> tokens;
+                    NStr::Split(it->GetTitle(), " ", tokens);
+                    seqid.Reset(new CSeq_id(tokens[0], CSeq_id::fParse_Default));
+                }
+            }
+        }
+
+        if (seqid.NotEmpty()) {
+            it->SetSegs().SetSpliced().SetProduct_id(*seqid);
+        }
+    }
+
+    ostr << MSerial_AsnText << aligns;
+
+    return ostr;
+}
 
 
 static CShortReadFastaInputSource::EInputFormat
@@ -1808,8 +1781,8 @@ int CMagicBlastApp::Run(void)
                     else if (fmt_args->GetFormattedOutputChoice() ==
                              CFormattingArgs::eAsnText) {
 
-                        os_vector[thread_index] << MSerial_AsnText <<
-                            *results->GetFlatResults();
+                        PrintASN1(os_vector[thread_index], *query_batch,
+                                  *results->GetFlatResults());
                     }
                     else {
                 

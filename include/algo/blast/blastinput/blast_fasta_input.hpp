@@ -136,6 +136,7 @@ public:
 
     virtual bool End(void) {return m_LineReader->AtEOF();}
 
+    void SetParseSeqIds(bool val) {m_ParseSeqIds = val;}
 
 private:
     CShortReadFastaInputSource(const CShortReadFastaInputSource&);
@@ -159,6 +160,8 @@ private:
     /// on a single line separated by '><'
     void x_ReadFastc(CBioseq_set& bioseq_set);
 
+    CRef<CSeq_id> x_GetNextSeqId(void);
+
     /// Number of bases added so far
     TSeqPos m_BasesAdded;
     /// string::capacity() can be used instead
@@ -172,6 +175,10 @@ private:
     bool m_IsPaired;
     /// Input format: FASTA, FASTQ, FASTC
     EInputFormat m_Format;
+    /// A counter for generating local ids
+    unsigned int m_Id;
+    /// Should defline ids be used Bioseq objects
+    bool m_ParseSeqIds;
 };
 
 
