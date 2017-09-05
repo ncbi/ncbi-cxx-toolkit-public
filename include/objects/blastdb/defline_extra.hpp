@@ -54,7 +54,7 @@ enum LinkoutTypes {
   eGenomicSeq             = (1<<7),  ///< Is a genomic sequence.  Used for the genome+transcript database to show the genomic 
                                      ///< and transcript sequences separately.
   eBioAssay               = (1<<8),  ///< Add Linkout for BioAssay (structure group resource)
-  eReprMicrobialGenomes   = (1<<9)   ///< Linkout for the representative microbial genomes
+  eReprMicrobialGenomes   = (1<<9),  ///< Linkout for the representative microbial genomes
   eGenomeDataViewer       = (1<<10)  ///< Linkout for Genome Data Viewer (GDV)
 };
 
