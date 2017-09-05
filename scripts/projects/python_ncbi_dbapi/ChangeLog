@@ -1,4 +1,4 @@
-Version 1.19.0 (2018-08-31):
+Version 1.19.0 (2017-08-31):
 * Advance to version 20.0 of the stable C++ Toolkit components, with
   mbed TLS favored over GNUTLS but the latter kept around for
   compatibility (linked statically, as before).
