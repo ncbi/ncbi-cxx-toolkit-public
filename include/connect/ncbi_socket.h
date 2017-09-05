@@ -2115,7 +2115,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  * @param bufsize
  *  must be large enough
  * @return
- *  Number of bytes printed, or 0 on error (e.g. buffer too short).
+ *  Number of bytes printed, or 0 on error (e.g. buffer too small).
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 (unsigned int   host,
