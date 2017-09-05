@@ -2274,6 +2274,7 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
         // update
         init.ForceGuard(binfo.m_BioseqAnnotRef_Info, m_MutexPool);
         if ( binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            binfo.m_BioseqAnnotRef_Info->match.clear();
             x_GetTSESetWithAnnots(lock, &binfo.m_BioseqAnnotRef_Info->match, binfo);
             binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp = m_AnnotChangeCounter;
             return;
@@ -2306,6 +2307,7 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
         // update
         init.ForceGuard(info.second.m_AllAnnotRef_Info, m_MutexPool);
         if ( info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            info.second.m_AllAnnotRef_Info->match.clear();
             x_GetTSESetWithAnnots(lock, &info.second.m_AllAnnotRef_Info->match, info);
             info.second.m_AllAnnotRef_Info->m_SearchTimestamp = m_AnnotChangeCounter;
             return;
