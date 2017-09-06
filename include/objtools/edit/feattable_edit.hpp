@@ -130,6 +130,10 @@ protected:
     void xFeatureAddTranscriptIdDefault(
         CMappedFeat);
 
+    std::string xGenerateTranscriptOrProteinId(
+        CMappedFeat,
+        const std::string&);
+
     CRef<CSeq_feat> xMakeGeneForFeature(
         const CMappedFeat&);
     void xGenerateMissingGeneForSubtype(

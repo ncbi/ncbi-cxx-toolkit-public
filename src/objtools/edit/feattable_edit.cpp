@@ -483,6 +483,10 @@ void CFeatTableEdit::xFeatureAddProteinIdMrna(
         xFeatureRemoveQualifier(mf, "orig_protein_id");
     }
     auto pid = mf.GetNamedQual("protein_id");
+    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
+        // already what we want
+        return;
+    }
     if (pid.empty()) {
     // we need to upinherit the protein_id from the CDS:
         CMappedFeat child = feature::GetBestCdsForMrna(mf, &mTree);
@@ -496,20 +500,10 @@ void CFeatTableEdit::xFeatureAddProteinIdMrna(
     }
 
     // otherwise, we need to police the existing transcript_id:
-    if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
-        // already what we want
-        return;
+    pid = xGenerateTranscriptOrProteinId(mf, pid);
+    if (!pid.empty()) {
+        xFeatureSetQualifier(mf, "protein_id", pid);
     }
-
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
-        xPutError(
-            ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
-        return;
-    }
-    pid = string("gnl|") + locusTagPrefix + "|" + pid;
-    xFeatureSetQualifier(mf, "protein_id", pid);
 }
 
 //  ----------------------------------------------------------------------------
@@ -529,41 +523,21 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     }
 
     auto pid = mf.GetNamedQual("protein_id");
-    if (pid.empty()) {
-    // we need to create and assign a protein_id (based on locus_tag prefix):
-        auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-        auto featId = xGetIdStr(mf);
-        auto oid = mf.GetNamedQual("ID"); 
-        if (oid.empty()) {
-            oid = featId;
-        }
-        if (string::npos != oid.find("|")  ||  locusTagPrefix.empty()) {
-            xPutError(
-                ILineError::eProblem_InvalidQualifier,
-                "Feature " + featId + " does not have a usable protein_id.");
-            xFeatureAddQualifier(mf, "protein_id", "MISSING");
-            return;
-        }
-        auto pid = string("gnl|") + locusTagPrefix + "|" + oid;
-        xFeatureAddQualifier(mf, "protein_id", pid);
-        return;
-    }
-
-    // otherwise, we need to police the existing transcript_id:
     if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
         // already what we want
         return;
     }
 
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
-        xPutError(
-            ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
-        return;
+    if (pid.empty()) {
+        pid = mf.GetNamedQual("ID"); 
+        if (pid.empty()) {
+            pid = xGetIdStr(mf);
+        }
     }
-    pid = string("gnl|") + locusTagPrefix + "|" + pid;
-    xFeatureSetQualifier(mf, "protein_id", pid);
+    pid = xGenerateTranscriptOrProteinId(mf, pid);
+    if (!pid.empty()) {
+        xFeatureSetQualifier(mf, "protein_id", pid);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -585,15 +559,10 @@ void CFeatTableEdit::xFeatureAddProteinIdDefault(
         // already what we want
         return;
     }
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != pid.find("|")  || locusTagPrefix.empty()) {
-        xPutError(
-            ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable protein_id.");
-        return;
+    pid = xGenerateTranscriptOrProteinId(mf, pid);
+    if (!pid.empty()) {
+        xFeatureSetQualifier(mf, "protein_id", pid);
     }
-    pid = string("gnl|") + locusTagPrefix + "|" + pid;
-    xFeatureSetQualifier(mf, "transcript_id", pid);
 }
 
 
@@ -614,41 +583,21 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
     }
 
     auto tid = mf.GetNamedQual("transcript_id");
-    if (tid.empty()) {
-    // we need to create and assign a transcript_id (based on locus_tag prefix):
-        auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-        auto featId = xGetIdStr(mf);
-        auto oid = mf.GetNamedQual("ID"); 
-        if (oid.empty()) {
-            oid = featId;
-        }
-        if (string::npos != oid.find("|")  || locusTagPrefix.empty()) {
-            xPutError(
-                ILineError::eProblem_InvalidQualifier,
-                "Feature " + featId + " does not have a usable transcript_id.");
-            xFeatureAddQualifier(mf, "transcript_id", "MISSING");
-            return;
-        }
-        auto tid = string("gnl|") + locusTagPrefix + "|" + oid;
-        xFeatureAddQualifier(mf, "transcript_id", tid);
-        return;
-    }
-
-    // otherwise, we need to police the existing transcript_id:
     if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
         // already what we want
         return;
     }
 
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
-        xPutError(
-            ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
-        return;
+    if (tid.empty()) {
+        tid = mf.GetNamedQual("ID"); 
+        if (tid.empty()) {
+            tid = xGetIdStr(mf);
+        }
     }
-    tid = string("gnl|") + locusTagPrefix + "|" + tid;
-    xFeatureSetQualifier(mf, "transcript_id", tid);
+    tid = xGenerateTranscriptOrProteinId(mf, tid);
+    if (!tid.empty()) {
+        xFeatureSetQualifier(mf, "transcript_id", tid);
+    }
 }
 
 
@@ -686,22 +635,17 @@ void CFeatTableEdit::xFeatureAddTranscriptIdCds(
         // already what we want
         return;
     }
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
-        xPutError(
-            ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
-        return;
+    tid = xGenerateTranscriptOrProteinId(mf, tid);
+    if (!tid.empty()) {
+        xFeatureSetQualifier(mf, "transcript_id", tid);
     }
-    tid = string("gnl|") + locusTagPrefix + "|" + tid;
-    xFeatureSetQualifier(mf, "transcript_id", tid);
 }
 
 
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
     CMappedFeat mf)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     //rw-451 rules for non CDS, non mRNA:
     // we won't touch orig_transcript_id
@@ -717,15 +661,36 @@ void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
         // already what we want
         return;
     }
-    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
-    if (string::npos != tid.find("|")  || locusTagPrefix.empty()) {
+    tid = xGenerateTranscriptOrProteinId(mf, tid);
+    if (!tid.empty()) {
+        xFeatureSetQualifier(mf, "transcript_id", tid);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+string CFeatTableEdit::xGenerateTranscriptOrProteinId(
+    CMappedFeat mf,
+    const string& rawId)
+//  ----------------------------------------------------------------------------
+{
+     if (string::npos != rawId.find("|")) {
         xPutError(
             ILineError::eProblem_InvalidQualifier,
-            "Feature " + xGetIdStr(mf) + " does not have a usable transcript_id.");
-        return;
+            "Feature " + xGetIdStr(mf) + 
+                " does not have a usable transcript_ or protein_id.");
+        return "";
     }
-    tid = string("gnl|") + locusTagPrefix + "|" + tid;
-    xFeatureSetQualifier(mf, "transcript_id", tid);
+
+    auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
+    if (locusTagPrefix.empty()) {
+        xPutError(
+            ILineError::eProblem_InvalidQualifier,
+            "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) + 
+                " without a locus tag.");
+        return "";
+    }
+    return string("gnl|") + locusTagPrefix + "|" + rawId;
 }
 
 
