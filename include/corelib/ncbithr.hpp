@@ -564,6 +564,9 @@ public:
     /// Otherwise, do nothing, and return FALSE.
     bool Discard(void);
 
+    /// Check if the thread has been terminated.
+    bool IsTerminated(void) const { return m_IsTerminated; }
+
     /// Get ID of current thread. When not using native threads, but CThread only,
     /// the main thread is guaranteed to have zero id. With native threads the
     /// main thread may have a non-zero id and it's more reliable to use IsMain().
