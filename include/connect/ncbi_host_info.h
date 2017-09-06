@@ -34,7 +34,7 @@
  *
  *   Host information handle becomes available from SERV_Get[Next]InfoEx()
  *   calls of the service mapper (ncbi_service.c) and remains valid until
- *   destructed by passing into free(). All API functions declared below
+ *   destructed by passing into free().  All API functions declared below
  *   accept NULL as 'host_info' parameter, and as the result return a failure
  *   status as described individually for each API call.
  *
