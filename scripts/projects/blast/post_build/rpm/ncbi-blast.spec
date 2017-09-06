@@ -53,6 +53,7 @@ Requires:    rpmlib(CompressedFileNames) <= 3.0.4-1
 Requires:    rpmlib(FileDigests) <= 4.6.0-1
 Requires:    rpmlib(PayloadFilesHavePrefix) <= 4.0-1
 Requires:    rpmlib(PayloadIsXz) <= 5.2-1
+BuildRequires:    gnutls-devel >= 2.8
 
 %description
 The NCBI Basic Local Alignment Search Tool (BLAST) finds regions of
