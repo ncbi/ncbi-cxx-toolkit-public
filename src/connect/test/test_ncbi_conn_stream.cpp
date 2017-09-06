@@ -135,6 +135,16 @@ void CNCBITestConnStreamApp::Init(void)
 }
 
 
+extern "C" {
+EHTTP_HeaderParse x_IfModifiedSinceParseHeader(const char* http_header,
+                                               void*       /*user_data*/,
+                                               int         server_error)
+{
+    return server_error == 304 ? eHTTP_HeaderComplete : eHTTP_HeaderSuccess;
+}
+}
+
+
 int CNCBITestConnStreamApp::Run(void)
 {
     TFTP_Flags flag = 0;
@@ -149,14 +159,14 @@ int CNCBITestConnStreamApp::Run(void)
     srand(g_NCBI_ConnectRandomSeed);
 
 
-    LOG_POST(Info << "Test 0 of 9: Checking error log setup");
+    LOG_POST(Info << "Test 0 of 10: Checking error log setup");
 
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST(Info << "Test 1 of 9: Memory stream");
+    LOG_POST(Info << "Test 1 of 10: Memory stream");
 
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
@@ -303,7 +313,7 @@ int CNCBITestConnStreamApp::Run(void)
     }
 
 
-    LOG_POST(Info << "Test 2 of 9: FTP download");
+    LOG_POST(Info << "Test 2 of 10: FTP download");
 
     CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
@@ -338,7 +348,7 @@ int CNCBITestConnStreamApp::Run(void)
              << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST(Info << "Test 3 of 9: FTP upload");
+    LOG_POST(Info << "Test 3 of 10: FTP upload");
 
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
@@ -429,7 +439,7 @@ int CNCBITestConnStreamApp::Run(void)
         LOG_POST(Info << "Test 3 skipped\n");
 
 
-    LOG_POST(Info << "Test 4 of 9: FTP peculiarities");
+    LOG_POST(Info << "Test 4 of 10: FTP peculiarities");
 
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
@@ -501,15 +511,13 @@ int CNCBITestConnStreamApp::Run(void)
     }}
 
 
-    LOG_POST(Info << "Test 5 of 9: Big buffer bounce via HTTP");
+    LOG_POST(Info << "Test 5 of 10: Big buffer bounce via HTTP");
 
     if (net_info->port == CONN_PORT_HTTPS)
         net_info->scheme = eURL_Https;
     CConn_HttpStream ios(net_info, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHCC_UrlEncodeArgs/*obsolete now*/);
-
-    ConnNetInfo_Destroy(net_info);
 
     AutoPtr< char, ArrayDeleter<char> >  buf1(new char[kBufferSize + 1]);
     AutoPtr< char, ArrayDeleter<char> >  buf2(new char[kBufferSize + 2]);
@@ -556,7 +564,7 @@ int CNCBITestConnStreamApp::Run(void)
     ios.clear();
 
 
-    LOG_POST(Info << "Test 6 of 9: Random bounce");
+    LOG_POST(Info << "Test 6 of 10: Random bounce");
 
     if (!(ios << buf1.get()))
         ERR_POST(Fatal << "Cannot send data");
@@ -601,7 +609,7 @@ int CNCBITestConnStreamApp::Run(void)
     ios.clear();
 
 
-    LOG_POST(Info << "Test 7 of 9: Truly binary bounce");
+    LOG_POST(Info << "Test 7 of 10: Truly binary bounce");
 
     for (i = 0;  i < kBufferSize;  i++)
         buf1.get()[i] = (char)(255/*rand() % 256*/);
@@ -637,7 +645,7 @@ int CNCBITestConnStreamApp::Run(void)
     buf2.reset(0);
 
 
-    LOG_POST(Info << "Test 8 of 9: NcbiStreamCopy()");
+    LOG_POST(Info << "Test 8 of 10: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -653,7 +661,7 @@ int CNCBITestConnStreamApp::Run(void)
         LOG_POST(Info << "Test 8 passed\n");
 
 
-    LOG_POST(Info << "Test 9 of 9: HTTP status code and text");
+    LOG_POST(Info << "Test 9 of 10: HTTP status code and text");
 
     CConn_HttpStream bad_http("https://www.ncbi.nlm.nih.gov/blah");
     bad_http >> ftpfile/*dummy*/;
@@ -676,6 +684,33 @@ int CNCBITestConnStreamApp::Run(void)
 
     LOG_POST(Info << "Test 9 passed\n");
 
+    LOG_POST(Info << "Test 10 of 10: HTTP If-Modified-Since");
+
+    if (!ConnNetInfo_ParseURL(net_info,
+                              "https://www.ncbi.nlm.nih.gov/Service"
+                              "/index.html")) {
+        ERR_POST(Fatal << "Cannot parse URL");
+    }
+    net_info->max_try = 1;
+    net_info->req_method = eReqMethod_Head;
+    net_info->debug_printout = eDebugPrintout_Data;
+
+    CConn_HttpStream modified(net_info,
+                              "If-Modified-Since: "
+                              "Fri, 25 Dec 2015 16:17:18 GMT",
+                              x_IfModifiedSinceParseHeader);
+
+    ConnNetInfo_Destroy(net_info);
+
+    if (!(modified >> ftpfile/*dummy*/))
+        ftpfile.erase();
+
+    if (!ftpfile.empty())
+        ERR_POST(Fatal << "Non-empty response\n" << ftpfile);
+    if (modified.GetStatusCode() != 304)
+        ERR_POST(Fatal << "Non-304 response code");
+
+    LOG_POST(Info << "Test 10 passed\n");
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     return 0/*okay*/;
