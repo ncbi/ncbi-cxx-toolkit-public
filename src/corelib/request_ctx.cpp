@@ -380,7 +380,11 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
         m_HitID.GetNextSubHitId() : m_HitID.GetCurrentSubHitId();
 
     // Cache the string so that C code can use it.
-    m_SubHitIDCache += "." + prefix + NStr::NumericToString(sub_hit_id);
+    string subhit = prefix + NStr::NumericToString(sub_hit_id);
+    m_SubHitIDCache += "." + subhit;
+    if ( increment ) {
+        GetDiagContext().Extra().Print("issued_subhit", subhit);
+    }
 }
 
 
