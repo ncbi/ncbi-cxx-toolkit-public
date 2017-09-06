@@ -84,8 +84,22 @@ static CRef<CSeq_entry> s_GetEntry(size_t i)
     CSeq_inst& inst = seq.SetInst();
     inst.SetRepr(inst.eRepr_raw);
     inst.SetMol(inst.eMol_aa);
+    inst.SetLength(2);
     inst.SetSeq_data().SetIupacaa().Set("AA");
     return entry;
+}
+
+
+static CRef<CSeq_annot> s_GetAnnot(CSeq_id& id, int count = 1)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    for ( int i = 0; i < count; ++i ) {
+        CRef<CSeq_feat> feat(new CSeq_feat);
+        feat->SetLocation().SetWhole(id);
+        feat->SetData().SetRegion("test");
+        annot->SetData().SetFtable().push_back(feat);
+    }
+    return annot;
 }
 
 
@@ -154,6 +168,35 @@ BOOST_AUTO_TEST_CASE(TestReResolve3)
     BOOST_REQUIRE(scope.GetSynonyms(*id2));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReResolve4)
+{
+    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1 = s_GetId(1);
+    CRef<CSeq_id> id2 = s_GetId2(1);
+    CRef<CSeq_entry> entry = s_GetEntry(1);
+    entry->SetSeq().SetAnnot().push_back(s_GetAnnot(*id2));
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry((const CSeq_entry&)*entry);
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc); loc2->SetWhole(*id2);
+    scope.AddSeq_annot(*s_GetAnnot(*id1, 3));
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 4u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 4u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2).GetSize(), 4u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2).GetSize(), 4u);
+    scope.AddSeq_annot(*s_GetAnnot(*id2, 5));
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 9u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 9u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2).GetSize(), 9u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2).GetSize(), 9u);
+    scope.RemoveTopLevelSeqEntry(seh);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 3u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 3u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 5u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 5u);
 }
 
 
