@@ -51,6 +51,7 @@
 #include <objects/misc/error_codes.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/general/Object_id.hpp>
 #include <algorithm>
 
 
@@ -4217,11 +4218,50 @@ private:
 };
 
 
-typedef CRangeWithFuzz                      TRangeWithFuzz;
-typedef vector<TRangeWithFuzz>              TRanges;
-typedef map<CSeq_id_Handle, TRanges>        TIdToRangeMap;
-typedef CRangeCollection<TSeqPos>           TRangeColl;
-typedef map<CSeq_id_Handle, TRangeColl>     TIdToRangeColl;
+class CSeq_id_Handle_Wrapper
+{
+public:
+    CSeq_id_Handle_Wrapper(void) {}
+
+    CSeq_id_Handle_Wrapper(const CSeq_id_Handle& idh, const CSeq_id& id)
+        : m_Handle(idh)
+    {
+        if (id.IsLocal() && id.GetLocal().IsStr()) {
+            m_Id.Reset(&id);
+        }
+    }
+
+    CConstRef<CSeq_id> GetSeqId(void) const { return m_Id ? m_Id : m_Handle.GetSeqId(); }
+
+    const CSeq_id_Handle& GetHandle(void) const { return m_Handle; }
+
+    bool operator== (const CSeq_id_Handle_Wrapper& handle) const
+        {
+            return m_Handle == handle.m_Handle;
+        }
+
+    bool operator!= (const CSeq_id_Handle_Wrapper& handle) const
+        {
+            return m_Handle != handle.m_Handle;
+        }
+    bool operator<  (const CSeq_id_Handle_Wrapper& handle) const
+        {
+            return m_Handle < handle.m_Handle;
+        }
+
+    DECLARE_OPERATOR_BOOL(m_Handle);
+
+private:
+    CSeq_id_Handle m_Handle;
+    CConstRef<CSeq_id> m_Id;
+};
+
+
+typedef CRangeWithFuzz                          TRangeWithFuzz;
+typedef vector<TRangeWithFuzz>                  TRanges;
+typedef map<CSeq_id_Handle_Wrapper, TRanges>    TIdToRangeMap;
+typedef CRangeCollection<TSeqPos>               TRangeColl;
+typedef map<CSeq_id_Handle_Wrapper, TRangeColl> TIdToRangeColl;
 
 
 class CRange_Less
@@ -4335,7 +4375,7 @@ bool x_MergeRanges(TRangeWithFuzz& rg1, ENa_strand str1,
 
 static
 void x_PushRange(CSeq_loc& dst,
-                 const CSeq_id_Handle& idh,
+                 const CSeq_id_Handle_Wrapper& idh,
                  const TRangeWithFuzz& rg,
                  ENa_strand strand)
 {
@@ -4443,10 +4483,10 @@ void x_SingleRange(CSeq_loc& dst,
 {
     // Create a single range
     TRangeWithFuzz total_rg(TRangeWithFuzz::GetEmpty());
-    CSeq_id_Handle first_id;
+    CSeq_id_Handle_Wrapper first_id;
     ENa_strand first_strand = eNa_strand_unknown;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle next_id = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper next_id(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         if ( !next_id ) {
             // Ignore NULLs
             continue;
@@ -4544,12 +4584,12 @@ void x_MergeNoSort(CSeq_loc& dst,
                    ISynonymMapper& syn_mapper)
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
-    CSeq_id_Handle last_id;
+    CSeq_id_Handle_Wrapper last_id;
     TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
     ENa_strand last_strand = eNa_strand_unknown;
     bool have_range = false;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper idh(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         // ID and strand must match
         TRangeWithFuzz it_rg(it);
         if ( have_range  &&  last_id == idh ) {
@@ -4606,7 +4646,7 @@ void x_MergeAndSort(CSeq_loc& dst,
 
     // Split location by by id/strand/range
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper idh(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         if ( IsReverse(it.GetStrand()) ) {
             id_map_minus[idh].push_back(TRangeWithFuzz(it));
         }
@@ -4640,10 +4680,10 @@ void x_SingleRange(CSeq_loc& dst,
                    ILengthGetter& len_getter)
 {
     TRangeWithFuzz total_rg(TRangeWithFuzz::GetEmpty());
-    CSeq_id_Handle first_id;
+    CSeq_id_Handle_Wrapper first_id;
     ENa_strand first_strand = eNa_strand_unknown;
     for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle next_id = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper next_id(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         if ( !next_id ) {
             // Ignore NULLs
             continue;
@@ -4740,12 +4780,12 @@ void x_SubNoSort(CSeq_loc& dst,
                  CSeq_loc::TOpFlags flags)
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
-    CSeq_id_Handle last_id;
+    CSeq_id_Handle_Wrapper last_id;
     TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
     ENa_strand last_strand = eNa_strand_unknown;
     bool have_range = false;
     for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper idh(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         bool rev = IsReverse(it.GetStrand());
         TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
@@ -4875,7 +4915,7 @@ void x_SubAndSort(CSeq_loc& dst,
         eNa_strand_minus : eNa_strand_unknown;
 
     for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
-        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper idh(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
@@ -5053,7 +5093,7 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
         if ( it.IsEmpty() ) {
             continue;
         }
-        CSeq_id_Handle idh = syn_mapper->GetBestSynonym(it.GetSeq_id());
+        CSeq_id_Handle_Wrapper idh(syn_mapper->GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
         TRangeColl& rmap = IsReverse(it.GetStrand()) ?
             rg_coll_minus[idh] : rg_coll_plus[idh];
         rmap += TRangeWithFuzz(it);
