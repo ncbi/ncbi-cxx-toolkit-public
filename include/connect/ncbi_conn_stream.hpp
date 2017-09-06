@@ -97,8 +97,8 @@ const size_t kConn_DefaultBufSize = 4096;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Base class, inherited from "std::iostream", does both input
-/// and output, using the specified CONNECTOR.
+/// Base class, inherited from "std::iostream", does both input and output,
+/// using the specified CONNECTOR.
 /// "Buf_size" designates the size of internal I/O buffers, which reside in
 /// between the stream and an underlying connector (which in turn may do
 /// further buffering, if needed).
@@ -125,12 +125,12 @@ public:
     } EConn_Flag;
     typedef unsigned int TConn_Flags;  ///< bitwise OR of EConn_Flag
 
-    /// Create a stream based on a CONN, which is to be closed upon
-    /// stream dtor only if "close" parameter is passed as "true".
+    /// Create a stream based on a CONN, which is to be closed upon stream
+    /// dtor only if "close" parameter is passed as "true".
     ///
     /// @param conn
-    ///  A C object of type CONN (ncbi_connection.h) on top of which
-    ///  the stream is being constructed.  May not be NULL.
+    ///  A C object of type CONN (ncbi_connection.h) on top of which the stream
+    ///  is being constructed.  May not be NULL.
     /// @param close
     ///  True if to close CONN automatically (otherwise CONN remains open)
     /// @param timeout
@@ -139,7 +139,7 @@ public:
     ///  Default size of underlying stream buffer's I/O arena
     /// @param flags
     ///  Specifies whether to tie input and output (a tied stream flushes all
-    ///  pending output prior to doing any input) and what to buffer.
+    ///  pending output prior to doing any input) and what to buffer
     /// @sa
     ///  CONN, ncbi_connection.h
     ///
@@ -158,8 +158,8 @@ protected:
     /// only for internal use in derived classes.
     ///
     /// @param TConn_Pair::connector
-    ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which
-    ///  the stream is being constructed
+    ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which the
+    ///  stream is being constructed.  CONNECTOR may not be NULL.
     /// @param TConn_Pair::status
     ///  I/O status to use in underlying streambuf when CONNECTOR is NULL
     /// @param timeout
@@ -168,7 +168,7 @@ protected:
     ///  Default size of underlying stream buffer's I/O arena
     /// @param flags
     ///  Specifies whether to tie input and output (a tied stream flushes all
-    ///  pending output prior to doing any input) and what to buffer.
+    ///  pending output prior to doing any input) and what to buffer
     /// @sa
     ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
@@ -197,7 +197,7 @@ public:
     /// Set connection timeout for "direction"
     /// @param
     ///   Can accept a pointer to a finite timeout, or either of the special
-    ///   values: kInfiniteTimeout, kDefaultTimeout.
+    ///   values: kInfiniteTimeout, kDefaultTimeout
     /// @sa
     ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
     EIO_Status      SetTimeout(EIO_Event       direction,
@@ -212,8 +212,8 @@ public:
     /// @return
     ///   Status of the last I/O performed by the underlying CONN in the
     ///   specified "direction" (either eIO_Open, IO_Read, or eIO_Write);
-    ///   if "direction" is not specified (eIO_Close), return status
-    ///   of the last CONN I/O performed by the stream.
+    ///   if "direction" is not specified (eIO_Close), return status of the
+    ///   last CONN I/O performed by the stream.
     /// @sa
     ///   CONN_Status
     EIO_Status      Status(EIO_Event direction = eIO_Close) const;
@@ -234,10 +234,10 @@ public:
     EIO_Status      SetCanceledCallback(const ICanceled* canceled);
 
     /// @return
-    ///   Internal CONNection handle, which is still owned and used by
-    ///   the stream (or NULL if no such handle exists)
+    ///   Internal CONNection handle, which is still owned and used by the
+    ///   stream (or NULL if no such handle exists)
     /// @note
-    ///   Connection can have additional flags set for I/O processing.
+    ///   Connection can have additional flags set for I/O processing
     /// @sa
     ///   CONN, ncbi_connection.h, CONN_GetFlags
     CONN            GetCONN(void) const;
@@ -335,8 +335,8 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data in a TCP channel, using socket interface.
-/// The endpoint is specified as a "host:port" pair.  The maximal
-/// number of connection attempts is given via "max_try".
+/// The endpoint is specified as a "host:port" pair.  The maximal number of
+/// connection attempts is given via "max_try".
 /// More details on that: <connect/ncbi_socket_connector.h>.
 ///
 /// @sa
@@ -486,8 +486,8 @@ struct SHTTP_StatusData {
 /// This stream exchanges data with an HTTP server located at the URL:
 /// http[s]://host[:port]/path[?args]
 ///
-/// Note that "path" must include a leading slash, "args" can be empty,
-/// in which case the '?' does not get appended to the path.
+/// Note that "path" must include the leading slash, "args" can be empty, in
+/// which case the '?' does not get appended to the path.
 ///
 /// "User_header" (if not empty) should be a sequence of lines in the form
 /// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence, and
@@ -505,8 +505,8 @@ struct SHTTP_StatusData {
 /// THTTP_Flags and other details: <connect/ncbi_http_connector.h>.
 ///
 /// Provided "timeout" is set at the connection level, and if different from
-/// kDefaultTimeout, it overrides a value supplied by the HTTP connector
-/// (the latter value is kept at SConnNetInfo::timeout).
+/// kDefaultTimeout, it overrides a value supplied by the HTTP connector (the
+/// latter value is kept at SConnNetInfo::timeout).
 ///
 /// @sa
 ///  HTTP_CreateConnector
@@ -741,7 +741,7 @@ protected:
 /// being in use as it may cause undefined behavior.
 ///
 /// Provided "timeout" is set at the connection level if different from
-/// kDefaultTimeout (which is infinite for this class be default).
+/// kDefaultTimeout (which is infinite for this class by default).
 ///
 /// @sa
 ///   PIPE_CreateConnector, CPipe
@@ -779,7 +779,7 @@ protected:
 /// CConn_NamedPipeStream for inter-process communication
 ///
 /// Provided "timeout" is set at the connection level if different from
-/// kDefaultTimeout (which is infinite for this class be default).
+/// kDefaultTimeout (which is infinite for this class by default).
 ///
 /// @sa
 ///   NAMEDPIPE_CreateConnector, CNamedPipe
@@ -845,8 +845,7 @@ public:
 
 /// CConn_FtpStream specialization (ctor) for download
 ///
-/// @note
-///   the order of parameters vs generic CConn_FtpStream ctor
+/// @note the order of parameters vs generic CConn_FtpStream ctor
 ///
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
@@ -915,7 +914,7 @@ protected:
 ///
 /// Given the URL, open the data source and make it available for reading.
 /// See <connect/ncbi_connutil.h> for supported schemes.
-/// Writing to the stream is undefined.
+/// @note Writing to the stream is undefined.
 ///
 extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url,
