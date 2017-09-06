@@ -833,13 +833,7 @@ void CObjectOStreamJson::NextElement(void)
 
 void CObjectOStreamJson::BeginArray(void)
 {
-    if (!m_ExpectValue && !m_SkippedMemberId.empty()) {
-        NextElement();
-        WriteKey(m_SkippedMemberId);
-        m_SkippedMemberId.erase();
-    } else {
-        BeginValue();
-    }
+    BeginValue();
     m_Output.PutChar('[');
     m_Output.IncIndentLevel();
     m_BlockStart = true;
