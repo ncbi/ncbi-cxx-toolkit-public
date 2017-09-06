@@ -426,7 +426,7 @@ void JSDParser::ParseOneOf(DTDElement& node)
             } else {
                 if (!c.IsNamed()) {
                     c.SetName(item_id);
-                    c.SetNamed();
+                    c.SetNamed(false);
                 }
                 m_MapElement[item_id] = c;
             }
