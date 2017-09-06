@@ -38,6 +38,8 @@
 #include "pythonpp_seq.hpp"
 #include "pythonpp_dict.hpp"
 
+#include <corelib/ncbi_safe_static.hpp>
+
 BEGIN_NCBI_SCOPE
 
 namespace pythonpp
@@ -202,6 +204,10 @@ private:
 
 #if PY_MAJOR_VERSION < 3
         tp_compare = NULL;
+#elif PY_MINOR_VERSION >= 5
+        tp_as_async = NULL;
+#else
+        tp_reserved = NULL;
 #endif
         tp_repr = NULL;
 
@@ -262,14 +268,22 @@ private:
         tp_is_gc = NULL; // For PyObject_IS_GC
         tp_bases = NULL;
         tp_mro = NULL; // method resolution order
+#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 4
+        tp_finalize = NULL;
+#endif
         tp_cache = NULL;
         tp_subclasses = NULL;
         tp_weaklist = NULL;
         tp_del = NULL;
 
 #ifdef COUNT_ALLOCS
+#  if PY_MAJOR_VERSION >= 3
+        tp_allocs = 0;
+        tp_frees = 0;
+#  else
         tp_alloc = 0;
         tp_free = 0;
+#  endif
         tp_maxalloc = 0;
         tp_next = 0;
 #endif
@@ -580,7 +594,9 @@ public:
         PyTypeObject* base = &PyBaseObject_Type
         )
     {
-        Declare(name.c_str(), descr, base);
+        static CSafeStaticPtr<string> safe_name;
+        *safe_name = name;
+        Declare(safe_name->c_str(), descr, base);
     }
 
     static CClass<1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
