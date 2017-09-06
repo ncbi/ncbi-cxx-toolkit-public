@@ -684,6 +684,7 @@ int CNCBITestConnStreamApp::Run(void)
 
     LOG_POST(Info << "Test 9 passed\n");
 
+
     LOG_POST(Info << "Test 10 of 10: HTTP If-Modified-Since");
 
     if (!ConnNetInfo_ParseURL(net_info,
@@ -711,6 +712,7 @@ int CNCBITestConnStreamApp::Run(void)
         ERR_POST(Fatal << "Non-304 response code");
 
     LOG_POST(Info << "Test 10 passed\n");
+
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     return 0/*okay*/;
