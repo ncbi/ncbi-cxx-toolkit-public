@@ -370,7 +370,15 @@ CRef<COrgName> COrgName::MakeCommon(const COrgName& other) const
 // nomenclature=[BPVZ]*;
 bool COrgName::GetNomenclature( string& result ) const
 {
-    return x_GetAttribValue( "nomenclature", result );
+    if( IsSetMod() ) {
+        ITERATE( COrgName::TMod, ci, GetMod() ) {
+            if( (*ci)->GetSubtype() == COrgMod::eSubtype_nomenclature ) {
+                result = (*ci)->GetSubname();
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 // returns false if value is unsupported
@@ -403,14 +411,17 @@ bool COrgName::SetNomenclature( const string& nomenclature )
 	    ResetNomenclature();
 	}
     }
-    x_SetAttribFlag( string("nomenclature=")+sNewVal );
+    if( !sNewVal.empty() ) {
+        CRef<COrgMod> pMod( new COrgMod( COrgMod::eSubtype_nomenclature, sNewVal ) );
+        SetMod().push_back( pMod );
+    }
     return true;
 }
 
 // returns false if value is unsupported
 void COrgName::ResetNomenclature()
 {
-    x_ResetAttribFlag( "nomenclature=", true );
+    RemoveModBySubtype( COrgMod::eSubtype_nomenclature );
 }
 
 unsigned int // returns number of removed modifiers

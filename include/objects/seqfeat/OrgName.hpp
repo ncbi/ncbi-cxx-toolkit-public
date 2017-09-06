@@ -84,6 +84,7 @@ public:
 
     // Nomenclature information stored in attrib field as string in following format:
     // nomenclature=[BPVZ]*;
+    // setting empty value is equivalent to no value
     bool GetNomenclature( string& result ) const;
     bool SetNomenclature( const string& nomenclature ); // False if value is unsupported
     void ResetNomenclature();
