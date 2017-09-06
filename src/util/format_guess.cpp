@@ -637,7 +637,7 @@ CFormatGuess::EnsureStats()
     //  m_iStatsCountBraces: Opening { and closing } braces
     //
     while ( ! TestBuffer.fail() ) {
-        NcbiGetlineEOL( TestBuffer, strLine );
+        NcbiGetline( TestBuffer, strLine, "\r\n" );
 // code in CFormatGuess::Format counts line ends
 // so, we will count them here as well
         if (!strLine.empty()) {
@@ -1342,7 +1342,7 @@ CFormatGuess::TestFormatCLUSTAL()
     const bool buffer_full = m_iTestDataSize == m_iTestBufferSize;
 
     while ( !TestBuffer.eof() ) {
-        NcbiGetlineEOL(TestBuffer, strLine);
+        NcbiGetline(TestBuffer, strLine, "\r\n");
 
         if (buffer_full && 
             TestBuffer.eof()) { // Skip last line if buffer is full 
