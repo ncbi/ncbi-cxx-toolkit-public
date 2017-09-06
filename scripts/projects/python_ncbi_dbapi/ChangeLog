@@ -1,3 +1,7 @@
+Version 1.19.2 (2017-09-06):
+* Fix Python type object initialization code, addressing bogus
+  reported type names and more possible Python 3 crashes.
+
 Version 1.19.1 (2017-09-05):
 * Avoid crashing at exit under Python 3.
 
