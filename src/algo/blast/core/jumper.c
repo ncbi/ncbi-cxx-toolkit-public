@@ -40,12 +40,13 @@
 
 JUMP jumper_default [] = {
  {1, 1, 9, 0},  /* this was added for illumina */
- {2, 2, 10, 0}, /* try double mismatch before indels */
  {1, 0, 10, 0},    /* insert in 1 */ 
  {0, 1, 10, 0},    /* deletion in 1 */
- {1, 1, 6, 0},
- {1, 0, 7, 0},
- {0, 1, 7, 0},
+ {2, 0, 10, 0}, 
+ {0, 2, 10, 0}, 
+ {3, 0, 13, 0},
+ {0, 3, 13, 0},
+ {2, 2, 12, 0}, /* try double mismatch */
  {1, 0, 10, 2},
  {0, 1, 10, 2},
  {2, 0, 10, 2}, 
@@ -1144,6 +1145,7 @@ Int4 JumperExtendRightCompressedWithTracebackOptimal(
 
     cp = query;
     cpmax = cp + query_length;
+    cp1 = cpmax;
 
     /* or assume matches up to byte edge */
     cq = 0;
@@ -1202,11 +1204,15 @@ Int4 JumperExtendRightCompressedWithTracebackOptimal(
             i = jp->lng;
             cp1 = cp + jp->dcp;
             cq1 = cq + jp->dcq;
-            if (i + cp1 >= cpmax || i + cq1 >= cqmax) {
+
+            if (cp1 >= cpmax || i + cq1 >= cqmax) {
                 continue;
             }
             while (i--) {
-                if (cp1 >= cpmax || cq1 >= cqmax) {
+                if (cp1 >= cpmax) {
+                    break;
+                }
+                if (/*cp1 >= cpmax ||*/ cq1 >= cqmax) {
                     goto next_jp;
                 }
                 if (*cp1++ != UNPACK_BASE(subject, cq1)) {
@@ -1313,7 +1319,7 @@ next_jp:
         cq += jp->dcq;
         
         /* we have already checked that these are matches */
-        if (jp->ok == 0 && jp->lng) {
+        if (cp1 < cpmax && jp->ok == 0 && jp->lng) {
             cp += jp->lng;
             cq += jp->lng;
             ASSERT(edit_script->num_ops < edit_script->num_allocated);
@@ -2122,6 +2128,7 @@ Int4 JumperExtendLeftCompressedWithTracebackOptimal(
 
     cp = query + query_offset;
     cpmin = query;
+    cp1 = cpmin;
 
     /* or assume matches up to byte edge */
     cq = subject_offset;
@@ -2155,7 +2162,7 @@ Int4 JumperExtendLeftCompressedWithTracebackOptimal(
         jp = jumper; 
         jp-- ;
         while (jp++) { /* 1, 1, 0, 0 = last always accepted */
-         
+
             if (!jp->lng) {
                 break;
             }
@@ -2177,11 +2184,15 @@ Int4 JumperExtendLeftCompressedWithTracebackOptimal(
             i = jp->lng;
             cp1 = cp - jp->dcp;
             cq1 = cq - jp->dcq;
-            if (cp1 - i < cpmin || cq1 - i < cqmin) {
+
+            if (cp1 <= cpmin || cq1 - i < cqmin) {
                 continue;
             }
             while (i--) {
-                if (cp1 < cpmin || cq1 < cqmin) {
+                if (cp1 < cpmin) {
+                    break;
+                }
+                if (/*cp1 < cpmin ||*/ cq1 < cqmin) {
                     goto next_jp;
                 }
                 if (*cp1-- != UNPACK_BASE(subject, cq1)) {
@@ -2282,7 +2293,7 @@ next_jp:
         cq -= jp->dcq;
         
         /* we have already checked that these are matches */
-        if (!jp->ok && jp->lng) {
+        if (cp1 > cpmin && !jp->ok && jp->lng) {
             cp -= jp->lng;
             cq -= jp->lng;
             ASSERT(edit_script->num_ops < edit_script->num_allocated);
