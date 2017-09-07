@@ -551,7 +551,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     data->done   = 1;
 
     /* Remove returned info */
-    SSERV_Info* info = data->cand.info;
+    SSERV_Info* info = (SSERV_Info*) data->cand.info;
     data->cand.info = NULL;
     return info;
 }
