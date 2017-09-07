@@ -93,7 +93,7 @@ public:
 
     CFastaOstreamEx* OpenFastaOstream(const string& argname, const string& strname, bool use_stdout);
 
-    void PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream);
+    void PrintQualityScores(const CBioseq& bioseq, CNcbiOstream& ostream);
 
 private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
@@ -864,10 +864,81 @@ void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostr
     fasta_os->WriteTitle(bioseq, 0, false, score_header);
 }
 
+static void s_Advance(int& column, CNcbiOstream& ostream, const int num_columns)
+{
+    if (column == num_columns) {
+        ostream << '\n';
+        column = 1;
+        return;
+    }
+    ++column;
+}
 
 //  --------------------------------------------------------------------------
-void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream)
+void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
+        CNcbiOstream& ostream) 
 //  --------------------------------------------------------------------------
+{
+    TSeqPos current_pos=0;
+    TSeqPos length=0;
+    int column=1; 
+    int num_columns=20;
+
+    if (bioseq.GetLength()) {
+        length = bioseq.GetLength();
+    }
+    bool has_graph = false;
+    x_WriteScoreHeader(bioseq, ostream);
+
+    if (bioseq.IsSetAnnot()) {
+        for (CRef<CSeq_annot> pAnnot : bioseq.GetAnnot()) {
+            if (!pAnnot->IsGraph()) {
+                continue;
+            }
+
+            has_graph = true;
+
+            for (CRef<CSeq_graph> pGraph : pAnnot->GetData().GetGraph()) {
+                if (!pGraph->GetGraph().IsByte()) {
+                    continue;
+                }
+
+                if (pGraph->IsSetLoc()) {
+                    TSeqPos left = pGraph->GetLoc().GetStart(eExtreme_Positional);
+                    while (current_pos < left) {
+                        ostream << " -1";
+                        s_Advance(column, ostream, num_columns);
+                        ++current_pos;
+                    }
+                }
+
+                const CByte_graph& byte_graph = pGraph->GetGraph().GetByte();
+                if (byte_graph.IsSetValues()) {
+                    for (char ch : byte_graph.GetValues()) {
+                        ostream << " " << setw(2) << static_cast<int>(ch);
+                        s_Advance(column, ostream, num_columns);
+                        ++current_pos;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (has_graph) {
+        while (current_pos < length) {
+            ostream << " -1";
+            s_Advance(column, ostream, num_columns);
+            ++current_pos;
+        }
+    }
+
+    if (column > 1) {
+        ostream << '\n';
+    }
+}
+
+/*
+void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream)
 {
     TSeqPos curpos = 0;
     TSeqPos len = 0;
@@ -949,6 +1020,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
         *out_stream << '\n';
     }
 }
+*/
 
 CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
 {
@@ -1006,7 +1078,7 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
     }
 
     if ( m_Oq != NULL && bsh.IsNa() ) {
-        PrintQualityScores (*bsr, m_Oq);
+        PrintQualityScores (*bsr, *m_Oq);
     }
 
     if ( m_Os.get() != NULL ) {
