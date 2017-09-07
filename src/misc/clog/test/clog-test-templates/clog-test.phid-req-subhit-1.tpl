@@ -6,12 +6,14 @@
 // Request 1
 ^${pid}/${tid}/0001/RB ${std_sid} request-start
 ^${pid}/${tid}/0001/R  ${std_sid} extra         ncbi_phid=${phidreq1=${phid_re}}
+^${pid}/${tid}/0001/R  ${std_sid} extra         issued_subhit=1
 ^${pid}/${tid}/0001/R  ${std_sid} Info: ${phidreq1}\.1
 ^${pid}/${tid}/0001/RE ${std_sid} request-stop  200 ${timespan_re} 1 2
 
 // Request 2
 ^${pid}/${tid}/0002/RB ${std_sid} request-start
 ^${pid}/${tid}/0002/R  ${std_sid} extra         ncbi_phid=${phidreq2=${phid_re}}
+^${pid}/${tid}/0002/R  ${std_sid} extra         issued_subhit=1
 ^${pid}/${tid}/0002/R  ${std_sid} Info: ${phidreq2}\.1
 ^${pid}/${tid}/0002/RE ${std_sid} request-stop  200 ${timespan_re} 1 2
 
