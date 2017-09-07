@@ -169,7 +169,7 @@ static const char* weasels[] = {
   "unique"
 };
 
-bool CString_constraint::x_IsWeasel(const string& str) const
+bool CString_constraint::x_IsWeasel(const CTempString& str) const
 {
     size_t n = ArraySize(weasels);
     for (size_t i = 0; i < n; i++) {
@@ -186,11 +186,11 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
     return kEmptyStr;
   }
   string ret_str;
-  vector<string> arr;
+  list<CTempString> arr;
   arr = NStr::Split(str, " ", arr, 0);
 
   bool found = false;
-  while (!arr.empty() && x_IsWeasel(arr[0])) {
+  while (!arr.empty() && x_IsWeasel(arr.front())) {
      arr.erase(arr.begin());
      found = true;
   }

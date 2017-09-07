@@ -83,7 +83,7 @@ private:
     CString_constraint& operator=(const CString_constraint& value);
 
     bool x_DoesSingleStringMatchConstraint (const string& str) const;
-    bool x_IsWeasel(const string& str) const;
+    bool x_IsWeasel(const CTempString& str) const;
     string x_SkipWeasel(const string& str) const;
     bool x_IsAllCaps(const string& str) const;
     bool x_IsAllLowerCase(const string& str) const;
