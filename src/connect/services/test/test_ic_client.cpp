@@ -45,6 +45,9 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/test_boost.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/rwstream.hpp>
+
+#include <util/cache/cache_async.hpp>
 
 #include <random>
 
@@ -417,6 +420,124 @@ static void s_SimpleTest()
     api.RemoveBlob(purge_ctx.key, purge_ctx.version, purge_ctx.subkey);
 }
 
+static void s_AsyncTest()
+{
+    const string service  = TNetCache_ServiceName::GetDefault();
+    const string cache_name  = TNetCache_CacheName::GetDefault();
+
+    unique_ptr<CNetICacheClient> main_cache(new CNetICacheClient(service, cache_name, s_ClientName));
+    main_cache->SetFlags(ICache::fBestReliability);
+
+    unique_ptr<CNetICacheClient> writer_cache(new CNetICacheClient(service, cache_name, s_ClientName));
+    writer_cache->SetFlags(ICache::fBestReliability);
+
+    CAsyncWriteCache api(main_cache.release(), writer_cache.release(), 20);
+    CNetICacheClient search_api(service, cache_name, s_ClientName);
+
+    const int kIterations = 50;
+    const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
+    const size_t kBufSize = 100 * 1024; // 100KB
+    vector<Uint8> src;
+    vector<char> buf;
+
+    src.resize(kSrcSize / sizeof(Uint8));
+    buf.resize(kBufSize);
+
+    auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
+
+    SCtx ctx;
+    ctx.key = to_string(time(NULL)) + "t" + to_string(random_uint8());
+    vector<string> subkeys;
+    vector<unique_ptr<IWriter>> writers;
+
+    for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
+        ctx.subkey = to_string(random_uint8());
+        subkeys.push_back(ctx.subkey);
+
+        try {
+            // Creating blob
+            generate_n(src.begin(), src.size(), random_uint8);
+            auto ptr = reinterpret_cast<const char*>(src.data());
+
+            writers.emplace_back(api.GetWriteStream(ctx.key, ctx.version, ctx.subkey));
+            CWStream os(writers.back().get());
+            os.write(ptr, kSrcSize);
+
+            BOOST_REQUIRE_MESSAGE(os.good(), "Write failed" << ctx);
+
+            // Blob is not yet created as writer is not yet destroyed (actual async write happens after)
+            BOOST_REQUIRE_MESSAGE(!api.HasBlobs(ctx.key, ctx.subkey), "Blob does exist" << ctx);
+        }
+        catch (...) {
+            BOOST_ERROR("An exception has been caught" << ctx);
+            throw;
+        }
+    }
+
+    // Actual async write starts here
+    writers.clear();
+
+    try {
+        using namespace ncbi::grid::netcache::search;
+
+        auto received = search_api.Search(fields::key == ctx.key);
+
+        CDeadline deadline(100);
+
+        // Waiting for all blobs to be stored
+        while (received.size() != subkeys.size()) {
+            SleepMilliSec(250);
+            received = search_api.Search(fields::key == ctx.key);
+
+            if (deadline.IsExpired()) {
+                BOOST_ERROR("Received unexpected number of subkeys: " <<
+                        received.size() << " vs " << subkeys.size());
+                break;
+            }
+        }
+
+        set<string> expected(subkeys.begin(), subkeys.end());
+
+        for (auto& i : received) {
+            ctx.subkey = i[fields::subkey];
+
+            if (expected.find(ctx.subkey) == expected.end()) {
+                BOOST_ERROR("Received unexpected subkey " << ctx.subkey << " for key " << ctx.key);
+            }
+        }
+    }
+    catch (...) {
+        BOOST_ERROR("An exception has been caught. Key: " << ctx.key);
+        throw;
+    }
+
+    // Checking all blobs and removing them
+
+    ctx.version = 0;
+
+    for (const auto& subkey : subkeys) {
+        ctx.subkey = subkey;
+
+        try {
+            BOOST_REQUIRE_MESSAGE(api.HasBlobs(ctx.key, ctx.subkey), "Blob does not exist" << ctx);
+            BOOST_REQUIRE_MESSAGE(api.GetSize(ctx.key, ctx.version, ctx.subkey) == kSrcSize,
+                    "Blob size (GetSize) differs from the source" << ctx);
+
+            // Removing blob
+            api.Remove(ctx.key, ctx.version, ctx.subkey);
+
+            // Checking removed blob
+            BOOST_REQUIRE_MESSAGE(!api.HasBlobs(ctx.key, ctx.subkey), "Removed blob still exists" << ctx);
+        }
+        catch (...) {
+            BOOST_ERROR("An exception has been caught" << ctx);
+            throw;
+        }
+
+        ++ctx.version;
+    }
+}
+
 BOOST_AUTO_TEST_SUITE(NetICacheClient)
 
 NCBITEST_AUTO_INIT()
@@ -439,6 +560,11 @@ BOOST_AUTO_TEST_CASE(OldTest)
 BOOST_AUTO_TEST_CASE(SimpleTest)
 {
     s_SimpleTest();
+}
+
+BOOST_AUTO_TEST_CASE(AsyncTest)
+{
+    s_AsyncTest();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
