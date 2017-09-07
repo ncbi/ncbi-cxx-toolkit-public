@@ -30,7 +30,10 @@
  *
  */
 
+#include <corelib/ncbithr.hpp>
+
 #include <util/cache/icache.hpp>
+#include <util/thread_pool.hpp>
 
 #include <memory>
 
@@ -38,11 +41,26 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Class for deferred asynchronous writes in a separate thread.
+///
 class CAsyncWriteCache : public ICache
 {
 public:
-    CAsyncWriteCache(ICache* main, ICache* writer);
 
+    /// Constructor
+    ///
+    /// @param main
+    ///    Main ICache instance used for all but write/store operations
+    /// @param writer
+    ///    ICache instance used solely for write/store operations (in a separate thread)
+    /// @param wait_to_finish
+    ///    Seconds to wait for the write thread to finish before cancelling all its tasks
+    CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish = 0);
+
+    /// ICache overrides.
+    ///
+    /// @sa ICache for details
+    /// @{
     TFlags GetFlags() override;
     void SetFlags(TFlags flags) override;
     void SetTimeStampPolicy(TTimeStampFlags policy, unsigned int timeout, unsigned int max_timeout) override;
@@ -65,12 +83,16 @@ public:
     bool HasBlobs(const string& key, const string& subkey) override;
     void Purge(time_t access_timeout, EKeepVersions keep_last_version = eDropAll) override;
     void Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions keep_last_version = eDropAll) override;
+    ~CAsyncWriteCache() override;
     bool SameCacheParams(const TCacheParams* params) const override;
     string GetCacheName(void) const override;
+    /// @}
 
 private:
     unique_ptr<ICache> m_Main;
-    unique_ptr<ICache> m_Writer;
+    shared_ptr<ICache> m_Writer;
+    shared_ptr<CThreadPool> m_ThreadPool;
+    unsigned m_WaitToFinish;
 };
 
 

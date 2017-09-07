@@ -28,19 +28,122 @@
  */
  
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbistre.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/stream_utils.hpp>
+
 #include <util/cache/cache_async.hpp>
+
+#include <sstream>
 
 
 BEGIN_NCBI_SCOPE
 
 
-CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer) :
+struct SMeta
+{
+    string key;
+    ICache::TBlobVersion version;
+    string subkey;
+    unsigned time_to_live;
+    string owner;
+};
+
+
+struct SAsyncWriteTask : CThreadPool_Task
+{
+    stringstream data;
+
+    SAsyncWriteTask(weak_ptr<ICache> cache, SMeta meta);
+    EStatus Execute(void) override;
+
+private:
+    weak_ptr<ICache> m_Cache;
+    SMeta m_Meta;
+};
+
+
+struct SDeferredExecutor
+{
+    CRef<SAsyncWriteTask> task;
+
+    SDeferredExecutor(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICache> cache, SMeta meta);
+    ~SDeferredExecutor();
+
+private:
+    weak_ptr<CThreadPool> m_ThreadPool;
+};
+
+
+struct SDeferredWriter : SDeferredExecutor, CStreamWriter
+{
+    SDeferredWriter(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICache> cache, SMeta meta);
+};
+
+
+SAsyncWriteTask::SAsyncWriteTask(weak_ptr<ICache> cache, SMeta meta) :
+    m_Cache(cache),
+    m_Meta(meta)
+{
+}
+
+
+SAsyncWriteTask::EStatus SAsyncWriteTask::Execute(void)
+{
+    auto cache = m_Cache.lock();
+    if (!cache) return eCanceled;
+
+    auto& m = m_Meta; // Shortcut
+    auto writer = cache->GetWriteStream(m.key, m.version, m.subkey, m.time_to_live, m.owner);
+
+    CWStream os(writer, 0, 0, CRWStreambuf::fOwnWriter);
+
+    NcbiStreamCopy(os, data);
+    return eCompleted;
+}
+
+
+SDeferredExecutor::SDeferredExecutor(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICache> cache, SMeta meta) :
+    task(new SAsyncWriteTask(cache, meta)),
+    m_ThreadPool(thread_pool)
+{
+}
+
+
+SDeferredExecutor::~SDeferredExecutor()
+{
+    if (auto p = m_ThreadPool.lock()) p->AddTask(task.Release());
+}
+
+
+SDeferredWriter::SDeferredWriter(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICache> cache, SMeta meta) :
+    SDeferredExecutor(thread_pool, cache, meta),
+    CStreamWriter(task->data)
+{
+}
+
+
+// XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
+CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish) :
     m_Main(main),
-    m_Writer(writer)
+    m_Writer(writer),
+    m_ThreadPool(make_shared<CThreadPool>(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext)),
+    m_WaitToFinish(wait_to_finish)
 {
     _ASSERT(main);
     _ASSERT(writer);
     _ASSERT(main != writer);
+}
+
+
+CAsyncWriteCache::~CAsyncWriteCache()
+{
+    CDeadline deadline(m_WaitToFinish);
+
+    while (m_ThreadPool->GetQueuedTasksCount() && m_ThreadPool->GetExecutingTasksCount() && !deadline.IsExpired()) {
+        SleepMilliSec(250);
+    }
 }
 
 
@@ -150,7 +253,8 @@ void CAsyncWriteCache::GetBlobAccess(const string& key, TBlobVersion version, co
 
 IWriter* CAsyncWriteCache::GetWriteStream(const string& key, TBlobVersion version, const string& subkey, unsigned int time_to_live, const string& owner)
 {
-    return m_Writer->GetWriteStream(key, version, subkey, time_to_live, owner);
+    SMeta meta{key, version, subkey, time_to_live, owner};
+    return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
 }
 
 
