@@ -3,9 +3,21 @@
 #
 
 # Include projects from this directory
-include(CMakeLists.clog.lib.txt)
+#include(CMakeLists.clog.lib.txt)
 
 # Recurse subdirectories
-add_subdirectory(app)
-add_subdirectory(demo )
-add_subdirectory(test )
+#add_subdirectory(app)
+#add_subdirectory(demo )
+#add_subdirectory(test )
+
+cmake_minimum_required(VERSION 3.1)
+
+PROJECT(ncbi_applog VERSION 1.2.4)
+
+INSTALL(PROGRAMS app/ncbi_applog DESTINATION bin)
+INSTALL(PROGRAMS app/ncbi_applog.cgi DESTINATION bin)
+
+INSTALL(FILES libclog.a DESTINATION lib)
+
+SET(CPACK_GENERATOR "ZIP")
+INCLUDE(CPack)
