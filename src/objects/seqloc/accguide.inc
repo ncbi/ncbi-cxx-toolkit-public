@@ -526,7 +526,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  MD  ddbj_other_nuc",
     "2+6  ME  ddbj_other_nuc",
     "2+6  MF  gb_dirsub",
-    "2+6  MG  gb_other_nuc",
+    "2+6  MG  gb_dirsub",
     "2+6  MH  gb_other_nuc",
     "2+6  MI  gb_other_nuc",
     "2+6  MJ  gb_other_nuc",
