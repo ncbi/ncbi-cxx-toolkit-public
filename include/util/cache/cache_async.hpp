@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 /// Class for deferred asynchronous writes in a separate thread.
 ///
-class CAsyncWriteCache : public ICache
+class NCBI_XUTIL_EXPORT CAsyncWriteCache : public ICache
 {
 public:
 
