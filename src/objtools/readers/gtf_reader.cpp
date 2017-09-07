@@ -236,6 +236,10 @@ CGtfReader::ReadSeqAnnots(
             return;
         }
         xReportProgress(pEC);
+        if ( xParseStructuredComment(line) ) {
+            continue;
+        }
+
         try {
             if (xIsTrackTerminator(line)) {
                 continue;
