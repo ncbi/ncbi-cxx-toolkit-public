@@ -1564,7 +1564,7 @@ static void s_InitDestination(const char* logfile_path)
                 }
                 /* server port */
                 if (sx_Info->server_port) {
-                    sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
+                    sprintf(xdir, "%s%d\0", kBaseLogDir, sx_Info->server_port);
                     if (s_SetLogFilesDir(xdir, 1)) {
                         return;
                     }
@@ -2735,6 +2735,16 @@ static void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
     s_Extra(ctx, params);
 }
 
+static void s_LogSubHitID(TNcbiLog_Context ctx, const char* subhit_id)
+{
+    SNcbiLog_Param params[2];
+    assert(subhit_id  &&  subhit_id[0]);
+    int i = s_AddParamsPair(params, 0, "issued_subhit", subhit_id);
+    params[i].key   = NULL;
+    params[i].value = NULL;
+    s_Extra(ctx, params);
+}
+
 
 extern void NcbiLog_AppSetHitID(const char* hit_id)
 {
@@ -2861,7 +2871,15 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
     if (need_increment) {
         ++(*sub_id);
     }
-    n = sprintf(buf, "%s.%d", hit_id, *sub_id);
+    /* Print issued sub hit ID number */
+    n = sprintf(buf, "%d\0", *sub_id);
+    if (n <= 0) {
+        return NULL;  /* error */
+    }
+    s_LogSubHitID(ctx, buf);
+
+    /* And return new sub hit ID */
+    n = sprintf(buf, "%s.%d\0", hit_id, *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
     }
