@@ -34,7 +34,7 @@ class Collector(object):
         mf = self.read_makefile(os.path.join(srcdir, mfname),
                                 command_info['target_name'], target_type)
         target_name = expand_makefile_vars('$(%s)' % target_type.upper(), mf)
-        tcprops = self.read_teamcity_properties()
+        tcprops = self.read_teamcity_properties(wanted)
         if 'vcs_type' in wanted or '*' in wanted:
             vcs_info = self.get_vcs_info(srcdir)
         else:
@@ -185,9 +185,12 @@ class Collector(object):
         except IOError:
             return { target_type.upper(): target_name }
 
-    def read_teamcity_properties(self):
+    def read_teamcity_properties(self, wanted):
         props = {}
-        if False and 'TEAMCITY_BUILD_PROPERTIES_FILE' in os.environ:
+        if 'TEAMCITY_BUILD_PROPERTIES_FILE' in os.environ and \
+           ('build_type' in wanted or 'build_id' in wanted
+            or 'build_number' in wanted or 'tc_vars' in wanted
+            or 'tc_agent_name' in wanted or '*' in wanted):
             fname = os.environ['TEAMCITY_BUILD_PROPERTIES_FILE']
             try:
                 with open(fname, 'r') as f:
