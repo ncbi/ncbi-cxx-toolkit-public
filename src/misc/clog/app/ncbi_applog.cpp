@@ -129,6 +129,7 @@ const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
+
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
 /// NOTE: we need sub-pattern for application name only!
 const char* kApplogRegexp = 
@@ -835,16 +836,18 @@ int CNcbiApplogApp::Redirect()
                 s_args += string(" \"-srvport=") + NStr::UIntToString(m_Info.server_port) + "\"";
             }
         }
+        s_args = NStr::Sanitize(s_args, NStr::fSS_cntrl | NStr::fSS_Reject | NStr::fSS_Remove);
 
         // Send request to another machine via CGI
+        //SetEnvironment().Set("CONN_MAX_TRY", "1");
 
         // fHTTP_Flushable is necessary to correctly check status of the stream.
         // 'endl' should cause flush() on the stream,  and flush() should
         // cause connection before reading from the stream in ReadCgiResponse().
 
         CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID | fHTTP_Flushable);
-        // TODO: sanitize (replace all not printable symbols: '\n' and etc)
         cgi << s_args << endl;
+
         return ReadCgiResponse(cgi);
     }
 
