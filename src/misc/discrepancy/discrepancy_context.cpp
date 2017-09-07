@@ -301,7 +301,6 @@ bool CDiscrepancyContext::IsViral()
         IsViral_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc) {
-            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
             if (HasLineage(*biosrc, GetLineage(), "Viruses")) {
                 IsViral_result = true;
                 return IsViral_result;
@@ -1001,7 +1000,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescObj(EKeepRef keep_ref
     if (feat) {
         return NewDiscObj(feat, keep_ref, autofix, more);
     }
-    else if (desc) {
+    else {
         return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
     }
 }

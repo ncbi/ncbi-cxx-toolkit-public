@@ -124,7 +124,7 @@ DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 struct DesiredAAData
 {
     char   short_symbol;
-    char*  long_symbol;
+    const char*  long_symbol;
     size_t num_expected;
 };
 

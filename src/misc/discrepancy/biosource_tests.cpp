@@ -144,7 +144,7 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Stra
             while (isdigit(s.c_str()[pos + len])) {
                 len++;
             }
-            if (!len > 0) {
+            if (!len) {
                 return;
             }
             strain_year = NStr::StringToInt(s.substr(pos, len));

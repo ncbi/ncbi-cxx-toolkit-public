@@ -611,32 +611,6 @@ static bool HasContainedNote(const CSeq_feat& feat)
 }
 
 
-static void DeleteProteinSequence(CBioseq_Handle prot)
-{
-    // Should be a protein!
-    if ( prot && prot.IsProtein() && !prot.IsRemoved() ) {
-        // Get the protein parent set before you remove the protein
-        CBioseq_set_Handle bssh = prot.GetParentBioseq_set();
-
-        // Delete the protein
-        CBioseq_EditHandle prot_eh(prot);
-        prot_eh.Remove();
-
-        // If lone nuc remains, renormalize the nuc-prot set
-        if (bssh && bssh.IsSetClass() 
-            && bssh.GetClass() == CBioseq_set::eClass_nuc_prot
-            && !bssh.IsEmptySeq_set() 
-            && bssh.GetBioseq_setCore()->GetSeq_set().size() == 1) 
-        {
-            // Renormalize the lone nuc that's inside the nuc-prot set into  
-            // a nuc bioseq.  This call will remove annots/descrs from the 
-            // set and attach them to the seq.
-            bssh.GetParentEntry().GetEditHandle().ConvertSetToSeq();
-        }
-    }
-}
-
-
 static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 {
     if (!feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {

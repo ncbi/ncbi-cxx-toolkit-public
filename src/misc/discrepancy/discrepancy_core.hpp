@@ -564,7 +564,7 @@ protected:
         SequenceHasFarPointers_result = 0;
         SequenceHasFarPointers_count = 0;
         GetSeqSummary_count = 0;
-        CSeq_id* GetProteinId_protein_id = 0;
+        GetProteinId_protein_id = 0;
         GetProteinId_count = 0;
         IsRefseq_is_refseq = 0;
         IsRefseq_count = 0;
@@ -599,15 +599,15 @@ protected:
     protected:                                                                                                      \
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \
+    static const char* descr_for_##name = descr;                                                                    \
     class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyConstructor_##name(void){ Register(#name, descr, group, *this);}                                \
+        CDiscrepancyConstructor_##name(void){ Register(#name, descr_for_##name, group, *this);}                     \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
-    static const char* descr_for_##name = descr;                                                                    \
     static TGroup group_for_##name = group;                                                                         \
     void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
 

@@ -289,10 +289,10 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
         if (((*gene)->IsSetComment() && !(*gene)->GetComment().empty()) || ((*gene)->GetData().GetGene().IsSetDesc() && !(*gene)->GetData().GetGene().GetDesc().empty())) {
             continue;
         }
-        bool gene_partial_start = (*gene)->GetLocation().IsPartialStart(eExtreme_Biological);
-        bool gene_partial_stop = (*gene)->GetLocation().IsPartialStop(eExtreme_Biological);
-        const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
-        const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
+        //bool gene_partial_start = (*gene)->GetLocation().IsPartialStart(eExtreme_Biological);
+        //bool gene_partial_stop = (*gene)->GetLocation().IsPartialStop(eExtreme_Biological);
+        //const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
+        //const string& locus_tag = (*gene)->GetData().GetGene().IsSetLocus_tag() ? (*gene)->GetData().GetGene().GetLocus_tag() : kEmptyStr;
         const CSeq_loc& loc = (*gene)->GetLocation();
 //cout << "GENE: " << CReportObject::GetTextObjectDescription(**gene, context.GetScope()) << "\n";
         bool found = false;
@@ -2379,7 +2379,6 @@ static const string kFeatureList = "Feature List";
 
 DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
 {
-static int count = 0;
     if (obj.IsSetData()) {
         CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
         if (subtype != CSeqFeatData::eSubtype_gap && subtype != CSeqFeatData::eSubtype_prot) {

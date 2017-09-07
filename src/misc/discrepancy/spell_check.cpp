@@ -42,7 +42,7 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(spell_check);
 
 
-static char*  Words[] = { "hypothetical", "protein", "hemoglobin", "Colleen", "Bollin" };
+static const char*  Words[] = { "hypothetical", "protein", "hemoglobin", "Colleen", "Bollin" };
 static size_t WordCount = sizeof(Words) / sizeof(Words[0]);
 
 class CScrumble
