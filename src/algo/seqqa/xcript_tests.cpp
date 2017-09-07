@@ -201,7 +201,7 @@ static void s_CdsFlags(const CSeq_id& id, const CSeqTestContext* ctx,
 {
     result.SetOutput_data()
         .AddField("is_partial",
-                  feat_iter->GetPartial());
+                  feat_iter->IsSetPartial() && feat_iter->GetPartial());
     result.SetOutput_data()
         .AddField("is_pseudo",
                   feat_iter->IsSetPseudo() && feat_iter->GetPseudo());
