@@ -378,27 +378,35 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT4)
     vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
     vector< CRef<CSeq_annot> > annots;
+    size_t total_feats = 0;
     for ( size_t i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
         ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
-        annots.push_back(s_GetAnnot(*ids.back(), i+1));
+        size_t count = i%5+1;
+        annots.push_back(s_GetAnnot(*ids.back(), count));
+        total_feats += count;
     }
+    LOG_POST("Resolving sequences");
     for ( auto c : s_GetBioseqParallel(2, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
+    LOG_POST("Resolving annots");
     for ( auto c : s_GetFeatParallel(2, scope, ids) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
+    LOG_POST("Adding sequences and annots");
     for ( size_t i = 0; i < COUNT; ++i ) {
         scope.AddTopLevelSeqEntry((const CSeq_entry&)*entries[i]);
         scope.AddSeq_annot(*annots[i]);
     }
+    LOG_POST("Re-resolving sequences");
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
+    LOG_POST("Re-resolving annots");
     for ( auto c : s_GetFeatParallel(THREADS, scope, ids) ) {
-        BOOST_REQUIRE_EQUAL(c, COUNT*(COUNT+1)/2);
+        BOOST_REQUIRE_EQUAL(c, total_feats);
     }
 }
 #endif // NCBI_THREADS
