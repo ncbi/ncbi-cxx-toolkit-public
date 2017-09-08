@@ -235,6 +235,33 @@ static vector<size_t> s_GetBioseqParallel(size_t THREADS,
     return rr;
 }
 
+static vector<size_t> s_GetFeatParallel(size_t THREADS,
+                                        CScope& scope,
+                                        const vector< CRef<CSeq_id> >& ids)
+{
+    vector< future<size_t> > ff(THREADS);
+    for ( size_t ti = 0; ti < THREADS; ++ti ) {
+        ff[ti] =
+            async(std::launch::async,
+                  [&]() -> size_t
+                  {
+                      size_t got_count = 0;
+                      for ( size_t i = 0; i < ids.size(); ++i ) {
+                          auto& id = ids[i];
+                          if ( CBioseq_Handle bh = scope.GetBioseqHandle(*id) ) {
+                              got_count += CFeat_CI(bh).GetSize();
+                          }
+                      }
+                      return got_count;
+                  });
+    }
+    vector<size_t> rr(THREADS);
+    for ( size_t ti = 0; ti < THREADS; ++ti ) {
+        rr[ti] = ff[ti].get();
+    }
+    return rr;
+}
+
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT1)
 {
@@ -337,6 +364,41 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReResolveMT4)
+{
+    const size_t COUNT = 1000;
+    const size_t THREADS = 10;
+    
+    // check re-resolve after adding
+    CScope scope(*CObjectManager::GetInstance());
+    vector< CRef<CSeq_id> > ids, ids2;
+    vector< CRef<CSeq_entry> > entries;
+    vector< CRef<CSeq_annot> > annots;
+    for ( size_t i = 0; i < COUNT; ++i ) {
+        ids.push_back(s_GetId(i));
+        ids2.push_back(s_GetId2(i));
+        entries.push_back(s_GetEntry(i));
+        annots.push_back(s_GetAnnot(*ids.back(), i+1));
+    }
+    for ( auto c : s_GetBioseqParallel(2, scope, ids, ids2) ) {
+        BOOST_REQUIRE_EQUAL(c, 0u);
+    }
+    for ( auto c : s_GetFeatParallel(2, scope, ids) ) {
+        BOOST_REQUIRE_EQUAL(c, 0u);
+    }
+    for ( size_t i = 0; i < COUNT; ++i ) {
+        scope.AddTopLevelSeqEntry((const CSeq_entry&)*entries[i]);
+        scope.AddSeq_annot(*annots[i]);
+    }
+    for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
+        BOOST_REQUIRE_EQUAL(c, COUNT);
+    }
+    for ( auto c : s_GetFeatParallel(THREADS, scope, ids) ) {
+        BOOST_REQUIRE_EQUAL(c, COUNT*(COUNT+1)/2);
     }
 }
 #endif // NCBI_THREADS
