@@ -210,7 +210,7 @@ const string kInferenceMessage[] = {
   "spaces in inference",
   "possible comment in inference",
   "same species misused",
-  "bad inference accession",
+  "the value in the accession field is not legal. The only allowed value is accession.version, eg AF123456.1. Problem =",
   "bad inference accession version",
   "accession.version not public",
   "bad accession type",

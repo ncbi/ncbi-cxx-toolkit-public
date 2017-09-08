@@ -15563,6 +15563,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    feat->SetQual().front()->SetVal("similar to AA sequence:RefSeq:gi|21240850|ref|NP_640432.1|");
+    eval = validator.Validate(seh, options);
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - the value in the accession field is not legal. The only allowed value is accession.version, eg AF123456.1. Problem = (similar to AA sequence:RefSeq:gi|21240850|ref|NP_640432.1|)");
+    CheckErrors(*eval, expected_errors);
+
+
     CLEAR_ERRORS    
     
     // SRA inferences are ok
