@@ -1179,7 +1179,7 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const SConnNetInfo&  net_info,
 void CConn_FTPDownloadStream::x_InitDownload(const string& file, Uint8 offset)
 {
     // Use '\n' here instead of NcbiFlush to avoid (and thus make silent)
-    // flush errors on retrieval of inexistent (or bad) files / directories..
+    // flush errors on retrieval of nonexistent (or bad) files / directories...
     EIO_Status status;
     if (offset) {
         write("REST ", 5) << NStr::UInt8ToString(offset) << '\n';
