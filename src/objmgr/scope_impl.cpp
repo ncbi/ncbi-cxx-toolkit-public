@@ -2238,20 +2238,22 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
         return;
     }
 
-    CInitGuard init(binfo.m_BioseqAnnotRef_Info, m_MutexPool, CInitGuard::force);
-    if ( init || binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
-        CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = binfo.m_BioseqAnnotRef_Info;
-        if ( !cache ) {
-            cache = new CBioseq_ScopeInfo::SAnnotSetCache;
+    {{
+        CInitGuard init(binfo.m_BioseqAnnotRef_Info, m_MutexPool, CInitGuard::force);
+        if ( init || binfo.m_BioseqAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = binfo.m_BioseqAnnotRef_Info;
+            if ( !cache ) {
+                cache = new CBioseq_ScopeInfo::SAnnotSetCache;
+            }
+            else {
+                cache->match.clear();
+            }
+            x_GetTSESetWithAnnots(lock, &cache->match, binfo);
+            cache->m_SearchTimestamp = m_AnnotChangeCounter;
+            binfo.m_BioseqAnnotRef_Info = cache;
+            return;
         }
-        else {
-            cache->match.clear();
-        }
-        x_GetTSESetWithAnnots(lock, &cache->match, binfo);
-        cache->m_SearchTimestamp = m_AnnotChangeCounter;
-        binfo.m_BioseqAnnotRef_Info = cache;
-        return;
-    }
+    }}
     // use cached set
     x_LockMatchSet(lock, binfo.m_BioseqAnnotRef_Info->match);
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
@@ -2266,20 +2268,22 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
 void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                         TSeq_idMapValue& info)
 {
-    CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool, CInitGuard::force);
-    if ( init || info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
-        CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = info.second.m_AllAnnotRef_Info;
-        if ( !cache ) {
-            cache = new CBioseq_ScopeInfo::SAnnotSetCache;
+    {{
+        CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool, CInitGuard::force);
+        if ( init || info.second.m_AllAnnotRef_Info->m_SearchTimestamp != m_AnnotChangeCounter ) {
+            CRef<CBioseq_ScopeInfo::SAnnotSetCache> cache = info.second.m_AllAnnotRef_Info;
+            if ( !cache ) {
+                cache = new CBioseq_ScopeInfo::SAnnotSetCache;
+            }
+            else {
+                cache->match.clear();
+            }
+            x_GetTSESetWithAnnots(lock, &cache->match, info);
+            cache->m_SearchTimestamp = m_AnnotChangeCounter;
+            info.second.m_AllAnnotRef_Info = cache;
+            return;
         }
-        else {
-            cache->match.clear();
-        }
-        x_GetTSESetWithAnnots(lock, &cache->match, info);
-        cache->m_SearchTimestamp = m_AnnotChangeCounter;
-        info.second.m_AllAnnotRef_Info = cache;
-        return;
-    }
+    }}
     // use cached set
     x_LockMatchSet(lock, info.second.m_AllAnnotRef_Info->match);
 }
