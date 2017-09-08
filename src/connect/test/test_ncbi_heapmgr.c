@@ -69,14 +69,16 @@ static void* s_Expand(void* base, TNCBI_Size size, void* arg)
 #endif
 
 
-static void s_Walk(HEAP heap, const char* which)
+static void s_Walk(HEAP heap, const char* which, int/*bool*/ check)
 {
-    unsigned int i = 0;
+    unsigned int n = 0;
     SHEAP_Block* blk = 0;
-    TNCBI_Size total = 0;
+    TNCBI_Size free_size[2];
+    TNCBI_Size total_size[2];
     CORE_LOGF(eLOG_Note,
               ("Walking %s%sheap",
                which  &&  *which ? which : "", &" "[!which  ||  !*which]));
+    free_size[0] = total_size[0] = 0;
     while ((blk = HEAP_Walk(heap, blk)) != 0) {
         const char* flag = (int) blk->flag < 0 ? ", last" : "";
         TNCBI_Size size = blk->size;
@@ -91,13 +93,23 @@ static void s_Walk(HEAP heap, const char* which)
             CORE_LOGF(eLOG_Note,
                       ("Free%s @%u, size %u, <-%u, %u->",
                        flag, HEAP_ADDR(blk, heap), size, ptr[2], ptr[3]));
+            free_size[0] += size;
         }
-        total += size;
-        i++;
+        total_size[0] += size;
+        ++n;
     }
+    free_size[1] = HEAP_Idle(heap);
+    total_size[1] = HEAP_Size(heap);
     CORE_LOGF(eLOG_Note,
-              ("%d block%s total; total size %u", i, &"s"[i == 1], total));
-    if (HEAP_Size(heap) != total)
+              ("%d block%s: free %u/%u, total %u/%u", n, &"s"[n == 1],
+               free_size[0], free_size[1], total_size[0], total_size[1]));
+    if (check) {
+        if (free_size[0] != free_size[1])
+            CORE_LOG(eLOG_Fatal, "Free size mismatch");
+        if (total_size[0] - free_size[0] != HEAP_Used(heap))
+            CORE_LOG(eLOG_Fatal, "Used size mismatch");
+    }
+    if (total_size[0] != total_size[1])
         CORE_LOG(eLOG_Fatal, "Heap size mismatch");
 }
 
@@ -144,7 +156,7 @@ int main(int argc, const char* argv[])
                     c = (char*) blk + sizeof(*blk);
                     while (i--)
                         *c++ = rand();
-                    s_Walk(heap, 0);
+                    s_Walk(heap, 0, 1);
                 } else
                     assert(!HEAP_Alloc(heap, i, tail));
             } else if (r == 3  ||  r == 4) {
@@ -162,7 +174,7 @@ int main(int argc, const char* argv[])
                     assert(data_size);
                     HEAP_Free(heap, blk);
                     CORE_LOG(eLOG_Note, "Done");
-                    s_Walk(heap, 0);
+                    s_Walk(heap, 0, 1);
                 }
             } else if (r == 5) {
                 const SHEAP_Block* prev = 0;
@@ -191,7 +203,7 @@ int main(int argc, const char* argv[])
                         else
                             HEAP_Free(heap, blk);
                         CORE_LOG(eLOG_Note, "Done");
-                        s_Walk(heap, 0);
+                        s_Walk(heap, 0, 1);
                         ok = 1;
                         if (prev  &&  !(prev->flag & 1))
                             continue;
@@ -199,7 +211,7 @@ int main(int argc, const char* argv[])
                     prev = blk;
                 }
                 if (!ok)
-                    s_Walk(heap, "the");
+                    s_Walk(heap, "the", 1);
                 else
                     CORE_LOG(eLOG_Note, "Done with freeing while walking");
             } else if (r == 6  ||  r == 7) {
@@ -224,7 +236,7 @@ int main(int argc, const char* argv[])
                     CORE_LOGF(eLOG_Error,
                               ("%s failed", r == 6 ? "Attach" : "Copy"));
                 } else
-                    s_Walk(newheap, r == 6 ? "attached" : "copied");
+                    s_Walk(newheap, r == 6 ? "attached" : "copied", !(r == 6));
                 HEAP_Detach(newheap);
             } else {
                 TNCBI_Size size = HEAP_Size(heap);
@@ -237,7 +249,7 @@ int main(int argc, const char* argv[])
                            size, HEAP_Size(newheap)));
                 if (newheap) {
                     heap = newheap;
-                    s_Walk(heap, "trimmed");
+                    s_Walk(heap, "trimmed", 1);
                 }
             }
         }

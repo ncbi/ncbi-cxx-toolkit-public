@@ -225,10 +225,20 @@ extern NCBI_XCONNECT_EXPORT unsigned int HEAP_Destroy(HEAP heap);
 extern NCBI_XCONNECT_EXPORT void* HEAP_Base(const HEAP heap);
 
 
-/* Get the extent of the heap.
+/* Get the extent of the heap.  This is a very fast routine.
  * Return 0 if heap is passed as NULL, or when the heap is completely empty.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
+
+
+/* Return total used space on the heap.  This is a very fast routine.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Used(const HEAP heap);
+
+
+/* Return total vacant usable space on the heap.  Involves heap walking.
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Idle(const HEAP heap);
 
 
 /* Get a serial number of the heap as assigned by Attach or Copy.

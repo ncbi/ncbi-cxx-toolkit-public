@@ -157,8 +157,9 @@ typedef struct HEAP_PACKED {
 struct SHEAP_tag {
     SHEAP_HeapBlock* base;    /* Base of heap extent:         !base == !size */
     TNCBI_Size       size;    /* # blocks in the heap extent: !base == !size */
+    TNCBI_Size       used;    /* # of blocks used (size - used = free blocks)*/
     TNCBI_Size       free;    /* Index of the largest free block (OOB=none)  */
-    TNCBI_Size       last;    /* Index of the last block (RW heap only)      */
+    TNCBI_Size       last;    /* Index of the last block (RW heap, else OOB) */
     TNCBI_Size       chunk;   /* Aligned (bytes);  0 when the heap is RO     */
     FHEAP_Resize     resize;  /* != NULL when resizeable (RW heap only)      */
     void*            auxarg;  /* Auxiliary argument to pass to "resize"      */
@@ -193,11 +194,17 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 #define HEAP_ISLAST(b)        ((b)->head.flag & HEAP_LAST)
 #define HEAP_ISUSED(b)        ((b)->head.flag & HEAP_USED)
 
+#define HEAP_CHECK(heap)                                            \
+    assert(!heap->base == !heap->size);                             \
+    assert(heap->used <= heap->size);                               \
+    assert(heap->free <= heap->size);                               \
+    assert(heap->last <= heap->size);                               \
+    assert(heap->used == heap->size  ||  heap->free < heap->size)
 
-#if HEAP_MASK != ~((HEAP_PREV_BIT | HEAP_NEXT_BIT |                     \
+#if ~HEAP_MASK != ((HEAP_PREV_BIT | HEAP_NEXT_BIT |                      \
                     HEAP_FREE | HEAP_USED | HEAP_LAST) & ~_HEAP_OLDLAST) \
     ||  HEAP_BLOCKS(~HEAP_MASK) != 0
-#  error "HEAP_MASK invalid"
+#  error "HEAP_MASK is invalid!"
 #endif
 
 
@@ -254,8 +261,8 @@ static unsigned int x_PrevBit(TNCBI_Size size)
 }
 
 
-HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
-                 TNCBI_Size chunk, FHEAP_Resize resize, void* auxarg)
+extern HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
+                        TNCBI_Size chunk, FHEAP_Resize resize, void* auxarg)
 {
     HEAP heap;
 
@@ -276,6 +283,7 @@ HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
         return 0;
     heap->base   = (SHEAP_HeapBlock*) base;
     heap->size   = HEAP_BLOCKS(size);
+    heap->used   = 0;
     heap->free   = 0;
     heap->last   = 0;
     heap->chunk  = chunk        ? HEAP_ALIGN(chunk) : 0;
@@ -300,7 +308,7 @@ HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
 }
 
 
-HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
+extern HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
 {
     HEAP heap;
 
@@ -316,6 +324,7 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
     }
     heap->base   = (SHEAP_HeapBlock*) base;
     heap->size   = HEAP_BLOCKS(size);
+    heap->used   = heap->size;
     heap->free   = heap->size;
     heap->last   = heap->size;
     heap->serial = serial;
@@ -329,7 +338,7 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
 }
 
 
-HEAP HEAP_Attach(const void* base, TNCBI_Size maxsize, int serial)
+extern HEAP HEAP_Attach(const void* base, TNCBI_Size maxsize, int serial)
 {
     TNCBI_Size size = 0;
 
@@ -387,23 +396,21 @@ static const char* s_HEAP_Id(char* buf, HEAP h)
 
 /* Scan the heap and return a free block, whose size is the minimal to fit the
  * requested one (i.e. its previous free block, if any, is smaller).  The block
- * returned is still linked into the list of free blocks.  Iff no suitable free
- * block can be found, *size gets updated with the total free space available.
+ * returned is still linked into the list of free blocks.  "hint" (if provided)
+ * is from where to start searching downto the start of the free block chain.
  */
 static SHEAP_HeapBlock* s_HEAP_Find(HEAP             heap,
-                                    TNCBI_Size*      size,
+                                    TNCBI_Size       need,
                                     SHEAP_HeapBlock* hint)
 {
     SHEAP_HeapBlock *f, *b, *e = heap->base + heap->free;
-    TNCBI_Size find = size ? *size : 0;
 
     assert(!hint  ||  !HEAP_ISUSED(hint));
     assert(heap->free < heap->size  &&  !HEAP_ISUSED(e));
-    if (!hint  &&  find < (e->head.size >> 1)) {
+    if (!hint  &&  need < (e->head.size >> 1)) {
         /* begin from the smallest block */
         for (b = heap->base + e->nextfree;  ; b = heap->base + b->nextfree) {
-            f = b;
-            if (!s_HEAP_fast) {
+            if (unlikely(!s_HEAP_fast)) {
                 if (b < heap->base  ||  heap->base + heap->size <= b) {
                     b = 0;
                     goto err;
@@ -411,15 +418,18 @@ static SHEAP_HeapBlock* s_HEAP_Find(HEAP             heap,
                 if (HEAP_ISUSED(b))
                     goto err;
             }
-            if (find <= b->head.size  ||  b == e)
+            if (need <= b->head.size) {
+                f = b;
                 break;
+            }
+            assert(b != e);
         }
         assert(f);
     } else {
-        TNCBI_Size free = (b = hint ? hint : e)->head.size;
-        f = free < find ? 0 : b;  /* a bigger free block */
+        b = hint ? hint : e;
+        f = b->head.size < need ? 0 : b; /*a bigger free block*/
         for (b = heap->base + b->prevfree;  ; b = heap->base + b->prevfree) {
-            if (!s_HEAP_fast) {
+            if (unlikely(!s_HEAP_fast)) {
                 if (b < heap->base  ||  heap->base + heap->size <= b) {
                     b = 0;
                     goto err;
@@ -427,14 +437,7 @@ static SHEAP_HeapBlock* s_HEAP_Find(HEAP             heap,
                 if (HEAP_ISUSED(b))
                     goto err;
             }
-            if (!f) {
-                if (b != e  &&  (free += b->head.size) < find)
-                    continue;
-                assert(size);
-                *size = free;
-                break;
-            }
-            if (b == e  ||  b->head.size < find)
+            if (b == e  ||  b->head.size < need)
                 break;
             f = b;
         }
@@ -453,8 +456,6 @@ static SHEAP_HeapBlock* s_HEAP_Find(HEAP             heap,
                      s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
                      heap->size, msg));
     }}
-    if (size)
-        *size = 0;
     return 0;
 }
 
@@ -484,10 +485,9 @@ static void s_HEAP_Link(HEAP heap, SHEAP_HeapBlock* f, SHEAP_HeapBlock* hint)
         b->nextfree = free;
         heap->free  = free;
     } else {
-        TNCBI_Size size = f->head.size;
-        /* find a block "b" that is just bigger than "f" */
-        assert(!hint  ||  size <= hint->head.size);
-        b = s_HEAP_Find(heap, &size, hint);
+        /* Find a block "b" that is just bigger than "f" */
+        assert(!hint  ||  f->head.size <= hint->head.size);
+        b = s_HEAP_Find(heap, f->head.size, hint);
         assert(b  &&  !HEAP_ISUSED(b));
         /* Link in BEFORE b (so that f <= b) */
         f->nextfree = HEAP_INDEX(b, heap->base);
@@ -508,7 +508,7 @@ static void s_HEAP_Unlink(SHEAP_HeapBlock* b)
     b->prevfree = b->nextfree = ~((TNCBI_Size) 0);
 }
 #else
-#define s_HEAP_Unlink(b)  ((void) 0)
+#  define s_HEAP_Unlink(b)  /*void*/
 #endif /*_DEBUG && !NDEBUG*/
 
 
@@ -614,7 +614,7 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap,
     assert(HEAP_SIZE(size) == size);
     assert(!HEAP_ISUSED(b)  &&  size <= b->head.size);
     if (size + HEAP_EXTENT(1) <= b->head.size) {
-        /* the block is to used partially */
+        /* the block is to be split */
         unsigned int last = HEAP_ISLAST(b) ? HEAP_LAST : 0;
         SHEAP_HeapBlock* f;
         if (tail) {
@@ -640,15 +640,16 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap,
         s_HEAP_Link(heap, f, n);
     } else
         b->head.flag |= HEAP_USED;
+    heap->used += HEAP_BLOCKS(size);
     if (size -= need)
         memset((char*) b + need, 0, size); /* block padding (if any) zeroed */
     return &b->head;
 }
 
 
-SHEAP_Block* HEAP_Alloc(HEAP        heap,
-                        TNCBI_Size  size,
-                        int/*bool*/ tail)
+extern SHEAP_Block* HEAP_Alloc(HEAP        heap,
+                               TNCBI_Size  size,
+                               int/*bool*/ tail)
 {
     SHEAP_HeapBlock *f, *n;
     TNCBI_Size need;
@@ -658,7 +659,7 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
         CORE_LOG_X(6, eLOG_Warning, "Heap Alloc: NULL heap");
         return 0;
     }
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
 
     if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(7, eLOG_Error,
@@ -671,9 +672,9 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
     size += (TNCBI_Size) sizeof(SHEAP_Block);
     need  = HEAP_ALIGN(size);
 
-    if (likely(heap->free < heap->size)) {
-        TNCBI_Size free = need;
-        if (likely((f = s_HEAP_Find(heap, &free, 0)) != 0)) {
+    if (need <= HEAP_EXTENT(heap->size - heap->used)) {
+        assert(heap->free < heap->size);
+        if (likely((f = s_HEAP_Find(heap, need, 0)) != 0)) {
             /*NB: f is still linked -- unlink*/
             n = heap->base + f->nextfree;
             if (n == f) {
@@ -690,15 +691,14 @@ SHEAP_Block* HEAP_Alloc(HEAP        heap,
                 }
             }
             s_HEAP_Unlink(f);
-        } else if (unlikely(need <= free)) {
-            /*NB: here f returns unlinked*/
+        } else {
+            /*NB: here f is returned unlinked*/
             f = s_HEAP_Collect(heap, need);
             assert(f  &&  !HEAP_ISUSED(f)  &&  need <= f->head.size);
             if (unlikely(f->head.flag & HEAP_LAST))
                 f->head.flag = HEAP_FREE | HEAP_LAST;
             n = 0;
-        } else
-            f = n = 0;
+        }
     } else
         f = n = 0;
     if (unlikely(!f)) {
@@ -776,6 +776,7 @@ static void s_HEAP_Free(HEAP             heap,
 
     s_HEAP_Unlink(b);
     b->head.flag = HEAP_FREE | last;
+    heap->used -= HEAP_BLOCKS(b->head.size);
     if (!last  &&  !HEAP_ISUSED(n)) {
         assert((n->nextfree | n->prevfree) != (TNCBI_Size)(~0));
         b->head.size += n->head.size;
@@ -823,7 +824,7 @@ static void s_HEAP_Free(HEAP             heap,
 }
 
 
-void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
+extern void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 {
     const SHEAP_HeapBlock* e;
     SHEAP_HeapBlock *b, *p;
@@ -833,7 +834,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
         CORE_LOG_X(10, eLOG_Warning, "Heap Free: NULL heap");
         return;
     }
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
 
     if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(11, eLOG_Error,
@@ -875,7 +876,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 
 
 /*FIXME: to remove*/
-void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
+extern void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 {
     SHEAP_HeapBlock *b, *p, *n;
     char _id[32];
@@ -884,7 +885,7 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
         CORE_LOG_X(15, eLOG_Warning, "Heap Free: NULL heap");
         return;
     }
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
 
     if (unlikely(!heap->chunk)) {
         CORE_LOGF_X(16, eLOG_Error,
@@ -930,7 +931,7 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 }
 
 
-HEAP HEAP_Trim(HEAP heap)
+extern HEAP HEAP_Trim(HEAP heap)
 {
     TNCBI_Size hsize, size, prev;
     SHEAP_HeapBlock* b;
@@ -938,14 +939,14 @@ HEAP HEAP_Trim(HEAP heap)
 
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
  
     if (!heap->chunk) {
         CORE_LOGF_X(30, eLOG_Error,
                     ("Heap Trim%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
     }
-    if (s_HEAP_fast  &&  heap->size == heap->free)
+    if (likely(s_HEAP_fast)  &&  heap->used == heap->size)
         return heap/*no free space, nothing to do*/;
 
     b = s_HEAP_Collect(heap, 0);
@@ -1198,13 +1199,13 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 }
 
 
-SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
+extern SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 {
     if (unlikely(!heap)) {
         CORE_LOG_X(29, eLOG_Warning, "Heap Walk: NULL heap");
         return 0;
     }
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
 
     if (likely(s_HEAP_fast)) {
         SHEAP_HeapBlock* b;
@@ -1218,7 +1219,7 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 }
 
 
-SHEAP_Block* HEAP_Next(const HEAP heap, const SHEAP_Block* ptr)
+extern SHEAP_Block* HEAP_Next(const HEAP heap, const SHEAP_Block* ptr)
 {
     SHEAP_Block* next;
     for (next = HEAP_Walk(heap, ptr);  next;  next = HEAP_Walk(heap, next)) {
@@ -1229,7 +1230,7 @@ SHEAP_Block* HEAP_Next(const HEAP heap, const SHEAP_Block* ptr)
 }
 
 
-HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
+extern HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
 {
     HEAP       copy;
     TNCBI_Size size;
@@ -1239,7 +1240,7 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
 
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
 
     size = HEAP_EXTENT(heap->size);
     copy = (HEAP) malloc(sizeof(*copy) +
@@ -1254,8 +1255,9 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
     } else
         copy->base = 0;
     copy->size   = heap->size;
-    copy->free   = heap->size;
-    copy->last   = heap->size;
+    copy->free   = heap->free;
+    copy->used   = heap->used;
+    copy->last   = heap->last;
     copy->chunk  = 0/*read-only*/;
     copy->resize = 0;
     copy->auxarg = 0;
@@ -1269,11 +1271,11 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
 }
 
 
-unsigned int HEAP_AddRef(HEAP heap)
+extern unsigned int HEAP_AddRef(HEAP heap)
 {
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
     if (heap->refcnt) {
         heap->refcnt++;
         assert(heap->refcnt);
@@ -1282,11 +1284,11 @@ unsigned int HEAP_AddRef(HEAP heap)
 }
 
 
-unsigned int HEAP_Detach(HEAP heap)
+extern unsigned int HEAP_Detach(HEAP heap)
 {
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
     if (heap->refcnt  &&  --heap->refcnt)
         return heap->refcnt;
     memset(heap, 0, sizeof(*heap));
@@ -1295,13 +1297,13 @@ unsigned int HEAP_Detach(HEAP heap)
 }
 
 
-unsigned int HEAP_Destroy(HEAP heap)
+extern unsigned int HEAP_Destroy(HEAP heap)
 {
     char _id[32];
 
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
     if (!heap->chunk  &&  !heap->refcnt) {
         CORE_LOGF_X(33, eLOG_Error,
                     ("Heap Destroy%s: Heap read-only", s_HEAP_Id(_id, heap)));
@@ -1311,29 +1313,68 @@ unsigned int HEAP_Destroy(HEAP heap)
 }
 
 
-void* HEAP_Base(const HEAP heap)
+extern void* HEAP_Base(const HEAP heap)
 {
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
     return heap->base;
 }
 
 
-TNCBI_Size HEAP_Size(const HEAP heap)
+extern TNCBI_Size HEAP_Size(const HEAP heap)
 {
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
     return HEAP_EXTENT(heap->size);
 }
 
 
-int HEAP_Serial(const HEAP heap)
+extern TNCBI_Size HEAP_Used(const HEAP heap)
 {
     if (!heap)
         return 0;
-    assert(!heap->base == !heap->size);
+    HEAP_CHECK(heap);
+    return HEAP_EXTENT(heap->used);
+}
+
+
+extern TNCBI_Size HEAP_Idle(const HEAP heap)
+{
+    TNCBI_Size size = 0;
+    if (heap) {
+        HEAP_CHECK(heap);
+        if (heap->free < heap->size) {
+            const SHEAP_HeapBlock* f = heap->base + heap->free;
+            const SHEAP_HeapBlock* b = f;
+            do {
+                size += b->head.size;
+                b = heap->base + b->prevfree;
+            } while (b != f);
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+            {{
+                TNCBI_Size alt_size = 0;
+                do {
+                    alt_size += b->head.size;
+                    b = heap->base + b->nextfree;
+                } while (b != f);
+                assert(alt_size == size);
+            }}
+#endif /*_DEBUG && !NDEBUG*/
+        }
+        assert(size == HEAP_SIZE(size));
+        assert(size == HEAP_EXTENT(heap->size - heap->used));
+    }
+    return size;
+}
+
+
+extern int HEAP_Serial(const HEAP heap)
+{
+    if (!heap)
+        return 0;
+    HEAP_CHECK(heap);
     return heap->serial;
 }
 
