@@ -33,12 +33,14 @@
 #include <util/static_set.hpp>
 #include <util/static_map.hpp>
 
-#include <objmgr/util/indexer.hpp>
-
 #include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_map_ci.hpp>
+
+#include <objmgr/util/indexer.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -679,6 +681,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
 {
     m_FetchFailure = false;
 
+    m_GapsInitialized = false;
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
 
@@ -758,6 +761,65 @@ CBioseqIndex::~CBioseqIndex (void)
         } catch (CException&) {
             // presumably still in use; let it be
         }
+    }
+}
+
+// Gap collection (delayed until needed)
+void CBioseqIndex::x_InitGaps (void)
+
+{
+    try {
+        if (m_GapsInitialized) {
+            return;
+        }
+
+        m_GapsInitialized = true;
+
+        if (! m_IsDelta) {
+            return;
+        }
+
+        SSeqMapSelector sel;
+
+        sel.SetFlags(CSeqMap::fFindGap)
+           .SetResolveCount(1);
+
+        // explore gaps, pass original target BioseqHandle if using Bioseq sublocation
+        for (CSeqMap_CI gap_it(m_OrigBsh, sel); gap_it; ++gap_it) {
+
+            TSeqPos start = gap_it.GetPosition();
+            TSeqPos end = gap_it.GetEndPosition() - 1;
+
+            // attempt to find CSeq_gap info
+            const CSeq_gap * pGap = NULL;
+            if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
+                pGap = &gap_it.GetData().GetGap();
+            } else {
+                CConstRef<CSeq_literal> pSeqLiteral = gap_it.GetRefGapLiteral();
+                if( pSeqLiteral && pSeqLiteral->IsSetSeq_data() ) {
+                     const CSeq_data & seq_data = pSeqLiteral->GetSeq_data();
+                     if( seq_data.IsGap() ) {
+                         pGap = &seq_data.GetGap();
+                     }
+                }
+            }
+
+            CFastaOstream::SGapModText gap_mod_text;
+            if( pGap ) {
+                CFastaOstream::GetGapModText(*pGap, gap_mod_text);
+            }
+            string type = gap_mod_text.gap_type;
+            vector<string> evidence = gap_mod_text.gap_linkage_evidences;
+
+            // feature name depends on what quals we use
+            bool isAssemblyGap = ( ! type.empty() || ! evidence.empty() );
+
+            CRef<CGapIndex> sgx(new CGapIndex(start, end, type, evidence, isAssemblyGap, *this));
+            m_GapList.push_back(sgx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::x_InitGaps: " << e.what());
     }
 }
 
@@ -961,6 +1023,12 @@ void CBioseqIndex::x_InitFeats (void)
         CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
         CProt_ref::EProcessed processed;
 
+        // next gap
+        CGapIndex* sgx = NULL;
+        if (m_GapList.size() > 0) {
+            sgx = m_GapList[0];
+        }
+
         // iterate features on Bioseq
         for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
             const CMappedFeat mf = *feat_it;
@@ -1083,12 +1151,12 @@ CRef<CFeatureIndex> CBioseqIndex::GetFeatureForProduct (void)
 CWeakRef<CBioseqIndex> CBioseqIndex::GetBioseqForProduct (void)
 
 {
-	CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
-	if (sfxp) {
-		return sfxp->GetBioseqIndex();
-	}
+    CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
+    if (sfxp) {
+        return sfxp->GetBioseqIndex();
+    }
 
-	return CWeakRef<CBioseqIndex> ();
+    return CWeakRef<CBioseqIndex> ();
 }
 
 // GetBestProteinFeature indexes longest protein feature on protein Bioseq
@@ -1254,6 +1322,16 @@ string CBioseqIndex::GetSequence (void)
     return buffer;
 }
 
+const vector<CRef<CGapIndex>>& CBioseqIndex::GetGapIndices(void)
+
+{
+    if (! m_GapsInitialized) {
+        x_InitGaps();
+    }
+
+    return m_GapList;
+}
+
 const vector<CRef<CDescriptorIndex>>& CBioseqIndex::GetDescriptorIndices(void)
 
 {
@@ -1272,6 +1350,25 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
     }
 
     return m_SfxList;
+}
+
+
+// CGapIndex
+
+// Constructor
+CGapIndex::CGapIndex (TSeqPos start,
+                      TSeqPos end,
+                      string type,
+                      vector<string> evidence,
+                      bool isAssemblyGap,
+                      CBioseqIndex& bsx)
+    : m_Start(start),
+      m_End(end),
+      m_GapType(type),
+      m_GapEvidence(evidence),
+      m_IsAssemblyGap(isAssemblyGap),
+      m_Bsx(&bsx)
+{
 }
 
 
@@ -1300,18 +1397,11 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
     const CSeqFeatData& data  = m_Mf.GetData();
     m_Type = data.Which();
     m_Subtype = data.GetSubtype();
-}
-
-CConstRef<CSeq_loc> CFeatureIndex::GetMappedLocation(void)
-
-{
-    if (! m_Fl) {
-        const CSeq_feat& mpd = m_Mf.GetMappedFeature();
-        CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-        m_Fl = fl;
-    }
-
-    return m_Fl;
+    const CSeq_feat& mpd = m_Mf.GetMappedFeature();
+    CConstRef<CSeq_loc> fl(&mpd.GetLocation());
+    m_Fl = fl;
+    m_Start = fl->GetStart(eExtreme_Positional);
+    m_End = fl->GetStop(eExtreme_Positional);
 }
 
 // Find CFeatureIndex object for best gene using internal CFeatTree

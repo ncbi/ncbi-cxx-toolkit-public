@@ -35,6 +35,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
@@ -53,6 +54,7 @@ class CSeqEntryIndex;
 class CSeqMasterIndex;
 class CSeqsetIndex;
 class CBioseqIndex;
+class CGapIndex;
 class CDescriptorIndex;
 class CFeatureIndex;
 
@@ -365,6 +367,9 @@ private:
     CBioseqIndex& operator= (const CBioseqIndex&) = delete;
 
 public:
+    // Gap exploration iterator
+    template<typename Fnc> size_t IterateGaps (Fnc m);
+
     // Descriptor exploration iterator
     template<typename Fnc> size_t IterateDescriptors (Fnc m);
 
@@ -417,6 +422,8 @@ public:
     // Map from GetBestGene result to CFeatureIndex object
     CRef<CFeatureIndex> GetFeatIndex (const CMappedFeat& mf);
 
+    const vector<CRef<CGapIndex>>& GetGapIndices(void);
+
     const vector<CRef<CDescriptorIndex>>& GetDescriptorIndices(void);
 
     const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
@@ -439,6 +446,9 @@ public:
     void SetFetchFailure (bool fails) { m_FetchFailure = fails; }
 
 private:
+    // Common gap collection, delayed until actually needed
+    void x_InitGaps (void);
+
     // Common descriptor collection, delayed until actually needed
     void x_InitDescs (void);
 
@@ -454,6 +464,9 @@ private:
     CRef<CScope> m_Scope;
 
     CWeakRef<CSeqMasterIndex> m_Idx;
+
+    bool m_GapsInitialized;
+    vector<CRef<CGapIndex>> m_GapList;
 
     bool m_DescsInitialized;
     vector<CRef<CDescriptorIndex>> m_SdxList;
@@ -514,10 +527,54 @@ private:
 };
 
 
+// CGapIndex
+//
+// CGapIndex stores information about an indexed descriptor
+class NCBI_XOBJUTIL_EXPORT CGapIndex : public CObject
+{
+public:
+    // Constructor
+    CGapIndex (TSeqPos start,
+               TSeqPos end,
+               string type,
+               vector<string> evidence,
+               bool isAssemblyGap,
+               CBioseqIndex& bsx);
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CGapIndex (const CGapIndex&) = delete;
+    CGapIndex& operator= (const CGapIndex&) = delete;
+
+public:
+    // Getters
+
+     const TSeqPos GetStart (void) const { return m_Start; }
+     const TSeqPos GetEnd (void) const { return m_End; }
+     const string GetGapType (void) const { return m_GapType; }
+     const vector<string>& GetGapEvience (void) const { return m_GapEvidence; }
+     bool IsAssemblyGap (void) const { return m_IsAssemblyGap; }
+
+   // Get parent Bioseq index
+    CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
+
+private:
+    CWeakRef<CBioseqIndex> m_Bsx;
+
+    TSeqPos m_Start;
+    TSeqPos m_End;
+
+    string m_GapType;
+    vector<string>& m_GapEvidence;
+
+    bool m_IsAssemblyGap;
+};
+
+
 // CDescriptorIndex
 //
 // CDescriptorIndex stores information about an indexed descriptor
-class NCBI_XOBJUTIL_EXPORT CDescriptorIndex : public CObjectEx
+class NCBI_XOBJUTIL_EXPORT CDescriptorIndex : public CObject
 {
 public:
     // Constructor
@@ -550,7 +607,7 @@ private:
 // CFeatureIndex
 //
 // CFeatureIndex stores information about an indexed feature
-class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObjectEx
+class NCBI_XOBJUTIL_EXPORT CFeatureIndex : public CObject
 {
 public:
     // Constructor
@@ -569,7 +626,7 @@ public:
     const CMappedFeat GetMappedFeat (void) const { return m_Mf; }
     CRef<CSeqVector> GetSeqVector (void) const { return m_SeqVec; }
 
-    CConstRef<CSeq_loc> GetMappedLocation(void);
+    CConstRef<CSeq_loc> GetMappedLocation(void) const { return m_Fl; }
 
     // Get parent Bioseq index
     CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
@@ -579,6 +636,9 @@ public:
 
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mRNA)
     CSeqFeatData::ESubtype GetSubtype (void) const { return m_Subtype; }
+
+     const TSeqPos GetStart (void) const { return m_Start; }
+     const TSeqPos GetEnd (void) const { return m_End; }
 
     // Get sequence letters under feature intervals
     string GetSequence (void);
@@ -602,6 +662,9 @@ private:
 
     CSeqFeatData::E_Choice m_Type;
     CSeqFeatData::ESubtype m_Subtype;
+
+    TSeqPos m_Start;
+    TSeqPos m_End;
 };
 
 
@@ -684,6 +747,30 @@ size_t CSeqMasterIndex::IterateSeqsets (Fnc m)
     for (auto& ssx : m_SsxList) {
         m(*ssx);
         count++;
+    }
+    return count;
+}
+
+// Visit CGapIndex objects for all gaps
+template<typename Fnc>
+inline
+size_t CBioseqIndex::IterateGaps (Fnc m)
+
+{
+    int count = 0;
+    try {
+        // Delay gap collection until first request
+        if (! m_GapsInitialized) {
+            x_InitGaps();
+        }
+
+        for (auto& sgx : m_GapList) {
+            count++;
+            m(*sgx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateGaps: " << e.what());
     }
     return count;
 }
