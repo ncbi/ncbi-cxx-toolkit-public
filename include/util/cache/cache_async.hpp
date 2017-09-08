@@ -43,6 +43,9 @@ BEGIN_NCBI_SCOPE
 
 /// Class for deferred asynchronous writes in a separate thread.
 ///
+/// This class is no-op (writes immediately) if wait timeout (wait_to_finish)
+/// is set to 0 (default) or in single thread builds.
+///
 class NCBI_XUTIL_EXPORT CAsyncWriteCache : public ICache
 {
 public:
@@ -54,7 +57,8 @@ public:
     /// @param writer
     ///    ICache instance used solely for write/store operations (in a separate thread)
     /// @param wait_to_finish
-    ///    Seconds to wait for the write thread to finish before cancelling all its tasks
+    ///    Seconds to wait for the write thread to finish before cancelling all its tasks.
+    ///    If set to 0 (default) or in single thread builds this class is no-op (writes immediately).
     CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish = 0);
 
     /// ICache overrides.

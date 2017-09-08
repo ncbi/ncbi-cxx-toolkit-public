@@ -124,11 +124,22 @@ SDeferredWriter::SDeferredWriter(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICa
 }
 
 
-// XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
+CThreadPool* s_CreateThreadPool(unsigned wait_to_finish)
+{
+#ifdef NCBI_THREADS
+    if (wait_to_finish) {
+        // XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
+        return new CThreadPool(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext);
+    }
+#endif
+
+    return nullptr;
+}
+
 CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish) :
     m_Main(main),
     m_Writer(writer),
-    m_ThreadPool(make_shared<CThreadPool>(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext)),
+    m_ThreadPool(s_CreateThreadPool(wait_to_finish)),
     m_WaitToFinish(wait_to_finish)
 {
     _ASSERT(main);
@@ -139,6 +150,8 @@ CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_t
 
 CAsyncWriteCache::~CAsyncWriteCache()
 {
+    if (!m_ThreadPool) return;
+
     CDeadline deadline(m_WaitToFinish);
 
     while (m_ThreadPool->GetQueuedTasksCount() && m_ThreadPool->GetExecutingTasksCount() && !deadline.IsExpired()) {
@@ -253,8 +266,14 @@ void CAsyncWriteCache::GetBlobAccess(const string& key, TBlobVersion version, co
 
 IWriter* CAsyncWriteCache::GetWriteStream(const string& key, TBlobVersion version, const string& subkey, unsigned int time_to_live, const string& owner)
 {
-    SMeta meta{key, version, subkey, time_to_live, owner};
-    return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
+#ifdef NCBI_THREADS
+    if (m_ThreadPool) {
+        SMeta meta{key, version, subkey, time_to_live, owner};
+        return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
+    }
+#endif
+
+    return m_Writer->GetWriteStream(key, version, subkey, time_to_live, owner);
 }
 
 

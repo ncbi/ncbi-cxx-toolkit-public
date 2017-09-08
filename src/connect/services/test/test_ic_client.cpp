@@ -465,8 +465,10 @@ static void s_AsyncTest()
 
             BOOST_REQUIRE_MESSAGE(os.good(), "Write failed" << ctx);
 
+#ifdef NCBI_THREADS
             // Blob is not yet created as writer is not yet destroyed (actual async write happens after)
             BOOST_REQUIRE_MESSAGE(!api.HasBlobs(ctx.key, ctx.subkey), "Blob does exist" << ctx);
+#endif
         }
         catch (...) {
             BOOST_ERROR("An exception has been caught" << ctx);
