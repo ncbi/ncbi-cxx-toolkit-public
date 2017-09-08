@@ -222,6 +222,9 @@ public:
 class CInitGuard
 {
 public:
+    enum EForce {
+        force
+    };
     CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool)
         : m_Init(init), m_Guard(eEmptyGuard)
         {
@@ -230,6 +233,13 @@ public:
                 if ( init ) {
                     x_Release();
                 }
+            }
+        }
+    CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool, EForce force)
+        : m_Init(init), m_Guard(eEmptyGuard)
+        {
+            if ( pool.AcquireMutex(init, m_Mutex, true) ) {
+                m_Guard.Guard(m_Mutex->GetMutex());
             }
         }
     ~CInitGuard(void)
