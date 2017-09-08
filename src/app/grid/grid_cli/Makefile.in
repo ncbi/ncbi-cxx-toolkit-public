@@ -3,6 +3,7 @@
 #################################
 
 APP_PROJ = grid_cli
+PROJ_TAG = grid
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
