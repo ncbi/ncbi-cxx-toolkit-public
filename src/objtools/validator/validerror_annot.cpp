@@ -154,6 +154,8 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
             m_FeatValidator.SetScope(*m_Scope);
             m_FeatValidator.SetTSE(m_Imp.GetTSEH());
         } else {
+            m_FeatValidator.SetScope(*m_Scope);
+            m_FeatValidator.SetTSE(m_Imp.GetTSEH());
             FOR_EACH_FEATURE_ON_ANNOT(feat, annot) {
                 m_FeatValidator.ValidateSeqFeat(**feat);
             }

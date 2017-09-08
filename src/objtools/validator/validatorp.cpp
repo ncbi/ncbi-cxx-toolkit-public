@@ -3450,6 +3450,24 @@ bool s_IsGoodTopSetClass(CBioseq_set::EClass set_class)
 }
 
 
+bool s_HasTopSetSiblings(CSeq_entry_Handle seh)
+{
+    CSeq_entry_Handle parent = seh.GetParentEntry();
+    if (!parent || !parent.IsSet()) {
+        return false;
+    }
+    CConstRef<CBioseq_set> pset = parent.GetSet().GetCompleteBioseq_set();
+    if (!pset) {
+        return false;
+    }
+    if (pset->IsSetSeq_set() && pset->GetSeq_set().size() > 10) {
+        return true;
+    } else {
+        return s_HasTopSetSiblings(parent);
+    }
+}
+
+
 CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle seh)
 {
     CSeq_entry_Handle appropriate_parent;
@@ -3485,7 +3503,12 @@ CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle s
     } else {
         appropriate_parent = seh;
     }
-    return appropriate_parent;
+    if (appropriate_parent && s_HasTopSetSiblings(appropriate_parent)) {
+        return appropriate_parent;
+    } else {
+        CSeq_entry_Handle empty;
+        return empty;
+    }
 }
 
 

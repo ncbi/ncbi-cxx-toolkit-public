@@ -230,6 +230,9 @@ void CValidError_bioseq::ValidateBioseq (
             CSeq_entry_Handle this_seh = tmp_scope->AddTopLevelSeqEntry(*(appropriate_parent.GetCompleteSeq_entry()));
             m_FeatValidator.SetScope(*tmp_scope);
             m_FeatValidator.SetTSE(this_seh);
+        } else {
+            m_FeatValidator.SetScope(*m_Scope);
+            m_FeatValidator.SetTSE(m_CurrentHandle.GetTopLevelEntry());
         }
         
 
