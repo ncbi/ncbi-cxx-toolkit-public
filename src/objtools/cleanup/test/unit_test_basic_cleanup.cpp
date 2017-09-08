@@ -1371,3 +1371,32 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4356)
     TestSSToDS(*org, false, false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_746)
+{
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetLocation().SetInt().SetId().SetLocal().SetStr("foo");
+    gene->SetLocation().SetInt().SetFrom(0);
+    gene->SetLocation().SetInt().SetTo(5);
+    gene->SetData().SetGene().SetLocus("a|b|c");
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup(*gene);
+
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetLocus(), "a");
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().size(), 2);
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().front(), "b");
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().back(), "c");
+
+    gene->SetData().SetGene().SetLocus("a|b|c");
+    changes = cleanup.BasicCleanup(*gene);
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetLocus(), "a");
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().size(), 2);
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().front(), "b");
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().back(), "c");
+
+
+}

@@ -7536,6 +7536,20 @@ void CNewCleanup_imp::GenerefBC (
 )
 
 {
+    if (gr.IsSetLocus()) {
+        // split locus at '|', copy values after first to synonyms
+        // VR-746
+        vector<string> tokens;
+        NStr::Split(gr.GetLocus(), "|", tokens);
+        if (tokens.size() > 1) {
+            for (size_t i = 1; i < tokens.size(); i++) {
+                gr.SetSyn().push_back(tokens[i]);
+            }
+            gr.SetLocus(tokens[0]);
+            ChangeMade(CCleanupChange::eChangeGeneRef);
+        }
+    }
+
     // split gene synonyms that have a comma or "; "
     vector<string> gene_syns_to_add;
     EDIT_EACH_SYNONYM_ON_GENEREF (syn_itr, gr) {
