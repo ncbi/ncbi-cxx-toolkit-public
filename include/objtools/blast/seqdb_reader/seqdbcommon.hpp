@@ -1245,7 +1245,7 @@ public:
     {
         return m_Ids;
     }
-    
+
     /// Access the string set.
     vector<string> & SetSeqIDs()
     {
@@ -1352,7 +1352,7 @@ public:
     CSeqDBIdSet(const vector<Uint8> & ids, EIdType t, bool positive = true);
 
 
-    
+
 
 #ifdef NCBI_STRICT_GI
     /// Build a computed ID list given an initial set of IDs.
@@ -1628,10 +1628,10 @@ string SeqDB_ResolveDbPathNoExtension(const string & filename,
 /// Resolve a file path using SeqDB's path algorithms.
 ///
 /// Identical to SeqDB_ResolveDbPathNoExtension with the exception that this
-/// function searches for ISAM files, specifically those storing numeric and
-/// string data (for LinkoutDB; i.e.: p[ns][id]).
-/// This is intended to check whether a pair of ISAM files used in LinkoutDB
-/// exists or not.
+/// function searches for ISAM or SQLite files, specifically those storing
+/// numeric and string data (for LinkoutDB; i.e.: '.sqlite3').
+/// This is intended to check whether the files used in LinkoutDB
+/// exist or not.
 ///
 /// @param filename Name of file to find.
 /// @return Resolved path or empty string if not found.

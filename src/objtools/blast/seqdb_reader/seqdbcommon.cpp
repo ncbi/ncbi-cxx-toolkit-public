@@ -239,18 +239,9 @@ static bool s_SeqDB_DBExists(const string         & dbname,
 
     if (linkoutdb_search) {
         _ASSERT(dbtype == 'p');
-        path.append(".p");
-        vector<string> extn;
-        extn.reserve(4);
-        extn.push_back("ni");
-        extn.push_back("nd");
-        extn.push_back("si");
-        extn.push_back("sd");
-        ITERATE(vector<string>, e, extn) {
-            string candidate(path + *e);
-            if (access.DoesFileExist(candidate)) {
-                return true;
-            }
+        path.append(".sqlite3");
+        if (access.DoesFileExist(path)) {
+            return true;
         }
     } else {
         path.append(".-al");
