@@ -2,6 +2,8 @@
 # Author:  Maxim Didneko
 #################################
 
+PROJ_TAG = grid
+
 APP = remote_app
 SRC = remote_app_wn exec_helpers
 

@@ -3,7 +3,6 @@
 #################################
 
 APP_PROJ = netcache_control ncfetch netschedule_control cidtool
-PROJ_TAG = grid
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

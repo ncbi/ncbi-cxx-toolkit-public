@@ -1,5 +1,7 @@
 # $Id$
 
+PROJ_TAG = grid
+
 APP = grid_worker_sample
 SRC = grid_worker_sample
 

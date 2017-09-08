@@ -1,5 +1,7 @@
 # $Id$
 
+PROJ_TAG = grid
+
 APP = netschedule_client_sample
 SRC = netschedule_client_sample
 

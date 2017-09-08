@@ -6,7 +6,7 @@
 LIB_PROJ =
 
 APP_PROJ = test_netstorage
-PROJ_TAG = test
+PROJ_TAG = test,grid
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

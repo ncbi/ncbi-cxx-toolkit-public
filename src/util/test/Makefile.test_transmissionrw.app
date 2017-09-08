@@ -1,5 +1,7 @@
 # $Id$
 
+PROJ_TAG = test,grid
+
 APP = test_transmissionrw
 SRC = test_transmissionrw
 LIB = xutil xncbi

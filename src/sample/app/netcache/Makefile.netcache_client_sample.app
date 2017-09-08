@@ -1,5 +1,7 @@
 # $Id$
 
+PROJ_TAG = grid
+
 APP = netcache_client_sample
 SRC = netcache_client_sample
 

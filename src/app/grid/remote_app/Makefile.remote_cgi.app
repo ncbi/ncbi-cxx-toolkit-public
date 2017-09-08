@@ -2,6 +2,8 @@
 # Author:  Maxim Didneko
 #################################
 
+PROJ_TAG = grid
+
 APP = remote_cgi
 SRC = remote_cgi_wn exec_helpers
 

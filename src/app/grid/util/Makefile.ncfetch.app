@@ -2,6 +2,8 @@
 # $Id$
 #################################
 
+PROJ_TAG = grid
+
 APP = ncfetch.cgi
 SRC = ncfetch
 
