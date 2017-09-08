@@ -194,23 +194,24 @@ class Collector(object):
             fname = os.environ['TEAMCITY_BUILD_PROPERTIES_FILE']
             try:
                 with open(fname, 'r') as f:
-                    prop_re \
-                        = re.compile(r'((?:\S*|\\\s)+)(?:\s*[:=]\s*|\s+)(.*)')
+                    prop_re = re.compile(r'((?:(?![:=])\S|\\.)+)'
+                                         + r'(?:\s*[:=]\s*|\s+)(.*)')
                     for l in f:
                         l = l.lstrip()
                         if len(l) == 0 or l[0] in '#!':
-                            next
+                            continue
                         l = l.rstrip('\n')
                         while (l.endswith('\\')):
-                            l = l + f.next().lstrip().rstrip('\n')
-                            mi = prop_re.match(l)
-                            if mi is None:
-                                warn('Malformed line in ' + fname + ': ' + l)
-                            else:
-                                k = ast.literal_eval("'''"+mi.group(1)+"'''")
-                                v = ast.literal_eval("'''"+mi.group(2)+"'''")
-                                props[k] = v
-            except:
+                            l = l.rstrip('\\') + f.next().lstrip().rstrip('\n')
+                        mi = prop_re.match(l)
+                        if mi is None:
+                            warn('Malformed line in ' + fname + ': ' + l)
+                        else:
+                            k = ast.literal_eval("'''"+mi.group(1)+"'''")
+                            v = ast.literal_eval("'''"+mi.group(2)+"'''")
+                            props[k] = v
+            except Exception as e:
+                warn("Failed to open %s: %s" % (fname, e))
                 pass
         if len(props) == 0:
             if 'NCBI_BUILD_SESSION_ID' in os.environ:
