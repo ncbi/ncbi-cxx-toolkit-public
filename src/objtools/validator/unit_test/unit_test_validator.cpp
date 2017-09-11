@@ -17052,6 +17052,26 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadInternalCharacter)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_746)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat>  cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus("gene|synonym");
+    unit_test_util::AddFeat(gene, nuc);
+
+    STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "BadInternalCharacter", 
+                              "Gene locus contains undesired character"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingCharacter)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
