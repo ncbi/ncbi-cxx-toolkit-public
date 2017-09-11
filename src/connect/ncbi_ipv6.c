@@ -247,7 +247,8 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
             token[t].len = (size_t)(&str[n] - token[t].ptr);
             if (token[t].len) {
                 if (n++ == len) {
-                    ++t;
+                    if (++t > maxt)
+                        return 0/*failure*/;
                     break;
                 }
             } else {
@@ -281,7 +282,8 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
                     }
                     return 0/*failure*/;
                 }
-                ++t;
+                if (++t > maxt)
+                    return 0/*failure*/;
             }
             break;
         }

@@ -211,6 +211,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
 {
     unsigned int addr, temp;
     const char* t;
+    size_t n;
     char* e;
     long d;
 
@@ -224,33 +225,53 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
     }
 
     t = NcbiStringToAddr(&range->a, str, strlen(str));
-    if (t  &&  t != str  &&  *t++ == '/'  &&  !isspace((unsigned char)(*t))) {
-        errno = 0;
-        d = strtol(t, &e, 10);
-        if (!errno  &&  t != e  &&  !*e  &&  d > 0) {
-            int/*bool*/ ipv4 = NcbiIsIPv4(&range->a);
-            if (ipv4  &&  d <= 32) {
-                if (!d  ||  d == 32) {
-                    assert(!range->b);
-                    range->type = eIPRange_Host;
-                    return 1/*success*/;
-                }
-                addr = SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0));
-                temp = ~0UL << (32 - d);
-                range->b    = SOCK_HostToNetLong(temp);
-                range->type = eIPRange_Network;
-                return addr  &&  !(addr & ~temp);
-            } else if (!ipv4  &&  d <= (sizeof(range->a.octet) << 3)) {
-                if (!d  ||  d == (sizeof(range->a.octet) << 3)) {
-                    assert(!range->b);
-                    range->type = eIPRange_Host;
-                    return 1/*success*/;
-                }
-                range->b    = d;
-                range->type = eIPRange_Network;
-                return !NcbiIsEmptyIPv6(&range->a);
-            } else
-                return 0/*failure*/;
+    if (t  &&  t != str) {
+        if (!*t /*t == str + strlen(str)*/) {
+            range->b    = 0;
+            range->type = eIPRange_Host;
+            return 1/*success*/;
+        }
+        if (*t++ == '/'  &&  !isspace((unsigned char)(*t))) {
+            errno = 0;
+            d = strtol(t, &e, 10);
+            if (!errno  &&  t != e  &&  !*e  &&  d > 0) {
+                int/*bool*/ ipv4 = NcbiIsIPv4(&range->a);
+                if (ipv4  &&  d <= 32) {
+                    if (!d  ||  d == 32) {
+                        range->b    = 0;
+                        range->type = eIPRange_Host;
+                        return 1/*success*/;
+                    }
+                    addr = SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0));
+                    temp = ~0UL << (32 - d);
+                    range->b    = SOCK_HostToNetLong(temp);
+                    range->type = eIPRange_Network;
+                    return addr  &&  !(addr & ~temp);
+                } else if (!ipv4  &&  d <= (sizeof(range->a.octet) << 3)) {
+                    if (!d  ||  d == (sizeof(range->a.octet) << 3)) {
+                        range->b    = 0;
+                        range->type = eIPRange_Host;
+                        return 1/*success*/;
+                    }
+                    range->b    = d;
+                    range->type = eIPRange_Network;
+                    d = (sizeof(range->a.octet) << 3) - d;
+                    for (n = sizeof(range->a.octet);  n > 0;  --n) {
+                        if (d >= 8) {
+                            if (range->a.octet[n - 1] & ~0)
+                                return 0/*failure*/;
+                            d -= 8;
+                        } else if (d) {
+                            if (range->a.octet[n - 1] & ~(~0 << d))
+                                return 0/*failure*/;
+                            break;
+                        } else
+                            break;
+                    }
+                    return !NcbiIsEmptyIPv6(&range->a);
+                } else
+                    return 0/*failure*/;
+            }
         }
     }
 
@@ -320,7 +341,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                 temp |=   (1 << ((3 - dots) << 3)) - 1;
                 NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
                 if (addr == temp) {
-                    assert(!range->b);
+                    range->b    = 0;
                     range->type = eIPRange_Host;
                     return 1/*success*/;
                 }
