@@ -854,6 +854,8 @@ string CSuspect_rule::SummarizeSearchFunc(const CSearch_func& func) const
         case CSearch_func::e_Has_term:
             //if (short_version) summ = "contains " + strtmp;
             return "contains \'" + func.GetHas_term() + "\' at start or separated from other letters by numbers, spaces, or punctuation, but does not also contain 'domain'";
+        default:
+            break;
     }
     return "Unknown search function";
 }
@@ -868,6 +870,8 @@ string CSuspect_rule::SummarizeEndDistance(const CLocation_pos_constraint& pos) 
             return "no more than " + NStr::IntToString(pos.GetMax_dist_from_end());
         case CLocation_pos_constraint::e_Min_dist_from_end:
             return "no less than " + NStr::IntToString(pos.GetMin_dist_from_end());
+        default:
+            break;
     }
     return kEmptyStr;
 }
@@ -1052,6 +1056,8 @@ string CSuspect_rule::SummarizeConstraint(const CConstraint_choice& choice) cons
         case CConstraint_choice::e_Translation:
             return "[[TRANSLATION CONSTRAINT]]";
             //phrase = SummarizeTranslationConstraint (cons_choice.GetTranslation());
+            break;
+        default:
             break;
     }
     return kEmptyStr;

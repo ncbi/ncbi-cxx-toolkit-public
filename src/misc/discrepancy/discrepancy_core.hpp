@@ -600,15 +600,15 @@ protected:
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \
     static const char* descr_for_##name = descr;                                                                    \
+    static TGroup group_for_##name = group;                                                                         \
     class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyConstructor_##name(void){ Register(#name, descr_for_##name, group, *this);}                     \
+        CDiscrepancyConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name, *this);}          \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
-    static TGroup group_for_##name = group;                                                                         \
     void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
 
 
