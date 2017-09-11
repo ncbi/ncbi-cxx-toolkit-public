@@ -41,6 +41,10 @@
 BEGIN_NCBI_SCOPE
 
 
+NCBI_PARAM_DEF(bool, icache, async_write, true);
+typedef NCBI_PARAM_TYPE(icache, async_write) TICache_AsyncWrite;
+
+
 struct SMeta
 {
     string key;
@@ -124,10 +128,10 @@ SDeferredWriter::SDeferredWriter(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICa
 }
 
 
-CThreadPool* s_CreateThreadPool(unsigned wait_to_finish)
+CThreadPool* s_CreateThreadPool()
 {
 #ifdef NCBI_THREADS
-    if (wait_to_finish) {
+    if (TICache_AsyncWrite::GetDefault()) {
         // XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
         return new CThreadPool(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext);
     }
@@ -139,7 +143,7 @@ CThreadPool* s_CreateThreadPool(unsigned wait_to_finish)
 CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish) :
     m_Main(main),
     m_Writer(writer),
-    m_ThreadPool(s_CreateThreadPool(wait_to_finish)),
+    m_ThreadPool(s_CreateThreadPool()),
     m_WaitToFinish(wait_to_finish)
 {
     _ASSERT(main);
@@ -266,12 +270,10 @@ void CAsyncWriteCache::GetBlobAccess(const string& key, TBlobVersion version, co
 
 IWriter* CAsyncWriteCache::GetWriteStream(const string& key, TBlobVersion version, const string& subkey, unsigned int time_to_live, const string& owner)
 {
-#ifdef NCBI_THREADS
     if (m_ThreadPool) {
         SMeta meta{key, version, subkey, time_to_live, owner};
         return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
     }
-#endif
 
     return m_Writer->GetWriteStream(key, version, subkey, time_to_live, owner);
 }
