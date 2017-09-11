@@ -1237,7 +1237,7 @@ bool s_IsLocationEndAtOtherLocationInternalEndpoint(const CSeq_loc& loc, const C
                 return true;
             }
         }
-        other_int++;
+        ++other_int;
     }
     return false;
 }
