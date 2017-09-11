@@ -1220,6 +1220,29 @@ bool IsTransSpliced(const CSeq_feat& feat)
 }
 
 
+bool s_IsLocationEndAtOtherLocationInternalEndpoint(const CSeq_loc& loc, const CSeq_loc& other_loc)
+{
+    size_t loc_end = loc.GetStop(eExtreme_Biological);
+    CSeq_loc_CI other_int(other_loc);
+    while (other_int) {
+        if (other_int.IsSetStrand() &&
+            other_int.GetStrand() == eNa_strand_minus) {
+            if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus &&
+                loc_end == other_int.GetRange().GetFrom()) {
+                return true;
+            }
+        } else {
+            if ((!loc.IsSetStrand() || loc.GetStrand() != eNa_strand_minus) &&
+                loc_end == other_int.GetRange().GetTo()) {
+                return true;
+            }
+        }
+        other_int++;
+    }
+    return false;
+}
+
+
 bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh, bool check_for_stop)
 {
     if (!f.GetData().IsCdregion()) {
@@ -1232,9 +1255,13 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
         return false;
     }
-    CConstRef<CSeq_feat> mrna = sequence::GetOverlappingmRNA(f.GetLocation(), bsh.GetScope());
-    if (mrna && mrna->GetLocation().GetStop(eExtreme_Biological) != f.GetLocation().GetStop(eExtreme_Biological)){
-        return false;
+    CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(f, bsh.GetScope());
+    if (mrna) {
+        if (mrna->GetLocation().GetStop(eExtreme_Biological) == f.GetLocation().GetStop(eExtreme_Biological)) {
+            //ok
+        } else if (s_IsLocationEndAtOtherLocationInternalEndpoint(f.GetLocation(), mrna->GetLocation())) {
+            return false;
+        }
     }
 
     if (check_for_stop) {
