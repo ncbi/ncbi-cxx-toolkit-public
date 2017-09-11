@@ -1133,8 +1133,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
                 int intron = (*next_exon)->GetGenomic_start() -
                     (*exon)->GetGenomic_end() - 1;
-                cigar += NStr::IntToString(intron);
-                cigar += "N";
+                if (intron > 0) {
+                    cigar += NStr::IntToString(intron);
+                    cigar += "N";
+                }
 
                 // get intron orientation
                 orientation.push_back(
