@@ -172,6 +172,9 @@ public:
         void* user_data);
 
     void SetTSE(const CSeq_entry_Handle& seh);
+
+    bool ShouldSubdivide() const { if (m_NumTopSetSiblings > 10) return true; else return false; }
+
 public:
     // interface to be used by the various validation classes
 
@@ -611,6 +614,8 @@ private:
 
     SIZE_TYPE   m_NumPseudo;
     SIZE_TYPE   m_NumPseudogene;
+
+    size_t      m_NumTopSetSiblings;
 
     // Taxonomy service interface.
     ITaxon3* m_taxon;

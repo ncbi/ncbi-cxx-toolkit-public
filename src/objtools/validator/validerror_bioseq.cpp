@@ -223,7 +223,10 @@ void CValidError_bioseq::ValidateBioseq (
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
 
-        CSeq_entry_Handle appropriate_parent = GetAppropriateXrefParent(m_CurrentHandle.GetSeq_entry_Handle());
+        CSeq_entry_Handle appropriate_parent;
+        if (m_Imp.ShouldSubdivide()) {
+            appropriate_parent = GetAppropriateXrefParent(m_CurrentHandle.GetSeq_entry_Handle());
+        }
         if (appropriate_parent) {
             CRef<CScope> tmp_scope(new CScope(*(CObjectManager::GetInstance())));
             tmp_scope->AddDefaults();

@@ -287,6 +287,7 @@ void CValidError_imp::Reset(void)
     m_NumAnnot = 0;
     m_NumBioseq = 0;
     m_NumBioseq_set = 0;
+    m_NumTopSetSiblings = 0;
     m_NumDesc = 0;
     m_NumDescr = 0;
     m_NumFeat = 0;
@@ -2804,11 +2805,45 @@ void CValidError_imp::SetTSE(const CSeq_entry_Handle& seh)
 }
 
 
+bool s_IsGoodTopSetClass(CBioseq_set::EClass set_class)
+{
+    if (set_class == CBioseq_set::eClass_gen_prod_set || set_class == CBioseq_set::eClass_small_genome_set) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+size_t s_CountTopSetSiblings(const CSeq_entry& se)
+{
+    if (se.IsSeq()) {
+        return 1;
+    } else if (!se.IsSet()) {
+        return 0;
+    }
+    if (se.GetSet().IsSetClass()) {
+        if (se.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot ||
+            s_IsGoodTopSetClass(se.GetSet().GetClass())) {
+            return 1;
+        }
+    }
+    size_t count = 0;
+    if (se.GetSet().IsSetSeq_set()) {
+        for (auto it = se.GetSet().GetSeq_set().begin(); it != se.GetSet().GetSeq_set().end(); it++) {
+            count += s_CountTopSetSiblings(**it);
+        }
+    }
+    return count;
+}
+
+
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
     SetTSE(seh);
 
+    m_NumTopSetSiblings = s_CountTopSetSiblings(*(seh.GetCompleteSeq_entry()));
     m_Scope.Reset(&m_TSEH.GetScope());
         
     // If no Pubs/BioSource in CSeq_entry, post only one error
@@ -3440,16 +3475,6 @@ CValidError_base::GetCache(void)
 }
 
 
-bool s_IsGoodTopSetClass(CBioseq_set::EClass set_class)
-{
-    if (set_class == CBioseq_set::eClass_gen_prod_set || set_class == CBioseq_set::eClass_small_genome_set) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool s_HasTopSetSiblings(CSeq_entry_Handle seh)
 {
     CSeq_entry_Handle parent = seh.GetParentEntry();
@@ -3503,12 +3528,7 @@ CSeq_entry_Handle CValidError_base::GetAppropriateXrefParent(CSeq_entry_Handle s
     } else {
         appropriate_parent = seh;
     }
-    if (appropriate_parent && s_HasTopSetSiblings(appropriate_parent)) {
-        return appropriate_parent;
-    } else {
-        CSeq_entry_Handle empty;
-        return empty;
-    }
+    return appropriate_parent;
 }
 
 

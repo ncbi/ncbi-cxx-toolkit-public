@@ -133,7 +133,7 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
         }
     } else if ( annot.IsFtable() ) {
         CSeq_entry_Handle appropriate_parent;
-        if (m_Scope) {
+        if (m_Imp.ShouldSubdivide() && m_Scope) {
             CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(annot);
             if (ah) {
                 CSeq_entry_Handle seh = ah.GetParentEntry();
