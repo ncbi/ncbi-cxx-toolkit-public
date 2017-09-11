@@ -191,6 +191,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "CCDS", CDbtag::eDbtagType_CCDS },
     { "CGNC", CDbtag::eDbtagType_CGNC },
     { "CloneID", CDbtag::eDbtagType_CloneID },
+    { "EPDnew", CDbtag::eDbtagType_EPDnew },
     { "HPM", CDbtag::eDbtagType_HPM },
     { "HPRD", CDbtag::eDbtagType_HPRD },
     { "LRG", CDbtag::eDbtagType_LRG },
@@ -699,6 +700,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_VGNC, "http://vertebrate.genenames.org/data/gene-symbol-report/#!/vgnc_id/VGNC:" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
     { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" },
+    { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
@@ -1009,6 +1011,22 @@ string CDbtag::GetUrl(const string & genus,
     case eDbtagType_ISHAM_ITS:
         if (NStr::StartsWith(tag, "MITS", NStr::eNocase)) {
             tag = tag.substr(4);
+        }
+        break;
+
+    case CDbtag::eDbtagType_EPDnew:
+        if( ! genus.empty()  &&   ! species.empty() ) {
+            string abbrev = "";
+            if (NStr::Equal (genus, "Homo") && NStr::Equal (species, "sapiens")) {
+                abbrev = "hg";
+            } else {
+                string gen = genus;
+                string spc = species;
+                gen = NStr::ToLower(gen);
+                spc = NStr::ToLower(spc);
+                abbrev = gen.substr(0, 1) + spc.substr(0, 1);
+            }
+            tag += "&db=" + abbrev;
         }
         break;
 
