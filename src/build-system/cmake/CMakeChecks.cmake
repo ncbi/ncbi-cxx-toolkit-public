@@ -76,7 +76,7 @@ if(WIN32)
     set(GIF_ROOT "${WIN32_PACKAGE_ROOT}/giflib-4.1.4-1-lib")
     set (ENV{GIF_DIR} "${GIF_ROOT}")
 
-    set(PCRE_PKG_ROOT "${WIN32_PACKAGE_ROOT}/pcre-7.0-lib")
+    set(PCRE_PKG_ROOT "${WIN32_PACKAGE_ROOT}/pcre-7.9-lib")
     set(PCRE_PKG_INCLUDE_DIRS "${PCRE_PKG_ROOT}/include")
     set(PCRE_PKG_LIBRARY_DIRS "${PCRE_PKG_ROOT}/lib")
 
@@ -88,7 +88,7 @@ if(WIN32)
     set(ENV{FREETYPE_DIR} "${FREETYPE_ROOT}")
 
     set(FTGL_ROOT "${WIN32_PACKAGE_ROOT}/ftgl-2.1.3_rc5")
-    set(LZO_ROOT "${WIN32_PACKAGE_ROOT}/lzo-1.08-lib")
+    set(LZO_ROOT "${WIN32_PACKAGE_ROOT}/lzo-2.05-lib")
 
     set(CMAKE_PREFIX_PATH
         ${CMAKE_PREFIX_PATH}
@@ -100,7 +100,6 @@ if(WIN32)
         "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32"
         "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32"
         "${FREETYPE_ROOT}"
-        "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
         "${WIN32_PACKAGE_ROOT}/glew-1.5.8"
         "${FTGL_ROOT}"
         "${WIN32_PACKAGE_ROOT}/sqlite3-3.8.10.1"
@@ -308,11 +307,27 @@ find_external_library(KRB5 INCLUDES gssapi/gssapi_krb5.h LIBS gssapi_krb5 krb5 k
 #
 # Sybase stuff
 #find_package(Sybase)
-find_external_library(Sybase
+
+if (WIN32)
+	find_external_library(Sybase
+    DYNAMIC_ONLY
+    INCLUDES sybdb.h
+    #LIBS libsybblk
+	LIBS libsybblk libsybdb64 libsybct libsybcs
+    INCLUDE_HINTS "${WIN32_PACKAGE_ROOT}\\sybase-15.5\\include"
+	LIBS_HINTS "${WIN32_PACKAGE_ROOT}\\sybase-15.5\\lib")
+else (WIN32)
+	find_external_library(Sybase
     DYNAMIC_ONLY
     INCLUDES sybdb.h
     LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
     HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
+endif (WIN32)
+
+if (NOT SYBASE_FOUND)
+	message(FATAL "no sybase found." )
+endif (NOT SYBASE_FOUND)
+
 set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 
 ############################################################################
@@ -664,14 +679,26 @@ set(EUTILS_LIBS eutils egquery elink epost esearch espell esummary linkout
 
 #
 # SRA/VDB stuff
-find_external_library(VDB
-    INCLUDES sra/sradb.h
-    LIBS ncbi-vdb
-    INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces"
-    LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib")
+if (WIN32)
+	find_external_library(VDB
+		INCLUDES sra/sradb.h
+		LIBS ncbi-vdb
+		INCLUDE_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.8.0\\interfaces"
+		LIBS_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.8.0\\win\\release\\x86_64\\lib")
+else (WIN32)
+	find_external_library(VDB
+		INCLUDES sra/sradb.h
+		LIBS ncbi-vdb
+		INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces"
+		LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib")
+endif (WIN32)
 
 if (${VDB_FOUND})
-    set(VDB_INCLUDE "${VDB_INCLUDE}" "${VDB_INCLUDE}/os/linux" "${VDB_INCLUDE}/os/unix" "${VDB_INCLUDE}/cc/gcc/x86_64" "${VDB_INCLUDE}/cc/gcc")
+	if (WIN32)
+		set(VDB_INCLUDE "${VDB_INCLUDE}" "${VDB_INCLUDE}\\os\\win" "${VDB_INCLUDE}\\cc\\vc++\\x86_64" "${VDB_INCLUDE}\\cc\\vc++")
+	else (WIN32)
+		set(VDB_INCLUDE "${VDB_INCLUDE}" "${VDB_INCLUDE}/os/linux" "${VDB_INCLUDE}/os/unix" "${VDB_INCLUDE}/cc/gcc/x86_64" "${VDB_INCLUDE}/cc/gcc")
+	endif(WIN32)
     set(SRA_INCLUDE ${VDB_INCLUDE})
     set(SRA_SDK_SYSLIBS ${VDB_LIBS})
     set(SRA_SDK_LIBS ${VDB_LIBS})
@@ -803,6 +830,18 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_D
 
 ENABLE_TESTING()
 include_directories(${incdir} ${includedir0} ${incinternal})
+
+if (WIN32)
+	set(win_include_directories 
+		"${PCRE_PKG_INCLUDE_DIRS}" 
+		"${PC_GNUTLS_INCLUDEDIR}"
+        "${WIN32_PACKAGE_ROOT}/sqlite3-3.8.10.1/include"
+		"${WIN32_PACKAGE_ROOT}/db-4.6.21/include"
+        "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32/include"
+        "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32/include"
+        "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32/include" )
+	include_directories(${win_include_directories})
+endif (WIN32)
 
 #
 # Dump our final diagnostics

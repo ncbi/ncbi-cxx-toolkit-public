@@ -31,16 +31,27 @@ else(PCRE_INCLUDE_DIR AND PCRE_LIBRARIES)
         /usr/local/include
         )
 
-    find_library(PCRE_LIBRARY
-        NAMES
-        pcre
-        HINTS
-        ${PCRE_PKG_LIBRARY_DIRS}
-        PATHS
-        /usr/lib
-        /usr/local/lib
-        )
-
+	if (WIN32)
+		find_library(PCRE_LIBRARY
+			NAMES
+			libpcre
+			HINTS
+			${PCRE_PKG_LIBRARY_DIRS}
+			PATHS
+			${CMAKE_PREFIX_PATH}
+			${LZO_ROOT}/lib
+			)
+	else (WIN32)
+		find_library(PCRE_LIBRARY
+			NAMES
+			pcre
+			HINTS
+			${PCRE_PKG_LIBRARY_DIRS}
+			PATHS
+			/usr/lib
+			/usr/local/lib
+			)
+	endif (WIN32)
     set(PCRE_LIBRARIES ${PCRE_LIBRARY})
 
     # handle the QUIETLY AND REQUIRED arguments AND set PCRE_FOUND to TRUE if
