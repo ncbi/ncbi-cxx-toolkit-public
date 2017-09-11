@@ -95,7 +95,7 @@ extern "C" {
 #define BLAST_GAP_EXTN_MEGABLAST 0 /**< default gap open penalty (megablast)
                                         with greedy gapped alignment) */
 
-#define BLAST_GAP_EXTN_MAPPER 8
+#define BLAST_GAP_EXTN_MAPPER 4
 
 /** neighboring word score thresholds; a threshold of zero
  *  means that only query and subject words that match exactly
@@ -147,7 +147,7 @@ extern "C" {
 #define BLAST_PENALTY -3        /**< default nucleotide mismatch score */
 #define BLAST_REWARD 1          /**< default nucleotide match score */
 
-#define BLAST_PENALTY_MAPPER -8
+#define BLAST_PENALTY_MAPPER -4
 #define BLAST_REWARD_MAPPER 1
 
 /** Default parameters for saving hits */

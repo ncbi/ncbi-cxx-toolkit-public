@@ -70,7 +70,7 @@ public:
         // gap extend penalty
         arg_desc.AddDefaultKey(kArgGapExtend, "extend_penalty",
                                "Cost to extend a gap", 
-                               CArgDescriptions::eInteger, "8");
+                               CArgDescriptions::eInteger, "4");
 
         // FIXME: not sure if this one is needed
         arg_desc.SetCurrentGroup("Restrict search or results");
@@ -93,7 +93,7 @@ public:
         // blastn mismatch penalty
         arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
                                "Penalty for a nucleotide mismatch", 
-                               CArgDescriptions::eInteger, "-8");
+                               CArgDescriptions::eInteger, "-4");
         arg_desc.SetConstraint(kArgMismatch, 
                                new CArgAllowValuesLessThanOrEqual(0));
         arg_desc.SetCurrentGroup("");
