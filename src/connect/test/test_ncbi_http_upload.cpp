@@ -205,7 +205,7 @@ int CTestHttpUploadApp::Run(void)
         max_try = 1;
     net_info->max_try = 1;
 
-    for (ntry = 1;  ntry <= max_try;  ++ntry) {
+    for (ntry = 0;  ntry < max_try;  ++ntry) {
         CConn_HttpStream http(kHttpUrl, net_info, user_header,
                               x_ParseHttpHeader, 0, 0, 0, fHTTP_WriteThru);
 
@@ -262,9 +262,9 @@ int CTestHttpUploadApp::Run(void)
     }
     if (ntry >= max_try)
         ERR_POST(Fatal << "Failed to upload after " << ntry << " attempt(s)");
-    ERR_POST(Info << "Upload complete (attempt " << ntry << ')');
+    ERR_POST(Info << "Upload complete (attempt " << (ntry + 1) << ')');
 
-    for (ntry = 1;  ntry <= max_try;  ++ntry) {
+    for (ntry = 0;  ntry < max_try;  ++ntry) {
         s = 0;
         CWStream null(new CNullCountingWriter(s), 0, 0,
                       CRWStreambuf::fOwnWriter);
@@ -282,7 +282,7 @@ int CTestHttpUploadApp::Run(void)
     }
     if (ntry >= max_try)
         ERR_POST(Fatal << "Failed to verify after " << ntry << " attemp(s)");
-    ERR_POST(Info << "Upload verified (attempt " << ntry << ')');
+    ERR_POST(Info << "Upload verified (attempt " << (ntry + 1) << ')');
 
     ConnNetInfo_Destroy(net_info);
     ERR_POST(Info << "TEST COMPLETED SUCCESSFULLY");
