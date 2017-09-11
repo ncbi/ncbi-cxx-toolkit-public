@@ -57,7 +57,8 @@ endif
 check_run = $(abs_top_srcdir)/scripts/common/check/check_run.sh
 check_add = $(abs_top_srcdir)/scripts/common/check/check_add.sh
 
-ifeq "" "$(filter 0 1,$(words $(wildcard $(srcdir)/Makefile.*.???)))"
+proj_count := $(words $(wildcard $(srcdir)/Makefile.*.???))
+ifeq "1:" "$(NCBI_USING_FLAT_MAKEFILE):$(filter 0 1,$(proj_count))"
   MAKE_LOCK_MAP = @cd $(abs_srcdir)  &&  $(RWL) \
     $(top_srcdir)/scripts/common/impl/make_lock_map.sh \
     -bd $(builddir) -sd $(rel_srcdir:src/%=%)
@@ -253,7 +254,12 @@ has_usr_nonusr = $(has_usr:%_l=%.nonusr)
 has_usr_usr    = $(has_usr:%_l=%.usr)
 has_usr_locked = $(has_usr:%_l=%.usr.locked)
 
-$(has_usr_l_real): %_l.real: %.nonusr ;
+ifeq ":" "$(NCBI_USING_FLAT_MAKEFILE):$(filter 0 1,$(proj_count))"
+  $(has_usr_l_real): %_l.real:
+	@$(RWL) $(MAKE) $(MFLAGS_NR) $*.nonusr
+else
+  $(has_usr_l_real): %_l.real: %.nonusr ;
+endif
 
 $(has_usr_real): %.real: %_l.real ;
 
@@ -278,7 +284,7 @@ else
   all.usr.locked: sources.usr.locked ;
 
   $(filter-out all.usr.locked,$(has_usr_locked)): %.usr.locked:
-	@$(RWL) $(MAKE) $(MFLAGS_NR) $*.usr
+	@$(RWL) -base make_user_projects $(MAKE) $(MFLAGS_NR) $*.usr
 
   $(has_usr_nonusr): %.nonusr: %.usr.locked
 endif

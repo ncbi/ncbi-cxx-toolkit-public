@@ -60,6 +60,7 @@ ifdef abs_top_srcdir
   endif
   include $(top_srcdir)/src/build-system/Makefile.requirements
 else
+  export NCBI_USING_FLAT_MAKEFILE = 1
   ifndef builddir
     include $(top_srcdir)/src/build-system/Makefile.flat_tuneups
   endif
