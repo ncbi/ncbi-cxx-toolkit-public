@@ -6098,7 +6098,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     // plasmid
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "foo");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "pfoo");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
                               "Plasmid subsource but not plasmid location"));
     eval = validator.Validate(seh, options);
@@ -21179,4 +21179,35 @@ BOOST_AUTO_TEST_CASE(Test_VR_733)
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 
+}
+
+
+
+void TestOnePlasmid(const string& plasmid_name, bool expect_error)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_plasmid);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, plasmid_name);
+    STANDARD_SETUP
+
+    if (expect_error) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+                    "Problematic plasmid/chromosome/linkage group name '" + plasmid_name + "'"));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_742)
+{
+    TestOnePlasmid("plasmid", true);
+    TestOnePlasmid("something", true);
+    TestOnePlasmid("pSebaea microphylla", true);
+
+    // these values are ok
+    TestOnePlasmid("megaplasmid", false);
+    TestOnePlasmid("2micron", false);
+    TestOnePlasmid("psomething", false);
 }

@@ -1799,7 +1799,6 @@ static bool s_HasBadPlasmidChromLinkName(const string& name, const string& taxna
 
 {
     if (name.length() < 1) return false;
-
     if (name.length() > 33) return true;
 
     if (NStr::FindNoCase(name, "plasmid") != NPOS) return true;
@@ -1810,6 +1809,25 @@ static bool s_HasBadPlasmidChromLinkName(const string& name, const string& taxna
     if (taxname.length() > 0 && NStr::FindNoCase(name, taxname) != NPOS) return true;
 
     return false;
+}
+
+
+static bool s_HasBadChromLinkName(const string& name, const string& taxname)
+{
+    return s_HasBadPlasmidChromLinkName(name, taxname);
+}
+
+
+static bool s_HadBadPlasmidName(const string& name, const string& taxname)
+{
+    // special plasmid name rules from VR-742
+    if (NStr::Equal(name, "2micron") || NStr::Equal(name, "megaplasmid")) {
+        return false;
+    } else if (name.c_str()[0] != 'p') {
+        return true;
+    } else {
+        return s_HasBadPlasmidChromLinkName(name, taxname);
+    }
 }
 
 
@@ -2079,12 +2097,21 @@ const CBioseq_Handle& bsh)
                 }
             }
             break;
-        case CSubSource::eSubtype_chromosome:
         case CSubSource::eSubtype_plasmid_name:
+            if ((*it)->IsSetName() && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
+                const string& name = (*it)->GetName();
+                if (s_HadBadPlasmidName(name, source.GetOrg().GetTaxname())) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        "Problematic plasmid/chromosome/linkage group name '" + name + "'",
+                        obj, ctx);
+                }
+            }
+            break;
+        case CSubSource::eSubtype_chromosome:
         case CSubSource::eSubtype_linkage_group:
             if ((*it)->IsSetName() && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
                 const string& name = (*it)->GetName();
-                if (s_HasBadPlasmidChromLinkName (name, source.GetOrg().GetTaxname())) {
+                if (s_HasBadChromLinkName (name, source.GetOrg().GetTaxname())) {
                     PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                         "Problematic plasmid/chromosome/linkage group name '" + name + "'",
                         obj, ctx);
