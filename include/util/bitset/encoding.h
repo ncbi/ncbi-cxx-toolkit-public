@@ -41,6 +41,8 @@ namespace bm
    
    Class for encoding data into memory. 
    Properly handles aligment issues with integer data types.
+   
+   \ingroup gammacode
 */
 class encoder
 {
@@ -53,6 +55,7 @@ public:
     void put_16(const bm::short_t* s, unsigned count);
     void put_32(bm::word_t  w);
     void put_32(const bm::word_t* w, unsigned count);
+    void put_64(bm::id64_t w);
     void put_prefixed_array_32(unsigned char c, 
                                const bm::word_t* w, unsigned count);
     void put_prefixed_array_16(unsigned char c, 
@@ -64,12 +67,13 @@ public:
 private:
     unsigned char*  buf_;
     unsigned char*  start_;
-    // unsigned int    size_; // never actually checked
+    unsigned int    size_;
 };
 
 // ----------------------------------------------------------------
 /**
     Base class for all decoding functionality
+    \ingroup gammacode
 */
 class decoder_base
 {
@@ -93,6 +97,7 @@ protected:
 /**
    Class for decoding data from memory buffer.
    Properly handles aligment issues with integer data types.
+   \ingroup gammacode
 */
 class decoder : public decoder_base
 {
@@ -100,6 +105,7 @@ public:
     decoder(const unsigned char* buf);
     bm::short_t get_16();
     bm::word_t get_32();
+    bm::id64_t get_64();
     void get_32(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
 };
@@ -110,6 +116,7 @@ public:
    Properly handles aligment issues with integer data types.
    Converts data to big endian architecture 
    (presumed it was encoded as little endian)
+   \ingroup gammacode
 */
 typedef decoder decoder_big_endian;
 
@@ -120,6 +127,7 @@ typedef decoder decoder_big_endian;
    Properly handles aligment issues with integer data types.
    Converts data to little endian architecture 
    (presumed it was encoded as big endian)
+   \ingroup gammacode
 */
 class decoder_little_endian : public decoder_base
 {
@@ -135,6 +143,7 @@ public:
 /** 
     Byte based writer for un-aligned bit streaming 
 
+    @ingroup gammacode
     @sa encoder
 */
 template<class TEncoder>
@@ -327,6 +336,7 @@ private:
 /** 
     Byte based reader for un-aligned bit streaming 
 
+    @ingroup gammacode
     @sa encoder
 */
 template<class TDecoder>
@@ -435,6 +445,7 @@ private:
 
 /**
     Functor for Elias Gamma encoding
+    @ingroup gammacode
 */
 template<typename T, typename TBitIO>
 class gamma_encoder
@@ -461,6 +472,7 @@ private:
 
 /**
     Elias Gamma decoder
+    @ingroup gammacode
 */
 template<typename T, typename TBitIO>
 class gamma_decoder
@@ -506,13 +518,13 @@ private:
     \param buf - memory buffer pointer.
     \param size - size of the buffer
 */
-inline encoder::encoder(unsigned char* buf, unsigned /* size */)
+inline encoder::encoder(unsigned char* buf, unsigned size)
 : buf_(buf), start_(buf)
 {
-    // size_ = size;
+    size_ = size;
 }
 /*!
-    \grief Encode 8-bit prefix + an array
+    \brief Encode 8-bit prefix + an array
 */
 inline void encoder::put_prefixed_array_32(unsigned char c, 
                                            const bm::word_t* w, 
@@ -523,7 +535,7 @@ inline void encoder::put_prefixed_array_32(unsigned char c,
 }
 
 /*!
-    \grief Encode 8-bit prefix + an array 
+    \brief Encode 8-bit prefix + an array 
 */
 inline void encoder::put_prefixed_array_16(unsigned char c, 
                                            const bm::short_t* s, 
@@ -642,6 +654,29 @@ BMFORCEINLINE void encoder::put_32(bm::word_t w)
 }
 
 /*!
+   \fn void encoder::put_64(bm::id64_t w)
+   \brief Puts 64 bits word into encoding buffer.
+   \param w - word to encode.
+*/
+inline void encoder::put_64(bm::id64_t w)
+{
+#if (BM_UNALIGNED_ACCESS_OK == 1)
+	*((bm::id64_t*) buf_) = w;
+	buf_ += sizeof(w);
+#else
+    *buf_++ = (unsigned char) w;
+    *buf_++ = (unsigned char) (w >> 8);
+    *buf_++ = (unsigned char) (w >> 16);
+    *buf_++ = (unsigned char) (w >> 24);
+    *buf_++ = (unsigned char) (w >> 32);
+    *buf_++ = (unsigned char) (w >> 40);
+    *buf_++ = (unsigned char) (w >> 48);
+    *buf_++ = (unsigned char) (w >> 56);
+#endif
+}
+
+
+/*!
     \brief Encodes array of 32-bit words
 */
 inline 
@@ -692,7 +727,7 @@ inline decoder::decoder(const unsigned char* buf)
 
 /*!
    \fn bm::short_t decoder::get_16()
-   \brief Reads 16bit word from the decoding buffer.
+   \brief Reads 16-bit word from the decoding buffer.
 */
 BMFORCEINLINE bm::short_t decoder::get_16() 
 {
@@ -707,7 +742,7 @@ BMFORCEINLINE bm::short_t decoder::get_16()
 
 /*!
    \fn bm::word_t decoder::get_32()
-   \brief Reads 32 bit word from the decoding buffer.
+   \brief Reads 32-bit word from the decoding buffer.
 */
 BMFORCEINLINE bm::word_t decoder::get_32() 
 {
@@ -716,6 +751,28 @@ BMFORCEINLINE bm::word_t decoder::get_32()
 #else
 	bm::word_t a = buf_[0]+ ((unsigned)buf_[1] << 8) +
                    ((unsigned)buf_[2] << 16) + ((unsigned)buf_[3] << 24);
+#endif
+    buf_+=sizeof(a);
+    return a;
+}
+
+/*!
+   \fn bm::word_t decoder::get_64()
+   \brief Reads 64-bit word from the decoding buffer.
+*/
+inline bm::id64_t decoder::get_64()
+{
+#if (BM_UNALIGNED_ACCESS_OK == 1)
+	bm::id64_t a = *((bm::id64_t*)buf_);
+#else
+	bm::word_t a = buf_[0]+
+                   ((bm::id64_t)buf_[1] << 8)  +
+                   ((bm::id64_t)buf_[2] << 16) +
+                   ((bm::id64_t)buf_[3] << 24) +
+                   ((bm::id64_t)buf_[4] << 32) +
+                   ((bm::id64_t)buf_[5] << 40) +
+                   ((bm::id64_t)buf_[6] << 48) +
+                   ((bm::id64_t)buf_[7] << 56);
 #endif
     buf_+=sizeof(a);
     return a;
@@ -797,7 +854,7 @@ inline decoder_little_endian::decoder_little_endian(const unsigned char* buf)
 
 BMFORCEINLINE bm::short_t decoder_little_endian::get_16()
 {
-    bm::short_t a = bm::short_t(((bm::short_t)buf_[0] << 8) + (bm::short_t)buf_[1]);
+    bm::short_t a = bm::short_t((bm::short_t)buf_[0] << 8) + ((bm::short_t)buf_[1]);
     buf_ += sizeof(a);
     return a;
 }
@@ -842,7 +899,7 @@ inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
     const bm::short_t* s_end = s + count;
     do 
     {
-        bm::short_t a = bm::short_t(((bm::short_t)buf[0] << 8) + (bm::short_t)buf[1]);
+        bm::short_t a = bm::short_t((bm::short_t)buf[0] << 8) + ((bm::short_t)buf[1]);
         *s++ = a;
         buf += sizeof(a);
     } while (s < s_end);

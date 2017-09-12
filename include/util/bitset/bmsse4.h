@@ -33,6 +33,7 @@ For more information please visit:  http://bmagic.sourceforge.net
 #include<mmintrin.h>
 #include<emmintrin.h>
 #include<smmintrin.h>
+#include<nmmintrin.h>
 
 #include "bmdef.h"
 #include "bmsse_util.h"
@@ -40,8 +41,9 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
-/** @defgroup SSE4 Processor specific optimizations for SSE4.2 instructions
- *  @ingroup bmagic
+/** @defgroup SSE4 SSE4.2 funcions
+    Processor specific optimizations for SSE4.2 instructions (internals)
+ *  @ingroup bvector
  */
 
 
@@ -59,8 +61,8 @@ bm::id_t sse4_bit_count(const __m128i* block, const __m128i* block_end)
     const bm::id64_t* b_end = (bm::id64_t*) block_end;
     do
     {
-        count += _mm_popcnt_u64(b[0]) +
-                 _mm_popcnt_u64(b[1]);
+        count += unsigned( _mm_popcnt_u64(b[0]) +
+                           _mm_popcnt_u64(b[1]));
         b += 2;
     } while (b < b_end);
 #else
@@ -119,8 +121,8 @@ bm::id_t sse4_bit_count_op(const __m128i* BMRESTRICT block,
         __m128i tmp1 = _mm_load_si128(mask_block);        
         __m128i b = sse2_func(tmp0, tmp1);
 
-        count += _mm_popcnt_u64(_mm_extract_epi64(b, 0));
-        count += _mm_popcnt_u64(_mm_extract_epi64(b, 1));
+        count += (unsigned)_mm_popcnt_u64(_mm_extract_epi64(b, 0));
+        count += (unsigned)_mm_popcnt_u64(_mm_extract_epi64(b, 1));
 
         ++block; ++mask_block;
     } while (block < block_end);
@@ -187,10 +189,10 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
 
 
 #define VECT_XOR_ARR_2_MASK(dst, src, src_end, mask)\
-    sse2_xor_arr_2_mask((__m128i*)(dst), (__m128i*)(src), (__m128i*)(src_end), mask)
+    sse2_xor_arr_2_mask((__m128i*)(dst), (__m128i*)(src), (__m128i*)(src_end), (bm::word_t)mask)
 
 #define VECT_ANDNOT_ARR_2_MASK(dst, src, src_end, mask)\
-    sse2_andnot_arr_2_mask((__m128i*)(dst), (__m128i*)(src), (__m128i*)(src_end), mask)
+    sse2_andnot_arr_2_mask((__m128i*)(dst), (__m128i*)(src), (__m128i*)(src_end), (bm::word_t)mask)
 
 #define VECT_BITCOUNT(first, last) \
     sse4_bit_count((__m128i*) (first), (__m128i*) (last)) 
@@ -208,7 +210,7 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
     sse4_bit_count_op((__m128i*) (first), (__m128i*) (last), (__m128i*) (mask), sse2_sub) 
 
 #define VECT_INVERT_ARR(first, last) \
-    sse2_invert_arr(first, last);
+    sse2_invert_arr((bm::word_t*)first, (bm::word_t*)last);
 
 #define VECT_AND_ARR(dst, src, src_end) \
     sse2_and_arr((__m128i*) dst, (__m128i*) (src), (__m128i*) (src_end))
@@ -244,7 +246,7 @@ bm::id_t sse4_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
                                                unsigned* BMRESTRICT bit_count)
 {
 //   __m128i mask1 = _mm_set_epi32(0x1, 0x1, 0x1, 0x1);
-   register int count = (block_end - block)*4; 
+   register int count = (unsigned)(block_end - block)*4; 
 
    register bm::word_t  w0, w_prev;
    const int w_shift = sizeof(w0) * 8 - 1;

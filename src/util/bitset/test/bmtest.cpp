@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2002-2009 Anatoliy Kuznetsov.
+Copyright (c) 2002-2017 Anatoliy Kuznetsov.
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -28,20 +28,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <time.h>
 #include <stdio.h>
 
-// No intermix FP with integer SSE in this program
-//#define BM_SET_MMX_GUARD
 //#define BMSSE2OPT
 //#define BMSSE42OPT
-//#define BM64OPT
+
 
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4996)
 #endif
 
+#include <vector>
 
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 #include <util/bitset/ncbi_bitset_util.hpp>
+#include <util/bitset/bmsparsevec.h>
+#include <util/bitset/bmsparsevec_algo.h>
+#include <util/bitset/bmsparsevec_serial.h>
+
+//#include <util/bitset/bmdbg.h>
 
 #include <math.h>
 
@@ -99,8 +103,9 @@ private:
 typedef bm::bvector<> bvect;
 
 
+
 void SimpleFillSets(test_bitset& bset, 
-                     bvect& bvec,
+                       bvect& bv,
                        unsigned min, 
                        unsigned max,
                        unsigned fill_factor,
@@ -109,7 +114,7 @@ void SimpleFillSets(test_bitset& bset,
     for (unsigned i = min; i < max; i+=fill_factor)
     {
         bset[i] = set_flag;
-        bvec[i] = set_flag;
+        bv[i] = set_flag;
     } // for i
 }
 
@@ -120,7 +125,7 @@ void SimpleFillSets(test_bitset& bset,
 //
 
 void FillSetsIntervals(test_bitset& bset, 
-                       bvect& bvec,
+                       bvect& bv,
                        unsigned min, 
                        unsigned max,
                        unsigned fill_factor,
@@ -148,12 +153,12 @@ void FillSetsIntervals(test_bitset& bset,
             if (set_flag)
             {
                 bset[j] = true;
-                bvec[j]= true;
+                bv[j]= true;
             }
             else
             {
                 bset[j] = false;
-                bvec[j] = false;
+                bv[j] = false;
             }
                            
         } // j
@@ -171,12 +176,12 @@ void FillSetsIntervals(test_bitset& bset,
                 if (set_flag)
                 {
                     bset[i] = true;
-                    bvec[i] = true;            
+                    bv[i] = true;
                 }
                 else
                 {
                     bset[j] = false;
-                    bvec[j] = false;
+                    bv[j] = false;
                 }
 
             }
@@ -329,15 +334,15 @@ void BitCountSparseTest()
     TimeTaker tt("BitCount: Sparse bitset (STL)", REPEATS*10);
     for (unsigned int i = 0; i < REPEATS*10; ++i)
     {    
-        value += (unsigned)bset->count();
+        value += bset->count();
     }
     }
 
     c1 = *p;
     value = c1 = 0;
     
-
-    bv->optimize();
+    BM_DECLARE_TEMP_BLOCK(tb)
+    bv->optimize(tb);
 
     {
     TimeTaker tt("BitCount: GAP Sparse bitset", REPEATS*1000);
@@ -486,18 +491,17 @@ void EnumeratorTest()
         {
             if (bv.any())
             {
-                unsigned val = bv.get_first();
+                unsigned v = bv.get_first();
                 do
                 {
-                    val = bv.get_next(val);
-                    cnt += val;
-                } while ( val );
+                    v = bv.get_next(value);
+                    cnt += v;
+                } while(v);
             }
         }
     }
 
     delete bset;
-//    delete bv;
 
     char buf[256];
     sprintf(buf, "%i %i ", cnt, cnt1);//, cnt2);
@@ -510,7 +514,6 @@ void EnumeratorTestGAP()
     bvect*  bv = new bvect();
     test_bitset*  bset = new test_bitset();
     unsigned i;
-    unsigned value = 0;
 
     SimpleFillSets(*bset, *bv, 0, BSIZE, 2500);
     bv->count();
@@ -519,6 +522,7 @@ void EnumeratorTestGAP()
     {
 
     {
+    unsigned v = 0;
     TimeTaker tt("Sparse bvector (enumerator)", REPEATS*10*(k+1));
     for (i = 0; i < REPEATS*10*(k+1); ++i)
     {    
@@ -527,7 +531,7 @@ void EnumeratorTestGAP()
 
         while (en < bend)
         {
-            value = *en;
+            v = *en;
             ++en;
         }
     }
@@ -544,12 +548,12 @@ void EnumeratorTestGAP()
     {
         if (bv->any())
         {
-            unsigned val = bv->get_first();
+            unsigned v = bv->get_first();
             do
             {
-                val = bv->get_next(val);
-                cnt += val;
-            } while ( val );
+                v = bv->get_next(v);
+                cnt += v;
+            } while (v);
         }
     }
     }
@@ -558,7 +562,8 @@ void EnumeratorTestGAP()
 
     {
 
-    bv->optimize();
+    BM_DECLARE_TEMP_BLOCK(tb)
+    bv->optimize(tb);
     }
 
     if (!platform_test) 
@@ -576,6 +581,9 @@ void EnumeratorTestGAP()
 void SerializationTest()
 {
 	bvect bv_sparse;
+    // stack declaration of temp block instead of re-allocation makes things faster
+    BM_DECLARE_TEMP_BLOCK(tb)
+
 
 	// prepare a test bitset with a small number of bits set somewhere
 	// far from the beginning
@@ -587,7 +595,7 @@ void SerializationTest()
 	bv_sparse[70000] = true;
 	bv_sparse[200000] = true;
 
-	bv_sparse.optimize();
+	bv_sparse.optimize(tb);
 
 	unsigned cnt = bv_sparse.count();
     bvect::statistics st;
@@ -600,7 +608,7 @@ void SerializationTest()
 	TimeTaker tt("Small bvector serialization", REPEATS*70000);
 	for (unsigned i = 0; i < REPEATS*70000; ++i)
 	{
-		len += bm::serialize(bv_sparse, buf, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
+		len += bm::serialize(bv_sparse, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
 		id_size += cnt * (unsigned)sizeof(unsigned);
 	}
 	}
@@ -621,7 +629,7 @@ void SerializationTest()
 	TimeTaker tt("Large bvector serialization", REPEATS*4);
 	for (unsigned i = 0; i < REPEATS*4; ++i)
 	{
-		len += bm::serialize(*bv, buf, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
+		len += bm::serialize(*bv, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
 		id_size += cnt * (unsigned)sizeof(unsigned);
 	}
 	}
@@ -790,7 +798,8 @@ void XorCountTest()
     {
         cout << "One optimized vector" << endl;
     }
-    bv2->optimize();
+    BM_DECLARE_TEMP_BLOCK(tb)
+    bv2->optimize(tb);
 
     if (!platform_test)
     {
@@ -801,7 +810,7 @@ void XorCountTest()
         bv_tmp.clear(false);
         bv_tmp |= *bv1;
         bv_tmp ^= *bv2;
-        count1 += bv_tmp.count();
+        count1 += (unsigned)bv_tmp.count();
     }
     }
 
@@ -809,7 +818,7 @@ void XorCountTest()
     TimeTaker tt("XOR COUNT bvector test", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
     {
-        count2 += bm::count_xor(*bv1, *bv2);
+        count2 += (unsigned)bm::count_xor(*bv1, *bv2);
     }
     }
 
@@ -826,7 +835,7 @@ void XorCountTest()
     {
         cout << "Both vectors optimized" << endl;
     }
-    bv1->optimize();
+    bv1->optimize(tb);
     //bv1->stat();
     if (!platform_test)
     {
@@ -837,7 +846,7 @@ void XorCountTest()
         bv_tmp.clear(false);
         bv_tmp |= *bv1;
         bv_tmp ^= *bv2;
-        count1 += bv_tmp.count();
+        count1 += (unsigned)bv_tmp.count();
     }
     }
 
@@ -845,7 +854,7 @@ void XorCountTest()
     TimeTaker tt("XOR COUNT bvector test", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
     {
-        count2 += bm::count_xor(*bv1, *bv2);
+        count2 += (unsigned)bm::count_xor(*bv1, *bv2);
     }
     }
     if (!platform_test)
@@ -906,7 +915,7 @@ void TI_MetricTest()
         bset_tmp->reset();
         *bset_tmp |= *bset1;
         *bset_tmp &= *bset2;
-        test_count  += (unsigned)bset_tmp->count();
+        test_count += (unsigned)bset_tmp->count();
         
         test_countA += (unsigned)bset1->count();
         test_countB += (unsigned)bset2->count();
@@ -950,7 +959,8 @@ void TI_MetricTest()
     {
         cout << "One optimized vector" << endl;
     }
-    bv2->optimize();
+    BM_DECLARE_TEMP_BLOCK(tb)
+    bv2->optimize(tb);
     bv1->count(); // trying to fool the CPU cache
 
     
@@ -1001,7 +1011,7 @@ void TI_MetricTest()
     {
         cout << "Both vectors optimized" << endl;
     }
-    bv1->optimize();
+    bv1->optimize(tb);
 
     {
     TimeTaker tt("Tversky index bvector test", REPEATS);
@@ -1047,24 +1057,6 @@ void TI_MetricTest()
     delete bset1;
     delete bset2;    
 }
-
-#ifdef BMSSE2OPT
-# if(_MSC_VER)
-#  define BM_ALIGN16 __declspec(align(16))
-#  define BM_ALIGN16ATTR
-
-# else // GCC
-
-#  define BM_ALIGN16
-#  define BM_ALIGN16ATTR __attribute__((aligned(16)))
-# endif
-
-#else
-
-#  define BM_ALIGN16
-#  define BM_ALIGN16ATTR
-
-#endif 
 
 void BitBlockTransposeTest()
 {
@@ -1204,6 +1196,74 @@ void ptest()
 }
 
 
+typedef bm::sparse_vector<unsigned, bvect> svect;
+
+// create a benchmark vector with a few dufferent distribution patterns
+//
+
+void FillSparseIntervals(svect& sv)
+{
+    sv.resize(250000000);
+    
+    unsigned i;
+    for (i = 256000; i < 256000 * 2; ++i)
+    {
+        sv.set(i, 0xFFE);
+    }
+    for (i = 256000 * 3; i < 256000 * 5; ++i)
+    {
+        sv.set(i, i);
+    }
+    
+    for (i = 180000000; i < 190000000; ++i)
+    {
+        sv.set(i, rand() % 128000);
+    }
+    
+    for (i = 200000000; i < 210000000; ++i)
+    {
+        sv.set(i, rand() % 128000);
+    }
+}
+
+
+void SparseVectorAccessTest()
+{
+    std::vector<unsigned> target;
+    svect   sv1;
+
+    FillSparseIntervals(sv1);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    sv1.optimize(tb);
+    target.resize(250000000);
+
+    unsigned long long cnt = 0;
+    {
+    TimeTaker tt("sparse_vector random element access test", REPEATS/10 );
+    for (unsigned i = 0; i < REPEATS/10; ++i)
+    {
+        for (unsigned j = 256000; j < 190000000/2; ++j)
+        {
+            unsigned v = sv1[j];
+            cnt += v;
+        }
+    }
+    }
+    {
+    TimeTaker tt("sparse_vector extraction access test", REPEATS/10 );
+    for (unsigned i = 0; i < REPEATS/10; ++i)
+    {
+        unsigned target_size = 190000000/2 - 256000;
+        sv1.extract(&target[0], 256000, target_size);
+    }
+    }
+    
+    char buf[256];
+    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
+    
+}
+
+
 int main(void)
 {
 //    ptest();
@@ -1223,6 +1283,7 @@ int main(void)
     BitBlockTransposeTest();
 
     EnumeratorTest();
+
     EnumeratorTestGAP();
 
     AndTest();
@@ -1235,7 +1296,9 @@ int main(void)
     TI_MetricTest();
 
     SerializationTest();
-        
+    
+    SparseVectorAccessTest();
+    
     return 0;
 }
 

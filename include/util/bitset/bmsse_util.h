@@ -31,8 +31,9 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
-/** @defgroup SSE2 Processor specific optimizations for SSE2 instructions
- *  @ingroup bmagic
+/** @defgroup SSE2 SSE2 functions
+    Processor specific optimizations for SSE2 instructions (internals)
+    @ingroup bvector
  */
 
 
@@ -44,6 +45,11 @@ namespace bm
   This class guards critical code fragments where SSE2 integer
   is used.
 
+  As of 2015 _mm_empty() is considered deprecated, and not even recognised
+  by some compilers (like MSVC) in 64-bit mode.
+  As MMX instructions gets old, we here deprecate and comment out 
+  use of _mm_empty()
+
   @ingroup SSE2
 */
 class sse_empty_guard
@@ -51,12 +57,12 @@ class sse_empty_guard
 public:
     BMFORCEINLINE sse_empty_guard() 
     {
-        _mm_empty();
+        //_mm_empty();
     }
 
     BMFORCEINLINE ~sse_empty_guard() 
     {
-        _mm_empty();
+        //_mm_empty();
     }
 };
 

@@ -11,7 +11,7 @@ publish, distribute, sublicense, and/or sell copies of the Software,
 and to permit persons to whom the Software is furnished to do so, 
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
@@ -27,10 +27,11 @@ For more information please visit:  http://bmagic.sourceforge.net
 */
 
 
-/*! \defgroup bvserial bvector serialization  
- *  bvector serialization
- *  \ingroup bmagic 
- *
+/*! 
+    \defgroup bvserial bvector<> serialization
+    Serialization for bvector<> container
+    \ingroup bvector
+ 
  */
 
 #ifndef BM__H__INCLUDED__
@@ -137,8 +138,11 @@ enum serialization_header_mask {
 /**
     Bit-vector serialization class.
     
-    Class designed to convert sparse bit-vector into a block of memory
+    Class designed to convert sparse bit-vectors into a single block of memory
     ready for file or database storage or network transfer.
+    
+    Reuse of this class for multiple serializations may offer some performance
+    advantage.
     
     @ingroup bvserial 
 */
@@ -149,7 +153,16 @@ public:
     typedef typename BV::allocator_type      allocator_type;
     typedef typename BV::blocks_manager_type blocks_manager_type;
 public:
-    serializer(const allocator_type&   alloc  = allocator_type());
+    /**
+        Construct serializer
+        
+        \param alloc - memory allocator
+        \param temp_block - temporary block for various operations
+               (if NULL it will be allocated and managed by serializer class)
+    */
+    serializer(const allocator_type&   alloc  = allocator_type(),
+              bm::word_t*  temp_block = 0);
+              
     ~serializer();
 
     /**
@@ -241,6 +254,7 @@ private:
     bool           byte_order_serial_;
     bm::word_t*    temp_block_;
     unsigned       compression_level_;
+    bool           own_temp_block_;
 };
 
 /**
@@ -496,7 +510,9 @@ protected:
 
 /**
     Class deserializer, can perform logical operation on bit-vector and
-    serialized bit-vector.
+    serialized bit-vector. This utility class potentially provides faster
+    and/or more memory efficient operation than more conventional deserialization
+    into memory bvector and then logical operation
 
     \ingroup bvserial 
 */
@@ -506,6 +522,17 @@ class operation_deserializer
 public:
     typedef BV bvector_type;
 public:
+    /**
+    \brief Deserialize bvector using buffer as set operation argument
+    
+    \param bv - target bvector
+    \param buf - serialized buffer as a logical argument
+    \param temp_block - temporary block to avoid re-allocations
+    \param op - set algebra operation (default: OR)
+    \param exit_on_one - quick exit if set operation found some result
+    
+    \return bitcount
+    */
     static
     unsigned deserialize(bvector_type&        bv, 
                          const unsigned char* buf, 
@@ -514,7 +541,13 @@ public:
                          bool                 exit_on_one = false ///<! exit early if any one are found
                          );
 private:
-    /// experimental
+    /** experimental 3-way deserializator TARGET = MASK (OR/AND/XOR) BUF
+    \param bv_target - target bvector
+    \param bv_mask - mask bvector (MASK)
+    \param buf - buffer argument
+    \param temp_block - operational temporary block to avoid re-allocations
+    \param op - logical operation
+    */
     static
     void deserialize(bvector_type&        bv_target,
                      const bvector_type&  bv_mask,
@@ -541,14 +574,24 @@ private:
 //---------------------------------------------------------------------
 
 template<class BV>
-serializer<BV>::serializer(const allocator_type&   alloc)
+serializer<BV>::serializer(const allocator_type&   alloc,
+                           bm::word_t*             temp_block)
 : alloc_(alloc),
   gap_serial_(false),
   byte_order_serial_(true),
-  temp_block_(0),
   compression_level_(3)
 {
-    temp_block_ = alloc_.alloc_bit_block();
+    if (temp_block == 0)
+    {
+        temp_block_ = alloc_.alloc_bit_block();
+        own_temp_block_ = true;
+    }
+    else
+    {
+        temp_block_ = temp_block;
+        own_temp_block_ = false;
+    }
+        
 }
 
 template<class BV>
@@ -566,7 +609,8 @@ unsigned serializer<BV>::get_compression_level() const
 template<class BV>
 serializer<BV>::~serializer()
 {
-    alloc_.free_bit_block(temp_block_);
+    if (own_temp_block_)
+        alloc_.free_bit_block(temp_block_);
 }
 
 
@@ -1045,7 +1089,8 @@ enum serialization_flags {
    Function serializes content of the bitvector into memory.
    Serialization adaptively uses compression(variation of GAP encoding) 
    when it is benefitial. 
-
+   
+   \param bv - source bvecor
    \param buf - pointer on target memory area. No range checking in the
    function. It is responsibility of programmer to allocate sufficient 
    amount of memory using information from calc_stat function.
@@ -1054,7 +1099,7 @@ enum serialization_flags {
    If you want to save memory across multiple bvectors
    allocate temporary block using allocate_tempblock and pass it to 
    serialize.
-   (Of course serialize does not deallocate temp_block.)
+   (Serialize does not deallocate temp_block.)
 
    \param serialization_flags
    Flags controlling serilization (bit-mask) 
@@ -1066,7 +1111,7 @@ enum serialization_flags {
    \sa calc_stat, serialization_flags
 
 */
-/*
+/*!
  Serialization format:
  <pre>
 
@@ -1083,10 +1128,10 @@ enum serialization_flags {
 template<class BV>
 unsigned serialize(const BV& bv, 
                    unsigned char* buf, 
-                   bm::word_t*    /*temp_block*/,
+                   bm::word_t*    temp_block = 0,
                    unsigned       serialization_flags = 0)
 {
-    bm::serializer<BV> bv_serial;
+    bm::serializer<BV> bv_serial(bv.get_allocator(), temp_block);
     if (serialization_flags & BM_NO_BYTE_ORDER) 
         bv_serial.byte_order_serialization(false);
         
@@ -1103,26 +1148,24 @@ unsigned serialize(const BV& bv,
 /*!
    @brief Saves bitvector into memory.
    Allocates temporary memory block for bvector.
-   \ingroup bvserial 
-*/
+ 
+   \param bv - source bvecor
+   \param buf - pointer on target memory area. No range checking in the
+   function. It is responsibility of programmer to allocate sufficient 
+   amount of memory using information from calc_stat function.
 
+   \param serialization_flags
+   Flags controlling serilization (bit-mask) 
+   (use OR-ed serialization flags)
+ 
+   \ingroup bvserial
+*/
 template<class BV>
 unsigned serialize(BV& bv, 
                    unsigned char* buf, 
                    unsigned  serialization_flags=0)
 {
-    bm::serializer<BV> bv_serial;
-    if (serialization_flags & BM_NO_BYTE_ORDER) 
-        bv_serial.byte_order_serialization(false);
-        
-    if (serialization_flags & BM_NO_GAP_LENGTH) 
-        bv_serial.gap_length_serialization(false);
-    else
-        bv_serial.gap_length_serialization(true);
-
-    bv_serial.set_compression_level(4);
-    
-    return bv_serial.serialize(bv, buf, 0);
+    return bm::serialize(bv, buf, 0, serialization_flags);
 }
 
 
@@ -1130,6 +1173,7 @@ unsigned serialize(BV& bv,
 /*!
     @brief Bitvector deserialization from memory.
 
+    @param bv - target bvector
     @param buf - pointer on memory which keeps serialized bvector
     @param temp_block - pointer on temporary block, 
             if NULL bvector allocates own.
@@ -3239,7 +3283,7 @@ void iterator_deserializer<BV, SerialIterator>::deserialize(
                         int is_gap = BM_IS_GAP(blk_mask);
                         bm::word_t* blk_target = 
                             bman_target.copy_bit_block(bv_block_idx, blk_mask, is_gap);
-                        bit_block_xor(blk_target, FULL_BLOCK_ADDR);
+                        bit_block_xor(blk_target, FULL_BLOCK_REAL_ADDR);
                     }
                     else
                     {
@@ -3491,14 +3535,14 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                     {
                     case set_XOR:
                         blk = bman.deoptimize_block(bv_block_idx);
-                        bit_block_xor(blk, FULL_BLOCK_ADDR);
+                        bit_block_xor(blk, FULL_BLOCK_REAL_ADDR);
                         break;
                     case set_COUNT_XOR:
                         {
                         count += 
                             combine_count_operation_with_block(
                                                 blk,
-                                                FULL_BLOCK_ADDR,
+                                                FULL_BLOCK_REAL_ADDR,
                                                 bm::COUNT_XOR);
                         }
                         break;
@@ -3507,7 +3551,7 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                         count += 
                             combine_count_operation_with_block(
                                                 blk,
-                                                FULL_BLOCK_ADDR,
+                                                FULL_BLOCK_REAL_ADDR,
                                                 bm::COUNT_SUB_BA);
                         }
                         break;

@@ -33,6 +33,7 @@ For more information please visit:  http://bmagic.sourceforge.net
 #include <cassert>
 #include <memory.h>
 #include <iostream>
+#include <strstream>
 #include <fstream>
 #include <iomanip>
 #include <time.h>
@@ -184,8 +185,10 @@ inline
 void SaveBlob(const char* name_prefix, unsigned num, const char* ext,
               const unsigned char* blob, unsigned blob_size)
 {
-    char fname[2048];
-    sprintf(fname, "%s-%u.%s", name_prefix, num, ext);
+    std::strstream fname_str;
+    fname_str << name_prefix << "-" << num << ext;
+    
+    char* fname = fname_str.str();
     ofstream bfile (fname, ios::out | ios::binary);
     if (!bfile.good())
     {
@@ -453,6 +456,45 @@ void print_stat(const BV& bv, unsigned blocks = 0)
     printf("gap_efficiency=%i\n", total_gap_eff); 
 
 }
+
+
+
+template<class SV>
+void print_svector_stat(const SV& svect)
+{
+    typename SV::statistics st;
+    svect.calc_stat(&st);
+    
+    std::cout << "size = " << svect.size() << std::endl;
+    std::cout << "Bit blocks:       " << st.bit_blocks << std::endl;
+    std::cout << "Gap blocks:       " << st.gap_blocks << std::endl;
+    std::cout << "Max serialize mem:" << st.max_serialize_mem << " "
+              << (st.max_serialize_mem / (1024 * 1024)) << "MB" << std::endl;
+    std::cout << "Memory used:      " << st.memory_used << " "
+              << (st.memory_used / (1024 * 1024))       << "MB" << std::endl;
+    
+    std::cout << "Projected mem usage for vector<int>:" << sizeof(int) * svect.size() << std::endl;
+    std::cout << "Projected mem usage for vector<long long>:" << sizeof(long long) * svect.size() << std::endl;
+    
+    std::cout << "Plains:" << std::endl;
+    
+    for (unsigned i = 0; i < svect.plains(); ++i)
+    {
+        const typename SV::bvector_type* bv_plain = svect.plain(i);
+        std::cout << i << ":";
+            if (bv_plain == 0)
+            {
+                std::cout << "NULL";
+            }
+            else
+            {
+                std::cout << bv_plain->count();
+            }
+            std::cout << std::endl;
+        
+    } // for i
+}
+
 
 #include "bmundef.h"
 

@@ -37,14 +37,18 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
-/*! \defgroup setalgo Set algorithms 
- *  Set algorithms 
- *  \ingroup bmagic
+/*! 
+   @defgroup setalgo Bitset algorithms
+ 
+   Set algebra algorithms
+   @ingroup bvector
  */
 
-/*! \defgroup distance Distance metrics 
- *  Algorithms to compute binary distance metrics
- *  \ingroup setalgo
+/*! 
+    @defgroup distance Binary-distance metrics
+ 
+    Distance metrics and algorithms to compute binary distances
+    @ingroup setalgo
  */
 
 
@@ -113,14 +117,12 @@ struct distance_metric_descriptor
      
 */
 inline
-void combine_count_operation_with_block(const bm::word_t* blk,
-                                        //unsigned gap,
-                                        const bm::word_t* arg_blk,
-                                        //int arg_gap,
+void combine_count_operation_with_block(const bm::word_t*           blk,
+                                        const bm::word_t*           arg_blk,
                                         distance_metric_descriptor* dmit,
                                         distance_metric_descriptor* dmit_end)
                                             
-{
+{     
      gap_word_t* g1 = BMGAP_PTR(blk);
      gap_word_t* g2 = BMGAP_PTR(arg_blk);
 
@@ -197,9 +199,7 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                  case bm::COUNT_SUB_BA:
                      dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
                      combine_count_operation_with_block(arg_blk,
-//                                                        arg_gap,
                                                         blk,
-//                                                        gap,
                                                         it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -762,7 +762,7 @@ void distance_operation(const BV& bv1,
 
         for (j = 0; j < bm::set_array_size; ++j, ++block_idx)
         {
-            blk = blk_blk[j];
+            blk = BLOCK_ADDR_SAN(blk_blk[j]);
             if (blk == 0 && is_all_and)
                 continue;
 
@@ -801,8 +801,6 @@ unsigned distance_and_operation(const BV& bv1,
 
     bm::word_t*** blk_root = bman1.get_rootblock();
     bm::word_t*** blk_root_arg = bman2.get_rootblock();
-//    unsigned i, j;
-
     unsigned count = 0;
 
     BM_SET_MMX_GUARD
@@ -822,40 +820,17 @@ unsigned distance_and_operation(const BV& bv1,
         for (unsigned j = 0; j < bm::set_array_size; j+=4)
         {
             (blk_blk[j] && blk_blk_arg[j]) ? 
-                count += combine_count_and_operation_with_block(blk_blk[j],blk_blk_arg[j])
+                count += combine_count_and_operation_with_block(BLOCK_ADDR_SAN(blk_blk[j]), BLOCK_ADDR_SAN(blk_blk_arg[j]))
                 :0;
             (blk_blk[j+1] && blk_blk_arg[j+1]) ? 
-                count += combine_count_and_operation_with_block(blk_blk[j+1],blk_blk_arg[j+1])
+                count += combine_count_and_operation_with_block(BLOCK_ADDR_SAN(blk_blk[j+1]), BLOCK_ADDR_SAN(blk_blk_arg[j+1]))
                 :0;
             (blk_blk[j+2] && blk_blk_arg[j+2]) ? 
-                count += combine_count_and_operation_with_block(blk_blk[j+2],blk_blk_arg[j+2])
+                count += combine_count_and_operation_with_block(BLOCK_ADDR_SAN(blk_blk[j+2]), BLOCK_ADDR_SAN(blk_blk_arg[j+2]))
                 :0;
             (blk_blk[j+3] && blk_blk_arg[j+3]) ? 
-                count += combine_count_and_operation_with_block(blk_blk[j+3],blk_blk_arg[j+3])
+                count += combine_count_and_operation_with_block(BLOCK_ADDR_SAN(blk_blk[j+3]), BLOCK_ADDR_SAN(blk_blk_arg[j+3]))
                 :0;
-/*
-            if ((blk = blk_blk[j]) && (arg_blk = blk_blk_arg[j]) )
-            {
-                count +=
-                combine_count_and_operation_with_block(blk,arg_blk);
-            }
-
-            if ((blk = blk_blk[j+1]) && (arg_blk = blk_blk_arg[j+1]) )
-            {
-                count +=
-                    combine_count_and_operation_with_block(blk,arg_blk);
-            }
-            if ((blk = blk_blk[j+2]) && (arg_blk = blk_blk_arg[j+2]) )
-            {
-                count +=
-                    combine_count_and_operation_with_block(blk, arg_blk);
-            }
-            if ((blk = blk_blk[j+3]) && (arg_blk = blk_blk_arg[j+3]) )
-            {
-                count +=
-                    combine_count_and_operation_with_block(blk, arg_blk);
-            }
-*/
         } // for j
 
     } // for i
@@ -896,7 +871,6 @@ void distance_operation_any(const BV& bv1,
     const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
     
     bool is_all_and = true; // flag is distance operation is just COUNT_AND
-    //bm::word_t* temp_blk = 
     distance_stage(dmit, dmit_end, &is_all_and);
   
     bm::word_t*** blk_root = bman1.get_rootblock();
@@ -970,7 +944,7 @@ void distance_operation_any(const BV& bv1,
 
         for (j = 0; j < bm::set_array_size; ++j, ++block_idx)
         {
-            blk = blk_blk[j];
+            blk = BLOCK_ADDR_SAN(blk_blk[j]);
             if (blk == 0 && is_all_and)
                 continue;
 
@@ -1196,7 +1170,7 @@ void combine_or(BV& bv, It  first, It last)
         label1:
         
         int block_type;
-        bm::word_t* blk = 
+        bm::word_t* blk =
             bman.check_allocate_block(nblock, 
                                       true, 
                                       bv.get_new_blocks_strat(), 
@@ -1275,7 +1249,7 @@ void combine_xor(BV& bv, It  first, It last)
         label1:
         
         int block_type;
-        bm::word_t* blk = 
+        bm::word_t* blk =
             bman.check_allocate_block(nblock, 
                                       true, 
                                       bv.get_new_blocks_strat(), 
@@ -1359,7 +1333,7 @@ void combine_sub(BV& bv, It  first, It last)
         label1:
         
         int block_type;
-        bm::word_t* blk = 
+        bm::word_t* blk =
             bman.check_allocate_block(nblock, 
                                       false, 
                                       bv.get_new_blocks_strat(), 
@@ -1523,7 +1497,7 @@ void export_array(BV& bv, It first, It last)
             size_t word_cnt = array_size / 4;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
-                bm::word_t* blk = 
+                bm::word_t* blk =
                     bman.check_allocate_block(i, 
                                               false, 
                                               BM_BIT, 
@@ -1577,7 +1551,7 @@ void export_array(BV& bv, It first, It last)
             size_t word_cnt = array_size / 2;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
-                bm::word_t* blk = 
+                bm::word_t* blk =
                     bman.check_allocate_block(i, 
                                               false, 
                                               BM_BIT, 
@@ -1625,7 +1599,7 @@ void export_array(BV& bv, It first, It last)
             size_t word_cnt = array_size;
             for (unsigned i = 0; i < bm::set_total_blocks; ++i)
             {
-                bm::word_t* blk = 
+                bm::word_t* blk =
                     bman.check_allocate_block(i, 
                                               false, 
                                               BM_BIT, 
