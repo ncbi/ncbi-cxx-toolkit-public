@@ -312,7 +312,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
    
         { 
             TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
-            x_CreateSeqEntryOStreams(filename_map, ostream_map);
 
             CObjectIStreamIterator<TRoot, CBioseq_set> it(istr, eNoOwnership,
                 CObjectIStreamIterator<CBioseq_set>::CParams().FilterByMember("class",
@@ -330,8 +329,14 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     return (e_class == CBioseq_set::eClass_nuc_prot);
                 }));
 
+            bool found_nuc_prot_set = false;
             for (const CBioseq_set& obj : it) 
             {
+                if (!found_nuc_prot_set) {
+                    x_CreateSeqEntryOStreams(filename_map, ostream_map);
+                    found_nuc_prot_set = true;
+                }
+
                 CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
                 CRef<CBioseq_set> bio_set = Ref(new CBioseq_set());
                 bio_set->Assign(obj);
@@ -344,6 +349,10 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     local_prot_ids,
                     prot_accessions,
                     match_tab); 
+            }
+            if (!found_nuc_prot_set) {
+                ERR_POST(Warning << "Input does not contain nuc-prot set");
+                return;
             }
         }
 
