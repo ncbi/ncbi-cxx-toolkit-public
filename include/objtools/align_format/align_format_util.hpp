@@ -168,6 +168,13 @@ static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16
 //For text link <@lnk@> is substituted by formatted url
 static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>";
 
+// .ncbirc alias: GENOME_DATA_VIEWER /genome/gdv/browser/?context=blast&id=NC_000019.10&alignid=<@label@>&rid=N9WGPH30015
+static const char kGenomeDataViewerUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+//substitues <@lnk_displ@>
+static const char kGenomeDataViewerImg[] = "<img border=0 height=16 width=16 src=\"images/V.gif\" alt=\"View genome data for <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kGenomeDataViewerDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Data viewer</span></div>";
+
 static const char kIdenticalProteinsUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/ipg/<@label@>\" title=\"View proteins identical to <@label@>\" <@lnkTarget@>><@lnk_displ@></a>";
 static const string kIdenticalProteinsDispl =  "<div><@lnk@>-<span class=\"rlLink\">Identical proteins to <@label@></span></div>";
 
@@ -284,6 +291,7 @@ static const TTagUrl s_TagUrls [] = {
   { "GENE",  kGeneUrl },
   { "GENE_INFO",  kGeneInfoUrl },
   { "GENOME_BTN",  kGenomeButton },
+  { "GENOME_DATA_VIEWER",  kGenomeDataViewerUrl },
   { "GEO",    kGeoUrl },
   { "GETSEQ_SEL_FRM",  k_GetSeqSelectForm },
   { "GETSEQ_SUB_FRM_0",  k_GetSeqSubmitForm_0 },
@@ -400,6 +408,73 @@ public:
 
     };
     
+    struct SLinkoutInfo {        
+        string rid;
+        string cdd_rid;
+        string entrez_term;
+        bool is_na;        
+        string database;
+        int query_number;        
+        string user_url;
+        string preComputedResID;
+
+        bool structure_linkout_as_group;
+        bool for_alignment;
+
+        int taxid;        
+        int cur_align;        
+        string taxName;
+        string gnl;
+        CRange<TSeqPos> subjRange;
+                
+        string linkoutOrder;
+        ILinkoutDB* linkoutdb;
+        string mv_build_name;
+
+        string giList;
+        string labelList;
+        TGi first_gi;
+                
+        string  queryID;        
+        
+        
+        void Init(string rid_in, string cdd_rid_in, string entrez_term_in, bool is_na_in, 
+                  string database_in, int query_number_in, string user_url_in, string preComputedResID_in, 
+                  string linkoutOrder_in, 
+                  bool structure_linkout_as_group_in = false, bool for_alignment_in = true) {
+            rid = rid_in;  
+            cdd_rid = cdd_rid_in;
+            entrez_term = entrez_term_in; 
+            is_na = is_na_in;
+            database = database_in;            
+            query_number = query_number_in;
+            user_url = user_url_in;  
+            preComputedResID = preComputedResID_in; 
+
+            linkoutOrder = linkoutOrder_in;            
+            //linkoutdb = linkoutdb_in; 
+            //mv_build_name = mv_build_name_in;
+
+
+            structure_linkout_as_group = structure_linkout_as_group_in;
+            for_alignment = for_alignment_in;
+        }
+
+        void Init(string rid_in, string cdd_rid_in, string entrez_term_in, bool is_na_in, 
+                  string database_in, int query_number_in, string user_url_in, string preComputedResID_in, 
+                  string linkoutOrder_in, ILinkoutDB* linkoutdb_in, string mv_build_name_in,                  
+                  bool structure_linkout_as_group_in = false, bool for_alignment_in = true) {
+
+            Init(rid_in,cdd_rid_in,entrez_term_in,is_na_in, 
+                  database_in,query_number_in, user_url_in,preComputedResID_in, 
+                  linkoutOrder_in, 
+                  structure_linkout_as_group_in, for_alignment_in);
+
+            linkoutdb = linkoutdb_in; 
+            mv_build_name = mv_build_name_in;
+        }
+    };
+
     ///Structure that holds information for all hits of one subject in Seq Align Set    
     struct SSeqAlignSetCalcParams {        
         //values used in descriptions display
@@ -1181,6 +1256,7 @@ public:
                                                  ILinkoutDB* linkoutdb,
                                                  const string& mv_build_name,
                                                  bool getIdentProteins);
+    static list<string> GetFullLinkoutUrl(const list< CRef< objects::CBlast_def_line > > &bdl, SLinkoutInfo &linkoutInfo);
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
 												

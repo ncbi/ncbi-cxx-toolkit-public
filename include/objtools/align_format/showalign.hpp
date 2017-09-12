@@ -631,6 +631,7 @@ protected:
     list <string> m_HSPLinksList;
     string m_FASTAlinkUrl;
     string m_AlignedRegionsUrl;
+    CAlignFormatUtil::SLinkoutInfo m_LinkoutInfo;
     
 
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
