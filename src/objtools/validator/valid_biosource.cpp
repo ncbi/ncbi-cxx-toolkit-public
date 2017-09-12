@@ -1818,12 +1818,27 @@ static bool s_HasBadChromLinkName(const string& name, const string& taxname)
 }
 
 
+// allow "unnamed" plus digits for plasmid name
+static bool s_IsUnnamed(const string& name)
+{
+    if (!NStr::StartsWith(name, "unnamed")) {
+        return false;
+    }
+    for (size_t i = 7; i < name.length(); i++) {
+        if (!isdigit(name.c_str()[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 static bool s_HadBadPlasmidName(const string& name, const string& taxname)
 {
     // special plasmid name rules from VR-742
     if (NStr::Equal(name, "2micron") || 
         NStr::Equal(name, "megaplasmid") || 
-        NStr::Equal(name, "unnamed")) {
+        s_IsUnnamed(name)) {
         return false;
     } else if (name.c_str()[0] != 'p') {
         return true;

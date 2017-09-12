@@ -21205,9 +21205,13 @@ BOOST_AUTO_TEST_CASE(Test_VR_742)
     TestOnePlasmid("plasmid", true);
     TestOnePlasmid("something", true);
     TestOnePlasmid("pSebaea microphylla", true);
+    TestOnePlasmid("unnamed X", true);
 
     // these values are ok
     TestOnePlasmid("megaplasmid", false);
     TestOnePlasmid("2micron", false);
     TestOnePlasmid("psomething", false);
+    TestOnePlasmid("unnamed", false);
+    TestOnePlasmid("unnamed2", false);
+    TestOnePlasmid("unnamed234", false);
 }
