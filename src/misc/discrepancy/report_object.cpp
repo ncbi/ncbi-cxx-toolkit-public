@@ -64,7 +64,7 @@ BEGIN_SCOPE(NDiscrepancy)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-/*
+
 string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
 {
     return CReportObject::GetTextObjectDescription(sf, scope);
@@ -88,7 +88,7 @@ string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope
     CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(bs);
     return CReportObject::GetTextObjectDescription(bssh);
 }
-*/
+
 
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
