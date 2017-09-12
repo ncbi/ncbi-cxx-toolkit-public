@@ -105,7 +105,19 @@ public:
         eStatusUnsupported = 17,
 
         /// Rs status is merged (become a part of another rs).
-        eStatusMerged = 18
+        eStatusMerged = 18,
+
+        /// Rs is clinical
+        eClinical = 19,
+
+        /// Rs is clinical and it has at least one pathogenic variant
+        eSeverityHigh = 20,
+
+        /// Rs is clinical, it's not high, but has at least one probably pathogenic variant
+        eSeverityMedium = 21,
+
+        /// Rs is clinical but neither high nor medium
+        eSeverityOther = 22
     };
 
     /// Initialize the bitset with a 64-bit integer.
