@@ -1210,16 +1210,11 @@ public:
     ///  - CArgException on error
     ///  - CArgHelpException if USAGE printout was requested ("-h" flag)
     ///
-    /// NOTE: You can deallocate the resulting "CArgs" object using 'delete'.
+    /// @note Deallocate the resulting "CArgs" object using 'delete'.
     ///
-    /// Examples:
-    ///
-    /// (1) int main(int argc, const char* argv[]) {
-    ///         CreateArgs(desc, argc, argv);
-    ///     }
-    ///
-    /// (2) CNcbiArguments ncbi_args;
-    ///     CreateArgs(desc, ncbi_args.Size(), ncbi_args);
+    /// @attention
+    ///  This function is not suitable for parsing URL-encoded _CGI_ arg
+    ///  outside of the CCgiApplication framework.
     template<class TSize, class TArray>
     CArgs* CreateArgs(TSize argc, TArray argv) const
     {
@@ -1256,7 +1251,7 @@ public:
         return args.release();
     }
 
-    /// Parse command-line arguments 'argv'
+    /// Parse command-line arguments 'argv' out of CNcbiArguments
     virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
 
     /// Convert argument map (key-value pairs) into arguments in accordance
