@@ -464,10 +464,12 @@ void JSDParser::ParseAllOf(DTDElement& node)
         string item_id;
         if (c.GetType() != DTDElement::eAlias && e.IsNamed()) {
     	    item_id = e.GetName();
+            node.SetOccurrence(item_id, e.GetOccurrence(item_id));
             AddElementContent(node,item_id);
         } else {
             for(const string& ref : e.GetContent()) {
                 item_id = ref;
+                node.SetOccurrence(item_id, e.GetOccurrence(item_id));
     	        AddElementContent(node,item_id);
             }
         }
