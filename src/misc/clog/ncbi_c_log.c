@@ -1474,8 +1474,7 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
         if (nbuf <= 0) {
             return 0;
         }
-        filelen = (size_t)nbuf;
-        filename_buf[filelen] = '\0';
+        filelen  = (size_t)nbuf;
         filename = filename_buf;
     }
 #endif
@@ -1564,7 +1563,7 @@ static void s_InitDestination(const char* logfile_path)
                 }
                 /* server port */
                 if (sx_Info->server_port) {
-                    sprintf(xdir, "%s%d\0", kBaseLogDir, sx_Info->server_port);
+                    sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
                     if (s_SetLogFilesDir(xdir, 1)) {
                         return;
                     }
@@ -1747,7 +1746,6 @@ static char* s_GenerateSID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNcbi
     if (n <= 0) {
         return NULL;
     }
-    dst[n] = '\0';
     return dst;
 }
 
@@ -1791,7 +1789,6 @@ static char* s_GenerateHitID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNc
     if (n <= 0) {
         return NULL;
     }
-    dst[n] = '\0';
     return dst;
 }
 
@@ -2872,14 +2869,14 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
         ++(*sub_id);
     }
     /* Print issued sub hit ID number */
-    n = sprintf(buf, "%d\0", *sub_id);
+    n = sprintf(buf, "%d", *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
     }
     s_LogSubHitID(ctx, buf);
 
     /* And return new sub hit ID */
-    n = sprintf(buf, "%s.%d\0", hit_id, *sub_id);
+    n = sprintf(buf, "%s.%d", hit_id, *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
     }
