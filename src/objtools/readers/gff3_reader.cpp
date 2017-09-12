@@ -151,6 +151,10 @@ bool CGff3ReadRecord::AssignFromGff(
         m_strType = "misc_RNA";
         return true;
     }
+    if (m_strType == "start_codon"  ||  m_strType ==  "stop_codon") {
+        m_strType = "CDS";
+        return true;
+    }
     return true;
 }
 
@@ -430,11 +434,14 @@ bool CGff3Reader::xUpdateAnnotCds(
     // If there is, use record to update feature under construction.
     // If there isn't, use record to initialize a brand new feature.
     //
-    for (map<string, string>::iterator featIt = impliedCdsFeats.begin(); 
-            featIt != impliedCdsFeats.end(); ++featIt) {
-        string cdsId = featIt->first;
-        string parentId = featIt->second;
-        IdToFeatureMap::iterator idIt = m_MapIdToFeature.find(cdsId);
+    for (auto featIt = impliedCdsFeats.begin(); featIt != impliedCdsFeats.end(); ++featIt) {
+        auto cdsId = featIt->first;
+        auto parentId = featIt->second;
+        auto idIt = m_MapIdToFeature.find(cdsId);
+        if (idIt == m_MapIdToFeature.end()) {
+            auto altId =  string("cds:") + parentId;
+            idIt = m_MapIdToFeature.find(altId);
+        }
         if (idIt != m_MapIdToFeature.end()) {
             //found feature with ID in question: update
             record.UpdateFeature(m_iFlags, idIt->second);

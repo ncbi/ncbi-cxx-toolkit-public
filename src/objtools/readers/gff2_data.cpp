@@ -684,9 +684,6 @@ bool CGff2Record::x_MigrateId(
 //  ----------------------------------------------------------------------------
 {
     unsigned int featId = NextId();
-//    if (!GetAttribute("ID", featIdStr)) {
-//        featIdStr = NextId();
-//    }
     CRef<CFeat_id> pFeatId(new CFeat_id);
     pFeatId->SetLocal().SetId(featId);
     pFeature->SetId(*pFeatId);
