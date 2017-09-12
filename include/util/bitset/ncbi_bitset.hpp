@@ -34,22 +34,7 @@
 /// @file ncbi_bitset.hpp
 /// Compressed bitset (entry point to bm.h)
 
-#include <corelib/ncbistd.hpp>
-
-#define BM_ASSERT _ASSERT
-
-#ifdef HAVE_RESTRICT_CXX
-#define BM_HASRESTRICT
-#define BMRESTRICT NCBI_RESTRICT
-#endif
-
-#if defined(NCBI_FORCEINLINE)  &&  \
-    ( !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 400  || \
-      defined(__OPTIMIZE__))
-#define BM_HASFORCEINLINE
-#define BMFORCEINLINE NCBI_FORCEINLINE
-#endif
-
+#include <corelib/ncbistd.hpp> // so bmdef.h can apply appropriate tuneups
 #include <util/bitset/bm.h>
 
 #endif /* UTIL___BITSET_BM__HPP */
