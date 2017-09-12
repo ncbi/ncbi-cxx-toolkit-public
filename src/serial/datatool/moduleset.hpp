@@ -63,6 +63,7 @@ public:
     void PrintSampleDEF(const string& rootdir) const;
     void PrintASN(CNcbiOstream& out) const;
     void PrintSpecDump(CNcbiOstream& out) const;
+    void PrintJSONSchema(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
 
     void GetRefInfo(list<string>& info) const;
@@ -130,6 +131,7 @@ public:
     void PrintSampleDEF(const string& rootdir) const;
     void PrintASN(CNcbiOstream& out) const;
     void PrintSpecDump(CNcbiOstream& out) const;
+    void PrintJSONSchema(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
 

@@ -57,6 +57,42 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
     out << GetASNKeyword();
 }
 
+void CStaticDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool) const
+{
+    string asnk(GetASNKeyword());
+    string type("string");
+    if (asnk == "NULL") {
+        type = "null";
+    } else if (asnk == "BOOLEAN") {
+        type = "boolean";
+    } else if (asnk == "INTEGER" || asnk == "BigInt") {
+        type = "integer";
+    } else if (asnk == "REAL") {
+        type = "number";
+    }
+    PrintASNNewLine(out, indent);
+    if (IsNillable()) {
+        out << "\"oneOf\": [{";
+    }
+    out << "\"type\": \"" << type << "\"";
+    if (IsNillable()) {
+        out << "}, {\"type\": \"null\"}]";
+    }
+    const CDataMember* mem = GetDataMember();
+    if (mem) {
+        if (mem->GetDefault()) {
+            out << ", \"default\": \"" << mem->GetDefault()->GetXmlString() << "\"";
+        }
+        if (!mem->Optional()) {
+            if (mem->SimpleType()) {
+                required.push_back(string("#") + mem->GetName());
+            } else {
+                required.push_back(mem->GetName());
+            }
+        }
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
@@ -895,6 +931,10 @@ void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
 {
     PrintASNTag(out);
     out << GetASNKeyword();
+}
+
+void CAnyContentDataType::PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const
+{
 }
 
 void CAnyContentDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const

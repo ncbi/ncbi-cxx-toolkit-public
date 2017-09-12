@@ -88,6 +88,7 @@ public:
     void PrintSampleDEF(CNcbiOstream& out) const;
     virtual void PrintASN(CNcbiOstream& out) const;
     virtual void PrintSpecDump(CNcbiOstream& out) const;
+    virtual void PrintJSONSchema(CNcbiOstream& out) const;
     virtual void PrintXMLSchema(CNcbiOstream& out) const;
     virtual void PrintDTD(CNcbiOstream& out) const;
 

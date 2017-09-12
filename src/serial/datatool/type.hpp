@@ -41,6 +41,7 @@
 #include "comments.hpp"
 #include <list>
 #include <set>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,6 +57,68 @@ class CFileCode;
 class CClassTypeStrings;
 class CNamespace;
 class CDataMember;
+
+/////////////////////////////////////////////////////////////////////////////
+// ostream_iterator with corrected delimiter and inserter
+
+template<typename TValue, typename TElem = char, typename TTraits = char_traits<TElem> >
+class Dt_ostream_iterator
+    : public iterator<output_iterator_tag, void, void, void, void>
+{
+public:
+	typedef TElem char_type;
+	typedef TTraits traits_type;
+	typedef basic_ostream<TElem, TTraits> ostream_type;
+    typedef function<void(ostream_type&, const TValue&)> TInserter;
+
+	Dt_ostream_iterator(ostream_type& ostr, const TElem *delim = nullptr,
+        TInserter fnIn = [](ostream& out, const TValue& v){ out << v;})
+		: m_ostr(&ostr), m_delim(delim), m_fnIn(fnIn), m_first(true) {
+	}
+    Dt_ostream_iterator& operator=(const TValue& value) {
+		if (!m_first && m_delim !=  nullptr) {
+			*m_ostr << m_delim;
+        }
+		m_fnIn(*m_ostr, value);
+		m_first = false;
+        return *this;
+    }
+	Dt_ostream_iterator& operator*() {
+		return *this;
+	}
+	Dt_ostream_iterator& operator++() {
+		return *this;
+	}
+	Dt_ostream_iterator& operator++(int) {
+		return *this;
+	}
+protected:
+	ostream_type *m_ostr;
+    const TElem *m_delim;
+    TInserter    m_fnIn;
+	bool m_first;
+};
+
+// mark Dt_ostream_iterator as checked
+#ifdef NCBI_COMPILER_MSVC
+template<typename TValue, typename TElem, class TTraits>
+struct _Is_checked_helper<Dt_ostream_iterator<TValue, TElem, TTraits> >
+		: public true_type {
+};
+#endif
+
+template<typename TInputIt, typename TOutputIt, class TFnIf, class TFnTr>
+TOutputIt Dt_transform_if(TInputIt first, TInputIt last, TOutputIt dest,
+                            TFnIf& funcIf, TFnTr& funcTransform)
+{
+	for (; first != last; ++first, (void)++dest) {
+        if (funcIf(*first)) {
+		    *dest = funcTransform(*first);
+        }
+    }
+	return (dest);
+}
+/////////////////////////////////////////////////////////////////////////////
 
 struct AnyType {
     union {
@@ -123,6 +186,7 @@ public:
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     virtual void PrintSpecDump(CNcbiOstream& out, int indent) const;
     virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const = 0;
     virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const = 0;
     virtual const char* GetASNKeyword(void) const;
     virtual string      GetSpecKeyword(void) const;

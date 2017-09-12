@@ -99,6 +99,14 @@ void CUniSequenceDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) con
     GetElementType()->Comments().PrintASN(out, indent, CComments::eNoEOL);
 }
 
+void CUniSequenceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool) const
+{
+    PrintASNNewLine(out, indent) << "\"type\": \"array\",";
+    PrintASNNewLine(out, indent++) << "\"items\": {";
+    GetElementType()->PrintJSONSchema(out, indent, required);
+    PrintASNNewLine(out, --indent) << "}";
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi

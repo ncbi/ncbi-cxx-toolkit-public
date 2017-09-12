@@ -117,6 +117,13 @@ void CFileModules::PrintSpecDump(CNcbiOstream& out) const
     }
 }
 
+void CFileModules::PrintJSONSchema(CNcbiOstream& out) const
+{
+    ITERATE ( TModules, mi, m_Modules ) {
+        (*mi)->PrintJSONSchema(out);
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
@@ -354,6 +361,13 @@ void CFileSet::PrintSpecDump(CNcbiOstream& out) const
 {
     ITERATE ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintSpecDump(out);
+    }
+}
+
+void CFileSet::PrintJSONSchema(CNcbiOstream& out) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintJSONSchema(out);
     }
 }
 

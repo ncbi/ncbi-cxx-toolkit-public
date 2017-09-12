@@ -122,6 +122,9 @@ void CDataTool::Init(void)
     d->AddOptionalKey("fxs", "XMLSchemaFile",
                       "write XML Schema file (\"-fxs m\" writes modular Schema file)",
                       CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("fjs", "JSONSchemaFile",
+                      "write JSON Schema file",
+                      CArgDescriptions::eOutputFile);
     d->AddOptionalKey("fd", "SpecificationDump",
                       "write specification dump file (datatool internal format)",
                       CArgDescriptions::eOutputFile);
@@ -352,6 +355,11 @@ bool CDataTool::ProcessModules(void)
             generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
             ax.CloseFile();
         }
+    }
+
+    if ( const CArgValue& ax = args["fjs"] ) {
+        generator.GetMainModules().PrintJSONSchema(ax.AsOutputFile());
+        ax.CloseFile();
     }
 
     if ( !generator.Check() ) {

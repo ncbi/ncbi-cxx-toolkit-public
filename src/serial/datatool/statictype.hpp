@@ -41,6 +41,7 @@ class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
 
@@ -225,6 +226,7 @@ class CAnyContentDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
 

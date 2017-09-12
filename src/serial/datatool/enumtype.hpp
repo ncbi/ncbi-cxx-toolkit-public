@@ -121,6 +121,7 @@ public:
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
+    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;

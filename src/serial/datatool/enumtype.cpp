@@ -117,6 +117,46 @@ void CEnumDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
     }
 }
 
+void CEnumDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool) const
+{
+    PrintASNNewLine(out, indent) << "\"type\": " << (IsInteger() ? "\"integer\"" : "\"string\"") << ',';
+    PrintASNNewLine(out, indent) << "\"enum\": [";
+
+#if 0
+    bool first = true;
+    ITERATE ( TValues, i, m_Values ) {
+        if (!first) {
+            out << ", ";
+        } else {
+            first = false;
+        }
+        if (IsInteger()) {
+            out << i->GetValue();
+        } else {
+            out << "\"" << i->GetName() << "\"";
+        }
+    }
+#else
+    if (IsInteger()) {
+        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(cout, ", ",
+            [](ostream& out, const TValue& e) {
+                out << e.GetValue();
+            }));
+    } else {
+        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(cout, ", ",
+            [](ostream& out, const TValue& e) {
+                out << "\"" << e.GetName() << "\"";
+            }));
+    }
+#endif
+
+    const CDataMember* mem = GetDataMember();
+    if (mem && !mem->Optional()) {
+        required.push_back(mem->GetName());
+    }
+    out << ']';
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi

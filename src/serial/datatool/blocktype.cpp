@@ -115,6 +115,107 @@ void CDataMemberContainerType::PrintSpecDumpExtra(CNcbiOstream& out, int indent)
     m_LastComments.PrintASN(out, indent, CComments::eNoEOL);
 }
 
+void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only) const
+{
+    bool hasAttlist= false, isAttlist= false;
+    bool isSimple= false, isSimpleSeq= false;
+    bool isSimpleContainer= false;
+    const CDataMember* data = GetDataMember();
+    bool hasNotag = data && data->Notag();
+    list<string> this_req;
+    list<string>& req = (hasNotag || contents_only) ? required : this_req;
+
+// see PrintXMLSchema for more
+    hasAttlist = find_if(m_Members.begin(), m_Members.end(),
+        [](const TMembers::value_type& e) { return e->Attlist();}) != m_Members.end();
+    if ((hasAttlist && GetMembers().size()==2) ||
+        (!hasAttlist && GetMembers().size()==1)) {
+        ITERATE ( TMembers, i, GetMembers() ) {
+            if (i->get()->Attlist()) {
+                continue;
+            }
+            if (i->get()->SimpleType()) {
+                isSimple = true;
+            } else {
+                const CUniSequenceDataType* typeSeq =
+                    dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
+                const CDataMemberContainerType* data =
+                    dynamic_cast<const CDataMemberContainerType*>(i->get()->GetType());
+                isSimpleSeq = typeSeq != 0 || data != 0;
+                isSimpleContainer = data != 0;
+                if (isSimpleSeq) {
+                    const CDataMember *mem = i->get()->GetType()->GetDataMember();
+                    if (mem) {
+                        if (!mem->Notag()) {
+                            isSimpleSeq = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    bool first = true;
+    if (!hasAttlist && (isSimpleSeq || isSimpleContainer)) {
+        ITERATE ( TMembers, i, m_Members ) {
+            if (!first) {
+                out << ",";
+            } else {
+                first = false;
+            }
+            const CDataMember& member = **i;
+            member.PrintJSONSchema(out, indent, required);
+        }
+        return;
+    }
+
+    if (!contents_only) {
+        PrintASNNewLine(out, indent) << "\"type\": \"object\",";
+        PrintASNNewLine(out, indent++) << "\"properties\": {";
+    }
+
+    first = true;
+    ITERATE ( TMembers, i, m_Members ) {
+        if (!first) {
+            out << ",";
+        } else {
+            first = false;
+        }
+        const CDataMember& member = **i;
+        if (member.Notag() && (isSimple || isSimpleSeq)) {
+            PrintASNNewLine(out, indent++) << "\"" << "#" << member.GetName() << "\": {";
+            member.PrintJSONSchema(out, indent, req, false);
+            PrintASNNewLine(out, --indent) << "}";
+        }
+        else if (!member.Notag() && !member.Attlist()) {
+            PrintASNNewLine(out, indent++) << "\"" << member.GetName() << "\": {";
+            member.PrintJSONSchema(out, indent, req, false);
+            PrintASNNewLine(out, --indent) << "}";
+        }
+        else {
+            member.PrintJSONSchema(out, indent, req, true);
+        }
+    }
+
+    if (!contents_only) {
+        PrintASNNewLine(out, --indent) << "}";
+        if (!req.empty()) {
+            cout << ',';
+            PrintASNNewLine(out, indent) << "\"required\": [";
+            transform(req.begin(), req.end(), Dt_ostream_iterator<string>(cout, ", "),
+                [](const string& e) {
+                    return string("\"").append(e).append("\"");
+                });
+            req.clear();
+            cout << "]";
+        }
+        out << ",";
+        PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
+    }
+    if (data && !data->Notag() && !data->Optional() && !data->Attlist()) {
+        required.push_back(data->GetName());
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
@@ -1001,6 +1102,11 @@ void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) 
         }
         type->PrintSpecDump(out, indent);
     }
+}
+
+void CDataMember::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only) const
+{
+    GetType()->PrintJSONSchema(out, indent, required, contents_only);
 }
 
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const

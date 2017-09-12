@@ -135,6 +135,109 @@ void CChoiceDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
+void CChoiceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only) const
+{
+    TMembers::const_iterator att = find_if( m_Members.begin(), m_Members.end(), [](const TMembers::value_type& e) { return e->Attlist();});
+    bool first = true;
+#if 0
+/*
+    tried to combine allOf and oneOf
+    I have failed to make it work
+    I get valid schema, but instance validation fails
+*/
+    if (att != m_Members.end()) {
+        if (first) {
+            first = false;
+            PrintASNNewLine(out, indent++) << "\"definitions\": {";
+        } else {
+            cout << ',';
+        }
+        PrintASNNewLine(out, indent++) << "\"" << "attributes" << "\": {";
+        (*att)->PrintJSONSchema(out,indent);
+        PrintASNNewLine(out, --indent) << "}";
+        PrintASNNewLine(out, --indent) << "},";
+    }
+#endif
+
+    PrintASNNewLine(out, indent++) << "\"oneOf\": [";
+    ITERATE ( TMembers, i, m_Members ) {
+        const CDataMember& member = **i;
+        if (!member.Attlist()) {
+            if (!first) {
+                out << ",";
+            } else {
+                first = false;
+            }
+#if 0
+/*
+tried to combine allOf and oneOf
+I have failed to make it work
+I get valid schema, but instance validation fails
+*/
+            if (member.Notag()) {
+                PrintASNNewLine(out, indent++) << "{";
+                member.PrintJSONSchema(out, indent);
+                PrintASNNewLine(out, --indent) << "}";
+            } else {
+                PrintASNNewLine(out, indent++) << "{";
+                if (att) {
+                    PrintASNNewLine(out, indent++) << "\"allOf\": [";
+                    PrintASNNewLine(out, indent)   << "{\"$ref\": \"#/definitions/" << this->GetMemberName() << "/definitions/attributes\"},";
+                    PrintASNNewLine(out, indent++) << "{";
+                }
+
+
+                PrintASNNewLine(out, indent)   << "\"type\": \"object\",";
+                PrintASNNewLine(out, indent++) << "\"properties\": {";
+                PrintASNNewLine(out, indent++) << "\"" << member.GetName() << "\": {";
+                member.PrintJSONSchema(out, indent);
+                PrintASNNewLine(out, --indent) << "}";
+                PrintASNNewLine(out, --indent) << "},";
+                PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
+
+                if (att) {
+                    PrintASNNewLine(out, --indent) << "}";
+                    PrintASNNewLine(out, --indent) << "]";
+                }
+
+
+                PrintASNNewLine(out, --indent) << "}";
+            }
+#else
+            if (member.Notag()) {
+                PrintASNNewLine(out, indent++) << "{";
+                member.PrintJSONSchema(out, indent, required);
+                PrintASNNewLine(out, --indent) << "}";
+            } else {
+                list<string> req;
+                PrintASNNewLine(out, indent++) << "{";
+                PrintASNNewLine(out, indent)   << "\"type\": \"object\",";
+                PrintASNNewLine(out, indent++) << "\"properties\": {";
+                if (att != m_Members.end()) {
+                    (*att)->PrintJSONSchema(out, indent, req, true);
+                    out << ",";
+                }
+                PrintASNNewLine(out, indent++) << "\"" << member.GetName() << "\": {";
+                member.PrintJSONSchema(out, indent, req);
+                PrintASNNewLine(out, --indent) << "}";
+                PrintASNNewLine(out, --indent) << "},";
+                if (!req.empty()) {
+                    PrintASNNewLine(out, indent) << "\"required\": [";
+                    transform(req.begin(), req.end(), Dt_ostream_iterator<string>(cout, ", "),
+                        [](const string& e) {
+                            return string("\"").append(e).append("\"");
+                        });
+                    cout << "],";
+                }
+                PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
+                PrintASNNewLine(out, --indent) << "}";
+            }
+#endif
+        }
+    }
+    PrintASNNewLine(out, --indent) << "]";
+}
+
 void CChoiceDataType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();

@@ -60,6 +60,16 @@ string CReferenceDataType::GetSpecKeyword(void) const
     return string("/") + GetUserTypeName();
 }
 
+void CReferenceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool) const
+{
+    PrintASNNewLine(out, indent);
+    out << "\"$ref\": \"#/definitions/" << m_UserTypeName << "\"";
+    const CDataMember* data = GetDataMember();
+    if (data && !data->Notag() && !data->Optional()) {
+        required.push_back(data->GetName());
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi

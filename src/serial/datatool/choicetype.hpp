@@ -42,6 +42,7 @@ class CChoiceDataType : public CDataMemberContainerType
     typedef CDataMemberContainerType CParent;
 public:
     virtual void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
 
     void FixTypeTree(void) const;
     bool CheckValue(const CDataValue& value) const;

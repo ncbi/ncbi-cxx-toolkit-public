@@ -220,6 +220,53 @@ void CDataTypeModule::PrintSpecDump(CNcbiOstream& out) const
     }
 }
 
+void CDataTypeModule::PrintJSONSchema(CNcbiOstream& out) const
+{
+    out << "{";
+    int indent = 1;
+    PrintASNNewLine(out, indent) << "\"$schema\": \"http://json-schema.org/draft-04/schema#\",";
+    list<string> req;
+    bool first = true;
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        if (i->second->GetGlobalType() != CDataType::eElement || CDataType::GetSourceDataSpec() != EDataSpec::eJSON) {
+            if (first) {
+                first = false;
+                PrintASNNewLine(out, indent++) << "\"definitions\": {";
+            } else {
+                cout << ',';
+            }
+            PrintASNNewLine(out, indent++) << "\"" << i->first << "\": {";
+            i->second->PrintJSONSchema(out,indent, req);
+            PrintASNNewLine(out, --indent) << "}";
+        }
+    }
+    if (!first) {
+        PrintASNNewLine(out, --indent) << "}";
+    }
+
+    if (CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
+        ITERATE ( TDefinitions, i, m_Definitions ) {
+            if (i->second->GetGlobalType() == CDataType::eElement) {
+                if (!first) {
+                    cout << ',';
+                }
+                i->second->PrintJSONSchema(out,indent, req);
+            }
+        }
+    } else if (!m_Definitions.empty()) {
+// as an example
+        cout << ',';
+        PrintASNNewLine(out, indent) << "\"type\": \"object\",";
+        PrintASNNewLine(out, indent++) << "\"properties\": {";
+        PrintASNNewLine(out, indent++) << "\"" << m_Definitions.front().first << "\": {";
+        PrintASNNewLine(out, indent) << "\"$ref\": \"#/definitions/" << m_Definitions.front().first << "\"";
+        PrintASNNewLine(out, --indent) << "}";
+        PrintASNNewLine(out, --indent) << "},";
+        PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
+    }
+    PrintASNNewLine(out, --indent) << "}\n";
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const

@@ -52,6 +52,7 @@ public:
     // trivial definitions for CDataType's pure virtuals
     // (I *said* this was fake... ;-))
     void       PrintASN(CNcbiOstream&, int)     const { }
+    void       PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const override { }
     void       PrintXMLSchema(CNcbiOstream&, int, bool)     const { }
     void       PrintDTDElement(CNcbiOstream&, bool)   const { }
     bool       CheckValue(const CDataValue&)    const { return false; }
