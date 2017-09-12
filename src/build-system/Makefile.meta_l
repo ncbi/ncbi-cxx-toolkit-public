@@ -256,7 +256,8 @@ has_usr_locked = $(has_usr:%_l=%.usr.locked)
 
 ifeq ":" "$(NCBI_USING_FLAT_MAKEFILE):$(filter 0 1,$(proj_count))"
   $(has_usr_l_real): %_l.real:
-	@$(RWL) $(MAKE) $(MFLAGS_NR) $*.nonusr
+	@$(RWL) -base make__$(notdir $(CURDIR))_common \
+	    $(MAKE) $(MFLAGS_NR) $*.nonusr
 else
   $(has_usr_l_real): %_l.real: %.nonusr ;
 endif
