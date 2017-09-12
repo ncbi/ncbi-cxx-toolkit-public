@@ -17063,7 +17063,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_746)
 
     STANDARD_SETUP
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "BadInternalCharacter", 
-                              "Gene locus contains undesired character"));
+                              "Gene locus contains undesired character '|'"));
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);

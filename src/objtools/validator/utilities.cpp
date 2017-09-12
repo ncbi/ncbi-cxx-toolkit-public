@@ -737,8 +737,7 @@ bool HasBadCharacter (string str)
 {
     if (NStr::Find (str, "?") != string::npos
         || NStr::Find (str, "!") != string::npos
-        || NStr::Find (str, "~") != string::npos
-        || NStr::Find(str, "|") != string::npos) {
+        || NStr::Find (str, "~") != string::npos) {
         return true;
     } else {
         return false;

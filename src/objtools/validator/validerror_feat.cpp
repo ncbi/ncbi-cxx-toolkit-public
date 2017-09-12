@@ -1459,6 +1459,10 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                  
     if (gene.IsSetLocus()) {
         ValidateCharactersInField (gene.GetLocus(), "Gene locus", feat);
+        if (NStr::Find(gene.GetLocus(), "|") != NPOS) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadInternalCharacter,
+                "Gene locus contains undesired character '|'", feat);
+        }
     }
 
       // check for SGML
