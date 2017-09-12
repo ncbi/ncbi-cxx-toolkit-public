@@ -5319,14 +5319,14 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
                 is_gap = true;
                 return true;
             } else if (s_AfterIsGapORN(stop, 1, len, vec)) {
-                return true;
+                return false;
             }
         } else if (tag == eSeqlocPartial_Nostart && start > 0) {
             if (s_BeforeIsGap(start, 1, vec) || s_BeforeIsGap(start, 2, vec)) {
                 is_gap = true;
                 return true;
             } else if (s_BeforeIsGapOrN(start, 1, vec)) {
-                return true;
+                return false;
             }
         }
     } catch ( exception& ) {
