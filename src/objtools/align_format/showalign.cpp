@@ -1032,22 +1032,11 @@ void CDisplaySeqalign::x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInf
         m_AlignedRegionsUrl =  CAlignFormatUtil::GetAlignedRegionsURL(seqUrlInfo,*seqID, m_Scope);
                                           
 
-        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > ZERO_GI)){     			                                
-            m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
-                                           m_Rid, 
-                                           m_CddRid, 
-                                           m_EntrezTerm, 
-                                           seqUrlInfo->isDbNa,
-                                           false,
-                                           true,                                           
-                                           m_cur_align,
-                                           m_LinkoutOrder,
-                                           seqUrlInfo->taxid,
-                                           m_DbName,
-                                           m_QueryNumber,                                                 
-                                           seqUrlInfo->user_url,
-                                           m_PreComputedResID,
-                                           m_LinkoutDB, m_MapViewerBuildName);
+        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > ZERO_GI)){     	
+            m_LinkoutInfo.cur_align = m_cur_align;
+            m_LinkoutInfo.taxid = seqUrlInfo->taxid;
+            m_LinkoutInfo.subjRange = seqUrlInfo->seqRange;
+            m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,m_LinkoutInfo);
         }        
     }                     
 }			
@@ -1840,6 +1829,17 @@ void CDisplaySeqalign::x_InitAlignParams(CSeq_align_set &actual_aln_list)
         if(feat_file != NcbiEmptyString && feat_file_index != NcbiEmptyString){
             m_DynamicFeature = new CGetFeature(feat_file, feat_file_index);
         }
+    }
+    if(m_AlignOption&eLinkout) {
+        string user_url = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "TOOL_URL") : "";                
+               
+
+        m_LinkoutInfo.Init(m_Rid, m_CddRid, m_EntrezTerm, m_IsDbNa,
+                           m_DbName, m_QueryNumber, user_url, m_PreComputedResID,
+                           m_LinkoutOrder, m_LinkoutDB, m_MapViewerBuildName);
+        
+        CRef<CSeq_id> wid = FindBestChoice(m_Scope.GetBioseqHandle(actual_aln_list.Get().front()->GetSeq_id(0)).GetBioseqCore()->GetId(), CSeq_id::WorstRank);        
+        wid->GetLabel(&m_LinkoutInfo.queryID, CSeq_id::eContent);                
     }
 }
 

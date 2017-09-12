@@ -2091,76 +2091,62 @@ static string s_MapDisabledLink(string lnk_displ)
     return linkText;
 }
 
-static list<string> s_GetLinkoutUrl(int linkout, 
+
+                                                                        
+static list<string> s_GetLinkoutUrl(int linkout,
                                     string giList,
                                     string labelList,
-                                    const string& rid,
-                                    const string& cdd_rid, 
-                                    const string& entrez_term,
-                                    bool is_na, 
-                                    TGi first_gi,
-                                    bool structure_linkout_as_group,
-                                    bool for_alignment, int cur_align,
-                                    string preComputedResID,
-                                    bool textLink = false,                                    
-                                    bool disableLink = false,
-                                    int taxid = 0,                                    
-                                    string taxname = "",
-                                    string database = "",
-                                    int query_number = 0,
-                                    string gnl = "",
-                                    string user_url = "")
+                                    TGi first_gi,                                    
+                                    CAlignFormatUtil::SLinkoutInfo &linkoutInfo,                                    
+                                    bool textLink = true)
+                                    
 {
     list<string> linkout_list;    
     string url_link,lnk_displ,lnk_title,lnkTitleInfo;
+ 
+    vector<string> accs;
+    NStr::Split(labelList,",",accs); 
+    string firstAcc = (accs.size() > 0)? accs[0] : labelList;
 
     if (linkout & eUnigene) {
         url_link = CAlignFormatUtil::GetURLFromRegistry("UNIGEN");        
         lnk_displ = textLink ? "UniGene" : kUnigeneImg;
-        if(!disableLink) {        
+        
             lnkTitleInfo = "UniGene cluster"; 
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"db",is_na ? "nucleotide" : "protein");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"dopt",is_na ? "nucleotide" : "protein");                                            
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);            
-        }
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"db",linkoutInfo.is_na ? "nucleotide" : "protein");
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"dopt",linkoutInfo.is_na ? "nucleotide" : "protein");                                            
+            url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kUnigeneDispl,"lnk",url_link);
         }        
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
-    if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){
+    if ((linkout & eStructure) && linkoutInfo.cdd_rid != "" && linkoutInfo.cdd_rid != "0"){
         string struct_link = CAlignFormatUtil::GetURLFromRegistry(
                                                              "STRUCTURE_URL");
 
         url_link = struct_link.empty() ? kStructureUrl : struct_link;
         lnk_displ = textLink ? "Structure" : kStructureImg;  
-        if(!disableLink) {
-            string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
-            vector<string> accs;
-            NStr::Split(labelList,",",accs); 
-            string firstAcc = (accs.size() > 0)? accs[0] : labelList;
+        
+        string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
             
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",
                 NStr::NumericToString(first_gi));                    
-            string  mapCDDParams;
-            if(NStr::Find(cdd_rid,"data_cache") != NPOS) {
-                mapCDDParams = "query_gi=" + preComputedResID;
-            }
-            else if (cdd_rid != "cdd_no_hits") {
-                mapCDDParams = "blast_CD_RID=" + cdd_rid;
-            }
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"cdd_params",mapCDDParams);            
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_view",structure_linkout_as_group ? "onegroup" : "onepair");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(entrez_term == NcbiEmptyString) ? "none":entrez_term);            
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,firstAcc,lnk_displ,"",linkTitle);
+        string  mapCDDParams;
+        if(NStr::Find(linkoutInfo.cdd_rid,"data_cache") != NPOS) {
+                mapCDDParams = "query_gi=" + linkoutInfo.preComputedResID;
         }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
+        else if (linkoutInfo.cdd_rid != "cdd_no_hits") {
+                mapCDDParams = "blast_CD_RID=" + linkoutInfo.cdd_rid;
         }
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"cdd_params",mapCDDParams);            
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_view",linkoutInfo.structure_linkout_as_group ? "onegroup" : "onepair");
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"taxname",(linkoutInfo.entrez_term == NcbiEmptyString) ? "none":linkoutInfo.entrez_term);            
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);
+        
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
         }        
@@ -2170,14 +2156,12 @@ static list<string> s_GetLinkoutUrl(int linkout,
     if (linkout & eGeo){
         url_link = CAlignFormatUtil::GetURLFromRegistry("GEO");        
         lnk_displ = textLink ? "GEO Profiles" : kGeoImg; 
-        if(!disableLink) {        
-            lnkTitleInfo = "Expression profiles";
-            //gilist contains comma separated gis            
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
-        }
+        
+        lnkTitleInfo = "Expression profiles";
+        //gilist contains comma separated gis            
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
+        
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kGeoDispl,"lnk",url_link);
         }        
@@ -2194,16 +2178,13 @@ static list<string> s_GetLinkoutUrl(int linkout,
       else {
         lnk_displ = kGeneImg;
       }
-      if(!disableLink) {        
-        string uid = !is_na ? "PUID" : "NUID";
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
-        //gilist contains comma separated gis, change it to the following
-        giList = NStr::Replace(giList,",","[" + uid + "] OR ");
-        url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
-      }
-      else {
-        url_link = s_MapDisabledLink(lnk_displ);
-      } 
+      
+      string uid = !linkoutInfo.is_na ? "PUID" : "NUID";
+      url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
+      //gilist contains comma separated gis, change it to the following
+      giList = NStr::Replace(giList,",","[" + uid + "] OR ");
+      url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
+       
       if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kGeneDispl,"lnk",url_link);
       } 
@@ -2213,30 +2194,28 @@ static list<string> s_GetLinkoutUrl(int linkout,
 
     //if((linkout & eGenomicSeq) && !genomicSeqURL.empty()){  
     if((linkout & eGenomicSeq)){  //only for advanced view -> textlink = true
+    //if((linkout & eGenomeDataViewer)){  //only for advanced view -> textlink = true
         if(textLink) {
             url_link = kMapviewBlastHitParams;        
             lnk_displ = "Map Viewer";
-            if(!disableLink) {        
-                lnkTitleInfo = "BLAST hits on the " + taxname + " genome";
+            
+            lnkTitleInfo = "BLAST hits on the " + linkoutInfo.taxName + " genome";
 
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"gnl",NStr::URLEncode(gnl));
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"db",database);
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"is_na",is_na? "1" : "0");
-                user_url = (user_url.empty()) ? kMapviewBlastHitUrl : user_url;
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"user_url",user_url);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"gnl",NStr::URLEncode(linkoutInfo.gnl));
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"db",linkoutInfo.database);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"is_na",linkoutInfo.is_na? "1" : "0");
+            string user_url = (linkoutInfo.user_url.empty()) ? kMapviewBlastHitUrl : linkoutInfo.user_url;
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"user_url",user_url);
 
-                string taxIDStr = (taxid > 0) ? NStr::IntToString(taxid) : "";
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid",taxIDStr);  
+            string taxIDStr = (linkoutInfo.taxid > 0) ? NStr::IntToString(linkoutInfo.taxid) : "";
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid",taxIDStr);  
     
-                string queryNumStr = (query_number > 0) ? NStr::IntToString(query_number) : "";
-                url_link = CAlignFormatUtil::MapTemplate(url_link,"query_number",queryNumStr);  //gi,term
+            string queryNumStr = (linkoutInfo.query_number > 0) ? NStr::IntToString(linkoutInfo.query_number) : "";
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"query_number",queryNumStr);  //gi,term
         
-                string giStr = (first_gi > ZERO_GI)? NStr::NumericToString(first_gi) : "";        
-                url_link = s_MapLinkoutGenParam(url_link,rid,giStr,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);        
-            }
-            else {
-                url_link = s_MapDisabledLink(lnk_displ);
-            }
+            string giStr = (first_gi > ZERO_GI)? NStr::NumericToString(first_gi) : "";        
+            url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giStr,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);        
+            
             if(textLink) {
                 url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
             }
@@ -2247,13 +2226,10 @@ static list<string> s_GetLinkoutUrl(int linkout,
     else if((linkout & eMapviewer)){  
         url_link = kMapviwerUrl;
         lnk_displ = textLink ? "Map Viewer" : kMapviwerImg;        
-        if(!disableLink) {        
-            string linkTitle = " title=\"View <@label@> aligned to the "  + taxname + " genome\"";  
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
-        }
+        
+        string linkTitle = " title=\"View <@label@> aligned to the "  + linkoutInfo.taxName + " genome\"";  
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
         }
@@ -2261,37 +2237,31 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);        
     }
     //View Bioassays involving <accession
-    if(linkout & eBioAssay && is_na){
+    if(linkout & eBioAssay && linkoutInfo.is_na){
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");                        
         lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayNucImg;            
-        if(!disableLink) {                    
-            string linkTitle = " title=\"View Bioassays involving <@label@>\"";
-            //gilist contains comma separated gis, change it to the following
-            giList = NStr::Replace(giList,",","[RNATargetGI] OR ");
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
-        }
+        
+        string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+        //gilist contains comma separated gis, change it to the following
+        giList = NStr::Replace(giList,",","[RNATargetGI] OR ");
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
         }
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
-    else if (linkout & eBioAssay && !is_na) {
+    else if (linkout & eBioAssay && !linkoutInfo.is_na) {
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");                        
         lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayProtImg;
-        if(!disableLink) {        
-            lnkTitleInfo ="Bioassay data";
-            string linkTitle = " title=\"View Bioassays involving <@label@>\"";
-            //gilist contains comma separated gis, change it to the following
-            giList = NStr::Replace(giList,",","[PigGI] OR ");
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
-        }
+        
+        lnkTitleInfo ="Bioassay data";
+        string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+        //gilist contains comma separated gis, change it to the following
+        giList = NStr::Replace(giList,",","[PigGI] OR ");
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
+        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
         }
@@ -2301,23 +2271,44 @@ static list<string> s_GetLinkoutUrl(int linkout,
     if(linkout & eReprMicrobialGenomes){
         url_link = CAlignFormatUtil::GetURLFromRegistry("REPR_MICROBIAL_GENOMES");                        
         lnk_displ = textLink ? "Genome" : kReprMicrobialGenomesImg;            
-        if(!disableLink) {            
-            lnkTitleInfo = "genomic information";
-            //gilist contains comma separated gis            
-            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
-        }
-        else {
-            url_link = s_MapDisabledLink(lnk_displ);
-        }        
+        
+        lnkTitleInfo = "genomic information";
+        //gilist contains comma separated gis            
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
+                
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kReprMicrobialGenomesDispl,"lnk",url_link);
         }
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
-    }
+    }    
+    if(linkout & eGenomeDataViewer){
+    //if(linkout & eGenomicSeq){
+        url_link = CAlignFormatUtil::GetURLFromRegistry("GENOME_DATA_VIEWER");                        
+        lnk_displ = textLink ? "Genomic data viewer" : kGenomeDataViewerImg;            
+        
+        lnkTitleInfo = "genomic data information";                
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,lnkTitleInfo);
+                
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
+
+        TSeqPos seqFrom = linkoutInfo.subjRange.GetFrom();
+        seqFrom = (seqFrom == 0) ? seqFrom : seqFrom - 1;
+
+        TSeqPos seqTo = linkoutInfo.subjRange.GetTo();
+        seqTo = (seqTo == 0) ? seqTo : seqTo - 1;
+
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"from",seqFrom);//-1
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"to",seqTo);//-1
+
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kGenomeDataViewerDispl,"lnk",url_link);
+        }
+        url_link = CAlignFormatUtil::MapProtocol(url_link);        
+        linkout_list.push_back(url_link);        
+    }     
     return linkout_list;
 }
-
 
 ///Get list of linkouts for one sequence
 list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
@@ -2338,18 +2329,31 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     wid->GetLabel(&label, CSeq_id::eContent);        
     string giString = NStr::NumericToString(gi);
     first_gi = (first_gi == ZERO_GI) ? gi : first_gi;
+
+
+
+    SLinkoutInfo linkoutInfo;
+    linkoutInfo.Init(rid,
+                     cdd_rid, 
+                     entrez_term,
+                     is_na,            
+                     "",  //database
+                     0,  //query_number
+                     "", //user_url
+                     preComputedResID,
+                     "", //linkoutOrder
+                     structure_linkout_as_group,
+                     for_alignment);
+
+    linkoutInfo.cur_align = cur_align;
+    linkoutInfo.taxid = 0;
+    
     linkout_list = s_GetLinkoutUrl(linkout, 
-                                  giString,
-                                  label,
-                                  rid,
-                                  cdd_rid, 
-                                  entrez_term,
-                                  is_na, 
-                                  first_gi,
-                                  structure_linkout_as_group,
-                                  for_alignment, 
-                                  cur_align,                                  
-                                  preComputedResID);
+                                   giString,
+                                   label,                                  
+                                   first_gi,
+                                   linkoutInfo,
+                                   false); //textlink                                 
 
     return linkout_list;
 }
@@ -2382,6 +2386,9 @@ static int s_LinkLetterToType(string linkLetter)
     else if(linkLetter == "R") {
         linkType = eReprMicrobialGenomes;
     }             
+    else if(linkLetter == "V") {
+        linkType = eGenomeDataViewer;
+    }                 
     return linkType;
 }
 
@@ -2435,7 +2442,10 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
         }        
         if(linkout & eReprMicrobialGenomes){        
             s_AddLinkoutInfo(linkout_map,eReprMicrobialGenomes,cur_id);            
-        }                          
+        }            
+        if(linkout & eGenomeDataViewer){        
+            s_AddLinkoutInfo(linkout_map,eGenomeDataViewer,cur_id);            
+        }                    
 }
 
 void 
@@ -2496,22 +2506,11 @@ void s_AddOtherRelatedInfoLinks(CBioseq::TId& cur_id,
     }
 }
 
+
+
+//reset:taxname,gnl
 static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,                                             
-                                        const string& rid,
-                                        const string& cdd_rid, 
-                                        const string& entrez_term,
-                                        bool is_na,                                                                                                   
-                                        bool structure_linkout_as_group,
-                                        bool for_alignment, 
-                                        int cur_align,
-                                        string& linkoutOrder,
-                                        int taxid,
-                                        string &database,
-                                        int query_number,                                                 
-                                        string &user_url,
-                                        string &preComputedResID,
-                                        //ILinkoutDB* linkoutdb,
-                                        //const string& mv_build_name,
+                                        CAlignFormatUtil::SLinkoutInfo &linkoutInfo,                                        
                                         map<int, vector < CBioseq::TId > >  &linkout_map,
                                         bool getIdentProteins)
                                                  
@@ -2519,21 +2518,20 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
     list<string> linkout_list;    
     
     vector<string> linkLetters;
-    NStr::Split(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
+    NStr::Split(linkoutInfo.linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,V,E,S,B,R"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
         TGi first_gi = ZERO_GI;
         vector < CBioseq::TId > idList;
         int linkout = s_LinkLetterToType(linkLetters[i]);        
-        string taxName;
+        linkoutInfo.taxName.clear();
         if(linkout & (eMapviewer | eGenomicSeq)) {            
             linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eMapviewer;                        
-            taxName = s_GetTaxName(taxid);
+            linkoutInfo.taxName = s_GetTaxName(linkoutInfo.taxid);
         }
         if(linkout_map.find(linkout) != linkout_map.end()) {
             idList = linkout_map[linkout];                 
-        }
-        bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (cdd_rid == "" || cdd_rid == "0")));
-        
+        }        
+        bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (linkoutInfo.cdd_rid == "" || linkoutInfo.cdd_rid == "0")));
 
         string giList,labelList;        
         for (size_t i = 0; i < idList.size(); i++) {
@@ -2549,49 +2547,50 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
             labelList += label;
 
             //use only first gi for bioAssay protein
-            if(!giList.empty() && (linkout & eBioAssay) && !is_na) continue;
+            if(!giList.empty() && (linkout & eBioAssay) && !linkoutInfo.is_na) continue;
             if(!giList.empty()) giList += ",";
             giList += NStr::NumericToString(gi);
         }
 
-        string gnl;
+        linkoutInfo.gnl.clear();
         if(!disableLink && linkout == eGenomicSeq) {            
-            gnl = s_GetBestIDForURL(cur_id);
+            linkoutInfo.gnl = s_GetBestIDForURL(cur_id);
         }
-
+        
         if(!disableLink) {//
-        //The following list will contain only one entry for single linkout value
+            //The following list will contain only one entry for single linkout value
             list<string> one_linkout = s_GetLinkoutUrl(linkout, 
-                                  giList,
-                                  labelList,
-                                  rid,
-                                  cdd_rid, 
-                                  entrez_term,
-                                  is_na, 
-                                  first_gi,
-                                  structure_linkout_as_group,
-                                  for_alignment, 
-                                  cur_align,
-                                  preComputedResID,
-                                  true,
-                                  false, // remove disableLink after design is confirmed
-                                  taxid,
-                                  taxName,
-                                  database,
-                                  query_number,
-                                  gnl,
-                                  user_url);
+                                                          giList,
+                                                          labelList,                                  
+                                                          first_gi,
+                                                          linkoutInfo);                                 
 
             list<string>::iterator iter = one_linkout.begin();        
             linkout_list.push_back(*iter);
         }
  }
  if(getIdentProteins) {
-    s_AddOtherRelatedInfoLinks(cur_id,rid,is_na,for_alignment,cur_align,linkout_list); 
+    s_AddOtherRelatedInfoLinks(cur_id,linkoutInfo.rid,linkoutInfo.is_na,linkoutInfo.for_alignment,linkoutInfo.cur_align,linkout_list); 
  }
  return linkout_list;
 }
 
+list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_line > > &bdl,                                             
+                                                    CAlignFormatUtil::SLinkoutInfo &linkoutInfo)                                                 
+{
+    list<string> linkout_list;
+    map<int, vector < CBioseq::TId > >  linkout_map;
+    if(bdl.size() > 0) {    
+    	GetBdlLinkoutInfo(bdl,linkout_map, linkoutInfo.linkoutdb, linkoutInfo.mv_build_name);
+    	list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
+    	CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();    
+        linkout_list = s_GetFullLinkoutUrl(cur_id,                          
+                                           linkoutInfo,                                       
+                                           linkout_map,
+                                           !linkoutInfo.is_na && bdl.size() > 1);                                           
+    }
+    return linkout_list;
+}
 
 
 list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_line > > &bdl,                                             
@@ -2617,23 +2616,28 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
     if(bdl.size() > 0) {    
     	GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
     	list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
-    	CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();    
-    	linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
-                                       rid,
-                                       cdd_rid, 
-                                       entrez_term,
-                                       is_na,                                                                                                   
-                                       structure_linkout_as_group,
-                                       for_alignment, 
-                                       cur_align,
-                                       linkoutOrder,
-                                       taxid,
-                                       database,
-                                       query_number,                                                 
-                                       user_url,
-                                       preComputedResID,                                      
-                                       linkout_map,
-                                       !is_na && bdl.size() > 1); 
+    	CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();  
+
+        SLinkoutInfo linkoutInfo;
+        linkoutInfo.Init(rid,
+                         cdd_rid, 
+                         entrez_term,
+                         is_na,            
+                         database,
+                         query_number,                                                 
+                         user_url,
+                         preComputedResID,
+                         linkoutOrder,
+                         structure_linkout_as_group,
+                         for_alignment);
+
+        linkoutInfo.cur_align = cur_align;
+        linkoutInfo.taxid = taxid;
+
+        linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
+                                        linkoutInfo,                                        
+                                        linkout_map,
+                                        !is_na && bdl.size() > 1);
     }
     return linkout_list;
 }
@@ -2661,24 +2665,26 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(CBioseq::TId& cur_id,
 
     map<int, vector < CBioseq::TId > >  linkout_map;        
     GetBdlLinkoutInfo(cur_id,linkout_map, linkoutdb, mv_build_name);
-    
+    SLinkoutInfo linkoutInfo;
+    linkoutInfo.Init(rid,
+                     cdd_rid, 
+                     entrez_term,
+                     is_na,            
+                     database,
+                     query_number,                                                 
+                     user_url,
+                     preComputedResID,
+                     linkoutOrder,
+                     structure_linkout_as_group,
+                     for_alignment);
+
+    linkoutInfo.cur_align = cur_align;
+    linkoutInfo.taxid = taxid;
+
     linkout_list = s_GetFullLinkoutUrl(cur_id,                                             
-                                       rid,
-                                       cdd_rid, 
-                                       entrez_term,
-                                       is_na,                                                                                                   
-                                       structure_linkout_as_group,
-                                       for_alignment, 
-                                       cur_align,
-                                       linkoutOrder,
-                                       taxid,
-                                       database,
-                                       query_number,                                                 
-                                       user_url,
-                                       preComputedResID,                                      
+                                       linkoutInfo,                                        
                                        linkout_map,
                                        getIdentProteins);
- 
     return linkout_list;
 }
 
