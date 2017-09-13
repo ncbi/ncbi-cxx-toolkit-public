@@ -143,11 +143,11 @@ CThreadPool* s_CreateThreadPool()
     return nullptr;
 }
 
-CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish) :
+CAsyncWriteCache::CAsyncWriteCache(ICache* main, ICache* writer, double grace_period) :
     m_Main(main),
     m_Writer(writer),
     m_ThreadPool(s_CreateThreadPool()),
-    m_WaitToFinish(wait_to_finish)
+    m_GracePeriod(max(grace_period, 0.0))
 {
     _ASSERT(main);
     _ASSERT(writer);
@@ -159,10 +159,11 @@ CAsyncWriteCache::~CAsyncWriteCache()
 {
     if (!m_ThreadPool) return;
 
-    CDeadline deadline(m_WaitToFinish);
+    CDeadline deadline(m_GracePeriod);
 
-    while (m_ThreadPool->GetQueuedTasksCount() && m_ThreadPool->GetExecutingTasksCount() && !deadline.IsExpired()) {
-        SleepMilliSec(250);
+    while (m_ThreadPool->GetQueuedTasksCount() && !deadline.IsExpired()) {
+        auto sleep = min(deadline.GetRemainingTime().GetAsDouble(), 0.1);
+        SleepMilliSec(sleep * kMilliSecondsPerSecond);
     }
 }
 

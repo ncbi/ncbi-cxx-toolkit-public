@@ -55,11 +55,11 @@ public:
     ///    Main ICache instance used for all but write/store operations
     /// @param writer
     ///    ICache instance used solely for write/store operations (in a separate thread, unless disabled)
-    /// @param wait_to_finish
+    /// @param grace_period
     ///    Seconds to wait for the write thread to wait before cancelling all its queued tasks.
     ///    Zero means cancelling all queued tasks immediately,
     ///    already executing task (if any) will try to finish.
-    CAsyncWriteCache(ICache* main, ICache* writer, unsigned wait_to_finish = 0);
+    CAsyncWriteCache(ICache* main, ICache* writer, double grace_period = 0.0);
 
     /// ICache overrides.
     ///
@@ -96,7 +96,7 @@ private:
     unique_ptr<ICache> m_Main;
     shared_ptr<ICache> m_Writer;
     shared_ptr<CThreadPool> m_ThreadPool;
-    unsigned m_WaitToFinish;
+    double m_GracePeriod;
 };
 
 
