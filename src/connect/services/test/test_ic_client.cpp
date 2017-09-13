@@ -431,8 +431,7 @@ static void s_AsyncTest()
     unique_ptr<CNetICacheClient> writer_cache(new CNetICacheClient(service, cache_name, s_ClientName));
     writer_cache->SetFlags(ICache::fBestReliability);
 
-    CAsyncWriteCache api(main_cache.release(), writer_cache.release(), 20);
-    CNetICacheClient search_api(service, cache_name, s_ClientName);
+    CNetICacheClient api(service, cache_name, s_ClientName);
 
     const int kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
@@ -448,54 +447,49 @@ static void s_AsyncTest()
     SCtx ctx;
     ctx.key = to_string(time(NULL)) + "t" + to_string(random_uint8());
     vector<string> subkeys;
-    vector<unique_ptr<IWriter>> writers;
 
-    for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
-        ctx.subkey = to_string(random_uint8());
-        subkeys.push_back(ctx.subkey);
+    {
+        CAsyncWriteCache async_api(main_cache.release(), writer_cache.release(), 100.0);
+        vector<unique_ptr<IWriter>> writers;
 
-        try {
-            // Creating blob
-            generate_n(src.begin(), src.size(), random_uint8);
-            auto ptr = reinterpret_cast<const char*>(src.data());
 
-            writers.emplace_back(api.GetWriteStream(ctx.key, ctx.version, ctx.subkey));
-            CWStream os(writers.back().get());
-            os.write(ptr, kSrcSize);
+        for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
+            ctx.subkey = to_string(random_uint8());
+            subkeys.push_back(ctx.subkey);
 
-            BOOST_REQUIRE_MESSAGE(os.good(), "Write failed" << ctx);
+            try {
+                // Creating blob
+                generate_n(src.begin(), src.size(), random_uint8);
+                auto ptr = reinterpret_cast<const char*>(src.data());
+
+                writers.emplace_back(async_api.GetWriteStream(ctx.key, ctx.version, ctx.subkey));
+                CWStream os(writers.back().get());
+                os.write(ptr, kSrcSize);
+
+                BOOST_REQUIRE_MESSAGE(os.good(), "Write failed" << ctx);
 
 #ifdef NCBI_THREADS
-            // Blob is not yet created as writer is not yet destroyed (actual async write happens after)
-            BOOST_REQUIRE_MESSAGE(!api.HasBlobs(ctx.key, ctx.subkey), "Blob does exist" << ctx);
+                // Blob is not yet created as writer is not yet destroyed (actual async write happens after)
+                BOOST_REQUIRE_MESSAGE(!async_api.HasBlobs(ctx.key, ctx.subkey), "Blob does exist" << ctx);
 #endif
+            }
+            catch (...) {
+                BOOST_ERROR("An exception has been caught" << ctx);
+                throw;
+            }
         }
-        catch (...) {
-            BOOST_ERROR("An exception has been caught" << ctx);
-            throw;
-        }
-    }
 
-    // Actual async write starts here
-    writers.clear();
+        // Actual async write starts here
+    }
 
     try {
         using namespace ncbi::grid::netcache::search;
 
-        auto received = search_api.Search(fields::key == ctx.key);
+        auto received = api.Search(fields::key == ctx.key);
 
-        CDeadline deadline(100);
-
-        // Waiting for all blobs to be stored
-        while (received.size() != subkeys.size()) {
-            SleepMilliSec(250);
-            received = search_api.Search(fields::key == ctx.key);
-
-            if (deadline.IsExpired()) {
-                BOOST_ERROR("Received unexpected number of subkeys: " <<
-                        received.size() << " vs " << subkeys.size());
-                break;
-            }
+        if (received.size() != subkeys.size()) {
+            BOOST_ERROR("Received unexpected number of subkeys: " <<
+                    received.size() << " vs " << subkeys.size());
         }
 
         set<string> expected(subkeys.begin(), subkeys.end());
