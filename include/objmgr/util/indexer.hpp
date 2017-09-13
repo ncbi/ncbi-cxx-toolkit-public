@@ -549,8 +549,8 @@ private:
 public:
     // Getters
 
-     const TSeqPos GetStart (void) const { return m_Start; }
-     const TSeqPos GetEnd (void) const { return m_End; }
+     TSeqPos GetStart (void) const { return m_Start; }
+     TSeqPos GetEnd (void) const { return m_End; }
      const string GetGapType (void) const { return m_GapType; }
      const vector<string>& GetGapEvience (void) const { return m_GapEvidence; }
      bool IsAssemblyGap (void) const { return m_IsAssemblyGap; }
@@ -637,8 +637,8 @@ public:
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mRNA)
     CSeqFeatData::ESubtype GetSubtype (void) const { return m_Subtype; }
 
-     const TSeqPos GetStart (void) const { return m_Start; }
-     const TSeqPos GetEnd (void) const { return m_End; }
+    TSeqPos GetStart (void) const { return m_Start; }
+    TSeqPos GetEnd (void) const { return m_End; }
 
     // Get sequence letters under feature intervals
     string GetSequence (void);
