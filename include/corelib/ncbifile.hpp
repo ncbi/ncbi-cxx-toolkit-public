@@ -2957,11 +2957,13 @@ private:
 
 /// File finding flags
 enum EFindFiles {
-    fFF_File       = (1 << 0),           ///< find files
-    fFF_Dir        = (1 << 1),           ///< find directories
-    fFF_Recursive  = (1 << 2),           ///< descend into sub-dirs
-    fFF_Nocase     = (1 << 3),           ///< case-insensitive name search
-    fFF_Default    = fFF_File | fFF_Dir  ///< default behavior
+    fFF_File       = (1 << 0),            ///< find files
+    fFF_Dir        = (1 << 1),            ///< find directories
+    fFF_All        = fFF_File | fFF_Dir,  ///< find files and directories
+                                          ///< (used automatically if fFF_File or fFF_Dir has not specified)
+    fFF_Recursive  = (1 << 2),            ///< descend into sub-dirs
+    fFF_Nocase     = (1 << 3),            ///< case-insensitive name search
+    fFF_Default    = fFF_All              ///< default behavior
 };
 /// Bitwise OR of "EFindFiles"
 typedef int TFindFiles; 
@@ -2975,10 +2977,9 @@ void FindFilesInDir(const CDir&            dir,
                     TFindFunc&             find_func,
                     TFindFiles             flags = fFF_Default)
 {
-    TFindFiles find_type = flags & (fFF_Dir | fFF_File);
+    TFindFiles find_type = flags & fFF_All;
     if ( find_type == 0 ) {
-        // nothing to find
-        return;
+        flags |= fFF_All;
     }
     unique_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | CDir::fIgnorePath));
@@ -3029,10 +3030,9 @@ void FindFilesInDir(const CDir&   dir,
                     TFindFunc&    find_func,
                     TFindFiles    flags = fFF_Default)
 {
-    TFindFiles find_type = flags & (fFF_Dir | fFF_File);
+    TFindFiles find_type = flags & fFF_All;
     if ( find_type == 0 ) {
-        // nothing to find
-        return;
+        flags |= fFF_All;
     }
     unique_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive |  CDir::fIgnorePath));

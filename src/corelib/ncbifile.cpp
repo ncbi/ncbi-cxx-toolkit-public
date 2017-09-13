@@ -6110,17 +6110,19 @@ void x_Glob(const string& path,
 }
 
 
-void FindFiles(const string& pattern,
-               std::list<string>& result,
-               TFindFiles flags)
+void FindFiles(const string& pattern,  std::list<string>& result, TFindFiles flags)
 {
+    TFindFiles find_type = flags & fFF_All;
+    if ( find_type == 0 ) {
+        flags |= fFF_All;
+    }
+
     string kDirSep(1, CDirEntry::GetPathSeparator());
     string abs_path = CDirEntry::CreateAbsolutePath(pattern);
     string search_path = kDirSep;
 
     std::list<string> parts;
-    NStr::Split(abs_path, kDirSep, parts,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(abs_path, kDirSep, parts, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if ( parts.empty() ) {
         return;
     }
