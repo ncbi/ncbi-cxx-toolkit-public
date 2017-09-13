@@ -162,8 +162,8 @@ CAsyncWriteCache::~CAsyncWriteCache()
     CDeadline deadline(m_GracePeriod);
 
     while (m_ThreadPool->GetQueuedTasksCount() && !deadline.IsExpired()) {
-        auto sleep = min(deadline.GetRemainingTime().GetAsDouble(), 0.1);
-        SleepMilliSec(sleep * kMilliSecondsPerSecond);
+        auto sleep = min(deadline.GetRemainingTime().GetAsMilliSeconds(), 100UL);
+        SleepMilliSec(sleep);
     }
 }
 

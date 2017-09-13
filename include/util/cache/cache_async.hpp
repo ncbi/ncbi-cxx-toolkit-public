@@ -96,7 +96,7 @@ private:
     unique_ptr<ICache> m_Main;
     shared_ptr<ICache> m_Writer;
     shared_ptr<CThreadPool> m_ThreadPool;
-    double m_GracePeriod;
+    CTimeout m_GracePeriod;
 };
 
 
