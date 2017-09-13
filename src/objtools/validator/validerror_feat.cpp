@@ -7222,7 +7222,7 @@ void CValidError_feat::x_CheckCDSFrame
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
-            if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)
+            if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart, true)
                 || NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                 // suppress
             } else {

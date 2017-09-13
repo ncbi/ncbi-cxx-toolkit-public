@@ -5964,7 +5964,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype) ||
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype, true) ||
                                    (feat.IsSetComment() && 
                                     NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress
@@ -5978,7 +5978,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype) ||
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype, true) ||
                                    (feat.IsSetComment()
                                     && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress

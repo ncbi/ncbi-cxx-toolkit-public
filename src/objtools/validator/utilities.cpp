@@ -1135,7 +1135,8 @@ bool SeqIsPatent (CBioseq_Handle seq)
 bool s_PartialAtGapOrNs (
     CScope* scope,
     const CSeq_loc& loc,
-    unsigned int tag
+    unsigned int tag,
+    bool only_gap
 )
 
 {
@@ -1196,6 +1197,9 @@ bool s_PartialAtGapOrNs (
         }
     } catch ( exception& ) {
         
+        return false;
+    }
+    if (only_gap) {
         return false;
     }
 

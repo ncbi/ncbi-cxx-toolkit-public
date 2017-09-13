@@ -142,7 +142,7 @@ bool NCBI_VALIDATOR_EXPORT HasECnumberPattern (const string& str);
 bool SeqIsPatent (const CBioseq& seq);
 bool SeqIsPatent (CBioseq_Handle seq);
 
-bool s_PartialAtGapOrNs (CScope* scope, const CSeq_loc& loc, unsigned int tag);
+bool s_PartialAtGapOrNs(CScope* scope, const CSeq_loc& loc, unsigned int tag, bool only_gap = false);
 
 CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc);
 
