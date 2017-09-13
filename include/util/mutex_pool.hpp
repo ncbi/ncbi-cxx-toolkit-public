@@ -235,7 +235,7 @@ public:
                 }
             }
         }
-    CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool, EForce force)
+    CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool, EForce)
         : m_Init(init), m_Guard(eEmptyGuard)
         {
             if ( pool.AcquireMutex(init, m_Mutex, true) ) {
